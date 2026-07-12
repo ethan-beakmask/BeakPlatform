@@ -6,6 +6,7 @@ import logging
 import tempfile
 
 from flask import jsonify, request, send_file
+from flask_babel import gettext as _
 
 from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
@@ -46,12 +47,12 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         data = request.get_json(silent=True) or {}
         spec_refs = data.get('specs', [])
         if not spec_refs:
-            return jsonify({'success': False, 'error': '請至少選擇一個規格'}), 400
+            return jsonify({'success': False, 'error': _('請至少選擇一個規格')}), 400
 
         doc_title = (data.get('doc_title') or '').strip() or '資料結構規格書'
 
@@ -59,14 +60,14 @@ def register(bp):
         for ref in spec_refs:
             spec_sc = ref.get('spec_sc')
             if not spec_sc:
-                return jsonify({'success': False, 'error': '每個項目需有 spec_sc'}), 400
+                return jsonify({'success': False, 'error': _('每個項目需有 spec_sc')}), 400
 
             req_version = ref.get('version')  # None = 最新版
             facets = ref.get('facets', [])
             if not facets:
                 return jsonify({
                     'success': False,
-                    'error': f'規格 {spec_sc} 未指定匯出格式',
+                    'error': _('規格 %(sc)s 未指定匯出格式', sc=spec_sc),
                 }), 400
 
             # 查詢 spec
@@ -77,7 +78,7 @@ def register(bp):
             ).first()
 
             if not spec:
-                return jsonify({'success': False, 'error': f'規格不存在: {spec_sc}'}), 404
+                return jsonify({'success': False, 'error': _('規格不存在: %(sc)s', sc=spec_sc)}), 404
 
             # 取得指定版本的 fields
             if req_version and req_version != spec.version:
@@ -91,7 +92,8 @@ def register(bp):
                 if not history:
                     return jsonify({
                         'success': False,
-                        'error': f'找不到 {spec.name} 的版本 v{req_version}',
+                        'error': _('找不到 %(name)s 的版本 v%(version)s',
+                                   name=spec.name, version=req_version),
                     }), 404
 
                 fields = history.fields_snapshot or []
@@ -107,10 +109,9 @@ def register(bp):
             if invalid_facets:
                 return jsonify({
                     'success': False,
-                    'error': (
-                        f'{spec.name} v{version} 未啟用格式: '
-                        f'{", ".join(invalid_facets)}'
-                    ),
+                    'error': _('%(name)s v%(version)s 未啟用格式: %(facets)s',
+                               name=spec.name, version=version,
+                               facets=', '.join(invalid_facets)),
                 }), 400
 
             entries.append({
@@ -147,7 +148,7 @@ def register(bp):
             )
         except Exception as e:
             logger.exception('DOCX 匯出失敗')
-            return jsonify({'success': False, 'error': f'匯出失敗: {str(e)}'}), 500
+            return jsonify({'success': False, 'error': _('匯出失敗: %(error)s', error=str(e))}), 500
 
     @bp.route('/export/pdf', methods=['POST'])
     @module_access_required('spec_formulate')
@@ -177,12 +178,12 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         data = request.get_json(silent=True) or {}
         spec_refs = data.get('specs', [])
         if not spec_refs:
-            return jsonify({'success': False, 'error': '請至少選擇一個規格'}), 400
+            return jsonify({'success': False, 'error': _('請至少選擇一個規格')}), 400
 
         doc_title = (data.get('doc_title') or '').strip() or '資料結構規格書'
 
@@ -190,14 +191,14 @@ def register(bp):
         for ref in spec_refs:
             spec_sc = ref.get('spec_sc')
             if not spec_sc:
-                return jsonify({'success': False, 'error': '每個項目需有 spec_sc'}), 400
+                return jsonify({'success': False, 'error': _('每個項目需有 spec_sc')}), 400
 
             req_version = ref.get('version')
             facets = ref.get('facets', [])
             if not facets:
                 return jsonify({
                     'success': False,
-                    'error': f'規格 {spec_sc} 未指定匯出格式',
+                    'error': _('規格 %(sc)s 未指定匯出格式', sc=spec_sc),
                 }), 400
 
             spec = FwSpecSchema.query.filter_by(
@@ -207,7 +208,7 @@ def register(bp):
             ).first()
 
             if not spec:
-                return jsonify({'success': False, 'error': f'規格不存在: {spec_sc}'}), 404
+                return jsonify({'success': False, 'error': _('規格不存在: %(sc)s', sc=spec_sc)}), 404
 
             if req_version and req_version != spec.version:
                 history = FwSpecSchemaHistory.query.filter_by(
@@ -219,7 +220,8 @@ def register(bp):
                 if not history:
                     return jsonify({
                         'success': False,
-                        'error': f'找不到 {spec.name} 的版本 v{req_version}',
+                        'error': _('找不到 %(name)s 的版本 v%(version)s',
+                                   name=spec.name, version=req_version),
                     }), 404
 
                 fields = history.fields_snapshot or []
@@ -234,10 +236,9 @@ def register(bp):
             if invalid_facets:
                 return jsonify({
                     'success': False,
-                    'error': (
-                        f'{spec.name} v{version} 未啟用格式: '
-                        f'{", ".join(invalid_facets)}'
-                    ),
+                    'error': _('%(name)s v%(version)s 未啟用格式: %(facets)s',
+                               name=spec.name, version=version,
+                               facets=', '.join(invalid_facets)),
                 }), 400
 
             entries.append({
@@ -269,4 +270,4 @@ def register(bp):
             )
         except Exception as e:
             logger.exception('PDF 匯出失敗')
-            return jsonify({'success': False, 'error': f'匯出失敗: {str(e)}'}), 500
+            return jsonify({'success': False, 'error': _('匯出失敗: %(error)s', error=str(e))}), 500

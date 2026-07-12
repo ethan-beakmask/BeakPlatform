@@ -224,7 +224,7 @@ function specSchemaEditor() {
                 layout: 'fitColumns',
                 movableRows: true,
                 selectable: true,
-                placeholder: '尚未定義欄位，點擊「+ 欄位」新增',
+                placeholder: __('尚未定義欄位，點擊「+ 欄位」新增'),
                 rowHeight: 24,
                 columnDefaults: { headerSort: false },
                 columns: [
@@ -294,7 +294,7 @@ function specSchemaEditor() {
                         editor: 'input',
                     },
                     {
-                        title: '加密', field: 'core.is_pii',
+                        title: __('加密'), field: 'core.is_pii',
                         formatter: 'tickCross', hozAlign: 'center',
                         width: 70, editor: true,
                         cellEdited: function(cell) {
@@ -308,20 +308,20 @@ function specSchemaEditor() {
                         },
                     },
                     {
-                        title: '必填', field: 'core.required',
+                        title: __('必填'), field: 'core.required',
                         formatter: 'tickCross', hozAlign: 'center',
                         width: 70, editor: true,
                     },
                     {
-                        title: '說明', field: 'description', editor: 'input',
+                        title: __('說明'), field: 'description', editor: 'input',
                         minWidth: 200,
                     },
                     {
-                        title: '操作', width: 100, hozAlign: 'center',
+                        title: __('操作'), width: 100, hozAlign: 'center',
                         resizable: false,
                         formatter: function(cell) {
                             var btn = document.createElement('button');
-                            btn.textContent = '詳細';
+                            btn.textContent = __('詳細');
                             btn.style.cssText = 'padding:2px 8px;font-size:11px;border:1px solid #d1d5db;background:#fff;cursor:pointer;border-radius:2px;';
                             btn.addEventListener('click', function(e) {
                                 e.stopPropagation();
@@ -416,7 +416,7 @@ function specSchemaEditor() {
             if (!this.gridTable) return;
             var selected = this.gridTable.getSelectedRows();
             if (selected.length === 0) {
-                this.showToast('請先勾選要刪除的欄位', 'warning');
+                this.showToast(__('請先勾選要刪除的欄位'), 'warning');
                 return;
             }
             selected.forEach(function(row) { row.delete(); });
@@ -498,20 +498,20 @@ function specSchemaEditor() {
                             window.__BP + '/spec-formulate/' + s.secure_code + '/edit');
                     }
                     if (s.warnings && s.warnings.length > 0) {
-                        this.showToast('已儲存（有 ' + s.warnings.length + ' 個警告）', 'warning');
+                        this.showToast(__('已儲存（有 {n} 個警告）', {n: s.warnings.length}), 'warning');
                     }
                     // 刷新側邊欄與歷史
                     this.loadSpecList();
                     this.loadHistory();
                 } else {
-                    var msg = data.error || '儲存失敗';
+                    var msg = data.error || __('儲存失敗');
                     if (data.details) {
-                        msg += ' (' + data.details.length + ' 個問題)';
+                        msg += ' (' + __('{n} 個問題', {n: data.details.length}) + ')';
                     }
                     this.showToast(msg, 'error');
                 }
             } catch (e) {
-                this.showToast('儲存失敗: ' + e.message, 'error');
+                this.showToast(__('儲存失敗: {msg}', {msg: e.message}), 'error');
             }
             this.saving = false;
         },
@@ -520,7 +520,7 @@ function specSchemaEditor() {
 
         async populateFacet(facetName) {
             if (!this.specSc) {
-                this.showToast('請先儲存規格', 'warning');
+                this.showToast(__('請先儲存規格'), 'warning');
                 return;
             }
 
@@ -552,16 +552,16 @@ function specSchemaEditor() {
                         this.gridTable.setData(this._plainFields());
                         this._syncProjectionFields();
                     }
-                    var msg = data.message || '完成';
+                    var msg = data.message || __('完成');
                     if (data.data.skipped_count > 0) {
-                        msg += ' (跳過 ' + data.data.skipped_count + ' 個不支援欄位)';
+                        msg += ' (' + __('跳過 {n} 個不支援欄位', {n: data.data.skipped_count}) + ')';
                     }
                     this.showToast(msg, 'success');
                 } else {
-                    this.showToast(data.error || '填充失敗', 'error');
+                    this.showToast(data.error || __('填充失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('填充失敗: ' + e.message, 'error');
+                this.showToast(__('填充失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -757,10 +757,10 @@ function specSchemaEditor() {
                     this.showLinkFormModal = false;
                     this.showToast(data.message, 'success');
                 } else {
-                    this.showToast(data.error || '關聯失敗', 'error');
+                    this.showToast(data.error || __('關聯失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('關聯失敗: ' + e.message, 'error');
+                this.showToast(__('關聯失敗: {msg}', {msg: e.message}), 'error');
             }
             this.linkSubmitting = false;
         },
@@ -778,21 +778,21 @@ function specSchemaEditor() {
                 if (data.success) {
                     this.linkedFormTemplateSc = '';
                     this.linkedFormTemplateName = '';
-                    this.showToast('已解除表單關聯', 'success');
+                    this.showToast(__('已解除表單關聯'), 'success');
                 } else {
-                    this.showToast(data.error || '解除失敗', 'error');
+                    this.showToast(data.error || __('解除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('解除失敗: ' + e.message, 'error');
+                this.showToast(__('解除失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
         async syncToForm() {
             if (!this.linkedFormTemplateSc) {
-                this.showToast('尚未關聯表單', 'warning');
+                this.showToast(__('尚未關聯表單'), 'warning');
                 return;
             }
-            if (!confirm('確定要將目前的欄位同步回關聯的表單嗎？\n這會覆蓋表單現有的欄位結構。')) {
+            if (!confirm(__('確定要將目前的欄位同步回關聯的表單嗎？\n這會覆蓋表單現有的欄位結構。'))) {
                 return;
             }
             // 先儲存最新欄位
@@ -809,10 +809,10 @@ function specSchemaEditor() {
                 if (data.success) {
                     this.showToast(data.message, 'success');
                 } else {
-                    this.showToast(data.error || '同步失敗', 'error');
+                    this.showToast(data.error || __('同步失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('同步失敗: ' + e.message, 'error');
+                this.showToast(__('同步失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -846,10 +846,10 @@ function specSchemaEditor() {
                     this.showCreateFormModal = false;
                     this.showToast(data.message, 'success');
                 } else {
-                    this.showToast(data.error || '建立失敗', 'error');
+                    this.showToast(data.error || __('建立失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('建立失敗: ' + e.message, 'error');
+                this.showToast(__('建立失敗: {msg}', {msg: e.message}), 'error');
             }
             this.createFormSubmitting = false;
         },
@@ -889,7 +889,7 @@ function specSchemaEditor() {
                     var label = t.name;
                     if (t.creator_org_name) {
                         label += ' (' + t.creator_org_name;
-                        if (t.is_owner) label += ', 自己建立';
+                        if (t.is_owner) label += ', ' + __('自己建立');
                         label += ')';
                     }
                     result.push({ value: t.name, label: label });
@@ -923,10 +923,10 @@ function specSchemaEditor() {
                 if (data.success) {
                     this.pgTables = data.data || [];
                 } else {
-                    this.showToast(data.error || '載入資料表失敗', 'error');
+                    this.showToast(data.error || __('載入資料表失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('載入失敗: ' + e.message, 'error');
+                this.showToast(__('載入失敗: {msg}', {msg: e.message}), 'error');
             }
             this.pgTablesLoading = false;
         },
@@ -949,10 +949,10 @@ function specSchemaEditor() {
                 if (data.success) {
                     this.pgCompareResult = data.data;
                 } else {
-                    this.showToast(data.error || '比對失敗', 'error');
+                    this.showToast(data.error || __('比對失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('比對失敗: ' + e.message, 'error');
+                this.showToast(__('比對失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -976,9 +976,9 @@ function specSchemaEditor() {
                 this.linkedSqlTable = tableName;
                 this.linkedSqlTarget = this.pgTarget;
                 this.showReadTableModal = false;
-                this.showToast('已關聯資料表: ' + tableName, 'success');
+                this.showToast(__('已關聯資料表: {name}', {name: tableName}), 'success');
             } catch (e) {
-                this.showToast('關聯失敗: ' + e.message, 'error');
+                this.showToast(__('關聯失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -1008,24 +1008,24 @@ function specSchemaEditor() {
                     this.linkedSqlTarget = this.pgTarget;
                     var toastMsg = data.message;
                     if (data.data && data.data.errors && data.data.errors.length > 0) {
-                        toastMsg += ' (' + data.data.errors.length + ' 個失敗)';
+                        toastMsg += ' (' + __('{n} 個失敗', {n: data.data.errors.length}) + ')';
                         this.showToast(toastMsg, 'warning');
                     } else {
                         this.showToast(toastMsg, 'success');
                     }
                     this.showReadTableModal = false;
                 } else {
-                    this.showToast(data.error || '覆蓋失敗', 'error');
+                    this.showToast(data.error || __('覆蓋失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('操作失敗: ' + e.message, 'error');
+                this.showToast(__('操作失敗: {msg}', {msg: e.message}), 'error');
             }
             this.pgApplying = false;
         },
 
         async pgCreateTable() {
             if (!this.specTableName) {
-                this.showToast('請先設定資料表名稱', 'warning');
+                this.showToast(__('請先設定資料表名稱'), 'warning');
                 return;
             }
 
@@ -1041,7 +1041,7 @@ function specSchemaEditor() {
                     }
                 }
                 if (missing.length > 0) {
-                    this.showToast('有 ' + missing.length + ' 個欄位缺少 PG Type', 'warning');
+                    this.showToast(__('有 {n} 個欄位缺少 PG Type', {n: missing.length}), 'warning');
                     return;
                 }
             }
@@ -1077,16 +1077,16 @@ function specSchemaEditor() {
                     this.linkedSqlTarget = this.pgTarget;
                     var msg = data.message;
                     if (data.data && data.data.warnings && data.data.warnings.length > 0) {
-                        msg += ' (' + data.data.warnings.length + ' 個警告)';
+                        msg += ' (' + __('{n} 個警告', {n: data.data.warnings.length}) + ')';
                         this.showToast(msg, 'warning');
                     } else {
                         this.showToast(msg, 'success');
                     }
                 } else {
-                    this.showToast(data.error || data.message || '建立失敗', 'error');
+                    this.showToast(data.error || data.message || __('建立失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('建立失敗: ' + e.message, 'error');
+                this.showToast(__('建立失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -1104,12 +1104,12 @@ function specSchemaEditor() {
                 if (data.success) {
                     this.linkedSqlTable = '';
                     this.linkedSqlTarget = '';
-                    this.showToast('已解除資料表關聯', 'success');
+                    this.showToast(__('已解除資料表關聯'), 'success');
                 } else {
-                    this.showToast(data.error || '解除失敗', 'error');
+                    this.showToast(data.error || __('解除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('解除失敗: ' + e.message, 'error');
+                this.showToast(__('解除失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -1144,7 +1144,7 @@ function specSchemaEditor() {
 
         async confirmNewSpec() {
             var name = (this.newSpecForm.name || '').trim();
-            if (!name) { alert('規格名稱必填'); return; }
+            if (!name) { alert(__('規格名稱必填')); return; }
             this.newSpecCreating = true;
             try {
                 var resp = await fetch(window.__BP + '/api/spec-formulate/schema/specs', {
@@ -1165,10 +1165,10 @@ function specSchemaEditor() {
                     this.showNewSpecModal = false;
                     window.location.href = window.__BP + '/spec-formulate/' + data.data.secure_code + '/edit';
                 } else {
-                    alert(data.error || '建立失敗');
+                    alert(data.error || __('建立失敗'));
                 }
             } catch (e) {
-                alert('建立失敗: ' + e.message);
+                alert(__('建立失敗: {msg}', {msg: e.message}));
             }
             this.newSpecCreating = false;
         },
@@ -1180,7 +1180,7 @@ function specSchemaEditor() {
                 return s.active_facets && s.active_facets.length > 0;
             });
             if (available.length === 0) {
-                this.showToast('目前沒有任何已啟用格式的規格可匯出', 'warning');
+                this.showToast(__('目前沒有任何已啟用格式的規格可匯出'), 'warning');
                 return;
             }
             this.docxTitle = '';
@@ -1271,7 +1271,7 @@ function specSchemaEditor() {
 
         async doExportDocx() {
             if (this.docxItems.length === 0) {
-                alert('請至少加入一個規格');
+                alert(__('請至少加入一個規格'));
                 return;
             }
             var specs = [];
@@ -1283,7 +1283,7 @@ function specSchemaEditor() {
                     if (item.selectedFacets[af[j]]) facets.push(af[j]);
                 }
                 if (facets.length === 0) {
-                    alert(item.name + ': 請至少選擇一種格式');
+                    alert(__('{name}: 請至少選擇一種格式', {name: item.name}));
                     return;
                 }
                 specs.push({
@@ -1308,7 +1308,7 @@ function specSchemaEditor() {
                 if (resp.ok) {
                     var blob = await resp.blob();
                     var cd = resp.headers.get('content-disposition') || '';
-                    var filename = '規格書.docx';
+                    var filename = __('規格書') + '.docx';
                     var starMatch = cd.match(/filename\*=UTF-8''([^;\s]+)/i);
                     if (starMatch) {
                         filename = decodeURIComponent(starMatch[1]);
@@ -1327,17 +1327,17 @@ function specSchemaEditor() {
                     this.showDocxModal = false;
                 } else {
                     var errData = await resp.json();
-                    alert(errData.error || '匯出失敗');
+                    alert(errData.error || __('匯出失敗'));
                 }
             } catch (e) {
-                alert('匯出失敗: ' + e.message);
+                alert(__('匯出失敗: {msg}', {msg: e.message}));
             }
             this.docxExporting = false;
         },
 
         async doExportPdf() {
             if (this.docxItems.length === 0) {
-                alert('請至少加入一個規格');
+                alert(__('請至少加入一個規格'));
                 return;
             }
             var specs = [];
@@ -1349,7 +1349,7 @@ function specSchemaEditor() {
                     if (item.selectedFacets[af[j]]) facets.push(af[j]);
                 }
                 if (facets.length === 0) {
-                    alert(item.name + ': 請至少選擇一種格式');
+                    alert(__('{name}: 請至少選擇一種格式', {name: item.name}));
                     return;
                 }
                 specs.push({
@@ -1374,7 +1374,7 @@ function specSchemaEditor() {
                 if (resp.ok) {
                     var blob = await resp.blob();
                     var cd = resp.headers.get('content-disposition') || '';
-                    var filename = '規格書.pdf';
+                    var filename = __('規格書') + '.pdf';
                     var starMatch = cd.match(/filename\*=UTF-8''([^;\s]+)/i);
                     if (starMatch) {
                         filename = decodeURIComponent(starMatch[1]);
@@ -1393,10 +1393,10 @@ function specSchemaEditor() {
                     this.showDocxModal = false;
                 } else {
                     var errData = await resp.json();
-                    alert(errData.error || '匯出失敗');
+                    alert(errData.error || __('匯出失敗'));
                 }
             } catch (e) {
-                alert('匯出失敗: ' + e.message);
+                alert(__('匯出失敗: {msg}', {msg: e.message}));
             }
             this.pdfExporting = false;
         },

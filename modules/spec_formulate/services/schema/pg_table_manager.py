@@ -16,6 +16,7 @@ Schema PostgreSQL Table Manager
 import logging
 
 import psycopg2
+from flask_babel import gettext as _
 from psycopg2 import sql as psql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
@@ -298,7 +299,8 @@ def create_table_from_spec(org_secure_code, table_name, spec_fields):
         if not pg_type:
             dc = f.get('core', {}).get('data_class', 'text')
             pg_type = _DC_TO_PG_FALLBACK.get(dc, 'TEXT')
-            warnings.append(f'{fk}: 無 PostgreSQL facet，使用預設型別 {pg_type}')
+            warnings.append(_('%(fk)s: 無 PostgreSQL facet，使用預設型別 %(pg_type)s',
+                              fk=fk, pg_type=pg_type))
 
         core = f.get('core', {})
         nullable = pg_facet.get('nullable', True)
@@ -324,7 +326,7 @@ def create_table_from_spec(org_secure_code, table_name, spec_fields):
     if not columns:
         return {
             'success': False,
-            'message': '無有效欄位可建立資料表',
+            'message': _('無有效欄位可建立資料表'),
             'ddl': '',
             'warnings': warnings,
         }
@@ -402,14 +404,14 @@ def create_table_from_spec(org_secure_code, table_name, spec_fields):
 
         return {
             'success': True,
-            'message': f'資料表 {table_name} 建立成功',
+            'message': _('資料表 %(table)s 建立成功', table=table_name),
             'ddl': ddl,
             'warnings': warnings,
         }
     except psycopg2.Error as e:
         return {
             'success': False,
-            'message': f'建立失敗: {e.pgerror or str(e)}',
+            'message': _('建立失敗: %(error)s', error=e.pgerror or str(e)),
             'ddl': ddl,
             'warnings': warnings,
         }
@@ -447,8 +449,8 @@ def apply_spec_to_table(org_secure_code, table_name, spec_fields, table_columns)
                     # SERIAL 不能 ALTER
                     if spec_type.upper() == 'SERIAL':
                         errors.append(
-                            f"{col['field_key']}: SERIAL 型別無法透過 ALTER 修改，"
-                            f"目前為 {col['db_type']}"
+                            _('%(fk)s: SERIAL 型別無法透過 ALTER 修改，目前為 %(db_type)s',
+                              fk=col['field_key'], db_type=col['db_type'])
                         )
                         continue
                     alter_sql = (
@@ -466,8 +468,8 @@ def apply_spec_to_table(org_secure_code, table_name, spec_fields, table_columns)
         return {
             'success': success,
             'message': (
-                f'已執行 {len(executed)} 項變更'
-                + (f'，{len(errors)} 項失敗' if errors else '')
+                _('已執行 %(n)s 項變更', n=len(executed))
+                + (_('，%(n)s 項失敗', n=len(errors)) if errors else '')
             ),
             'executed_sql': executed,
             'errors': errors,
@@ -476,7 +478,7 @@ def apply_spec_to_table(org_secure_code, table_name, spec_fields, table_columns)
     except Exception as e:
         return {
             'success': False,
-            'message': f'操作失敗: {str(e)}',
+            'message': _('操作失敗: %(error)s', error=str(e)),
             'executed_sql': executed,
             'errors': errors,
         }
@@ -697,7 +699,8 @@ def cg_create_table_from_spec(
             dc = f.get('core', {}).get('data_class', 'text')
             pg_type = _DC_TO_PG_FALLBACK.get(dc, 'TEXT')
             warnings.append(
-                f'{fk}: 無 PostgreSQL facet，使用預設型別 {pg_type}'
+                _('%(fk)s: 無 PostgreSQL facet，使用預設型別 %(pg_type)s',
+                  fk=fk, pg_type=pg_type)
             )
 
         core = f.get('core', {})
@@ -721,7 +724,7 @@ def cg_create_table_from_spec(
     if not columns:
         return {
             'success': False,
-            'message': '無有效欄位可建立資料表',
+            'message': _('無有效欄位可建立資料表'),
             'ddl': '',
             'warnings': warnings,
         }
@@ -823,14 +826,14 @@ def cg_create_table_from_spec(
 
         return {
             'success': True,
-            'message': f'集團共享資料表 {table_name} 建立成功（含 RLS）',
+            'message': _('集團共享資料表 %(table)s 建立成功（含 RLS）', table=table_name),
             'ddl': ddl,
             'warnings': warnings,
         }
     except psycopg2.Error as e:
         return {
             'success': False,
-            'message': f'建立失敗: {e.pgerror or str(e)}',
+            'message': _('建立失敗: %(error)s', error=e.pgerror or str(e)),
             'ddl': ddl,
             'warnings': warnings,
         }
@@ -863,7 +866,7 @@ def cg_apply_spec_to_table(
     ):
         return {
             'success': False,
-            'message': f'權限不足：只有建立此表的企業才能修改結構',
+            'message': _('權限不足：只有建立此表的企業才能修改結構'),
             'executed_sql': [],
             'errors': ['NOT_TABLE_OWNER'],
         }
@@ -893,8 +896,8 @@ def cg_apply_spec_to_table(
                     spec_type = col['spec_type']
                     if spec_type.upper() == 'SERIAL':
                         errors.append(
-                            f"{col['field_key']}: SERIAL 型別無法透過 "
-                            f"ALTER 修改，目前為 {col['db_type']}"
+                            _('%(fk)s: SERIAL 型別無法透過 ALTER 修改，目前為 %(db_type)s',
+                              fk=col['field_key'], db_type=col['db_type'])
                         )
                         continue
                     alter_sql = (
@@ -915,8 +918,8 @@ def cg_apply_spec_to_table(
         return {
             'success': success,
             'message': (
-                f'已執行 {len(executed)} 項變更'
-                + (f'，{len(errors)} 項失敗' if errors else '')
+                _('已執行 %(n)s 項變更', n=len(executed))
+                + (_('，%(n)s 項失敗', n=len(errors)) if errors else '')
             ),
             'executed_sql': executed,
             'errors': errors,
@@ -925,7 +928,7 @@ def cg_apply_spec_to_table(
     except Exception as e:
         return {
             'success': False,
-            'message': f'操作失敗: {str(e)}',
+            'message': _('操作失敗: %(error)s', error=str(e)),
             'executed_sql': executed,
             'errors': errors,
         }

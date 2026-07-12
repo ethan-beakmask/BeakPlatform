@@ -6,6 +6,7 @@ import logging
 import secrets
 
 from flask import jsonify, request
+from flask_babel import gettext as _
 
 from app import db
 from app.security.decorators import module_access_required
@@ -34,7 +35,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -43,7 +44,7 @@ def register(bp):
         ).first()
 
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         # 歷史版本
         histories = FwSpecSchemaHistory.query.filter_by(
@@ -112,7 +113,7 @@ def register(bp):
 
         # 找不到
         if request.method == 'GET':
-            return jsonify({'success': False, 'error': '此表單尚未關聯規格'}), 404
+            return jsonify({'success': False, 'error': _('此表單尚未關聯規格')}), 404
 
         # POST: 自動建立 spec 並關聯，從 FormIO schema 匯入欄位
         template = FwFormTemplate.query.filter_by(
@@ -120,7 +121,7 @@ def register(bp):
             org_secure_code=org.secure_code,
         ).first()
         if not template:
-            return jsonify({'success': False, 'error': '表單模板不存在'}), 404
+            return jsonify({'success': False, 'error': _('表單模板不存在')}), 404
 
         user_sc, user_name = _get_user_info()
 
@@ -147,7 +148,7 @@ def register(bp):
         return jsonify({
             'success': True,
             'data': {'secure_code': spec.secure_code, 'name': spec.name},
-            'message': f'已自動建立規格「{spec.name}」',
+            'message': _('已自動建立規格「%(name)s」', name=spec.name),
         }), 201
 
     @bp.route('/available-templates', methods=['GET'])
@@ -159,7 +160,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         # 已被佔用的 form_template secure_codes
         occupied = set()
@@ -203,7 +204,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -211,12 +212,12 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         data = request.get_json(silent=True) or {}
         ft_sc = (data.get('form_template_secure_code') or '').strip()
         if not ft_sc:
-            return jsonify({'success': False, 'error': '缺少 form_template_secure_code'}), 400
+            return jsonify({'success': False, 'error': _('缺少 form_template_secure_code')}), 400
 
         template = FwFormTemplate.query.filter_by(
             secure_code=ft_sc,
@@ -225,7 +226,7 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not template:
-            return jsonify({'success': False, 'error': '表單模板不存在'}), 404
+            return jsonify({'success': False, 'error': _('表單模板不存在')}), 404
 
         # 檢查是否已被其他 spec 佔用
         existing = FwSpecSchema.query.filter_by(
@@ -237,7 +238,7 @@ def register(bp):
         if existing and existing.secure_code != spec_sc:
             return jsonify({
                 'success': False,
-                'error': f'此表單模板已被「{existing.name}」關聯',
+                'error': _('此表單模板已被「%(name)s」關聯', name=existing.name),
             }), 409
 
         spec.linked_form_template_sc = ft_sc
@@ -250,7 +251,7 @@ def register(bp):
                 'template_name': template.name,
                 'template_code': template.code,
             },
-            'message': f'已關聯表單模板「{template.name}」',
+            'message': _('已關聯表單模板「%(name)s」', name=template.name),
         })
 
     @bp.route('/specs/<spec_sc>/unlink-form', methods=['POST'])
@@ -261,7 +262,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -269,12 +270,12 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         spec.linked_form_template_sc = None
         db.session.commit()
 
-        return jsonify({'success': True, 'message': '已解除表單關聯'})
+        return jsonify({'success': True, 'message': _('已解除表單關聯')})
 
     @bp.route('/specs/<spec_sc>/sync-to-form', methods=['POST'])
     @module_access_required('spec_formulate')
@@ -293,7 +294,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -301,17 +302,17 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         if not spec.linked_form_template_sc:
-            return jsonify({'success': False, 'error': '此規格尚未關聯表單'}), 400
+            return jsonify({'success': False, 'error': _('此規格尚未關聯表單')}), 400
 
         template = FwFormTemplate.query.filter_by(
             secure_code=spec.linked_form_template_sc,
             org_secure_code=org.secure_code,
         ).first()
         if not template:
-            return jsonify({'success': False, 'error': '關聯的表單模板不存在'}), 404
+            return jsonify({'success': False, 'error': _('關聯的表單模板不存在')}), 404
 
         # 產生新的 FormIO schema（帶入表單名稱作為標題）
         new_schema = spec_fields_to_formio_schema(spec.fields or [], form_title=template.name)
@@ -328,7 +329,8 @@ def register(bp):
         field_count = len(new_schema.get('components', []))
         return jsonify({
             'success': True,
-            'message': f'已同步 {field_count} 個欄位回表單「{template.name}」',
+            'message': _('已同步 %(n)s 個欄位回表單「%(name)s」',
+                         n=field_count, name=template.name),
             'data': {
                 'template_name': template.name,
                 'field_count': field_count,
@@ -355,7 +357,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -363,7 +365,7 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         data = request.get_json(silent=True) or {}
         form_name = (data.get('name') or '').strip() or spec.name
@@ -383,14 +385,14 @@ def register(bp):
         if dup:
             return jsonify({
                 'success': False,
-                'error': f'表單代碼 {form_code} 已存在',
+                'error': _('表單代碼 %(code)s 已存在', code=form_code),
             }), 409
 
         # 確認有 formio facet
         if 'formio' not in (spec.active_facets or []):
             return jsonify({
                 'success': False,
-                'error': '此規格尚未啟用 FormIO 格式，請先填充 FormIO facet',
+                'error': _('此規格尚未啟用 FormIO 格式，請先填充 FormIO facet'),
             }), 400
 
         # 產生 FormIO schema
@@ -424,5 +426,6 @@ def register(bp):
                     'code': template.code,
                 },
             },
-            'message': f'已建立並關聯表單「{form_name}」({form_code})',
+            'message': _('已建立並關聯表單「%(name)s」(%(code)s)',
+                         name=form_name, code=form_code),
         })

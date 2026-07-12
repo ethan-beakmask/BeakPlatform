@@ -6,6 +6,7 @@ import logging
 import re
 
 from flask import jsonify, request
+from flask_babel import gettext as _
 
 from app import db
 from app.security.decorators import module_access_required
@@ -27,7 +28,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         try:
             org_db = ensure_org_database(org)
@@ -40,7 +41,7 @@ def register(bp):
             })
         except Exception as e:
             logger.exception('企業 DB 建立失敗')
-            return jsonify({'success': False, 'error': f'資料庫建立失敗: {str(e)}'}), 500
+            return jsonify({'success': False, 'error': _('資料庫建立失敗: %(error)s', error=str(e))}), 500
 
     @bp.route('/pg/tables', methods=['GET'])
     @module_access_required('spec_formulate')
@@ -53,7 +54,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         try:
             ensure_org_database(org)
@@ -73,7 +74,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         try:
             columns = introspect_table(org.secure_code, table_name)
@@ -93,7 +94,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -101,7 +102,7 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         try:
             columns = introspect_table(org.secure_code, table_name)
@@ -126,7 +127,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -134,12 +135,12 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         if 'postgresql' not in (spec.active_facets or []):
             return jsonify({
                 'success': False,
-                'error': '此規格尚未啟用 PostgreSQL 格式',
+                'error': _('此規格尚未啟用 PostgreSQL 格式'),
             }), 400
 
         data = request.get_json(silent=True) or {}
@@ -147,14 +148,14 @@ def register(bp):
         if not table_name:
             return jsonify({
                 'success': False,
-                'error': '請指定資料表名稱',
+                'error': _('請指定資料表名稱'),
             }), 400
 
         # 驗證表名
         if not re.match(r'^[a-z][a-z0-9_]*$', table_name):
             return jsonify({
                 'success': False,
-                'error': '資料表名稱只能包含小寫英文、數字和底線，且以英文開頭',
+                'error': _('資料表名稱只能包含小寫英文、數字和底線，且以英文開頭'),
             }), 400
 
         try:
@@ -192,7 +193,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -200,12 +201,12 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         data = request.get_json(silent=True) or {}
         table_name = (data.get('table_name') or '').strip()
         if not table_name:
-            return jsonify({'success': False, 'error': '請指定資料表名稱'}), 400
+            return jsonify({'success': False, 'error': _('請指定資料表名稱')}), 400
 
         try:
             columns = introspect_table(org.secure_code, table_name)
@@ -234,7 +235,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -242,10 +243,10 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         spec.linked_sql_table = None
         spec.linked_sql_target = None
         db.session.commit()
 
-        return jsonify({'success': True, 'message': '已解除資料表關聯'})
+        return jsonify({'success': True, 'message': _('已解除資料表關聯')})

@@ -6,6 +6,8 @@ Field Normalizer - 欄位定義驗證與正規化
 """
 import re
 
+from flask_babel import gettext as _
+
 from .data_class_registry import DATA_CLASS_REGISTRY, ALL_FACETS
 
 # field_key 格式：英文字母/數字/底線，首字元為英文
@@ -39,21 +41,21 @@ def validate_field(field, index=0):
 
     # field_key 必填且格式正確
     if not field.get('field_key'):
-        raise FieldValidationError(fk, 'field_key 必填')
+        raise FieldValidationError(fk, _('field_key 必填'))
     if not FIELD_KEY_PATTERN.match(field['field_key']):
         raise FieldValidationError(
             fk,
-            'field_key 格式錯誤：僅允許英文字母、數字、底線，且首字元為英文'
+            _('field_key 格式錯誤：僅允許英文字母、數字、底線，且首字元為英文')
         )
 
     # label 必填
     if not field.get('label', '').strip():
-        raise FieldValidationError(fk, 'label 必填')
+        raise FieldValidationError(fk, _('label 必填'))
 
     # core 區塊
     core = field.get('core')
     if not core or not isinstance(core, dict):
-        raise FieldValidationError(fk, 'core 區塊必填')
+        raise FieldValidationError(fk, _('core 區塊必填'))
 
     # data_class 必須是已知值
     dc = core.get('data_class')
@@ -61,27 +63,29 @@ def validate_field(field, index=0):
         known = ', '.join(DATA_CLASS_REGISTRY.keys())
         raise FieldValidationError(
             fk,
-            f'未知的 data_class: {dc}（可用值: {known}）'
+            _('未知的 data_class: %(dc)s（可用值: %(known)s）', dc=dc, known=known)
         )
 
     # facets 區塊驗證
     facets = field.get('facets', {})
     if not isinstance(facets, dict):
-        raise FieldValidationError(fk, 'facets 必須是 dict')
+        raise FieldValidationError(fk, _('facets 必須是 dict'))
 
     for facet_name, facet_val in facets.items():
         if facet_name not in ALL_FACETS:
-            warnings.append(f'[{fk}] 未知的 facet: {facet_name}')
+            warnings.append(_('[%(fk)s] 未知的 facet: %(facet)s',
+                              fk=fk, facet=facet_name))
             continue
         if not isinstance(facet_val, dict):
-            raise FieldValidationError(fk, f'facets.{facet_name} 必須是 dict')
+            raise FieldValidationError(
+                fk, _('facets.%(facet)s 必須是 dict', facet=facet_name))
 
         # 檢查 data_class 是否支援此 facet
         reg = DATA_CLASS_REGISTRY[dc]['facets'].get(facet_name, {})
         if not reg.get('supported', False):
             warnings.append(
-                f'[{fk}] data_class={dc} 不支援 {facet_name}，'
-                f'facet 資料將保留但不生效'
+                _('[%(fk)s] data_class=%(dc)s 不支援 %(facet)s，facet 資料將保留但不生效',
+                  fk=fk, dc=dc, facet=facet_name)
             )
 
     return warnings
@@ -139,7 +143,7 @@ def normalize_fields(fields):
             - errors: 阻斷錯誤列表
     """
     if not isinstance(fields, list):
-        return [], [], ['fields 必須是陣列']
+        return [], [], [_('fields 必須是陣列')]
 
     normalized = []
     all_warnings = []
@@ -148,7 +152,7 @@ def normalize_fields(fields):
 
     for i, field in enumerate(fields):
         if not isinstance(field, dict):
-            all_errors.append(f'fields[{i}] 不是有效的物件')
+            all_errors.append(_('fields[%(i)s] 不是有效的物件', i=i))
             continue
 
         # 正規化
@@ -161,7 +165,7 @@ def normalize_fields(fields):
         # field_key 重複檢查
         if norm['field_key'] in seen_keys:
             all_errors.append(
-                f'field_key 重複: {norm["field_key"]}'
+                _('field_key 重複: %(key)s', key=norm['field_key'])
             )
             continue
         seen_keys.add(norm['field_key'])

@@ -23,7 +23,7 @@ function specSchemaManager() {
         // 製作規格書 modal
         showDocxModal: false,
         docxExporting: false,
-        docxTitle: '資料結構規格書',
+        docxTitle: __('資料結構規格書'),
         docxItems: [],
         // docxItems: [{ spec_sc, name, version, versions: [{version, is_current, active_facets}], selectedFacets: {pg: true, ...}, loadingVersions: bool }]
 
@@ -95,7 +95,7 @@ function specSchemaManager() {
         async confirmCreate() {
             var name = (this.createForm.name || '').trim();
             if (!name) {
-                alert('規格名稱必填');
+                alert(__('規格名稱必填'));
                 return;
             }
             this.creating = true;
@@ -120,10 +120,10 @@ function specSchemaManager() {
                     window.location.href = window.__BP + '/spec-formulate/' +
                         data.data.secure_code + '/edit';
                 } else {
-                    alert(data.error || '建立失敗');
+                    alert(data.error || __('建立失敗'));
                 }
             } catch (e) {
-                alert('建立失敗: ' + e.message);
+                alert(__('建立失敗: {msg}', {msg: e.message}));
             }
             this.creating = false;
         },
@@ -156,10 +156,10 @@ function specSchemaManager() {
                     this.deleteTarget = null;
                     this.loadSpecs();
                 } else {
-                    alert(data.error || '刪除失敗');
+                    alert(data.error || __('刪除失敗'));
                 }
             } catch (e) {
-                alert('刪除失敗: ' + e.message);
+                alert(__('刪除失敗: {msg}', {msg: e.message}));
             }
             this.deleting = false;
         },
@@ -172,11 +172,11 @@ function specSchemaManager() {
                 return s.active_facets && s.active_facets.length > 0;
             });
             if (available.length === 0) {
-                alert('目前沒有任何已啟用格式的規格可匯出');
+                alert(__('目前沒有任何已啟用格式的規格可匯出'));
                 return;
             }
 
-            this.docxTitle = '資料結構規格書';
+            this.docxTitle = __('資料結構規格書');
             this.docxItems = [];
             this.showDocxModal = true;
         },
@@ -281,7 +281,7 @@ function specSchemaManager() {
 
         async doExportDocx() {
             if (this.docxItems.length === 0) {
-                alert('請至少加入一個規格');
+                alert(__('請至少加入一個規格'));
                 return;
             }
 
@@ -297,7 +297,7 @@ function specSchemaManager() {
                     }
                 }
                 if (facets.length === 0) {
-                    alert(item.name + ': 請至少選擇一種格式');
+                    alert(__('{name}: 請至少選擇一種格式', {name: item.name}));
                     return;
                 }
                 specs.push({
@@ -316,7 +316,7 @@ function specSchemaManager() {
                         'X-CSRFToken': this.csrfToken,
                     },
                     body: JSON.stringify({
-                        doc_title: this.docxTitle || '資料結構規格書',
+                        doc_title: this.docxTitle || __('資料結構規格書'),
                         specs: specs,
                     }),
                 });
@@ -325,7 +325,7 @@ function specSchemaManager() {
                     // 下載檔案
                     var blob = await resp.blob();
                     var cd = resp.headers.get('content-disposition') || '';
-                    var filename = '規格書.docx';
+                    var filename = __('規格書') + '.docx';
                     // 優先讀取 filename*=UTF-8''... (RFC 5987, 支援中文)
                     var starMatch = cd.match(/filename\*=UTF-8''([^;\s]+)/i);
                     if (starMatch) {
@@ -347,10 +347,10 @@ function specSchemaManager() {
                     this.showDocxModal = false;
                 } else {
                     var errData = await resp.json();
-                    alert(errData.error || '匯出失敗');
+                    alert(errData.error || __('匯出失敗'));
                 }
             } catch (e) {
-                alert('匯出失敗: ' + e.message);
+                alert(__('匯出失敗: {msg}', {msg: e.message}));
             }
             this.docxExporting = false;
         },

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-12 15:00+0800\n"
+"POT-Creation-Date: 2026-07-12 16:03+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -182,6 +182,8 @@ msgstr ""
 msgid "不支援的操作: %(action)s"
 msgstr ""
 
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:481
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:931
 #: app/api/_ss_emailrelay.py:419 app/api/_ss_emailrelay.py:439
 #: app/web/external_users.py:523 app/web/external_users.py:577
 #: app/web/external_users.py:619 app/web/org_admin_rescue.py:100
@@ -503,6 +505,8 @@ msgstr ""
 msgid "至少需要選擇兩家企業"
 msgstr ""
 
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:414
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:836
 #: app/api/conglomerates.py:84 app/api/conglomerates.py:276
 #: app/api/users.py:220 app/web/approval_categories.py:192
 #: app/web/delegations.py:152 app/web/external_users.py:321
@@ -517,8 +521,9 @@ msgstr ""
 msgid "建立失敗: %(error)s"
 msgstr ""
 
-#: app/api/conglomerates.py:98 app/api/conglomerates.py:146
-#: app/api/conglomerates.py:170 app/api/conglomerates.py:256
+#: ../modules/spec_formulate/api/_mf_cg.py:38 app/api/conglomerates.py:98
+#: app/api/conglomerates.py:146 app/api/conglomerates.py:170
+#: app/api/conglomerates.py:256
 msgid "集團不存在"
 msgstr ""
 
@@ -1071,6 +1076,7 @@ msgstr ""
 msgid "名稱長度不可超過 255 字元（目前 %(length)s 字元）"
 msgstr ""
 
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:45
 #: app/api/organizational_units.py:334 app/api/work_schedules.py:185
 msgid "名稱不可為空"
 msgstr ""
@@ -1831,6 +1837,15 @@ msgstr ""
 msgid "確認密碼一致"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:118
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:140
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:232
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:364
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:395
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:424
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:496
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:552
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:636
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:75
 #: app/templates/auth/change_password.html:74
 #: app/templates/pages/account_roles.html:134
@@ -2684,6 +2699,13 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:49
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:25
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:24
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:25
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:210
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:37
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:56
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:379
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:443
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:615
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:37
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:32
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:60
@@ -2891,6 +2913,8 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:60
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:33
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:32
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:43
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:191
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:17
 #: app/templates/pages/admin/_settings_recipients_section.html:31
 #: app/templates/pages/admin/_settings_smtp_section.html:32
@@ -2946,6 +2970,7 @@ msgstr ""
 msgid "狀態"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
 #: app/templates/pages/admin/_settings_recipients_section.html:32
 #: app/templates/pages/admin/_settings_smtp_section.html:33
 #: app/templates/pages/admin/_settings_telegram_section.html:32
@@ -3077,6 +3102,7 @@ msgstr ""
 msgid "預覽"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:73
 #: app/templates/pages/admin/_settings_recipients_section.html:52
 #: app/templates/pages/admin/_settings_recipients_section.html:54
 #: app/templates/pages/admin/_settings_smtp_section.html:61
@@ -3100,6 +3126,7 @@ msgstr ""
 msgid "編輯"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:74
 #: app/templates/pages/admin/_settings_recipients_section.html:56
 #: app/templates/pages/admin/_settings_recipients_section.html:58
 #: app/templates/pages/admin/_settings_smtp_section.html:65
@@ -3189,6 +3216,7 @@ msgstr ""
 msgid "收件人預覽 -"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:157
 #: app/templates/pages/admin/_settings_recipients_section.html:245
 #: app/templates/pages/job_levels/list.html:67
 msgid "共"
@@ -3208,6 +3236,8 @@ msgstr ""
 msgid "關閉"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:131
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:142
 #: app/templates/pages/admin/_settings_recipients_section.html:276
 #: app/templates/pages/admin/_settings_recipients_section.html:282
 #: app/templates/pages/admin/_settings_smtp_section.html:198
@@ -3645,6 +3675,8 @@ msgstr ""
 msgid "團長"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:193
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:599
 #: app/templates/pages/admin/groups.html:283
 #: app/templates/pages/admin/groups.html:319
 #: app/templates/pages/admin/groups.html:360
@@ -4344,6 +4376,9 @@ msgstr ""
 msgid "公元年碼"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:214
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:249
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:618
 #: app/templates/pages/admin/numbering/edit.html:152
 #: app/templates/pages/admin/numbering/edit.html:211
 msgid "格式:"
@@ -5364,6 +5399,7 @@ msgstr ""
 msgid "請從左側選擇類別進行編輯"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:65
 #: app/templates/pages/approval_categories/list.html:196
 #: app/templates/pages/menu/list.html:97
 #: app/templates/pages/roles/edit.html:124
@@ -5390,6 +5426,9 @@ msgstr ""
 msgid "如: PETTY_CASH"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:121
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:428
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:555
 #: app/templates/pages/approval_categories/list.html:289
 #: app/templates/pages/roles/create.html:174
 msgid "建立中..."
@@ -6668,6 +6707,7 @@ msgstr ""
 msgid "涉及資料表:"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:39
 #: app/templates/pages/hostconfig/data_maintenance.html:44
 #: app/templates/pages/hostconfig/data_maintenance.html:99
 #: app/templates/pages/hostconfig/index.html:53
@@ -6689,6 +6729,7 @@ msgstr ""
 msgid "執行硬刪除"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:143
 #: app/templates/pages/hostconfig/data_maintenance.html:61
 #: app/templates/pages/hostconfig/index.html:70
 #: app/templates/pages/roles/edit.html:192
@@ -7256,6 +7297,7 @@ msgstr ""
 msgid "是"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:45
 #: app/templates/pages/job_levels/view.html:55
 #: app/templates/pages/roles/edit.html:114
 #: app/templates/pages/roles/view.html:58
@@ -7695,6 +7737,8 @@ msgid "例：監控管理"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:112
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:120
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:554
 #: app/templates/pages/menu/list.html:90
 #: app/templates/pages/units/create.html:67
 msgid "建立"
@@ -8082,6 +8126,8 @@ msgstr ""
 msgid "密碼輪換"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:97
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:531
 #: app/templates/pages/org_databases/monitor.html:119
 msgid "資料表名稱"
 msgstr ""
@@ -8261,6 +8307,7 @@ msgstr ""
 msgid "已停用"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:44
 #: app/templates/pages/organizations/contract_form.html:160
 msgid "最後修改"
 msgstr ""
@@ -8435,6 +8482,7 @@ msgstr ""
 msgid "刪除企業"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:35
 #: app/templates/pages/organizations/list.html:26
 msgid "+ 新增"
 msgstr ""
@@ -8489,6 +8537,7 @@ msgstr ""
 msgid "建立共享資料庫"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:98
 #: app/templates/pages/organizations/list.html:88
 msgid "集團"
 msgstr ""
@@ -10420,6 +10469,7 @@ msgstr ""
 msgid "系統預設:"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:64
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:76
 #: app/templates/pages/security/org_rate_limits.html:89
 msgid "儲存"
@@ -10457,6 +10507,7 @@ msgstr ""
 msgid "完整 INFO"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:40
 #: app/templates/pages/server_manage/redis_monitor.html:50
 msgid "版本"
 msgstr ""
@@ -11093,6 +11144,8 @@ msgstr ""
 msgid "尚未參加任何社團"
 msgstr ""
 
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:109
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:543
 #: app/templates/partials/_code_input.html:16
 msgid "建議:"
 msgstr ""
@@ -12773,5 +12826,695 @@ msgstr ""
 
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:40
 msgid "理由"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_cg.py:29
+msgid "此企業不屬於任何集團"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_cg.py:43
+msgid "此集團尚未建立共享資料庫"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_cg.py:62
+#: ../modules/spec_formulate/api/_mf_cg.py:92
+#: ../modules/spec_formulate/api/_mf_cg.py:141
+#: ../modules/spec_formulate/api/_mf_cg.py:167
+#: ../modules/spec_formulate/api/_mf_cg.py:208
+#: ../modules/spec_formulate/api/_mf_cg.py:283
+#: ../modules/spec_formulate/api/_mf_export.py:50
+#: ../modules/spec_formulate/api/_mf_export.py:181
+#: ../modules/spec_formulate/api/_mf_form_link.py:38
+#: ../modules/spec_formulate/api/_mf_form_link.py:163
+#: ../modules/spec_formulate/api/_mf_form_link.py:207
+#: ../modules/spec_formulate/api/_mf_form_link.py:265
+#: ../modules/spec_formulate/api/_mf_form_link.py:297
+#: ../modules/spec_formulate/api/_mf_form_link.py:360
+#: ../modules/spec_formulate/api/_mf_pg.py:31
+#: ../modules/spec_formulate/api/_mf_pg.py:57
+#: ../modules/spec_formulate/api/_mf_pg.py:77
+#: ../modules/spec_formulate/api/_mf_pg.py:97
+#: ../modules/spec_formulate/api/_mf_pg.py:130
+#: ../modules/spec_formulate/api/_mf_pg.py:196
+#: ../modules/spec_formulate/api/_mf_pg.py:238
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:112
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:140
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:195
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:235
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:321
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:352
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:395
+msgid "無法取得企業資訊"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_cg.py:179
+#: ../modules/spec_formulate/api/_mf_cg.py:220
+#: ../modules/spec_formulate/api/_mf_cg.py:295
+#: ../modules/spec_formulate/api/_mf_form_link.py:47
+#: ../modules/spec_formulate/api/_mf_form_link.py:215
+#: ../modules/spec_formulate/api/_mf_form_link.py:273
+#: ../modules/spec_formulate/api/_mf_form_link.py:305
+#: ../modules/spec_formulate/api/_mf_form_link.py:368
+#: ../modules/spec_formulate/api/_mf_pg.py:105
+#: ../modules/spec_formulate/api/_mf_pg.py:138
+#: ../modules/spec_formulate/api/_mf_pg.py:204
+#: ../modules/spec_formulate/api/_mf_pg.py:246
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:204
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:244
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:330
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:361
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:404
+msgid "規格不存在"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_cg.py:225
+#: ../modules/spec_formulate/api/_mf_pg.py:143
+msgid "此規格尚未啟用 PostgreSQL 格式"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_cg.py:231
+#: ../modules/spec_formulate/api/_mf_cg.py:300
+#: ../modules/spec_formulate/api/_mf_pg.py:151
+#: ../modules/spec_formulate/api/_mf_pg.py:209
+msgid "請指定資料表名稱"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_cg.py:236
+#: ../modules/spec_formulate/api/_mf_pg.py:158
+msgid "資料表名稱只能包含小寫英文、數字和底線，且以英文開頭"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_export.py:55
+#: ../modules/spec_formulate/api/_mf_export.py:186
+msgid "請至少選擇一個規格"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_export.py:63
+#: ../modules/spec_formulate/api/_mf_export.py:194
+msgid "每個項目需有 spec_sc"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_export.py:70
+#: ../modules/spec_formulate/api/_mf_export.py:201
+#, python-format
+msgid "規格 %(sc)s 未指定匯出格式"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_export.py:81
+#: ../modules/spec_formulate/api/_mf_export.py:211
+#, python-format
+msgid "規格不存在: %(sc)s"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_export.py:95
+#: ../modules/spec_formulate/api/_mf_export.py:223
+#, python-format
+msgid "找不到 %(name)s 的版本 v%(version)s"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_export.py:112
+#: ../modules/spec_formulate/api/_mf_export.py:239
+#, python-format
+msgid "%(name)s v%(version)s 未啟用格式: %(facets)s"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_export.py:151
+#: ../modules/spec_formulate/api/_mf_export.py:273
+#, python-format
+msgid "匯出失敗: %(error)s"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:116
+msgid "此表單尚未關聯規格"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:124
+#: ../modules/spec_formulate/api/_mf_form_link.py:229
+msgid "表單模板不存在"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:151
+#, python-format
+msgid "已自動建立規格「%(name)s」"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:220
+msgid "缺少 form_template_secure_code"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:241
+#, python-format
+msgid "此表單模板已被「%(name)s」關聯"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:254
+#, python-format
+msgid "已關聯表單模板「%(name)s」"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:278
+msgid "已解除表單關聯"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:308
+msgid "此規格尚未關聯表單"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:315
+msgid "關聯的表單模板不存在"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:332
+#, python-format
+msgid "已同步 %(n)s 個欄位回表單「%(name)s」"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:388
+#, python-format
+msgid "表單代碼 %(code)s 已存在"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:395
+msgid "此規格尚未啟用 FormIO 格式，請先填充 FormIO facet"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:429
+#, python-format
+msgid "已建立並關聯表單「%(name)s」(%(code)s)"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_pg.py:44
+#, python-format
+msgid "資料庫建立失敗: %(error)s"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_pg.py:252
+msgid "已解除資料表關聯"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:145
+msgid "規格名稱必填"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:156
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:254
+msgid "欄位驗證失敗"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:184
+#, python-format
+msgid "已建立規格「%(name)s」"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:268
+msgid "內容無變更，未建立新版本"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:310
+#, python-format
+msgid "已更新至 v%(version)s"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:337
+#, python-format
+msgid "已刪除規格「%(name)s」"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:411
+#, python-format
+msgid "未知的格式: %(facet)s（可用: %(available)s）"
+msgstr ""
+
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:447
+#, python-format
+msgid "已為 %(n)s 個欄位填入 %(facet)s 預設值"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:44
+msgid "field_key 必填"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:48
+msgid "field_key 格式錯誤：僅允許英文字母、數字、底線，且首字元為英文"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:53
+msgid "label 必填"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:58
+msgid "core 區塊必填"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:66
+#, python-format
+msgid "未知的 data_class: %(dc)s（可用值: %(known)s）"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:72
+msgid "facets 必須是 dict"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:76
+#, python-format
+msgid "[%(fk)s] 未知的 facet: %(facet)s"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:81
+#, python-format
+msgid "facets.%(facet)s 必須是 dict"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:87
+#, python-format
+msgid "[%(fk)s] data_class=%(dc)s 不支援 %(facet)s，facet 資料將保留但不生效"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:146
+msgid "fields 必須是陣列"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:155
+#, python-format
+msgid "fields[%(i)s] 不是有效的物件"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/field_normalizer.py:168
+#, python-format
+msgid "field_key 重複: %(key)s"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:302
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:702
+#, python-format
+msgid "%(fk)s: 無 PostgreSQL facet，使用預設型別 %(pg_type)s"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:329
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:727
+msgid "無有效欄位可建立資料表"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:407
+#, python-format
+msgid "資料表 %(table)s 建立成功"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:452
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:899
+#, python-format
+msgid "%(fk)s: SERIAL 型別無法透過 ALTER 修改，目前為 %(db_type)s"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:471
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:921
+#, python-format
+msgid "已執行 %(n)s 項變更"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:472
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:922
+#, python-format
+msgid "，%(n)s 項失敗"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:829
+#, python-format
+msgid "集團共享資料表 %(table)s 建立成功（含 RLS）"
+msgstr ""
+
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:869
+msgid "權限不足：只有建立此表的企業才能修改結構"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:3
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:15
+msgid "規格管理"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:18
+msgid "重新載入"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:19
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:153
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:68
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:565
+msgid "製作規格書"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:20
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:86
+msgid "新增規格"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:29
+msgid "尚未建立任何規格"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:30
+msgid "建立第一個規格"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:38
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:92
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:145
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:526
+msgid "規格名稱"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:41
+msgid "欄位數"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:42
+msgid "已啟用格式"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:93
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:527
+msgid "例如：訂單資料表"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:105
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:539
+msgid "採用建議"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:113
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:547
+msgid "描述（選填）"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:114
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:548
+msgid "規格用途說明"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:136
+msgid "確定要刪除規格「"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:136
+msgid "」？"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:137
+msgid "此操作為軟刪除，資料不會真正移除。"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:160
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:571
+msgid "文件標題"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:161
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:572
+msgid "資料結構規格書"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:166
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:575
+msgid "加入規格"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:174
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:583
+msgid "-- 選擇規格 --"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:184
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:591
+msgid "請從上方下拉選單加入規格"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:198
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:603
+msgid "版本:"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:223
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:627
+msgid "此版本無已啟用格式"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:235
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:639
+msgid "匯出 DOCX"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:236
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:640
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:646
+msgid "匯出中..."
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:3
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:22
+msgid "規格編輯器"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:34
+msgid "SPEC 清單"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:47
+msgid "尚無規格"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:61
+msgid "+ 欄位"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:62
+msgid "刪除選取"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:71
+msgid "啟用格式:"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:81
+msgid "企業 DB"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:89
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:438
+msgid "讀入資料表"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:91
+msgid "新建資料表"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:99
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:121
+msgid "解除"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:112
+msgid "關聯表單"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:114
+msgid "建立表單"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:120
+msgid "同步回表單"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:144
+msgid "欄位定義表"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:157
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:488
+msgid "個欄位"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:165
+msgid "[+] 新增 10 列空白欄位"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:176
+msgid "格式投影表"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:190
+msgid "格式映射"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:211
+msgid "支援"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:214
+msgid "不支援"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:228
+msgid "版本歷史表"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:232
+msgid "無歷史記錄"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:242
+msgid "還原"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:261
+msgid "+ 新增:"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:269
+msgid "- 移除:"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:277
+msgid "~ 修改:"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:298
+msgid "進階設定"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:311
+msgid "預設值"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:312
+msgid "(無)"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:320
+msgid "結構屬性"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:334
+msgid "FK 參照"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:334
+msgid "（格式: table(column)）"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:336
+msgid "例如: users(id)"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:346
+msgid "格式設定"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:348
+msgid "(此 data_class 不支援)"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:358
+msgid "尚未填充"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:365
+msgid "確認"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:374
+msgid "關聯表單模板"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:382
+msgid "目前沒有可關聯的表單模板"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:385
+msgid "選擇表單模板"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:387
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:449
+msgid "-- 選擇 --"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:398
+msgid "確認關聯"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:399
+msgid "關聯中..."
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:409
+msgid "建立 FormIO 表單"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:415
+msgid "表單名稱"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:419
+msgid "表單代碼（選填，留空自動產生）"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:427
+msgid "建立並關聯"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:447
+msgid "選擇資料表"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:460
+msgid "結構完全一致"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:466
+msgid "SPEC 有但資料表無:"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:473
+msgid "資料表有但 SPEC 無:"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:480
+msgid "型別不符:"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:488
+msgid "相符:"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:498
+msgid "直接關聯"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:504
+msgid "SPEC 的欄位定義覆蓋到資料表"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:505
+msgid "SPEC 覆蓋資料表"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:506
+msgid "執行中..."
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:509
+msgid "直接關聯，不修改資料表"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:509
+msgid "僅關聯"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:520
+msgid "新增多面向規格"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:645
+msgid "匯出 PDF"
 msgstr ""
 

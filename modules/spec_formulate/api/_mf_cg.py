@@ -6,6 +6,7 @@ import logging
 import re
 
 from flask import jsonify, request
+from flask_babel import gettext as _
 
 from app import db
 from app.security.decorators import module_access_required
@@ -25,7 +26,7 @@ def _get_org_conglomerate(org):
 
     if not org.conglomerate_secure_code:
         return None, (jsonify({
-            'success': False, 'error': '此企業不屬於任何集團',
+            'success': False, 'error': _('此企業不屬於任何集團'),
         }), 400)
 
     cg = Conglomerate.query.filter_by(
@@ -34,12 +35,12 @@ def _get_org_conglomerate(org):
     ).first()
     if not cg:
         return None, (jsonify({
-            'success': False, 'error': '集團不存在',
+            'success': False, 'error': _('集團不存在'),
         }), 404)
 
     if not cg.has_shared_db:
         return None, (jsonify({
-            'success': False, 'error': '此集團尚未建立共享資料庫',
+            'success': False, 'error': _('此集團尚未建立共享資料庫'),
         }), 400)
 
     return cg, None
@@ -58,7 +59,7 @@ def register(bp):
         """
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         if not org.conglomerate_secure_code:
             return jsonify({'success': True, 'data': {'has_conglomerate_db': False}})
@@ -88,7 +89,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         cg, err = _get_org_conglomerate(org)
         if err:
@@ -137,7 +138,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         cg, err = _get_org_conglomerate(org)
         if err:
@@ -163,7 +164,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         cg, err = _get_org_conglomerate(org)
         if err:
@@ -175,7 +176,7 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         try:
             columns = _cg_introspect(cg.secure_code, table_name)
@@ -204,7 +205,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         cg, err = _get_org_conglomerate(org)
         if err:
@@ -216,23 +217,23 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         if 'postgresql' not in (spec.active_facets or []):
             return jsonify({
                 'success': False,
-                'error': '此規格尚未啟用 PostgreSQL 格式',
+                'error': _('此規格尚未啟用 PostgreSQL 格式'),
             }), 400
 
         data = request.get_json(silent=True) or {}
         table_name = (data.get('table_name') or '').strip() or spec.table_name
         if not table_name:
-            return jsonify({'success': False, 'error': '請指定資料表名稱'}), 400
+            return jsonify({'success': False, 'error': _('請指定資料表名稱')}), 400
 
         if not re.match(r'^[a-z][a-z0-9_]*$', table_name):
             return jsonify({
                 'success': False,
-                'error': '資料表名稱只能包含小寫英文、數字和底線，且以英文開頭',
+                'error': _('資料表名稱只能包含小寫英文、數字和底線，且以英文開頭'),
             }), 400
 
         try:
@@ -279,7 +280,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         cg, err = _get_org_conglomerate(org)
         if err:
@@ -291,12 +292,12 @@ def register(bp):
             is_deleted=False,
         ).first()
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         data = request.get_json(silent=True) or {}
         table_name = (data.get('table_name') or '').strip()
         if not table_name:
-            return jsonify({'success': False, 'error': '請指定資料表名稱'}), 400
+            return jsonify({'success': False, 'error': _('請指定資料表名稱')}), 400
 
         try:
             columns = _cg_introspect(cg.secure_code, table_name)

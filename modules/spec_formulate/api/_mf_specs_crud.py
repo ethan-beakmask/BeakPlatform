@@ -6,6 +6,7 @@ import logging
 from datetime import datetime, timezone
 
 from flask import jsonify, request
+from flask_babel import gettext as _
 
 from app import db
 from app.security.decorators import module_access_required
@@ -41,7 +42,7 @@ def register(bp):
         data = request.get_json(silent=True) or {}
         name = (data.get('name') or '').strip()
         if not name:
-            return jsonify({'success': False, 'error': '名稱不可為空'}), 400
+            return jsonify({'success': False, 'error': _('名稱不可為空')}), 400
 
         prefix = (data.get('prefix') or '').strip()
 
@@ -108,7 +109,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         specs = FwSpecSchema.query.filter_by(
             org_secure_code=org.secure_code,
@@ -136,12 +137,12 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         data = request.get_json(silent=True) or {}
         name = (data.get('name') or '').strip()
         if not name:
-            return jsonify({'success': False, 'error': '規格名稱必填'}), 400
+            return jsonify({'success': False, 'error': _('規格名稱必填')}), 400
 
         table_name = (data.get('table_name') or '').strip()
         description = (data.get('description') or '').strip()
@@ -152,7 +153,7 @@ def register(bp):
         if errors:
             return jsonify({
                 'success': False,
-                'error': '欄位驗證失敗',
+                'error': _('欄位驗證失敗'),
                 'details': errors,
             }), 400
 
@@ -180,7 +181,7 @@ def register(bp):
         return jsonify({
             'success': True,
             'data': result,
-            'message': f'已建立規格「{name}」',
+            'message': _('已建立規格「%(name)s」', name=name),
         }), 201
 
     @bp.route('/specs/<spec_sc>', methods=['GET'])
@@ -191,7 +192,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -200,7 +201,7 @@ def register(bp):
         ).first()
 
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         result = spec.to_dict()
         result['field_count'] = len(spec.fields or [])
@@ -231,7 +232,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -240,7 +241,7 @@ def register(bp):
         ).first()
 
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         data = request.get_json(silent=True) or {}
         raw_fields = data.get('fields', [])
@@ -250,7 +251,7 @@ def register(bp):
         if errors:
             return jsonify({
                 'success': False,
-                'error': '欄位驗證失敗',
+                'error': _('欄位驗證失敗'),
                 'details': errors,
             }), 400
 
@@ -264,7 +265,7 @@ def register(bp):
             return jsonify({
                 'success': True,
                 'data': spec.to_dict(),
-                'message': '內容無變更，未建立新版本',
+                'message': _('內容無變更，未建立新版本'),
             })
 
         # 計算差異
@@ -306,7 +307,7 @@ def register(bp):
         return jsonify({
             'success': True,
             'data': result,
-            'message': f'已更新至 v{spec.version}',
+            'message': _('已更新至 v%(version)s', version=spec.version),
         })
 
     @bp.route('/specs/<spec_sc>', methods=['DELETE'])
@@ -317,7 +318,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -326,14 +327,14 @@ def register(bp):
         ).first()
 
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         spec.is_deleted = True
         spec.deleted_at = datetime.now(timezone.utc)
         spec.status = 'archived'
         db.session.commit()
 
-        return jsonify({'success': True, 'message': f'已刪除規格「{spec.name}」'})
+        return jsonify({'success': True, 'message': _('已刪除規格「%(name)s」', name=spec.name)})
 
     # ── 版本歷史 ──
 
@@ -348,7 +349,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -357,7 +358,7 @@ def register(bp):
         ).first()
 
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         histories = FwSpecSchemaHistory.query.filter_by(
             spec_secure_code=spec_sc,
@@ -391,7 +392,7 @@ def register(bp):
 
         org = get_current_org()
         if not org:
-            return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+            return jsonify({'success': False, 'error': _('無法取得企業資訊')}), 403
 
         spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
@@ -400,14 +401,15 @@ def register(bp):
         ).first()
 
         if not spec:
-            return jsonify({'success': False, 'error': '規格不存在'}), 404
+            return jsonify({'success': False, 'error': _('規格不存在')}), 404
 
         data = request.get_json(silent=True) or {}
         facet_name = data.get('facet_name', '').strip()
         if facet_name not in ALL_FACETS:
             return jsonify({
                 'success': False,
-                'error': f'未知的格式: {facet_name}（可用: {", ".join(ALL_FACETS)}）',
+                'error': _('未知的格式: %(facet)s（可用: %(available)s）',
+                           facet=facet_name, available=', '.join(ALL_FACETS)),
             }), 400
 
         fields = list(spec.fields or [])
@@ -442,5 +444,6 @@ def register(bp):
                 'skipped_fields': skipped,
                 'active_facets': spec.active_facets,
             },
-            'message': f'已為 {len(populated)} 個欄位填入 {facet_name} 預設值',
+            'message': _('已為 %(n)s 個欄位填入 %(facet)s 預設值',
+                         n=len(populated), facet=facet_name),
         })
