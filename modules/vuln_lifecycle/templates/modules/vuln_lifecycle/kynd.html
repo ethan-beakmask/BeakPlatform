@@ -1,5 +1,5 @@
 {% extends "layouts/base.html" %}
-{% block title %}KYND 外部風險監控{% endblock %}
+{% block title %}{{ _('KYND 外部風險監控') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/vuln_lifecycle/css/vuln-common.css">
@@ -12,7 +12,7 @@
     <div id="health-banner" class="vlc-health-banner" style="display:none;"></div>
 
     <div class="vlc-page-header">
-        <h1>KYND 外部風險監控</h1>
+        <h1>{{ _('KYND 外部風險監控') }}</h1>
         <select class="vlc-kynd-session-sel" x-model="selectedSession" @change="loadSummary()">
             <template x-for="s in sessions" :key="s.id">
                 <option :value="s.id" x-text="BkTime.format(s.scan_date, 'date')"></option>
@@ -24,7 +24,7 @@
     <div class="vlc-kynd-stats">
         <div class="vlc-stat-card">
             <div class="vlc-stat-value" style="color:#333" x-text="assetCount">-</div>
-            <div class="vlc-stat-label">監控網域</div>
+            <div class="vlc-stat-label">{{ _('監控網域') }}</div>
         </div>
         <div class="vlc-stat-card">
             <div class="vlc-stat-value vlc-kynd-red" x-text="totalRed">-</div>
@@ -109,7 +109,7 @@
                 </thead>
                 <tbody>
                     <template x-if="findings.length === 0">
-                        <tr><td colspan="5" class="vlc-empty">無資料</td></tr>
+                        <tr><td colspan="5" class="vlc-empty">{{ _('無資料') }}</td></tr>
                     </template>
                     <template x-for="f in findings" :key="f.id">
                         <tr>
@@ -144,7 +144,7 @@
     <div class="vlc-modal-overlay" x-show="showModal" x-cloak>
         <div class="vlc-modal-box" style="width:500px;">
             <div class="vlc-modal-header">
-                <h3>KYND 風險調整</h3>
+                <h3>{{ _('KYND 風險調整') }}</h3>
                 <button class="vlc-modal-close" @click="showModal=false">&times;</button>
             </div>
 
@@ -163,10 +163,10 @@
                     Adjustment Type</label>
                 <select style="width:100%;font-size:13px;padding:4px 8px;border:1px solid #ccc;border-radius:3px;"
                         x-model="adjType">
-                    <option value="ACCEPTED">ACCEPTED (接受風險)</option>
-                    <option value="MITIGATED">MITIGATED (已緩解)</option>
-                    <option value="FALSE_POSITIVE">FALSE_POSITIVE (誤報)</option>
-                    <option value="DEFERRED">DEFERRED (延後處理)</option>
+                    <option value="ACCEPTED">{{ _('ACCEPTED (接受風險)') }}</option>
+                    <option value="MITIGATED">{{ _('MITIGATED (已緩解)') }}</option>
+                    <option value="FALSE_POSITIVE">{{ _('FALSE_POSITIVE (誤報)') }}</option>
+                    <option value="DEFERRED">{{ _('DEFERRED (延後處理)') }}</option>
                 </select>
             </div>
 
@@ -246,8 +246,8 @@ function kyndPage() {
 
         checkHealth() {
             var STATUS_MSG = {
-                'service_down': 'BeakRisk 服務未啟動 -- 顯示的是最後一次同步的資料',
-                'db_error': 'BeakRisk 資料庫暫時不可用',
+                'service_down': __('BeakRisk 服務未啟動 -- 顯示的是最後一次同步的資料'),
+                'db_error': __('BeakRisk 資料庫暫時不可用'),
             };
             var STATUS_COLOR = {
                 'service_down': '#d97706',
@@ -264,7 +264,7 @@ function kyndPage() {
                     banner.style.display = 'block';
                     banner.style.color = STATUS_COLOR[health.status] || '#666';
                     banner.style.borderColor = STATUS_COLOR[health.status] || '#666';
-                    banner.textContent = STATUS_MSG[health.status] || health.message || 'BeakRisk 狀態未知';
+                    banner.textContent = STATUS_MSG[health.status] || health.message || __('BeakRisk 狀態未知');
                 }
             }).catch(function() {});
         },

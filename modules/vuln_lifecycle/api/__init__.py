@@ -6,6 +6,7 @@ VulnLifecycle Module - API Routes
 資料來源：外部 vulnmgmt PostgreSQL 資料庫。
 """
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 
 from app.security.decorators import public_route, module_access_required
 from app.platform.auth import require_permission, current_user
@@ -33,7 +34,7 @@ def catch_db_unavailable(f):
                 'success': False,
                 'unavailable': True,
                 'beakrisk_status': 'db_error',
-                'message': 'BeakRisk 資料庫暫時不可用',
+                'message': _('BeakRisk 資料庫暫時不可用'),
             }), 503
     return wrapper
 
@@ -551,9 +552,9 @@ def kynd_risk_adjust():
     expires_at = data.get('expires_at')
 
     if not justification:
-        return jsonify({'success': False, 'message': '必須填寫調整理由'}), 400
+        return jsonify({'success': False, 'message': _('必須填寫調整理由')}), 400
     if not fingerprint:
-        return jsonify({'success': False, 'message': '缺少 fingerprint'}), 400
+        return jsonify({'success': False, 'message': _('缺少 fingerprint')}), 400
 
     reviewer = current_user.display_name if current_user else 'system'
 

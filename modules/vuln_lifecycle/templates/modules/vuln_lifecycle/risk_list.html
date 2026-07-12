@@ -1,5 +1,5 @@
 {% extends "layouts/base.html" %}
-{% block title %}風險調整{% endblock %}
+{% block title %}{{ _('風險調整') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/vuln_lifecycle/css/vuln-common.css">
@@ -9,17 +9,17 @@
 <div class="vlc-container">
 
     <div class="vlc-page-header">
-        <h1>風險調整紀錄</h1>
+        <h1>{{ _('風險調整紀錄') }}</h1>
     </div>
 
     <!-- 篩選列 -->
     <div class="vlc-filter-bar">
-        <label>狀態</label>
+        <label>{{ _('狀態') }}</label>
         <select id="filter-status" onchange="loadAdj()">
-            <option value="ACTIVE">生效中</option>
-            <option value="EXPIRED">已過期</option>
-            <option value="REVOKED">已撤銷</option>
-            <option value="SUPERSEDED">已取代</option>
+            <option value="ACTIVE">{{ _('生效中') }}</option>
+            <option value="EXPIRED">{{ _('已過期') }}</option>
+            <option value="REVOKED">{{ _('已撤銷') }}</option>
+            <option value="SUPERSEDED">{{ _('已取代') }}</option>
         </select>
         <span class="vlc-filter-count" id="adj-count"></span>
     </div>
@@ -31,17 +31,17 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>資產</th>
-                        <th>弱點</th>
-                        <th>調整類型</th>
-                        <th>調整後嚴重度</th>
-                        <th>審核人</th>
-                        <th>到期日</th>
-                        <th>理由</th>
+                        <th>{{ _('資產') }}</th>
+                        <th>{{ _('弱點') }}</th>
+                        <th>{{ _('調整類型') }}</th>
+                        <th>{{ _('調整後嚴重度') }}</th>
+                        <th>{{ _('審核人') }}</th>
+                        <th>{{ _('到期日') }}</th>
+                        <th>{{ _('理由') }}</th>
                     </tr>
                 </thead>
                 <tbody id="adj-table">
-                    <tr><td colspan="8" class="vlc-empty">載入中...</td></tr>
+                    <tr><td colspan="8" class="vlc-empty">{{ _('載入中...') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -54,8 +54,8 @@
 <script>
 (function() {
     var ADJ_LABEL = {
-        'ACCEPTED': '已接受', 'MITIGATED': '已緩解',
-        'FALSE_POSITIVE': '誤報', 'DEFERRED': '延後處理'
+        'ACCEPTED': __('已接受'), 'MITIGATED': __('已緩解'),
+        'FALSE_POSITIVE': __('誤報'), 'DEFERRED': __('延後處理')
     };
 
     window.loadAdj = function() {
@@ -64,7 +64,7 @@
         .then(function(r) {
             if (!r.ok) {
                 document.getElementById('adj-count').innerHTML =
-                    '<span style="color:#dc3545;font-weight:bold;">未安裝 BeakRisk 弱點管制系統</span>';
+                    '<span style="color:#dc3545;font-weight:bold;">' + __('未安裝 BeakRisk 弱點管制系統') + '</span>';
                 document.getElementById('adj-table').innerHTML =
                     '<tr><td colspan="8" class="vlc-empty"></td></tr>';
                 return null;
@@ -73,7 +73,7 @@
         })
         .then(function(r) {
             if (!r || !r.success) return;
-            document.getElementById('adj-count').textContent = r.data.length + ' 筆紀錄';
+            document.getElementById('adj-count').textContent = __('{n} 筆紀錄', {n: r.data.length});
             var html = '';
             r.data.forEach(function(a) {
                 var exp = a.expires_at ? a.expires_at.substring(0, 10) : '-';
@@ -97,7 +97,7 @@
                 html += '</tr>';
             });
             document.getElementById('adj-table').innerHTML =
-                html || '<tr><td colspan="8" class="vlc-empty">無紀錄</td></tr>';
+                html || '<tr><td colspan="8" class="vlc-empty">' + __('無紀錄') + '</td></tr>';
         });
     };
 

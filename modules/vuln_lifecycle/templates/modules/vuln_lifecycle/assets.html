@@ -1,5 +1,5 @@
 {% extends "layouts/base.html" %}
-{% block title %}資產清冊{% endblock %}
+{% block title %}{{ _('資產清冊') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/vuln_lifecycle/css/vuln-common.css">
@@ -10,18 +10,18 @@
 <div class="vlc-container">
 
     <div class="vlc-page-header">
-        <h1>資產清冊</h1>
+        <h1>{{ _('資產清冊') }}</h1>
     </div>
 
     <!-- 篩選列 -->
     <div class="vlc-filter-bar">
-        <label>資產類型</label>
+        <label>{{ _('資產類型') }}</label>
         <select id="filter-type" onchange="loadAssets()">
-            <option value="">全部</option>
-            <option value="host">主機 (Host)</option>
-            <option value="webapp">網頁應用 (WebApp)</option>
+            <option value="">{{ _('全部') }}</option>
+            <option value="host">{{ _('主機 (Host)') }}</option>
+            <option value="webapp">{{ _('網頁應用 (WebApp)') }}</option>
         </select>
-        <label>嚴重度 &ge;</label>
+        <label>{{ _('嚴重度') }} &ge;</label>
         <input type="number" id="filter-sev" value="0" min="0" max="10" step="0.1"
                onchange="loadAssets()">
         <span class="vlc-filter-count" id="asset-count"></span>
@@ -29,7 +29,7 @@
 
     <!-- Trellis Grid 容器 -->
     <div id="asset-grid" class="vlc-trellis-wrap" style="min-height:200px"></div>
-    <div id="asset-loading" class="vlc-empty">載入中...</div>
+    <div id="asset-loading" class="vlc-empty">{{ _('載入中...') }}</div>
 
 </div>
 {% endblock %}
@@ -57,7 +57,7 @@ function loadAssets() {
     fetch(url).then(function(r) {
         if (!r.ok) {
             document.getElementById('asset-loading').innerHTML =
-                '<span style="color:#dc3545;font-weight:bold;">未安裝 BeakRisk 弱點管制系統</span>';
+                '<span style="color:#dc3545;font-weight:bold;">' + __('未安裝 BeakRisk 弱點管制系統') + '</span>';
             return null;
         }
         return r.json();
@@ -65,10 +65,10 @@ function loadAssets() {
         if (!r || !r.success) return;
 
         document.getElementById('asset-loading').style.display = 'none';
-        document.getElementById('asset-count').textContent = r.total + ' 筆資產';
+        document.getElementById('asset-count').textContent = __('{n} 筆資產', {n: r.total});
 
         var groups = {};
-        var typeLabel = { 'host': '主機 (Host)', 'webapp': '網頁應用 (WebApp)' };
+        var typeLabel = { 'host': __('主機 (Host)'), 'webapp': __('網頁應用 (WebApp)') };
 
         r.data.forEach(function(a) {
             var g = a.asset_type || 'other';
@@ -110,11 +110,11 @@ function loadAssets() {
 
         var columns = [
             { id: 'ip', label: 'IP / URL', width: 200, sortable: true },
-            { id: 'hostname', label: '主機名稱', width: 180, sortable: true },
-            { id: 'asset_type', label: '類型', width: 140, sortable: true },
-            { id: 'scan_count', label: '掃描次數', width: 90, sortable: true, type: 'number' },
-            { id: 'finding_count', label: '弱點數', width: 80, sortable: true, type: 'number' },
-            { id: 'max_severity', label: '最高嚴重度', width: 100, sortable: true, type: 'number',
+            { id: 'hostname', label: __('主機名稱'), width: 180, sortable: true },
+            { id: 'asset_type', label: __('類型'), width: 140, sortable: true },
+            { id: 'scan_count', label: __('掃描次數'), width: 90, sortable: true, type: 'number' },
+            { id: 'finding_count', label: __('弱點數'), width: 80, sortable: true, type: 'number' },
+            { id: 'max_severity', label: __('最高嚴重度'), width: 100, sortable: true, type: 'number',
               renderer: function(value) {
                   var v = parseFloat(value) || 0;
                   var el = document.createElement('span');
@@ -124,7 +124,7 @@ function loadAssets() {
                   return el;
               }
             },
-            { id: 'last_seen', label: '最後偵測', width: 110, sortable: true }
+            { id: 'last_seen', label: __('最後偵測'), width: 110, sortable: true }
         ];
 
         var container = document.getElementById('asset-grid');

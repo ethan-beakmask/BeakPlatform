@@ -1,5 +1,5 @@
 {% extends "layouts/base.html" %}
-{% block title %}資產弱點詳情{% endblock %}
+{% block title %}{{ _('資產弱點詳情') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/vuln_lifecycle/css/vuln-common.css">
@@ -9,22 +9,22 @@
 <div class="vlc-container" x-data="assetDetail()">
 
     <div class="vlc-page-header">
-        <a href="{{ app_prefix }}/vuln/assets" class="vlc-btn-back">&larr; 返回清冊</a>
-        <h1 x-text="title">資產 #{{ asset_id }}</h1>
+        <a href="{{ app_prefix }}/vuln/assets" class="vlc-btn-back">&larr; {{ _('返回清冊') }}</a>
+        <h1 x-text="title">{{ _('資產 #%(id)s', id=asset_id) }}</h1>
     </div>
 
     <!-- 資產資訊卡 -->
     <div class="vlc-info-card" x-show="loaded" x-cloak>
         <span><strong>IP:</strong> <span x-text="info.ip">-</span></span>
-        <span><strong>主機名稱:</strong> <span x-text="info.hostname">-</span></span>
-        <span><strong>類型:</strong> <span x-text="info.type">-</span></span>
-        <span><strong>掃描次數:</strong> <span x-text="info.scans">-</span></span>
-        <span><strong>弱點數:</strong> <span x-text="info.findings">-</span></span>
+        <span><strong>{{ _('主機名稱') }}:</strong> <span x-text="info.hostname">-</span></span>
+        <span><strong>{{ _('類型') }}:</strong> <span x-text="info.type">-</span></span>
+        <span><strong>{{ _('掃描次數') }}:</strong> <span x-text="info.scans">-</span></span>
+        <span><strong>{{ _('弱點數') }}:</strong> <span x-text="info.findings">-</span></span>
     </div>
 
     <!-- 篩選 -->
     <div class="vlc-filter-bar">
-        <label>嚴重度 &ge;</label>
+        <label>{{ _('嚴重度') }} &ge;</label>
         <input type="number" x-model="sevFilter" @change="load()" value="0" min="0" max="10" step="0.1">
     </div>
 
@@ -34,7 +34,7 @@
             <table class="vlc-table">
                 <thead id="t-head"></thead>
                 <tbody id="t-body">
-                    <tr><td class="vlc-empty">載入中...</td></tr>
+                    <tr><td class="vlc-empty">{{ _('載入中...') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -44,36 +44,36 @@
     <div class="vlc-modal-overlay" x-show="showModal" x-cloak @click.self="">
         <div class="vlc-modal-box">
             <div class="vlc-modal-header">
-                <h3>風險調整</h3>
+                <h3>{{ _('風險調整') }}</h3>
                 <button class="vlc-modal-close" @click="showModal=false">&times;</button>
             </div>
             <p style="font-size:13px;color:#666" x-text="adjTarget"></p>
             <div style="margin-bottom:12px">
-                <label class="form-label">調整類型</label>
+                <label class="form-label">{{ _('調整類型') }}</label>
                 <select x-model="adjType" class="form-control" style="font-size:13px">
-                    <option value="ACCEPTED">已接受 (Accepted)</option>
-                    <option value="MITIGATED">已緩解 (Mitigated)</option>
-                    <option value="FALSE_POSITIVE">誤報 (False Positive)</option>
-                    <option value="DEFERRED">延後處理 (Deferred)</option>
+                    <option value="ACCEPTED">{{ _('已接受 (Accepted)') }}</option>
+                    <option value="MITIGATED">{{ _('已緩解 (Mitigated)') }}</option>
+                    <option value="FALSE_POSITIVE">{{ _('誤報 (False Positive)') }}</option>
+                    <option value="DEFERRED">{{ _('延後處理 (Deferred)') }}</option>
                 </select>
             </div>
             <div style="margin-bottom:12px">
-                <label class="form-label">調整後嚴重度</label>
+                <label class="form-label">{{ _('調整後嚴重度') }}</label>
                 <input type="number" x-model="adjSev" class="form-control" style="font-size:13px"
                        min="0" max="10" step="0.1">
             </div>
             <div style="margin-bottom:12px">
-                <label class="form-label">調整理由</label>
+                <label class="form-label">{{ _('調整理由') }}</label>
                 <textarea x-model="adjJust" class="form-control" style="font-size:13px"
-                          rows="3" placeholder="請說明風險調整的理由..."></textarea>
+                          rows="3" placeholder="{{ _('請說明風險調整的理由...') }}"></textarea>
             </div>
             <div style="margin-bottom:12px">
-                <label class="form-label">到期日</label>
+                <label class="form-label">{{ _('到期日') }}</label>
                 <input type="date" x-model="adjExp" class="form-control" style="font-size:13px">
             </div>
             <div class="vlc-modal-footer">
-                <button class="btn btn-secondary" @click="showModal=false">取消</button>
-                <button class="btn btn-primary" @click="submitAdj()">儲存</button>
+                <button class="btn btn-secondary" @click="showModal=false">{{ _('取消') }}</button>
+                <button class="btn btn-primary" @click="submitAdj()">{{ _('儲存') }}</button>
             </div>
         </div>
     </div>
@@ -87,8 +87,8 @@ function assetDetail() {
     var assetId = {{ asset_id }};
 
     var ADJ_LABEL = {
-        'ACCEPTED': '已接受', 'MITIGATED': '已緩解',
-        'FALSE_POSITIVE': '誤報', 'DEFERRED': '延後'
+        'ACCEPTED': __('已接受'), 'MITIGATED': __('已緩解'),
+        'FALSE_POSITIVE': __('誤報'), 'DEFERRED': __('延後')
     };
 
     function sevColor(v) {
@@ -109,7 +109,7 @@ function assetDetail() {
     }
 
     return {
-        title: '資產 #' + assetId,
+        title: __('資產 #{id}', {id: assetId}),
         loaded: false,
         sevFilter: 0,
         info: { ip: '-', hostname: '-', type: '-', scans: '-', findings: '-' },
@@ -129,7 +129,7 @@ function assetDetail() {
             .then(function(r) {
                 if (!r.ok) {
                     document.getElementById('t-body').innerHTML =
-                        '<tr><td style="color:#dc3545;font-weight:bold;padding:16px">未安裝 BeakRisk 弱點管制系統</td></tr>';
+                        '<tr><td style="color:#dc3545;font-weight:bold;padding:16px">' + __('未安裝 BeakRisk 弱點管制系統') + '</td></tr>';
                     return null;
                 }
                 return r.json();
@@ -143,7 +143,7 @@ function assetDetail() {
                 }
                 var d = r.data, a = d.asset, ss = d.sessions, ff = d.findings;
 
-                self.title = '資產: ' + (a.ip || a.id);
+                self.title = __('資產: {ip}', {ip: a.ip || a.id});
                 self.info = {
                     ip: a.ip || '-',
                     hostname: a.hostname || '-',
@@ -154,13 +154,13 @@ function assetDetail() {
                 self.loaded = true;
 
                 // 表頭
-                var th = '<tr><th>弱點名稱</th><th>Port</th><th>嚴重度</th><th>狀態</th>';
+                var th = '<tr><th>' + __('弱點名稱') + '</th><th>Port</th><th>' + __('嚴重度') + '</th><th>' + __('狀態') + '</th>';
                 ss.forEach(function(s) {
                     var dt = s.scan_start ? s.scan_start.substring(5, 10) : '?';
                     th += '<th style="width:28px;text-align:center;padding:2px">' +
                         '<div class="vlc-session-hdr">' + dt + '</div></th>';
                 });
-                th += '<th>風險調整</th><th></th></tr>';
+                th += '<th>' + __('風險調整') + '</th><th></th></tr>';
                 document.getElementById('t-head').innerHTML = th;
 
                 // 弱點列
@@ -191,12 +191,12 @@ function assetDetail() {
                         html += '<td><button class="vlc-btn-adjust" ' +
                             'onclick="document.querySelector(\'[x-data]\').__x.$data.openAdj(' +
                             f.vuln_id + ',\'' + vn.replace(/'/g, "\\'").replace(/"/g, '&quot;') +
-                            '\',' + f.max_severity + ')">調整</button></td>';
+                            '\',' + f.max_severity + ')">' + __('調整') + '</button></td>';
                     }
                     html += '</tr>';
                 });
                 document.getElementById('t-body').innerHTML =
-                    html || '<tr><td colspan="99" class="vlc-empty">無弱點發現</td></tr>';
+                    html || '<tr><td colspan="99" class="vlc-empty">' + __('無弱點發現') + '</td></tr>';
             });
         },
 
@@ -212,7 +212,7 @@ function assetDetail() {
         submitAdj: function() {
             var self = this;
             if (!self.adjJust.trim()) {
-                alert('請填寫調整理由');
+                alert(__('請填寫調整理由'));
                 return;
             }
             fetch('{{ app_prefix }}/api/vuln-lifecycle/risk/adjust', {
@@ -231,7 +231,7 @@ function assetDetail() {
                     self.showModal = false;
                     self.load();
                 } else {
-                    alert(r.message || '儲存失敗');
+                    alert(r.message || __('儲存失敗'));
                 }
             });
         }

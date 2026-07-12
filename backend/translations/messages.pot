@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-12 13:30+0800\n"
+"POT-Creation-Date: 2026-07-12 15:00+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1831,6 +1831,7 @@ msgstr ""
 msgid "確認密碼一致"
 msgstr ""
 
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:75
 #: app/templates/auth/change_password.html:74
 #: app/templates/pages/account_roles.html:134
 #: app/templates/pages/admin/_employee_create_form.html:152
@@ -2683,6 +2684,12 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:49
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:25
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:24
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:37
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:32
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:60
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:75
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:91
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:44
 #: app/templates/pages/admin/_settings_login_security_section.html:10
 #: app/templates/pages/admin/_settings_recipients_section.html:15
 #: app/templates/pages/admin/_settings_smtp_section.html:15
@@ -2884,6 +2891,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:60
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:33
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:32
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:17
 #: app/templates/pages/admin/_settings_recipients_section.html:31
 #: app/templates/pages/admin/_settings_smtp_section.html:32
 #: app/templates/pages/admin/_settings_telegram_section.html:31
@@ -3251,6 +3259,7 @@ msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:30
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:29
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
 #: app/templates/pages/admin/_settings_smtp_section.html:28
 #: app/templates/pages/admin/_settings_telegram_section.html:28
 #: app/templates/pages/approval_categories/list.html:94
@@ -3914,10 +3923,13 @@ msgstr ""
 msgid "合約編號"
 msgstr ""
 
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:71
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:39
 #: app/templates/pages/admin/module_list.html:114
 msgid "到期日"
 msgstr ""
 
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:20
 #: app/templates/pages/admin/module_list.html:126
 #: app/templates/pages/delegations/edit.html:86
 #: app/templates/pages/delegations/list.html:61
@@ -4844,6 +4856,9 @@ msgid "日期"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:20
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:89
 #: app/templates/pages/admin/time/holidays.html:88
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:18
 #: app/templates/pages/menu/list.html:122
@@ -5635,6 +5650,7 @@ msgstr ""
 msgid "目前狀態"
 msgstr ""
 
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:19
 #: app/templates/pages/delegations/edit.html:82
 #: app/templates/pages/delegations/list.html:57
 #: app/templates/pages/delegations/view.html:65
@@ -5647,6 +5663,7 @@ msgstr ""
 msgid "待生效"
 msgstr ""
 
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:21
 #: app/templates/pages/delegations/edit.html:88
 #: app/templates/pages/delegations/list.html:63
 #: app/templates/pages/delegations/view.html:71
@@ -8429,6 +8446,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:23
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:34
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:49
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:20
 #: app/templates/pages/organizations/list.html:32
 #: app/templates/pages/permissions/index.html:211
 #: app/templates/pages/store/index.html:16
@@ -8851,6 +8869,8 @@ msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:58
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:27
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:24
 #: app/templates/pages/permissions/index.html:605
 msgid "嚴重度"
 msgstr ""
@@ -10400,6 +10420,7 @@ msgstr ""
 msgid "系統預設:"
 msgstr ""
 
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:76
 #: app/templates/pages/security/org_rate_limits.html:89
 msgid "儲存"
 msgstr ""
@@ -12456,6 +12477,7 @@ msgid "如 203.0"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:50
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/kynd.html:112
 msgid "無資料"
 msgstr ""
 
@@ -12561,5 +12583,195 @@ msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:107
 msgid "關閉視窗後 secret 無法再取得。"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/api/__init__.py:37
+msgid "BeakRisk 資料庫暫時不可用"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/api/__init__.py:555
+msgid "必須填寫調整理由"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/api/__init__.py:557
+msgid "缺少 fingerprint"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:2
+msgid "資產弱點詳情"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:12
+msgid "返回清冊"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:13
+#, python-format
+msgid "資產 #%(id)s"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:19
+msgid "主機名稱"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:21
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:56
+msgid "掃描次數"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:22
+msgid "弱點數"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:47
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:2
+msgid "風險調整"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:52
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:72
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:36
+msgid "調整類型"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:54
+msgid "已接受 (Accepted)"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:55
+msgid "已緩解 (Mitigated)"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:56
+msgid "誤報 (False Positive)"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:57
+msgid "延後處理 (Deferred)"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:61
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:37
+msgid "調整後嚴重度"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:66
+msgid "調整理由"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:68
+msgid "請說明風險調整的理由..."
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:2
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:13
+msgid "資產清冊"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:18
+msgid "資產類型"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:21
+msgid "主機 (Host)"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:22
+msgid "網頁應用 (WebApp)"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:2
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:12
+msgid "弱點儀表板"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:38
+msgid "資產數"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:42
+msgid "已調整"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:50
+msgid "掃描器來源"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
+msgid "匯入方式"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:56
+msgid "最後掃描"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:68
+msgid "生效中的風險調整"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:72
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:89
+msgid "數量"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:86
+msgid "資產類型分布"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:99
+msgid "部署模式"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/kynd.html:2
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/kynd.html:15
+msgid "KYND 外部風險監控"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/kynd.html:27
+msgid "監控網域"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/kynd.html:147
+msgid "KYND 風險調整"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/kynd.html:166
+msgid "ACCEPTED (接受風險)"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/kynd.html:167
+msgid "MITIGATED (已緩解)"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/kynd.html:168
+msgid "FALSE_POSITIVE (誤報)"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/kynd.html:169
+msgid "DEFERRED (延後處理)"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:12
+msgid "風險調整紀錄"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:22
+msgid "已取代"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:34
+msgid "資產"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:35
+msgid "弱點"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:38
+msgid "審核人"
+msgstr ""
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:40
+msgid "理由"
 msgstr ""
 
