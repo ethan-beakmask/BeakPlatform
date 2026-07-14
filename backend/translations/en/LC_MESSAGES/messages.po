@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-12 21:31+0800\n"
+"POT-Creation-Date: 2026-07-15 01:25+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -14,7 +14,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.18.0\n"
+"Generated-By: Babel 2.17.0\n"
 
 #: app/api/_ss_audit.py:79
 msgid "最小 -- 僅登入/登出與失敗嘗試"
@@ -2028,7 +2028,7 @@ msgstr "Cancel"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:28
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:66
 #: app/templates/auth/change_password.html:86
-#: app/templates/layouts/base.html:52
+#: app/templates/layouts/base.html:84
 #: app/templates/pages/admin/initial_setup.html:298
 msgid "登出"
 msgstr "Logout"
@@ -2209,7 +2209,7 @@ msgstr "Server Error"
 msgid "系統發生錯誤，請稍後再試。"
 msgstr "A system error occurred. Please try again later."
 
-#: app/templates/layouts/base.html:82
+#: app/templates/layouts/base.html:96
 msgid "首頁"
 msgstr "Home"
 
@@ -4248,6 +4248,10 @@ msgstr "Administrator account:"
 #: app/templates/pages/admin/initial_setup.html:282
 msgid "用戶編號:"
 msgstr "User number:"
+
+#: app/templates/pages/admin/initial_setup.html:283
+msgid "(未設定)"
+msgstr "(Not set)"
 
 #: app/templates/pages/admin/initial_setup.html:284
 msgid "(自動產生)"
@@ -11933,6 +11937,7 @@ msgstr "CSV field description"
 msgid "欄位名稱"
 msgstr "Field name"
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:114
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:142
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:468
 #: app/templates/pages/users/import.html:94
@@ -12019,6 +12024,7 @@ msgstr "Previous"
 msgid "第 %(page)s / %(pages)s 頁 （共 %(total)s 筆）"
 msgstr "Page %(page)s / %(pages)s (%(total)s records)"
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:344
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
@@ -17502,10 +17508,6 @@ msgstr "page"
 msgid "&lt; 上一頁"
 msgstr "< Previous page"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:344
-msgid "= listTotalPages\" @click=\"listPage++\">下一頁 &gt;"
-msgstr "= listTotalPages\" @click=\"listPage++\">Next page >"
-
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:353
 msgid "表單中心 - 欄位顯示設定"
 msgstr "Form Center - Field Display Settings"
@@ -18052,15 +18054,9 @@ msgstr "Spec vs Form Offset Details"
 msgid "規格 vs SQL 偏移細節"
 msgstr "Specs vs SQL offset details"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:427
-msgid ""
-"i.form_template_name === "
-"compareTemplateName)?.form_template_secure_code)\">\n"
-"                        前往編輯器處理"
-msgstr ""
-"i.form_template_name === "
-"compareTemplateName)?.form_template_secure_code)\"> \n"
-" Go to the editor for workflowing"
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:428
+msgid "前往編輯器處理"
+msgstr "Open in editor"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:3
 msgid "欄位規格 - BeakPlatform"
@@ -18138,14 +18134,6 @@ msgstr "Apply to SQL Table"
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:97
 msgid "儲存規格"
 msgstr "Storage specifications"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:113
-msgid ""
-"f.constraints && f.constraints.required).length > 0\">\n"
-"                必填:"
-msgstr ""
-"f.constraints && f.constraints.required).length > 0\"> \n"
-" Required:"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:119
 msgid "點擊下方 [+] 按鈕新增空白欄位列，或使用「從 FormIO 同步」自動匯入"
@@ -18356,20 +18344,6 @@ msgstr "New form"
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:113
 msgid "表單"
 msgstr "form"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:283
-msgid ""
-"0\" class=\"fc-btn fc-btn-sm\"\n"
-"                        style=\"background: #fef2f2; color: #dc2626; "
-"border: 1px solid #fecaca;\"\n"
-"                        @click=\"deleteTestForms()\"\n"
-"                        x-text=\"__('刪除測試表單 (') + testFormCount + ')'\">"
-msgstr ""
-"0\" class=\"fc-btn fc-btn-sm\" \n"
-" style=\"background: #fef2f2; color: #dc2626; border: 1px solid "
-"#fecaca;\" \n"
-" @click=\"deleteTestForms()\" \n"
-" x-text=\"__('Delete test form (') + testFormCount + ')'\">"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:397
 msgid "測試模式 - 表單尚未正式發行"
@@ -18720,10 +18694,9 @@ msgid "新發行"
 msgstr "new issue"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:94
-msgid "0) ? '需先封存所有發行版本' : (m.total_versions === 0 ? '無發行版本' : '封存此配對')\">封存"
-msgstr ""
-"0) ? 'All publishs need to be archived first' : (m.total_versions === 0 ?"
-" 'No publishs' : 'Archive this pairing')\">Archive"
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:250
+msgid "封存"
+msgstr "Seal"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:116
 msgid "封存時間"
@@ -18802,10 +18775,6 @@ msgstr "Publish time"
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:249
 msgid "開放"
 msgstr "open"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:250
-msgid "封存"
-msgstr "Seal"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:270
 msgid "確認解除配對"
@@ -19914,15 +19883,9 @@ msgstr "Not used"
 msgid "適應畫面"
 msgstr "Adapt to the picture"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:50
-msgid ""
-"0\"\n"
-"                    @click=\"deleteAllUnused()\">\n"
-"                全部刪除"
-msgstr ""
-"0\" \n"
-" @click=\"deleteAllUnused()\"> \n"
-" Delete all"
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:52
+msgid "全部刪除"
+msgstr "Delete all"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:75
 msgid "其他節點"
@@ -20167,4 +20130,54 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "確定要刪除用戶「%(name)s」嗎？"
 #~ msgstr "Are you sure you want to delete user \"%(name)s\"?"
+
+#~ msgid "= listTotalPages\" @click=\"listPage++\">下一頁 &gt;"
+#~ msgstr "= listTotalPages\" @click=\"listPage++\">Next page >"
+
+#~ msgid ""
+#~ "i.form_template_name === "
+#~ "compareTemplateName)?.form_template_secure_code)\">\n"
+#~ "                        前往編輯器處理"
+#~ msgstr ""
+#~ "i.form_template_name === "
+#~ "compareTemplateName)?.form_template_secure_code)\"> \n"
+#~ " Go to the editor for workflowing"
+
+#~ msgid ""
+#~ "f.constraints && f.constraints.required).length > 0\">\n"
+#~ "                必填:"
+#~ msgstr ""
+#~ "f.constraints && f.constraints.required).length > 0\"> \n"
+#~ " Required:"
+
+#~ msgid ""
+#~ "0\" class=\"fc-btn fc-btn-sm\"\n"
+#~ "                        style=\"background: #fef2f2; "
+#~ "color: #dc2626; border: 1px solid "
+#~ "#fecaca;\"\n"
+#~ "                        @click=\"deleteTestForms()\"\n"
+#~ "                        x-text=\"__('刪除測試表單 (') +"
+#~ " testFormCount + ')'\">"
+#~ msgstr ""
+#~ "0\" class=\"fc-btn fc-btn-sm\" \n"
+#~ " style=\"background: #fef2f2; color: #dc2626;"
+#~ " border: 1px solid #fecaca;\" \n"
+#~ " @click=\"deleteTestForms()\" \n"
+#~ " x-text=\"__('Delete test form (') + testFormCount + ')'\">"
+
+#~ msgid "0) ? '需先封存所有發行版本' : (m.total_versions === 0 ? '無發行版本' : '封存此配對')\">封存"
+#~ msgstr ""
+#~ "0) ? 'All publishs need to be "
+#~ "archived first' : (m.total_versions === "
+#~ "0 ? 'No publishs' : 'Archive this"
+#~ " pairing')\">Archive"
+
+#~ msgid ""
+#~ "0\"\n"
+#~ "                    @click=\"deleteAllUnused()\">\n"
+#~ "                全部刪除"
+#~ msgstr ""
+#~ "0\" \n"
+#~ " @click=\"deleteAllUnused()\"> \n"
+#~ " Delete all"
 

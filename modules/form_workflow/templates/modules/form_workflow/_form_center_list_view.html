@@ -102,7 +102,7 @@
                                         <input type="checkbox" :checked="isBatchChecked(item)"
                                                :disabled="(item.is_locked && !item.locked_by_self) || !isBatchCompatible(item)"
                                                @change="batchToggle(item)"
-                                               :title="!isBatchCompatible(item) ? '不同表單/節點/版本，無法一起批次簽核' : ''">
+                                               :title="!isBatchCompatible(item) ? __('不同表單/節點/版本，無法一起批次簽核') : ''">
                                     </td>
                                     <td x-show="colV('serial_number')">
                                         <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-right: 4px;">TEST</span>
@@ -341,7 +341,7 @@
                 <button class="fc-list-pager-btn" :class="{ active: listPage === p }" @click="listPage = p" x-text="p"
                         x-show="p === 1 || p === listTotalPages || (p >= listPage - 2 && p <= listPage + 2)"></button>
             </template>
-            <button class="fc-list-pager-btn" :disabled="listPage >{{ _('= listTotalPages" @click="listPage++">下一頁 &gt;') }}</button>
+            <button class="fc-list-pager-btn" :disabled="listPage >= listTotalPages" @click="listPage++">{{ _('下一頁') }} &gt;</button>
         </div>
     </div>
 </div>

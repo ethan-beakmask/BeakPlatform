@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-12 21:31+0800\n"
+"POT-Creation-Date: 2026-07-15 01:25+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2007,7 +2007,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:28
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:66
 #: app/templates/auth/change_password.html:86
-#: app/templates/layouts/base.html:52
+#: app/templates/layouts/base.html:84
 #: app/templates/pages/admin/initial_setup.html:298
 msgid "登出"
 msgstr ""
@@ -2186,7 +2186,7 @@ msgstr ""
 msgid "系統發生錯誤，請稍後再試。"
 msgstr ""
 
-#: app/templates/layouts/base.html:82
+#: app/templates/layouts/base.html:96
 msgid "首頁"
 msgstr ""
 
@@ -4186,6 +4186,10 @@ msgstr ""
 
 #: app/templates/pages/admin/initial_setup.html:282
 msgid "用戶編號:"
+msgstr ""
+
+#: app/templates/pages/admin/initial_setup.html:283
+msgid "(未設定)"
 msgstr ""
 
 #: app/templates/pages/admin/initial_setup.html:284
@@ -11446,6 +11450,7 @@ msgstr ""
 msgid "欄位名稱"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:114
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:142
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:468
 #: app/templates/pages/users/import.html:94
@@ -11530,6 +11535,7 @@ msgstr ""
 msgid "第 %(page)s / %(pages)s 頁 （共 %(total)s 筆）"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:344
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
@@ -16882,10 +16888,6 @@ msgstr ""
 msgid "&lt; 上一頁"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:344
-msgid "= listTotalPages\" @click=\"listPage++\">下一頁 &gt;"
-msgstr ""
-
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:353
 msgid "表單中心 - 欄位顯示設定"
 msgstr ""
@@ -17423,11 +17425,8 @@ msgstr ""
 msgid "規格 vs SQL 偏移細節"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:427
-msgid ""
-"i.form_template_name === "
-"compareTemplateName)?.form_template_secure_code)\">\n"
-"                        前往編輯器處理"
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:428
+msgid "前往編輯器處理"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:3
@@ -17505,12 +17504,6 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:97
 msgid "儲存規格"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:113
-msgid ""
-"f.constraints && f.constraints.required).length > 0\">\n"
-"                必填:"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:119
@@ -17715,15 +17708,6 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:38
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:113
 msgid "表單"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:283
-msgid ""
-"0\" class=\"fc-btn fc-btn-sm\"\n"
-"                        style=\"background: #fef2f2; color: #dc2626; "
-"border: 1px solid #fecaca;\"\n"
-"                        @click=\"deleteTestForms()\"\n"
-"                        x-text=\"__('刪除測試表單 (') + testFormCount + ')'\">"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:397
@@ -18071,7 +18055,8 @@ msgid "新發行"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:94
-msgid "0) ? '需先封存所有發行版本' : (m.total_versions === 0 ? '無發行版本' : '封存此配對')\">封存"
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:250
+msgid "封存"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:116
@@ -18148,10 +18133,6 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:249
 msgid "開放"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:250
-msgid "封存"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:270
@@ -19208,11 +19189,8 @@ msgstr ""
 msgid "適應畫面"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:50
-msgid ""
-"0\"\n"
-"                    @click=\"deleteAllUnused()\">\n"
-"                全部刪除"
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:52
+msgid "全部刪除"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:75

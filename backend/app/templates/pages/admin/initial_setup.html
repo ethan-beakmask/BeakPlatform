@@ -280,7 +280,7 @@
             <span class="label">{{ _('管理員帳號:') }}</span>
             <span class="value" x-text="'admin-' + normalizedUsername + '@{{ org.domain_name }}'"></span><br>
             <span class="label">{{ _('用戶編號:') }}</span>
-            <span class="value" x-text="employeeId || '{{ suggested_employee_id or "(未設定)" }}'"></span>
+            <span class="value" x-text="employeeId || '{{ suggested_employee_id or _("(未設定)") }}'"></span>
             <span x-show="!employeeId && '{{ suggested_employee_id }}'" style="color: #888; font-size: 12px;">{{ _('(自動產生)') }}</span>
         </div>
 

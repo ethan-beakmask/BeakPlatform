@@ -113,20 +113,25 @@ JSON 字典範例 (`en.json`):
 - 修復附帶問題：msgid 裸 `%` 造成 500（flask_babel 一律做 % 插值，settings.html 改 `%%`）、`selectattr('contains')` 缺自訂 test（既有 bug，app 註冊 `contains`）、「未知網域」跨層字串比對改 `org_unknown` 布林旗標、選單標題 title_i18n 回填 72 筆英文
 - 待辦：menu_defaults.py（新裝 seed）尚未帶英文選單標題
 
-### Phase 4 - 模組 Python + 模板
+### Phase 4 - 模組 Python + 模板 ✅ (2026-07-12 完成)
 
-依模組分批:
+五模組（open_defense、vuln_lifecycle、spec_formulate、nocode_builder、form_workflow）分批完成，
+一批一 commit，詳見 `I18N_PHASE45_REPORT.md`。翻譯併入平台主 `.po`。
 
-- [ ] **4a**: form_workflow Python (flash/error) + 模板 `_()`
-- [ ] **4b**: nocode_builder Python + 模板
-- [ ] **4c**: spec_formulate Python + 模板
-- [ ] 各模組 extract + 翻譯 + 建立模組 `i18n/en.json`
+### Phase 5 - 模組 JS ✅ (2026-07-12 完成)
 
-### Phase 5 - 模組 JS
+同上五模組 JS 全量 `__()` 包裹，字典併入 `backend/app/static/i18n/en.json`。
 
-- [ ] **5a**: form_workflow JS (workflow-main.js 4,734 + 其他)
-- [ ] **5b**: nocode_builder JS (studio.js 等)
-- [ ] **5c**: spec_formulate JS
+### 收尾驗證 ✅ (2026-07-15 完成)
+
+- [x] extract 全模組後 .po 4,011 條 0 未翻譯 0 fuzzy；en.json 1,328 條無空值
+- [x] 全庫掃描 `__()` key 與 en.json 比對：無缺漏
+- [x] 修復批次包裹事故殘留：6 處 Jinja `_()` 誤把 Alpine 表達式/HTML 包進 msgid
+  （form_center、_form_center_list_view、data_spec_list、workflow_list、field_spec_editor、mappings_list）
+- [x] 補漏包字串：form_center/_form_center_list_view 批次簽核 title、mappings_list 3 處 title、
+  sync_control placeholder、initial_setup (未設定)
+- [x] 修 nocode_builder 三處硬編碼過期前綴 `/bp/` redirect（改 url_for）
+- [x] en 語系冒煙測試六模組頁面：殘留 user-facing 中文 0 行
 
 ---
 
@@ -156,4 +161,4 @@ Phase 0 完成後即生效:
 
 ---
 
-*最後更新: 2026-07-12（Phase 0 + Phase 1 完成，「未來開發守則」已生效）*
+*最後更新: 2026-07-15（全 Phase 完成並收尾驗證，Issue #3 關閉；技術債移至獨立 Issue 追蹤）*

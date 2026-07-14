@@ -4,7 +4,7 @@ Data CRUD Module - Web Routes
 """
 import logging
 
-from flask import Blueprint, render_template, request, abort, redirect
+from flask import Blueprint, render_template, request, abort, redirect, url_for
 from flask_login import current_user
 
 from app.security.decorators import module_access_required
@@ -24,7 +24,7 @@ web_bp = Blueprint(
 @module_access_required('nocode_builder')
 def index():
     """模組首頁 → 導向子系統列表"""
-    return redirect('/bp/nocode-builder/sub-systems')
+    return redirect(url_for('nocode_builder_web.sub_system_list'))
 
 
 @web_bp.route('/lab')
@@ -56,14 +56,12 @@ def page_view(secure_code):
         # context 為 None 表示用戶無權存取此子系統或頁面
         if sub_system_context is None:
             _deny_and_logout('nocode_page_view', secure_code, sub_sc)
-            from flask import redirect
-            return redirect('/bp/auth/login')
+            return redirect(url_for('auth.login'))
 
         # SiteMap 節點權限檢查
         if not _check_site_map_node_access(sub_sc, secure_code, current_user):
             _deny_and_logout('nocode_sitemap_node', secure_code, sub_sc)
-            from flask import redirect
-            return redirect('/bp/auth/login')
+            return redirect(url_for('auth.login'))
 
     return render_template(
         'modules/nocode_builder/lab_view.html',

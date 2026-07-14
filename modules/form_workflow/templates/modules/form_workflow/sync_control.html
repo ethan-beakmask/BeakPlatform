@@ -234,7 +234,7 @@
                         <p class="sc-warning-text">{{ _('高風險操作：請輸入表名確認') }}</p>
                         <input type="text" class="sc-confirm-input"
                                x-model="confirmTableInput"
-                               :placeholder="'輸入 ' + (status && status.sql ? status.sql.table_name : '') + ' 確認'">
+                               :placeholder="__('輸入 {t} 確認', {t: (status && status.sql ? status.sql.table_name : '')})">
                     </div>
                 </template>
             </div>

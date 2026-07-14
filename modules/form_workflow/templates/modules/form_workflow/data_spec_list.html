@@ -424,8 +424,8 @@
                 <button class="ds-btn" @click="showCompareModal = false">{{ _('關閉') }}</button>
                 <template x-if="compareResult && compareResult.summary.total_drifts > 0">
                     <button class="ds-btn primary"
-                            @click="showCompareModal = false; goToSpecEditor(items.find(i => {{ _('i.form_template_name === compareTemplateName)?.form_template_secure_code)">
-                        前往編輯器處理') }}
+                            @click="showCompareModal = false; goToSpecEditor(items.find(i => i.form_template_name === compareTemplateName)?.form_template_secure_code)">
+                        {{ _('前往編輯器處理') }}
                     </button>
                 </template>
             </div>

@@ -47,9 +47,9 @@
                 </button>
             </div>
             <button class="btn btn-sm btn-danger"
-                    x-show="treeView.tab === 'unused' && !unusedView.loading && unusedView.subflows.length > {{ _('0"
+                    x-show="treeView.tab === 'unused' && !unusedView.loading && unusedView.subflows.length > 0"
                     @click="deleteAllUnused()">
-                全部刪除') }}
+                {{ _('全部刪除') }}
             </button>
         </div>
 

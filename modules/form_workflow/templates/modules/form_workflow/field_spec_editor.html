@@ -110,8 +110,8 @@ window.__SPEC_CONFIG = {
             <span x-show="fields.filter(f => f.is_pii).length > 0">
                 PII: <strong x-text="fields.filter(f => f.is_pii).length"></strong>
             </span>
-            <span x-show="fields.filter(f => {{ _('f.constraints && f.constraints.required).length > 0">
-                必填:') }} <strong x-text="fields.filter(f => f.constraints && f.constraints.required).length"></strong>
+            <span x-show="fields.filter(f => f.constraints && f.constraints.required).length > 0">
+                {{ _('必填') }}: <strong x-text="fields.filter(f => f.constraints && f.constraints.required).length"></strong>
             </span>
         </div>
 

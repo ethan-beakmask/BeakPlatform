@@ -123,7 +123,7 @@ window.__USER_SC = '{{ user_secure_code }}';
                                     <input type="checkbox" :checked="isBatchChecked(item)"
                                            :disabled="(item.is_locked && !item.locked_by_self) || !isBatchCompatible(item)"
                                            @change="batchToggle(item)"
-                                           :title="!isBatchCompatible(item) ? '不同表單/節點/版本，無法一起批次簽核' : ''">
+                                           :title="!isBatchCompatible(item) ? __('不同表單/節點/版本，無法一起批次簽核') : ''">
                                 </td>
                                 <td>
                                     <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-right: 4px;">TEST</span>
@@ -280,10 +280,10 @@ window.__USER_SC = '{{ user_secure_code }}';
                         </div>
                     </div>
                 </div>
-                <button x-show="isAdmin && testFormCount > {{ _('0" class="fc-btn fc-btn-sm"
+                <button x-show="isAdmin && testFormCount > 0" class="fc-btn fc-btn-sm"
                         style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;"
                         @click="deleteTestForms()"
-                        x-text="__(\'刪除測試表單 (\') + testFormCount + \')\'">') }}</button>
+                        x-text="__('刪除測試表單') + ' (' + testFormCount + ')'"></button>
             </div>
             <div style="padding: 0;">
                 <!-- 我的歷史 -->

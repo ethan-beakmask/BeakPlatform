@@ -91,7 +91,7 @@
                                 </button>
                                 <button class="fw-btn" @click="archiveMapping(m)"
                                         :disabled="!m.all_versions_archived || m.total_versions === 0"
-                                        :title="(!m.all_versions_archived && m.total_versions > {{ _('0) ? \'需先封存所有發行版本\' : (m.total_versions === 0 ? \'無發行版本\' : \'封存此配對\')">封存') }}</button>
+                                        :title="(!m.all_versions_archived && m.total_versions > 0) ? __('需先封存所有發行版本') : (m.total_versions === 0 ? __('無發行版本') : __('封存此配對'))">{{ _('封存') }}</button>
                                 <button class="fw-btn danger" @click="confirmDelete(m)" :disabled="m.is_published">{{ _('刪除') }}</button>
                             </div>
                         </td>
@@ -233,7 +233,7 @@
                                 </td>
                                 <td style="text-align: center;">
                                     <label class="fw-toggle"
-                                           :title="v.sql_sync_enabled ? 'SQL 同步已啟用（不可關閉）' : (v.status === 'Archived' ? '已封存版本無法啟用' : '啟用 SQL 同步')">
+                                           :title="v.sql_sync_enabled ? __('SQL 同步已啟用（不可關閉）') : (v.status === 'Archived' ? __('已封存版本無法啟用') : __('啟用 SQL 同步'))">
                                         <input type="checkbox" :checked="v.sql_sync_enabled"
                                                :disabled="v.sql_sync_enabled || v.status === 'Archived'"
                                                @change="toggleSqlSync(v, $event.target.checked)">
@@ -250,7 +250,7 @@
                                     <button x-show="v.status !== 'Archived'" class="fw-btn" @click="archiveVersion(v)">{{ _('封存') }}</button>
                                     <button class="fw-btn danger" @click="deleteVersion(v)"
                                             :disabled="v.is_used || v.status === 'Published'"
-                                            :title="v.is_used ? '已使用過的版本無法刪除' : (v.status === 'Published' ? '運作中版本無法刪除' : '刪除此版本')">{{ _('刪除') }}</button>
+                                            :title="v.is_used ? __('已使用過的版本無法刪除') : (v.status === 'Published' ? __('運作中版本無法刪除') : __('刪除此版本'))">{{ _('刪除') }}</button>
                                 </td>
                             </tr>
                         </template>
