@@ -603,13 +603,16 @@ new Date(record.created_at).toLocaleString('zh-TW')
   ```
 
 ### 服務啟動
+- **正式管道是 systemd 服務**：`sudo systemctl restart beakplatform-dev.service`（重啟後 `systemctl is-active` 確認）
+- 開發服務以**非 debug 模式**跑，Python/模板變更**不會自動重載，必須重啟**
+- **踩坑**：若曾手動 `flask run`，殘留進程會佔住 7000 埠導致 systemd 服務 crash loop（`is-active` 一直是 `activating`）。用 `ss -tlnp | grep :7000` 找出佔埠 PID kill 掉，服務即自動接手
+- 手動啟動（僅除錯用，用完要 kill）：
 ```bash
 cd /opt/BeakPlatform-dev
 source venv/bin/activate
 set -a && source .env && set +a
 cd backend && flask run --host=127.0.0.1 --port=7000
 ```
-- 開發服務以**非 debug 模式**跑，Python/模板變更**不會自動重載，必須重啟**（找進程：`ss -tlnp | grep :7000`）
 - 對外經 nginx `192.168.0.16:7000/beakplatform` 反代，flask 只綁 127.0.0.1
 
 ### 檔案輸出
