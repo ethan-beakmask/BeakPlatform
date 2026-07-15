@@ -562,6 +562,13 @@ BkTime.format(record.created_at, 'short')
 new Date(record.created_at).toLocaleString('zh-TW')
 ```
 
+- **自行做時間運算**（SLA 倒數、時間差）時，DB 回傳的 ISO 字串是 naive UTC（無 `Z` 後綴），
+  直接 `new Date(iso)` 會被當本地時間、差 8 小時——必須先補 `Z` 再 parse（已踩過：SLA 顯示逾時 465 分）
+```javascript
+const iso = s.endsWith('Z') ? s : s + 'Z';   // naive UTC 補 Z
+const deadline = new Date(iso).getTime() + slaMinutes * 60000;
+```
+
 ---
 
 ## 禁止事項
@@ -616,6 +623,15 @@ new Date(record.created_at).toLocaleString('zh-TW')
   TOKEN=$(curl -s -b cj.txt -c cj.txt "$BASE/dashboard" | grep -o 'csrf-token" content="[^"]*' | cut -d'"' -f3)
   curl -s -b cj.txt -X POST "$BASE/api/xxx" -H 'Content-Type: application/json' -H "X-CSRFToken: $TOKEN" -d '{...}'
   ```
+
+### form_workflow 發行（publish）陷阱
+- `POST /api/mappings/<sc>/publish` 以表單/流程模板的 **version+revision** 判斷有無變更；
+  直接改 `fw_workflow_templates.graph`（SQL 或 PUT API）**不會** bump revision，
+  publish 會回「版本未變更」並沿用舊快照
+- 解法：改完 graph 先 `UPDATE fw_workflow_templates SET revision = revision+1 WHERE ...` 再 publish
+- intake / 表單中心都只讀 `fw_published_form_workflows` 最新 Published 快照，改模板不重發行等於沒改
+- 流程變數：流程編號（OD-YYYYMMDD-NNNN）是 `${wi.exec_code}`；`${wi.code}` 是 workflow instance 的 secure_code，
+  沒有 `${wi.execution_code}` 這個變數（替換結果為空字串）
 
 ### 服務啟動
 - **正式管道是 systemd 服務**：`sudo systemctl restart beakplatform-dev.service`（重啟後 `systemctl is-active` 確認）
