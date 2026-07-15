@@ -1,0 +1,186 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('資安案件處置中心') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/open_defense/css/od-common.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/open_defense/css/sc-cases.css">
+{% endblock %}
+
+{% block content %}
+<div class="od-container" x-data="scCases()" x-init="load()">
+
+    <div class="od-header">
+        <div>
+            <h1>{{ _('資安案件處置中心') }}</h1>
+            <p>{{ _('SOC 值班介面：嚴重度優先、SLA 倒數、1-click 處置。案件由 OpenDefense 事件自動建立。') }}</p>
+        </div>
+        <div class="od-actions">
+            <button class="btn btn-secondary" :class="{ 'btn-primary': statusFilter === 'open' }"
+                    @click="setFilter('open')">{{ _('進行中') }}</button>
+            <button class="btn btn-secondary" :class="{ 'btn-primary': statusFilter === 'closed' }"
+                    @click="setFilter('closed')">{{ _('已結案') }}</button>
+            <button class="btn btn-secondary" @click="load()">{{ _('重新整理') }}</button>
+        </div>
+    </div>
+
+    <div class="od-stats">
+        <div class="od-stat-card">
+            <div class="od-stat-value" x-text="stats.open_count ?? '-'"></div>
+            <div class="od-stat-label">{{ _('進行中案件') }}</div>
+        </div>
+        <div class="od-stat-card">
+            <div class="od-stat-value warn" x-text="stats.waiting_count ?? '-'"></div>
+            <div class="od-stat-label">{{ _('待簽核') }}</div>
+        </div>
+        <div class="od-stat-card">
+            <div class="od-stat-value danger" x-text="stats.overdue_count ?? '-'"></div>
+            <div class="od-stat-label">{{ _('SLA 逾時') }}</div>
+        </div>
+        <div class="od-stat-card">
+            <div class="od-stat-value ok" x-text="stats.today_block_count ?? '-'"></div>
+            <div class="od-stat-label">{{ _('今日封鎖') }}</div>
+        </div>
+        <div class="od-stat-card">
+            <div class="od-stat-value" x-text="stats.today_case_count ?? '-'"></div>
+            <div class="od-stat-label">{{ _('今日新案') }}</div>
+        </div>
+    </div>
+
+    <div class="sc-main">
+        <!-- 左：案件清單 -->
+        <div class="sc-case-list">
+            <template x-if="!loading && cases.length === 0">
+                <div class="sc-detail-empty">{{ _('目前沒有案件') }}</div>
+            </template>
+            <template x-for="c in cases" :key="c.workflow_instance_secure_code">
+                <div class="sc-case-item"
+                     :class="[`sev-${sevNum(c.severity_id)}`,
+                              { selected: selected?.workflow_instance_secure_code === c.workflow_instance_secure_code }]"
+                     @click="selectCase(c)">
+                    <div class="sc-case-row1">
+                        <span class="sc-case-ip" x-html="val(c.actor_ip)"></span>
+                        <span class="sc-sev" :class="`sc-sev-${sevNum(c.severity_id)}`"
+                              x-text="'S' + sevNum(c.severity_id)"></span>
+                    </div>
+                    <div class="sc-case-row2">
+                        <span class="sc-case-subject" x-text="c.subject || c.form_name"></span>
+                        <template x-if="slaInfo(c)">
+                            <span class="sc-sla" :class="slaInfo(c).cls"
+                                  x-text="slaInfo(c).text"></span>
+                        </template>
+                    </div>
+                    <div class="sc-case-row2">
+                        <span class="od-mono" x-text="c.execution_code"></span>
+                        <span x-text="(c.od_event_count > 1 ? `×${c.od_event_count} ` : '') + fmtTime(c.submitted_at)"></span>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- 右：案件詳情 + 1-click 處置 -->
+        <div class="sc-detail" id="sc-detail">
+            <template x-if="!selected">
+                <div class="sc-detail-empty">{{ _('從左側選擇案件') }}</div>
+            </template>
+
+            <template x-if="selected">
+                <div>
+                    <div class="sc-detail-header">
+                        <div>
+                            <h3 x-text="selected.subject || selected.form_name"></h3>
+                            <span class="od-mono" x-text="selected.execution_code"></span>
+                            <span class="od-badge"
+                                  :class="selected.status === 'RUNNING' ? 'od-badge-pending' : 'od-badge-applied'"
+                                  x-text="selected.status"></span>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="sc-risk" :class="riskClass(selected.risk_score)"
+                                 x-text="'{{ _('風險') }} ' + (selected.risk_score ?? '-')"></div>
+                            <div class="sc-field-label" x-text="'{{ _('建議') }}: ' + (selected.recommended_action || '-')"></div>
+                        </div>
+                    </div>
+
+                    <div class="sc-fields">
+                        <div><div class="sc-field-label">{{ _('攻擊者 IP') }}</div>
+                             <div class="sc-field-value mono" x-html="val(selected.actor_ip)"></div></div>
+                        <div><div class="sc-field-label">{{ _('嚴重度') }}</div>
+                             <div class="sc-field-value" x-text="sevNum(selected.severity_id)"></div></div>
+                        <div><div class="sc-field-label">{{ _('偵測來源') }}</div>
+                             <div class="sc-field-value" x-html="val(selected.source_system)"></div></div>
+                        <div><div class="sc-field-label">{{ _('規則 ID') }}</div>
+                             <div class="sc-field-value mono" x-html="val(selected.finding_rule_id)"></div></div>
+                        <div><div class="sc-field-label">{{ _('聚合事件數') }}</div>
+                             <div class="sc-field-value" x-text="selected.od_event_count ?? 1"></div></div>
+                        <div><div class="sc-field-label">{{ _('建立時間') }}</div>
+                             <div class="sc-field-value" x-text="fmtTime(selected.submitted_at)"></div></div>
+                    </div>
+
+                    <!-- 進行中且輪到簽核：完整表單欄位 + 處置 -->
+                    <template x-if="detail">
+                        <div>
+                            <div class="sc-subtitle">{{ _('事件詳情（出口政策已套用）') }}</div>
+                            <div class="sc-fields">
+                                <template x-for="key in ['target_host','target_url','target_service','actor_asn','actor_country','actor_user_agent','finding_summary','intel_summary','od_first_seen','od_last_seen']" :key="key">
+                                    <div x-show="detail.form_data && detail.form_data[key] !== undefined">
+                                        <div class="sc-field-label" x-text="key"></div>
+                                        <div class="sc-field-value" x-html="val(detail.form_data[key])"></div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <template x-if="selected.can_act && actionOptions.length">
+                                <div>
+                                    <div class="sc-subtitle">{{ _('處置（1-click，直接完成簽核）') }}</div>
+                                    <div class="sc-comment">
+                                        <textarea x-model="comment"
+                                                  placeholder="{{ _('處置意見（依流程設定可能必填）') }}"></textarea>
+                                    </div>
+                                    <div class="sc-actions">
+                                        <template x-for="opt in actionOptions" :key="opt.id">
+                                            <button class="btn"
+                                                    :class="opt.style === 'danger' ? 'btn-danger' : 'btn-primary'"
+                                                    :disabled="acting"
+                                                    @click="act(opt)" x-text="opt.label"></button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="!selected.can_act">
+                                <p class="sc-field-label">{{ _('您不是此案件目前節點的指定簽核人。') }}</p>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- 關聯防禦決策 -->
+                    <div class="sc-subtitle">{{ _('關聯防禦決策') }}</div>
+                    <template x-if="decisions.length === 0">
+                        <p class="sc-field-label">{{ _('尚無決策') }}</p>
+                    </template>
+                    <table class="od-table" x-show="decisions.length > 0">
+                        <thead><tr>
+                            <th>{{ _('動作') }}</th><th>{{ _('目標') }}</th>
+                            <th>{{ _('狀態') }}</th><th>{{ _('時間') }}</th>
+                        </tr></thead>
+                        <tbody>
+                            <template x-for="d in decisions" :key="d.secure_code">
+                                <tr>
+                                    <td x-text="d.action"></td>
+                                    <td class="od-mono" x-text="d.target_value"></td>
+                                    <td><span class="od-badge" :class="`od-badge-${d.status}`"
+                                              x-text="d.status"></span></td>
+                                    <td x-text="fmtTime(d.decided_at)"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ app_prefix }}/static/modules/open_defense/js/od-common.js"></script>
+<script src="{{ app_prefix }}/static/modules/open_defense/js/sc-cases.js"></script>
+{% endblock %}

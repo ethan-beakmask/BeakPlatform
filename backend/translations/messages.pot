@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-15 12:34+0800\n"
+"POT-Creation-Date: 2026-07-16 06:17+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2490,6 +2490,7 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:20
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:83
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:33
 #: app/templates/pages/dashboard.html:43
 msgid "待簽核"
 msgstr ""
@@ -3142,6 +3143,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:21
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:60
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:33
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:162
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:32
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:43
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:191
@@ -5082,6 +5084,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:47
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:54
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:36
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:114
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:35
 #: app/templates/pages/admin/org-admins/list.html:43
 #: app/templates/pages/cg_databases/overview.html:186
@@ -5925,6 +5928,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:400
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:162
 #: app/templates/pages/cg_databases/overview.html:250
 #: app/templates/pages/server_manage/redis_monitor.html:216
 msgid "時間"
@@ -5936,6 +5940,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:32
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:55
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:161
 #: app/templates/pages/cg_databases/overview.html:250
 msgid "動作"
 msgstr ""
@@ -9373,6 +9378,7 @@ msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:58
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:106
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:27
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:24
 #: app/templates/pages/permissions/index.html:605
@@ -10723,6 +10729,7 @@ msgstr ""
 msgid "建立:"
 msgstr ""
 
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:19
 #: app/templates/pages/security/alert_broadcasts.html:90
 msgid "進行中"
 msgstr ""
@@ -10951,6 +10958,7 @@ msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:16
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:16
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:22
 #: app/templates/pages/server_manage/redis_monitor.html:20
 #: app/templates/pages/server_manage/redis_monitor.html:201
 msgid "重新整理"
@@ -12857,37 +12865,37 @@ msgstr ""
 msgid "allowed_source_systems 必須為非空 list"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:125
+#: ../modules/open_defense/services/intake_service.py:278
 #, python-format
 msgid "form template %(form_template_sc)s 不存在或不屬於本企業"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:138
+#: ../modules/open_defense/services/intake_service.py:291
 #, python-format
 msgid "form template %(form_template_sc)s 尚無 Published 版本,請先在表單設計器發行"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:160
+#: ../modules/open_defense/services/intake_service.py:313
 msgid "工作流模板缺 Start 節點"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:241
+#: ../modules/open_defense/services/intake_service.py:394
 msgid "開始"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:287
+#: ../modules/open_defense/services/intake_service.py:440
 #, python-format
 msgid "source_system %(source_system)r 不在 key 允許清單"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:296
+#: ../modules/open_defense/services/intake_service.py:449
 #, python-format
 msgid ""
 "event_class %(event_class)r 在本企業無對應 form_template,請至 /open-defense"
 "/intake-keys 設定 mapping"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:348
+#: ../modules/open_defense/services/intake_service.py:519
 #, python-format
 msgid "啟動 workflow 失敗: %(error)s"
 msgstr ""
@@ -12990,6 +12998,7 @@ msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:56
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:161
 msgid "目標"
 msgstr ""
 
@@ -13052,6 +13061,91 @@ msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:34
 msgid "過期"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:2
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:14
+msgid "資安案件處置中心"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:15
+msgid "SOC 值班介面：嚴重度優先、SLA 倒數、1-click 處置。案件由 OpenDefense 事件自動建立。"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:21
+msgid "已結案"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:29
+msgid "進行中案件"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:37
+msgid "SLA 逾時"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:41
+msgid "今日封鎖"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:45
+msgid "今日新案"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:53
+msgid "目前沒有案件"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:83
+msgid "從左側選擇案件"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:98
+msgid "風險"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:99
+msgid "建議"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:104
+msgid "攻擊者 IP"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:108
+msgid "偵測來源"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:110
+msgid "規則 ID"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:112
+msgid "聚合事件數"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:121
+msgid "事件詳情（出口政策已套用）"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:133
+msgid "處置（1-click，直接完成簽核）"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:136
+msgid "處置意見（依流程設定可能必填）"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:149
+msgid "您不是此案件目前節點的指定簽核人。"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:155
+msgid "關聯防禦決策"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:157
+msgid "尚無決策"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:2
@@ -15711,7 +15805,7 @@ msgstr ""
 #: ../modules/form_workflow/api/fc_fill.py:59
 #: ../modules/form_workflow/api/fc_fill.py:249
 #: ../modules/form_workflow/api/fc_monitor.py:105
-#: ../modules/form_workflow/api/fc_my_forms.py:188
+#: ../modules/form_workflow/api/fc_my_forms.py:197
 msgid "找不到指定的表單"
 msgstr ""
 
@@ -15751,8 +15845,8 @@ msgid "單次批次簽核上限 100 筆"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_batch.py:68
-#: ../modules/form_workflow/api/fc_pending.py:267
-#: ../modules/form_workflow/api/fc_pending.py:370
+#: ../modules/form_workflow/api/fc_pending.py:281
+#: ../modules/form_workflow/api/fc_pending.py:384
 msgid "找不到任務或已處理"
 msgstr ""
 
@@ -15769,7 +15863,7 @@ msgid "已簽核過此節點"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_batch.py:106
-#: ../modules/form_workflow/api/fc_pending.py:423
+#: ../modules/form_workflow/api/fc_pending.py:437
 #: ../modules/form_workflow/api/instance_routes.py:233
 #, python-format
 msgid "簽核意見至少需要 %(count)s 字"
@@ -15835,71 +15929,71 @@ msgstr ""
 msgid "流程實例 %(instance_id)s 不存在"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:150
+#: ../modules/form_workflow/api/fc_pending.py:156
 msgid "找不到指定的任務"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:157
-#: ../modules/form_workflow/api/fc_pending.py:274
-#: ../modules/form_workflow/api/fc_pending.py:377
+#: ../modules/form_workflow/api/fc_pending.py:163
+#: ../modules/form_workflow/api/fc_pending.py:288
+#: ../modules/form_workflow/api/fc_pending.py:391
 #: ../modules/form_workflow/api/instance_routes.py:170
 #: ../modules/form_workflow/api/instance_routes.py:224
 msgid "您不是此任務的指定簽核人"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:284
+#: ../modules/form_workflow/api/fc_pending.py:298
 msgid "鎖定已刷新"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:293
+#: ../modules/form_workflow/api/fc_pending.py:307
 #, python-format
 msgid "此表單由 %(locker)s 簽核中"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:304
+#: ../modules/form_workflow/api/fc_pending.py:318
 msgid "已取得簽核鎖定"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:311
+#: ../modules/form_workflow/api/fc_pending.py:325
 #, python-format
 msgid "取得鎖定失敗: %(error)s"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:335
+#: ../modules/form_workflow/api/fc_pending.py:349
 msgid "找不到任務"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:342
+#: ../modules/form_workflow/api/fc_pending.py:356
 msgid "鎖定已釋放"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:383
+#: ../modules/form_workflow/api/fc_pending.py:397
 msgid "此表單正由他人簽核中"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:390
+#: ../modules/form_workflow/api/fc_pending.py:404
 msgid "簽核逾時，鎖定已失效，請重新開啟"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:404
+#: ../modules/form_workflow/api/fc_pending.py:418
 msgid "您已簽核過此節點，無法重複簽核"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:456
+#: ../modules/form_workflow/api/fc_pending.py:470
 #, python-format
 msgid "欄位 %(field_key)s 不允許修改"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:572
+#: ../modules/form_workflow/api/fc_pending.py:586
 #: ../modules/form_workflow/api/instance_routes.py:274
 msgid "簽核完成"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:572
+#: ../modules/form_workflow/api/fc_pending.py:586
 msgid "已退回"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:577
+#: ../modules/form_workflow/api/fc_pending.py:591
 #, python-format
 msgid "簽核失敗: %(error)s"
 msgstr ""

@@ -58,6 +58,15 @@ def list_my_forms():
         FwFormInstance.is_deleted == False
     )
 
+    # 資安分類隔離：資安案件不在一般表單中心顯示（NULL 分類為一般表單，保留）
+    from ..services.security_center import SECURITY_CATEGORY_PREFIX
+    base_query = base_query.filter(
+        db.or_(
+            FT.category_secure_code.is_(None),
+            ~FT.category_secure_code.like(f'{SECURITY_CATEGORY_PREFIX}%'),
+        )
+    )
+
     if signed == '1':
         # 查詢我簽核過的表單（使用 secure_code），排除自己發起的
         signed_form_codes = db.session.query(FwApprovalRecord.form_instance_secure_code).filter(

@@ -211,6 +211,11 @@ def list_available_forms():
             _enrich_category(item, form_template.category_secure_code)
             result.append(item)
 
+    # 資安分類隔離：資安類表單不在一般表單中心顯示（改由資安案件處置中心呈現）
+    from ..services.security_center import is_security_category
+    result = [i for i in result
+              if not is_security_category(i.get('category_secure_code'))]
+
     return jsonify({
         'success': True,
         'data': result,

@@ -1,0 +1,142 @@
+/* sc-cases.css -- 資安案件處置中心（SIEM 式雙欄佈局） */
+
+.sc-main {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+/* ---- 左側案件清單 ---- */
+.sc-case-list {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    max-height: calc(100vh - 260px);
+    overflow-y: auto;
+}
+.sc-case-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    border-left: 4px solid transparent;
+    cursor: pointer;
+}
+.sc-case-item:hover { background: #fafbfc; }
+.sc-case-item.selected { background: #eff6ff; }
+.sc-case-item.sev-5, .sc-case-item.sev-4 { border-left-color: #dc2626; }
+.sc-case-item.sev-3 { border-left-color: #f59e0b; }
+.sc-case-item.sev-2, .sc-case-item.sev-1 { border-left-color: #9ca3af; }
+
+.sc-case-row1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.sc-case-ip {
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-weight: 600;
+    font-size: 14px;
+}
+.sc-case-row2 {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #666;
+}
+.sc-case-subject {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 嚴重度徽章 */
+.sc-sev {
+    display: inline-block;
+    min-width: 24px;
+    text-align: center;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.sc-sev-5, .sc-sev-4 { background: #fee2e2; color: #991b1b; }
+.sc-sev-3 { background: #fef3c7; color: #92400e; }
+.sc-sev-2, .sc-sev-1, .sc-sev-0 { background: #e5e7eb; color: #4b5563; }
+
+/* SLA 倒數 */
+.sc-sla { font-size: 11px; font-weight: 600; color: #059669; }
+.sc-sla.warn { color: #f59e0b; }
+.sc-sla.overdue { color: #dc2626; }
+
+/* ---- 右側詳情 ---- */
+.sc-detail {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px;
+    max-height: calc(100vh - 260px);
+    overflow-y: auto;
+}
+.sc-detail-empty {
+    color: #9ca3af;
+    text-align: center;
+    padding: 60px 0;
+}
+.sc-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+}
+.sc-detail-header h3 { margin: 0; font-size: 16px; }
+
+.sc-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px 16px;
+    margin-bottom: 14px;
+}
+.sc-field-label { font-size: 11px; color: #888; }
+.sc-field-value { font-size: 13px; word-break: break-all; }
+.sc-field-value.mono { font-family: ui-monospace, SFMono-Regular, monospace; }
+
+/* 風險分數 */
+.sc-risk {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+.sc-risk.high { background: #fee2e2; color: #991b1b; }
+.sc-risk.mid  { background: #fef3c7; color: #92400e; }
+.sc-risk.low  { background: #d1fae5; color: #065f46; }
+
+/* 1-click 處置按鈕列 */
+.sc-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+}
+.sc-comment { margin: 8px 0; }
+.sc-comment textarea {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 13px;
+}
+
+.sc-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 14px 0 6px 0;
+    color: #374151;
+}

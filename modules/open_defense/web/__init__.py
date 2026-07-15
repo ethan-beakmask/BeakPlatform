@@ -48,3 +48,14 @@ def intake_keys():
 @admin_required
 def service_accounts():
     return render_template('modules/open_defense/service_accounts.html')
+
+
+@web_bp.route('/security-cases')
+@module_access_required('open_defense', False)
+def security_cases():
+    """資安案件處置中心（SOC 值班介面）。
+
+    不鎖 admin_required：SOC_L1 值班人員（一般員工）為主要使用者，
+    案件與簽核權限由 form_workflow 既有機制把關。
+    """
+    return render_template('modules/open_defense/security_cases.html')

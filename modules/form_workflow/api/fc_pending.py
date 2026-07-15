@@ -73,10 +73,16 @@ def list_pending_tasks():
         ft_cat_map = {t.id: t.category for t in ft_list}
         ft_cat_sc_map = {t.id: t.category_secure_code for t in ft_list}
 
+    from ..services.security_center import is_security_category
+
     result = []
     for task in my_tasks:
         fi = fi_map.get(task.form_instance_secure_code)
         serial_number = fi.serial_number if fi else None
+
+        # 資安分類隔離：資安案件的待簽核改由資安案件處置中心呈現
+        if fi and is_security_category(ft_cat_sc_map.get(fi.form_template_id)):
+            continue
 
         form_subject = None
         category = None
