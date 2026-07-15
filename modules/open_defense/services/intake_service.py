@@ -5,8 +5,9 @@ OpenDefense Module - Intake Service
   1. 冪等檢查(correlation_id)
   2. source_system 白名單比對
   3. event_class -> form_template 對應(查 OdFormTemplateMapping)
-  4. 建立 FwFormInstance + 啟動 workflow
-  5. 寫 OdIntakeEvent 並回填 case_secure_code
+  4. 聚合降噪:同 攻擊者IP+rule_id 於時間窗內合併升級既有案件,不開新案
+  5. 建立 FwFormInstance(含情報 enrichment 欄位) + 啟動 workflow
+  6. 寫 OdIntakeEvent 並回填 case_secure_code
 """
 import logging
 import secrets
@@ -22,6 +23,13 @@ from app.utils.security import generate_secure_code
 from ..models import OdIntakeEvent, OdFormTemplateMapping
 
 logger = logging.getLogger(__name__)
+
+# 聚合降噪:同 攻擊者IP+rule_id 在此時間窗內合併進既有案件(原子 4844)
+AGGREGATION_WINDOW_MINUTES = 60
+# 情報 enrichment:「同源事件數」的回看範圍
+REPEAT_LOOKBACK_HOURS = 24
+# 風險分數達此值時建議封鎖
+RISK_BLOCK_THRESHOLD = 60
 
 
 class IntakeError(Exception):
@@ -74,6 +82,151 @@ def _build_form_data(event: Dict[str, Any]) -> Dict[str, Any]:
         'detector_hint_action': detector_hint.get('action'),
         'detector_hint_ttl_sec': detector_hint.get('ttl_sec'),
     }
+
+
+def _compute_risk(severity_id, repeat_count, history_block_count) -> Tuple[int, str]:
+    """
+    規則式風險分數(0-100)與建議處置。
+
+    severity 權重最高,重複出現與歷史封鎖紀錄加成;
+    等資料量足夠再考慮 ML(交接文件已與用戶議定初期用規則)。
+    """
+    sev = int(severity_id or 0)
+    repeat = int(repeat_count or 0)
+    history = int(history_block_count or 0)
+    score = min(100, sev * 15 + min(repeat, 6) * 5 + min(history, 3) * 10)
+    action = 'block' if score >= RISK_BLOCK_THRESHOLD else 'observe'
+    return score, action
+
+
+def _enrich_form_data(org_secure_code: str, form_data: Dict[str, Any]) -> None:
+    """
+    情報 enrichment(就地補欄位):同源事件數、歷史封鎖次數、
+    風險分數與建議處置。封閉網路 v1 只查內部資料源;
+    外部情資(VT/ASN mirror)留待 SOC-4 節點化。
+    """
+    from datetime import timedelta
+    from ..models import OdDefenseDecision
+
+    actor_ip = form_data.get('actor_ip')
+
+    repeat_count = 0
+    history_block_count = 0
+    if actor_ip:
+        lookback = datetime.utcnow() - timedelta(hours=REPEAT_LOOKBACK_HOURS)
+        repeat_count = OdIntakeEvent.query.filter(
+            OdIntakeEvent.org_secure_code == org_secure_code,
+            OdIntakeEvent.received_at >= lookback,
+            OdIntakeEvent.raw_body['actor']['ip'].astext == actor_ip,
+        ).count()
+        history_block_count = OdDefenseDecision.query.filter_by(
+            org_secure_code=org_secure_code,
+            action='block',
+            target_type='ip',
+            target_value=actor_ip,
+            is_deleted=False,
+        ).count()
+
+    risk_score, recommended = _compute_risk(
+        form_data.get('severity_id'), repeat_count, history_block_count)
+
+    now_iso = datetime.utcnow().isoformat() + 'Z'
+    form_data.update({
+        'od_event_count': 1,
+        'od_repeat_count': repeat_count,
+        'od_history_block_count': history_block_count,
+        'risk_score': risk_score,
+        'recommended_action': recommended,
+        'od_first_seen': form_data.get('occurred_at') or now_iso,
+        'od_last_seen': form_data.get('occurred_at') or now_iso,
+    })
+
+
+def _find_mergeable_case(
+    org_secure_code: str,
+    actor_ip: Optional[str],
+    rule_id: Optional[str],
+    severity_id: Optional[int],
+):
+    """
+    聚合降噪:找時間窗內同 攻擊者IP+rule_id 的既有案件。
+
+    - 一般情況只合併進「流程仍在跑(RUNNING)」的案件
+    - 低危(severity<=2)雜訊連已結案的窗內案件也合併(純計數,避免灌出海量歸檔案)
+
+    Returns:
+        FwWorkflowInstance 或 None
+    """
+    from modules.form_workflow.models import FwWorkflowInstance
+
+    if not actor_ip or not rule_id:
+        return None
+
+    from datetime import timedelta
+    cutoff = datetime.utcnow() - timedelta(minutes=AGGREGATION_WINDOW_MINUTES)
+
+    candidates = OdIntakeEvent.query.filter(
+        OdIntakeEvent.org_secure_code == org_secure_code,
+        OdIntakeEvent.received_at >= cutoff,
+        OdIntakeEvent.case_secure_code.isnot(None),
+        OdIntakeEvent.raw_body['actor']['ip'].astext == actor_ip,
+        OdIntakeEvent.raw_body['finding']['rule_id'].astext == rule_id,
+    ).order_by(OdIntakeEvent.received_at.desc()).limit(20).all()
+
+    merge_closed_ok = (severity_id or 0) <= 2
+    for candidate in candidates:
+        wi = FwWorkflowInstance.query.filter_by(
+            secure_code=candidate.case_secure_code,
+            org_secure_code=org_secure_code,
+            is_deleted=False,
+        ).first()
+        if wi is None:
+            continue
+        if wi.status == 'RUNNING' or merge_closed_ok:
+            return wi
+    return None
+
+
+def _merge_event_into_case(event: OdIntakeEvent, workflow_instance) -> None:
+    """
+    把新事件合併進既有案件:計數累加、severity 取 max、
+    last_seen 更新、風險分數重算。severity 升高視為案件升級(記 log)。
+    """
+    from modules.form_workflow.models import FwFormInstance
+
+    form_instance = FwFormInstance.query.filter_by(
+        secure_code=workflow_instance.form_instance_secure_code,
+    ).first()
+
+    event.case_secure_code = workflow_instance.secure_code
+
+    if form_instance is None:
+        return
+
+    fd = dict(form_instance.form_data or {})
+    fd['od_event_count'] = int(fd.get('od_event_count') or 1) + 1
+
+    old_sev = int(fd.get('severity_id') or 0)
+    new_sev = int(event.severity_id or 0)
+    escalated = new_sev > old_sev
+    if escalated:
+        fd['severity_id'] = new_sev
+
+    fd['od_last_seen'] = ((event.raw_body or {}).get('occurred_at')
+                          or datetime.utcnow().isoformat() + 'Z')
+    fd['risk_score'], fd['recommended_action'] = _compute_risk(
+        fd.get('severity_id'),
+        max(int(fd.get('od_repeat_count') or 0), fd['od_event_count']),
+        fd.get('od_history_block_count'),
+    )
+    form_instance.form_data = fd
+
+    if escalated:
+        logger.warning(
+            'intake merge escalated case=%s severity %s -> %s (event %s)',
+            workflow_instance.execution_code, old_sev, new_sev,
+            event.correlation_id,
+        )
 
 
 def _lookup_form_template(org_secure_code: str, event_class: str) -> Optional[str]:
@@ -325,10 +478,28 @@ def process_intake(
             return existing, True
         raise
 
-    # 5. 啟 workflow
+    # 5. 聚合降噪:時間窗內同 攻擊者IP+rule_id 合併進既有案件,不開新案
+    actor = body.get('actor') or {}
     finding = body.get('finding') or {}
+    mergeable = _find_mergeable_case(
+        org_secure_code=org_sc,
+        actor_ip=actor.get('ip'),
+        rule_id=finding.get('rule_id'),
+        severity_id=body.get('severity_id'),
+    )
+    if mergeable is not None:
+        _merge_event_into_case(event, mergeable)
+        db.session.commit()
+        logger.info(
+            'intake merged correlation_id=%s into case=%s',
+            correlation_id, mergeable.execution_code,
+        )
+        return event, False
+
+    # 6. 啟 workflow(含情報 enrichment)
     subject = finding.get('title') or f'{source_system} {event_class}'
     form_data = _build_form_data(body)
+    _enrich_form_data(org_sc, form_data)
 
     try:
         _, workflow_instance_sc = _create_form_instance_and_start_workflow(
@@ -349,7 +520,7 @@ def process_intake(
             code='workflow_start_failed', status=500,
         )
 
-    # 6. 回填 case_secure_code(= workflow_instance.secure_code)
+    # 7. 回填 case_secure_code(= workflow_instance.secure_code)
     event.case_secure_code = workflow_instance_sc
     db.session.commit()
 

@@ -80,3 +80,11 @@ note: |
     expired/revoked 由 BeakPlatform 排程獨佔。
   - decision_writer node handler 寫表時必須帶 org_secure_code(從 form_instance 取),
     避免跨租戶決策汙染。
+  - 2026-07-16 intake 聚合降噪 + 情報 enrichment(原子 4844):
+    同 攻擊者IP+rule_id 60 分鐘窗內合併進既有案件(RUNNING 案必合併,
+    severity<=2 連已結案也合併純計數),severity 取 max、od_event_count 累加、
+    risk_score 重算。新案 form_data 帶 enrichment 欄位(od_repeat_count/
+    od_history_block_count/risk_score/recommended_action 等,規則式計分)。
+    detection_finding 已改綁「資安事件處置」表單(SEC_INCIDENT_RESPONSE)+
+    「資安事件處置流程」(severity 三段分流 -> SOC_L1 簽核 -> 封鎖/放行/派工/誤判
+    -> DecisionWriter -> AlertBroadcast)。其餘三個 event_class 暫維持舊綁定。
