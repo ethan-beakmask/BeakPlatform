@@ -18,6 +18,7 @@ function fcApproval() {
         approvalLockRemaining: 0,
         approvalLockInterval: null,
         _beforeUnloadHandler: null,
+        _egressMasked: {},   // EGRESS-01: field key -> 遮罩哨兵
 
         // --- Computed ---
         get approvalCountdownText() {
@@ -123,8 +124,19 @@ function fcApproval() {
             if (!container || !this.currentApproval) return;
 
             const schema = this.currentApproval.form_schema;
-            const formData = this.currentApproval.form_data;
+            const formData = { ...(this.currentApproval.form_data || {}) };
             const hasEditable = this.currentApproval.has_editable_fields;
+
+            // EGRESS-01: 抽出遮罩哨兵，改以遮罩字串顯示，hover 逐格揭示
+            this._egressMasked = {};
+            if (window.BkEgress) {
+                for (const key of Object.keys(formData)) {
+                    if (BkEgress.isMasked(formData[key])) {
+                        this._egressMasked[key] = formData[key];
+                        formData[key] = '●●●●●●';
+                    }
+                }
+            }
 
             if (!schema) {
                 container.innerHTML = '<p style="color: #6b7280; text-align: center;">無表單內容</p>';
@@ -150,6 +162,11 @@ function fcApproval() {
 
                 if (formData) {
                     this.approvalFormInstance.submission = { data: formData };
+                }
+
+                // EGRESS-01: 遮罩欄位綁定 hover 揭示
+                if (Object.keys(this._egressMasked).length) {
+                    this._bindEgressReveal(this.approvalFormInstance, this._egressMasked);
                 }
 
                 // 動態欄位權限覆蓋（來自 input_variables 評估結果）
@@ -182,6 +199,42 @@ function fcApproval() {
                     nodeId: this.currentApproval?.node_id || '',
                 });
                 this._approvalAttachment.init();
+            }
+        },
+
+        /**
+         * EGRESS-01: 遮罩欄位 hover 揭示（真值不留在 DOM，移出即復原）
+         */
+        _bindEgressReveal(formInstance, maskedMap) {
+            const MASK = '●●●●●●';
+            const HOVER_DELAY_MS = 350;
+            for (const [key, sentinel] of Object.entries(maskedMap)) {
+                const comp = formInstance.getComponent(key);
+                const el = comp && comp.element;
+                if (!el) continue;
+
+                // readOnly 模式部分元件渲染為純文字 div，非 input
+                const setDisplay = (text) => {
+                    const ro = el.querySelector('.formio-editor-read-only-content');
+                    if (ro) { ro.textContent = text; return; }
+                    const input = comp.refs && comp.refs.input && comp.refs.input[0];
+                    if (input) input.value = text;
+                };
+
+                let timer = null;
+                el.addEventListener('mouseenter', () => {
+                    timer = setTimeout(() => {
+                        BkEgress.reveal(sentinel.resource, sentinel.record_sc, sentinel.field)
+                            .then(value => {
+                                setDisplay(value == null ? '-' : String(value));
+                            })
+                            .catch(() => { setDisplay(MASK); });
+                    }, HOVER_DELAY_MS);
+                });
+                el.addEventListener('mouseleave', () => {
+                    if (timer) { clearTimeout(timer); timer = null; }
+                    setDisplay(MASK);
+                });
             }
         },
 
@@ -222,6 +275,7 @@ function fcApproval() {
             this.approvalComment = '';
             this.selectedOptionValue = null;
             this.selectedOptionId = null;
+            this._egressMasked = {};
         },
 
         toggleEdgeSelection(edgeId) {
@@ -299,7 +353,12 @@ function fcApproval() {
                 };
 
                 if (this.currentApproval?.has_editable_fields && this.approvalFormInstance) {
-                    payload.form_data = this.approvalFormInstance.submission.data;
+                    // EGRESS-01: 剔除遮罩欄位（值為遮罩字串，非真值，不可回寫）
+                    const submitData = { ...this.approvalFormInstance.submission.data };
+                    for (const key of Object.keys(this._egressMasked || {})) {
+                        delete submitData[key];
+                    }
+                    payload.form_data = submitData;
                 }
 
                 const res = await fetch(`${window.__BP}/api/form-center/pending-tasks/${this.currentApproval.queue_secure_code}/approve`, {
@@ -344,6 +403,7 @@ function fcApproval() {
                     this.approvalComment = '';
                     this.selectedOptionValue = null;
                     this.selectedOptionId = null;
+                    this._egressMasked = {};
                     this.loadPendingApprovals();
                     this.loadTracking();
                 } else {

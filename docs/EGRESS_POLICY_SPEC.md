@@ -94,8 +94,36 @@ data = egress_service.apply('user', 'detail', [user.to_dict()])[0]
   註冊 `resource_code -> (Model, 欄位取值函式)`。模組（含 Form.io form_data
   的 JSON 欄位）在載入時自行註冊 accessor。
 - `form_node` 語境：form_workflow 渲染服務以 `node_key` 欄位綁定政策到
-  流程節點，過濾 Form.io schema 與 form_data（本期完成引擎支援，
-  form_workflow 端接入為下一期試點）。
+  流程節點，過濾 Form.io schema 與 form_data（已接入，見下節）。
+
+## form_node 語境接入（form_workflow 模組）
+
+接入點：`GET /api/form-center/pending-tasks/<sc>`（FormAdapter/Approve 節點
+簽核詳情），實作在 `modules/form_workflow/services/egress_adapter.py`。
+
+| 項目 | 約定 |
+|---|---|
+| resource_code | `fw_form:<form_template_secure_code>`（每個表單模板一個資源代碼） |
+| node_key | workflow graph 節點 id（`FwNodeExecutionQueue.node_id`）；NULL = 該表單全節點通用 |
+| record_sc | `fw_form_instances.secure_code` |
+| field_name | Form.io component 的 `key`（巢狀容器內層欄位以自身 key 比對，同 key 一律套用） |
+
+過濾做兩層（政策在 field_permissions 欄位權限**之後**套用，為最終出口守門）：
+
+1. **form_data 值**：`egress_service.apply(resource, 'form_node', ...)`，
+   masked 換哨兵、hidden 剔除。
+2. **Form.io schema components**：hidden 遞迴剔除 component（前端不知欄位
+   存在）；masked 保留 component 但強制 `disabled`。
+   模組用 `egress_service.visibility_map()` 取欄位能見度自行過濾。
+
+揭示通道：動態資源代碼以 `register_accessor_prefix('fw_form:', fn)` 註冊，
+accessor 簽名 `fn(resource_code, record_sc, field_name)`，自行做租戶隔離並
+驗證實例屬於該表單模板。前端簽核 Modal 的 masked 欄位顯示遮罩字串，
+hover 走 `/api/egress/reveal` 逐格揭示，移出即復原（真值不留 DOM）；
+可編輯表單送出時剔除 masked 欄位鍵（後端欄位權限亦會擋非法回寫）。
+
+`reveal` 的政策檢查：form_node 政策可能綁定特定 node_key，哨兵不攜帶
+node_key，故逐一 node_key 評估，任一節點下該欄位為 masked 即允許揭示。
 
 ## 資料表
 

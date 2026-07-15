@@ -178,6 +178,14 @@ def init_runtime(app):
     except Exception as e:
         logger.error(f'FormWorkflow: 註冊檔案 authorizer 失敗: {str(e)}')
 
+    # 註冊 egress 揭示通道（EGRESS-01 form_node 語境，資源代碼 fw_form:<sc>）
+    try:
+        from app.services import egress_service
+        from .services.egress_adapter import register as register_egress
+        register_egress(egress_service)
+    except Exception as e:
+        logger.error(f'FormWorkflow: 註冊 egress accessor 失敗: {str(e)}')
+
     # 僅在非測試環境且未使用獨立 executor 進程時啟動
     # Flask debug reloader 會產生父+子兩個進程，只在子進程（WERKZEUG_RUN_MAIN=true）啟動
     is_reloader_parent = (

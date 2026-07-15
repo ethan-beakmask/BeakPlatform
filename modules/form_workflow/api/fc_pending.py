@@ -189,6 +189,14 @@ def get_pending_task(secure_code):
             form_schema, role_permissions
         )
 
+    # EGRESS-01 form_node 語境：出口政策過濾（欄位權限之後，政策為最終守門）
+    form_data = form_instance.form_data if form_instance else {}
+    if form_instance:
+        from ..services.egress_adapter import apply_form_egress
+        form_schema, form_data = apply_form_egress(
+            form_instance, form_schema, task.node_id
+        )
+
     # 取得簽核歷程
     approvals = []
     if task.workflow_instance_secure_code:
@@ -214,7 +222,7 @@ def get_pending_task(secure_code):
             'node_type': task.node_type,
             'node_name': task.node_name,
             'node_config': node_config,
-            'form_data': form_instance.form_data if form_instance else {},
+            'form_data': form_data,
             'form_schema': form_schema,
             'form_name': form_instance.form_name if form_instance else None,
             'form_subject': form_instance.subject if form_instance else None,

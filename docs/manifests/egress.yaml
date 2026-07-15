@@ -23,6 +23,9 @@ files:
 notes: |
   - 未設政策的資源為 no-op（clear 預設），模組漸進接入
   - 已接入試點：user（api/users.py list/detail + web/users.py 檢視頁 + pages/users/view.html）
+  - form_node 語境已接入 form_workflow：modules/form_workflow/services/egress_adapter.py
+    （資源代碼 fw_form:<template_sc>，接入 fc_pending.get_pending_task；
+    動態資源用 register_accessor_prefix 註冊揭示通道）
   - 警戒觸發走既有 broadcast 管道（LookupItem category=broadcast, type=alert, target=ORG_ADMIN）
   - 政策快取 60 秒；管理 API 異動後主動 invalidate
   - 安全鐵律見 SECURITY_PITFALLS.md 第 9 節（master-detail 禁預載、export 必過政策）

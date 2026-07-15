@@ -38,6 +38,11 @@ _policy_cache: Dict[tuple, Dict] = {}
 # 由模組載入時 register_accessor 自訂取值函式。
 _RESOURCE_ACCESSORS: Dict[str, Callable[[str, str], Any]] = {}
 
+# 動態資源代碼的前綴註冊表：prefix -> accessor(resource_code, record_sc, field_name)
+# 供模組以「每筆模板一個資源代碼」的模式接入（如 fw_form:<template_sc>），
+# 精確比對優先，找不到才依前綴比對。
+_RESOURCE_ACCESSOR_PREFIXES: Dict[str, Callable[[str, str, str], Any]] = {}
+
 
 # =============================================================================
 # 註冊
@@ -46,6 +51,19 @@ _RESOURCE_ACCESSORS: Dict[str, Callable[[str, str], Any]] = {}
 def register_accessor(resource_code: str, accessor: Callable[[str, str], Any]) -> None:
     """註冊揭示取值函式。accessor(record_sc, field_name) 需自行做租戶隔離。"""
     _RESOURCE_ACCESSORS[resource_code] = accessor
+
+
+def register_accessor_prefix(
+    prefix: str,
+    accessor: Callable[[str, str, str], Any],
+) -> None:
+    """
+    註冊動態資源代碼的揭示取值函式。
+
+    accessor(resource_code, record_sc, field_name) 需自行做租戶隔離，
+    並驗證 record_sc 確實屬於 resource_code 所指的資源。
+    """
+    _RESOURCE_ACCESSOR_PREFIXES[prefix] = accessor
 
 
 def register_model_resource(resource_code: str, model_class) -> None:
@@ -273,6 +291,33 @@ def field_visibility(resource_code: str, context: str, field_name: str) -> str:
     return policy['visibility'] if policy else VISIBILITY_CLEAR
 
 
+def visibility_map(
+    resource_code: str,
+    context: str,
+    node_key: str = None,
+) -> Dict[str, str]:
+    """
+    回傳 (resource, context) 下每個設有政策欄位對當前用戶的能見度。
+
+    供模組做結構層過濾（如 Form.io schema components）。
+    無政策/無用戶上下文 → 空 dict（呼叫端視為全 clear）。
+    """
+    if not has_request_context():
+        return {}
+    user = _current_user()
+    if user is None:
+        return {}
+    org = getattr(user, 'org_secure_code', None)
+    if not org:
+        return {}
+    policies = _load_policies(org, resource_code).get(context, [])
+    if not policies:
+        return {}
+    role_scs, dept_scs = _user_scopes(user)
+    effective = _resolve_field_policies(policies, role_scs, dept_scs, node_key)
+    return {f: p['visibility'] for f, p in effective.items()}
+
+
 def meter_view(resource_code: str, context: str, record_scs: List[str]) -> None:
     """伺服端渲染頁的出口計量（web route 於 render_template 前呼叫）。"""
     if not has_request_context():
@@ -328,25 +373,39 @@ def reveal(resource_code: str, record_sc: str, field_name: str) -> Any:
     tier = 'normal'
     seen_policy = False
     for context in ('list', 'detail', 'form_node'):
-        effective = _resolve_field_policies(
-            by_context.get(context, []), role_scs, dept_scs)
-        policy = effective.get(field_name)
-        if policy is None:
-            continue
-        seen_policy = True
-        if policy['visibility'] == VISIBILITY_MASKED:
-            allowed = True
-            tier = policy['tier']
+        ctx_policies = by_context.get(context, [])
+        # form_node 語境的政策可能綁定特定 node_key；哨兵不攜帶 node_key，
+        # 故逐一 node_key 評估，任一節點下該欄位為 masked 即允許揭示
+        node_keys = {None}
+        if context == 'form_node':
+            node_keys |= {p['node_key'] for p in ctx_policies if p['node_key']}
+        for nk in node_keys:
+            effective = _resolve_field_policies(
+                ctx_policies, role_scs, dept_scs, nk)
+            policy = effective.get(field_name)
+            if policy is None:
+                continue
+            seen_policy = True
+            if policy['visibility'] == VISIBILITY_MASKED:
+                allowed = True
+                tier = policy['tier']
     if not seen_policy:
         raise RevealDenied('欄位未設遮罩政策')
     if not allowed:
         raise RevealDenied('無揭示權限')
 
     accessor = _RESOURCE_ACCESSORS.get(resource_code)
-    if accessor is None:
-        raise RevealDenied(f'資源 {resource_code} 未註冊揭示通道')
-
-    value = accessor(record_sc, field_name)
+    if accessor is not None:
+        value = accessor(record_sc, field_name)
+    else:
+        prefix_accessor = next(
+            (fn for prefix, fn in _RESOURCE_ACCESSOR_PREFIXES.items()
+             if resource_code.startswith(prefix)),
+            None,
+        )
+        if prefix_accessor is None:
+            raise RevealDenied(f'資源 {resource_code} 未註冊揭示通道')
+        value = prefix_accessor(resource_code, record_sc, field_name)
 
     _record_and_meter(
         user=user, org=org, resource_code=resource_code,

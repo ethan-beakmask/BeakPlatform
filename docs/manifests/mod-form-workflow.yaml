@@ -38,6 +38,7 @@ files:
   service:     modules/form_workflow/services/              # workflow_engine/executor/node_runner + node_handlers/
                # form_submit_service.py 送單核心（fc_fill 與外部發動閘道共用）
                # fill_permission_service.py 填寫權限解析（fc_available 與 fc_fill submit 共用）
+               # egress_adapter.py EGRESS-01 form_node 語境（fc_pending 簽核詳情過濾 + 揭示通道）
   model:       modules/form_workflow/models/
   template:    modules/form_workflow/templates/modules/form_workflow/
   js:
