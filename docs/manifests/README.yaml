@@ -98,6 +98,8 @@ url_index:
   menubar:                       global-infra.yaml
   security_interceptor:          security-core.yaml
   resource_gateway:              security-core.yaml
+  egress:                        egress.yaml
+  /api/egress/:                  egress.yaml
   csrf:                          security-core.yaml
   rate_limiter:                  security-core.yaml
 
@@ -119,6 +121,7 @@ manifest_files:
   - hostconfig.yaml              # 系統主機設定
   - server-manage.yaml           # 主機管理（Redis 監看）
   - security-center.yaml         # 安全中心
+  - egress.yaml                  # 資料出口政策（欄位遮罩/揭示/計量）
   - work-schedules.yaml          # 班表設定
   - numbering.yaml               # 帳號編號規則
   - lookup.yaml                  # 查詢表

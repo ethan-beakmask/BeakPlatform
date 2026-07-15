@@ -229,6 +229,33 @@ mask_ip('192.168.1.100')        # 192.168.x.x
 
 ---
 
+## 9. 資料出口政策 (Egress) -- 遮罩欄位與 Master-Detail
+
+規格：`docs/EGRESS_POLICY_SPEC.md`。設有出口政策的資源，欄位可能是
+`masked`（下發哨兵，真值不離開伺服器）或 `hidden`（投影剔除）。
+
+```python
+# 錯誤：新增序列化路徑繞過出口政策（masked 欄位裸奔）
+return jsonify({'users': [u.to_dict() for u in users]})
+
+# 正確：to_dict 之後過 egress_service.apply
+from app.services import egress_service
+return jsonify({'users': egress_service.apply('user', 'list', [u.to_dict() for u in users])})
+```
+
+**鐵律**：
+- **Master-Detail 禁止在 list 回應內嵌預載 detail 資料**——detail 必須由
+  獨立 API 呼叫取得，否則 detail 語境的政策評估被繞過
+- masked 欄位唯一取值通道是 `POST /api/egress/reveal`，禁止另開端點回傳真值
+- 遮罩必須做在伺服器端投影；只靠 Form.io hidden/conditional 或前端 CSS
+  隱藏 = 值已在瀏覽器，不是護欄
+- export/匯出路徑必須同樣過政策（通常最容易被遺忘的破口）
+
+已接入資源（改這些 API 時注意保持 apply 呼叫）：`user`（users list/detail
+API + `/users/<sc>` 檢視頁 Jinja `egress_value`/`egress_visibility`）
+
+---
+
 ## 修改前自查清單
 
 每次修改程式前，逐項確認：
@@ -243,3 +270,4 @@ mask_ip('192.168.1.100')        # 192.168.x.x
 - [ ] 沒有 SQL 字串拼接
 - [ ] 日誌不含明文 PII
 - [ ] URL 用 secure_code 不用自增 ID
+- [ ] 有出口政策的資源，新序列化路徑過 egress_service.apply；list 回應不內嵌 detail

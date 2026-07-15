@@ -149,6 +149,45 @@ def register_template_filters(app: Flask) -> None:
     from datetime import datetime
     from zoneinfo import ZoneInfo
 
+    @app.template_global('egress_visibility')
+    def egress_visibility(resource, context, field):
+        """單一欄位對當前用戶的能見度：clear/masked/hidden（規格見 EGRESS_POLICY_SPEC.md）"""
+        from .services import egress_service
+        return egress_service.field_visibility(resource, context, field)
+
+    @app.template_global('egress_value')
+    def egress_value(resource, context, record_sc, field, value):
+        """
+        伺服端渲染的出口欄位值。
+
+        用法:
+            {{ egress_value('user', 'detail', user.secure_code, 'mobile_phone_1', user.mobile_phone_1) }}
+
+        masked -> 遮罩 span（真值不進 HTML，hover 由 egress-mask.js 揭示）
+        hidden -> 空字串（整列隱藏請搭配 egress_visibility 判斷）
+        clear  -> 逸出後的值；空值顯示「未設定」
+        """
+        from markupsafe import Markup, escape
+        from flask_babel import gettext
+        from .services import egress_service
+
+        vis = egress_service.field_visibility(resource, context, field)
+        if vis == 'hidden':
+            return ''
+        if vis == 'masked':
+            return Markup(
+                '<span class="bk-egress-mask"'
+                f' data-egress-resource="{escape(resource)}"'
+                f' data-egress-record="{escape(record_sc)}"'
+                f' data-egress-field="{escape(field)}"'
+                f' title="{escape(gettext("滑鼠停留以揭示"))}">'
+                '●●●●●●</span>'
+            )
+        if value is None or value == '':
+            return Markup(
+                f'<span class="empty-value">{escape(gettext("未設定"))}</span>')
+        return escape(value)
+
     @app.template_filter('tz_format')
     def tz_format_filter(dt, fmt='%Y-%m-%d %H:%M:%S'):
         """

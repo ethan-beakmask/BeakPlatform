@@ -154,6 +154,9 @@ def view_user(secure_code: str):
         current_user.is_system_admin or user.user_type != UserType.SYSTEM_ADMIN
     )
 
+    from ..services import egress_service
+    egress_service.meter_view('user', 'detail', [user.secure_code])
+
     return render_template(
         'pages/users/view.html',
         user=user,

@@ -137,6 +137,16 @@ Generated with Claude Code"
 - 包含但不限於：用戶列表、組織樹、簽核人選擇、角色成員解析、部門成員解析
 - 關聯查詢（如透過角色/部門取用戶）需 JOIN User 表確認帳號狀態
 
+### EGRESS-01: 資料出口政策
+
+設有出口政策的資源，欄位依 (角色, 語境) 呈現 clear / masked / hidden。
+規格：`docs/EGRESS_POLICY_SPEC.md`，防雷：`docs/manifests/SECURITY_PITFALLS.md` 第 9 節。
+
+- API 序列化：to_dict 之後過 `egress_service.apply(resource, context, items)`
+- 後端模板：`egress_value()` / `egress_visibility()` template globals + `BkEgress.bind()`
+- **禁止** list 回應內嵌預載 detail 資料（master-detail 必須分開請求）
+- **禁止** 繞過 `POST /api/egress/reveal` 另開端點回傳 masked 欄位真值
+
 ### MENU-01: 選單項目新增規範
 
 **新增 menu_items 記錄時，必須遵守以下規則：**

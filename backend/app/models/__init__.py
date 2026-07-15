@@ -84,6 +84,9 @@ from .audit_log import AuditLog
 from .platform_file import PlatformFile
 from .file_access_log import FileAccessLog
 
+# 資料出口政策
+from .egress_policy import EgressFieldPolicy, EgressTierThreshold, EgressAuditLog
+
 # 用戶編號規則
 from .user_numbering_rule import (
     UserNumberingRule,
@@ -196,6 +199,10 @@ __all__ = [
     # 檔案管理
     'PlatformFile',
     'FileAccessLog',
+    # 資料出口政策
+    'EgressFieldPolicy',
+    'EgressTierThreshold',
+    'EgressAuditLog',
     # 用戶編號規則
     'UserNumberingRule',
     'UserNumberingCounter',

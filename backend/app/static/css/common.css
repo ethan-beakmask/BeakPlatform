@@ -648,3 +648,18 @@ textarea.form-control {
 .mb-16 { margin-bottom: 16px; }
 
 .hidden { display: none; }
+
+/* ===== 資料出口遮罩 (egress-mask.js) ===== */
+.bk-egress-mask {
+    cursor: pointer;
+    color: #94a3b8;
+    letter-spacing: 1px;
+    user-select: none;
+    border-bottom: 1px dashed #cbd5e1;
+}
+.bk-egress-mask.bk-egress-loading { opacity: 0.5; }
+.bk-egress-mask.bk-egress-revealed {
+    color: inherit;
+    letter-spacing: normal;
+    border-bottom-color: #f59e0b;
+}

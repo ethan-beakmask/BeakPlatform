@@ -126,22 +126,19 @@
 
     <div class="section-title optional">{{ _('聯絡方式') }}</div>
     <table class="info-table">
+        {% for pii_field, pii_label in [
+            ('backup_email_1', _('備用 Email 1')),
+            ('backup_email_2', _('備用 Email 2')),
+            ('mobile_phone_1', _('手機號碼 1')),
+            ('mobile_phone_2', _('手機號碼 2')),
+        ] %}
+        {% if egress_visibility('user', 'detail', pii_field) != 'hidden' %}
         <tr>
-            <th>{{ _('備用 Email 1') }}</th>
-            <td>{% if user.backup_email_1 %}{{ user.backup_email_1 }}{% else %}<span class="empty-value">{{ _('未設定') }}</span>{% endif %}</td>
+            <th>{{ pii_label }}</th>
+            <td>{{ egress_value('user', 'detail', user.secure_code, pii_field, user|attr(pii_field)) }}</td>
         </tr>
-        <tr>
-            <th>{{ _('備用 Email 2') }}</th>
-            <td>{% if user.backup_email_2 %}{{ user.backup_email_2 }}{% else %}<span class="empty-value">{{ _('未設定') }}</span>{% endif %}</td>
-        </tr>
-        <tr>
-            <th>{{ _('手機號碼 1') }}</th>
-            <td>{% if user.mobile_phone_1 %}{{ user.mobile_phone_1 }}{% else %}<span class="empty-value">{{ _('未設定') }}</span>{% endif %}</td>
-        </tr>
-        <tr>
-            <th>{{ _('手機號碼 2') }}</th>
-            <td>{% if user.mobile_phone_2 %}{{ user.mobile_phone_2 }}{% else %}<span class="empty-value">{{ _('未設定') }}</span>{% endif %}</td>
-        </tr>
+        {% endif %}
+        {% endfor %}
     </table>
 
     <div class="section-title optional">{{ _('參與社團') }}</div>
@@ -225,4 +222,5 @@
 </div><!-- 關閉 x-data -->
 
 <script src="{{ url_for('static', filename='js/user-view.js') }}"></script>
+<script>BkEgress.bind();</script>
 {% endblock %}

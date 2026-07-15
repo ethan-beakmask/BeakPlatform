@@ -1,0 +1,28 @@
+# 資料出口政策
+# 欄位能見度（clear/masked/hidden）、逐格揭示、三水表計量與警戒
+page:
+  - /api/egress/reveal
+  - /api/egress/policies
+  - /api/egress/thresholds
+description: 資料出口政策（欄位遮罩/隱藏、hover 揭示、出口計量警戒），規格見 docs/EGRESS_POLICY_SPEC.md
+
+files:
+  api:
+    - backend/app/api/egress.py                      # reveal + 政策/閾值管理
+  service:
+    - backend/app/services/egress_service.py         # 政策引擎（apply/reveal/計量/告警）
+  model:
+    - backend/app/models/egress_policy.py            # EgressFieldPolicy / EgressTierThreshold / EgressAuditLog
+  js:
+    - backend/app/static/js/egress-mask.js           # BkEgress 哨兵渲染 + hover 揭示
+  jinja:
+    - backend/app/__init__.py                        # egress_visibility / egress_value template globals
+  migration:
+    - scripts/migrations/081_egress_policy.sql
+
+notes: |
+  - 未設政策的資源為 no-op（clear 預設），模組漸進接入
+  - 已接入試點：user（api/users.py list/detail + web/users.py 檢視頁 + pages/users/view.html）
+  - 警戒觸發走既有 broadcast 管道（LookupItem category=broadcast, type=alert, target=ORG_ADMIN）
+  - 政策快取 60 秒；管理 API 異動後主動 invalidate
+  - 安全鐵律見 SECURITY_PITFALLS.md 第 9 節（master-detail 禁預載、export 必過政策）

@@ -44,8 +44,11 @@ def list_users():
     # 只保留企業成員帳號（排除系統管理員、企業管理員、外部廠商）
     users = [u for u in result['items'] if u.user_type == UserType.EMPLOYEE]
 
+    from ..services import egress_service
+    items = egress_service.apply('user', 'list', [u.to_dict() for u in users])
+
     return jsonify({
-        'users': [u.to_dict() for u in users],
+        'users': items,
         'pagination': {
             'total': len(users),
             'page': result['page'],
@@ -66,7 +69,10 @@ def get_user(secure_code: str):
     """
     user = ResourceGateway.get(User, secure_code)
 
-    return jsonify({'user': user.to_dict()}), 200
+    from ..services import egress_service
+    data = egress_service.apply('user', 'detail', [user.to_dict()])[0]
+
+    return jsonify({'user': data}), 200
 
 
 @users_bp.route('/', methods=['POST'])

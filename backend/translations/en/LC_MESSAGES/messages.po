@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-15 01:25+0800\n"
+"POT-Creation-Date: 2026-07-15 12:34+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -14,7 +14,21 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.17.0\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: app/__init__.py:183
+msgid "滑鼠停留以揭示"
+msgstr "Hover to reveal"
+
+#: app/__init__.py:188 app/templates/pages/admin/numbering/list.html:146
+#: app/templates/pages/delegations/view.html:52
+#: app/templates/pages/users/view.html:65
+#: app/templates/pages/users/view.html:73
+#: app/templates/pages/users/view.html:115
+#: app/templates/pages/users/view.html:119
+#: app/templates/pages/users/view.html:123
+msgid "未設定"
+msgstr "Not set"
 
 #: app/api/_ss_audit.py:79
 msgid "最小 -- 僅登入/登出與失敗嘗試"
@@ -190,7 +204,7 @@ msgstr "Unsupported action: %(action)s"
 #: app/api/_ss_emailrelay.py:419 app/api/_ss_emailrelay.py:439
 #: app/web/external_users.py:523 app/web/external_users.py:577
 #: app/web/external_users.py:619 app/web/org_admin_rescue.py:100
-#: app/web/org_admins.py:505 app/web/users.py:700
+#: app/web/org_admins.py:505 app/web/users.py:703
 #, python-format
 msgid "操作失敗: %(error)s"
 msgstr "Operation failed: %(error)s"
@@ -518,7 +532,7 @@ msgstr "At least two organizations must be selected"
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:414
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:836
 #: app/api/conglomerates.py:84 app/api/conglomerates.py:276
-#: app/api/users.py:220 app/web/approval_categories.py:192
+#: app/api/users.py:226 app/web/approval_categories.py:192
 #: app/web/delegations.py:152 app/web/external_users.py:321
 #: app/web/job_families.py:211 app/web/job_families.py:212
 #: app/web/job_levels.py:185 app/web/job_titles.py:270
@@ -526,7 +540,7 @@ msgstr "At least two organizations must be selected"
 #: app/web/modules.py:120 app/web/org_admins.py:284 app/web/org_admins.py:453
 #: app/web/organizations.py:264 app/web/positions.py:149
 #: app/web/sys_accounts.py:171 app/web/sys_accounts.py:172 app/web/units.py:134
-#: app/web/users.py:414
+#: app/web/users.py:417
 #, python-format
 msgid "建立失敗: %(error)s"
 msgstr "Creation failed: %(error)s"
@@ -550,7 +564,7 @@ msgstr "A conglomerate requires at least two organizations"
 #: app/web/job_titles.py:349 app/web/job_titles.py:350 app/web/menu.py:493
 #: app/web/modules.py:180 app/web/organizations.py:320 app/web/positions.py:244
 #: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:195
-#: app/web/users.py:606
+#: app/web/users.py:609
 #, python-format
 msgid "更新失敗: %(error)s"
 msgstr "Update failed: %(error)s"
@@ -722,6 +736,36 @@ msgstr "Duty deleted"
 msgid "刪除職務失敗"
 msgstr "Failed to delete duty"
 
+#: app/api/egress.py:46 app/web/account_roles.py:269
+#: app/web/account_roles.py:370
+msgid "缺少必要參數"
+msgstr "Missing required parameters"
+
+#: app/api/egress.py:54
+msgid "揭示失敗"
+msgstr "Reveal failed"
+
+#: app/api/egress.py:65
+#, python-format
+msgid "context 必須為 %(v)s 之一"
+msgstr "context must be one of %(v)s"
+
+#: app/api/egress.py:67 app/api/egress.py:126
+msgid "visibility 必須為 clear / masked / hidden"
+msgstr "visibility must be clear / masked / hidden"
+
+#: app/api/egress.py:69
+msgid "resource_code 與 field_name 為必填"
+msgstr "resource_code and field_name are required"
+
+#: app/api/egress.py:121 app/api/egress.py:145
+msgid "找不到政策"
+msgstr "Policy not found"
+
+#: app/api/egress.py:177
+msgid "tier、meter、threshold 為必填且格式需正確"
+msgstr "tier, meter and threshold are required and must be valid"
+
 #: app/api/enterprise_settings.py:80 app/web/admin.py:84
 msgid "設定已儲存"
 msgstr "Settings saved"
@@ -773,7 +817,7 @@ msgstr "Logo deleted"
 #: app/web/modules.py:208 app/web/org_admins.py:543
 #: app/web/organizations.py:396 app/web/organizations.py:539
 #: app/web/positions.py:273 app/web/sys_accounts.py:315
-#: app/web/sys_accounts.py:316 app/web/units.py:229 app/web/users.py:668
+#: app/web/sys_accounts.py:316 app/web/units.py:229 app/web/users.py:671
 #, python-format
 msgid "刪除失敗: %(error)s"
 msgstr "Delete failed: %(error)s"
@@ -1679,51 +1723,51 @@ msgstr "Number \"%(number)s\" is already in use"
 msgid "請提供編號"
 msgstr "Please provide a number"
 
-#: app/api/users.py:107 app/web/org_admins.py:121
+#: app/api/users.py:113 app/web/org_admins.py:121
 msgid "本國姓名、英文姓名、帳號為必填"
 msgstr "Local name, English name and account are required"
 
-#: app/api/users.py:109 app/web/users.py:320
+#: app/api/users.py:115 app/web/users.py:323
 msgid "用戶編號為必填"
 msgstr "User ID is required"
 
-#: app/api/users.py:113 app/web/external_users.py:184
+#: app/api/users.py:119 app/web/external_users.py:184
 #: app/web/external_users.py:365 app/web/org_admins.py:70
-#: app/web/org_admins.py:384 app/web/users.py:327 app/web/users.py:840
+#: app/web/org_admins.py:384 app/web/users.py:330 app/web/users.py:843
 msgid "找不到所屬企業"
 msgstr "Owning organization not found"
 
-#: app/api/users.py:120 app/web/org_admins.py:141 app/web/sys_accounts.py:128
-#: app/web/users.py:338
+#: app/api/users.py:126 app/web/org_admins.py:141 app/web/sys_accounts.py:128
+#: app/web/users.py:341
 #, python-format
 msgid "帳號 %(username)s 已存在"
 msgstr "Account %(username)s already exists"
 
-#: app/api/users.py:127 app/web/org_admins.py:152 app/web/users.py:341
+#: app/api/users.py:133 app/web/org_admins.py:152 app/web/users.py:344
 #, python-format
 msgid "用戶編號 %(employee_id)s 已存在"
 msgstr "User ID %(employee_id)s already exists"
 
-#: app/api/users.py:139
+#: app/api/users.py:145
 #, python-format
 msgid "找不到部門代碼 %(department_code)s"
 msgstr "Department code %(department_code)s not found"
 
-#: app/api/users.py:215 app/web/users.py:410
+#: app/api/users.py:221 app/web/users.py:413
 #, python-format
 msgid "已建立用戶 %(name)s"
 msgstr "User %(name)s created"
 
-#: app/api/users.py:262 app/web/org_admins.py:526 app/web/sys_accounts.py:277
-#: app/web/users.py:647
+#: app/api/users.py:268 app/web/org_admins.py:526 app/web/sys_accounts.py:277
+#: app/web/users.py:650
 msgid "不能刪除自己的帳號"
 msgstr "You cannot delete your own account"
 
-#: app/api/users.py:266 app/web/users.py:652
+#: app/api/users.py:272 app/web/users.py:655
 msgid "不能刪除自己綁定的企業成員帳號"
 msgstr "You cannot delete the employee account bound to yourself"
 
-#: app/api/users.py:270 app/web/users.py:657
+#: app/api/users.py:276 app/web/users.py:660
 msgid "不能刪除企業原始管理員"
 msgstr "The original organization administrator cannot be deleted"
 
@@ -1860,7 +1904,7 @@ msgstr "Current password"
 #: app/templates/pages/sys_accounts/edit.html:64
 #: app/templates/pages/sys_accounts/list.html:136
 #: app/templates/pages/users/edit.html:132
-#: app/templates/pages/users/view.html:188
+#: app/templates/pages/users/view.html:185
 msgid "新密碼"
 msgstr "New password"
 
@@ -1884,7 +1928,7 @@ msgstr "Confirm new password"
 #: app/templates/pages/sys_accounts/edit.html:91
 #: app/templates/pages/sys_accounts/list.html:167
 #: app/templates/pages/sys_accounts/list.html:278
-#: app/templates/pages/users/view.html:210
+#: app/templates/pages/users/view.html:207
 msgid "密碼不一致"
 msgstr "Passwords do not match"
 
@@ -1893,7 +1937,7 @@ msgstr "Passwords do not match"
 #: app/templates/pages/admin/org-admins/list.html:136
 #: app/templates/pages/change_password.html:46
 #: app/templates/pages/organizations/admins.html:139
-#: app/templates/pages/users/view.html:213
+#: app/templates/pages/users/view.html:210
 msgid "確認密碼一致"
 msgstr "Passwords match"
 
@@ -2020,7 +2064,7 @@ msgstr "Passwords match"
 #: app/templates/pages/users/edit.html:340
 #: app/templates/pages/users/edit.html:342
 #: app/templates/pages/users/import.html:183
-#: app/templates/pages/users/view.html:216
+#: app/templates/pages/users/view.html:213
 msgid "取消"
 msgstr "Cancel"
 
@@ -2028,7 +2072,7 @@ msgstr "Cancel"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:28
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:66
 #: app/templates/auth/change_password.html:86
-#: app/templates/layouts/base.html:84
+#: app/templates/layouts/base.html:86
 #: app/templates/pages/admin/initial_setup.html:298
 msgid "登出"
 msgstr "Logout"
@@ -2209,7 +2253,7 @@ msgstr "Server Error"
 msgid "系統發生錯誤，請稍後再試。"
 msgstr "A system error occurred. Please try again later."
 
-#: app/templates/layouts/base.html:96
+#: app/templates/layouts/base.html:98
 msgid "首頁"
 msgstr "Home"
 
@@ -2752,7 +2796,7 @@ msgstr "Leave blank to automatically generate a strengthened password"
 #: app/templates/pages/sys_accounts/list.html:267
 #: app/templates/pages/users/create.html:117
 #: app/templates/pages/users/edit.html:159
-#: app/templates/pages/users/view.html:204
+#: app/templates/pages/users/view.html:201
 msgid "密碼符合要求"
 msgstr "The password meets the requirements"
 
@@ -4217,7 +4261,7 @@ msgstr ""
 #: app/templates/pages/sys_accounts/create.html:77
 #: app/templates/pages/sys_accounts/list.html:159
 #: app/templates/pages/sys_accounts/list.html:272
-#: app/templates/pages/users/view.html:206
+#: app/templates/pages/users/view.html:203
 msgid "確認密碼"
 msgstr "Confirm password"
 
@@ -4994,20 +5038,6 @@ msgstr "Form default"
 msgid "內外都通用"
 msgstr "Universal for both inside and outside"
 
-#: app/templates/pages/admin/numbering/list.html:146
-#: app/templates/pages/delegations/view.html:52
-#: app/templates/pages/users/view.html:65
-#: app/templates/pages/users/view.html:73
-#: app/templates/pages/users/view.html:115
-#: app/templates/pages/users/view.html:119
-#: app/templates/pages/users/view.html:123
-#: app/templates/pages/users/view.html:131
-#: app/templates/pages/users/view.html:135
-#: app/templates/pages/users/view.html:139
-#: app/templates/pages/users/view.html:143
-msgid "未設定"
-msgstr "Not set"
-
 #: app/templates/pages/admin/numbering/list.html:175
 msgid "尚未建立任何編號規則"
 msgstr "No numbering scheme has been established yet"
@@ -5103,7 +5133,7 @@ msgstr "Automatically bring into the bound Employee notification mailbox"
 #: app/templates/pages/sys_accounts/list.html:145
 #: app/templates/pages/sys_accounts/list.html:258
 #: app/templates/pages/users/edit.html:146
-#: app/templates/pages/users/view.html:195
+#: app/templates/pages/users/view.html:192
 msgid "建議密碼"
 msgstr "Suggested password"
 
@@ -5198,7 +5228,7 @@ msgstr "Not bound"
 #: app/templates/pages/organizations/admins.html:87
 #: app/templates/pages/organizations/admins.html:108
 #: app/templates/pages/users/view.html:22
-#: app/templates/pages/users/view.html:184
+#: app/templates/pages/users/view.html:181
 msgid "重設密碼"
 msgstr "reset password"
 
@@ -5208,19 +5238,19 @@ msgstr "(self)"
 
 #: app/templates/pages/admin/org-admins/list.html:108
 #: app/templates/pages/organizations/admins.html:111
-#: app/templates/pages/users/view.html:185
+#: app/templates/pages/users/view.html:182
 msgid "為"
 msgstr "for"
 
 #: app/templates/pages/admin/org-admins/list.html:108
 #: app/templates/pages/organizations/admins.html:111
-#: app/templates/pages/users/view.html:185
+#: app/templates/pages/users/view.html:182
 msgid "設定新密碼"
 msgstr "Set new password"
 
 #: app/templates/pages/admin/org-admins/list.html:141
 #: app/templates/pages/organizations/admins.html:144
-#: app/templates/pages/users/view.html:218
+#: app/templates/pages/users/view.html:215
 msgid "確認重設"
 msgstr "Confirm reset"
 
@@ -6456,12 +6486,12 @@ msgstr "belonging group"
 #: app/templates/pages/users/edit.html:102
 #: app/templates/pages/users/view.html:38
 #: app/templates/pages/users/view.html:85
-#: app/templates/pages/users/view.html:153
+#: app/templates/pages/users/view.html:150
 msgid "角色"
 msgstr "Role"
 
 #: app/templates/pages/external-users/edit.html:135
-#: app/templates/pages/users/view.html:154
+#: app/templates/pages/users/view.html:151
 msgid "加入日期"
 msgstr "Joining date"
 
@@ -11834,21 +11864,21 @@ msgstr ""
 
 #: app/templates/pages/users/create.html:232
 #: app/templates/pages/users/import.html:150
-#: app/templates/pages/users/view.html:134
+#: app/templates/pages/users/view.html:131
 msgid "備用 Email 2"
 msgstr "Backup Email 2"
 
 #: app/templates/pages/users/create.html:236
 #: app/templates/pages/users/edit.html:315
 #: app/templates/pages/users/import.html:155
-#: app/templates/pages/users/view.html:138
+#: app/templates/pages/users/view.html:132
 msgid "手機號碼 1"
 msgstr "Mobile number 1"
 
 #: app/templates/pages/users/create.html:240
 #: app/templates/pages/users/edit.html:325
 #: app/templates/pages/users/import.html:160
-#: app/templates/pages/users/view.html:142
+#: app/templates/pages/users/view.html:133
 msgid "手機號碼 2"
 msgstr "Mobile number 2"
 
@@ -12081,15 +12111,15 @@ msgstr "Supporting Department"
 msgid "無跨部門支援關係"
 msgstr "No cross-Department support relationship"
 
-#: app/templates/pages/users/view.html:147
+#: app/templates/pages/users/view.html:144
 msgid "參與社團"
 msgstr "Participate in clubs"
 
-#: app/templates/pages/users/view.html:152
+#: app/templates/pages/users/view.html:149
 msgid "社團名稱"
 msgstr "Club Name"
 
-#: app/templates/pages/users/view.html:176
+#: app/templates/pages/users/view.html:173
 msgid "尚未參加任何社團"
 msgstr "Not yet joined any club"
 
@@ -12102,10 +12132,6 @@ msgstr "Suggestions:"
 #: app/templates/partials/_icon_picker.html:34
 msgid "無符合的圖示"
 msgstr "No matching icons"
-
-#: app/web/account_roles.py:269 app/web/account_roles.py:370
-msgid "缺少必要參數"
-msgstr "Missing required parameters"
 
 #: app/web/account_roles.py:304
 #, python-format
@@ -12362,7 +12388,7 @@ msgstr "External vendor %(name)s deleted"
 
 #: app/web/external_users.py:679 app/web/main.py:223
 #: app/web/org_admin_rescue.py:136 app/web/org_admins.py:582
-#: app/web/users.py:742
+#: app/web/users.py:745
 msgid "請輸入新密碼"
 msgstr "Please enter a new password"
 
@@ -12697,7 +12723,7 @@ msgstr "Administrator %(name)s %(status)s"
 
 #: app/web/org_admin_rescue.py:141 app/web/org_admins.py:130
 #: app/web/org_admins.py:587 app/web/sys_accounts.py:118
-#: app/web/sys_accounts.py:213 app/web/users.py:747
+#: app/web/sys_accounts.py:213 app/web/users.py:750
 msgid "兩次輸入的密碼不一致"
 msgstr "The passwords do not match"
 
@@ -12707,7 +12733,7 @@ msgid "已重設 %(name)s 的密碼，並通知所有企業管理員"
 msgstr "Password of %(name)s reset; all organization admins notified"
 
 #: app/web/org_admin_rescue.py:178 app/web/org_admins.py:627
-#: app/web/users.py:758
+#: app/web/users.py:761
 #, python-format
 msgid "重設密碼失敗: %(error)s"
 msgstr "Password reset failed: %(error)s"
@@ -12766,7 +12792,7 @@ msgstr "Administrator %(admin)s created (bound employee: %(employee)s)%(extra)s"
 msgid "此帳號不是企業管理員"
 msgstr "This account is not an organization administrator"
 
-#: app/web/org_admins.py:481 app/web/sys_accounts.py:217 app/web/users.py:683
+#: app/web/org_admins.py:481 app/web/sys_accounts.py:217 app/web/users.py:686
 msgid "不能停用自己的帳號"
 msgstr "You cannot disable your own account"
 
@@ -12791,7 +12817,7 @@ msgstr "Administrator %(name)s disabled"
 msgid "已刪除管理員 %(name)s"
 msgstr "Administrator %(name)s deleted"
 
-#: app/web/org_admins.py:567 app/web/users.py:722
+#: app/web/org_admins.py:567 app/web/users.py:725
 msgid "請使用「變更密碼」功能修改自己的密碼"
 msgstr "Please use the \"Change Password\" function to change your own password"
 
@@ -13079,118 +13105,118 @@ msgstr "This unit has child units. Please delete them first"
 msgid "已刪除 %(name)s"
 msgstr "%(name)s deleted"
 
-#: app/web/users.py:318
+#: app/web/users.py:321
 msgid "英文姓名、本國姓名、帳號為必填"
 msgstr "English name, local name and account are required"
 
-#: app/web/users.py:348 app/web/users.py:552
+#: app/web/users.py:351 app/web/users.py:555
 #, python-format
 msgid "找不到部門代碼 %(code)s"
 msgstr "Department code %(code)s not found"
 
-#: app/web/users.py:499
+#: app/web/users.py:502
 msgid "您沒有編輯權限"
 msgstr "You do not have edit permission"
 
-#: app/web/users.py:540
+#: app/web/users.py:543
 msgid "本國姓名、英文姓名為必填"
 msgstr "Local name and English name are required"
 
-#: app/web/users.py:545
+#: app/web/users.py:548
 #, python-format
 msgid "企業成員編號 %(employee_id)s 已存在"
 msgstr "Employee ID %(employee_id)s already exists"
 
-#: app/web/users.py:597
+#: app/web/users.py:600
 msgid "已更新用戶資料"
 msgstr "User data updated"
 
-#: app/web/users.py:664
+#: app/web/users.py:667
 #, python-format
 msgid "已刪除用戶 %(name)s"
 msgstr "User %(name)s deleted"
 
-#: app/web/users.py:688
+#: app/web/users.py:691
 msgid "不能停用自己綁定的企業成員帳號"
 msgstr "You cannot disable the employee account bound to yourself"
 
-#: app/web/users.py:695
+#: app/web/users.py:698
 #, python-format
 msgid "已啟用用戶 %(name)s"
 msgstr "User %(name)s enabled"
 
-#: app/web/users.py:697
+#: app/web/users.py:700
 #, python-format
 msgid "已停用用戶 %(name)s"
 msgstr "User %(name)s disabled"
 
-#: app/web/users.py:717
+#: app/web/users.py:720
 msgid "找不到該用戶"
 msgstr "User not found"
 
-#: app/web/users.py:727
+#: app/web/users.py:730
 msgid "無權重設系統管理員的密碼"
 msgstr "No permission to reset a system administrator's password"
 
-#: app/web/users.py:755
+#: app/web/users.py:758
 #, python-format
 msgid "已重設 %(name)s 的密碼"
 msgstr "Password of %(name)s reset"
 
-#: app/web/users.py:831
+#: app/web/users.py:834
 msgid "請選擇 CSV 檔案"
 msgstr "Please select a CSV file"
 
-#: app/web/users.py:835
+#: app/web/users.py:838
 msgid "請上傳 CSV 格式檔案"
 msgstr "Please upload a CSV file"
 
-#: app/web/users.py:859
+#: app/web/users.py:862
 #, python-format
 msgid "第 %(row)s 列: %(error)s"
 msgstr "Row %(row)s: %(error)s"
 
-#: app/web/users.py:864
+#: app/web/users.py:867
 #, python-format
 msgid "成功匯入 %(count)s 位用戶"
 msgstr "%(count)s users imported successfully"
 
-#: app/web/users.py:869
+#: app/web/users.py:872
 #, python-format
 msgid "... 還有 %(count)s 個錯誤"
 msgstr "... %(count)s more errors"
 
-#: app/web/users.py:875
+#: app/web/users.py:878
 #, python-format
 msgid "匯入失敗: %(error)s"
 msgstr "Import failed: %(error)s"
 
-#: app/web/users.py:893
+#: app/web/users.py:896
 #, python-format
 msgid "第 %(row)s 列: 帳號為必填"
 msgstr "Row %(row)s: account is required"
 
-#: app/web/users.py:895
+#: app/web/users.py:898
 #, python-format
 msgid "第 %(row)s 列: 密碼為必填"
 msgstr "Row %(row)s: password is required"
 
-#: app/web/users.py:897
+#: app/web/users.py:900
 #, python-format
 msgid "第 %(row)s 列: 姓名為必填"
 msgstr "Row %(row)s: name is required"
 
-#: app/web/users.py:901
+#: app/web/users.py:904
 #, python-format
 msgid "第 %(row)s 列: "
 msgstr "Row %(row)s: "
 
-#: app/web/users.py:908
+#: app/web/users.py:911
 #, python-format
 msgid "第 %(row)s 列: 帳號 %(username)s 已存在"
 msgstr "Row %(row)s: account %(username)s already exists"
 
-#: app/web/users.py:919
+#: app/web/users.py:922
 #, python-format
 msgid "第 %(row)s 列: 企業成員編號 %(employee_id)s 已存在"
 msgstr "Row %(row)s: employee ID %(employee_id)s already exists"

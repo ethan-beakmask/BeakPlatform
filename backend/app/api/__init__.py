@@ -106,6 +106,10 @@ def register_blueprints(app: Flask) -> None:
     from .broadcasts import broadcasts_bp
     app.register_blueprint(broadcasts_bp)
 
+    # 資料出口政策（遮罩揭示 + 政策管理）
+    from .egress import egress_bp
+    app.register_blueprint(egress_bp)
+
     # 統一檔案管理
     from .files import files_bp
     app.register_blueprint(files_bp)
