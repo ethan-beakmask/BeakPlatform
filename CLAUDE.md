@@ -611,6 +611,11 @@ new Date(record.created_at).toLocaleString('zh-TW')
   curl -s -c cj.txt -X POST "$BASE/auth/login" -H 'Content-Type: application/json' \
     -d '{"account":"admin-ethanyu@beluga.com","password":"ApiKeyTest2026"}'
   ```
+- curl 打非 exempt 的 POST API 需要 CSRF token，從任一登入後頁面的 meta 取（登入回應不含 token）：
+  ```bash
+  TOKEN=$(curl -s -b cj.txt -c cj.txt "$BASE/dashboard" | grep -o 'csrf-token" content="[^"]*' | cut -d'"' -f3)
+  curl -s -b cj.txt -X POST "$BASE/api/xxx" -H 'Content-Type: application/json' -H "X-CSRFToken: $TOKEN" -d '{...}'
+  ```
 
 ### 服務啟動
 - **正式管道是 systemd 服務**：`sudo systemctl restart beakplatform-dev.service`（重啟後 `systemctl is-active` 確認）
