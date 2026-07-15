@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-16 06:17+0800\n"
+"POT-Creation-Date: 2026-07-16 06:39+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -3142,7 +3142,7 @@ msgstr "Number of recipients"
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:21
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:60
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:33
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:162
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:185
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:32
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:43
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:191
@@ -5927,7 +5927,7 @@ msgstr "Change process"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:400
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:162
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:185
 #: app/templates/pages/cg_databases/overview.html:250
 #: app/templates/pages/server_manage/redis_monitor.html:216
 msgid "時間"
@@ -5939,7 +5939,7 @@ msgstr "Time"
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:32
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:55
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:161
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:184
 #: app/templates/pages/cg_databases/overview.html:250
 msgid "動作"
 msgstr "Action"
@@ -12991,7 +12991,7 @@ msgstr "No pending decisions"
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:56
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:161
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:184
 msgid "目標"
 msgstr "Target"
 
@@ -13117,27 +13117,31 @@ msgstr "Rule ID"
 msgid "聚合事件數"
 msgstr "Aggregated Events"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:121
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:124
+msgid "簽核歷程（前手判斷）"
+msgstr "Approval Trail (previous decisions)"
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:144
 msgid "事件詳情（出口政策已套用）"
 msgstr "Event Details (egress policy applied)"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:133
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:156
 msgid "處置（1-click，直接完成簽核）"
 msgstr "Response (1-click, completes approval)"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:136
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:159
 msgid "處置意見（依流程設定可能必填）"
 msgstr "Response comment (may be required by the workflow)"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:149
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:172
 msgid "您不是此案件目前節點的指定簽核人。"
 msgstr "You are not the designated approver for the current node of this case."
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:155
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:178
 msgid "關聯防禦決策"
 msgstr "Related Defense Decisions"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:157
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:180
 msgid "尚無決策"
 msgstr "No decisions yet"
 

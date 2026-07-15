@@ -134,6 +134,29 @@
     font-size: 13px;
 }
 
+/* 簽核歷程 */
+.sc-approval-trail {
+    border-left: 3px solid #e5e7eb;
+    margin: 4px 0 10px 4px;
+    padding-left: 12px;
+}
+.sc-approval-item { margin-bottom: 8px; }
+.sc-approval-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+.sc-approval-who { font-weight: 600; }
+.sc-approval-comment {
+    margin-top: 2px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border-radius: 4px;
+    font-size: 13px;
+    white-space: pre-wrap;
+}
+
 .sc-subtitle {
     font-size: 13px;
     font-weight: 600;

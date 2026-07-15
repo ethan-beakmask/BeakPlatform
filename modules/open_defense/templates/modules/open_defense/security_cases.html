@@ -118,6 +118,29 @@
                     <!-- 進行中且輪到簽核：完整表單欄位 + 處置 -->
                     <template x-if="detail">
                         <div>
+                            <!-- 簽核歷程：讓接手的人看見前手的判斷 -->
+                            <template x-if="detail.approvals && detail.approvals.length">
+                                <div>
+                                    <div class="sc-subtitle">{{ _('簽核歷程（前手判斷）') }}</div>
+                                    <div class="sc-approval-trail">
+                                        <template x-for="(a, i) in detail.approvals" :key="i">
+                                            <div class="sc-approval-item">
+                                                <div class="sc-approval-head">
+                                                    <span x-text="a.node_name"></span>
+                                                    <span class="sc-approval-who" x-text="a.approver_name"></span>
+                                                    <span class="od-badge"
+                                                          :class="a.action === 'approved' ? 'od-badge-applied' : 'od-badge-failed'"
+                                                          x-text="a.action"></span>
+                                                    <span class="sc-field-label" x-text="fmtTime(a.acted_at)"></span>
+                                                </div>
+                                                <div class="sc-approval-comment"
+                                                     x-show="a.comment" x-text="a.comment"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
                             <div class="sc-subtitle">{{ _('事件詳情（出口政策已套用）') }}</div>
                             <div class="sc-fields">
                                 <template x-for="key in ['target_host','target_url','target_service','actor_asn','actor_country','actor_user_agent','finding_summary','intel_summary','od_first_seen','od_last_seen']" :key="key">
