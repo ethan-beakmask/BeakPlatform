@@ -130,6 +130,28 @@ class UserRoleAssignment(TenantBaseModel):
             return False
         return True
 
+    @classmethod
+    def get_active_assignments(cls, user_secure_code: str) -> list:
+        """
+        取得用戶當前有效的角色指派（未刪除 + 在有效期內）。
+
+        全站取用戶有效角色的唯一標準實作，
+        供 permission_service / page_role_guard / menu_service 共用。
+        """
+        assignments = cls.query.filter(
+            cls.user_secure_code == user_secure_code,
+            cls.is_deleted == False,
+        ).all()
+        return [a for a in assignments if a.is_valid]
+
+    @classmethod
+    def get_active_role_secure_codes(cls, user_secure_code: str) -> set:
+        """取得用戶當前有效角色的 secure_code 集合"""
+        return {
+            a.role_secure_code
+            for a in cls.get_active_assignments(user_secure_code)
+        }
+
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({

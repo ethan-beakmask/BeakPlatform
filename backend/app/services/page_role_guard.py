@@ -16,7 +16,6 @@ BeakPlatform Page Role Guard
    - 不匹配 → 強制登出 + 稽核日誌
 """
 import logging
-from datetime import date
 from typing import List, Optional, Set, Tuple
 
 from flask import request, url_for
@@ -334,27 +333,9 @@ class PageRoleGuard:
         """
         取得用戶當前有效的角色 secure_code 集合。
 
-        過濾條件：
-        - 未刪除
-        - 在有效期限內
+        委派給 UserRoleAssignment.get_active_role_secure_codes（全站標準實作）。
         """
-        today = date.today()
-
-        assignments = UserRoleAssignment.query.filter(
-            UserRoleAssignment.user_secure_code == user_secure_code,
-            UserRoleAssignment.is_deleted == False,
-        ).all()
-
-        result = set()
-        for a in assignments:
-            # 檢查有效期限
-            if a.valid_from and today < a.valid_from:
-                continue
-            if a.valid_until and today > a.valid_until:
-                continue
-            result.add(a.role_secure_code)
-
-        return result
+        return UserRoleAssignment.get_active_role_secure_codes(user_secure_code)
 
     # ==========================================================================
     # 管理 API 用的方法

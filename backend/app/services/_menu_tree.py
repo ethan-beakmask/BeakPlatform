@@ -15,7 +15,6 @@
 - _resolve_link: 連結解析
 """
 import logging
-from datetime import date
 from typing import List, Dict, Any, Optional, Set
 
 from flask import g, url_for
@@ -265,19 +264,10 @@ class MenuTreeMixin:
                 req.role_secure_code
             )
 
-        # 取得用戶當前有效角色
-        user_role_scs = set()
-        today = date.today()
-        assignments = UserRoleAssignment.query.filter(
-            UserRoleAssignment.user_secure_code == user.secure_code,
-            UserRoleAssignment.is_deleted == False,
-        ).all()
-        for a in assignments:
-            if a.valid_from and today < a.valid_from:
-                continue
-            if a.valid_until and today > a.valid_until:
-                continue
-            user_role_scs.add(a.role_secure_code)
+        # 取得用戶當前有效角色（全站標準實作）
+        user_role_scs = UserRoleAssignment.get_active_role_secure_codes(
+            user.secure_code
+        )
 
         filtered = []
         for item in items:

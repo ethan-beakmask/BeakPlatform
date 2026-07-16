@@ -346,33 +346,23 @@ class PermissionService:
 
     @classmethod
     def _get_user_roles(cls, user: User) -> List[Role]:
-        """取得用戶所有有效角色"""
-        now = datetime.utcnow()
+        """
+        取得用戶所有有效角色（僅啟用中的角色）
 
-        assignments = UserRoleAssignment.query.filter(
-            UserRoleAssignment.user_secure_code == user.secure_code,
-            UserRoleAssignment.is_deleted == False,
-            db.or_(
-                UserRoleAssignment.valid_from == None,
-                UserRoleAssignment.valid_from <= now
-            ),
-            db.or_(
-                UserRoleAssignment.valid_until == None,
-                UserRoleAssignment.valid_until >= now
-            )
+        指派有效性委派給 UserRoleAssignment.get_active_role_secure_codes
+        （全站標準實作，Date 欄位以日曆日比較，含效期最後一日）。
+        """
+        role_scs = UserRoleAssignment.get_active_role_secure_codes(
+            user.secure_code
+        )
+        if not role_scs:
+            return []
+
+        return Role.query.filter(
+            Role.secure_code.in_(role_scs),
+            Role.is_active == True,
+            Role.is_deleted == False
         ).all()
-
-        roles = []
-        for assignment in assignments:
-            role = Role.query.filter_by(
-                secure_code=assignment.role_secure_code,
-                is_active=True,
-                is_deleted=False
-            ).first()
-            if role:
-                roles.append(role)
-
-        return roles
 
     @classmethod
     def _get_role_chain(cls, role: Role) -> List[Role]:
