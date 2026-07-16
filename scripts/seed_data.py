@@ -337,7 +337,7 @@ def seed_menu_items(org, module):
         ('admin', '企業管理', 'route', 'admin.index', 1, 1),
         ('system_settings', '系統設定', 'route', 'admin.settings', 2, 1),
         ('users', '用戶管理', 'route', 'users.list_users', 3, 1),
-        ('roles', '角色權限', 'route', 'roles.list_roles', 4, 1),
+        ('access_center_org', '權限管理中心', 'url', '/access/', 4, 1),
         ('modules', '模組管理', 'route', 'modules.list_modules', 6, 1),
         ('organizations', '企業總覽', 'route', 'organizations.list_orgs', 7, 0),
     ]

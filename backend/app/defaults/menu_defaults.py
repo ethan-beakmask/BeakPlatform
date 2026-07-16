@@ -348,12 +348,12 @@ CORE_MENUS = [
         'is_shared': False,
     },
     {
-        'code': 'permission_central',
-        'title': '權限中央管理',
-        'title_i18n': {'en': 'Permission Central'},
+        'code': 'access_center',
+        'title': '權限管理中心',
+        'title_i18n': {'en': 'Access Center'},
         'parent_code': 'perm_mgmt',
         'link_type': 'url',
-        'link_target': '/permissions/',
+        'link_target': '/access/',
         'display_order': 2,
         'depth': 1,
         'required_level': 0,
@@ -419,18 +419,6 @@ CORE_MENUS = [
         'link_type': 'route',
         'link_target': 'numbering.list_rules',
         'display_order': 0,
-        'depth': 1,
-        'required_level': 30,
-        'is_shared': False,
-    },
-    {
-        'code': 'roles',
-        'title': '角色管理',
-        'title_i18n': {'en': 'Role Management'},
-        'parent_code': 'org_account',
-        'link_type': 'route',
-        'link_target': 'roles.list_roles',
-        'display_order': 1,
         'depth': 1,
         'required_level': 30,
         'is_shared': False,
@@ -536,12 +524,12 @@ CORE_MENUS = [
 
     # -- 角色管控 (roles_control) --
     {
-        'code': 'permission_central_org',
-        'title': '權限中央管理',
-        'title_i18n': {'en': 'Permission Central'},
+        'code': 'access_center_org',
+        'title': '權限管理中心',
+        'title_i18n': {'en': 'Access Center'},
         'parent_code': 'roles_control',
         'link_type': 'url',
-        'link_target': '/permissions/',
+        'link_target': '/access/',
         'display_order': 0,
         'depth': 1,
         'required_level': 30,
@@ -560,19 +548,6 @@ CORE_MENUS = [
         'is_shared': False,
         'required_permission': 'module:manage',
     },
-    {
-        'code': 'account_roles',
-        'title': '帳號角色權限表',
-        'title_i18n': {'en': 'Account Role Permissions'},
-        'parent_code': 'roles_control',
-        'link_type': 'route',
-        'link_target': 'account_roles.index',
-        'display_order': 3,
-        'depth': 1,
-        'required_level': 30,
-        'is_shared': False,
-    },
-
     # -- 系統安全 (org_security) --
     {
         'code': 'login_fail_monitor_org',
@@ -716,7 +691,6 @@ MENU_ROLE_DEFAULTS = {
 
     # 帳號管理區（ORG_ADMIN only）
     'numbering': ['ORG_ADMIN'],
-    'roles': ['ORG_ADMIN'],
     'users': ['ORG_ADMIN'],
     'work_schedules': ['ORG_ADMIN'],
     'external_users': ['ORG_ADMIN'],
@@ -733,9 +707,8 @@ MENU_ROLE_DEFAULTS = {
     'groups': ['ORG_ADMIN'],
 
     # 角色管控區（ORG_ADMIN only）
-    'account_roles': ['ORG_ADMIN'],
+    'access_center_org': ['ORG_ADMIN'],
     'module_perm_mgmt': ['ORG_ADMIN'],
-    'permission_central_org': ['ORG_ADMIN'],
 
     # 系統安全區（ORG_ADMIN only）
     'login_fail_monitor_org': ['ORG_ADMIN'],

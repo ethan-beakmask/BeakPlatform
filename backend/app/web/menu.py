@@ -413,10 +413,6 @@ def edit_menu(secure_code: str):
     descendant_codes.add(item.secure_code)
     parent_options = [p for p in parent_options if p['item'].secure_code not in descendant_codes]
 
-    # 取得當前權限
-    current_permissions = MenuService.get_menu_permissions(item.secure_code)
-    is_module = _is_module_menu(item.code)
-
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         title_en = request.form.get('title_en', '').strip() or None
@@ -428,7 +424,6 @@ def edit_menu(secure_code: str):
         display_order = int(request.form.get('display_order', 0))
         is_expanded = request.form.get('is_expanded') == 'on'
         is_active = request.form.get('is_active') == 'on'
-        allowed_user_types = request.form.getlist('allowed_user_types')
 
         # 組裝 title_i18n JSONB
         title_i18n = {}
@@ -444,8 +439,6 @@ def edit_menu(secure_code: str):
 
         if not title:
             flash(_('標題為必填'), 'error')
-        elif not allowed_user_types:
-            flash(_('請至少選擇一種用戶類型'), 'error')
         else:
             try:
                 item.title = title
@@ -482,9 +475,6 @@ def edit_menu(secure_code: str):
 
                     update_children_depth(item)
 
-                # 所有選單（含模組選單）都寫入 MenuPermission（鑰匙1: 用戶類型資格）
-                MenuService.set_menu_permissions(item.secure_code, allowed_user_types)
-
                 db.session.commit()
                 flash(_('已更新選單項目'), 'success')
                 return redirect(url_for('menu.list_menu'))
@@ -502,10 +492,6 @@ def edit_menu(secure_code: str):
         'pages/menu/edit.html',
         item=item,
         parent_options=parent_options,
-        current_permissions=current_permissions,
-        is_module_menu=is_module,
-        user_types=MenuService.USER_TYPES,
-        user_type_labels=USER_TYPE_LABELS,
         protected_children=protected_children
     )
 

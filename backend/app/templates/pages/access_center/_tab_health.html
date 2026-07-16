@@ -1,4 +1,122 @@
-<div class="ac-section">
-    <h2 class="ac-section-title">{{ _('健檢') }}</h2>
-    <p class="ac-muted">{{ _('開發中') }}</p>
+<div class="ac-section" x-data="acHealthTab()" x-init="init()">
+    <div class="ac-section-head">
+        <div>
+            <h2 class="ac-section-title">{{ _('健檢') }}</h2>
+            <p class="ac-muted">{{ _('檢查權限配置衝突並管理 RBAC 預設值') }}</p>
+        </div>
+        <div class="ac-actions">
+            <template x-if="isSystemAdmin">
+                <label class="ac-field ac-org-filter">
+                    <span>{{ _('企業') }}</span>
+                    <select class="form-control" x-model="selectedOrgCode" @change="onOrgChange()">
+                        <option value="">{{ _('請選擇企業') }}</option>
+                        <template x-for="org in organizations" :key="org.secure_code">
+                            <option :value="org.secure_code" x-text="org.name"></option>
+                        </template>
+                    </select>
+                </label>
+            </template>
+            <template x-if="!isSystemAdmin">
+                <div class="ac-org-lock">
+                    <span>{{ _('企業') }}</span>
+                    <strong x-text="orgLabel"></strong>
+                </div>
+            </template>
+            <button type="button" class="btn btn-secondary" @click="loadConflicts()" :disabled="loading || !canLoad">
+                {{ _('重新偵測') }}
+            </button>
+        </div>
+    </div>
+
+    <div class="ac-alert" :class="'ac-alert-' + alert.type" x-show="alert.show" x-cloak>
+        <span x-text="alert.message"></span>
+    </div>
+
+    <div class="ac-health-actions">
+        <button type="button" class="btn btn-secondary" @click="exportRbac()" :disabled="!canLoad || exporting">
+            {{ _('匯出 RBAC') }}
+        </button>
+
+        <template x-if="isSystemAdmin">
+            <button type="button" class="btn btn-primary" @click="saveFactoryDefaults()" :disabled="!canLoad || savingFactory">
+                {{ _('設定目前組態為出廠值') }}
+            </button>
+        </template>
+
+        <template x-if="!isSystemAdmin">
+            <button type="button" class="btn btn-danger" @click="restoreDefaults()" :disabled="!canLoad || restoring">
+                {{ _('恢復 RBAC 預設權限') }}
+            </button>
+        </template>
+    </div>
+
+    <div class="ac-import-panel">
+        <label class="ac-field">
+            <span>{{ _('匯入 RBAC JSON') }}</span>
+            <textarea class="form-control" rows="7" x-model="importText" placeholder="{{ _('貼上匯出的 JSON 內容') }}"></textarea>
+        </label>
+        <div class="ac-actions">
+            <button type="button" class="btn btn-primary" @click="importRbac()" :disabled="!canLoad || importing || !importText.trim()">
+                {{ _('匯入 RBAC') }}
+            </button>
+            <button type="button" class="btn btn-secondary" @click="importText = ''" :disabled="importing || !importText">
+                {{ _('清除') }}
+            </button>
+        </div>
+    </div>
+
+    <template x-if="isSystemAdmin && !selectedOrgCode">
+        <p class="ac-empty">{{ _('請先選擇企業') }}</p>
+    </template>
+
+    <template x-if="loading">
+        <p class="ac-empty">{{ _('偵測中') }}</p>
+    </template>
+
+    <div class="ac-health-summary" x-show="!loading && canLoad" x-cloak>
+        <span>{{ _('總數') }} <strong x-text="summary.total || 0"></strong></span>
+        <span>{{ _('錯誤') }} <strong x-text="summary.errors || 0"></strong></span>
+        <span>{{ _('警告') }} <strong x-text="summary.warnings || 0"></strong></span>
+        <span>{{ _('資訊') }} <strong x-text="summary.infos || 0"></strong></span>
+    </div>
+
+    <template x-if="!loading && canLoad && groupedConflicts.length === 0">
+        <p class="ac-empty">{{ _('沒有偵測到衝突') }}</p>
+    </template>
+
+    <div class="ac-conflict-groups" x-show="!loading && canLoad && groupedConflicts.length > 0" x-cloak>
+        <template x-for="group in groupedConflicts" :key="group.type">
+            <section class="ac-conflict-group">
+                <div class="ac-conflict-group-head">
+                    <h3 x-text="conflictTypeLabel(group.type)"></h3>
+                    <span class="ac-badge" x-text="group.items.length"></span>
+                </div>
+                <div class="ac-conflict-list">
+                    <template x-for="conflict in group.items" :key="conflictKey(conflict)">
+                        <article class="ac-conflict-item" :class="'ac-conflict-' + (conflict.severity || 'info')">
+                            <div>
+                                <div class="ac-conflict-title">
+                                    <span class="ac-badge" x-text="severityLabel(conflict.severity)"></span>
+                                    <strong x-text="conflict.message || conflict.description || conflictTypeLabel(conflict.type)"></strong>
+                                </div>
+                                <div class="ac-conflict-meta">
+                                    <template x-if="conflict.menu_title || conflict.menu_code">
+                                        <span>{{ _('選單') }}: <strong x-text="menuLabel(conflict)"></strong></span>
+                                    </template>
+                                    <template x-if="conflict.role_name || conflict.role_code">
+                                        <span>{{ _('角色') }}: <strong x-text="roleLabel(conflict)"></strong></span>
+                                    </template>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary ac-btn-small"
+                                    x-show="conflict.menu_secure_code"
+                                    @click="jumpToMenu(conflict.menu_secure_code)">
+                                {{ _('查看') }}
+                            </button>
+                        </article>
+                    </template>
+                </div>
+            </section>
+        </template>
+    </div>
 </div>

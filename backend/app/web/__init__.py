@@ -21,7 +21,6 @@ def register_web_blueprints(app: Flask) -> None:
     """
     from .main import main_bp
     from .users import users_bp
-    from .roles import roles_bp
     from .organizations import organizations_bp
     from .profile import profile_bp
     from .menu import menu_web_bp
@@ -43,7 +42,6 @@ def register_web_blueprints(app: Flask) -> None:
     from .org_admins import org_admins_bp
     from .org_admin_rescue import org_admin_rescue_bp
     from .external_users import external_users_bp
-    from .account_roles import account_roles_bp
     from .access_center import access_center_bp
     # Main routes (dashboard, etc.)
     app.register_blueprint(main_bp)
@@ -73,9 +71,6 @@ def register_web_blueprints(app: Flask) -> None:
     # External Users - 外部廠商帳號管理
     app.register_blueprint(external_users_bp)
 
-    # Account Roles Overview - 帳號角色權限表 (企業管理員)
-    app.register_blueprint(account_roles_bp, url_prefix='/admin/account-roles')
-
     # Department settings - 部門設定 (企業管理員)
     app.register_blueprint(departments_bp, url_prefix='/admin/departments')
 
@@ -90,9 +85,6 @@ def register_web_blueprints(app: Flask) -> None:
 
     # User management pages
     app.register_blueprint(users_bp, url_prefix='/users')
-
-    # Role management pages
-    app.register_blueprint(roles_bp, url_prefix='/roles')
 
     # Organization management pages
     app.register_blueprint(organizations_bp, url_prefix='/organizations')
@@ -141,10 +133,6 @@ def register_web_blueprints(app: Flask) -> None:
     # Conglomerate Database Overview (集團資料庫總覽)
     from .cg_databases import cg_databases_bp
     app.register_blueprint(cg_databases_bp)
-
-    # Permission Central Management (權限中央管理)
-    from .permission_central import permission_central_bp
-    app.register_blueprint(permission_central_bp, url_prefix='/permissions')
 
     # Access Center (權限管理中心)
     app.register_blueprint(access_center_bp, url_prefix='/access')

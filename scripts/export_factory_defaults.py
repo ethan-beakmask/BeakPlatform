@@ -129,7 +129,7 @@ def export_rbac_defaults(app, dry_run=False):
 
         if not rows:
             print("[rbac] rbac_defaults 表為空，跳過")
-            print("       請先在 /permissions/ 頁面按「設定目前組態成出廠值」")
+            print("       請先在 /access/ 頁面按「設定目前組態成出廠值」")
             return False
 
         # 統計
@@ -199,7 +199,7 @@ def main():
 
 前置條件:
   1. 在 /menu/ 按「設定目前組態成出廠值」 -> menu_defaults 表
-  2. 在 /permissions/ 按「設定目前組態成出廠值」 -> rbac_defaults 表
+  2. 在 /access/ 按「設定目前組態成出廠值」 -> rbac_defaults 表
   3. 執行本工具產出 SQL
 
 install.sh 安全機制:

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 18:05+0800\n"
+"POT-Creation-Date: 2026-07-17 02:01+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -201,9 +201,9 @@ msgstr ""
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:481
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:931
 #: app/api/_ss_emailrelay.py:419 app/api/_ss_emailrelay.py:439
-#: app/web/external_users.py:523 app/web/external_users.py:577
-#: app/web/external_users.py:619 app/web/org_admin_rescue.py:100
-#: app/web/org_admins.py:505 app/web/users.py:703
+#: app/web/external_users.py:517 app/web/external_users.py:570
+#: app/web/external_users.py:611 app/web/org_admin_rescue.py:100
+#: app/web/org_admins.py:502 app/web/users.py:697
 #, python-format
 msgid "操作失敗: %(error)s"
 msgstr ""
@@ -346,6 +346,10 @@ msgstr ""
 
 #: app/api/_ss_telegram.py:169 app/api/enterprise_settings.py:808
 msgid "Telegram 設定已刪除"
+msgstr ""
+
+#: app/api/access_center.py:53 app/api/access_center.py:77 app/api/egress.py:46
+msgid "缺少必要參數"
 msgstr ""
 
 #: app/api/api_keys.py:39
@@ -500,11 +504,11 @@ msgstr ""
 msgid "不支援的實體類型: %(entity_type)s"
 msgstr ""
 
-#: app/api/code_service.py:155 app/api/roles.py:90
+#: app/api/code_service.py:155 app/api/roles.py:186
 msgid "請提供名稱"
 msgstr ""
 
-#: app/api/code_service.py:199 app/api/roles.py:123
+#: app/api/code_service.py:199 app/api/roles.py:225
 msgid "請提供代碼"
 msgstr ""
 
@@ -527,15 +531,15 @@ msgstr ""
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:414
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:836
 #: app/api/conglomerates.py:84 app/api/conglomerates.py:276
-#: app/api/users.py:229 app/web/approval_categories.py:192
-#: app/web/delegations.py:152 app/web/external_users.py:321
-#: app/web/job_families.py:211 app/web/job_families.py:212
-#: app/web/job_levels.py:185 app/web/job_titles.py:270
-#: app/web/job_titles.py:271 app/web/menu.py:324 app/web/menu.py:391
-#: app/web/modules.py:120 app/web/org_admins.py:284 app/web/org_admins.py:453
-#: app/web/organizations.py:264 app/web/positions.py:149
-#: app/web/sys_accounts.py:171 app/web/sys_accounts.py:172 app/web/units.py:134
-#: app/web/users.py:417
+#: app/api/users.py:229 app/web/approval_categories.py:189
+#: app/web/delegations.py:148 app/web/external_users.py:318
+#: app/web/job_families.py:207 app/web/job_families.py:208
+#: app/web/job_levels.py:181 app/web/job_titles.py:266
+#: app/web/job_titles.py:267 app/web/menu.py:324 app/web/menu.py:391
+#: app/web/modules.py:120 app/web/org_admins.py:284 app/web/org_admins.py:451
+#: app/web/organizations.py:264 app/web/positions.py:145
+#: app/web/sys_accounts.py:171 app/web/sys_accounts.py:172 app/web/units.py:128
+#: app/web/users.py:413
 #, python-format
 msgid "建立失敗: %(error)s"
 msgstr ""
@@ -553,13 +557,13 @@ msgstr ""
 #: ../modules/form_workflow/api/backgrounds.py:150
 #: ../modules/form_workflow/api/categories.py:309
 #: ../modules/form_workflow/api/form_themes.py:214 app/api/conglomerates.py:214
-#: app/web/approval_categories.py:273 app/web/delegations.py:242
-#: app/web/external_users.py:443 app/web/job_families.py:291
-#: app/web/job_families.py:292 app/web/job_levels.py:272
-#: app/web/job_titles.py:349 app/web/job_titles.py:350 app/web/menu.py:493
-#: app/web/modules.py:180 app/web/organizations.py:320 app/web/positions.py:244
-#: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:195
-#: app/web/users.py:609
+#: app/web/approval_categories.py:269 app/web/delegations.py:237
+#: app/web/external_users.py:438 app/web/job_families.py:286
+#: app/web/job_families.py:287 app/web/job_levels.py:267
+#: app/web/job_titles.py:344 app/web/job_titles.py:345 app/web/menu.py:483
+#: app/web/modules.py:180 app/web/organizations.py:320 app/web/positions.py:239
+#: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:188
+#: app/web/users.py:605
 #, python-format
 msgid "更新失敗: %(error)s"
 msgstr ""
@@ -632,7 +636,7 @@ msgid "請提供分類資料"
 msgstr ""
 
 #: app/api/duties.py:107 app/api/organizational_units.py:343
-#: app/api/roles.py:186 app/web/units.py:113
+#: app/api/roles.py:299 app/web/units.py:107
 #, python-format
 msgid "代碼 %(code)s 已存在"
 msgstr ""
@@ -647,7 +651,7 @@ msgstr ""
 
 #: app/api/duties.py:153 app/api/duties.py:383
 #: app/api/organizational_units.py:405 app/api/organizational_units.py:1580
-#: app/api/organizations.py:211 app/api/roles.py:268
+#: app/api/organizations.py:211 app/api/roles.py:388
 msgid "請提供更新資料"
 msgstr ""
 
@@ -723,11 +727,6 @@ msgstr ""
 msgid "刪除職務失敗"
 msgstr ""
 
-#: app/api/egress.py:46 app/web/account_roles.py:269
-#: app/web/account_roles.py:370
-msgid "缺少必要參數"
-msgstr ""
-
 #: app/api/egress.py:54
 msgid "揭示失敗"
 msgstr ""
@@ -753,7 +752,7 @@ msgstr ""
 msgid "tier、meter、threshold 為必填且格式需正確"
 msgstr ""
 
-#: app/api/enterprise_settings.py:80 app/web/admin.py:84
+#: app/api/enterprise_settings.py:80
 msgid "設定已儲存"
 msgstr ""
 
@@ -797,19 +796,19 @@ msgstr ""
 #: ../modules/form_workflow/api/categories.py:353
 #: ../modules/form_workflow/api/form_themes.py:257
 #: app/api/enterprise_settings.py:381 app/api/files.py:445
-#: app/web/approval_categories.py:332 app/web/delegations.py:294
-#: app/web/external_users.py:658 app/web/job_families.py:375
-#: app/web/job_families.py:376 app/web/job_levels.py:324
-#: app/web/job_titles.py:401 app/web/job_titles.py:402 app/web/menu.py:551
-#: app/web/modules.py:208 app/web/org_admins.py:543
+#: app/web/approval_categories.py:327 app/web/delegations.py:287
+#: app/web/external_users.py:649 app/web/job_families.py:369
+#: app/web/job_families.py:370 app/web/job_levels.py:318
+#: app/web/job_titles.py:395 app/web/job_titles.py:396 app/web/menu.py:537
+#: app/web/modules.py:208 app/web/org_admins.py:539
 #: app/web/organizations.py:396 app/web/organizations.py:539
-#: app/web/positions.py:273 app/web/sys_accounts.py:315
-#: app/web/sys_accounts.py:316 app/web/units.py:229 app/web/users.py:671
+#: app/web/positions.py:267 app/web/sys_accounts.py:315
+#: app/web/sys_accounts.py:316 app/web/units.py:221 app/web/users.py:666
 #, python-format
 msgid "刪除失敗: %(error)s"
 msgstr ""
 
-#: app/api/files.py:108
+#: app/api/files.py:108 app/templates/pages/access_center/_tab_health.html:79
 msgid "警告"
 msgstr ""
 
@@ -870,7 +869,7 @@ msgstr ""
 msgid "已撤銷刪除"
 msgstr ""
 
-#: app/api/files.py:478 app/web/delegations.py:273
+#: app/api/files.py:478 app/web/delegations.py:267
 #, python-format
 msgid "撤銷失敗: %(error)s"
 msgstr ""
@@ -916,7 +915,7 @@ msgstr ""
 msgid "類別代碼 %(code)s 與系統級類別衝突"
 msgstr ""
 
-#: app/api/lookup.py:132 app/web/approval_categories.py:152
+#: app/api/lookup.py:132 app/web/approval_categories.py:149
 #, python-format
 msgid "類別代碼 %(code)s 已存在"
 msgstr ""
@@ -929,9 +928,9 @@ msgstr ""
 #: app/api/lookup.py:226 app/api/lookup.py:232 app/api/lookup.py:269
 #: app/api/lookup.py:277 app/api/lookup.py:297 app/api/lookup.py:304
 #: app/api/lookup.py:442 app/api/lookup.py:446
-#: app/web/approval_categories.py:214 app/web/approval_categories.py:215
-#: app/web/approval_categories.py:311 app/web/approval_categories.py:312
-#: app/web/approval_categories.py:350 app/web/approval_categories.py:420
+#: app/web/approval_categories.py:210 app/web/approval_categories.py:211
+#: app/web/approval_categories.py:306 app/web/approval_categories.py:307
+#: app/web/approval_categories.py:344 app/web/approval_categories.py:413
 msgid "類別不存在"
 msgstr ""
 
@@ -944,8 +943,8 @@ msgstr ""
 msgid "更新失敗"
 msgstr ""
 
-#: app/api/lookup.py:208 app/web/approval_categories.py:255
-#: app/web/approval_categories.py:269
+#: app/api/lookup.py:208 app/web/approval_categories.py:251
+#: app/web/approval_categories.py:265
 msgid "已更新類別"
 msgstr ""
 
@@ -1027,7 +1026,7 @@ msgstr ""
 msgid "排序已更新"
 msgstr ""
 
-#: app/api/menu.py:204 app/web/menu.py:526
+#: app/api/menu.py:204 app/web/menu.py:512
 msgid "預設選單項目禁止刪除"
 msgstr ""
 
@@ -1036,27 +1035,48 @@ msgstr ""
 msgid "子項目中包含預設選單（%(names)s），請先將其移出"
 msgstr ""
 
-#: app/api/menu.py:318 app/api/menu.py:440
+#: app/api/menu.py:315
+msgid "user_types 必須是陣列"
+msgstr ""
+
+#: app/api/menu.py:321
+msgid "user_types 包含不允許的值"
+msgstr ""
+
+#: app/api/menu.py:326
+msgid "至少需要一個 user_type"
+msgstr ""
+
+#: app/api/menu.py:340 app/api/menu.py:374 app/api/menu.py:496
 msgid "選單項目不存在"
 msgstr ""
 
-#: app/api/menu.py:500
+#: app/api/menu.py:347
+#, python-format
+msgid "權限設定不符合路由限制：%(message)s"
+msgstr ""
+
+#: app/api/menu.py:351
+msgid "更新功能授權失敗"
+msgstr ""
+
+#: app/api/menu.py:556
 msgid "更新角色需求失敗"
 msgstr ""
 
-#: app/api/menu.py:524
+#: app/api/menu.py:580
 msgid "重置選單位置失敗"
 msgstr ""
 
-#: app/api/menu.py:547
+#: app/api/menu.py:603
 msgid "重置選單出廠值失敗"
 msgstr ""
 
-#: app/api/menu.py:572
+#: app/api/menu.py:628
 msgid "儲存選單出廠預設值失敗"
 msgstr ""
 
-#: app/api/menu.py:594
+#: app/api/menu.py:650
 msgid "匯出 SQL 失敗"
 msgstr ""
 
@@ -1109,11 +1129,11 @@ msgstr ""
 msgid "請提供單位資料"
 msgstr ""
 
-#: app/api/organizational_units.py:302 app/api/roles.py:165
+#: app/api/organizational_units.py:302 app/api/roles.py:273
 msgid "缺少必要欄位: name"
 msgstr ""
 
-#: app/api/organizational_units.py:319 app/api/roles.py:192
+#: app/api/organizational_units.py:319 app/api/roles.py:305
 #, python-format
 msgid "無法自動產生代碼: %(error)s"
 msgstr ""
@@ -1159,11 +1179,11 @@ msgstr ""
 msgid "建立組織單位失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:424 app/api/roles.py:288
+#: app/api/organizational_units.py:424 app/api/roles.py:416
 msgid "不能設定自己為父層"
 msgstr ""
 
-#: app/api/organizational_units.py:429 app/api/roles.py:292
+#: app/api/organizational_units.py:429 app/api/roles.py:420
 msgid "不能設定子層為父層"
 msgstr ""
 
@@ -1215,7 +1235,7 @@ msgstr ""
 #: app/api/organizational_units.py:769 app/api/organizational_units.py:877
 #: app/api/organizational_units.py:982 app/api/organizational_units.py:1199
 #: app/api/organizational_units.py:1445 app/api/organizational_units.py:1679
-#: app/web/account_roles.py:280
+#: app/services/role_assignment_service.py:141
 msgid "用戶不存在"
 msgstr ""
 
@@ -1278,22 +1298,28 @@ msgid "%(position)s 角色不存在，請聯繫系統管理員"
 msgstr ""
 
 #: app/api/organizational_units.py:1240 app/api/organizational_units.py:1322
+#: app/services/role_assignment_service.py:37
 #: app/templates/pages/admin/departments.html:363
 msgid "主管"
 msgstr ""
 
 #: app/api/organizational_units.py:1241 app/api/organizational_units.py:1323
+#: app/services/role_assignment_service.py:38
 #: app/templates/pages/admin/departments.html:399
 msgid "副主管"
 msgstr ""
 
 #: app/api/organizational_units.py:1242 app/api/organizational_units.py:1324
+#: app/services/role_assignment_service.py:28
+#: app/services/role_assignment_service.py:39
 #: app/templates/pages/admin/departments.html:380
 #: app/templates/pages/admin/groups.html:295
 msgid "代理人(一)"
 msgstr ""
 
 #: app/api/organizational_units.py:1243 app/api/organizational_units.py:1325
+#: app/services/role_assignment_service.py:29
+#: app/services/role_assignment_service.py:40
 #: app/templates/pages/admin/departments.html:416
 #: app/templates/pages/admin/groups.html:331
 msgid "代理人(二)"
@@ -1424,129 +1450,140 @@ msgstr ""
 msgid "刪除企業失敗"
 msgstr ""
 
-#: app/api/permission_central.py:144 app/web/account_roles.py:263
-#: app/web/account_roles.py:364
+#: app/api/permission_central.py:145
 msgid "缺少請求資料"
 msgstr ""
 
-#: app/api/permission_central.py:150
+#: app/api/permission_central.py:151
 msgid "缺少 role_secure_code"
 msgstr ""
 
-#: app/api/permission_central.py:153
+#: app/api/permission_central.py:154
 msgid "permission_secure_codes 必須是陣列"
 msgstr ""
 
-#: app/api/permission_central.py:185
+#: app/api/permission_central.py:186
+#: app/templates/pages/access_center/_tab_functions.html:40
+#: app/templates/pages/access_center/_tab_health.html:69
+#: app/templates/pages/access_center/_tab_roles.html:36
 msgid "請先選擇企業"
 msgstr ""
 
-#: app/api/permission_central.py:214
+#: app/api/permission_central.py:215
 #, python-format
 msgid "匯出 SQL 失敗: %(error)s"
 msgstr ""
 
-#: app/api/permission_central.py:265
+#: app/api/permission_central.py:266
 msgid "未選擇檔案"
 msgstr ""
 
-#: app/api/permission_central.py:270
+#: app/api/permission_central.py:271
 #, python-format
 msgid "檔案格式無效: %(error)s"
 msgstr ""
 
-#: app/api/permission_central.py:275
+#: app/api/permission_central.py:276
 msgid "缺少匯入資料"
 msgstr ""
 
-#: app/api/permission_central.py:302
+#: app/api/permission_central.py:303
 msgid "無法確定企業"
 msgstr ""
 
-#: app/api/roles.py:70 app/api/roles.py:256 app/api/roles.py:340
-#: app/web/account_roles.py:289
+#: app/api/roles.py:166 app/api/roles.py:378 app/api/roles.py:471
+#: app/api/roles.py:526 app/services/role_assignment_service.py:149
 msgid "角色不存在"
 msgstr ""
 
-#: app/api/roles.py:161
+#: app/api/roles.py:269
 msgid "請提供角色資料"
 msgstr ""
 
-#: app/api/roles.py:182
+#: app/api/roles.py:275 app/api/roles.py:390
+msgid "互斥群組值無效"
+msgstr ""
+
+#: app/api/roles.py:295
 #, python-format
 msgid "代碼格式錯誤: %(error)s"
 msgstr ""
 
-#: app/api/roles.py:199 app/api/roles.py:301
+#: app/api/roles.py:316 app/api/roles.py:431
 msgid "父層角色不存在"
 msgstr ""
 
-#: app/api/roles.py:210
+#: app/api/roles.py:329
 msgid "綁定的組織單位不存在"
 msgstr ""
 
-#: app/api/roles.py:234
+#: app/api/roles.py:354
 msgid "角色建立成功"
 msgstr ""
 
-#: app/api/roles.py:241
+#: app/api/roles.py:361
 msgid "建立角色失敗"
 msgstr ""
 
-#: app/api/roles.py:264
+#: app/api/roles.py:385
 #, python-format
 msgid "系統角色不允許修改 %(field)s 欄位"
 msgstr ""
 
-#: app/api/roles.py:316
+#: app/api/roles.py:446
 msgid "角色更新成功"
 msgstr ""
 
-#: app/api/roles.py:323
+#: app/api/roles.py:453
 msgid "更新角色失敗"
 msgstr ""
 
-#: app/api/roles.py:344
+#: app/api/roles.py:475
 msgid "系統角色不可刪除"
 msgstr ""
 
-#: app/api/roles.py:349
+#: app/api/roles.py:480
 msgid "此角色有子角色，請先刪除子角色"
 msgstr ""
 
-#: app/api/roles.py:370
+#: app/api/roles.py:492
+#, python-format
+msgid "此角色已有 %(count)s 位用戶使用，需強制刪除"
+msgstr ""
+
+#: app/api/roles.py:509
 msgid "角色已刪除"
 msgstr ""
 
-#: app/api/roles.py:376
+#: app/api/roles.py:515
 msgid "刪除角色失敗"
 msgstr ""
 
-#: app/api/roles.py:391
+#: app/api/roles.py:553
 msgid "請提供要刪除的角色 ID 列表"
 msgstr ""
 
-#: app/api/roles.py:401
+#: app/api/roles.py:563
 #, python-format
 msgid "%(code)s: 角色不存在"
 msgstr ""
 
-#: app/api/roles.py:405
+#: app/api/roles.py:567
 #, python-format
 msgid "%(name)s: 系統角色不可刪除"
 msgstr ""
 
-#: app/api/roles.py:411
+#: app/api/roles.py:573
 #, python-format
 msgid "%(name)s: 有子角色，請先刪除子角色"
 msgstr ""
 
-#: app/api/roles.py:432
+#: app/api/roles.py:594
 #, python-format
 msgid "已刪除 %(count)s 個角色"
 msgstr ""
 
-#: app/api/roles.py:440
+#: app/api/roles.py:602
 msgid "批量刪除失敗"
 msgstr ""
 
@@ -1636,27 +1673,27 @@ msgid "無效的請求資料"
 msgstr ""
 
 #: app/api/user_numbering.py:73 app/api/user_numbering.py:159
-#: app/web/numbering.py:59 app/web/numbering.py:131
+#: app/web/numbering.py:56 app/web/numbering.py:127
 msgid "規則名稱為必填"
 msgstr ""
 
 #: app/api/user_numbering.py:87 app/api/user_numbering.py:169
-#: app/web/numbering.py:80 app/web/numbering.py:153
+#: app/web/numbering.py:77 app/web/numbering.py:149
 #, python-format
 msgid "規則名稱「%(name)s」已存在"
 msgstr ""
 
-#: app/api/user_numbering.py:119 app/web/numbering.py:104
+#: app/api/user_numbering.py:119 app/web/numbering.py:101
 msgid "編號規則已建立"
 msgstr ""
 
 #: app/api/user_numbering.py:129 app/api/user_numbering.py:149
 #: app/api/user_numbering.py:207 app/api/user_numbering.py:229
-#: app/web/numbering.py:116 app/web/numbering.py:192
+#: app/web/numbering.py:112 app/web/numbering.py:187
 msgid "找不到此規則"
 msgstr ""
 
-#: app/api/user_numbering.py:197 app/web/numbering.py:174
+#: app/api/user_numbering.py:197 app/web/numbering.py:170
 msgid "編號規則已更新"
 msgstr ""
 
@@ -1712,23 +1749,23 @@ msgstr ""
 msgid "本國姓名、英文姓名、帳號為必填"
 msgstr ""
 
-#: app/api/users.py:118 app/web/users.py:323
+#: app/api/users.py:118 app/web/users.py:319
 msgid "用戶編號為必填"
 msgstr ""
 
-#: app/api/users.py:122 app/web/external_users.py:184
-#: app/web/external_users.py:365 app/web/org_admins.py:70
-#: app/web/org_admins.py:384 app/web/users.py:330 app/web/users.py:843
+#: app/api/users.py:122 app/web/external_users.py:181
+#: app/web/external_users.py:360 app/web/org_admins.py:70
+#: app/web/org_admins.py:382 app/web/users.py:326 app/web/users.py:834
 msgid "找不到所屬企業"
 msgstr ""
 
 #: app/api/users.py:129 app/web/org_admins.py:141 app/web/sys_accounts.py:128
-#: app/web/users.py:341
+#: app/web/users.py:337
 #, python-format
 msgid "帳號 %(username)s 已存在"
 msgstr ""
 
-#: app/api/users.py:136 app/web/org_admins.py:152 app/web/users.py:344
+#: app/api/users.py:136 app/web/org_admins.py:152 app/web/users.py:340
 #, python-format
 msgid "用戶編號 %(employee_id)s 已存在"
 msgstr ""
@@ -1738,21 +1775,21 @@ msgstr ""
 msgid "找不到部門代碼 %(department_code)s"
 msgstr ""
 
-#: app/api/users.py:224 app/web/users.py:413
+#: app/api/users.py:224 app/web/users.py:409
 #, python-format
 msgid "已建立用戶 %(name)s"
 msgstr ""
 
-#: app/api/users.py:271 app/web/org_admins.py:526 app/web/sys_accounts.py:277
-#: app/web/users.py:650
+#: app/api/users.py:271 app/web/org_admins.py:522 app/web/sys_accounts.py:277
+#: app/web/users.py:645
 msgid "不能刪除自己的帳號"
 msgstr ""
 
-#: app/api/users.py:275 app/web/users.py:655
+#: app/api/users.py:275 app/web/users.py:650
 msgid "不能刪除自己綁定的企業成員帳號"
 msgstr ""
 
-#: app/api/users.py:279 app/web/users.py:660
+#: app/api/users.py:279 app/web/users.py:655
 msgid "不能刪除企業原始管理員"
 msgstr ""
 
@@ -1781,7 +1818,7 @@ msgstr ""
 #: app/api/work_schedules.py:229 app/api/work_schedules.py:269
 #: app/api/work_schedules.py:305 app/api/work_schedules.py:344
 #: app/api/work_schedules.py:410 app/api/work_schedules.py:462
-#: app/api/work_schedules.py:507 app/web/work_schedules.py:57
+#: app/api/work_schedules.py:507 app/web/work_schedules.py:54
 msgid "班表不存在"
 msgstr ""
 
@@ -1850,6 +1887,125 @@ msgstr ""
 #: app/api/work_schedules.py:578
 #, python-format
 msgid "已匯入 %(imported)s 筆，略過 %(skipped)s 筆"
+msgstr ""
+
+#: app/services/role_assignment_service.py:26
+#: app/templates/pages/admin/groups.html:277
+msgid "團長"
+msgstr ""
+
+#: app/services/role_assignment_service.py:27
+#: app/templates/pages/admin/groups.html:313
+msgid "副團長"
+msgstr ""
+
+#: app/services/role_assignment_service.py:30
+#: app/services/role_assignment_service.py:31
+#: app/services/role_assignment_service.py:305
+#: app/templates/pages/admin/groups.html:351
+msgid "團員"
+msgstr ""
+
+#: app/services/role_assignment_service.py:46
+#: app/services/role_assignment_service.py:47
+#: app/services/role_assignment_service.py:48
+#: app/services/role_assignment_service.py:49
+#: app/templates/pages/positions/list.html:55
+#: app/templates/pages/positions/view.html:60
+msgid "代理"
+msgstr ""
+
+#: app/services/role_assignment_service.py:50
+#: app/services/role_assignment_service.py:269
+#: app/services/role_assignment_service.py:271
+msgid "員工"
+msgstr ""
+
+#: app/services/role_assignment_service.py:56
+#: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:30
+#: app/templates/pages/menu/list.html:132
+#: app/templates/pages/modules/create.html:52
+#: app/templates/pages/platform_help/org_admin.html:46
+#: app/templates/pages/platform_help/org_admin.html:83
+#: app/templates/pages/profile/view.html:21
+#: app/templates/pages/users/edit.html:93
+#: app/templates/pages/users/edit.html:106
+#: app/templates/pages/users/view.html:41
+msgid "企業管理員"
+msgstr ""
+
+#: app/services/role_assignment_service.py:57
+#: app/templates/pages/admin/departments.html:257
+#: app/templates/pages/admin/departments.html:437
+#: app/templates/pages/menu/list.html:136
+#: app/templates/pages/platform_help/org_admin.html:51
+#: app/templates/pages/platform_help/org_admin.html:136
+#: app/templates/pages/positions/edit.html:17
+#: app/templates/pages/positions/list.html:17
+#: app/templates/pages/positions/view.html:15
+msgid "企業成員"
+msgstr ""
+
+#: app/services/role_assignment_service.py:58
+#: app/templates/pages/external-users/list.html:25
+#: app/templates/pages/external-users/view.html:23
+#: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:35
+#: app/templates/pages/job_levels/create.html:110
+#: app/templates/pages/menu/list.html:140
+#: app/templates/pages/menu/list.html:152
+#: app/templates/pages/platform_help/org_admin.html:56
+#: app/templates/pages/users/edit.html:92
+#: app/templates/pages/users/edit.html:107
+msgid "外部廠商"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:296
+#: app/services/role_assignment_service.py:59
+#: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:25
+#: app/templates/pages/menu/list.html:128
+#: app/templates/pages/modules/create.html:51
+#: app/templates/pages/platform_help/org_admin.html:41
+#: app/templates/pages/profile/view.html:20
+#: app/templates/pages/users/edit.html:95
+#: app/templates/pages/users/edit.html:105
+#: app/templates/pages/users/view.html:40
+msgid "系統管理員"
+msgstr ""
+
+#: app/services/role_assignment_service.py:166
+#, python-format
+msgid "用戶已擁有「%(role)s」角色"
+msgstr ""
+
+#: app/services/role_assignment_service.py:187
+#, python-format
+msgid "已將「%(role)s」指派給 %(user)s"
+msgstr ""
+
+#: app/services/role_assignment_service.py:201
+msgid "找不到此角色指派"
+msgstr ""
+
+#: app/services/role_assignment_service.py:220
+#, python-format
+msgid "已移除 %(user)s 的「%(role)s」角色"
+msgstr ""
+
+#: app/services/role_assignment_service.py:406
+msgid "此角色必須選擇單位"
+msgstr ""
+
+#: app/services/role_assignment_service.py:415
+msgid "單位不存在或類型不符"
+msgstr ""
+
+#: app/services/role_assignment_service.py:419
+msgid "此角色不可指定單位"
+msgstr ""
+
+#: app/services/role_assignment_service.py:447
+#, python-format
+msgid "無法指派「%(role)s」：與現有角色「%(conflict)s」互斥，請先移除後再指派"
 msgstr ""
 
 #: app/templates/auth/change_password.html:7
@@ -1975,7 +2131,8 @@ msgstr ""
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:636
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:75
 #: app/templates/auth/change_password.html:74
-#: app/templates/pages/account_roles.html:134
+#: app/templates/pages/access_center/_tab_accounts.html:169
+#: app/templates/pages/access_center/_tab_roles.html:219
 #: app/templates/pages/admin/_employee_create_form.html:152
 #: app/templates/pages/admin/_settings_recipients_section.html:226
 #: app/templates/pages/admin/_settings_recipients_section.html:280
@@ -2015,7 +2172,7 @@ msgstr ""
 #: app/templates/pages/job_titles/list.html:129
 #: app/templates/pages/job_titles/list.html:215
 #: app/templates/pages/menu/create.html:114
-#: app/templates/pages/menu/edit.html:118 app/templates/pages/menu/list.html:45
+#: app/templates/pages/menu/edit.html:109 app/templates/pages/menu/list.html:45
 #: app/templates/pages/menu/list.html:69 app/templates/pages/menu/list.html:89
 #: app/templates/pages/modules/create.html:65
 #: app/templates/pages/modules/edit.html:55
@@ -2027,16 +2184,10 @@ msgstr ""
 #: app/templates/pages/organizations/edit.html:147
 #: app/templates/pages/organizations/list.html:63
 #: app/templates/pages/organizations/list.html:422
-#: app/templates/pages/permissions/index.html:69
-#: app/templates/pages/permissions/index.html:88
-#: app/templates/pages/permissions/index.html:495
 #: app/templates/pages/positions/create.html:123
 #: app/templates/pages/positions/edit.html:127
 #: app/templates/pages/profile/edit.html:39
 #: app/templates/pages/profile/password.html:43
-#: app/templates/pages/roles/create.html:176
-#: app/templates/pages/roles/edit.html:186
-#: app/templates/pages/roles/list.html:121
 #: app/templates/pages/security/_api_keys_modals.html:90
 #: app/templates/pages/security/_api_keys_modals.html:136
 #: app/templates/pages/sys_accounts/create.html:90
@@ -2250,192 +2401,6 @@ msgstr ""
 msgid "登入系統"
 msgstr ""
 
-#: app/templates/pages/account_roles.html:3
-#: app/templates/pages/account_roles.html:8
-msgid "帳號角色權限表"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:14
-msgid "全部類型"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:15
-#: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:30
-#: app/templates/pages/menu/list.html:132
-#: app/templates/pages/modules/create.html:52
-#: app/templates/pages/platform_help/org_admin.html:46
-#: app/templates/pages/platform_help/org_admin.html:83
-#: app/templates/pages/profile/view.html:21
-#: app/templates/pages/users/edit.html:93
-#: app/templates/pages/users/edit.html:106
-#: app/templates/pages/users/view.html:41
-msgid "企業管理員"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:16
-#: app/templates/pages/admin/departments.html:257
-#: app/templates/pages/admin/departments.html:437
-#: app/templates/pages/menu/list.html:136
-#: app/templates/pages/platform_help/org_admin.html:51
-#: app/templates/pages/platform_help/org_admin.html:136
-#: app/templates/pages/positions/edit.html:17
-#: app/templates/pages/positions/list.html:17
-#: app/templates/pages/positions/view.html:15
-msgid "企業成員"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:17
-#: app/templates/pages/external-users/list.html:25
-#: app/templates/pages/external-users/view.html:23
-#: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:35
-#: app/templates/pages/job_levels/create.html:110
-#: app/templates/pages/menu/list.html:140
-#: app/templates/pages/menu/list.html:152
-#: app/templates/pages/platform_help/org_admin.html:56
-#: app/templates/pages/users/edit.html:92
-#: app/templates/pages/users/edit.html:107
-msgid "外部廠商"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:19
-msgid "搜尋姓名/帳號/編號"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:21
-#: app/templates/pages/server_manage/redis_monitor.html:133
-msgid "搜尋"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:23
-msgid "清除篩選"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:25
-#, python-format
-msgid "共 %(count)d 筆"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:32
-#: app/templates/pages/admin/_settings_recipients_section.html:251
-#: app/templates/pages/admin/org-admins/create.html:53
-#: app/templates/pages/admin/org-admins/list.html:40
-#: app/templates/pages/external-users/edit.html:32
-#: app/templates/pages/external-users/list.html:35
-#: app/templates/pages/organizations/admins.html:47
-#: app/templates/pages/profile/view.html:10
-#: app/templates/pages/roles/edit.html:149
-#: app/templates/pages/security/alert_broadcasts.html:142
-#: app/templates/pages/security/alert_broadcasts.html:170
-#: app/templates/pages/users/list.html:38
-#: app/templates/pages/users/view.html:30
-msgid "姓名"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:33
-msgid "帳號類型"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:34
-#: app/templates/pages/admin/_employee_create_form.html:81
-#: app/templates/pages/admin/initial_setup.html:193
-#: app/templates/pages/admin/settings.html:223
-#: app/templates/pages/personal_settings.html:138
-#: app/templates/pages/users/create.html:122
-#: app/templates/pages/users/edit.html:172
-#: app/templates/pages/users/edit.html:239
-#: app/templates/pages/users/edit.html:246
-#: app/templates/pages/users/list.html:40
-#: app/templates/pages/users/view.html:64
-msgid "用戶編號"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:328
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:325
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:254
-#: app/templates/pages/account_roles.html:35
-#: app/templates/pages/admin/departments.html:256
-#: app/templates/pages/modules/list.html:156
-#: app/templates/pages/positions/list.html:19
-#: app/templates/pages/positions/view.html:44
-#: app/templates/pages/roles/create.html:110
-#: app/templates/pages/roles/edit.html:61
-#: app/templates/pages/roles/list.html:81
-#: app/templates/pages/roles/view.html:35
-#: app/templates/pages/units/create.html:3
-#: app/templates/pages/units/create.html:11
-#: app/templates/pages/units/create.html:67
-#: app/templates/pages/units/list.html:40
-#: app/templates/pages/units/view.html:27
-#: app/templates/pages/units/view.html:77
-#: app/templates/pages/users/create.html:153
-#: app/templates/pages/users/edit.html:183
-#: app/templates/pages/users/list.html:41
-msgid "部門"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:36
-#: app/templates/pages/dashboard.html:61
-msgid "社群參與"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:37
-msgid "角色指派"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:90
-#: app/templates/pages/account_roles.html:99
-#: app/templates/pages/admin/_settings_smtp_section.html:31
-#: app/templates/pages/admin/_settings_telegram_section.html:130
-#: app/templates/pages/admin/time/schedules.html:43
-#: app/templates/pages/approval_categories/list.html:110
-#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:44
-#: app/templates/pages/organizations/admins.html:60 app/web/numbering.py:201
-msgid "預設"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:104
-msgid "移除角色"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:110
-msgid "指派"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:118
-msgid "無符合條件的帳號"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:125
-msgid "指派角色給"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:128
-#: app/templates/pages/permissions/index.html:123
-msgid "選擇角色"
-msgstr ""
-
-#: app/templates/pages/account_roles.html:138
-msgid "確認指派"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:163
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:125
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:136
-#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:91
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:437
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:127
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:182
-#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:111
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:64
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:191
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:228
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:391
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:326
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:493
-#: app/templates/pages/account_roles.html:139
-msgid "處理中..."
-msgstr ""
-
 #: app/templates/pages/change_password.html:7
 msgid "返回個人設定"
 msgstr ""
@@ -2504,6 +2469,11 @@ msgstr ""
 #: app/templates/pages/admin/groups.html:171
 #: app/templates/pages/dashboard.html:53
 msgid "我的社群"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:48
+#: app/templates/pages/dashboard.html:61
+msgid "社群參與"
 msgstr ""
 
 #: app/templates/pages/admin/groups.html:213
@@ -2655,6 +2625,20 @@ msgstr ""
 msgid "跟隨企業設定"
 msgstr ""
 
+#: app/templates/pages/access_center/_tab_accounts.html:46
+#: app/templates/pages/admin/_employee_create_form.html:81
+#: app/templates/pages/admin/initial_setup.html:193
+#: app/templates/pages/admin/settings.html:223
+#: app/templates/pages/personal_settings.html:138
+#: app/templates/pages/users/create.html:122
+#: app/templates/pages/users/edit.html:172
+#: app/templates/pages/users/edit.html:239
+#: app/templates/pages/users/edit.html:246
+#: app/templates/pages/users/list.html:40
+#: app/templates/pages/users/view.html:64
+msgid "用戶編號"
+msgstr ""
+
 #: app/templates/pages/personal_settings.html:139
 #: app/templates/pages/users/edit.html:240
 #: app/templates/pages/users/edit.html:247
@@ -2687,6 +2671,714 @@ msgstr ""
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:40
 #: app/templates/pages/personal_settings.html:175
 msgid "儲存設定"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:4
+#: app/templates/pages/access_center/index.html:27
+msgid "帳號配角色"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:5
+msgid "查看帳號歸屬並指派或移除角色"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:9
+#: app/templates/pages/access_center/_tab_accounts.html:45
+msgid "帳號類型"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:17
+msgid "關鍵字"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:20
+msgid "搜尋姓名、帳號、Email、編號"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:23
+#: app/templates/pages/server_manage/redis_monitor.html:133
+msgid "搜尋"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:33
+msgid "載入帳號中"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:37
+msgid "無符合條件的帳號"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:44
+#: app/templates/pages/admin/_settings_recipients_section.html:251
+#: app/templates/pages/admin/org-admins/create.html:53
+#: app/templates/pages/admin/org-admins/list.html:40
+#: app/templates/pages/external-users/edit.html:32
+#: app/templates/pages/external-users/list.html:35
+#: app/templates/pages/organizations/admins.html:47
+#: app/templates/pages/profile/view.html:10
+#: app/templates/pages/security/alert_broadcasts.html:142
+#: app/templates/pages/security/alert_broadcasts.html:170
+#: app/templates/pages/users/list.html:38
+#: app/templates/pages/users/view.html:30
+msgid "姓名"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:328
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:325
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:254
+#: app/templates/pages/access_center/_tab_accounts.html:47
+#: app/templates/pages/admin/departments.html:256
+#: app/templates/pages/modules/list.html:156
+#: app/templates/pages/positions/list.html:19
+#: app/templates/pages/positions/view.html:44
+#: app/templates/pages/units/create.html:3
+#: app/templates/pages/units/create.html:11
+#: app/templates/pages/units/create.html:67
+#: app/templates/pages/units/list.html:40
+#: app/templates/pages/units/view.html:27
+#: app/templates/pages/units/view.html:77
+#: app/templates/pages/users/create.html:153
+#: app/templates/pages/users/edit.html:183
+#: app/templates/pages/users/list.html:41
+msgid "部門"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:49
+msgid "角色指派"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:58
+#: app/templates/pages/admin/_settings_recipients_section.html:45
+#: app/templates/pages/admin/_settings_smtp_section.html:54
+#: app/templates/pages/admin/_settings_telegram_section.html:48
+#: app/templates/pages/admin/numbering/list.html:154
+#: app/templates/pages/admin/org-admins/list.html:73
+#: app/templates/pages/admin/org-admins/list.html:86
+#: app/templates/pages/admin/time/schedules.html:70
+#: app/templates/pages/cg_databases/overview.html:224
+#: app/templates/pages/external-users/list.html:62
+#: app/templates/pages/external-users/list.html:70
+#: app/templates/pages/external-users/view.html:62
+#: app/templates/pages/job_families/view.html:58
+#: app/templates/pages/job_levels/view.html:44
+#: app/templates/pages/job_titles/view.html:73
+#: app/templates/pages/modules/view.html:55
+#: app/templates/pages/modules/view.html:82
+#: app/templates/pages/org_databases/monitor.html:43
+#: app/templates/pages/org_databases/monitor.html:68
+#: app/templates/pages/organizations/admins.html:80
+#: app/templates/pages/organizations/admins.html:95
+#: app/templates/pages/organizations/edit.html:88
+#: app/templates/pages/organizations/list.html:125
+#: app/templates/pages/organizations/list.html:189
+#: app/templates/pages/organizations/list.html:278
+#: app/templates/pages/positions/list.html:69
+#: app/templates/pages/positions/view.html:97
+#: app/templates/pages/sys_accounts/edit.html:55
+#: app/templates/pages/sys_accounts/list.html:125
+#: app/templates/pages/units/list.html:42
+#: app/templates/pages/units/view.html:49
+#: app/templates/pages/users/edit.html:119
+#: app/templates/pages/users/edit.html:127
+#: app/templates/pages/users/list.html:58
+#: app/templates/pages/users/list.html:67
+#: app/templates/pages/users/view.html:48 app/web/external_users.py:604
+#: app/web/org_admin_rescue.py:96
+msgid "停用"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:102
+msgid "移除角色"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:106
+#: app/templates/pages/access_center/_tab_accounts.html:131
+msgid "指派角色"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:85
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:119
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:312
+#: app/templates/pages/access_center/_tab_accounts.html:120
+#: app/templates/pages/users/list.html:89
+msgid "上一頁"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:344
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
+#: app/templates/pages/access_center/_tab_accounts.html:123
+#: app/templates/pages/users/list.html:93
+msgid "下一頁"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:794
+#: app/templates/pages/access_center/_tab_accounts.html:143
+#: app/templates/pages/access_center/_tab_health.html:107
+#: app/templates/pages/access_center/_tab_roles.html:4
+#: app/templates/pages/access_center/index.html:22
+#: app/templates/pages/external-users/edit.html:134
+#: app/templates/pages/modules/list.html:155
+#: app/templates/pages/platform_help/org_admin.html:77
+#: app/templates/pages/platform_help/org_admin.html:98
+#: app/templates/pages/platform_help/org_admin.html:127
+#: app/templates/pages/platform_help/org_admin.html:393
+#: app/templates/pages/profile/view.html:18
+#: app/templates/pages/users/edit.html:88
+#: app/templates/pages/users/edit.html:102
+#: app/templates/pages/users/view.html:38
+#: app/templates/pages/users/view.html:85
+#: app/templates/pages/users/view.html:150
+msgid "角色"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:145
+msgid "請選擇角色"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:156
+msgid "請選擇單位"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:4
+#: app/templates/pages/access_center/index.html:18
+msgid "功能授權"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:5
+msgid "管理選單的鑰匙1可見身分與鑰匙2角色門檻"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:9
+#: app/templates/pages/access_center/_tab_functions.html:20
+#: app/templates/pages/access_center/_tab_health.html:10
+#: app/templates/pages/access_center/_tab_health.html:21
+#: app/templates/pages/access_center/_tab_roles.html:10
+#: app/templates/pages/access_center/_tab_roles.html:21
+#: app/templates/pages/cg_databases/overview.html:250
+msgid "企業"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:11
+#: app/templates/pages/access_center/_tab_health.html:12
+#: app/templates/pages/access_center/_tab_roles.html:12
+msgid "請選擇企業"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:33
+msgid "選單樹"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:16
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:16
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:22
+#: app/templates/pages/access_center/_tab_functions.html:35
+#: app/templates/pages/server_manage/redis_monitor.html:20
+#: app/templates/pages/server_manage/redis_monitor.html:201
+msgid "重新整理"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:44
+msgid "載入中"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:48
+msgid "沒有選單資料"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:57
+msgid "鑰匙1摘要"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:71
+msgid "選擇一個選單"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:72
+msgid "左側點選節點後可編輯功能授權"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:89
+msgid "鑰匙1：可見身分"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:90
+msgid "全量替換此功能允許看見的 user_type"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:93
+msgid "儲存鑰匙1"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:110
+msgid "鑰匙2：角色門檻"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:114
+msgid "儲存鑰匙2"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:119
+#: app/templates/pages/access_center/_tab_roles.html:40
+msgid "載入角色中"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_functions.html:123
+msgid "沒有可用角色"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:4
+#: app/templates/pages/access_center/index.html:32
+msgid "健檢"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:5
+msgid "檢查權限配置衝突並管理 RBAC 預設值"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:26
+msgid "重新偵測"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:37
+msgid "匯出 RBAC"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:42
+msgid "設定目前組態為出廠值"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:48
+msgid "恢復 RBAC 預設權限"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:55
+msgid "匯入 RBAC JSON"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:56
+msgid "貼上匯出的 JSON 內容"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:60
+msgid "匯入 RBAC"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:27
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:198
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:89
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:141
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:166
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:212
+#: app/templates/pages/access_center/_tab_health.html:63
+#: app/templates/pages/users/create.html:161
+#: app/templates/partials/_icon_picker.html:8
+msgid "清除"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:73
+msgid "偵測中"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:77
+msgid "總數"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:78
+msgid "錯誤"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:80
+msgid "資訊"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:84
+msgid "沒有偵測到衝突"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:104
+msgid "選單"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_health.html:114
+msgid "查看"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:5
+msgid "管理角色屬性、互斥群組與 API 權限"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:26
+msgid "建立角色"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:44
+msgid "沒有角色資料"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:37
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:74
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:240
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:294
+#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:91
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:164
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:343
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:103
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:30
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:29
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
+#: app/templates/pages/access_center/_tab_roles.html:51
+#: app/templates/pages/access_center/_tab_roles.html:139
+#: app/templates/pages/admin/_settings_smtp_section.html:28
+#: app/templates/pages/admin/_settings_telegram_section.html:28
+#: app/templates/pages/approval_categories/list.html:94
+#: app/templates/pages/approval_categories/list.html:155
+#: app/templates/pages/approval_categories/list.html:246
+#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:32
+#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:32
+#: app/templates/pages/job_levels/create.html:99
+#: app/templates/pages/job_levels/list.html:80
+#: app/templates/pages/modules/list.html:84
+#: app/templates/pages/platform_help/org_admin.html:275
+#: app/templates/pages/security/_api_keys_modals.html:9
+#: app/templates/pages/units/list.html:25
+msgid "名稱"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:52
+#: app/templates/pages/access_center/_tab_roles.html:143
+msgid "Code"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:39
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:41
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:326
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:466
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:551
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:323
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:250
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:20
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:89
+#: app/templates/pages/access_center/_tab_roles.html:53
+#: app/templates/pages/access_center/_tab_roles.html:148
+#: app/templates/pages/admin/time/holidays.html:88
+#: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:18
+#: app/templates/pages/menu/list.html:122
+#: app/templates/pages/modules/list.html:83
+#: app/templates/pages/positions/list.html:20
+#: app/templates/pages/units/list.html:26
+msgid "類型"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:54
+#: app/templates/pages/access_center/_tab_roles.html:156
+msgid "範圍"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:55
+#: app/templates/pages/access_center/_tab_roles.html:176
+msgid "互斥群組"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:56
+#: app/templates/pages/organizations/list.html:115
+msgid "系統"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:57
+msgid "使用人數"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:183
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:383
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:485
+#: app/templates/pages/access_center/_tab_roles.html:58
+#: app/templates/pages/access_center/_tab_roles.html:169
+#: app/templates/pages/admin/_settings_recipients_section.html:44
+#: app/templates/pages/admin/_settings_smtp_section.html:53
+#: app/templates/pages/admin/_settings_smtp_section.html:177
+#: app/templates/pages/admin/_settings_telegram_section.html:47
+#: app/templates/pages/admin/_settings_telegram_section.html:143
+#: app/templates/pages/admin/numbering/list.html:152
+#: app/templates/pages/admin/org-admins/list.html:71
+#: app/templates/pages/admin/org-admins/list.html:86
+#: app/templates/pages/admin/time/schedules.html:67
+#: app/templates/pages/approval_categories/edit.html:81
+#: app/templates/pages/approval_categories/list.html:186
+#: app/templates/pages/cg_databases/overview.html:221
+#: app/templates/pages/external-users/list.html:60
+#: app/templates/pages/external-users/list.html:70
+#: app/templates/pages/external-users/view.html:60
+#: app/templates/pages/hostconfig/_system_settings_modals.html:93
+#: app/templates/pages/hostconfig/_system_settings_modals.html:159
+#: app/templates/pages/hostconfig/_system_settings_modals.html:198
+#: app/templates/pages/job_families/edit.html:85
+#: app/templates/pages/job_families/list.html:183
+#: app/templates/pages/job_families/view.html:58
+#: app/templates/pages/job_levels/edit.html:80
+#: app/templates/pages/job_levels/list.html:166
+#: app/templates/pages/job_levels/view.html:44
+#: app/templates/pages/job_titles/edit.html:105
+#: app/templates/pages/job_titles/list.html:206
+#: app/templates/pages/job_titles/view.html:73
+#: app/templates/pages/menu/edit.html:102
+#: app/templates/pages/modules/edit.html:48
+#: app/templates/pages/modules/view.html:55
+#: app/templates/pages/modules/view.html:82
+#: app/templates/pages/organizations/admins.html:78
+#: app/templates/pages/organizations/admins.html:95
+#: app/templates/pages/organizations/edit.html:87
+#: app/templates/pages/organizations/list.html:188
+#: app/templates/pages/positions/edit.html:119
+#: app/templates/pages/positions/list.html:69
+#: app/templates/pages/positions/view.html:97
+#: app/templates/pages/sys_accounts/edit.html:50
+#: app/templates/pages/sys_accounts/edit.html:54
+#: app/templates/pages/sys_accounts/list.html:120
+#: app/templates/pages/sys_accounts/list.html:124
+#: app/templates/pages/units/list.html:42
+#: app/templates/pages/units/view.html:49
+#: app/templates/pages/users/edit.html:118
+#: app/templates/pages/users/edit.html:127
+#: app/templates/pages/users/list.html:56
+#: app/templates/pages/users/list.html:67
+#: app/templates/pages/users/view.html:48 app/web/external_users.py:604
+#: app/web/org_admin_rescue.py:96
+msgid "啟用"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:95
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:41
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:51
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:117
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:226
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:144
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:116
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:189
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:234
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:303
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:350
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:43
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:57
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:44
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:117
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:212
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:81
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:92
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:250
+#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:48
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:54
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
+#: app/templates/pages/access_center/_tab_roles.html:59
+#: app/templates/pages/admin/_settings_recipients_section.html:32
+#: app/templates/pages/admin/_settings_smtp_section.html:33
+#: app/templates/pages/admin/_settings_telegram_section.html:32
+#: app/templates/pages/admin/module_list.html:86
+#: app/templates/pages/admin/numbering/list.html:122
+#: app/templates/pages/admin/org-admins/list.html:44
+#: app/templates/pages/admin/time/holidays.html:91
+#: app/templates/pages/admin/time/schedules.html:34
+#: app/templates/pages/delegations/list.html:26
+#: app/templates/pages/external-users/edit.html:136
+#: app/templates/pages/external-users/list.html:38
+#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:36
+#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:36
+#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:36
+#: app/templates/pages/modules/list.html:86
+#: app/templates/pages/organizations/admins.html:51
+#: app/templates/pages/organizations/list.html:266
+#: app/templates/pages/positions/list.html:25
+#: app/templates/pages/security/api_keys.html:34
+#: app/templates/pages/units/list.html:29
+#: app/templates/pages/users/list.html:44
+msgid "操作"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:85
+msgid "系統角色"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:53
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:67
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:80
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:65
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:68
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:104
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:141
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:295
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:218
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:796
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:73
+#: app/templates/pages/access_center/_tab_roles.html:101
+#: app/templates/pages/admin/_settings_recipients_section.html:52
+#: app/templates/pages/admin/_settings_recipients_section.html:54
+#: app/templates/pages/admin/_settings_smtp_section.html:61
+#: app/templates/pages/admin/_settings_smtp_section.html:63
+#: app/templates/pages/admin/_settings_telegram_section.html:55
+#: app/templates/pages/admin/_settings_telegram_section.html:57
+#: app/templates/pages/admin/numbering/list.html:159
+#: app/templates/pages/admin/time/holidays.html:105
+#: app/templates/pages/admin/time/schedules.html:75
+#: app/templates/pages/external-users/list.html:66
+#: app/templates/pages/external-users/view.html:28
+#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:50
+#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:53
+#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:50
+#: app/templates/pages/job_families/view.html:10
+#: app/templates/pages/modules/view.html:16
+#: app/templates/pages/security/api_keys.html:59
+#: app/templates/pages/users/list.html:63
+msgid "編輯"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:58
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:68
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:81
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:69
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:73
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:95
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:133
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:253
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:63
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:147
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:227
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:222
+#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:74
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:102
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:313
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:797
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:218
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:85
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:74
+#: app/templates/pages/access_center/_tab_roles.html:102
+#: app/templates/pages/admin/_settings_recipients_section.html:56
+#: app/templates/pages/admin/_settings_recipients_section.html:58
+#: app/templates/pages/admin/_settings_smtp_section.html:65
+#: app/templates/pages/admin/_settings_smtp_section.html:67
+#: app/templates/pages/admin/_settings_telegram_section.html:59
+#: app/templates/pages/admin/_settings_telegram_section.html:61
+#: app/templates/pages/admin/departments.html:314
+#: app/templates/pages/admin/groups.html:244
+#: app/templates/pages/admin/numbering/list.html:165
+#: app/templates/pages/admin/org-admins/list.html:93
+#: app/templates/pages/admin/settings.html:86
+#: app/templates/pages/admin/time/holidays.html:106
+#: app/templates/pages/admin/time/schedules.html:80
+#: app/templates/pages/external-users/list.html:77
+#: app/templates/pages/external-users/view.html:41
+#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:51
+#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:55
+#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:52
+#: app/templates/pages/job_families/list.html:190
+#: app/templates/pages/job_levels/list.html:186
+#: app/templates/pages/job_titles/list.html:213
+#: app/templates/pages/users/list.html:74
+msgid "刪除"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:109
+msgid "載入持有人中"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:112
+msgid "沒有持有人"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:165
+msgid "管理者角色"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:36
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:113
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:36
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:112
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:374
+#: app/templates/pages/access_center/_tab_roles.html:172
+#: app/templates/pages/approval_categories/create.html:67
+#: app/templates/pages/approval_categories/edit.html:62
+#: app/templates/pages/approval_categories/list.html:174
+#: app/templates/pages/approval_categories/list.html:276
+#: app/templates/pages/job_families/list.html:110
+#: app/templates/pages/job_families/list.html:177
+#: app/templates/pages/job_titles/list.html:119
+#: app/templates/pages/job_titles/list.html:196
+msgid "排序"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:38
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:109
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:39
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:108
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:76
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:177
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:242
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:371
+#: app/templates/pages/access_center/_tab_roles.html:185
+#: app/templates/pages/admin/_settings_telegram_section.html:90
+#: app/templates/pages/admin/groups.html:237
+#: app/templates/pages/admin/groups.html:255
+#: app/templates/pages/admin/numbering/edit.html:54
+#: app/templates/pages/admin/numbering/list.html:119
+#: app/templates/pages/admin/time/schedules.html:199
+#: app/templates/pages/approval_categories/create.html:75
+#: app/templates/pages/approval_categories/edit.html:70
+#: app/templates/pages/approval_categories/list.html:178
+#: app/templates/pages/approval_categories/list.html:280
+#: app/templates/pages/hostconfig/_system_settings_modals.html:16
+#: app/templates/pages/hostconfig/_system_settings_modals.html:121
+#: app/templates/pages/hostconfig/_system_settings_modals.html:186
+#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:33
+#: app/templates/pages/job_families/create.html:79
+#: app/templates/pages/job_families/edit.html:66
+#: app/templates/pages/job_families/list.html:106
+#: app/templates/pages/job_families/list.html:173
+#: app/templates/pages/job_families/view.html:49
+#: app/templates/pages/job_levels/create.html:81
+#: app/templates/pages/job_levels/edit.html:69
+#: app/templates/pages/job_levels/list.html:158
+#: app/templates/pages/job_levels/list.html:249
+#: app/templates/pages/job_levels/view.html:39
+#: app/templates/pages/job_titles/create.html:99
+#: app/templates/pages/job_titles/edit.html:86
+#: app/templates/pages/job_titles/list.html:123
+#: app/templates/pages/job_titles/list.html:200
+#: app/templates/pages/job_titles/view.html:68
+#: app/templates/pages/modules/create.html:44
+#: app/templates/pages/modules/edit.html:40
+#: app/templates/pages/modules/view.html:46
+#: app/templates/pages/organizations/create.html:69
+#: app/templates/pages/organizations/edit.html:103
+#: app/templates/pages/organizations/list.html:342
+#: app/templates/pages/organizations/list.html:393
+#: app/templates/pages/units/create.html:54
+#: app/templates/pages/units/edit.html:49
+#: app/templates/pages/units/view.html:56
+msgid "描述"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:191
+msgid "進階：API 權限"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:193
+msgid "載入權限中"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_roles.html:196
+msgid "沒有可用權限"
+msgstr ""
+
+#: app/templates/pages/access_center/index.html:3
+#: app/templates/pages/access_center/index.html:12
+#: app/templates/pages/menu/edit.html:90
+msgid "權限管理中心"
+msgstr ""
+
+#: app/templates/pages/access_center/index.html:15
+msgid "權限管理中心分頁"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:4
@@ -2938,8 +3630,6 @@ msgstr ""
 #: app/templates/pages/modules/list.html:79
 #: app/templates/pages/org_databases/monitor.html:74
 #: app/templates/pages/org_databases/monitor.html:244
-#: app/templates/pages/permissions/index.html:141
-#: app/templates/pages/permissions/index.html:387
 #: app/templates/pages/security/alert_broadcasts.html:114
 #: app/templates/pages/security/login_failures.html:74
 #: app/templates/pages/security/org_rate_limits.html:95
@@ -3114,7 +3804,6 @@ msgstr ""
 #: app/templates/pages/organizations/admins.html:162
 #: app/templates/pages/organizations/contract_form.html:36
 #: app/templates/pages/organizations/contract_form.html:109
-#: app/templates/pages/permissions/index.html:647
 #: app/templates/pages/platform_help/org_admin.html:36
 #: app/templates/pages/platform_help/org_admin.html:128
 #: app/templates/pages/platform_help/org_admin.html:321
@@ -3207,155 +3896,11 @@ msgstr ""
 msgid "狀態"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:95
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:41
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:51
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:117
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:226
-#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:144
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:116
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:189
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:234
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:303
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:350
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:43
-#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:57
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:44
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:117
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:212
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:81
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:92
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:250
-#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:48
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:54
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
-#: app/templates/pages/admin/_settings_recipients_section.html:32
-#: app/templates/pages/admin/_settings_smtp_section.html:33
-#: app/templates/pages/admin/_settings_telegram_section.html:32
-#: app/templates/pages/admin/module_list.html:86
-#: app/templates/pages/admin/numbering/list.html:122
-#: app/templates/pages/admin/org-admins/list.html:44
-#: app/templates/pages/admin/time/holidays.html:91
-#: app/templates/pages/admin/time/schedules.html:34
-#: app/templates/pages/delegations/list.html:26
-#: app/templates/pages/external-users/edit.html:136
-#: app/templates/pages/external-users/list.html:38
-#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:36
-#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:36
-#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:36
-#: app/templates/pages/modules/list.html:86
-#: app/templates/pages/organizations/admins.html:51
-#: app/templates/pages/organizations/list.html:266
-#: app/templates/pages/permissions/index.html:648
-#: app/templates/pages/positions/list.html:25
-#: app/templates/pages/roles/edit.html:151
-#: app/templates/pages/roles/list.html:54
-#: app/templates/pages/security/api_keys.html:34
-#: app/templates/pages/units/list.html:29
-#: app/templates/pages/users/list.html:44
-msgid "操作"
-msgstr ""
-
 #: app/templates/pages/admin/_settings_recipients_section.html:41
 #: app/templates/pages/security/alert_broadcasts.html:119
 #: app/templates/pages/security/alert_broadcasts.html:121
 #: app/templates/pages/security/alert_broadcasts.html:123
 msgid "人"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:183
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:383
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:485
-#: app/templates/pages/admin/_settings_recipients_section.html:44
-#: app/templates/pages/admin/_settings_smtp_section.html:53
-#: app/templates/pages/admin/_settings_smtp_section.html:177
-#: app/templates/pages/admin/_settings_telegram_section.html:47
-#: app/templates/pages/admin/_settings_telegram_section.html:143
-#: app/templates/pages/admin/numbering/list.html:152
-#: app/templates/pages/admin/org-admins/list.html:71
-#: app/templates/pages/admin/org-admins/list.html:86
-#: app/templates/pages/admin/time/schedules.html:67
-#: app/templates/pages/approval_categories/edit.html:81
-#: app/templates/pages/approval_categories/list.html:186
-#: app/templates/pages/cg_databases/overview.html:221
-#: app/templates/pages/external-users/list.html:60
-#: app/templates/pages/external-users/list.html:70
-#: app/templates/pages/external-users/view.html:60
-#: app/templates/pages/hostconfig/_system_settings_modals.html:93
-#: app/templates/pages/hostconfig/_system_settings_modals.html:159
-#: app/templates/pages/hostconfig/_system_settings_modals.html:198
-#: app/templates/pages/job_families/edit.html:85
-#: app/templates/pages/job_families/list.html:183
-#: app/templates/pages/job_families/view.html:58
-#: app/templates/pages/job_levels/edit.html:80
-#: app/templates/pages/job_levels/list.html:166
-#: app/templates/pages/job_levels/view.html:44
-#: app/templates/pages/job_titles/edit.html:105
-#: app/templates/pages/job_titles/list.html:206
-#: app/templates/pages/job_titles/view.html:73
-#: app/templates/pages/menu/edit.html:111
-#: app/templates/pages/modules/edit.html:48
-#: app/templates/pages/modules/view.html:55
-#: app/templates/pages/modules/view.html:82
-#: app/templates/pages/organizations/admins.html:78
-#: app/templates/pages/organizations/admins.html:95
-#: app/templates/pages/organizations/edit.html:87
-#: app/templates/pages/organizations/list.html:188
-#: app/templates/pages/positions/edit.html:119
-#: app/templates/pages/positions/list.html:69
-#: app/templates/pages/positions/view.html:97
-#: app/templates/pages/sys_accounts/edit.html:50
-#: app/templates/pages/sys_accounts/edit.html:54
-#: app/templates/pages/sys_accounts/list.html:120
-#: app/templates/pages/sys_accounts/list.html:124
-#: app/templates/pages/units/list.html:42
-#: app/templates/pages/units/view.html:49
-#: app/templates/pages/users/edit.html:118
-#: app/templates/pages/users/edit.html:127
-#: app/templates/pages/users/list.html:56
-#: app/templates/pages/users/list.html:67
-#: app/templates/pages/users/view.html:48 app/web/external_users.py:612
-#: app/web/org_admin_rescue.py:96
-msgid "啟用"
-msgstr ""
-
-#: app/templates/pages/admin/_settings_recipients_section.html:45
-#: app/templates/pages/admin/_settings_smtp_section.html:54
-#: app/templates/pages/admin/_settings_telegram_section.html:48
-#: app/templates/pages/admin/numbering/list.html:154
-#: app/templates/pages/admin/org-admins/list.html:73
-#: app/templates/pages/admin/org-admins/list.html:86
-#: app/templates/pages/admin/time/schedules.html:70
-#: app/templates/pages/cg_databases/overview.html:224
-#: app/templates/pages/external-users/list.html:62
-#: app/templates/pages/external-users/list.html:70
-#: app/templates/pages/external-users/view.html:62
-#: app/templates/pages/job_families/view.html:58
-#: app/templates/pages/job_levels/view.html:44
-#: app/templates/pages/job_titles/view.html:73
-#: app/templates/pages/modules/view.html:55
-#: app/templates/pages/modules/view.html:82
-#: app/templates/pages/org_databases/monitor.html:43
-#: app/templates/pages/org_databases/monitor.html:68
-#: app/templates/pages/organizations/admins.html:80
-#: app/templates/pages/organizations/admins.html:95
-#: app/templates/pages/organizations/edit.html:88
-#: app/templates/pages/organizations/list.html:125
-#: app/templates/pages/organizations/list.html:189
-#: app/templates/pages/organizations/list.html:278
-#: app/templates/pages/positions/list.html:69
-#: app/templates/pages/positions/view.html:97
-#: app/templates/pages/sys_accounts/edit.html:55
-#: app/templates/pages/sys_accounts/list.html:125
-#: app/templates/pages/units/list.html:42
-#: app/templates/pages/units/view.html:49
-#: app/templates/pages/users/edit.html:119
-#: app/templates/pages/users/edit.html:127
-#: app/templates/pages/users/list.html:58
-#: app/templates/pages/users/list.html:67
-#: app/templates/pages/users/view.html:48 app/web/external_users.py:612
-#: app/web/org_admin_rescue.py:96
-msgid "停用"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:39
@@ -3365,85 +3910,6 @@ msgstr ""
 #: app/templates/pages/admin/_settings_recipients_section.html:48
 #: app/templates/pages/admin/_settings_recipients_section.html:50
 msgid "預覽"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:53
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:67
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:80
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:65
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:68
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:104
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:141
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:295
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:218
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:796
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:73
-#: app/templates/pages/admin/_settings_recipients_section.html:52
-#: app/templates/pages/admin/_settings_recipients_section.html:54
-#: app/templates/pages/admin/_settings_smtp_section.html:61
-#: app/templates/pages/admin/_settings_smtp_section.html:63
-#: app/templates/pages/admin/_settings_telegram_section.html:55
-#: app/templates/pages/admin/_settings_telegram_section.html:57
-#: app/templates/pages/admin/numbering/list.html:159
-#: app/templates/pages/admin/time/holidays.html:105
-#: app/templates/pages/admin/time/schedules.html:75
-#: app/templates/pages/external-users/list.html:66
-#: app/templates/pages/external-users/view.html:28
-#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:50
-#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:53
-#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:50
-#: app/templates/pages/job_families/view.html:10
-#: app/templates/pages/modules/view.html:16
-#: app/templates/pages/permissions/index.html:438
-#: app/templates/pages/roles/list.html:96
-#: app/templates/pages/roles/view.html:15
-#: app/templates/pages/security/api_keys.html:59
-#: app/templates/pages/users/list.html:63
-msgid "編輯"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:58
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:68
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:81
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:69
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:73
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:95
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:133
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:253
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:63
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:147
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:227
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:222
-#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:74
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:102
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:313
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:797
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:218
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:85
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:74
-#: app/templates/pages/admin/_settings_recipients_section.html:56
-#: app/templates/pages/admin/_settings_recipients_section.html:58
-#: app/templates/pages/admin/_settings_smtp_section.html:65
-#: app/templates/pages/admin/_settings_smtp_section.html:67
-#: app/templates/pages/admin/_settings_telegram_section.html:59
-#: app/templates/pages/admin/_settings_telegram_section.html:61
-#: app/templates/pages/admin/departments.html:314
-#: app/templates/pages/admin/groups.html:244
-#: app/templates/pages/admin/numbering/list.html:165
-#: app/templates/pages/admin/org-admins/list.html:93
-#: app/templates/pages/admin/settings.html:86
-#: app/templates/pages/admin/time/holidays.html:106
-#: app/templates/pages/admin/time/schedules.html:80
-#: app/templates/pages/external-users/list.html:77
-#: app/templates/pages/external-users/view.html:41
-#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:51
-#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:55
-#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:52
-#: app/templates/pages/job_families/list.html:190
-#: app/templates/pages/job_levels/list.html:186
-#: app/templates/pages/job_titles/list.html:213
-#: app/templates/pages/users/list.html:74
-msgid "刪除"
 msgstr ""
 
 #: app/templates/pages/admin/_settings_recipients_section.html:80
@@ -3573,9 +4039,6 @@ msgstr ""
 #: app/templates/pages/admin/_settings_smtp_section.html:204
 #: app/templates/pages/admin/_settings_telegram_section.html:164
 #: app/templates/pages/admin/_settings_telegram_section.html:170
-#: app/templates/pages/roles/edit.html:174
-#: app/templates/pages/roles/edit.html:191
-#: app/templates/pages/roles/list.html:125
 msgid "確認刪除"
 msgstr ""
 
@@ -3620,36 +4083,6 @@ msgstr ""
 msgid "點擊「新增設定」開始建立"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:37
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:74
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:240
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:294
-#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:91
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:164
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:343
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:103
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:30
-#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:29
-#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
-#: app/templates/pages/admin/_settings_smtp_section.html:28
-#: app/templates/pages/admin/_settings_telegram_section.html:28
-#: app/templates/pages/approval_categories/list.html:94
-#: app/templates/pages/approval_categories/list.html:155
-#: app/templates/pages/approval_categories/list.html:246
-#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:32
-#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:32
-#: app/templates/pages/job_levels/create.html:99
-#: app/templates/pages/job_levels/list.html:80
-#: app/templates/pages/modules/list.html:84
-#: app/templates/pages/permissions/index.html:228
-#: app/templates/pages/permissions/index.html:274
-#: app/templates/pages/platform_help/org_admin.html:275
-#: app/templates/pages/roles/list.html:49
-#: app/templates/pages/security/_api_keys_modals.html:9
-#: app/templates/pages/units/list.html:25
-msgid "名稱"
-msgstr ""
-
 #: app/templates/pages/admin/_settings_smtp_section.html:29
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:33
 msgid "伺服器"
@@ -3658,6 +4091,16 @@ msgstr ""
 #: app/templates/pages/admin/_settings_smtp_section.html:30
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:34
 msgid "寄件人"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:90
+#: app/templates/pages/admin/_settings_smtp_section.html:31
+#: app/templates/pages/admin/_settings_telegram_section.html:130
+#: app/templates/pages/admin/time/schedules.html:43
+#: app/templates/pages/approval_categories/list.html:110
+#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:44
+#: app/templates/pages/organizations/admins.html:60 app/web/numbering.py:196
+msgid "預設"
 msgstr ""
 
 #: app/templates/pages/admin/_settings_smtp_section.html:57
@@ -3773,59 +4216,6 @@ msgstr ""
 
 #: app/templates/pages/admin/_settings_telegram_section.html:85
 msgid "例如: 告警通知群組"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:38
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:109
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:39
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:108
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:76
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:177
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:242
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:371
-#: app/templates/pages/admin/_settings_telegram_section.html:90
-#: app/templates/pages/admin/groups.html:237
-#: app/templates/pages/admin/groups.html:255
-#: app/templates/pages/admin/numbering/edit.html:54
-#: app/templates/pages/admin/numbering/list.html:119
-#: app/templates/pages/admin/time/schedules.html:199
-#: app/templates/pages/approval_categories/create.html:75
-#: app/templates/pages/approval_categories/edit.html:70
-#: app/templates/pages/approval_categories/list.html:178
-#: app/templates/pages/approval_categories/list.html:280
-#: app/templates/pages/hostconfig/_system_settings_modals.html:16
-#: app/templates/pages/hostconfig/_system_settings_modals.html:121
-#: app/templates/pages/hostconfig/_system_settings_modals.html:186
-#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:33
-#: app/templates/pages/job_families/create.html:79
-#: app/templates/pages/job_families/edit.html:66
-#: app/templates/pages/job_families/list.html:106
-#: app/templates/pages/job_families/list.html:173
-#: app/templates/pages/job_families/view.html:49
-#: app/templates/pages/job_levels/create.html:81
-#: app/templates/pages/job_levels/edit.html:69
-#: app/templates/pages/job_levels/list.html:158
-#: app/templates/pages/job_levels/list.html:249
-#: app/templates/pages/job_levels/view.html:39
-#: app/templates/pages/job_titles/create.html:99
-#: app/templates/pages/job_titles/edit.html:86
-#: app/templates/pages/job_titles/list.html:123
-#: app/templates/pages/job_titles/list.html:200
-#: app/templates/pages/job_titles/view.html:68
-#: app/templates/pages/modules/create.html:44
-#: app/templates/pages/modules/edit.html:40
-#: app/templates/pages/modules/view.html:46
-#: app/templates/pages/organizations/create.html:69
-#: app/templates/pages/organizations/edit.html:103
-#: app/templates/pages/organizations/list.html:342
-#: app/templates/pages/organizations/list.html:393
-#: app/templates/pages/roles/create.html:152
-#: app/templates/pages/roles/edit.html:85
-#: app/templates/pages/roles/view.html:50
-#: app/templates/pages/units/create.html:54
-#: app/templates/pages/units/edit.html:49
-#: app/templates/pages/units/view.html:56
-msgid "描述"
 msgstr ""
 
 #: app/templates/pages/admin/_settings_telegram_section.html:102
@@ -3977,10 +4367,6 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:326
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:255
 #: app/templates/pages/admin/groups.html:188
-#: app/templates/pages/roles/create.html:111
-#: app/templates/pages/roles/edit.html:62
-#: app/templates/pages/roles/list.html:82
-#: app/templates/pages/roles/view.html:36
 msgid "社群"
 msgstr ""
 
@@ -4031,10 +4417,6 @@ msgstr ""
 msgid "社群成員"
 msgstr ""
 
-#: app/templates/pages/admin/groups.html:277
-msgid "團長"
-msgstr ""
-
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:338
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:132
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:146
@@ -4053,16 +4435,8 @@ msgstr ""
 msgid "拖入設為團長"
 msgstr ""
 
-#: app/templates/pages/admin/groups.html:313
-msgid "副團長"
-msgstr ""
-
 #: app/templates/pages/admin/groups.html:323
 msgid "拖入設為副團長"
-msgstr ""
-
-#: app/templates/pages/admin/groups.html:351
-msgid "團員"
 msgstr ""
 
 #: app/templates/pages/admin/groups.html:356
@@ -4894,12 +5268,11 @@ msgstr ""
 #: app/templates/pages/job_levels/edit.html:86
 #: app/templates/pages/job_titles/edit.html:111
 #: app/templates/pages/job_titles/list.html:216
-#: app/templates/pages/menu/edit.html:117
+#: app/templates/pages/menu/edit.html:108
 #: app/templates/pages/modules/edit.html:54
 #: app/templates/pages/organizations/edit.html:146
 #: app/templates/pages/positions/edit.html:125
 #: app/templates/pages/profile/edit.html:38
-#: app/templates/pages/roles/edit.html:123
 #: app/templates/pages/sys_accounts/edit.html:98
 #: app/templates/pages/units/edit.html:65
 #: app/templates/pages/users/edit.html:338
@@ -4935,15 +5308,15 @@ msgstr ""
 msgid "新增規則"
 msgstr ""
 
-#: app/templates/pages/admin/numbering/list.html:131 app/web/numbering.py:197
+#: app/templates/pages/admin/numbering/list.html:131 app/web/numbering.py:192
 msgid "企業成員預設"
 msgstr ""
 
-#: app/templates/pages/admin/numbering/list.html:133 app/web/numbering.py:198
+#: app/templates/pages/admin/numbering/list.html:133 app/web/numbering.py:193
 msgid "外部預設"
 msgstr ""
 
-#: app/templates/pages/admin/numbering/list.html:135 app/web/numbering.py:199
+#: app/templates/pages/admin/numbering/list.html:135 app/web/numbering.py:194
 msgid "表單預設"
 msgstr ""
 
@@ -5059,7 +5432,6 @@ msgstr ""
 #: app/templates/pages/admin/org-admins/create.html:140
 #: app/templates/pages/job_families/edit.html:106
 #: app/templates/pages/platform_help/org_admin.html:64
-#: app/templates/pages/roles/view.html:64
 msgid "注意："
 msgstr ""
 
@@ -5102,8 +5474,6 @@ msgstr ""
 #: app/templates/pages/organizations/contract_form.html:155
 #: app/templates/pages/organizations/list.html:214
 #: app/templates/pages/positions/view.html:104
-#: app/templates/pages/roles/edit.html:110
-#: app/templates/pages/roles/view.html:54
 #: app/templates/pages/sys_accounts/edit.html:119
 #: app/templates/pages/sys_accounts/list.html:185
 #: app/templates/pages/units/view.html:60
@@ -5163,8 +5533,8 @@ msgid "企業管理員可以管理企業設定、用戶帳號等"
 msgstr ""
 
 #: app/templates/pages/admin/org-admins/list.html:157
-#: app/web/org_admin_rescue.py:90 app/web/org_admins.py:493
-#: app/web/org_admins.py:533
+#: app/web/org_admin_rescue.py:90 app/web/org_admins.py:490
+#: app/web/org_admins.py:529
 msgid "必須至少保留一個啟用的管理員"
 msgstr ""
 
@@ -5253,30 +5623,6 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:396
 #: app/templates/pages/admin/time/holidays.html:87
 msgid "日期"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:39
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:41
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:326
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:466
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:551
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:323
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:250
-#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
-#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:20
-#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
-#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:89
-#: app/templates/pages/admin/time/holidays.html:88
-#: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:18
-#: app/templates/pages/menu/list.html:122
-#: app/templates/pages/modules/list.html:83
-#: app/templates/pages/permissions/index.html:645
-#: app/templates/pages/positions/list.html:20
-#: app/templates/pages/roles/create.html:89
-#: app/templates/pages/roles/edit.html:52
-#: app/templates/pages/roles/list.html:50
-#: app/templates/pages/units/list.html:26
-msgid "類型"
 msgstr ""
 
 #: app/templates/pages/admin/time/holidays.html:90
@@ -5521,8 +5867,6 @@ msgstr ""
 #: app/templates/pages/job_families/view.html:9
 #: app/templates/pages/job_levels/create.html:11
 #: app/templates/pages/job_titles/create.html:11
-#: app/templates/pages/roles/create.html:8
-#: app/templates/pages/roles/edit.html:8
 #: app/templates/pages/sys_accounts/create.html:11
 #: app/templates/pages/sys_accounts/edit.html:11
 msgid "返回列表"
@@ -5634,22 +5978,6 @@ msgstr ""
 #: app/templates/pages/approval_categories/list.html:163
 #: app/templates/pages/approval_categories/list.html:265
 msgid "幣別"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:36
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:113
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:36
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:112
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:374
-#: app/templates/pages/approval_categories/create.html:67
-#: app/templates/pages/approval_categories/edit.html:62
-#: app/templates/pages/approval_categories/list.html:174
-#: app/templates/pages/approval_categories/list.html:276
-#: app/templates/pages/job_families/list.html:110
-#: app/templates/pages/job_families/list.html:177
-#: app/templates/pages/job_titles/list.html:119
-#: app/templates/pages/job_titles/list.html:196
-msgid "排序"
 msgstr ""
 
 #: app/templates/pages/approval_categories/create.html:78
@@ -5775,13 +6103,8 @@ msgstr ""
 #: app/templates/pages/job_levels/list.html:218
 #: app/templates/pages/job_titles/list.html:76
 #: app/templates/pages/job_titles/list.html:152
-#: app/templates/pages/menu/edit.html:140
-#: app/templates/pages/menu/edit.html:169
 #: app/templates/pages/modules/view.html:97
-#: app/templates/pages/permissions/index.html:168
-#: app/templates/pages/permissions/index.html:450
 #: app/templates/pages/platform_help/org_admin.html:35
-#: app/templates/pages/roles/list.html:48
 #: app/templates/pages/units/list.html:24
 msgid "代碼"
 msgstr ""
@@ -5795,7 +6118,6 @@ msgstr ""
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:65
 #: app/templates/pages/approval_categories/list.html:196
 #: app/templates/pages/menu/list.html:97
-#: app/templates/pages/roles/edit.html:124
 msgid "儲存中..."
 msgstr ""
 
@@ -5828,7 +6150,6 @@ msgstr ""
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:428
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:555
 #: app/templates/pages/approval_categories/list.html:289
-#: app/templates/pages/roles/create.html:174
 msgid "建立中..."
 msgstr ""
 
@@ -5949,10 +6270,6 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:184
 #: app/templates/pages/cg_databases/overview.html:250
 msgid "動作"
-msgstr ""
-
-#: app/templates/pages/cg_databases/overview.html:250
-msgid "企業"
 msgstr ""
 
 #: app/templates/pages/cg_databases/overview.html:250
@@ -6281,7 +6598,6 @@ msgstr ""
 #: app/templates/pages/job_titles/list.html:105
 #: app/templates/pages/job_titles/list.html:171
 #: app/templates/pages/job_titles/list.html:182
-#: app/templates/pages/permissions/index.html:126
 msgid "-- 請選擇 --"
 msgstr ""
 
@@ -6344,24 +6660,6 @@ msgstr ""
 #: app/templates/pages/external-users/list.html:36
 #: app/templates/pages/external-users/view.html:67
 msgid "歸屬群組"
-msgstr ""
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:794
-#: app/templates/pages/external-users/edit.html:134
-#: app/templates/pages/modules/list.html:155
-#: app/templates/pages/platform_help/org_admin.html:77
-#: app/templates/pages/platform_help/org_admin.html:98
-#: app/templates/pages/platform_help/org_admin.html:127
-#: app/templates/pages/platform_help/org_admin.html:393
-#: app/templates/pages/profile/view.html:18
-#: app/templates/pages/roles/list.html:78
-#: app/templates/pages/roles/view.html:29
-#: app/templates/pages/users/edit.html:88
-#: app/templates/pages/users/edit.html:102
-#: app/templates/pages/users/view.html:38
-#: app/templates/pages/users/view.html:85
-#: app/templates/pages/users/view.html:150
-msgid "角色"
 msgstr ""
 
 #: app/templates/pages/external-users/edit.html:135
@@ -6834,18 +7132,6 @@ msgstr ""
 msgid "文字"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:296
-#: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:25
-#: app/templates/pages/menu/list.html:128
-#: app/templates/pages/modules/create.html:51
-#: app/templates/pages/platform_help/org_admin.html:41
-#: app/templates/pages/profile/view.html:20
-#: app/templates/pages/users/edit.html:95
-#: app/templates/pages/users/edit.html:105
-#: app/templates/pages/users/view.html:40
-msgid "系統管理員"
-msgstr ""
-
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:26
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:27
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:31
@@ -7152,8 +7438,6 @@ msgstr ""
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:143
 #: app/templates/pages/hostconfig/data_maintenance.html:61
 #: app/templates/pages/hostconfig/index.html:70
-#: app/templates/pages/roles/edit.html:192
-#: app/templates/pages/roles/list.html:126
 msgid "刪除中..."
 msgstr ""
 
@@ -7302,8 +7586,6 @@ msgstr ""
 #: app/templates/pages/job_families/view.html:53
 #: app/templates/pages/job_titles/create.html:106
 #: app/templates/pages/job_titles/edit.html:92
-#: app/templates/pages/roles/create.html:161
-#: app/templates/pages/roles/edit.html:98
 #: app/templates/pages/units/create.html:58
 #: app/templates/pages/units/edit.html:53
 #: app/templates/pages/units/view.html:52
@@ -7381,9 +7663,6 @@ msgstr ""
 #: app/templates/pages/job_titles/list.html:113
 #: app/templates/pages/job_titles/list.html:190
 #: app/templates/pages/job_titles/view.html:64
-#: app/templates/pages/roles/create.html:136
-#: app/templates/pages/roles/edit.html:70
-#: app/templates/pages/roles/list.html:52
 msgid "管理職"
 msgstr ""
 
@@ -7415,9 +7694,6 @@ msgstr ""
 #: app/templates/pages/job_titles/view.html:77
 #: app/templates/pages/modules/view.html:51
 #: app/templates/pages/positions/view.html:68
-#: app/templates/pages/roles/edit.html:78
-#: app/templates/pages/roles/view.html:43
-#: app/templates/pages/roles/view.html:47
 msgid "否"
 msgstr ""
 
@@ -7656,7 +7932,7 @@ msgstr ""
 msgid "數字越大職等越高 (0-9999)"
 msgstr ""
 
-#: app/templates/pages/job_levels/list.html:191 app/web/job_levels.py:295
+#: app/templates/pages/job_levels/list.html:191 app/web/job_levels.py:289
 msgid "系統預設職等不可刪除"
 msgstr ""
 
@@ -7719,9 +7995,6 @@ msgstr ""
 #: app/templates/pages/job_levels/view.html:32
 #: app/templates/pages/modules/view.html:51
 #: app/templates/pages/positions/list.html:60
-#: app/templates/pages/roles/edit.html:78
-#: app/templates/pages/roles/view.html:43
-#: app/templates/pages/roles/view.html:47
 msgid "是"
 msgstr ""
 
@@ -7732,8 +8005,6 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:53
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:45
 #: app/templates/pages/job_levels/view.html:55
-#: app/templates/pages/roles/edit.html:114
-#: app/templates/pages/roles/view.html:58
 #: app/templates/pages/units/view.html:64
 msgid "更新時間"
 msgstr ""
@@ -7957,7 +8228,6 @@ msgid "手動建立的選單僅能作為區塊標題，路由型選單由系統�
 msgstr ""
 
 #: app/templates/pages/menu/create.html:90
-#: app/templates/pages/menu/edit.html:87
 msgid "授權用戶類型"
 msgstr ""
 
@@ -7966,14 +8236,14 @@ msgid "勾選可看見此選單的用戶類型（平行關係，非繼承）"
 msgstr ""
 
 #: app/templates/pages/menu/create.html:103
-#: app/templates/pages/menu/edit.html:103
+#: app/templates/pages/menu/edit.html:94
 #: app/templates/pages/modules/edit.html:44
 #: app/templates/pages/modules/view.html:58
 msgid "顯示順序"
 msgstr ""
 
 #: app/templates/pages/menu/create.html:107
-#: app/templates/pages/menu/edit.html:107
+#: app/templates/pages/menu/edit.html:98
 msgid "預設展開"
 msgstr ""
 
@@ -8005,86 +8275,40 @@ msgstr ""
 msgid "連結目標"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:96
-msgid "鑰匙1: 勾選哪些用戶類型有「資格」看到此選單（平行關係，非繼承）"
+#: app/templates/pages/menu/edit.html:87
+msgid "鑰匙授權"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:98
-msgid "此為模組選單，企業須有合約授權才會生效"
+#: app/templates/pages/menu/edit.html:89
+msgid "鑰匙授權已移至"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:122
-msgid "存取角色需求"
-msgstr ""
-
+#: app/templates/pages/menu/edit.html:114
+#: app/templates/pages/menu/edit.html:119
 #: app/templates/pages/menu/edit.html:126
-msgid "此項目為結構元素（群組標題/分隔線），不適用鑰匙2角色需求：其可見性由「底下是否有可見子項」自動決定，請到各子項目設定存取角色。"
-msgstr ""
-
-#: app/templates/pages/menu/edit.html:128
-msgid "鑰匙2: 必須設定角色。未設定角色的選單，任何人（含管理員）都無法透過 URL 存取。用戶必須持有至少一個指定角色，否則強制登出。"
-msgstr ""
-
-#: app/templates/pages/menu/edit.html:133
-msgid "被授權的角色"
-msgstr ""
-
-#: app/templates/pages/menu/edit.html:139
-#: app/templates/pages/menu/edit.html:168
-#: app/templates/pages/permissions/index.html:449
-#: app/templates/pages/roles/create.html:35
-#: app/templates/pages/roles/edit.html:39
-#: app/templates/pages/roles/view.html:24
-msgid "角色名稱"
-msgstr ""
-
-#: app/templates/pages/menu/edit.html:141
-#: app/templates/pages/menu/edit.html:170
-#: app/templates/pages/permissions/index.html:229
-#: app/templates/pages/permissions/index.html:275
-#: app/templates/pages/units/view.html:44
-msgid "層級"
-msgstr ""
-
-#: app/templates/pages/menu/edit.html:157
-msgid "尚未授權任何角色"
-msgstr ""
-
-#: app/templates/pages/menu/edit.html:161
-msgid "可選角色"
-msgstr ""
-
-#: app/templates/pages/menu/edit.html:186
-#: app/templates/pages/permissions/index.html:478
-msgid "企業尚未建立角色"
-msgstr ""
-
-#: app/templates/pages/menu/edit.html:276
-#: app/templates/pages/menu/edit.html:281
-#: app/templates/pages/menu/edit.html:288
 msgid "刪除選單項目"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:279
+#: app/templates/pages/menu/edit.html:117
 msgid "無法刪除：子項目中包含預設選單（"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:279
+#: app/templates/pages/menu/edit.html:117
 msgid "等共"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:82
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:59
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:223
-#: app/templates/pages/menu/edit.html:279
+#: app/templates/pages/menu/edit.html:117
 msgid "項"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:279
+#: app/templates/pages/menu/edit.html:117
 msgid "），請先將其移出"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:284
+#: app/templates/pages/menu/edit.html:122
 msgid "刪除此選單項目將連同子項目一起刪除。"
 msgstr ""
 
@@ -8109,7 +8333,6 @@ msgid "重置MENU項目位置"
 msgstr ""
 
 #: app/templates/pages/menu/list.html:22
-#: app/templates/pages/permissions/index.html:39
 msgid "設定目前組態成出廠值"
 msgstr ""
 
@@ -8146,7 +8369,6 @@ msgid "儲存後，「重置MENU所有設定成出廠值」將以此快照為準
 msgstr ""
 
 #: app/templates/pages/menu/list.html:46
-#: app/templates/pages/permissions/index.html:70
 msgid "確認儲存"
 msgstr ""
 
@@ -8514,7 +8736,6 @@ msgid "此模組無頁面"
 msgstr ""
 
 #: app/templates/pages/modules/view.html:91
-#: app/templates/pages/permissions/index.html:323
 msgid "選單結構"
 msgstr ""
 
@@ -8612,7 +8833,6 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:60
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:224
 #: app/templates/pages/org_databases/monitor.html:207
-#: app/templates/pages/roles/list.html:27
 msgid "反選"
 msgstr ""
 
@@ -8962,7 +9182,6 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:49
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:20
 #: app/templates/pages/organizations/list.html:32
-#: app/templates/pages/permissions/index.html:211
 #: app/templates/pages/store/index.html:16
 msgid "全部"
 msgstr ""
@@ -9013,11 +9232,6 @@ msgstr ""
 #: app/templates/pages/organizations/list.html:89
 #: app/templates/pages/platform_help/org_admin.html:443
 msgid "合約"
-msgstr ""
-
-#: app/templates/pages/organizations/list.html:115
-#: app/templates/pages/roles/list.html:76
-msgid "系統"
 msgstr ""
 
 #: app/templates/pages/organizations/list.html:122
@@ -9121,325 +9335,6 @@ msgstr ""
 msgid "結束日期 *"
 msgstr ""
 
-#: app/templates/pages/permissions/index.html:3
-#: app/templates/pages/permissions/index.html:12
-msgid "權限中央管理"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:18
-#: app/templates/pages/security/login_failures.html:27
-msgid "指定企業"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:22
-msgid "-- 請選擇企業 --"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:42
-msgid "匯出 RBAC 權限"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:44
-msgid "匯入 RBAC 權限"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:50
-msgid "恢復 RBAC 預設權限"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:59
-msgid "確認設定出廠值"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:61
-msgid "此操作將把目前所選企業的系統角色 RBAC 權限配置儲存為出廠預設值。"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:64
-msgid "生成安裝用 SQL（新安裝的用戶將自動取得這些預設值）"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:65
-msgid "僅在角色完全沒有權限時才套用（升級不會覆蓋既有設定）"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:66
-msgid "企業可使用「恢復 RBAC 預設權限」手動套用"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:79
-msgid "確認恢復 RBAC 預設權限"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:81
-msgid "RBAC 完全覆蓋：自行新增的權限配置不會保留，已刪除的預設權限會再出現。"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:82
-msgid "請務必先使用「匯出 RBAC 權限」備份目前設定。"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:85
-msgid "此操作將以系統出廠預設值覆蓋本企業所有系統角色的 RBAC 權限。"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:89
-msgid "確認恢復"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:97
-msgid "請先選擇企業，才能查看該企業的角色與權限配置。"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:104
-msgid "角色視角"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:106
-msgid "功能視角"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:109
-#: app/templates/pages/platform_help/org_admin.html:453
-msgid "衝突偵測"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:137
-msgid "請從左側選擇一個角色"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:158
-msgid "頁面存取需求 (MenuRoleRequirement)"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:159
-msgid "此角色被設為存取條件的選單頁面"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:161
-msgid "無 -- 此角色未被任何選單設為存取條件"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:167
-msgid "選單名稱"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:169
-#: app/templates/pages/units/list.html:27
-msgid "路徑"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:197
-msgid "RBAC 權限 (RolePermission)"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:207
-msgid "勾選要授予的權限"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:214
-msgid "企業級"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:216
-msgid "模組級"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:219
-msgid "系統級"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:227
-#: app/templates/pages/permissions/index.html:273
-msgid "權限代碼"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:267
-msgid "無 -- 此角色未持有任何 RBAC 權限"
-msgstr ""
-
-#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:62
-#: app/templates/pages/permissions/index.html:276
-msgid "來源"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:289
-msgid "直接授予"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:301
-#: app/templates/pages/platform_help/org_admin.html:100
-msgid "繼承"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:324
-msgid "= 該選單設有 required_permission (RBAC 權限門檻)"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:338
-#: app/templates/pages/permissions/index.html:355
-#: app/templates/pages/permissions/index.html:367
-msgid "需要 RBAC 權限"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:383
-msgid "請從左側選擇一個選單項目"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:400
-msgid "路徑:"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:406
-msgid "用戶類型可見性 (MenuPermission)"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:410
-msgid "用戶類型"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:411
-msgid "可見"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:435
-msgid "角色存取需求 (MenuRoleRequirement)"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:443
-msgid "無角色需求 -- 雙鑰匙 fail-closed，EMPLOYEE / EXTERNAL 一律不可見、不可存取"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:451
-msgid "持有者"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:473
-msgid "系統管理員模式：以角色代碼批量套用到所有企業（僅系統預設角色）"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:475
-msgid "勾選可存取此功能的角色（含企業自訂角色），僅影響本企業"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:421
-#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:62
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:101
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:38
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:252
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:52
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:100
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:289
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:64
-#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:76
-#: app/templates/pages/permissions/index.html:493
-#: app/templates/pages/security/org_rate_limits.html:89
-msgid "儲存"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:503
-msgid "RBAC 權限門檻 (required_permission) -- 已退役"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:504
-msgid "此欄位已不參與選單可見性（單軌化為雙鑰匙角色制），permission code 僅存在 API / 資源層，以下僅供參考。"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:506
-msgid "無 -- 此選單未設定 RBAC 權限門檻"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:511
-msgid "需要權限:"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:518
-msgid "沒有任何角色持有此權限（不影響選單可見性，僅影響對應 API）"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:522
-msgid "持有此權限的角色:"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:548
-msgid "分析中..."
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:555
-msgid "顯示類型"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:561
-msgid "權限代碼不存在"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:567
-msgid "無角色持有所需權限"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:573
-msgid "角色無人持有"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:579
-msgid "選單要求的角色已停用"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:585
-msgid "雙鑰匙交集為空"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:591
-msgid "指派給停用帳號"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:597
-msgid "角色無權限"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:604
-msgid "選單無存取控制"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:612
-msgid "孤兒權限"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:620
-msgid "偵測結果"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:636
-msgid "未偵測到權限衝突或缺失（或所有類型已隱藏）"
-msgstr ""
-
-#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:58
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:106
-#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:27
-#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:24
-#: app/templates/pages/permissions/index.html:644
-msgid "嚴重度"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:646
-msgid "對象"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:664
-msgid "相關帳號："
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:666
-msgid "、"
-msgstr ""
-
-#: app/templates/pages/permissions/index.html:673
-#: app/templates/pages/roles/edit.html:160
-msgid "查看"
-msgstr ""
-
 #: app/templates/pages/platform_help/employee.html:3
 #: app/templates/pages/platform_help/employee.html:7
 msgid "平台說明 - 企業成員"
@@ -9527,7 +9422,7 @@ msgid "預設角色"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:70
-msgid "系統內建以下角色，企業管理員可在 /roles/ 自行增減角色。"
+msgid "系統內建以下角色，企業管理員可在 /access/ 自行增減角色。"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:72
@@ -9561,6 +9456,10 @@ msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:94
 msgid "控制模組（如子系統開發模組）的存取層級，具有繼承關係。"
+msgstr ""
+
+#: app/templates/pages/platform_help/org_admin.html:100
+msgid "繼承"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:105
@@ -9661,7 +9560,7 @@ msgid "角色繼承："
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:144
-msgid "部分角色會自動包含下級角色的權限。例如「模組作者」自動擁有「模組讀者」的所有權限。繼承關係在 /roles/ 頁面可查看。"
+msgid "部分角色會自動包含下級角色的權限。例如「模組作者」自動擁有「模組讀者」的所有權限。繼承關係在 /access/ 頁面可查看。"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:156
@@ -9669,7 +9568,7 @@ msgid "權限管理概觀"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:157
-msgid "平台的權限分散在多個層面，各有不同的控制目標。企業管理員可透過「權限管理」(/permissions/) 進行統一檢視與管理。"
+msgid "平台的權限分散在多個層面，各有不同的控制目標。企業管理員可透過「權限管理中心」(/access/) 進行統一檢視與管理。"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:162
@@ -9697,10 +9596,6 @@ msgstr ""
 #: app/templates/pages/platform_help/org_admin.html:174
 #: app/templates/pages/platform_help/org_admin.html:418
 msgid "選單角色需求"
-msgstr ""
-
-#: app/templates/pages/platform_help/org_admin.html:175
-msgid "/menu/ (角色欄)"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:176
@@ -9787,7 +9682,7 @@ msgid "常見問題："
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:234
-msgid "如果企業成員反映「選單看得到但點進去沒權限」，通常是步驟 1 通過但步驟 3 或 4 未配置。請至 /permissions/ 檢查衝突偵測結果。"
+msgid "如果企業成員反映「選單看得到但點進去沒權限」，通常是步驟 1 通過但步驟 3 或 4 未配置。請至 /access/ 檢查衝突偵測結果。"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:239
@@ -9807,7 +9702,7 @@ msgid "企業管理員不需要被加入任何角色就能操作所有企業內�
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:244
-msgid "在 /permissions/ 的衝突偵測中，僅授權給 ORG_ADMIN 的選單不會被標記為缺少 RBAC 權限"
+msgid "在 /access/ 的衝突偵測中，僅授權給 ORG_ADMIN 的選單不會被標記為缺少 RBAC 權限"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:245
@@ -9823,19 +9718,19 @@ msgid "新增一個需要權限控制的功能時，建議依以下順序操作�
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:253
-msgid "-- 設定選單可見性（勾選哪些帳號等級能看到）"
+msgid "-- 建立或調整選單結構"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:254
-msgid "-- 建立或選擇角色，指派角色給帳號"
+msgid "-- 設定選單可見性與角色門檻"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:255
-msgid "-- 為角色配置所需的 RBAC 權限"
+msgid "-- 建立或選擇角色，指派角色給帳號"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:256
-msgid "-- 使用衝突偵測功能確認配置完整"
+msgid "-- 為角色配置所需的 RBAC 權限並檢查衝突"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:268
@@ -10067,8 +9962,12 @@ msgstr ""
 msgid "系統自動記錄的操作歷史，用於事後追溯與合規"
 msgstr ""
 
+#: app/templates/pages/platform_help/org_admin.html:453
+msgid "衝突偵測"
+msgstr ""
+
 #: app/templates/pages/platform_help/org_admin.html:455
-msgid "/permissions/ 中的功能，自動檢查權限配置是否有遺漏或矛盾"
+msgid "/access/ 中的功能，自動檢查權限配置是否有遺漏或矛盾"
 msgstr ""
 
 #: app/templates/pages/platform_help/page_doc.html:3
@@ -10211,11 +10110,6 @@ msgstr ""
 #: app/templates/pages/positions/list.html:54
 #: app/templates/pages/positions/view.html:59
 msgid "兼任"
-msgstr ""
-
-#: app/templates/pages/positions/list.html:55
-#: app/templates/pages/positions/view.html:60
-msgid "代理"
 msgstr ""
 
 #: app/templates/pages/positions/list.html:56
@@ -10376,267 +10270,6 @@ msgstr ""
 
 #: app/templates/pages/public/index.html:73
 msgid "了解更多"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:3
-#: app/templates/pages/roles/create.html:11
-#: app/templates/pages/roles/list.html:18
-msgid "新增角色"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:19
-msgid "適用對象"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:24
-msgid "企業內部人員"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:27
-msgid "外部廠商：如訪客、廠商、合作夥伴"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:28
-msgid "內部人員：企業正式企業成員"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:39
-msgid "如：專案經理、業務主管"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:41
-msgid "輸入名稱後會自動產生代碼建議"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:48
-#: app/templates/pages/roles/edit.html:30
-#: app/templates/pages/roles/view.html:20
-msgid "角色代碼"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:59
-msgid "使用建議"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:66
-#: app/templates/partials/_code_input.html:27
-msgid "代碼可用"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:71
-msgid "建議代碼："
-msgstr ""
-
-#: app/templates/pages/roles/create.html:82
-msgid "格式：大寫英文、數字、底線，開頭必須是英文。如 PROJECT_MANAGER"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:94
-#: app/templates/pages/roles/edit.html:53
-msgid "角色 (通用)"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:95
-#: app/templates/pages/roles/edit.html:53
-msgid "職位 (部門專用)"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:98
-msgid "職位用於部門內職務（如主管、專員），角色用於通用權限（如表單審核者）"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:99
-msgid "外部廠商只能指派角色，不能擔任職位"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:106
-#: app/templates/pages/roles/edit.html:58
-#: app/templates/pages/roles/list.html:51
-#: app/templates/pages/roles/view.html:32
-msgid "適用範圍"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:109
-#: app/templates/pages/roles/edit.html:60
-#: app/templates/pages/roles/list.html:80
-#: app/templates/pages/roles/view.html:34
-msgid "全企業"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:112
-#: app/templates/pages/roles/edit.html:63
-#: app/templates/pages/roles/list.html:83
-#: app/templates/pages/roles/view.html:37
-msgid "外部人員"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:116
-msgid "此角色可在企業任何地方指派（如：表單審核者、公告管理員）"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:119
-msgid "此角色只能在部門內指派（如：部門主管、部門秘書）"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:122
-msgid "此角色只能在社群內指派（如：社群團長、專案召集人）"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:125
-msgid "此角色僅限外部人員（非雇傭關係，受限存取）"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:129
-msgid "註：這是角色的「指派範圍」，不是權限範圍。權限需另外設定。"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:142
-#: app/templates/pages/roles/edit.html:75
-msgid "是管理職（具有管理權限）"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:145
-msgid "外部廠商不能擔任管理職"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:155
-#: app/templates/pages/roles/edit.html:89
-msgid "角色職責說明..."
-msgstr ""
-
-#: app/templates/pages/roles/create.html:173
-msgid "建立角色"
-msgstr ""
-
-#: app/templates/pages/roles/create.html:185
-#: app/templates/pages/roles/edit.html:135
-msgid "錯誤："
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:3 app/templates/pages/roles/list.html:3
-#: app/templates/pages/roles/list.html:14
-msgid "角色管理"
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:15
-msgid "系統角色"
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:20
-msgid "刪除角色"
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:33
-msgid "代碼建立後無法修改"
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:45
-msgid "系統角色無法修改名稱"
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:141
-msgid "使用此角色的用戶"
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:142
-#: app/templates/pages/roles/list.html:90
-#, python-format
-msgid "%(count)s 人"
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:167
-msgid "目前沒有用戶使用此角色"
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:178
-#: app/templates/pages/roles/list.html:115
-msgid "警告："
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:178
-msgid "此角色目前有"
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:178
-msgid "位用戶使用中。刪除後這些用戶將失去此角色的權限。"
-msgstr ""
-
-#: app/templates/pages/roles/edit.html:182
-#, python-format
-msgid "確定要刪除角色「%(name)s」嗎？"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:30
-msgid "選擇未使用"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:35
-msgid "刪除選中"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:53
-msgid "使用中"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:78
-#: app/templates/pages/roles/view.html:29
-msgid "職位"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:92
-msgid "未使用"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:103
-msgid "尚無角色資料。"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:103
-msgid "建立第一個角色"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:109
-msgid "確認批量刪除"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:111
-msgid "確定要刪除選中的"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:111
-msgid "個角色嗎？"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:115
-msgid "其中"
-msgstr ""
-
-#: app/templates/pages/roles/list.html:115
-msgid "個角色有用戶使用中。刪除後這些用戶將失去相應角色的權限。"
-msgstr ""
-
-#: app/templates/pages/roles/view.html:3
-msgid "角色詳情"
-msgstr ""
-
-#: app/templates/pages/roles/view.html:7
-msgid "返回角色列表"
-msgstr ""
-
-#: app/templates/pages/roles/view.html:28
-msgid "角色類型"
-msgstr ""
-
-#: app/templates/pages/roles/view.html:42
-msgid "是否為管理者"
-msgstr ""
-
-#: app/templates/pages/roles/view.html:46
-msgid "系統預設角色"
-msgstr ""
-
-#: app/templates/pages/roles/view.html:64
-msgid "此為系統預設角色，無法編輯或刪除。"
 msgstr ""
 
 #: app/templates/pages/security/_api_keys_modals.html:10
@@ -10886,6 +10519,10 @@ msgstr ""
 msgid "登入錯誤監看"
 msgstr ""
 
+#: app/templates/pages/security/login_failures.html:27
+msgid "指定企業"
+msgstr ""
+
 #: app/templates/pages/security/login_failures.html:31
 msgid "-- 全部 (含未知網域) --"
 msgstr ""
@@ -10971,6 +10608,20 @@ msgstr ""
 msgid "系統預設:"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:421
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:62
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:101
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:38
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:252
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:52
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:100
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:289
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:64
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:76
+#: app/templates/pages/security/org_rate_limits.html:89
+msgid "儲存"
+msgstr ""
+
 #: app/templates/pages/security/org_rate_limits.html:109
 msgid "限制以「帳號 + 來源 IP」計算，同企業不同帳號互不影響。清空欄位並儲存即可恢復系統預設。"
 msgstr ""
@@ -10978,14 +10629,6 @@ msgstr ""
 #: app/templates/pages/server_manage/redis_monitor.html:3
 #: app/templates/pages/server_manage/redis_monitor.html:14
 msgid "Redis 監看"
-msgstr ""
-
-#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:16
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:16
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:22
-#: app/templates/pages/server_manage/redis_monitor.html:20
-#: app/templates/pages/server_manage/redis_monitor.html:201
-msgid "重新整理"
 msgstr ""
 
 #: app/templates/pages/server_manage/redis_monitor.html:36
@@ -11305,6 +10948,10 @@ msgstr ""
 msgid "[群組]"
 msgstr ""
 
+#: app/templates/pages/units/list.html:27
+msgid "路徑"
+msgstr ""
+
 #: app/templates/pages/units/list.html:52
 msgid "尚無組織單位資料。"
 msgstr ""
@@ -11328,6 +10975,10 @@ msgstr ""
 
 #: app/templates/pages/units/view.html:30
 msgid "完整路徑"
+msgstr ""
+
+#: app/templates/pages/units/view.html:44
+msgid "層級"
 msgstr ""
 
 #: app/templates/pages/units/view.html:45
@@ -11372,17 +11023,6 @@ msgstr ""
 
 #: app/templates/pages/users/create.html:159
 msgid "點擊選擇部門"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:27
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:198
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:89
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:141
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:166
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:212
-#: app/templates/pages/users/create.html:161
-#: app/templates/partials/_icon_picker.html:8
-msgid "清除"
 msgstr ""
 
 #: app/templates/pages/users/create.html:165
@@ -11585,24 +11225,9 @@ msgstr ""
 msgid "企業管理員請至「企業管理員帳號」管理，外部廠商請至「外部廠商帳號」管理。"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:85
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:119
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:312
-#: app/templates/pages/users/list.html:89
-msgid "上一頁"
-msgstr ""
-
 #: app/templates/pages/users/list.html:91
 #, python-format
 msgid "第 %(page)s / %(pages)s 頁 （共 %(total)s 筆）"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:344
-#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
-#: app/templates/pages/users/list.html:93
-msgid "下一頁"
 msgstr ""
 
 #: app/templates/pages/users/list.html:99
@@ -11668,32 +11293,17 @@ msgstr ""
 msgid "建議:"
 msgstr ""
 
+#: app/templates/partials/_code_input.html:27
+msgid "代碼可用"
+msgstr ""
+
 #: app/templates/partials/_icon_picker.html:34
 msgid "無符合的圖示"
 msgstr ""
 
-#: app/web/account_roles.py:304
+#: app/web/access_center.py:26
 #, python-format
-msgid "用戶已擁有「%(role)s」角色"
-msgstr ""
-
-#: app/web/account_roles.py:335
-#, python-format
-msgid "無法指派「%(role)s」：與現有角色「%(conflict)s」互斥，請先移除後再指派"
-msgstr ""
-
-#: app/web/account_roles.py:353
-#, python-format
-msgid "已將「%(role)s」指派給 %(user)s"
-msgstr ""
-
-#: app/web/account_roles.py:382
-msgid "找不到此角色指派"
-msgstr ""
-
-#: app/web/account_roles.py:397
-#, python-format
-msgid "已移除 %(user)s 的「%(role)s」角色"
+msgid "系統 (%(code)s)"
 msgstr ""
 
 #: app/web/admin.py:33
@@ -11711,38 +11321,38 @@ msgstr ""
 msgid "%(n)s 日"
 msgstr ""
 
-#: app/web/approval_categories.py:128
+#: app/web/approval_categories.py:125
 msgid "類別代碼為必填"
 msgstr ""
 
-#: app/web/approval_categories.py:130 app/web/approval_categories.py:228
+#: app/web/approval_categories.py:127 app/web/approval_categories.py:224
 msgid "類別名稱為必填"
 msgstr ""
 
-#: app/web/approval_categories.py:137 app/web/approval_categories.py:235
+#: app/web/approval_categories.py:134 app/web/approval_categories.py:231
 msgid "排序須為整數"
 msgstr ""
 
-#: app/web/approval_categories.py:174 app/web/approval_categories.py:188
+#: app/web/approval_categories.py:171 app/web/approval_categories.py:185
 #, python-format
 msgid "已建立類別 %(name)s"
 msgstr ""
 
-#: app/web/approval_categories.py:198 app/web/approval_categories.py:424
-#: app/web/job_levels.py:422
+#: app/web/approval_categories.py:195 app/web/approval_categories.py:417
+#: app/web/job_levels.py:413
 msgid "無效的請求"
 msgstr ""
 
-#: app/web/approval_categories.py:317 app/web/approval_categories.py:318
+#: app/web/approval_categories.py:312 app/web/approval_categories.py:313
 msgid "系統預設類別不可刪除"
 msgstr ""
 
-#: app/web/approval_categories.py:327 app/web/approval_categories.py:329
+#: app/web/approval_categories.py:322 app/web/approval_categories.py:324
 #, python-format
 msgid "已刪除類別 %(name)s"
 msgstr ""
 
-#: app/web/approval_categories.py:462
+#: app/web/approval_categories.py:455
 msgid "已儲存核決上限"
 msgstr ""
 
@@ -11750,192 +11360,192 @@ msgstr ""
 msgid "(集團已刪除)"
 msgstr ""
 
-#: app/web/delegations.py:82
+#: app/web/delegations.py:78
 msgid "請選擇授權人"
 msgstr ""
 
-#: app/web/delegations.py:84
+#: app/web/delegations.py:80
 msgid "請選擇被授權人"
 msgstr ""
 
-#: app/web/delegations.py:86
+#: app/web/delegations.py:82
 msgid "授權人和被授權人不能相同"
 msgstr ""
 
-#: app/web/delegations.py:88
+#: app/web/delegations.py:84
 msgid "生效開始日期為必填"
 msgstr ""
 
-#: app/web/delegations.py:90
+#: app/web/delegations.py:86
 msgid "生效結束日期為必填"
 msgstr ""
 
-#: app/web/delegations.py:99 app/web/delegations.py:198
+#: app/web/delegations.py:95 app/web/delegations.py:193
 msgid "生效開始日期格式錯誤"
 msgstr ""
 
-#: app/web/delegations.py:105 app/web/delegations.py:204
+#: app/web/delegations.py:101 app/web/delegations.py:199
 msgid "生效結束日期格式錯誤"
 msgstr ""
 
-#: app/web/delegations.py:108 app/web/delegations.py:207
+#: app/web/delegations.py:104 app/web/delegations.py:202
 msgid "生效開始日期不能晚於結束日期"
 msgstr ""
 
-#: app/web/delegations.py:115 app/web/job_levels.py:121
-#: app/web/job_levels.py:239
+#: app/web/delegations.py:111 app/web/job_levels.py:117
+#: app/web/job_levels.py:234
 msgid "簽核金額上限不可為負數"
 msgstr ""
 
-#: app/web/delegations.py:117 app/web/delegations.py:214
-#: app/web/job_levels.py:123 app/web/job_levels.py:241
+#: app/web/delegations.py:113 app/web/delegations.py:209
+#: app/web/job_levels.py:119 app/web/job_levels.py:236
 msgid "簽核金額上限格式錯誤"
 msgstr ""
 
-#: app/web/delegations.py:148
+#: app/web/delegations.py:144
 msgid "已建立代理授權"
 msgstr ""
 
-#: app/web/delegations.py:238
+#: app/web/delegations.py:233
 msgid "已更新代理授權"
 msgstr ""
 
-#: app/web/delegations.py:269
+#: app/web/delegations.py:263
 msgid "已撤銷代理授權"
 msgstr ""
 
-#: app/web/delegations.py:290
+#: app/web/delegations.py:283
 msgid "已刪除代理授權"
 msgstr ""
 
-#: app/web/external_users.py:190
+#: app/web/external_users.py:187
 msgid "尚未設定「外部廠商」預設編號規則，請先到「用戶編號規則」頁面設定。"
 msgstr ""
 
-#: app/web/external_users.py:219
+#: app/web/external_users.py:216
 msgid "姓名、Email、密碼為必填"
 msgstr ""
 
-#: app/web/external_users.py:221 app/web/external_users.py:409
+#: app/web/external_users.py:218 app/web/external_users.py:404
 msgid "請輸入有效的 Email 格式"
 msgstr ""
 
-#: app/web/external_users.py:226
+#: app/web/external_users.py:223
 msgid "必須選擇歸屬群組"
 msgstr ""
 
-#: app/web/external_users.py:238
+#: app/web/external_users.py:235
 #, python-format
 msgid "Email %(email)s 已存在"
 msgstr ""
 
-#: app/web/external_users.py:243
+#: app/web/external_users.py:240
 msgid "找不到外部廠商預設編號規則，請先設定"
 msgstr ""
 
-#: app/web/external_users.py:254
+#: app/web/external_users.py:251
 #, python-format
 msgid "產生編號失敗: %(error)s"
 msgstr ""
 
-#: app/web/external_users.py:270
+#: app/web/external_users.py:267
 #, python-format
 msgid "找不到群組 %(code)s"
 msgstr ""
 
-#: app/web/external_users.py:316
+#: app/web/external_users.py:313
 #, python-format
 msgid "已建立外部廠商 %(name)s（編號：%(employee_id)s）"
 msgstr ""
 
-#: app/web/external_users.py:341 app/web/external_users.py:374
-#: app/web/external_users.py:476 app/web/external_users.py:538
-#: app/web/external_users.py:592 app/web/external_users.py:634
-#: app/web/external_users.py:673
+#: app/web/external_users.py:337 app/web/external_users.py:369
+#: app/web/external_users.py:470 app/web/external_users.py:531
+#: app/web/external_users.py:584 app/web/external_users.py:625
+#: app/web/external_users.py:663
 msgid "此帳號不是外部廠商"
 msgstr ""
 
-#: app/web/external_users.py:407 app/web/sys_accounts.py:106
+#: app/web/external_users.py:402 app/web/sys_accounts.py:106
 msgid "Email 為必填"
 msgstr ""
 
-#: app/web/external_users.py:419
+#: app/web/external_users.py:414
 #, python-format
 msgid "Email %(email)s 已被其他帳號使用"
 msgstr ""
 
-#: app/web/external_users.py:439
+#: app/web/external_users.py:434
 #, python-format
 msgid "已更新外部廠商 %(name)s"
 msgstr ""
 
-#: app/web/external_users.py:481
+#: app/web/external_users.py:475
 msgid "請選擇群組"
 msgstr ""
 
-#: app/web/external_users.py:493
+#: app/web/external_users.py:487
 msgid "找不到群組"
 msgstr ""
 
-#: app/web/external_users.py:505
+#: app/web/external_users.py:499
 #, python-format
 msgid "已是「%(name)s」的成員"
 msgstr ""
 
-#: app/web/external_users.py:520
+#: app/web/external_users.py:514
 #, python-format
 msgid "已加入群組「%(name)s」"
 msgstr ""
 
-#: app/web/external_users.py:543
+#: app/web/external_users.py:536
 msgid "參數錯誤"
 msgstr ""
 
-#: app/web/external_users.py:553
+#: app/web/external_users.py:546
 msgid "找不到成員關係"
 msgstr ""
 
-#: app/web/external_users.py:565
+#: app/web/external_users.py:558
 msgid "外部廠商必須至少屬於一個群組"
 msgstr ""
 
-#: app/web/external_users.py:574
+#: app/web/external_users.py:567
 #, python-format
 msgid "已從群組「%(name)s」移除"
 msgstr ""
 
-#: app/web/external_users.py:615
+#: app/web/external_users.py:607
 #, python-format
 msgid "（自動退出 %(g_count)s 個社群、解除 %(r_count)s 個角色）"
 msgstr ""
 
-#: app/web/external_users.py:616
+#: app/web/external_users.py:608
 #, python-format
 msgid "已%(status)s外部廠商 %(name)s%(detail)s"
 msgstr ""
 
-#: app/web/external_users.py:655
+#: app/web/external_users.py:646
 #, python-format
 msgid "已刪除外部廠商 %(name)s"
 msgstr ""
 
-#: app/web/external_users.py:679 app/web/main.py:223
-#: app/web/org_admin_rescue.py:136 app/web/org_admins.py:582
-#: app/web/users.py:745
+#: app/web/external_users.py:669 app/web/main.py:223
+#: app/web/org_admin_rescue.py:136 app/web/org_admins.py:577
+#: app/web/users.py:738
 msgid "請輸入新密碼"
 msgstr ""
 
-#: app/web/external_users.py:694
+#: app/web/external_users.py:684
 #, python-format
 msgid "已變更 %(name)s 的密碼"
 msgstr ""
 
-#: app/web/external_users.py:697
+#: app/web/external_users.py:687
 #, python-format
 msgid "密碼變更失敗: %(error)s"
 msgstr ""
 
-#: app/web/groups.py:42 app/web/groups.py:66
+#: app/web/groups.py:41 app/web/groups.py:65
 msgid "無權限存取社群管理"
 msgstr ""
 
@@ -11962,166 +11572,166 @@ msgstr ""
 msgid "，另清理 %(count)s 筆孤兒記錄"
 msgstr ""
 
-#: app/web/job_families.py:147 app/web/job_families.py:256
+#: app/web/job_families.py:143 app/web/job_families.py:251
 msgid "職系名稱為必填"
 msgstr ""
 
-#: app/web/job_families.py:149
+#: app/web/job_families.py:145
 msgid "職系類型無效"
 msgstr ""
 
-#: app/web/job_families.py:163 app/web/job_levels.py:137
-#: app/web/job_titles.py:220 app/web/menu.py:270 app/web/menu.py:355
+#: app/web/job_families.py:159 app/web/job_levels.py:133
+#: app/web/job_titles.py:216 app/web/menu.py:270 app/web/menu.py:355
 msgid "無法自動產生代碼，請手動輸入"
 msgstr ""
 
-#: app/web/job_families.py:169 app/web/job_families.py:262
-#: app/web/job_titles.py:226 app/web/job_titles.py:322
+#: app/web/job_families.py:165 app/web/job_families.py:257
+#: app/web/job_titles.py:222 app/web/job_titles.py:317
 msgid "排序順序須為整數"
 msgstr ""
 
-#: app/web/job_families.py:186 app/web/job_families.py:187
+#: app/web/job_families.py:182 app/web/job_families.py:183
 #, python-format
 msgid "職系代碼 %(code)s 已存在"
 msgstr ""
 
-#: app/web/job_families.py:205 app/web/job_families.py:206
+#: app/web/job_families.py:201 app/web/job_families.py:202
 #, python-format
 msgid "已建立職系 %(name)s"
 msgstr ""
 
-#: app/web/job_families.py:232 app/web/job_families.py:313
-#: app/web/job_levels.py:463
+#: app/web/job_families.py:227 app/web/job_families.py:307
+#: app/web/job_levels.py:454
 msgid "職系不存在"
 msgstr ""
 
-#: app/web/job_families.py:266
+#: app/web/job_families.py:261
 msgid "不能將自己設為父職系"
 msgstr ""
 
-#: app/web/job_families.py:285 app/web/job_families.py:286
+#: app/web/job_families.py:280 app/web/job_families.py:281
 msgid "已更新職系"
 msgstr ""
 
-#: app/web/job_families.py:319 app/web/job_families.py:320
+#: app/web/job_families.py:313 app/web/job_families.py:314
 msgid "系統預設職系不可刪除"
 msgstr ""
 
-#: app/web/job_families.py:330
+#: app/web/job_families.py:324
 #, python-format
 msgid "此職系有 %(count)s 個子職系，請先刪除子職系"
 msgstr ""
 
-#: app/web/job_families.py:341
+#: app/web/job_families.py:335
 #, python-format
 msgid "此職系有 %(count)s 個職稱使用中，需連同職稱一併刪除"
 msgstr ""
 
-#: app/web/job_families.py:364
+#: app/web/job_families.py:358
 #, python-format
 msgid "已刪除職系 %(name)s 及 %(count)s 個職稱"
 msgstr ""
 
-#: app/web/job_families.py:366
+#: app/web/job_families.py:360
 #, python-format
 msgid "已刪除職系 %(name)s"
 msgstr ""
 
-#: app/web/job_levels.py:101 app/web/job_levels.py:219
+#: app/web/job_levels.py:97 app/web/job_levels.py:214
 msgid "職等名稱為必填"
 msgstr ""
 
-#: app/web/job_levels.py:103 app/web/job_levels.py:221
+#: app/web/job_levels.py:99 app/web/job_levels.py:216
 msgid "職等序號為必填"
 msgstr ""
 
-#: app/web/job_levels.py:111 app/web/job_levels.py:229
+#: app/web/job_levels.py:107 app/web/job_levels.py:224
 msgid "職等序號須在 0-9999 之間"
 msgstr ""
 
-#: app/web/job_levels.py:113 app/web/job_levels.py:231
+#: app/web/job_levels.py:109 app/web/job_levels.py:226
 msgid "職等序號須為整數"
 msgstr ""
 
-#: app/web/job_levels.py:153
+#: app/web/job_levels.py:149
 #, python-format
 msgid "職等代碼 %(code)s 已存在"
 msgstr ""
 
-#: app/web/job_levels.py:177 app/web/job_levels.py:181
+#: app/web/job_levels.py:173 app/web/job_levels.py:177
 #, python-format
 msgid "已建立職等 %(name)s"
 msgstr ""
 
-#: app/web/job_levels.py:201 app/web/job_levels.py:290
-#: app/web/job_levels.py:338 app/web/job_levels.py:449
+#: app/web/job_levels.py:196 app/web/job_levels.py:284
+#: app/web/job_levels.py:331 app/web/job_levels.py:440
 msgid "職等不存在"
 msgstr ""
 
-#: app/web/job_levels.py:264 app/web/job_levels.py:268
+#: app/web/job_levels.py:259 app/web/job_levels.py:263
 msgid "已更新職等"
 msgstr ""
 
-#: app/web/job_levels.py:305
+#: app/web/job_levels.py:299
 #, python-format
 msgid "此職等有 %(count)s 個職稱使用中，請先移除關聯"
 msgstr ""
 
-#: app/web/job_levels.py:318 app/web/job_levels.py:320
+#: app/web/job_levels.py:312 app/web/job_levels.py:314
 #, python-format
 msgid "已刪除職等 %(name)s"
 msgstr ""
 
-#: app/web/job_levels.py:429
+#: app/web/job_levels.py:420
 msgid "缺少職稱代碼"
 msgstr ""
 
-#: app/web/job_levels.py:439 app/web/job_titles.py:288
-#: app/web/job_titles.py:368
+#: app/web/job_levels.py:430 app/web/job_titles.py:283
+#: app/web/job_titles.py:362
 msgid "職稱不存在"
 msgstr ""
 
-#: app/web/job_levels.py:470 app/web/units.py:191
+#: app/web/job_levels.py:461 app/web/units.py:184
 #, python-format
 msgid "已更新 %(name)s"
 msgstr ""
 
-#: app/web/job_titles.py:202 app/web/job_titles.py:312
+#: app/web/job_titles.py:198 app/web/job_titles.py:307
 msgid "職稱名稱為必填"
 msgstr ""
 
-#: app/web/job_titles.py:204 app/web/job_titles.py:314
+#: app/web/job_titles.py:200 app/web/job_titles.py:309
 msgid "請選擇職等"
 msgstr ""
 
-#: app/web/job_titles.py:206 app/web/job_titles.py:316
+#: app/web/job_titles.py:202 app/web/job_titles.py:311
 msgid "請選擇職系"
 msgstr ""
 
-#: app/web/job_titles.py:241
+#: app/web/job_titles.py:237
 #, python-format
 msgid "職稱代碼 %(code)s 已存在"
 msgstr ""
 
-#: app/web/job_titles.py:264 app/web/job_titles.py:265
+#: app/web/job_titles.py:260 app/web/job_titles.py:261
 #, python-format
 msgid "已建立職稱 %(name)s"
 msgstr ""
 
-#: app/web/job_titles.py:343 app/web/job_titles.py:344
+#: app/web/job_titles.py:338 app/web/job_titles.py:339
 msgid "已更新職稱"
 msgstr ""
 
-#: app/web/job_titles.py:372
+#: app/web/job_titles.py:366
 msgid "系統預設職稱不可刪除"
 msgstr ""
 
-#: app/web/job_titles.py:382
+#: app/web/job_titles.py:376
 #, python-format
 msgid "此職稱有 %(count)s 位企業成員使用中，請先移除關聯"
 msgstr ""
 
-#: app/web/job_titles.py:393
+#: app/web/job_titles.py:387
 #, python-format
 msgid "已刪除職稱 %(name)s"
 msgstr ""
@@ -12147,11 +11757,11 @@ msgstr ""
 msgid "變更失敗: %(error)s"
 msgstr ""
 
-#: app/web/menu.py:273 app/web/menu.py:340 app/web/menu.py:446
+#: app/web/menu.py:273 app/web/menu.py:340 app/web/menu.py:441
 msgid "標題為必填"
 msgstr ""
 
-#: app/web/menu.py:275 app/web/menu.py:448
+#: app/web/menu.py:275
 msgid "請至少選擇一種用戶類型"
 msgstr ""
 
@@ -12170,21 +11780,21 @@ msgstr ""
 msgid "已建立根項目「%(title)s」"
 msgstr ""
 
-#: app/web/menu.py:489
+#: app/web/menu.py:479
 msgid "已更新選單項目"
 msgstr ""
 
-#: app/web/menu.py:535
+#: app/web/menu.py:521
 #, python-format
 msgid " 等共 %(count)s 項"
 msgstr ""
 
-#: app/web/menu.py:536
+#: app/web/menu.py:522
 #, python-format
 msgid "無法刪除：子項目中包含預設選單（%(names)s），請先將其移出"
 msgstr ""
 
-#: app/web/menu.py:548
+#: app/web/menu.py:534
 #, python-format
 msgid "已刪除選單項目 %(title)s"
 msgstr ""
@@ -12224,18 +11834,18 @@ msgstr ""
 msgid "已刪除模組 %(name)s"
 msgstr ""
 
-#: app/web/numbering.py:202
+#: app/web/numbering.py:197
 #, python-format
 msgid "無法刪除%(label)s規則，請先在編輯頁面取消預設設定"
 msgstr ""
 
-#: app/web/numbering.py:210
+#: app/web/numbering.py:205
 #, python-format
 msgid "規則「%(name)s」已刪除"
 msgstr ""
 
 #: app/web/org_admin_rescue.py:83 app/web/org_admin_rescue.py:121
-#: app/web/org_admins.py:557
+#: app/web/org_admins.py:552
 msgid "找不到該管理員"
 msgstr ""
 
@@ -12245,18 +11855,18 @@ msgid "已%(status)s管理員 %(name)s"
 msgstr ""
 
 #: app/web/org_admin_rescue.py:141 app/web/org_admins.py:130
-#: app/web/org_admins.py:587 app/web/sys_accounts.py:118
-#: app/web/sys_accounts.py:213 app/web/users.py:750
+#: app/web/org_admins.py:582 app/web/sys_accounts.py:118
+#: app/web/sys_accounts.py:213 app/web/users.py:743
 msgid "兩次輸入的密碼不一致"
 msgstr ""
 
-#: app/web/org_admin_rescue.py:175 app/web/org_admins.py:624
+#: app/web/org_admin_rescue.py:175 app/web/org_admins.py:619
 #, python-format
 msgid "已重設 %(name)s 的密碼，並通知所有企業管理員"
 msgstr ""
 
-#: app/web/org_admin_rescue.py:178 app/web/org_admins.py:627
-#: app/web/users.py:761
+#: app/web/org_admin_rescue.py:178 app/web/org_admins.py:622
+#: app/web/users.py:754
 #, python-format
 msgid "重設密碼失敗: %(error)s"
 msgstr ""
@@ -12269,7 +11879,7 @@ msgstr ""
 msgid "密碼為必填"
 msgstr ""
 
-#: app/web/org_admins.py:143 app/web/org_admins.py:401
+#: app/web/org_admins.py:143 app/web/org_admins.py:399
 #, python-format
 msgid "管理員帳號 %(username)s 已存在"
 msgstr ""
@@ -12281,101 +11891,101 @@ msgid ""
 "%(admin_username)s。原始管理員已停用。請使用新的管理員帳號登入。"
 msgstr ""
 
-#: app/web/org_admins.py:361
+#: app/web/org_admins.py:359
 msgid "請選擇要綁定的企業成員帳號"
 msgstr ""
 
-#: app/web/org_admins.py:363
+#: app/web/org_admins.py:361
 msgid "請輸入密碼"
 msgstr ""
 
-#: app/web/org_admins.py:378
+#: app/web/org_admins.py:376
 msgid "選擇的企業成員帳號無效"
 msgstr ""
 
-#: app/web/org_admins.py:380
+#: app/web/org_admins.py:378
 msgid "此企業成員已被其他管理員綁定"
 msgstr ""
 
-#: app/web/org_admins.py:443
+#: app/web/org_admins.py:441
 #, python-format
 msgid "，預設管理員 %(username)s 已自動停用"
 msgstr ""
 
-#: app/web/org_admins.py:447
+#: app/web/org_admins.py:445
 #, python-format
 msgid "已建立管理員 %(admin)s（綁定企業成員：%(employee)s）%(extra)s"
 msgstr ""
 
-#: app/web/org_admins.py:476 app/web/org_admins.py:521
-#: app/web/org_admins.py:562
+#: app/web/org_admins.py:473 app/web/org_admins.py:517
+#: app/web/org_admins.py:557
 msgid "此帳號不是企業管理員"
 msgstr ""
 
-#: app/web/org_admins.py:481 app/web/sys_accounts.py:217 app/web/users.py:686
+#: app/web/org_admins.py:478 app/web/sys_accounts.py:217 app/web/users.py:680
 msgid "不能停用自己的帳號"
 msgstr ""
 
-#: app/web/org_admins.py:486
+#: app/web/org_admins.py:483
 msgid "預設管理員帳號僅能由系統管理員啟用，請聯繫系統管理員"
 msgstr ""
 
-#: app/web/org_admins.py:500
+#: app/web/org_admins.py:497
 #, python-format
 msgid "已啟用管理員 %(name)s"
 msgstr ""
 
-#: app/web/org_admins.py:502
+#: app/web/org_admins.py:499
 #, python-format
 msgid "已停用管理員 %(name)s"
 msgstr ""
 
-#: app/web/org_admins.py:540
+#: app/web/org_admins.py:536
 #, python-format
 msgid "已刪除管理員 %(name)s"
 msgstr ""
 
-#: app/web/org_admins.py:567 app/web/users.py:725
+#: app/web/org_admins.py:562 app/web/users.py:718
 msgid "請使用「變更密碼」功能修改自己的密碼"
 msgstr ""
 
 #: app/web/org_databases.py:138 app/web/org_databases.py:244
-#: app/web/org_databases.py:293
+#: app/web/org_databases.py:292
 msgid "憑證解密失敗，請檢查伺服器環境設定"
 msgstr ""
 
-#: app/web/org_databases.py:343
+#: app/web/org_databases.py:342
 msgid "企業資料庫不存在"
 msgstr ""
 
-#: app/web/org_databases.py:382
+#: app/web/org_databases.py:380
 msgid "無效的表名格式"
 msgstr ""
 
-#: app/web/org_databases.py:392
+#: app/web/org_databases.py:390
 msgid "企業資料庫不存在，可能尚未建立或已被移除"
 msgstr ""
 
-#: app/web/org_databases.py:393
+#: app/web/org_databases.py:391
 #, python-format
 msgid "資料庫連線失敗: %(error)s"
 msgstr ""
 
-#: app/web/org_databases.py:400
+#: app/web/org_databases.py:398
 #, python-format
 msgid "資料表 %(table)s 不存在"
 msgstr ""
 
-#: app/web/org_databases.py:432
+#: app/web/org_databases.py:430
 #, python-format
 msgid "查詢失敗: %(error)s"
 msgstr ""
 
-#: app/web/org_databases.py:523
+#: app/web/org_databases.py:519
 msgid "無效表名"
 msgstr ""
 
-#: app/web/org_databases.py:527
+#: app/web/org_databases.py:523
 msgid "表不存在"
 msgstr ""
 
@@ -12479,35 +12089,35 @@ msgstr ""
 msgid "此頁面尚未提供說明文件"
 msgstr ""
 
-#: app/web/positions.py:103
+#: app/web/positions.py:99
 msgid "請選擇企業成員"
 msgstr ""
 
-#: app/web/positions.py:105
+#: app/web/positions.py:101
 msgid "請選擇職稱"
 msgstr ""
 
-#: app/web/positions.py:107
+#: app/web/positions.py:103
 msgid "請選擇部門"
 msgstr ""
 
-#: app/web/positions.py:114 app/web/positions.py:215
+#: app/web/positions.py:110 app/web/positions.py:210
 msgid "生效日期格式錯誤"
 msgstr ""
 
-#: app/web/positions.py:121 app/web/positions.py:222
+#: app/web/positions.py:117 app/web/positions.py:217
 msgid "失效日期格式錯誤"
 msgstr ""
 
-#: app/web/positions.py:145
+#: app/web/positions.py:141
 msgid "已建立職位指派"
 msgstr ""
 
-#: app/web/positions.py:240
+#: app/web/positions.py:235
 msgid "已更新職位"
 msgstr ""
 
-#: app/web/positions.py:269
+#: app/web/positions.py:263
 msgid "已刪除職位指派"
 msgstr ""
 
@@ -12592,141 +12202,141 @@ msgstr ""
 msgid "已刪除系統管理員 %(username)s"
 msgstr ""
 
-#: app/web/units.py:103
+#: app/web/units.py:97
 msgid "代碼和名稱為必填"
 msgstr ""
 
-#: app/web/units.py:130
+#: app/web/units.py:124
 #, python-format
 msgid "已建立 %(name)s"
 msgstr ""
 
 #: ../modules/nocode_builder/services/project_service.py:81
-#: app/web/units.py:176
+#: app/web/units.py:169
 msgid "名稱為必填"
 msgstr ""
 
-#: app/web/units.py:218
+#: app/web/units.py:210
 msgid "此單位有子單位，請先刪除子單位"
 msgstr ""
 
-#: app/web/units.py:225
+#: app/web/units.py:217
 #, python-format
 msgid "已刪除 %(name)s"
 msgstr ""
 
-#: app/web/users.py:321
+#: app/web/users.py:317
 msgid "英文姓名、本國姓名、帳號為必填"
 msgstr ""
 
-#: app/web/users.py:351 app/web/users.py:555
+#: app/web/users.py:347 app/web/users.py:551
 #, python-format
 msgid "找不到部門代碼 %(code)s"
 msgstr ""
 
-#: app/web/users.py:502
+#: app/web/users.py:498
 msgid "您沒有編輯權限"
 msgstr ""
 
-#: app/web/users.py:543
+#: app/web/users.py:539
 msgid "本國姓名、英文姓名為必填"
 msgstr ""
 
-#: app/web/users.py:548
+#: app/web/users.py:544
 #, python-format
 msgid "企業成員編號 %(employee_id)s 已存在"
 msgstr ""
 
-#: app/web/users.py:600
+#: app/web/users.py:596
 msgid "已更新用戶資料"
 msgstr ""
 
-#: app/web/users.py:667
+#: app/web/users.py:662
 #, python-format
 msgid "已刪除用戶 %(name)s"
 msgstr ""
 
-#: app/web/users.py:691
+#: app/web/users.py:685
 msgid "不能停用自己綁定的企業成員帳號"
 msgstr ""
 
-#: app/web/users.py:698
+#: app/web/users.py:692
 #, python-format
 msgid "已啟用用戶 %(name)s"
 msgstr ""
 
-#: app/web/users.py:700
+#: app/web/users.py:694
 #, python-format
 msgid "已停用用戶 %(name)s"
 msgstr ""
 
-#: app/web/users.py:720
+#: app/web/users.py:713
 msgid "找不到該用戶"
 msgstr ""
 
-#: app/web/users.py:730
+#: app/web/users.py:723
 msgid "無權重設系統管理員的密碼"
 msgstr ""
 
-#: app/web/users.py:758
+#: app/web/users.py:751
 #, python-format
 msgid "已重設 %(name)s 的密碼"
 msgstr ""
 
-#: app/web/users.py:834
+#: app/web/users.py:825
 msgid "請選擇 CSV 檔案"
 msgstr ""
 
-#: app/web/users.py:838
+#: app/web/users.py:829
 msgid "請上傳 CSV 格式檔案"
 msgstr ""
 
-#: app/web/users.py:862
+#: app/web/users.py:853
 #, python-format
 msgid "第 %(row)s 列: %(error)s"
 msgstr ""
 
-#: app/web/users.py:867
+#: app/web/users.py:858
 #, python-format
 msgid "成功匯入 %(count)s 位用戶"
 msgstr ""
 
-#: app/web/users.py:872
+#: app/web/users.py:863
 #, python-format
 msgid "... 還有 %(count)s 個錯誤"
 msgstr ""
 
-#: app/web/users.py:878
+#: app/web/users.py:869
 #, python-format
 msgid "匯入失敗: %(error)s"
 msgstr ""
 
-#: app/web/users.py:896
+#: app/web/users.py:887
 #, python-format
 msgid "第 %(row)s 列: 帳號為必填"
 msgstr ""
 
-#: app/web/users.py:898
+#: app/web/users.py:889
 #, python-format
 msgid "第 %(row)s 列: 密碼為必填"
 msgstr ""
 
-#: app/web/users.py:900
+#: app/web/users.py:891
 #, python-format
 msgid "第 %(row)s 列: 姓名為必填"
 msgstr ""
 
-#: app/web/users.py:904
+#: app/web/users.py:895
 #, python-format
 msgid "第 %(row)s 列: "
 msgstr ""
 
-#: app/web/users.py:911
+#: app/web/users.py:902
 #, python-format
 msgid "第 %(row)s 列: 帳號 %(username)s 已存在"
 msgstr ""
 
-#: app/web/users.py:922
+#: app/web/users.py:913
 #, python-format
 msgid "第 %(row)s 列: 企業成員編號 %(employee_id)s 已存在"
 msgstr ""
@@ -13009,7 +12619,20 @@ msgid "尚無事件"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:62
+msgid "來源"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
 msgid "國家"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:58
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:106
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:27
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:24
+msgid "嚴重度"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
@@ -14877,6 +14500,23 @@ msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:318
 msgid "支援階層結構（樹狀下拉）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:163
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:125
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:136
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:91
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:437
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:127
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:182
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:111
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:64
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:191
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:228
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:391
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:326
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:493
+msgid "處理中..."
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:494

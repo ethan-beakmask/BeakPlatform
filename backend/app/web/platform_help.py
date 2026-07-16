@@ -50,7 +50,7 @@ def api_page_doc():
     Modal 用 API：依 endpoint / path 反查 menu_code 並回傳 HTML
     Query params:
       - endpoint: Flask endpoint 名（如 'users.list_users'）
-      - path: URL path（如 '/permissions/'，已去掉 APP_PREFIX）
+      - path: URL path（如 '/access/'，已去掉 APP_PREFIX）
     """
     endpoint = request.args.get('endpoint') or None
     path = request.args.get('path') or None

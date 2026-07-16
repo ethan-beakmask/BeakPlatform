@@ -67,7 +67,7 @@
 
 <section class="ph-section">
     <h3>{{ _('預設角色') }}</h3>
-    <p>{{ _('系統內建以下角色，企業管理員可在 /roles/ 自行增減角色。') }}</p>
+    <p>{{ _('系統內建以下角色，企業管理員可在 /access/ 自行增減角色。') }}</p>
 
     <h4>{{ _('企業級角色') }}</h4>
     <p>{{ _('管理本企業的組織與模組。') }}</p>
@@ -141,7 +141,7 @@
     </table>
 
     <div class="ph-note">
-        <strong>{{ _('角色繼承：') }}</strong>{{ _('部分角色會自動包含下級角色的權限。例如「模組作者」自動擁有「模組讀者」的所有權限。繼承關係在 /roles/ 頁面可查看。') }}
+        <strong>{{ _('角色繼承：') }}</strong>{{ _('部分角色會自動包含下級角色的權限。例如「模組作者」自動擁有「模組讀者」的所有權限。繼承關係在 /access/ 頁面可查看。') }}
     </div>
 </section>
 
@@ -154,7 +154,7 @@
 
 <section class="ph-section">
     <h3>{{ _('權限管理概觀') }}</h3>
-    <p>{{ _('平台的權限分散在多個層面，各有不同的控制目標。企業管理員可透過「權限管理」(/permissions/) 進行統一檢視與管理。') }}</p>
+    <p>{{ _('平台的權限分散在多個層面，各有不同的控制目標。企業管理員可透過「權限管理中心」(/access/) 進行統一檢視與管理。') }}</p>
 
     <table class="ph-table">
         <thead>
@@ -172,12 +172,12 @@
             </tr>
             <tr>
                 <td><strong>{{ _('選單角色需求') }}</strong></td>
-                <td>{{ _('/menu/ (角色欄)') }}</td>
+                <td>/access/</td>
                 <td>{{ _('選單項目需要持有哪些角色才能存取（如：需要「表單流程管理者」角色）') }}</td>
             </tr>
             <tr>
                 <td><strong>{{ _('角色權限 (RBAC)') }}</strong></td>
-                <td>/permissions/</td>
+                <td>/access/</td>
                 <td>{{ _('角色持有哪些具體操作權限（如：角色「表單流程管理者」持有 form_workflow.template.view）') }}</td>
             </tr>
             <tr>
@@ -187,7 +187,7 @@
             </tr>
             <tr>
                 <td><strong>{{ _('帳號角色指派') }}</strong></td>
-                <td>/roles/</td>
+                <td>/access/</td>
                 <td>{{ _('哪些帳號持有哪些角色（如：張三擁有「表單流程管理者」角色）') }}</td>
             </tr>
         </tbody>
@@ -231,7 +231,7 @@
     </table>
 
     <div class="ph-note">
-        <strong>{{ _('常見問題：') }}</strong>{{ _('如果企業成員反映「選單看得到但點進去沒權限」，通常是步驟 1 通過但步驟 3 或 4 未配置。請至 /permissions/ 檢查衝突偵測結果。') }}
+        <strong>{{ _('常見問題：') }}</strong>{{ _('如果企業成員反映「選單看得到但點進去沒權限」，通常是步驟 1 通過但步驟 3 或 4 未配置。請至 /access/ 檢查衝突偵測結果。') }}
     </div>
 </section>
 
@@ -241,7 +241,7 @@
     <p>{{ _('這代表：') }}</p>
     <ul class="ph-list">
         <li>{{ _('企業管理員不需要被加入任何角色就能操作所有企業內功能') }}</li>
-        <li>{{ _('在 /permissions/ 的衝突偵測中，僅授權給 ORG_ADMIN 的選單不會被標記為缺少 RBAC 權限') }}</li>
+        <li>{{ _('在 /access/ 的衝突偵測中，僅授權給 ORG_ADMIN 的選單不會被標記為缺少 RBAC 權限') }}</li>
         <li>{{ _('但「系統級」權限仍保留給系統管理員，企業管理員無法取得') }}</li>
     </ul>
 </section>
@@ -250,10 +250,10 @@
     <h3>{{ _('權限管理建議流程') }}</h3>
     <p>{{ _('新增一個需要權限控制的功能時，建議依以下順序操作：') }}</p>
     <ol class="ph-list">
-        <li><strong>/menu/</strong> {{ _('-- 設定選單可見性（勾選哪些帳號等級能看到）') }}</li>
-        <li><strong>/roles/</strong> {{ _('-- 建立或選擇角色，指派角色給帳號') }}</li>
-        <li><strong>/permissions/</strong> {{ _('-- 為角色配置所需的 RBAC 權限') }}</li>
-        <li><strong>/permissions/</strong> {{ _('-- 使用衝突偵測功能確認配置完整') }}</li>
+        <li><strong>/menu/</strong> {{ _('-- 建立或調整選單結構') }}</li>
+        <li><strong>/access/</strong> {{ _('-- 設定選單可見性與角色門檻') }}</li>
+        <li><strong>/access/</strong> {{ _('-- 建立或選擇角色，指派角色給帳號') }}</li>
+        <li><strong>/access/</strong> {{ _('-- 為角色配置所需的 RBAC 權限並檢查衝突') }}</li>
     </ol>
 </section>
 
@@ -452,7 +452,7 @@
             <tr>
                 <td><strong>{{ _('衝突偵測') }}</strong></td>
                 <td>Conflict Detection</td>
-                <td>{{ _('/permissions/ 中的功能，自動檢查權限配置是否有遺漏或矛盾') }}</td>
+                <td>{{ _('/access/ 中的功能，自動檢查權限配置是否有遺漏或矛盾') }}</td>
             </tr>
         </tbody>
     </table>

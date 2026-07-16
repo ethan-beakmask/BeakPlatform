@@ -31,6 +31,22 @@ function acFunctionsTab() {
         ],
 
         async init() {
+            window.addEventListener('ac:select-menu', async (event) => {
+                const secureCode = event.detail ? event.detail.secureCode : '';
+                const orgCode = event.detail ? event.detail.orgCode : '';
+                if (!secureCode) return;
+                if (this.isSystemAdmin && orgCode && orgCode !== this.selectedOrgCode) {
+                    this.selectedOrgCode = orgCode;
+                    await this.loadMenus();
+                } else if (this.canLoadMenus && this.allMenus.length === 0) {
+                    await this.loadMenus();
+                }
+                const node = this.findTreeNode(secureCode);
+                if (node) {
+                    this.expandToMenu(secureCode);
+                    await this.selectMenu(node, false);
+                }
+            });
             if (!this.isSystemAdmin) {
                 await this.loadMenus();
             }
@@ -143,6 +159,22 @@ function acFunctionsTab() {
                 stack.push(...node.children);
             }
             return null;
+        },
+
+        expandToMenu(secureCode) {
+            const expandPath = (nodes) => {
+                for (const node of nodes) {
+                    if (node.secure_code === secureCode) {
+                        return true;
+                    }
+                    if (node.children.length && expandPath(node.children)) {
+                        node._expanded = true;
+                        return true;
+                    }
+                }
+                return false;
+            };
+            expandPath(this.menuTreeRoots);
         },
 
         async selectMenu(node, toggleNode) {

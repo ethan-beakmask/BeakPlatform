@@ -50,6 +50,12 @@ function accessCenter() {
         isSystemAdmin: !!config.isSystemAdmin,
         activeTab: 'functions',
 
+        init() {
+            window.addEventListener('ac:select-menu', () => {
+                this.activeTab = 'functions';
+            });
+        },
+
         switchTab(tab) {
             if (this.isSystemAdmin && tab === 'accounts') {
                 this.activeTab = 'functions';
