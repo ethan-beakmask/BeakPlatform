@@ -167,6 +167,16 @@ class ModuleRoleService:
                     )
                     continue
 
+                # header/divider 不吃鑰匙2（結構元素，可見性由可見子項決定），
+                # 種了只會產生死資料
+                if item.link_type in ('header', 'divider'):
+                    logger.warning(
+                        f"Module {module.name}: menu '{menu_code}' is a "
+                        f"structural element ({item.link_type}), Key2 does "
+                        f"not apply — skipping"
+                    )
+                    continue
+
                 for role_code in role_codes:
                     role_sc = role_code_to_sc.get(role_code)
                     if not role_sc:

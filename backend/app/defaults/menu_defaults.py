@@ -685,13 +685,17 @@ CORE_MENUS = [
 #
 # 從系統企業 (SYSTEM_ORG_CODE) 的 menu_role_requirements 匯出 (2026-03-30)
 # SYSTEM_ADMIN 專用選單不需要角色（程式 bypass），故不在此列
+#
+# 注意 (2026-07-16)：header/divider 型選單不吃鑰匙2
+# （_menu_tree._filter_by_role_requirements 對結構元素直接放行，
+# 可見性由 _prune_empty_parents 依可見子項決定），故本表禁止列入
+# header 型 code——種了只會產生永不被讀取的死資料（migration 083 已清理）。
 # ============================================================================
 MENU_ROLE_DEFAULTS = {
     # 共用選單（ALL user types）
     'dashboard': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
     'personal_settings': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
     'form_workflow.center': ['ORG_ADMIN', 'EMPLOYEE'],
-    'platform_help': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
 
     # 說明子選單（各 user_type 專屬）
     'platform_help.org_admin': ['ORG_ADMIN'],
@@ -699,7 +703,6 @@ MENU_ROLE_DEFAULTS = {
     'platform_help.external': ['EXTERNAL_USERS'],
 
     # 表單流程模組（ORG_ADMIN + FORM_DESIGNER + FLOW_DESIGNER）
-    'form_workflow': ['ORG_ADMIN', 'FORM_DESIGNER', 'FLOW_DESIGNER'],
     'form_workflow.categories': ['ORG_ADMIN', 'FORM_DESIGNER', 'FLOW_DESIGNER'],
     'form_workflow.form_themes': ['ORG_ADMIN', 'FORM_DESIGNER', 'FLOW_DESIGNER'],
     'form_workflow.mappings': ['ORG_ADMIN', 'FORM_DESIGNER', 'FLOW_DESIGNER'],
@@ -707,13 +710,11 @@ MENU_ROLE_DEFAULTS = {
     'form_workflow.workflows': ['ORG_ADMIN', 'FLOW_DESIGNER'],
 
     # 系統管理區（ORG_ADMIN only）
-    'org_config_mgr': ['ORG_ADMIN'],
     'system_settings': ['ORG_ADMIN'],
     'org_admins': ['ORG_ADMIN'],
     'org_databases_org': ['ORG_ADMIN'],
 
     # 帳號管理區（ORG_ADMIN only）
-    'org_account': ['ORG_ADMIN'],
     'numbering': ['ORG_ADMIN'],
     'roles': ['ORG_ADMIN'],
     'users': ['ORG_ADMIN'],
@@ -721,7 +722,6 @@ MENU_ROLE_DEFAULTS = {
     'external_users': ['ORG_ADMIN'],
 
     # 職級職稱區（ORG_ADMIN only）
-    'jobs_config': ['ORG_ADMIN'],
     'job_matrix': ['ORG_ADMIN'],
     'job_levels': ['ORG_ADMIN'],
     'job_families': ['ORG_ADMIN'],
@@ -733,24 +733,20 @@ MENU_ROLE_DEFAULTS = {
     'groups': ['ORG_ADMIN'],
 
     # 角色管控區（ORG_ADMIN only）
-    'roles_control': ['ORG_ADMIN'],
     'account_roles': ['ORG_ADMIN'],
     'module_perm_mgmt': ['ORG_ADMIN'],
     'permission_central_org': ['ORG_ADMIN'],
 
     # 系統安全區（ORG_ADMIN only）
-    'org_security': ['ORG_ADMIN'],
     'login_fail_monitor_org': ['ORG_ADMIN'],
     'org_rate_limits': ['ORG_ADMIN'],
     'alert_broadcasts_org': ['ORG_ADMIN'],
     'api_key_manage': ['ORG_ADMIN'],
 
     # 規格制定模組（ORG_ADMIN + SPEC_DESIGNER）
-    'spec_formulate': ['ORG_ADMIN', 'SPEC_DESIGNER'],
     'spec_formulate.spec_schema': ['ORG_ADMIN', 'SPEC_DESIGNER'],
 
     # 無程式碼建構模組（ORG_ADMIN + SUBSYS_DESIGNER）
-    'nocode_builder': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
     'nocode_builder.sub_systems': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
     'nocode_builder.lookup': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
 }
