@@ -90,7 +90,7 @@
 | 選單名稱 | URL 路徑 | 說明 |
 |----------|----------|------|
 | 企業成員帳號 | `/users/` | 使用者 CRUD |
-| 角色管理 | `/roles/` | 角色 CRUD |
+| 角色管理 | `/roles/` | 角色 CRUD（角色/單位職務等名詞定版見 `docs/ROLE_TAXONOMY.md`） |
 | 外部廠商 | `/external-users/` | 外部廠商管理 |
 | 編號設定 | `/admin/numbering` | 自動編號規則 |
 | 基本班表 | `/admin/settings/work-schedules` | 班表與假日設定 |

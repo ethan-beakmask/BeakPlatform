@@ -174,7 +174,7 @@
                             <template x-for="r in availableRoles" :key="r.id">
                                 <tr :class="r.selected ? 'text-muted' : ''">
                                     <td style="text-align:center;">
-                                        <input type="checkbox" :checked="r.selected" @change="toggleRole(r)" :disabled="r.selected" style="cursor:pointer;">
+                                        <input type="checkbox" :checked="r.selected" @change="toggleRole(r)" style="cursor:pointer;">
                                     </td>
                                     <td x-text="r.name"></td>
                                     <td><code x-text="r.code"></code></td>
@@ -225,11 +225,15 @@ function menuRoleManager() {
         },
 
         toggleRole: async function(role) {
-            if (role.selected) return;
             var currentIds = this.availableRoles
                 .filter(function(r) { return r.selected; })
                 .map(function(r) { return r.id; });
-            currentIds.push(role.id);
+            if (role.selected) {
+                // 取消勾選：從現有集合移除
+                currentIds = currentIds.filter(function(id) { return id !== role.id; });
+            } else {
+                currentIds.push(role.id);
+            }
             await this._saveRoles(currentIds);
         },
 
