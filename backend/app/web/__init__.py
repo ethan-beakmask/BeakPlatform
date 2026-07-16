@@ -44,6 +44,7 @@ def register_web_blueprints(app: Flask) -> None:
     from .org_admin_rescue import org_admin_rescue_bp
     from .external_users import external_users_bp
     from .account_roles import account_roles_bp
+    from .access_center import access_center_bp
     # Main routes (dashboard, etc.)
     app.register_blueprint(main_bp)
 
@@ -145,6 +146,9 @@ def register_web_blueprints(app: Flask) -> None:
     from .permission_central import permission_central_bp
     app.register_blueprint(permission_central_bp, url_prefix='/permissions')
 
+    # Access Center (權限管理中心)
+    app.register_blueprint(access_center_bp, url_prefix='/access')
+
     # Security Center (本機安全)
     from .security_center import security_center_bp
     app.register_blueprint(security_center_bp, url_prefix='/security')
@@ -160,4 +164,3 @@ def register_web_blueprints(app: Flask) -> None:
     # Store - 內部商場
     from .store import store_web_bp
     app.register_blueprint(store_web_bp, url_prefix='/store')
-

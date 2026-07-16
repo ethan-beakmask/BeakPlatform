@@ -94,6 +94,10 @@ def register_blueprints(app: Flask) -> None:
     from .permission_central import permission_central_bp
     app.register_blueprint(permission_central_bp)
 
+    # Access center (權限管理中心)
+    from .access_center import access_center_api_bp
+    app.register_blueprint(access_center_api_bp)
+
     # Security center (本機安全)
     from .security_center import security_center_bp
     app.register_blueprint(security_center_bp)
