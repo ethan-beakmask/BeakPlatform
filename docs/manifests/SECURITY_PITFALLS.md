@@ -73,9 +73,10 @@ members = db.session.query(UserUnitMembership).join(
 ### 規則
 選單顯示問題的根因是 DB 資料設定，不是程式邏輯。
 
-### 雙鑰匙機制
-- **Key1**: `menu_permissions` 表 -- 控制哪些 user_type 能看到選單
-- **Key2**: `menu_role_requirements` 表 -- 控制哪些角色能看到選單（按企業隔離）
+### 雙鑰匙機制（完整模型見 docs/PERMISSION_MODEL.md）
+- **Key1**: `menu_permissions` 表 -- 控制哪些 user_type 能看到選單（層界宣告）
+- **Key2**: `menu_role_requirements` 表 -- 控制哪些角色能看到選單（按企業隔離，僅對 EMPLOYEE/EXTERNAL 生效；SYSTEM_ADMIN/ORG_ADMIN 依規則 bypass）
+- （已退役）`menu_items.required_permission` 不再參與選單可見性，permission code 僅存在 API/資源層
 
 ### 禁止修改的檔案（選單問題時）
 - `auth_interceptor.py`
@@ -86,8 +87,11 @@ members = db.session.query(UserUnitMembership).join(
 ### 正確排查流程
 1. 查 `menu_items` 確認 link_type 是否正確（只認 url/route/page/divider/header）
 2. 查 `menu_permissions` 確認 user_type 設定
+   - 模組選單的 user_types 來源是模組 `__init__.py` 定義，改 DB 會被 `flask module sync --force` 沖掉
 3. 查 `menu_role_requirements` 確認角色設定（含 org_secure_code）
+   - 企業管理員可在 權限中央 → 功能視角 → 角色存取需求 [編輯] 自行設定（含企業自訂角色）
 4. 查 `user_role_assignments` 確認用戶角色（含有效期限）
+   - 注意：指派角色給 ORG_ADMIN 帳號無效果（bypass 角色檢查），應指派給其 EMPLOYEE 帳號
 
 ---
 

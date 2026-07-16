@@ -124,6 +124,12 @@ Generated with Claude Code"
 @system_admin_required # 需要系統管理員
 ```
 
+### PERM-01: 權限模型（4+1）
+- 四層 user_type 硬界線（角色永不跨層）+ NoCode 公開資料隔離區
+- 選單/頁面 = 雙鑰匙（Key1 user_type 層界 + Key2 角色，僅 EMPLOYEE/EXTERNAL 吃 Key2）；欄位 = EGRESS-01
+- `menu_items.required_permission` 已退役不再影響選單；permission code 僅存在 API/資源層
+- 定版文件：`docs/PERMISSION_MODEL.md`（bypass 規則、功能開放多層 SOP、已知備忘）
+
 ### TENANT-01: 強制企業隔離
 - 所有查詢包含 `org_secure_code` 過濾
 - PostgreSQL RLS 作為最後防線

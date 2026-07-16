@@ -42,4 +42,8 @@ tables:
 
 security:
   decorator: "@admin_required"
-  note: 此為安全核心功能，修改前務必確認影響範圍
+  note: |
+    此為安全核心功能，修改前務必確認影響範圍
+    權限中央功能視角含「角色存取需求」編輯（寫入走 /api/menu/<sc>/roles）
+    role-permission 矩陣僅服務 API/資源層（ResourceGateway、模組 API），不再影響選單可見性
+    權限模型定版文件：docs/PERMISSION_MODEL.md
