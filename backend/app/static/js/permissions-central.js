@@ -337,6 +337,13 @@ function permissionCentral() {
             }
         },
 
+        // header/divider 為結構元素，不吃鑰匙2（可見性由可見子項決定），
+        // 功能視角對其隱藏角色需求編輯，避免存出永不生效的死資料
+        isStructuralMenu() {
+            return !!(this.menuData && this.menuData.menu &&
+                ['header', 'divider'].includes(this.menuData.menu.link_type));
+        },
+
         async loadMenuView() {
             if (!this.selectedMenuCode) {
                 this.menuData = null;

@@ -434,10 +434,14 @@
                             <h4 class="perm-section-title">
                                 {{ _('角色存取需求 (MenuRoleRequirement)') }}
                                 <button type="button" class="btn btn-sm" style="margin-left:8px;"
-                                        x-show="!editingMenuRoles"
+                                        x-show="!editingMenuRoles && !isStructuralMenu()"
                                         @click="startEditMenuRoles()">{{ _('編輯') }}</button>
                             </h4>
-                            <template x-if="!editingMenuRoles">
+                            {# header/divider 不吃鑰匙2（_menu_tree 對結構元素放行，可見性由可見子項決定），與 /menu/ 編輯頁同語 #}
+                            <template x-if="isStructuralMenu()">
+                                <p class="text-muted">{{ _('此項目為結構元素（群組標題/分隔線），不適用鑰匙2角色需求：其可見性由「底下是否有可見子項」自動決定，請到各子項目設定存取角色。') }}</p>
+                            </template>
+                            <template x-if="!isStructuralMenu() && !editingMenuRoles">
                                 <div>
                                     <template x-if="menuData.required_roles.length === 0">
                                         <p class="text-warn">{{ _('無角色需求 -- 雙鑰匙 fail-closed，EMPLOYEE / EXTERNAL 一律不可見、不可存取') }}</p>
@@ -467,7 +471,7 @@
                                     </template>
                                 </div>
                             </template>
-                            <template x-if="editingMenuRoles">
+                            <template x-if="!isStructuralMenu() && editingMenuRoles">
                                 <div>
                                     {% if is_system_admin %}
                                     <p class="text-muted">{{ _('系統管理員模式：以角色代碼批量套用到所有企業（僅系統預設角色）') }}</p>

@@ -282,6 +282,7 @@ class PermissionCentralService:
                 'secure_code': menu.secure_code,
                 'code': menu.code,
                 'title': menu.title,
+                'link_type': menu.link_type,
                 'link_target': menu.link_target,
                 'required_permission': menu.required_permission,
                 'is_active': menu.is_active,
