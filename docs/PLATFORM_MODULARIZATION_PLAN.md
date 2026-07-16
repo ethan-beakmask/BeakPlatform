@@ -32,6 +32,9 @@ MODULE_INFO = {
     'platform_version': '>=1.0.0',
     'menu_items': [...],
     'permissions': [...],
+    # 模組預設角色（選填）：採購本模組的企業自動獲得，見 docs/PERMISSION_MODEL.md 3.1
+    'default_roles': [{'code': 'SECURITY_STAFF', 'name': '資安人員', 'description': '...'}],
+    'default_menu_role_requirements': {'open_defense.security_cases': ['SECURITY_STAFF']},
 }
 ```
 

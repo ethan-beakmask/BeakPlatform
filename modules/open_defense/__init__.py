@@ -75,6 +75,22 @@ MODULE_INFO = {
         },
     ],
 
+    # 模組預設角色：採購本模組的企業自動獲得（碰撞跳過，冪等）
+    # 僅提供最小集合「資安人員」，SOC_L1/主管等分工角色由企業依
+    # docs/guides/SOC_ROLE_DESIGN_GUIDE.md 自行設計
+    'default_roles': [
+        {
+            'code': 'SECURITY_STAFF',
+            'name': '資安人員',
+            'description': '資安案件處置中心值班與案件簽核人員（開放防禦模組預設角色）',
+        },
+    ],
+
+    # 模組預設選單角色需求（雙鑰匙 Key2）：menu code → [role codes]
+    'default_menu_role_requirements': {
+        'open_defense.security_cases': ['SECURITY_STAFF'],
+    },
+
     'permissions': [
         {
             'code': 'open_defense.view',

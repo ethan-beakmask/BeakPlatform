@@ -100,3 +100,9 @@ note: |
     CAT_SECURITY_(常數在 modules/form_workflow/services/security_center.py),
     一般表單中心(fc_available/fc_pending/fc_my_forms)已排除此前綴。
     清單 API 的 form_data 衍生欄位有過 egress list 語境(fw_form:<模板SC>)。
+  - 2026-07-16 模組預設角色(原子 4852):MODULE_INFO 宣告 default_roles
+    (SECURITY_STAFF/資安人員) + default_menu_role_requirements
+    (security_cases Key2)。採購本模組的企業自動獲得該角色(合約 hook +
+    flask module sync 補種,碰撞跳過)。beluga 原自訂 SOC_L1 已由 migration 082
+    收編為 SECURITY_STAFF。企業自行分工設計見 docs/guides/SOC_ROLE_DESIGN_GUIDE.md,
+    機制實作在 backend/app/services/module_role_service.py。

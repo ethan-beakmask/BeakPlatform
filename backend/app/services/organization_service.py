@@ -2,6 +2,7 @@
 BeakMask Organization Service
 企業管理服務
 """
+import json
 import logging
 from datetime import date
 from typing import Optional, Dict, Any, Tuple
@@ -786,6 +787,18 @@ class OrganizationService:
             created_by_secure_code=created_by  # 稽核欄位
         )
         db.session.add(contract)
+
+        # 依合約模組清單種入模組預設角色與 Key2（碰撞跳過，冪等）
+        if modules_config:
+            from .module_role_service import ModuleRoleService
+            try:
+                module_codes = json.loads(modules_config)
+            except (json.JSONDecodeError, TypeError):
+                module_codes = []
+            if isinstance(module_codes, list) and module_codes:
+                ModuleRoleService.seed_contract_module_roles(
+                    org_secure_code, module_codes
+                )
 
         logger.info(f"Contract created: {contract_number} for org {org.code} by {created_by}")
 

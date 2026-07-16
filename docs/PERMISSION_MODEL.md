@@ -57,6 +57,21 @@
 
 這是「功能宣告多層 + 各層角色細分」，不是「角色跨層」。
 
+### 3.1 模組預設角色（module default roles，2026-07-16）
+
+模組可在 `MODULE_INFO` 宣告 `default_roles`（角色）與 `default_menu_role_requirements`
+（鑰匙 2），採購該模組的企業自動獲得這套角色，解決「買了模組卻無角色可配發」的缺口：
+
+- **Seeding 時機**：(a) 新增合約時（`OrganizationService.create_contract` 依 modules_config
+  觸發）；(b) `flask module sync` 對所有持有效合約的企業補種（冪等）
+- **碰撞政策**：企業已有同 code 角色 → 跳過不覆蓋（保護企業自訂），但鑰匙 2 仍綁到既有角色
+- **角色屬性**：`role_level=MODULE`、`is_system_role=true`、scope GLOBAL
+- **設計哲學**：模組只給最小預設集合（如 open_defense 的「資安人員」SECURITY_STAFF），
+  值班分工（L1/L2/主管等）由企業依 `docs/guides/SOC_ROLE_DESIGN_GUIDE.md` 自行設計
+- 實作：`services/module_role_service.py`；合約到期/停用時角色保留（選單已被合約過濾擋下）
+- 待辦（另案）：form_workflow 的 FORM_DESIGNER/FLOW_DESIGNER 目前烘在平台 17 個預設角色
+  （`organization_service._create_default_roles`），應遷移到本機制
+
 ## 4. 保留的資源層（軌 C 現況）
 
 permission code（permissions / role_permissions）已退出選單/頁面授權，但仍活躍於：

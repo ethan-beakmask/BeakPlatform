@@ -42,6 +42,10 @@ class ModuleInfo:
         self.platform_version = info.get('platform_version', '>=0.0.0')
         self.menu_items = info.get('menu_items', [])
         self.permissions = info.get('permissions', [])
+        # 模組預設角色：採購本模組的企業自動獲得的一套企業內角色
+        self.default_roles = info.get('default_roles', [])
+        # 模組預設選單角色需求（雙鑰匙 Key2）：menu code → [role codes]
+        self.default_menu_role_requirements = info.get('default_menu_role_requirements', {})
         self.enabled = info.get('enabled', True)
         self.scope = info.get('scope', 'tenant')  # tenant | platform
 

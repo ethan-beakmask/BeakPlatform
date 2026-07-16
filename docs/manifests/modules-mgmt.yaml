@@ -18,6 +18,7 @@ files:
     - backend/app/services/module_access_service.py
     - backend/app/services/module_menu_service.py
     - backend/app/services/module_permission_service.py
+    - backend/app/services/module_role_service.py       # 模組預設角色 seeding（合約 hook + module sync）
   model:
     - backend/app/models/module.py
     - backend/app/models/module_access_control.py

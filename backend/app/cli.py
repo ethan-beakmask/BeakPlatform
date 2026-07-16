@@ -103,6 +103,7 @@ def sync_modules(force):
     from .module_loader import module_loader
     from .services.module_permission_service import ModulePermissionService
     from .services.module_menu_service import ModuleMenuService
+    from .services.module_role_service import ModuleRoleService
 
     click.echo("\n=== Syncing Modules ===\n")
 
@@ -137,6 +138,24 @@ def sync_modules(force):
                 f"{result.get('updated', 0)} updated, "
                 f"{result.get('unchanged', 0)} unchanged"
             )
+
+    # 補種模組預設角色（對所有持有效合約的企業，冪等）
+    click.echo("\nSyncing module default roles...")
+    try:
+        role_results = ModuleRoleService.sync_all_module_roles(module_loader)
+    except Exception as e:
+        click.echo("  " + click.style(f"ERROR - {e}", fg="red"))
+        raise
+    if not role_results:
+        click.echo("  (no modules declare default_roles)")
+    for mod_name, result in role_results.items():
+        click.echo(
+            f"  {mod_name}: "
+            f"{result.get('roles_created', 0)} roles created, "
+            f"{result.get('roles_skipped', 0)} skipped (collision), "
+            f"{result.get('mrr_created', 0)} menu role requirements, "
+            f"{result.get('perms_assigned', 0)} role permissions"
+        )
 
     click.echo("\n" + click.style("Sync complete!", fg="green"))
 
