@@ -643,6 +643,12 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 - **正式管道是 systemd 服務**：`sudo systemctl restart beakplatform-dev.service`（重啟後 `systemctl is-active` 確認）
 - 開發服務以**非 debug 模式**跑，Python/模板變更**不會自動重載，必須重啟**
 - **踩坑**：若曾手動 `flask run`，殘留進程會佔住 7000 埠導致 systemd 服務 crash loop（`is-active` 一直是 `activating`）。用 `ss -tlnp | grep :7000` 找出佔埠 PID kill 掉，服務即自動接手
+- **flask CLI 必須先載入 .env**（缺 SECRET_KEY 直接 ValueError）：
+  ```bash
+  cd /opt/BeakPlatform-dev && set -a && source .env && set +a
+  cd backend && ../venv/bin/flask module sync --force   # 同步模組選單/權限定義到 DB
+  ```
+  模組選單的 user_types 改在模組 `__init__.py` 定義後需跑此指令；啟動時的自動同步**不含**權限覆寫（僅 --force 才會）
 - 手動啟動（僅除錯用，用完要 kill）：
 ```bash
 cd /opt/BeakPlatform-dev
