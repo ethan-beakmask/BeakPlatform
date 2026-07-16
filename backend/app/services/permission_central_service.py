@@ -878,12 +878,23 @@ class PermissionCentralService:
                 MenuItem.secure_code.in_(visible_code_set)
             ).order_by(MenuItem.display_order).all()
 
+        menu_codes = [m.secure_code for m in items]
+        permissions_by_menu = {code: set() for code in menu_codes}
+        if menu_codes:
+            perms = MenuPermission.query.filter(
+                MenuPermission.menu_secure_code.in_(menu_codes),
+                MenuPermission.is_deleted == False
+            ).all()
+            for perm in perms:
+                permissions_by_menu.setdefault(perm.menu_secure_code, set()).add(str(perm.user_type))
+
         return [
             {
                 'secure_code': m.secure_code,
                 'code': m.code,
                 'title': m.title,
                 'parent_secure_code': m.parent_secure_code,
+                'link_type': m.link_type,
                 'link_target': m.link_target,
                 'icon': m.icon,
                 'depth': m.depth,
@@ -891,6 +902,12 @@ class PermissionCentralService:
                 'required_permission': m.required_permission,
                 'org_secure_code': m.org_secure_code,
                 'org_label': cls._get_org_label(m.org_secure_code),
+                'user_types': {
+                    'SYSTEM_ADMIN': 'SYSTEM_ADMIN' in permissions_by_menu.get(m.secure_code, set()),
+                    'ORG_ADMIN': 'ORG_ADMIN' in permissions_by_menu.get(m.secure_code, set()),
+                    'EMPLOYEE': 'EMPLOYEE' in permissions_by_menu.get(m.secure_code, set()),
+                    'EXTERNAL': 'EXTERNAL' in permissions_by_menu.get(m.secure_code, set()),
+                },
             }
             for m in items
         ]

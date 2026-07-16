@@ -54,8 +54,12 @@
 
 <script>
 window.__AC_CONFIG = {
-    isSystemAdmin: {{ is_system_admin | tojson }}
+    isSystemAdmin: {{ is_system_admin | tojson }},
+    userOrgSecureCode: {{ user_org_secure_code | tojson }},
+    userOrgLabel: {{ user_org_label | tojson }},
+    organizations: {{ organizations | tojson }}
 };
 </script>
 <script src="{{ url_for('static', filename='js/access-center/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/access-center/functions.js') }}"></script>
 {% endblock %}

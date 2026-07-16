@@ -295,6 +295,62 @@ def move_menu_item(secure_code: str):
 # 選單角色需求 API (Page Role Guard)
 # =============================================================================
 
+@menu_bp.route('/<secure_code>/permissions', methods=['PUT'])
+@system_admin_required
+def set_menu_permissions(secure_code: str):
+    """
+    設定選單項目的 user_type 可見性（鑰匙1，全量替換）
+
+    Body:
+        user_types: ["SYSTEM_ADMIN", "ORG_ADMIN", "EMPLOYEE", "EXTERNAL"]
+
+    Returns:
+        {success: true, user_types: [...]}
+    """
+    data = request.get_json() or {}
+    user_types = data.get('user_types')
+    allowed_user_types = {'SYSTEM_ADMIN', 'ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL'}
+
+    if not isinstance(user_types, list):
+        return jsonify({'error': _('user_types 必須是陣列')}), 400
+
+    normalized = []
+    for user_type in user_types:
+        value = str(user_type)
+        if value not in allowed_user_types:
+            return jsonify({'error': _('user_types 包含不允許的值')}), 400
+        if value not in normalized:
+            normalized.append(value)
+
+    if not normalized:
+        return jsonify({'error': _('至少需要一個 user_type')}), 400
+
+    try:
+        # RLS context: 選單屬系統企業（全站共用物），管理員操作需繞過租戶隔離
+        db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
+
+        menu_item = ResourceGateway.get_by(
+            MenuItem,
+            secure_code=secure_code,
+            is_deleted=False,
+            skip_tenant_filter=True,
+            check_permission=False,
+        )
+        if not menu_item:
+            return jsonify({'error': _('選單項目不存在')}), 404
+
+        MenuService.set_menu_permissions(menu_item.secure_code, normalized)
+        db.session.commit()
+        return jsonify({'success': True, 'user_types': normalized}), 200
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'error': _('權限設定不符合路由限制：%(message)s', message=str(e))}), 400
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to set menu permissions: {e}")
+        return jsonify({'error': _('更新功能授權失敗')}), 500
+
+
 @menu_bp.route('/<secure_code>/roles', methods=['GET'])
 @admin_required
 def get_menu_roles(secure_code: str):

@@ -1,4 +1,144 @@
-<div class="ac-section">
-    <h2 class="ac-section-title">{{ _('功能授權') }}</h2>
-    <p class="ac-muted">{{ _('開發中') }}</p>
+<div class="ac-section" x-data="acFunctionsTab()" x-init="init()">
+    <div class="ac-section-head">
+        <div>
+            <h2 class="ac-section-title">{{ _('功能授權') }}</h2>
+            <p class="ac-muted">{{ _('管理選單的鑰匙1可見身分與鑰匙2角色門檻') }}</p>
+        </div>
+        <template x-if="isSystemAdmin">
+            <label class="ac-field ac-org-filter">
+                <span>{{ _('企業') }}</span>
+                <select class="form-control" x-model="selectedOrgCode" @change="onOrgChange()">
+                    <option value="">{{ _('請選擇企業') }}</option>
+                    <template x-for="org in organizations" :key="org.secure_code">
+                        <option :value="org.secure_code" x-text="org.name"></option>
+                    </template>
+                </select>
+            </label>
+        </template>
+        <template x-if="!isSystemAdmin">
+            <div class="ac-org-lock">
+                <span>{{ _('企業') }}</span>
+                <strong x-text="orgLabel"></strong>
+            </div>
+        </template>
+    </div>
+
+    <div class="ac-alert" :class="'ac-alert-' + alert.type" x-show="alert.show" x-cloak>
+        <span x-text="alert.message"></span>
+    </div>
+
+    <div class="ac-grid-2 ac-functions-layout">
+        <aside class="ac-tree-panel">
+            <div class="ac-panel-head">
+                <h3>{{ _('選單樹') }}</h3>
+                <button type="button" class="btn btn-secondary ac-btn-small" @click="loadMenus()" :disabled="loadingMenus || !canLoadMenus">
+                    {{ _('重新整理') }}
+                </button>
+            </div>
+
+            <template x-if="isSystemAdmin && !selectedOrgCode">
+                <p class="ac-empty">{{ _('請先選擇企業') }}</p>
+            </template>
+
+            <template x-if="loadingMenus">
+                <p class="ac-empty">{{ _('載入中') }}</p>
+            </template>
+
+            <template x-if="!loadingMenus && canLoadMenus && visibleRows.length === 0">
+                <p class="ac-empty">{{ _('沒有選單資料') }}</p>
+            </template>
+
+            <ul class="ac-tree" x-show="!loadingMenus && canLoadMenus && visibleRows.length > 0" x-cloak>
+                <template x-for="row in visibleRows" :key="row.node.secure_code">
+                    <li class="ac-tree-row" :class="{ 'is-selected': selectedMenuCode === row.node.secure_code, 'is-structural': isStructuralNode(row.node) }">
+                        <button type="button" class="ac-tree-node" @click="selectMenu(row.node)" :style="treeIndent(row.depth)">
+                            <span class="ac-tree-toggle" x-text="row.node.children.length ? (row.node._expanded ? '-' : '+') : ''"></span>
+                            <span class="ac-tree-title" x-text="row.node.title"></span>
+                            <span class="ac-key1-badges" aria-label="{{ _('鑰匙1摘要') }}">
+                                <template x-for="badge in key1Badges(row.node)" :key="badge.code">
+                                    <span class="ac-key1-badge" :class="'ac-key1-' + badge.code" x-text="badge.label"></span>
+                                </template>
+                            </span>
+                        </button>
+                    </li>
+                </template>
+            </ul>
+        </aside>
+
+        <section class="ac-auth-panel">
+            <template x-if="!selectedMenu">
+                <div class="ac-panel-placeholder">
+                    <h3>{{ _('選擇一個選單') }}</h3>
+                    <p class="ac-muted">{{ _('左側點選節點後可編輯功能授權') }}</p>
+                </div>
+            </template>
+
+            <template x-if="selectedMenu">
+                <div class="ac-menu-editor">
+                    <div class="ac-panel-head">
+                        <div>
+                            <h3 x-text="selectedMenu.title"></h3>
+                            <p class="ac-muted" x-text="selectedMenu.code"></p>
+                        </div>
+                        <span class="ac-link-type" x-text="selectedMenu.link_type || '-'"></span>
+                    </div>
+
+                    <div class="ac-auth-block">
+                        <div class="ac-auth-block-head">
+                            <div>
+                                <h4>{{ _('鑰匙1：可見身分') }}</h4>
+                                <p class="ac-muted">{{ _('全量替換此功能允許看見的 user_type') }}</p>
+                            </div>
+                            <button type="button" class="btn btn-primary" x-show="isSystemAdmin" @click="saveKey1()" :disabled="savingKey1">
+                                {{ _('儲存鑰匙1') }}
+                            </button>
+                        </div>
+                        <div class="ac-check-grid">
+                            <template x-for="type in userTypeOptions" :key="type.value">
+                                <label class="ac-check-item">
+                                    <input type="checkbox" :value="type.value" x-model="key1Selection" :disabled="!isSystemAdmin || savingKey1">
+                                    <span x-text="type.label"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <template x-if="!selectedIsStructural">
+                        <div class="ac-auth-block">
+                            <div class="ac-auth-block-head">
+                                <div>
+                                    <h4>{{ _('鑰匙2：角色門檻') }}</h4>
+                                    <p class="ac-muted" x-text="key2HelpText"></p>
+                                </div>
+                                <button type="button" class="btn btn-primary" @click="saveKey2()" :disabled="savingKey2 || loadingRoles">
+                                    {{ _('儲存鑰匙2') }}
+                                </button>
+                            </div>
+
+                            <template x-if="loadingRoles">
+                                <p class="ac-empty">{{ _('載入角色中') }}</p>
+                            </template>
+
+                            <template x-if="!loadingRoles && roleOptions.length === 0">
+                                <p class="ac-empty">{{ _('沒有可用角色') }}</p>
+                            </template>
+
+                            <div class="ac-role-list" x-show="!loadingRoles && roleOptions.length > 0" x-cloak>
+                                <template x-for="role in roleOptions" :key="role.id">
+                                    <label class="ac-role-item">
+                                        <input type="checkbox" x-model="role.selected" :disabled="savingKey2">
+                                        <span class="ac-role-main">
+                                            <strong x-text="role.name"></strong>
+                                            <small x-text="role.code"></small>
+                                        </span>
+                                        <span class="ac-role-meta" x-text="role.scope_type || role.role_type || ''"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </section>
+    </div>
 </div>
