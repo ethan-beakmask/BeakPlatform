@@ -16,7 +16,7 @@ from flask_babel import Babel
 
 from .security.auth_interceptor import register_auth_interceptor
 from .security.security_headers import register_security_headers
-from .security.url_access_control import register_page_access_interceptor, register_url_access_logger
+from .security.url_access_control import register_url_access_logger
 
 
 def _rate_limit_key():
@@ -82,9 +82,6 @@ def create_app(config_name: str = None) -> Flask:
     # Register Web blueprints (HTML pages)
     from .web import register_web_blueprints
     register_web_blueprints(app)
-
-    # Register page access interceptor (after blueprints)
-    register_page_access_interceptor(app)
 
     # Register URL access logger (for audit)
     register_url_access_logger(app)

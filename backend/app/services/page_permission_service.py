@@ -99,51 +99,6 @@ class PagePermissionService:
         return cls.ACCESS_DENIED
 
     @classmethod
-    def check_url_access(cls, user, url_path: str) -> str:
-        """
-        根據 URL 路徑檢查存取權限
-
-        用於 URL 層級存取控制。
-
-        Args:
-            user: 當前用戶
-            url_path: URL 路徑
-
-        Returns:
-            權限結果
-        """
-        if not user or not user.is_authenticated:
-            return cls.ACCESS_DENIED
-
-        # 查找對應的頁面
-        page = Page.query.filter(
-            Page.org_secure_code == user.org_secure_code,
-            Page.url_path == url_path,
-            Page.is_active == True,
-            Page.is_deleted == False
-        ).first()
-
-        if page:
-            return cls._check_page(user, page)
-
-        # 無對應頁面時，使用預設政策（允許已登入用戶）
-        return cls.ACCESS_FULL
-
-    @classmethod
-    def can_access(cls, user, page_secure_code: str) -> bool:
-        """
-        簡化的權限檢查 (是否可存取)
-
-        Args:
-            user: 當前用戶
-            page_secure_code: 頁面識別碼
-
-        Returns:
-            是否可存取
-        """
-        return cls.check_page_access(user, page_secure_code) != cls.ACCESS_DENIED
-
-    @classmethod
     def get_user_accessible_pages(cls, user, module_secure_code: Optional[str] = None):
         """
         取得用戶可存取的頁面列表
