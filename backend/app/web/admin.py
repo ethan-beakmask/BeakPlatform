@@ -61,36 +61,6 @@ def settings():
     )
 
 
-@admin_bp.route('/settings/general', methods=['GET', 'POST'])
-def settings_general():
-    """
-    一般設定頁面
-
-    包含：
-    - 允許用戶修改自己的資料
-    """
-    org = current_user.organization
-
-    if request.method == 'POST':
-        # 取得表單值
-        allow_user_self_edit = request.form.get('allow_user_self_edit') == '1'
-
-        # 儲存設定
-        org.set_setting('allow_user_self_edit', allow_user_self_edit)
-        db.session.commit()
-
-        flash(_('設定已儲存'), 'success')
-        return redirect(url_for('admin.settings_general'))
-
-    # 取得目前設定
-    settings = org.get_settings()
-
-    return render_template(
-        'pages/admin/settings_general.html',
-        settings=settings
-    )
-
-
 @admin_bp.route('/module-permissions')
 def module_permissions():
     """
