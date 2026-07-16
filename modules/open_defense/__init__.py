@@ -35,7 +35,9 @@ MODULE_INFO = {
                     'name': '儀表板',
                     'url': 'open_defense_web.dashboard',
                     'sort_order': 0,
-                    'user_types': ['ORG_ADMIN'],
+                    # PERM-01 試點：Key1 開到 EMPLOYEE 層，是否真的開放由各企業
+                    # 的 Key2（角色需求）決定——預設不種員工角色，fail-closed
+                    'user_types': ['ORG_ADMIN', 'EMPLOYEE'],
                     'required_permission': 'open_defense.view',
                 },
                 {

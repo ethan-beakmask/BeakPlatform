@@ -24,8 +24,12 @@ def index():
 
 @web_bp.route('/dashboard')
 @module_access_required('open_defense', False)
-@admin_required
 def dashboard():
+    """PERM-01 試點：不鎖 admin_required，存取交給 PageRoleGuard 雙鑰匙。
+
+    企業可自行決定是否透過角色開放給員工（如資安人員）；
+    stats API 掛 @page_keys_required 與本頁共用同一組鑰匙。
+    """
     return render_template('modules/open_defense/dashboard.html')
 
 

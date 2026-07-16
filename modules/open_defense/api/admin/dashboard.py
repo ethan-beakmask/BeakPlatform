@@ -6,7 +6,7 @@ from flask_login import current_user
 from sqlalchemy import func
 
 from app import db
-from app.security.decorators import admin_required
+from app.security.decorators import page_keys_required
 
 from . import admin_bp
 from ...models import (
@@ -15,7 +15,7 @@ from ...models import (
 
 
 @admin_bp.route('/dashboard/stats', methods=['GET'])
-@admin_required
+@page_keys_required('open_defense.dashboard')  # PERM-01 試點：與 dashboard 頁共用雙鑰匙
 def dashboard_stats():
     org_sc = current_user.org_secure_code
     today_start = datetime.utcnow().replace(

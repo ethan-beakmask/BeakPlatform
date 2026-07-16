@@ -57,6 +57,13 @@
 
 這是「功能宣告多層 + 各層角色細分」，不是「角色跨層」。
 
+**「能看見就能用」試點（2026-07-16，open_defense.dashboard）**：web 頁面路由不掛
+身分 decorator（僅留 `@module_access_required`），身分+角色統一由 PageRoleGuard
+雙鑰匙把關；頁面消費的資料 API 掛 `@page_keys_required('<menu_code>')` 與所屬選單頁
+共用同一組鑰匙（`security/decorators.py`）。目標：改選單/角色設定即改實際存取，
+不再出現「選單看得見、進去 403」。試點驗證後逐步推廣到全平台頁面路由；
+無對應 MenuItem 的孤兒路由仍須保留 decorator（PageRoleGuard 對其放行）。
+
 ### 3.1 模組預設角色（module default roles，2026-07-16）
 
 模組可在 `MODULE_INFO` 宣告 `default_roles`（角色）與 `default_menu_role_requirements`

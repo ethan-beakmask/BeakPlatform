@@ -116,6 +116,91 @@ def system_admin_required(f):
     return decorated_function
 
 
+def page_keys_required(menu_code: str):
+    """
+    頁面資料 API 與所屬頁面共用雙鑰匙（選單即授權，PERM-01 試點 2026-07-16）。
+
+    用途：web 頁面本身由 PageRoleGuard（before_request）依雙鑰匙把關，
+    但頁面消費的 /api/ 路徑在 PageRoleGuard 的 SKIP_PREFIXES 內——
+    掛此裝飾器讓資料 API 與所屬選單頁吃同一組鑰匙，
+    避免「選單看得見、頁面開得了、資料卻 403」的不同步。
+
+    檢查語意與 PageRoleGuard.check_access 一致：
+    1. 登入 + 帳號啟用
+    2. SYSTEM_ADMIN / ORG_ADMIN / 原始管理員 → bypass（同 PageRoleGuard）
+    3. 其餘（EMPLOYEE/EXTERNAL）：
+       鑰匙1 = 該選單對用戶 user_type 有 MenuPermission
+       鑰匙2 = 用戶持有該選單在其企業的任一所需角色
+    4. 失敗回 403（API 語境，不做 PageRoleGuard 的強制登出）
+
+    Usage:
+        @admin_bp.route('/dashboard/stats')
+        @page_keys_required('open_defense.dashboard')
+        def dashboard_stats(): ...
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401, description="Authentication required")
+
+            if not current_user.is_active:
+                abort(403, description="Account is disabled")
+
+            # Set tenant context
+            g.current_org_secure_code = current_user.org_secure_code
+
+            if (current_user.is_system_admin or current_user.is_org_admin
+                    or getattr(current_user, 'is_original_admin', False)):
+                return f(*args, **kwargs)
+
+            # 延遲 import 避免循環相依
+            from sqlalchemy import text
+            from .. import db
+            from ..models.menu_item import MenuItem
+            from ..services.page_role_guard import PageRoleGuard
+
+            # RLS context: 選單項目屬系統企業
+            try:
+                db.session.execute(
+                    text("SET LOCAL app.is_system_admin = 'true'"))
+            except Exception:
+                pass
+
+            item = MenuItem.query.filter_by(
+                code=menu_code, is_deleted=False, is_active=True
+            ).first()
+            if not item:
+                # fail-closed：宣告的選單不存在視為設定錯誤，一律擋下
+                logger.error(
+                    f"page_keys_required: menu '{menu_code}' not found "
+                    f"(route={request.path})"
+                )
+                abort(403, description="Access denied")
+
+            # 鑰匙1: user_type
+            permitted = PageRoleGuard._filter_by_user_type(
+                [item], str(current_user.user_type))
+            if not permitted:
+                abort(403, description="Access denied")
+
+            # 鑰匙2: 角色（無角色設定 = fail-closed）
+            required = PageRoleGuard._get_required_roles(
+                item.secure_code, current_user.org_secure_code)
+            if not required:
+                abort(403, description="Access denied")
+
+            user_roles = PageRoleGuard._get_user_roles(
+                current_user.secure_code)
+            if not (user_roles & required):
+                abort(403, description="Access denied")
+
+            return f(*args, **kwargs)
+
+        return decorated_function
+    return decorator
+
+
 def module_access_required(module_code: str, check_acl: bool = True):
     """
     模組使用權路由檢查裝飾器。
