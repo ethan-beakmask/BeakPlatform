@@ -26,13 +26,16 @@ MODULE_INFO = {
             'icon': 'ri-shield-keyhole-line',
             'parent': None,
             'sort_order': 5,
-            'user_types': ['ORG_ADMIN'],
+            # header 含 EMPLOYEE：資安案件處置中心開放給持 SOC 角色的企業成員
+            # （員工無可見子項時，header 由 _prune_empty_parents 自動裁剪）
+            'user_types': ['ORG_ADMIN', 'EMPLOYEE'],
             'children': [
                 {
                     'code': 'open_defense.dashboard',
                     'name': '儀表板',
                     'url': 'open_defense_web.dashboard',
                     'sort_order': 0,
+                    'user_types': ['ORG_ADMIN'],
                     'required_permission': 'open_defense.view',
                 },
                 {
@@ -40,20 +43,32 @@ MODULE_INFO = {
                     'name': '決策列表',
                     'url': 'open_defense_web.decisions',
                     'sort_order': 1,
+                    'user_types': ['ORG_ADMIN'],
                     'required_permission': 'open_defense.decision.view',
+                },
+                {
+                    'code': 'open_defense.security_cases',
+                    'name': '資安案件處置中心',
+                    'url': 'open_defense_web.security_cases',
+                    'sort_order': 2,
+                    # SOC 值班人員（企業成員）為主要使用者；實際可見誰由各企業
+                    # 的 MenuRoleRequirement（雙鑰匙 Key2）決定
+                    'user_types': ['ORG_ADMIN', 'EMPLOYEE'],
                 },
                 {
                     'code': 'open_defense.intake_keys',
                     'name': '事件接收金鑰',
                     'url': 'open_defense_web.intake_keys',
-                    'sort_order': 2,
+                    'sort_order': 3,
+                    'user_types': ['ORG_ADMIN'],
                     'required_permission': 'open_defense.admin',
                 },
                 {
                     'code': 'open_defense.service_accounts',
                     'name': '執行端帳號',
                     'url': 'open_defense_web.service_accounts',
-                    'sort_order': 3,
+                    'sort_order': 4,
+                    'user_types': ['ORG_ADMIN'],
                     'required_permission': 'open_defense.admin',
                 },
             ],

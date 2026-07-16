@@ -37,6 +37,11 @@ function permissionCentral() {
         menuData: null,
         menuLoading: false,
 
+        // 選單角色需求編輯（雙鑰匙 Key2）
+        editingMenuRoles: false,
+        menuRoleOptions: [],
+        menuRolesSaving: false,
+
         // 衝突偵測
         conflictsData: null,
         conflictsLoading: false,
@@ -272,7 +277,64 @@ function permissionCentral() {
 
         selectMenu(secureCode) {
             this.selectedMenuCode = secureCode;
+            this.editingMenuRoles = false;
             this.loadMenuView();
+        },
+
+        // ============================================================
+        // 選單角色需求編輯（MenuRoleRequirement / 雙鑰匙 Key2）
+        // ORG_ADMIN: 編輯自己企業（可選企業自訂角色，如 SOC 值班）
+        // SYSTEM_ADMIN: 以角色代碼批量套用到所有企業（僅系統預設角色）
+        // ============================================================
+
+        async startEditMenuRoles() {
+            if (!this.selectedMenuCode) return;
+            try {
+                const res = await fetch(window.__BP + '/api/menu/' + this.selectedMenuCode + '/roles');
+                const data = await res.json();
+                if (!res.ok) {
+                    this.showToast(data.error || __('載入失敗'), 'error');
+                    return;
+                }
+                this.menuRoleOptions = (data.available_roles || []).map(r => ({ ...r }));
+                this.editingMenuRoles = true;
+            } catch (e) {
+                console.error('Failed to load menu roles:', e);
+                this.showToast(__('載入失敗'), 'error');
+            }
+        },
+
+        async saveMenuRoles() {
+            if (!this.selectedMenuCode) return;
+            this.menuRolesSaving = true;
+            try {
+                const meta = document.querySelector('meta[name="csrf-token"]');
+                const res = await fetch(window.__BP + '/api/menu/' + this.selectedMenuCode + '/roles', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': meta ? meta.content : ''
+                    },
+                    body: JSON.stringify({
+                        role_secure_codes: this.menuRoleOptions
+                            .filter(r => r.selected)
+                            .map(r => r.id)
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    this.showToast(__('角色需求已更新'), 'success');
+                    this.editingMenuRoles = false;
+                    await this.loadMenuView();
+                } else {
+                    this.showToast(data.error || __('儲存失敗'), 'error');
+                }
+            } catch (e) {
+                console.error('Failed to save menu roles:', e);
+                this.showToast(__('儲存失敗'), 'error');
+            } finally {
+                this.menuRolesSaving = false;
+            }
         },
 
         async loadMenuView() {

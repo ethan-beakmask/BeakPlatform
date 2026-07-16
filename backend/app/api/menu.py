@@ -9,7 +9,7 @@ from flask_babel import gettext as _
 from flask_login import current_user
 from sqlalchemy import text
 
-from ..security.decorators import login_required, system_admin_required
+from ..security.decorators import login_required, admin_required, system_admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..services.menu_service import MenuService
 from ..services.page_role_guard import PageRoleGuard
@@ -296,21 +296,26 @@ def move_menu_item(secure_code: str):
 # =============================================================================
 
 @menu_bp.route('/<secure_code>/roles', methods=['GET'])
-@system_admin_required
+@admin_required
 def get_menu_roles(secure_code: str):
     """
     取得選單項目的角色需求
 
     SYSTEM_ADMIN: 查所有企業的系統預設角色（去重 by code），已設定狀態取任一企業
-    ORG_ADMIN: 查自己企業的角色
+    ORG_ADMIN: 查自己企業的角色（含企業自訂角色，如 SOC_L1）
 
     Returns:
         {roles: [...], available_roles: [...]}
     """
-    menu_item = ResourceGateway.get(MenuItem, secure_code, check_permission=False)
-
-    # RLS context: 管理員操作需要 system_admin 權限繞過租戶隔離
+    # RLS context: 選單屬系統企業（全站共用物），管理員操作需繞過租戶隔離
+    # （ORG_ADMIN 亦需讀取，故不可用 ResourceGateway 的租戶過濾取件）
     db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
+
+    menu_item = MenuItem.query.filter_by(
+        secure_code=secure_code, is_deleted=False
+    ).first()
+    if not menu_item:
+        return jsonify({'error': _('選單項目不存在')}), 404
 
     if current_user.is_system_admin:
         # SYSTEM_ADMIN: 查系統預設角色（去重 by code）
@@ -407,7 +412,7 @@ def get_menu_roles(secure_code: str):
 
 
 @menu_bp.route('/<secure_code>/roles', methods=['PUT'])
-@system_admin_required
+@admin_required
 def set_menu_roles(secure_code: str):
     """
     設定選單項目的角色需求（全量替換）
@@ -420,14 +425,19 @@ def set_menu_roles(secure_code: str):
     Returns:
         {success: true, count: int}
     """
-    menu_item = ResourceGateway.get(MenuItem, secure_code, check_permission=False)
     data = request.get_json()
 
     role_identifiers = data.get('role_secure_codes', [])
 
     try:
-        # RLS context: 管理員操作需要 system_admin 權限繞過租戶隔離
+        # RLS context: 選單屬系統企業（全站共用物），管理員操作需繞過租戶隔離
         db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
+
+        menu_item = MenuItem.query.filter_by(
+            secure_code=secure_code, is_deleted=False
+        ).first()
+        if not menu_item:
+            return jsonify({'error': _('選單項目不存在')}), 404
 
         if current_user.is_system_admin:
             # SYSTEM_ADMIN: role_identifiers 是 role codes，批量為所有企業設定
@@ -466,6 +476,15 @@ def set_menu_roles(secure_code: str):
             })
         else:
             # ORG_ADMIN: role_identifiers 是 role secure_codes
+            # 只接受屬於自己企業的角色，防止跨租戶引用
+            if role_identifiers:
+                own_roles = Role.query.filter(
+                    Role.org_secure_code == current_user.org_secure_code,
+                    Role.secure_code.in_(role_identifiers),
+                    Role.is_deleted == False,
+                ).all()
+                role_identifiers = [r.secure_code for r in own_roles]
+
             count = PageRoleGuard.set_menu_roles(
                 menu_item.secure_code,
                 current_user.org_secure_code,

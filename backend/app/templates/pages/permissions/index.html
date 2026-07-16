@@ -431,38 +431,77 @@
 
                         <!-- 角色需求 (MenuRoleRequirement) -->
                         <div class="perm-section">
-                            <h4 class="perm-section-title">{{ _('角色存取需求 (MenuRoleRequirement)') }}</h4>
-                            <template x-if="menuData.required_roles.length === 0">
-                                <p class="text-muted">{{ _('無角色需求 -- 不受角色守衛控制') }}</p>
+                            <h4 class="perm-section-title">
+                                {{ _('角色存取需求 (MenuRoleRequirement)') }}
+                                <button type="button" class="btn btn-sm" style="margin-left:8px;"
+                                        x-show="!editingMenuRoles"
+                                        @click="startEditMenuRoles()">{{ _('編輯') }}</button>
+                            </h4>
+                            <template x-if="!editingMenuRoles">
+                                <div>
+                                    <template x-if="menuData.required_roles.length === 0">
+                                        <p class="text-warn">{{ _('無角色需求 -- 雙鑰匙 fail-closed，EMPLOYEE / EXTERNAL 一律不可見、不可存取') }}</p>
+                                    </template>
+                                    <template x-if="menuData.required_roles.length > 0">
+                                        <table class="data-table bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>{{ _('角色名稱') }}</th>
+                                                    <th>{{ _('代碼') }}</th>
+                                                    <th>{{ _('持有者') }}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template x-for="r in menuData.required_roles" :key="r.secure_code">
+                                                    <tr>
+                                                        <td x-text="r.name"></td>
+                                                        <td><code x-text="r.code"></code></td>
+                                                        <td>
+                                                            <span x-text="__('{count} 人', {count: r.holder_count})"
+                                                                  :class="{ 'text-warn': r.holder_count === 0 }"></span>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </template>
+                                </div>
                             </template>
-                            <template x-if="menuData.required_roles.length > 0">
-                                <table class="data-table bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>{{ _('角色名稱') }}</th>
-                                            <th>{{ _('代碼') }}</th>
-                                            <th>{{ _('持有者') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template x-for="r in menuData.required_roles" :key="r.secure_code">
-                                            <tr>
-                                                <td x-text="r.name"></td>
-                                                <td><code x-text="r.code"></code></td>
-                                                <td>
-                                                    <span x-text="__('{count} 人', {count: r.holder_count})"
-                                                          :class="{ 'text-warn': r.holder_count === 0 }"></span>
-                                                </td>
-                                            </tr>
+                            <template x-if="editingMenuRoles">
+                                <div>
+                                    {% if is_system_admin %}
+                                    <p class="text-muted">{{ _('系統管理員模式：以角色代碼批量套用到所有企業（僅系統預設角色）') }}</p>
+                                    {% else %}
+                                    <p class="text-muted">{{ _('勾選可存取此功能的角色（含企業自訂角色），僅影響本企業') }}</p>
+                                    {% endif %}
+                                    <template x-if="menuRoleOptions.length === 0">
+                                        <p class="text-muted">{{ _('企業尚未建立角色') }}</p>
+                                    </template>
+                                    <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border-color, #ddd);padding:8px 12px;">
+                                        <template x-for="r in menuRoleOptions" :key="r.id">
+                                            <label style="display:block;margin:4px 0;">
+                                                <input type="checkbox" x-model="r.selected">
+                                                <span x-text="r.name"></span>
+                                                (<code x-text="r.code"></code>)
+                                                <span class="perm-level-badge" x-text="r.role_level"></span>
+                                            </label>
                                         </template>
-                                    </tbody>
-                                </table>
+                                    </div>
+                                    <div style="margin-top:8px;display:flex;gap:8px;">
+                                        <button type="button" class="btn btn-primary btn-sm"
+                                                :disabled="menuRolesSaving"
+                                                @click="saveMenuRoles()">{{ _('儲存') }}</button>
+                                        <button type="button" class="btn btn-sm"
+                                                @click="editingMenuRoles = false">{{ _('取消') }}</button>
+                                    </div>
+                                </div>
                             </template>
                         </div>
 
                         <!-- required_permission (RBAC) -->
                         <div class="perm-section">
-                            <h4 class="perm-section-title">{{ _('RBAC 權限門檻 (required_permission)') }}</h4>
+                            <h4 class="perm-section-title">{{ _('RBAC 權限門檻 (required_permission) -- 已退役') }}</h4>
+                            <p class="text-muted">{{ _('此欄位已不參與選單可見性（單軌化為雙鑰匙角色制），permission code 僅存在 API / 資源層，以下僅供參考。') }}</p>
                             <template x-if="!menuData.rbac_info">
                                 <p class="text-muted">{{ _('無 -- 此選單未設定 RBAC 權限門檻') }}</p>
                             </template>
@@ -476,7 +515,7 @@
                                               x-text="menuData.rbac_info.permission_level"></span>
                                     </p>
                                     <template x-if="menuData.rbac_info.holding_roles.length === 0">
-                                        <p class="text-warn">{{ _('!! 沒有任何角色持有此權限 -- 此選單實際上無法被存取') }}</p>
+                                        <p class="text-muted">{{ _('沒有任何角色持有此權限（不影響選單可見性，僅影響對應 API）') }}</p>
                                     </template>
                                     <template x-if="menuData.rbac_info.holding_roles.length > 0">
                                         <div>
