@@ -120,6 +120,11 @@
 </form>
 
 <div class="section-title" style="margin-top:32px;">{{ _('存取角色需求') }}</div>
+{% if item.link_type in ('header', 'divider') %}
+{# 結構元素不吃鑰匙2：_menu_tree._filter_by_role_requirements 對 header/divider 直接放行， #}
+{# 可見性由 _prune_empty_parents 依「是否有可見子項」決定，設定角色不會被讀取 #}
+<div class="alert alert-info" style="margin-top:8px;">{{ _('此項目為結構元素（群組標題/分隔線），不適用鑰匙2角色需求：其可見性由「底下是否有可見子項」自動決定，請到各子項目設定存取角色。') }}</div>
+{% else %}
 <div class="alert alert-warning" style="margin-top:8px;">{{ _('鑰匙2: 必須設定角色。未設定角色的選單，任何人（含管理員）都無法透過 URL 存取。用戶必須持有至少一個指定角色，否則強制登出。') }}</div>
 
 <div x-data="menuRoleManager()" x-init="init()">
@@ -265,6 +270,7 @@ function menuRoleManager() {
     };
 }
 </script>
+{% endif %}{# link_type not in ('header', 'divider') #}
 
 {% if item.is_user_created %}
 <div class="section-title" style="margin-top:32px;border-left-color:var(--color-danger);">{{ _('刪除選單項目') }}</div>

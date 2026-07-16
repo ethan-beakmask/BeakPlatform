@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-16 12:40+0800\n"
+"POT-Creation-Date: 2026-07-16 18:05+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -5901,8 +5901,8 @@ msgstr "No category information yet"
 #: app/templates/pages/job_levels/list.html:218
 #: app/templates/pages/job_titles/list.html:76
 #: app/templates/pages/job_titles/list.html:152
-#: app/templates/pages/menu/edit.html:135
-#: app/templates/pages/menu/edit.html:164
+#: app/templates/pages/menu/edit.html:140
+#: app/templates/pages/menu/edit.html:169
 #: app/templates/pages/modules/view.html:97
 #: app/templates/pages/permissions/index.html:168
 #: app/templates/pages/permissions/index.html:450
@@ -8240,19 +8240,27 @@ msgstr ""
 msgid "存取角色需求"
 msgstr "Access Role Requirements"
 
-#: app/templates/pages/menu/edit.html:123
+#: app/templates/pages/menu/edit.html:126
+msgid "此項目為結構元素（群組標題/分隔線），不適用鑰匙2角色需求：其可見性由「底下是否有可見子項」自動決定，請到各子項目設定存取角色。"
+msgstr ""
+"This item is a structural element (group header / divider) and Key 2 role "
+"requirements do not apply: its visibility is determined automatically by "
+"whether it has any visible child items. Configure access roles on the "
+"child items instead."
+
+#: app/templates/pages/menu/edit.html:128
 msgid "鑰匙2: 必須設定角色。未設定角色的選單，任何人（含管理員）都無法透過 URL 存取。用戶必須持有至少一個指定角色，否則強制登出。"
 msgstr ""
 "Key 2: roles must be configured. A menu without roles cannot be accessed "
 "by anyone (including admins) via URL. Users must hold at least one "
 "designated role or they are forcibly logged out."
 
-#: app/templates/pages/menu/edit.html:128
+#: app/templates/pages/menu/edit.html:133
 msgid "被授權的角色"
 msgstr "Authorized roles"
 
-#: app/templates/pages/menu/edit.html:134
-#: app/templates/pages/menu/edit.html:163
+#: app/templates/pages/menu/edit.html:139
+#: app/templates/pages/menu/edit.html:168
 #: app/templates/pages/permissions/index.html:449
 #: app/templates/pages/roles/create.html:35
 #: app/templates/pages/roles/edit.html:39
@@ -8260,53 +8268,53 @@ msgstr "Authorized roles"
 msgid "角色名稱"
 msgstr "Role name"
 
-#: app/templates/pages/menu/edit.html:136
-#: app/templates/pages/menu/edit.html:165
+#: app/templates/pages/menu/edit.html:141
+#: app/templates/pages/menu/edit.html:170
 #: app/templates/pages/permissions/index.html:229
 #: app/templates/pages/permissions/index.html:275
 #: app/templates/pages/units/view.html:44
 msgid "層級"
 msgstr "Level"
 
-#: app/templates/pages/menu/edit.html:152
+#: app/templates/pages/menu/edit.html:157
 msgid "尚未授權任何角色"
 msgstr "No roles authorized yet"
 
-#: app/templates/pages/menu/edit.html:156
+#: app/templates/pages/menu/edit.html:161
 msgid "可選角色"
 msgstr "Available roles"
 
-#: app/templates/pages/menu/edit.html:181
+#: app/templates/pages/menu/edit.html:186
 #: app/templates/pages/permissions/index.html:478
 msgid "企業尚未建立角色"
 msgstr "The organization has not created any roles"
 
-#: app/templates/pages/menu/edit.html:270
-#: app/templates/pages/menu/edit.html:275
-#: app/templates/pages/menu/edit.html:282
+#: app/templates/pages/menu/edit.html:276
+#: app/templates/pages/menu/edit.html:281
+#: app/templates/pages/menu/edit.html:288
 msgid "刪除選單項目"
 msgstr "Delete Menu Item"
 
-#: app/templates/pages/menu/edit.html:273
+#: app/templates/pages/menu/edit.html:279
 msgid "無法刪除：子項目中包含預設選單（"
 msgstr "Cannot delete: child items contain default menus ("
 
-#: app/templates/pages/menu/edit.html:273
+#: app/templates/pages/menu/edit.html:279
 msgid "等共"
 msgstr "and a total of"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:82
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:59
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:223
-#: app/templates/pages/menu/edit.html:273
+#: app/templates/pages/menu/edit.html:279
 msgid "項"
 msgstr "items"
 
-#: app/templates/pages/menu/edit.html:273
+#: app/templates/pages/menu/edit.html:279
 msgid "），請先將其移出"
 msgstr "). Please move them out first"
 
-#: app/templates/pages/menu/edit.html:278
+#: app/templates/pages/menu/edit.html:284
 msgid "刪除此選單項目將連同子項目一起刪除。"
 msgstr "Deleting this menu item will also delete all its child items."
 
@@ -9600,7 +9608,9 @@ msgstr "Role access requirement (MenuRoleRequirement)"
 
 #: app/templates/pages/permissions/index.html:443
 msgid "無角色需求 -- 雙鑰匙 fail-closed，EMPLOYEE / EXTERNAL 一律不可見、不可存取"
-msgstr "No role requirements -- double-key fail-closed: invisible and inaccessible to EMPLOYEE / EXTERNAL"
+msgstr ""
+"No role requirements -- double-key fail-closed: invisible and "
+"inaccessible to EMPLOYEE / EXTERNAL"
 
 #: app/templates/pages/permissions/index.html:451
 msgid "持有者"
@@ -9608,11 +9618,15 @@ msgstr "holder"
 
 #: app/templates/pages/permissions/index.html:473
 msgid "系統管理員模式：以角色代碼批量套用到所有企業（僅系統預設角色）"
-msgstr "System admin mode: apply to all organizations in bulk by role code (system default roles only)"
+msgstr ""
+"System admin mode: apply to all organizations in bulk by role code "
+"(system default roles only)"
 
 #: app/templates/pages/permissions/index.html:475
 msgid "勾選可存取此功能的角色（含企業自訂角色），僅影響本企業"
-msgstr "Select the roles allowed to access this feature (including custom roles); affects this organization only"
+msgstr ""
+"Select the roles allowed to access this feature (including custom roles);"
+" affects this organization only"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:421
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:62
@@ -9635,7 +9649,10 @@ msgstr "RBAC permission threshold (required_permission) -- retired"
 
 #: app/templates/pages/permissions/index.html:504
 msgid "此欄位已不參與選單可見性（單軌化為雙鑰匙角色制），permission code 僅存在 API / 資源層，以下僅供參考。"
-msgstr "This field no longer affects menu visibility (consolidated into the double-key role model); permission codes exist only at the API / resource layer. Shown for reference only."
+msgstr ""
+"This field no longer affects menu visibility (consolidated into the "
+"double-key role model); permission codes exist only at the API / resource"
+" layer. Shown for reference only."
 
 #: app/templates/pages/permissions/index.html:506
 msgid "無 -- 此選單未設定 RBAC 權限門檻"
@@ -9647,7 +9664,9 @@ msgstr "Permissions required:"
 
 #: app/templates/pages/permissions/index.html:518
 msgid "沒有任何角色持有此權限（不影響選單可見性，僅影響對應 API）"
-msgstr "No role holds this permission (does not affect menu visibility; affects the corresponding APIs only)"
+msgstr ""
+"No role holds this permission (does not affect menu visibility; affects "
+"the corresponding APIs only)"
 
 #: app/templates/pages/permissions/index.html:522
 msgid "持有此權限的角色:"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 12:40+0800\n"
+"POT-Creation-Date: 2026-07-16 18:05+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -5775,8 +5775,8 @@ msgstr ""
 #: app/templates/pages/job_levels/list.html:218
 #: app/templates/pages/job_titles/list.html:76
 #: app/templates/pages/job_titles/list.html:152
-#: app/templates/pages/menu/edit.html:135
-#: app/templates/pages/menu/edit.html:164
+#: app/templates/pages/menu/edit.html:140
+#: app/templates/pages/menu/edit.html:169
 #: app/templates/pages/modules/view.html:97
 #: app/templates/pages/permissions/index.html:168
 #: app/templates/pages/permissions/index.html:450
@@ -8017,16 +8017,20 @@ msgstr ""
 msgid "存取角色需求"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:123
-msgid "鑰匙2: 必須設定角色。未設定角色的選單，任何人（含管理員）都無法透過 URL 存取。用戶必須持有至少一個指定角色，否則強制登出。"
+#: app/templates/pages/menu/edit.html:126
+msgid "此項目為結構元素（群組標題/分隔線），不適用鑰匙2角色需求：其可見性由「底下是否有可見子項」自動決定，請到各子項目設定存取角色。"
 msgstr ""
 
 #: app/templates/pages/menu/edit.html:128
+msgid "鑰匙2: 必須設定角色。未設定角色的選單，任何人（含管理員）都無法透過 URL 存取。用戶必須持有至少一個指定角色，否則強制登出。"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:133
 msgid "被授權的角色"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:134
-#: app/templates/pages/menu/edit.html:163
+#: app/templates/pages/menu/edit.html:139
+#: app/templates/pages/menu/edit.html:168
 #: app/templates/pages/permissions/index.html:449
 #: app/templates/pages/roles/create.html:35
 #: app/templates/pages/roles/edit.html:39
@@ -8034,53 +8038,53 @@ msgstr ""
 msgid "角色名稱"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:136
-#: app/templates/pages/menu/edit.html:165
+#: app/templates/pages/menu/edit.html:141
+#: app/templates/pages/menu/edit.html:170
 #: app/templates/pages/permissions/index.html:229
 #: app/templates/pages/permissions/index.html:275
 #: app/templates/pages/units/view.html:44
 msgid "層級"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:152
+#: app/templates/pages/menu/edit.html:157
 msgid "尚未授權任何角色"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:156
+#: app/templates/pages/menu/edit.html:161
 msgid "可選角色"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:181
+#: app/templates/pages/menu/edit.html:186
 #: app/templates/pages/permissions/index.html:478
 msgid "企業尚未建立角色"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:270
-#: app/templates/pages/menu/edit.html:275
-#: app/templates/pages/menu/edit.html:282
+#: app/templates/pages/menu/edit.html:276
+#: app/templates/pages/menu/edit.html:281
+#: app/templates/pages/menu/edit.html:288
 msgid "刪除選單項目"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:273
+#: app/templates/pages/menu/edit.html:279
 msgid "無法刪除：子項目中包含預設選單（"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:273
+#: app/templates/pages/menu/edit.html:279
 msgid "等共"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:82
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:59
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:223
-#: app/templates/pages/menu/edit.html:273
+#: app/templates/pages/menu/edit.html:279
 msgid "項"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:273
+#: app/templates/pages/menu/edit.html:279
 msgid "），請先將其移出"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:278
+#: app/templates/pages/menu/edit.html:284
 msgid "刪除此選單項目將連同子項目一起刪除。"
 msgstr ""
 
