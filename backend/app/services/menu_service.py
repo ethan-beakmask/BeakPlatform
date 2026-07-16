@@ -5,7 +5,7 @@ BeakMask Menu Service
 權限設計：
 - MenuPermission 交叉表決定選單對 user_type 的可見性
 - org_secure_code 用於管理權限（誰能編輯選單），不影響可見性
-- required_permission 設定的選單需要通過 RBAC 權限檢查
+- (已退役) required_permission 不再參與選單可見性，permission code 僅存在 API/資源層
 - 模組選單需要企業擁有有效合約授權才可見
 
 實作拆分為 4 個 Mixin（按職責）：
@@ -39,7 +39,7 @@ class MenuService(
     權限設計：
     - MenuPermission 交叉表決定選單對 user_type 的可見性
     - org_secure_code 用於管理權限（誰能編輯/刪除選單），不影響可見性
-    - required_permission 設定的選單需要通過 RBAC 權限檢查
+    - (已退役) required_permission 不再參與選單可見性，permission code 僅存在 API/資源層
     """
 
     # 用戶類型列表 (用於權限交叉表)

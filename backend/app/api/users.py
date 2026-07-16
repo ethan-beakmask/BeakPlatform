@@ -6,7 +6,7 @@ from flask import Blueprint, request, jsonify
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..security.decorators import login_required, admin_required, permission_required
+from ..security.decorators import login_required, admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.user import User, UserType
 from ..models.organizational_unit import OrganizationalUnit
@@ -59,13 +59,16 @@ def list_users():
 
 
 @users_bp.route('/<secure_code>', methods=['GET'])
-@permission_required('user', 'read', model=User)
+@admin_required
 def get_user(secure_code: str):
     """
     取得單一用戶資訊。
 
     GET /api/users/<secure_code>
-    需要 user:read 權限（to_dict 含手機/備用信箱等 PII，不開放一般登入用戶）
+    限管理員（to_dict 含手機/備用信箱等 PII，不開放一般登入用戶）。
+    原為 @permission_required('user','read')，實際僅 SYSTEM_ADMIN 角色持有
+    user:read、ORG_ADMIN 自動通過 -- 與 @admin_required 行為等價，隨軌 C 選單/
+    頁面層退役改用 user_type 檢查。
     """
     user = ResourceGateway.get(User, secure_code)
 

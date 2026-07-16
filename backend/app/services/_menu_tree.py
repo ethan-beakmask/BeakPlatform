@@ -4,8 +4,6 @@
 方法：
 - get_user_menu_tree: 主入口，組合所有過濾步驟
 - _get_allowed_menu_codes: MenuPermission 查詢
-- _get_user_permission_codes: RBAC 權限代碼
-- _filter_by_rbac_permission: RBAC 過濾
 - _filter_by_role_requirements: 雙鑰匙角色過濾
 - _prune_empty_parents: 裁剪空 header/divider
 - _filter_with_bypass: 治理分流
@@ -46,10 +44,12 @@ class MenuTreeMixin:
         可見性邏輯（雙鑰匙安全模型）：
         1. MenuPermission (user_type) 取得有權限的選單
         2. 模組注入（非 SYSTEM_ADMIN，依 ACL）
-        3. RBAC 權限過濾 (required_permission)
-        4. 合約/ACL/社群過濾
-        5. 角色過濾（非 SYSTEM_ADMIN，MenuRoleRequirement 雙鑰匙）
-        6. 空 header 裁剪
+        3. 合約/ACL/社群過濾
+        4. 角色過濾（非 SYSTEM_ADMIN，MenuRoleRequirement 雙鑰匙）
+        5. 空 header 裁剪
+
+        （已退役）required_permission RBAC 過濾：permission code 僅存在於
+        API/資源層，不再參與選單可見性。
 
         SYSTEM_ADMIN 走程式控制（decorator），不受角色過濾。
 
@@ -82,9 +82,6 @@ class MenuTreeMixin:
         # MenuPermission 治理的選單 = 管理員勾選即生效，不受合約/ACL/社群過濾
         module_only_codes = module_injected_codes - perm_governed_codes
 
-        # 2. 取得用戶的 RBAC 權限列表 (用於 required_permission 檢查)
-        user_permissions = cls._get_user_permission_codes(user)
-
         # 3. 建立查詢
         # 選單可見性由 MenuPermission + module_access_control 共同決定
         # org_secure_code 只用於管理權限（誰能編輯選單）
@@ -103,10 +100,10 @@ class MenuTreeMixin:
             MenuItem.display_order
         ).all()
 
-        # 5. 過濾需要 RBAC 權限的選單
-        filtered_items = cls._filter_by_rbac_permission(
-            items, user_permissions
-        )
+        # 5. (已退役) RBAC required_permission 過濾
+        # 選單可見性單軌化為雙鑰匙（MenuPermission + MenuRoleRequirement），
+        # permission code 保留於 API/資源層（ResourceGateway、模組 API），不再參與選單過濾
+        filtered_items = items
 
         # 6~6.7 模組治理過濾
         # 6. 合約過濾：對所有模組選單生效（含 MenuPermission 治理的）
@@ -177,47 +174,6 @@ class MenuTreeMixin:
         ).all()
 
         return {p.menu_secure_code for p in permissions}
-
-    @classmethod
-    def _get_user_permission_codes(cls, user) -> Set[str]:
-        """
-        取得用戶的 RBAC 權限代碼列表
-
-        Args:
-            user: 當前用戶
-
-        Returns:
-            權限代碼集合 (如 {'user:read', 'form_instance:create', ...})
-        """
-        from .permission_service import PermissionService
-        return PermissionService.get_all_permission_codes(user)
-
-    @classmethod
-    def _filter_by_rbac_permission(
-        cls,
-        items: List[MenuItem],
-        user_permissions: Set[str]
-    ) -> List[MenuItem]:
-        """
-        過濾需要 RBAC 權限的選單
-
-        Args:
-            items: 選單項目列表
-            user_permissions: 用戶擁有的權限代碼集合
-
-        Returns:
-            過濾後的選單項目列表
-        """
-        filtered = []
-        for item in items:
-            if not item.required_permission:
-                filtered.append(item)
-                continue
-
-            if item.required_permission in user_permissions:
-                filtered.append(item)
-
-        return filtered
 
     @classmethod
     def _filter_by_role_requirements(
