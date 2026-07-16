@@ -67,7 +67,8 @@
 
 | 選單名稱 | URL 路徑 | 說明 |
 |----------|----------|------|
-| 選單管理 | `/menu/` | 動態選單 CRUD |
+| 選單管理 | `/menu/` | 動態選單 CRUD（結構；鑰匙授權在權限管理中心） |
+| 權限管理中心 | `/access/` | 功能授權（雙鑰匙）/角色/帳號配角色/健檢 四 tab，2026-07-17 取代舊權限中央、/roles/、/admin/account-roles/ |
 | 模組管理 | `/modules/` | 模組啟停管理 |
 
 ### 模組區
@@ -90,7 +91,7 @@
 | 選單名稱 | URL 路徑 | 說明 |
 |----------|----------|------|
 | 企業成員帳號 | `/users/` | 使用者 CRUD |
-| 角色管理 | `/roles/` | 角色 CRUD（角色/單位職務等名詞定版見 `docs/ROLE_TAXONOMY.md`） |
+| 角色管理 | `/access/`（角色 tab） | 舊 `/roles/` 已退役；名詞定版見 `docs/ROLE_TAXONOMY.md` |
 | 外部廠商 | `/external-users/` | 外部廠商管理 |
 | 編號設定 | `/admin/numbering` | 自動編號規則 |
 | 基本班表 | `/admin/settings/work-schedules` | 班表與假日設定 |

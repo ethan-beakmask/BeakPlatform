@@ -80,6 +80,13 @@
   選單（路徑前綴 = 該區領地）；區內新增子路由自動被罩住。API 路由（`/api/` 前綴）
   不在 guard 範圍，單頁專屬資料 API 掛 `@page_keys_required('<menu_code>')`。
 
+**Phase C 權限管理中心（2026-07-17，migrations 085/086）**：`/access/` 四 tab
+（功能授權雙鑰匙 / 角色含 exclusive_group 與 RBAC / 帳號配角色 / 健檢）成為權限
+管理唯一入口；舊 `/permissions/`、`/roles/`、`/admin/account-roles/` 已退役，
+`/menu/` 瘦身為純結構編輯（建立頁保留 Key1 初始勾選）。規格：
+`docs/ACCESS_CENTER_SPEC.md`。互斥群組檢查收斂於
+`services/role_assignment_service.py`。
+
 ### 3.1 模組預設角色（module default roles，2026-07-16）
 
 模組可在 `MODULE_INFO` 宣告 `default_roles`（角色）與 `default_menu_role_requirements`
