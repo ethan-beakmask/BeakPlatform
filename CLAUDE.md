@@ -624,6 +624,15 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
   curl -s -c cj.txt -X POST "$BASE/auth/login" -H 'Content-Type: application/json' \
     -d '{"account":"admin-ethanyu@beluga.com","password":"ApiKeyTest2026"}'
   ```
+- curl 快速切換**任意帳號**（免密碼免 CSRF，POST JSON 版，E2E 多帳號矩陣測試首選）:
+  ```bash
+  USC=$(psql -h localhost -U beakplatform -d beakplatform_dev -t -A \
+    -c "SELECT secure_code FROM users WHERE email='ethan@lion.com' AND is_deleted=false;")
+  curl -s -c cj.txt -X POST "$BASE/dev/quick-login" \
+    -H 'Content-Type: application/json' -d "{\"user_id\":\"$USC\"}"
+  ```
+- 常用 API 回應格式備忘：`GET /api/menu` 回 `{menu:[...]}`（樹狀，key 是 `menu` 不是 items）；
+  權限中央 API（/api/permissions/*）的企業參數名是 `org_code`（不是 org）
 - curl 打非 exempt 的 POST API 需要 CSRF token，從任一登入後頁面的 meta 取（登入回應不含 token）：
   ```bash
   TOKEN=$(curl -s -b cj.txt -c cj.txt "$BASE/dashboard" | grep -o 'csrf-token" content="[^"]*' | cut -d'"' -f3)
