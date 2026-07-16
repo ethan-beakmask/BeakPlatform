@@ -63,4 +63,7 @@ window.__AC_CONFIG = {
 <script src="{{ url_for('static', filename='js/access-center/main.js') }}"></script>
 <script src="{{ url_for('static', filename='js/access-center/functions.js') }}"></script>
 <script src="{{ url_for('static', filename='js/access-center/roles.js') }}"></script>
+{% if not is_system_admin %}
+<script src="{{ url_for('static', filename='js/access-center/accounts.js') }}"></script>
+{% endif %}
 {% endblock %}
