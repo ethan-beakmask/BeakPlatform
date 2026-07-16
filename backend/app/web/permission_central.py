@@ -5,7 +5,6 @@ BeakPlatform Permission Central Web Routes
 from flask import Blueprint, render_template
 from flask_login import current_user
 
-from ..security.decorators import admin_required
 from ..models.organization import Organization
 from ..models.user import UserType
 from ..constants import SYSTEM_ORG_CODE
@@ -14,7 +13,6 @@ permission_central_bp = Blueprint('permission_central', __name__)
 
 
 @permission_central_bp.route('/')
-@admin_required
 def index():
     """權限中央管理頁面"""
     is_system_admin = str(current_user.user_type) == 'SYSTEM_ADMIN'

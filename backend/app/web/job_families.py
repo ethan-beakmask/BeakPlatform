@@ -13,7 +13,6 @@ from flask_babel import gettext as _
 from flask_login import current_user
 
 from sqlalchemy import func
-from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.job_family import JobFamily, JobFamilyType
 from ..services.code_generator import get_code_generator
@@ -28,7 +27,6 @@ def _wants_json():
 
 
 @job_families_bp.route('/')
-@admin_required
 def list_job_families():
     """職系列表頁面（BeakTrellis 樹狀格線）"""
     result = ResourceGateway.list(
@@ -109,7 +107,6 @@ def list_job_families():
 
 
 @job_families_bp.route('/<secure_code>')
-@admin_required
 def view_job_family(secure_code: str):
     """查看職系詳情"""
     try:
@@ -121,7 +118,6 @@ def view_job_family(secure_code: str):
 
 
 @job_families_bp.route('/create', methods=['GET', 'POST'])
-@admin_required
 def create_job_family():
     """建立職系（支援 AJAX JSON 回應）"""
     # 取得可作為父職系的選項 (只有根職系可作為父)
@@ -222,7 +218,6 @@ def create_job_family():
 
 
 @job_families_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
 def edit_job_family(secure_code: str):
     """編輯職系（支援 AJAX JSON 回應）"""
     try:
@@ -303,7 +298,6 @@ def edit_job_family(secure_code: str):
 
 
 @job_families_bp.route('/<secure_code>/delete', methods=['POST'])
-@admin_required
 def delete_job_family(secure_code: str):
     """刪除職系（支援 AJAX JSON 回應）"""
     try:

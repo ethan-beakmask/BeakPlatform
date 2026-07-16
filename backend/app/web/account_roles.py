@@ -11,7 +11,6 @@ from flask import Blueprint, render_template, jsonify, request
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.user import User, UserType
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
@@ -36,7 +35,6 @@ _MEMBERSHIP_ROLE_LABELS = {
 
 
 @account_roles_bp.route('/')
-@admin_required
 def index():
     """帳號角色權限表主頁"""
     org_sc = current_user.org_secure_code
@@ -254,7 +252,6 @@ def index():
 # =============================================================================
 
 @account_roles_bp.route('/api/assign', methods=['POST'])
-@admin_required
 @csrf.exempt
 def assign_role():
     """指派角色給用戶"""
@@ -355,7 +352,6 @@ def assign_role():
 
 
 @account_roles_bp.route('/api/revoke', methods=['POST'])
-@admin_required
 @csrf.exempt
 def revoke_role():
     """移除用戶的角色"""

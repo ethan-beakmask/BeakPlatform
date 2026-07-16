@@ -64,6 +64,22 @@
 不再出現「選單看得見、進去 403」。試點驗證後逐步推廣到全平台頁面路由；
 無對應 MenuItem 的孤兒路由仍須保留 decorator（PageRoleGuard 對其放行）。
 
+**Phase B 全平台推廣（2026-07-17，migration 084）**：「選單即授權」已推到全部
+`@admin_required` web 頁面路由。做法（方案 B「URL 領地」）：
+
+- **route 型選單改 url 型**：17 個平台選單的 link_target 由 endpoint 名稱改為 URL
+  路徑（如 `users.list_users` → `/users/`），使 PageRoleGuard 的**最長前綴匹配**罩住
+  該區全部子路由（create/edit/delete/view），執法單一來源。`menu_defaults`（factory
+  還原預設）同步更新。
+- **web 層 `@admin_required` 全面移除**（99 處 → 剩 2 處孤兒：`admin.index`、
+  `admin.test_treegrid`，因無 MenuItem 對應而保留）。
+- **孤兒頁補選單**：`positions`（職位設定，掛職級職稱）、`delegations`（代理授權，
+  掛帳號管理）、`units`（組織單位，頂層），Key1=ORG_ADMIN、Key2 複製 users 選單的
+  各企業 ORG_ADMIN 角色。
+- **注意**：新增此類頁面路由時**不掛身分 decorator**，改為確保 menu_items 有 url 型
+  選單（路徑前綴 = 該區領地）；區內新增子路由自動被罩住。API 路由（`/api/` 前綴）
+  不在 guard 範圍，單頁專屬資料 API 掛 `@page_keys_required('<menu_code>')`。
+
 ### 3.1 模組預設角色（module default roles，2026-07-16）
 
 模組可在 `MODULE_INFO` 宣告 `default_roles`（角色）與 `default_menu_role_requirements`

@@ -11,7 +11,6 @@ from flask_babel import gettext as _
 from flask_login import current_user
 
 from sqlalchemy import func
-from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.job_title import JobTitle
 from ..models.job_level import JobLevel
@@ -72,7 +71,6 @@ def _family_tree_node(family, children_nodes):
 
 
 @job_titles_bp.route('/')
-@admin_required
 def list_job_titles():
     """職稱列表頁面 - BeakTrellis 樹狀格線"""
     # 取得所有啟用職系（建樹用）
@@ -163,7 +161,6 @@ def list_job_titles():
 
 
 @job_titles_bp.route('/<secure_code>')
-@admin_required
 def view_job_title(secure_code: str):
     """查看職稱詳情"""
     try:
@@ -175,7 +172,6 @@ def view_job_title(secure_code: str):
 
 
 @job_titles_bp.route('/create', methods=['GET', 'POST'])
-@admin_required
 def create_job_title():
     """建立職稱（支援 AJAX JSON 回應）"""
     job_levels = ResourceGateway.filter(
@@ -278,7 +274,6 @@ def create_job_title():
 
 
 @job_titles_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
 def edit_job_title(secure_code: str):
     """編輯職稱（支援 AJAX JSON 回應）"""
     try:
@@ -358,7 +353,6 @@ def edit_job_title(secure_code: str):
 
 
 @job_titles_bp.route('/<secure_code>/delete', methods=['POST'])
-@admin_required
 def delete_job_title(secure_code: str):
     """刪除職稱（支援 AJAX JSON 回應）"""
     try:

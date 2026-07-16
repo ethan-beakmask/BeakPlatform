@@ -9,7 +9,7 @@ from flask import Blueprint, render_template, abort
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..security.decorators import login_required, admin_required
+from ..security.decorators import login_required
 from ..models.user_unit_membership import UserUnitMembership, MembershipRole
 
 groups_bp = Blueprint('groups', __name__)
@@ -33,7 +33,6 @@ def _user_has_managed_groups():
 
 
 @groups_bp.route('/')
-@admin_required
 def group_settings():
     """社群設定主頁面 (Admin + Team Leader)"""
     is_admin = _user_is_admin()

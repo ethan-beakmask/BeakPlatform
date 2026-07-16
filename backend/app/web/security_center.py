@@ -5,7 +5,6 @@ BeakPlatform Security Center Web Routes
 from flask import Blueprint, render_template
 from flask_login import current_user
 
-from ..security.decorators import admin_required
 from ..models.organization import Organization
 from ..models.lookup_item import LookupItem
 from ..models.broadcast_acknowledgment import BroadcastAcknowledgment
@@ -16,7 +15,6 @@ security_center_bp = Blueprint('security_center', __name__)
 
 
 @security_center_bp.route('/login-failures/')
-@admin_required
 def login_failures():
     """登入錯誤監看頁面"""
     is_system_admin = str(current_user.user_type) == 'SYSTEM_ADMIN'
@@ -55,21 +53,18 @@ def login_failures():
 
 
 @security_center_bp.route('/rate-limits/')
-@admin_required
 def rate_limits():
     """企業速率限制設定頁面"""
     return render_template('pages/security/org_rate_limits.html')
 
 
 @security_center_bp.route('/api-keys/')
-@admin_required
 def api_keys():
     """API Key 管理頁面(外部系統 HMAC 金鑰)"""
     return render_template('pages/security/api_keys.html')
 
 
 @security_center_bp.route('/alert-broadcasts/')
-@admin_required
 def alert_broadcasts():
     """緊急廣播管理頁面"""
     org_code = current_user.org_secure_code

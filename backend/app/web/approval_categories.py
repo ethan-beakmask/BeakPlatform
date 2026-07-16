@@ -11,7 +11,6 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models import ApprovalCategory, JobLevelApprovalLimit, JobLevel, JobFamily, JobTitle
 from .. import db
@@ -25,7 +24,6 @@ def _wants_json():
 
 
 @approval_categories_bp.route('/')
-@admin_required
 def list_categories():
     """核決權限類別列表（含核決金額矩陣）"""
     # 左面板表格：顯示所有類別（含停用）
@@ -112,7 +110,6 @@ def list_categories():
 
 
 @approval_categories_bp.route('/create', methods=['GET', 'POST'])
-@admin_required
 def create_category():
     """建立核決權限類別"""
     if request.method == 'POST':
@@ -201,7 +198,6 @@ def create_category():
 
 
 @approval_categories_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
 def edit_category(secure_code: str):
     """編輯核決權限類別"""
     category = ResourceGateway.get_by(
@@ -298,7 +294,6 @@ def edit_category(secure_code: str):
 
 
 @approval_categories_bp.route('/<secure_code>/delete', methods=['POST'])
-@admin_required
 def delete_category(secure_code: str):
     """刪除核決權限類別"""
     category = ResourceGateway.get_by(
@@ -338,7 +333,6 @@ def delete_category(secure_code: str):
 
 
 @approval_categories_bp.route('/<secure_code>/limits')
-@admin_required
 def category_limits(secure_code: str):
     """查看/設定此類別各職等的核決上限（含職級職稱矩陣）"""
     category = ResourceGateway.get_by(
@@ -408,7 +402,6 @@ def category_limits(secure_code: str):
 
 
 @approval_categories_bp.route('/<secure_code>/limits', methods=['POST'])
-@admin_required
 def save_category_limits(secure_code: str):
     """儲存此類別各職等的核決上限"""
     category = ResourceGateway.get_by(

@@ -13,7 +13,6 @@ from flask import Blueprint, render_template, abort, request, flash, redirect, u
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.user import User, UserType
 from ..models.organizational_unit import OrganizationalUnit
@@ -151,7 +150,6 @@ def _log_audit(action: str, target_user: User, details: str = None):
 
 
 @external_users_bp.route('/external-users')
-@admin_required
 def list_external_users():
     """外部廠商列表"""
     users = User.query.filter(
@@ -176,7 +174,6 @@ def list_external_users():
 
 
 @external_users_bp.route('/external-users/create', methods=['GET', 'POST'])
-@admin_required
 def create_external_user():
     """新增外部廠商"""
     org = current_user.organization
@@ -329,7 +326,6 @@ def create_external_user():
 
 
 @external_users_bp.route('/external-users/<secure_code>')
-@admin_required
 def view_external_user(secure_code: str):
     """查看外部廠商詳情"""
     try:
@@ -357,7 +353,6 @@ def view_external_user(secure_code: str):
 
 
 @external_users_bp.route('/external-users/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
 def edit_external_user(secure_code: str):
     """編輯外部廠商"""
     org = current_user.organization
@@ -464,7 +459,6 @@ def _get_role_name(role_type: str) -> str:
 
 
 @external_users_bp.route('/external-users/<secure_code>/add-group', methods=['POST'])
-@admin_required
 def add_to_group(secure_code: str):
     """將外部廠商加入群組"""
     try:
@@ -526,7 +520,6 @@ def add_to_group(secure_code: str):
 
 
 @external_users_bp.route('/external-users/<secure_code>/remove-group', methods=['POST'])
-@admin_required
 def remove_from_group(secure_code: str):
     """將外部廠商從群組移除"""
     try:
@@ -580,7 +573,6 @@ def remove_from_group(secure_code: str):
 
 
 @external_users_bp.route('/external-users/<secure_code>/toggle-status', methods=['POST'])
-@admin_required
 def toggle_status(secure_code: str):
     """切換外部廠商啟用狀態"""
     try:
@@ -622,7 +614,6 @@ def toggle_status(secure_code: str):
 
 
 @external_users_bp.route('/external-users/<secure_code>/delete', methods=['POST'])
-@admin_required
 def delete_external_user(secure_code: str):
     """刪除外部廠商"""
     try:
@@ -661,7 +652,6 @@ def delete_external_user(secure_code: str):
 
 
 @external_users_bp.route('/external-users/<secure_code>/change-password', methods=['POST'])
-@admin_required
 def change_password(secure_code: str):
     """管理員變更外部廠商密碼（不需要舊密碼）"""
     try:

@@ -12,7 +12,6 @@ from flask import Blueprint, render_template, abort, request, flash, redirect, u
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.delegation import Delegation, DelegationType, DelegationStatus
 from ..models.user import User
@@ -22,7 +21,6 @@ delegations_bp = Blueprint('delegations', __name__)
 
 
 @delegations_bp.route('/')
-@admin_required
 def list_delegations():
     """代理授權列表頁面"""
     result = ResourceGateway.list(
@@ -40,7 +38,6 @@ def list_delegations():
 
 
 @delegations_bp.route('/<secure_code>')
-@admin_required
 def view_delegation(secure_code: str):
     """查看代理授權詳情"""
     try:
@@ -52,7 +49,6 @@ def view_delegation(secure_code: str):
 
 
 @delegations_bp.route('/create', methods=['GET', 'POST'])
-@admin_required
 def create_delegation():
     """建立代理授權頁面"""
     users = User.query.filter_by(
@@ -159,7 +155,6 @@ def create_delegation():
 
 
 @delegations_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
 def edit_delegation(secure_code: str):
     """編輯代理授權頁面"""
     try:
@@ -250,7 +245,6 @@ def edit_delegation(secure_code: str):
 
 
 @delegations_bp.route('/<secure_code>/revoke', methods=['POST'])
-@admin_required
 def revoke_delegation(secure_code: str):
     """撤銷代理授權"""
     try:
@@ -275,7 +269,6 @@ def revoke_delegation(secure_code: str):
 
 
 @delegations_bp.route('/<secure_code>/delete', methods=['POST'])
-@admin_required
 def delete_delegation(secure_code: str):
     """刪除代理授權"""
     try:

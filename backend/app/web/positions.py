@@ -12,7 +12,6 @@ from flask import Blueprint, render_template, abort, request, flash, redirect, u
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.employee_position import EmployeePosition, PositionType
 from ..models.job_title import JobTitle
@@ -24,7 +23,6 @@ positions_bp = Blueprint('positions', __name__)
 
 
 @positions_bp.route('/')
-@admin_required
 def list_positions():
     """職位列表頁面"""
     result = ResourceGateway.list(
@@ -42,7 +40,6 @@ def list_positions():
 
 
 @positions_bp.route('/<secure_code>')
-@admin_required
 def view_position(secure_code: str):
     """查看職位詳情"""
     try:
@@ -54,7 +51,6 @@ def view_position(secure_code: str):
 
 
 @positions_bp.route('/create', methods=['GET', 'POST'])
-@admin_required
 def create_position():
     """建立職位頁面"""
     # 取得選項
@@ -158,7 +154,6 @@ def create_position():
 
 
 @positions_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
 def edit_position(secure_code: str):
     """編輯職位頁面"""
     try:
@@ -254,7 +249,6 @@ def edit_position(secure_code: str):
 
 
 @positions_bp.route('/<secure_code>/delete', methods=['POST'])
-@admin_required
 def delete_position(secure_code: str):
     """刪除職位"""
     try:

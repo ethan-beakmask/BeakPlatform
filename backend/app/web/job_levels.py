@@ -14,7 +14,6 @@ from flask_babel import gettext as _
 from flask_login import current_user
 
 from sqlalchemy import func
-from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.job_level import JobLevel
 from ..models.job_family import JobFamily
@@ -47,7 +46,6 @@ def _level_to_dict(level):
 
 
 @job_levels_bp.route('/')
-@admin_required
 def list_job_levels():
     """職等列表頁面"""
     result = ResourceGateway.list(
@@ -68,7 +66,6 @@ def list_job_levels():
 
 
 @job_levels_bp.route('/<secure_code>')
-@admin_required
 def view_job_level(secure_code: str):
     """查看職等詳情"""
     try:
@@ -80,7 +77,6 @@ def view_job_level(secure_code: str):
 
 
 @job_levels_bp.route('/create', methods=['GET', 'POST'])
-@admin_required
 def create_job_level():
     """建立職等"""
     if request.method == 'POST':
@@ -191,7 +187,6 @@ def create_job_level():
 
 
 @job_levels_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
 def edit_job_level(secure_code: str):
     """編輯職等"""
     try:
@@ -278,7 +273,6 @@ def edit_job_level(secure_code: str):
 
 
 @job_levels_bp.route('/<secure_code>/delete', methods=['POST'])
-@admin_required
 def delete_job_level(secure_code: str):
     """刪除職等"""
     is_ajax = _wants_json()
@@ -329,7 +323,6 @@ def delete_job_level(secure_code: str):
 
 
 @job_levels_bp.route('/<secure_code>/check-usage')
-@admin_required
 def check_usage(secure_code: str):
     """檢查職等被引用的情況（停用前檢查）"""
     try:
@@ -353,7 +346,6 @@ def check_usage(secure_code: str):
 
 
 @job_levels_bp.route('/matrix')
-@admin_required
 def job_matrix():
     """職級職稱矩陣視圖"""
     # 取得所有職等 (由高到低)
@@ -405,7 +397,6 @@ def job_matrix():
 
 
 @job_levels_bp.route('/matrix/update-title', methods=['POST'])
-@admin_required
 def update_title_position():
     """
     更新職稱的職等和職系 (矩陣拖拉用)

@@ -45,7 +45,6 @@ def index():
 
 
 @admin_bp.route('/settings')
-@admin_required
 def settings():
     """
     系統設定頁面 (企業級)
@@ -63,7 +62,6 @@ def settings():
 
 
 @admin_bp.route('/settings/general', methods=['GET', 'POST'])
-@admin_required
 def settings_general():
     """
     一般設定頁面
@@ -94,7 +92,6 @@ def settings_general():
 
 
 @admin_bp.route('/module-permissions')
-@admin_required
 def module_permissions():
     """
     模組權限管理頁面

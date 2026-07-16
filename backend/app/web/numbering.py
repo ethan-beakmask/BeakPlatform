@@ -7,7 +7,6 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import current_user
 from flask_babel import gettext as _
 
-from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models import UserNumberingRule, NumberingUsageScope
 from ..services.numbering_service import NumberingService
@@ -17,7 +16,6 @@ numbering_bp = Blueprint('numbering', __name__)
 
 
 @numbering_bp.route('/admin/numbering')
-@admin_required
 def list_rules():
     """編號規則列表頁面"""
     rules = UserNumberingRule.query.filter_by(
@@ -42,7 +40,6 @@ def list_rules():
 
 
 @numbering_bp.route('/admin/numbering/create', methods=['GET', 'POST'])
-@admin_required
 def create_rule():
     """新增編號規則"""
     if request.method == 'POST':
@@ -108,7 +105,6 @@ def create_rule():
 
 
 @numbering_bp.route('/admin/numbering/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
 def edit_rule(secure_code):
     """編輯編號規則"""
     rule = ResourceGateway.get(UserNumberingRule, secure_code)
@@ -184,7 +180,6 @@ def edit_rule(secure_code):
 
 
 @numbering_bp.route('/admin/numbering/<secure_code>/delete', methods=['POST'])
-@admin_required
 def delete_rule(secure_code):
     """刪除編號規則"""
     rule = ResourceGateway.get(UserNumberingRule, secure_code)

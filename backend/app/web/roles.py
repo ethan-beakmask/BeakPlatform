@@ -6,7 +6,7 @@ from flask import Blueprint, render_template, abort, request, flash, redirect, u
 from flask_login import current_user
 from sqlalchemy import func
 
-from ..security.decorators import admin_required, system_admin_required
+from ..security.decorators import system_admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models import Role, RoleType, ScopeType, UserRoleAssignment, User
 from .. import db
@@ -15,7 +15,6 @@ roles_bp = Blueprint('roles', __name__)
 
 
 @roles_bp.route('/')
-@admin_required
 def list_roles():
     """角色列表頁面"""
     result = ResourceGateway.list(
@@ -55,14 +54,12 @@ def list_roles():
 
 
 @roles_bp.route('/<secure_code>')
-@admin_required
 def view_role(secure_code: str):
     """查看角色詳情 - 重定向到編輯頁"""
     return redirect(url_for('roles.edit_role', secure_code=secure_code))
 
 
 @roles_bp.route('/create', methods=['GET', 'POST'])
-@admin_required
 def create_role():
     """建立角色頁面"""
     if request.method == 'POST':
@@ -76,7 +73,6 @@ def create_role():
 
 
 @roles_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
 def edit_role(secure_code: str):
     """編輯角色頁面（含查看功能）"""
     role = ResourceGateway.get(Role, secure_code, raise_on_not_found=False)

@@ -14,7 +14,7 @@ from flask import Blueprint, render_template, abort, request, flash, redirect, u
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..security.decorators import login_required, admin_required
+from ..security.decorators import login_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.user import User, UserType
 from ..models.organizational_unit import OrganizationalUnit
@@ -29,7 +29,6 @@ users_bp = Blueprint('users', __name__)
 
 
 @users_bp.route('/check-username')
-@admin_required
 def check_username():
     """即時檢查帳號是否可用（排除已刪除，保留停用）"""
     username = request.args.get('username', '').strip().lower()
@@ -50,7 +49,6 @@ def check_username():
 
 
 @users_bp.route('/')
-@admin_required
 def list_users():
     """一般用戶列表頁面
 
@@ -84,7 +82,6 @@ def list_users():
 
 
 @users_bp.route('/<secure_code>')
-@admin_required
 def view_user(secure_code: str):
     """查看用戶詳情"""
     try:
@@ -266,7 +263,6 @@ def _check_employee_id_unique(org_secure_code: str, employee_id: str, exclude_us
 
 
 @users_bp.route('/create', methods=['GET', 'POST'])
-@admin_required
 def create_user():
     """建立企業成員帳號頁面"""
     # 表單資料（用於錯誤時保留）
@@ -637,7 +633,6 @@ def edit_user(secure_code: str):
 
 
 @users_bp.route('/<secure_code>/delete', methods=['POST'])
-@admin_required
 def delete_user(secure_code: str):
     """刪除用戶"""
     try:
@@ -673,7 +668,6 @@ def delete_user(secure_code: str):
 
 
 @users_bp.route('/<secure_code>/toggle-status', methods=['POST'])
-@admin_required
 def toggle_status(secure_code: str):
     """切換用戶啟用狀態"""
     try:
@@ -706,7 +700,6 @@ def toggle_status(secure_code: str):
 
 
 @users_bp.route('/<secure_code>/reset-password', methods=['POST'])
-@admin_required
 def reset_password(secure_code: str):
     """
     管理員重設用戶密碼
@@ -785,7 +778,6 @@ CSV_COLUMNS = [
 
 
 @users_bp.route('/csv-template')
-@admin_required
 def download_csv_template():
     """下載 CSV 匯入範本"""
     output = io.StringIO()
@@ -825,7 +817,6 @@ def download_csv_template():
 
 
 @users_bp.route('/import', methods=['GET', 'POST'])
-@admin_required
 def import_users():
     """匯入用戶 CSV"""
     if request.method == 'POST':

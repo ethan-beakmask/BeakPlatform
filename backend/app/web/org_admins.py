@@ -14,7 +14,7 @@ from flask import Blueprint, render_template, abort, request, flash, redirect, u
 from flask_babel import gettext as _
 from flask_login import current_user, logout_user
 
-from ..security.decorators import admin_required, login_required
+from ..security.decorators import login_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.user import User, UserType
 from ..models.user_numbering_rule import UsedUserNumber
@@ -303,7 +303,6 @@ def initial_setup():
 
 
 @org_admins_bp.route('/admin/org-admins')
-@admin_required
 def list_admins():
     """企業管理員列表"""
     admins = User.query.filter(
@@ -322,7 +321,6 @@ def list_admins():
 
 
 @org_admins_bp.route('/admin/org-admins/create', methods=['GET', 'POST'])
-@admin_required
 def create_admin():
     """新增企業管理員"""
     form_data = {}
@@ -463,7 +461,6 @@ def create_admin():
 
 
 @org_admins_bp.route('/admin/org-admins/<secure_code>/toggle-status', methods=['POST'])
-@admin_required
 def toggle_status(secure_code: str):
     """切換管理員啟用狀態"""
     try:
@@ -508,7 +505,6 @@ def toggle_status(secure_code: str):
 
 
 @org_admins_bp.route('/admin/org-admins/<secure_code>/delete', methods=['POST'])
-@admin_required
 def delete_admin(secure_code: str):
     """刪除管理員"""
     try:
@@ -546,7 +542,6 @@ def delete_admin(secure_code: str):
 
 
 @org_admins_bp.route('/admin/org-admins/<secure_code>/reset-password', methods=['POST'])
-@admin_required
 def reset_password(secure_code: str):
     """重設企業管理員密碼"""
     from ..services.email_service import EmailService

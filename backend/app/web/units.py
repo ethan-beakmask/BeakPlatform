@@ -6,7 +6,6 @@ from flask import Blueprint, render_template, abort, request, flash, redirect, u
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models import OrganizationalUnit, UnitType
 from .. import db
@@ -15,7 +14,6 @@ units_bp = Blueprint('units', __name__)
 
 
 @units_bp.route('/')
-@admin_required
 def list_units():
     """組織單位列表頁面"""
     unit_type = request.args.get('type', 'all')
@@ -47,21 +45,18 @@ def list_units():
 
 
 @units_bp.route('/departments')
-@admin_required
 def list_departments():
     """部門列表 (便捷路由)"""
     return redirect(url_for('units.list_units', type='department'))
 
 
 @units_bp.route('/groups')
-@admin_required
 def list_groups():
     """群組列表 (便捷路由)"""
     return redirect(url_for('units.list_units', type='group'))
 
 
 @units_bp.route('/<secure_code>')
-@admin_required
 def view_unit(secure_code: str):
     """查看組織單位詳情"""
     unit = ResourceGateway.get(OrganizationalUnit, secure_code, raise_on_not_found=False)
@@ -75,7 +70,6 @@ def view_unit(secure_code: str):
 
 
 @units_bp.route('/create', methods=['GET', 'POST'])
-@admin_required
 def create_unit():
     """建立組織單位頁面"""
     unit_type = request.args.get('type', UnitType.DEPARTMENT)
@@ -142,7 +136,6 @@ def create_unit():
 
 
 @units_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
 def edit_unit(secure_code: str):
     """編輯組織單位頁面"""
     unit = ResourceGateway.get(OrganizationalUnit, secure_code, raise_on_not_found=False)
@@ -203,7 +196,6 @@ def edit_unit(secure_code: str):
 
 
 @units_bp.route('/<secure_code>/delete', methods=['POST'])
-@admin_required
 def delete_unit(secure_code: str):
     """刪除組織單位"""
     from datetime import datetime

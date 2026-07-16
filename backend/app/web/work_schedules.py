@@ -9,7 +9,6 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..security.decorators import admin_required
 from ..models import WorkSchedule, ScheduleHoliday
 from .. import db
 
@@ -17,7 +16,6 @@ work_schedules_bp = Blueprint('work_schedules', __name__)
 
 
 @work_schedules_bp.route('/admin/settings/work-schedules')
-@admin_required
 def list_schedules():
     """基本班表列表頁面"""
     schedules = WorkSchedule.query.filter_by(
@@ -39,7 +37,6 @@ def list_schedules():
 
 
 @work_schedules_bp.route('/admin/settings/work-schedules/<secure_code>/holidays')
-@admin_required
 def schedule_holidays(secure_code):
     """
     共用月曆（假日管理）頁面

@@ -16,7 +16,7 @@ from flask_babel import gettext as _
 from flask_login import current_user
 
 from .. import db
-from ..security.decorators import system_admin_required, admin_required
+from ..security.decorators import system_admin_required
 from ..models.organization import Organization
 
 logger = logging.getLogger(__name__)
@@ -266,7 +266,6 @@ def system_org_stats(org_secure_code):
 
 
 @org_databases_bp.route('/admin/org-database')
-@admin_required
 def org_view():
     """企業級：master-detail 佈局 + 管理功能"""
     from modules.form_workflow.models.org_database import FwOrgDatabase
@@ -375,7 +374,6 @@ def _serialize_value(val):
 
 
 @org_databases_bp.route('/admin/org-database/preview/<table_name>')
-@admin_required
 def preview_table(table_name):
     """預覽企業 DB 指定表的前 100 筆資料"""
     if not _validate_table_name(table_name):
@@ -435,7 +433,6 @@ def preview_table(table_name):
 
 
 @org_databases_bp.route('/admin/org-database/check-references', methods=['POST'])
-@admin_required
 def check_references():
     """檢查待刪除表的引用關係（FwSqlFormRegistry、DcCrudView）"""
     from modules.form_workflow.models.sql_form_registry import FwSqlFormRegistry
@@ -492,7 +489,6 @@ def check_references():
 
 
 @org_databases_bp.route('/admin/org-database/drop-tables', methods=['POST'])
-@admin_required
 def drop_tables():
     """
     刪除企業 DB 中的資料表

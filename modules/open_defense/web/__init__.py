@@ -6,7 +6,7 @@ OpenDefense Module - Web Routes
 """
 from flask import Blueprint, render_template, redirect, url_for
 
-from app.security.decorators import module_access_required, admin_required
+from app.security.decorators import module_access_required
 
 web_bp = Blueprint(
     'open_defense_web',
@@ -35,21 +35,18 @@ def dashboard():
 
 @web_bp.route('/decisions')
 @module_access_required('open_defense', False)
-@admin_required
 def decisions():
     return render_template('modules/open_defense/decisions.html')
 
 
 @web_bp.route('/intake-keys')
 @module_access_required('open_defense', False)
-@admin_required
 def intake_keys():
     return render_template('modules/open_defense/intake_keys.html')
 
 
 @web_bp.route('/service-accounts')
 @module_access_required('open_defense', False)
-@admin_required
 def service_accounts():
     return render_template('modules/open_defense/service_accounts.html')
 
