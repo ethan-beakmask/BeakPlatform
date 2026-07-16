@@ -8,7 +8,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    border-bottom: 1px solid var(--color-border, #ddd);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .ac-tab {
@@ -16,7 +16,7 @@
     border: 0;
     border-bottom: 2px solid transparent;
     background: transparent;
-    color: var(--color-text-secondary, #666);
+    color: var(--color-text-secondary);
     cursor: pointer;
     padding: 10px 14px;
     font: inherit;
@@ -24,12 +24,12 @@
 
 .ac-tab:hover,
 .ac-tab:focus {
-    color: var(--color-text, #333);
+    color: var(--color-text);
 }
 
 .ac-tab.is-active {
-    border-bottom-color: var(--color-primary, #0066cc);
-    color: var(--color-text, #333);
+    border-bottom-color: var(--color-primary);
+    color: var(--color-text);
     font-weight: 600;
 }
 
@@ -38,8 +38,8 @@
 }
 
 .ac-section {
-    border: 1px solid var(--color-border, #ddd);
-    background: var(--color-bg-white, #fff);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-white);
     padding: 18px;
 }
 
@@ -59,7 +59,7 @@
 }
 
 .ac-muted {
-    color: var(--color-text-secondary, #666);
+    color: var(--color-text-secondary);
     margin: 0;
 }
 
@@ -77,7 +77,7 @@
 .ac-field {
     display: grid;
     gap: 6px;
-    color: var(--color-text-secondary, #666);
+    color: var(--color-text-secondary);
     font-size: 13px;
 }
 
@@ -88,13 +88,13 @@
 .ac-org-lock {
     display: grid;
     gap: 4px;
-    color: var(--color-text-secondary, #666);
+    color: var(--color-text-secondary);
     font-size: 13px;
     min-width: 200px;
 }
 
 .ac-org-lock strong {
-    color: var(--color-text, #333);
+    color: var(--color-text);
     font-size: 14px;
 }
 
@@ -104,30 +104,30 @@
 }
 
 .ac-alert {
-    border: 1px solid var(--color-border, #ddd);
+    border: 1px solid var(--color-border);
     margin-top: 14px;
     padding: 10px 12px;
 }
 
 .ac-alert-success {
-    border-color: #16a34a;
-    color: #86efac;
+    border-color: var(--color-primary);
+    color: var(--color-text);
 }
 
 .ac-alert-error {
-    border-color: #dc2626;
-    color: #fca5a5;
+    border-color: var(--color-border);
+    color: var(--color-text);
 }
 
 .ac-alert-info {
-    border-color: #2563eb;
-    color: #93c5fd;
+    border-color: var(--color-primary);
+    color: var(--color-text);
 }
 
 .ac-tree-panel,
 .ac-auth-panel {
-    border: 1px solid var(--color-border, #ddd);
-    background: var(--color-bg-light, #f9fafb);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-light);
     min-width: 0;
 }
 
@@ -137,13 +137,13 @@
 }
 
 .ac-panel-head {
-    border-bottom: 1px solid var(--color-border, #ddd);
+    border-bottom: 1px solid var(--color-border);
     padding: 12px;
 }
 
 .ac-panel-head h3,
 .ac-auth-block h4 {
-    color: var(--color-text, #333);
+    color: var(--color-text);
     font-size: 16px;
     line-height: 1.35;
     margin: 0;
@@ -156,13 +156,13 @@
 
 .ac-empty,
 .ac-panel-placeholder {
-    color: var(--color-text-secondary, #666);
+    color: var(--color-text-secondary);
     margin: 0;
     padding: 18px;
 }
 
 .ac-panel-placeholder h3 {
-    color: var(--color-text, #333);
+    color: var(--color-text);
     margin: 0 0 8px;
 }
 
@@ -181,7 +181,7 @@
     appearance: none;
     background: transparent;
     border: 0;
-    color: var(--color-text, #333);
+    color: var(--color-text);
     cursor: pointer;
     display: flex;
     gap: 8px;
@@ -199,12 +199,12 @@
 }
 
 .ac-tree-row.is-structural .ac-tree-title {
-    color: var(--color-text-secondary, #666);
+    color: var(--color-text-secondary);
     font-weight: 600;
 }
 
 .ac-tree-toggle {
-    color: var(--color-text-secondary, #666);
+    color: var(--color-text-secondary);
     flex: 0 0 14px;
     font-family: monospace;
     text-align: center;
@@ -225,8 +225,8 @@
 }
 
 .ac-key1-badge {
-    border: 1px solid var(--color-border, #ddd);
-    color: var(--color-text-secondary, #666);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
     font-size: 11px;
     line-height: 1;
     min-width: 20px;
@@ -235,23 +235,23 @@
 }
 
 .ac-key1-system-admin {
-    border-color: #60a5fa;
-    color: #bfdbfe;
+    border-color: var(--color-primary);
+    color: var(--color-text);
 }
 
 .ac-key1-org-admin {
-    border-color: #34d399;
-    color: #a7f3d0;
+    border-color: var(--color-primary);
+    color: var(--color-text);
 }
 
 .ac-key1-employee {
-    border-color: #fbbf24;
-    color: #fde68a;
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
 }
 
 .ac-key1-external {
-    border-color: #f87171;
-    color: #fecaca;
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
 }
 
 .ac-menu-editor {
@@ -261,14 +261,14 @@
 
 .ac-link-type,
 .ac-role-meta {
-    border: 1px solid var(--color-border, #ddd);
-    color: var(--color-text-secondary, #666);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
     font-size: 12px;
     padding: 4px 7px;
 }
 
 .ac-auth-block {
-    border-top: 1px solid var(--color-border, #ddd);
+    border-top: 1px solid var(--color-border);
     display: grid;
     gap: 14px;
     padding: 14px;
@@ -283,8 +283,8 @@
 .ac-check-item,
 .ac-role-item {
     align-items: center;
-    border: 1px solid var(--color-border, #ddd);
-    color: var(--color-text, #333);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
     display: flex;
     gap: 10px;
     min-width: 0;
@@ -311,7 +311,156 @@
 }
 
 .ac-role-main small {
-    color: var(--color-text-secondary, #666);
+    color: var(--color-text-secondary);
+}
+
+.ac-actions {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.ac-table-wrap {
+    margin-top: 16px;
+    overflow-x: auto;
+}
+
+.ac-roles-table td {
+    vertical-align: top;
+}
+
+.ac-cell-note {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.ac-badge,
+.ac-status-on,
+.ac-status-off {
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    display: inline-block;
+    font-size: 12px;
+    line-height: 1.2;
+    padding: 3px 7px;
+    white-space: nowrap;
+}
+
+.ac-status-on {
+    color: var(--color-primary);
+}
+
+.ac-link-button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--color-primary);
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.ac-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ac-expanded-row td {
+    background: var(--color-bg-light);
+}
+
+.ac-empty-compact {
+    padding: 8px 0;
+}
+
+.ac-user-list {
+    display: grid;
+    gap: 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ac-user-list li {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ac-user-list span {
+    color: var(--color-text-secondary);
+}
+
+.ac-role-modal {
+    max-width: calc(100vw - 32px);
+}
+
+.ac-role-modal .modal-body {
+    display: grid;
+    gap: 16px;
+    max-height: min(72vh, 720px);
+    overflow: auto;
+}
+
+.ac-role-modal input.form-control:not([type="checkbox"]):not([type="radio"]),
+.ac-role-modal select.form-control,
+.ac-role-modal textarea.form-control {
+    width: 100%;
+}
+
+.ac-form-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ac-span-2 {
+    grid-column: 1 / -1;
+}
+
+.ac-check-inline {
+    align-items: center;
+    color: var(--color-text);
+    display: flex;
+    gap: 8px;
+    min-height: 38px;
+}
+
+.ac-help {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.ac-permission-details {
+    border-top: 1px solid var(--color-border);
+    padding-top: 12px;
+}
+
+.ac-permission-details summary {
+    color: var(--color-text);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.ac-permission-groups {
+    display: grid;
+    gap: 14px;
+    margin-top: 12px;
+}
+
+.ac-permission-group {
+    display: grid;
+    gap: 8px;
+}
+
+.ac-permission-group h4 {
+    color: var(--color-text);
+    font-size: 14px;
+    margin: 0;
 }
 
 @media (max-width: 800px) {
@@ -328,5 +477,11 @@
 
     .ac-org-filter {
         min-width: 0;
+    }
+
+    .ac-actions,
+    .ac-form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
     }
 }

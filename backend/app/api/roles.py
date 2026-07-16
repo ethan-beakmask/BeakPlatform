@@ -9,16 +9,105 @@ from flask import Blueprint, request, jsonify
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from sqlalchemy import func
 from ..security.decorators import admin_required, login_required
 from ..security.resource_gateway import ResourceGateway
-from ..models import Role, RoleType, ScopeType, OrganizationalUnit, UserRoleAssignment
+from ..models import (
+    Role, RoleType, ScopeType, ExclusiveGroup,
+    OrganizationalUnit, UserRoleAssignment, User
+)
 from ..services.code_generator import get_code_generator
 from .. import db, csrf
 
 logger = logging.getLogger(__name__)
 
 roles_bp = Blueprint('api_roles', __name__, url_prefix='/api/roles')
+
+
+def _is_sys_admin() -> bool:
+    return bool(getattr(current_user, 'is_system_admin', False))
+
+
+def _request_data() -> dict:
+    return request.get_json(silent=True) or {}
+
+
+def _resolve_org_code(data: dict = None) -> str:
+    if _is_sys_admin():
+        payload = data if data is not None else _request_data()
+        return request.args.get('org_code') or payload.get('org_code') or current_user.org_secure_code
+    return current_user.org_secure_code
+
+
+def _role_filters(org_code: str, **filters) -> dict:
+    next_filters = {'org_secure_code': org_code}
+    next_filters.update(filters)
+    return next_filters
+
+
+def _find_role(identifier: str, org_code: str) -> Role:
+    role = ResourceGateway.get_by(
+        Role,
+        skip_tenant_filter=_is_sys_admin(),
+        **_role_filters(org_code, secure_code=identifier, is_deleted=False)
+    )
+    if role:
+        return role
+
+    roles = ResourceGateway.filter(
+        Role,
+        skip_tenant_filter=_is_sys_admin(),
+        **_role_filters(org_code, is_deleted=False)
+    )
+    return next((r for r in roles if r.code == identifier), None)
+
+
+def _valid_exclusive_group(value) -> bool:
+    return value in (
+        None,
+        '',
+        ExclusiveGroup.IDENTITY_TYPE,
+        ExclusiveGroup.DEPT_POSITION,
+        ExclusiveGroup.GROUP_POSITION
+    )
+
+
+def _normalize_exclusive_group(value):
+    return None if value == '' else value
+
+
+def _role_holder_users(role_secure_code: str, org_code: str):
+    assignments = ResourceGateway.filter(
+        UserRoleAssignment,
+        skip_tenant_filter=_is_sys_admin(),
+        role_secure_code=role_secure_code,
+        org_secure_code=org_code,
+        is_deleted=False
+    )
+    users = []
+    seen = set()
+    for assignment in assignments:
+        user = ResourceGateway.get_by(
+            User,
+            skip_tenant_filter=_is_sys_admin(),
+            secure_code=assignment.user_secure_code,
+            org_secure_code=org_code,
+            is_deleted=False
+        )
+        if user and user.secure_code not in seen:
+            seen.add(user.secure_code)
+            users.append(user)
+    return users
+
+
+def _serialize_role(role: Role, include_children: bool = False) -> dict:
+    data = role.to_dict(include_children=include_children)
+    data.update({
+        'exclusive_group': role.exclusive_group,
+        'is_system_role': role.is_system_role,
+        'is_active': role.is_active,
+        'holder_count': len(_role_holder_users(role.secure_code, role.org_secure_code)),
+    })
+    return data
 
 
 @roles_bp.route('/', methods=['GET'])
@@ -36,23 +125,29 @@ def list_roles():
     role_type = request.args.get('type')
     scope_type = request.args.get('scope')
     as_tree = request.args.get('tree', 'false').lower() == 'true'
+    org_code = _resolve_org_code()
 
-    filters = {'is_deleted': False}
+    filters = _role_filters(org_code, is_deleted=False)
     if role_type:
         filters['role_type'] = role_type
     if scope_type:
         filters['scope_type'] = scope_type
 
-    roles = ResourceGateway.filter(Role, order_by='sort_order', **filters)
+    roles = ResourceGateway.filter(
+        Role,
+        order_by='sort_order',
+        skip_tenant_filter=_is_sys_admin(),
+        **filters
+    )
 
     if as_tree:
         root_roles = [r for r in roles if r.parent_secure_code is None]
         return jsonify({
-            'roles': [r.to_dict(include_children=True) for r in root_roles]
+            'roles': [_serialize_role(r, include_children=True) for r in root_roles]
         }), 200
 
     return jsonify({
-        'roles': [r.to_dict() for r in roles]
+        'roles': [_serialize_role(r) for r in roles]
     }), 200
 
 
@@ -64,13 +159,14 @@ def get_role(secure_code: str):
 
     GET /api/roles/<secure_code>
     """
-    role = ResourceGateway.get_by(Role, secure_code=secure_code, is_deleted=False)
+    org_code = _resolve_org_code()
+    role = _find_role(secure_code, org_code)
 
     if not role:
         return jsonify({'error': _('角色不存在')}), 404
 
     return jsonify({
-        'role': role.to_dict(include_children=True)
+        'role': _serialize_role(role, include_children=True)
     }), 200
 
 
@@ -85,14 +181,20 @@ def generate_code():
     Body: { "name": "業務經理" }
     Response: { "code": "SALES_MANAGER", "suggestions": [...] }
     """
-    data = request.get_json()
+    data = _request_data()
     if not data or not data.get('name'):
         return jsonify({'error': _('請提供名稱')}), 400
 
     generator = get_code_generator()
+    org_code = _resolve_org_code(data)
 
     def exists_checker(code: str) -> bool:
-        return ResourceGateway.exists(Role, code=code, is_deleted=False)
+        roles = ResourceGateway.filter(
+            Role,
+            skip_tenant_filter=_is_sys_admin(),
+            **_role_filters(org_code, is_deleted=False)
+        )
+        return any(r.code.upper() == code.upper() for r in roles)
 
     try:
         code = generator.generate(data['name'], exists_checker=exists_checker)
@@ -118,14 +220,20 @@ def validate_code():
     Body: { "code": "MY_CODE" }
     Response: { "valid": true } 或 { "valid": false, "error": "..." }
     """
-    data = request.get_json()
+    data = _request_data()
     if not data or not data.get('code'):
         return jsonify({'error': _('請提供代碼')}), 400
 
     generator = get_code_generator()
+    org_code = _resolve_org_code(data)
 
     def exists_checker(code: str) -> bool:
-        return ResourceGateway.exists(Role, code=code, is_deleted=False)
+        roles = ResourceGateway.filter(
+            Role,
+            skip_tenant_filter=_is_sys_admin(),
+            **_role_filters(org_code, is_deleted=False)
+        )
+        return any(r.code.upper() == code.upper() for r in roles)
 
     is_valid, error = generator.validate_with_exists_check(
         data['code'],
@@ -156,22 +264,27 @@ def create_role():
         "description": "專案管理職務"
     }
     """
-    data = request.get_json()
+    data = _request_data()
     if not data:
         return jsonify({'error': _('請提供角色資料')}), 400
 
     # 只有 name 是必填
     if not data.get('name'):
         return jsonify({'error': _('缺少必要欄位: name')}), 400
+    if not _valid_exclusive_group(data.get('exclusive_group')):
+        return jsonify({'error': _('互斥群組值無效')}), 400
+
+    org_code = _resolve_org_code(data)
 
     generator = get_code_generator()
 
     def exists_checker(code: str) -> bool:
-        return Role.query.filter(
-            func.upper(Role.code) == code.upper(),
-            Role.org_secure_code == current_user.org_secure_code,
-            Role.is_deleted == False
-        ).first() is not None
+        roles = ResourceGateway.filter(
+            Role,
+            skip_tenant_filter=_is_sys_admin(),
+            **_role_filters(org_code, is_deleted=False)
+        )
+        return any(r.code.upper() == code.upper() for r in roles)
 
     # 處理代碼：用戶輸入優先，否則自動產生
     if data.get('code'):
@@ -194,7 +307,11 @@ def create_role():
     # 檢查父層
     parent = None
     if data.get('parent_id'):
-        parent = ResourceGateway.get_by(Role, secure_code=data['parent_id'], is_deleted=False)
+        parent = ResourceGateway.get_by(
+            Role,
+            skip_tenant_filter=_is_sys_admin(),
+            **_role_filters(org_code, secure_code=data['parent_id'], is_deleted=False)
+        )
         if not parent:
             return jsonify({'error': _('父層角色不存在')}), 400
 
@@ -203,6 +320,8 @@ def create_role():
     if data.get('bound_unit_id'):
         bound_unit = ResourceGateway.get_by(
             OrganizationalUnit,
+            skip_tenant_filter=_is_sys_admin(),
+            org_secure_code=org_code,
             secure_code=data['bound_unit_id'],
             is_deleted=False
         )
@@ -211,7 +330,7 @@ def create_role():
 
     try:
         role = Role(
-            org_secure_code=current_user.org_secure_code,
+            org_secure_code=org_code,
             role_type=data.get('role_type', RoleType.ROLE),
             scope_type=data.get('scope_type', ScopeType.GLOBAL),
             code=code,  # 使用前面處理好的代碼（手動輸入或自動產生）
@@ -220,7 +339,8 @@ def create_role():
             parent_secure_code=parent.secure_code if parent else None,
             is_manager=data.get('is_manager', False),
             is_system_role=False,
-            is_active=True,
+            is_active=data.get('is_active', True),
+            exclusive_group=_normalize_exclusive_group(data.get('exclusive_group')),
             bound_unit_secure_code=bound_unit.secure_code if bound_unit else None,
             sort_order=data.get('sort_order', 0)
         )
@@ -232,7 +352,7 @@ def create_role():
 
         return jsonify({
             'message': _('角色建立成功'),
-            'role': role.to_dict()
+            'role': _serialize_role(role)
         }), 201
 
     except Exception as e:
@@ -250,36 +370,44 @@ def update_role(secure_code: str):
 
     PUT /api/roles/<secure_code>
     """
-    role = ResourceGateway.get_by(Role, secure_code=secure_code, is_deleted=False)
+    data = _request_data()
+    org_code = _resolve_org_code(data)
+    role = _find_role(secure_code, org_code)
 
     if not role:
         return jsonify({'error': _('角色不存在')}), 404
 
     # 系統角色只能修改部分欄位
     if role.is_system_role:
-        data = request.get_json()
         allowed_fields = ['description', 'sort_order', 'is_active']
         for key in data.keys():
-            if key not in allowed_fields:
+            if key not in allowed_fields and key != 'org_code':
                 return jsonify({'error': _('系統角色不允許修改 %(field)s 欄位', field=key)}), 400
 
-    data = request.get_json()
     if not data:
         return jsonify({'error': _('請提供更新資料')}), 400
+    if 'exclusive_group' in data and not _valid_exclusive_group(data.get('exclusive_group')):
+        return jsonify({'error': _('互斥群組值無效')}), 400
 
     try:
         old_name = role.name
 
-        if 'name' in data:
+        if 'name' in data and not role.is_system_role:
             role.name = data['name']
         if 'description' in data:
             role.description = data['description']
+        if 'role_type' in data and not role.is_system_role:
+            role.role_type = data['role_type']
+        if 'scope_type' in data and not role.is_system_role:
+            role.scope_type = data['scope_type']
         if 'is_manager' in data and not role.is_system_role:
             role.is_manager = data['is_manager']
         if 'sort_order' in data:
             role.sort_order = data['sort_order']
         if 'is_active' in data:
             role.is_active = data['is_active']
+        if 'exclusive_group' in data and not role.is_system_role:
+            role.exclusive_group = _normalize_exclusive_group(data.get('exclusive_group'))
 
         # 更新父層
         if 'parent_id' in data and not role.is_system_role:
@@ -293,6 +421,8 @@ def update_role(secure_code: str):
 
                 parent = ResourceGateway.get_by(
                     Role,
+                    skip_tenant_filter=_is_sys_admin(),
+                    org_secure_code=org_code,
                     secure_code=data['parent_id'],
                     is_deleted=False
                 )
@@ -314,7 +444,7 @@ def update_role(secure_code: str):
 
         return jsonify({
             'message': _('角色更新成功'),
-            'role': role.to_dict()
+            'role': _serialize_role(role)
         }), 200
 
     except Exception as e:
@@ -334,7 +464,8 @@ def delete_role(secure_code: str):
     Query params:
         - force: true = 強制刪除（即使有用戶使用）
     """
-    role = ResourceGateway.get_by(Role, secure_code=secure_code, is_deleted=False)
+    org_code = _resolve_org_code()
+    role = _find_role(secure_code, org_code)
 
     if not role:
         return jsonify({'error': _('角色不存在')}), 404
@@ -351,9 +482,17 @@ def delete_role(secure_code: str):
     # 檢查是否有用戶使用此角色
     assignments = ResourceGateway.filter(
         UserRoleAssignment,
-        role_secure_code=secure_code,
+        skip_tenant_filter=_is_sys_admin(),
+        role_secure_code=role.secure_code,
+        org_secure_code=org_code,
         is_deleted=False
     )
+    if assignments and request.args.get('force', 'false').lower() != 'true':
+        return jsonify({
+            'error': _('此角色已有 %(count)s 位用戶使用，需強制刪除', count=len(assignments)),
+            'holder_count': len(assignments),
+            'requires_force': True
+        }), 400
 
     # 如果有用戶使用，同時刪除指派關係
     if assignments:
@@ -374,6 +513,29 @@ def delete_role(secure_code: str):
         db.session.rollback()
         logger.error(f"Failed to delete role: {e}")
         return jsonify({'error': _('刪除角色失敗')}), 500
+
+
+@roles_bp.route('/<secure_code>/users', methods=['GET'])
+@admin_required
+def list_role_users(secure_code: str):
+    """取得角色持有用戶清單"""
+    org_code = _resolve_org_code()
+    role = _find_role(secure_code, org_code)
+
+    if not role:
+        return jsonify({'error': _('角色不存在')}), 404
+
+    users = _role_holder_users(role.secure_code, org_code)
+    return jsonify({
+        'users': [
+            {
+                'secure_code': user.secure_code,
+                'name': user.native_name or user.display_name or user.username,
+                'email': user.email,
+            }
+            for user in users
+        ]
+    }), 200
 
 
 @roles_bp.route('/batch-delete', methods=['POST'])

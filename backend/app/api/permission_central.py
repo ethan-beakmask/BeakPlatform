@@ -61,6 +61,7 @@ def list_roles():
 
 
 @permission_central_bp.route('/permissions', methods=['GET'])
+@permission_central_bp.route('/all', methods=['GET'])
 @admin_required
 def list_permissions():
     """取得權限定義（ORG_ADMIN 看不到 SYSTEM 級）"""

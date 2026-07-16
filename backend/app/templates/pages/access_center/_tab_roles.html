@@ -1,4 +1,226 @@
-<div class="ac-section">
-    <h2 class="ac-section-title">{{ _('角色') }}</h2>
-    <p class="ac-muted">{{ _('開發中') }}</p>
+<div class="ac-section" x-data="acRolesTab()" x-init="init()">
+    <div class="ac-section-head">
+        <div>
+            <h2 class="ac-section-title">{{ _('角色') }}</h2>
+            <p class="ac-muted">{{ _('管理角色屬性、互斥群組與 API 權限') }}</p>
+        </div>
+        <div class="ac-actions">
+            <template x-if="isSystemAdmin">
+                <label class="ac-field ac-org-filter">
+                    <span>{{ _('企業') }}</span>
+                    <select class="form-control" x-model="selectedOrgCode" @change="onOrgChange()">
+                        <option value="">{{ _('請選擇企業') }}</option>
+                        <template x-for="org in organizations" :key="org.secure_code">
+                            <option :value="org.secure_code" x-text="org.name"></option>
+                        </template>
+                    </select>
+                </label>
+            </template>
+            <template x-if="!isSystemAdmin">
+                <div class="ac-org-lock">
+                    <span>{{ _('企業') }}</span>
+                    <strong x-text="orgLabel"></strong>
+                </div>
+            </template>
+            <button type="button" class="btn btn-primary" @click="openCreate()" :disabled="!canLoadRoles">
+                {{ _('建立角色') }}
+            </button>
+        </div>
+    </div>
+
+    <div class="ac-alert" :class="'ac-alert-' + alert.type" x-show="alert.show" x-cloak>
+        <span x-text="alert.message"></span>
+    </div>
+
+    <template x-if="isSystemAdmin && !selectedOrgCode">
+        <p class="ac-empty">{{ _('請先選擇企業') }}</p>
+    </template>
+
+    <template x-if="loadingRoles">
+        <p class="ac-empty">{{ _('載入角色中') }}</p>
+    </template>
+
+    <template x-if="!loadingRoles && canLoadRoles && roles.length === 0">
+        <p class="ac-empty">{{ _('沒有角色資料') }}</p>
+    </template>
+
+    <div class="ac-table-wrap" x-show="!loadingRoles && canLoadRoles && roles.length > 0" x-cloak>
+        <table class="data-table bordered compact ac-roles-table">
+            <thead>
+                <tr>
+                    <th>{{ _('名稱') }}</th>
+                    <th>{{ _('Code') }}</th>
+                    <th>{{ _('類型') }}</th>
+                    <th>{{ _('範圍') }}</th>
+                    <th>{{ _('互斥群組') }}</th>
+                    <th>{{ _('系統') }}</th>
+                    <th>{{ _('使用人數') }}</th>
+                    <th>{{ _('啟用') }}</th>
+                    <th>{{ _('操作') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="row in tableRows" :key="row.key">
+                    <tr :class="{ 'ac-expanded-row': row.kind === 'users' }">
+                        <template x-if="row.kind === 'role'">
+                            <td>
+                                <strong x-text="row.role.name"></strong>
+                                <p class="ac-muted ac-cell-note" x-text="row.role.description || ''"></p>
+                            </td>
+                        </template>
+                        <template x-if="row.kind === 'role'">
+                            <td><code x-text="row.role.code"></code></td>
+                        </template>
+                        <template x-if="row.kind === 'role'">
+                            <td x-text="labelFor(roleTypeOptions, row.role.role_type)"></td>
+                        </template>
+                        <template x-if="row.kind === 'role'">
+                            <td x-text="labelFor(scopeTypeOptions, row.role.scope_type)"></td>
+                        </template>
+                        <template x-if="row.kind === 'role'">
+                            <td x-text="labelFor(exclusiveGroupOptions, row.role.exclusive_group || '')"></td>
+                        </template>
+                        <template x-if="row.kind === 'role'">
+                            <td>
+                                <span class="ac-badge" x-show="row.role.is_system_role">{{ _('系統角色') }}</span>
+                            </td>
+                        </template>
+                        <template x-if="row.kind === 'role'">
+                            <td>
+                                <button type="button" class="ac-link-button" @click="toggleUsers(row.role)" x-text="row.role.holder_count || 0"></button>
+                            </td>
+                        </template>
+                        <template x-if="row.kind === 'role'">
+                            <td>
+                                <span :class="row.role.is_active ? 'ac-status-on' : 'ac-status-off'" x-text="row.role.is_active ? __('啟用') : __('停用')"></span>
+                            </td>
+                        </template>
+                        <template x-if="row.kind === 'role'">
+                            <td>
+                                <div class="ac-row-actions">
+                                    <button type="button" class="btn btn-secondary ac-btn-small" @click="openEdit(row.role)">{{ _('編輯') }}</button>
+                                    <button type="button" class="btn btn-danger ac-btn-small" @click="deleteRole(row.role)" :disabled="row.role.is_system_role">{{ _('刪除') }}</button>
+                                </div>
+                            </td>
+                        </template>
+                        <template x-if="row.kind === 'users'">
+                            <td colspan="9">
+                                <template x-if="loadingUsersCode === row.role.secure_code">
+                                    <p class="ac-empty ac-empty-compact">{{ _('載入持有人中') }}</p>
+                                </template>
+                                <template x-if="loadingUsersCode !== row.role.secure_code && roleUsers[row.role.secure_code] && roleUsers[row.role.secure_code].length === 0">
+                                    <p class="ac-empty ac-empty-compact">{{ _('沒有持有人') }}</p>
+                                </template>
+                                <ul class="ac-user-list" x-show="loadingUsersCode !== row.role.secure_code && roleUsers[row.role.secure_code] && roleUsers[row.role.secure_code].length > 0" x-cloak>
+                                    <template x-for="user in roleUsers[row.role.secure_code]" :key="user.secure_code">
+                                        <li>
+                                            <strong x-text="user.name"></strong>
+                                            <span x-text="user.email"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </td>
+                        </template>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal-overlay" x-show="modalOpen" x-cloak>
+        <div class="modal-content ac-role-modal" style="width: 640px;">
+            <div class="modal-header">
+                <h3 x-text="editingRole ? __('編輯角色') : __('建立角色')"></h3>
+                <button type="button" class="modal-close" @click="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="ac-form-grid">
+                    <label class="ac-field">
+                        <span>{{ _('名稱') }}</span>
+                        <input type="text" class="form-control" x-model="form.name" @input="onNameInput()" :disabled="isLockedRole" required>
+                    </label>
+                    <label class="ac-field">
+                        <span>{{ _('Code') }}</span>
+                        <input type="text" class="form-control" x-model="form.code" @input="onCodeInput()" :placeholder="codePlaceholder" :disabled="!!editingRole || isLockedRole">
+                        <small class="ac-help" x-text="codeMessage"></small>
+                    </label>
+                    <label class="ac-field">
+                        <span>{{ _('類型') }}</span>
+                        <select class="form-control" x-model="form.role_type" :disabled="isLockedRole">
+                            <template x-for="option in roleTypeOptions" :key="option.value">
+                                <option :value="option.value" x-text="option.label"></option>
+                            </template>
+                        </select>
+                    </label>
+                    <label class="ac-field">
+                        <span>{{ _('範圍') }}</span>
+                        <select class="form-control" x-model="form.scope_type" :disabled="isLockedRole">
+                            <template x-for="option in scopeTypeOptions" :key="option.value">
+                                <option :value="option.value" x-text="option.label"></option>
+                            </template>
+                        </select>
+                    </label>
+                    <label class="ac-check-inline">
+                        <input type="checkbox" x-model="form.is_manager" :disabled="isLockedRole">
+                        <span>{{ _('管理者角色') }}</span>
+                    </label>
+                    <label class="ac-check-inline">
+                        <input type="checkbox" x-model="form.is_active">
+                        <span>{{ _('啟用') }}</span>
+                    </label>
+                    <label class="ac-field">
+                        <span>{{ _('排序') }}</span>
+                        <input type="number" class="form-control" x-model.number="form.sort_order">
+                    </label>
+                    <label class="ac-field">
+                        <span>{{ _('互斥群組') }}</span>
+                        <select class="form-control" x-model="form.exclusive_group" :disabled="isLockedRole">
+                            <template x-for="option in exclusiveGroupOptions" :key="option.value">
+                                <option :value="option.value" x-text="option.label"></option>
+                            </template>
+                        </select>
+                        <small class="ac-help" x-text="exclusiveGroupHelp"></small>
+                    </label>
+                    <label class="ac-field ac-span-2">
+                        <span>{{ _('描述') }}</span>
+                        <textarea class="form-control" rows="3" x-model="form.description"></textarea>
+                    </label>
+                </div>
+
+                <details class="ac-permission-details" @toggle="onPermissionDetailsToggle($event)">
+                    <summary>{{ _('進階：API 權限') }}</summary>
+                    <template x-if="loadingPermissions">
+                        <p class="ac-empty ac-empty-compact">{{ _('載入權限中') }}</p>
+                    </template>
+                    <template x-if="!loadingPermissions && permissionGroups.length === 0">
+                        <p class="ac-empty ac-empty-compact">{{ _('沒有可用權限') }}</p>
+                    </template>
+                    <div class="ac-permission-groups" x-show="!loadingPermissions && permissionGroups.length > 0" x-cloak>
+                        <template x-for="group in permissionGroups" :key="group.level">
+                            <section class="ac-permission-group">
+                                <h4 x-text="group.level"></h4>
+                                <div class="ac-check-grid">
+                                    <template x-for="permission in group.permissions" :key="permission.secure_code">
+                                        <label class="ac-check-item">
+                                            <input type="checkbox" :value="permission.secure_code" x-model="selectedPermissionCodes">
+                                            <span class="ac-role-main">
+                                                <strong x-text="permission.name"></strong>
+                                                <small x-text="permission.code"></small>
+                                            </span>
+                                        </label>
+                                    </template>
+                                </div>
+                            </section>
+                        </template>
+                    </div>
+                </details>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @click="closeModal()">{{ _('取消') }}</button>
+                <button type="button" class="btn btn-primary" @click="saveRole()" :disabled="savingRole || !canSave">
+                    <span x-text="savingRole ? __('儲存中') : __('儲存')"></span>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
