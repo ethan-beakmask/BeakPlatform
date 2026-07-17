@@ -129,6 +129,11 @@ Generated with Claude Code"
 - 選單/頁面 = 雙鑰匙（Key1 user_type 層界 + Key2 角色，僅 EMPLOYEE/EXTERNAL 吃 Key2）；欄位 = EGRESS-01
 - `menu_items.required_permission` 已退役不再影響選單；permission code 僅存在 API/資源層
 - 定版文件：`docs/PERMISSION_MODEL.md`（bypass 規則、功能開放多層 SOP、已知備忘）
+- 權限管理 UI 統一入口：`/access/` 權限管理中心（功能授權/角色/帳號配角色/健檢；
+  舊 `/permissions/`、`/roles/`、`/admin/account-roles/` 已退役，`/menu/` 只管選單結構）；
+  規格 `docs/ACCESS_CENTER_SPEC.md`
+- Phase B 起頁面路由**不掛身分 decorator**：url 型選單路徑前綴即 PageRoleGuard 領地；
+  單頁專屬資料 API 掛 `@page_keys_required('<menu_code>')`
 
 ### TENANT-01: 強制企業隔離
 - 所有查詢包含 `org_secure_code` 過濾
@@ -461,6 +466,11 @@ function pageManager() {
 | 雙欄佈局 | `xxx-grid-2` 用 `display: grid; grid-template-columns: 1fr 1fr; gap: 16px` |
 
 **參考實作：** `modules/form_workflow/static/modules/form_workflow/css/fw-dashboard.css`
+
+**CSS 變數白名單**：顏色一律用 common.css `:root` 定義的 `var(--color-*)` 系列
+（`--color-primary/--color-text/--color-text-secondary/--color-text-muted/--color-bg/--color-bg-white/--color-bg-light/--color-border` 等）。
+**禁止**自創 `--text-primary`、`--surface-color` 這類不存在的變數——fallback 值會生效，
+曾造成整頁深色 fallback、白底白字（派工給 Codex/agent 時必須在 prompt 明列此白名單）。
 
 **常見錯誤（會導致排版全部擠在一起）：**
 - 使用 `row` + `col-md-6`（不存在，無效果）
