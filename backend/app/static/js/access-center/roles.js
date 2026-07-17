@@ -375,6 +375,14 @@ function acRolesTab() {
             return option ? option.label : (value || '-');
         },
 
+        roleOriginLabel(role) {
+            return window.acRoleOriginLabel(role);
+        },
+
+        roleOriginClass(role) {
+            return window.acRoleOriginClass(role);
+        },
+
         showAlert(message, type) {
             this.alert = { show: true, message, type: type || 'info' };
             window.setTimeout(() => {

@@ -293,24 +293,77 @@
 
 .ac-role-list {
     display: grid;
-    gap: 8px;
+    border: 1px solid var(--color-border);
+    gap: 0;
 }
 
 .ac-role-main {
-    display: grid;
+    align-items: center;
+    display: flex;
     flex: 1 1 auto;
-    gap: 3px;
+    gap: 10px;
     min-width: 0;
 }
 
 .ac-role-main strong,
 .ac-role-main small {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .ac-role-main small {
+    color: var(--color-text-secondary);
+}
+
+.ac-role-row,
+.ac-permission-row {
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    min-height: 34px;
+    padding: 5px 8px;
+}
+
+.ac-role-row:last-child,
+.ac-permission-row:last-child {
+    border-bottom: 0;
+}
+
+.ac-role-row:hover,
+.ac-permission-row:hover {
+    background: var(--color-bg-light);
+}
+
+.ac-permission-list {
+    border: 1px solid var(--color-border);
+    display: grid;
+    gap: 0;
+}
+
+.ac-role-code {
+    color: var(--color-text-secondary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 12px;
+}
+
+.ac-role-origin {
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    display: inline-block;
+    font-size: 11px;
+    line-height: 1.2;
+    padding: 2px 5px;
+    white-space: nowrap;
+}
+
+.ac-role-origin-system {
+    border-color: var(--color-info);
+    color: var(--color-info);
+}
+
+.ac-role-origin-custom {
+    border-color: var(--color-text-secondary);
     color: var(--color-text-secondary);
 }
 

@@ -171,21 +171,25 @@ function acAccountsTab() {
             }
         },
 
-        roleLabel(role) {
+        roleDisplayName(role) {
             let label = role.name || '';
             if (role.unit_name) {
                 label += ' / ' + role.unit_name;
-            }
-            if (role.is_system_role) {
-                label += __(' (預設)');
             }
             return label;
         },
 
         roleOptionLabel(role) {
             const scope = this.scopeLabel(role.scope_type);
-            const system = role.is_system_role ? __(' (預設)') : '';
-            return role.name + system + ' - ' + scope;
+            return role.name + ' ' + window.acRoleOriginSuffix(role) + ' - ' + scope;
+        },
+
+        roleOriginLabel(role) {
+            return window.acRoleOriginLabel(role);
+        },
+
+        roleOriginClass(role) {
+            return window.acRoleOriginClass(role);
         },
 
         scopeLabel(scopeType) {

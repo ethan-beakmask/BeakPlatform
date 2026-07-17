@@ -43,6 +43,18 @@ async function acFetch(url, options) {
     return data;
 }
 
+function acRoleOriginLabel(role) {
+    return role && role.is_system_role ? __('系統') : __('自訂');
+}
+
+function acRoleOriginClass(role) {
+    return role && role.is_system_role ? 'ac-role-origin-system' : 'ac-role-origin-custom';
+}
+
+function acRoleOriginSuffix(role) {
+    return '[' + acRoleOriginLabel(role) + ']';
+}
+
 function accessCenter() {
     const config = window.__AC_CONFIG || {};
 
@@ -67,4 +79,7 @@ function accessCenter() {
 }
 
 window.acFetch = acFetch;
+window.acRoleOriginLabel = acRoleOriginLabel;
+window.acRoleOriginClass = acRoleOriginClass;
+window.acRoleOriginSuffix = acRoleOriginSuffix;
 window.accessCenter = accessCenter;

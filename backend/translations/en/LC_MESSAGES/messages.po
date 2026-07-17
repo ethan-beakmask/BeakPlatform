@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-17 02:01+0800\n"
+"POT-Creation-Date: 2026-07-17 08:41+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -1062,7 +1062,7 @@ msgstr "user_types contains disallowed values"
 msgid "至少需要一個 user_type"
 msgstr "At least one user_type is required"
 
-#: app/api/menu.py:340 app/api/menu.py:374 app/api/menu.py:496
+#: app/api/menu.py:340 app/api/menu.py:374 app/api/menu.py:498
 msgid "選單項目不存在"
 msgstr "Menu item not found"
 
@@ -1075,23 +1075,23 @@ msgstr "Permission setting violates route constraints: %(message)s"
 msgid "更新功能授權失敗"
 msgstr "Failed to update function authorization"
 
-#: app/api/menu.py:556
+#: app/api/menu.py:558
 msgid "更新角色需求失敗"
 msgstr "Failed to update role requirements"
 
-#: app/api/menu.py:580
+#: app/api/menu.py:582
 msgid "重置選單位置失敗"
 msgstr "Failed to reset menu positions"
 
-#: app/api/menu.py:603
+#: app/api/menu.py:605
 msgid "重置選單出廠值失敗"
 msgstr "Failed to reset menus to factory defaults"
 
-#: app/api/menu.py:628
+#: app/api/menu.py:630
 msgid "儲存選單出廠預設值失敗"
 msgstr "Failed to save menu factory defaults"
 
-#: app/api/menu.py:650
+#: app/api/menu.py:652
 msgid "匯出 SQL 失敗"
 msgstr "SQL export failed"
 
@@ -2154,7 +2154,7 @@ msgstr "Passwords match"
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:636
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:75
 #: app/templates/auth/change_password.html:74
-#: app/templates/pages/access_center/_tab_accounts.html:169
+#: app/templates/pages/access_center/_tab_accounts.html:170
 #: app/templates/pages/access_center/_tab_roles.html:219
 #: app/templates/pages/admin/_employee_create_form.html:152
 #: app/templates/pages/admin/_settings_recipients_section.html:226
@@ -2821,19 +2821,19 @@ msgstr "Role Assignments"
 msgid "停用"
 msgstr "Disabled"
 
-#: app/templates/pages/access_center/_tab_accounts.html:102
+#: app/templates/pages/access_center/_tab_accounts.html:103
 msgid "移除角色"
 msgstr "Remove role"
 
-#: app/templates/pages/access_center/_tab_accounts.html:106
-#: app/templates/pages/access_center/_tab_accounts.html:131
+#: app/templates/pages/access_center/_tab_accounts.html:107
+#: app/templates/pages/access_center/_tab_accounts.html:132
 msgid "指派角色"
 msgstr "Assign Role"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:85
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:119
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:312
-#: app/templates/pages/access_center/_tab_accounts.html:120
+#: app/templates/pages/access_center/_tab_accounts.html:121
 #: app/templates/pages/users/list.html:89
 msgid "上一頁"
 msgstr "Previous"
@@ -2842,14 +2842,14 @@ msgstr "Previous"
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
-#: app/templates/pages/access_center/_tab_accounts.html:123
+#: app/templates/pages/access_center/_tab_accounts.html:124
 #: app/templates/pages/users/list.html:93
 msgid "下一頁"
 msgstr "Next"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:794
-#: app/templates/pages/access_center/_tab_accounts.html:143
-#: app/templates/pages/access_center/_tab_health.html:107
+#: app/templates/pages/access_center/_tab_accounts.html:144
+#: app/templates/pages/access_center/_tab_health.html:108
 #: app/templates/pages/access_center/_tab_roles.html:4
 #: app/templates/pages/access_center/index.html:22
 #: app/templates/pages/external-users/edit.html:134
@@ -2867,11 +2867,11 @@ msgstr "Next"
 msgid "角色"
 msgstr "Role"
 
-#: app/templates/pages/access_center/_tab_accounts.html:145
+#: app/templates/pages/access_center/_tab_accounts.html:146
 msgid "請選擇角色"
 msgstr "Please select a role"
 
-#: app/templates/pages/access_center/_tab_accounts.html:156
+#: app/templates/pages/access_center/_tab_accounts.html:157
 msgid "請選擇單位"
 msgstr "Please select a unit"
 
@@ -3035,7 +3035,7 @@ msgstr "No conflicts detected"
 msgid "選單"
 msgstr "Menu"
 
-#: app/templates/pages/access_center/_tab_health.html:114
+#: app/templates/pages/access_center/_tab_health.html:119
 msgid "查看"
 msgstr "View"
 
@@ -3117,10 +3117,11 @@ msgstr "Scope"
 msgid "互斥群組"
 msgstr "Exclusive Group"
 
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:62
 #: app/templates/pages/access_center/_tab_roles.html:56
-#: app/templates/pages/organizations/list.html:115
-msgid "系統"
-msgstr "system"
+msgid "來源"
+msgstr "Source"
 
 #: app/templates/pages/access_center/_tab_roles.html:57
 msgid "使用人數"
@@ -3230,10 +3231,6 @@ msgstr "Active"
 #: app/templates/pages/users/list.html:44
 msgid "操作"
 msgstr "Actions"
-
-#: app/templates/pages/access_center/_tab_roles.html:85
-msgid "系統角色"
-msgstr "System Role"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:53
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:67
@@ -9506,6 +9503,10 @@ msgstr "Conglomerate"
 msgid "合約"
 msgstr "Contract"
 
+#: app/templates/pages/organizations/list.html:115
+msgid "系統"
+msgstr "system"
+
 #: app/templates/pages/organizations/list.html:122
 msgid "無約"
 msgstr "No appointment"
@@ -9719,7 +9720,9 @@ msgstr "Default Role"
 
 #: app/templates/pages/platform_help/org_admin.html:70
 msgid "系統內建以下角色，企業管理員可在 /access/ 自行增減角色。"
-msgstr "The system ships with the following roles; org admins can add or remove roles in /access/."
+msgstr ""
+"The system ships with the following roles; org admins can add or remove "
+"roles in /access/."
 
 #: app/templates/pages/platform_help/org_admin.html:72
 msgid "企業級角色"
@@ -9863,7 +9866,10 @@ msgstr "Role inheritance:"
 
 #: app/templates/pages/platform_help/org_admin.html:144
 msgid "部分角色會自動包含下級角色的權限。例如「模組作者」自動擁有「模組讀者」的所有權限。繼承關係在 /access/ 頁面可查看。"
-msgstr "Some roles automatically include the permissions of subordinate roles. For example, \"Module Author\" automatically has all permissions of \"Module Reader\". Inheritance can be viewed in /access/."
+msgstr ""
+"Some roles automatically include the permissions of subordinate roles. "
+"For example, \"Module Author\" automatically has all permissions of "
+"\"Module Reader\". Inheritance can be viewed in /access/."
 
 #: app/templates/pages/platform_help/org_admin.html:156
 msgid "權限管理概觀"
@@ -9871,7 +9877,10 @@ msgstr "Permissions Management Overview"
 
 #: app/templates/pages/platform_help/org_admin.html:157
 msgid "平台的權限分散在多個層面，各有不同的控制目標。企業管理員可透過「權限管理中心」(/access/) 進行統一檢視與管理。"
-msgstr "Platform permissions span multiple layers, each with its own control target. Org admins can review and manage them centrally in the Access Center (/access/)."
+msgstr ""
+"Platform permissions span multiple layers, each with its own control "
+"target. Org admins can review and manage them centrally in the Access "
+"Center (/access/)."
 
 #: app/templates/pages/platform_help/org_admin.html:162
 msgid "權限層"
@@ -9999,7 +10008,10 @@ msgstr "FAQ:"
 
 #: app/templates/pages/platform_help/org_admin.html:234
 msgid "如果企業成員反映「選單看得到但點進去沒權限」，通常是步驟 1 通過但步驟 3 或 4 未配置。請至 /access/ 檢查衝突偵測結果。"
-msgstr "If a member reports \"the menu is visible but access is denied\", step 1 passed while step 3 or 4 is not configured. Check the conflict detection results in /access/."
+msgstr ""
+"If a member reports \"the menu is visible but access is denied\", step 1 "
+"passed while step 3 or 4 is not configured. Check the conflict detection "
+"results in /access/."
 
 #: app/templates/pages/platform_help/org_admin.html:239
 msgid "企業管理員的天生權限"
@@ -10024,7 +10036,9 @@ msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:244
 msgid "在 /access/ 的衝突偵測中，僅授權給 ORG_ADMIN 的選單不會被標記為缺少 RBAC 權限"
-msgstr "In /access/ conflict detection, menus granted only to ORG_ADMIN are not flagged as missing RBAC permissions"
+msgstr ""
+"In /access/ conflict detection, menus granted only to ORG_ADMIN are not "
+"flagged as missing RBAC permissions"
 
 #: app/templates/pages/platform_help/org_admin.html:245
 msgid "但「系統級」權限仍保留給系統管理員，企業管理員無法取得"
@@ -10346,7 +10360,9 @@ msgstr "conflict detection"
 
 #: app/templates/pages/platform_help/org_admin.html:455
 msgid "/access/ 中的功能，自動檢查權限配置是否有遺漏或矛盾"
-msgstr "A feature in /access/ that automatically checks the permission configuration for gaps or contradictions"
+msgstr ""
+"A feature in /access/ that automatically checks the permission "
+"configuration for gaps or contradictions"
 
 #: app/templates/pages/platform_help/page_doc.html:3
 #, python-format
@@ -13088,11 +13104,6 @@ msgstr "Recent events"
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:61
 msgid "尚無事件"
 msgstr "No events yet"
-
-#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:62
-msgid "來源"
-msgstr "Source"
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
 msgid "國家"
@@ -20416,4 +20427,7 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "此為系統預設角色，無法編輯或刪除。"
 #~ msgstr "This is the system default Role and cannot be edited or deleted."
+
+#~ msgid "系統角色"
+#~ msgstr "System Role"
 

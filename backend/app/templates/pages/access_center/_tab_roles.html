@@ -53,7 +53,7 @@
                     <th>{{ _('類型') }}</th>
                     <th>{{ _('範圍') }}</th>
                     <th>{{ _('互斥群組') }}</th>
-                    <th>{{ _('系統') }}</th>
+                    <th>{{ _('來源') }}</th>
                     <th>{{ _('使用人數') }}</th>
                     <th>{{ _('啟用') }}</th>
                     <th>{{ _('操作') }}</th>
@@ -82,7 +82,7 @@
                         </template>
                         <template x-if="row.kind === 'role'">
                             <td>
-                                <span class="ac-badge" x-show="row.role.is_system_role">{{ _('系統角色') }}</span>
+                                <span class="ac-role-origin" :class="roleOriginClass(row.role)" x-text="roleOriginLabel(row.role)"></span>
                             </td>
                         </template>
                         <template x-if="row.kind === 'role'">
@@ -199,13 +199,13 @@
                         <template x-for="group in permissionGroups" :key="group.level">
                             <section class="ac-permission-group">
                                 <h4 x-text="group.level"></h4>
-                                <div class="ac-check-grid">
+                                <div class="ac-permission-list">
                                     <template x-for="permission in group.permissions" :key="permission.secure_code">
-                                        <label class="ac-check-item">
+                                        <label class="ac-check-item ac-permission-row">
                                             <input type="checkbox" :value="permission.secure_code" x-model="selectedPermissionCodes">
                                             <span class="ac-role-main">
                                                 <strong x-text="permission.name"></strong>
-                                                <small x-text="permission.code"></small>
+                                                <small class="ac-role-code" x-text="permission.code"></small>
                                             </span>
                                         </label>
                                     </template>

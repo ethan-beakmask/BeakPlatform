@@ -104,7 +104,12 @@
                                         <span>{{ _('選單') }}: <strong x-text="menuLabel(conflict)"></strong></span>
                                     </template>
                                     <template x-if="conflict.role_name || conflict.role_code">
-                                        <span>{{ _('角色') }}: <strong x-text="roleLabel(conflict)"></strong></span>
+                                        <span>
+                                            {{ _('角色') }}: <strong x-text="roleLabel(conflict)"></strong>
+                                            <template x-if="hasRoleOrigin(conflict)">
+                                                <span class="ac-role-origin" :class="roleOriginClass(conflict)" x-text="roleOriginLabel(conflict)"></span>
+                                            </template>
+                                        </span>
                                     </template>
                                 </div>
                             </div>

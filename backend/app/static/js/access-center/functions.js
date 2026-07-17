@@ -289,6 +289,14 @@ function acFunctionsTab() {
                 .map(type => ({ code: type.value.toLowerCase().replace('_', '-'), label: type.badge }));
         },
 
+        roleOriginLabel(role) {
+            return window.acRoleOriginLabel(role);
+        },
+
+        roleOriginClass(role) {
+            return window.acRoleOriginClass(role);
+        },
+
         showAlert(message, type) {
             this.alert = { show: true, message, type: type || 'info' };
             window.setTimeout(() => {

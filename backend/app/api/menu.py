@@ -430,6 +430,7 @@ def get_menu_roles(secure_code: str):
                     'role_type': r.role_type,
                     'role_level': r.role_level,
                     'scope_type': r.scope_type,
+                    'is_system_role': r.is_system_role,
                     'selected': r.code in req_role_codes,
                 }
                 for r in available_roles
@@ -460,6 +461,7 @@ def get_menu_roles(secure_code: str):
                     'role_type': r.role_type,
                     'role_level': r.role_level,
                     'scope_type': r.scope_type,
+                    'is_system_role': r.is_system_role,
                     'selected': r.secure_code in selected_scs,
                 }
                 for r in available_roles

@@ -95,7 +95,8 @@
                             <div class="ac-role-chip-list">
                                 <template x-for="role in user.roles" :key="role.assignment_secure_code">
                                     <span class="ac-role-chip">
-                                        <span x-text="roleLabel(role)"></span>
+                                        <span x-text="roleDisplayName(role)"></span>
+                                        <span class="ac-role-origin" :class="roleOriginClass(role)" x-text="roleOriginLabel(role)"></span>
                                         <button type="button" class="ac-chip-remove"
                                                 :disabled="removingRoleCode === (role.assignment_secure_code || role.secure_code)"
                                                 @click="revokeRole(user, role)"

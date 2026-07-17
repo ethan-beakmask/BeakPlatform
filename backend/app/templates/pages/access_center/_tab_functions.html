@@ -125,11 +125,12 @@
 
                             <div class="ac-role-list" x-show="!loadingRoles && roleOptions.length > 0" x-cloak>
                                 <template x-for="role in roleOptions" :key="role.id">
-                                    <label class="ac-role-item">
+                                    <label class="ac-role-item ac-role-row">
                                         <input type="checkbox" x-model="role.selected" :disabled="savingKey2">
                                         <span class="ac-role-main">
                                             <strong x-text="role.name"></strong>
-                                            <small x-text="role.code"></small>
+                                            <small class="ac-role-code" x-text="role.code"></small>
+                                            <span class="ac-role-origin" :class="roleOriginClass(role)" x-text="roleOriginLabel(role)"></span>
                                         </span>
                                         <span class="ac-role-meta" x-text="role.scope_type || role.role_type || ''"></span>
                                     </label>

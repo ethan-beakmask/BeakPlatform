@@ -233,6 +233,18 @@ function acHealthTab() {
             return name && code ? name + ' (' + code + ')' : (name || code || '-');
         },
 
+        hasRoleOrigin(conflict) {
+            return conflict && Object.prototype.hasOwnProperty.call(conflict, 'is_system_role');
+        },
+
+        roleOriginLabel(conflict) {
+            return window.acRoleOriginLabel(conflict);
+        },
+
+        roleOriginClass(conflict) {
+            return window.acRoleOriginClass(conflict);
+        },
+
         conflictKey(conflict) {
             return [
                 conflict.type || '',
