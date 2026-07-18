@@ -4,10 +4,10 @@ from datetime import datetime
 from flask import request, jsonify
 from flask_babel import gettext as _
 from flask_login import current_user
-from sqlalchemy import or_
 
 from app import db
-from app.security.decorators import admin_required
+from app.security.decorators import page_keys_required
+from app.services.capability_service import permission_required
 from app.utils.security import generate_secure_code
 
 from . import admin_bp
@@ -37,7 +37,7 @@ def _serialize(d):
 
 
 @admin_bp.route('/decisions', methods=['GET'])
-@admin_required
+@page_keys_required('open_defense.decisions')
 def list_decisions_admin():
     org_sc = current_user.org_secure_code
     q = OdDefenseDecision.query.filter_by(
@@ -68,7 +68,7 @@ def list_decisions_admin():
 
 
 @admin_bp.route('/decisions/<secure_code>/revoke', methods=['POST'])
-@admin_required
+@permission_required('open_defense.decision.write')
 def revoke_decision_admin(secure_code):
     """
     手動撤銷一筆 applied 決策:產生對應 unblock 決策(同 target / EP)。

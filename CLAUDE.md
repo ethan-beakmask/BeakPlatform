@@ -134,6 +134,9 @@ Generated with Claude Code"
   規格 `docs/ACCESS_CENTER_SPEC.md`
 - Phase B 起頁面路由**不掛身分 decorator**：url 型選單路徑前綴即 PageRoleGuard 領地；
   單頁專屬資料 API 掛 `@page_keys_required('<menu_code>')`
+- Phase D 元件級：動作按鈕一律包 `{% if can('<permission_code>') %}`（JS 用 `BkCaps.can()`），
+  對應動作 API 掛 `@permission_required('<permission_code>')`（capability_service）；
+  指引 `docs/COMPONENT_VISIBILITY_GUIDE.md`（四層防線總表 + NoCode_Builder 消費規則）
 
 ### TENANT-01: 強制企業隔離
 - 所有查詢包含 `org_secure_code` 過濾

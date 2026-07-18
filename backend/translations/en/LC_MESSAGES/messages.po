@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-17 08:41+0800\n"
+"POT-Creation-Date: 2026-07-18 22:27+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -1908,6 +1908,11 @@ msgstr "Please provide holiday data"
 msgid "已匯入 %(imported)s 筆，略過 %(skipped)s 筆"
 msgstr "%(imported)s records imported, %(skipped)s skipped"
 
+#: app/services/capability_service.py:54
+#, python-format
+msgid "缺少權限：%(code)s"
+msgstr "Missing permission: %(code)s"
+
 #: app/services/role_assignment_service.py:26
 #: app/templates/pages/admin/groups.html:277
 msgid "團長"
@@ -2230,7 +2235,7 @@ msgstr "Cancel"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:28
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:66
 #: app/templates/auth/change_password.html:86
-#: app/templates/layouts/base.html:86
+#: app/templates/layouts/base.html:87
 #: app/templates/pages/admin/initial_setup.html:298
 msgid "登出"
 msgstr "Logout"
@@ -2411,7 +2416,7 @@ msgstr "Server Error"
 msgid "系統發生錯誤，請稍後再試。"
 msgstr "A system error occurred. Please try again later."
 
-#: app/templates/layouts/base.html:98
+#: app/templates/layouts/base.html:99
 msgid "首頁"
 msgstr "Home"
 
@@ -10924,7 +10929,7 @@ msgstr "Suspend"
 msgid "復原"
 msgstr "Restore"
 
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:100
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:101
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:64
 #: app/templates/pages/security/api_keys.html:66
 msgid "撤銷"
@@ -12822,16 +12827,16 @@ msgstr "Row %(row)s: employee ID %(employee_id)s already exists"
 msgid "since 必須為 ISO-8601 字串"
 msgstr "since must be an ISO-8601 string"
 
-#: ../modules/open_defense/api/admin/decisions.py:86
+#: ../modules/open_defense/api/admin/decisions.py:88
 #, python-format
 msgid "只能撤銷 applied 狀態的決策(目前 %(status)s)"
 msgstr "Only decisions in applied status can be revoked (current: %(status)s)"
 
-#: ../modules/open_defense/api/admin/decisions.py:91
+#: ../modules/open_defense/api/admin/decisions.py:93
 msgid "unblock 決策無需再撤銷"
 msgstr "Unblock decisions do not need to be revoked again"
 
-#: ../modules/open_defense/api/admin/decisions.py:95
+#: ../modules/open_defense/api/admin/decisions.py:97
 msgid "人工手動撤銷"
 msgstr "Manual revocation"
 
@@ -20430,4 +20435,3 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "系統角色"
 #~ msgstr "System Role"
-

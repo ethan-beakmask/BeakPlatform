@@ -185,6 +185,12 @@ def register_template_filters(app: Flask) -> None:
                 f'<span class="empty-value">{escape(gettext("未設定"))}</span>')
         return escape(value)
 
+    @app.template_global('can')
+    def template_can(permission_code):
+        """元件級 UI 權限（Phase D）：{% if can('open_defense.decision.write') %}"""
+        from app.services.capability_service import user_can
+        return user_can(permission_code)
+
     @app.template_filter('tz_format')
     def tz_format_filter(dt, fmt='%Y-%m-%d %H:%M:%S'):
         """

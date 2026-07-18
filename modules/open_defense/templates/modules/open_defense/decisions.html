@@ -95,9 +95,11 @@
                             <div style="font-size:11px;" x-text="d.decided_via"></div>
                         </td>
                         <td class="od-actions">
+                            {% if can('open_defense.decision.write') %}
                             <button x-show="d.status==='applied' && d.action!=='unblock'"
                                     class="btn btn-sm btn-secondary"
                                     @click="revoke(d)">{{ _('撤銷') }}</button>
+                            {% endif %}
                         </td>
                     </tr>
                 </template>
@@ -110,5 +112,6 @@
 window.__OD_API = '{{ app_prefix }}/api/open_defense/admin';
 </script>
 <script src="{{ app_prefix }}/static/modules/open_defense/js/od-common.js"></script>
+<script>window.__PAGE_CAPS = {{ page_caps | tojson }};</script>
 <script src="{{ app_prefix }}/static/modules/open_defense/js/od-decisions.js"></script>
 {% endblock %}

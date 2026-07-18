@@ -22,6 +22,7 @@ function odDecisions() {
         },
 
         async revoke(d) {
+            if (typeof BkCaps !== 'undefined' && !BkCaps.can('open_defense.decision.write')) return;
             const reason = prompt(__('撤銷 {action} {targetType}/{targetValue}?\n填入撤銷理由(會產生 unblock 決策):', {
                 action: d.action,
                 targetType: d.target_type,

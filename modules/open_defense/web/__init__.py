@@ -7,6 +7,7 @@ OpenDefense Module - Web Routes
 from flask import Blueprint, render_template, redirect, url_for
 
 from app.security.decorators import module_access_required
+from app.services.capability_service import build_caps
 
 web_bp = Blueprint(
     'open_defense_web',
@@ -36,7 +37,8 @@ def dashboard():
 @web_bp.route('/decisions')
 @module_access_required('open_defense', False)
 def decisions():
-    return render_template('modules/open_defense/decisions.html')
+    caps = build_caps(['open_defense.decision.write'])
+    return render_template('modules/open_defense/decisions.html', page_caps=caps)
 
 
 @web_bp.route('/intake-keys')
