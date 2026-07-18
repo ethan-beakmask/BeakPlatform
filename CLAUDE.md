@@ -138,6 +138,17 @@ Generated with Claude Code"
   對應動作 API 掛 `@permission_required('<permission_code>')`（capability_service）；
   指引 `docs/COMPONENT_VISIBILITY_GUIDE.md`（四層防線總表 + NoCode_Builder 消費規則）
 
+### PERM-02: D2 元件級推廣檢查（強制，2026-07-18 起）
+
+**任何開發或修改工單，凡觸及「頁面模板、動作按鈕（增刪改查/簽核/撤銷等）、動作型 API」，
+動工前必須先問用戶：「本次是否依 D2 標準進行？」**，取得答覆後才能實作。
+
+- D2 標準 = 按鈕包 `can()`、動作 API 掛 `@permission_required`、code 沿用 API 層既有
+  permission code（詳見 `docs/COMPONENT_VISIBILITY_GUIDE.md` §2.5）
+- 用戶答「是」→ 該工單範圍內的按鈕與 API 一併完成 D2 改造；答「否」→ 照原樣修改，不擅自加
+- 純資料修正、CSS、i18n、文件等不觸及按鈕/動作 API 的工單不必問
+- 全新頁面**不必問，一律直接套 D2 標準**（新程式碼沒有理由用舊模式）
+
 ### TENANT-01: 強制企業隔離
 - 所有查詢包含 `org_secure_code` 過濾
 - PostgreSQL RLS 作為最後防線
