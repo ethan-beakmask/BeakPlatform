@@ -203,6 +203,14 @@ def get_pending_task(secure_code):
             form_instance, form_schema, task.node_id
         )
 
+    # 欄位權限 hidden 的值不得出現在回應（schema 已剔除，資料同步剔除；
+    # 必須放在 apply_form_egress 之後，因其內部重讀 form_instance.form_data）
+    if role_permissions:
+        form_data = {
+            k: v for k, v in (form_data or {}).items()
+            if role_permissions.get(k) != 'hidden'
+        }
+
     # 取得簽核歷程
     approvals = []
     if task.workflow_instance_secure_code:
