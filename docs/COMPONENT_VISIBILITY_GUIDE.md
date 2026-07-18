@@ -110,7 +110,7 @@ FormAdapter 簽核節點已內建三態欄位權限（無需新開發）：
 - **寫入防護**：簽核送出時後端過濾非 editable 欄位的改值。
 - **最終守門**：EGRESS-01 `form_node` 語境（`egress_adapter.py`）接在欄位權限之後，支援 per-node_key 政策。
 
-**已知資安洞（Forgejo Issue #27，待修）**：schema 裁掉 hidden 元件，但 `form_data` 未同步剔除 hidden 欄位值（僅設有 egress 政策時才過濾）。修復後請更新本節與 `docs/manifests/mod-form-workflow.yaml`。
+**資料防線（Forgejo Issue #27，已修復，commit 21f22e0b）**：schema 裁掉 hidden 元件的同時，`form_data` 亦同步剔除 hidden 欄位的頂層 key（`fc_pending.py`，須在 `apply_form_egress` 之後執行，因其內部重讀 `form_instance.form_data`）。egress form_node 政策為疊加的最終守門，順序不變。
 
 **form.io 升級彈性**：裁剪邏輯全部外置於後端函式（輸入 schema JSON → 輸出裁剪後 schema），不修改 form.io 原始碼、不依賴其版本內部行為。form.io 只渲染收到的東西，升級不影響此層。
 

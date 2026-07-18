@@ -69,3 +69,7 @@ note: |
   流程推進由 workflow_executor 背景執行緒輪詢 FwNodeExecutionQueue，
   節點處理器在 services/node_handlers/（factory.py 註冊）。
   程式化建單 API 指南：docs/integrations/quick_form_submit_api.md
+  欄位權限（field_permissions）：FormAdapter 節點 config.field_permissions 分 approver/reader
+  對每欄位配 editable/readonly/hidden；fc_pending.py 詳情 API 伺服器端裁剪 schema
+  （fc_utils._apply_field_permissions_to_schema）並同步從 form_data 剔除 hidden 頂層 key
+  （須在 apply_form_egress 之後，Forgejo #27，commit 21f22e0b）；送出時 approver 僅 editable 欄位可寫回。
