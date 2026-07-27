@@ -71,3 +71,9 @@ def init_runtime(app):
         register(file_service)
     except Exception as e:
         logger.error(f'NocodeBuilder: 註冊檔案 authorizer 失敗: {str(e)}')
+
+    try:
+        from .services.pageir_portal_resources import init_portal_pageir_resources
+        init_portal_pageir_resources()
+    except Exception as e:
+        logger.error(f'NocodeBuilder: 註冊 Page IR portal resources 失敗: {str(e)}')

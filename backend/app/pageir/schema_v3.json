@@ -21,6 +21,10 @@
       "type": "string",
       "pattern": "^[a-z][a-z0-9_-]{0,63}$"
     },
+    "resource_ref": {
+      "type": "string",
+      "pattern": "^([a-z][a-z0-9_-]{0,63}|portal:[A-Za-z0-9_-]{8,64})$"
+    },
     "field_key": {
       "type": "string",
       "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
@@ -45,7 +49,7 @@
       "required": ["resource", "view", "fields"],
       "properties": {
         "resource": {
-          "$ref": "#/$defs/binding_slug"
+          "$ref": "#/$defs/resource_ref"
         },
         "view": {
           "$ref": "#/$defs/binding_slug"

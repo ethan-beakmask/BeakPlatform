@@ -246,7 +246,11 @@ def _prepare_actions(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
 
 
 def _prepare_action_buttons(widget: dict) -> list[dict]:
+    from app.pageir.context import get_render_context
     from app.services.capability_service import user_can
+
+    if get_render_context().get("world") == "portal":
+        return []
 
     buttons = []
     for button in widget.get("buttons", []):

@@ -274,6 +274,25 @@ def published_page(secure_code):
     if isinstance(page.layout_json, dict) and page.layout_json.get('ir_version') == 3:
         from app.pageir import PageIrRenderError, render_page_ir_full
 
+        sub_sc = request.args.get('sub', '').strip()
+        ssp_sc = request.args.get('ssp', '').strip()
+        if sub_sc and ssp_sc:
+            try:
+                from modules.nocode_builder.web import (
+                    _build_sub_system_context,
+                    _check_site_map_node_access,
+                    _deny_and_logout,
+                )
+            except ImportError:
+                abort(404)
+            ctx = _build_sub_system_context(sub_sc, ssp_sc)
+            if ctx is None:
+                _deny_and_logout('pageir_v3_page', secure_code, sub_sc)
+                return redirect(url_for('auth.login'))
+            if not _check_site_map_node_access(sub_sc, secure_code, current_user):
+                _deny_and_logout('pageir_v3_sitemap', secure_code, sub_sc)
+                return redirect(url_for('auth.login'))
+
         try:
             rendered = render_page_ir_full(page.layout_json)
         except PageIrRenderError:

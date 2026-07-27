@@ -248,8 +248,35 @@ can(permission, ctx) -> bool
 | 平台 | 資料面 | 權限面 |
 |---|---|---|
 | BeakPlatform | ResourceGateway + EGRESS-01 | 四層防線全套（雙鑰匙 / can() / 裁剪 / egress） |
-| NoCode 子系統 | **僅**子系統專屬 SQLite（單向橋接寫入）；母系統權限**不進入** | SQLite 內帳號體系（細節於 NoCode_Builder 重寫時另議） |
+| NoCode 子系統 | **僅**子系統專屬 SQLite（單向橋接寫入）；母系統權限**不進入** | SQLite 內帳號體系（portal_users / portal_roles） |
 | BeakForge (SRS) | fixture 假資料，不接後端 | 全通過（純預覽）；RD 階段由目標專案 resolver 接手 |
+
+#### 6.3.1 NoCode 子系統 resolver（P4 定案，2026-07-28）
+
+- **兩個世界互斥**：渲染語境（render context）分 `platform` / `portal` 兩種，
+  由渲染入口路由在 server-side 設定，IR 不可指定。
+  - `platform` 語境**只准**解析無前綴資源（`user` 等平台註冊資源），
+    解析 `portal:` 資源一律 None → fail-closed（平台登入不得讀子系統 SQLite）。
+  - `portal` 語境**只准**解析 `portal:` 前綴資源，
+    解析平台資源一律 None → fail-closed（母系統資料不進入 portal）。
+  - 一份 IR 頁面天然屬於單一世界，不存在混血頁。
+- **`portal:` 前綴資源**：`{"resource": "portal:<DcCrudView.secure_code>"}`，
+  registry 採 prefix 型 provider（先例：egress `register_accessor_prefix`）。
+  binding_slug pattern 為此放寬允許 `portal:` + secure_code 字元集
+  （唯一允許的前綴例外；secure_code 非人類可讀 slug 是已知取捨，
+  設計器以下拉選單呈現 view 名稱）。
+- **欄位白名單來源**：`DcCrudView.columns_config` 的 visible 欄位
+  （沿用 sqlite_crud_service 既有安全配置層）；`binding.fields` ⊄ 白名單 → 拒絕。
+- **EGRESS 取捨**：SQLite 資料無 EGRESS 政策（EGRESS-01 屬母系統 PostgreSQL 資源），
+  portal resolver 的 `egress_resource` 一律 `None`，欄位控制**僅**靠
+  columns_config 白名單。此為已知取捨，不新增 INV。
+- **語境注入**：portal 語境 ctx 含 `sub_system_sc`（由 portal path_id 於 server-side
+  解析，**禁止**採用 client 提供的 sub_system_sc 參數/header）與 portal session
+  （portal_auth_service，與 Flask-Login 完全分離）。
+- **portal 渲染入口**：`/public/portal/<path_id>/p/<page_layout_sc>`，
+  要求 portal session（或子系統允許匿名時自動 GUEST）；頁面必須
+  `status='published'`、`ir_version=3`、且經 DcSubSystemPage 掛載於該子系統
+  並通過 visible_roles 檢查。`/p/` 維持平台世界專用。
 
 ---
 

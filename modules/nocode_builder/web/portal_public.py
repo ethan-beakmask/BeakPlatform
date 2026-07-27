@@ -93,6 +93,84 @@ def portal_entry(path_id):
     return redirect(url_for('nocode_public_portal.portal_login', path_id=path_id))
 
 
+@public_portal_bp.route('/<path_id>/p/<page_sc>', endpoint='portal_page')
+@public_route
+def portal_page(path_id, page_sc):
+    """Public Page IR v3 portal page."""
+    from app.pageir import PageIrRenderError, render_page_ir_full
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.security.resource_gateway import ResourceGateway
+    from ..models import DcPageLayout, DcSubSystemPage
+    from ..services.portal_auth_service import (
+        create_guest_session,
+        get_current_portal_user,
+        is_anonymous_allowed,
+    )
+    from . import _page_ir_title
+
+    ss = _resolve_sub_system(path_id)
+
+    portal_user = get_current_portal_user(ss.secure_code)
+    if not portal_user:
+        if is_anonymous_allowed(ss.secure_code):
+            portal_user = create_guest_session(ss.secure_code)
+        else:
+            return redirect(url_for('nocode_public_portal.portal_login', path_id=path_id))
+
+    page = ResourceGateway.get(
+        DcPageLayout,
+        page_sc,
+        raise_on_not_found=False,
+        check_permission=False,
+    )
+    if (
+        not page
+        or page.is_deleted
+        or page.status != 'published'
+        or not isinstance(page.layout_json, dict)
+        or page.layout_json.get('ir_version') != 3
+    ):
+        abort(404)
+
+    mount = DcSubSystemPage.query.filter_by(
+        sub_system_secure_code=ss.secure_code,
+        page_layout_secure_code=page_sc,
+        is_deleted=False,
+        is_active=True,
+    ).first()
+    if not mount or not _portal_role_allowed(mount.visible_roles, portal_user):
+        abort(404)
+
+    try:
+        set_render_context('portal', sub_system_sc=ss.secure_code, portal_user=portal_user)
+        rendered = render_page_ir_full(page.layout_json)
+    except PageIrRenderError:
+        logger.exception('Portal Page IR v3 render failed: page=%s sub_system=%s', page_sc, ss.secure_code)
+        return render_template('pageir/page_error.html'), 422
+    finally:
+        clear_render_context()
+
+    return render_template(
+        'modules/nocode_builder/portal_page_v3.html',
+        page=page,
+        page_title=_page_ir_title(page),
+        body_html=rendered['html'],
+        has_form=rendered['has_form'],
+        sub_system_name=ss.name,
+        sub_system_icon=ss.icon or '',
+        path_id=path_id,
+        portal_user=portal_user,
+    )
+
+
+def _portal_role_allowed(visible_roles, portal_user: dict) -> bool:
+    roles = visible_roles or []
+    if '*' in roles:
+        return True
+    user_roles = portal_user.get('roles') or ['GUEST']
+    return bool(user_roles and user_roles[0] in roles)
+
+
 def _render_portal(ss, portal_user: dict, path_id: str):
     """渲染 portal 主頁"""
     return render_template(
