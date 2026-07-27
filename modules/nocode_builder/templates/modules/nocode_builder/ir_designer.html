@@ -122,11 +122,20 @@
                         <div class="ird-section">
                             <div class="ird-subtitle">{{ _('資料綁定') }}</div>
                             <div class="ird-field">
+                                <label>{{ _('資料範圍') }}</label>
+                                <select x-model="dataScope" @change="onScopeChange()">
+                                    <option value="">{{ _('平台資源') }}</option>
+                                    <template x-for="ss in subSystems" :key="ss.secure_code">
+                                        <option :value="ss.secure_code" x-text="ss.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="ird-field">
                                 <label>{{ _('資源') }}</label>
                                 <select x-model="selectedWidget.binding.resource" @change="onResourceChange()">
                                     <option value="">{{ _('-- 請選擇 --') }}</option>
                                     <template x-for="res in meta.resources" :key="res.code">
-                                        <option :value="res.code" x-text="res.code"></option>
+                                        <option :value="res.code" x-text="formatResourceOption(res)"></option>
                                     </template>
                                 </select>
                             </div>

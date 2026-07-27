@@ -30,6 +30,8 @@ function irDesigner() {
         pageTitleZh: '',
         doc: { ir_version: 3, page: { id: 'page', title_i18n: { 'zh-TW': '' }, widgets: [] } },
         meta: { resources: [], actions: [] },
+        subSystems: [],
+        dataScope: '',
         selectedId: '',
         activeWidget: null,
         errors: [],
@@ -50,7 +52,8 @@ function irDesigner() {
         ],
 
         async init() {
-            await Promise.all([this.loadPage(), this.loadMeta()]);
+            await Promise.all([this.loadPage(), this.loadSubSystems(), this.loadMeta(this.dataScope)]);
+            await this.detectPortalScope();
             this.syncCounters();
             this.savedSnapshot = this.snapshot();
         },
@@ -66,6 +69,7 @@ function irDesigner() {
             const layout = data.data.layout_json || {};
             if (layout.ir_version === 3 && layout.page) {
                 this.doc = clone(layout);
+                this.normalizeWidgets(this.doc.page.widgets || []);
             } else {
                 this.doc = {
                     ir_version: 3,
@@ -79,19 +83,55 @@ function irDesigner() {
             this.pageTitleZh = this.doc.page.title_i18n['zh-TW'] || this.pageName || '';
         },
 
-        async loadMeta() {
+        normalizeWidgets(widgets) {
+            for (const widget of widgets) {
+                if (widget.type === 'table' && !widget.default_sort) {
+                    const first = (widget.binding && widget.binding.fields && widget.binding.fields[0]) || '';
+                    widget.default_sort = { field: first, dir: 'asc' };
+                }
+                if (widget.type === 'layout') this.normalizeWidgets(widget.children || []);
+            }
+        },
+
+        async loadMeta(scope = '') {
             try {
-                const res = await fetch(`${BP}/api/pageir/meta`);
+                const url = scope
+                    ? `${BP}/api/pageir/meta?sub_system=${encodeURIComponent(scope)}`
+                    : `${BP}/api/pageir/meta`;
+                const res = await fetch(url);
                 const data = await res.json();
                 if (data.success) {
                     this.meta = {
-                        resources: data.resources || [],
+                        resources: scope ? (data.portal_resources || []) : (data.resources || []),
                         actions: data.actions || [],
                     };
                 }
             } catch (err) {
                 this.errors = [{ path: '', message: tr('Meta 載入失敗') }];
             }
+        },
+
+        async loadSubSystems() {
+            try {
+                const res = await fetch(`${BP}/api/nocode-builder/sub-systems`);
+                const data = await res.json();
+                if (!data.success) {
+                    this.subSystems = [];
+                    console.warn('[IR Designer] sub-systems load failed:', data.error || data);
+                    return;
+                }
+                this.subSystems = (data.data || []).map((item) => ({
+                    secure_code: item.secure_code,
+                    name: item.name,
+                })).filter((item) => item.secure_code);
+            } catch (err) {
+                this.subSystems = [];
+                console.warn('[IR Designer] sub-systems load failed:', err);
+            }
+        },
+
+        async onScopeChange() {
+            await this.loadMeta(this.dataScope);
         },
 
         get selectedWidget() {
@@ -132,6 +172,47 @@ function irDesigner() {
 
         get selectedResourceFields() {
             return (this.selectedResource && this.selectedResource.fields) || [];
+        },
+
+        formatResourceOption(res) {
+            if (!res) return '';
+            return res.name ? `${res.name} (${res.code})` : res.code;
+        },
+
+        firstPortalBindingResource(widgets) {
+            const list = widgets || this.doc.page.widgets || [];
+            for (const widget of list) {
+                const resource = widget.binding && widget.binding.resource;
+                if (resource && resource.indexOf('portal:') === 0) return resource;
+                if (widget.type === 'layout') {
+                    const found = this.firstPortalBindingResource(widget.children || []);
+                    if (found) return found;
+                }
+            }
+            return '';
+        },
+
+        async detectPortalScope() {
+            const portalCode = this.firstPortalBindingResource();
+            if (!portalCode || !this.subSystems.length) return;
+            for (const subSystem of this.subSystems.slice(0, 10)) {
+                try {
+                    const res = await fetch(`${BP}/api/pageir/meta?sub_system=${encodeURIComponent(subSystem.secure_code)}`);
+                    const data = await res.json();
+                    if (!data.success) continue;
+                    const resources = data.portal_resources || [];
+                    if (resources.some((resource) => resource.code === portalCode)) {
+                        this.dataScope = subSystem.secure_code;
+                        this.meta = {
+                            resources,
+                            actions: data.actions || [],
+                        };
+                        return;
+                    }
+                } catch (err) {
+                    console.warn('[IR Designer] portal scope detect failed:', err);
+                }
+            }
         },
 
         findWidget(id, widgets) {

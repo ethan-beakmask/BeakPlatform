@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-27 22:45+0800\n"
+"POT-Creation-Date: 2026-07-28 01:48+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -2137,7 +2137,7 @@ msgstr "Passwords match"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:140
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:388
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:423
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:274
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:283
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:254
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:323
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:490
@@ -2234,6 +2234,7 @@ msgstr "Cancel"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:42
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:28
+#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:39
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:66
 #: app/templates/auth/change_password.html:86
 #: app/templates/layouts/base.html:87
@@ -3354,7 +3355,7 @@ msgstr "Manager role"
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:113
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:36
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:112
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:161
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:170
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:374
 #: app/templates/pages/access_center/_tab_roles.html:172
 #: app/templates/pages/approval_categories/create.html:67
@@ -4773,7 +4774,7 @@ msgid "展開"
 msgstr "Expand"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:57
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:188
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:197
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:110
 #: app/templates/pages/admin/module_list.html:102
 #: app/templates/pages/job_titles/create.html:68
@@ -6755,7 +6756,7 @@ msgid "歸屬群組 *"
 msgstr "Belonging group *"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:356
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:127
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:136
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:88
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:160
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:197
@@ -14919,67 +14920,76 @@ msgid "資料綁定"
 msgstr "Data Binding"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:125
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:390
+msgid "資料範圍"
+msgstr "Data scope"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:127
+msgid "平台資源"
+msgstr "Platform resources"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:134
 msgid "資源"
 msgstr "Resource"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:134
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:143
 msgid "視圖"
 msgstr "View"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:383
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:151
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:199
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:160
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:208
 msgid "欄位"
 msgstr "field"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:165
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:212
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:174
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:221
 msgid "新增欄位"
 msgstr "Add Field"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:167
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:176
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:96
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:753
 msgid "每頁筆數"
 msgstr "Rows per page"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:171
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:180
 msgid "預設排序欄位"
 msgstr "Default Sort Field"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:179
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:188
 msgid "排序方向"
 msgstr "Sort Direction"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:186
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:195
 msgid "列動作"
 msgstr "Row Actions"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:214
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:223
 msgid "版面欄數"
 msgstr "Layout Columns"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:222
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:231
 msgid "按鈕"
 msgstr "Buttons"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:243
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:252
 msgid "新增按鈕"
 msgstr "Add Button"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:249
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:258
 msgid "編輯表單"
 msgstr "Edit Form"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:251
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:260
 msgid "送出動作"
 msgstr "Submit Action"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:269
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:278
 msgid "表單編輯"
 msgstr "Form Editor"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:275
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:284
 msgid "儲存表單"
 msgstr "Save Form"
 
@@ -15553,10 +15563,6 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:373
 msgid "使用政策組:"
 msgstr "Using policy group:"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:390
-msgid "資料範圍"
-msgstr "Data scope"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:392
 msgid "起始網頁"
