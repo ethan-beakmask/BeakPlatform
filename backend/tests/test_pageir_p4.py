@@ -226,3 +226,53 @@ def test_portal_binding_fields_outside_resolver_whitelist_fails_closed(pir_app):
         with pytest.raises(PageIrRenderError):
             render_page_ir(doc)
         clear_render_context()
+
+
+def test_portal_resolver_hard_excludes_sensitive_columns(monkeypatch):
+    from modules.nocode_builder.services import pageir_portal_resources as portal_resources
+
+    view = SimpleNamespace(
+        secure_code="View5678",
+        name="Members",
+        org_secure_code="org_1",
+        data_source="portal",
+        table_name="portal_users",
+        columns_config=[
+            {"column": "username", "visible": True, "sort_order": 1},
+            {"column": "password_hash", "visible": True, "sort_order": 2},
+            {"column": "reset_token", "visible": True, "sort_order": 3},
+            {"column": "api_key", "visible": True, "sort_order": 4},
+            {"column": "display_name", "visible": True, "sort_order": 5},
+        ],
+        soft_delete_column=None,
+        fixed_filters={},
+        default_sort_column="username",
+        default_sort_dir="ASC",
+    )
+    sub_system = SimpleNamespace(secure_code="ss_123", org_secure_code="org_1")
+
+    class FakeQuery:
+        def __init__(self, value):
+            self.value = value
+
+        def filter_by(self, **kwargs):
+            return self
+
+        def first(self):
+            return self.value
+
+    monkeypatch.setattr(portal_resources, "DcCrudView", SimpleNamespace(query=FakeQuery(view)))
+    monkeypatch.setattr(portal_resources, "DcSubSystem", SimpleNamespace(query=FakeQuery(sub_system)))
+
+    config = portal_resources._resolve_portal_resource(
+        "portal:View5678",
+        {"world": "portal", "sub_system_sc": "ss_123"},
+    )
+    assert config is not None
+    # columns_config 標 visible 也擋：password_hash / reset_token / api_key 硬排除
+    assert config["fields"] == ["username", "display_name"]
+
+    # lister 與 provider 共用同一 helper，直接驗 helper 的大小寫與 token 涵蓋
+    assert portal_resources._strip_sensitive_columns(
+        ["username", "PASSWORD_HASH", "session_token", "salt", "email"]
+    ) == ["username", "email"]

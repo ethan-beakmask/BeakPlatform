@@ -14,6 +14,20 @@ from .sqlite_crud_service import (
 )
 
 
+# 敏感欄位硬排除：不信任 columns_config 對這類欄位的 visible 設定（2026-07-28 用戶裁決）
+_SENSITIVE_COLUMN_TOKENS = (
+    'password', 'passwd', 'pw_hash', 'secret', 'token', 'salt',
+    'api_key', 'apikey', 'credential', 'private_key',
+)
+
+
+def _strip_sensitive_columns(columns: list[str]) -> list[str]:
+    return [
+        col for col in columns
+        if not any(tok in (col or '').lower() for tok in _SENSITIVE_COLUMN_TOKENS)
+    ]
+
+
 def init_portal_pageir_resources() -> None:
     """Register portal-prefixed Page IR resources."""
     register_resource_provider("portal", _resolve_portal_resource)
@@ -45,7 +59,7 @@ def _resolve_portal_resource(code: str, ctx: dict) -> dict | None:
     if not sub_system or view.org_secure_code != sub_system.org_secure_code:
         return None
 
-    fields = _get_visible_columns(view)
+    fields = _strip_sensitive_columns(_get_visible_columns(view))
 
     def fetch_list(fields_arg, page, page_size, sort_field, sort_dir):
         return _fetch_list(view, sub_sc, fields, fields_arg, page, page_size, sort_field, sort_dir)
@@ -132,7 +146,7 @@ def _list_portal_resources(sub_system_sc: str) -> list[dict]:
             "code": f"portal:{view.secure_code}",
             "name": view.name,
             "views": ["list", "detail"],
-            "fields": _get_visible_columns(view),
+            "fields": _strip_sensitive_columns(_get_visible_columns(view)),
             "egress_resource": None,
         })
     return resources

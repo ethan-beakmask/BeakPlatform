@@ -270,6 +270,11 @@ can(permission, ctx) -> bool
 - **EGRESS 取捨**：SQLite 資料無 EGRESS 政策（EGRESS-01 屬母系統 PostgreSQL 資源），
   portal resolver 的 `egress_resource` 一律 `None`，欄位控制**僅**靠
   columns_config 白名單。此為已知取捨，不新增 INV。
+- **敏感欄位硬排除**（2026-07-28 用戶裁決）：欄名含
+  `password / passwd / pw_hash / secret / token / salt / api_key / apikey /
+  credential / private_key`（不分大小寫、子字串比對）者，resolver 層無條件
+  剔出白名單——即使 columns_config 標 visible 也擋。設計器 meta 與渲染兩端
+  共用同一 helper（`_strip_sensitive_columns`）。誤傷寧可偏嚴（fail-closed 傾向）。
 - **語境注入**：portal 語境 ctx 含 `sub_system_sc`（由 portal path_id 於 server-side
   解析，**禁止**採用 client 提供的 sub_system_sc 參數/header）與 portal session
   （portal_auth_service，與 Flask-Login 完全分離）。
