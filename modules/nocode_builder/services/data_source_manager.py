@@ -208,6 +208,90 @@ VALUES
     ('PUBLIC_USER', '註冊用戶', '已註冊的公開用戶', 10);
 """
 
+_PORTAL_SCHEMA_V2 = """
+CREATE TABLE IF NOT EXISTS portal_groups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS portal_levels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    rank INTEGER NOT NULL,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+INSERT OR IGNORE INTO portal_groups (code, name, display_order)
+VALUES ('GENERAL', '一般', 0);
+
+INSERT OR IGNORE INTO portal_levels (code, name, rank, display_order)
+VALUES
+    ('GUEST', '訪客', 0, 0),
+    ('MEMBER', '會員', 10, 10),
+    ('STAFF', '幹部', 50, 50),
+    ('ADMIN', '管理', 90, 90);
+"""
+
+
+def _execute_schema(conn, schema: str):
+    """逐句執行 SQLite schema script。"""
+    for stmt in schema.strip().split(';'):
+        stmt = stmt.strip()
+        if stmt:
+            conn.execute(text(stmt))
+
+
+def _table_columns(conn, table_name: str) -> set[str]:
+    rows = conn.execute(text(f'PRAGMA table_info({table_name})')).mappings().all()
+    return {row['name'] for row in rows}
+
+
+def ensure_portal_schema(sub_system_sc: str):
+    """
+    確保 portal.db schema 已升級至最新版本。
+
+    不負責建立 DB；portal.db 不存在時維持 FileNotFoundError。
+    """
+    portal_path = _get_db_path(sub_system_sc, 'portal')
+    if not portal_path.exists():
+        raise FileNotFoundError(
+            _('SQLite 檔案不存在: %(path)s (子系統 %(sc)s 可能尚未初始化)',
+              path=portal_path, sc=sub_system_sc)
+        )
+
+    engine = create_engine(
+        f'sqlite:///{portal_path}',
+        poolclass=NullPool,
+        connect_args={'check_same_thread': False},
+    )
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("PRAGMA journal_mode=WAL"))
+            conn.execute(text("PRAGMA foreign_keys=ON"))
+            conn.execute(text("PRAGMA busy_timeout=5000"))
+            version = conn.execute(text('PRAGMA user_version')).scalar() or 0
+            if version >= 2:
+                conn.commit()
+                return
+
+            _execute_schema(conn, _PORTAL_SCHEMA_V2)
+            columns = _table_columns(conn, 'portal_users')
+            if 'group_code' not in columns:
+                conn.execute(text('ALTER TABLE portal_users ADD COLUMN group_code TEXT DEFAULT NULL'))
+            if 'level_code' not in columns:
+                conn.execute(text('ALTER TABLE portal_users ADD COLUMN level_code TEXT DEFAULT NULL'))
+            conn.execute(text('PRAGMA user_version = 2'))
+            conn.commit()
+    finally:
+        engine.dispose()
+
 
 def init_portal_sqlite(sub_system_sc: str) -> Path:
     """
@@ -238,12 +322,10 @@ def init_portal_sqlite(sub_system_sc: str) -> Path:
         conn.execute(text("PRAGMA journal_mode=WAL"))
         conn.execute(text("PRAGMA foreign_keys=ON"))
         conn.execute(text("PRAGMA busy_timeout=5000"))
-        for stmt in _PORTAL_SCHEMA.strip().split(';'):
-            stmt = stmt.strip()
-            if stmt:
-                conn.execute(text(stmt))
+        _execute_schema(conn, _PORTAL_SCHEMA)
         conn.commit()
     engine.dispose()
+    ensure_portal_schema(sub_system_sc)
 
     # portal_data.db — 公開資料 (空, 只建檔 + PRAGMA)
     data_path = portal_dir / 'portal_data.db'
