@@ -1,0 +1,15 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pageir.css') }}">
+{% endblock %}
+{% block content %}
+<div class="pir-page">
+    <h1 class="pir-page-title">{{ page_title }}</h1>
+    <div class="pir-body">{{ body_html|safe }}</div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pageir.js') }}"></script>
+<script>BkEgress.bind();</script>
+{% endblock %}

@@ -106,6 +106,10 @@ def create_app(config_name: str = None) -> Flask:
     # Register static asset cache-busting
     register_static_cache_busting(app)
 
+    # Register Page IR platform resources
+    from .pageir.platform_resources import init_pageir_resources
+    init_pageir_resources(app)
+
     # Load modules (after blueprints and before returning)
     from .module_loader import init_module_loader
     init_module_loader(app)

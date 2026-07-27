@@ -1,0 +1,11 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('頁面無法顯示') }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pageir.css') }}">
+{% endblock %}
+{% block content %}
+<div class="pir-page pir-error">
+    <h1 class="pir-page-title">{{ _('頁面無法顯示') }}</h1>
+    <p>{{ _('頁面定義無效或引用了未註冊的資源') }}</p>
+</div>
+{% endblock %}

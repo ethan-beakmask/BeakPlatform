@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-27 21:47+0800\n"
+"POT-Creation-Date: 2026-07-27 22:19+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -16,11 +16,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: app/__init__.py:180
+#: app/__init__.py:184
 msgid "滑鼠停留以揭示"
 msgstr "Hover to reveal"
 
-#: app/__init__.py:185 app/templates/pages/admin/numbering/list.html:146
+#: app/__init__.py:189 app/templates/pages/admin/numbering/list.html:146
 #: app/templates/pages/delegations/view.html:52
 #: app/templates/pages/users/view.html:65
 #: app/templates/pages/users/view.html:73
@@ -150,7 +150,7 @@ msgstr "SMTP authentication settings saved"
 msgid "無權限寫入 Auth 檔案，請檢查目錄權限"
 msgstr "No permission to write the Auth file. Please check directory permissions"
 
-#: app/api/_ss_emailrelay.py:236 app/web/main.py:193
+#: app/api/_ss_emailrelay.py:236 app/web/main.py:194
 #, python-format
 msgid "儲存失敗: %(error)s"
 msgstr "Save failed: %(error)s"
@@ -2431,6 +2431,99 @@ msgstr "Host settings"
 msgid "登入系統"
 msgstr "Log in"
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:95
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:41
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:51
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:117
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:226
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:144
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:116
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:189
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:234
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:303
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:350
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:43
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:57
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:44
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:117
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:212
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:81
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:92
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:250
+#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:48
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:54
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
+#: app/templates/pageir/_page_ir.html:24
+#: app/templates/pages/access_center/_tab_roles.html:59
+#: app/templates/pages/admin/_settings_recipients_section.html:32
+#: app/templates/pages/admin/_settings_smtp_section.html:33
+#: app/templates/pages/admin/_settings_telegram_section.html:32
+#: app/templates/pages/admin/module_list.html:86
+#: app/templates/pages/admin/numbering/list.html:122
+#: app/templates/pages/admin/org-admins/list.html:44
+#: app/templates/pages/admin/time/holidays.html:91
+#: app/templates/pages/admin/time/schedules.html:34
+#: app/templates/pages/delegations/list.html:26
+#: app/templates/pages/external-users/edit.html:136
+#: app/templates/pages/external-users/list.html:38
+#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:36
+#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:36
+#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:36
+#: app/templates/pages/modules/list.html:86
+#: app/templates/pages/organizations/admins.html:51
+#: app/templates/pages/organizations/list.html:266
+#: app/templates/pages/positions/list.html:25
+#: app/templates/pages/security/api_keys.html:34
+#: app/templates/pages/units/list.html:29
+#: app/templates/pages/users/list.html:44
+msgid "操作"
+msgstr "Actions"
+
+#: app/templates/pageir/_page_ir.html:51
+msgid "沒有資料"
+msgstr "No data"
+
+#: app/templates/pageir/_page_ir.html:56
+#: app/templates/pages/access_center/_tab_health.html:77
+msgid "總數"
+msgstr "Total"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:85
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:119
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:312
+#: app/templates/pageir/_page_ir.html:57
+#: app/templates/pages/access_center/_tab_accounts.html:121
+#: app/templates/pages/users/list.html:89
+msgid "上一頁"
+msgstr "Previous"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:344
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
+#: app/templates/pageir/_page_ir.html:59
+#: app/templates/pages/access_center/_tab_accounts.html:124
+#: app/templates/pages/users/list.html:93
+msgid "下一頁"
+msgstr "Next"
+
+#: app/templates/pageir/_page_ir.html:81
+msgid "請選擇一筆資料"
+msgstr "Select a record"
+
+#: app/templates/pageir/_page_ir.html:91
+msgid "表單元件將於後續版本啟用"
+msgstr "Form widget will be enabled in a later version"
+
+#: app/templates/pageir/page_error.html:2
+#: app/templates/pageir/page_error.html:8
+msgid "頁面無法顯示"
+msgstr "Page cannot be displayed"
+
+#: app/templates/pageir/page_error.html:9
+msgid "頁面定義無效或引用了未註冊的資源"
+msgstr "Page definition is invalid or references unregistered resources"
+
 #: app/templates/pages/change_password.html:7
 msgid "返回個人設定"
 msgstr "Return to personal settings"
@@ -2835,23 +2928,6 @@ msgstr "Remove role"
 msgid "指派角色"
 msgstr "Assign Role"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:85
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:119
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:312
-#: app/templates/pages/access_center/_tab_accounts.html:121
-#: app/templates/pages/users/list.html:89
-msgid "上一頁"
-msgstr "Previous"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:344
-#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
-#: app/templates/pages/access_center/_tab_accounts.html:124
-#: app/templates/pages/users/list.html:93
-msgid "下一頁"
-msgstr "Next"
-
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:794
 #: app/templates/pages/access_center/_tab_accounts.html:144
 #: app/templates/pages/access_center/_tab_health.html:108
@@ -3020,10 +3096,6 @@ msgstr "Clear"
 msgid "偵測中"
 msgstr "Detecting"
 
-#: app/templates/pages/access_center/_tab_health.html:77
-msgid "總數"
-msgstr "Total"
-
 #: app/templates/pages/access_center/_tab_health.html:78
 msgid "錯誤"
 msgstr "Errors"
@@ -3189,53 +3261,6 @@ msgstr "Holders"
 #: app/web/org_admin_rescue.py:96
 msgid "啟用"
 msgstr "Active"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:95
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:41
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:51
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:117
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:226
-#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:144
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:116
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:189
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:234
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:303
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:350
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:43
-#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:57
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:44
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:117
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:212
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:81
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:92
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:250
-#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:48
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:54
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
-#: app/templates/pages/access_center/_tab_roles.html:59
-#: app/templates/pages/admin/_settings_recipients_section.html:32
-#: app/templates/pages/admin/_settings_smtp_section.html:33
-#: app/templates/pages/admin/_settings_telegram_section.html:32
-#: app/templates/pages/admin/module_list.html:86
-#: app/templates/pages/admin/numbering/list.html:122
-#: app/templates/pages/admin/org-admins/list.html:44
-#: app/templates/pages/admin/time/holidays.html:91
-#: app/templates/pages/admin/time/schedules.html:34
-#: app/templates/pages/delegations/list.html:26
-#: app/templates/pages/external-users/edit.html:136
-#: app/templates/pages/external-users/list.html:38
-#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:36
-#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:36
-#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:36
-#: app/templates/pages/modules/list.html:86
-#: app/templates/pages/organizations/admins.html:51
-#: app/templates/pages/organizations/list.html:266
-#: app/templates/pages/positions/list.html:25
-#: app/templates/pages/security/api_keys.html:34
-#: app/templates/pages/units/list.html:29
-#: app/templates/pages/users/list.html:44
-msgid "操作"
-msgstr "Actions"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:53
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:67
@@ -11988,7 +12013,7 @@ msgstr "External vendor %(name)s %(status)s%(detail)s"
 msgid "已刪除外部廠商 %(name)s"
 msgstr "External vendor %(name)s deleted"
 
-#: app/web/external_users.py:669 app/web/main.py:223
+#: app/web/external_users.py:669 app/web/main.py:224
 #: app/web/org_admin_rescue.py:136 app/web/org_admins.py:577
 #: app/web/users.py:738
 msgid "請輸入新密碼"
@@ -12201,23 +12226,23 @@ msgstr ""
 msgid "已刪除職稱 %(name)s"
 msgstr "Job title %(name)s deleted"
 
-#: app/web/main.py:188
+#: app/web/main.py:189
 msgid "個人設定已儲存"
 msgstr "Personal settings saved"
 
-#: app/web/main.py:221
+#: app/web/main.py:222
 msgid "目前密碼不正確"
 msgstr "Current password is incorrect"
 
-#: app/web/main.py:228
+#: app/web/main.py:229
 msgid "新密碼與確認密碼不一致"
 msgstr "New password and confirmation do not match"
 
-#: app/web/main.py:236
+#: app/web/main.py:237
 msgid "密碼已變更成功"
 msgstr "Password changed successfully"
 
-#: app/web/main.py:241 app/web/profile.py:66
+#: app/web/main.py:242 app/web/profile.py:66
 #, python-format
 msgid "變更失敗: %(error)s"
 msgstr "Change failed: %(error)s"

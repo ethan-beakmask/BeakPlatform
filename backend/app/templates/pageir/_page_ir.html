@@ -1,0 +1,97 @@
+{% macro render_widget(widget) %}
+{% if widget.type == 'layout' %}
+<div id="{{ widget.id }}" class="pir-layout" style="grid-template-columns: repeat({{ widget.columns }}, 1fr); gap: {{ widget.gap }}px">
+    {% for child in widget.children %}
+    {{ render_widget(child) }}
+    {% endfor %}
+</div>
+{% elif widget.type == 'text' %}
+<{{ widget.level }} id="{{ widget.id }}" class="pir-text pir-text-{{ widget.level }}">{{ widget.content }}</{{ widget.level }}>
+{% elif widget.type == 'table' %}
+<div id="{{ widget.id }}" class="pir-table-wrap">
+    <table class="pir-table">
+        <thead>
+            <tr>
+                {% for column in widget.columns %}
+                <th{% if column.sortable %} class="pir-sortable{% if widget.sort_field == column.field %} pir-sort-active{% endif %}"{% endif %}>
+                    {% if column.sortable %}
+                    <a href="{{ pir_sort_url(widget.id, column.field, widget.sort_field, widget.sort_dir) }}">{{ column.label }}<span class="pir-sort-indicator">{% if widget.sort_field == column.field and widget.sort_dir == 'asc' %}▲{% elif widget.sort_field == column.field %}▼{% else %}↕{% endif %}</span></a>
+                    {% else %}
+                    {{ column.label }}
+                    {% endif %}
+                </th>
+                {% endfor %}
+                {% if widget.row_actions %}<th>{{ _('操作') }}</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in widget.rows %}
+            <tr>
+                {% for column in widget.columns %}
+                {% set value = row.get(column.field) %}
+                <td>
+                    {% if widget.egress_resource %}
+                    {{ egress_value(widget.egress_resource, 'list', row.get('_sc'), column.field, value|tz_format('%Y-%m-%d %H:%M') if value is datetime else value) }}
+                    {% elif value is datetime %}
+                    {{ value|tz_format('%Y-%m-%d %H:%M') }}
+                    {% else %}
+                    {{ value }}
+                    {% endif %}
+                </td>
+                {% endfor %}
+                {% if widget.row_actions %}
+                <td class="pir-actions-cell">
+                    {% for button in widget.row_actions %}
+                    <button type="button" class="pir-btn pir-btn-{{ button.style }}" data-pir-url="{{ pir_action_url(button.url, row.get('_sc')) }}" data-pir-method="{{ button.method }}" data-pir-confirm="{{ 'true' if button.confirm else 'false' }}">{{ button.label }}</button>
+                    {% endfor %}
+                </td>
+                {% endif %}
+            </tr>
+            {% else %}
+            <tr><td colspan="{{ widget.columns|length + (1 if widget.row_actions else 0) }}" class="pir-empty">{{ _('沒有資料') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="pir-pagination">
+        <span>{{ _('總數') }}: {{ widget.total }}</span>
+        {% if widget.prev_url %}<a href="{{ widget.prev_url }}">{{ _('上一頁') }}</a>{% endif %}
+        <span>{{ widget.page }} / {{ widget.pages }}</span>
+        {% if widget.next_url %}<a href="{{ widget.next_url }}">{{ _('下一頁') }}</a>{% endif %}
+    </div>
+</div>
+{% elif widget.type == 'detail' %}
+<div id="{{ widget.id }}" class="pir-detail" style="grid-template-columns: repeat({{ widget.layout_columns }}, 1fr)">
+    {% if widget.record %}
+    {% for field in widget.fields %}
+    {% set value = widget.record.get(field.field) %}
+    <div class="pir-detail-item">
+        <div class="pir-detail-label">{{ field.label }}</div>
+        <div class="pir-detail-value">
+            {% if widget.egress_resource %}
+            {{ egress_value(widget.egress_resource, 'detail', widget.record.get('_sc'), field.field, value|tz_format('%Y-%m-%d %H:%M') if value is datetime else value) }}
+            {% elif value is datetime %}
+            {{ value|tz_format('%Y-%m-%d %H:%M') }}
+            {% else %}
+            {{ value }}
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="pir-empty">{{ _('請選擇一筆資料') }}</div>
+    {% endif %}
+</div>
+{% elif widget.type == 'actions' %}
+<div id="{{ widget.id }}" class="pir-actions">
+    {% for button in widget.buttons %}
+    <button type="button" class="pir-btn pir-btn-{{ button.style }}" data-pir-url="{{ button.url }}" data-pir-method="{{ button.method }}" data-pir-confirm="{{ 'true' if button.confirm else 'false' }}">{{ button.label }}</button>
+    {% endfor %}
+</div>
+{% elif widget.type == 'form' %}
+<div id="{{ widget.id }}" class="pir-form-placeholder">{{ _('表單元件將於後續版本啟用') }}</div>
+{% endif %}
+{% endmacro %}
+
+{% for widget in widgets %}
+{{ render_widget(widget) }}
+{% endfor %}

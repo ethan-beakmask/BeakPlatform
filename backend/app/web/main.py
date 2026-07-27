@@ -4,7 +4,8 @@ BeakMask Main Web Routes
 """
 import logging
 from datetime import datetime
-from flask import Blueprint, render_template, redirect, url_for, request, flash, abort
+from flask import Blueprint, g, render_template, redirect, url_for, request, flash, abort
+from flask_babel import get_locale
 from flask_babel import gettext as _
 from flask_login import current_user
 
@@ -270,6 +271,22 @@ def published_page(secure_code):
     if not page or page.is_deleted or page.status != 'published':
         abort(404)
 
+    if isinstance(page.layout_json, dict) and page.layout_json.get('ir_version') == 3:
+        from app.pageir import PageIrRenderError, render_page_ir
+
+        try:
+            body_html = render_page_ir(page.layout_json)
+        except PageIrRenderError:
+            logger.exception('Page IR v3 render failed: page=%s', secure_code)
+            return render_template('pageir/page_error.html'), 422
+
+        return render_template(
+            'pageir/page_v3.html',
+            page=page,
+            page_title=_page_ir_title(page),
+            body_html=body_html,
+        )
+
     # 子系統 context
     sub_sc = request.args.get('sub', '').strip()
     ssp_sc = request.args.get('ssp', '').strip()
@@ -288,3 +305,10 @@ def published_page(secure_code):
         page_name=page.name or '',
         sub_system_context=sub_system_context,
     )
+
+
+def _page_ir_title(page):
+    """依使用者語系選 Page IR 標題。"""
+    title_i18n = (page.layout_json or {}).get('page', {}).get('title_i18n', {})
+    locale = str(getattr(g, 'locale', None) or get_locale() or 'zh-TW')
+    return title_i18n.get(locale) or title_i18n.get('zh-TW') or page.name or ''

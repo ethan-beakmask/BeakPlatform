@@ -1,0 +1,144 @@
+/* Page IR runtime styles. */
+.pir-page {
+    color: var(--color-text);
+}
+
+.pir-page-title {
+    margin: 0 0 16px;
+    color: var(--color-text);
+}
+
+.pir-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.pir-layout {
+    display: grid;
+    align-items: start;
+}
+
+.pir-text {
+    color: var(--color-text);
+}
+
+.pir-table-wrap {
+    overflow-x: auto;
+}
+
+.pir-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+}
+
+.pir-table th,
+.pir-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border: 1px solid var(--color-border);
+}
+
+.pir-table th {
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pir-table th a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+}
+
+.pir-sort-indicator {
+    margin-left: 4px;
+    color: var(--color-text-muted);
+}
+
+.pir-sort-active,
+.pir-sort-active a {
+    color: var(--color-text);
+}
+
+.pir-pagination,
+.pir-actions,
+.pir-actions-cell {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.pir-pagination {
+    justify-content: flex-end;
+    margin-top: 10px;
+    color: var(--color-text-secondary);
+}
+
+.pir-pagination a {
+    color: var(--color-primary);
+}
+
+.pir-btn {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.pir-btn-primary {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-bg-white);
+}
+
+.pir-btn-secondary {
+    color: var(--color-text);
+}
+
+.pir-btn-danger {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.pir-detail {
+    display: grid;
+    gap: 12px;
+}
+
+.pir-detail-item {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+    padding: 10px 12px;
+}
+
+.pir-detail-label {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.pir-detail-value {
+    color: var(--color-text);
+}
+
+.pir-empty,
+.pir-form-placeholder,
+.pir-error {
+    color: var(--color-text-secondary);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    padding: 12px;
+}
+
+@media (max-width: 720px) {
+    .pir-layout,
+    .pir-detail {
+        grid-template-columns: 1fr !important;
+    }
+}
