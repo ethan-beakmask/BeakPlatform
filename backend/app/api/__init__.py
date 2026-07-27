@@ -19,6 +19,7 @@ def register_blueprints(app: Flask) -> None:
     from .modules import modules_bp
     from .pages import pages_bp
     from .system_settings import api_system_settings
+    from .pageir_meta import pageir_meta_bp
 
     # Authentication routes
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -50,6 +51,9 @@ def register_blueprints(app: Flask) -> None:
 
     # Page management
     app.register_blueprint(pages_bp, url_prefix='/api/pages')
+
+    # Page IR designer meta
+    app.register_blueprint(pageir_meta_bp)
 
     # System settings (system admin only)
     app.register_blueprint(api_system_settings)  # already has url_prefix

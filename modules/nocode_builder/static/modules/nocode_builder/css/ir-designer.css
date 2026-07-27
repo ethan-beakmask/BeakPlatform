@@ -1,0 +1,259 @@
+.ird-shell {
+    color: var(--color-text);
+}
+
+.ird-topbar {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+    padding: 12px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+}
+
+.ird-title-field,
+.ird-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ird-title-field label,
+.ird-field label,
+.ird-subtitle {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.ird-title-field input,
+.ird-field input,
+.ird-field select,
+.ird-field textarea,
+.ird-list-item input,
+.ird-list-item select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 8px;
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+
+.ird-field textarea {
+    min-height: 72px;
+    resize: vertical;
+}
+
+.ird-actions,
+.ird-node-actions,
+.ird-modal-actions,
+.ird-canvas-head {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ird-btn,
+.ird-icon-btn,
+.ird-palette-item {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.ird-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 7px 12px;
+    text-decoration: none;
+}
+
+.ird-btn-primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-bg-white);
+}
+
+.ird-icon-btn {
+    width: 28px;
+    height: 28px;
+    line-height: 1;
+}
+
+.ird-errors {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 4px;
+    padding: 8px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-error,
+.ird-hint {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.ird-grid {
+    display: grid;
+    grid-template-columns: 220px minmax(360px, 1fr) 420px;
+    gap: 12px;
+    margin-top: 12px;
+    min-height: calc(100vh - 190px);
+}
+
+.ird-panel {
+    min-width: 0;
+    padding: 12px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    overflow: auto;
+}
+
+.ird-panel h2 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: var(--color-text);
+}
+
+.ird-palette-item {
+    display: flex;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 8px;
+    text-align: left;
+}
+
+.ird-canvas-head {
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.ird-empty {
+    padding: 16px;
+    color: var(--color-text-muted);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-node {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    min-height: 42px;
+    margin-bottom: 6px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+}
+
+.ird-node-selected {
+    border-color: var(--color-primary);
+}
+
+.ird-node-main {
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+}
+
+.ird-node-type {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.ird-node-id {
+    color: var(--color-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ird-prop-body,
+.ird-section {
+    display: grid;
+    gap: 12px;
+}
+
+.ird-section {
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+}
+
+.ird-checks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.ird-checks label {
+    color: var(--color-text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.ird-list-item {
+    display: grid;
+    grid-template-columns: minmax(80px, 1fr);
+    gap: 8px;
+    padding: 8px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: var(--color-bg);
+}
+
+.ird-modal-box {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    width: min(1180px, 96vw);
+    height: min(860px, 92vh);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+}
+
+.ird-modal-head,
+.ird-modal-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.ird-modal-actions {
+    justify-content: flex-end;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 0;
+}
+
+.ird-form-builder {
+    overflow: auto;
+    padding: 12px;
+}
+
+@media (max-width: 1100px) {
+    .ird-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ird-topbar {
+        grid-template-columns: 1fr;
+    }
+}

@@ -149,6 +149,9 @@ AI 幻覺出的屬性在存檔時即被拒絕，不靜默帶病上線。
 
 - `formio_schema` 是**不透明 payload**：IR 驗證器只驗它是 object，不驗內部
   （form.io 版本升級不影響 IR schema）。
+- `submit_action_ref` 是 **L2 action registry 參照**（同 `actions.action_ref` 的 pattern），
+  **不是**頁內 actions widget 的 id——渲染期經 `get_action()` fail-closed 解析
+  （2026-07-27 修訂：P1 初版誤將其列入頁內 dangling_ref 檢查，P3 定案更正）。
 - 執行期沿用 form_workflow 整套既有防線：三態欄位權限伺服器端裁剪
   （`_apply_field_permissions_to_schema()` 模式）、form_data hidden 同步剔除（Forgejo #27 修法）、
   EGRESS `form_node` 語境最終守門。裁剪一律在 server 端、於 IR runtime 吐出 schema 之前完成。

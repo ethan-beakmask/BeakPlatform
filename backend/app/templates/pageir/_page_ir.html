@@ -88,7 +88,8 @@
     {% endfor %}
 </div>
 {% elif widget.type == 'form' %}
-<div id="{{ widget.id }}" class="pir-form-placeholder">{{ _('表單元件將於後續版本啟用') }}</div>
+<div class="pir-form" data-pir-form-id="{{ widget.id }}"{% if widget.submit_url %} data-pir-submit-url="{{ widget.submit_url }}"{% endif %}></div>
+<script type="application/json" data-pir-form-schema="{{ widget.id }}">{{ widget.schema|tojson }}</script>
 {% endif %}
 {% endmacro %}
 

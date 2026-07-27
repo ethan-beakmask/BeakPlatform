@@ -301,6 +301,12 @@ class ModuleLoader:
                     module.web_blueprint = web_module.web_bp
                     self.app.register_blueprint(web_module.web_bp)
                     logger.debug(f"Registered Web blueprint for {module.name}")
+
+                # 註冊 Web 額外 Blueprint（用於短網址或相容性路由）
+                if hasattr(web_module, 'additional_blueprints'):
+                    for bp in web_module.additional_blueprints:
+                        self.app.register_blueprint(bp)
+                        logger.debug(f"Registered additional web blueprint {bp.name} for {module.name}")
             except Exception as e:
                 logger.error(f"Failed to load Web blueprint for {module.name}: {e}")
 

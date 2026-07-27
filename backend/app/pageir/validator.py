@@ -118,8 +118,8 @@ def _semantic_errors(doc: dict[str, Any]) -> list[dict]:
         if widget_type == "detail":
             _check_detail_fields(widget, path, errors)
 
-        if widget_type == "form" and "submit_action_ref" in widget:
-            refs.append((f"{path}.submit_action_ref", widget["submit_action_ref"]))
+        # form.submit_action_ref 是 L2 action registry 參照（渲染期 fail-closed 解析），
+        # 不是頁內 actions widget 參照，故不列入 dangling_ref 檢查。
 
     for path, ref_id in refs:
         if ref_id not in actions_ids:

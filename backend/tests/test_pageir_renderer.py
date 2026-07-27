@@ -184,7 +184,7 @@ def test_actions_permission_and_unregistered_action(pir_app, monkeypatch):
             render_page_ir(action_doc)
 
 
-def test_form_placeholder_does_not_render_schema(pir_app):
+def test_form_renders_runtime_mount_and_schema(pir_app):
     doc = _doc([
         {
             "id": "frm",
@@ -196,8 +196,10 @@ def test_form_placeholder_does_not_render_schema(pir_app):
     with pir_app.test_request_context("/"):
         html = render_page_ir(doc)
 
-    assert "表單元件將於後續版本啟用" in html
-    assert "Secret Schema Text" not in html
+    assert "表單元件將於後續版本啟用" not in html
+    assert 'data-pir-form-id="frm"' in html
+    assert 'data-pir-form-schema="frm"' in html
+    assert "Secret Schema Text" in html
 
 
 def test_invalid_ir_fails_closed(pir_app):

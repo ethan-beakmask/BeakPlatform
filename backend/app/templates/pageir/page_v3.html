@@ -1,6 +1,9 @@
 {% extends "layouts/base.html" %}
 {% block title %}{{ page_title }}{% endblock %}
 {% block head %}
+{% if has_form %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/formio.full.min.css') }}">
+{% endif %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pageir.css') }}">
 {% endblock %}
 {% block content %}
@@ -10,6 +13,9 @@
 </div>
 {% endblock %}
 {% block scripts %}
+{% if has_form %}
+<script src="{{ url_for('static', filename='vendor/formio.full.min.js') }}"></script>
+{% endif %}
 <script src="{{ url_for('static', filename='js/pageir.js') }}"></script>
 <script>BkEgress.bind();</script>
 {% endblock %}

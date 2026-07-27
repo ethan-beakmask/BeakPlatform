@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-27 22:19+0800\n"
+"POT-Creation-Date: 2026-07-27 22:45+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2114,7 +2114,8 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:140
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:388
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:423
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:251
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:274
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:254
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:323
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:490
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:119
@@ -2484,10 +2485,6 @@ msgstr ""
 
 #: app/templates/pageir/_page_ir.html:81
 msgid "請選擇一筆資料"
-msgstr ""
-
-#: app/templates/pageir/_page_ir.html:91
-msgid "表單元件將於後續版本啟用"
 msgstr ""
 
 #: app/templates/pageir/page_error.html:2
@@ -3272,6 +3269,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:63
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:147
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:227
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:67
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:222
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:74
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:102
@@ -3322,6 +3320,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:113
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:36
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:112
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:161
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:374
 #: app/templates/pages/access_center/_tab_roles.html:172
 #: app/templates/pages/approval_categories/create.html:67
@@ -3930,6 +3929,7 @@ msgstr ""
 msgid "人"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:19
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:39
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:70
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:58
@@ -4038,7 +4038,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:147
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:210
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:654
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:231
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:234
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1121
 #: app/templates/pages/admin/_settings_recipients_section.html:267
 #: app/templates/pages/organizations/list.html:357
@@ -4706,6 +4706,7 @@ msgid "展開"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:57
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:188
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:110
 #: app/templates/pages/admin/module_list.html:102
 #: app/templates/pages/job_titles/create.html:68
@@ -6615,6 +6616,7 @@ msgid "歸屬群組 *"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:356
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:127
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:88
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:160
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:197
@@ -8740,6 +8742,7 @@ msgstr ""
 msgid "頁面列表"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:14
 #: app/templates/pages/modules/view.html:68
 msgid "頁面標題"
 msgstr ""
@@ -10642,8 +10645,9 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:421
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:62
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:101
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:18
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:38
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:252
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:255
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:52
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:100
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:289
@@ -11008,6 +11012,7 @@ msgstr ""
 msgid "完整路徑"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:102
 #: app/templates/pages/units/view.html:44
 msgid "層級"
 msgstr ""
@@ -14315,6 +14320,143 @@ msgstr ""
 msgid "未命名頁面"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:3
+msgid "IR 設計器"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:20
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:48
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab_view.html:70
+msgid "返回"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:33
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:56
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:78
+msgid "元件庫"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:46
+msgid "頁面結構"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:47
+msgid "根層"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:50
+msgid "尚無元件"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:62
+msgid "上移"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:63
+msgid "下移"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:65
+msgid "加入到此 layout"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:74
+msgid "屬性"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:76
+msgid "請選擇元件"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:83
+msgid "ID 格式不正確"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:89
+msgid "欄數"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:93
+msgid "間距"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:111
+msgid "內容 zh-TW"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:115
+msgid "內容 en"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:123
+msgid "資料綁定"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:125
+msgid "資源"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:134
+msgid "視圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:383
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:151
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:199
+msgid "欄位"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:165
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:212
+msgid "新增欄位"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:167
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:96
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:753
+msgid "每頁筆數"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:171
+msgid "預設排序欄位"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:179
+msgid "排序方向"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:186
+msgid "列動作"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:214
+msgid "版面欄數"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:222
+msgid "按鈕"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:243
+msgid "新增按鈕"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:249
+msgid "編輯表單"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:251
+msgid "送出動作"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:269
+msgid "表單編輯"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:275
+msgid "儲存表單"
+msgstr ""
+
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:3
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab_view.html:3
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:3
@@ -14337,16 +14479,6 @@ msgstr ""
 msgid "取消發布"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:48
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab_view.html:70
-msgid "返回"
-msgstr ""
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:56
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:78
-msgid "元件庫"
-msgstr ""
-
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:60
 msgid "資料清單元件"
 msgstr ""
@@ -14361,11 +14493,6 @@ msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:86
 msgid "資料來源 (View)"
-msgstr ""
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:96
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:753
-msgid "每頁筆數"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:105
@@ -14443,15 +14570,19 @@ msgstr ""
 msgid "尚無已儲存的頁面"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:240
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:229
+msgid "IR 設計"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:243
 msgid "儲存新頁面"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:245
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:248
 msgid "頁面名稱"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:246
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:249
 msgid "輸入頁面名稱"
 msgstr ""
 
@@ -16718,10 +16849,6 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:377
 msgid "使用者登入後依其語系載入對應設定，無精確語系時 fallback 到「通用」，無通用則用程式預設值。"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:383
-msgid "欄位"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:384

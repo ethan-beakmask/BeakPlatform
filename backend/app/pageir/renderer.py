@@ -20,6 +20,11 @@ class PageIrRenderError(Exception):
 
 def render_page_ir(doc: dict) -> str:
     """驗證 + 渲染 Page IR v3 文件，回傳 HTML 片段。"""
+    return render_page_ir_full(doc)["html"]
+
+
+def render_page_ir_full(doc: dict) -> dict:
+    """驗證 + 渲染 Page IR v3 文件，回傳 HTML 與 runtime meta。"""
     ok, errors = validate_page_ir(doc)
     if not ok:
         raise PageIrRenderError(f"Invalid Page IR: {errors[:5]}")
@@ -33,7 +38,10 @@ def render_page_ir(doc: dict) -> str:
         _prepare_widget(widget, widgets_by_id)
         for widget in doc["page"].get("widgets", [])
     ]
-    return render_template("pageir/_page_ir.html", widgets=prepared)
+    return {
+        "html": render_template("pageir/_page_ir.html", widgets=prepared),
+        "has_form": _has_widget_type(prepared, "form"),
+    }
 
 
 def _index_widgets(widgets: list[dict]) -> dict[str, dict]:
@@ -43,6 +51,15 @@ def _index_widgets(widgets: list[dict]) -> dict[str, dict]:
         if widget.get("type") == "layout":
             indexed.update(_index_widgets(widget.get("children", [])))
     return indexed
+
+
+def _has_widget_type(widgets: list[dict], widget_type: str) -> bool:
+    for widget in widgets:
+        if widget.get("type") == widget_type:
+            return True
+        if widget.get("type") == "layout" and _has_widget_type(widget.get("children", []), widget_type):
+            return True
+    return False
 
 
 def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
@@ -254,7 +271,19 @@ def _prepare_action_buttons(widget: dict) -> list[dict]:
 
 def _prepare_form(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     del widgets_by_id
-    return {"type": "form", "id": widget["id"]}
+    submit_url = None
+    submit_action_ref = widget.get("submit_action_ref")
+    if submit_action_ref:
+        action = get_action(submit_action_ref)
+        if action is None:
+            raise PageIrRenderError(f"Unregistered form submit action: {submit_action_ref}")
+        submit_url = action.get("url")
+    return {
+        "type": "form",
+        "id": widget["id"],
+        "schema": widget["formio_schema"],
+        "submit_url": submit_url,
+    }
 
 
 def _i18n(values: dict[str, str]) -> str:

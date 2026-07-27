@@ -5,6 +5,7 @@ Data CRUD Module - Web Routes
 import logging
 
 from flask import Blueprint, render_template, request, abort, redirect, url_for
+from flask_babel import get_locale
 from flask_login import current_user
 
 from app.security.decorators import module_access_required
@@ -18,6 +19,15 @@ web_bp = Blueprint(
     url_prefix='/nocode-builder',
     template_folder='../templates'
 )
+
+nocode_short_bp = Blueprint(
+    'nocode_builder_short_web',
+    __name__,
+    url_prefix='/nocode',
+    template_folder='../templates'
+)
+
+additional_blueprints = [nocode_short_bp]
 
 
 @web_bp.route('/')
@@ -39,6 +49,50 @@ def lab():
 def lab_edit(secure_code):
     """Web Builder - 佈局設計器（編輯既有頁面）"""
     return render_template('modules/nocode_builder/lab.html')
+
+
+@web_bp.route('/ir-designer/<secure_code>')
+@nocode_short_bp.route('/ir-designer/<secure_code>')
+@module_access_required('nocode_builder')
+def ir_designer(secure_code):
+    """Page IR v3 設計器。"""
+    return render_template(
+        'modules/nocode_builder/ir_designer.html',
+        secure_code=secure_code,
+    )
+
+
+@web_bp.route('/ir-designer/<secure_code>/preview')
+@nocode_short_bp.route('/ir-designer/<secure_code>/preview')
+@module_access_required('nocode_builder')
+def ir_designer_preview(secure_code):
+    """Page IR v3 草稿預覽。"""
+    from app.pageir import PageIrRenderError, render_page_ir_full
+    from app.security.resource_gateway import ResourceGateway
+    from ..models import DcPageLayout
+
+    page = ResourceGateway.get(
+        DcPageLayout,
+        secure_code,
+        raise_on_not_found=False,
+        check_permission=False,
+    )
+    if not page or page.is_deleted:
+        abort(404)
+
+    try:
+        rendered = render_page_ir_full(page.layout_json or {})
+    except PageIrRenderError:
+        logger.exception('Page IR preview render failed: page=%s', secure_code)
+        return render_template('pageir/page_error.html'), 422
+
+    return render_template(
+        'pageir/page_v3.html',
+        page=page,
+        page_title=_page_ir_title(page),
+        body_html=rendered['html'],
+        has_form=rendered['has_form'],
+    )
 
 
 @web_bp.route('/pages/<secure_code>')
@@ -286,12 +340,14 @@ def _check_site_map_node_access(sub_system_sc, page_layout_sc, user):
     from app.security.resource_gateway import ResourceGateway
 
     try:
-        node = DcSiteMapNode.query.filter(
-            DcSiteMapNode.sub_system_secure_code == sub_system_sc,
-            DcSiteMapNode.page_layout_secure_code == page_layout_sc,
-            DcSiteMapNode.is_deleted == False,
-            DcSiteMapNode.is_active == True,
-        ).first()
+        nodes = ResourceGateway.filter(
+            DcSiteMapNode,
+            sub_system_secure_code=sub_system_sc,
+            page_layout_secure_code=page_layout_sc,
+            is_deleted=False,
+            is_active=True,
+        )
+        node = nodes[0] if nodes else None
 
         if not node:
             return True  # 無對應節點 → 放行
@@ -312,3 +368,10 @@ def _check_site_map_node_access(sub_system_sc, page_layout_sc, user):
     except Exception as e:
         logger.warning('SiteMap node access check failed: %s', e)
         return True  # 異常時放行，避免鎖死
+
+
+def _page_ir_title(page):
+    """依使用者語系選 Page IR 標題。"""
+    title_i18n = (page.layout_json or {}).get('page', {}).get('title_i18n', {})
+    locale = str(get_locale() or 'zh-TW')
+    return title_i18n.get(locale) or title_i18n.get('zh-TW') or page.name or ''

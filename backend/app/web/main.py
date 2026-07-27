@@ -272,10 +272,10 @@ def published_page(secure_code):
         abort(404)
 
     if isinstance(page.layout_json, dict) and page.layout_json.get('ir_version') == 3:
-        from app.pageir import PageIrRenderError, render_page_ir
+        from app.pageir import PageIrRenderError, render_page_ir_full
 
         try:
-            body_html = render_page_ir(page.layout_json)
+            rendered = render_page_ir_full(page.layout_json)
         except PageIrRenderError:
             logger.exception('Page IR v3 render failed: page=%s', secure_code)
             return render_template('pageir/page_error.html'), 422
@@ -284,7 +284,8 @@ def published_page(secure_code):
             'pageir/page_v3.html',
             page=page,
             page_title=_page_ir_title(page),
-            body_html=body_html,
+            body_html=rendered['html'],
+            has_form=rendered['has_form'],
         )
 
     # 子系統 context

@@ -224,6 +224,9 @@
                         <div style="font-weight:500;" x-text="p.name"></div>
                         <div style="font-size:11px; color:#999;" x-text="p.description || ''"></div>
                         <div style="font-size:11px; color:#bbb;" x-text="p.updated_at"></div>
+                        <a :href="'{{ app_prefix }}/nocode/ir-designer/' + p.secure_code"
+                           target="_blank"
+                           @click.stop>{{ _('IR 設計') }}</a>
                     </div>
                 </template>
             </div>

@@ -248,7 +248,7 @@
           "type": "object"
         },
         "submit_action_ref": {
-          "$ref": "#/$defs/slug"
+          "$ref": "#/$defs/permission_ref"
         }
       }
     },
