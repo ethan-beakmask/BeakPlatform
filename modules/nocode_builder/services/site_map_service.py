@@ -307,7 +307,14 @@ class SiteMapService:
             layout = DcPageLayout(
                 org_secure_code=org_sc,
                 name=name,
-                layout_json={'version': 2, 'widgets': []},
+                layout_json={
+                    'ir_version': 3,
+                    'page': {
+                        'id': 'new-page',
+                        'title_i18n': {'zh-TW': name or 'untitled'},
+                        'widgets': [],
+                    },
+                },
                 status='draft',
             )
             db.session.add(layout)

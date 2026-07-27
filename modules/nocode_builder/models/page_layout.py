@@ -26,7 +26,14 @@ class DcPageLayout(ModuleBaseModel):
         data.update({
             'name': self.name,
             'description': self.description,
-            'layout_json': self.layout_json or {'version': 2, 'widgets': []},
+            'layout_json': self.layout_json or {
+                'ir_version': 3,
+                'page': {
+                    'id': 'new-page',
+                    'title_i18n': {'zh-TW': self.name or 'untitled'},
+                    'widgets': [],
+                },
+            },
             'style_config': self.style_config or {},
             'is_active': self.is_active,
             'status': self.status or 'draft',

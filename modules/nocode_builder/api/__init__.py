@@ -14,6 +14,7 @@ from flask_babel import gettext as _
 from flask_login import current_user
 
 from app import csrf, db
+from app.pageir import validate_page_ir
 from app.security.decorators import public_route, module_access_required, admin_required
 from app.security.resource_gateway import ResourceGateway
 from app.platform.data import get_current_org
@@ -938,10 +939,26 @@ def create_page():
         if not name:
             return jsonify({'success': False, 'error': 'Name is required'}), 400
 
+        layout_json = data.get('layout_json', {
+            'ir_version': 3,
+            'page': {
+                'id': 'new-page',
+                'title_i18n': {'zh-TW': name},
+                'widgets': [],
+            },
+        })
+        ok, errors = validate_page_ir(layout_json)
+        if not ok:
+            return jsonify({
+                'success': False,
+                'error': _('Page IR validation failed'),
+                'errors': errors,
+            }), 400
+
         create_kwargs = dict(
             name=name,
             description=data.get('description', ''),
-            layout_json=data.get('layout_json', {'version': 2, 'widgets': []}),
+            layout_json=layout_json,
             is_active=data.get('is_active', True),
         )
         if 'style_config' in data:
@@ -1012,6 +1029,15 @@ def update_page(secure_code):
 
         if 'name' in update_fields and not update_fields['name'].strip():
             return jsonify({'success': False, 'error': 'Name cannot be empty'}), 400
+
+        if 'layout_json' in update_fields:
+            ok, errors = validate_page_ir(update_fields['layout_json'])
+            if not ok:
+                return jsonify({
+                    'success': False,
+                    'error': _('Page IR validation failed'),
+                    'errors': errors,
+                }), 400
 
         ResourceGateway.update(page, check_permission=False, **update_fields)
         ResourceGateway.commit()

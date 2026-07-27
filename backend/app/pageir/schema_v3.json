@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beakplatform.local/schemas/page_ir_v3.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ir_version", "page"],
+  "properties": {
+    "ir_version": {
+      "const": 3
+    },
+    "page": {
+      "$ref": "#/$defs/page"
+    }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,63}$"
+    },
+    "binding_slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+    },
+    "field_key": {
+      "type": "string",
+      "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+    },
+    "permission_ref": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.:-]{1,127}$"
+    },
+    "i18n": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "propertyNames": {
+        "pattern": "^[a-z]{2}(-[A-Za-z]{2,8})?$"
+      },
+      "minProperties": 1
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource", "view", "fields"],
+      "properties": {
+        "resource": {
+          "$ref": "#/$defs/binding_slug"
+        },
+        "view": {
+          "$ref": "#/$defs/binding_slug"
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/field_key"
+          }
+        }
+      }
+    },
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title_i18n", "widgets"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "title_i18n": {
+          "$ref": "#/$defs/i18n"
+        },
+        "widgets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/widget"
+          }
+        }
+      }
+    },
+    "widget": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/layout_widget"
+        },
+        {
+          "$ref": "#/$defs/table_widget"
+        },
+        {
+          "$ref": "#/$defs/detail_widget"
+        },
+        {
+          "$ref": "#/$defs/form_widget"
+        },
+        {
+          "$ref": "#/$defs/actions_widget"
+        },
+        {
+          "$ref": "#/$defs/text_widget"
+        }
+      ]
+    },
+    "layout_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "columns", "children"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "layout"
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/widget"
+          }
+        }
+      }
+    },
+    "table_column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "label_i18n"],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/field_key"
+        },
+        "label_i18n": {
+          "$ref": "#/$defs/i18n"
+        },
+        "sortable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "default_sort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "dir"],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/field_key"
+        },
+        "dir": {
+          "enum": ["asc", "desc"]
+        }
+      }
+    },
+    "table_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "binding", "columns"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "table"
+        },
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/table_column"
+          }
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "default_sort": {
+          "$ref": "#/$defs/default_sort"
+        },
+        "row_actions_ref": {
+          "$ref": "#/$defs/slug"
+        }
+      }
+    },
+    "detail_field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "label_i18n"],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/field_key"
+        },
+        "label_i18n": {
+          "$ref": "#/$defs/i18n"
+        }
+      }
+    },
+    "detail_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "binding", "fields"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "detail"
+        },
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "layout_columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/detail_field"
+          }
+        }
+      }
+    },
+    "form_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "formio_schema"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "form"
+        },
+        "formio_schema": {
+          "type": "object"
+        },
+        "submit_action_ref": {
+          "$ref": "#/$defs/slug"
+        }
+      }
+    },
+    "action_button": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label_i18n", "permission", "action_ref"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "label_i18n": {
+          "$ref": "#/$defs/i18n"
+        },
+        "style": {
+          "enum": ["primary", "secondary", "danger"]
+        },
+        "permission": {
+          "$ref": "#/$defs/permission_ref"
+        },
+        "action_ref": {
+          "$ref": "#/$defs/permission_ref"
+        }
+      }
+    },
+    "actions_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "buttons"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "actions"
+        },
+        "buttons": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/action_button"
+          }
+        }
+      }
+    },
+    "text_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "level", "content_i18n"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "text"
+        },
+        "level": {
+          "enum": ["h1", "h2", "h3", "p"]
+        },
+        "content_i18n": {
+          "$ref": "#/$defs/i18n"
+        }
+      }
+    }
+  }
+}

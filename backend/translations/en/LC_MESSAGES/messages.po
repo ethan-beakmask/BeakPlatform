@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-18 22:27+0800\n"
+"POT-Creation-Date: 2026-07-27 21:47+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -1177,7 +1177,7 @@ msgstr "Name cannot exceed 255 characters (currently %(length)s)"
 #: ../modules/nocode_builder/api/site_map_api.py:121
 #: ../modules/nocode_builder/api/site_map_api.py:514
 #: ../modules/nocode_builder/api/site_map_api.py:547
-#: ../modules/nocode_builder/api/template_api.py:114
+#: ../modules/nocode_builder/api/template_api.py:123
 #: ../modules/nocode_builder/services/project_service.py:124
 #: ../modules/spec_formulate/api/_mf_specs_crud.py:45
 #: app/api/organizational_units.py:334 app/api/work_schedules.py:185
@@ -12827,16 +12827,16 @@ msgstr "Row %(row)s: employee ID %(employee_id)s already exists"
 msgid "since 必須為 ISO-8601 字串"
 msgstr "since must be an ISO-8601 string"
 
-#: ../modules/open_defense/api/admin/decisions.py:88
+#: ../modules/open_defense/api/admin/decisions.py:86
 #, python-format
 msgid "只能撤銷 applied 狀態的決策(目前 %(status)s)"
 msgstr "Only decisions in applied status can be revoked (current: %(status)s)"
 
-#: ../modules/open_defense/api/admin/decisions.py:93
+#: ../modules/open_defense/api/admin/decisions.py:91
 msgid "unblock 決策無需再撤銷"
 msgstr "Unblock decisions do not need to be revoked again"
 
-#: ../modules/open_defense/api/admin/decisions.py:97
+#: ../modules/open_defense/api/admin/decisions.py:95
 msgid "人工手動撤銷"
 msgstr "Manual revocation"
 
@@ -14301,46 +14301,52 @@ msgstr "New Multi-Facet Spec"
 msgid "匯出 PDF"
 msgstr "Export PDF"
 
-#: ../modules/nocode_builder/api/__init__.py:725
+#: ../modules/nocode_builder/api/__init__.py:726
 msgid "此 Master 記錄已鎖定，無法修改關聯資料"
 msgstr "This Master record is locked and related data cannot be modified"
 
-#: ../modules/nocode_builder/api/__init__.py:1082
+#: ../modules/nocode_builder/api/__init__.py:954
+#: ../modules/nocode_builder/api/__init__.py:1038
+#: ../modules/nocode_builder/api/template_api.py:69
+msgid "Page IR validation failed"
+msgstr "Page IR validation failed"
+
+#: ../modules/nocode_builder/api/__init__.py:1108
 msgid "頁面已發布"
 msgstr "Page published"
 
-#: ../modules/nocode_builder/api/__init__.py:1112
+#: ../modules/nocode_builder/api/__init__.py:1138
 msgid "頁面已取消發布"
 msgstr "Page unpublished"
 
-#: ../modules/nocode_builder/api/__init__.py:1204
-#: ../modules/nocode_builder/api/__init__.py:1250
+#: ../modules/nocode_builder/api/__init__.py:1230
+#: ../modules/nocode_builder/api/__init__.py:1276
 msgid "非子系統成員"
 msgstr "Not a subsystem member"
 
-#: ../modules/nocode_builder/api/__init__.py:1219
-#: ../modules/nocode_builder/api/__init__.py:1267
-#: ../modules/nocode_builder/api/__init__.py:1278
+#: ../modules/nocode_builder/api/__init__.py:1245
+#: ../modules/nocode_builder/api/__init__.py:1293
+#: ../modules/nocode_builder/api/__init__.py:1304
 #, python-format
 msgid "您的角色 (%(role_type)s) 不允許此操作"
 msgstr "Your role (%(role_type)s) is not allowed to perform this action"
 
-#: ../modules/nocode_builder/api/__init__.py:1362
+#: ../modules/nocode_builder/api/__init__.py:1388
 msgid "子系統預設樣式已更新"
 msgstr "Subsystem default style updated"
 
-#: ../modules/nocode_builder/api/__init__.py:1404
+#: ../modules/nocode_builder/api/__init__.py:1430
 #, python-format
 msgid "已套用到 %(count)s 個頁面"
 msgstr "Applied to %(count)s pages"
 
 #: ../modules/form_workflow/api/backgrounds.py:103
-#: ../modules/nocode_builder/api/__init__.py:1489
+#: ../modules/nocode_builder/api/__init__.py:1515
 msgid "底圖上傳成功"
 msgstr "Background image uploaded"
 
 #: ../modules/form_workflow/api/backgrounds.py:187
-#: ../modules/nocode_builder/api/__init__.py:1521
+#: ../modules/nocode_builder/api/__init__.py:1547
 msgid "底圖已刪除"
 msgstr "Background image deleted"
 
@@ -14538,28 +14544,28 @@ msgstr "Portal public database"
 msgid "(未知社群)"
 msgstr "(Unknown group)"
 
-#: ../modules/nocode_builder/api/template_api.py:58
+#: ../modules/nocode_builder/api/template_api.py:59
 msgid "模板名稱為必填"
 msgstr "Template name is required"
 
-#: ../modules/nocode_builder/api/template_api.py:62
+#: ../modules/nocode_builder/api/template_api.py:63
 msgid "缺少頁面佈局資料"
 msgstr "Missing page layout data"
 
-#: ../modules/nocode_builder/api/template_api.py:83
+#: ../modules/nocode_builder/api/template_api.py:92
 msgid "模板已儲存"
 msgstr "Template saved"
 
-#: ../modules/nocode_builder/api/template_api.py:105
-#: ../modules/nocode_builder/api/template_api.py:144
+#: ../modules/nocode_builder/api/template_api.py:114
+#: ../modules/nocode_builder/api/template_api.py:153
 msgid "模板不存在"
 msgstr "Template does not exist"
 
-#: ../modules/nocode_builder/api/template_api.py:122
+#: ../modules/nocode_builder/api/template_api.py:131
 msgid "模板已更新"
 msgstr "Template updated"
 
-#: ../modules/nocode_builder/api/template_api.py:149
+#: ../modules/nocode_builder/api/template_api.py:158
 msgid "模板已刪除"
 msgstr "Template deleted"
 
@@ -14802,7 +14808,7 @@ msgstr ""
 msgid "根頁面名稱必須為 welcome"
 msgstr "The root page name must be welcome"
 
-#: ../modules/nocode_builder/services/site_map_service.py:367
+#: ../modules/nocode_builder/services/site_map_service.py:374
 msgid "根頁面 (welcome) 不可刪除"
 msgstr "The root page (welcome) cannot be deleted"
 
@@ -16068,8 +16074,8 @@ msgid "單次批次簽核上限 100 筆"
 msgstr "The maximum number of approvals in a single batch is 100"
 
 #: ../modules/form_workflow/api/fc_batch.py:68
-#: ../modules/form_workflow/api/fc_pending.py:281
-#: ../modules/form_workflow/api/fc_pending.py:384
+#: ../modules/form_workflow/api/fc_pending.py:289
+#: ../modules/form_workflow/api/fc_pending.py:392
 msgid "找不到任務或已處理"
 msgstr "Task not found or already workflowed"
 
@@ -16086,7 +16092,7 @@ msgid "已簽核過此節點"
 msgstr "This node has been approved"
 
 #: ../modules/form_workflow/api/fc_batch.py:106
-#: ../modules/form_workflow/api/fc_pending.py:437
+#: ../modules/form_workflow/api/fc_pending.py:445
 #: ../modules/form_workflow/api/instance_routes.py:233
 #, python-format
 msgid "簽核意見至少需要 %(count)s 字"
@@ -16159,66 +16165,66 @@ msgid "找不到指定的任務"
 msgstr "The specified task cannot be found"
 
 #: ../modules/form_workflow/api/fc_pending.py:163
-#: ../modules/form_workflow/api/fc_pending.py:288
-#: ../modules/form_workflow/api/fc_pending.py:391
+#: ../modules/form_workflow/api/fc_pending.py:296
+#: ../modules/form_workflow/api/fc_pending.py:399
 #: ../modules/form_workflow/api/instance_routes.py:170
 #: ../modules/form_workflow/api/instance_routes.py:224
 msgid "您不是此任務的指定簽核人"
 msgstr "You are not the designated signer for this task"
 
-#: ../modules/form_workflow/api/fc_pending.py:298
+#: ../modules/form_workflow/api/fc_pending.py:306
 msgid "鎖定已刷新"
 msgstr "Lock refreshed"
 
-#: ../modules/form_workflow/api/fc_pending.py:307
+#: ../modules/form_workflow/api/fc_pending.py:315
 #, python-format
 msgid "此表單由 %(locker)s 簽核中"
 msgstr "This form is being signed by %(locker)s"
 
-#: ../modules/form_workflow/api/fc_pending.py:318
+#: ../modules/form_workflow/api/fc_pending.py:326
 msgid "已取得簽核鎖定"
 msgstr "Obtained approval lock"
 
-#: ../modules/form_workflow/api/fc_pending.py:325
+#: ../modules/form_workflow/api/fc_pending.py:333
 #, python-format
 msgid "取得鎖定失敗: %(error)s"
 msgstr "Failed to obtain lock: %(error)s"
 
-#: ../modules/form_workflow/api/fc_pending.py:349
+#: ../modules/form_workflow/api/fc_pending.py:357
 msgid "找不到任務"
 msgstr "Task not found"
 
-#: ../modules/form_workflow/api/fc_pending.py:356
+#: ../modules/form_workflow/api/fc_pending.py:364
 msgid "鎖定已釋放"
 msgstr "lock publishd"
 
-#: ../modules/form_workflow/api/fc_pending.py:397
+#: ../modules/form_workflow/api/fc_pending.py:405
 msgid "此表單正由他人簽核中"
 msgstr "This form is being signed by someone else"
 
-#: ../modules/form_workflow/api/fc_pending.py:404
+#: ../modules/form_workflow/api/fc_pending.py:412
 msgid "簽核逾時，鎖定已失效，請重新開啟"
 msgstr "Sign-in timed out and the lock has expired. Please reopen it."
 
-#: ../modules/form_workflow/api/fc_pending.py:418
+#: ../modules/form_workflow/api/fc_pending.py:426
 msgid "您已簽核過此節點，無法重複簽核"
 msgstr "You have already approved on this node and cannot sign on again."
 
-#: ../modules/form_workflow/api/fc_pending.py:470
+#: ../modules/form_workflow/api/fc_pending.py:478
 #, python-format
 msgid "欄位 %(field_key)s 不允許修改"
 msgstr "Modification of field %(field_key)s is not allowed"
 
-#: ../modules/form_workflow/api/fc_pending.py:586
+#: ../modules/form_workflow/api/fc_pending.py:594
 #: ../modules/form_workflow/api/instance_routes.py:274
 msgid "簽核完成"
 msgstr "Approval completed"
 
-#: ../modules/form_workflow/api/fc_pending.py:586
+#: ../modules/form_workflow/api/fc_pending.py:594
 msgid "已退回"
 msgstr "Returned"
 
-#: ../modules/form_workflow/api/fc_pending.py:591
+#: ../modules/form_workflow/api/fc_pending.py:599
 #, python-format
 msgid "簽核失敗: %(error)s"
 msgstr "Approval failed: %(error)s"
@@ -20435,3 +20441,4 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "系統角色"
 #~ msgstr "System Role"
+

@@ -9,6 +9,7 @@ from flask_babel import gettext as _
 from flask_login import current_user
 
 from app import csrf, db
+from app.pageir import validate_page_ir
 from app.security.decorators import admin_required
 from app.security.resource_gateway import ResourceGateway
 
@@ -60,6 +61,14 @@ def create_template():
         layout_json = data.get('layout_json')
         if not layout_json:
             return jsonify({'success': False, 'error': _('缺少頁面佈局資料')}), 400
+
+        ok, errors = validate_page_ir(layout_json)
+        if not ok:
+            return jsonify({
+                'success': False,
+                'error': _('Page IR validation failed'),
+                'errors': errors,
+            }), 400
 
         category = data.get('category', '常用').strip() or '常用'
 
