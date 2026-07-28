@@ -997,7 +997,20 @@ def get_page(secure_code):
         if not page or page.is_deleted:
             return jsonify({'success': False, 'error': 'Page not found'}), 404
 
-        return jsonify({'success': True, 'data': page.to_dict()})
+        # 設計器要靠這個決定 portal 語境（元件准入 UI 的顯示條件）。
+        # 純 form 頁沒有 portal: 前綴的 binding 可推導，只能從掛載關係取得。
+        from ..models import DcSubSystemPage
+
+        mount = DcSubSystemPage.query.filter_by(
+            page_layout_secure_code=page.secure_code,
+            org_secure_code=page.org_secure_code,
+            is_deleted=False,
+            is_active=True,
+        ).order_by(DcSubSystemPage.display_order).first()
+
+        data = page.to_dict()
+        data['sub_system_secure_code'] = mount.sub_system_secure_code if mount else None
+        return jsonify({'success': True, 'data': data})
     except Exception as e:
         db.session.rollback()
         logger.exception('[PageLayout] get_page error')

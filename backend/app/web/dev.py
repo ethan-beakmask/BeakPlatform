@@ -98,7 +98,8 @@ def get_users(org_secure_code):
         users = User.query.filter(
             User.org_secure_code == org_secure_code,
             User.is_deleted == False,
-            User.is_active == True
+            User.is_active == True,
+            User.is_service_account == False
         ).order_by(User.user_type, User.username).all()
 
         return jsonify({
@@ -142,7 +143,8 @@ def quick_login():
 
         user = User.query.filter(
             User.secure_code == user_id,
-            User.is_deleted == False
+            User.is_deleted == False,
+            User.is_service_account == False
         ).first()
 
         if not user:

@@ -330,6 +330,13 @@
         },
         "submit_action_ref": {
           "$ref": "#/$defs/permission_ref"
+        },
+        "mapping_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{8,64}$"
+        },
+        "access_matrix": {
+          "$ref": "#/$defs/widget_access_matrix"
         }
       }
     },

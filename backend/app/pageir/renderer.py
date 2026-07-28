@@ -6,11 +6,16 @@ from datetime import datetime
 from math import ceil
 from urllib.parse import urlencode
 
-from flask import current_app, render_template, request
+from flask import current_app, render_template, request, url_for
 
 from app.pageir.context import get_render_context
 from app.pageir.masking import apply_record_masks, apply_row_masks, masked_fields
-from app.pageir.registry import get_access_evaluator, get_action, get_resource
+from app.pageir.registry import (
+    get_access_evaluator,
+    get_action,
+    get_portal_action,
+    get_resource,
+)
 from app.pageir.validator import validate_page_ir
 
 logger = logging.getLogger(__name__)
@@ -363,19 +368,64 @@ def _prepare_action_buttons(widget: dict) -> list[dict]:
 
 def _prepare_form(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     del widgets_by_id
-    submit_url = None
+    ctx = get_render_context()
+    world = ctx.get("world", "platform")
     submit_action_ref = widget.get("submit_action_ref")
+    submit_url = None
+
     if submit_action_ref:
-        action = get_action(submit_action_ref)
-        if action is None:
-            raise PageIrRenderError(f"Unregistered form submit action: {submit_action_ref}")
-        submit_url = action.get("url")
+        if world == "portal":
+            submit_url = _portal_form_submit_url(widget, submit_action_ref, ctx)
+        else:
+            action = get_action(submit_action_ref)
+            if action is None:
+                raise PageIrRenderError(
+                    f"Unregistered form submit action: {submit_action_ref}")
+            submit_url = action.get("url")
+
     return {
         "type": "form",
         "id": widget["id"],
         "schema": widget["formio_schema"],
         "submit_url": submit_url,
     }
+
+
+def _portal_form_submit_url(widget: dict, ref: str, ctx: dict) -> str | None:
+    action = get_portal_action(ref)
+    if action is None:
+        return None
+    if not widget.get("mapping_ref"):
+        return None
+
+    evaluator = get_access_evaluator("portal")
+    if evaluator is None:
+        return None
+    try:
+        allowed = bool(evaluator(widget.get("access_matrix") or {}, "create", ctx))
+    except Exception:
+        logger.exception(
+            "Page IR portal form access evaluator failed: widget=%s ref=%s",
+            widget.get("id"),
+            ref,
+        )
+        return None
+    if not allowed:
+        return None
+
+    if not ctx.get("path_id") or not ctx.get("page_sc"):
+        return None
+
+    try:
+        return url_for(
+            action["endpoint"],
+            path_id=ctx["path_id"],
+            page_sc=ctx["page_sc"],
+            widget_id=widget["id"],
+        )
+    except Exception:
+        logger.exception("Page IR portal form submit endpoint unavailable: ref=%s", ref)
+        return None
 
 
 def _i18n(values: dict[str, str]) -> str:

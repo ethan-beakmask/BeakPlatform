@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 _RESOURCES: dict[str, dict[str, Any]] = {}
 _ACTIONS: dict[str, dict[str, Any]] = {}
+_PORTAL_ACTIONS: dict[str, dict[str, Any]] = {}
 _PROVIDERS: dict[str, Callable[[str, dict], dict | None]] = {}
 _RESOURCE_LISTERS: list[Callable[[str], list[dict]]] = []
 _ACCESS_EVALUATORS: dict[str, Callable[[dict, str, dict], bool]] = {}
@@ -109,3 +110,23 @@ def list_actions() -> list[str]:
         ref for ref, config in _ACTIONS.items()
         if not isinstance(config, Callable)
     )
+
+
+def register_portal_action(ref: str, config: dict) -> None:
+    """註冊 portal 世界的 Page IR 動作；同 ref 後註冊者覆蓋前者。"""
+    _PORTAL_ACTIONS[ref] = copy(config)
+
+
+def get_portal_action(ref: str) -> dict | None:
+    """取得 portal 動作設定；非 portal 語境或未註冊一律回 None。"""
+    from app.pageir.context import get_render_context
+
+    if get_render_context().get("world") != "portal":
+        return None
+    config = _PORTAL_ACTIONS.get(ref)
+    return copy(config) if config is not None else None
+
+
+def list_portal_actions() -> list[str]:
+    """列出 portal 可設計動作 ref。"""
+    return sorted(_PORTAL_ACTIONS)

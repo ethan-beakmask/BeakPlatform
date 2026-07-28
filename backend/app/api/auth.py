@@ -176,6 +176,18 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
         )
         return error_response(_('帳號或密碼錯誤'), 401)
 
+    if user.is_service_account:
+        logger.warning(f"Login denied for service account: {username}@{domain_name} from {request.remote_addr}")
+        from ..services.audit_service import AuditService
+        AuditService.log_auth_event(
+            action='LOGIN_FAILED',
+            org_secure_code=org.secure_code,
+            user_secure_code=user.secure_code,
+            details=f'服務帳號登入嘗試: {username}@{domain_name}',
+            status_code=401,
+        )
+        return error_response(_('帳號或密碼錯誤'), 401)
+
     # 帳號鎖定檢查
     is_locked, lock_error = PasswordPolicyService.check_account_lock(user)
     if is_locked:

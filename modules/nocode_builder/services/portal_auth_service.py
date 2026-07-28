@@ -82,8 +82,23 @@ def create_guest_session(sub_system_sc: str) -> dict:
         'level_rank': 0,
         'roles': ['GUEST'],
         'display_name': '訪客',
+        'guest_token': secrets.token_urlsafe(16),
     }
     return _store_session(sub_system_sc, data)
+
+
+def ensure_guest_token(sub_system_sc: str, portal_user: dict) -> str:
+    """Return or issue the anonymous visitor token stored only in Flask session."""
+    if not isinstance(portal_user, dict):
+        portal_user = {}
+    token = portal_user.get('guest_token')
+    if token:
+        return token
+    updated = dict(portal_user)
+    updated['guest_token'] = secrets.token_urlsafe(16)
+    _store_session(sub_system_sc, updated)
+    portal_user.update(updated)
+    return updated['guest_token']
 
 
 def logout(sub_system_sc: str):

@@ -123,6 +123,8 @@ def create_instance_and_start(
     # 申請人
     applicant_secure_code=None, applicant_name=None,
     applicant_username=None, applicant_email=None, applicant_dept=None,
+    # NoCode portal source tracking
+    nocode_sub_system_sc=None, nocode_user_ref=None,
 ):
     """
     建立 FwFormInstance + FwWorkflowInstance(RUNNING) + Start 節點入佇列。
@@ -179,6 +181,9 @@ def create_instance_and_start(
     )
     proc_seq = result.scalar() or 1
     execution_code = f"{proc_prefix}{date_str}-{str(proc_seq).zfill(4)}"
+    variables = {}
+    if nocode_sub_system_sc or nocode_user_ref:
+        variables = {'nocode': {'sub': nocode_sub_system_sc, 'user': nocode_user_ref}}
 
     workflow_instance = FwWorkflowInstance(
         secure_code=secrets.token_urlsafe(16),
@@ -193,6 +198,9 @@ def create_instance_and_start(
         workflow_version=workflow_version,
         graph_snapshot=workflow_graph,
         status='RUNNING',
+        variables=variables,
+        nocode_sub_system_sc=nocode_sub_system_sc,
+        nocode_user_ref=nocode_user_ref,
         started_at=datetime.utcnow(),
     )
     db.session.add(workflow_instance)

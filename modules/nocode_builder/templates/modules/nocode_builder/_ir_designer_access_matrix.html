@@ -1,0 +1,52 @@
+{% macro render(actions_expr, write_hint) %}
+<template x-if="dataScope">
+    <div class="ird-section">
+        <div class="ird-subtitle">{{ _('元件准入') }}</div>
+        <template x-for="action in {{ actions_expr|safe }}" :key="action.key">
+            <div>
+                <div class="ird-field">
+                    <label>
+                        <input type="checkbox"
+                               :checked="widgetActionEnabled(action.key)"
+                               @change="toggleWidgetAction(action.key, $event.target.checked)">
+                        <span x-text="action.label"></span>
+                    </label>
+                </div>
+                <template x-if="widgetActionEnabled(action.key)">
+                    <div>
+                        <div class="ird-field">
+                            <label>{{ _('群組限制') }}</label>
+                            <select :value="widgetGroupMode(action.key)" @change="setWidgetGroupMode(action.key, $event.target.value)">
+                                <option value="all">{{ _('不限群組') }}</option>
+                                <option value="limited">{{ _('限定群組') }}</option>
+                            </select>
+                        </div>
+                        <div class="ird-checks" x-show="widgetGroupMode(action.key) === 'limited'">
+                            <template x-for="group in activePortalGroups()" :key="group.code">
+                                <label>
+                                    <input type="checkbox"
+                                           :checked="widgetActionGroups(action.key).includes(group.code)"
+                                           @change="toggleWidgetGroup(action.key, group.code)">
+                                    <span x-text="group.name + ' (' + group.code + ')'"></span>
+                                </label>
+                            </template>
+                        </div>
+                        <div class="ird-field">
+                            <label>{{ _('最低階級') }}</label>
+                            <select @change="setWidgetActionMinLevel(action.key, $event.target.value)">
+                                <template x-for="level in sortedPortalLevels()" :key="level.code">
+                                    <option :value="level.code"
+                                            :selected="level.code === widgetActionMinLevel(action.key)"
+                                            x-text="level.name + ' (' + level.code + ', rank ' + level.rank + ')'"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+        <p class="ird-hint">{{ _('僅在子系統 portal 語境生效；平台頁面不套用此限制。') }}</p>
+        <p class="ird-hint">{{ write_hint }}</p>
+    </div>
+</template>
+{% endmacro %}

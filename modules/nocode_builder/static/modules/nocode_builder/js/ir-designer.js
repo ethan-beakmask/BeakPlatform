@@ -31,9 +31,12 @@ function irDesigner() {
         pageName: '',
         pageTitleZh: '',
         doc: { ir_version: 3, page: { id: 'page', title_i18n: { 'zh-TW': '' }, widgets: [] } },
-        meta: { resources: [], actions: [] },
+        meta: { resources: [], actions: [], portal_actions: [] },
         subSystems: [],
         dataScope: '',
+        mountedSubSystem: '',
+        formMappings: [],
+        formMappingsLoadFailed: false,
         previewGroup: '',
         previewLevel: '',
         portalOrgLoaded: false,
@@ -64,13 +67,16 @@ function irDesigner() {
             { key: 'update', label: tr('編輯') },
             { key: 'delete', label: tr('刪除') },
         ],
+        formAccessActions: [
+            { key: 'create', label: tr('新增') },
+        ],
 
         async init() {
             const cfg = window.__IR_DESIGNER_CONFIG || {};
             this.secureCode = cfg.secureCode || '';
             this.designerUrl = cfg.designerUrl || '';
             this.previewUrl = cfg.previewUrl || '';
-            await Promise.all([this.loadPage(), this.loadSubSystems(), this.loadMeta(this.dataScope)]);
+            await Promise.all([this.loadPage(), this.loadSubSystems(), this.loadMeta(this.dataScope), this.loadFormMappings()]);
             await this.detectPortalScope();
             await this.ensurePortalOrg();
             this.syncCounters();
@@ -85,6 +91,7 @@ function irDesigner() {
                 return;
             }
             this.pageName = data.data.name || '';
+            this.mountedSubSystem = data.data.sub_system_secure_code || '';
             const layout = data.data.layout_json || {};
             if (layout.ir_version === 3 && layout.page) {
                 this.doc = clone(layout);
@@ -177,10 +184,28 @@ function irDesigner() {
                     this.meta = {
                         resources: scope ? (data.portal_resources || []) : (data.resources || []),
                         actions: data.actions || [],
+                        portal_actions: data.portal_actions || [],
                     };
                 }
             } catch (err) {
                 this.errors = [{ path: '', message: tr('Meta 載入失敗') }];
+            }
+        },
+
+        async loadFormMappings() {
+            try {
+                const res = await fetch(`${BP}/api/mappings?is_published=true&is_archived=false`);
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    this.formMappings = [];
+                    this.formMappingsLoadFailed = true;
+                    return;
+                }
+                this.formMappings = Array.isArray(data.data) ? data.data : [];
+                this.formMappingsLoadFailed = false;
+            } catch (err) {
+                this.formMappings = [];
+                this.formMappingsLoadFailed = true;
             }
         },
 
@@ -361,6 +386,10 @@ function irDesigner() {
             return (this.meta.actions || []).filter((ref) => /^[a-z][a-z0-9_.:-]{1,127}$/.test(ref));
         },
 
+        get formPortalActionRefs() {
+            return (this.meta.portal_actions || []).filter((ref) => /^[a-z][a-z0-9_.:-]{1,127}$/.test(ref));
+        },
+
         get selectedResource() {
             const widget = this.selectedWidget;
             if (!widget || !widget.binding) return null;
@@ -380,6 +409,33 @@ function irDesigner() {
             return res.name ? `${res.name} (${res.code})` : res.code;
         },
 
+        formatFormMappingOption(mapping) {
+            if (!mapping) return '';
+            const name = mapping.published_form_name || mapping.form_template_name || '';
+            const code = mapping.form_template_code || mapping.secure_code || '';
+            return name && code ? `${name} (${code})` : (name || code);
+        },
+
+        formSubmitReady() {
+            const widget = this.selectedWidget;
+            return !!(
+                widget
+                && widget.mapping_ref
+                && widget.submit_action_ref
+                && widget.access_matrix
+                && widget.access_matrix.create
+            );
+        },
+
+        formMissingItems() {
+            const widget = this.selectedWidget || {};
+            const missing = [];
+            if (!widget.mapping_ref) missing.push(tr('表單流程配對'));
+            if (!widget.submit_action_ref) missing.push(tr('送出動作'));
+            if (!(widget.access_matrix && widget.access_matrix.create)) missing.push(tr('新增准入'));
+            return missing;
+        },
+
         firstPortalBindingResource(widgets) {
             const list = widgets || this.doc.page.widgets || [];
             for (const widget of list) {
@@ -394,6 +450,13 @@ function irDesigner() {
         },
 
         async detectPortalScope() {
+            // 掛載關係優先：純 form 頁沒有 portal: binding 可推導，
+            // 但仍需要 dataScope 才能顯示元件准入設定。
+            if (this.mountedSubSystem) {
+                this.dataScope = this.mountedSubSystem;
+                await this.loadMeta(this.dataScope);
+                return;
+            }
             const portalCode = this.firstPortalBindingResource();
             if (!portalCode || !this.subSystems.length) return;
             for (const subSystem of this.subSystems.slice(0, 10)) {
@@ -407,6 +470,7 @@ function irDesigner() {
                         this.meta = {
                             resources,
                             actions: data.actions || [],
+                            portal_actions: data.portal_actions || [],
                         };
                         return;
                     }
@@ -659,6 +723,12 @@ function irDesigner() {
         emptyToDelete(obj, key) {
             if (!obj[key]) delete obj[key];
             this.markDirty();
+        },
+
+        setOptionalWidgetValue(obj, key, value) {
+            if (!obj) return;
+            obj[key] = value;
+            this.emptyToDelete(obj, key);
         },
 
         async formioBuilderOptions() {

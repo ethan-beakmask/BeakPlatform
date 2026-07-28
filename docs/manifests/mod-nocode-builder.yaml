@@ -21,6 +21,8 @@ files:
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace.js
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace-org.js
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace-tables.js
+  templates:
+    - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_access_matrix.html
   models:
     - modules/nocode_builder/models/permission_policy.py
   web:
@@ -33,6 +35,7 @@ files:
     - modules/nocode_builder/services/portal_path_service.py
     - modules/nocode_builder/services/portal_access_service.py   # 三層判定核心
     - modules/nocode_builder/services/pageir_portal_resources.py # portal L2 resolver
+    - modules/nocode_builder/services/pageir_mapping_usage.py    # form workflow mapping 引用查詢
   css:
     - modules/nocode_builder/static/modules/nocode_builder/css/nocode-builder.css
     - modules/nocode_builder/static/modules/nocode_builder/css/studio.css
@@ -53,6 +56,7 @@ files:
     - backend/app/pageir/masking.py                   # 欄位視覺遮罩（server 端唯一實作）
     - backend/app/pageir/renderer.py
     - backend/app/pageir/schema_v3.json
+    - backend/app/services/nocode_service_account.py  # portal 送件公用帳號
 
 note: |
   准入控制使用 grant-based permission 模式（部門/社群/個人多重選擇）。

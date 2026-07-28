@@ -103,6 +103,9 @@ class User(TenantBaseModel, UserMixin):
     # 企業原始管理員標記（無合約時唯一可登入的帳號）
     is_original_admin = Column(Boolean, default=False, nullable=False, comment='企業原始管理員')
 
+    # 系統/模組代辦用公用帳號，不允許互動式登入
+    is_service_account = Column(Boolean, default=False, nullable=False, comment='服務帳號')
+
     # 備註（管理員可見）
     notes = Column(Text, nullable=True, comment='用戶備註（管理員可見）')
 
@@ -188,7 +191,10 @@ class User(TenantBaseModel, UserMixin):
         raw = password.encode('utf-8')
         if len(raw) > 72:
             return False
-        return bcrypt.checkpw(raw, self.password_hash.encode('utf-8'))
+        try:
+            return bcrypt.checkpw(raw, self.password_hash.encode('utf-8'))
+        except ValueError:
+            return False
 
     def get_id(self) -> str:
         """Flask-Login 需要的方法，返回用戶識別碼"""

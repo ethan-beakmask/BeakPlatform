@@ -155,7 +155,9 @@ def list_external_users():
     users = User.query.filter(
         User.org_secure_code == current_user.org_secure_code,
         User.user_type == UserType.EXTERNAL,
-        User.is_deleted == False
+        User.is_service_account == False,
+        User.is_deleted == False,
+        User.is_active == True
     ).order_by(User.created_at.desc()).all()
 
     # 查詢每個用戶的群組歸屬

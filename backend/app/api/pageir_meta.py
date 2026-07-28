@@ -3,7 +3,12 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
-from app.pageir.registry import list_actions, list_prefixed_resources, list_resources
+from app.pageir.registry import (
+    list_actions,
+    list_portal_actions,
+    list_prefixed_resources,
+    list_resources,
+)
 from app.security.decorators import admin_required
 
 
@@ -20,4 +25,5 @@ def meta():
         "resources": list_resources(),
         "portal_resources": list_prefixed_resources(sub_system_sc) if sub_system_sc else [],
         "actions": list_actions(),
+        "portal_actions": list_portal_actions(),
     })

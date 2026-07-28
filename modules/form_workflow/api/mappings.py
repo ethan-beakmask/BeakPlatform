@@ -46,6 +46,16 @@ def _sync_mapping_published_flag(mapping_secure_code):
         mapping.updated_at = datetime.utcnow()
 
 
+def _nocode_usage(org_sc, mapping_sc):
+    try:
+        from modules.nocode_builder.services.pageir_mapping_usage import (
+            find_pages_using_mapping,
+        )
+    except Exception:
+        return []
+    return find_pages_using_mapping(org_sc, mapping_sc)
+
+
 # =============================================================================
 # 配對管理 API
 # =============================================================================
@@ -374,6 +384,15 @@ def delete_mapping(secure_code):
     # 檢查是否已發行
     if mapping.is_published:
         return jsonify({'success': False, 'error': _('已發行的配對無法刪除，請先取消發行')}), 400
+
+    usage = _nocode_usage(org.secure_code, secure_code)
+    if usage:
+        return jsonify({
+            'success': False,
+            'error': 'nocode_in_use',
+            'message': _('此配對正被 NoCode 頁面使用，無法刪除'),
+            'details': {'pages': usage},
+        }), 400
 
     mapping.is_deleted = True
     mapping.updated_at = datetime.utcnow()
@@ -896,6 +915,15 @@ def archive_mapping(secure_code):
                 'success': False,
                 'error': _('尚有 %(count)s 個發行版本未封存，請先封存所有版本', count=len(non_archived))
             }), 400
+
+    usage = _nocode_usage(org.secure_code, secure_code)
+    if usage:
+        return jsonify({
+            'success': False,
+            'error': 'nocode_in_use',
+            'message': _('此配對正被 NoCode 頁面使用，無法封存'),
+            'details': {'pages': usage},
+        }), 400
 
     mapping.is_archived = True
     mapping.is_published = False

@@ -51,6 +51,10 @@ class FwWorkflowInstance(ModuleBaseModel):
     # 流程變數
     variables = Column(JSON, default=dict)
 
+    # NoCode portal 來源追蹤
+    nocode_sub_system_sc = Column(String(32), nullable=True, index=True)
+    nocode_user_ref = Column(String(64), nullable=True, index=True)
+
     # 錯誤資訊
     error_message = Column(Text, nullable=True)
     error_node_id = Column(String(100), nullable=True)

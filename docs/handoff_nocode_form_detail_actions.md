@@ -35,7 +35,90 @@
 
 ---
 
-## 1.5 【動工前必看】portal 世界目前**完全不支援 action**
+## 1.4 【2026-07-29 更新】form 元件（送件主線）已完成
+
+**§1.5 描述的硬阻擋已解除，§2 的「未定案」已全部裁決並落地。**
+本節是現況；§1.5 與 §2 的原文保留作為決策脈絡，讀的時候以本節為準。
+
+### 用戶裁決（2026-07-29）
+
+| 議題 | 裁決 |
+|---|---|
+| portal action 機制 | **A 案**：`_PORTAL_ACTIONS` 自成 registry，權限吃 widget `access_matrix` |
+| 公用帳號 | `users` 真實 row、`user_type=EXTERNAL`、`is_service_account=True`、不可登入 |
+| 匿名訪客送件 | **允許**。識別碼是 server 發的一次性 `guest_token`（只存 Flask session） |
+| 識別碼存放 | `fw_workflow_instances` 加實體欄位 + 複合 index，並鏡射進 `variables.nocode` |
+
+### 已落地的東西
+
+| 能力 | 位置 |
+|---|---|
+| portal action registry | `registry.py`：`register_portal_action` / `get_portal_action` / `list_portal_actions` |
+| 內建 portal action | `portal.form.submit`，在 `nocode_builder/__init__.py:init_runtime()` 註冊 |
+| `form_widget` 新欄位 | `schema_v3.json`：`mapping_ref`、`access_matrix`（form 只用 `create`） |
+| renderer 分流 | `renderer._prepare_form()` → portal 走 `_portal_form_submit_url()`，全程 fail-closed 回 `None`（唯讀），不 raise |
+| render context | `set_render_context()` 加 `path_id` / `page_sc`（renderer 組送件 URL 要用） |
+| 送件 API | `POST /public/portal/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/submit` |
+| 公用帳號 | `app/services/nocode_service_account.py:get_or_create(org_secure_code)` |
+| guest token | `portal_auth_service.ensure_guest_token()` |
+| mapping 引用守衛 | `nocode_builder/services/pageir_mapping_usage.py` + `mappings.py` 的 `_nocode_usage()` |
+| 設計器面板 | form widget 可設配對／送出動作／元件准入；准入 UI 抽成 `_ir_designer_access_matrix.html` macro，table/detail/form 共用 |
+| migration | `scripts/migrations/088_nocode_form_submit.sql` |
+
+送件成立的三個條件（缺一即唯讀，**渲染層與 API 層都檢查**）：
+`submit_action_ref` 已註冊 + `mapping_ref` 有值 + `access_matrix.create` 判定通過。
+
+### 這一輪新踩的坑（會再踩，寫下來）
+
+1. **portal action registry 差點形同虛設**。第一版送件 API 只檢查 access_matrix
+   與 mapping_ref，**完全不看 `submit_action_ref`**。後果是設計者把「送出動作」
+   清空、以為表單變唯讀，但知道 URL 的人仍能直接 POST 送件成功。
+   教訓：新增抽象層時，要問「不走這層直接打 API 會怎樣」，
+   而不是只驗證「走這層的路徑對不對」。
+2. **匿名送件端點必須有 rate limit**。`allow_anonymous` 的子系統等於開放匿名寫入，
+   沒有 limiter 就能無限灌流程實例。現為 `10 per minute; 100 per hour`。
+   注意 **CSRF 檢查發生在 limiter 之前**，測 limiter 時必須帶正確的 token，
+   否則全部 400、看不到 429。
+3. **`dataScope` 推導不出純 form 頁**。設計器的「元件准入」UI 顯示條件是
+   `x-if="dataScope"`，而 `dataScope` 原本只從
+   `firstPortalBindingResource()`（找 `portal:` 前綴的 binding）推導。
+   form widget 沒有 binding → 純 form 頁的 `dataScope` 永遠是空 →
+   **准入 UI 不顯示 → create 無從設定 → 表單永遠送不出去**。
+   修法：`GET /api/nocode-builder/pages/<sc>` 回傳 `sub_system_secure_code`
+   （查 `dc_sub_system_pages` 掛載關係），`detectPortalScope()` 優先用它。
+4. **`password_hash` 給非 bcrypt 值會讓 `bcrypt.checkpw` 拋 `ValueError`**，
+   不是回 False。公用帳號的 `'!nologin'` 就是這種值，
+   `User.check_password()` 已加 try/except。
+5. **送件會真的跑完整條流程**。用「子系統開發申請」配對做 E2E 時，
+   流程的 SubSystemProvision 節點會**真的建出子系統**
+   （`dc_sub_systems.provision_serial_number` 對得上送件序號）。
+   測完記得清，否則設計器的子系統下拉會被測試垃圾塞滿。
+
+### 本機測試資料（是事實，不要重建）
+
+```
+測試頁 : FORMTEST00000000000001（Form 送件 E2E 頁），掛在 8uopl3mNbDzGDUGAcNQqNe
+配對   : 7AVNBK7C-kQ5LSb2DEmeMw（子系統開發申請，已發行未封存）
+公用帳號: nocode-svc-beluga / nocode-svc@beluga.local（企業 _9c8TewkRkCBEf3XsUdqeF）
+```
+
+頁面結構是一個 layout 包三個 form widget，刻意做成對照組：
+
+| widget | 設定 | 預期 |
+|---|---|---|
+| `form-1` | 配對 + 動作 + create(不限群組/GUEST) | 可送出 |
+| `form-2` | 同上（本輪驗收時由設計器補上動作） | 可送出 |
+| `form-3` | create 設 VIP / ADMIN | 一般訪客唯讀，直打 API 回 404 |
+
+### 尚未做（不是遺漏，是下一步）
+
+**簽核狀態可見**（§2.2 用戶已裁決要做）。送件已回傳
+`serial_number` 與 `execution_code`，狀態查詢有依據可接。
+待決：用哪個 widget 呈現、查詢入口放哪。
+
+---
+
+## 1.5 【已解除，保留作決策脈絡】portal 世界原本完全不支援 action
 
 冷讀審核時查證出來的硬阻擋。不先處理，form 元件做到一半必定卡住：
 

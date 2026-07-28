@@ -90,3 +90,12 @@ def init_runtime(app):
         register_access_evaluator('portal', _portal_widget_evaluator)
     except Exception as e:
         logger.error(f'NocodeBuilder: 註冊 Page IR portal access evaluator 失敗: {str(e)}')
+
+    try:
+        from app.pageir.registry import register_portal_action
+
+        register_portal_action('portal.form.submit', {
+            'endpoint': 'nocode_public_portal.portal_widget_submit',
+        })
+    except Exception as e:
+        logger.error(f'NocodeBuilder: 註冊 Page IR portal action 失敗: {str(e)}')
