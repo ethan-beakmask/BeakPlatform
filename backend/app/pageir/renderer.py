@@ -133,6 +133,8 @@ def _prepare_table(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     resource = _checked_resource(binding)
     fields = binding["fields"]
     columns = _visible_table_columns(widget, resource)
+    caps = _widget_write_caps(widget, resource)
+    form_fields = _table_form_fields(widget, resource) if caps["create"] or caps["update"] else []
     page_size = widget.get("page_size", 20)
     page = _positive_int(request.args.get(f"{widget['id']}__page"), 1)
     sort_field, sort_dir = _table_sort(widget)
@@ -155,7 +157,54 @@ def _prepare_table(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
         "sort_dir": sort_dir,
         "egress_resource": resource.get("egress_resource"),
         "row_actions": row_actions,
+        "caps": caps,
+        "form_fields": form_fields,
     }
+
+
+def _widget_write_caps(widget: dict, resource: dict) -> dict[str, bool]:
+    caps = {"create": False, "update": False, "delete": False}
+    ctx = get_render_context()
+    world = ctx.get("world", "platform")
+    if world != "portal":
+        return caps
+
+    matrix = widget.get("access_matrix")
+    if not matrix:
+        return caps
+
+    crud = resource.get("crud") or {}
+    evaluator = get_access_evaluator(world)
+    if evaluator is None:
+        return caps
+
+    for action in caps:
+        if not crud.get(action):
+            continue
+        try:
+            caps[action] = bool(evaluator(matrix, action, ctx))
+        except Exception:
+            logger.exception(
+                "Page IR widget write evaluator failed: widget=%s action=%s world=%s",
+                widget.get("id"),
+                action,
+                world,
+            )
+            caps[action] = False
+    return caps
+
+
+def _table_form_fields(widget: dict, resource: dict) -> list[dict]:
+    writable = set(resource.get("writable_fields") or [])
+    labels = {
+        column["field"]: _i18n(column["label_i18n"])
+        for column in widget.get("columns", [])
+    }
+    return [
+        {"field": field, "label": labels.get(field, field)}
+        for field in widget["binding"]["fields"]
+        if field in writable
+    ]
 
 
 def _checked_resource(binding: dict) -> dict:

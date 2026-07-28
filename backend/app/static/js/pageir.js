@@ -8,6 +8,21 @@
     return csrf ? csrf.content : '';
   }
 
+  var crudErrorMessages = {
+    invalid_data: '資料格式不正確',
+    no_valid_data: '資料格式不正確',
+    no_writable_fields: '沒有可寫入欄位',
+    portal_db_missing: '資料庫不存在',
+    write_failed: '寫入失敗',
+    not_allowed: '沒有權限執行此操作',
+    csrf_failed: '頁面已過期，請重新整理後再試',
+    row_not_found: '找不到資料',
+    invalid_row: '找不到資料',
+    row_identifier_missing: '找不到資料'
+  };
+
+  var tableCrudInitialized = false;
+
   async function run(button) {
     if (button.dataset.pirConfirm === 'true' && !confirm(t('確定執行此動作？'))) {
       return;
@@ -123,6 +138,9 @@
       }
     );
     var hasActions = wrap.dataset.pirActions === 'true';
+    var canUpdate = wrap.dataset.pirCanUpdate === 'true';
+    var canDelete = wrap.dataset.pirCanDelete === 'true';
+    var widgetId = wrap.dataset.pirTable;
     rows.forEach(function (row) {
       var tr = document.createElement('tr');
       fields.forEach(function (field) {
@@ -134,10 +152,32 @@
       if (hasActions) {
         var actionCell = document.createElement('td');
         actionCell.className = 'pir-actions-cell';
+        if (canUpdate) {
+          actionCell.appendChild(crudButton('edit', widgetId, row && row._sc));
+        }
+        if (canDelete) {
+          actionCell.appendChild(crudButton('delete', widgetId, row && row._sc));
+        }
         tr.appendChild(actionCell);
       }
       tbody.appendChild(tr);
     });
+  }
+
+  function crudButton(action, widgetId, rowId) {
+    var button = document.createElement('button');
+    button.type = 'button';
+    if (action === 'delete') {
+      button.className = 'pir-btn pir-btn-danger';
+      button.dataset.pirDelete = widgetId || '';
+      button.textContent = t('刪除');
+    } else {
+      button.className = 'pir-btn pir-btn-secondary';
+      button.dataset.pirEdit = widgetId || '';
+      button.textContent = t('編輯');
+    }
+    button.dataset.pirRow = rowId === null || rowId === undefined ? '' : String(rowId);
+    return button;
   }
 
   function initInfiniteTables() {
@@ -222,9 +262,240 @@
     });
   }
 
+  function initTableCrud() {
+    if (!window.__PIR_ROWS_URL_BASE || tableCrudInitialized) {
+      return;
+    }
+    tableCrudInitialized = true;
+
+    document.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-pir-create]');
+      if (button) {
+        openCrudModal('create', button.dataset.pirCreate, '', {});
+        return;
+      }
+
+      button = event.target.closest('[data-pir-edit]');
+      if (button) {
+        var editWidgetId = button.dataset.pirEdit;
+        var wrap = findTableWrap(editWidgetId);
+        openCrudModal('update', editWidgetId, button.dataset.pirRow || '', wrap ? rowValuesFromDom(wrap, button) : {});
+        return;
+      }
+
+      button = event.target.closest('[data-pir-delete]');
+      if (button) {
+        deleteRow(button.dataset.pirDelete, button.dataset.pirRow || '');
+      }
+    });
+  }
+
+  function findTableWrap(widgetId) {
+    var wraps = document.querySelectorAll('[data-pir-table]');
+    for (var i = 0; i < wraps.length; i += 1) {
+      if (wraps[i].dataset.pirTable === widgetId) {
+        return wraps[i];
+      }
+    }
+    return null;
+  }
+
+  function formFields(widgetId) {
+    var scripts = document.querySelectorAll('[data-pir-form-fields]');
+    for (var i = 0; i < scripts.length; i += 1) {
+      if (scripts[i].dataset.pirFormFields === widgetId) {
+        try {
+          var parsed = JSON.parse(scripts[i].textContent || '[]');
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+          console.error('[PageIR] table form fields parse failed:', err);
+          return [];
+        }
+      }
+    }
+    return [];
+  }
+
+  function rowValuesFromDom(wrap, button) {
+    var values = {};
+    var fields = Array.prototype.map.call(
+      wrap.querySelectorAll('thead th[data-field]'),
+      function (th) {
+        return th.dataset.field;
+      }
+    );
+    var tr = button.closest('tr');
+    if (!tr) {
+      return values;
+    }
+    fields.forEach(function (field, index) {
+      var cell = tr.children[index];
+      values[field] = cell ? cell.textContent.trim() : '';
+    });
+    return values;
+  }
+
+  function rowsUrl(widgetId, rowId) {
+    var url = window.__PIR_ROWS_URL_BASE + '/' + encodeURIComponent(widgetId) + '/rows';
+    if (rowId) {
+      url += '/' + encodeURIComponent(rowId);
+    }
+    return url;
+  }
+
+  function showCrudError(el, code) {
+    var key = typeof code === 'string' ? code : '';
+    el.textContent = t(crudErrorMessages[key] || '操作失敗');
+    el.classList.add('pir-modal-error-visible');
+  }
+
+  function closeModal(overlay) {
+    overlay.classList.remove('pir-modal-open');
+    overlay.remove();
+  }
+
+  function openCrudModal(mode, widgetId, rowId, initialValues) {
+    var fields = formFields(widgetId);
+    var overlay = document.createElement('div');
+    overlay.className = 'pir-modal-overlay';
+
+    var dialog = document.createElement('div');
+    dialog.className = 'pir-modal-dialog';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+
+    var title = document.createElement('h2');
+    title.className = 'pir-modal-title';
+    title.textContent = mode === 'create' ? t('新增') : t('編輯');
+    dialog.appendChild(title);
+
+    var error = document.createElement('div');
+    error.className = 'pir-modal-error';
+    dialog.appendChild(error);
+
+    var form = document.createElement('form');
+    form.className = 'pir-modal-form';
+    fields.forEach(function (fieldDef) {
+      var field = fieldDef && fieldDef.field ? String(fieldDef.field) : '';
+      if (!field) {
+        return;
+      }
+
+      var group = document.createElement('label');
+      group.className = 'pir-modal-field';
+
+      var label = document.createElement('span');
+      label.textContent = fieldDef.label || field;
+      group.appendChild(label);
+
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.name = field;
+      var value = Object.prototype.hasOwnProperty.call(initialValues, field) ? initialValues[field] : '';
+      input.value = value === null || value === undefined ? '' : String(value);
+      group.appendChild(input);
+      form.appendChild(group);
+    });
+
+    var actions = document.createElement('div');
+    actions.className = 'pir-modal-actions';
+
+    var save = document.createElement('button');
+    save.type = 'submit';
+    save.className = 'pir-btn pir-btn-primary';
+    save.textContent = t('儲存');
+    actions.appendChild(save);
+
+    var cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'pir-btn pir-btn-secondary';
+    cancel.textContent = t('取消');
+    cancel.addEventListener('click', function () {
+      closeModal(overlay);
+    });
+    actions.appendChild(cancel);
+    form.appendChild(actions);
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      error.classList.remove('pir-modal-error-visible');
+      error.textContent = '';
+
+      var data = {};
+      fields.forEach(function (fieldDef) {
+        var field = fieldDef && fieldDef.field ? String(fieldDef.field) : '';
+        var input = field ? form.elements[field] : null;
+        if (input) {
+          data[field] = input.value;
+        }
+      });
+
+      fetch(rowsUrl(widgetId, mode === 'update' ? rowId : ''), {
+        method: mode === 'create' ? 'POST' : 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken()
+        },
+        body: JSON.stringify({ data: data })
+      })
+        .then(function (res) {
+          return res.json().catch(function () {
+            return {};
+          }).then(function (payload) {
+            if (!res.ok || payload.success === false) {
+              throw new Error(payload.error || 'operation_failed');
+            }
+            return payload;
+          });
+        })
+        .then(function () {
+          closeModal(overlay);
+          location.reload();
+        })
+        .catch(function (err) {
+          showCrudError(error, err && err.message);
+        });
+    });
+
+    dialog.appendChild(form);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    overlay.classList.add('pir-modal-open');
+  }
+
+  function deleteRow(widgetId, rowId) {
+    if (!rowId || !confirm(t('確定刪除這筆資料？'))) {
+      return;
+    }
+    fetch(rowsUrl(widgetId, rowId), {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken()
+      }
+    })
+      .then(function (res) {
+        return res.json().catch(function () {
+          return {};
+        }).then(function (payload) {
+          if (!res.ok || payload.success === false) {
+            throw new Error(payload.error || 'operation_failed');
+          }
+          return payload;
+        });
+      })
+      .then(function () {
+        location.reload();
+      })
+      .catch(function (err) {
+        alert(t(crudErrorMessages[(err && err.message) || ''] || '操作失敗'));
+      });
+  }
+
   function initPageIr() {
     initForms();
     initInfiniteTables();
+    initTableCrud();
   }
 
   document.addEventListener('click', function (event) {

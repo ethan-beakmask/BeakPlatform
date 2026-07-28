@@ -27,6 +27,13 @@
     overflow-x: auto;
 }
 
+.pir-table-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
 .pir-table {
     width: 100%;
     border-collapse: collapse;
@@ -102,8 +109,93 @@
 }
 
 .pir-btn-danger {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.pir-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.pir-modal-overlay.pir-modal-open {
+    display: flex;
+}
+
+.pir-modal-overlay::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: var(--color-text);
+    opacity: 0.42;
+}
+
+.pir-modal-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(520px, 100%);
+    max-height: min(720px, 92vh);
+    overflow: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    padding: 20px;
+}
+
+.pir-modal-title {
+    margin: 0 0 16px;
+    color: var(--color-text);
+    font-size: 1.25rem;
+}
+
+.pir-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pir-modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+}
+
+.pir-modal-field input {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    padding: 8px 10px;
+    font: inherit;
+}
+
+.pir-modal-error {
+    display: none;
+    margin-bottom: 12px;
+    border: 1px solid var(--color-danger);
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    padding: 10px 12px;
+}
+
+.pir-modal-error.pir-modal-error-visible {
+    display: block;
+}
+
+.pir-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
 }
 
 .pir-detail {

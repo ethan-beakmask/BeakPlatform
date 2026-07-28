@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 13:48+0800\n"
+"POT-Creation-Date: 2026-07-28 14:03+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -2436,6 +2436,22 @@ msgstr "Host settings"
 msgid "登入系統"
 msgstr "Log in"
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:86
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:332
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:343
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:214
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:471
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:342
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:795
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:269
+#: app/templates/pageir/_page_ir.html:14
+#: app/templates/pages/admin/groups.html:191
+#: app/templates/pages/organizations/list.html:423
+#: app/templates/pages/units/create.html:3
+#: app/templates/pages/units/create.html:11
+msgid "新增"
+msgstr "Add"
+
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:95
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:41
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:51
@@ -2458,7 +2474,7 @@ msgstr "Log in"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:48
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:54
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
-#: app/templates/pageir/_page_ir.html:24
+#: app/templates/pageir/_page_ir.html:32
 #: app/templates/pages/access_center/_tab_roles.html:59
 #: app/templates/pages/admin/_settings_recipients_section.html:32
 #: app/templates/pages/admin/_settings_smtp_section.html:33
@@ -2484,11 +2500,92 @@ msgstr "Log in"
 msgid "操作"
 msgstr "Actions"
 
-#: app/templates/pageir/_page_ir.html:51
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:53
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:67
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:80
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:65
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:68
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:104
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:141
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:295
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:218
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:796
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:73
+#: app/templates/pageir/_page_ir.html:55
+#: app/templates/pages/access_center/_tab_roles.html:101
+#: app/templates/pages/admin/_settings_recipients_section.html:52
+#: app/templates/pages/admin/_settings_recipients_section.html:54
+#: app/templates/pages/admin/_settings_smtp_section.html:61
+#: app/templates/pages/admin/_settings_smtp_section.html:63
+#: app/templates/pages/admin/_settings_telegram_section.html:55
+#: app/templates/pages/admin/_settings_telegram_section.html:57
+#: app/templates/pages/admin/numbering/list.html:159
+#: app/templates/pages/admin/time/holidays.html:105
+#: app/templates/pages/admin/time/schedules.html:75
+#: app/templates/pages/external-users/list.html:66
+#: app/templates/pages/external-users/view.html:28
+#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:50
+#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:53
+#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:50
+#: app/templates/pages/job_families/view.html:10
+#: app/templates/pages/modules/view.html:16
+#: app/templates/pages/security/api_keys.html:59
+#: app/templates/pages/users/list.html:63
+msgid "編輯"
+msgstr "Edit"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:58
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:68
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:81
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:69
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:73
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:95
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:133
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:253
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:63
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:147
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:227
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:58
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:222
+#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:74
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:102
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:313
+#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:797
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:218
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:87
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:74
+#: app/templates/pageir/_page_ir.html:56
+#: app/templates/pages/access_center/_tab_roles.html:102
+#: app/templates/pages/admin/_settings_recipients_section.html:56
+#: app/templates/pages/admin/_settings_recipients_section.html:58
+#: app/templates/pages/admin/_settings_smtp_section.html:65
+#: app/templates/pages/admin/_settings_smtp_section.html:67
+#: app/templates/pages/admin/_settings_telegram_section.html:59
+#: app/templates/pages/admin/_settings_telegram_section.html:61
+#: app/templates/pages/admin/departments.html:314
+#: app/templates/pages/admin/groups.html:244
+#: app/templates/pages/admin/numbering/list.html:165
+#: app/templates/pages/admin/org-admins/list.html:93
+#: app/templates/pages/admin/settings.html:86
+#: app/templates/pages/admin/time/holidays.html:106
+#: app/templates/pages/admin/time/schedules.html:80
+#: app/templates/pages/external-users/list.html:77
+#: app/templates/pages/external-users/view.html:41
+#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:51
+#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:55
+#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:52
+#: app/templates/pages/job_families/list.html:190
+#: app/templates/pages/job_levels/list.html:186
+#: app/templates/pages/job_titles/list.html:213
+#: app/templates/pages/users/list.html:74
+msgid "刪除"
+msgstr "Delete"
+
+#: app/templates/pageir/_page_ir.html:61
 msgid "沒有資料"
 msgstr "No data"
 
-#: app/templates/pageir/_page_ir.html:56
+#: app/templates/pageir/_page_ir.html:66
 #: app/templates/pages/access_center/_tab_health.html:77
 msgid "總數"
 msgstr "Total"
@@ -2496,7 +2593,7 @@ msgstr "Total"
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:85
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:119
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:312
-#: app/templates/pageir/_page_ir.html:57
+#: app/templates/pageir/_page_ir.html:67
 #: app/templates/pages/access_center/_tab_accounts.html:121
 #: app/templates/pages/users/list.html:89
 msgid "上一頁"
@@ -2506,13 +2603,13 @@ msgstr "Previous"
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
-#: app/templates/pageir/_page_ir.html:59
+#: app/templates/pageir/_page_ir.html:69
 #: app/templates/pages/access_center/_tab_accounts.html:124
 #: app/templates/pages/users/list.html:93
 msgid "下一頁"
 msgstr "Next"
 
-#: app/templates/pageir/_page_ir.html:81
+#: app/templates/pageir/_page_ir.html:91
 msgid "請選擇一筆資料"
 msgstr "Select a record"
 
@@ -3263,85 +3360,6 @@ msgstr "Holders"
 #: app/web/org_admin_rescue.py:96
 msgid "啟用"
 msgstr "Active"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:53
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:67
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:80
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:65
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:68
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:104
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:141
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:295
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:218
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:796
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:73
-#: app/templates/pages/access_center/_tab_roles.html:101
-#: app/templates/pages/admin/_settings_recipients_section.html:52
-#: app/templates/pages/admin/_settings_recipients_section.html:54
-#: app/templates/pages/admin/_settings_smtp_section.html:61
-#: app/templates/pages/admin/_settings_smtp_section.html:63
-#: app/templates/pages/admin/_settings_telegram_section.html:55
-#: app/templates/pages/admin/_settings_telegram_section.html:57
-#: app/templates/pages/admin/numbering/list.html:159
-#: app/templates/pages/admin/time/holidays.html:105
-#: app/templates/pages/admin/time/schedules.html:75
-#: app/templates/pages/external-users/list.html:66
-#: app/templates/pages/external-users/view.html:28
-#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:50
-#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:53
-#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:50
-#: app/templates/pages/job_families/view.html:10
-#: app/templates/pages/modules/view.html:16
-#: app/templates/pages/security/api_keys.html:59
-#: app/templates/pages/users/list.html:63
-msgid "編輯"
-msgstr "Edit"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:58
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:68
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:81
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:69
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:73
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:95
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:133
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:253
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:63
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:147
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:227
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:58
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:222
-#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:74
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:102
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:313
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:797
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:218
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:87
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:74
-#: app/templates/pages/access_center/_tab_roles.html:102
-#: app/templates/pages/admin/_settings_recipients_section.html:56
-#: app/templates/pages/admin/_settings_recipients_section.html:58
-#: app/templates/pages/admin/_settings_smtp_section.html:65
-#: app/templates/pages/admin/_settings_smtp_section.html:67
-#: app/templates/pages/admin/_settings_telegram_section.html:59
-#: app/templates/pages/admin/_settings_telegram_section.html:61
-#: app/templates/pages/admin/departments.html:314
-#: app/templates/pages/admin/groups.html:244
-#: app/templates/pages/admin/numbering/list.html:165
-#: app/templates/pages/admin/org-admins/list.html:93
-#: app/templates/pages/admin/settings.html:86
-#: app/templates/pages/admin/time/holidays.html:106
-#: app/templates/pages/admin/time/schedules.html:80
-#: app/templates/pages/external-users/list.html:77
-#: app/templates/pages/external-users/view.html:41
-#: app/templates/pages/hostconfig/_system_settings_section_recipients.html:51
-#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:55
-#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:52
-#: app/templates/pages/job_families/list.html:190
-#: app/templates/pages/job_levels/list.html:186
-#: app/templates/pages/job_titles/list.html:213
-#: app/templates/pages/users/list.html:74
-msgid "刪除"
-msgstr "Delete"
 
 #: app/templates/pages/access_center/_tab_roles.html:109
 msgid "載入持有人中"
@@ -4458,21 +4476,6 @@ msgstr "Group"
 #: app/templates/pages/admin/groups.html:189
 msgid "成員"
 msgstr "Members"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:86
-#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:332
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:343
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:214
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:471
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:342
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:795
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:269
-#: app/templates/pages/admin/groups.html:191
-#: app/templates/pages/organizations/list.html:423
-#: app/templates/pages/units/create.html:3
-#: app/templates/pages/units/create.html:11
-msgid "新增"
-msgstr "Add"
 
 #: app/templates/pages/admin/groups.html:203
 msgid "請從左側選擇社群"
