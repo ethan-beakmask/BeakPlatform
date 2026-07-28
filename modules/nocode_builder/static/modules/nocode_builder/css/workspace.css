@@ -103,6 +103,10 @@
     margin-top: 12px;
 }
 
+.wks-layout-full {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .wks-sidebar,
 .wks-main {
     min-width: 0;
@@ -191,6 +195,242 @@
     min-height: calc(100vh - 290px);
 }
 
+.wks-main-org {
+    position: relative;
+}
+
+.wks-org-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.wks-org-head h2,
+.wks-org-head p,
+.wks-assignment-panel h3,
+.wks-assignment-panel p {
+    margin: 0;
+}
+
+.wks-org-head h2 {
+    font-size: 18px;
+}
+
+.wks-org-head p,
+.wks-assignment-panel p {
+    color: var(--color-text-muted);
+}
+
+.wks-org-actions,
+.wks-assignment-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.wks-inline-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px;
+    margin-bottom: 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-light);
+}
+
+.wks-inline-form label,
+.wks-assignment-panel label {
+    display: grid;
+    gap: 4px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.wks-inline-form input,
+.wks-assignment-panel select {
+    min-height: 34px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    padding: 6px 8px;
+}
+
+.wks-inline-form input[readonly] {
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+}
+
+.wks-matrix-panel {
+    min-width: 0;
+}
+
+.wks-matrix-wrap {
+    max-width: 100%;
+    overflow: auto;
+    border: 1px solid var(--color-border);
+}
+
+.wks-matrix-table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+}
+
+.wks-matrix-table th,
+.wks-matrix-table td {
+    border: 1px solid var(--color-border);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.wks-matrix-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--color-bg-header);
+    color: var(--color-bg-white);
+}
+
+.wks-matrix-corner {
+    left: 0;
+    z-index: 3;
+    min-width: 140px;
+}
+
+.wks-matrix-group-head {
+    min-width: 150px;
+    cursor: pointer;
+}
+
+.wks-matrix-level-head {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 140px;
+    background: var(--color-bg-light);
+    cursor: pointer;
+}
+
+.wks-matrix-code,
+.wks-matrix-name,
+.wks-matrix-rank {
+    display: block;
+}
+
+.wks-matrix-code {
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.wks-matrix-table thead .wks-matrix-code {
+    color: var(--color-bg-white);
+}
+
+.wks-matrix-name {
+    margin-top: 2px;
+    font-weight: 600;
+}
+
+.wks-matrix-rank {
+    margin-top: 4px;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.wks-matrix-cell {
+    min-width: 150px;
+    min-height: 54px;
+    background: var(--color-bg-white);
+    transition: background-color 0.15s, outline-color 0.15s;
+}
+
+.wks-matrix-cell-blocked {
+    background: var(--color-bg);
+}
+
+.wks-matrix-drag-over {
+    background: var(--color-info-light);
+    outline: 2px dashed var(--color-primary);
+    outline-offset: -2px;
+}
+
+.wks-matrix-cell-blocked.wks-matrix-drag-over {
+    background: var(--color-warning-light);
+    outline-color: var(--color-warning);
+}
+
+.wks-matrix-unassigned {
+    color: var(--color-text-muted);
+}
+
+.wks-user-chip {
+    display: inline-flex;
+    align-items: center;
+    max-width: 140px;
+    min-height: 28px;
+    margin: 3px;
+    padding: 4px 9px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-info-light);
+    color: var(--color-primary);
+    cursor: grab;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    user-select: none;
+}
+
+.wks-user-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wks-user-chip:hover {
+    border-color: var(--color-primary);
+}
+
+.wks-user-chip:active {
+    cursor: grabbing;
+}
+
+.wks-user-chip-dragging {
+    opacity: 0.5;
+}
+
+.wks-user-chip-inactive {
+    opacity: 0.45;
+}
+
+.wks-matrix-empty {
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.wks-assignment-panel {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 20;
+    display: grid;
+    gap: 10px;
+    width: min(320px, calc(100vw - 32px));
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg-white);
+    box-shadow: 0 8px 22px var(--color-border);
+}
+
 @media (max-width: 960px) {
     .wks-header,
     .wks-layout {
@@ -199,6 +439,10 @@
 
     .wks-header {
         align-items: stretch;
+        flex-direction: column;
+    }
+
+    .wks-org-head {
         flex-direction: column;
     }
 }

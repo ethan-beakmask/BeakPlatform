@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 03:24+0800\n"
+"POT-Creation-Date: 2026-07-28 09:24+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -2149,6 +2149,9 @@ msgstr "Passwords match"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:354
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:114
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:131
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:88
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:109
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:187
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:118
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:140
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:232
@@ -2983,6 +2986,7 @@ msgstr "Please select an organization"
 msgid "選單樹"
 msgstr "Menu Tree"
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:70
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:16
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:16
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:22
@@ -3666,6 +3670,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_portal.html:88
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_portal_v2.html:123
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:40
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:163
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:49
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:25
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:24
@@ -3836,6 +3841,7 @@ msgstr "No recipient groups yet"
 msgid "點擊「新增群組」開始建立"
 msgstr "Click \"Add Group\" to start creating"
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:80
 #: app/templates/pages/admin/_settings_recipients_section.html:28
 #: app/templates/pages/external-users/edit.html:133
 #: app/templates/pages/hostconfig/_system_settings_modals.html:181
@@ -7556,6 +7562,7 @@ msgstr ""
 msgid "收件人群組列表"
 msgstr "Recipient group list"
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:68
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:14
 msgid "新增群組"
 msgstr "Add new group"
@@ -8487,6 +8494,8 @@ msgstr "Authorized User Types"
 msgid "勾選可看見此選單的用戶類型（平行關係，非繼承）"
 msgstr "Select user types that can see this menu (parallel, not inherited)"
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:84
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:105
 #: app/templates/pages/menu/create.html:103
 #: app/templates/pages/menu/edit.html:94
 #: app/templates/pages/modules/edit.html:44
@@ -8933,6 +8942,7 @@ msgstr "Assignment type"
 msgid "選擇類型"
 msgstr "Select type"
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:170
 #: app/templates/pages/modules/list.html:157
 #: app/templates/pages/units/create.html:3
 #: app/templates/pages/units/create.html:11
@@ -14437,6 +14447,41 @@ msgstr "Rule updated"
 msgid "規則已刪除"
 msgstr "Rule deleted"
 
+#: ../modules/nocode_builder/api/portal_org_api.py:36
+msgid "子系統 portal.db 不存在，請先初始化 Portal"
+msgstr "Portal database not initialized for this sub-system"
+
+#: ../modules/nocode_builder/api/portal_org_api.py:45
+#: ../modules/nocode_builder/api/portal_org_api.py:68
+#: ../modules/nocode_builder/api/portal_org_api.py:101
+#: ../modules/nocode_builder/api/portal_org_api.py:135
+msgid "Sub system not found"
+msgstr "Sub system not found"
+
+#: ../modules/nocode_builder/api/portal_org_api.py:83
+msgid "顯示順序格式不正確"
+msgstr "Invalid display order format"
+
+#: ../modules/nocode_builder/api/portal_org_api.py:91
+msgid "群組已儲存"
+msgstr "Group saved"
+
+#: ../modules/nocode_builder/api/portal_org_api.py:117
+msgid "rank 或顯示順序格式不正確"
+msgstr "Invalid rank or display order format"
+
+#: ../modules/nocode_builder/api/portal_org_api.py:125
+msgid "階級已儲存"
+msgstr "Level saved"
+
+#: ../modules/nocode_builder/api/portal_org_api.py:151
+msgid "帳號或群組階級不存在"
+msgstr "Account, group, or level not found"
+
+#: ../modules/nocode_builder/api/portal_org_api.py:160
+msgid "帳號歸屬已更新"
+msgstr "Assignment updated"
+
 #: ../modules/nocode_builder/api/site_map_api.py:86
 msgid "網頁已建立"
 msgstr "Page created"
@@ -16131,12 +16176,9 @@ msgid "頁面設計"
 msgstr "Page Design"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:19
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:64
 msgid "帳號權限"
 msgstr "Accounts & Permissions"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:19
-msgid "N2b 建置中"
-msgstr "coming soon (N2b)"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:22
 msgid "返回子系統列表"
@@ -16173,6 +16215,53 @@ msgstr "Select or create a page on the left"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:49
 msgid "folder 節點只展開或收合，不會載入設計器。"
 msgstr "Folder nodes only expand/collapse; they do not load the designer."
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:65
+msgid "拖拉帳號 chip 可調整群組與階級。"
+msgstr "Drag account chips to change group and level."
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:69
+msgid "新增階級"
+msgstr "New Level"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:76
+msgid "群組代碼"
+msgstr "Group Code"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:141
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:87
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:108
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:186
+msgid "確定"
+msgstr "OK"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:93
+msgid "階級代碼"
+msgstr "Level Code"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:97
+msgid "階級名稱"
+msgstr "Level Name"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:101
+msgid "rank"
+msgstr "rank"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:117
+msgid "階級 / 群組"
+msgstr "Level / Group"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:160
+msgid "尚無帳號權限資料"
+msgstr "No account data yet"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:167
+msgid "調整帳號歸屬"
+msgstr "Change Assignment"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:178
+msgid "階級"
+msgstr "Level"
 
 #: ../modules/form_workflow/api/backgrounds.py:133
 #: ../modules/form_workflow/api/backgrounds.py:171
@@ -19192,10 +19281,6 @@ msgstr "Edit description"
 msgid "輸入流程描述..."
 msgstr "Enter workflow description..."
 
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:141
-msgid "確定"
-msgstr "OK"
-
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:147
 msgid "Shift 模式：框選節點 / 連續畫線"
 msgstr "Shift mode: frame node selection/continuous line drawing"
@@ -20665,4 +20750,7 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "表單元件將於後續版本啟用"
 #~ msgstr "Form widget will be enabled in a later version"
+
+#~ msgid "N2b 建置中"
+#~ msgstr "coming soon (N2b)"
 

@@ -15,15 +15,15 @@
         <div class="wks-title-group">
             <h1 x-text="subSystem ? subSystem.name : __('NoCode 工作區')"></h1>
             <nav class="wks-tabs" aria-label="{{ _('工作區分頁') }}">
-                <button type="button" class="wks-tab wks-tab-active">{{ _('頁面設計') }}</button>
-                <button type="button" class="wks-tab wks-tab-disabled" disabled>{{ _('帳號權限') }} · {{ _('N2b 建置中') }}</button>
+                <button type="button" class="wks-tab" :class="{ 'wks-tab-active': activeTab === 'design' }" @click="activeTab = 'design'">{{ _('頁面設計') }}</button>
+                <button type="button" class="wks-tab" :class="{ 'wks-tab-active': activeTab === 'org' }" @click="activeTab = 'org'">{{ _('帳號權限') }}</button>
             </nav>
         </div>
         <a class="wks-link" href="{{ app_prefix }}/nocode-builder/sub-systems">{{ _('返回子系統列表') }}</a>
     </header>
 
-    <main class="wks-layout">
-        <aside class="wks-sidebar">
+    <main class="wks-layout" :class="{ 'wks-layout-full': activeTab === 'org' }">
+        <aside class="wks-sidebar" x-show="activeTab === 'design'">
             <div class="wks-sidebar-head">
                 <h2>{{ _('Site Map') }}</h2>
                 <span class="wks-muted" x-show="sortDirty">{{ _('排序未儲存') }}</span>
@@ -42,7 +42,7 @@
             <div class="wks-status" x-show="toast.show" x-text="toast.message"></div>
         </aside>
 
-        <section class="wks-main">
+        <section class="wks-main" x-show="activeTab === 'design'">
             <template x-if="!currentPageSc">
                 <div class="wks-main-empty">
                     <h2>{{ _('從左側選擇或建立網頁') }}</h2>
@@ -57,6 +57,137 @@
                 </div>
             </template>
         </section>
+
+        <section class="wks-main wks-main-org" x-show="activeTab === 'org'" x-data="wksOrgManager(subSystemSc)">
+            <div class="wks-org-head">
+                <div>
+                    <h2>{{ _('帳號權限') }}</h2>
+                    <p>{{ _('拖拉帳號 chip 可調整群組與階級。') }}</p>
+                </div>
+                <div class="wks-org-actions">
+                    <button type="button" class="wks-btn wks-btn-primary" @click="startGroupForm()">{{ _('新增群組') }}</button>
+                    <button type="button" class="wks-btn wks-btn-primary" @click="startLevelForm()">{{ _('新增階級') }}</button>
+                    <button type="button" class="wks-btn" @click="loadOrg()" :disabled="loading">{{ _('重新整理') }}</button>
+                </div>
+            </div>
+
+            <div class="wks-inline-form" x-show="groupForm.open">
+                <label>
+                    <span>{{ _('群組代碼') }}</span>
+                    <input type="text" x-model="groupForm.code" :readonly="groupForm.editing" placeholder="^[A-Z][A-Z0-9_]{0,31}$">
+                </label>
+                <label>
+                    <span>{{ _('群組名稱') }}</span>
+                    <input type="text" x-model="groupForm.name">
+                </label>
+                <label>
+                    <span>{{ _('顯示順序') }}</span>
+                    <input type="number" x-model="groupForm.display_order">
+                </label>
+                <button type="button" class="wks-btn wks-btn-primary" @click="saveGroup()">{{ _('確定') }}</button>
+                <button type="button" class="wks-btn" @click="cancelForms()">{{ _('取消') }}</button>
+            </div>
+
+            <div class="wks-inline-form" x-show="levelForm.open">
+                <label>
+                    <span>{{ _('階級代碼') }}</span>
+                    <input type="text" x-model="levelForm.code" :readonly="levelForm.editing" placeholder="^[A-Z][A-Z0-9_]{0,31}$">
+                </label>
+                <label>
+                    <span>{{ _('階級名稱') }}</span>
+                    <input type="text" x-model="levelForm.name">
+                </label>
+                <label>
+                    <span>{{ _('rank') }}</span>
+                    <input type="number" x-model="levelForm.rank">
+                </label>
+                <label>
+                    <span>{{ _('顯示順序') }}</span>
+                    <input type="number" x-model="levelForm.display_order">
+                </label>
+                <button type="button" class="wks-btn wks-btn-primary" @click="saveLevel()">{{ _('確定') }}</button>
+                <button type="button" class="wks-btn" @click="cancelForms()">{{ _('取消') }}</button>
+            </div>
+
+            <div class="wks-matrix-panel" x-show="!loading">
+                <div class="wks-matrix-wrap" x-show="groups.length || levels.length || users.length">
+                    <table class="wks-matrix-table">
+                        <thead>
+                            <tr>
+                                <th class="wks-matrix-corner">{{ _('階級 / 群組') }}</th>
+                                <template x-for="group in matrixGroups()" :key="group.code || '__none_group'">
+                                    <th class="wks-matrix-group-head" :class="{ 'wks-matrix-unassigned': !group.code }" @click="group.code && editGroup(group)">
+                                        <span class="wks-matrix-code" x-text="group.code || __('未歸屬')"></span>
+                                        <span class="wks-matrix-name" x-text="group.name"></span>
+                                    </th>
+                                </template>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="level in matrixLevels()" :key="level.code || '__none_level'">
+                                <tr>
+                                    <th class="wks-matrix-level-head" :class="{ 'wks-matrix-unassigned': !level.code }" @click="level.code && editLevel(level)">
+                                        <span class="wks-matrix-code" x-text="level.code || __('未歸屬')"></span>
+                                        <span class="wks-matrix-name" x-text="level.name"></span>
+                                        <span class="wks-matrix-rank" x-show="level.code" x-text="'rank ' + level.rank"></span>
+                                    </th>
+                                    <template x-for="group in matrixGroups()" :key="(level.code || '__none_level') + ':' + (group.code || '__none_group')">
+                                        <td class="wks-matrix-cell"
+                                            :class="{ 'wks-matrix-cell-blocked': !group.code || !level.code }"
+                                            @dragover.prevent="onDragOver($event, group, level)"
+                                            @dragleave="onDragLeave($event)"
+                                            @drop.prevent="onDrop($event, group, level)">
+                                            <template x-for="user in usersForCell(group, level)" :key="user.secure_code">
+                                                <button type="button"
+                                                        class="wks-user-chip"
+                                                        :class="{ 'wks-user-chip-inactive': !truthy(user.is_active), 'wks-user-chip-dragging': draggingUserSc === user.secure_code }"
+                                                        draggable="true"
+                                                        :title="user.username"
+                                                        @dragstart="onDragStart($event, user)"
+                                                        @dragend="onDragEnd($event)"
+                                                        @click="openAssignmentPanel(user)">
+                                                    <span x-text="user.display_name || user.username"></span>
+                                                </button>
+                                            </template>
+                                            <span class="wks-matrix-empty" x-show="usersForCell(group, level).length === 0">-</span>
+                                        </td>
+                                    </template>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="wks-empty" x-show="!groups.length && !levels.length && !users.length">{{ _('尚無帳號權限資料') }}</div>
+            </div>
+
+            <div class="wks-empty" x-show="loading">{{ _('載入中...') }}</div>
+            <div class="wks-status" x-show="toast.show" x-text="toast.message"></div>
+
+            <div class="wks-assignment-panel" x-show="assignmentPanel.open" @click.outside="closeAssignmentPanel()">
+                <h3>{{ _('調整帳號歸屬') }}</h3>
+                <p x-text="assignmentPanel.user ? (assignmentPanel.user.display_name || assignmentPanel.user.username) : ''"></p>
+                <label>
+                    <span>{{ _('群組') }}</span>
+                    <select x-model="assignmentPanel.group_code">
+                        <template x-for="group in activeGroups()" :key="group.code">
+                            <option :value="group.code" x-text="group.name"></option>
+                        </template>
+                    </select>
+                </label>
+                <label>
+                    <span>{{ _('階級') }}</span>
+                    <select x-model="assignmentPanel.level_code">
+                        <template x-for="level in sortedLevelsDesc()" :key="level.code">
+                            <option :value="level.code" x-text="level.name + ' (rank ' + level.rank + ')'"></option>
+                        </template>
+                    </select>
+                </label>
+                <div class="wks-assignment-actions">
+                    <button type="button" class="wks-btn wks-btn-primary" @click="saveAssignmentPanel()">{{ _('確定') }}</button>
+                    <button type="button" class="wks-btn" @click="closeAssignmentPanel()">{{ _('取消') }}</button>
+                </div>
+            </div>
+        </section>
     </main>
 </div>
 {% endblock %}
@@ -69,4 +200,5 @@
 <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-drag.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/ir-designer.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace-org.js"></script>
 {% endblock %}

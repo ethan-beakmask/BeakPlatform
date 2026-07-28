@@ -281,6 +281,20 @@ def list_levels(sub_system_sc: str) -> list[dict]:
         return [dict(row) for row in rows]
 
 
+def list_users(sub_system_sc: str) -> list[dict]:
+    ensure_portal_schema(sub_system_sc)
+    mgr = DataSourceManager()
+    with mgr.get_session(sub_system_sc, 'portal') as sess:
+        rows = sess.execute(
+            text(
+                'SELECT secure_code, username, display_name, email, role_code, '
+                'group_code, level_code, is_active, created_at '
+                'FROM portal_users ORDER BY username ASC'
+            )
+        ).mappings().all()
+        return [dict(row) for row in rows]
+
+
 def upsert_group(
     sub_system_sc: str,
     code: str,

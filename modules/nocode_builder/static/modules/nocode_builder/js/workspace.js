@@ -21,6 +21,7 @@ function wksManager(subSystemSc) {
 
     return {
         subSystemSc: subSystemSc || '',
+        activeTab: 'design',
         subSystem: null,
         loading: true,
         tree: [],

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-28 03:24+0800\n"
+"POT-Creation-Date: 2026-07-28 09:24+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2126,6 +2126,9 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:354
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:114
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:131
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:88
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:109
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:187
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:118
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:140
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:232
@@ -2949,6 +2952,7 @@ msgstr ""
 msgid "選單樹"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:70
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:16
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:16
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:22
@@ -3626,6 +3630,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_portal.html:88
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_portal_v2.html:123
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:40
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:163
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:49
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:25
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:24
@@ -3794,6 +3799,7 @@ msgstr ""
 msgid "點擊「新增群組」開始建立"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:80
 #: app/templates/pages/admin/_settings_recipients_section.html:28
 #: app/templates/pages/external-users/edit.html:133
 #: app/templates/pages/hostconfig/_system_settings_modals.html:181
@@ -7364,6 +7370,7 @@ msgstr ""
 msgid "收件人群組列表"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:68
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:14
 msgid "新增群組"
 msgstr ""
@@ -8266,6 +8273,8 @@ msgstr ""
 msgid "勾選可看見此選單的用戶類型（平行關係，非繼承）"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:84
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:105
 #: app/templates/pages/menu/create.html:103
 #: app/templates/pages/menu/edit.html:94
 #: app/templates/pages/modules/edit.html:44
@@ -8694,6 +8703,7 @@ msgstr ""
 msgid "選擇類型"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:170
 #: app/templates/pages/modules/list.html:157
 #: app/templates/pages/units/create.html:3
 #: app/templates/pages/units/create.html:11
@@ -13925,6 +13935,41 @@ msgstr ""
 msgid "規則已刪除"
 msgstr ""
 
+#: ../modules/nocode_builder/api/portal_org_api.py:36
+msgid "子系統 portal.db 不存在，請先初始化 Portal"
+msgstr ""
+
+#: ../modules/nocode_builder/api/portal_org_api.py:45
+#: ../modules/nocode_builder/api/portal_org_api.py:68
+#: ../modules/nocode_builder/api/portal_org_api.py:101
+#: ../modules/nocode_builder/api/portal_org_api.py:135
+msgid "Sub system not found"
+msgstr ""
+
+#: ../modules/nocode_builder/api/portal_org_api.py:83
+msgid "顯示順序格式不正確"
+msgstr ""
+
+#: ../modules/nocode_builder/api/portal_org_api.py:91
+msgid "群組已儲存"
+msgstr ""
+
+#: ../modules/nocode_builder/api/portal_org_api.py:117
+msgid "rank 或顯示順序格式不正確"
+msgstr ""
+
+#: ../modules/nocode_builder/api/portal_org_api.py:125
+msgid "階級已儲存"
+msgstr ""
+
+#: ../modules/nocode_builder/api/portal_org_api.py:151
+msgid "帳號或群組階級不存在"
+msgstr ""
+
+#: ../modules/nocode_builder/api/portal_org_api.py:160
+msgid "帳號歸屬已更新"
+msgstr ""
+
 #: ../modules/nocode_builder/api/site_map_api.py:86
 msgid "網頁已建立"
 msgstr ""
@@ -15579,11 +15624,8 @@ msgid "頁面設計"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:19
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:64
 msgid "帳號權限"
-msgstr ""
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:19
-msgid "N2b 建置中"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:22
@@ -15620,6 +15662,53 @@ msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:49
 msgid "folder 節點只展開或收合，不會載入設計器。"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:65
+msgid "拖拉帳號 chip 可調整群組與階級。"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:69
+msgid "新增階級"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:76
+msgid "群組代碼"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:141
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:87
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:108
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:186
+msgid "確定"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:93
+msgid "階級代碼"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:97
+msgid "階級名稱"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:101
+msgid "rank"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:117
+msgid "階級 / 群組"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:160
+msgid "尚無帳號權限資料"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:167
+msgid "調整帳號歸屬"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:178
+msgid "階級"
 msgstr ""
 
 #: ../modules/form_workflow/api/backgrounds.py:133
@@ -18552,10 +18641,6 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:137
 msgid "輸入流程描述..."
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:141
-msgid "確定"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:147
