@@ -56,7 +56,7 @@ function subSystemPortal() {
 
         openPage(page) {
             const config = window.__PORTAL_CONFIG || {};
-            const url = window.__BP + '/nocode-builder/pages/' + page.page_layout_secure_code
+            const url = window.__BP + '/p/' + page.page_layout_secure_code
                 + '?sub=' + encodeURIComponent(config.subSystemSc)
                 + '&ssp=' + encodeURIComponent(page.secure_code);
             window.location.href = url;

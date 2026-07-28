@@ -51,7 +51,7 @@
                     <th style="width: 70px;">{{ _('頁面數') }}</th>
                     <th style="width: 60px;">{{ _('狀態') }}</th>
                     <th style="width: 140px;">{{ _('更新時間') }}</th>
-                    <th style="width: 300px;">{{ _('操作') }}</th>
+                    <th style="width: 240px;">{{ _('操作') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -77,8 +77,6 @@
                         <td class="actions">
                             <a :href="'{{ app_prefix }}/nocode/workspace/' + item.secure_code"
                                class="dc-btn sm">{{ _('工作區') }}</a>
-                            <a :href="'{{ app_prefix }}/nocode-builder/studio/' + item.secure_code"
-                               class="dc-btn sm">{{ _('設計器') }}</a>
                             <a :href="'{{ app_prefix }}/nocode-builder/sub-systems/' + item.secure_code + '/portal'"
                                class="dc-btn sm" target="_blank">{{ _('預覽') }}</a>
                             <a :href="'{{ app_prefix }}/nocode-builder/sub-systems/' + item.secure_code + '/config'"

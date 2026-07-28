@@ -4,7 +4,7 @@
  * Based on proven matrix approach: 2D array tracks cell IDs,
  * colWidths/rowHeights arrays for fr units, merge/split/undo/resize.
  *
- * Integrates with studio.js via class interface:
+ * Exposes a class interface for layout designers:
  *   - constructor(container, { rows, cols })
  *   - loadLayout(layoutJson v3) / toLayoutJson()
  *   - render()
@@ -851,7 +851,7 @@ class GridLayoutEditor {
         }
     }
 
-    // ===== Widget Operations (studio.js interface) =====
+    // ===== Widget Operations (designer interface) =====
 
     _placeWidget(regionId, type) {
         const key = 'r' + regionId;
@@ -889,7 +889,7 @@ class GridLayoutEditor {
         }
     }
 
-    /** studio.js calls this: add widget to currently selected empty zone */
+    /** Add widget to currently selected empty zone. */
     addWidgetToSelected(type) {
         if (this.selected.size !== 1) return;
         const regionId = [...this.selected][0];
@@ -899,7 +899,7 @@ class GridLayoutEditor {
         }
     }
 
-    /** studio.js calls this: update widget config */
+    /** Update widget config. */
     updateWidget(zoneId, config) {
         if (!this.widgetMap[zoneId]) return;
         Object.assign(this.widgetMap[zoneId], config);
@@ -1014,7 +1014,7 @@ class GridLayoutEditor {
         this.render();
     }
 
-    /** Resize (used by studio.js) */
+    /** Resize the grid and clear existing widgets. */
     resize(rows, cols) {
         this.widgetMap = {};
         this._initGrid(rows, cols);

@@ -37,20 +37,6 @@ def index():
     return redirect(url_for('nocode_builder_web.sub_system_list'))
 
 
-@web_bp.route('/lab')
-@module_access_required('nocode_builder')
-def lab():
-    """Web Builder - 佈局設計器（新頁面）"""
-    return render_template('modules/nocode_builder/lab.html')
-
-
-@web_bp.route('/lab/<secure_code>')
-@module_access_required('nocode_builder')
-def lab_edit(secure_code):
-    """Web Builder - 佈局設計器（編輯既有頁面）"""
-    return render_template('modules/nocode_builder/lab.html')
-
-
 @web_bp.route('/ir-designer/<secure_code>')
 @nocode_short_bp.route('/ir-designer/<secure_code>')
 @module_access_required('nocode_builder')
@@ -103,36 +89,6 @@ def ir_designer_preview(secure_code):
         page_title=_page_ir_title(page),
         body_html=rendered['html'],
         has_form=rendered['has_form'],
-    )
-
-
-@web_bp.route('/pages/<secure_code>')
-@module_access_required('nocode_builder', False)
-def page_view(secure_code):
-    """Web Builder - 頁面檢視（用戶模式）"""
-    # 子系統 context: ?sub=<sub_sc>&ssp=<ssp_sc>
-    sub_sc = request.args.get('sub', '').strip()
-    ssp_sc = request.args.get('ssp', '').strip()
-
-    sub_system_context = None
-    if sub_sc and ssp_sc:
-        sub_system_context = _build_sub_system_context(sub_sc, ssp_sc)
-        # [SEC-01] 子系統頁面強制權限檢查
-        # context 為 None 表示用戶無權存取此子系統或頁面
-        if sub_system_context is None:
-            _deny_and_logout('nocode_page_view', secure_code, sub_sc)
-            return redirect(url_for('auth.login'))
-
-        # SiteMap 節點權限檢查
-        if not _check_site_map_node_access(sub_sc, secure_code, current_user):
-            _deny_and_logout('nocode_sitemap_node', secure_code, sub_sc)
-            return redirect(url_for('auth.login'))
-
-    return render_template(
-        'modules/nocode_builder/lab_view.html',
-        secure_code=secure_code,
-        page_name='',
-        sub_system_context=sub_system_context,
     )
 
 
@@ -189,26 +145,6 @@ def lookup_manager():
 def my_projects():
     """我的開發案列表"""
     return render_template('modules/nocode_builder/my_projects.html')
-
-
-@web_bp.route('/studio/<secure_code>')
-@module_access_required('nocode_builder')
-def studio(secure_code):
-    """統一設計器 (Phase 2)"""
-    return render_template(
-        'modules/nocode_builder/studio.html',
-        sub_system_sc=secure_code,
-    )
-
-
-@web_bp.route('/studio-test/<secure_code>')
-@module_access_required('nocode_builder')
-def studio_grid_test(secure_code):
-    """Grid 模式測試頁 (standalone, no base.html)"""
-    return render_template(
-        'modules/nocode_builder/studio_grid_test.html',
-        sub_system_sc=secure_code,
-    )
 
 
 # =============================================================================

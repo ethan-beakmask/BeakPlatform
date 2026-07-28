@@ -512,7 +512,6 @@ function siteMapPortal() {
 
         /**
          * 向下相容: bindings → contextInputs/contextOutputs
-         * (復用 lab-viewer.js 邏輯)
          */
         _migrateBindingsToContext(layout) {
             if (layout.version === 2) return layout;

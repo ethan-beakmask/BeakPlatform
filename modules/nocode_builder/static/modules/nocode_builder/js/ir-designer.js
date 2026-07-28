@@ -1,6 +1,7 @@
 /* global Alpine, Formio, BkI18n, __ */
 function irDesigner() {
     const BP = window.__BP || '';
+    const apiBase = `${BP}/api/nocode-builder`;
 
     function tr(text, params) {
         return window.__ ? window.__(text, params) : text;
@@ -69,7 +70,7 @@ function irDesigner() {
         },
 
         async loadPage() {
-            const res = await fetch(`${BP}/api/nocode-builder/pages/${this.secureCode}`);
+            const res = await fetch(`${apiBase}/pages/${this.secureCode}`);
             const data = await res.json();
             if (!data.success) {
                 this.errors = [{ path: '', message: data.error || tr('載入失敗') }];
@@ -605,7 +606,7 @@ function irDesigner() {
                 layout_json: this.buildDoc(),
             };
             try {
-                const res = await fetch(`${BP}/api/nocode-builder/pages/${this.secureCode}`, {
+                const res = await fetch(`${apiBase}/pages/${this.secureCode}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',

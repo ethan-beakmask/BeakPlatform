@@ -307,24 +307,9 @@ def published_page(secure_code):
             has_form=rendered['has_form'],
         )
 
-    # 子系統 context
-    sub_sc = request.args.get('sub', '').strip()
-    ssp_sc = request.args.get('ssp', '').strip()
-
-    sub_system_context = None
-    if sub_sc and ssp_sc:
-        try:
-            from modules.nocode_builder.web import _build_sub_system_context
-            sub_system_context = _build_sub_system_context(sub_sc, ssp_sc)
-        except Exception as e:
-            logger.warning('Failed to build sub system context for /p/: %s', e)
-
-    return render_template(
-        'modules/nocode_builder/lab_view.html',
-        secure_code=secure_code,
-        page_name=page.name or '',
-        sub_system_context=sub_system_context,
-    )
+    # v2 已廢棄：不再渲染，回明確錯誤頁。
+    logger.info('Legacy v2 page requested: %s', secure_code)
+    return render_template('pageir/page_error.html', legacy_v2=True), 410
 
 
 def _page_ir_title(page):

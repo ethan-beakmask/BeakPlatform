@@ -1,8 +1,8 @@
 # 無程式碼建構模組
 # 頁面設計器、查詢表管理、子系統設定
 page:
-  - /nocode/studio
-  - /nocode/lab
+  - /nocode/workspace
+  - /nocode/ir-designer
   - /nocode/lookup-manager
   - /nocode/sub-system-config
 description: 無程式碼建構模組（頁面設計器、查詢表管理、子系統設定、存取矩陣）
@@ -11,16 +11,15 @@ files:
   module_root: modules/nocode_builder/
   template:    modules/nocode_builder/templates/modules/nocode_builder/
   js:
-    - modules/nocode_builder/static/modules/nocode_builder/js/studio.js
     - modules/nocode_builder/static/modules/nocode_builder/js/page-context.js
     - modules/nocode_builder/static/modules/nocode_builder/js/datalist-widget.js
     - modules/nocode_builder/static/modules/nocode_builder/js/grid-layout-editor.js
-    - modules/nocode_builder/static/modules/nocode_builder/js/lab-designer.js
     - modules/nocode_builder/static/modules/nocode_builder/js/lookup-manager.js
-    - modules/nocode_builder/static/modules/nocode_builder/js/site-map-editor.js
     - modules/nocode_builder/static/modules/nocode_builder/js/sitemenu-widget.js
-    - modules/nocode_builder/static/modules/nocode_builder/js/access-matrix.js
     - modules/nocode_builder/static/modules/nocode_builder/js/sub-system-config.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/ir-designer.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/workspace.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/workspace-org.js
   models:
     - modules/nocode_builder/models/permission_policy.py
   web:

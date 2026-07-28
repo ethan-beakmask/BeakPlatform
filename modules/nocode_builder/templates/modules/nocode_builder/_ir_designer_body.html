@@ -7,7 +7,7 @@
             <button type="button" class="ird-btn ird-btn-primary" @click="savePage()">{{ _('儲存') }}</button>
             <button type="button" class="ird-btn" @click="previewPage()">{{ _('預覽') }}</button>
             {% if secure_code is defined %}
-            <a class="ird-btn" href="{{ app_prefix }}/nocode-builder/lab/{{ secure_code }}">{{ _('返回') }}</a>
+            <a class="ird-btn" href="{{ app_prefix }}/nocode-builder/sub-systems">{{ _('返回') }}</a>
             {% endif %}
         </div>
         <template x-if="errors.length">

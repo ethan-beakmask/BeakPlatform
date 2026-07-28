@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 14:03+0800\n"
+"POT-Creation-Date: 2026-07-28 14:20+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -2138,17 +2138,13 @@ msgstr "Passwords match"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:388
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:423
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:317
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:254
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:323
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:490
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:119
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:137
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1027
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1063
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1083
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:354
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:114
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:131
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:112
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:129
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:127
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:148
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:226
@@ -2238,7 +2234,6 @@ msgstr "Cancel"
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:42
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:28
 #: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:40
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:66
 #: app/templates/auth/change_password.html:86
 #: app/templates/layouts/base.html:87
 #: app/templates/pages/admin/initial_setup.html:298
@@ -2441,8 +2436,6 @@ msgstr "Log in"
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:343
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:214
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:471
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:342
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:795
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:269
 #: app/templates/pageir/_page_ir.html:14
 #: app/templates/pages/admin/groups.html:191
@@ -2509,7 +2502,6 @@ msgstr "Actions"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:141
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:295
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:218
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:796
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:73
 #: app/templates/pageir/_page_ir.html:55
 #: app/templates/pages/access_center/_tab_roles.html:101
@@ -2548,11 +2540,8 @@ msgstr "Edit"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:58
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:222
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:74
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:102
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:313
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:797
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:218
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:87
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:85
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:74
 #: app/templates/pageir/_page_ir.html:56
 #: app/templates/pages/access_center/_tab_roles.html:102
@@ -2614,11 +2603,19 @@ msgid "請選擇一筆資料"
 msgstr "Select a record"
 
 #: app/templates/pageir/page_error.html:2
-#: app/templates/pageir/page_error.html:8
+#: app/templates/pageir/page_error.html:12
 msgid "頁面無法顯示"
 msgstr "Page cannot be displayed"
 
 #: app/templates/pageir/page_error.html:9
+msgid "此頁面使用已停用的舊版格式"
+msgstr "This page uses a retired legacy format"
+
+#: app/templates/pageir/page_error.html:10
+msgid "此頁面仍使用已廢棄的 v2 版面格式，請以 IR 設計器重建後再發布。"
+msgstr "This page still uses the deprecated v2 layout format. Rebuild it with the IR designer before publishing."
+
+#: app/templates/pageir/page_error.html:13
 msgid "頁面定義無效或引用了未註冊的資源"
 msgstr "Page definition is invalid or references unregistered resources"
 
@@ -2954,7 +2951,6 @@ msgid "姓名"
 msgstr "Name"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:328
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:325
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:254
 #: app/templates/pages/access_center/_tab_accounts.html:47
 #: app/templates/pages/admin/departments.html:256
@@ -3026,7 +3022,6 @@ msgstr "Remove role"
 msgid "指派角色"
 msgstr "Assign Role"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:794
 #: app/templates/pages/access_center/_tab_accounts.html:144
 #: app/templates/pages/access_center/_tab_health.html:108
 #: app/templates/pages/access_center/_tab_roles.html:4
@@ -3182,9 +3177,6 @@ msgstr "Import RBAC"
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:27
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:198
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:89
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:141
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:166
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:212
 #: app/templates/pages/access_center/_tab_health.html:63
 #: app/templates/pages/users/create.html:161
 #: app/templates/partials/_icon_picker.html:8
@@ -3234,7 +3226,7 @@ msgstr "No role data"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:91
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:164
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:343
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:105
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:103
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:30
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:29
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
@@ -3266,7 +3258,6 @@ msgstr "Code"
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:326
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:466
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:551
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:323
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:250
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:20
@@ -3675,13 +3666,6 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:31
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:228
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:26
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:33
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:301
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:348
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:577
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:628
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:741
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio_grid_test.html:76
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:153
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:274
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:28
@@ -3874,11 +3858,10 @@ msgstr "Group name"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:313
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:45
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:96
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1054
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:168
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:348
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:50
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:109
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:107
 #: app/templates/pages/admin/_settings_recipients_section.html:29
 #: app/templates/pages/admin/_settings_recipients_section.html:86
 #: app/templates/pages/admin/numbering/list.html:181
@@ -3998,10 +3981,8 @@ msgid "人"
 msgstr "people"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:8
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:39
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:70
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:58
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:83
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:81
 #: app/templates/pages/admin/_settings_recipients_section.html:48
 #: app/templates/pages/admin/_settings_recipients_section.html:50
 msgid "預覽"
@@ -4047,7 +4028,6 @@ msgstr "Selected recipient"
 msgid "部門/群組："
 msgstr "Department/Group:"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:332
 #: app/templates/pages/admin/_settings_recipients_section.html:161
 msgid "含子部門"
 msgstr "Contains Department"
@@ -4106,8 +4086,6 @@ msgstr "Notification mailbox"
 #: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:147
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:210
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:654
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:234
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1121
 #: app/templates/pages/admin/_settings_recipients_section.html:267
 #: app/templates/pages/organizations/list.html:357
 #: app/templates/pages/server_manage/redis_monitor.html:184
@@ -4124,8 +4102,8 @@ msgstr "Close"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:424
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:129
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:138
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:124
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:132
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:122
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:130
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:131
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:142
 #: app/templates/pages/admin/_settings_recipients_section.html:276
@@ -4467,7 +4445,6 @@ msgid "社群分類"
 msgstr "Group classification"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:329
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:326
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:255
 #: app/templates/pages/admin/groups.html:188
 msgid "社群"
@@ -4508,9 +4485,6 @@ msgid "社群成員"
 msgstr "Group member"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:338
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:132
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:146
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:184
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:193
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:599
 #: app/templates/pages/admin/groups.html:283
@@ -4785,7 +4759,6 @@ msgstr "Expand"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:57
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:231
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:110
 #: app/templates/pages/admin/module_list.html:102
 #: app/templates/pages/job_titles/create.html:68
 #: app/templates/pages/organizations/edit.html:97
@@ -5438,7 +5411,6 @@ msgstr "User Numbering Rules"
 msgid "返回系統設定"
 msgstr "Back to System Settings"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:318
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:247
 #: app/templates/pages/admin/numbering/list.html:100
 msgid "新增規則"
@@ -5989,7 +5961,6 @@ msgstr "+ Rest"
 msgid "將目前設定的第一個上班日時間複製到所有上班日"
 msgstr "Copy the currently set first working day time to all working days"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:447
 #: app/templates/pages/admin/time/schedules.html:200
 #: app/templates/pages/external-users/edit.html:57
 #: app/templates/pages/hostconfig/_system_settings_modals.html:17
@@ -6017,7 +5988,6 @@ msgstr "Added Approval Authority category"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:16
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:13
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:42
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:148
 #: app/templates/pages/approval_categories/create.html:7
 #: app/templates/pages/approval_categories/edit.html:20
@@ -6767,10 +6737,6 @@ msgstr "Belonging group *"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:356
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:128
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:88
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:160
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:197
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:356
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:285
 #: app/templates/pages/external-users/create.html:85
 #: app/templates/pages/job_titles/list.html:94
@@ -7333,7 +7299,6 @@ msgstr ""
 "management page. It will take effect after refreshing the page after "
 "saving."
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:133
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:19
 msgid "底色"
 msgstr "Background color"
@@ -7653,9 +7618,6 @@ msgstr "items"
 msgid "涉及資料表:"
 msgstr "Information sheets involved:"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:568
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:619
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:732
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:39
 #: app/templates/pages/hostconfig/data_maintenance.html:44
 #: app/templates/pages/hostconfig/data_maintenance.html:99
@@ -8170,7 +8132,6 @@ msgstr "Edit Job Level:"
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:105
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:150
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:344
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:956
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:80
 #: app/templates/pages/job_levels/list.html:130
 #: app/templates/pages/job_levels/list.html:214
@@ -8451,16 +8412,12 @@ msgstr "Menu Code"
 msgid "選填，留空自動產生。英文、數字、底線"
 msgstr "Optional; leave blank to auto-generate. Letters, digits, underscores"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:106
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:960
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:172
 #: app/templates/pages/menu/create.html:57
 #: app/templates/pages/menu/edit.html:43
 msgid "圖示"
 msgstr "Icon"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:432
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:963
 #: app/templates/pages/menu/create.html:62
 #: app/templates/pages/menu/edit.html:48
 #: app/templates/partials/_icon_picker.html:5
@@ -8668,9 +8625,6 @@ msgstr ""
 "Create a new menu. Enter a menu code (cannot be changed later) (English "
 "recommended) (duplicates get a _01 suffix automatically)"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:446
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:646
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:749
 #: app/templates/pages/menu/list.html:83
 msgid "標題"
 msgstr "Title"
@@ -8681,8 +8635,7 @@ msgstr "e.g. Monitoring Management"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:594
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:120
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1028
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:115
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:113
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:112
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:120
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:554
@@ -10039,7 +9992,6 @@ msgstr ""
 "The user has the Role required for this page (determined by Menu Role "
 "requirements)"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:116
 #: app/templates/pages/platform_help/org_admin.html:227
 msgid "操作權限"
 msgstr "Operation permission"
@@ -11082,11 +11034,6 @@ msgstr "System default:"
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:62
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:101
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:7
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:38
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:255
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:52
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:100
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:289
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:64
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:76
 #: app/templates/pages/security/org_rate_limits.html:89
@@ -14893,7 +14840,6 @@ msgstr "(Unable to get conglomerate database information)"
 #: ../modules/nocode_builder/services/project_service.py:266
 #: ../modules/nocode_builder/services/project_service.py:298
 #: ../modules/nocode_builder/services/project_service.py:343
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:34
 msgid "開發案不存在"
 msgstr "Project does not exist"
 
@@ -14947,14 +14893,10 @@ msgid "未命名頁面"
 msgstr "Untitled page"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:10
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:48
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab_view.html:70
 msgid "返回"
 msgstr "Back"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:24
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:56
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:78
 msgid "元件庫"
 msgstr "Widget library"
 
@@ -15015,7 +14957,6 @@ msgid "資料綁定"
 msgstr "Data Binding"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:117
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:390
 msgid "資料範圍"
 msgstr "Data scope"
 
@@ -15077,8 +15018,6 @@ msgid "新增欄位"
 msgstr "Add Field"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:210
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:96
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:753
 msgid "每頁筆數"
 msgstr "Rows per page"
 
@@ -15125,147 +15064,6 @@ msgstr "Save Form"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:3
 msgid "IR 設計器"
 msgstr "IR Designer"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:3
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab_view.html:3
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:3
-msgid "資料表工具"
-msgstr "Data Table Tool"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:36
-msgid "新頁面"
-msgstr "New page"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:37
-msgid "開啟"
-msgstr "Open"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:42
-msgid "發布"
-msgstr "Publish"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:46
-msgid "取消發布"
-msgstr "Unpublish"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:60
-msgid "資料清單元件"
-msgstr "Data list widget"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:72
-msgid "元件設定"
-msgstr "Widget settings"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:76
-msgid "點擊畫布上的元件進行設定"
-msgstr "Click a widget on the canvas to configure it"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:86
-msgid "資料來源 (View)"
-msgstr "Data source (View)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:105
-msgid "顯示功能"
-msgstr "Display features"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:108
-msgid "搜尋列"
-msgstr "Search bar"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:112
-msgid "分頁"
-msgstr "Pagination"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:119
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:666
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:777
-msgid "允許新增"
-msgstr "Allow create"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:123
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:670
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:781
-msgid "允許編輯"
-msgstr "Allow edit"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:127
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:674
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:785
-msgid "允許刪除"
-msgstr "Allow delete"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:131
-msgid "套用設定"
-msgstr "Apply settings"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:137
-msgid "輸出設定 (Output)"
-msgstr "Output settings (Output)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:152
-msgid "觸發事件"
-msgstr "Trigger event"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:158
-msgid "來源欄位"
-msgstr "Source field"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:168
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:191
-msgid "例: order_no"
-msgstr "Example: order_no"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:171
-msgid "新增輸出"
-msgstr "Add output"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:176
-msgid "輸入設定 (Input)"
-msgstr "Input settings (Input)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:195
-msgid "篩選欄位"
-msgstr "Filter field"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:203
-msgid "新增輸入"
-msgstr "Add input"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:215
-msgid "開啟頁面"
-msgstr "Open page"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:220
-msgid "尚無已儲存的頁面"
-msgstr "No saved pages"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:229
-msgid "IR 設計"
-msgstr ""
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:243
-msgid "儲存新頁面"
-msgstr "Save new page"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:248
-msgid "頁面名稱"
-msgstr "Page name"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:249
-msgid "輸入頁面名稱"
-msgstr "Enter page name"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab_view.html:3
-msgid "頁面預覽"
-msgstr "Page preview"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab_view.html:64
-msgid "返回子系統"
-msgstr "Back to subsystem"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lab_view.html:67
-msgid "編輯此頁"
-msgstr "Edit this page"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:3
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:204
@@ -15471,9 +15269,9 @@ msgid "開發者"
 msgstr "Developer"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:68
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:81
-msgid "設計器"
-msgstr "Designer"
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:79
+msgid "工作區"
+msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:92
 msgid "例: 訂餐系統"
@@ -15496,582 +15294,13 @@ msgid "確定要刪除開發案「"
 msgstr "Delete project \""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:133
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:128
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:126
 msgid "」嗎?"
 msgstr "\"?"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:134
 msgid "此操作會同時刪除相關的 Site Map 和頁面佈局設定"
 msgstr "This action will also delete related Site Map and page layout settings"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:48
-msgid "(未儲存)"
-msgstr "(Unsaved)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:55
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1037
-msgid "儲存成模板"
-msgstr "Save as template"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:101
-msgid "網頁"
-msgstr "Page"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:111
-msgid "選擇"
-msgstr "Select"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:118
-msgid "尚無節點，點擊 [+ 節點] 建立"
-msgstr "No nodes yet. Click [+ Node] to create one"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:130
-msgid "頁面組態"
-msgstr "Page configuration"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:85
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:147
-msgid "底圖"
-msgstr "Background image"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:157
-msgid "圖庫"
-msgstr "Gallery"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:124
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:154
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:160
-msgid "上傳"
-msgstr "Upload"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:85
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:173
-msgid "透明度"
-msgstr "Opacity"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:197
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:183
-msgid "縮放"
-msgstr "Scale"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:103
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:193
-msgid "位置"
-msgstr "Position"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:204
-msgid "字色"
-msgstr "Text color"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:218
-msgid "字型"
-msgstr "Font"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:221
-msgid "-- 預設 --"
-msgstr "-- Default --"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:224
-msgid "微軟正黑體"
-msgstr "Microsoft JhengHei"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:225
-msgid "蘋方"
-msgstr "PingFang"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:232
-msgid "字型大小 (px)"
-msgstr "Font size (px)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:238
-msgid "子系統操作"
-msgstr "Subsystem actions"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:242
-msgid "成為子系統預設"
-msgstr "Make subsystem default"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:246
-msgid "全域覆蓋"
-msgstr "Global override"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:249
-msgid "子系統預設: 新頁面自動套用 / 全域覆蓋: 覆蓋所有頁面"
-msgstr ""
-"Subsystem default: applied automatically to new pages / Global override: "
-"override all pages"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:254
-msgid "准入設定"
-msgstr "Access settings"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:256
-msgid "請先選擇一個網頁節點"
-msgstr "Select a page node first"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:264
-msgid "向上繼承"
-msgstr "Inherit from parent"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:265
-msgid "沿用父節點的權限"
-msgstr "Inherit parent node permissions"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:269
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:199
-msgid "權限政策組"
-msgstr "Permission policy group"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:273
-msgid "-- 請選擇政策組 --"
-msgstr "-- Select policy group --"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:279
-msgid "尚未建立政策組，請到 [設定] 頁建立"
-msgstr "No policy groups have been created. Create one on the [Settings] page"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:284
-msgid "自訂權限"
-msgstr "Custom permissions"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:285
-msgid "逐一設定規則"
-msgstr "Configure rules one by one"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:290
-msgid "向下套用"
-msgstr "Apply downward"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:296
-msgid "自訂准入規則"
-msgstr "Custom access rules"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:297
-msgid "無規則 = 開放給所有社群成員 | 有規則 = 僅匹配者可進入"
-msgstr ""
-"No rules = open to all group members | With rules = only matched users "
-"can enter"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:303
-msgid "尚無准入規則（所有社群成員皆可進入）"
-msgstr "No access rules yet (all group members can enter)"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:314
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:311
-msgid "（含子部門）"
-msgstr "(including child departments)"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:315
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:312
-msgid "（含下層群組）"
-msgstr "(including subgroups)"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:330
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:327
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:256
-msgid "個人"
-msgstr "Individual"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:337
-msgid "含下層"
-msgstr "Include descendants"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:354
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:354
-msgid "選擇成員"
-msgstr "Select member"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:147
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:364
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:364
-msgid "已選擇:"
-msgstr "Selected:"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:370
-msgid "此網頁將沿用父節點的權限設定。根節點的繼承 = 開放給所有社群成員。"
-msgstr ""
-"This page will inherit the parent node permissions. Inheritance on the "
-"root node means open to all group members."
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:373
-msgid "使用政策組:"
-msgstr "Using policy group:"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:392
-msgid "起始網頁"
-msgstr "Start page"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:394
-msgid "-- 整棵樹 --"
-msgstr "-- Entire tree --"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:402
-msgid "顯示層級"
-msgstr "Display level"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:404
-msgid "本級 (僅此節點)"
-msgstr "This level (this node only)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:405
-msgid "下一級 (此節點的子項)"
-msgstr "Next level (children of this node)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:415
-msgid "顯示首頁連結 (回到 Welcome)"
-msgstr "Show home link (back to Welcome)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:418
-msgid "啟用後選單第一項固定為「首頁」，點擊回到 Welcome 頁面"
-msgstr "When enabled, the first menu item is Home and returns to the Welcome page"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:421
-msgid "節點圖示"
-msgstr "Node icon"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:436
-msgid "清除圖示"
-msgstr "Clear icon"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:440
-msgid "尚無節點"
-msgstr "No nodes"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:444
-msgid "外觀"
-msgstr "Appearance"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:450
-msgid "方向"
-msgstr "Direction"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:452
-msgid "直式"
-msgstr "Vertical"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:453
-msgid "橫式"
-msgstr "Horizontal"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:457
-msgid "圖示位置"
-msgstr "Icon position"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:459
-msgid "文字上方 (Mega Menu 風格)"
-msgstr "Text below icon (Mega Menu style)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:460
-msgid "文字前方 (Main Menu 風格)"
-msgstr "Text after icon (Main Menu style)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:464
-msgid "選單高度"
-msgstr "Menu height"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:468
-msgid "auto 或 px 數值"
-msgstr "auto or px value"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:471
-msgid "auto = 圖示在上方時較高，inline 或無圖示時自動壓縮"
-msgstr ""
-"auto = taller when icons are on top; inline or no icon compresses "
-"automatically"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:475
-msgid "項目間隔 (px)"
-msgstr "Item gap (px)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:479
-msgid "展開行為"
-msgstr "Expansion behavior"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:482
-msgid "滑鼠懸停自動展開子選單"
-msgstr "Auto-expand submenu on hover"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:485
-msgid "懸停延遲 (ms)"
-msgstr "Hover delay (ms)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:489
-msgid "配色"
-msgstr "Colors"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:493
-msgid "選單底色"
-msgstr "Menu background"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:497
-msgid "項目底色"
-msgstr "Item background"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:501
-msgid "項目字色"
-msgstr "Item text color"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:505
-msgid "Hover 底色"
-msgstr "Hover background"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:509
-msgid "Hover 字色"
-msgstr "Hover text color"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:513
-msgid "強調色"
-msgstr "Accent color"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:543
-msgid "高亮節點"
-msgstr "Highlighted node"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:143
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:550
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:712
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:896
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:77
-msgid "套用"
-msgstr "Apply"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:551
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:713
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:897
-msgid "移除元件"
-msgstr "Remove widget"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:557
-msgid "Master 表"
-msgstr "Master table"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:559
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:610
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:720
-msgid "資料來源"
-msgstr "Data source"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:561
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:612
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:722
-msgid "-- 選擇來源 --"
-msgstr "-- Select source --"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:572
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:623
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:736
-msgid "-- 選擇資料表 --"
-msgstr "-- Select table --"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:580
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:631
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:746
-msgid "正在準備視圖配置..."
-msgstr "Preparing view configuration..."
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:583
-msgid "PKey 欄位"
-msgstr "PKey field"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:586
-msgid "-- 選擇主鍵 --"
-msgstr "-- Select primary key --"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:593
-msgid "簡式清單顯示欄位"
-msgstr "Simple list display fields"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:608
-msgid "Detail 表"
-msgstr "Detail table"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:634
-msgid "FKey 欄位 (關聯 Master PKey)"
-msgstr "FKey field (linked to Master PKey)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:637
-msgid "-- 選擇外鍵 --"
-msgstr "-- Select foreign key --"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:644
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:85
-msgid "設定"
-msgstr "Settings"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:647
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:750
-msgid "自訂標題"
-msgstr "Custom title"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:650
-msgid "Detail 每頁筆數"
-msgstr "Detail rows per page"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:654
-msgid "PKey 編號規則"
-msgstr "PKey numbering rule"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:656
-msgid "自動遞增 (auto+1)"
-msgstr "Auto increment (auto+1)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:663
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:765
-msgid "CRUD 權限"
-msgstr "CRUD permissions"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:728
-msgid "無可用資料來源"
-msgstr "No available data sources"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:743
-msgid "此來源無可用表"
-msgstr "No available tables for this source"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:756
-msgid "顯示選項"
-msgstr "Display options"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:759
-msgid "顯示搜尋"
-msgstr "Show search"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:763
-msgid "顯示分頁"
-msgstr "Show pagination"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:770
-msgid "依角色設定"
-msgstr "Configure by role"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:817
-msgid "C=新增 E=編輯 D=刪除 (讀取恆開)"
-msgstr "C=Create E=Edit D=Delete (Read is always on)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:821
-msgid "角色資料篩選"
-msgstr "Role data filters"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:826
-msgid "-- 選擇角色 --"
-msgstr "-- Select role --"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:837
-msgid "欄位名"
-msgstr "Field name"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:839
-msgid "值 / $變數"
-msgstr "Value / $variable"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:845
-msgid "+ 條件"
-msgstr "+ Condition"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:857
-msgid "已設定:"
-msgstr "Configured:"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:909
-msgid "框架模式"
-msgstr "Frame mode"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:912
-msgid "自由模式"
-msgstr "Freeform mode"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:923
-msgid "點擊左側 Site Map 的頁面節點開始設計"
-msgstr "Click a page node in the Site Map on the left to start designing"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:945
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:32
-msgid "新增網頁"
-msgstr "Add page"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:952
-msgid "Site Map 的第一個節點為根頁面 (welcome)，所有其他頁面將建立在其下方"
-msgstr ""
-"The first Site Map node is the root page (welcome). All other pages will "
-"be created under it"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:978
-msgid "選擇模板"
-msgstr "Select template"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:978
-msgid "(可選，不選則建立空白頁)"
-msgstr "(Optional. Leave empty to create a blank page)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:979
-msgid "載入模板中..."
-msgstr "Loading templates..."
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1000
-msgid "空白"
-msgstr "Blank"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1003
-msgid "空白頁面"
-msgstr "Blank page"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1013
-msgid "刪除模板"
-msgstr "Delete template"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1021
-msgid "此分類尚無模板"
-msgstr "No templates in this category"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1042
-msgid "模板名稱 *"
-msgstr "Template name *"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1043
-msgid "例如: 左右分欄報表"
-msgstr "Example: two-column report"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1046
-msgid "分類 *"
-msgstr "Category *"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1056
-msgid "模板用途描述 (選填)"
-msgstr "Template purpose description (optional)"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1059
-msgid "將儲存當前頁面的完整佈局設計 (含格線配置、元件設定、樣式) 為可重複使用的模板。"
-msgstr ""
-"Save the current page layout design, including grid configuration, widget"
-" settings, and styles, as a reusable template."
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1074
-msgid "未儲存的變更"
-msgstr "Unsaved changes"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1078
-msgid "目前頁面有未儲存的變更，要如何處理?"
-msgstr "The current page has unsaved changes. How should they be handled?"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1081
-msgid "儲存並切換"
-msgstr "Save and switch"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1082
-msgid "不儲存切換"
-msgstr "Switch without saving"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1092
-msgid "底圖圖庫"
-msgstr "Background image gallery"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1097
-msgid "尚無底圖，請先上傳"
-msgstr "No background images yet. Upload one first"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1117
-msgid "上傳底圖"
-msgstr "Upload background image"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:3
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:145
@@ -16093,6 +15322,10 @@ msgstr "-- Not specified --"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:188
 msgid "透過 SubSystemProvision 流程指定"
 msgstr "Specified through the SubSystemProvision flow"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:199
+msgid "權限政策組"
+msgstr "Permission policy group"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:200
 msgid "新增政策組"
@@ -16123,6 +15356,11 @@ msgstr "(includes child departments)"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:238
 msgid "(含下層群組)"
 msgstr "(includes subgroups)"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:330
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:256
+msgid "個人"
+msgstr "Individual"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:293
 msgid "已選擇"
@@ -16197,12 +15435,16 @@ msgstr "Update"
 msgid "子系統管理"
 msgstr "Subsystem management"
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:3
+msgid "資料表工具"
+msgstr "Data Table Tool"
+
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:16
 msgid "管理子系統的社群綁定、頁面分配和角色權限"
 msgstr "Manage subsystem group binding, page assignments, and role permissions"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:21
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:100
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:98
 msgid "新增子系統"
 msgstr "Add subsystem"
 
@@ -16226,11 +15468,11 @@ msgstr "Bound group"
 msgid "頁面數"
 msgstr "Page count"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:79
-msgid "工作區"
-msgstr ""
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:83
+msgid "設定"
+msgstr "Settings"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:128
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:126
 msgid "確定要刪除子系統「"
 msgstr "Delete subsystem \""
 
@@ -16279,6 +15521,10 @@ msgstr "Site Map"
 msgid "排序未儲存"
 msgstr "Order not saved"
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:32
+msgid "新增網頁"
+msgstr "Add page"
+
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:33
 msgid "新增資料夾"
 msgstr "New Folder"
@@ -16306,6 +15552,11 @@ msgstr "No groups available"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:73
 msgid "GUEST"
 msgstr "GUEST"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:143
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:77
+msgid "套用"
+msgstr "Apply"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:78
 msgid "清除設定"
@@ -17228,6 +16479,10 @@ msgstr "Basemap not set yet"
 msgid "顯示設定"
 msgstr "display settings"
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:85
+msgid "透明度"
+msgstr "Opacity"
+
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:92
 msgid "顯示方式"
 msgstr "Display mode"
@@ -17255,6 +16510,10 @@ msgstr "Jigsaw puzzle (tiled)"
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:99
 msgid "拼圖 (位移交錯)"
 msgstr "Puzzle (Position Wrong)"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:103
+msgid "位置"
+msgstr "Position"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:105
 msgid "置中"
@@ -17284,6 +16543,11 @@ msgstr "Remove basemap"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:351
 msgid "上傳新底圖"
 msgstr "Upload new basemap"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:124
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:154
+msgid "上傳"
+msgstr "Upload"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:127
 msgid "支援 PNG, JPG, GIF, WebP 格式，最大 5MB"
@@ -18581,6 +17845,10 @@ msgstr "Upload template"
 msgid "設定表單底圖"
 msgstr "Set form basemap"
 
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:85
+msgid "底圖"
+msgstr "Background image"
+
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:96
 msgid "開啟欄位規格編輯器"
 msgstr "Open the field specification editor"
@@ -18744,6 +18012,11 @@ msgstr "for \""
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:143
 msgid "」上傳 CSS 檔案，將覆蓋現有內容。"
 msgstr "\"Uploading CSS files will overwrite existing content."
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:147
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:364
+msgid "已選擇:"
+msgstr "Selected:"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:155
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:354
@@ -18988,6 +18261,14 @@ msgstr "Custom rules"
 msgid "尚無自訂規則，僅預設角色可填寫此表單"
 msgstr "There are no custom rules yet, only default roles can fill out this form"
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:314
+msgid "（含子部門）"
+msgstr "(including child departments)"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:315
+msgid "（含下層群組）"
+msgstr "(including subgroups)"
+
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:316
 msgid "刪除此規則"
 msgstr "Delete this rule"
@@ -19003,6 +18284,10 @@ msgstr "Includes all sub-departments"
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:340
 msgid "包含下層群組"
 msgstr "Contains lower-level groups"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:354
+msgid "選擇成員"
+msgstr "Select member"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:378
 msgid "配對規則說明"
@@ -19423,6 +18708,10 @@ msgstr "⚠ WARNING"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:193
 msgid "畫布調整"
 msgstr "Canvas adjustment"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:197
+msgid "縮放"
+msgstr "Scale"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:208
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:40
@@ -20877,4 +20166,476 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "invalid_data"
 #~ msgstr ""
+
+#~ msgid "新頁面"
+#~ msgstr "New page"
+
+#~ msgid "開啟"
+#~ msgstr "Open"
+
+#~ msgid "發布"
+#~ msgstr "Publish"
+
+#~ msgid "取消發布"
+#~ msgstr "Unpublish"
+
+#~ msgid "資料清單元件"
+#~ msgstr "Data list widget"
+
+#~ msgid "元件設定"
+#~ msgstr "Widget settings"
+
+#~ msgid "點擊畫布上的元件進行設定"
+#~ msgstr "Click a widget on the canvas to configure it"
+
+#~ msgid "資料來源 (View)"
+#~ msgstr "Data source (View)"
+
+#~ msgid "顯示功能"
+#~ msgstr "Display features"
+
+#~ msgid "搜尋列"
+#~ msgstr "Search bar"
+
+#~ msgid "分頁"
+#~ msgstr "Pagination"
+
+#~ msgid "允許新增"
+#~ msgstr "Allow create"
+
+#~ msgid "允許編輯"
+#~ msgstr "Allow edit"
+
+#~ msgid "允許刪除"
+#~ msgstr "Allow delete"
+
+#~ msgid "套用設定"
+#~ msgstr "Apply settings"
+
+#~ msgid "輸出設定 (Output)"
+#~ msgstr "Output settings (Output)"
+
+#~ msgid "觸發事件"
+#~ msgstr "Trigger event"
+
+#~ msgid "來源欄位"
+#~ msgstr "Source field"
+
+#~ msgid "例: order_no"
+#~ msgstr "Example: order_no"
+
+#~ msgid "新增輸出"
+#~ msgstr "Add output"
+
+#~ msgid "輸入設定 (Input)"
+#~ msgstr "Input settings (Input)"
+
+#~ msgid "篩選欄位"
+#~ msgstr "Filter field"
+
+#~ msgid "新增輸入"
+#~ msgstr "Add input"
+
+#~ msgid "開啟頁面"
+#~ msgstr "Open page"
+
+#~ msgid "尚無已儲存的頁面"
+#~ msgstr "No saved pages"
+
+#~ msgid "IR 設計"
+#~ msgstr ""
+
+#~ msgid "儲存新頁面"
+#~ msgstr "Save new page"
+
+#~ msgid "頁面名稱"
+#~ msgstr "Page name"
+
+#~ msgid "輸入頁面名稱"
+#~ msgstr "Enter page name"
+
+#~ msgid "頁面預覽"
+#~ msgstr "Page preview"
+
+#~ msgid "返回子系統"
+#~ msgstr "Back to subsystem"
+
+#~ msgid "編輯此頁"
+#~ msgstr "Edit this page"
+
+#~ msgid "設計器"
+#~ msgstr "Designer"
+
+#~ msgid "(未儲存)"
+#~ msgstr "(Unsaved)"
+
+#~ msgid "儲存成模板"
+#~ msgstr "Save as template"
+
+#~ msgid "網頁"
+#~ msgstr "Page"
+
+#~ msgid "選擇"
+#~ msgstr "Select"
+
+#~ msgid "尚無節點，點擊 [+ 節點] 建立"
+#~ msgstr "No nodes yet. Click [+ Node] to create one"
+
+#~ msgid "頁面組態"
+#~ msgstr "Page configuration"
+
+#~ msgid "圖庫"
+#~ msgstr "Gallery"
+
+#~ msgid "字色"
+#~ msgstr "Text color"
+
+#~ msgid "字型"
+#~ msgstr "Font"
+
+#~ msgid "-- 預設 --"
+#~ msgstr "-- Default --"
+
+#~ msgid "微軟正黑體"
+#~ msgstr "Microsoft JhengHei"
+
+#~ msgid "蘋方"
+#~ msgstr "PingFang"
+
+#~ msgid "字型大小 (px)"
+#~ msgstr "Font size (px)"
+
+#~ msgid "子系統操作"
+#~ msgstr "Subsystem actions"
+
+#~ msgid "成為子系統預設"
+#~ msgstr "Make subsystem default"
+
+#~ msgid "全域覆蓋"
+#~ msgstr "Global override"
+
+#~ msgid "子系統預設: 新頁面自動套用 / 全域覆蓋: 覆蓋所有頁面"
+#~ msgstr ""
+#~ "Subsystem default: applied automatically to"
+#~ " new pages / Global override: "
+#~ "override all pages"
+
+#~ msgid "准入設定"
+#~ msgstr "Access settings"
+
+#~ msgid "請先選擇一個網頁節點"
+#~ msgstr "Select a page node first"
+
+#~ msgid "向上繼承"
+#~ msgstr "Inherit from parent"
+
+#~ msgid "沿用父節點的權限"
+#~ msgstr "Inherit parent node permissions"
+
+#~ msgid "-- 請選擇政策組 --"
+#~ msgstr "-- Select policy group --"
+
+#~ msgid "尚未建立政策組，請到 [設定] 頁建立"
+#~ msgstr "No policy groups have been created. Create one on the [Settings] page"
+
+#~ msgid "自訂權限"
+#~ msgstr "Custom permissions"
+
+#~ msgid "逐一設定規則"
+#~ msgstr "Configure rules one by one"
+
+#~ msgid "向下套用"
+#~ msgstr "Apply downward"
+
+#~ msgid "自訂准入規則"
+#~ msgstr "Custom access rules"
+
+#~ msgid "無規則 = 開放給所有社群成員 | 有規則 = 僅匹配者可進入"
+#~ msgstr ""
+#~ "No rules = open to all group "
+#~ "members | With rules = only "
+#~ "matched users can enter"
+
+#~ msgid "尚無准入規則（所有社群成員皆可進入）"
+#~ msgstr "No access rules yet (all group members can enter)"
+
+#~ msgid "含下層"
+#~ msgstr "Include descendants"
+
+#~ msgid "此網頁將沿用父節點的權限設定。根節點的繼承 = 開放給所有社群成員。"
+#~ msgstr ""
+#~ "This page will inherit the parent "
+#~ "node permissions. Inheritance on the "
+#~ "root node means open to all group"
+#~ " members."
+
+#~ msgid "使用政策組:"
+#~ msgstr "Using policy group:"
+
+#~ msgid "起始網頁"
+#~ msgstr "Start page"
+
+#~ msgid "-- 整棵樹 --"
+#~ msgstr "-- Entire tree --"
+
+#~ msgid "顯示層級"
+#~ msgstr "Display level"
+
+#~ msgid "本級 (僅此節點)"
+#~ msgstr "This level (this node only)"
+
+#~ msgid "下一級 (此節點的子項)"
+#~ msgstr "Next level (children of this node)"
+
+#~ msgid "顯示首頁連結 (回到 Welcome)"
+#~ msgstr "Show home link (back to Welcome)"
+
+#~ msgid "啟用後選單第一項固定為「首頁」，點擊回到 Welcome 頁面"
+#~ msgstr ""
+#~ "When enabled, the first menu item "
+#~ "is Home and returns to the Welcome"
+#~ " page"
+
+#~ msgid "節點圖示"
+#~ msgstr "Node icon"
+
+#~ msgid "清除圖示"
+#~ msgstr "Clear icon"
+
+#~ msgid "尚無節點"
+#~ msgstr "No nodes"
+
+#~ msgid "外觀"
+#~ msgstr "Appearance"
+
+#~ msgid "方向"
+#~ msgstr "Direction"
+
+#~ msgid "直式"
+#~ msgstr "Vertical"
+
+#~ msgid "橫式"
+#~ msgstr "Horizontal"
+
+#~ msgid "圖示位置"
+#~ msgstr "Icon position"
+
+#~ msgid "文字上方 (Mega Menu 風格)"
+#~ msgstr "Text below icon (Mega Menu style)"
+
+#~ msgid "文字前方 (Main Menu 風格)"
+#~ msgstr "Text after icon (Main Menu style)"
+
+#~ msgid "選單高度"
+#~ msgstr "Menu height"
+
+#~ msgid "auto 或 px 數值"
+#~ msgstr "auto or px value"
+
+#~ msgid "auto = 圖示在上方時較高，inline 或無圖示時自動壓縮"
+#~ msgstr ""
+#~ "auto = taller when icons are on"
+#~ " top; inline or no icon compresses"
+#~ " automatically"
+
+#~ msgid "項目間隔 (px)"
+#~ msgstr "Item gap (px)"
+
+#~ msgid "展開行為"
+#~ msgstr "Expansion behavior"
+
+#~ msgid "滑鼠懸停自動展開子選單"
+#~ msgstr "Auto-expand submenu on hover"
+
+#~ msgid "懸停延遲 (ms)"
+#~ msgstr "Hover delay (ms)"
+
+#~ msgid "配色"
+#~ msgstr "Colors"
+
+#~ msgid "選單底色"
+#~ msgstr "Menu background"
+
+#~ msgid "項目底色"
+#~ msgstr "Item background"
+
+#~ msgid "項目字色"
+#~ msgstr "Item text color"
+
+#~ msgid "Hover 底色"
+#~ msgstr "Hover background"
+
+#~ msgid "Hover 字色"
+#~ msgstr "Hover text color"
+
+#~ msgid "強調色"
+#~ msgstr "Accent color"
+
+#~ msgid "高亮節點"
+#~ msgstr "Highlighted node"
+
+#~ msgid "移除元件"
+#~ msgstr "Remove widget"
+
+#~ msgid "Master 表"
+#~ msgstr "Master table"
+
+#~ msgid "資料來源"
+#~ msgstr "Data source"
+
+#~ msgid "-- 選擇來源 --"
+#~ msgstr "-- Select source --"
+
+#~ msgid "-- 選擇資料表 --"
+#~ msgstr "-- Select table --"
+
+#~ msgid "正在準備視圖配置..."
+#~ msgstr "Preparing view configuration..."
+
+#~ msgid "PKey 欄位"
+#~ msgstr "PKey field"
+
+#~ msgid "-- 選擇主鍵 --"
+#~ msgstr "-- Select primary key --"
+
+#~ msgid "簡式清單顯示欄位"
+#~ msgstr "Simple list display fields"
+
+#~ msgid "Detail 表"
+#~ msgstr "Detail table"
+
+#~ msgid "FKey 欄位 (關聯 Master PKey)"
+#~ msgstr "FKey field (linked to Master PKey)"
+
+#~ msgid "-- 選擇外鍵 --"
+#~ msgstr "-- Select foreign key --"
+
+#~ msgid "自訂標題"
+#~ msgstr "Custom title"
+
+#~ msgid "Detail 每頁筆數"
+#~ msgstr "Detail rows per page"
+
+#~ msgid "PKey 編號規則"
+#~ msgstr "PKey numbering rule"
+
+#~ msgid "自動遞增 (auto+1)"
+#~ msgstr "Auto increment (auto+1)"
+
+#~ msgid "CRUD 權限"
+#~ msgstr "CRUD permissions"
+
+#~ msgid "無可用資料來源"
+#~ msgstr "No available data sources"
+
+#~ msgid "此來源無可用表"
+#~ msgstr "No available tables for this source"
+
+#~ msgid "顯示選項"
+#~ msgstr "Display options"
+
+#~ msgid "顯示搜尋"
+#~ msgstr "Show search"
+
+#~ msgid "顯示分頁"
+#~ msgstr "Show pagination"
+
+#~ msgid "依角色設定"
+#~ msgstr "Configure by role"
+
+#~ msgid "C=新增 E=編輯 D=刪除 (讀取恆開)"
+#~ msgstr "C=Create E=Edit D=Delete (Read is always on)"
+
+#~ msgid "角色資料篩選"
+#~ msgstr "Role data filters"
+
+#~ msgid "-- 選擇角色 --"
+#~ msgstr "-- Select role --"
+
+#~ msgid "欄位名"
+#~ msgstr "Field name"
+
+#~ msgid "值 / $變數"
+#~ msgstr "Value / $variable"
+
+#~ msgid "+ 條件"
+#~ msgstr "+ Condition"
+
+#~ msgid "已設定:"
+#~ msgstr "Configured:"
+
+#~ msgid "框架模式"
+#~ msgstr "Frame mode"
+
+#~ msgid "自由模式"
+#~ msgstr "Freeform mode"
+
+#~ msgid "點擊左側 Site Map 的頁面節點開始設計"
+#~ msgstr "Click a page node in the Site Map on the left to start designing"
+
+#~ msgid "Site Map 的第一個節點為根頁面 (welcome)，所有其他頁面將建立在其下方"
+#~ msgstr ""
+#~ "The first Site Map node is the "
+#~ "root page (welcome). All other pages "
+#~ "will be created under it"
+
+#~ msgid "選擇模板"
+#~ msgstr "Select template"
+
+#~ msgid "(可選，不選則建立空白頁)"
+#~ msgstr "(Optional. Leave empty to create a blank page)"
+
+#~ msgid "載入模板中..."
+#~ msgstr "Loading templates..."
+
+#~ msgid "空白"
+#~ msgstr "Blank"
+
+#~ msgid "空白頁面"
+#~ msgstr "Blank page"
+
+#~ msgid "刪除模板"
+#~ msgstr "Delete template"
+
+#~ msgid "此分類尚無模板"
+#~ msgstr "No templates in this category"
+
+#~ msgid "模板名稱 *"
+#~ msgstr "Template name *"
+
+#~ msgid "例如: 左右分欄報表"
+#~ msgstr "Example: two-column report"
+
+#~ msgid "分類 *"
+#~ msgstr "Category *"
+
+#~ msgid "模板用途描述 (選填)"
+#~ msgstr "Template purpose description (optional)"
+
+#~ msgid "將儲存當前頁面的完整佈局設計 (含格線配置、元件設定、樣式) 為可重複使用的模板。"
+#~ msgstr ""
+#~ "Save the current page layout design, "
+#~ "including grid configuration, widget settings,"
+#~ " and styles, as a reusable template."
+
+#~ msgid "未儲存的變更"
+#~ msgstr "Unsaved changes"
+
+#~ msgid "目前頁面有未儲存的變更，要如何處理?"
+#~ msgstr "The current page has unsaved changes. How should they be handled?"
+
+#~ msgid "儲存並切換"
+#~ msgstr "Save and switch"
+
+#~ msgid "不儲存切換"
+#~ msgstr "Switch without saving"
+
+#~ msgid "底圖圖庫"
+#~ msgstr "Background image gallery"
+
+#~ msgid "尚無底圖，請先上傳"
+#~ msgstr "No background images yet. Upload one first"
+
+#~ msgid "上傳底圖"
+#~ msgstr "Upload background image"
 

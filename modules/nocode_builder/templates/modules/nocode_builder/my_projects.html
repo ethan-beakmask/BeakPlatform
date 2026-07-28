@@ -64,8 +64,8 @@
                         <td style="text-align: center;" x-text="item.developer_count || 1"></td>
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(item.created_at)"></td>
                         <td class="actions">
-                            <a :href="'{{ app_prefix }}/nocode-builder/studio/' + item.secure_code"
-                               class="dc-btn sm primary">{{ _('設計器') }}</a>
+                            <a :href="'{{ app_prefix }}/nocode/workspace/' + item.secure_code"
+                               class="dc-btn sm primary">{{ _('工作區') }}</a>
                             <a :href="'{{ app_prefix }}/nocode-builder/sub-systems/' + item.secure_code + '/portal'"
                                class="dc-btn sm" target="_blank">{{ _('預覽') }}</a>
                             <button class="dc-btn sm"
