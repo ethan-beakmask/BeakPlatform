@@ -110,39 +110,82 @@
                     </template>
 
                     <template x-if="['table', 'detail'].includes(selectedWidget.type)">
-                        <div class="ird-section">
-                            <div class="ird-subtitle">{{ _('資料綁定') }}</div>
-                            <div class="ird-field">
-                                <label>{{ _('資料範圍') }}</label>
-                                <select x-model="dataScope" @change="onScopeChange()">
-                                    <option value="">{{ _('平台資源') }}</option>
-                                    <template x-for="ss in subSystems" :key="ss.secure_code">
-                                        <option :value="ss.secure_code" x-text="ss.name"></option>
+                        <div>
+                            <div class="ird-section">
+                                <div class="ird-subtitle">{{ _('資料綁定') }}</div>
+                                <div class="ird-field">
+                                    <label>{{ _('資料範圍') }}</label>
+                                    <select x-model="dataScope" @change="onScopeChange()">
+                                        <option value="">{{ _('平台資源') }}</option>
+                                        <template x-for="ss in subSystems" :key="ss.secure_code">
+                                            <option :value="ss.secure_code" x-text="ss.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="ird-field">
+                                    <label>{{ _('資源') }}</label>
+                                    <select x-model="selectedWidget.binding.resource" @change="onResourceChange()">
+                                        <option value="">{{ _('-- 請選擇 --') }}</option>
+                                        <template x-for="res in meta.resources" :key="res.code">
+                                            <option :value="res.code" x-text="formatResourceOption(res)"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="ird-field">
+                                    <label>{{ _('視圖') }}</label>
+                                    <select x-model="selectedWidget.binding.view" @change="markDirty()">
+                                        <template x-for="view in selectedResourceViews" :key="view">
+                                            <option :value="view" x-text="view"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="ird-checks">
+                                    <template x-for="field in selectedResourceFields" :key="field">
+                                        <label><input type="checkbox" :value="field" x-model="selectedWidget.binding.fields" @change="syncBindingFields()"> <span x-text="field"></span></label>
                                     </template>
-                                </select>
+                                </div>
                             </div>
-                            <div class="ird-field">
-                                <label>{{ _('資源') }}</label>
-                                <select x-model="selectedWidget.binding.resource" @change="onResourceChange()">
-                                    <option value="">{{ _('-- 請選擇 --') }}</option>
-                                    <template x-for="res in meta.resources" :key="res.code">
-                                        <option :value="res.code" x-text="formatResourceOption(res)"></option>
+                            <template x-if="dataScope">
+                                <div class="ird-section">
+                                    <div class="ird-subtitle">{{ _('元件准入') }}</div>
+                                    <div class="ird-field">
+                                        <label>
+                                            <input type="checkbox" :checked="widgetAccessEnabled()" @change="toggleWidgetAccess($event.target.checked)">
+                                            {{ _('啟用元件准入限制') }}
+                                        </label>
+                                    </div>
+                                    <template x-if="selectedWidget.access_matrix && selectedWidget.access_matrix.read">
+                                        <div>
+                                            <div class="ird-field">
+                                                <label>{{ _('群組限制') }}</label>
+                                                <select :value="widgetGroupMode()" @change="setWidgetGroupMode($event.target.value)">
+                                                    <option value="all">{{ _('不限群組') }}</option>
+                                                    <option value="limited">{{ _('限定群組') }}</option>
+                                                </select>
+                                            </div>
+                                            <div class="ird-checks" x-show="widgetGroupMode() === 'limited'">
+                                                <template x-for="group in activePortalGroups()" :key="group.code">
+                                                    <label>
+                                                        <input type="checkbox"
+                                                               :checked="(selectedWidget.access_matrix.read.groups || []).includes(group.code)"
+                                                               @change="toggleWidgetGroup(group.code)">
+                                                        <span x-text="group.name + ' (' + group.code + ')'"></span>
+                                                    </label>
+                                                </template>
+                                            </div>
+                                            <div class="ird-field">
+                                                <label>{{ _('最低階級') }}</label>
+                                                <select x-model="selectedWidget.access_matrix.read.min_level" @change="markDirty()">
+                                                    <template x-for="level in sortedPortalLevels()" :key="level.code">
+                                                        <option :value="level.code" x-text="level.name + ' (' + level.code + ', rank ' + level.rank + ')'"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+                                            <p class="ird-hint">{{ _('僅在子系統 portal 語境生效；平台頁面不套用此限制。') }}</p>
+                                        </div>
                                     </template>
-                                </select>
-                            </div>
-                            <div class="ird-field">
-                                <label>{{ _('視圖') }}</label>
-                                <select x-model="selectedWidget.binding.view" @change="markDirty()">
-                                    <template x-for="view in selectedResourceViews" :key="view">
-                                        <option :value="view" x-text="view"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div class="ird-checks">
-                                <template x-for="field in selectedResourceFields" :key="field">
-                                    <label><input type="checkbox" :value="field" x-model="selectedWidget.binding.fields" @change="syncBindingFields()"> <span x-text="field"></span></label>
-                                </template>
-                            </div>
+                                </div>
+                            </template>
                         </div>
                     </template>
 

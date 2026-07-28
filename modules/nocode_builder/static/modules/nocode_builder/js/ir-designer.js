@@ -33,6 +33,10 @@ function irDesigner() {
         meta: { resources: [], actions: [] },
         subSystems: [],
         dataScope: '',
+        portalOrgLoaded: false,
+        portalOrgScope: '',
+        portalGroups: [],
+        portalLevels: [],
         selectedId: '',
         activeWidget: null,
         errors: [],
@@ -59,6 +63,7 @@ function irDesigner() {
             this.previewUrl = cfg.previewUrl || '';
             await Promise.all([this.loadPage(), this.loadSubSystems(), this.loadMeta(this.dataScope)]);
             await this.detectPortalScope();
+            await this.ensurePortalOrg();
             this.syncCounters();
             this.savedSnapshot = this.snapshot();
         },
@@ -95,6 +100,28 @@ function irDesigner() {
                     widget.default_sort = { field: first, dir: 'asc' };
                 }
                 if (widget.type === 'layout') this.normalizeWidgets(widget.children || []);
+            }
+        },
+
+        normalizeAccessMatrix(widgets) {
+            for (const widget of widgets || []) {
+                const matrix = widget.access_matrix;
+                if (matrix && matrix.read) {
+                    if (Array.isArray(matrix.read.groups) && matrix.read.groups.length === 0) {
+                        matrix.read.groups = null;
+                    }
+                }
+                if (matrix) {
+                    for (const action of Object.keys(matrix)) {
+                        if (!matrix[action] || Object.keys(matrix[action]).length === 0) {
+                            delete matrix[action];
+                        }
+                    }
+                }
+                if (matrix && Object.keys(matrix).length === 0) {
+                    delete widget.access_matrix;
+                }
+                if (widget.type === 'layout') this.normalizeAccessMatrix(widget.children || []);
             }
         },
 
@@ -137,6 +164,98 @@ function irDesigner() {
 
         async onScopeChange() {
             await this.loadMeta(this.dataScope);
+            await this.ensurePortalOrg();
+        },
+
+        async ensurePortalOrg() {
+            if (!this.dataScope) return;
+            if (this.portalOrgLoaded && this.portalOrgScope === this.dataScope) return;
+            try {
+                const res = await fetch(`${BP}/api/nocode-builder/sub-systems/${encodeURIComponent(this.dataScope)}/portal/org`);
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    this.portalGroups = [];
+                    this.portalLevels = [];
+                    this.portalOrgScope = '';
+                    this.portalOrgLoaded = false;
+                    console.warn('[IR Designer] portal org load failed:', data.error || data);
+                    return;
+                }
+                const orgData = data.data || {};
+                this.portalGroups = orgData.groups || [];
+                this.portalLevels = orgData.levels || [];
+                this.portalOrgScope = this.dataScope;
+                this.portalOrgLoaded = true;
+            } catch (err) {
+                this.portalGroups = [];
+                this.portalLevels = [];
+                this.portalOrgScope = '';
+                this.portalOrgLoaded = false;
+                console.warn('[IR Designer] portal org load failed:', err);
+            }
+        },
+
+        activePortalGroups() {
+            return (this.portalGroups || []).filter((group) => group && group.code && group.is_active !== false);
+        },
+
+        sortedPortalLevels() {
+            return [...(this.portalLevels || [])]
+                .filter((level) => level && level.code && level.is_active !== false)
+                .sort((a, b) => Number(a.rank || 0) - Number(b.rank || 0));
+        },
+
+        defaultWidgetMinLevel() {
+            const levels = this.sortedPortalLevels();
+            if (levels.some((level) => level.code === 'GUEST')) return 'GUEST';
+            return (levels[0] && levels[0].code) || 'GUEST';
+        },
+
+        widgetAccessEnabled() {
+            return !!(this.selectedWidget && this.selectedWidget.access_matrix);
+        },
+
+        toggleWidgetAccess(enabled) {
+            const widget = this.selectedWidget;
+            if (!widget) return;
+            if (enabled) {
+                if (!widget.access_matrix) {
+                    widget.access_matrix = { read: { groups: null, min_level: this.defaultWidgetMinLevel() } };
+                } else if (!widget.access_matrix.read) {
+                    widget.access_matrix.read = { groups: null, min_level: this.defaultWidgetMinLevel() };
+                }
+            } else {
+                delete widget.access_matrix;
+            }
+            this.markDirty();
+        },
+
+        widgetGroupMode() {
+            const widget = this.selectedWidget;
+            const read = widget && widget.access_matrix && widget.access_matrix.read;
+            return read && Array.isArray(read.groups) ? 'limited' : 'all';
+        },
+
+        setWidgetGroupMode(mode) {
+            const widget = this.selectedWidget;
+            const read = widget && widget.access_matrix && widget.access_matrix.read;
+            if (!read) return;
+            read.groups = mode === 'limited' ? (Array.isArray(read.groups) ? read.groups : []) : null;
+            this.markDirty();
+        },
+
+        toggleWidgetGroup(code) {
+            const widget = this.selectedWidget;
+            const read = widget && widget.access_matrix && widget.access_matrix.read;
+            if (!read || !code) return;
+            if (!Array.isArray(read.groups)) read.groups = [];
+            const index = read.groups.indexOf(code);
+            if (index >= 0) {
+                read.groups.splice(index, 1);
+            } else {
+                read.groups.push(code);
+            }
+            this.markDirty();
         },
 
         get selectedWidget() {
@@ -474,7 +593,9 @@ function irDesigner() {
         buildDoc() {
             this.doc.page.title_i18n['zh-TW'] = this.pageTitleZh || this.pageName || '';
             if (!this.doc.page.id) this.doc.page.id = slugify(this.pageTitleZh || this.pageName).slice(0, 64);
-            return clone(this.doc);
+            const doc = clone(this.doc);
+            this.normalizeAccessMatrix(doc.page.widgets || []);
+            return doc;
         },
 
         async savePage() {
