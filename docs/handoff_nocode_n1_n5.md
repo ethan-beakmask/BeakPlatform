@@ -345,39 +345,124 @@ reason 短碼：`no_session` / `no_matrix` / `bad_matrix` / `group_denied` /
 
 ---
 
+## 5.6 環境前提與工具（冷讀補洞）
+
+- **權限**：本機帳號 `ethan`，Claude Code 以 `--permission-mode bypassPermissions` 啟動，
+  可 sudo 成 root。`sudo systemctl` / `sudo journalctl` / PostgreSQL 密碼登入
+  全部可直接使用，不需額外申請。
+- **瀏覽器實測**：用 Claude Code 內建的 `chrome-devtools` MCP 工具
+  （`new_page` / `evaluate_script` / `take_snapshot` / `handle_dialog` / `list_console_messages`），
+  **不是**專案內的測試腳本，也不需要另外啟動 CDP。
+  本 session 的實測都是直接 `mcp__chrome-devtools__new_page` 開 URL 後
+  用 `evaluate_script` 操作 Alpine 元件（`Alpine.$data(document.querySelector('.wks-shell'))`）。
+- **manifest 可信度**：`docs/manifests/mod-nocode-builder.yaml` **已於 N5 更新並補齊**
+  （頁面清單改為 workspace / ir-designer，JS 清單補了 `ir-designer.js` /
+  `workspace.js` / `workspace-org.js`）。動工照 CLAUDE.md 的 manifest 流程走即可；
+  §3 的檔案地圖是補充說明，不是取代 manifest。
+
 ## 6. 未完成缺口（用戶已知，待決定是否進行）
 
-### 6.1 視覺遮罩（用戶原話裡的最後一項）
+> **重要**：以下標記「**需用戶裁決**」的項目是**刻意留白**，不是交接疏漏。
+> 這些牽涉產品形態或安全邊界，本 session 已判斷不該由 AI 自行假設。
+> **動工前必須先問用戶，不要憑猜測開工。**
+>
+> **建議的下一步**：優先做 §6.4 的「設計器補 create/update/delete 元件准入 UI」
+> （知識庫待辦 #4902）——它不需要新的產品決策、範圍明確、且是目前最明顯的可用性缺口
+> （權限模型 runtime 已完備，卻只能手改 JSON 才能設定寫入權限）。
+> 完成定義：設計器可設定四個 action 的群組/階級條件並存檔，
+> 存檔後 portal 頁的按鈕與 API 判定同步生效，125 個既有測試不退步。
+
+### 6.4 設計器補 create/update/delete 元件准入 UI ← **建議先做這個**
+
+範圍明確、不需新的產品決策。schema 與 runtime 都已支援（N4a/N4b 完成），純缺 UI。
+知識庫待辦 **#4902**（含可執行驗證指令）。
+
+只需改兩個檔案：
+- `templates/.../_ir_designer_body.html` 的「元件准入」區塊（目前只有 read 的表單）
+- `static/.../js/ir-designer.js` 的 `toggleWidgetAccess` / `widgetGroupMode` /
+  `setWidgetGroupMode` / `toggleWidgetGroup`（目前寫死操作 `access_matrix.read`，
+  要改成吃 action 參數）
+
+**互動形態建議**（沒有硬性規定，但這個最省事且與現有面板一致）：
+四個 action 各一組「啟用勾選 + 群組不限/限定 + 最低階級 select」，
+沿用現有 read 面板的版型往下堆疊；不必做成矩陣或分頁。
+
+**必須注意**：
+1. `buildDoc()` 的 `normalizeAccessMatrix()` 已處理空群組陣列轉 null 與空 action 移除，
+   擴充後要確認仍正確（schema 有 `minItems:1` 與 `minProperties:1`，
+   存成 `{}` 或 `groups: []` 都會被驗證器擋下）
+2. **寫入 action 未宣告 = 拒絕**（與 read 相反），UI 措辭要讓使用者知道
+   「沒啟用就是沒人能寫」，不要寫成「預設允許」
+3. 只在 `dataScope` 非空（子系統資源）時顯示
+
+**驗收案例**（照做即可）：
+- 四個 action 分別設定後存檔 → DB `layout_json` 正確、不被驗證器拒
+- 只勾「限定群組」但不選任何群組 → 正規化為 `groups: null`，存檔成功
+- 停用某 action → 該 key 從 `access_matrix` 消失
+- 存檔後開 portal 頁：按鈕出現與否符合設定，且按下去 API 不回 404
+  （用 `data-pir-can-*` 屬性與 curl 交叉驗證，指令見 #4902）
+- 既有 125 測試不退步
+
+### 6.5 視覺遮罩（**需用戶裁決**）
 
 portal 世界沒有 EGRESS（那是母系統 PostgreSQL 資源的機制，`egress_resource` 一律 None）。
 若要做欄位級遮罩，需要為 portal 設計輕量方案。建議形態：
 IR 的 `table.columns[]` / `detail.fields[]` 加 optional `mask`
 （如 `{"type": "partial", "keep_tail": 4}`），由 portal resolver 在回傳前套用
-（**必須 server 端做**，符合 INV-3）。**動工前要與用戶確認遮罩型態清單。**
+（**必須 server 端做**，符合 INV-3）。
 
-### 6.2 建表 / 建 view 尚未併入工作區
+**要問用戶**：遮罩型態清單（部分遮蔽／全遮／hover 揭示？）、
+設定 UI 放哪、寫入時是否也遮罩（編輯既有列時 masked 欄位怎麼處理）。
+
+### 6.6 建表 / 建 view 尚未併入工作區（**需用戶裁決方向**）
 
 目前建 SQLite 表與 CRUD view 仍要跳到子系統設定頁。
 用戶抱怨的「兩個畫面往來不方便」只解決了權限那半。
-建議：工作區加第三個 tab「資料表」，或在設計器的資料綁定面板加「新建 view」按鈕。
 
-### 6.3 portal 頁的 IR 預覽回 422
+**要問用戶**：工作區加第三個 tab「資料表」，還是在設計器的資料綁定面板加「新建 view」按鈕。
+
+既有可消費的 API（不必重造）：
+- `GET  /api/nocode-builder/sub-systems/{sc}/data-sources`
+- `GET  /api/nocode-builder/sub-systems/{sc}/data-sources/{key}/tables`
+- `POST /api/nocode-builder/sub-systems/{sc}/resolve-view`（解析/自動建立 CRUD View）
+- 相關 UI 現況在 `sub_system_config.html` + `sub-system-config.js`
+
+### 6.7 portal 頁的 IR 預覽回 422（**需用戶裁決安全邊界**）
 
 `/nocode/ir-designer/<psc>/preview` 是**平台語境**，遇到 `portal:` 綁定會 fail-closed 回 422。
 設計 portal 頁時無法預覽。這是世界互斥的必然結果，不是 bug。
+
 可能解法：preview 路由接受 `?sub=<ss_sc>` 參數，設 portal 語境 + 以「設計者身分」
-給一個虛擬的最高階級 portal_user 來預覽。**這會開一個以平台身分讀 SQLite 的口子，
-安全上要謹慎設計並與用戶確認。**
+給一個虛擬的最高階級 portal_user 來預覽。
 
-### 6.4 其他登記在案
+**要問用戶**：是否允許平台身分讀子系統 SQLite（這會鑿穿目前刻意的世界互斥）、
+虛擬身分的階級規則、是否限定只有子系統 developers 可預覽、預覽是否唯讀。
 
-- action registry 平台側仍無任何實際註冊（P2 遺留），第一個真 action 落地時要補 E2E
-- `DcCrudView.fixed_filters` 含 `$CURRENT_USER` 類變數時，portal 匿名語境行為未定義
-- v2 頁面 31 筆仍在 DB（`/p/` 存取回 410），24 個 site map 節點指向它們，
-  由用戶決定何時清理
-- `studio.css` 保留中（仍被 `sub_system_portal_v2.html` 引用）
-- 設計器只能編 `read` 的元件准入；`create/update/delete` 目前只能手改 JSON 或 SQL
-  （**這是明顯的可用性缺口，優先度應高於 6.1~6.3**）
+### 6.8 其他登記在案
+
+- **action registry 平台側仍無任何實際註冊**（P2 遺留）。第一個真 action 落地時要補 E2E。
+  **需用戶指定**第一個 action 是什麼（資源、permission code、UI 觸發點、預期行為）。
+- **`DcCrudView.fixed_filters` 含 `$CURRENT_USER` 類變數時，portal 語境行為未定義**。
+  `resolve_filter_variables()` 在 `services/crud_service.py`，目前吃的是平台 `current_user`。
+  **需用戶裁決**三種語境各自的行為：portal 匿名（無 user_id）、portal 登入帳號、平台使用者。
+  目前的安全預設應該是「portal 語境遇到未知變數就拒絕查詢」，但**尚未實作也未驗證**。
+- **v2 頁面清理**：31 筆仍在 DB（`/p/` 存取回 410），24 個 site map 節點指向它們。
+  **需用戶裁決**刪除／封存／保留。清單用 SQL 現查（數量會變動，別用寫死的 ID）：
+  ```sql
+  -- v2 頁面清單
+  SELECT secure_code, name, status, org_secure_code FROM dc_page_layouts
+  WHERE is_deleted=false AND layout_json->>'version'='2' ORDER BY updated_at DESC;
+  -- 指向 v2 頁面的 site map 節點
+  SELECT n.secure_code, n.name, n.sub_system_secure_code, p.name AS page_name
+  FROM dc_site_map_nodes n JOIN dc_page_layouts p ON p.secure_code=n.page_layout_secure_code
+  WHERE n.is_deleted=false AND p.layout_json->>'version'='2';
+  ```
+- **`studio.css` 保留中**。判斷條件明確：它目前**只**被
+  `templates/.../sub_system_portal_v2.html` 引用（N5 驗證過）。
+  該模板本身**不在**退役範圍（它是子系統 Portal V2 導航頁，仍在服役），
+  所以 CSS 要留著。**等該模板哪天也退役時再一併清**，
+  或有人願意把它用到的樣式搬進自己的 CSS 檔。
+  驗證指令：`grep -rn "studio.css" modules/ backend/`
 
 ---
 

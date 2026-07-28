@@ -663,6 +663,51 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
   curl -s -b cj.txt -X POST "$BASE/api/xxx" -H 'Content-Type: application/json' -H "X-CSRFToken: $TOKEN" -d '{...}'
   ```
 
+### NoCode Builder / Portal 開發備忘（2026-07-28 起）
+
+**兩個帳號世界完全分離**，測試時 cookie jar 要分開（同一個 jar 也能並存，但別混淆）：
+
+| | 平台世界 | Portal 世界 |
+|---|---|---|
+| 入口 | `/nocode/workspace/<sub_system_sc>`（統一工作區） | `/public/portal/<path_id>/...` |
+| 帳號 | PostgreSQL `users` | 子系統 SQLite `portal.db` 的 `portal_users` |
+| session | Flask-Login | `session['portal_sessions'][sub_sc]`（per 子系統並存） |
+| 渲染語境 | `platform` | `portal`（互斥，跨界解析一律 fail-closed） |
+
+```bash
+# portal 帳號登入（表單 POST，非 JSON；用獨立 cookie jar）
+curl -s -c p4_cj.txt -X POST "$BASE/public/portal/<path_id>/login" \
+  -d 'username=<帳號>&password=<密碼>'
+
+# portal 頁的 CSRF token 在頁面 meta（平台的 /dashboard 取不到 portal 用的）
+TOKEN=$(curl -s -b p4_cj.txt "$BASE/public/portal/<path_id>/p/<page_sc>" \
+  | grep -o 'csrf-token" content="[^"]*' | cut -d'"' -f3)
+
+# 子系統 SQLite 直查（portal.db=帳號/群組/階級，portal_data.db=業務資料）
+sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
+  "SELECT username, group_code, level_code FROM portal_users;"
+```
+
+- `path_id` 不等於 `sub_system_sc`，對照在 `lookup_items.value_str`：
+  `SELECT code, value_str FROM lookup_items WHERE value_str='<sub_system_sc>';`
+- 權限判定失敗**一律回 404**（不洩漏存在與否）；查原因看
+  `sudo journalctl -u beakplatform-dev.service --since "-5 min" | grep reason=`
+- 權限模型與判定鏈：`docs/PORTAL_ACCOUNT_SPEC.md`；
+  完整交接與踩坑清單：`docs/handoff_nocode_n1_n5.md`
+- v2 `layout_json` 已退役，`/p/` 遇到會回 410；設計器只認 `ir_version: 3`
+
+### pytest 既有環境問題（不要試圖修）
+
+跑完整 `pytest tests/` 會有 **13 個 error**，原因是測試 app 用 SQLite `db.create_all()`
+但平台有 PostgreSQL `JSONB` 欄位（最早卡在 `menu_defaults.title_i18n`），
+與任何功能變更無關。**驗收時只跑相關測試檔**，或以這 13 個為基準線比對是否退步：
+
+```bash
+cd /opt/BeakPlatform-dev/backend
+../venv/bin/python -m pytest tests/test_pageir_*.py tests/test_portal_*.py \
+  tests/test_sitemap_access_matrix.py -q     # 基準 125 passed
+```
+
 ### form_workflow 發行（publish）陷阱
 - `POST /api/mappings/<sc>/publish` 以表單/流程模板的 **version+revision** 判斷有無變更；
   直接改 `fw_workflow_templates.graph`（SQL 或 PUT API）**不會** bump revision，
