@@ -130,6 +130,44 @@ Portal 權限結構借鑒平台職級矩陣：
 
 N1 只建立帳號結構與 session 規範化，不變更既有 `visible_roles` 判定。
 
+## 6.1 頁面准入判定（N3a）
+
+Portal 頁面 runtime 會在既有 `DcSubSystemPage.visible_roles` 通過後，再消費
+`DcSiteMapNode.access_matrix`。兩者是 AND 關係：`visible_roles` 與
+`access_matrix` 都必須通過，頁面才會渲染；任一拒絕皆回 404，避免洩漏頁面存在。
+
+判定順序：
+
+| 順序 | 條件 | 結果 |
+|---|---|---|
+| 1 | `portal_user` 為 `None` | 拒絕，`no_session` |
+| 2 | 找不到 active、未刪除且對應子系統/頁面的 site map node | 放行，`no_matrix` |
+| 3 | node 存在但 `access_matrix` 為 `NULL` | 放行，`no_matrix` |
+| 4 | `access_matrix` 不是物件、缺 `read`、`read` 不是物件 | 拒絕，`bad_matrix` |
+| 5 | `read.groups` 為 `null` | 群組條件通過 |
+| 6 | `read.groups` 為清單 | `portal_user.group_code` 必須在清單內，否則拒絕 `group_denied` |
+| 7 | `read.min_level` 缺少或不是字串 | 拒絕，`bad_matrix` |
+| 8 | `read.min_level` 在該子系統 active `portal_levels` 查無 | 拒絕，`level_missing` |
+| 9 | `portal_user.level_rank` 小於 min level rank | 拒絕，`level_denied` |
+| 10 | 群組與階級皆通過 | 放行，`ok` |
+
+Reason 短碼只供稽核與 log 使用，不是 user-facing 訊息：
+
+| reason | 意義 |
+|---|---|
+| `no_session` | 沒有 portal session |
+| `no_matrix` | 沒有對應 node，或 node 尚未設定 `access_matrix` |
+| `bad_matrix` | `access_matrix` runtime 格式不合法 |
+| `group_denied` | 使用者群組不符合 `read.groups` |
+| `level_missing` | `read.min_level` 指向不存在或停用的 portal level |
+| `level_denied` | 使用者 `level_rank` 未達門檻 |
+| `ok` | 判定通過 |
+| `error` | 未預期例外，例如 `portal.db` 不存在 |
+
+Fail-closed 原則：只要 `access_matrix` 已設定，格式錯誤、`min_level` 查無、
+portal DB 讀取錯誤或其他未預期例外都一律拒絕。`access_matrix = NULL` 是向下相容語意，
+代表此節點尚未啟用 N3a 矩陣判定，runtime 交回既有 `visible_roles` 機制把關。
+
 ---
 
 ## 7. Schema 升級

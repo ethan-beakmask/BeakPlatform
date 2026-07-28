@@ -106,6 +106,7 @@ def portal_page(path_id, page_sc):
         get_current_portal_user,
         is_anonymous_allowed,
     )
+    from ..services import portal_access_service
     from . import _page_ir_title
 
     ss = _resolve_sub_system(path_id)
@@ -139,6 +140,21 @@ def portal_page(path_id, page_sc):
         is_active=True,
     ).first()
     if not mount or not _portal_role_allowed(mount.visible_roles, portal_user):
+        abort(404)
+
+    allowed, reason = portal_access_service.check_page_access(
+        ss.secure_code,
+        page_sc,
+        portal_user,
+    )
+    if not allowed:
+        logger.warning(
+            'Portal page access denied: page=%s sub_system=%s user=%s reason=%s',
+            page_sc,
+            ss.secure_code,
+            portal_user.get('user_id'),
+            reason,
+        )
         abort(404)
 
     try:
