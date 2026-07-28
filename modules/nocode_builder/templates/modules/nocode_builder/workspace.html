@@ -39,6 +39,45 @@
                 <div class="wks-empty" x-show="!loading && tree.length === 0">{{ _('尚無節點，請建立網頁') }}</div>
                 <div class="wks-empty" x-show="loading">{{ _('載入中...') }}</div>
             </div>
+            <div class="wks-access-panel" x-show="selectedAccessCount() > 0" x-effect="selectedAccessCount() && ensurePortalOrg()">
+                <div class="wks-access-head">
+                    <h3>{{ _('節點准入') }}</h3>
+                    <span class="wks-muted" x-text="__('已選 {count} 個節點', { count: selectedAccessCount() })"></span>
+                </div>
+                <div class="wks-access-field">
+                    <span>{{ _('群組限制') }}</span>
+                    <label class="wks-access-option">
+                        <input type="radio" value="all" x-model="accessForm.groupMode">
+                        <span>{{ _('不限群組') }}</span>
+                    </label>
+                    <label class="wks-access-option">
+                        <input type="radio" value="limited" x-model="accessForm.groupMode">
+                        <span>{{ _('限定群組') }}</span>
+                    </label>
+                    <div class="wks-access-checks" x-show="accessForm.groupMode === 'limited'">
+                        <template x-for="group in activePortalGroups()" :key="group.code">
+                            <label class="wks-access-check">
+                                <input type="checkbox" :value="group.code" x-model="accessForm.groupCodes">
+                                <span x-text="group.name + ' (' + group.code + ')'"></span>
+                            </label>
+                        </template>
+                        <span class="wks-muted" x-show="portalOrgLoaded && activePortalGroups().length === 0">{{ _('尚無可用群組') }}</span>
+                    </div>
+                </div>
+                <label class="wks-access-field">
+                    <span>{{ _('最低階級') }}</span>
+                    <select x-model="accessForm.minLevel">
+                        <template x-for="level in sortedPortalLevels()" :key="level.code">
+                            <option :value="level.code" x-text="level.name + ' (' + level.code + ', rank ' + level.rank + ')'"></option>
+                        </template>
+                        <option value="GUEST" x-show="sortedPortalLevels().length === 0">{{ _('GUEST') }}</option>
+                    </select>
+                </label>
+                <div class="wks-access-actions">
+                    <button type="button" class="wks-btn wks-btn-primary" @click="applyAccessMatrix()" :disabled="accessForm.groupMode === 'limited' && accessForm.groupCodes.length === 0">{{ _('套用') }}</button>
+                    <button type="button" class="wks-btn" @click="clearAccessMatrix()">{{ _('清除設定') }}</button>
+                </div>
+            </div>
             <div class="wks-status" x-show="toast.show" x-text="toast.message"></div>
         </aside>
 

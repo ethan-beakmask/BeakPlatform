@@ -345,6 +345,7 @@ class SiteMapService:
         allowed = {
             'name', 'icon', 'page_layout_secure_code',
             'display_order', 'access_roles', 'redirect_to',
+            'access_matrix',
             'crud_overrides', 'data_filters', 'is_active',
             'permission_mode', 'permission_policy_secure_code',
         }

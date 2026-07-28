@@ -26,6 +26,15 @@ function wksManager(subSystemSc) {
         loading: true,
         tree: [],
         selectedNode: null,
+        selectedNodeScs: [],
+        portalOrgLoaded: false,
+        portalGroups: [],
+        portalLevels: [],
+        accessForm: {
+            groupMode: 'all',
+            groupCodes: [],
+            minLevel: 'GUEST',
+        },
         currentPageSc: '',
         designerMounted: false,
         designerKey: 0,
@@ -88,6 +97,7 @@ function wksManager(subSystemSc) {
             });
             this._bkTree.expandAll();
             this.markSelectedRow();
+            this.markMultiSelectedRows();
         },
 
         treeToSource(nodes) {
@@ -101,19 +111,28 @@ function wksManager(subSystemSc) {
 
         nodeLabel(node) {
             const typeLabel = node.node_type === 'folder' ? __('資料夾') : __('網頁');
-            return `[${typeLabel}] ${node.name}`;
+            const accessLabel = node.access_matrix ? ` ${__('〔准入〕')}` : '';
+            return `[${typeLabel}] ${node.name}${accessLabel}`;
         },
 
         async onTreeNodeClick(nodeId, bkNode, event) {
             const nodeData = bkNode && bkNode.data ? bkNode.data : {};
+            if (event && (event.ctrlKey || event.metaKey)) {
+                this.toggleMultiSelect(nodeId);
+                return;
+            }
+            this.selectedNodeScs = [];
             this.selectedNode = nodeData;
             this.markSelectedRow(nodeId);
+            this.markMultiSelectedRows();
+            this.syncAccessForm();
 
             if (nodeData.node_type === 'folder') {
                 if (this.currentPageSc && this.designerIsDirty()) {
                     if (!confirm(__('尚未儲存，確定切換？'))) {
                         this.selectedNode = this.findNodeByPage(this.currentPageSc) || this.selectedNode;
                         this.markSelectedRow(this.selectedNode && this.selectedNode.secure_code);
+                        this.syncAccessForm();
                         return;
                     }
                 }
@@ -142,11 +161,13 @@ function wksManager(subSystemSc) {
                 if (!confirm(__('尚未儲存，確定切換？'))) {
                     this.selectedNode = this.findNodeByPage(this.currentPageSc) || this.selectedNode;
                     this.markSelectedRow(this.selectedNode && this.selectedNode.secure_code);
+                    this.syncAccessForm();
                     return;
                 }
             }
 
             this.selectedNode = nodeData;
+            this.syncAccessForm();
             this.currentPageSc = pageSc;
             window.__IR_DESIGNER_CONFIG = {
                 secureCode: pageSc,
@@ -210,6 +231,7 @@ function wksManager(subSystemSc) {
             await this.reloadTree();
             this.selectedNode = this.findNodeBySecureCode(node.secure_code) || node;
             this.markSelectedRow(node.secure_code);
+            this.syncAccessForm();
             this.showToast(__('資料夾已建立'));
         },
 
@@ -297,6 +319,7 @@ function wksManager(subSystemSc) {
                     return;
                 }
                 this.selectedNode = null;
+                this.selectedNodeScs = [];
                 this.currentPageSc = '';
                 this.designerMounted = false;
                 await this.reloadTree();
@@ -344,7 +367,11 @@ function wksManager(subSystemSc) {
         },
 
         async reloadTree() {
+            const selectedSc = this.selectedNode && this.selectedNode.secure_code;
             await this.loadTree();
+            if (selectedSc) this.selectedNode = this.findNodeBySecureCode(selectedSc);
+            this.selectedNodeScs = this.selectedNodeScs.filter((sc) => this.findNodeBySecureCode(sc));
+            this.syncAccessForm();
             await this.$nextTick();
             this.initTree();
         },
@@ -375,6 +402,139 @@ function wksManager(subSystemSc) {
             if (!selectedId) return;
             const row = document.querySelector(`#wks-tree tr[data-id="${selectedId}"]`);
             if (row) row.classList.add('wks-tree-selected');
+        },
+
+        markMultiSelectedRows() {
+            document.querySelectorAll('#wks-tree .wks-tree-multiselected').forEach((el) => {
+                el.classList.remove('wks-tree-multiselected');
+            });
+            this.selectedNodeScs.forEach((sc) => {
+                const row = document.querySelector(`#wks-tree tr[data-id="${sc}"]`);
+                if (row) row.classList.add('wks-tree-multiselected');
+            });
+        },
+
+        toggleMultiSelect(nodeSc) {
+            if (!nodeSc) return;
+            if (this.selectedNodeScs.includes(nodeSc)) {
+                this.selectedNodeScs = this.selectedNodeScs.filter((sc) => sc !== nodeSc);
+            } else {
+                this.selectedNodeScs = [...this.selectedNodeScs, nodeSc];
+            }
+            this.markMultiSelectedRows();
+            this.syncAccessForm();
+        },
+
+        accessTargetNodeScs() {
+            if (this.selectedNodeScs.length) return this.selectedNodeScs;
+            return this.selectedNode ? [this.selectedNode.secure_code] : [];
+        },
+
+        selectedAccessCount() {
+            return this.accessTargetNodeScs().length;
+        },
+
+        async ensurePortalOrg() {
+            if (this.portalOrgLoaded) return;
+            try {
+                const res = await fetch(`${BP}/api/nocode-builder/sub-systems/${this.subSystemSc}/portal/org`);
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    this.showToast(data.error || __('載入群組階級失敗'));
+                    return;
+                }
+                const orgData = data.data || {};
+                this.portalGroups = orgData.groups || [];
+                this.portalLevels = orgData.levels || [];
+                this.portalOrgLoaded = true;
+                this.syncAccessForm();
+            } catch (err) {
+                this.showToast(err.message || __('載入群組階級失敗'));
+            }
+        },
+
+        activePortalGroups() {
+            return (this.portalGroups || []).filter((group) => group && group.code && group.is_active !== false);
+        },
+
+        sortedPortalLevels() {
+            return [...(this.portalLevels || [])]
+                .filter((level) => level && level.code && level.is_active !== false)
+                .sort((a, b) => Number(a.rank || 0) - Number(b.rank || 0));
+        },
+
+        syncAccessForm() {
+            const targets = this.accessTargetNodeScs();
+            if (targets.length !== 1) {
+                this.accessForm = { groupMode: 'all', groupCodes: [], minLevel: this.defaultMinLevel() };
+                return;
+            }
+            const node = this.findNodeBySecureCode(targets[0]) || this.selectedNode;
+            const matrix = node && node.access_matrix && node.access_matrix.read ? node.access_matrix.read : null;
+            if (!matrix) {
+                this.accessForm = { groupMode: 'all', groupCodes: [], minLevel: this.defaultMinLevel() };
+                return;
+            }
+            const groups = Array.isArray(matrix.groups) ? matrix.groups : [];
+            this.accessForm = {
+                groupMode: matrix.groups === null ? 'all' : 'limited',
+                groupCodes: groups,
+                minLevel: matrix.min_level || this.defaultMinLevel(),
+            };
+        },
+
+        defaultMinLevel() {
+            if (this.sortedPortalLevels().some((level) => level.code === 'GUEST')) return 'GUEST';
+            const first = this.sortedPortalLevels()[0];
+            return first ? first.code : 'GUEST';
+        },
+
+        buildAccessMatrix() {
+            return {
+                read: {
+                    groups: this.accessForm.groupMode === 'all' ? null : this.accessForm.groupCodes,
+                    min_level: this.accessForm.minLevel || this.defaultMinLevel(),
+                },
+            };
+        },
+
+        async applyAccessMatrix() {
+            const targets = this.accessTargetNodeScs();
+            if (!targets.length) return;
+            const matrix = this.buildAccessMatrix();
+            if (matrix.read.groups !== null && !matrix.read.groups.length) {
+                this.showToast(__('請至少選擇一個群組'));
+                return;
+            }
+            await this.saveAccessMatrixBatch(targets, matrix, __('節點准入已套用'));
+        },
+
+        async clearAccessMatrix() {
+            const targets = this.accessTargetNodeScs();
+            if (!targets.length) return;
+            await this.saveAccessMatrixBatch(targets, null, __('節點准入已清除'));
+        },
+
+        async saveAccessMatrixBatch(nodeScs, accessMatrix, message) {
+            try {
+                const res = await fetch(`${BP}/api/nocode-builder/sub-systems/${this.subSystemSc}/site-map/access-matrix/batch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                    body: JSON.stringify({
+                        node_secure_codes: nodeScs,
+                        access_matrix: accessMatrix,
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    this.showToast(data.error || __('儲存節點准入失敗'));
+                    return;
+                }
+                await this.reloadTree();
+                this.showToast(message);
+            } catch (err) {
+                this.showToast(err.message || __('儲存節點准入失敗'));
+            }
         },
 
         showToast(message) {

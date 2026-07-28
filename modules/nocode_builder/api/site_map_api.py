@@ -6,6 +6,7 @@ Admin API: 完整樹 CRUD + 權限管理
 User API: 用戶可見樹 + 節點 context
 """
 import logging
+import re
 from datetime import date
 
 from flask import jsonify, request
@@ -20,6 +21,38 @@ from app.platform.data import get_current_org
 from . import api_bp
 
 logger = logging.getLogger(__name__)
+
+_PORTAL_CODE_RE = re.compile(r'^[A-Z][A-Z0-9_]{0,31}$')
+
+
+def _validate_access_matrix(value):
+    """Validate design-time portal access matrix JSON."""
+    if value is None:
+        return True, ''
+    if not isinstance(value, dict):
+        return False, _('access_matrix 必須為物件或 null')
+    if set(value.keys()) != {'read'}:
+        return False, _('access_matrix 目前只允許 read 設定')
+
+    read = value.get('read')
+    if not isinstance(read, dict):
+        return False, _('access_matrix.read 必須為物件')
+    if set(read.keys()) != {'groups', 'min_level'}:
+        return False, _('access_matrix.read 必須包含 groups 與 min_level')
+
+    groups = read.get('groups')
+    if groups is not None:
+        if not isinstance(groups, list) or not groups:
+            return False, _('groups 必須為 null 或非空陣列')
+        for group_code in groups:
+            if not isinstance(group_code, str) or not _PORTAL_CODE_RE.match(group_code):
+                return False, _('groups 代碼格式不正確')
+
+    min_level = read.get('min_level')
+    if not isinstance(min_level, str) or not _PORTAL_CODE_RE.match(min_level):
+        return False, _('min_level 代碼格式不正確')
+
+    return True, ''
 
 
 # =============================================================================
@@ -107,18 +140,25 @@ def update_site_map_node(ss_sc, node_sc):
     node = SiteMapService.get_node(node_sc, org.secure_code)
     if not node:
         return jsonify({'success': False, 'error': 'Node not found'}), 404
+    if node.sub_system_secure_code != ss_sc:
+        return jsonify({'success': False, 'error': 'Node not found'}), 404
 
     data = request.get_json() or {}
     update_fields = {}
     for field in ('name', 'icon', 'page_layout_secure_code',
                   'display_order', 'access_roles', 'redirect_to',
                   'crud_overrides', 'data_filters', 'is_active',
-                  'permission_mode', 'permission_policy_secure_code'):
+                  'permission_mode', 'permission_policy_secure_code',
+                  'access_matrix'):
         if field in data:
             update_fields[field] = data[field]
 
     if 'name' in update_fields and not update_fields['name'].strip():
         return jsonify({'success': False, 'error': _('名稱不可為空')}), 400
+    if 'access_matrix' in update_fields:
+        ok, err = _validate_access_matrix(update_fields['access_matrix'])
+        if not ok:
+            return jsonify({'success': False, 'error': err}), 400
 
     try:
         SiteMapService.update_node(node, **update_fields)
@@ -215,6 +255,57 @@ def _check_developer(ss_sc):
         return None, (jsonify({'success': False, 'error': _('您不是此子系統的開發者')}), 403)
 
     return ss, None
+
+
+@api_bp.route('/sub-systems/<ss_sc>/site-map/access-matrix/batch', methods=['POST'])
+@csrf.exempt
+@module_access_required('nocode_builder')
+def batch_update_site_map_access_matrix(ss_sc):
+    """批次更新 Site Map 節點 Portal 准入矩陣。"""
+    from ..models.site_map_node import DcSiteMapNode
+
+    ss, err = _check_developer(ss_sc)
+    if err:
+        return err
+    org = get_current_org()
+    if not org or ss.org_secure_code != org.secure_code:
+        return jsonify({'success': False, 'error': _('Sub system not found')}), 404
+
+    data = request.get_json() or {}
+    node_scs = data.get('node_secure_codes')
+    if not isinstance(node_scs, list) or not node_scs:
+        return jsonify({'success': False, 'error': _('node_secure_codes 必須為非空陣列')}), 400
+    if len(node_scs) > 200:
+        return jsonify({'success': False, 'error': _('一次最多套用 200 個節點')}), 400
+    if any(not isinstance(sc, str) or not sc.strip() for sc in node_scs):
+        return jsonify({'success': False, 'error': _('node_secure_codes 格式不正確')}), 400
+    if 'access_matrix' not in data:
+        return jsonify({'success': False, 'error': _('access_matrix 為必填')}), 400
+
+    unique_scs = list(dict.fromkeys(node_scs))
+    access_matrix = data.get('access_matrix')
+    ok, validate_err = _validate_access_matrix(access_matrix)
+    if not ok:
+        return jsonify({'success': False, 'error': validate_err}), 400
+
+    nodes = DcSiteMapNode.query.filter(
+        DcSiteMapNode.secure_code.in_(unique_scs),
+        DcSiteMapNode.org_secure_code == org.secure_code,
+        DcSiteMapNode.sub_system_secure_code == ss_sc,
+        DcSiteMapNode.is_deleted == False,
+    ).all()
+    if len(nodes) != len(unique_scs):
+        return jsonify({'success': False, 'error': _('節點不屬於此子系統或租戶')}), 400
+
+    try:
+        for node in nodes:
+            node.access_matrix = access_matrix
+        db.session.commit()
+        return jsonify({'success': True, 'updated': len(nodes)})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[SiteMap] batch_update_access_matrix error')
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/nodes/<node_sc>/permissions')

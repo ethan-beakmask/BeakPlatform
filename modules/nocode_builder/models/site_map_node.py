@@ -11,6 +11,10 @@ page 類型連結到 DcPageLayout。
   ["GUEST"]   → 任何人都能到此頁面（含非成員）
   ["MANAGER", "MEMBER", ...] → 只有符合角色的成員才能到此頁面
 不符合准入的用戶一律轉向 redirect_to (預設 /dashboard)。
+
+Portal 准入 (access_matrix):
+  {"read":{"groups":null|[codes],"min_level":code}}
+  NULL = 尚未設定，沿用舊制行為（runtime 由 N3 定義）。
 """
 from typing import Dict, Any
 
@@ -34,6 +38,7 @@ class DcSiteMapNode(ModuleBaseModel):
 
     # 准入控制: [] = NONE, ["GUEST"] = 任何人, ["MANAGER",...] = 角色清單
     access_roles = Column(JSONB, default=list)
+    access_matrix = Column(JSONB, nullable=True)
     redirect_to = Column(String(200), default='/dashboard')
 
     # 權限模式: 'inherit'(向上繼承), 'policy'(政策組), 'custom'(自訂), NULL(禁止)
@@ -58,6 +63,7 @@ class DcSiteMapNode(ModuleBaseModel):
             'page_layout_secure_code': self.page_layout_secure_code,
             'display_order': self.display_order,
             'access_roles': self.access_roles or [],
+            'access_matrix': self.access_matrix,
             'redirect_to': self.redirect_to or '/dashboard',
             'permission_mode': self.permission_mode,
             'permission_policy_secure_code': self.permission_policy_secure_code,

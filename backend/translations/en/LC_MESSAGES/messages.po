@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 09:24+0800\n"
+"POT-Creation-Date: 2026-07-28 12:55+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -1173,10 +1173,10 @@ msgstr "Code must be at least 2 characters"
 msgid "名稱長度不可超過 255 字元（目前 %(length)s 字元）"
 msgstr "Name cannot exceed 255 characters (currently %(length)s)"
 
-#: ../modules/nocode_builder/api/site_map_api.py:67
-#: ../modules/nocode_builder/api/site_map_api.py:121
-#: ../modules/nocode_builder/api/site_map_api.py:514
-#: ../modules/nocode_builder/api/site_map_api.py:547
+#: ../modules/nocode_builder/api/site_map_api.py:100
+#: ../modules/nocode_builder/api/site_map_api.py:157
+#: ../modules/nocode_builder/api/site_map_api.py:605
+#: ../modules/nocode_builder/api/site_map_api.py:638
 #: ../modules/nocode_builder/api/template_api.py:123
 #: ../modules/nocode_builder/services/project_service.py:124
 #: ../modules/spec_formulate/api/_mf_specs_crud.py:45
@@ -2149,9 +2149,9 @@ msgstr "Passwords match"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:354
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:114
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:131
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:88
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:109
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:187
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:127
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:148
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:226
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:118
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:140
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:232
@@ -2986,7 +2986,7 @@ msgstr "Please select an organization"
 msgid "選單樹"
 msgstr "Menu Tree"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:70
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:109
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:16
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:16
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:22
@@ -3670,7 +3670,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_portal.html:88
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_portal_v2.html:123
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:40
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:163
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:202
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:49
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:25
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:24
@@ -3841,7 +3841,7 @@ msgstr "No recipient groups yet"
 msgid "點擊「新增群組」開始建立"
 msgstr "Click \"Add Group\" to start creating"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:80
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:119
 #: app/templates/pages/admin/_settings_recipients_section.html:28
 #: app/templates/pages/external-users/edit.html:133
 #: app/templates/pages/hostconfig/_system_settings_modals.html:181
@@ -7562,7 +7562,7 @@ msgstr ""
 msgid "收件人群組列表"
 msgstr "Recipient group list"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:68
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:107
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:14
 msgid "新增群組"
 msgstr "Add new group"
@@ -8494,8 +8494,8 @@ msgstr "Authorized User Types"
 msgid "勾選可看見此選單的用戶類型（平行關係，非繼承）"
 msgstr "Select user types that can see this menu (parallel, not inherited)"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:84
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:105
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:123
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:144
 #: app/templates/pages/menu/create.html:103
 #: app/templates/pages/menu/edit.html:94
 #: app/templates/pages/modules/edit.html:44
@@ -8942,7 +8942,7 @@ msgstr "Assignment type"
 msgid "選擇類型"
 msgstr "Select type"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:170
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:209
 #: app/templates/pages/modules/list.html:157
 #: app/templates/pages/units/create.html:3
 #: app/templates/pages/units/create.html:11
@@ -14443,7 +14443,7 @@ msgid "規則已更新"
 msgstr "Rule updated"
 
 #: ../modules/nocode_builder/api/bridge_api.py:425
-#: ../modules/nocode_builder/api/site_map_api.py:663
+#: ../modules/nocode_builder/api/site_map_api.py:754
 msgid "規則已刪除"
 msgstr "Rule deleted"
 
@@ -14455,6 +14455,7 @@ msgstr "Portal database not initialized for this sub-system"
 #: ../modules/nocode_builder/api/portal_org_api.py:68
 #: ../modules/nocode_builder/api/portal_org_api.py:101
 #: ../modules/nocode_builder/api/portal_org_api.py:135
+#: ../modules/nocode_builder/api/site_map_api.py:272
 msgid "Sub system not found"
 msgstr "Sub system not found"
 
@@ -14482,84 +14483,132 @@ msgstr "Account, group, or level not found"
 msgid "帳號歸屬已更新"
 msgstr "Assignment updated"
 
-#: ../modules/nocode_builder/api/site_map_api.py:86
+#: ../modules/nocode_builder/api/site_map_api.py:33
+msgid "access_matrix 必須為物件或 null"
+msgstr "access_matrix must be an object or null"
+
+#: ../modules/nocode_builder/api/site_map_api.py:35
+msgid "access_matrix 目前只允許 read 設定"
+msgstr "access_matrix currently allows only the read key"
+
+#: ../modules/nocode_builder/api/site_map_api.py:39
+msgid "access_matrix.read 必須為物件"
+msgstr "access_matrix.read must be an object"
+
+#: ../modules/nocode_builder/api/site_map_api.py:41
+msgid "access_matrix.read 必須包含 groups 與 min_level"
+msgstr "access_matrix.read must contain groups and min_level"
+
+#: ../modules/nocode_builder/api/site_map_api.py:46
+msgid "groups 必須為 null 或非空陣列"
+msgstr "groups must be null or a non-empty array"
+
+#: ../modules/nocode_builder/api/site_map_api.py:49
+msgid "groups 代碼格式不正確"
+msgstr "Invalid group code format"
+
+#: ../modules/nocode_builder/api/site_map_api.py:53
+msgid "min_level 代碼格式不正確"
+msgstr "Invalid min_level code format"
+
+#: ../modules/nocode_builder/api/site_map_api.py:119
 msgid "網頁已建立"
 msgstr "Page created"
 
-#: ../modules/nocode_builder/api/site_map_api.py:129
+#: ../modules/nocode_builder/api/site_map_api.py:169
 msgid "節點已更新"
 msgstr "Node updated"
 
-#: ../modules/nocode_builder/api/site_map_api.py:155
+#: ../modules/nocode_builder/api/site_map_api.py:195
 #, python-format
 msgid "已刪除 %(count)s 個節點"
 msgstr "Deleted %(count)s nodes"
 
-#: ../modules/nocode_builder/api/site_map_api.py:186
+#: ../modules/nocode_builder/api/site_map_api.py:226
 #, python-format
 msgid "已更新 %(count)s 個節點"
 msgstr "Updated %(count)s nodes"
 
-#: ../modules/nocode_builder/api/site_map_api.py:215
+#: ../modules/nocode_builder/api/site_map_api.py:255
 msgid "您不是此子系統的開發者"
 msgstr "You are not a developer of this subsystem"
 
+#: ../modules/nocode_builder/api/site_map_api.py:277
+msgid "node_secure_codes 必須為非空陣列"
+msgstr "node_secure_codes must be a non-empty array"
+
+#: ../modules/nocode_builder/api/site_map_api.py:279
+msgid "一次最多套用 200 個節點"
+msgstr "At most 200 nodes can be updated at once"
+
+#: ../modules/nocode_builder/api/site_map_api.py:281
+msgid "node_secure_codes 格式不正確"
+msgstr "Invalid node_secure_codes format"
+
+#: ../modules/nocode_builder/api/site_map_api.py:283
+msgid "access_matrix 為必填"
+msgstr "access_matrix is required"
+
+#: ../modules/nocode_builder/api/site_map_api.py:298
+msgid "節點不屬於此子系統或租戶"
+msgstr "Node does not belong to this sub-system or tenant"
+
 #: ../modules/form_workflow/api/mapping_permissions.py:92
-#: ../modules/nocode_builder/api/site_map_api.py:273
+#: ../modules/nocode_builder/api/site_map_api.py:364
 msgid "grant_type 必須為 department / group / user"
 msgstr "grant_type must be department / group / user"
 
 #: ../modules/form_workflow/api/mapping_permissions.py:106
-#: ../modules/nocode_builder/api/site_map_api.py:289
+#: ../modules/nocode_builder/api/site_map_api.py:380
 msgid "此規則已存在"
 msgstr "This rule already exists"
 
-#: ../modules/nocode_builder/api/site_map_api.py:293
+#: ../modules/nocode_builder/api/site_map_api.py:384
 msgid "准入規則已新增"
 msgstr "Access rule added"
 
-#: ../modules/nocode_builder/api/site_map_api.py:307
+#: ../modules/nocode_builder/api/site_map_api.py:398
 msgid "grant_type+grant_target 或 target_type+target_secure_code 為必填"
 msgstr "grant_type+grant_target or target_type+target_secure_code is required"
 
-#: ../modules/nocode_builder/api/site_map_api.py:313
+#: ../modules/nocode_builder/api/site_map_api.py:404
 msgid "此權限已存在"
 msgstr "This permission already exists"
 
-#: ../modules/nocode_builder/api/site_map_api.py:317
+#: ../modules/nocode_builder/api/site_map_api.py:408
 msgid "權限已新增"
 msgstr "Permission added"
 
-#: ../modules/nocode_builder/api/site_map_api.py:343
+#: ../modules/nocode_builder/api/site_map_api.py:434
 msgid "權限已刪除"
 msgstr "Permission deleted"
 
-#: ../modules/nocode_builder/api/site_map_api.py:450
+#: ../modules/nocode_builder/api/site_map_api.py:541
 msgid "您沒有存取此頁面的權限"
 msgstr "You do not have permission to access this page"
 
-#: ../modules/nocode_builder/api/site_map_api.py:523
+#: ../modules/nocode_builder/api/site_map_api.py:614
 msgid "政策組已建立"
 msgstr "Policy group created"
 
-#: ../modules/nocode_builder/api/site_map_api.py:552
+#: ../modules/nocode_builder/api/site_map_api.py:643
 msgid "政策組已更新"
 msgstr "Policy group updated"
 
-#: ../modules/nocode_builder/api/site_map_api.py:579
+#: ../modules/nocode_builder/api/site_map_api.py:670
 #, python-format
 msgid "政策組已刪除，%(n)s 個節點權限已重設"
 msgstr "Policy group deleted; permissions for %(n)s nodes were reset"
 
-#: ../modules/nocode_builder/api/site_map_api.py:627
+#: ../modules/nocode_builder/api/site_map_api.py:718
 msgid "缺少必要欄位"
 msgstr "Missing required fields"
 
-#: ../modules/nocode_builder/api/site_map_api.py:638
+#: ../modules/nocode_builder/api/site_map_api.py:729
 msgid "規則已新增"
 msgstr "Rule added"
 
-#: ../modules/nocode_builder/api/site_map_api.py:697
+#: ../modules/nocode_builder/api/site_map_api.py:788
 #, python-format
 msgid "已套用到 %(affected)s 個子節點"
 msgstr "Applied to %(affected)s child nodes"
@@ -14886,7 +14935,7 @@ msgstr ""
 msgid "根頁面名稱必須為 welcome"
 msgstr "The root page name must be welcome"
 
-#: ../modules/nocode_builder/services/site_map_service.py:374
+#: ../modules/nocode_builder/services/site_map_service.py:375
 msgid "根頁面 (welcome) 不可刪除"
 msgstr "The root page (welcome) cannot be deleted"
 
@@ -15745,6 +15794,7 @@ msgstr "Highlighted node"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:550
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:712
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:896
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:77
 msgid "套用"
 msgstr "Apply"
 
@@ -16176,7 +16226,7 @@ msgid "頁面設計"
 msgstr "Page Design"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:19
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:64
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:103
 msgid "帳號權限"
 msgstr "Accounts & Permissions"
 
@@ -16208,58 +16258,90 @@ msgstr "Delete Node"
 msgid "尚無節點，請建立網頁"
 msgstr "No nodes yet. Create a page."
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:44
+msgid "節點准入"
+msgstr "Node Access"
+
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:48
+msgid "群組限制"
+msgstr "Group restriction"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:51
+msgid "不限群組"
+msgstr "Any group"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:55
+msgid "限定群組"
+msgstr "Selected groups"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:64
+msgid "尚無可用群組"
+msgstr "No groups available"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:68
+msgid "最低階級"
+msgstr "Minimum level"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:73
+msgid "GUEST"
+msgstr "GUEST"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:78
+msgid "清除設定"
+msgstr "Clear"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:87
 msgid "從左側選擇或建立網頁"
 msgstr "Select or create a page on the left"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:49
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:88
 msgid "folder 節點只展開或收合，不會載入設計器。"
 msgstr "Folder nodes only expand/collapse; they do not load the designer."
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:65
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:104
 msgid "拖拉帳號 chip 可調整群組與階級。"
 msgstr "Drag account chips to change group and level."
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:69
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:108
 msgid "新增階級"
 msgstr "New Level"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:76
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:115
 msgid "群組代碼"
 msgstr "Group Code"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:141
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:87
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:108
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:186
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:126
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:147
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:225
 msgid "確定"
 msgstr "OK"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:93
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:132
 msgid "階級代碼"
 msgstr "Level Code"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:97
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:136
 msgid "階級名稱"
 msgstr "Level Name"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:101
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:140
 msgid "rank"
 msgstr "rank"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:117
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:156
 msgid "階級 / 群組"
 msgstr "Level / Group"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:160
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:199
 msgid "尚無帳號權限資料"
 msgstr "No account data yet"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:167
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:206
 msgid "調整帳號歸屬"
 msgstr "Change Assignment"
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:178
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:217
 msgid "階級"
 msgstr "Level"
 
