@@ -1,5 +1,22 @@
 # BeakPlatform - Claude Code 專案規範
 
+## 這份文件的範圍（2026-07-29 重整）
+
+本檔只放**「不知道就會做錯」的規範與環境事實**。細節與可重複使用的內容已分流：
+
+| 找什麼 | 去哪 |
+|---|---|
+| 派工給 codex 時要貼的規範片段 | **`docs/codex_spec/`**（frontend / i18n / security / portal / _footer） |
+| 檔案上傳下載的完整 API 用法 | `docs/FILE_SERVICE.md` |
+| 改哪些檔案（工單導向） | `docs/manifests/README.yaml` → 對應 manifest |
+| 安全踩坑清單 | `docs/manifests/SECURITY_PITFALLS.md` |
+| 權限模型定版 | `docs/PERMISSION_MODEL.md`、`docs/COMPONENT_VISIBILITY_GUIDE.md` |
+| 名詞對照 | `docs/GLOSSARY.md` |
+| 跨 session 待辦與決策脈絡 | BeakBroodNest 知識庫（`note_search` / `note_get`） |
+
+**維護原則**：新的踩坑先問「這是 codex 猜不到的專案特有事實，還是通用工程常識？」
+前者才寫進來；屬於「派工時要貼給 codex」的，寫進 `docs/codex_spec/` 並在本檔留指針。
+
 ## 專案定位
 
 **BeakPlatform 是一個多租戶權限管理平台**
@@ -199,92 +216,16 @@ SELECT code, link_type, link_target FROM menu_items WHERE parent_secure_code = '
 
 ### FILE-01: 檔案上傳/下載統一規範
 
-**所有檔案操作必須透過統一元件，禁止自行實作上傳/下載邏輯。**
+**所有檔案操作必須透過 `file_service`，禁止自行實作上傳/下載邏輯。**
 
-#### 架構總覽
+- 加密由 `storage_type` 自動決定（`form_attachment` / `subsystem_file` 走 AES-256-GCM），
+  程式不需手動呼叫加密函式
+- 前端一律用 `BkFileAttachment` 元件，不要自己寫上傳 API 呼叫
+- **禁止**繞過 `file_service` 直接讀寫 uploads/ 或 encrypted_storage/
+- **禁止**手動呼叫 `crypto/engine.py`
+- **禁止**將 `ENCRYPTION_MASTER_KEY` 硬編碼或寫入版控
 
-```
-前端 BkFileAttachment → POST /api/files/upload → file_service.upload_file()
-                                                      ├── local (org_logo, wf_background)
-                                                      └── encrypted (form_attachment, subsystem_file)
-                                                           └── crypto/key_manager.py (AES-256-GCM)
-```
-
-#### 加密機制 (內建，非外部服務)
-
-- **位置**: `backend/app/crypto/` (engine.py + key_manager.py)
-- **演算法**: AES-256-GCM
-- **金鑰架構**: Master Key (env) → Org Key (DB per 企業) → File DEK (per 檔案隨機)
-- **觸發時機**: `storage_type='encrypted'` 時自動加解密，程式不需手動呼叫加密函式
-- **加密檔案儲存**: `ENCRYPTED_STORAGE_DIR` 環境變數指定的目錄，按企業隔離子目錄
-
-#### context_type 與 storage_type 對應
-
-| context_type | storage_type | 加密 | 說明 |
-|---|---|---|---|
-| `org_logo` | `local` | 否 | 企業 Logo |
-| `wf_background` | `local` | 否 | 工作流設計器底圖 |
-| `form_attachment` | `encrypted` | 是 | 表單簽核附件 |
-| `subsystem_file` | `encrypted` | 是 | 子系統業務附件 |
-
-**新增 context_type 時**：在 `file_service.py` 的 `CONTEXT_STORAGE_MAP`、`CONTEXT_ALLOWED_EXT`、`CONTEXT_MAX_SIZE` 三個 dict 中加入對應設定。
-
-#### 後端開發 - 上傳
-
-```python
-from app.services import file_service
-
-record = file_service.upload_file(
-    org_sc=org.secure_code,       # 企業 SC (租戶隔離)
-    file=request.files['file'],   # werkzeug FileStorage
-    context_type='form_attachment', # 用途類型 → 自動決定加不加密
-    context_id='RECORD_SC',       # 關聯的業務記錄 SC (選填)
-    uploader_sc=current_user.secure_code,
-)
-db.session.commit()
-# record.secure_code 用於前端存取
-# record.serve_url / record.download_url 用於產生連結
-```
-
-#### 後端開發 - 下載/讀取
-
-```python
-record = file_service.get_file_by_sc(secure_code, org_sc=org.secure_code)
-data, mime_type, original_name = file_service.serve_file(record)
-# data 是明文 bytes，加密檔案已自動解密
-```
-
-#### 後端開發 - 刪除
-
-```python
-file_service.delete_file(record)  # 刪除實體檔案 + 軟刪除 DB 記錄
-db.session.commit()
-```
-
-#### 前端開發 - BkFileAttachment 元件
-
-```html
-<script src="/static/js/bk-file-attachment.js"></script>
-<div id="attachments"></div>
-<script>
-const att = new BkFileAttachment('#attachments', {
-    contextType: 'form_attachment',
-    contextId: '{{ record.secure_code }}',
-    readonly: false,
-    maxFiles: 10,
-    onUpload: (file) => { /* 上傳完成 */ },
-    onDelete: (fileSc) => { /* 刪除完成 */ },
-});
-att.init();
-</script>
-```
-
-#### 禁止事項
-
-- **禁止** 繞過 `file_service` 直接讀寫 uploads/ 或 encrypted_storage/ 目錄
-- **禁止** 在前端自行實作上傳 API 呼叫（應使用 `BkFileAttachment`）
-- **禁止** 手動呼叫 `crypto/engine.py` 加解密檔案（應透過 `file_service` 自動處理）
-- **禁止** 將 `ENCRYPTION_MASTER_KEY` 硬編碼或寫入版控
+完整 API 用法、context_type 對應表、金鑰架構：**`docs/FILE_SERVICE.md`**
 
 ---
 
@@ -338,50 +279,21 @@ modules/<module_name>/static/modules/<module_name>/
 
 ### FRONT-01: JS/CSS 分離原則
 
-**HTML 模板中禁止大量內嵌 JS/CSS。** 邏輯和樣式應盡量抽為獨立檔案。
+**HTML 模板中禁止大量內嵌 JS/CSS。**
 
-| 類型 | 規範 | 說明 |
-|------|------|------|
-| CSS | 抽為 `.css` 靜態檔 | 放在 `static/` 目錄，用 `<link>` 引入 |
-| JS 邏輯 | 抽為 `.js` 靜態檔 | 放在 `static/js/`，用 `<script src>` 引入 |
-| 小段膠水代碼 | 可留在 HTML | 如初始化呼叫、Jinja2 變數注入（不超過 30 行） |
+| 類型 | 規範 |
+|------|------|
+| CSS | 抽為 `.css` 靜態檔 |
+| JS 邏輯 | 抽為 `.js` 靜態檔 |
+| 膠水碼（初始化、Jinja2 變數注入） | 可留在 HTML，不超過 30 行 |
 
-**平台層靜態檔位置：** `backend/app/static/js/`、`backend/app/static/css/`
-**模組層靜態檔位置：** `modules/<name>/static/modules/<name>/js/`、`modules/<name>/static/modules/<name>/css/`
+平台層：`backend/app/static/js|css/`；模組層：`modules/<name>/static/modules/<name>/js|css/`
 
-#### JS 抽離三種模式（依 Jinja2 耦合程度選擇）
+需要把 Jinja2 變數帶進 JS 時用 window bridge（`window.__PAGE_CONFIG = {...}`）。
+JS 與 Jinja2 深度交織無法乾淨分離時，才保留 `{% include "_xxx_methods.html" %}` partial。
 
-**模式 A：直接搬移**（JS 零 Jinja2 變數）
-```html
-<!-- HTML: 只留引入 -->
-<script src="/static/.../page.js"></script>
-<div x-data="pageManager()">...</div>
-```
-範例：`template-list.js`、`workflow-list.js`
+抽離模式範例與完整說明：**`docs/codex_spec/frontend.md`**
 
-**模式 B：Window Bridge**（少量 Jinja2 變數需注入）
-```html
-<!-- HTML: 變數橋接 + 引入 -->
-<script>
-window.__PAGE_CONFIG = {
-    scheduleId: '{{ schedule.secure_code }}',
-    year: {{ year }}
-};
-</script>
-<script src="/static/.../page.js"></script>
-```
-```js
-// page.js: 讀取橋接變數
-const config = window.__PAGE_CONFIG || {};
-function pageManager() {
-    return { scheduleId: config.scheduleId, year: config.year, ... };
-}
-```
-範例：`holidays.js`、`schedules.js`、`form-center.js`
-
-**模式 C：保留 Partial**（JS 與 Jinja2 深度交織）
-維持 `{% include "_xxx_methods.html" %}` 模式，僅抽離 CSS。
-此模式僅用於 JS 和 Jinja2 無法乾淨分離的情況，應盡量避免。
 
 ### FRONT-02: HTML 模板行數上限
 
@@ -398,151 +310,67 @@ function pageManager() {
 
 ### FRONT-04: Code 欄位自動建議規範
 
-所有需要唯一識別碼 (code) 的建立表單，必須遵循統一 UX:
+需要唯一識別碼的建立表單，統一 UX：輸入名稱 → debounce 500ms → `POST /api/code/generate`
+取得建議值當 placeholder → 手動輸入時 `POST /api/code/validate` 即時驗證 →
+留空提交時後端採用建議值。不強制大小寫轉換。
 
-1. 輸入名稱 → debounce 500ms → 呼叫 `/api/code/generate` 取得建議
-2. code 欄位顯示建議值為 placeholder，附建議列表按鈕
-3. 使用者可手動輸入任意大小寫，即時呼叫 `/api/code/validate` 驗證
-4. code 留空提交時，後端自動採用建議值
-5. 不強制大小寫轉換（自動產生的建議為大寫，但不限制手動輸入）
+前端引入 `/static/js/code-input.js` 的 `codeInputMixin(entityType)`，
+標準區塊 HTML 用 `{% include "partials/_code_input.html" %}`。
 
-**通用 API**:
-- `POST /api/code/generate` -- body: `{ entity_type, name }`
-- `POST /api/code/validate` -- body: `{ entity_type, code }`
+### FRONT-05 / FRONT-06 / FRONT-08: 前端框架陷阱
 
-**前端實作**:
-- 引入 `/static/js/code-input.js`，使用 `codeInputMixin(entityType)`
-- 可用 `{% include "partials/_code_input.html" %}` 取得標準建議區塊 HTML
+以下三條寫錯會造成排版錯亂或功能靜默失效，**派工給 codex 時必須貼進 prompt**
+（完整說明與範例在 `docs/codex_spec/frontend.md`）：
 
----
+- **FRONT-05**：CSS 全寬規則必須排除 radio/checkbox
+  （`input:not([type="radio"]):not([type="checkbox"])`），否則同列文字被擠成直排
+- **FRONT-06**：有 `x-show` 的元素禁止 inline style 設 `display`
+  （x-show 還原時會清掉，佈局遺失）
+- **FRONT-08**：select 綁動態 `x-for` options 時，option 必須加
+  `:selected="<值> === <狀態>"`，否則初次渲染顯示第一個選項
+  （症狀：一進頁面顯示錯的，手動改一次就正常，極易漏看）
 
-### FRONT-05: 對話窗 (Modal) 表單元素規範
-
-**CSS 全寬規則必須排除 radio 和 checkbox：**
-
-```css
-/* 正確 — 排除 radio/checkbox */
-.stu-field input:not([type="radio"]):not([type="checkbox"]),
-.stu-field select,
-.stu-field textarea {
-    width: 100%;
-}
-
-/* 錯誤 — radio/checkbox 會被撐到 100% 寬，擠壓同列文字成直排 */
-.stu-field input { width: 100%; }
-```
-
-**Modal 尺寸設定：**
-- 使用 inline style 覆蓋 CSS 預設寬度（如 `style="width:500px;"`）
-- 若 CSS class 定義了 `width`，inline style 優先級更高，正常情況可覆蓋
-- 內含表單的 Modal 建議最小寬度 450px，避免欄位過窄
-
-**常見踩坑：**
-- `input { width: 100% }` 會影響所有 input 類型，包括 radio、checkbox
-- Radio/checkbox 被撐寬後，同列的 label 文字會被擠成直排或換行
-- 解法：CSS selector 加 `:not([type="radio"]):not([type="checkbox"])` 排除
-
-### FRONT-06: Alpine.js x-show 與 display 衝突規範
-
-**禁止在有 `x-show` 的元素上用 inline style 設定 `display` 屬性。**
-
-原因：Alpine.js `x-show` 透過切換 inline `display: none` 控制顯隱。
-還原時會清除 inline display，導致原本的 `display: flex` 等值遺失，
-元素退回 `<div>` 預設的 `display: block`。
-
-正確做法：將 `display: flex` 等佈局屬性寫在 CSS class 中，
-讓 `x-show` 只操作 inline display 而不影響 class 定義的佈局。
-
-```html
-<!-- 錯誤 - x-show 還原時 display:flex 會遺失 -->
-<div x-show="visible" style="display:flex; flex-wrap:wrap; gap:8px;">
-
-<!-- 正確 - 佈局屬性寫在 CSS class -->
-<div x-show="visible" class="my-flex-container">
-```
 
 ### FRONT-07: 模組 CSS 命名與排版規範
 
-**平台未載入 Bootstrap，禁止在模板中使用 Bootstrap class。**
+**平台未載入 Bootstrap。** 全域 CSS 只有 `common.css` + `base-layout.css`，
+提供 `.btn` / `.data-table` / `.form-control` / `.modal-overlay`，**沒有 Grid 系統**。
 
-平台全域 CSS 為 `common.css` + `base-layout.css`，提供按鈕（`.btn`）、表格（`.data-table`）、
-表單（`.form-control`）、Modal（`.modal-overlay`）等基礎元件，但**沒有 Grid 系統**
-（無 `row`、`col-md-*`、`container-fluid`）。
+- 禁止 `row` / `col-md-*` / `card` / `table-sm` / `mb-3` / `d-flex` 等 Bootstrap class
+  （寫了完全無效果，排版會全部擠在一起）
+- 排版用 CSS Grid / Flexbox；模組 class 加前綴（`wks-`、`ird-`、`fw-`、`pir-`）
 
-**模組 CSS 開發規則：**
+**CSS 變數白名單**（只能用這些，禁止自創）：
 
-| 規則 | 說明 |
-|------|------|
-| 模組專屬前綴 | 所有 class 使用模組前綴（`vlc-`、`fw-` 等），避免與 common.css 撞名 |
-| 排版方式 | CSS Grid / Flexbox（非 Bootstrap grid） |
-| 區塊容器 | `xxx-section` + `xxx-section-header`（白底 + 1px border） |
-| 統計卡片 | `xxx-stats` 用 `display: grid; grid-template-columns: repeat(N, 1fr)` |
-| 雙欄佈局 | `xxx-grid-2` 用 `display: grid; grid-template-columns: 1fr 1fr; gap: 16px` |
-
-**參考實作：** `modules/form_workflow/static/modules/form_workflow/css/fw-dashboard.css`
-
-**CSS 變數白名單**：顏色一律用 common.css `:root` 定義的 `var(--color-*)` 系列
-（`--color-primary/--color-text/--color-text-secondary/--color-text-muted/--color-bg/--color-bg-white/--color-bg-light/--color-border` 等）。
-**禁止**自創 `--text-primary`、`--surface-color` 這類不存在的變數——fallback 值會生效，
-曾造成整頁深色 fallback、白底白字（派工給 Codex/agent 時必須在 prompt 明列此白名單）。
-
-**常見錯誤（會導致排版全部擠在一起）：**
-- 使用 `row` + `col-md-6`（不存在，無效果）
-- 使用 `card` + `card-header` + `card-body`（common.css 無此定義）
-- 使用 `table-sm`、`table-hover`（應用 `data-table` 或模組自訂 `xxx-table`）
-- 使用 `mb-3`、`p-0`、`d-flex` 等 Bootstrap utility class
-
-### FRONT-08: Alpine select 綁動態 options 必須加 `:selected`
-
-**`x-model`（或 `:value`）綁定的 select，若 options 由 `x-for` 動態產生，
-初次渲染會顯示成第一個選項，而不是實際的 state 值。**
-
-原因是 Alpine 設定 select value 的時機早於 `x-for` 展開 options，
-瀏覽器找不到對應 option 就退回第一個。之後 state 變動時 effect 重跑才會正確——
-所以症狀是「一進頁面顯示錯的，手動改一次就好了」，極容易漏看。
-
-```html
-<!-- 錯誤：初次渲染顯示第一個 option，不是 col.field -->
-<select x-model="col.field">
-    <template x-for="field in fields" :key="field">
-        <option :value="field" x-text="field"></option>
-    </template>
-</select>
-
-<!-- 正確：option 自帶 selected -->
-<select x-model="col.field">
-    <template x-for="field in fields" :key="field">
-        <option :value="field" :selected="field === col.field" x-text="field"></option>
-    </template>
-</select>
+```
+--color-primary  --color-text  --color-text-secondary  --color-text-muted
+--color-bg  --color-bg-white  --color-bg-light  --color-border
 ```
 
-**實例**：NoCode IR 設計器的「資料範圍 / 資源 / 欄位 / 最低階級」四個 select
-長期顯示錯值（DB 實為 MEMBER/STAFF/ADMIN，畫面全顯示 GUEST），
-使用者會照著錯誤顯示做權限設定。2026-07-28 才發現。
+自創 `--text-primary`、`--surface-color` 這類不存在的變數時，CSS fallback 值會生效，
+曾造成整頁深色 fallback、白底白字。**派工給 codex/agent 時必須在 prompt 明列此白名單。**
 
-options 為靜態寫死時沒有此問題，不必加。
+版型範例：`modules/form_workflow/static/modules/form_workflow/css/fw-dashboard.css`
+
 
 ### FRONT-09: D2 的 `BkCaps.can()` 需要頁面注入 `__PAGE_CAPS`
 
-`backend/app/static/js/capability.js` 的 `BkCaps.can(code)` 讀的是
-`window.__PAGE_CAPS`，**該變數由各頁面自行注入，沒有全域預設值**。
-忘了注入時 `can()` 恆為 `false`，症狀是**按鈕點下去完全沒反應、console 也不報錯**
-（JS 層 `if (!this.canManage()) return;` 靜默擋掉）。
+`capability.js` 的 `BkCaps.can(code)` 讀 `window.__PAGE_CAPS`，
+**該變數由各頁面自行注入，沒有全域預設值**。漏注入時 `can()` 恆為 `false`，
+症狀是**按鈕點下去完全沒反應、console 也不報錯**。
 
-後端 view：
 ```python
 from app.services.capability_service import build_caps
 return render_template('...', page_caps=build_caps(['module.permission_code']))
 ```
-
-模板（`layouts/base.html` 已載入 capability.js，不必重複引入）：
 ```html
 <script>window.__PAGE_CAPS = {{ page_caps | default({}) | tojson }};</script>
 ```
 
-模板層的 `{% if can('...') %}` 走的是後端 Jinja2 global，**與此無關**——
+模板層的 `{% if can('...') %}` 走後端 Jinja2 global，**與此無關**——
 所以會出現「按鈕有渲染出來但點了沒用」的矛盾現象，這正是漏注入的特徵。
+（`layouts/base.html` 已載入 capability.js，不必重複引入。）
+
 
 ### CACHE-01: 靜態資源 Cache-Busting
 
@@ -564,94 +392,46 @@ return render_template('...', page_caps=build_caps(['module.permission_code']))
 
 ## 多語系規範 (I18N-01)
 
-**平台支援 zh-TW（原文即 key）+ en，其他語系由社群擴展。所有新 user-facing 字串必須包翻譯函式：**
+平台支援 zh-TW（原文即 key）+ en。**所有新 user-facing 字串必須包翻譯函式**：
+Python `_('中文')`、Jinja2 `{{ _('中文') }}`、JS `__('中文')`。
 
-| 語境 | 寫法 | 帶變數 |
-|------|------|--------|
-| Python (flash/jsonify error/abort) | `from flask_babel import gettext as _` + `_('中文')` | `_('共 %(n)s 筆', n=x)` |
-| Jinja2 模板 | `{{ _('中文') }}` | `{{ _('共 %(n)s 筆', n=x) }}` |
-| JS（靜態檔、模板 script、Alpine 表達式） | `__('中文')`（i18n.js 全域） | `__('共 {n} 筆', {n: x})` |
+**四條地雷**（違反會 500 或讓功能失效）：
+- msgid 含字面 `%` 必須寫 `%%`（flask_babel 一律做 % 插值）
+- **禁止**包裹參與 `==`/`===` 比較的字串與機器可讀錯誤碼（包了前端比對即失效）
+- **禁止**包裹 logger/console 訊息、寫入 DB 的資料值、email 主旨內文
+- pybabel update 的 fuzzy 配對幾乎全錯，必須逐條重翻並清 fuzzy flag
 
-**地雷與禁忌**：
-- msgid 含字面 `%` 必須寫 `%%`（flask_babel 一律做 % 插值，裸 % 直接 500）
-- **禁止**包裹：logger/console 訊息、寫入 DB 的資料值、email 主旨內文、參與 `==`/`===` 比較的字串（後端包了 `_()` 後，前端比對同字串即失效——改回穩定布林/代碼欄位）
-- pybabel update 產生的 fuzzy 配對幾乎全是錯的，必須逐條重翻並清除 fuzzy flag
+**extract 必須帶齊全部已包裹模組目錄**（open_defense / vuln_lifecycle / spec_formulate /
+nocode_builder / form_workflow）——少帶任何一個，該模組 msgid 會被打成 obsolete
+並喪失翻譯（已發生過事故）。新模組包裹後要加進清單。
 
-**翻譯流程**（新增字串後）：
-```bash
-cd /opt/BeakPlatform-dev/backend
-../venv/bin/pybabel extract -F babel.cfg -k _l -o translations/messages.pot . \
-  ../modules/open_defense ../modules/vuln_lifecycle ../modules/spec_formulate \
-  ../modules/nocode_builder ../modules/form_workflow
-../venv/bin/pybabel update -i translations/messages.pot -d translations -l en
-# 補翻 translations/en/LC_MESSAGES/messages.po 後
-../venv/bin/pybabel compile -d translations   # 改完重啟服務生效
-```
-- **extract 必須帶齊上列全部已包裹模組目錄**——少帶任何一個，該模組的 msgid 會被 update 打成 obsolete 並喪失翻譯（已發生過一次事故）。新模組包裹後要加進此清單
-- JS 字典：`backend/app/static/i18n/en.json`（zh 原文 → en，flat dict / indent=1 / sort_keys），由 `/i18n/<locale>.js` 路由阻塞式載入
-- 獨立模板（不繼承 base.html，如 studio.html、workflow_designer.html、form_designer.html）需自行載入 i18n.js + 語系字典區塊；`BkI18n` 是 top-level const 不掛 window，JS 判斷用 `typeof BkI18n !== 'undefined'`
-- FormIO 設計器/渲染的 `language` 選項必須跟隨用戶 locale，非 zh-TW 不可載入 formio-i18n-zh-TW.json（會把英文反向翻回中文）
-- 選單標題屬 DB 資料（menu_items.title_i18n JSONB），不走 gettext
-- 詳細計畫與進度：`docs/I18N_PLAN.md`
+完整指令、JS 字典規則、FormIO locale 陷阱：**`docs/codex_spec/i18n.md`**
+進度計畫：`docs/I18N_PLAN.md`
+
 
 ## 時區處理規範 (TZ-01)
 
-### 儲存層
-- DB 一律使用 `datetime.utcnow()` 儲存 UTC 時間
-- PostgreSQL 時區設定為 `Etc/UTC`，欄位類型 `timestamp without time zone`
-- **純日期欄位**（`effective_from`、`start_date`、合約日期等）不涉及時區，直接存日曆日期
+**DB 一律存 UTC**（`datetime.utcnow()`，欄位 `timestamp without time zone`）。
+純日期欄位（`effective_from`、合約日期）不涉及時區，直接存日曆日期。
 
-### 時區優先順序
-`g.timezone` 由 `auth_interceptor.py` 設定：**用戶個人 > 企業設定 > `Asia/Taipei`**
+顯示時區優先序由 `auth_interceptor.py` 設定：**用戶個人 > 企業設定 > `Asia/Taipei`**（`g.timezone`）。
 
-### 後端模板顯示
-- **必須** 使用 `|tz_format` filter 顯示 datetime 欄位
-- **禁止** 直接 `.strftime()` 格式化 datetime 欄位（會顯示 UTC 時間）
-- 純日期欄位可用 `.strftime('%Y-%m-%d')`（不需時區轉換）
+| 位置 | 必須 | 禁止 |
+|---|---|---|
+| 後端模板 | `{{ dt\|tz_format('%Y-%m-%d %H:%M') }}` | `dt.strftime()`（會顯示 UTC） |
+| 前端 JS | `BkTime.format(dateStr, 'short')` | `new Date(x).toLocaleString()`（會用瀏覽器時區） |
+| 後端 API 回格式化字串 | 先 `.replace(tzinfo=UTC).astimezone(user_tz)` 再 strftime | 直接 strftime |
 
-```jinja2
-{# 正確 #}
-{{ record.created_at|tz_format('%Y-%m-%d %H:%M') if record.created_at else '-' }}
+`BkTime` 由 `timezone.js` 在 base.html 全域載入，style 可用 `full`/`short`/`date`/`time`。
 
-{# 錯誤 - 會顯示 UTC 時間 #}
-{{ record.created_at.strftime('%Y-%m-%d %H:%M') }}
-```
+**自行做時間運算時（SLA 倒數、時間差）**：DB 回的 ISO 字串是 naive UTC（無 `Z` 後綴），
+直接 `new Date(iso)` 會被當本地時間、差 8 小時（已踩過：SLA 顯示逾時 465 分）：
 
-### 後端 API 回傳
-- 若回傳已格式化時間字串：先將 UTC 轉為用戶時區再 `strftime`
-- 若回傳 `isoformat()`：前端用 `BkTime.format()` 處理
-
-```python
-from zoneinfo import ZoneInfo
-from flask import g
-
-utc_tz = ZoneInfo('UTC')
-user_tz = ZoneInfo(getattr(g, 'timezone', 'Asia/Taipei'))
-local_dt = dt.replace(tzinfo=utc_tz).astimezone(user_tz)
-```
-
-### 前端 JS 顯示
-- **必須** 使用 `BkTime.format(dateStr, style)` 格式化 DB 時間
-- **禁止** 用 `new Date(x).toLocaleString()` 顯示 DB 時間（會用瀏覽器時區）
-- `timezone.js` 已在 `base.html` 全域載入，`BkTime` 全站可用
-- style: `'full'`(預設), `'short'`, `'date'`, `'time'`
-
-```javascript
-// 正確
-BkTime.format(record.created_at, 'short')
-
-// 錯誤 - 會用瀏覽器時區
-new Date(record.created_at).toLocaleString('zh-TW')
-```
-
-- **自行做時間運算**（SLA 倒數、時間差）時，DB 回傳的 ISO 字串是 naive UTC（無 `Z` 後綴），
-  直接 `new Date(iso)` 會被當本地時間、差 8 小時——必須先補 `Z` 再 parse（已踩過：SLA 顯示逾時 465 分）
 ```javascript
 const iso = s.endsWith('Z') ? s : s + 'Z';   // naive UTC 補 Z
 const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 ```
 
----
 
 ## 禁止事項
 
@@ -669,6 +449,7 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 12. **禁止** 繞過 `file_service` 直接操作檔案儲存目錄（參見 FILE-01）
 13. **禁止** 手動呼叫 `crypto/engine.py` 加解密（應透過 `file_service` 自動處理）
 14. **禁止** 在有 `x-show` 的元素上用 inline style 設定 `display`（應用 CSS class，參見 FRONT-06）
+15. **禁止** select 綁動態 `x-for` options 卻不加 `:selected`（初次渲染會顯示錯值，參見 FRONT-05/06 段）
 
 ---
 
