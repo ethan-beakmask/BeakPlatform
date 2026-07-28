@@ -183,6 +183,39 @@ key 未宣告即放行，讓 N4b 的 create/update/delete 呼叫端可自行決�
 渲染流程消費。格式錯誤、`min_level` 查無、portal session/context 缺失或未預期例外
 皆 fail-closed。
 
+## 6.3 寫入判定（N4b）
+
+Portal 寫入 API（create / update / delete）採明確宣告才允許的 fail-closed 語意：
+`access_matrix` 不存在、不是 dict，或未宣告對應 action 時，一律拒絕並以 404 回應。
+這與 `read` 的相容語意不同；`check_widget_access()` 仍維持 action 未宣告即放行，
+寫入端必須使用 `check_widget_write_access()`。
+
+每次寫入都會重新跑完整准入鏈：子系統 path、portal session（或允許匿名時的 GUEST）、
+Page IR v3 已發布頁、子系統 mount/visible role、頁面級 `access_matrix.read`、
+table widget、widget `read`、widget 寫入 action。任一環節失敗都回 404，避免洩漏
+頁面、widget 或資料列是否存在。
+
+寫入還必須通過 view 層級 CRUD 開關：`DcCrudView.allow_create / allow_edit /
+allow_delete` 為 False 時，對應 action 直接拒絕，即使 widget `access_matrix` 通過。
+實際可寫欄位是三重交集：
+
+`binding.fields` ∩ `resource.fields` ∩ `sqlite_crud_service._get_writable_columns(view)`
+
+交集會再經 `_strip_sensitive_columns()` 排除 password / token / secret 等敏感欄位。
+client payload 中不在交集內的 key 會被靜默丟棄；交集為空時回 400
+`no_writable_fields`。client 不得指定 table、view、resource 或任何 SQL 片段，
+所有寫入皆透過 `SqliteCrudService` 執行。
+
+三支寫入 API 不豁免 CSRF。Portal Page IR v3 HTML 會輸出
+`<meta name="csrf-token" ...>`，前端必須帶 `X-CSRFToken`。
+
+**目標表選擇原則（2026-07-28 驗收發現）**：若目標表存在 `NOT NULL` 且無預設值的
+欄位，而該欄位落在敏感欄位排除清單內（如 `portal_users.password_hash`），
+portal 新增必然失敗——因為它永遠進不了可寫白名單。這是預期的保護行為：
+**帳號表（`portal.db` 的 `portal_users` 等）不應作為 portal 頁面的 CRUD 目標**，
+帳號維運請走工作區「帳號權限」矩陣。portal 頁面的 CRUD 目標應是
+`portal_data.db` 中的業務表，且欄位需有預設值或允許 NULL。
+
 ---
 
 ## 7. Schema 升級

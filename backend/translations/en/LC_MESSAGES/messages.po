@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 13:34+0800\n"
+"POT-Creation-Date: 2026-07-28 13:48+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -2237,7 +2237,7 @@ msgstr "Cancel"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:42
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:28
-#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:39
+#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:40
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:66
 #: app/templates/auth/change_password.html:86
 #: app/templates/layouts/base.html:87
@@ -15058,7 +15058,9 @@ msgstr "Minimum level"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:184
 msgid "僅在子系統 portal 語境生效；平台頁面不套用此限制。"
-msgstr "Applies only in the sub-system portal context; platform pages ignore this restriction."
+msgstr ""
+"Applies only in the sub-system portal context; platform pages ignore this"
+" restriction."
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:383
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:194
@@ -20851,4 +20853,25 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "N2b 建置中"
 #~ msgstr "coming soon (N2b)"
+
+#~ msgid "portal_db_missing"
+#~ msgstr ""
+
+#~ msgid "no_writable_fields"
+#~ msgstr ""
+
+#~ msgid "row_not_found"
+#~ msgstr ""
+
+#~ msgid "no_valid_data"
+#~ msgstr ""
+
+#~ msgid "row_identifier_missing"
+#~ msgstr ""
+
+#~ msgid "write_failed"
+#~ msgstr ""
+
+#~ msgid "invalid_data"
+#~ msgstr ""
 

@@ -11,6 +11,7 @@ from .sqlite_crud_service import (
     SqliteCrudService,
     _find_row_id_column,
     _get_visible_columns,
+    _get_writable_columns,
 )
 
 
@@ -60,6 +61,7 @@ def _resolve_portal_resource(code: str, ctx: dict) -> dict | None:
         return None
 
     fields = _strip_sensitive_columns(_get_visible_columns(view))
+    writable_fields = _strip_sensitive_columns(_get_writable_columns(view))
 
     def fetch_list(fields_arg, page, page_size, sort_field, sort_dir):
         return _fetch_list(view, sub_sc, fields, fields_arg, page, page_size, sort_field, sort_dir)
@@ -67,12 +69,30 @@ def _resolve_portal_resource(code: str, ctx: dict) -> dict | None:
     def fetch_detail(record_sc, fields_arg):
         return _fetch_detail(view, sub_sc, fields, record_sc, fields_arg)
 
+    def create_row(payload):
+        return _create_row(view, sub_sc, payload)
+
+    def update_row(record_sc, payload):
+        return _update_row(view, sub_sc, record_sc, payload)
+
+    def delete_row(record_sc):
+        return _delete_row(view, sub_sc, record_sc)
+
     return {
         "fields": fields,
+        "writable_fields": writable_fields,
+        "crud": {
+            "create": bool(getattr(view, "allow_create", False)),
+            "update": bool(getattr(view, "allow_edit", False)),
+            "delete": bool(getattr(view, "allow_delete", False)),
+        },
         "egress_resource": None,
         "views": ["list", "detail"],
         "fetch_list": fetch_list,
         "fetch_detail": fetch_detail,
+        "create_row": create_row,
+        "update_row": update_row,
+        "delete_row": delete_row,
     }
 
 
@@ -113,6 +133,49 @@ def _fetch_detail(view, sub_sc, whitelist, record_sc, fields):
     return _portal_row(view, result.get("data") or {}, requested)
 
 
+def _create_row(view, sub_sc, payload):
+    try:
+        with DataSourceManager().get_session(sub_sc, view.data_source) as session:
+            result = SqliteCrudService.create_row(
+                session=session,
+                view=view,
+                row_data=payload,
+            )
+    except FileNotFoundError:
+        return False, "portal_db_missing"
+
+    return bool(result.get("success")), result.get("error") or ""
+
+
+def _update_row(view, sub_sc, record_sc, payload):
+    try:
+        with DataSourceManager().get_session(sub_sc, view.data_source) as session:
+            result = SqliteCrudService.update_row(
+                session=session,
+                view=view,
+                row_id=record_sc,
+                row_data=payload,
+            )
+    except FileNotFoundError:
+        return False, "portal_db_missing"
+
+    return bool(result.get("success")), result.get("error") or ""
+
+
+def _delete_row(view, sub_sc, record_sc):
+    try:
+        with DataSourceManager().get_session(sub_sc, view.data_source) as session:
+            result = SqliteCrudService.delete_row(
+                session=session,
+                view=view,
+                row_id=record_sc,
+            )
+    except FileNotFoundError:
+        return False, "portal_db_missing"
+
+    return bool(result.get("success")), result.get("error") or ""
+
+
 def _portal_row(view, source_row: dict, fields: list[str]) -> dict:
     row = {field: source_row.get(field) for field in fields if field in source_row}
     row_id_col = _find_row_id_column(view)
@@ -147,6 +210,12 @@ def _list_portal_resources(sub_system_sc: str) -> list[dict]:
             "name": view.name,
             "views": ["list", "detail"],
             "fields": _strip_sensitive_columns(_get_visible_columns(view)),
+            "writable_fields": _strip_sensitive_columns(_get_writable_columns(view)),
+            "crud": {
+                "create": bool(getattr(view, "allow_create", False)),
+                "update": bool(getattr(view, "allow_edit", False)),
+                "delete": bool(getattr(view, "allow_delete", False)),
+            },
             "egress_resource": None,
         })
     return resources

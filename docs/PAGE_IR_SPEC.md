@@ -275,6 +275,10 @@ can(permission, ctx) -> bool
   設計器以下拉選單呈現 view 名稱）。
 - **欄位白名單來源**：`DcCrudView.columns_config` 的 visible 欄位
   （沿用 sqlite_crud_service 既有安全配置層）；`binding.fields` ⊄ 白名單 → 拒絕。
+  N4b 起 portal resolver 另提供寫入介面：`writable_fields`、`crud`、
+  `create_row(payload)`、`update_row(record_sc, payload)`、`delete_row(record_sc)`；
+  可寫欄位仍由 runtime 以 `binding.fields`、`resource.fields`、`writable_fields`
+  三重交集決定。
 - **EGRESS 取捨**：SQLite 資料無 EGRESS 政策（EGRESS-01 屬母系統 PostgreSQL 資源），
   portal resolver 的 `egress_resource` 一律 `None`，欄位控制**僅**靠
   columns_config 白名單。此為已知取捨，不新增 INV。

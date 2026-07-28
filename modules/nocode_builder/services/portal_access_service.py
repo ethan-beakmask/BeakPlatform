@@ -70,6 +70,33 @@ def check_widget_access(access_matrix, action, ctx) -> bool:
         return False
 
 
+def check_widget_write_access(access_matrix, action, ctx) -> bool:
+    """Check portal widget write access_matrix with explicit opt-in semantics."""
+    try:
+        if action not in {'create', 'update', 'delete'}:
+            return False
+        if not isinstance(ctx, dict):
+            return False
+        sub_system_sc = ctx.get('sub_system_sc')
+        portal_user = ctx.get('portal_user')
+        if not sub_system_sc or portal_user is None:
+            return False
+        if not isinstance(access_matrix, dict):
+            return False
+        if action not in access_matrix:
+            return False
+
+        allowed, _reason = _evaluate_rule(sub_system_sc, access_matrix.get(action), portal_user)
+        return allowed
+    except Exception:
+        logger.exception(
+            'Portal widget write access check failed: action=%s sub_system=%s',
+            action,
+            ctx.get('sub_system_sc') if isinstance(ctx, dict) else None,
+        )
+        return False
+
+
 def _evaluate_rule(sub_system_sc, rule, portal_user) -> tuple[bool, str]:
     """Evaluate one portal access rule against normalized portal user data."""
     if not isinstance(rule, dict):
