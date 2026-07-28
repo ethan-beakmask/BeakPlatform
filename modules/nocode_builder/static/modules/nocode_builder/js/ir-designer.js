@@ -34,6 +34,8 @@ function irDesigner() {
         meta: { resources: [], actions: [] },
         subSystems: [],
         dataScope: '',
+        previewGroup: '',
+        previewLevel: '',
         portalOrgLoaded: false,
         portalOrgScope: '',
         portalGroups: [],
@@ -55,6 +57,12 @@ function irDesigner() {
             { type: 'detail', label: tr('明細') },
             { type: 'actions', label: tr('動作') },
             { type: 'form', label: tr('表單') },
+        ],
+        accessActions: [
+            { key: 'read', label: tr('檢視') },
+            { key: 'create', label: tr('新增') },
+            { key: 'update', label: tr('編輯') },
+            { key: 'delete', label: tr('刪除') },
         ],
 
         async init() {
@@ -100,19 +108,43 @@ function irDesigner() {
                     const first = (widget.binding && widget.binding.fields && widget.binding.fields[0]) || '';
                     widget.default_sort = { field: first, dir: 'asc' };
                 }
+                if (widget.type === 'table') this.normalizeMasks(widget.columns || []);
+                if (widget.type === 'detail') this.normalizeMasks(widget.fields || []);
                 if (widget.type === 'layout') this.normalizeWidgets(widget.children || []);
+            }
+        },
+
+        normalizeMasks(specs) {
+            for (const spec of specs || []) {
+                const mask = spec.mask;
+                if (!mask || !mask.type) {
+                    delete spec.mask;
+                    continue;
+                }
+                if (!['partial', 'full', 'email', 'phone'].includes(mask.type)) {
+                    spec.mask = { type: 'full' };
+                } else if (mask.type === 'partial') {
+                    spec.mask = {
+                        type: 'partial',
+                        keep_head: this.clampMaskParam(mask.keep_head, 0),
+                        keep_tail: this.clampMaskParam(mask.keep_tail, 4),
+                    };
+                } else {
+                    spec.mask = { type: mask.type };
+                }
+                if (Object.prototype.hasOwnProperty.call(spec, 'sortable')) spec.sortable = false;
             }
         },
 
         normalizeAccessMatrix(widgets) {
             for (const widget of widgets || []) {
                 const matrix = widget.access_matrix;
-                if (matrix && matrix.read) {
-                    if (Array.isArray(matrix.read.groups) && matrix.read.groups.length === 0) {
-                        matrix.read.groups = null;
-                    }
-                }
                 if (matrix) {
+                    for (const action of ['read', 'create', 'update', 'delete']) {
+                        if (matrix[action] && Array.isArray(matrix[action].groups) && matrix[action].groups.length === 0) {
+                            matrix[action].groups = null;
+                        }
+                    }
                     for (const action of Object.keys(matrix)) {
                         if (!matrix[action] || Object.keys(matrix[action]).length === 0) {
                             delete matrix[action];
@@ -123,6 +155,14 @@ function irDesigner() {
                     delete widget.access_matrix;
                 }
                 if (widget.type === 'layout') this.normalizeAccessMatrix(widget.children || []);
+            }
+        },
+
+        normalizeWidgetMasks(widgets) {
+            for (const widget of widgets || []) {
+                if (widget.type === 'table') this.normalizeMasks(widget.columns || []);
+                if (widget.type === 'detail') this.normalizeMasks(widget.fields || []);
+                if (widget.type === 'layout') this.normalizeWidgetMasks(widget.children || []);
             }
         },
 
@@ -164,6 +204,8 @@ function irDesigner() {
         },
 
         async onScopeChange() {
+            this.previewGroup = '';
+            this.previewLevel = '';
             await this.loadMeta(this.dataScope);
             await this.ensurePortalOrg();
         },
@@ -187,6 +229,7 @@ function irDesigner() {
                 this.portalLevels = orgData.levels || [];
                 this.portalOrgScope = this.dataScope;
                 this.portalOrgLoaded = true;
+                this.syncPreviewIdentity();
             } catch (err) {
                 this.portalGroups = [];
                 this.portalLevels = [];
@@ -212,50 +255,83 @@ function irDesigner() {
             return (levels[0] && levels[0].code) || 'GUEST';
         },
 
-        widgetAccessEnabled() {
-            return !!(this.selectedWidget && this.selectedWidget.access_matrix);
+        syncPreviewIdentity() {
+            if (this.previewGroup && !this.activePortalGroups().some((group) => group.code === this.previewGroup)) {
+                this.previewGroup = '';
+            }
+            const levels = this.sortedPortalLevels();
+            if (!levels.some((level) => level.code === this.previewLevel)) {
+                this.previewLevel = this.defaultWidgetMinLevel();
+            }
         },
 
-        toggleWidgetAccess(enabled) {
+        widgetActionEnabled(action) {
+            const widget = this.selectedWidget;
+            return !!(widget && widget.access_matrix && widget.access_matrix[action]);
+        },
+
+        toggleWidgetAction(action, enabled) {
             const widget = this.selectedWidget;
             if (!widget) return;
             if (enabled) {
-                if (!widget.access_matrix) {
-                    widget.access_matrix = { read: { groups: null, min_level: this.defaultWidgetMinLevel() } };
-                } else if (!widget.access_matrix.read) {
-                    widget.access_matrix.read = { groups: null, min_level: this.defaultWidgetMinLevel() };
+                if (!widget.access_matrix) widget.access_matrix = {};
+                if (!widget.access_matrix[action]) {
+                    widget.access_matrix[action] = { groups: null, min_level: this.defaultWidgetMinLevel() };
                 }
-            } else {
-                delete widget.access_matrix;
+            } else if (widget.access_matrix) {
+                delete widget.access_matrix[action];
+                if (Object.keys(widget.access_matrix).length === 0) {
+                    delete widget.access_matrix;
+                }
             }
             this.markDirty();
         },
 
-        widgetGroupMode() {
+        widgetGroupMode(action) {
             const widget = this.selectedWidget;
-            const read = widget && widget.access_matrix && widget.access_matrix.read;
-            return read && Array.isArray(read.groups) ? 'limited' : 'all';
+            const rule = widget && widget.access_matrix && widget.access_matrix[action];
+            return rule && Array.isArray(rule.groups) ? 'limited' : 'all';
         },
 
-        setWidgetGroupMode(mode) {
+        setWidgetGroupMode(action, mode) {
             const widget = this.selectedWidget;
-            const read = widget && widget.access_matrix && widget.access_matrix.read;
-            if (!read) return;
-            read.groups = mode === 'limited' ? (Array.isArray(read.groups) ? read.groups : []) : null;
+            const rule = widget && widget.access_matrix && widget.access_matrix[action];
+            if (!rule) return;
+            rule.groups = mode === 'limited' ? (Array.isArray(rule.groups) ? rule.groups : []) : null;
             this.markDirty();
         },
 
-        toggleWidgetGroup(code) {
+        toggleWidgetGroup(action, code) {
             const widget = this.selectedWidget;
-            const read = widget && widget.access_matrix && widget.access_matrix.read;
-            if (!read || !code) return;
-            if (!Array.isArray(read.groups)) read.groups = [];
-            const index = read.groups.indexOf(code);
+            const rule = widget && widget.access_matrix && widget.access_matrix[action];
+            if (!rule || !code) return;
+            if (!Array.isArray(rule.groups)) rule.groups = [];
+            const index = rule.groups.indexOf(code);
             if (index >= 0) {
-                read.groups.splice(index, 1);
+                rule.groups.splice(index, 1);
             } else {
-                read.groups.push(code);
+                rule.groups.push(code);
             }
+            this.markDirty();
+        },
+
+        widgetActionGroups(action) {
+            const widget = this.selectedWidget;
+            const rule = widget && widget.access_matrix && widget.access_matrix[action];
+            return rule && Array.isArray(rule.groups) ? rule.groups : [];
+        },
+
+        widgetActionMinLevel(action) {
+            const widget = this.selectedWidget;
+            const rule = widget && widget.access_matrix && widget.access_matrix[action];
+            return (rule && rule.min_level) || this.defaultWidgetMinLevel();
+        },
+
+        setWidgetActionMinLevel(action, code) {
+            const widget = this.selectedWidget;
+            const rule = widget && widget.access_matrix && widget.access_matrix[action];
+            if (!rule || !code) return;
+            rule.min_level = code;
             this.markDirty();
         },
 
@@ -528,6 +604,40 @@ function irDesigner() {
             this.markDirty();
         },
 
+        maskType(spec) {
+            return (spec && spec.mask && spec.mask.type) || '';
+        },
+
+        setMaskType(spec, type) {
+            if (!spec) return;
+            if (!type) {
+                delete spec.mask;
+            } else if (type === 'partial') {
+                spec.mask = { type: 'partial', keep_head: 0, keep_tail: 4 };
+            } else if (['full', 'email', 'phone'].includes(type)) {
+                spec.mask = { type };
+            } else {
+                spec.mask = { type: 'full' };
+            }
+            if (spec.mask && Object.prototype.hasOwnProperty.call(spec, 'sortable')) spec.sortable = false;
+            this.markDirty();
+        },
+
+        setMaskParam(spec, key, value) {
+            if (!spec || !spec.mask || spec.mask.type !== 'partial') return;
+            if (!['keep_head', 'keep_tail'].includes(key)) return;
+            const parsed = Number(value);
+            if (!Number.isInteger(parsed) || parsed < 0 || parsed > 8) return;
+            spec.mask[key] = parsed;
+            this.markDirty();
+        },
+
+        clampMaskParam(value, fallback) {
+            const parsed = Number(value);
+            if (!Number.isInteger(parsed)) return fallback;
+            return Math.min(8, Math.max(0, parsed));
+        },
+
         addActionButton() {
             const widget = this.selectedWidget;
             if (!widget) return;
@@ -595,6 +705,7 @@ function irDesigner() {
             this.doc.page.title_i18n['zh-TW'] = this.pageTitleZh || this.pageName || '';
             if (!this.doc.page.id) this.doc.page.id = slugify(this.pageTitleZh || this.pageName).slice(0, 64);
             const doc = clone(this.doc);
+            this.normalizeWidgetMasks(doc.page.widgets || []);
             this.normalizeAccessMatrix(doc.page.widgets || []);
             return doc;
         },
@@ -633,7 +744,24 @@ function irDesigner() {
                 alert(tr('請先儲存'));
                 return;
             }
-            window.open(this.previewUrl, '_blank');
+            if (!this.dataScope) {
+                window.open(this.previewUrl, '_blank');
+                return;
+            }
+            this.syncPreviewIdentity();
+            const url = new URL(this.previewUrl, window.location.origin);
+            url.searchParams.set('sub', this.dataScope);
+            if (this.previewGroup) {
+                url.searchParams.set('group', this.previewGroup);
+            } else {
+                url.searchParams.delete('group');
+            }
+            if (this.previewLevel) {
+                url.searchParams.set('level', this.previewLevel);
+            } else {
+                url.searchParams.delete('level');
+            }
+            window.open(url.toString(), '_blank');
         },
 
         markDirty() {

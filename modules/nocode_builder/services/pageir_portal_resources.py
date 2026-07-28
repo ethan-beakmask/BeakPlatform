@@ -1,6 +1,9 @@
 """Page IR NoCode portal SQLite resource resolver."""
 from __future__ import annotations
 
+import logging
+
+from app.pageir import PageIrRenderError
 from app.pageir.registry import register_resource_lister, register_resource_provider
 
 from ..models.crud_view import DcCrudView
@@ -8,11 +11,14 @@ from ..models.sub_system import DcSubSystem
 from .data_source_manager import DataSourceManager
 from .db_connector import is_sqlite_source
 from .sqlite_crud_service import (
+    PortalFilterNotSupported,
     SqliteCrudService,
     _find_row_id_column,
     _get_visible_columns,
     _get_writable_columns,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # 敏感欄位硬排除：不信任 columns_config 對這類欄位的 visible 設定（2026-07-28 用戶裁決）
@@ -111,6 +117,13 @@ def _fetch_list(view, sub_sc, whitelist, fields, page, page_size, sort_field, so
             )
     except FileNotFoundError:
         return [], 0
+    except PortalFilterNotSupported:
+        logger.warning(
+            "Portal list query rejected because fixed_filters contains unsupported variables: view=%s sub_system=%s",
+            getattr(view, "secure_code", None),
+            sub_sc,
+        )
+        raise PageIrRenderError("portal_fixed_filter_variable_not_supported")
 
     requested = [field for field in fields if field in whitelist]
     rows = [
@@ -126,6 +139,14 @@ def _fetch_detail(view, sub_sc, whitelist, record_sc, fields):
             result = SqliteCrudService.get_row(session=session, view=view, row_id=record_sc)
     except FileNotFoundError:
         return None
+    except PortalFilterNotSupported:
+        logger.warning(
+            "Portal detail query rejected because fixed_filters contains unsupported variables: view=%s sub_system=%s record=%s",
+            getattr(view, "secure_code", None),
+            sub_sc,
+            record_sc,
+        )
+        raise PageIrRenderError("portal_fixed_filter_variable_not_supported")
 
     if not result.get("success"):
         return None

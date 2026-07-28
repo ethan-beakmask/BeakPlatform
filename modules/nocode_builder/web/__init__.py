@@ -3,6 +3,7 @@ Data CRUD Module - Web Routes
 資料表工具頁面路由
 """
 import logging
+import re
 
 from flask import Blueprint, render_template, request, abort, redirect, url_for
 from flask_babel import get_locale
@@ -12,6 +13,7 @@ from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
 
 logger = logging.getLogger(__name__)
+_PORTAL_PREVIEW_CODE_RE = re.compile(r'^[A-Z][A-Z0-9_]{0,31}$')
 
 web_bp = Blueprint(
     'nocode_builder_web',
@@ -53,9 +55,12 @@ def ir_designer(secure_code):
 @module_access_required('nocode_builder')
 def workspace(sub_system_sc):
     """NoCode 統一工作區。"""
+    from app.services.capability_service import build_caps
+
     return render_template(
         'modules/nocode_builder/workspace.html',
         sub_system_sc=sub_system_sc,
+        page_caps=build_caps(['nocode_builder.manage']),
     )
 
 
@@ -65,8 +70,10 @@ def workspace(sub_system_sc):
 def ir_designer_preview(secure_code):
     """Page IR v3 草稿預覽。"""
     from app.pageir import PageIrRenderError, render_page_ir_full
+    from app.pageir.context import clear_render_context, set_render_context
     from app.security.resource_gateway import ResourceGateway
-    from ..models import DcPageLayout
+    from ..models import DcPageLayout, DcSubSystem, DcSubSystemPage
+    from ..services import portal_access_service, portal_auth_service
 
     page = ResourceGateway.get(
         DcPageLayout,
@@ -76,6 +83,135 @@ def ir_designer_preview(secure_code):
     )
     if not page or page.is_deleted:
         abort(404)
+
+    preview_banner = None
+    sub_system_sc = (request.args.get('sub') or '').strip()
+    if sub_system_sc:
+        ss = ResourceGateway.get(
+            DcSubSystem,
+            sub_system_sc,
+            raise_on_not_found=False,
+            check_permission=False,
+        )
+        if not ss or ss.is_deleted:
+            abort(404)
+
+        mounted_page = DcSubSystemPage.query.filter_by(
+            sub_system_secure_code=ss.secure_code,
+            page_layout_secure_code=secure_code,
+            is_deleted=False,
+        ).first()
+        if not mounted_page:
+            abort(404)
+
+        group_code = (request.args.get('group') or '').strip()
+        level_code = (request.args.get('level') or '').strip()
+        if group_code and not _PORTAL_PREVIEW_CODE_RE.fullmatch(group_code):
+            abort(400)
+        if level_code and not _PORTAL_PREVIEW_CODE_RE.fullmatch(level_code):
+            abort(400)
+
+        try:
+            groups = portal_auth_service.list_groups(ss.secure_code)
+            levels = portal_auth_service.list_levels(ss.secure_code)
+        except FileNotFoundError:
+            abort(400)
+
+        def _portal_unit_active(item):
+            return item.get('is_active') in (True, 1, '1')
+
+        active_groups = {
+            group.get('code'): group
+            for group in groups
+            if group.get('code') and _portal_unit_active(group)
+        }
+        active_levels = [
+            level for level in levels
+            if level.get('code') and _portal_unit_active(level)
+        ]
+        if group_code and group_code not in active_groups:
+            abort(400)
+        if not level_code:
+            first_level = next(iter(active_levels), None)
+            if not first_level:
+                abort(400)
+            level_code = first_level.get('code')
+
+        level = next((item for item in active_levels if item.get('code') == level_code), None)
+        if not level:
+            abort(400)
+        try:
+            level_rank = int(level.get('rank'))
+        except (TypeError, ValueError):
+            abort(400)
+
+        preview_user = {
+            'sub_system_sc': ss.secure_code,
+            'user_id': None,
+            'user_type': 'PREVIEW',
+            'group_code': group_code or None,
+            'level_code': level_code,
+            'level_rank': level_rank,
+            'roles': [],
+            'display_name': 'PREVIEW',
+        }
+        page_allowed, page_access_reason = portal_access_service.check_page_access(
+            ss.secure_code,
+            secure_code,
+            preview_user,
+        )
+        if not page_allowed:
+            logger.info(
+                'Page IR portal preview denied: user=%s page=%s sub_system=%s group=%s level=%s reason=%s',
+                getattr(current_user, 'secure_code', None),
+                secure_code,
+                ss.secure_code,
+                group_code or None,
+                level_code,
+                page_access_reason,
+            )
+            abort(403)
+        preview_banner = {
+            'group': active_groups[group_code].get('name') if group_code else None,
+            'level': level.get('name') or level_code,
+        }
+        user_sc = getattr(current_user, 'secure_code', None)
+        username = getattr(current_user, 'username', None)
+        logger.info(
+            'Page IR portal preview: user=%s username=%s page=%s sub_system=%s group=%s level=%s',
+            user_sc,
+            username,
+            secure_code,
+            ss.secure_code,
+            group_code or None,
+            level_code,
+        )
+        set_render_context('portal', sub_system_sc=ss.secure_code, portal_user=preview_user)
+        try:
+            rendered = render_page_ir_full(page.layout_json or {})
+        except PageIrRenderError:
+            logger.exception(
+                'Page IR preview render failed: page=%s sub_system=%s',
+                secure_code,
+                ss.secure_code,
+            )
+            return render_template('pageir/page_error.html'), 422
+        finally:
+            clear_render_context()
+
+        return render_template(
+            'modules/nocode_builder/portal_page_v3.html',
+            page=page,
+            page_title=_page_ir_title(page),
+            body_html=rendered['html'],
+            has_form=rendered['has_form'],
+            preview_banner=preview_banner,
+            is_preview=True,
+            sub_system_name=ss.name,
+            sub_system_icon=ss.icon or '',
+            portal_user=preview_user,
+            path_id=None,
+        )
 
     try:
         rendered = render_page_ir_full(page.layout_json or {})
@@ -89,6 +225,7 @@ def ir_designer_preview(secure_code):
         page_title=_page_ir_title(page),
         body_html=rendered['html'],
         has_form=rendered['has_form'],
+        preview_banner=None,
     )
 
 

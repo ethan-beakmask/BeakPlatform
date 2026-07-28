@@ -492,6 +492,58 @@ function pageManager() {
 - 使用 `table-sm`、`table-hover`（應用 `data-table` 或模組自訂 `xxx-table`）
 - 使用 `mb-3`、`p-0`、`d-flex` 等 Bootstrap utility class
 
+### FRONT-08: Alpine select 綁動態 options 必須加 `:selected`
+
+**`x-model`（或 `:value`）綁定的 select，若 options 由 `x-for` 動態產生，
+初次渲染會顯示成第一個選項，而不是實際的 state 值。**
+
+原因是 Alpine 設定 select value 的時機早於 `x-for` 展開 options，
+瀏覽器找不到對應 option 就退回第一個。之後 state 變動時 effect 重跑才會正確——
+所以症狀是「一進頁面顯示錯的，手動改一次就好了」，極容易漏看。
+
+```html
+<!-- 錯誤：初次渲染顯示第一個 option，不是 col.field -->
+<select x-model="col.field">
+    <template x-for="field in fields" :key="field">
+        <option :value="field" x-text="field"></option>
+    </template>
+</select>
+
+<!-- 正確：option 自帶 selected -->
+<select x-model="col.field">
+    <template x-for="field in fields" :key="field">
+        <option :value="field" :selected="field === col.field" x-text="field"></option>
+    </template>
+</select>
+```
+
+**實例**：NoCode IR 設計器的「資料範圍 / 資源 / 欄位 / 最低階級」四個 select
+長期顯示錯值（DB 實為 MEMBER/STAFF/ADMIN，畫面全顯示 GUEST），
+使用者會照著錯誤顯示做權限設定。2026-07-28 才發現。
+
+options 為靜態寫死時沒有此問題，不必加。
+
+### FRONT-09: D2 的 `BkCaps.can()` 需要頁面注入 `__PAGE_CAPS`
+
+`backend/app/static/js/capability.js` 的 `BkCaps.can(code)` 讀的是
+`window.__PAGE_CAPS`，**該變數由各頁面自行注入，沒有全域預設值**。
+忘了注入時 `can()` 恆為 `false`，症狀是**按鈕點下去完全沒反應、console 也不報錯**
+（JS 層 `if (!this.canManage()) return;` 靜默擋掉）。
+
+後端 view：
+```python
+from app.services.capability_service import build_caps
+return render_template('...', page_caps=build_caps(['module.permission_code']))
+```
+
+模板（`layouts/base.html` 已載入 capability.js，不必重複引入）：
+```html
+<script>window.__PAGE_CAPS = {{ page_caps | default({}) | tojson }};</script>
+```
+
+模板層的 `{% if can('...') %}` 走的是後端 Jinja2 global，**與此無關**——
+所以會出現「按鈕有渲染出來但點了沒用」的矛盾現象，這正是漏注入的特徵。
+
 ### CACHE-01: 靜態資源 Cache-Busting
 
 **Flask 全站機制，確保 JS/CSS 變更後瀏覽器立即載入新版，無需 F5。**

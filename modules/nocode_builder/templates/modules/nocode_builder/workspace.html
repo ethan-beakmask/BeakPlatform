@@ -17,12 +17,13 @@
             <nav class="wks-tabs" aria-label="{{ _('工作區分頁') }}">
                 <button type="button" class="wks-tab" :class="{ 'wks-tab-active': activeTab === 'design' }" @click="activeTab = 'design'">{{ _('頁面設計') }}</button>
                 <button type="button" class="wks-tab" :class="{ 'wks-tab-active': activeTab === 'org' }" @click="activeTab = 'org'">{{ _('帳號權限') }}</button>
+                <button type="button" class="wks-tab" :class="{ 'wks-tab-active': activeTab === 'tables' }" @click="activeTab = 'tables'">{{ _('資料表') }}</button>
             </nav>
         </div>
         <a class="wks-link" href="{{ app_prefix }}/nocode-builder/sub-systems">{{ _('返回子系統列表') }}</a>
     </header>
 
-    <main class="wks-layout" :class="{ 'wks-layout-full': activeTab === 'org' }">
+    <main class="wks-layout" :class="{ 'wks-layout-full': activeTab === 'org' || activeTab === 'tables' }">
         <aside class="wks-sidebar" x-show="activeTab === 'design'">
             <div class="wks-sidebar-head">
                 <h2>{{ _('Site Map') }}</h2>
@@ -227,11 +228,147 @@
                 </div>
             </div>
         </section>
+
+        <section class="wks-main wks-main-tables" x-show="activeTab === 'tables'" x-data='wksTablesManager(subSystemSc)'>
+            <div class="wks-tables-head">
+                <div>
+                    <h2>{{ _('資料表') }}</h2>
+                    <p>{{ _('管理 portal_data 業務資料表與 CRUD View。') }}</p>
+                </div>
+                <div class="wks-tables-actions">
+                    {% if can('nocode_builder.manage') %}
+                    <button type="button" class="wks-btn wks-btn-primary" @click="openCreateModal()"
+                            :disabled="sourceKey !== 'portal_data'"
+                            :title="sourceKey !== 'portal_data' ? __('僅 Portal 公開資料庫可新建表') : ''">{{ _('新建表') }}</button>
+                    <button type="button" class="wks-btn" @click="resolveView()" :disabled="!selectedTable">{{ _('建立 CRUD View') }}</button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="wks-tables-toolbar">
+                <label>
+                    <span>{{ _('資料來源') }}</span>
+                    <select x-model="sourceKey" @change="loadTables()">
+                        <template x-for="source in sources" :key="source.key">
+                            <option :value="source.key" :selected="source.key === sourceKey" x-text="source.label + (source.db_name ? ' (' + source.db_name + ')' : '')" :disabled="!source.available"></option>
+                        </template>
+                    </select>
+                </label>
+                <button type="button" class="wks-btn" @click="loadTables()" :disabled="loading">{{ _('重新整理') }}</button>
+            </div>
+
+            <div class="wks-status wks-status-error" x-show="error" x-text="error"></div>
+            <div class="wks-status" x-show="message" x-text="message"></div>
+
+            <div class="wks-tables-grid">
+                <aside class="wks-table-list" aria-label="{{ _('資料表清單') }}">
+                    <div class="wks-table-list-head">
+                        <h3>{{ _('表') }}</h3>
+                        <span class="wks-muted" x-text="tables.length"></span>
+                    </div>
+                    <div class="wks-empty" x-show="loading">{{ _('載入中...') }}</div>
+                    <div class="wks-empty" x-show="!loading && tables.length === 0">{{ _('尚無資料表') }}</div>
+                    <template x-for="table in tables" :key="table.name">
+                        <button type="button"
+                                class="wks-table-item"
+                                :class="{ 'wks-table-item-active': selectedTable === table.name }"
+                                @click="selectTable(table.name)">
+                            <span x-text="table.name"></span>
+                            <small x-show="table.comment" x-text="table.comment"></small>
+                        </button>
+                    </template>
+                </aside>
+
+                <section class="wks-column-panel">
+                    <div class="wks-column-head">
+                        <h3 x-text="selectedTable || __('請選擇資料表')"></h3>
+                        <span class="wks-muted" x-show="selectedTable" x-text="__('{count} 個欄位', { count: columns.length })"></span>
+                    </div>
+                    <div class="wks-empty" x-show="!selectedTable">{{ _('從左側選擇資料表查看欄位。') }}</div>
+                    <div class="wks-empty" x-show="selectedTable && !loading && columns.length === 0">{{ _('尚無欄位資料') }}</div>
+                    <div class="wks-column-table-wrap" x-show="selectedTable && columns.length > 0">
+                        <table class="wks-column-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ _('欄位') }}</th>
+                                    <th>{{ _('型別') }}</th>
+                                    <th>{{ _('必填') }}</th>
+                                    <th>{{ _('主鍵') }}</th>
+                                    <th>{{ _('預設值') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="column in columns" :key="column.column">
+                                    <tr>
+                                        <td><code x-text="column.column"></code></td>
+                                        <td x-text="column.db_type"></td>
+                                        <td x-text="column.nullable ? __('否') : __('是')"></td>
+                                        <td x-text="column.is_pk ? __('是') : __('否')"></td>
+                                        <td x-text="column.default || '-'"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <template x-if="showCreateModal">
+                <div class="modal-overlay">
+                    <div class="modal-content modal-lg">
+                        <div class="modal-header">
+                            <h3>{{ _('新建資料表') }}</h3>
+                            <button type="button" class="modal-close" @click="closeCreateModal()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="wks-table-form">
+                                <label>
+                                    <span>{{ _('表名') }}</span>
+                                    <input type="text" x-model="newTable.name" placeholder="orders">
+                                </label>
+                                <div class="wks-new-columns">
+                                    <div class="wks-new-columns-head">
+                                        <h4>{{ _('欄位') }}</h4>
+                                        <button type="button" class="wks-btn" @click="addNewColumn()">{{ _('新增欄位') }}</button>
+                                    </div>
+                                    <template x-for="(column, idx) in newTable.columns" :key="idx">
+                                        <div class="wks-new-column-row">
+                                            <label>
+                                                <span>{{ _('欄位名') }}</span>
+                                                <input type="text" x-model="column.name" placeholder="customer">
+                                            </label>
+                                            <label>
+                                                <span>{{ _('型別') }}</span>
+                                                <select x-model="column.type">
+                                                    <template x-for="type in columnTypes" :key="type">
+                                                        <option :value="type" :selected="type === column.type" x-text="type"></option>
+                                                    </template>
+                                                </select>
+                                            </label>
+                                            <label class="wks-check-field">
+                                                <input type="checkbox" x-model="column.required">
+                                                <span>{{ _('必填') }}</span>
+                                            </label>
+                                            <button type="button" class="wks-btn" @click="removeNewColumn(idx)" :disabled="newTable.columns.length <= 1">{{ _('刪除') }}</button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="wks-btn" @click="closeCreateModal()">{{ _('取消') }}</button>
+                            <button type="button" class="wks-btn wks-btn-primary" @click="createTable()" :disabled="loading">{{ _('建立') }}</button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </section>
     </main>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script>window.__PAGE_CAPS = {{ page_caps | default({}) | tojson }};</script>
 <script src="{{ url_for('static', filename='vendor/formio.full.min.js') }}"></script>
 <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-model.js"></script>
 <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.js"></script>
@@ -240,4 +377,5 @@
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/ir-designer.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace-org.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace-tables.js"></script>
 {% endblock %}

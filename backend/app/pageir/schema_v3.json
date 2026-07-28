@@ -78,6 +78,26 @@
         }
       }
     },
+    "field_mask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["partial", "full", "email", "phone"]
+        },
+        "keep_head": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "keep_tail": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        }
+      }
+    },
     "i18n": {
       "type": "object",
       "additionalProperties": {
@@ -191,6 +211,9 @@
         },
         "sortable": {
           "type": "boolean"
+        },
+        "mask": {
+          "$ref": "#/$defs/field_mask"
         }
       }
     },
@@ -254,6 +277,9 @@
         },
         "label_i18n": {
           "$ref": "#/$defs/i18n"
+        },
+        "mask": {
+          "$ref": "#/$defs/field_mask"
         }
       }
     },

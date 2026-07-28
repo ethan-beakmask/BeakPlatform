@@ -21,6 +21,7 @@ from flask import Blueprint, render_template, abort, redirect, url_for, request,
 from flask_babel import gettext as _
 
 from app import csrf
+from app.pageir.masking import apply_row_masks, masked_fields
 from app.security.decorators import public_route
 
 logger = logging.getLogger(__name__)
@@ -93,14 +94,14 @@ def _resolve_sort(widget: dict, binding: dict, requested_sort: str | None, reque
     sortable = {
         column.get('field')
         for column in widget.get('columns') or []
-        if column.get('sortable') is True
+        if column.get('sortable') is True and column.get('mask') is None
     }
     if requested_sort in binding_fields and requested_sort in sortable:
         return requested_sort, requested_dir if requested_dir in {'asc', 'desc'} else 'asc'
 
     default_sort = widget.get('default_sort') or {}
     default_field = default_sort.get('field')
-    if not default_field:
+    if not default_field or default_field in masked_fields(widget.get('columns') or []):
         return None, None
     default_dir = default_sort.get('dir')
     if default_dir not in {'asc', 'desc'}:
@@ -150,8 +151,12 @@ def _valid_portal_row_id(row_id: str) -> bool:
     return isinstance(row_id, str) and bool(PORTAL_ROW_ID_RE.fullmatch(row_id))
 
 
-def _writable_payload(payload: dict, binding_fields, resource_fields, writable_fields) -> dict:
-    allowed = set(binding_fields or []) & set(resource_fields or []) & set(writable_fields or [])
+def _writable_payload(payload: dict, binding_fields, resource_fields, writable_fields, masked=None) -> dict:
+    allowed = ((
+        set(binding_fields or [])
+        & set(resource_fields or [])
+        & set(writable_fields or [])
+    ) - set(masked or []))
     return {
         key: value
         for key, value in (payload or {}).items()
@@ -287,6 +292,7 @@ def _resolve_portal_widget_write(path_id, page_sc, widget_id, action):
         'binding_fields': binding_fields,
         'resource_fields': resource_fields,
         'writable_fields': resource.get('writable_fields', []),
+        'masked_fields': masked_fields(widget.get('columns') or []),
         'resource': resource,
     }
 
@@ -416,10 +422,12 @@ def portal_page(path_id, page_sc):
 @public_route
 def portal_widget_rows(path_id, page_sc, widget_id):
     """Public portal Page IR table rows API for scroll loading."""
+    from app.pageir import PageIrRenderError
     from app.pageir.context import clear_render_context, set_render_context
     from app.pageir.registry import get_resource
     from app.security.resource_gateway import ResourceGateway
     from ..models import DcPageLayout, DcSubSystemPage
+    from ..services.sqlite_crud_service import PortalFilterNotSupported
     from ..services.portal_auth_service import (
         create_guest_session,
         get_current_portal_user,
@@ -526,6 +534,16 @@ def portal_widget_rows(path_id, page_sc, widget_id):
             sort_field,
             sort_dir,
         )
+        rows = apply_row_masks(rows, widget.get('columns') or [])
+    except (PortalFilterNotSupported, PageIrRenderError):
+        logger.warning(
+            'Portal rows query rejected: page=%s widget=%s sub_system=%s user=%s',
+            page_sc,
+            widget_id,
+            ss.secure_code,
+            portal_user.get('user_id'),
+        )
+        abort(404)
     finally:
         clear_render_context()
 
@@ -552,11 +570,11 @@ def portal_widget_create_row(path_id, page_sc, widget_id):
     if not isinstance(data, dict):
         return jsonify({'success': False, 'error': 'invalid_data'}), 400
 
-    allowed_fields = (
+    allowed_fields = ((
         set(config['binding_fields'])
         & set(config['resource_fields'])
         & set(config['writable_fields'])
-    )
+    ) - set(config['masked_fields']))
     if not allowed_fields:
         return jsonify({'success': False, 'error': 'no_writable_fields'}), 400
 
@@ -565,6 +583,7 @@ def portal_widget_create_row(path_id, page_sc, widget_id):
         config['binding_fields'],
         config['resource_fields'],
         config['writable_fields'],
+        config['masked_fields'],
     )
     ok, error = config['resource']['create_row'](payload)
     if not ok:
@@ -595,11 +614,11 @@ def portal_widget_update_row(path_id, page_sc, widget_id, row_id):
     if not isinstance(data, dict):
         return jsonify({'success': False, 'error': 'invalid_data'}), 400
 
-    allowed_fields = (
+    allowed_fields = ((
         set(config['binding_fields'])
         & set(config['resource_fields'])
         & set(config['writable_fields'])
-    )
+    ) - set(config['masked_fields']))
     if not allowed_fields:
         return jsonify({'success': False, 'error': 'no_writable_fields'}), 400
 
@@ -608,6 +627,7 @@ def portal_widget_update_row(path_id, page_sc, widget_id, row_id):
         config['binding_fields'],
         config['resource_fields'],
         config['writable_fields'],
+        config['masked_fields'],
     )
     ok, error = config['resource']['update_row'](row_id, payload)
     if not ok:

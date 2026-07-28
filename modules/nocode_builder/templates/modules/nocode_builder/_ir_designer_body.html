@@ -5,6 +5,25 @@
         </div>
         <div class="ird-actions">
             <button type="button" class="ird-btn ird-btn-primary" @click="savePage()">{{ _('儲存') }}</button>
+            <div class="ird-preview-identity" x-show="dataScope">
+                <label>
+                    <span>{{ _('預覽群組') }}</span>
+                    <select x-model="previewGroup">
+                        <option value="" :selected="previewGroup === ''">{{ _('不限群組') }}</option>
+                        <template x-for="group in activePortalGroups()" :key="group.code">
+                            <option :value="group.code" :selected="group.code === previewGroup" x-text="group.name + ' (' + group.code + ')'"></option>
+                        </template>
+                    </select>
+                </label>
+                <label>
+                    <span>{{ _('預覽階級') }}</span>
+                    <select x-model="previewLevel">
+                        <template x-for="level in sortedPortalLevels()" :key="level.code">
+                            <option :value="level.code" :selected="level.code === previewLevel" x-text="level.name + ' (' + level.code + ', rank ' + level.rank + ')'"></option>
+                        </template>
+                    </select>
+                </label>
+            </div>
             <button type="button" class="ird-btn" @click="previewPage()">{{ _('預覽') }}</button>
             {% if secure_code is defined %}
             <a class="ird-btn" href="{{ app_prefix }}/nocode-builder/sub-systems">{{ _('返回') }}</a>
@@ -118,7 +137,7 @@
                                     <select x-model="dataScope" @change="onScopeChange()">
                                         <option value="">{{ _('平台資源') }}</option>
                                         <template x-for="ss in subSystems" :key="ss.secure_code">
-                                            <option :value="ss.secure_code" x-text="ss.name"></option>
+                                            <option :value="ss.secure_code" :selected="ss.secure_code === dataScope" x-text="ss.name"></option>
                                         </template>
                                     </select>
                                 </div>
@@ -127,7 +146,7 @@
                                     <select x-model="selectedWidget.binding.resource" @change="onResourceChange()">
                                         <option value="">{{ _('-- 請選擇 --') }}</option>
                                         <template x-for="res in meta.resources" :key="res.code">
-                                            <option :value="res.code" x-text="formatResourceOption(res)"></option>
+                                            <option :value="res.code" :selected="res.code === selectedWidget.binding.resource" x-text="formatResourceOption(res)"></option>
                                         </template>
                                     </select>
                                 </div>
@@ -135,7 +154,7 @@
                                     <label>{{ _('視圖') }}</label>
                                     <select x-model="selectedWidget.binding.view" @change="markDirty()">
                                         <template x-for="view in selectedResourceViews" :key="view">
-                                            <option :value="view" x-text="view"></option>
+                                            <option :value="view" :selected="view === selectedWidget.binding.view" x-text="view"></option>
                                         </template>
                                     </select>
                                 </div>
@@ -148,42 +167,52 @@
                             <template x-if="dataScope">
                                 <div class="ird-section">
                                     <div class="ird-subtitle">{{ _('元件准入') }}</div>
-                                    <div class="ird-field">
-                                        <label>
-                                            <input type="checkbox" :checked="widgetAccessEnabled()" @change="toggleWidgetAccess($event.target.checked)">
-                                            {{ _('啟用元件准入限制') }}
-                                        </label>
-                                    </div>
-                                    <template x-if="selectedWidget.access_matrix && selectedWidget.access_matrix.read">
+                                    <template x-for="action in accessActions" :key="action.key">
                                         <div>
                                             <div class="ird-field">
-                                                <label>{{ _('群組限制') }}</label>
-                                                <select :value="widgetGroupMode()" @change="setWidgetGroupMode($event.target.value)">
-                                                    <option value="all">{{ _('不限群組') }}</option>
-                                                    <option value="limited">{{ _('限定群組') }}</option>
-                                                </select>
+                                                <label>
+                                                    <input type="checkbox"
+                                                           :checked="widgetActionEnabled(action.key)"
+                                                           @change="toggleWidgetAction(action.key, $event.target.checked)">
+                                                    <span x-text="action.label"></span>
+                                                </label>
                                             </div>
-                                            <div class="ird-checks" x-show="widgetGroupMode() === 'limited'">
-                                                <template x-for="group in activePortalGroups()" :key="group.code">
-                                                    <label>
-                                                        <input type="checkbox"
-                                                               :checked="(selectedWidget.access_matrix.read.groups || []).includes(group.code)"
-                                                               @change="toggleWidgetGroup(group.code)">
-                                                        <span x-text="group.name + ' (' + group.code + ')'"></span>
-                                                    </label>
-                                                </template>
-                                            </div>
-                                            <div class="ird-field">
-                                                <label>{{ _('最低階級') }}</label>
-                                                <select x-model="selectedWidget.access_matrix.read.min_level" @change="markDirty()">
-                                                    <template x-for="level in sortedPortalLevels()" :key="level.code">
-                                                        <option :value="level.code" x-text="level.name + ' (' + level.code + ', rank ' + level.rank + ')'"></option>
-                                                    </template>
-                                                </select>
-                                            </div>
-                                            <p class="ird-hint">{{ _('僅在子系統 portal 語境生效；平台頁面不套用此限制。') }}</p>
+                                            <template x-if="widgetActionEnabled(action.key)">
+                                                <div>
+                                                    <div class="ird-field">
+                                                        <label>{{ _('群組限制') }}</label>
+                                                        <select :value="widgetGroupMode(action.key)" @change="setWidgetGroupMode(action.key, $event.target.value)">
+                                                            <option value="all">{{ _('不限群組') }}</option>
+                                                            <option value="limited">{{ _('限定群組') }}</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="ird-checks" x-show="widgetGroupMode(action.key) === 'limited'">
+                                                        <template x-for="group in activePortalGroups()" :key="group.code">
+                                                            <label>
+                                                                <input type="checkbox"
+                                                                       :checked="widgetActionGroups(action.key).includes(group.code)"
+                                                                       @change="toggleWidgetGroup(action.key, group.code)">
+                                                                <span x-text="group.name + ' (' + group.code + ')'"></span>
+                                                            </label>
+                                                        </template>
+                                                    </div>
+                                                    <div class="ird-field">
+                                                        <label>{{ _('最低階級') }}</label>
+                                                        <select @change="setWidgetActionMinLevel(action.key, $event.target.value)">
+                                                            <template x-for="level in sortedPortalLevels()" :key="level.code">
+                                                                <option :value="level.code"
+                                                                        :selected="level.code === widgetActionMinLevel(action.key)"
+                                                                        x-text="level.name + ' (' + level.code + ', rank ' + level.rank + ')'"></option>
+                                                            </template>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </template>
                                         </div>
                                     </template>
+                                    <p class="ird-hint">{{ _('僅在子系統 portal 語境生效；平台頁面不套用此限制。') }}</p>
+                                    <p class="ird-hint">{{ _('檢視（read）：未啟用時不額外限制') }}</p>
+                                    <p class="ird-hint">{{ _('新增／編輯／刪除：未啟用時任何 portal 帳號都無法執行') }}</p>
                                 </div>
                             </template>
                         </div>
@@ -196,12 +225,24 @@
                                 <div class="ird-list-item">
                                     <select x-model="col.field" @change="markDirty()">
                                         <template x-for="field in selectedWidget.binding.fields" :key="field">
-                                            <option :value="field" x-text="field"></option>
+                                            <option :value="field" :selected="field === col.field" x-text="field"></option>
                                         </template>
                                     </select>
                                     <input type="text" x-model="col.label_i18n['zh-TW']" @input="markDirty()" :placeholder="__('標籤 zh-TW')">
                                     <input type="text" x-model="col.label_i18n.en" @input="markDirty()" :placeholder="__('標籤 en')">
-                                    <label><input type="checkbox" x-model="col.sortable" @change="markDirty()"> {{ _('排序') }}</label>
+                                    <select :value="maskType(col)" @change="setMaskType(col, $event.target.value)">
+                                        <option value="">{{ _('不遮罩') }}</option>
+                                        <option value="partial">{{ _('部分遮蔽') }}</option>
+                                        <option value="full">{{ _('全遮') }}</option>
+                                        <option value="email">{{ _('Email') }}</option>
+                                        <option value="phone">{{ _('電話') }}</option>
+                                    </select>
+                                    <div class="ird-mask-params" x-show="maskType(col) === 'partial'">
+                                        <input type="number" min="0" max="8" :value="col.mask && col.mask.keep_head" @change="setMaskParam(col, 'keep_head', $event.target.value)" :placeholder="__('保留前段')">
+                                        <input type="number" min="0" max="8" :value="col.mask && col.mask.keep_tail" @change="setMaskParam(col, 'keep_tail', $event.target.value)" :placeholder="__('保留尾段')">
+                                    </div>
+                                    <label><input type="checkbox" x-model="col.sortable" :disabled="!!col.mask" @change="markDirty()"> {{ _('排序') }}</label>
+                                    <p class="ird-hint" x-show="!!col.mask">{{ _('遮罩欄位不可排序、不可編輯') }}</p>
                                     <button type="button" class="ird-icon-btn" @click="removeArrayItem(selectedWidget.columns, idx)">×</button>
                                 </div>
                             </template>
@@ -214,7 +255,7 @@
                                 <label>{{ _('預設排序欄位') }}</label>
                                 <select x-model="selectedWidget.default_sort.field" @change="markDirty()">
                                     <template x-for="field in selectedWidget.binding.fields" :key="field">
-                                        <option :value="field" x-text="field"></option>
+                                        <option :value="field" :selected="field === selectedWidget.default_sort.field" x-text="field"></option>
                                     </template>
                                 </select>
                             </div>
@@ -230,7 +271,7 @@
                                 <select x-model="selectedWidget.row_actions_ref" @change="emptyToDelete(selectedWidget, 'row_actions_ref')">
                                     <option value="">{{ _('無') }}</option>
                                     <template x-for="act in actionWidgets" :key="act.id">
-                                        <option :value="act.id" x-text="act.id"></option>
+                                        <option :value="act.id" :selected="act.id === selectedWidget.row_actions_ref" x-text="act.id"></option>
                                     </template>
                                 </select>
                             </div>
@@ -244,11 +285,23 @@
                                 <div class="ird-list-item">
                                     <select x-model="fieldDef.field" @change="markDirty()">
                                         <template x-for="field in selectedWidget.binding.fields" :key="field">
-                                            <option :value="field" x-text="field"></option>
+                                            <option :value="field" :selected="field === fieldDef.field" x-text="field"></option>
                                         </template>
                                     </select>
                                     <input type="text" x-model="fieldDef.label_i18n['zh-TW']" @input="markDirty()" :placeholder="__('標籤 zh-TW')">
                                     <input type="text" x-model="fieldDef.label_i18n.en" @input="markDirty()" :placeholder="__('標籤 en')">
+                                    <select :value="maskType(fieldDef)" @change="setMaskType(fieldDef, $event.target.value)">
+                                        <option value="">{{ _('不遮罩') }}</option>
+                                        <option value="partial">{{ _('部分遮蔽') }}</option>
+                                        <option value="full">{{ _('全遮') }}</option>
+                                        <option value="email">{{ _('Email') }}</option>
+                                        <option value="phone">{{ _('電話') }}</option>
+                                    </select>
+                                    <div class="ird-mask-params" x-show="maskType(fieldDef) === 'partial'">
+                                        <input type="number" min="0" max="8" :value="fieldDef.mask && fieldDef.mask.keep_head" @change="setMaskParam(fieldDef, 'keep_head', $event.target.value)" :placeholder="__('保留前段')">
+                                        <input type="number" min="0" max="8" :value="fieldDef.mask && fieldDef.mask.keep_tail" @change="setMaskParam(fieldDef, 'keep_tail', $event.target.value)" :placeholder="__('保留尾段')">
+                                    </div>
+                                    <p class="ird-hint" x-show="!!fieldDef.mask">{{ _('遮罩欄位不可排序、不可編輯') }}</p>
                                     <button type="button" class="ird-icon-btn" @click="removeArrayItem(selectedWidget.fields, idx)">×</button>
                                 </div>
                             </template>

@@ -55,6 +55,30 @@
     align-items: center;
 }
 
+.ird-preview-identity {
+    display: flex;
+    gap: 8px;
+    align-items: end;
+}
+
+.ird-preview-identity label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.ird-preview-identity select {
+    min-width: 150px;
+    box-sizing: border-box;
+    padding: 7px 8px;
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+
 .ird-btn,
 .ird-icon-btn,
 .ird-palette-item {
@@ -208,6 +232,12 @@
     border: 1px solid var(--color-border);
 }
 
+.ird-mask-params {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
 .ird-modal {
     position: fixed;
     inset: 0;
@@ -255,5 +285,10 @@
 
     .ird-topbar {
         grid-template-columns: 1fr;
+    }
+
+    .ird-actions,
+    .ird-preview-identity {
+        flex-wrap: wrap;
     }
 }

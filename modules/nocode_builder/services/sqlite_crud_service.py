@@ -18,6 +18,11 @@ from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 
+
+class PortalFilterNotSupported(Exception):
+    """portal 語境不支援的 fixed_filters 變數（fail-closed）。"""
+
+
 # 合法 SQL 識別符
 IDENTIFIER_RE = re.compile(r'^\w+$', re.UNICODE)
 
@@ -133,7 +138,10 @@ def resolve_filter_variables(filters: Dict[str, str], user=None) -> Dict[str, st
     if not filters:
         return {}
 
-    if user is None:
+    from app.pageir.context import get_render_context
+    world = (get_render_context() or {}).get('world', 'platform')
+
+    if user is None and world != 'portal':
         try:
             from flask_login import current_user
             user = current_user
@@ -145,6 +153,16 @@ def resolve_filter_variables(filters: Dict[str, str], user=None) -> Dict[str, st
         if not isinstance(val, str) or not val.startswith('$'):
             resolved[col] = val
             continue
+        if world == 'portal':
+            if val == '$TODAY':
+                resolved[col] = date.today().isoformat()
+                continue
+            logger.warning(
+                'Portal fixed filter variable not supported: column=%s variable=%s',
+                col,
+                val,
+            )
+            raise PortalFilterNotSupported('portal_fixed_filter_variable_not_supported')
         if val == '$CURRENT_USER' and user:
             resolved[col] = user.secure_code
         elif val == '$CURRENT_USER_NAME' and user:

@@ -506,6 +506,201 @@
     box-shadow: 0 8px 22px var(--color-border);
 }
 
+.wks-main-tables {
+    display: grid;
+    gap: 12px;
+}
+
+.wks-tables-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.wks-tables-head h2,
+.wks-tables-head p,
+.wks-table-list-head h3,
+.wks-column-head h3,
+.wks-new-columns-head h4 {
+    margin: 0;
+}
+
+.wks-tables-head h2 {
+    font-size: 18px;
+}
+
+.wks-tables-head p {
+    color: var(--color-text-muted);
+}
+
+.wks-tables-actions,
+.wks-tables-toolbar,
+.wks-table-list-head,
+.wks-column-head,
+.wks-new-columns-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wks-tables-actions,
+.wks-new-columns-head {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.wks-tables-toolbar {
+    align-items: flex-end;
+    flex-wrap: wrap;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-light);
+}
+
+.wks-tables-toolbar label,
+.wks-table-form label {
+    display: grid;
+    gap: 4px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.wks-tables-toolbar select,
+.wks-table-form input:not([type="radio"]):not([type="checkbox"]),
+.wks-table-form select {
+    min-height: 34px;
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    padding: 6px 8px;
+}
+
+.wks-tables-toolbar label {
+    min-width: min(360px, 100%);
+}
+
+.wks-status-error {
+    color: var(--color-primary);
+}
+
+.wks-tables-grid {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+    gap: 12px;
+    min-height: 420px;
+}
+
+.wks-table-list,
+.wks-column-panel {
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+}
+
+.wks-table-list {
+    display: grid;
+    align-content: start;
+    max-height: calc(100vh - 310px);
+    overflow: auto;
+}
+
+.wks-table-list-head,
+.wks-column-head {
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-light);
+}
+
+.wks-table-item {
+    display: grid;
+    gap: 3px;
+    width: 100%;
+    padding: 10px;
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+}
+
+.wks-table-item:hover,
+.wks-table-item-active {
+    background: var(--color-bg-light);
+}
+
+.wks-table-item-active {
+    color: var(--color-primary);
+}
+
+.wks-table-item small {
+    overflow: hidden;
+    color: var(--color-text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wks-column-panel {
+    overflow: auto;
+}
+
+.wks-column-table-wrap {
+    overflow: auto;
+}
+
+.wks-column-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.wks-column-table th,
+.wks-column-table td {
+    border-bottom: 1px solid var(--color-border);
+    padding: 9px 10px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.wks-column-table th {
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+}
+
+.wks-column-table code {
+    color: var(--color-text);
+}
+
+.wks-table-form {
+    display: grid;
+    gap: 14px;
+}
+
+.wks-new-columns {
+    display: grid;
+    gap: 10px;
+}
+
+.wks-new-column-row {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) minmax(140px, 180px) auto auto;
+    align-items: end;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-light);
+}
+
+.wks-check-field {
+    display: flex;
+    align-items: center;
+    min-height: 34px;
+}
+
 @media (max-width: 960px) {
     .wks-header,
     .wks-layout {
@@ -519,5 +714,18 @@
 
     .wks-org-head {
         flex-direction: column;
+    }
+
+    .wks-tables-head,
+    .wks-tables-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wks-tables-head {
+        flex-direction: column;
+    }
+
+    .wks-new-column-row {
+        grid-template-columns: 1fr;
     }
 }

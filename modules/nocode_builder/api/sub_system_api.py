@@ -10,6 +10,7 @@ from flask_login import current_user
 
 from app import csrf, db
 from app.security.decorators import module_access_required, admin_required
+from app.services.capability_service import permission_required
 from app.security.resource_gateway import ResourceGateway
 from app.platform.data import get_current_org
 
@@ -649,6 +650,136 @@ def resolve_view(secure_code):
     ResourceGateway.commit()
 
     return jsonify({'success': True, 'data': view.to_dict(), 'created': True})
+
+
+@api_bp.route('/sub-systems/<secure_code>/data-sources/<source_key>/tables/<table_name>/columns')
+@module_access_required('nocode_builder')
+def get_source_table_columns(secure_code, source_key, table_name):
+    """取得指定資料來源資料表欄位。"""
+    from ..models import DcSubSystem
+    from ..services.schema_service import SchemaService
+    from ..services.db_connector import (
+        get_data_conn, get_sqlite_session, is_sqlite_source,
+        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+    )
+    from ..services.sqlite_crud_service import _validate_identifier
+
+    _VALID_SOURCES = ('org', 'conglomerate', 'portal', 'portal_data')
+    if source_key not in _VALID_SOURCES:
+        return jsonify({'success': False, 'error': f'Unknown source: {source_key}'}), 400
+
+    ss = ResourceGateway.get(
+        DcSubSystem, secure_code,
+        raise_on_not_found=False,
+        check_permission=False
+    )
+    if not ss or ss.is_deleted:
+        return jsonify({'success': False, 'error': 'Sub system not found'}), 404
+
+    if not _validate_identifier(table_name):
+        return jsonify({'success': False, 'error': 'invalid_table_name'}), 400
+
+    try:
+        if is_sqlite_source(source_key):
+            from ..services.sqlite_crud_service import SqliteSchemaService
+            with get_sqlite_session(ss.secure_code, source_key) as session:
+                columns = SqliteSchemaService.get_columns(session, table_name)
+        else:
+            with get_data_conn(ss.org_secure_code, data_source=source_key) as conn:
+                columns = SchemaService.get_columns(conn, table_name)
+    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+    if columns is None:
+        return jsonify({'success': False, 'error': 'table_not_found'}), 404
+
+    return jsonify({'success': True, 'data': columns})
+
+
+@api_bp.route('/sub-systems/<secure_code>/tables', methods=['POST'])
+@module_access_required('nocode_builder')
+@permission_required('nocode_builder.manage')
+def create_portal_data_table(secure_code):
+    """在 portal_data.db 新建業務資料表。"""
+    from sqlalchemy import text
+
+    from ..models import DcSubSystem
+    from ..services.db_connector import get_sqlite_session, PortalDatabaseNotFound
+    from ..services.sqlite_crud_service import _quote, _validate_identifier
+
+    allowed_types = {'TEXT', 'INTEGER', 'REAL', 'DATE', 'DATETIME', 'BOOLEAN'}
+    reserved_columns = {'id', 'created_at'}
+
+    ss = ResourceGateway.get(
+        DcSubSystem, secure_code,
+        raise_on_not_found=False,
+        check_permission=False
+    )
+    if not ss or ss.is_deleted:
+        return jsonify({'success': False, 'error': 'Sub system not found'}), 404
+
+    data = request.get_json() or {}
+    data_source = data.get('data_source')
+    if data_source != 'portal_data':
+        return jsonify({'success': False, 'error': 'invalid_data_source'}), 400
+
+    table_name = str(data.get('table_name') or '').strip()
+    table_name_lower = table_name.lower()
+    if (
+        not _validate_identifier(table_name)
+        or table_name_lower.startswith('sqlite_')
+        or table_name_lower.startswith('portal_')
+    ):
+        return jsonify({'success': False, 'error': 'invalid_table_name'}), 400
+
+    columns = data.get('columns')
+    if not isinstance(columns, list) or not 1 <= len(columns) <= 30:
+        return jsonify({'success': False, 'error': 'invalid_columns'}), 400
+
+    seen_columns = set()
+    column_defs = [
+        f'{_quote("id")} INTEGER PRIMARY KEY AUTOINCREMENT',
+        f'{_quote("created_at")} DATETIME DEFAULT CURRENT_TIMESTAMP',
+    ]
+    for column in columns:
+        if not isinstance(column, dict):
+            return jsonify({'success': False, 'error': 'invalid_columns'}), 400
+
+        column_name = str(column.get('name') or '').strip()
+        column_name_lower = column_name.lower()
+        if not _validate_identifier(column_name):
+            return jsonify({'success': False, 'error': 'invalid_column_name'}), 400
+        if column_name_lower in reserved_columns:
+            return jsonify({'success': False, 'error': 'reserved_column_name'}), 400
+        if column_name_lower in seen_columns:
+            return jsonify({'success': False, 'error': 'duplicate_column_name'}), 400
+        seen_columns.add(column_name_lower)
+
+        column_type = str(column.get('type') or '').strip().upper()
+        if column_type not in allowed_types:
+            return jsonify({'success': False, 'error': 'invalid_column_type'}), 400
+
+        required_sql = ' NOT NULL' if column.get('required') is True else ''
+        column_defs.append(f'{_quote(column_name)} {column_type}{required_sql}')
+
+    try:
+        with get_sqlite_session(ss.secure_code, data_source) as session:
+            exists = session.execute(
+                text("SELECT 1 FROM sqlite_master WHERE type='table' AND name = :tbl"),
+                {'tbl': table_name}
+            ).fetchone()
+            if exists:
+                return jsonify({'success': False, 'error': 'table_exists'}), 400
+
+            create_sql = f'CREATE TABLE {_quote(table_name)} ({", ".join(column_defs)})'
+            session.execute(text(create_sql))
+    except PortalDatabaseNotFound as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception:
+        logger.exception('create portal_data table failed')
+        return jsonify({'success': False, 'error': 'create_table_failed'}), 500
+
+    return jsonify({'success': True, 'data': {'table_name': table_name}})
 
 
 # =============================================================================

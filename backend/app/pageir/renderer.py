@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 from flask import current_app, render_template, request
 
 from app.pageir.context import get_render_context
+from app.pageir.masking import apply_record_masks, apply_row_masks, masked_fields
 from app.pageir.registry import get_access_evaluator, get_action, get_resource
 from app.pageir.validator import validate_page_ir
 
@@ -140,6 +141,7 @@ def _prepare_table(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     sort_field, sort_dir = _table_sort(widget)
     rows, total = resource["fetch_list"](fields, page, page_size, sort_field, sort_dir)
     _check_rows_have_sc(widget["id"], rows)
+    rows = apply_row_masks(rows, widget["columns"])
     row_actions = _row_actions(widget, widgets_by_id)
 
     return {
@@ -196,6 +198,7 @@ def _widget_write_caps(widget: dict, resource: dict) -> dict[str, bool]:
 
 def _table_form_fields(widget: dict, resource: dict) -> list[dict]:
     writable = set(resource.get("writable_fields") or [])
+    masked = masked_fields(widget.get("columns", []))
     labels = {
         column["field"]: _i18n(column["label_i18n"])
         for column in widget.get("columns", [])
@@ -203,7 +206,7 @@ def _table_form_fields(widget: dict, resource: dict) -> list[dict]:
     return [
         {"field": field, "label": labels.get(field, field)}
         for field in widget["binding"]["fields"]
-        if field in writable
+        if field in writable and field not in masked
     ]
 
 
@@ -237,10 +240,12 @@ def _visible_table_columns(widget: dict, resource: dict) -> list[dict]:
             and _egress_visibility(egress_resource, "list", field) == "hidden"
         ):
             continue
+        masked = column.get("mask") is not None
         columns.append({
             "field": field,
             "label": _i18n(column["label_i18n"]),
-            "sortable": column.get("sortable", False),
+            "sortable": False if masked else column.get("sortable", False),
+            "masked": masked,
         })
     return columns
 
@@ -250,7 +255,7 @@ def _table_sort(widget: dict) -> tuple[str | None, str | None]:
     sortable = {
         column["field"]
         for column in widget["columns"]
-        if column.get("sortable") is True
+        if column.get("sortable") is True and column.get("mask") is None
     }
     requested = request.args.get(f"{widget['id']}__sort")
     if requested in sortable:
@@ -262,8 +267,13 @@ def _table_sort(widget: dict) -> tuple[str | None, str | None]:
     else:
         sort_field = default_sort.get("field")
         sort_dir = default_sort.get("dir")
+        if sort_field in masked_fields(widget.get("columns", [])):
+            sort_field = None
+            sort_dir = None
     if sort_dir not in {"asc", "desc"}:
         sort_dir = default_sort.get("dir", "asc")
+        if sort_field is None:
+            sort_dir = None
     return sort_field, sort_dir
 
 
@@ -294,6 +304,7 @@ def _prepare_detail(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     record = resource["fetch_detail"](record_sc, binding["fields"]) if record_sc else None
     if record is not None and "_sc" not in record:
         record = {**record, "_sc": record_sc}
+    record = apply_record_masks(record, widget["fields"])
 
     fields = []
     egress_resource = resource.get("egress_resource")

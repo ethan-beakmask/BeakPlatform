@@ -34,8 +34,8 @@
             <div class="portal-user">
                 {% if portal_user %}
                 <span>{{ portal_user.display_name }}</span>
-                <span class="portal-badge">{{ (portal_user.roles or ['GUEST'])[0] }}</span>
-                {% if portal_user.user_type != 'GUEST' %}
+                <span class="portal-badge">{% if is_preview|default(false) %}{{ portal_user.group_code or _('不限群組') }} / {{ portal_user.level_code }}{% else %}{{ (portal_user.roles or ['GUEST'])[0] }}{% endif %}</span>
+                {% if portal_user.user_type != 'GUEST' and not is_preview|default(false) %}
                 <form method="POST" action="{{ url_for('nocode_public_portal.portal_logout', path_id=path_id) }}" style="margin:0;">
                     <button type="submit" class="portal-logout">{{ _('登出') }}</button>
                 </form>
@@ -43,6 +43,11 @@
                 {% endif %}
             </div>
         </header>
+        {% if preview_banner %}
+        <div class="pir-preview-banner">
+            {{ _('預覽模式：以「%(group)s / %(level)s」身分檢視，資料為唯讀，寫入操作不會生效。', group=preview_banner.group or _('不限群組'), level=preview_banner.level) }}
+        </div>
+        {% endif %}
         <main class="portal-content">
             <div class="pir-page">
                 <h1 class="pir-page-title">{{ page_title }}</h1>
@@ -53,7 +58,9 @@
     {% if has_form %}
     <script src="{{ app_prefix }}/static/vendor/formio.full.min.js"></script>
     {% endif %}
+    {% if not is_preview|default(false) %}
     <script>window.__PIR_ROWS_URL_BASE = {{ (app_prefix ~ '/public/portal/' ~ path_id ~ '/api/pages/' ~ page.secure_code ~ '/widgets')|tojson }};</script>
+    {% endif %}
     <script src="{{ app_prefix }}/static/js/pageir.js"></script>
 </body>
 </html>

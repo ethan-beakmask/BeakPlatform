@@ -20,25 +20,42 @@ files:
     - modules/nocode_builder/static/modules/nocode_builder/js/ir-designer.js
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace.js
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace-org.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/workspace-tables.js
   models:
     - modules/nocode_builder/models/permission_policy.py
   web:
     - modules/nocode_builder/web/portal_public.py
+    - modules/nocode_builder/web/__init__.py          # workspace / ir_designer / preview 路由
   services:
     - modules/nocode_builder/services/permission_policy_service.py
     - modules/nocode_builder/services/data_source_manager.py
     - modules/nocode_builder/services/sqlite_crud_service.py
     - modules/nocode_builder/services/portal_path_service.py
+    - modules/nocode_builder/services/portal_access_service.py   # 三層判定核心
+    - modules/nocode_builder/services/pageir_portal_resources.py # portal L2 resolver
   css:
     - modules/nocode_builder/static/modules/nocode_builder/css/nocode-builder.css
     - modules/nocode_builder/static/modules/nocode_builder/css/studio.css
     - modules/nocode_builder/static/modules/nocode_builder/css/datalist-widget.css
     - modules/nocode_builder/static/modules/nocode_builder/css/sitemenu-widget.css
+    - modules/nocode_builder/static/modules/nocode_builder/css/workspace.css
+    - modules/nocode_builder/static/modules/nocode_builder/css/ir-designer.css
   vendor_deps:
     - backend/app/static/vendor/gridstack/            # 柵欄佈局
     - backend/app/static/vendor/beak-trellis/         # 樹狀元件
     - backend/app/static/vendor/wunderbaum/           # 高效樹
 
+  api:
+    - modules/nocode_builder/api/sub_system_api.py    # 子系統/資料來源/建表/resolve-view
+    - modules/nocode_builder/api/site_map_api.py
+    - modules/nocode_builder/api/portal_org_api.py
+  platform_deps:
+    - backend/app/pageir/masking.py                   # 欄位視覺遮罩（server 端唯一實作）
+    - backend/app/pageir/renderer.py
+    - backend/app/pageir/schema_v3.json
+
 note: |
   准入控制使用 grant-based permission 模式（部門/社群/個人多重選擇）。
   模式規範見 docs/GRANT_PERMISSION_PATTERN.md。
+  工作區三個 tab：頁面設計 / 帳號權限 / 資料表（建表限 portal_data，掛 nocode_builder.manage）。
+  IR 設計器可設定四個 action 的元件准入與欄位遮罩；預覽支援 ?sub=&group=&level= 模擬 portal 身分。
