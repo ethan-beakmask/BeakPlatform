@@ -13,6 +13,7 @@ _RESOURCES: dict[str, dict[str, Any]] = {}
 _ACTIONS: dict[str, dict[str, Any]] = {}
 _PROVIDERS: dict[str, Callable[[str, dict], dict | None]] = {}
 _RESOURCE_LISTERS: list[Callable[[str], list[dict]]] = []
+_ACCESS_EVALUATORS: dict[str, Callable[[dict, str, dict], bool]] = {}
 
 
 def register_resource(code: str, config: dict) -> None:
@@ -75,6 +76,16 @@ def list_prefixed_resources(sub_system_sc: str) -> list[dict]:
         except Exception:
             logger.exception("Page IR prefixed resource lister failed")
     return resources
+
+
+def register_access_evaluator(world: str, fn: Callable[[dict, str, dict], bool]) -> None:
+    """註冊指定 render world 的 Page IR access_matrix 評估器。"""
+    _ACCESS_EVALUATORS[world] = fn
+
+
+def get_access_evaluator(world: str) -> Callable[[dict, str, dict], bool] | None:
+    """取得指定 render world 的 access_matrix 評估器；未註冊回 None。"""
+    return _ACCESS_EVALUATORS.get(world)
 
 
 def register_action(ref: str, config: dict) -> None:

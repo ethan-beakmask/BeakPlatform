@@ -77,3 +77,17 @@ def init_runtime(app):
         init_portal_pageir_resources()
     except Exception as e:
         logger.error(f'NocodeBuilder: 註冊 Page IR portal resources 失敗: {str(e)}')
+
+    try:
+        from app.pageir.registry import register_access_evaluator
+        from .services import portal_access_service
+        register_access_evaluator(
+            'portal',
+            lambda matrix, action, ctx: portal_access_service.check_widget_access(
+                matrix,
+                action,
+                ctx,
+            ),
+        )
+    except Exception as e:
+        logger.error(f'NocodeBuilder: 註冊 Page IR portal access evaluator 失敗: {str(e)}')

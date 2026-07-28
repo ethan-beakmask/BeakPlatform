@@ -8,7 +8,8 @@ from urllib.parse import urlencode
 
 from flask import current_app, render_template, request
 
-from app.pageir.registry import get_action, get_resource
+from app.pageir.context import get_render_context
+from app.pageir.registry import get_access_evaluator, get_action, get_resource
 from app.pageir.validator import validate_page_ir
 
 logger = logging.getLogger(__name__)
@@ -35,8 +36,9 @@ def render_page_ir_full(doc: dict) -> dict:
 
     widgets_by_id = _index_widgets(doc["page"].get("widgets", []))
     prepared = [
-        _prepare_widget(widget, widgets_by_id)
+        prepared_widget
         for widget in doc["page"].get("widgets", [])
+        if (prepared_widget := _prepare_widget(widget, widgets_by_id)) is not None
     ]
     return {
         "html": render_template("pageir/_page_ir.html", widgets=prepared),
@@ -62,7 +64,10 @@ def _has_widget_type(widgets: list[dict], widget_type: str) -> bool:
     return False
 
 
-def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
+def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict]) -> dict | None:
+    if not _widget_read_allowed(widget):
+        return None
+
     dispatch = {
         "layout": _prepare_layout,
         "text": _prepare_text,
@@ -77,6 +82,28 @@ def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     return handler(widget, widgets_by_id)
 
 
+def _widget_read_allowed(widget: dict) -> bool:
+    matrix = widget.get("access_matrix")
+    ctx = get_render_context()
+    world = ctx.get("world", "platform")
+    if world == "platform":
+        return True
+    if not matrix:
+        return True
+    evaluator = get_access_evaluator(world)
+    if evaluator is None:
+        return False
+    try:
+        return bool(evaluator(matrix, "read", ctx))
+    except Exception:
+        logger.exception(
+            "Page IR widget access evaluator failed: widget=%s world=%s",
+            widget.get("id"),
+            world,
+        )
+        return False
+
+
 def _prepare_layout(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     return {
         "type": "layout",
@@ -84,8 +111,9 @@ def _prepare_layout(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
         "columns": widget["columns"],
         "gap": widget.get("gap", 0),
         "children": [
-            _prepare_widget(child, widgets_by_id)
+            prepared_child
             for child in widget.get("children", [])
+            if (prepared_child := _prepare_widget(child, widgets_by_id)) is not None
         ],
     }
 

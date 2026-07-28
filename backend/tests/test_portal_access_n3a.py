@@ -150,6 +150,8 @@ def test_missing_min_level_fails_closed(portal_base, portal_app, monkeypatch):
         {},
         {"read": "bad"},
         {"read": {"groups": None}},
+        {"read": {"min_level": "GUEST"}},
+        {"read": {"groups": [], "min_level": "GUEST"}},
         {"read": {"groups": None, "min_level": 123}},
     ],
 )
@@ -171,3 +173,53 @@ def test_missing_portal_db_returns_error(portal_base, portal_app, monkeypatch):
     _patch_node(monkeypatch, _node({"read": {"groups": None, "min_level": "GUEST"}}))
 
     assert _check(portal_app, "ss_missing_db", "page_1", _user()) == (False, "error")
+
+
+def test_widget_access_undeclared_action_allows(portal_base, portal_app):
+    dsm.init_portal_sqlite("ss_widget_action")
+    ctx = {"sub_system_sc": "ss_widget_action", "portal_user": _user(group_code="GENERAL")}
+
+    assert access.check_widget_access(
+        {"read": {"groups": ["VIP"], "min_level": "GUEST"}},
+        "create",
+        ctx,
+    ) is True
+
+
+@pytest.mark.parametrize(
+    "matrix",
+    [
+        None,
+        ["VIP"],
+        {"read": "bad"},
+        {"read": {"groups": None}},
+        {"read": {"groups": None, "min_level": 123}},
+    ],
+)
+def test_widget_access_bad_matrix_or_rule_fails_closed(portal_base, portal_app, matrix):
+    dsm.init_portal_sqlite("ss_widget_bad")
+    ctx = {"sub_system_sc": "ss_widget_bad", "portal_user": _user()}
+
+    assert access.check_widget_access(matrix, "read", ctx) is False
+
+
+@pytest.mark.parametrize(
+    ("group_code", "level_rank", "expected"),
+    [
+        ("VIP", 50, True),
+        ("GENERAL", 50, False),
+        ("VIP", 10, False),
+    ],
+)
+def test_widget_access_uses_same_group_and_level_rule(portal_base, portal_app, group_code, level_rank, expected):
+    dsm.init_portal_sqlite("ss_widget_rule")
+    ctx = {
+        "sub_system_sc": "ss_widget_rule",
+        "portal_user": _user(group_code=group_code, level_rank=level_rank),
+    }
+
+    assert access.check_widget_access(
+        {"read": {"groups": ["VIP"], "min_level": "STAFF"}},
+        "read",
+        ctx,
+    ) is expected

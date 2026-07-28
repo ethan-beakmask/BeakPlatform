@@ -168,6 +168,21 @@ Fail-closed 原則：只要 `access_matrix` 已設定，格式錯誤、`min_leve
 portal DB 讀取錯誤或其他未預期例外都一律拒絕。`access_matrix = NULL` 是向下相容語意，
 代表此節點尚未啟用 N3a 矩陣判定，runtime 交回既有 `visible_roles` 機制把關。
 
+## 6.2 元件級判定（N4a）
+
+Page IR v3 的 `table` / `detail` widget 可宣告元件級 `access_matrix`。它與頁面級
+判定是 AND 關係：頁面級 `visible_roles` 與 `DcSiteMapNode.access_matrix.read`
+先通過後，元件仍可能因自己的 `access_matrix.read` 被擋。
+
+N4a runtime 只判定 `read`。`read` 不通過時，該 widget 不進 server-side render tree，
+也不會呼叫資料 resolver；rows API 對同一 widget 回 404，符合 INV-3 hidden 不出資料。
+未宣告 `access_matrix` 代表不額外限制；對 `check_widget_access()` 而言，某個 action
+key 未宣告即放行，讓 N4b 的 create/update/delete 呼叫端可自行決定預設策略。
+
+`create` / `update` / `delete` 三個 key 已保留在 schema 與型別語意中，但本階段不由
+渲染流程消費。格式錯誤、`min_level` 查無、portal session/context 缺失或未預期例外
+皆 fail-closed。
+
 ---
 
 ## 7. Schema 升級

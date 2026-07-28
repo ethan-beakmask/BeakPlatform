@@ -110,6 +110,9 @@ AI 幻覺出的屬性在存檔時即被拒絕，不靜默帶病上線。
   ],
   "page_size": 20,
   "default_sort": {"field": "created_at", "dir": "desc"},
+  "access_matrix": {
+    "read": {"groups": ["VIP"], "min_level": "GUEST"}
+  },
   "row_actions_ref": "enroll-row-actions"
 }
 ```
@@ -118,6 +121,7 @@ AI 幻覺出的屬性在存檔時即被拒絕，不靜默帶病上線。
 - 資料一律由 L2 resolver 供給；欄位能見度（clear/masked/hidden）由 EGRESS-01 執行期決定，
   **IR 內無任何能見度欄位可寫**。
 - `row_actions_ref`：引用同頁 `actions` widget 的 id（每列動作鈕），可省略。
+- `access_matrix`：資料元件級 portal 准入宣告，格式見 6.3.1；可省略。
 - 可排序欄位表頭預設顯示排序符號（全域前端規範）。
 
 ### 3.3 `detail` -- 單筆欄位檢視
@@ -127,6 +131,9 @@ AI 幻覺出的屬性在存檔時即被拒絕，不靜默帶病上線。
   "id": "enroll-detail", "type": "detail",
   "binding": {"resource": "enrollment", "view": "detail", "fields": ["name", "email", "id_number"]},
   "layout_columns": 2,
+  "access_matrix": {
+    "read": {"groups": null, "min_level": "GUEST"}
+  },
   "fields": [
     {"field": "id_number", "label_i18n": {"zh-TW": "身分證字號"}}
   ]
@@ -134,6 +141,7 @@ AI 幻覺出的屬性在存檔時即被拒絕，不靜默帶病上線。
 ```
 
 - masked 欄位 hover 逐格揭示沿用 `BkEgress.bind()` 既有機制。
+- `access_matrix`：資料元件級 portal 准入宣告，格式見 6.3.1；可省略。
 - **禁止** list 頁內嵌預載 detail 資料（EGRESS-01 既有禁令）：
   `table` + `detail` 同頁時必須分開請求。
 
@@ -282,6 +290,29 @@ can(permission, ctx) -> bool
   要求 portal session（或子系統允許匿名時自動 GUEST）；頁面必須
   `status='published'`、`ir_version=3`、且經 DcSubSystemPage 掛載於該子系統
   並通過 visible_roles 檢查。`/p/` 維持平台世界專用。
+- **元件級 `access_matrix`（N4a）**：`table` / `detail` 可宣告
+  `access_matrix`，目前 runtime 只消費 `read`，schema 與型別保留
+  `create` / `update` / `delete` 給 N4b。
+
+  ```json
+  {
+    "read": {"groups": ["VIP"], "min_level": "GUEST"},
+    "create": {"groups": null, "min_level": "STAFF"},
+    "update": {"groups": ["VIP"], "min_level": "STAFF"},
+    "delete": {"groups": ["VIP"], "min_level": "ADMIN"}
+  }
+  ```
+
+  `groups` 為 `null` 代表不限制群組；若為陣列，必須是既有
+  `portal_groups.code`。`min_level` 引用既有 `portal_levels.code`，判定時以
+  runtime 查得的 rank 比較。此欄位只在 `portal` 語境生效；`platform` 語境仍走
+  ResourceGateway / EGRESS / can()，不消費此宣告。Portal 語境下未宣告
+  `access_matrix` 代表不額外限制；宣告後 `read` 不通過、評估器未註冊、
+  `min_level` 查無或格式錯誤，該元件不進 render tree，也不取資料。
+
+  與 INV-2 的關係：這是「准入宣告」，只引用既有 group / level code（呼應
+  INV-6），不是欄位 clear/masked/hidden 覆寫。欄位能見度仍由 EGRESS 或
+  portal resolver 白名單在 runtime 決定，IR 只宣告元件准入條件。
 
 ---
 

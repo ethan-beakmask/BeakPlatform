@@ -334,6 +334,22 @@ def portal_widget_rows(path_id, page_sc, widget_id):
 
     try:
         set_render_context('portal', sub_system_sc=ss.secure_code, portal_user=portal_user)
+        ctx = {'world': 'portal', 'sub_system_sc': ss.secure_code, 'portal_user': portal_user}
+        access_matrix = widget.get('access_matrix')
+        if access_matrix is not None and not portal_access_service.check_widget_access(
+            access_matrix,
+            'read',
+            ctx,
+        ):
+            logger.warning(
+                'Portal rows widget denied: page=%s widget=%s sub_system=%s user=%s',
+                page_sc,
+                widget_id,
+                ss.secure_code,
+                portal_user.get('user_id'),
+            )
+            abort(404)
+
         binding = widget.get('binding') or {}
         resource = get_resource(binding.get('resource'))
         if resource is None:

@@ -35,33 +35,7 @@ def check_page_access(sub_system_sc, page_layout_sc, portal_user) -> tuple[bool,
         if not isinstance(matrix, dict):
             return False, 'bad_matrix'
 
-        read_rule = matrix.get('read')
-        if not isinstance(read_rule, dict):
-            return False, 'bad_matrix'
-
-        groups = read_rule.get('groups')
-        if groups is not None:
-            if not isinstance(groups, list):
-                return False, 'bad_matrix'
-            group_code = portal_user.get('group_code')
-            if not group_code or group_code not in groups:
-                return False, 'group_denied'
-
-        min_level = read_rule.get('min_level')
-        if not isinstance(min_level, str):
-            return False, 'bad_matrix'
-
-        min_rank = _get_level_rank(sub_system_sc, min_level)
-        if min_rank is None:
-            return False, 'level_missing'
-
-        user_rank = portal_user.get('level_rank')
-        if not isinstance(user_rank, int) or isinstance(user_rank, bool):
-            user_rank = 0
-        if user_rank < min_rank:
-            return False, 'level_denied'
-
-        return True, 'ok'
+        return _evaluate_rule(sub_system_sc, matrix.get('read'), portal_user)
     except Exception:
         logger.exception(
             'Portal page access check failed: page=%s sub_system=%s',
@@ -69,6 +43,64 @@ def check_page_access(sub_system_sc, page_layout_sc, portal_user) -> tuple[bool,
             sub_system_sc,
         )
         return False, 'error'
+
+
+def check_widget_access(access_matrix, action, ctx) -> bool:
+    """Check portal widget access_matrix for one action."""
+    try:
+        if not isinstance(ctx, dict):
+            return False
+        sub_system_sc = ctx.get('sub_system_sc')
+        portal_user = ctx.get('portal_user')
+        if not sub_system_sc or portal_user is None:
+            return False
+        if not isinstance(access_matrix, dict):
+            return False
+        if action not in access_matrix:
+            return True
+
+        allowed, _reason = _evaluate_rule(sub_system_sc, access_matrix.get(action), portal_user)
+        return allowed
+    except Exception:
+        logger.exception(
+            'Portal widget access check failed: action=%s sub_system=%s',
+            action,
+            ctx.get('sub_system_sc') if isinstance(ctx, dict) else None,
+        )
+        return False
+
+
+def _evaluate_rule(sub_system_sc, rule, portal_user) -> tuple[bool, str]:
+    """Evaluate one portal access rule against normalized portal user data."""
+    if not isinstance(rule, dict):
+        return False, 'bad_matrix'
+
+    if 'groups' not in rule:
+        return False, 'bad_matrix'
+
+    groups = rule.get('groups')
+    if groups is not None:
+        if not isinstance(groups, list) or not groups:
+            return False, 'bad_matrix'
+        group_code = portal_user.get('group_code')
+        if not group_code or group_code not in groups:
+            return False, 'group_denied'
+
+    min_level = rule.get('min_level')
+    if not isinstance(min_level, str):
+        return False, 'bad_matrix'
+
+    min_rank = _get_level_rank(sub_system_sc, min_level)
+    if min_rank is None:
+        return False, 'level_missing'
+
+    user_rank = portal_user.get('level_rank')
+    if not isinstance(user_rank, int) or isinstance(user_rank, bool):
+        user_rank = 0
+    if user_rank < min_rank:
+        return False, 'level_denied'
+
+    return True, 'ok'
 
 
 def _get_level_rank(sub_system_sc, code):
