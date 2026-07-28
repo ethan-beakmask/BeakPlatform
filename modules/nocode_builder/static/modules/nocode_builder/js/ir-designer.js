@@ -1,6 +1,5 @@
 /* global Alpine, Formio, BkI18n, __ */
 function irDesigner() {
-    const cfg = window.__IR_DESIGNER_CONFIG || {};
     const BP = window.__BP || '';
 
     function tr(text, params) {
@@ -25,7 +24,9 @@ function irDesigner() {
     }
 
     return {
-        secureCode: cfg.secureCode || '',
+        secureCode: '',
+        designerUrl: '',
+        previewUrl: '',
         pageName: '',
         pageTitleZh: '',
         doc: { ir_version: 3, page: { id: 'page', title_i18n: { 'zh-TW': '' }, widgets: [] } },
@@ -52,6 +53,10 @@ function irDesigner() {
         ],
 
         async init() {
+            const cfg = window.__IR_DESIGNER_CONFIG || {};
+            this.secureCode = cfg.secureCode || '';
+            this.designerUrl = cfg.designerUrl || '';
+            this.previewUrl = cfg.previewUrl || '';
             await Promise.all([this.loadPage(), this.loadSubSystems(), this.loadMeta(this.dataScope)]);
             await this.detectPortalScope();
             this.syncCounters();
@@ -506,7 +511,7 @@ function irDesigner() {
                 alert(tr('請先儲存'));
                 return;
             }
-            window.open(cfg.previewUrl, '_blank');
+            window.open(this.previewUrl, '_blank');
         },
 
         markDirty() {

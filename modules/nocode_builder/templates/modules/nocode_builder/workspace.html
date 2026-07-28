@@ -1,0 +1,72 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('NoCode 工作區') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/formio.full.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.css') }}">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/ir-designer.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/workspace.css">
+{% endblock %}
+
+{% block content %}
+<div class="wks-shell" x-data='wksManager({{ sub_system_sc|tojson }})' x-cloak>
+    <header class="wks-header">
+        <div class="wks-title-group">
+            <h1 x-text="subSystem ? subSystem.name : __('NoCode 工作區')"></h1>
+            <nav class="wks-tabs" aria-label="{{ _('工作區分頁') }}">
+                <button type="button" class="wks-tab wks-tab-active">{{ _('頁面設計') }}</button>
+                <button type="button" class="wks-tab wks-tab-disabled" disabled>{{ _('帳號權限') }} · {{ _('N2b 建置中') }}</button>
+            </nav>
+        </div>
+        <a class="wks-link" href="{{ app_prefix }}/nocode-builder/sub-systems">{{ _('返回子系統列表') }}</a>
+    </header>
+
+    <main class="wks-layout">
+        <aside class="wks-sidebar">
+            <div class="wks-sidebar-head">
+                <h2>{{ _('Site Map') }}</h2>
+                <span class="wks-muted" x-show="sortDirty">{{ _('排序未儲存') }}</span>
+            </div>
+            <div class="wks-toolbar">
+                <button type="button" class="wks-btn wks-btn-primary" @click="addPage()">{{ _('新增網頁') }}</button>
+                <button type="button" class="wks-btn" @click="addFolder()">{{ _('新增資料夾') }}</button>
+                <button type="button" class="wks-btn" @click="saveReorder()" :disabled="!sortDirty">{{ _('儲存排序') }}</button>
+                <button type="button" class="wks-btn wks-btn-danger" @click="deleteNode()" :disabled="!selectedNode">{{ _('刪除節點') }}</button>
+            </div>
+            <div class="wks-tree-wrap">
+                <div id="wks-tree"></div>
+                <div class="wks-empty" x-show="!loading && tree.length === 0">{{ _('尚無節點，請建立網頁') }}</div>
+                <div class="wks-empty" x-show="loading">{{ _('載入中...') }}</div>
+            </div>
+            <div class="wks-status" x-show="toast.show" x-text="toast.message"></div>
+        </aside>
+
+        <section class="wks-main">
+            <template x-if="!currentPageSc">
+                <div class="wks-main-empty">
+                    <h2>{{ _('從左側選擇或建立網頁') }}</h2>
+                    <p>{{ _('folder 節點只展開或收合，不會載入設計器。') }}</p>
+                </div>
+            </template>
+            <template x-if="designerMounted">
+                <div class="wks-designer-mount" :data-designer-key="designerKey">
+                    <div class="ird-shell" x-data="irDesigner()" x-cloak>
+                        {% include "modules/nocode_builder/_ir_designer_body.html" %}
+                    </div>
+                </div>
+            </template>
+        </section>
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/formio.full.min.js') }}"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-model.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-drag.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/ir-designer.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace.js"></script>
+{% endblock %}

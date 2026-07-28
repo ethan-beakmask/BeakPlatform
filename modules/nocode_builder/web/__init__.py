@@ -62,6 +62,17 @@ def ir_designer(secure_code):
     )
 
 
+@web_bp.route('/workspace/<sub_system_sc>')
+@nocode_short_bp.route('/workspace/<sub_system_sc>')
+@module_access_required('nocode_builder')
+def workspace(sub_system_sc):
+    """NoCode 統一工作區。"""
+    return render_template(
+        'modules/nocode_builder/workspace.html',
+        sub_system_sc=sub_system_sc,
+    )
+
+
 @web_bp.route('/ir-designer/<secure_code>/preview')
 @nocode_short_bp.route('/ir-designer/<secure_code>/preview')
 @module_access_required('nocode_builder')
