@@ -12,8 +12,11 @@ NoCode Builder - Public Portal Route
 CSRF 在登入/註冊 POST 端點豁免 (無已登入 session 可被攻擊)。
 """
 import logging
+from datetime import date, datetime
+from decimal import Decimal
+from math import ceil
 
-from flask import Blueprint, render_template, abort, redirect, url_for, request, flash
+from flask import Blueprint, render_template, abort, redirect, url_for, request, flash, jsonify
 
 from app import csrf
 from app.security.decorators import public_route
@@ -56,6 +59,88 @@ def _resolve_sub_system(path_id: str):
         abort(404)
 
     return ss
+
+
+def _find_table_widget(doc: dict, widget_id: str) -> dict | None:
+    """Find a table widget by id in Page IR v3, including nested layout children."""
+    if not isinstance(doc, dict) or not widget_id:
+        return None
+
+    def walk(widgets):
+        if not isinstance(widgets, list):
+            return None
+        for widget in widgets:
+            if not isinstance(widget, dict):
+                continue
+            if widget.get('id') == widget_id:
+                return widget if widget.get('type') == 'table' else None
+            if widget.get('type') == 'layout':
+                found = walk(widget.get('children', []))
+                if found is not None:
+                    return found
+        return None
+
+    page = doc.get('page') or {}
+    return walk(page.get('widgets', []))
+
+
+def _resolve_sort(widget: dict, binding: dict, requested_sort: str | None, requested_dir: str | None):
+    """Resolve API sort params against binding fields and sortable table columns."""
+    binding_fields = set(binding.get('fields') or [])
+    sortable = {
+        column.get('field')
+        for column in widget.get('columns') or []
+        if column.get('sortable') is True
+    }
+    if requested_sort in binding_fields and requested_sort in sortable:
+        return requested_sort, requested_dir if requested_dir in {'asc', 'desc'} else 'asc'
+
+    default_sort = widget.get('default_sort') or {}
+    default_field = default_sort.get('field')
+    if not default_field:
+        return None, None
+    default_dir = default_sort.get('dir')
+    if default_dir not in {'asc', 'desc'}:
+        default_dir = 'asc'
+    return default_field, default_dir
+
+
+def _positive_int(value, default: int, max_value: int | None = None) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    if parsed < 1:
+        return default
+    if max_value is not None and parsed > max_value:
+        return max_value
+    return parsed
+
+
+def _json_safe_value(value):
+    if isinstance(value, bytes):
+        return value.decode('utf-8', errors='replace')
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        return str(value)
+    return str(value)
+
+
+def _sanitize_rows(rows: list[dict], fields: list[str]) -> list[dict]:
+    allowed = set(fields) | {'_sc'}
+    sanitized = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        sanitized.append({
+            key: _json_safe_value(value)
+            for key, value in row.items()
+            if key in allowed
+        })
+    return sanitized
 
 
 # ── 入口 ──────────────────────────────────────────────────────
@@ -177,6 +262,118 @@ def portal_page(path_id, page_sc):
         path_id=path_id,
         portal_user=portal_user,
     )
+
+
+@public_portal_bp.route('/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/rows')
+@public_route
+def portal_widget_rows(path_id, page_sc, widget_id):
+    """Public portal Page IR table rows API for scroll loading."""
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.pageir.registry import get_resource
+    from app.security.resource_gateway import ResourceGateway
+    from ..models import DcPageLayout, DcSubSystemPage
+    from ..services.portal_auth_service import (
+        create_guest_session,
+        get_current_portal_user,
+        is_anonymous_allowed,
+    )
+    from ..services import portal_access_service
+
+    ss = _resolve_sub_system(path_id)
+
+    portal_user = get_current_portal_user(ss.secure_code)
+    if not portal_user:
+        if is_anonymous_allowed(ss.secure_code):
+            portal_user = create_guest_session(ss.secure_code)
+        else:
+            abort(404)
+
+    page = ResourceGateway.get(
+        DcPageLayout,
+        page_sc,
+        raise_on_not_found=False,
+        check_permission=False,
+    )
+    if (
+        not page
+        or page.is_deleted
+        or page.status != 'published'
+        or not isinstance(page.layout_json, dict)
+        or page.layout_json.get('ir_version') != 3
+    ):
+        abort(404)
+
+    mount = DcSubSystemPage.query.filter_by(
+        sub_system_secure_code=ss.secure_code,
+        page_layout_secure_code=page_sc,
+        is_deleted=False,
+        is_active=True,
+    ).first()
+    if not mount or not _portal_role_allowed(mount.visible_roles, portal_user):
+        abort(404)
+
+    allowed, reason = portal_access_service.check_page_access(
+        ss.secure_code,
+        page_sc,
+        portal_user,
+    )
+    if not allowed:
+        logger.warning(
+            'Portal rows access denied: page=%s widget=%s sub_system=%s user=%s reason=%s',
+            page_sc,
+            widget_id,
+            ss.secure_code,
+            portal_user.get('user_id'),
+            reason,
+        )
+        abort(404)
+
+    widget = _find_table_widget(page.layout_json, widget_id)
+    if widget is None:
+        abort(404)
+
+    try:
+        set_render_context('portal', sub_system_sc=ss.secure_code, portal_user=portal_user)
+        binding = widget.get('binding') or {}
+        resource = get_resource(binding.get('resource'))
+        if resource is None:
+            abort(404)
+
+        binding_view = binding.get('view')
+        binding_fields = binding.get('fields') or []
+        if binding_view not in set(resource.get('views', [])):
+            abort(404)
+        allowed_fields = set(resource.get('fields', []))
+        if any(field not in allowed_fields for field in binding_fields):
+            abort(404)
+
+        page_num = _positive_int(request.args.get('page'), 1, 10000)
+        page_size = _positive_int(widget.get('page_size'), 20)
+        sort_field, sort_dir = _resolve_sort(
+            widget,
+            binding,
+            request.args.get('sort'),
+            request.args.get('dir'),
+        )
+        rows, total = resource['fetch_list'](
+            binding_fields,
+            page_num,
+            page_size,
+            sort_field,
+            sort_dir,
+        )
+    finally:
+        clear_render_context()
+
+    pages = max(1, ceil(total / page_size)) if page_size else 1
+    return jsonify({
+        'success': True,
+        'rows': _sanitize_rows(rows, binding_fields),
+        'page': page_num,
+        'pages': pages,
+        'total': total,
+        'has_more': page_num < pages,
+    })
 
 
 def _portal_role_allowed(visible_roles, portal_user: dict) -> bool:

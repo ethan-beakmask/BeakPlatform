@@ -107,6 +107,126 @@
     });
   }
 
+  function appendRows(wrap, rows) {
+    var tbody = wrap.querySelector('tbody');
+    if (!tbody) {
+      return;
+    }
+    var empty = tbody.querySelector('tr .pir-empty');
+    if (empty && empty.closest('tr')) {
+      empty.closest('tr').remove();
+    }
+    var fields = Array.prototype.map.call(
+      wrap.querySelectorAll('thead th[data-field]'),
+      function (th) {
+        return th.dataset.field;
+      }
+    );
+    var hasActions = wrap.dataset.pirActions === 'true';
+    rows.forEach(function (row) {
+      var tr = document.createElement('tr');
+      fields.forEach(function (field) {
+        var td = document.createElement('td');
+        var value = row && Object.prototype.hasOwnProperty.call(row, field) ? row[field] : '';
+        td.textContent = value === null || value === undefined ? '' : String(value);
+        tr.appendChild(td);
+      });
+      if (hasActions) {
+        var actionCell = document.createElement('td');
+        actionCell.className = 'pir-actions-cell';
+        tr.appendChild(actionCell);
+      }
+      tbody.appendChild(tr);
+    });
+  }
+
+  function initInfiniteTables() {
+    if (!window.__PIR_ROWS_URL_BASE || typeof IntersectionObserver === 'undefined') {
+      return;
+    }
+    document.querySelectorAll('[data-pir-table]').forEach(function (wrap) {
+      var pagination = wrap.querySelector('.pir-pagination');
+      if (pagination) {
+        pagination.hidden = true;
+      }
+
+      var sentinel = document.createElement('div');
+      sentinel.className = 'pir-scroll-sentinel';
+      wrap.appendChild(sentinel);
+
+      var loading = false;
+      var stopped = false;
+      var observer = new IntersectionObserver(function (entries) {
+        var visible = entries.some(function (entry) {
+          return entry.isIntersecting;
+        });
+        if (!visible || loading || stopped) {
+          return;
+        }
+
+        var page = parseInt(wrap.dataset.pirPage || '1', 10) || 1;
+        var pages = parseInt(wrap.dataset.pirPages || '1', 10) || 1;
+        if (page >= pages) {
+          sentinel.textContent = t('已載入全部');
+          stopped = true;
+          observer.unobserve(sentinel);
+          return;
+        }
+
+        var next = page + 1;
+        var widgetId = wrap.dataset.pirTable;
+        var params = new URLSearchParams();
+        params.set('page', String(next));
+        if (wrap.dataset.pirSort) {
+          params.set('sort', wrap.dataset.pirSort);
+        }
+        if (wrap.dataset.pirDir) {
+          params.set('dir', wrap.dataset.pirDir);
+        }
+
+        loading = true;
+        sentinel.textContent = t('載入中...');
+        fetch(
+          window.__PIR_ROWS_URL_BASE + '/' + encodeURIComponent(widgetId) + '/rows?' + params.toString(),
+          { headers: { 'Accept': 'application/json' } }
+        )
+          .then(function (res) {
+            if (!res.ok) {
+              throw new Error(t('載入失敗'));
+            }
+            return res.json();
+          })
+          .then(function (data) {
+            if (!data || data.success === false || !Array.isArray(data.rows)) {
+              throw new Error(t('載入失敗'));
+            }
+            appendRows(wrap, data.rows);
+            wrap.dataset.pirPage = String(data.page || next);
+            wrap.dataset.pirPages = String(data.pages || pages);
+            sentinel.textContent = data.has_more ? '' : t('已載入全部');
+            if (!data.has_more) {
+              stopped = true;
+              observer.unobserve(sentinel);
+            }
+          })
+          .catch(function (err) {
+            stopped = true;
+            sentinel.textContent = err.message || t('載入失敗');
+            observer.unobserve(sentinel);
+          })
+          .finally(function () {
+            loading = false;
+          });
+      });
+      observer.observe(sentinel);
+    });
+  }
+
+  function initPageIr() {
+    initForms();
+    initInfiniteTables();
+  }
+
   document.addEventListener('click', function (event) {
     var button = event.target.closest('[data-pir-url]');
     if (button) {
@@ -115,8 +235,8 @@
   });
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initForms);
+    document.addEventListener('DOMContentLoaded', initPageIr);
   } else {
-    initForms();
+    initPageIr();
   }
 }());

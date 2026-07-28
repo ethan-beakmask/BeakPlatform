@@ -8,12 +8,12 @@
 {% elif widget.type == 'text' %}
 <{{ widget.level }} id="{{ widget.id }}" class="pir-text pir-text-{{ widget.level }}">{{ widget.content }}</{{ widget.level }}>
 {% elif widget.type == 'table' %}
-<div id="{{ widget.id }}" class="pir-table-wrap">
+<div id="{{ widget.id }}" class="pir-table-wrap" data-pir-table="{{ widget.id }}" data-pir-page="{{ widget.page }}" data-pir-pages="{{ widget.pages }}" data-pir-sort="{{ widget.sort_field or '' }}" data-pir-dir="{{ widget.sort_dir or '' }}" data-pir-cols="{{ widget.columns|length }}" data-pir-actions="{{ 'true' if widget.row_actions else 'false' }}">
     <table class="pir-table">
         <thead>
             <tr>
                 {% for column in widget.columns %}
-                <th{% if column.sortable %} class="pir-sortable{% if widget.sort_field == column.field %} pir-sort-active{% endif %}"{% endif %}>
+                <th data-field="{{ column.field }}"{% if column.sortable %} class="pir-sortable{% if widget.sort_field == column.field %} pir-sort-active{% endif %}"{% endif %}>
                     {% if column.sortable %}
                     <a href="{{ pir_sort_url(widget.id, column.field, widget.sort_field, widget.sort_dir) }}">{{ column.label }}<span class="pir-sort-indicator">{% if widget.sort_field == column.field and widget.sort_dir == 'asc' %}▲{% elif widget.sort_field == column.field %}▼{% else %}↕{% endif %}</span></a>
                     {% else %}

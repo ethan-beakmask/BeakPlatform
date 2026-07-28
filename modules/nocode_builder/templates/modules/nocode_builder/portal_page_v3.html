@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page_title }}</title>
     <script>window.__BP = '{{ app_prefix }}';</script>
-    <link rel="icon" href="{{ app_prefix }}/favicon.ico">
+    <link rel="icon" href="{{ app_prefix }}/static/favicon.ico">
     <link rel="stylesheet" href="{{ app_prefix }}/static/css/common.css">
     <link rel="stylesheet" href="{{ app_prefix }}/static/css/pageir.css">
     {% if has_form %}
@@ -52,6 +52,7 @@
     {% if has_form %}
     <script src="{{ app_prefix }}/static/vendor/formio.full.min.js"></script>
     {% endif %}
+    <script>window.__PIR_ROWS_URL_BASE = {{ (app_prefix ~ '/public/portal/' ~ path_id ~ '/api/pages/' ~ page.secure_code ~ '/widgets')|tojson }};</script>
     <script src="{{ app_prefix }}/static/js/pageir.js"></script>
 </body>
 </html>
