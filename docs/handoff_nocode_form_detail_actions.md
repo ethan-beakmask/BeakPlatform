@@ -604,27 +604,122 @@ form 的送件、detail 草稿的 submit，都是 action。
 先把這兩個具體場景做出來，actions 的介面（參數、回傳、錯誤處理、權限）
 才有真實需求可依循。
 
-### 4.2 現況
+### 4.2 現況（2026-07-29 晚更新，先前的「registry 零註冊」已過時）
 
-- `backend/app/pageir/registry.py:91` 有 `register_action(ref, config)`
-- 平台側與模組側都**沒有任何實際註冊**
-- 設計器的 actions 元件可以拖進頁面，但動作下拉是空的
-- `table.row_actions_ref` 指向 actions widget，因此列動作也不可用
+**portal 側的 action registry 已經存在並在用**（A 案，見 §1.4）：
 
-### 4.3 做的時候必須先問用戶的事
+```python
+# backend/app/pageir/registry.py
+_ACTIONS         # 平台世界，權限走 capability_service
+_PORTAL_ACTIONS  # portal 世界，權限走 widget access_matrix
+register_portal_action / get_portal_action / list_portal_actions
+```
 
-1. 第一個真 action 的完整場景（資源、觸發點、預期行為、失敗時的 UI）
-2. action 的權限模型：portal 世界沒有平台 permission code。
-   是沿用 widget 的 `access_matrix` 四動作，還是 action 自帶一組條件？
-3. action 執行後的頁面行為：留在原頁重整、跳轉、還是只跳訊息
+目前只註冊了一個，在 `modules/nocode_builder/__init__.py` 的 `init_runtime()`：
 
-### 4.4 落地時要補的驗收
+```python
+register_portal_action('portal.form.submit', {
+    'endpoint': 'nocode_public_portal.portal_widget_submit',
+    'update_endpoint': 'nocode_public_portal.portal_widget_update_submission',
+    'state_resolver': resolve_submission_state,
+})
+```
 
-第一個 action 落地時要補 E2E（交接檔 `handoff_nocode_n1_n5.md` §6.8 登記在案）。
+**平台側 `_ACTIONS` 仍然零註冊**，所以 `/api/pageir/meta` 的 `actions` 是空陣列。
+
+### 4.2.1 actions widget 本身仍然完全沒做
+
+**這是 actions 階段真正要做的東西，前面幾輪刻意沒動：**
+
+```python
+# renderer.py _prepare_action_buttons()
+if get_render_context().get("world") == "portal":
+    return []          # portal 的動作按鈕全部消失，至今未改
+```
+
+`table.row_actions_ref` 指向 actions widget，因此列動作在 portal 也還是空的。
+（列**連結**已經能用了——那是 `row_link_ref`，見 §2.9 前的 commit，
+與 actions 無關，不要混淆。）
+
+### 4.2.2 已知的硬阻擋：`action_button.permission` 在 portal 世界無意義
+
+schema 的 `action_button` 目前是：
+
+```json
+{"required": ["id","label_i18n","permission","action_ref"],
+ "properties": {"style": {"enum": ["primary","secondary","danger"]}}}
+```
+
+`permission` 是**平台 permission code**，`_prepare_action_buttons()` 用
+`capability_service.user_can(button["permission"])` 判定。
+portal 世界沒有平台身分，這條路走不通。
+
+依 §1.4 已定的 A 案（權限吃 widget `access_matrix`），合理的做法是：
+`actions_widget` 加 `access_matrix`，portal 世界改用它判定，
+`permission` 變成只在平台世界有意義的選填欄位。
+**但 `permission` 目前是 `required`，改成選填要同時確認既有頁面沒有踩到。**
+
+### 4.3 動工前必須先問用戶的事
+
+1. **第一個真 action 的完整場景**（資源、觸發點、預期行為、失敗時的 UI）。
+   用戶已明確點名一個：**撤單**——
+   > 「至於撤單（**資料會保存直到 DBA 刪除**）應該用 action 做比較適合。」
+
+   所以撤單是「標記為已撤銷」而非實體刪除，要問清楚標記寫在哪
+   （`fw_form_instances.status`？`fw_workflow_instances.status`？
+   還是像 `nocode_editable` 那樣用流程變數？）、以及撤單後流程要不要終止
+2. **action 執行後的頁面行為**：留在原頁重整、跳轉、還是只跳訊息
+3. **`action_button.permission` 改成選填**是否可接受（見 §4.2.2）
+
+### 4.4 可以直接沿用的模式（不要重新發明）
+
+前面三輪建立的東西，actions 階段照抄即可：
+
+| 需求 | 照抄哪裡 |
+|---|---|
+| portal 端點的准入鏈 | `portal_public.py` 的 `portal_widget_submit`（共用前置 `_resolve_portal_widget_common`） |
+| registry 不可被繞過 | 送出端點的 `submit_action_ref` 檢查（widget 沒設動作 → 直打 URL 也 404） |
+| 公開端點限流 | `@limiter.limit('10 per minute; 100 per hour')` |
+| 拒絕一律 404 + `_log_portal_write_denied(..., reason=)` | 同上 |
+| 授權判定不可吃 VariableService 快取 | `pageir_formflow_resources.is_submission_editable()` 的註解 |
+| 只能取到自己的資料 | `_owned_submission()` / `get_editable_submission()`（三重過濾在 SQL WHERE） |
+
+### 4.5 落地時要補的驗收
+
+第一個 action 落地時要補 E2E（`docs/handoff_nocode_n1_n5.md` §6.8 登記在案）。
+
+**驗收方式的教訓**：涉及「使用者要點擊的連結或按鈕」時，
+**必須用瀏覽器驗，不能只用 curl**。
+Page IR 的排序連結從第一版起就缺 nginx 前綴、點下去 404，
+一直沒被發現，就是因為歷來都用 curl 帶完整路徑測
+（已於 2026-07-29 修正，見 `renderer._self_url()`）。
 
 ---
 
-## 5. 這一輪（2026-07-28~29）已完成、可直接依賴的東西
+## 4.6 測試基準（2026-07-29 晚）
+
+```bash
+cd /opt/BeakPlatform-dev/backend
+../venv/bin/python -m pytest tests/test_pageir_*.py tests/test_portal_*.py \
+  tests/test_sitemap_access_matrix.py -q
+```
+
+**198 passed**（§5 底下寫的 155 是 2026-07-28 的舊基準，已過時）。
+
+本輪（form → 簽核狀態 → 三狀態 → 列連結 → 主細表）的 commit：
+
+```
+1dc8bb5d  form 送件進簽核流程
+88ac64e0  簽核狀態可見（formflow:submissions）
+9ce87ac3  form 三狀態 + 流程變數寫入位置修正
+f59d6957  列連結導覽 + 自連網址缺 nginx 前綴修正
+32a4d15a  主細表後端
+de383028  主細表設計器
+```
+
+---
+
+## 5. 【2026-07-28 舊基準】這一輪已完成、可直接依賴的東西
 
 | 能力 | 位置 | 備註 |
 |---|---|---|
