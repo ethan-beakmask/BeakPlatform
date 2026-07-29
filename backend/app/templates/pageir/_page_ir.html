@@ -98,8 +98,14 @@
     {% endfor %}
 </div>
 {% elif widget.type == 'form' %}
-<div class="pir-form" data-pir-form-id="{{ widget.id }}"{% if widget.submit_url %} data-pir-submit-url="{{ widget.submit_url }}"{% endif %}></div>
+<div class="pir-form" data-pir-form-id="{{ widget.id }}"
+     data-pir-form-mode="{{ widget.mode }}"
+     {% if widget.submit_url %} data-pir-submit-url="{{ widget.submit_url }}"{% endif %}
+     {% if widget.update_url %} data-pir-update-url="{{ widget.update_url }}"{% endif %}></div>
 <script type="application/json" data-pir-form-schema="{{ widget.id }}">{{ widget.schema|tojson }}</script>
+{% if widget.record_data is not none %}
+<script type="application/json" data-pir-form-record="{{ widget.id }}">{{ widget.record_data|tojson }}</script>
+{% endif %}
 {% endif %}
 {% endmacro %}
 

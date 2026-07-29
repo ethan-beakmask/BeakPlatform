@@ -45,11 +45,11 @@
     return (typeof BkI18n !== 'undefined' && BkI18n._locale) || 'zh-TW';
   }
 
-  async function formioOptions(submitUrl) {
+  async function formioOptions(readOnly) {
     var locale = formioLocale();
     var options = {
       language: locale,
-      readOnly: !submitUrl
+      readOnly: readOnly
     };
     if (locale === 'zh-TW') {
       try {
@@ -83,12 +83,32 @@
       return;
     }
     var submitUrl = el.dataset.pirSubmitUrl || '';
-    var form = await Formio.createForm(el, schema, await formioOptions(submitUrl));
-    if (submitUrl) {
+    var updateUrl = el.dataset.pirUpdateUrl || '';
+    var mode = el.dataset.pirFormMode || (submitUrl ? 'new' : 'readonly');
+    var record = null;
+    var recordEl = document.querySelector('[data-pir-form-record="' + id + '"]');
+    if (recordEl) {
+      try {
+        record = JSON.parse(recordEl.textContent || '{}');
+      } catch (err) {
+        el.textContent = t('表單設定格式錯誤');
+        return;
+      }
+    }
+    var form = await Formio.createForm(el, schema, await formioOptions(mode === 'readonly'));
+    if (record !== null) {
+      form.submission = { data: record };
+    }
+    if (mode === 'readonly') {
+      return;
+    }
+    var requestUrl = mode === 'edit' ? updateUrl : submitUrl;
+    var requestMethod = mode === 'edit' ? 'PUT' : 'POST';
+    if (requestUrl) {
       form.on('submit', async function (submission) {
         try {
-          var res = await fetch(submitUrl, {
-            method: 'POST',
+          var res = await fetch(requestUrl, {
+            method: requestMethod,
             headers: {
               'Content-Type': 'application/json',
               'X-CSRFToken': csrfToken()
@@ -104,7 +124,7 @@
           if (!res.ok || data.success === false) {
             throw new Error(data.error || t('送出失敗'));
           }
-          alert(t('已送出'));
+          alert(mode === 'edit' ? t('已更新') : t('已送出'));
           location.reload();
         } catch (err) {
           alert(err.message || t('送出失敗'));

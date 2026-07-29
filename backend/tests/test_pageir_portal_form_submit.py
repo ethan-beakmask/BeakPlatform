@@ -34,6 +34,13 @@ def pir_app():
     def portal_widget_submit(path_id, page_sc, widget_id):
         return ""
 
+    @app.route(
+        "/update/<path_id>/<page_sc>/<widget_id>/<record_sc>",
+        endpoint="portal_widget_update_submission",
+    )
+    def portal_widget_update_submission(path_id, page_sc, widget_id, record_sc):
+        return ""
+
     return app
 
 
@@ -83,6 +90,21 @@ def _read_only_matrix():
     return {"read": {"groups": None, "min_level": "GUEST"}}
 
 
+def _create_matrix():
+    return {
+        "read": {"groups": None, "min_level": "GUEST"},
+        "create": {"groups": None, "min_level": "GUEST"},
+    }
+
+
+def _create_update_matrix():
+    return {
+        "read": {"groups": None, "min_level": "GUEST"},
+        "create": {"groups": None, "min_level": "GUEST"},
+        "update": {"groups": None, "min_level": "GUEST"},
+    }
+
+
 def test_prepare_form_portal_without_declared_create_is_readonly(pir_app):
     register_portal_action("portal.form.submit", {"endpoint": "portal_widget_submit"})
     register_access_evaluator("portal", lambda matrix, action, ctx: action in matrix)
@@ -102,6 +124,7 @@ def test_prepare_form_portal_without_declared_create_is_readonly(pir_app):
         clear_render_context()
 
     assert 'data-pir-submit-url=' not in rendered["html"]
+    assert 'data-pir-form-mode="new"' in rendered["html"]
 
 
 def test_prepare_form_portal_without_mapping_ref_is_readonly(pir_app):
@@ -128,6 +151,146 @@ def test_prepare_form_platform_unregistered_action_still_raises(pir_app):
     with pir_app.test_request_context("/"):
         with pytest.raises(PageIrRenderError):
             render_page_ir_full(_doc(_form_widget(submit_action_ref="missing.action")))
+
+
+def test_prepare_form_portal_without_record_sc_is_new(pir_app):
+    register_portal_action("portal.form.submit", {"endpoint": "portal_widget_submit"})
+    register_access_evaluator("portal", lambda matrix, action, ctx: action in {"read", "create"})
+
+    with pir_app.test_request_context("/"):
+        set_render_context(
+            "portal",
+            sub_system_sc="ss_123",
+            portal_user={"user_id": 1},
+            path_id="pub12345",
+            page_sc="page123456",
+        )
+        rendered = render_page_ir_full(_doc(_form_widget(
+            mapping_ref="map123456",
+            access_matrix=_create_matrix(),
+        )))
+        clear_render_context()
+
+    assert 'data-pir-form-mode="new"' in rendered["html"]
+    assert 'data-pir-submit-url=' in rendered["html"]
+    assert 'data-pir-update-url=' not in rendered["html"]
+
+
+def test_prepare_form_portal_missing_state_is_new(pir_app):
+    register_portal_action("portal.form.submit", {
+        "endpoint": "portal_widget_submit",
+        "state_resolver": lambda record_sc, ctx: None,
+    })
+    register_access_evaluator("portal", lambda matrix, action, ctx: action in {"read", "create"})
+
+    with pir_app.test_request_context("/?frm__sc=missing"):
+        set_render_context(
+            "portal",
+            sub_system_sc="ss_123",
+            portal_user={"user_id": 1},
+            path_id="pub12345",
+            page_sc="page123456",
+        )
+        rendered = render_page_ir_full(_doc(_form_widget(
+            mapping_ref="map123456",
+            access_matrix=_create_matrix(),
+        )))
+        clear_render_context()
+
+    assert 'data-pir-form-mode="new"' in rendered["html"]
+    assert 'data-pir-submit-url=' in rendered["html"]
+
+
+def test_prepare_form_portal_readonly_state_has_record_without_urls(pir_app):
+    register_portal_action("portal.form.submit", {
+        "endpoint": "portal_widget_submit",
+        "update_endpoint": "portal_widget_update_submission",
+        "state_resolver": lambda record_sc, ctx: {
+            "form_data": {"name": "Alice"},
+            "editable": False,
+        },
+    })
+    register_access_evaluator("portal", lambda matrix, action, ctx: True)
+
+    with pir_app.test_request_context("/?frm__sc=fi123456789"):
+        set_render_context(
+            "portal",
+            sub_system_sc="ss_123",
+            portal_user={"user_id": 1},
+            path_id="pub12345",
+            page_sc="page123456",
+        )
+        rendered = render_page_ir_full(_doc(_form_widget(
+            mapping_ref="map123456",
+            access_matrix=_create_update_matrix(),
+        )))
+        clear_render_context()
+
+    assert 'data-pir-form-mode="readonly"' in rendered["html"]
+    assert 'data-pir-submit-url=' not in rendered["html"]
+    assert 'data-pir-update-url=' not in rendered["html"]
+    assert 'data-pir-form-record="frm"' in rendered["html"]
+    assert '"name": "Alice"' in rendered["html"]
+
+
+def test_prepare_form_portal_editable_state_without_update_access_is_readonly(pir_app):
+    register_portal_action("portal.form.submit", {
+        "endpoint": "portal_widget_submit",
+        "update_endpoint": "portal_widget_update_submission",
+        "state_resolver": lambda record_sc, ctx: {
+            "form_data": {"name": "Alice"},
+            "editable": True,
+        },
+    })
+    register_access_evaluator("portal", lambda matrix, action, ctx: action in matrix)
+
+    with pir_app.test_request_context("/?frm__sc=fi123456789"):
+        set_render_context(
+            "portal",
+            sub_system_sc="ss_123",
+            portal_user={"user_id": 1},
+            path_id="pub12345",
+            page_sc="page123456",
+        )
+        rendered = render_page_ir_full(_doc(_form_widget(
+            mapping_ref="map123456",
+            access_matrix=_create_matrix(),
+        )))
+        clear_render_context()
+
+    assert 'data-pir-form-mode="readonly"' in rendered["html"]
+    assert 'data-pir-submit-url=' not in rendered["html"]
+    assert 'data-pir-update-url=' not in rendered["html"]
+
+
+def test_prepare_form_portal_editable_state_with_update_access_is_edit(pir_app):
+    register_portal_action("portal.form.submit", {
+        "endpoint": "portal_widget_submit",
+        "update_endpoint": "portal_widget_update_submission",
+        "state_resolver": lambda record_sc, ctx: {
+            "form_data": {"name": "Alice"},
+            "editable": True,
+        },
+    })
+    register_access_evaluator("portal", lambda matrix, action, ctx: action in matrix)
+
+    with pir_app.test_request_context("/?frm__sc=fi123456789"):
+        set_render_context(
+            "portal",
+            sub_system_sc="ss_123",
+            portal_user={"user_id": 1},
+            path_id="pub12345",
+            page_sc="page123456",
+        )
+        rendered = render_page_ir_full(_doc(_form_widget(
+            mapping_ref="map123456",
+            access_matrix=_create_update_matrix(),
+        )))
+        clear_render_context()
+
+    assert 'data-pir-form-mode="edit"' in rendered["html"]
+    assert 'data-pir-submit-url=' not in rendered["html"]
+    assert 'data-pir-update-url=' in rendered["html"]
 
 
 def test_portal_and_platform_action_registries_do_not_fallback(pir_app):

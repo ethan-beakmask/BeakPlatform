@@ -25,7 +25,19 @@ from modules.form_workflow.models import (
     FwFormInstance,
     FwNodeExecutionQueue,
     FwWorkflowInstance,
+    FwWorkflowVariable,
 )
+
+# FwWorkflowVariable.var_value 是 PostgreSQL JSONB，SQLite 測試 DB 無法直接建表
+# （這正是本專案跑完整 pytest 會出現既有 error 的同一類原因）。
+# 讓 JSONB 在 sqlite 方言下編譯成 JSON，只影響測試進程，不影響正式 PostgreSQL。
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.compiler import compiles
+
+
+@compiles(JSONB, "sqlite")
+def _compile_jsonb_on_sqlite(type_, compiler, **kw):
+    return "JSON"
 
 
 @pytest.fixture(autouse=True)
@@ -54,11 +66,13 @@ def mini_app(tmp_path):
             FwFormInstance.__table__,
             FwWorkflowInstance.__table__,
             FwNodeExecutionQueue.__table__,
+            FwWorkflowVariable.__table__,
         ):
             table.create(db.engine, checkfirst=True)
         yield app
         db.session.remove()
         for table in (
+            FwWorkflowVariable.__table__,
             FwNodeExecutionQueue.__table__,
             FwWorkflowInstance.__table__,
             FwFormInstance.__table__,
@@ -282,3 +296,56 @@ def test_different_nocode_user_refs_cannot_read_each_other(mini_app, monkeypatch
         form_b.secure_code,
         ["serial_number", "execution_code", "status_label"],
     ) is None
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (True, True),
+        ("true", True),
+        ("True", True),
+        ("1", True),
+        (1, True),
+        (None, False),
+        (False, False),
+        ("no", False),
+        ("anything", False),
+        (0, False),
+    ],
+)
+def test_is_submission_editable_fail_closed(mini_app, value, expected):
+    """用真實的 FwWorkflowVariable 記錄驗證，不 mock。
+
+    is_submission_editable 刻意繞過 VariableService 的進程內快取直接查 DB
+    （授權判定不可吃無 TTL 的快取），所以測試也必須走真的資料表。
+    """
+    instance_code = "wi_formflow_editable_00001"
+    if value is not None:
+        db.session.add(FwWorkflowVariable(
+            secure_code="var_formflow_editable_001",
+            org_secure_code="org_formflow_000000000001",
+            workflow_instance_secure_code=instance_code,
+            var_name="nocode_editable",
+            var_value=value,
+            var_type="FLOW",
+        ))
+        db.session.commit()
+
+    assert formflow_resources.is_submission_editable(instance_code) is expected
+
+
+def test_resolve_submission_state_rejects_different_nocode_user_ref(mini_app, monkeypatch):
+    sub_system, _form_a, form_b = _seed_submissions()
+    _patch_sub_system(monkeypatch, sub_system)
+    monkeypatch.setattr(formflow_resources, "is_submission_editable", lambda _instance_code: True)
+
+    state = formflow_resources.resolve_submission_state(
+        form_b.secure_code,
+        {
+            "world": "portal",
+            "sub_system_sc": sub_system.secure_code,
+            "portal_user": {"user_id": 1},
+        },
+    )
+
+    assert state is None

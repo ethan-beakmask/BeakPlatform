@@ -99,9 +99,12 @@ def init_runtime(app):
 
     try:
         from app.pageir.registry import register_portal_action
+        from .services.pageir_formflow_resources import resolve_submission_state
 
         register_portal_action('portal.form.submit', {
             'endpoint': 'nocode_public_portal.portal_widget_submit',
+            'update_endpoint': 'nocode_public_portal.portal_widget_update_submission',
+            'state_resolver': resolve_submission_state,
         })
     except Exception as e:
         logger.error(f'NocodeBuilder: 註冊 Page IR portal action 失敗: {str(e)}')

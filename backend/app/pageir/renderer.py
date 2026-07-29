@@ -372,10 +372,36 @@ def _prepare_form(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     world = ctx.get("world", "platform")
     submit_action_ref = widget.get("submit_action_ref")
     submit_url = None
+    update_url = None
+    mode = "new"
+    record_data = None
 
     if submit_action_ref:
         if world == "portal":
-            submit_url = _portal_form_submit_url(widget, submit_action_ref, ctx)
+            action = get_portal_action(submit_action_ref)
+            record_sc = request.args.get(f"{widget['id']}__sc", "").strip()
+            state = None
+            if action is not None and record_sc:
+                resolver = action.get("state_resolver")
+                if callable(resolver):
+                    try:
+                        state = resolver(record_sc, ctx)
+                    except Exception:
+                        logger.exception(
+                            "Page IR portal form state resolver failed: widget=%s ref=%s",
+                            widget.get("id"),
+                            submit_action_ref,
+                        )
+                        state = None
+            if state is None:
+                submit_url = _portal_form_submit_url(widget, submit_action_ref, ctx)
+            else:
+                record_data = state.get("form_data") if isinstance(state.get("form_data"), dict) else {}
+                mode = "readonly"
+                if state.get("editable") is True and _portal_form_update_allowed(widget, ctx):
+                    update_url = _portal_form_update_url(widget, action, ctx, record_sc)
+                    if update_url:
+                        mode = "edit"
         else:
             action = get_action(submit_action_ref)
             if action is None:
@@ -388,6 +414,9 @@ def _prepare_form(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
         "id": widget["id"],
         "schema": widget["formio_schema"],
         "submit_url": submit_url,
+        "update_url": update_url,
+        "mode": mode,
+        "record_data": record_data,
     }
 
 
@@ -425,6 +454,44 @@ def _portal_form_submit_url(widget: dict, ref: str, ctx: dict) -> str | None:
         )
     except Exception:
         logger.exception("Page IR portal form submit endpoint unavailable: ref=%s", ref)
+        return None
+
+
+def _portal_form_update_allowed(widget: dict, ctx: dict) -> bool:
+    evaluator = get_access_evaluator("portal")
+    if evaluator is None:
+        return False
+    try:
+        return bool(evaluator(widget.get("access_matrix") or {}, "update", ctx))
+    except Exception:
+        logger.exception(
+            "Page IR portal form update access evaluator failed: widget=%s",
+            widget.get("id"),
+        )
+        return False
+
+
+def _portal_form_update_url(widget: dict, action: dict, ctx: dict, record_sc: str) -> str | None:
+    if not widget.get("mapping_ref"):
+        return None
+    if not ctx.get("path_id") or not ctx.get("page_sc"):
+        return None
+    endpoint = action.get("update_endpoint")
+    if not endpoint:
+        return None
+    try:
+        return url_for(
+            endpoint,
+            path_id=ctx["path_id"],
+            page_sc=ctx["page_sc"],
+            widget_id=widget["id"],
+            record_sc=record_sc,
+        )
+    except Exception:
+        logger.exception(
+            "Page IR portal form update endpoint unavailable: widget=%s",
+            widget.get("id"),
+        )
         return None
 
 

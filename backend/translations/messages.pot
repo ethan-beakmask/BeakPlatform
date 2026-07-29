@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-29 08:40+0800\n"
+"POT-Creation-Date: 2026-07-29 15:46+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14335,17 +14335,17 @@ msgstr ""
 msgid "(無法取得集團資料庫資訊)"
 msgstr ""
 
-#: ../modules/nocode_builder/services/pageir_formflow_resources.py:118
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:119
 msgid "我送出的表單"
 msgstr ""
 
-#: ../modules/nocode_builder/services/pageir_formflow_resources.py:237
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:291
 msgid "審核中"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:23
-#: ../modules/nocode_builder/services/pageir_formflow_resources.py:237
-#: ../modules/nocode_builder/services/pageir_formflow_resources.py:242
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:291
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:296
 msgid "處理中"
 msgstr ""
 
@@ -14353,12 +14353,12 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:55
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:482
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:24
-#: ../modules/nocode_builder/services/pageir_formflow_resources.py:239
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:293
 msgid "已完成"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_pending.py:594
-#: ../modules/nocode_builder/services/pageir_formflow_resources.py:241
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:295
 msgid "已退回"
 msgstr ""
 
@@ -15981,7 +15981,7 @@ msgstr ""
 msgid "分析表單欄位失敗: %(error)s"
 msgstr ""
 
-#: ../modules/form_workflow/services/form_submit_service.py:224
+#: ../modules/form_workflow/services/form_submit_service.py:227
 msgid "流程中找不到起始節點"
 msgstr ""
 

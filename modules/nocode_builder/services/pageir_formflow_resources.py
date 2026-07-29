@@ -12,6 +12,7 @@ from modules.form_workflow.models import (
     FwFormInstance,
     FwNodeExecutionQueue,
     FwWorkflowInstance,
+    FwWorkflowVariable,
 )
 
 from ..models.sub_system import DcSubSystem
@@ -188,6 +189,96 @@ def _fetch_detail(
     wi, fi = pair
     waiting = _waiting_steps([wi.secure_code], org_secure_code)
     return _submission_row(wi, fi, waiting, fields)
+
+
+def is_submission_editable(workflow_instance_secure_code: str) -> bool:
+    """流程變數 nocode_editable 是否開放外部用戶修改此筆送件。
+
+    刻意**不走** `VariableService.get_flow_var()`：那層有一份類別層級、
+    無 TTL 的進程內快取，多 worker 部署下流程把變數改成 false 之後，
+    其他 worker 仍會讀到舊的 true。用過期值做顯示只是難看，
+    用過期值做授權判定就是漏洞，所以這裡直接查 DB。
+
+    未設定或任何無法明確判讀為真的值 → 一律唯讀（fail-closed）。
+    """
+    var = FwWorkflowVariable.query.filter_by(
+        workflow_instance_secure_code=workflow_instance_secure_code,
+        var_name="nocode_editable",
+        var_type="FLOW",
+    ).first()
+    value = var.var_value if var else None
+    if value is True or value == 1:
+        return True
+    if isinstance(value, str) and value in {"true", "True", "1"}:
+        return True
+    return False
+
+
+def _owned_submission(record_sc: str, ctx: dict):
+    """Return (workflow_instance, form_instance) owned by the current portal user.
+
+    三重過濾（org / 子系統 / user_ref）全部在 SQL WHERE。
+    任何呼叫端都必須經由本函式取得 form_instance，
+    不可以自行再查一次 FwFormInstance —— 第二次查詢很容易漏掉 user_ref，
+    那就是 IDOR。
+    """
+    if not record_sc:
+        return None
+    sub_system_sc = (ctx or {}).get("sub_system_sc")
+    portal_user = (ctx or {}).get("portal_user")
+    if not sub_system_sc or not portal_user:
+        return None
+
+    sub_system = DcSubSystem.query.filter_by(
+        secure_code=sub_system_sc,
+        is_deleted=False,
+    ).first()
+    if not sub_system:
+        return None
+
+    try:
+        user_ref = nocode_user_ref(sub_system_sc, portal_user)
+    except Exception:
+        logger.exception(
+            "Failed to resolve portal nocode user ref: sub_system=%s",
+            sub_system_sc,
+        )
+        return None
+
+    return _base_query(
+        sub_system.org_secure_code,
+        sub_system_sc,
+        user_ref,
+    ).filter(
+        FwFormInstance.secure_code == record_sc,
+    ).first()
+
+
+def resolve_submission_state(record_sc: str, ctx: dict) -> dict | None:
+    """Return form state for a portal-owned formflow submission."""
+    pair = _owned_submission(record_sc, ctx)
+    if not pair:
+        return None
+    wi, fi = pair
+    return {
+        "form_data": fi.form_data if isinstance(fi.form_data, dict) else {},
+        "editable": is_submission_editable(wi.secure_code),
+    }
+
+
+def get_editable_submission(record_sc: str, ctx: dict):
+    """Return the FwFormInstance the current portal user is allowed to edit.
+
+    無權存取、查無此筆、或流程變數未開放修改時一律回 None。
+    更新端點必須用這支取得 instance，不要自行再查一次。
+    """
+    pair = _owned_submission(record_sc, ctx)
+    if not pair:
+        return None
+    wi, fi = pair
+    if not is_submission_editable(wi.secure_code):
+        return None
+    return fi
 
 
 def _waiting_steps(workflow_instance_codes: list[str], org_secure_code: str) -> dict[str, str]:

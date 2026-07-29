@@ -180,12 +180,107 @@
 `backend/tests/test_pageir_formflow_submissions.py` 的隔離測試是真的建兩筆
 不同 `nocode_user_ref` 的資料互查，不是 mock。
 
-### 仍待用戶澄清
+---
 
-§2.2 有一條「form 的兩種狀態：**新增** 與 **簽核**，設計時要分開處理」。
-目前的理解是：設計者現在能做出「送件頁」（form widget）與
-「我的申請頁」（table 綁 `formflow:submissions`）兩種頁面，這就是「分開處理」。
-**若原意是別的（例如同一個 widget 要能切換兩種狀態），這條還沒做。**
+## 1.4.2 【2026-07-29 更新】form 三狀態已完成
+
+用戶把 §2.2 的「兩種狀態」澄清為**三**狀態（原話重點）：
+
+> 新增：填新表單。
+> 修改：有些情境是能修改的，例如**還沒被別人簽之前修改比撤單重填省事**。
+> 唯讀：如稽核人員，或**追蹤目前不在自己簽核的表單**就該唯讀。
+> 「你定義一個流程變數即可，**流程設計者去負責**依用戶在流程階段的變遷
+> 而有唯讀或修改狀態。」
+
+**關鍵設計決定：可否修改由流程變數決定，平台只忠實執行，不自作主張加規則。**
+
+### 流程變數 `nocode_editable`
+
+- FLOW scope，流程設計者用既有的 **`OpSet`（設定變數）節點** 設定
+- 判為可修改的值：`True` / `"true"` / `"True"` / `"1"` / `1`
+- **未設定或其他任何值 → 唯讀**（fail-closed）
+- 判定函式 `is_submission_editable()` 在
+  `modules/nocode_builder/services/pageir_formflow_resources.py`
+
+### 狀態判定（`renderer._prepare_form()`）
+
+依 URL 的 `?<widget_id>__sc=<form_instance_sc>`：
+
+| 情況 | mode |
+|---|---|
+| 無 `__sc`，或 state_resolver 回 `None`（含**別人的** sc） | `new` |
+| 有 state、`editable` 為真、且 access_matrix 的 `update` 通過 | `edit` |
+| 其餘 | `readonly` |
+
+拿別人的 sc 會落回 `new`，不是「查無此筆」——**刻意不洩漏該筆是否存在**。
+
+更新端點：`PUT .../widgets/<widget_id>/submissions/<record_sc>`
+（`portal_widget_update_submission`）。
+**只更新 `fw_form_instances.form_data`**，不動流程狀態、佇列、簽核軌跡。
+
+### 兩個容易再犯的坑（本輪修掉的）
+
+1. **流程變數的權威儲存是 `fw_workflow_variables` 表，不是
+   `fw_workflow_instances.variables` JSONB**。
+   上一輪把 nocode 識別碼鏡射進 JSONB，以為流程設計者能引用——引用不到：
+   - `${v.xxx}` 走 `VariableService`，只讀那張表
+   - `${wi.xxx}` 只支援 `base.py` 的
+     `_WI_FIELDS = {'wi.code','wi.exec_code','wi.name','wi.status','wi.depth'}`
+
+   現在送件成功後會用 `VariableService.set_flow_var()` 寫成真變數
+   （`nocode_sub_system` / `nocode_user_ref`），流程設計者可用
+   `${v.nocode_user_ref}`。實體欄位與 JSONB 鏡射保留（查詢用，index 靠它）。
+
+2. **`is_submission_editable()` 刻意不走 `VariableService.get_flow_var()`**。
+   那層有一份類別層級、**無 TTL** 的進程內快取。開發環境是 `flask run`
+   單進程 + 同進程 daemon thread 跑流程引擎，所以看不出問題；
+   多 worker 部署下，流程把變數改成 false 之後其他 worker 仍讀到舊的 true。
+   **用過期值做顯示只是難看，用過期值做授權判定就是漏洞**，所以直接查 DB。
+   已實測：SQL 改值後不重啟服務，下一次請求就從 `edit` 變 `readonly`。
+
+3. 防禦深度：更新端點**不可以**自己再查一次 `FwFormInstance`。
+   必須用 `get_editable_submission(record_sc, ctx)` 一次取得——
+   它走同一個 `_base_query()`（三重過濾 + editable）。
+   第一版曾是「先用 state 檢查、再用 org 條件重查一次 instance」，
+   當下不是漏洞（record_sc 沒變），但只要有人拆掉前面的檢查就會變成 IDOR。
+
+### 驗收（本機實測）
+
+| 情境 | 結果 |
+|---|---|
+| 無 `__sc` | `mode=new`，有 submit_url |
+| 有 `__sc`、未設 `nocode_editable` | `mode=readonly`，無任何 url，資料有帶入 |
+| 拿別人的 `__sc` | `mode=new`，不帶資料（不洩漏） |
+| 設 `nocode_editable=true` | `mode=edit`，有 update_url，資料帶入 |
+| readonly 時直打 PUT | 404 |
+| edit 時 PUT | 200，`form_data` 更新，流程狀態與佇列**完全未動** |
+| 改別人那筆 | 404 |
+| SQL 把變數改 false（不重啟） | 下一次請求即變 readonly，PUT 404 |
+| 送新件後查流程變數 | `nocode_sub_system` / `nocode_user_ref` 都在 |
+
+### 撤單（用戶已裁決，尚未做）
+
+> 「至於撤單（資料會保存直到 DBA 刪除）應該用 action 做比較適合。」
+
+→ 留到 actions 階段，本輪明確不做。
+
+### 尚未做的必要配套
+
+**目前沒有任何機制能從 table 列連到 `?<widget>__sc=`。**
+detail widget 一直只能手改 URL，form 的 edit / readonly 模式同樣觸達不了。
+計畫：table widget 加選填 `row_link_ref` 指向同頁 form/detail widget，
+每列產生導覽連結。
+
+### detail 階段動工前要問的事
+
+用戶說「以上 form 的說明也適用於 detail，這算是對應 form.io 開發表單時的
+data grid 或 edit grid」。這裡有個要攤開來確認的差異：
+
+- form.io 的 **editgrid/datagrid 是表單內部的多列輸入元件**，
+  資料落在 `fw_form_instances.form_data` 裡
+- **detail widget 綁的是 portal SQLite 業務表**，資料落在 `portal_data.db`
+
+「訂價單品項一直加」用哪一種，決定 detail 階段要做什麼。動工前必問。
 
 ---
 

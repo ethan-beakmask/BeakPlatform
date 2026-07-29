@@ -8,6 +8,7 @@ FormWorkflow Module - Form Submit Service
 規格: docs/API_KEY_TRIGGER_SPEC.md §3
 """
 import secrets
+import logging
 from datetime import datetime
 from typing import Optional, Tuple
 
@@ -17,6 +18,8 @@ from app import db
 from app.models import UserNumberingRule
 from app.services.numbering_service import NumberingService
 from flask_babel import gettext as _
+
+logger = logging.getLogger(__name__)
 
 
 class SubmitError(Exception):
@@ -238,6 +241,29 @@ def create_instance_and_start(
     )
     db.session.add(queue_item)
     db.session.commit()
+
+    if nocode_sub_system_sc or nocode_user_ref:
+        try:
+            from .variable_service import VariableService
+            if nocode_sub_system_sc:
+                VariableService.set_flow_var(
+                    workflow_instance.secure_code,
+                    'nocode_sub_system',
+                    nocode_sub_system_sc,
+                    org_secure_code,
+                )
+            if nocode_user_ref:
+                VariableService.set_flow_var(
+                    workflow_instance.secure_code,
+                    'nocode_user_ref',
+                    nocode_user_ref,
+                    org_secure_code,
+                )
+        except Exception:
+            logger.exception(
+                'Failed to persist NoCode portal workflow variables: workflow_instance=%s',
+                workflow_instance.secure_code,
+            )
 
     return form_instance, workflow_instance
 

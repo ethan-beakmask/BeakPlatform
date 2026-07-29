@@ -828,6 +828,128 @@ def portal_widget_submit(path_id, page_sc, widget_id):
     }), 201
 
 
+@public_portal_bp.route('/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/submissions/<record_sc>', methods=['PUT'], endpoint='portal_widget_update_submission')
+@limiter.limit('10 per minute; 100 per hour')
+@public_route
+def portal_widget_update_submission(path_id, page_sc, widget_id, record_sc):
+    """Public portal Page IR form submission update API."""
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.pageir.registry import get_portal_action
+    from modules.form_workflow.models import (
+        FwFormWorkflowMapping,
+        FwPublishedFormWorkflow,
+    )
+    from modules.form_workflow.services.form_submit_service import extract_schema_field_keys
+    from ..services import portal_access_service
+    from ..services.pageir_formflow_resources import get_editable_submission
+    from ..services.portal_auth_service import nocode_user_ref
+
+    common = _resolve_portal_widget_common(path_id, page_sc, widget_id, 'update')
+    ss = common['ss']
+    portal_user = common['portal_user']
+    widget = common['widget']
+    ctx = common['ctx']
+
+    if widget.get('type') != 'form':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'widget_not_found')
+        abort(404)
+
+    if not portal_access_service.check_widget_write_access(widget.get('access_matrix') or {}, 'update', ctx):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'widget_write_denied')
+        abort(404)
+
+    submit_action_ref = widget.get('submit_action_ref')
+    if not submit_action_ref:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'submit_action_missing')
+        abort(404)
+    try:
+        set_render_context(
+            'portal',
+            sub_system_sc=ss.secure_code,
+            portal_user=portal_user,
+            path_id=path_id,
+            page_sc=page_sc,
+        )
+        action = get_portal_action(submit_action_ref)
+    finally:
+        clear_render_context()
+    if not action or action.get('endpoint') != 'nocode_public_portal.portal_widget_submit':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'submit_action_denied')
+        abort(404)
+
+    mapping_ref = widget.get('mapping_ref')
+    if not mapping_ref:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'mapping_missing')
+        abort(404)
+
+    # 三重過濾 + editable 一次解析完成；不要在後面另外再查一次 FwFormInstance
+    form_instance = get_editable_submission(record_sc, ctx)
+    if form_instance is None:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'submission_denied')
+        abort(404)
+
+    mapping = FwFormWorkflowMapping.query.filter_by(
+        secure_code=mapping_ref,
+        org_secure_code=ss.org_secure_code,
+        is_deleted=False,
+    ).first()
+    if not mapping or not mapping.is_active or mapping.is_archived:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'mapping_denied')
+        abort(404)
+
+    published = FwPublishedFormWorkflow.query.filter_by(
+        source_mapping_secure_code=mapping.secure_code,
+        org_secure_code=ss.org_secure_code,
+        status='Published',
+        is_deleted=False,
+    ).order_by(FwPublishedFormWorkflow.created_at.desc()).first()
+    if not published:
+        return jsonify({'success': False, 'error': 'form_not_published'}), 422
+
+    form_data = request.get_json(silent=True)
+    if not isinstance(form_data, dict):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+
+    form_snapshot = published.form_snapshot or {}
+    form_schema = form_snapshot.get('schema')
+    allowed_keys = extract_schema_field_keys(form_schema)
+    unknown = sorted(set(form_data.keys()) - allowed_keys)
+    if unknown:
+        return jsonify({
+            'success': False,
+            'error': 'unknown_field',
+            'details': {'unknown_keys': unknown, 'allowed_keys': sorted(allowed_keys)},
+        }), 400
+
+    sub_ref = ss.secure_code
+    user_ref = nocode_user_ref(ss.secure_code, portal_user)
+    payload = dict(form_data)
+    if '_nocode_sub_system' in allowed_keys:
+        payload['_nocode_sub_system'] = sub_ref
+    if '_nocode_user_ref' in allowed_keys:
+        payload['_nocode_user_ref'] = user_ref
+
+    try:
+        form_instance.form_data = payload
+        form_instance.updated_at = datetime.utcnow()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception(
+            'Portal form update failed: page=%s widget=%s record=%s sub_system=%s',
+            page_sc,
+            widget_id,
+            record_sc,
+            ss.secure_code,
+        )
+        return jsonify({'success': False, 'error': 'internal_error'}), 500
+
+    return jsonify({
+        'success': True,
+        'data': {'serial_number': form_instance.serial_number},
+    }), 200
+
+
 @public_portal_bp.route('/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/rows/<row_id>', methods=['PUT'])
 @public_route
 def portal_widget_update_row(path_id, page_sc, widget_id, row_id):
