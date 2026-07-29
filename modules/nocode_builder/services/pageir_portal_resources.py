@@ -75,6 +75,20 @@ def _resolve_portal_resource(code: str, ctx: dict) -> dict | None:
     def fetch_detail(record_sc, fields_arg):
         return _fetch_detail(view, sub_sc, fields, record_sc, fields_arg)
 
+    def fetch_related(filter_field, filter_value, fields_arg, page, page_size, sort_field, sort_dir):
+        return _fetch_related(
+            view,
+            sub_sc,
+            fields,
+            filter_field,
+            filter_value,
+            fields_arg,
+            page,
+            page_size,
+            sort_field,
+            sort_dir,
+        )
+
     def create_row(payload):
         return _create_row(view, sub_sc, payload)
 
@@ -96,6 +110,7 @@ def _resolve_portal_resource(code: str, ctx: dict) -> dict | None:
         "views": ["list", "detail"],
         "fetch_list": fetch_list,
         "fetch_detail": fetch_detail,
+        "fetch_related": fetch_related,
         "create_row": create_row,
         "update_row": update_row,
         "delete_row": delete_row,
@@ -122,6 +137,53 @@ def _fetch_list(view, sub_sc, whitelist, fields, page, page_size, sort_field, so
             "Portal list query rejected because fixed_filters contains unsupported variables: view=%s sub_system=%s",
             getattr(view, "secure_code", None),
             sub_sc,
+        )
+        raise PageIrRenderError("portal_fixed_filter_variable_not_supported")
+
+    requested = [field for field in fields if field in whitelist]
+    rows = [
+        _portal_row(view, row, requested)
+        for row in result.get("rows", [])
+    ]
+    return rows, result.get("total", 0)
+
+
+def _fetch_related(
+    view,
+    sub_sc,
+    whitelist,
+    filter_field,
+    filter_value,
+    fields,
+    page,
+    page_size,
+    sort_field,
+    sort_dir,
+):
+    if filter_field not in whitelist:
+        return [], 0
+
+    sort_column = sort_field if sort_field in whitelist else view.default_sort_column
+    try:
+        with DataSourceManager().get_session(sub_sc, view.data_source) as session:
+            result = SqliteCrudService.query_rows(
+                session=session,
+                view=view,
+                page=page,
+                per_page=page_size,
+                search="",
+                sort_column=sort_column,
+                sort_dir=sort_dir or view.default_sort_dir,
+                dynamic_filters={filter_field: filter_value},
+            )
+    except FileNotFoundError:
+        return [], 0
+    except PortalFilterNotSupported:
+        logger.warning(
+            "Portal related query rejected because fixed_filters contains unsupported variables: view=%s sub_system=%s filter=%s",
+            getattr(view, "secure_code", None),
+            sub_sc,
+            filter_field,
         )
         raise PageIrRenderError("portal_fixed_filter_variable_not_supported")
 

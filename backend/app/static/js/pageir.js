@@ -18,7 +18,8 @@
     csrf_failed: '頁面已過期，請重新整理後再試',
     row_not_found: '找不到資料',
     invalid_row: '找不到資料',
-    row_identifier_missing: '找不到資料'
+    row_identifier_missing: '找不到資料',
+    too_many_details: '明細筆數過多'
   };
 
   var tableCrudInitialized = false;
@@ -524,13 +525,180 @@
       });
   }
 
+  function masterDetailColumns(wrap) {
+    var id = wrap.dataset.pirMasterDetail || '';
+    var script = document.querySelector('[data-pir-md-columns="' + id + '"]');
+    if (!script) {
+      return [];
+    }
+    try {
+      var parsed = JSON.parse(script.textContent || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+      console.error('[PageIR] master-detail columns parse failed:', err);
+      return [];
+    }
+  }
+
+  function updateMasterDetailCount(wrap) {
+    var count = wrap.querySelectorAll('[data-pir-md-row]').length;
+    var target = wrap.querySelector('[data-pir-md-count-current]');
+    if (target) {
+      target.textContent = String(count);
+    }
+    var empty = wrap.querySelector('[data-pir-md-empty]');
+    if (empty) {
+      empty.hidden = count > 0;
+    }
+  }
+
+  function addMasterDetailRow(wrap) {
+    var columns = masterDetailColumns(wrap);
+    var tbody = wrap.querySelector('[data-pir-md-current-body]');
+    if (!tbody || !columns.length) {
+      return;
+    }
+    var tr = document.createElement('tr');
+    tr.dataset.pirMdRow = 'true';
+    columns.forEach(function (column) {
+      var td = document.createElement('td');
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.name = column.field || '';
+      input.dataset.pirMdDetailField = column.field || '';
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+    var actionCell = document.createElement('td');
+    actionCell.className = 'pir-actions-cell';
+    var remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'pir-btn pir-btn-secondary';
+    remove.dataset.pirMdRemove = 'true';
+    remove.textContent = t('移除');
+    actionCell.appendChild(remove);
+    tr.appendChild(actionCell);
+    tbody.appendChild(tr);
+    updateMasterDetailCount(wrap);
+  }
+
+  function collectMasterDetailPayload(wrap) {
+    var master = {};
+    wrap.querySelectorAll('[data-pir-md-master-field]').forEach(function (input) {
+      master[input.dataset.pirMdMasterField] = input.value;
+    });
+    var details = [];
+    wrap.querySelectorAll('[data-pir-md-row]').forEach(function (row) {
+      var item = {};
+      row.querySelectorAll('[data-pir-md-detail-field]').forEach(function (input) {
+        item[input.dataset.pirMdDetailField] = input.value;
+      });
+      details.push(item);
+    });
+    return {
+      master: {
+        sc: wrap.dataset.pirMasterSc || null,
+        data: master
+      },
+      details: details
+    };
+  }
+
+  function submitMasterDetail(wrap, button) {
+    var submitUrl = wrap.dataset.pirSubmitUrl || '';
+    if (!submitUrl) {
+      return;
+    }
+    button.disabled = true;
+    fetch(submitUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken()
+      },
+      body: JSON.stringify(collectMasterDetailPayload(wrap))
+    })
+      .then(function (res) {
+        return res.json().catch(function () {
+          return {};
+        }).then(function (payload) {
+          if (!res.ok || payload.success === false) {
+            throw new Error(payload.error || 'operation_failed');
+          }
+          return payload;
+        });
+      })
+      .then(function () {
+        alert(t('已送出'));
+        location.reload();
+      })
+      .catch(function (err) {
+        alert(t(crudErrorMessages[(err && err.message) || ''] || '送出失敗'));
+      })
+      .finally(function () {
+        button.disabled = false;
+      });
+  }
+
+  function initMasterDetails() {
+    document.querySelectorAll('[data-pir-master-detail]').forEach(function (wrap) {
+      updateMasterDetailCount(wrap);
+    });
+  }
+
   function initPageIr() {
     initForms();
     initInfiniteTables();
     initTableCrud();
+    initMasterDetails();
   }
 
   document.addEventListener('click', function (event) {
+    var tab = event.target.closest('[data-pir-md-tab]');
+    if (tab) {
+      var tabWrap = tab.closest('[data-pir-master-detail]');
+      if (tabWrap) {
+        tabWrap.querySelectorAll('[data-pir-md-tab]').forEach(function (item) {
+          item.classList.toggle('pir-md-tab-active', item === tab);
+        });
+        tabWrap.querySelectorAll('[data-pir-md-panel]').forEach(function (panel) {
+          panel.classList.toggle('pir-md-panel-active', panel.dataset.pirMdPanel === tab.dataset.pirMdTab);
+        });
+      }
+      return;
+    }
+
+    var add = event.target.closest('[data-pir-md-add]');
+    if (add) {
+      var addWrap = add.closest('[data-pir-master-detail]');
+      if (addWrap) {
+        addMasterDetailRow(addWrap);
+      }
+      return;
+    }
+
+    var remove = event.target.closest('[data-pir-md-remove]');
+    if (remove) {
+      var removeWrap = remove.closest('[data-pir-master-detail]');
+      var row = remove.closest('[data-pir-md-row]');
+      if (row) {
+        row.remove();
+      }
+      if (removeWrap) {
+        updateMasterDetailCount(removeWrap);
+      }
+      return;
+    }
+
+    var submit = event.target.closest('[data-pir-md-submit]');
+    if (submit) {
+      var submitWrap = submit.closest('[data-pir-master-detail]');
+      if (submitWrap) {
+        submitMasterDetail(submitWrap, submit);
+      }
+      return;
+    }
+
     var button = event.target.closest('[data-pir-url]');
     if (button) {
       run(button);

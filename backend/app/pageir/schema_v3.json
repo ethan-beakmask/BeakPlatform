@@ -159,6 +159,9 @@
           "$ref": "#/$defs/detail_widget"
         },
         {
+          "$ref": "#/$defs/master_detail_widget"
+        },
+        {
           "$ref": "#/$defs/form_widget"
         },
         {
@@ -314,6 +317,99 @@
         },
         "access_matrix": {
           "$ref": "#/$defs/widget_access_matrix"
+        }
+      }
+    },
+    "master_detail_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "master", "detail"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "master_detail"
+        },
+        "master": {
+          "$ref": "#/$defs/md_master"
+        },
+        "detail": {
+          "$ref": "#/$defs/md_detail"
+        },
+        "history": {
+          "$ref": "#/$defs/md_history"
+        },
+        "access_matrix": {
+          "$ref": "#/$defs/widget_access_matrix"
+        }
+      }
+    },
+    "md_master": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "fields"],
+      "properties": {
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/detail_field"
+          }
+        },
+        "layout_columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "editable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "md_detail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "foreign_key", "columns"],
+      "properties": {
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "foreign_key": {
+          "$ref": "#/$defs/field_key"
+        },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/table_column"
+          }
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        }
+      }
+    },
+    "md_history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "default_sort": {
+          "$ref": "#/$defs/default_sort"
         }
       }
     },

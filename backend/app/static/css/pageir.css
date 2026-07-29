@@ -228,6 +228,64 @@
     color: var(--color-text);
 }
 
+.pir-master-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.pir-md-input {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    padding: 8px 10px;
+    font: inherit;
+}
+
+.pir-md-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.pir-md-tab {
+    border: 1px solid var(--color-border);
+    border-bottom: 0;
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.pir-md-tab-active {
+    background: var(--color-bg-white);
+    color: var(--color-text);
+}
+
+.pir-md-panel {
+    display: none;
+}
+
+.pir-md-panel-active {
+    display: block;
+}
+
+.pir-md-current-table input {
+    width: 100%;
+    min-width: 120px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    padding: 7px 9px;
+    font: inherit;
+}
+
+.pir-md-submit-row {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .pir-empty,
 .pir-form-placeholder,
 .pir-error {

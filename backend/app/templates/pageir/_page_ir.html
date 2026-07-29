@@ -94,6 +94,107 @@
     <div class="pir-empty">{{ _('請選擇一筆資料') }}</div>
     {% endif %}
 </div>
+{% elif widget.type == 'master_detail' %}
+<div id="{{ widget.id }}" class="pir-master-detail"
+     data-pir-master-detail="{{ widget.id }}"
+     data-pir-mode="{{ widget.mode }}"
+     data-pir-master-sc="{{ widget.master.record.get('_sc') if widget.master.record else '' }}"
+     {% if widget.submit_url %}data-pir-submit-url="{{ widget.submit_url }}"{% endif %}>
+    <div class="pir-detail pir-md-master" style="grid-template-columns: repeat({{ widget.master.layout_columns }}, 1fr)">
+        {% for field in widget.master.fields %}
+        {% set value = widget.master.record.get(field.field) if widget.master.record else '' %}
+        <div class="pir-detail-item">
+            <label class="pir-detail-label" for="{{ widget.id }}__master__{{ field.field }}">{{ field.label }}</label>
+            {% if widget.mode in ['new', 'edit'] %}
+            <input id="{{ widget.id }}__master__{{ field.field }}" class="pir-md-input" type="text" name="{{ field.field }}" value="{{ value if value is not none else '' }}" data-pir-md-master-field="{{ field.field }}">
+            {% else %}
+            <div class="pir-detail-value">
+                {% if widget.master.egress_resource and widget.master.record %}
+                {{ egress_value(widget.master.egress_resource, 'detail', widget.master.record.get('_sc'), field.field, value|tz_format('%Y-%m-%d %H:%M') if value is datetime else value) }}
+                {% elif value is datetime %}
+                {{ value|tz_format('%Y-%m-%d %H:%M') }}
+                {% else %}
+                {{ value }}
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    <div class="pir-md-tabs" role="tablist">
+        <button type="button" class="pir-md-tab pir-md-tab-active" data-pir-md-tab="current">{{ _('本次服務項目') }} <span data-pir-md-count-current>0</span></button>
+        {% if widget.history.enabled %}
+        <button type="button" class="pir-md-tab" data-pir-md-tab="history">{{ _('歷史記錄') }} <span>{{ widget.history.total }}</span></button>
+        {% endif %}
+    </div>
+    <div class="pir-md-panel pir-md-panel-active" data-pir-md-panel="current">
+        {% if widget.detail.can_create %}
+        <div class="pir-table-toolbar">
+            <button type="button" class="pir-btn pir-btn-secondary" data-pir-md-add>{{ _('新增一筆') }}</button>
+        </div>
+        {% endif %}
+        <script type="application/json" data-pir-md-columns="{{ widget.id }}">{{ widget.detail.columns|tojson }}</script>
+        <table class="pir-table pir-md-current-table">
+            <thead>
+                <tr>
+                    {% for column in widget.detail.columns %}
+                    <th data-field="{{ column.field }}">{{ column.label }}</th>
+                    {% endfor %}
+                    {% if widget.detail.can_create %}<th>{{ _('操作') }}</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody data-pir-md-current-body>
+                <tr data-pir-md-empty><td colspan="{{ widget.detail.columns|length + (1 if widget.detail.can_create else 0) }}" class="pir-empty">{{ _('沒有資料') }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+    {% if widget.history.enabled %}
+    <div class="pir-md-panel" data-pir-md-panel="history">
+        <div class="pir-table-wrap">
+            <table class="pir-table">
+                <thead>
+                    <tr>
+                        {% for column in widget.detail.columns %}
+                        <th>{{ column.label }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in widget.history.rows %}
+                    <tr>
+                        {% for column in widget.detail.columns %}
+                        {% set value = row.get(column.field) %}
+                        <td>
+                            {% if widget.detail.egress_resource %}
+                            {{ egress_value(widget.detail.egress_resource, 'list', row.get('_sc'), column.field, value|tz_format('%Y-%m-%d %H:%M') if value is datetime else value) }}
+                            {% elif value is datetime %}
+                            {{ value|tz_format('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                            {{ value }}
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="{{ widget.detail.columns|length }}" class="pir-empty">{{ _('沒有資料') }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="pir-pagination">
+                <span>{{ _('總數') }}: {{ widget.history.total }}</span>
+                {% if widget.history.prev_url %}<a href="{{ widget.history.prev_url }}">{{ _('上一頁') }}</a>{% endif %}
+                <span>{{ widget.history.page }} / {{ widget.history.pages }}</span>
+                {% if widget.history.next_url %}<a href="{{ widget.history.next_url }}">{{ _('下一頁') }}</a>{% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if widget.submit_url %}
+    <div class="pir-md-submit-row">
+        <button type="button" class="pir-btn pir-btn-primary" data-pir-md-submit>{{ _('送出') }}</button>
+    </div>
+    {% endif %}
+</div>
 {% elif widget.type == 'actions' %}
 <div id="{{ widget.id }}" class="pir-actions">
     {% for button in widget.buttons %}

@@ -355,9 +355,12 @@ class SqliteCrudService:
         sql = f'INSERT INTO {_quote(table_name)} ({col_quoted}) VALUES ({placeholders})'
 
         try:
-            session.execute(text(sql), params)
+            result = session.execute(text(sql), params)
             session.flush()
-            return {'success': True, 'message': 'Row created'}
+            row_id = getattr(result, 'lastrowid', None)
+            if row_id is None:
+                row_id = session.execute(text('SELECT last_insert_rowid()')).scalar()
+            return {'success': True, 'message': 'Row created', 'row_id': str(row_id) if row_id is not None else None}
         except Exception as e:
             logger.error('sqlite create_row error: %s', e)
             return {'success': False, 'error': str(e)}

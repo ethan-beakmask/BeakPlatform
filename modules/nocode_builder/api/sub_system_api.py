@@ -737,6 +737,7 @@ def create_portal_data_table(secure_code):
         return jsonify({'success': False, 'error': 'invalid_columns'}), 400
 
     seen_columns = set()
+    references_to_check = []
     column_defs = [
         f'{_quote("id")} INTEGER PRIMARY KEY AUTOINCREMENT',
         f'{_quote("created_at")} DATETIME DEFAULT CURRENT_TIMESTAMP',
@@ -760,7 +761,26 @@ def create_portal_data_table(secure_code):
             return jsonify({'success': False, 'error': 'invalid_column_type'}), 400
 
         required_sql = ' NOT NULL' if column.get('required') is True else ''
-        column_defs.append(f'{_quote(column_name)} {column_type}{required_sql}')
+        reference_sql = ''
+        references = column.get('references')
+        if references is not None:
+            if not isinstance(references, dict):
+                return jsonify({'success': False, 'error': 'invalid_reference'}), 400
+            ref_table = str(references.get('table') or '').strip()
+            ref_table_lower = ref_table.lower()
+            if (
+                not _validate_identifier(ref_table)
+                or ref_table_lower.startswith('sqlite_')
+                or ref_table_lower.startswith('portal_')
+            ):
+                return jsonify({'success': False, 'error': 'invalid_reference_table'}), 400
+            ref_column = str(references.get('column') or 'id').strip()
+            if not _validate_identifier(ref_column):
+                return jsonify({'success': False, 'error': 'invalid_reference_column'}), 400
+            reference_sql = f' REFERENCES {_quote(ref_table)}({_quote(ref_column)})'
+            references_to_check.append(ref_table)
+
+        column_defs.append(f'{_quote(column_name)} {column_type}{required_sql}{reference_sql}')
 
     try:
         with get_sqlite_session(ss.secure_code, data_source) as session:
@@ -770,6 +790,14 @@ def create_portal_data_table(secure_code):
             ).fetchone()
             if exists:
                 return jsonify({'success': False, 'error': 'table_exists'}), 400
+
+            for ref_table in references_to_check:
+                ref_exists = session.execute(
+                    text("SELECT 1 FROM sqlite_master WHERE type='table' AND name = :tbl"),
+                    {'tbl': ref_table}
+                ).fetchone()
+                if not ref_exists:
+                    return jsonify({'success': False, 'error': 'reference_table_not_found'}), 400
 
             create_sql = f'CREATE TABLE {_quote(table_name)} ({", ".join(column_defs)})'
             session.execute(text(create_sql))

@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-29 22:35+0800\n"
+"POT-Creation-Date: 2026-07-29 23:00+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -2468,7 +2468,7 @@ msgstr "Add"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:48
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:54
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
-#: app/templates/pageir/_page_ir.html:32
+#: app/templates/pageir/_page_ir.html:32 app/templates/pageir/_page_ir.html:143
 #: app/templates/pages/access_center/_tab_roles.html:59
 #: app/templates/pages/admin/_settings_recipients_section.html:32
 #: app/templates/pages/admin/_settings_smtp_section.html:33
@@ -2576,11 +2576,12 @@ msgstr "Edit"
 msgid "刪除"
 msgstr "Delete"
 
-#: app/templates/pageir/_page_ir.html:64
+#: app/templates/pageir/_page_ir.html:64 app/templates/pageir/_page_ir.html:147
+#: app/templates/pageir/_page_ir.html:179
 msgid "沒有資料"
 msgstr "No data"
 
-#: app/templates/pageir/_page_ir.html:69
+#: app/templates/pageir/_page_ir.html:69 app/templates/pageir/_page_ir.html:184
 #: app/templates/pages/access_center/_tab_health.html:77
 msgid "總數"
 msgstr "Total"
@@ -2588,7 +2589,7 @@ msgstr "Total"
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:85
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:119
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:312
-#: app/templates/pageir/_page_ir.html:70
+#: app/templates/pageir/_page_ir.html:70 app/templates/pageir/_page_ir.html:185
 #: app/templates/pages/access_center/_tab_accounts.html:121
 #: app/templates/pages/users/list.html:89
 msgid "上一頁"
@@ -2598,7 +2599,7 @@ msgstr "Previous"
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
-#: app/templates/pageir/_page_ir.html:72
+#: app/templates/pageir/_page_ir.html:72 app/templates/pageir/_page_ir.html:187
 #: app/templates/pages/access_center/_tab_accounts.html:124
 #: app/templates/pages/users/list.html:93
 msgid "下一頁"
@@ -2607,6 +2608,22 @@ msgstr "Next"
 #: app/templates/pageir/_page_ir.html:94
 msgid "請選擇一筆資料"
 msgstr "Select a record"
+
+#: app/templates/pageir/_page_ir.html:125
+msgid "本次服務項目"
+msgstr "Current service items"
+
+#: app/templates/pageir/_page_ir.html:127
+msgid "歷史記錄"
+msgstr "History"
+
+#: app/templates/pageir/_page_ir.html:133
+msgid "新增一筆"
+msgstr "Add row"
+
+#: app/templates/pageir/_page_ir.html:194
+msgid "送出"
+msgstr "Submit"
 
 #: app/templates/pageir/page_error.html:2
 #: app/templates/pageir/page_error.html:12
@@ -14650,7 +14667,7 @@ msgstr "Portal account database"
 msgid "Portal 公開資料庫"
 msgstr "Portal public database"
 
-#: ../modules/nocode_builder/api/sub_system_api.py:815
+#: ../modules/nocode_builder/api/sub_system_api.py:843
 msgid "(未知社群)"
 msgstr "(Unknown group)"
 

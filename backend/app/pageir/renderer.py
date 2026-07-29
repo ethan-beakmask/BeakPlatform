@@ -79,6 +79,7 @@ def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict]) -> dict | None
         "text": _prepare_text,
         "table": _prepare_table,
         "detail": _prepare_detail,
+        "master_detail": _prepare_master_detail,
         "actions": _prepare_actions,
         "form": _prepare_form,
     }
@@ -347,6 +348,170 @@ def _prepare_detail(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     }
 
 
+def _prepare_master_detail(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
+    del widgets_by_id
+    master = widget["master"]
+    detail = widget["detail"]
+    master_binding = master["binding"]
+    detail_binding = detail["binding"]
+    master_resource = _checked_resource(master_binding)
+    detail_resource = _checked_resource(detail_binding)
+
+    master_allowed = set(master_resource.get("fields", []))
+    if any(field_def["field"] not in master_allowed for field_def in master["fields"]):
+        raise PageIrRenderError(
+            f"Master-detail master fields exceed whitelist: {master_binding['resource']}"
+        )
+
+    detail_columns = _visible_table_columns(
+        {"binding": detail_binding, "columns": detail["columns"]},
+        detail_resource,
+    )
+    foreign_key = detail["foreign_key"]
+    if foreign_key not in set(detail_resource.get("writable_fields") or []):
+        raise PageIrRenderError(f"Master-detail foreign_key is not writable: {foreign_key}")
+
+    ctx = get_render_context()
+    master_sc = request.args.get(f"{widget['id']}__sc", "").strip()
+    master_record = (
+        master_resource["fetch_detail"](master_sc, master_binding["fields"])
+        if master_sc
+        else None
+    )
+    if master_record is not None and "_sc" not in master_record:
+        master_record = {**master_record, "_sc": master_sc}
+
+    can_update_master = bool(master.get("editable") is True and _widget_action_allowed(widget, "update"))
+    if not master_sc or master_record is None:
+        mode = "new"
+        master_record = None
+    elif can_update_master:
+        mode = "edit"
+    else:
+        mode = "readonly"
+    master_record = apply_record_masks(master_record, master["fields"])
+
+    detail_crud = detail_resource.get("crud") or {}
+    can_create_detail = bool(_widget_action_allowed(widget, "create") and detail_crud.get("create"))
+
+    history = _prepare_master_detail_history(
+        widget,
+        detail_resource,
+        detail_binding,
+        master_sc,
+        master_record,
+    )
+
+    return {
+        "type": "master_detail",
+        "id": widget["id"],
+        "mode": mode,
+        "master": {
+            "fields": _master_detail_fields(master, master_resource),
+            "record": master_record,
+            "layout_columns": master.get("layout_columns", 1),
+            "egress_resource": master_resource.get("egress_resource"),
+        },
+        "detail": {
+            "columns": detail_columns,
+            "foreign_key": foreign_key,
+            "can_create": can_create_detail,
+            "egress_resource": detail_resource.get("egress_resource"),
+        },
+        "history": history,
+        "submit_url": _portal_master_detail_submit_url(widget, ctx) if can_create_detail else None,
+    }
+
+
+def _master_detail_fields(master: dict, resource: dict) -> list[dict]:
+    fields = []
+    egress_resource = resource.get("egress_resource")
+    for field_def in master["fields"]:
+        field = field_def["field"]
+        if egress_resource and _egress_visibility(egress_resource, "detail", field) == "hidden":
+            continue
+        fields.append({"field": field, "label": _i18n(field_def["label_i18n"])})
+    return fields
+
+
+def _widget_action_allowed(widget: dict, action: str) -> bool:
+    ctx = get_render_context()
+    world = ctx.get("world", "platform")
+    if world != "portal":
+        return False
+    evaluator = get_access_evaluator(world)
+    if evaluator is None:
+        return False
+    try:
+        return bool(evaluator(widget.get("access_matrix") or {}, action, ctx))
+    except Exception:
+        logger.exception(
+            "Page IR widget action evaluator failed: widget=%s action=%s world=%s",
+            widget.get("id"),
+            action,
+            world,
+        )
+        return False
+
+
+def _prepare_master_detail_history(
+    widget: dict,
+    detail_resource: dict,
+    detail_binding: dict,
+    master_sc: str,
+    master_record: dict | None,
+) -> dict:
+    detail = widget["detail"]
+    history_cfg = widget.get("history") or {}
+    page_size = history_cfg.get("page_size") or detail.get("page_size") or 20
+    page = _positive_int(request.args.get(f"{widget['id']}__hpage"), 1)
+    fetch_related = detail_resource.get("fetch_related")
+    enabled = (
+        history_cfg.get("enabled") is True
+        and bool(master_sc)
+        and master_record is not None
+        and callable(fetch_related)
+    )
+    empty = {
+        "enabled": False,
+        "rows": [],
+        "total": 0,
+        "page": page,
+        "pages": 1,
+        "prev_url": None,
+        "next_url": None,
+    }
+    if not enabled:
+        return empty
+
+    default_sort = history_cfg.get("default_sort") or {}
+    sort_field = default_sort.get("field")
+    sort_dir = default_sort.get("dir")
+    if sort_field in masked_fields(detail.get("columns", [])):
+        sort_field = None
+        sort_dir = None
+    rows, total = fetch_related(
+        detail["foreign_key"],
+        master_sc,
+        detail_binding["fields"],
+        page,
+        page_size,
+        sort_field,
+        sort_dir,
+    )
+    rows = apply_row_masks(rows, detail["columns"])
+    pages = max(1, ceil(total / page_size)) if page_size else 1
+    return {
+        "enabled": True,
+        "rows": rows,
+        "total": total,
+        "page": page,
+        "pages": pages,
+        "prev_url": _history_page_url(widget["id"], page - 1) if page > 1 else None,
+        "next_url": _history_page_url(widget["id"], page + 1) if page * page_size < total else None,
+    }
+
+
 def _prepare_actions(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     del widgets_by_id
     return {
@@ -475,6 +640,28 @@ def _portal_form_submit_url(widget: dict, ref: str, ctx: dict) -> str | None:
         return None
 
 
+def _portal_master_detail_submit_url(widget: dict, ctx: dict) -> str | None:
+    if ctx.get("world") != "portal":
+        return None
+    if not _widget_action_allowed(widget, "create"):
+        return None
+    if not ctx.get("path_id") or not ctx.get("page_sc"):
+        return None
+    try:
+        return url_for(
+            "nocode_public_portal.portal_widget_master_detail_submit",
+            path_id=ctx["path_id"],
+            page_sc=ctx["page_sc"],
+            widget_id=widget["id"],
+        )
+    except Exception:
+        logger.exception(
+            "Page IR portal master-detail submit endpoint unavailable: widget=%s",
+            widget.get("id"),
+        )
+        return None
+
+
 def _portal_form_update_allowed(widget: dict, ctx: dict) -> bool:
     evaluator = get_access_evaluator("portal")
     if evaluator is None:
@@ -549,6 +736,12 @@ def _self_url(args: dict) -> str:
 def _page_url(widget_id: str, page: int) -> str:
     args = request.args.to_dict(flat=False)
     args[f"{widget_id}__page"] = [str(page)]
+    return _self_url(args)
+
+
+def _history_page_url(widget_id: str, page: int) -> str:
+    args = request.args.to_dict(flat=False)
+    args[f"{widget_id}__hpage"] = [str(page)]
     return _self_url(args)
 
 

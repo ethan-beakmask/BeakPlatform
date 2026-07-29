@@ -828,6 +828,205 @@ def portal_widget_submit(path_id, page_sc, widget_id):
     }), 201
 
 
+@public_portal_bp.route(
+    '/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/master-detail',
+    methods=['POST'],
+    endpoint='portal_widget_master_detail_submit',
+)
+@limiter.limit('10 per minute; 100 per hour')
+@public_route
+def portal_widget_master_detail_submit(path_id, page_sc, widget_id):
+    """Public portal Page IR master-detail submit API."""
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.pageir.registry import get_resource
+    from ..services import portal_access_service
+    from ..services.db_connector import is_sqlite_source
+    from ..services.master_detail_service import (
+        MasterDetailWriteError,
+        save_master_detail,
+    )
+
+    common = _resolve_portal_widget_common(path_id, page_sc, widget_id, 'create')
+    ss = common['ss']
+    portal_user = common['portal_user']
+    widget = common['widget']
+    ctx = common['ctx']
+
+    if widget.get('type') != 'master_detail':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'widget_not_found')
+        abort(404)
+
+    if not portal_access_service.check_widget_write_access(widget.get('access_matrix') or {}, 'create', ctx):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'widget_write_denied')
+        abort(404)
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+    master_body = body.get('master') or {}
+    details = body.get('details')
+    if not isinstance(master_body, dict) or not isinstance(master_body.get('data') or {}, dict):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+    if not isinstance(details, list):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+    if len(details) > 200:
+        return jsonify({'success': False, 'error': 'too_many_details'}), 400
+    if any(not isinstance(item, dict) for item in details):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+
+    try:
+        set_render_context(
+            'portal',
+            sub_system_sc=ss.secure_code,
+            portal_user=portal_user,
+            path_id=path_id,
+            page_sc=page_sc,
+        )
+        master_binding = (widget.get('master') or {}).get('binding') or {}
+        detail_binding = (widget.get('detail') or {}).get('binding') or {}
+        master_resource = get_resource(master_binding.get('resource'))
+        detail_resource = get_resource(detail_binding.get('resource'))
+    finally:
+        clear_render_context()
+
+    if master_resource is None or detail_resource is None:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'resource_not_found')
+        abort(404)
+
+    master_binding_fields = master_binding.get('fields') or []
+    detail_binding_fields = detail_binding.get('fields') or []
+    if not _binding_allowed(master_binding, master_resource) or not _binding_allowed(detail_binding, detail_resource):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'binding_denied')
+        abort(404)
+
+    detail_crud = detail_resource.get('crud') or {}
+    if detail_crud.get('create') is not True:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'detail_crud_disabled')
+        abort(404)
+
+    master_sc = master_body.get('sc')
+    if master_sc in ('', None):
+        master_sc = None
+    else:
+        master_sc = str(master_sc)
+        if not _valid_portal_row_id(master_sc):
+            _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'bad_master_sc')
+            abort(404)
+
+    master_crud = master_resource.get('crud') or {}
+    if master_sc is None and master_crud.get('create') is not True:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'master_create_disabled')
+        abort(404)
+    if master_sc is not None:
+        try:
+            set_render_context(
+                'portal',
+                sub_system_sc=ss.secure_code,
+                portal_user=portal_user,
+                path_id=path_id,
+                page_sc=page_sc,
+            )
+            existing_master = master_resource['fetch_detail'](master_sc, master_binding_fields)
+        finally:
+            clear_render_context()
+        if existing_master is None:
+            _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'master_not_found')
+            abort(404)
+
+    foreign_key = (widget.get('detail') or {}).get('foreign_key')
+    if foreign_key not in set(detail_resource.get('writable_fields') or []):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'foreign_key_not_writable')
+        abort(404)
+
+    master_masked = masked_fields((widget.get('master') or {}).get('fields') or [])
+    detail_masked = masked_fields((widget.get('detail') or {}).get('columns') or [])
+    update_master_allowed = (
+        master_sc is not None
+        and (widget.get('master') or {}).get('editable') is True
+        and master_crud.get('update') is True
+        and portal_access_service.check_widget_write_access(widget.get('access_matrix') or {}, 'update', ctx)
+    )
+    master_payload = _writable_payload(
+        master_body.get('data') or {},
+        master_binding_fields,
+        master_resource.get('fields', []),
+        master_resource.get('writable_fields', []),
+        master_masked,
+    )
+    if master_sc is not None and not update_master_allowed:
+        master_payload = {}
+    detail_payloads = [
+        _writable_payload(
+            {key: value for key, value in detail_data.items() if key != foreign_key},
+            detail_binding_fields,
+            detail_resource.get('fields', []),
+            detail_resource.get('writable_fields', []),
+            detail_masked,
+        )
+        for detail_data in details
+    ]
+
+    master_view = _portal_crud_view_from_binding(master_binding, ss)
+    detail_view = _portal_crud_view_from_binding(detail_binding, ss)
+    if master_view is None or detail_view is None:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'view_denied')
+        abort(404)
+    if not is_sqlite_source(master_view.data_source) or master_view.data_source != 'portal_data':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'master_source_denied')
+        abort(404)
+    if not is_sqlite_source(detail_view.data_source) or detail_view.data_source != 'portal_data':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'detail_source_denied')
+        abort(404)
+
+    try:
+        data = save_master_detail(
+            sub_system_sc=ss.secure_code,
+            master_view=master_view,
+            detail_view=detail_view,
+            master_sc=master_sc,
+            master_payload=master_payload,
+            detail_payloads=detail_payloads,
+            foreign_key=foreign_key,
+            update_master=update_master_allowed,
+        )
+    except MasterDetailWriteError as exc:
+        return jsonify({'success': False, 'error': _portal_write_error(exc.error)}), 400
+    except FileNotFoundError:
+        return jsonify({'success': False, 'error': 'portal_db_missing'}), 400
+    except Exception:
+        logger.exception(
+            'Portal master-detail submit failed: page=%s widget=%s sub_system=%s',
+            page_sc,
+            widget_id,
+            ss.secure_code,
+        )
+        return jsonify({'success': False, 'error': 'write_failed'}), 500
+
+    return jsonify({'success': True, 'data': data}), 201
+
+
+def _binding_allowed(binding: dict, resource: dict) -> bool:
+    if binding.get('view') not in set(resource.get('views', [])):
+        return False
+    resource_fields = set(resource.get('fields') or [])
+    return not any(field not in resource_fields for field in binding.get('fields') or [])
+
+
+def _portal_crud_view_from_binding(binding: dict, ss):
+    from ..models.crud_view import DcCrudView
+
+    resource_ref = binding.get('resource') or ''
+    parts = resource_ref.split(':', 1)
+    if len(parts) != 2 or parts[0] != 'portal':
+        return None
+    return DcCrudView.query.filter_by(
+        secure_code=parts[1],
+        org_secure_code=ss.org_secure_code,
+        is_deleted=False,
+        is_active=True,
+    ).first()
+
+
 @public_portal_bp.route('/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/submissions/<record_sc>', methods=['PUT'], endpoint='portal_widget_update_submission')
 @limiter.limit('10 per minute; 100 per hour')
 @public_route
