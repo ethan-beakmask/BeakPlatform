@@ -795,6 +795,159 @@ showToast(message, type = 'success') {
    它是既有 form 元件的行為變更，不是新功能
 5. 設計器 UI（actions widget 的按鈕清單編輯 + 准入）
 
+### 4.3.2 冷讀補洞（2026-07-30，codex read-only 審核列出 15 個猜測點）
+
+以下**全部已定案**，動工時照做即可；只有標 ★ 的三條是「建議」，
+用戶可推翻，但沒有異議就照建議做，不要停下來問。
+
+#### 命名與端點（原本沒定，現在定了）
+
+| 項目 | 定案 |
+|---|---|
+| 撤單 action ref | `portal.form.cancel`（與 `portal.form.submit` 同族） |
+| 撤單端點 | `POST /public/portal/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/submissions/<record_sc>/cancel` |
+| endpoint 名稱 | `portal_widget_cancel_submission` |
+| request body | 不需要（識別碼全在 URL），有帶也忽略 |
+| 成功回應 | `{"success": true, "data": {"execution_code": "..."}}`，200 |
+| 失敗回應 | `{"success": false, "error": "<safe_code>"}`；權限／存在性一律 404 |
+
+**回應形狀與既有 portal API 完全一致**（`success` + `error`），
+前端 toast 依 `success` 決定顯示成功或失敗訊息。
+
+#### 撤單作用在哪一筆
+
+**`fw_form_instances.secure_code`** —— 也就是 `formflow:submissions`
+每一列**既有的 `_sc`**。不必為此新增欄位，`can_cancel` 是唯一要加的。
+
+後端拿到 `record_sc` 後走 `_owned_submission(record_sc, ctx)`
+（`pageir_formflow_resources.py`）取得 `(wi, fi)`，三重過濾已在裡面。
+
+#### row action 怎麼把「哪一列」傳給端點 —— 既有契約，不要重新發明
+
+`renderer._action_url()`（第 769 行）已經定好了：
+
+```python
+def _action_url(url: str, record_sc: str) -> str:
+    separator = "&" if "?" in url else "?"
+    return f"{url}{separator}{urlencode({'sc': record_sc})}"
+```
+
+模板端是 `pir_action_url(button.url, row.get('_sc'))`，
+產生 `<action_url>?sc=<record_sc>`。**參數名就是 `sc`**。
+
+→ 撤單端點若走 row action，`record_sc` 可以從 URL path 拿，
+也可以沿用這個 `?sc=`。**建議走 path**（與 `submissions/<record_sc>` 的
+既有形狀一致），並讓 actions widget 的 button 產生的 url 直接帶 path。
+
+#### ★ actions widget 的 access_matrix 語意
+
+**建議：整個 actions widget 共用一組 `access_matrix`**，
+與 table / detail 一致，button 層不再細分。理由是元件准入 UI 已經是
+widget 級的 macro，button 級會讓設計器面板複雜度爆掉，
+而用戶明確要「簡化版的表單中心」。
+
+撤單另外由 **後端強制的 `can_cancel` 二次判定**（`wi.status == 'RUNNING'`
+＋三重過濾）把關，所以 widget 級權限夠用。
+
+#### ★ 未註冊的 action_ref 在 portal 的行為
+
+**建議：靜默跳過該按鈕並記 `logger.warning`，不 raise。**
+與 `_portal_form_submit_url()` 的 fail-closed 一致——設定不完整就是不給那個能力，
+而不是整頁掛掉。**平台世界維持現行的 raise 不變。**
+
+不這樣做的話，N2A 驗收頁（`aq6WeXXsKU4HoA_rVCtpJK`）那兩個
+`nocode_builder.ref` 會讓整頁 422。
+
+#### ★ N2A 驗收頁的兩個假 actions widget
+
+**建議：直接刪掉。** 它們是 N2A 階段的殘留，`action_ref` 從未註冊過，
+留著只會在每次改 actions 時變成假警報。刪之前先確認該頁沒有別的驗收用途。
+
+#### 撤單後「回到追蹤中清單」怎麼實作
+
+portal 世界的「追蹤中-我發起的表單」就是**綁 `formflow:submissions` 的
+table widget**，實務上與撤單按鈕同頁。所以：
+
+**撤單成功後清掉網址上所有 `*__sc=` 參數並 reload**，
+畫面自然就回到清單狀態（detail / form 區塊會因為沒有 `__sc` 而回到空狀態）。
+不需要另外設定跳轉目標頁。
+
+#### toast 放哪
+
+`pageir.js` 動態建立一個 `.pir-toast` 容器 append 到 body，
+CSS 寫進 `backend/app/static/css/pageir.css`（該檔已存在，主細表的 Tabs 就在裡面）。
+**不要**在模板寫死容器——Page IR 的頁面組成是動態的。
+
+3 秒自動關閉，行為照抄
+`modules/form_workflow/static/modules/form_workflow/js/fc-utils.js:108`。
+
+#### 設計器 UI 的資料模型
+
+**既有的 actions widget 面板已經有按鈕清單編輯**
+（`ir-designer.js` 的 `addActionButton()`，第 835 行），照它擴充即可：
+
+```javascript
+widget.buttons.push({
+    id: this.nextId('btn'),
+    label_i18n: { 'zh-TW': tr('執行'), en: 'Run' },
+    style: 'secondary',
+    permission: 'nocode_builder.view',        // 改選填後這行要拿掉
+    action_ref: this.meta.actions[0] || 'nocode_builder.ref',   // 要改成分組下拉
+});
+```
+
+要改的兩處：
+- 預設值不要再塞 `permission`（改選填後塞了反而是垃圾欄位）
+- `action_ref` 改成 `<optgroup>` 分組 select，來源
+  `meta.portal_actions`（子系統 Portal）+ `meta.actions`（平台），
+  **照 form widget 送出動作那個下拉抄**（上一輪做的，同檔案）
+
+准入用既有 macro：`{{ access_matrix.render('actionsAccessActions', ...) }}`。
+
+#### 平台世界維持現狀
+
+`_ACTIONS` 仍然零註冊，所以設計器的「平台」分組會是空的 ——
+**這是預期行為，不是 bug**，不要為了填滿它去註冊假 action。
+
+#### 撤單的驗收頁
+
+**用既有的 `FORMTEST00000000000001`**（它已經有 `subs-1` table 綁
+`formflow:submissions`），加一個 actions widget 並把 `subs-1.row_actions_ref`
+指過去即可。不必新建頁面。
+
+該頁 `p4tester`（`u:1`）目前有數筆送件，但**多數已 COMPLETED**——
+撤單需要 `status == 'RUNNING'` 的資料，驗收前先送一筆新的：
+
+```bash
+BASE=http://192.168.0.16:7000/beakplatform
+curl -s -c p4.txt -X POST "$BASE/public/portal/ubwdM7Tp/login" \
+  -d 'username=p4tester&password=p4test123'
+T=$(curl -s -b p4.txt -c p4.txt "$BASE/public/portal/ubwdM7Tp/p/FORMTEST00000000000001" \
+  | grep -o 'csrf-token" content="[^"]*' | cut -d'"' -f3)
+curl -s -b p4.txt -X POST \
+  "$BASE/public/portal/ubwdM7Tp/api/pages/FORMTEST00000000000001/widgets/form-1/submit" \
+  -H "X-CSRFToken: $T" -H 'Content-Type: application/json' \
+  -d '{"textField":"撤單驗收用"}'
+```
+
+**注意**：這個 mapping 是「子系統開發申請」，流程會跑到底並**真的建出子系統**
+（`dc_sub_systems.provision_serial_number` 對得上送件序號），
+而且會很快變成 COMPLETED。要測 RUNNING 狀態就得手動插一筆 WAITING 佇列：
+
+```sql
+UPDATE fw_workflow_instances SET status='RUNNING' WHERE execution_code='<你的>';
+INSERT INTO fw_node_execution_queue (secure_code, org_secure_code,
+  workflow_instance_secure_code, form_instance_secure_code, node_id, node_type,
+  node_name, node_config, status, priority, scheduled_at, is_deleted,
+  created_at, updated_at)
+VALUES ('CANCELTEST000000000001', '_9c8TewkRkCBEf3XsUdqeF', '<wi_sc>', '<fi_sc>',
+  'node-Approve-1', 'Approve', '部門主管審核', '{}'::json, 'WAITING', 10,
+  now(), false, now(), now());
+```
+
+測完記得清掉 queue 記錄與自動產生的子系統
+（`UPDATE dc_sub_systems SET is_deleted=true WHERE provision_serial_number='...'`）。
+
 ### 4.4 可以直接沿用的模式（不要重新發明）
 
 前面三輪建立的東西，actions 階段照抄即可：

@@ -372,6 +372,32 @@ return render_template('...', page_caps=build_caps(['module.permission_code']))
 （`layouts/base.html` 已載入 capability.js，不必重複引入。）
 
 
+### FRONT-10: 後端組「指向本頁」的網址必須帶 `request.script_root`
+
+app 掛在 nginx 的 `/beakplatform` 前綴下，而 **Flask 的 `request.path` 不含該前綴**。
+只用 `request.path` 組出的 `/public/portal/...` 在瀏覽器上會被當成缺前綴的
+絕對路徑而 404。
+
+```python
+# 錯：點下去 404
+f"{request.path}?{urlencode(args)}"
+# 對
+f"{request.script_root}{request.path}?{urlencode(args)}"
+```
+
+Page IR 的排序連結**從第一版起就是壞的**，直到 2026-07-29 才發現
+（`renderer._self_url()` 已修）。原因見下條。
+
+### VERIFY-01: 使用者要點擊的東西，驗收必須用瀏覽器
+
+curl 對「連結、按鈕、select 初次渲染值」有**結構性盲區**：
+
+- 用 curl 測連結時都是自己帶完整路徑，永遠測不出網址少了前綴（FRONT-10 的成因）
+- select 顯示錯值（FRONT-08）在 HTML 原始碼裡看不出來，要渲染後才知道
+- `BkCaps.can()` 漏注入（FRONT-09）的症狀是「按鈕點了沒反應、console 不報錯」
+
+→ 只要變更涉及使用者要點的東西，curl 驗完**還要**用 chrome-devtools 實際點一次。
+
 ### CACHE-01: 靜態資源 Cache-Busting
 
 **Flask 全站機制，確保 JS/CSS 變更後瀏覽器立即載入新版，無需 F5。**
@@ -538,7 +564,7 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 ```bash
 cd /opt/BeakPlatform-dev/backend
 ../venv/bin/python -m pytest tests/test_pageir_*.py tests/test_portal_*.py \
-  tests/test_sitemap_access_matrix.py -q     # 基準 125 passed
+  tests/test_sitemap_access_matrix.py -q     # 基準 198 passed（2026-07-30）
 ```
 
 ### form_workflow 發行（publish）陷阱
@@ -549,6 +575,26 @@ cd /opt/BeakPlatform-dev/backend
 - intake / 表單中心都只讀 `fw_published_form_workflows` 最新 Published 快照，改模板不重發行等於沒改
 - 流程變數：流程編號（OD-YYYYMMDD-NNNN）是 `${wi.exec_code}`；`${wi.code}` 是 workflow instance 的 secure_code，
   沒有 `${wi.execution_code}` 這個變數（替換結果為空字串）
+
+### form_workflow 流程變數的儲存位置（寫錯地方＝流程引用不到）
+
+**流程變數的權威儲存是 `fw_workflow_variables` 表，不是
+`fw_workflow_instances.variables` JSONB。**
+
+- `${v.xxx}` 走 `VariableService`，**只讀那張表**
+- `${wi.xxx}` 只支援五個欄位（`base.py` 的
+  `_WI_FIELDS = {'wi.code','wi.exec_code','wi.name','wi.status','wi.depth'}`）
+- **兩條路都到不了 `variables` JSONB** —— 寫進 JSONB 只有自己查得到，
+  流程設計者引用不到。要讓流程引用得到就用
+  `VariableService.set_flow_var(instance_code, name, value, org_code)`
+- 流程設計者設變數用既有的 **`OpSet`（設定變數）節點**
+
+**`VariableService._cache` 是類別層級、無 TTL 的進程內快取。**
+開發環境是 `flask run` 單進程 + 同進程 daemon thread 跑流程引擎，看不出問題；
+多 worker 部署下，流程改了變數之後其他 worker 仍讀到舊值。
+**用過期值做顯示只是難看，用過期值做授權判定就是漏洞** ——
+授權判定一律繞過快取直接查 `FwWorkflowVariable`
+（範例：`pageir_formflow_resources.is_submission_editable()`）。
 
 ### 服務啟動
 - **正式管道是 systemd 服務**：`sudo systemctl restart beakplatform-dev.service`（重啟後 `systemctl is-active` 確認）
