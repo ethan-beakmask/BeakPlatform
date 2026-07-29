@@ -659,17 +659,141 @@ portal 世界沒有平台身分，這條路走不通。
 `permission` 變成只在平台世界有意義的選填欄位。
 **但 `permission` 目前是 `required`，改成選填要同時確認既有頁面沒有踩到。**
 
-### 4.3 動工前必須先問用戶的事
+### 4.3 用戶已裁決（2026-07-29 晚，三題全部有答案，可直接動工）
 
-1. **第一個真 action 的完整場景**（資源、觸發點、預期行為、失敗時的 UI）。
-   用戶已明確點名一個：**撤單**——
-   > 「至於撤單（**資料會保存直到 DBA 刪除**）應該用 action 做比較適合。」
+#### 產品定位（先讀這段，它決定所有取捨）
 
-   所以撤單是「標記為已撤銷」而非實體刪除，要問清楚標記寫在哪
-   （`fw_form_instances.status`？`fw_workflow_instances.status`？
-   還是像 `nocode_editable` 那樣用流程變數？）、以及撤單後流程要不要終止
-2. **action 執行後的頁面行為**：留在原頁重整、跳轉、還是只跳訊息
-3. **`action_button.permission` 改成選填**是否可接受（見 §4.2.2）
+> 「並無意建立第二套複雜的表單介面，就只是讓外部用戶在 web 上填寫資料。
+> 比如客服申請、訂票訂位的介面，當然能查自己的歷史並取消（就是撤單）。」
+
+→ **portal 這一側是「簡化版的表單中心」**。功能對齊 `/forms/center`，
+但介面要簡單。不要把表單中心的複雜度整套搬過來。
+
+#### 裁決一：撤單 = portal 版的「強制結束」
+
+> 「應該會有一個未結束的表單清單（**限填單人自己送出的才能撤單**），
+> 對應的是 `/beakplatform/forms/center` 的 **[強制結束]**。
+> 那個 [追蹤中-我發起的表單] 加子系統代碼等 nocode 的那串，
+> 就能組合當前 nocode 的用戶的 SQLite 內的帳號。」
+
+**照抄的對象已查證**：`modules/form_workflow/api/fc_admin.py:24`
+的 `force_end_workflow()`。它做三件事：
+
+```python
+WorkflowEngine.cancel_pending_nodes(wi.secure_code)       # 取消未完成節點
+WorkflowEngine.complete_workflow(wi.secure_code, status='CANCELLED',
+                                 end_message=f'由 {operator} 強制結束')
+FwApprovalRecord(node_id='FORCE_END', action='FORCE_END', ...)  # 留軌跡
+```
+
+- **資料完全保留**（只改 status + 留一筆軌跡），符合用戶說的
+  「資料會保存直到 DBA 刪除」
+- 前置條件：`workflow_instance.status == 'RUNNING'`
+
+**portal 版唯一要換掉的是權限判定。** 原版是：
+
+```python
+is_applicant = form_instance.applicant_secure_code == current_user.secure_code
+```
+
+portal 世界的 `applicant_secure_code` **一律是企業公用帳號**
+（`nocode-svc-<org>`），拿它判定等於「所有 portal 用戶都是發起人」——
+這是**致命的**，一定要換成：
+
+```python
+wi.nocode_sub_system_sc == <當前子系統>
+and wi.nocode_user_ref == nocode_user_ref(sub_system_sc, portal_user)
+```
+
+也就是**沿用 `_owned_submission()` 那條三重過濾**
+（`pageir_formflow_resources.py`），不要另寫一份。
+用戶那句「加子系統代碼等 nocode 的那串就能組合當前 nocode 的用戶」
+講的就是這件事。
+
+#### 「未結束的表單清單」怎麼來
+
+`formflow:submissions` 資源已經是「我發起的表單」了（§1.4.1），
+但目前**沒有帶出「這筆能不能撤單」**。要加一個欄位，
+比照表單中心 `fc_my_forms.py:161` 的 `can_force_end`：
+
+```python
+can_cancel = (wi.status == 'RUNNING')   # 擁有權已由三重過濾保證
+```
+
+（表單中心還要判 `applicant == current_user or is_org_admin`，
+portal 這邊三重過濾已經涵蓋，不必再判。）
+
+#### 裁決二：action 執行後的頁面行為
+
+| 情境 | 行為 |
+|---|---|
+| **新填表單送出** | 底下浮現「填寫成功／失敗」訊息，**3 秒自動關閉**；同時**回到剛送出的那張表單的空白表單**，方便連續建立多張 |
+| **撤單** | 回到「追蹤中-我發起的表單」清單 |
+
+**這會改到已經完成的 form 元件行為。** 目前 `pageir.js` 的送出成功是
+`alert(t('已送出'))` + `location.reload()`，兩點都不符：
+alert 要手動關、reload 會保留 `?<widget>__sc=` 而不是回到空白表單。
+
+toast 可照抄表單中心的
+`modules/form_workflow/static/modules/form_workflow/js/fc-utils.js:108`：
+
+```javascript
+showToast(message, type = 'success') {
+    this.toast = { show: true, message, type };
+    setTimeout(() => { this.toast.show = false; }, 3000);
+}
+```
+
+「回到空白表單」= 清掉 `?<widget_id>__sc=` 參數並重置 form.io 的 submission，
+**不要整頁 reload**（reload 會讓連續建單的節奏斷掉，也違反「方便連續建立多張」）。
+
+#### 裁決三：`action_button.permission` 改成選填 —— **接受**
+
+依 A 案（§1.4）把 `actions_widget` 加上 `access_matrix`，portal 世界用它判定；
+`permission` 從 `required` 移出，只在平台世界有意義。
+
+**既有資料已查過（2026-07-29）**，結論是改成選填**沒有相容性風險**，
+但有另一個坑：
+
+`dc_page_layouts` 只有一頁含 actions widget ——
+`aq6WeXXsKU4HoA_rVCtpJK`（N2A 驗收頁，掛在子系統 `8uopl3mNbDzGDUGAcNQqNe`），
+裡面有兩個：
+
+```json
+{"id": "actions-1", "type": "actions", "buttons": [
+  {"id": "btn-1", "action_ref": "nocode_builder.ref",
+   "permission": "nocode_builder.view", "style": "secondary",
+   "label_i18n": {"zh-TW": "執行", "en": "Run"}}]}
+// actions-2 內容相同
+```
+
+- `permission` 改選填 → 這兩個仍帶著該欄位，**照樣合法**，零風險
+- **但 `action_ref` 是 `nocode_builder.ref`，這個 ref 從來沒被註冊過**。
+  目前不會爆，是因為 `_prepare_action_buttons()` 在 portal 一律回 `[]`
+  根本沒去解析。**一旦 actions 階段讓 portal 開始解析 action_ref，
+  這頁就會撞到「未註冊」而 raise → 整頁 422。**
+
+  動工時要先決定：未註冊的 ref 在 portal 是 raise 還是靜默跳過。
+  建議**靜默跳過該按鈕並記 log**（與 `_portal_form_submit_url()` 的
+  fail-closed 一致：設定不完整就是不給那個能力，而不是整頁掛掉），
+  平台世界維持現行的 raise 不變。
+  順手把 N2A 驗收頁那兩個 widget 清掉或補上真的 ref 也可以。
+
+### 4.3.1 建議的實作順序
+
+三個裁決之間有依賴，照這個順序做最省事：
+
+1. **`actions_widget` 加 `access_matrix`、`permission` 改選填**
+   （schema + `_prepare_action_buttons()` 依 world 分流）
+   —— 這是地基，不做的話 portal 一個按鈕都渲染不出來
+2. **`formflow:submissions` 加 `can_cancel` 欄位**
+   —— 撤單按鈕要靠它決定顯不顯示
+3. **撤單 action**（註冊 portal action + 端點，照抄 `force_end_workflow`
+   但換掉權限判定）
+4. **送出後行為改成 toast + 回空白表單**
+   —— 這條獨立於 1~3，可以先做也可以最後做，但**不要漏掉**，
+   它是既有 form 元件的行為變更，不是新功能
+5. 設計器 UI（actions widget 的按鈕清單編輯 + 准入）
 
 ### 4.4 可以直接沿用的模式（不要重新發明）
 
