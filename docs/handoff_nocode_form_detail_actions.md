@@ -446,7 +446,107 @@ ORDER BY scheduled_at;
 
 ---
 
-## 3. detail 元件：就地編輯 + 草稿
+## 2.9 【2026-07-29 完成】主細表元件 `master_detail`
+
+**§3 的「detail 就地編輯 + 草稿」已被本節取代**，原文保留作為決策脈絡。
+用戶原本說 detail 對應 form.io 的 data grid / edit grid，後來自己更正：
+
+> 「我誤會了 form.io 的 datagrid, editgrid 的原理與 web 的運作，
+> 所以才會說出前述兩個元件的錯誤對應。會綜合兩個元件的特性所以要新開發…
+> 因 form.io 那兩個也不好用。需求是：**資料在業務表（detail widget + portal SQLite）
+> 就是傳統的主細表，由兩個表用 FKey 關聯**。」
+
+用戶另外裁決：日後也會在 `/forms/templates/` 的「平台元件」類別下出一個新元件
+——**目前只做 portal 版**，`master_detail_service.py` 就是日後平台版可以接的那層
+（它刻意不含 portal 權限判定，權限在路由層判完）。
+
+### 用戶定義的三場景（電話客服）
+
+| 場景 | 情境 | master | detail |
+|---|---|---|---|
+| 一 | 第一次來電、沒有客戶資料 | **新增**客戶基本資料 | 本次 1~n 筆服務項目 |
+| 二 | 客戶已在主表 | **編輯或唯讀**（設計者決定） | 本次 1~n 筆服務項目 |
+| 三 | 同二 | 同二 | 同二 + **此客戶歷史服務記錄**（唯讀，給客服參考） |
+
+### 用戶已裁決、不要改的兩件事
+
+1. **detail 的 1~n 筆在送出前只存前端**，送出時一次寫入兩表（單一交易）。
+   不做草稿表、不做 `_draft_status` 標記。中途關瀏覽器就是全部消失。
+   （§3.2 建議的草稿方案**已被否決**，不要照那段實作。）
+2. **歷史用 Tabs 呈現**（「本次服務項目 N」/「歷史記錄 M」），不是上下並排。
+
+### 檔案地圖
+
+| 東西 | 位置 |
+|---|---|
+| schema | `schema_v3.json` 的 `master_detail_widget` / `md_master` / `md_detail` / `md_history` |
+| 渲染 | `renderer._prepare_master_detail()` |
+| 歷史查詢 | portal provider 的 `fetch_related()`（`pageir_portal_resources.py`） |
+| 交易寫入 | `modules/nocode_builder/services/master_detail_service.py` |
+| 送出 API | `POST /public/portal/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/master-detail` |
+| 建表 FK | `sub_system_api.create_portal_data_table` 的 `columns[i].references` |
+| 設計器 | `_ir_designer_body.html` 的 `master_detail` 區塊 |
+
+### 關鍵事實（省下重新查證的時間）
+
+- `DataSourceManager().get_session()` **是交易 scope**（yield 後 commit、
+  例外 rollback），`SqliteCrudService.create_row()` 只 `flush()` 不 commit
+  → 主表 + n 筆明細寫在同一個 `with` 內就是單一交易
+- `SqliteCrudService.query_rows()` **早就有 `dynamic_filters` 參數**
+  （等值、identifier 驗證、參數化）→ 歷史查詢直接帶
+  `{foreign_key: master_sc}`，**不要自己拼 SQL**，否則會繞過 view 的
+  `soft_delete_column` 與 `fixed_filters`
+- 每張 portal_data 表都有 `id INTEGER PRIMARY KEY AUTOINCREMENT`（建表 API 硬編）
+- `create_row()` 已擴充回傳 `row_id`（取剛建立的 master id 用）
+
+### 安全設計（改這支程式前務必讀）
+
+- **FK 值一律 server 端覆寫**，做了雙重保險：路由層組 payload 時先剔除同名欄位，
+  `save_master_detail()` 內再 `pop` 一次後賦值。
+  前端能改 DevTools，讓明細掛到別人的主檔上就是資料竄改
+- **`foreign_key` 必須在明細資源的 `writable_fields` 內**：
+  渲染期 raise、送出端點 404。不擋的話 FK 會被 `create_row` 的白名單靜默濾掉，
+  生出一堆孤兒明細列
+- master 為唯讀時**忽略 `master.data` 但不報錯**——場景二/三本來就常是
+  「客戶資料不能動，只加服務項目」
+- `details` 上限 200 筆
+
+### 驗收（本機實測，非推論）
+
+| 測試 | 結果 |
+|---|---|
+| 場景一（無 `__sc`） | master 可填、無歷史 Tab |
+| 場景二/三（`?md-widget__sc=1`） | master 唯讀、Tabs 出現「歷史記錄 4」 |
+| 交易 rollback（第 2 筆明細違反 NOT NULL） | 400，**master 未建立** |
+| FK 覆寫（送 `customer_id=999`） | 201，實存 `1` |
+| FK 約束擋孤兒（繞過 API 直接 SQL） | `FOREIGN KEY constraint failed` |
+| 偽造不存在的 `master_sc` | 404 |
+| 201 筆明細 | 400 `too_many_details` |
+| readonly master 竄改 `master.data` | 201 但主表未變 |
+| edit 模式更新 master + 同交易新增明細 | 兩者都成功 |
+| 設計器改「可編輯」→ 儲存 | portal 頁 mode 從 readonly 變 edit |
+
+### 本機測試資料（是事實，不要重建）
+
+```
+子系統      : 8uopl3mNbDzGDUGAcNQqNe（portal path_id = ubwdM7Tp）
+主細表頁    : qiHMpMCul-1KGxhU4Q7Trd（widget id = md-widget）
+master view : f1hG0Do9ZGaLw2UaRdRc6H → md_customers_230517（name / phone）
+detail view : ugptiXn7E0zs3t6Eb6DBqg → md_services_230517（customer_id / service / note）
+portal 帳號 : p4tester / p4test123
+```
+
+`md_services_230517.customer_id` 有真的 FK 約束：
+`INTEGER NOT NULL REFERENCES "md_customers_230517"("id")`
+
+---
+
+## 3.【已被 §2.9 取代】detail 元件：就地編輯 + 草稿
+
+> 本節是 2026-07-29 上午的規劃，當時以為 detail 要做「送出前草稿」。
+> 用戶後來澄清需求其實是**傳統主細表**（見 §2.9），
+> 且明確裁決 detail 送出前只存前端、不做草稿表。
+> **保留本節只為記錄決策脈絡，不要照著實作。**
 
 ### 3.1 用戶定義的場景（原話）
 

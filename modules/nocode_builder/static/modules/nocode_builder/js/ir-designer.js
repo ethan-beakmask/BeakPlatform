@@ -58,6 +58,7 @@ function irDesigner() {
             { type: 'text', label: tr('文字') },
             { type: 'table', label: tr('表格') },
             { type: 'detail', label: tr('明細') },
+            { type: 'master_detail', label: tr('主細表') },
             { type: 'actions', label: tr('動作') },
             { type: 'form', label: tr('表單') },
         ],
@@ -69,6 +70,10 @@ function irDesigner() {
         ],
         formAccessActions: [
             { key: 'create', label: tr('新增') },
+        ],
+        masterDetailAccessActions: [
+            { key: 'create', label: tr('新增') },
+            { key: 'update', label: tr('編輯') },
         ],
 
         async init() {
@@ -117,7 +122,30 @@ function irDesigner() {
                 }
                 if (widget.type === 'table') this.normalizeMasks(widget.columns || []);
                 if (widget.type === 'detail') this.normalizeMasks(widget.fields || []);
+                if (widget.type === 'master_detail') this.normalizeMasterDetailWidget(widget);
                 if (widget.type === 'layout') this.normalizeWidgets(widget.children || []);
+            }
+        },
+
+        normalizeMasterDetailWidget(widget) {
+            if (!widget.master) widget.master = { binding: this.emptyBinding(), fields: [] };
+            if (!widget.master.binding) widget.master.binding = this.emptyBinding();
+            if (!Array.isArray(widget.master.binding.fields)) widget.master.binding.fields = [];
+            if (!Array.isArray(widget.master.fields)) widget.master.fields = [];
+            if (!widget.detail) widget.detail = { binding: this.emptyBinding(), columns: [] };
+            if (!widget.detail.binding) widget.detail.binding = this.emptyBinding();
+            if (!Array.isArray(widget.detail.binding.fields)) widget.detail.binding.fields = [];
+            if (!Array.isArray(widget.detail.columns)) widget.detail.columns = [];
+            this.normalizeMasks(widget.master.fields);
+            this.normalizeMasks(widget.detail.columns);
+            if (widget.master.editable !== true) delete widget.master.editable;
+            if (!widget.master.layout_columns) delete widget.master.layout_columns;
+            if (!widget.detail.foreign_key) delete widget.detail.foreign_key;
+            if (!widget.detail.page_size) delete widget.detail.page_size;
+            if (widget.history && widget.history.enabled !== true) delete widget.history;
+            if (widget.history) {
+                if (!widget.history.page_size) delete widget.history.page_size;
+                if (widget.history.default_sort && !widget.history.default_sort.field) delete widget.history.default_sort;
             }
         },
 
@@ -169,6 +197,7 @@ function irDesigner() {
             for (const widget of widgets || []) {
                 if (widget.type === 'table') this.normalizeMasks(widget.columns || []);
                 if (widget.type === 'detail') this.normalizeMasks(widget.fields || []);
+                if (widget.type === 'master_detail') this.normalizeMasterDetailWidget(widget);
                 if (widget.type === 'layout') this.normalizeWidgetMasks(widget.children || []);
             }
         },
@@ -385,7 +414,7 @@ function irDesigner() {
         get rowLinkTargets() {
             return this.treeRows
                 .map((row) => row.widget)
-                .filter((widget) => widget.type === 'detail' || widget.type === 'form');
+                .filter((widget) => widget.type === 'detail' || widget.type === 'form' || widget.type === 'master_detail');
         },
 
         get formActionRefs() {
@@ -408,6 +437,35 @@ function irDesigner() {
 
         get selectedResourceFields() {
             return (this.selectedResource && this.selectedResource.fields) || [];
+        },
+
+        widgetTypeLabel(widget) {
+            const item = this.palette.find((entry) => entry.type === (widget && widget.type));
+            return item ? item.label : ((widget && widget.type) || '');
+        },
+
+        emptyBinding() {
+            return { resource: '', view: '', fields: [] };
+        },
+
+        resourceForBinding(binding) {
+            if (!binding) return null;
+            return this.meta.resources.find((res) => res.code === binding.resource) || null;
+        },
+
+        viewsForBinding(binding) {
+            const resource = this.resourceForBinding(binding);
+            return (resource && resource.views) || [];
+        },
+
+        fieldsForBinding(binding) {
+            const resource = this.resourceForBinding(binding);
+            return (resource && resource.fields) || [];
+        },
+
+        writableFieldsForBinding(binding) {
+            const resource = this.resourceForBinding(binding);
+            return (resource && resource.writable_fields) || [];
         },
 
         formatResourceOption(res) {
@@ -447,6 +505,10 @@ function irDesigner() {
             for (const widget of list) {
                 const resource = widget.binding && widget.binding.resource;
                 if (resource && resource.indexOf('portal:') === 0) return resource;
+                const masterResource = widget.master && widget.master.binding && widget.master.binding.resource;
+                if (masterResource && masterResource.indexOf('portal:') === 0) return masterResource;
+                const detailResource = widget.detail && widget.detail.binding && widget.detail.binding.resource;
+                if (detailResource && detailResource.indexOf('portal:') === 0) return detailResource;
                 if (widget.type === 'layout') {
                     const found = this.firstPortalBindingResource(widget.children || []);
                     if (found) return found;
@@ -550,6 +612,14 @@ function irDesigner() {
                     fields: [{ field: firstField, label_i18n: { 'zh-TW': firstField, en: firstField } }],
                 };
             }
+            if (type === 'master_detail') {
+                return {
+                    id,
+                    type,
+                    master: { binding: this.emptyBinding(), fields: [] },
+                    detail: { binding: this.emptyBinding(), foreign_key: '', columns: [] },
+                };
+            }
             if (type === 'actions') {
                 return {
                     id, type,
@@ -581,7 +651,7 @@ function irDesigner() {
 
         syncCounters() {
             this.treeRows.forEach((row) => {
-                const parts = row.widget.id.match(/^([a-z]+)-(\d+)$/);
+                const parts = row.widget.id.match(/^([a-z_]+)-(\d+)$/);
                 if (parts) {
                     this.counters[parts[1]] = Math.max(this.counters[parts[1]] || 0, Number(parts[2]));
                 }
@@ -636,6 +706,17 @@ function irDesigner() {
             this.syncBindingFields();
         },
 
+        onMasterDetailResourceChange(section) {
+            const part = this.masterDetailPart(section);
+            if (!part || !part.binding) return;
+            const resource = this.resourceForBinding(part.binding);
+            if (!resource) return;
+            part.binding.view = (resource.views || [])[0] || '';
+            part.binding.fields = (resource.fields || []).slice(0, 1);
+            if (section === 'detail') delete part.foreign_key;
+            this.syncMasterDetailBindingFields(section);
+        },
+
         syncBindingFields() {
             const widget = this.selectedWidget;
             if (!widget || !widget.binding) return;
@@ -656,6 +737,36 @@ function irDesigner() {
             this.markDirty();
         },
 
+        masterDetailPart(section) {
+            const widget = this.selectedWidget;
+            if (!widget || widget.type !== 'master_detail') return null;
+            return section === 'master' ? widget.master : widget.detail;
+        },
+
+        syncMasterDetailBindingFields(section) {
+            const part = this.masterDetailPart(section);
+            if (!part || !part.binding) return;
+            if (!Array.isArray(part.binding.fields)) part.binding.fields = [];
+            const available = this.fieldsForBinding(part.binding);
+            if (!part.binding.fields.length && available.length) {
+                part.binding.fields.push(available[0]);
+            }
+            const allowed = new Set(part.binding.fields);
+            const first = part.binding.fields[0] || '';
+            if (section === 'master') {
+                part.fields = (part.fields || []).filter((fieldDef) => allowed.has(fieldDef.field));
+                if (!part.fields.length && first) this.addMasterDetailField('master');
+            } else {
+                part.columns = (part.columns || []).filter((col) => allowed.has(col.field));
+                if (!part.columns.length && first) this.addMasterDetailField('detail');
+                const history = this.selectedWidget && this.selectedWidget.history;
+                if (history && history.default_sort && !allowed.has(history.default_sort.field)) {
+                    history.default_sort.field = first;
+                }
+            }
+            this.markDirty();
+        },
+
         addTableColumn() {
             const widget = this.selectedWidget;
             if (!widget) return;
@@ -671,6 +782,19 @@ function irDesigner() {
             const field = (widget.binding.fields || [])[0] || '';
             if (!field) return;
             widget.fields.push({ field, label_i18n: { 'zh-TW': field, en: field } });
+            this.markDirty();
+        },
+
+        addMasterDetailField(section) {
+            const part = this.masterDetailPart(section);
+            if (!part || !part.binding) return;
+            const field = (part.binding.fields || [])[0] || '';
+            if (!field) return;
+            if (section === 'master') {
+                part.fields.push({ field, label_i18n: { 'zh-TW': field, en: field } });
+            } else {
+                part.columns.push({ field, label_i18n: { 'zh-TW': field, en: field }, sortable: false });
+            }
             this.markDirty();
         },
 
@@ -735,6 +859,60 @@ function irDesigner() {
             if (!obj) return;
             obj[key] = value;
             this.emptyToDelete(obj, key);
+        },
+
+        setOptionalNumberValue(obj, key, value) {
+            if (!obj) return;
+            if (value === '' || value === null || value === undefined) {
+                delete obj[key];
+            } else {
+                const parsed = Number(value);
+                if (Number.isInteger(parsed)) obj[key] = parsed;
+            }
+            this.markDirty();
+        },
+
+        setMasterEditable(enabled) {
+            const widget = this.selectedWidget;
+            if (!widget || widget.type !== 'master_detail') return;
+            if (enabled) {
+                widget.master.editable = true;
+            } else {
+                delete widget.master.editable;
+            }
+            this.markDirty();
+        },
+
+        toggleMasterDetailHistory(enabled) {
+            const widget = this.selectedWidget;
+            if (!widget || widget.type !== 'master_detail') return;
+            if (enabled) {
+                const first = ((widget.detail && widget.detail.binding && widget.detail.binding.fields) || [])[0] || '';
+                widget.history = { enabled: true };
+                if (first) widget.history.default_sort = { field: first, dir: 'asc' };
+            } else {
+                delete widget.history;
+            }
+            this.markDirty();
+        },
+
+        setHistorySortField(value) {
+            const widget = this.selectedWidget;
+            if (!widget || widget.type !== 'master_detail' || !widget.history) return;
+            if (!value) {
+                delete widget.history.default_sort;
+            } else {
+                const dir = (widget.history.default_sort && widget.history.default_sort.dir) || 'asc';
+                widget.history.default_sort = { field: value, dir };
+            }
+            this.markDirty();
+        },
+
+        setHistorySortDir(value) {
+            const widget = this.selectedWidget;
+            if (!widget || widget.type !== 'master_detail' || !widget.history || !widget.history.default_sort) return;
+            widget.history.default_sort.dir = value === 'desc' ? 'desc' : 'asc';
+            this.markDirty();
         },
 
         async formioBuilderOptions() {

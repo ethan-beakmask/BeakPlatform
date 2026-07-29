@@ -67,7 +67,7 @@
                      :style="'padding-left:' + (12 + row.depth * 22) + 'px'"
                      @click="selectWidget(row.widget.id)">
                     <div class="ird-node-main">
-                        <span class="ird-node-type" x-text="row.widget.type"></span>
+                        <span class="ird-node-type" x-text="widgetTypeLabel(row.widget)"></span>
                         <span class="ird-node-id" x-text="row.widget.id"></span>
                     </div>
                     <div class="ird-node-actions">
@@ -271,6 +271,181 @@
                                 <label>{{ _('版面欄數') }}</label>
                                 <input type="number" min="1" max="4" x-model.number="selectedWidget.layout_columns" @input="markDirty()">
                             </div>
+                        </div>
+                    </template>
+
+                    <template x-if="selectedWidget.type === 'master_detail'">
+                        <div>
+                            <div class="ird-section">
+                                <div class="ird-subtitle">{{ _('主檔') }}</div>
+                                <div class="ird-field">
+                                    <label>{{ _('資源') }}</label>
+                                    <select x-model="selectedWidget.master.binding.resource" @change="onMasterDetailResourceChange('master')">
+                                        <option value="">{{ _('-- 請選擇 --') }}</option>
+                                        <template x-for="res in meta.resources" :key="res.code">
+                                            <option :value="res.code" :selected="res.code === selectedWidget.master.binding.resource" x-text="formatResourceOption(res)"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="ird-field">
+                                    <label>{{ _('視圖') }}</label>
+                                    <select x-model="selectedWidget.master.binding.view" @change="markDirty()">
+                                        <template x-for="view in viewsForBinding(selectedWidget.master.binding)" :key="view">
+                                            <option :value="view" :selected="view === selectedWidget.master.binding.view" x-text="view"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="ird-checks">
+                                    <template x-for="field in fieldsForBinding(selectedWidget.master.binding)" :key="field">
+                                        <label><input type="checkbox" :value="field" x-model="selectedWidget.master.binding.fields" @change="syncMasterDetailBindingFields('master')"> <span x-text="field"></span></label>
+                                    </template>
+                                </div>
+                                <template x-for="(fieldDef, idx) in selectedWidget.master.fields" :key="idx">
+                                    <div class="ird-list-item">
+                                        <select x-model="fieldDef.field" @change="markDirty()">
+                                            <template x-for="field in selectedWidget.master.binding.fields" :key="field">
+                                                <option :value="field" :selected="field === fieldDef.field" x-text="field"></option>
+                                            </template>
+                                        </select>
+                                        <input type="text" x-model="fieldDef.label_i18n['zh-TW']" @input="markDirty()" :placeholder="__('標籤 zh-TW')">
+                                        <input type="text" x-model="fieldDef.label_i18n.en" @input="markDirty()" :placeholder="__('標籤 en')">
+                                        <select :value="maskType(fieldDef)" @change="setMaskType(fieldDef, $event.target.value)">
+                                            <option value="">{{ _('不遮罩') }}</option>
+                                            <option value="partial">{{ _('部分遮蔽') }}</option>
+                                            <option value="full">{{ _('全遮') }}</option>
+                                            <option value="email">{{ _('Email') }}</option>
+                                            <option value="phone">{{ _('電話') }}</option>
+                                        </select>
+                                        <div class="ird-mask-params" x-show="maskType(fieldDef) === 'partial'">
+                                            <input type="number" min="0" max="8" :value="fieldDef.mask && fieldDef.mask.keep_head" @change="setMaskParam(fieldDef, 'keep_head', $event.target.value)" :placeholder="__('保留前段')">
+                                            <input type="number" min="0" max="8" :value="fieldDef.mask && fieldDef.mask.keep_tail" @change="setMaskParam(fieldDef, 'keep_tail', $event.target.value)" :placeholder="__('保留尾段')">
+                                        </div>
+                                        <p class="ird-hint" x-show="!!fieldDef.mask">{{ _('遮罩欄位不可排序、不可編輯') }}</p>
+                                        <button type="button" class="ird-icon-btn" @click="removeArrayItem(selectedWidget.master.fields, idx)">×</button>
+                                    </div>
+                                </template>
+                                <button type="button" class="ird-btn" @click="addMasterDetailField('master')">{{ _('新增欄位') }}</button>
+                                <div class="ird-field">
+                                    <label>{{ _('版面欄數') }}</label>
+                                    <select :value="selectedWidget.master.layout_columns || ''" @change="setOptionalNumberValue(selectedWidget.master, 'layout_columns', $event.target.value)">
+                                        <option value="" :selected="!selectedWidget.master.layout_columns">{{ _('未設定') }}</option>
+                                        <option value="1" :selected="selectedWidget.master.layout_columns === 1">1</option>
+                                        <option value="2" :selected="selectedWidget.master.layout_columns === 2">2</option>
+                                        <option value="3" :selected="selectedWidget.master.layout_columns === 3">3</option>
+                                        <option value="4" :selected="selectedWidget.master.layout_columns === 4">4</option>
+                                    </select>
+                                </div>
+                                <div class="ird-field">
+                                    <label>
+                                        <input type="checkbox" :checked="selectedWidget.master.editable === true" @change="setMasterEditable($event.target.checked)">
+                                        {{ _('帶入既有主檔時可編輯') }}
+                                    </label>
+                                    <p class="ird-hint">{{ _('未勾選時，帶入既有主檔只能檢視，仍可新增明細') }}</p>
+                                </div>
+                            </div>
+
+                            <div class="ird-section">
+                                <div class="ird-subtitle">{{ _('明細') }}</div>
+                                <div class="ird-field">
+                                    <label>{{ _('資源') }}</label>
+                                    <select x-model="selectedWidget.detail.binding.resource" @change="onMasterDetailResourceChange('detail')">
+                                        <option value="">{{ _('-- 請選擇 --') }}</option>
+                                        <template x-for="res in meta.resources" :key="res.code">
+                                            <option :value="res.code" :selected="res.code === selectedWidget.detail.binding.resource" x-text="formatResourceOption(res)"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="ird-field">
+                                    <label>{{ _('視圖') }}</label>
+                                    <select x-model="selectedWidget.detail.binding.view" @change="markDirty()">
+                                        <template x-for="view in viewsForBinding(selectedWidget.detail.binding)" :key="view">
+                                            <option :value="view" :selected="view === selectedWidget.detail.binding.view" x-text="view"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="ird-checks">
+                                    <template x-for="field in fieldsForBinding(selectedWidget.detail.binding)" :key="field">
+                                        <label><input type="checkbox" :value="field" x-model="selectedWidget.detail.binding.fields" @change="syncMasterDetailBindingFields('detail')"> <span x-text="field"></span></label>
+                                    </template>
+                                </div>
+                                <template x-for="(col, idx) in selectedWidget.detail.columns" :key="idx">
+                                    <div class="ird-list-item">
+                                        <select x-model="col.field" @change="markDirty()">
+                                            <template x-for="field in selectedWidget.detail.binding.fields" :key="field">
+                                                <option :value="field" :selected="field === col.field" x-text="field"></option>
+                                            </template>
+                                        </select>
+                                        <input type="text" x-model="col.label_i18n['zh-TW']" @input="markDirty()" :placeholder="__('標籤 zh-TW')">
+                                        <input type="text" x-model="col.label_i18n.en" @input="markDirty()" :placeholder="__('標籤 en')">
+                                        <select :value="maskType(col)" @change="setMaskType(col, $event.target.value)">
+                                            <option value="">{{ _('不遮罩') }}</option>
+                                            <option value="partial">{{ _('部分遮蔽') }}</option>
+                                            <option value="full">{{ _('全遮') }}</option>
+                                            <option value="email">{{ _('Email') }}</option>
+                                            <option value="phone">{{ _('電話') }}</option>
+                                        </select>
+                                        <div class="ird-mask-params" x-show="maskType(col) === 'partial'">
+                                            <input type="number" min="0" max="8" :value="col.mask && col.mask.keep_head" @change="setMaskParam(col, 'keep_head', $event.target.value)" :placeholder="__('保留前段')">
+                                            <input type="number" min="0" max="8" :value="col.mask && col.mask.keep_tail" @change="setMaskParam(col, 'keep_tail', $event.target.value)" :placeholder="__('保留尾段')">
+                                        </div>
+                                        <label><input type="checkbox" x-model="col.sortable" :disabled="!!col.mask" @change="markDirty()"> {{ _('排序') }}</label>
+                                        <p class="ird-hint" x-show="!!col.mask">{{ _('遮罩欄位不可排序、不可編輯') }}</p>
+                                        <button type="button" class="ird-icon-btn" @click="removeArrayItem(selectedWidget.detail.columns, idx)">×</button>
+                                    </div>
+                                </template>
+                                <button type="button" class="ird-btn" @click="addMasterDetailField('detail')">{{ _('新增欄位') }}</button>
+                                <div class="ird-field">
+                                    <label>{{ _('關聯欄位') }}</label>
+                                    <select :value="selectedWidget.detail.foreign_key || ''" @change="setOptionalWidgetValue(selectedWidget.detail, 'foreign_key', $event.target.value)">
+                                        <option value="" :selected="!selectedWidget.detail.foreign_key">{{ _('未設定') }}</option>
+                                        <template x-for="field in writableFieldsForBinding(selectedWidget.detail.binding)" :key="field">
+                                            <option :value="field" :selected="field === selectedWidget.detail.foreign_key" x-text="field"></option>
+                                        </template>
+                                    </select>
+                                    <p class="ird-hint">{{ _('明細表中指向主檔的欄位；送出時由系統填入，使用者不可指定') }}</p>
+                                </div>
+                                <div class="ird-field">
+                                    <label>{{ _('每頁筆數') }}</label>
+                                    <input type="number" min="1" max="200" :value="selectedWidget.detail.page_size || ''" @input="setOptionalNumberValue(selectedWidget.detail, 'page_size', $event.target.value)">
+                                </div>
+                            </div>
+
+                            <div class="ird-section">
+                                <div class="ird-subtitle">{{ _('歷史') }}</div>
+                                <div class="ird-field">
+                                    <label>
+                                        <input type="checkbox" :checked="!!(selectedWidget.history && selectedWidget.history.enabled)" @change="toggleMasterDetailHistory($event.target.checked)">
+                                        {{ _('啟用') }}
+                                    </label>
+                                    <p class="ird-hint">{{ _('顯示此主檔既有的明細記錄，唯讀。新增主檔時不會出現') }}</p>
+                                </div>
+                                <template x-if="selectedWidget.history && selectedWidget.history.enabled">
+                                    <div>
+                                        <div class="ird-field">
+                                            <label>{{ _('每頁筆數') }}</label>
+                                            <input type="number" min="1" max="200" :value="selectedWidget.history.page_size || ''" @input="setOptionalNumberValue(selectedWidget.history, 'page_size', $event.target.value)">
+                                        </div>
+                                        <div class="ird-field">
+                                            <label>{{ _('預設排序欄位') }}</label>
+                                            <select :value="selectedWidget.history.default_sort && selectedWidget.history.default_sort.field || ''" @change="setHistorySortField($event.target.value)">
+                                                <option value="" :selected="!(selectedWidget.history.default_sort && selectedWidget.history.default_sort.field)">{{ _('未設定') }}</option>
+                                                <template x-for="field in selectedWidget.detail.binding.fields" :key="field">
+                                                    <option :value="field" :selected="selectedWidget.history.default_sort && field === selectedWidget.history.default_sort.field" x-text="field"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                        <div class="ird-field">
+                                            <label>{{ _('排序方向') }}</label>
+                                            <select :value="selectedWidget.history.default_sort && selectedWidget.history.default_sort.dir || 'asc'" @change="setHistorySortDir($event.target.value)">
+                                                <option value="asc" :selected="!selectedWidget.history.default_sort || selectedWidget.history.default_sort.dir === 'asc'">asc</option>
+                                                <option value="desc" :selected="selectedWidget.history.default_sort && selectedWidget.history.default_sort.dir === 'desc'">desc</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            {{ access_matrix.render('masterDetailAccessActions', _('未啟用新增時無法送出；編輯需同時勾選主檔可編輯')) }}
                         </div>
                     </template>
 
