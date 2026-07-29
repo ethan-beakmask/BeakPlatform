@@ -320,6 +320,7 @@ def _submission_row(
     }
     row = {field: values.get(field) for field in requested}
     row["_sc"] = fi.secure_code
+    row["_can_cancel"] = (wi.status == "RUNNING")
     return row
 
 

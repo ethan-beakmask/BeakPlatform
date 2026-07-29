@@ -19709,6 +19709,18 @@ msgstr "- Form:"
 msgid "流程樹系圖 - BeakPlatform"
 msgstr "Workflow tree diagram - BeakPlatform"
 
+#: modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html
+msgid "未設定（此按鈕不會顯示）"
+msgstr "Not set (this button will not be shown)"
+
+#: modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html
+msgid "權限欄位僅平台頁面生效；子系統 Portal 一律以下方「元件准入」判定。"
+msgstr "The permission field applies to platform pages only; subsystem Portal always uses the widget access rules below."
+
+#: modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html
+msgid "未啟用「執行動作」時，portal 訪客看不到任何按鈕。"
+msgstr "When \"Execute action\" is not enabled, portal visitors see no buttons."
+
 #~ msgid "前往「%(link_start)s新增企業管理員%(link_end)s」，建立正式管理員並綁定該企業成員帳號"
 #~ msgstr ""
 #~ "Go to \"%(link_start)sAdd Organization "

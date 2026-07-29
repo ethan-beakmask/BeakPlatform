@@ -22,7 +22,46 @@
     too_many_details: '明細筆數過多'
   };
 
+  var actionErrorMessages = {
+    not_cancellable: '此表單已結束，無法撤單',
+    internal_error: '操作失敗',
+    csrf_failed: '頁面已過期，請重新整理後再試'
+  };
+
   var tableCrudInitialized = false;
+
+  function showToast(message, type) {
+    var host = document.querySelector('.pir-toast-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.className = 'pir-toast-host';
+      document.body.appendChild(host);
+    }
+
+    var toast = document.createElement('div');
+    toast.className = 'pir-toast pir-toast-' + (type === 'error' ? 'error' : 'success');
+    toast.textContent = message;
+    host.appendChild(toast);
+    window.setTimeout(function () {
+      toast.classList.add('pir-toast-visible');
+    }, 0);
+    window.setTimeout(function () {
+      toast.classList.remove('pir-toast-visible');
+      window.setTimeout(function () {
+        toast.remove();
+      }, 200);
+    }, 3000);
+  }
+
+  function reloadWithoutRecordParams() {
+    var url = new URL(window.location.href);
+    // searchParams.keys() 是迭代器，不能用 slice（沒有 length，會得到空陣列），
+    // 必須 Array.from 先展開再刪，否則一個參數都刪不掉。
+    Array.from(url.searchParams.keys())
+      .filter(function (key) { return /__sc$/.test(key); })
+      .forEach(function (key) { url.searchParams.delete(key); });
+    window.location.href = url.pathname + (url.search || '');
+  }
 
   async function run(button) {
     if (button.dataset.pirConfirm === 'true' && !confirm(t('確定執行此動作？'))) {
@@ -33,12 +72,19 @@
         method: button.dataset.pirMethod || 'POST',
         headers: { 'X-CSRFToken': csrfToken() }
       });
-      if (!res.ok) {
-        throw new Error(t('動作執行失敗'));
+      var data = {};
+      try {
+        data = await res.json();
+      } catch (err) {
+        data = {};
       }
-      location.reload();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error || '');
+      }
+      showToast(t('已完成'), 'success');
+      setTimeout(function () { reloadWithoutRecordParams(); }, 800);
     } catch (err) {
-      alert(err.message || t('動作執行失敗'));
+      showToast(t(actionErrorMessages[(err && err.message) || ''] || '動作執行失敗'), 'error');
     }
   }
 
@@ -123,12 +169,20 @@
             data = {};
           }
           if (!res.ok || data.success === false) {
-            throw new Error(data.error || t('送出失敗'));
+            throw new Error(data.error || '');
           }
-          alert(mode === 'edit' ? t('已更新') : t('已送出'));
-          location.reload();
+          if (mode === 'edit') {
+            showToast(t('已更新'), 'success');
+            setTimeout(function () { location.reload(); }, 800);
+          } else {
+            showToast(t('已送出'), 'success');
+            form.submission = { data: {} };
+            var url = new URL(window.location.href);
+            url.searchParams.delete(id + '__sc');
+            history.replaceState(null, '', url.pathname + (url.search || ''));
+          }
         } catch (err) {
-          alert(err.message || t('送出失敗'));
+          showToast(t(crudErrorMessages[(err && err.message) || ''] || '送出失敗'), 'error');
         }
       });
     }
@@ -185,6 +239,29 @@
           link.textContent = t('開啟');
           actionCell.appendChild(link);
         }
+        var rowActions = [];
+        try {
+          rowActions = JSON.parse(wrap.dataset.pirRowActions || '[]');
+        } catch (err) {
+          rowActions = [];
+        }
+        rowActions.forEach(function (action) {
+          if (action.requires_record && !(row && row._sc)) {
+            return;
+          }
+          if (action.row_flag && !(row && row[action.row_flag])) {
+            return;
+          }
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'pir-btn pir-btn-' + (action.style || 'secondary');
+          btn.dataset.pirUrl = String(action.url || '')
+            .replace('__PIR_RECORD_SC__', encodeURIComponent((row && row._sc) || ''));
+          btn.dataset.pirMethod = action.method || 'POST';
+          btn.dataset.pirConfirm = action.confirm ? 'true' : 'false';
+          btn.textContent = action.label || '';
+          actionCell.appendChild(btn);
+        });
         if (canUpdate) {
           actionCell.appendChild(crudButton('edit', widgetId, row && row._sc));
         }
@@ -629,11 +706,11 @@
         });
       })
       .then(function () {
-        alert(t('已送出'));
-        location.reload();
+        showToast(t('已送出'), 'success');
+        setTimeout(function () { location.reload(); }, 800);
       })
       .catch(function (err) {
-        alert(t(crudErrorMessages[(err && err.message) || ''] || '送出失敗'));
+        showToast(t(crudErrorMessages[(err && err.message) || ''] || '送出失敗'), 'error');
       })
       .finally(function () {
         button.disabled = false;

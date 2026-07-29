@@ -287,10 +287,12 @@ def test_different_nocode_user_refs_cannot_read_each_other(mini_app, monkeypatch
         "status_label": "審核中",
         "current_step": "First approval",
         "submitted_at": form_a.submitted_at,
+        "_can_cancel": True,
     }]
     assert resource["fetch_detail"](form_a.secure_code, ["serial_number"]) == {
         "_sc": form_a.secure_code,
         "serial_number": "FORM-A",
+        "_can_cancel": True,
     }
     assert resource["fetch_detail"](
         form_b.secure_code,

@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from math import ceil
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from flask import current_app, render_template, request, url_for
 
@@ -19,6 +19,7 @@ from app.pageir.registry import (
 from app.pageir.validator import validate_page_ir
 
 logger = logging.getLogger(__name__)
+PORTAL_RECORD_PLACEHOLDER = "__PIR_RECORD_SC__"
 
 
 class PageIrRenderError(Exception):
@@ -302,7 +303,7 @@ def _row_actions(widget: dict, widgets_by_id: dict[str, dict]) -> list[dict]:
     action_widget = widgets_by_id.get(ref)
     if not action_widget or action_widget.get("type") != "actions":
         raise PageIrRenderError(f"row_actions_ref does not resolve: {ref}")
-    return _prepare_action_buttons(action_widget)
+    return _prepare_action_buttons(action_widget, row_context=True)
 
 
 def _row_link_target(widget: dict, widgets_by_id: dict[str, dict]) -> str | None:
@@ -521,16 +522,20 @@ def _prepare_actions(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     }
 
 
-def _prepare_action_buttons(widget: dict) -> list[dict]:
+def _prepare_action_buttons(widget: dict, *, row_context=False) -> list[dict]:
     from app.pageir.context import get_render_context
     from app.services.capability_service import user_can
 
-    if get_render_context().get("world") == "portal":
-        return []
+    ctx = get_render_context()
+    if ctx.get("world") == "portal":
+        return _prepare_portal_action_buttons(widget, ctx, row_context)
 
     buttons = []
     for button in widget.get("buttons", []):
-        if not user_can(button["permission"]):
+        permission = button.get("permission")
+        if not permission:
+            continue
+        if not user_can(permission):
             continue
         action = get_action(button["action_ref"])
         if action is None:
@@ -545,6 +550,80 @@ def _prepare_action_buttons(widget: dict) -> list[dict]:
             "url": action["url"],
             "method": method,
             "confirm": bool(action.get("confirm", False)),
+            "requires_record": False,
+            "row_flag": None,
+        })
+    return buttons
+
+
+def _prepare_portal_action_buttons(widget: dict, ctx: dict, row_context: bool) -> list[dict]:
+    # actions widget 用 update 作為 widget 級寫入准入 key。
+    if not _widget_action_allowed(widget, "update"):
+        return []
+    if not ctx.get("path_id") or not ctx.get("page_sc"):
+        return []
+
+    buttons = []
+    for button in widget.get("buttons", []):
+        action = get_portal_action(button["action_ref"])
+        if action is None:
+            logger.warning(
+                "Page IR portal action unregistered, button skipped: widget=%s ref=%s",
+                widget.get("id"),
+                button.get("action_ref"),
+            )
+            continue
+        if action.get("method", "POST") != "POST":
+            logger.warning(
+                "Page IR portal action unsupported method, button skipped: widget=%s ref=%s method=%s",
+                widget.get("id"),
+                button.get("action_ref"),
+                action.get("method"),
+            )
+            continue
+        endpoint = action.get("endpoint")
+        if not endpoint:
+            logger.warning(
+                "Page IR portal action missing endpoint, button skipped: widget=%s ref=%s",
+                widget.get("id"),
+                button.get("action_ref"),
+            )
+            continue
+        requires_record = bool(action.get("requires_record"))
+        if requires_record and not row_context:
+            logger.warning(
+                "Page IR portal row action outside row context, button skipped: widget=%s ref=%s",
+                widget.get("id"),
+                button.get("action_ref"),
+            )
+            continue
+
+        kwargs = {
+            "path_id": ctx["path_id"],
+            "page_sc": ctx["page_sc"],
+            "widget_id": widget["id"],
+        }
+        if requires_record:
+            kwargs["record_sc"] = PORTAL_RECORD_PLACEHOLDER
+        try:
+            url = url_for(endpoint, **kwargs)
+        except Exception:
+            logger.exception(
+                "Page IR portal action endpoint unavailable: widget=%s ref=%s endpoint=%s",
+                widget.get("id"),
+                button.get("action_ref"),
+                endpoint,
+            )
+            continue
+        buttons.append({
+            "id": button["id"],
+            "label": _i18n(button["label_i18n"]),
+            "style": button.get("style", "secondary"),
+            "url": url,
+            "method": "POST",
+            "confirm": bool(action.get("confirm", False)),
+            "requires_record": requires_record,
+            "row_flag": action.get("row_flag") or None,
         })
     return buttons
 
@@ -767,6 +846,9 @@ def _sort_url(
 
 
 def _action_url(url: str, record_sc: str) -> str:
+    """列動作的網址；portal 動作用 path placeholder，平台動作沿用 ?sc=。"""
+    if url and PORTAL_RECORD_PLACEHOLDER in url:
+        return url.replace(PORTAL_RECORD_PLACEHOLDER, quote(str(record_sc or ""), safe=""))
     separator = "&" if "?" in url else "?"
     return f"{url}{separator}{urlencode({'sc': record_sc})}"
 

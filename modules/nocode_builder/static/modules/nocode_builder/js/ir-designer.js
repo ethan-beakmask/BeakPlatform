@@ -75,6 +75,10 @@ function irDesigner() {
             { key: 'create', label: tr('新增') },
             { key: 'update', label: tr('編輯') },
         ],
+        actionsAccessActions: [
+            { key: 'read', label: tr('檢視') },
+            { key: 'update', label: tr('執行動作') },
+        ],
 
         async init() {
             const cfg = window.__IR_DESIGNER_CONFIG || {};
@@ -199,6 +203,17 @@ function irDesigner() {
                 if (widget.type === 'detail') this.normalizeMasks(widget.fields || []);
                 if (widget.type === 'master_detail') this.normalizeMasterDetailWidget(widget);
                 if (widget.type === 'layout') this.normalizeWidgetMasks(widget.children || []);
+            }
+        },
+
+        normalizeActionButtons(widgets) {
+            for (const widget of widgets || []) {
+                if (widget.type === 'actions') {
+                    for (const btn of widget.buttons || []) {
+                        if (!btn.permission) delete btn.permission;
+                    }
+                }
+                if (widget.type === 'layout') this.normalizeActionButtons(widget.children || []);
             }
         },
 
@@ -425,6 +440,10 @@ function irDesigner() {
             return (this.meta.portal_actions || []).filter((ref) => /^[a-z][a-z0-9_.:-]{1,127}$/.test(ref));
         },
 
+        defaultActionRef() {
+            return (this.meta.portal_actions || [])[0] || (this.meta.actions || [])[0] || '';
+        },
+
         get selectedResource() {
             const widget = this.selectedWidget;
             if (!widget || !widget.binding) return null;
@@ -627,8 +646,7 @@ function irDesigner() {
                         id: this.nextId('btn'),
                         label_i18n: { 'zh-TW': tr('執行'), en: 'Run' },
                         style: 'secondary',
-                        permission: 'nocode_builder.view',
-                        action_ref: this.meta.actions[0] || 'nocode_builder.ref',
+                        action_ref: this.defaultActionRef(),
                     }],
                 };
             }
@@ -839,8 +857,7 @@ function irDesigner() {
                 id: this.nextId('btn'),
                 label_i18n: { 'zh-TW': tr('執行'), en: 'Run' },
                 style: 'secondary',
-                permission: 'nocode_builder.view',
-                action_ref: this.meta.actions[0] || 'nocode_builder.ref',
+                action_ref: this.defaultActionRef(),
             });
             this.markDirty();
         },
@@ -961,6 +978,7 @@ function irDesigner() {
             const doc = clone(this.doc);
             this.normalizeWidgetMasks(doc.page.widgets || []);
             this.normalizeAccessMatrix(doc.page.widgets || []);
+            this.normalizeActionButtons(doc.page.widgets || []);
             return doc;
         },
 

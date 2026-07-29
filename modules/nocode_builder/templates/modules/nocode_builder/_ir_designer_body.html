@@ -450,29 +450,43 @@
                     </template>
 
                     <template x-if="selectedWidget.type === 'actions'">
-                        <div class="ird-section">
-                            <div class="ird-subtitle">{{ _('按鈕') }}</div>
-                            <template x-for="(btn, idx) in selectedWidget.buttons" :key="idx">
-                                <div class="ird-list-item">
-                                    <input type="text" x-model="btn.id" @input="markDirty()" placeholder="id">
-                                    <input type="text" x-model="btn.label_i18n['zh-TW']" @input="markDirty()" :placeholder="__('標籤 zh-TW')">
-                                    <input type="text" x-model="btn.label_i18n.en" @input="markDirty()" :placeholder="__('標籤 en')">
-                                    <select x-model="btn.style" @change="markDirty()">
-                                        <option value="primary">primary</option>
-                                        <option value="secondary">secondary</option>
-                                        <option value="danger">danger</option>
-                                    </select>
-                                    <input type="text" x-model="btn.permission" @input="markDirty()" :placeholder="__('權限')">
-                                    <input type="text" list="ird-action-refs" x-model="btn.action_ref" @input="markDirty()" :placeholder="__('動作')">
-                                    <button type="button" class="ird-icon-btn" @click="removeArrayItem(selectedWidget.buttons, idx)">×</button>
-                                </div>
-                            </template>
-                            <datalist id="ird-action-refs">
-                                <template x-for="ref in meta.actions" :key="ref">
-                                    <option :value="ref"></option>
+                        <div>
+                            <div class="ird-section">
+                                <div class="ird-subtitle">{{ _('按鈕') }}</div>
+                                <template x-for="(btn, idx) in selectedWidget.buttons" :key="idx">
+                                    <div class="ird-list-item">
+                                        <input type="text" x-model="btn.id" @input="markDirty()" placeholder="id">
+                                        <input type="text" x-model="btn.label_i18n['zh-TW']" @input="markDirty()" :placeholder="__('標籤 zh-TW')">
+                                        <input type="text" x-model="btn.label_i18n.en" @input="markDirty()" :placeholder="__('標籤 en')">
+                                        <select x-model="btn.style" @change="markDirty()">
+                                            <option value="primary">primary</option>
+                                            <option value="secondary">secondary</option>
+                                            <option value="danger">danger</option>
+                                        </select>
+                                        <input type="text" :value="btn.permission || ''"
+                                               @input="btn.permission = $event.target.value; markDirty()"
+                                               :placeholder="__('權限（僅平台頁面需要）')">
+                                        <select :value="btn.action_ref || ''"
+                                                @change="btn.action_ref = $event.target.value; markDirty()">
+                                            <option value="">{{ _('未設定（此按鈕不會顯示）') }}</option>
+                                            <optgroup label="{{ _('子系統 Portal') }}">
+                                                <template x-for="ref in formPortalActionRefs" :key="ref">
+                                                    <option :value="ref" :selected="ref === btn.action_ref" x-text="ref"></option>
+                                                </template>
+                                            </optgroup>
+                                            <optgroup label="{{ _('平台') }}">
+                                                <template x-for="ref in formActionRefs" :key="ref">
+                                                    <option :value="ref" :selected="ref === btn.action_ref" x-text="ref"></option>
+                                                </template>
+                                            </optgroup>
+                                        </select>
+                                        <button type="button" class="ird-icon-btn" @click="removeArrayItem(selectedWidget.buttons, idx)">×</button>
+                                    </div>
                                 </template>
-                            </datalist>
-                            <button type="button" class="ird-btn" @click="addActionButton()">{{ _('新增按鈕') }}</button>
+                                <p class="ird-hint">{{ _('權限欄位僅平台頁面生效；子系統 Portal 一律以下方「元件准入」判定。') }}</p>
+                                <button type="button" class="ird-btn" @click="addActionButton()">{{ _('新增按鈕') }}</button>
+                            </div>
+                            {{ access_matrix.render('actionsAccessActions', _('未啟用「執行動作」時，portal 訪客看不到任何按鈕。')) }}
                         </div>
                     </template>
 

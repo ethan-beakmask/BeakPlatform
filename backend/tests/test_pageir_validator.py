@@ -215,8 +215,11 @@ def test_row_actions_ref_must_point_to_actions_widget():
     assert "dangling_ref" in error_codes(non_actions_doc)
 
 
-def test_actions_button_requires_permission():
+def test_actions_button_allows_missing_permission():
     doc = valid_doc()
     del doc["page"]["widgets"][3]["buttons"][0]["permission"]
 
-    assert "required" in error_codes(doc)
+    ok, errors = validate_page_ir(doc)
+
+    assert ok is True
+    assert errors == []

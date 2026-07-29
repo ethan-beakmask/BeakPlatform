@@ -12,6 +12,10 @@
 ① form  →  ② detail 就地編輯  →  ③ actions
 ```
 
+**三者皆已完成**：① 見 §1.4 / §1.4.1 / §1.4.2（2026-07-29），
+② 由 §2.9 的主細表元件取代（2026-07-29），③ 見 §4.0（2026-07-30）。
+以下的「未做 / 待裁決」字樣一律是歷史脈絡，不是現況。
+
 **actions 排在最後是刻意的**：actions 的規格會被前兩者倒推出來。
 用戶原話：「『送出或確認』的行為應該可當 actions 的場景」——
 在 form 與 detail 的送出流程定案前，actions 的介面設計沒有依據，
@@ -31,7 +35,7 @@
 | table | 完成 | 資料綁定、四動作准入、欄位遮罩、CRUD、捲動載入 |
 | detail | **部分** | 只能檢視（含遮罩），無就地編輯 → 本檔 §3 |
 | form | **部分** | FormIO 設計器可用，送出後沒有接上任何後端流程 → 本檔 §2 |
-| actions | **未做** | registry 零註冊 → 本檔 §4 |
+| actions | 完成 | portal 動作按鈕 + 撤單（2026-07-30）→ 本檔 §4.0 |
 
 ---
 
@@ -595,7 +599,103 @@ portal 帳號 : p4tester / p4test123
 
 ---
 
-## 4. actions 元件（最後做）
+## 4. actions 元件【2026-07-30 完成】
+
+**§4.3 的三個裁決與 §4.3.1 的五步順序已全部落地並實測通過。**
+以下 4.1~4.5 保留作決策脈絡，實作現況以 **§4.0** 為準。
+
+### 4.0 完成內容（2026-07-30）
+
+#### 落地的東西
+
+| 項目 | 位置 |
+|---|---|
+| `action_button.permission` 改選填、`actions_widget` 加 `access_matrix` | `backend/app/pageir/schema_v3.json` |
+| portal 世界的動作按鈕渲染（原本一律 `return []`） | `renderer._prepare_portal_action_buttons()` |
+| 撤單端點 | `portal_public.portal_widget_cancel_submission` |
+| portal action 註冊 `portal.form.cancel` | `modules/nocode_builder/__init__.py` `init_runtime()` |
+| `can_cancel` 判定 | `pageir_formflow_resources._submission_row()` 的 `row["_can_cancel"]` |
+| toast + 送出後回空白表單 + 撤單後回清單 | `backend/app/static/js/pageir.js`、`pageir.css` |
+| 設計器 actions 面板（分組 select + 元件准入） | `ir-designer.js`、`_ir_designer_body.html` |
+| 新測試 | `backend/tests/test_pageir_portal_action_cancel.py` |
+
+基準測試 **198 → 205 passed**（新增 7 條）。
+
+#### 定案的機制（改這塊前先讀）
+
+- **actions widget 的 access_matrix 用 `read` + `update` 兩個 key**：
+  `read` 決定 widget 看不看得到，**`update` 決定按鈕渲不渲染、端點准不准**。
+  渲染端 `_prepare_portal_action_buttons()` 與撤單端點都是判 `update`，
+  兩邊一致，改一邊等於開後門。
+- **row action 的 record_sc 走 path placeholder**：portal 動作的 url 由
+  `url_for(endpoint, record_sc=PORTAL_RECORD_PLACEHOLDER)` 產生，值是
+  `__PIR_RECORD_SC__`；`renderer._action_url()` 在渲染每一列時替換成該列 `_sc`。
+  平台動作維持舊契約 `?sc=<record_sc>`。**兩條路並存，不要統一掉**。
+- **portal action config 的三個新欄位**：`requires_record`（需要單筆記錄，
+  放在獨立 actions 區塊時該按鈕會被跳過）、`row_flag`（指向列上的底線欄位，
+  falsy 就不渲染該列的按鈕，撤單用 `_can_cancel`）、`confirm`。
+- **未註冊的 action_ref 在 portal 靜默跳過並記 `logger.warning`，不 raise**；
+  平台世界維持 raise。N2A 驗收頁（`aq6WeXXsKU4HoA_rVCtpJK`）那兩個
+  `nocode_builder.ref` 假 widget **已刪除**。
+- **平台世界 button 沒有 `permission` 就不渲染**（fail-closed）。
+  `_ACTIONS` 仍零註冊，設計器「平台」分組是空的，**這是預期行為**。
+
+#### 撤單端點的准入鏈（順序不可調換）
+
+`_resolve_portal_widget_common(..., 'update')` → widget 必須是 `actions` →
+`check_widget_write_access(access_matrix, 'update')` → **widget 的 buttons 裡
+必須有一顆解析得到、且 endpoint 正好是本端點的 portal action**（registry 不可繞過）
+→ `_owned_submission(record_sc, ctx)` 三重過濾 → `wi.status == 'RUNNING'`。
+前四關任一失敗一律 404 + `_log_portal_write_denied(reason=)`；
+狀態不符回 409 `not_cancellable`。
+
+**撤單的擁有權判定絕不可用 `applicant_secure_code`** —— portal 世界那一律是
+企業公用帳號（`nocode-svc-<org>`），拿它判定等於所有 portal 用戶都是發起人。
+
+軌跡寫 `FwApprovalRecord(node_id='FORCE_END', action='FORCE_END')`，
+`approver_secure_code` 只能塞 `fi.applicant_secure_code`（portal 帳號不存在於
+平台 `users` 表），真正的操作者記在 `approver_name`（`portal:<display_name>`）
+與 `comment`（含 `user_ref=`）。
+
+#### 這一輪新踩的坑（會再踩）
+
+1. **`URLSearchParams.keys()` 不能用 `Array.prototype.slice.call()`** ——
+   迭代器沒有 `length`，slice 回空陣列，於是「撤單後清掉 `*__sc=`」
+   一個參數都沒刪掉，畫面看起來成功但仍停在 detail。必須 `Array.from()`。
+   **症狀極不明顯**（動作真的成功了，只是網址沒清），curl 測不出來。
+2. **formio 的 submit button 若 `input: true`，送出 payload 會多一個 `submit: true`
+   欄位** → 後端 `extract_schema_field_keys` 白名單擋下，回 400 `unknown_field`。
+   驗收頁加送出按鈕時要寫 `"input": false`。
+3. 驗收頁 `FORMTEST00000000000001` 原本的 form schema **沒有送出按鈕**
+   （歷來都用 curl 送件），本輪已補上（`input: false`）。
+
+#### 順手發現、**尚未修**的既有問題（與 actions 無關）
+
+- **portal 頁沒有載入 `timezone.js`**（`typeof BkTime === 'undefined'`），
+  所以表格「捲動載入」的列時間直接印 API 回的 naive UTC ISO 字串
+  （`2026-07-28T20:23:...`），與伺服器端渲染的第一頁（`2026-07-29 04:23`）不一致。
+  違反 TZ-01。修法是 portal base 模板載入 timezone.js + appendRows 改用
+  `BkTime.format()`，但牽涉 portal 世界的時區來源，本輪未動。
+- **內容不足一屏時，無限捲動載不到第 3 頁以後**：sentinel 一直在視窗內，
+  IntersectionObserver 不再觸發回呼。page_size 小、資料少時可重現。
+
+#### 本機驗收資料（是事實，不要重建）
+
+- 驗收頁 `FORMTEST00000000000001` 已有 `acts-1`（actions widget，一顆撤單按鈕，
+  access_matrix read+update 皆 GUEST），`subs-1.row_actions_ref = 'acts-1'`。
+- 撤單需要 `wi.status == 'RUNNING'`；該 mapping 的流程會很快跑完變 COMPLETED，
+  要測就照 §4.3.2 的 SQL 手動改 status + 插一筆 WAITING 佇列。
+- 測完記得清 queue 記錄與自動產生的子系統
+  （`dc_sub_systems.provision_serial_number` 對得上送件序號）。
+
+#### 瀏覽器實測項目（VERIFY-01，全部通過）
+
+列動作只出現在 RUNNING 那一列、撤單 URL 帶 nginx 前綴、confirm → 撤單 →
+toast「已完成」→ 800ms 後清掉 `*__sc=` 回清單、狀態變「已退回」、
+待辦節點 CANCELLED、留下 FORCE_END 軌跡；表單送出 → toast「已送出」+
+欄位清空 + 不 reload；捲動載入的第 2 頁列也有撤單按鈕且 record_sc 正確；
+設計器面板 select 初次渲染正確（FRONT-08）、儲存後 `permission` 空值被清掉。
+IDOR（撤別人的單）、打非 actions widget、缺 CSRF、重複撤單 → 404/404/400/409。
 
 ### 4.1 為什麼放最後
 

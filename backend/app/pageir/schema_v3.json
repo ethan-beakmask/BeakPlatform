@@ -442,7 +442,7 @@
     "action_button": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "label_i18n", "permission", "action_ref"],
+      "required": ["id", "label_i18n", "action_ref"],
       "properties": {
         "id": {
           "$ref": "#/$defs/slug"
@@ -478,6 +478,9 @@
           "items": {
             "$ref": "#/$defs/action_button"
           }
+        },
+        "access_matrix": {
+          "$ref": "#/$defs/widget_access_matrix"
         }
       }
     },

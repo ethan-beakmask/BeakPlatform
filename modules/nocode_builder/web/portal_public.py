@@ -13,6 +13,7 @@ CSRF 在登入/註冊 POST 端點豁免 (無已登入 session 可被攻擊)。
 """
 import logging
 import re
+import secrets
 from datetime import date, datetime
 from decimal import Decimal
 from math import ceil
@@ -140,7 +141,7 @@ def _json_safe_value(value):
 
 
 def _sanitize_rows(rows: list[dict], fields: list[str]) -> list[dict]:
-    allowed = set(fields) | {'_sc'}
+    allowed = set(fields) | {'_sc', '_can_cancel'}
     sanitized = []
     for row in rows:
         if not isinstance(row, dict):
@@ -1147,6 +1148,108 @@ def portal_widget_update_submission(path_id, page_sc, widget_id, record_sc):
         'success': True,
         'data': {'serial_number': form_instance.serial_number},
     }), 200
+
+
+@public_portal_bp.route(
+    '/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/submissions/<record_sc>/cancel',
+    methods=['POST'],
+    endpoint='portal_widget_cancel_submission',
+)
+@limiter.limit('10 per minute; 100 per hour')
+@public_route
+def portal_widget_cancel_submission(path_id, page_sc, widget_id, record_sc):
+    """Public portal Page IR 撤單（等同表單中心的強制結束）。"""
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.pageir.registry import get_portal_action
+    from modules.form_workflow.models import FwApprovalRecord
+    from modules.form_workflow.services.workflow_engine import WorkflowEngine
+    from ..services import portal_access_service
+    from ..services.pageir_formflow_resources import _owned_submission
+
+    common = _resolve_portal_widget_common(path_id, page_sc, widget_id, 'update')
+    ss = common['ss']
+    portal_user = common['portal_user']
+    widget = common['widget']
+    ctx = common['ctx']
+
+    if widget.get('type') != 'actions':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'widget_not_found')
+        abort(404)
+
+    if not portal_access_service.check_widget_write_access(widget.get('access_matrix') or {}, 'update', ctx):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'widget_write_denied')
+        abort(404)
+
+    action_registered = False
+    try:
+        set_render_context(
+            'portal',
+            sub_system_sc=ss.secure_code,
+            portal_user=portal_user,
+            path_id=path_id,
+            page_sc=page_sc,
+        )
+        for button in widget.get('buttons') or []:
+            action = get_portal_action(button.get('action_ref'))
+            if action and action.get('endpoint') == 'nocode_public_portal.portal_widget_cancel_submission':
+                action_registered = True
+                break
+    finally:
+        clear_render_context()
+    if not action_registered:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'cancel_action_missing')
+        abort(404)
+
+    pair = _owned_submission(record_sc, ctx)
+    if pair is None:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'submission_denied')
+        abort(404)
+    wi, fi = pair
+
+    if wi.status != 'RUNNING':
+        return jsonify({'success': False, 'error': 'not_cancellable'}), 409
+
+    try:
+        # portal session 沒有 username 欄位，可讀名稱在 display_name；
+        # 真正能對回帳號的識別碼是 wi.nocode_user_ref，一併寫進軌跡。
+        operator = 'portal:' + str(
+            portal_user.get('display_name')
+            or portal_user.get('username')
+            or portal_user.get('user_id')
+            or ''
+        )
+        WorkflowEngine.cancel_pending_nodes(wi.secure_code)
+        WorkflowEngine.complete_workflow(
+            wi.secure_code,
+            status='CANCELLED',
+            end_message=f'由 {operator} 撤單',
+        )
+        db.session.add(FwApprovalRecord(
+            secure_code=secrets.token_urlsafe(16),
+            org_secure_code=ss.org_secure_code,
+            workflow_instance_secure_code=wi.secure_code,
+            form_instance_secure_code=fi.secure_code,
+            node_id='FORCE_END',
+            node_name='撤單',
+            approver_secure_code=fi.applicant_secure_code,
+            approver_name=operator,
+            action='FORCE_END',
+            comment=f'由外部帳號 {operator} 撤單 (user_ref={wi.nocode_user_ref})',
+            acted_at=datetime.utcnow(),
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception(
+            'Portal form cancel failed: page=%s widget=%s record=%s sub_system=%s',
+            page_sc,
+            widget_id,
+            record_sc,
+            ss.secure_code,
+        )
+        return jsonify({'success': False, 'error': 'internal_error'}), 500
+
+    return jsonify({'success': True, 'data': {'execution_code': wi.execution_code}}), 200
 
 
 @public_portal_bp.route('/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/rows/<row_id>', methods=['PUT'])

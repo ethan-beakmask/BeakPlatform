@@ -8,7 +8,7 @@
 {% elif widget.type == 'text' %}
 <{{ widget.level }} id="{{ widget.id }}" class="pir-text pir-text-{{ widget.level }}">{{ widget.content }}</{{ widget.level }}>
 {% elif widget.type == 'table' %}
-<div id="{{ widget.id }}" class="pir-table-wrap" data-pir-table="{{ widget.id }}" data-pir-page="{{ widget.page }}" data-pir-pages="{{ widget.pages }}" data-pir-sort="{{ widget.sort_field or '' }}" data-pir-dir="{{ widget.sort_dir or '' }}" data-pir-cols="{{ widget.columns|length }}" data-pir-actions="{{ 'true' if widget.row_link_target or widget.row_actions or widget.caps['update'] or widget.caps['delete'] else 'false' }}" data-pir-row-link="{{ widget.row_link_target or '' }}" data-pir-can-create="{{ 'true' if widget.caps['create'] else 'false' }}" data-pir-can-update="{{ 'true' if widget.caps['update'] else 'false' }}" data-pir-can-delete="{{ 'true' if widget.caps['delete'] else 'false' }}">
+<div id="{{ widget.id }}" class="pir-table-wrap" data-pir-table="{{ widget.id }}" data-pir-page="{{ widget.page }}" data-pir-pages="{{ widget.pages }}" data-pir-sort="{{ widget.sort_field or '' }}" data-pir-dir="{{ widget.sort_dir or '' }}" data-pir-cols="{{ widget.columns|length }}" data-pir-actions="{{ 'true' if widget.row_link_target or widget.row_actions or widget.caps['update'] or widget.caps['delete'] else 'false' }}" data-pir-row-link="{{ widget.row_link_target or '' }}" data-pir-row-actions="{{ widget.row_actions|tojson|forceescape }}" data-pir-can-create="{{ 'true' if widget.caps['create'] else 'false' }}" data-pir-can-update="{{ 'true' if widget.caps['update'] else 'false' }}" data-pir-can-delete="{{ 'true' if widget.caps['delete'] else 'false' }}">
     {% if widget.caps['create'] %}
     <div class="pir-table-toolbar">
         <button type="button" class="pir-btn pir-btn-primary" data-pir-create="{{ widget.id }}">{{ _('新增') }}</button>
@@ -53,7 +53,9 @@
                     <a class="pir-btn pir-btn-secondary" href="{{ row.get('_link') }}">{{ _('開啟') }}</a>
                     {% endif %}
                     {% for button in widget.row_actions %}
+                    {% if (not button.requires_record or row.get('_sc')) and (not button.row_flag or row.get(button.row_flag)) %}
                     <button type="button" class="pir-btn pir-btn-{{ button.style }}" data-pir-url="{{ pir_action_url(button.url, row.get('_sc')) }}" data-pir-method="{{ button.method }}" data-pir-confirm="{{ 'true' if button.confirm else 'false' }}">{{ button.label }}</button>
+                    {% endif %}
                     {% endfor %}
                     {% if widget.caps['update'] %}<button type="button" class="pir-btn pir-btn-secondary" data-pir-edit="{{ widget.id }}" data-pir-row="{{ row.get('_sc') }}">{{ _('編輯') }}</button>{% endif %}
                     {% if widget.caps['delete'] %}<button type="button" class="pir-btn pir-btn-danger" data-pir-delete="{{ widget.id }}" data-pir-row="{{ row.get('_sc') }}">{{ _('刪除') }}</button>{% endif %}

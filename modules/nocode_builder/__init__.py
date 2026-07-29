@@ -106,5 +106,12 @@ def init_runtime(app):
             'update_endpoint': 'nocode_public_portal.portal_widget_update_submission',
             'state_resolver': resolve_submission_state,
         })
+        register_portal_action('portal.form.cancel', {
+            'endpoint': 'nocode_public_portal.portal_widget_cancel_submission',
+            'method': 'POST',
+            'requires_record': True,
+            'row_flag': '_can_cancel',
+            'confirm': True,
+        })
     except Exception as e:
         logger.error(f'NocodeBuilder: 註冊 Page IR portal action 失敗: {str(e)}')
