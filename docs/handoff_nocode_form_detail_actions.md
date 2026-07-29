@@ -110,11 +110,82 @@
 | `form-2` | 同上（本輪驗收時由設計器補上動作） | 可送出 |
 | `form-3` | create 設 VIP / ADMIN | 一般訪客唯讀，直打 API 回 404 |
 
-### 尚未做（不是遺漏，是下一步）
+---
 
-**簽核狀態可見**（§2.2 用戶已裁決要做）。送件已回傳
-`serial_number` 與 `execution_code`，狀態查詢有依據可接。
-待決：用哪個 widget 呈現、查詢入口放哪。
+## 1.4.1 【2026-07-29 更新】簽核狀態可見已完成
+
+用戶裁決把這項插在 detail 之前做完。
+
+### 做法：新增 portal 資源，不新增 widget 型別
+
+資源 code：**`formflow:submissions`**
+（`modules/nocode_builder/services/pageir_formflow_resources.py`）
+
+設計者用**既有的 table / detail widget** 綁定它就能顯示「我送出的表單」。
+分頁、排序、遮罩、元件准入、捲動載入全部沿用既有機制。
+
+為此放寬了 `schema_v3.json` 的 `resource_ref` pattern：
+`^([a-z][a-z0-9_-]{0,63}|(portal|formflow):[A-Za-z0-9_-]{8,64})$`
+—— **明列兩個前綴，不是通配任意前綴**。日後要加第三種資源前綴，
+照這個模式加，不要改成 `[a-z]+:`。
+
+### 六個欄位（固定，設計者不可增減）
+
+`serial_number` / `execution_code` / `subject` / `status_label` /
+`current_step` / `submitted_at`
+
+**刻意不放**申請人、簽核人、簽核意見、`form_data`、內部節點 id。
+申請人一律是公用帳號，對外部用戶無意義且會洩漏內部帳號名。
+用戶要的是「不必像表單中心那麼詳細」，**不要自行加欄位**。
+
+`status_label` 是人話（審核中／處理中／已完成／已退回），
+判定依據是 `fw_node_execution_queue` 有無 WAITING 的 Approve/FormAdapter 節點。
+`current_step` 是該節點的 `node_name`（多個取 `scheduled_at` 最早）。
+
+### 安全設計（改這支程式前務必讀）
+
+- 三重過濾**全部在 SQL WHERE**：`org_secure_code` + `nocode_sub_system_sc`
+  + `nocode_user_ref`。`fetch_detail` 是在同樣的 WHERE 上再加
+  `fi.secure_code = record_sc`——**不是先查再比對**，後者就是 IDOR
+- 唯讀是硬性的：`crud` 全 False **之外**，`create_row` / `update_row` /
+  `delete_row` 也直接回 `(False, "readonly")`。不可留 `None`
+  （呼叫端拿到 `None` 會 TypeError，而不是乾淨拒絕）
+- 識別碼算法抽成 `portal_auth_service.nocode_user_ref()`，
+  **送件端與查詢端共用同一份**。兩邊一旦漂移，輕則查不到自己的案子，
+  重則查到別人的
+- `portal_user` 不是 dict 時 helper 拋 `ValueError`，不回空字串
+  （空字串會讓查詢條件變成比對空值）
+
+### 匿名用戶的必然限制
+
+匿名的 `user_ref` 是 `g:<guest_token>`，token 只存 Flask session。
+**清 cookie 或換裝置就查不到自己先前送的案子**。
+這是「一次性 token」方案的必然結果，用戶已知並裁決接受。
+要支援跨裝置查詢就得讓匿名者留下可驗證的聯絡方式，那是另一個題目。
+
+### 驗收（本機實測，非推論）
+
+| 情境 | 結果 |
+|---|---|
+| p4tester（`u:1`）看清單 | 3 筆，全是自己的 |
+| 原匿名 session（`g:Patkey...`） | 1 筆，只有自己的 |
+| 全新匿名 session | 0 筆 |
+| p4tester 用 `subs-2__sc=` 查匿名那筆 | 「請選擇一筆資料」（不洩漏存在與否） |
+| 匿名查 p4tester 那筆 | 同上 |
+| 捲動載入 API 跨用戶 | total 各自 3 / 1 |
+| POST / PUT / DELETE rows | 全 404 |
+| platform 世界 / 缺 ctx / `formflow:other` | 全部回 `None` |
+| 造一筆 WAITING 的 Approve 節點 | 顯示「審核中」+「部門主管審核」 |
+
+`backend/tests/test_pageir_formflow_submissions.py` 的隔離測試是真的建兩筆
+不同 `nocode_user_ref` 的資料互查，不是 mock。
+
+### 仍待用戶澄清
+
+§2.2 有一條「form 的兩種狀態：**新增** 與 **簽核**，設計時要分開處理」。
+目前的理解是：設計者現在能做出「送件頁」（form widget）與
+「我的申請頁」（table 綁 `formflow:submissions`）兩種頁面，這就是「分開處理」。
+**若原意是別的（例如同一個 widget 要能切換兩種狀態），這條還沒做。**
 
 ---
 

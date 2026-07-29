@@ -668,7 +668,7 @@ def portal_widget_submit(path_id, page_sc, widget_id):
         extract_schema_field_keys,
     )
     from ..services import portal_access_service
-    from ..services.portal_auth_service import ensure_guest_token
+    from ..services.portal_auth_service import nocode_user_ref
 
     common = _resolve_portal_widget_common(path_id, page_sc, widget_id, 'create')
     ss = common['ss']
@@ -752,10 +752,7 @@ def portal_widget_submit(path_id, page_sc, widget_id):
         }), 400
 
     sub_ref = ss.secure_code
-    if portal_user.get('user_id') is not None:
-        user_ref = f"u:{portal_user['user_id']}"
-    else:
-        user_ref = f"g:{ensure_guest_token(ss.secure_code, portal_user)}"
+    user_ref = nocode_user_ref(ss.secure_code, portal_user)
     payload = dict(form_data)
     if '_nocode_sub_system' in allowed_keys:
         payload['_nocode_sub_system'] = sub_ref

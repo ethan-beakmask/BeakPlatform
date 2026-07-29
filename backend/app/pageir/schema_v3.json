@@ -23,7 +23,7 @@
     },
     "resource_ref": {
       "type": "string",
-      "pattern": "^([a-z][a-z0-9_-]{0,63}|portal:[A-Za-z0-9_-]{8,64})$"
+      "pattern": "^([a-z][a-z0-9_-]{0,63}|(portal|formflow):[A-Za-z0-9_-]{8,64})$"
     },
     "field_key": {
       "type": "string",

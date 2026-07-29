@@ -79,6 +79,12 @@ def init_runtime(app):
         logger.error(f'NocodeBuilder: 註冊 Page IR portal resources 失敗: {str(e)}')
 
     try:
+        from .services.pageir_formflow_resources import init_formflow_pageir_resources
+        init_formflow_pageir_resources()
+    except Exception as e:
+        logger.error(f'NocodeBuilder: 註冊 Page IR formflow resources 失敗: {str(e)}')
+
+    try:
         from app.pageir.registry import register_access_evaluator
         from .services import portal_access_service
 

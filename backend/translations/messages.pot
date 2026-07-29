@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-29 04:15+0800\n"
+"POT-Creation-Date: 2026-07-29 08:40+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -13816,47 +13816,47 @@ msgid "此 Master 記錄已鎖定，無法修改關聯資料"
 msgstr ""
 
 #: ../modules/nocode_builder/api/__init__.py:954
-#: ../modules/nocode_builder/api/__init__.py:1038
+#: ../modules/nocode_builder/api/__init__.py:1051
 #: ../modules/nocode_builder/api/template_api.py:69
 msgid "Page IR validation failed"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1108
+#: ../modules/nocode_builder/api/__init__.py:1121
 msgid "頁面已發布"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1138
+#: ../modules/nocode_builder/api/__init__.py:1151
 msgid "頁面已取消發布"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1230
-#: ../modules/nocode_builder/api/__init__.py:1276
+#: ../modules/nocode_builder/api/__init__.py:1243
+#: ../modules/nocode_builder/api/__init__.py:1289
 msgid "非子系統成員"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1245
-#: ../modules/nocode_builder/api/__init__.py:1293
-#: ../modules/nocode_builder/api/__init__.py:1304
+#: ../modules/nocode_builder/api/__init__.py:1258
+#: ../modules/nocode_builder/api/__init__.py:1306
+#: ../modules/nocode_builder/api/__init__.py:1317
 #, python-format
 msgid "您的角色 (%(role_type)s) 不允許此操作"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1388
+#: ../modules/nocode_builder/api/__init__.py:1401
 msgid "子系統預設樣式已更新"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1430
+#: ../modules/nocode_builder/api/__init__.py:1443
 #, python-format
 msgid "已套用到 %(count)s 個頁面"
 msgstr ""
 
 #: ../modules/form_workflow/api/backgrounds.py:103
-#: ../modules/nocode_builder/api/__init__.py:1515
+#: ../modules/nocode_builder/api/__init__.py:1528
 msgid "底圖上傳成功"
 msgstr ""
 
 #: ../modules/form_workflow/api/backgrounds.py:187
-#: ../modules/nocode_builder/api/__init__.py:1547
+#: ../modules/nocode_builder/api/__init__.py:1560
 msgid "底圖已刪除"
 msgstr ""
 
@@ -14333,6 +14333,33 @@ msgstr ""
 
 #: ../modules/nocode_builder/services/db_connector.py:189
 msgid "(無法取得集團資料庫資訊)"
+msgstr ""
+
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:118
+msgid "我送出的表單"
+msgstr ""
+
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:237
+msgid "審核中"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:23
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:237
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:242
+msgid "處理中"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:357
+#: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:55
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:482
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:24
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:239
+msgid "已完成"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:594
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:241
+msgid "已退回"
 msgstr ""
 
 #: ../modules/nocode_builder/services/project_service.py:116
@@ -15482,10 +15509,6 @@ msgstr ""
 #: ../modules/form_workflow/api/fc_pending.py:594
 #: ../modules/form_workflow/api/instance_routes.py:274
 msgid "簽核完成"
-msgstr ""
-
-#: ../modules/form_workflow/api/fc_pending.py:594
-msgid "已退回"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_pending.py:599
@@ -16681,13 +16704,6 @@ msgstr ""
 msgid "執行中"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:357
-#: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:55
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:482
-#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:24
-msgid "已完成"
-msgstr ""
-
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:358
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:56
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:483
@@ -17610,10 +17626,6 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:21
 msgid "草稿"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:23
-msgid "處理中"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:25

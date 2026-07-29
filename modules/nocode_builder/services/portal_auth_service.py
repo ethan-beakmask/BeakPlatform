@@ -101,6 +101,16 @@ def ensure_guest_token(sub_system_sc: str, portal_user: dict) -> str:
     return updated['guest_token']
 
 
+def nocode_user_ref(sub_system_sc: str, portal_user: dict) -> str:
+    """回傳送件／查詢共用的外部用戶識別碼。"""
+    if not isinstance(portal_user, dict):
+        raise ValueError('portal_user must be a dict')
+    user_id = portal_user.get('user_id')
+    if user_id is not None:
+        return f"u:{user_id}"
+    return f"g:{ensure_guest_token(sub_system_sc, portal_user)}"
+
+
 def logout(sub_system_sc: str):
     """清除 portal session (僅清除與該子系統相符的 session)"""
     portal_sessions = dict(session.get(_SESSION_KEY) or {})
