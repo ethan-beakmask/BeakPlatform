@@ -158,6 +158,7 @@
       }
     );
     var hasActions = wrap.dataset.pirActions === 'true';
+    var rowLinkTarget = wrap.dataset.pirRowLink || '';
     var canUpdate = wrap.dataset.pirCanUpdate === 'true';
     var canDelete = wrap.dataset.pirCanDelete === 'true';
     var widgetId = wrap.dataset.pirTable;
@@ -172,6 +173,17 @@
       if (hasActions) {
         var actionCell = document.createElement('td');
         actionCell.className = 'pir-actions-cell';
+        // 捲動載入的列不經過 renderer，沒有後端算好的 _link，
+        // 這裡自行組出與 _row_link_url() 同語意的網址（保留現有 query 參數）。
+        if (rowLinkTarget && row && row._sc) {
+          var link = document.createElement('a');
+          link.className = 'pir-btn pir-btn-secondary';
+          var url = new URL(window.location.href);
+          url.searchParams.set(rowLinkTarget + '__sc', row._sc);
+          link.href = url.pathname + url.search;
+          link.textContent = t('開啟');
+          actionCell.appendChild(link);
+        }
         if (canUpdate) {
           actionCell.appendChild(crudButton('edit', widgetId, row && row._sc));
         }

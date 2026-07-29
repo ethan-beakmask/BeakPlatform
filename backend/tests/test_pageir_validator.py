@@ -122,6 +122,16 @@ def test_valid_complete_document():
     assert errors == []
 
 
+def test_schema_accepts_table_row_link_ref():
+    doc = valid_doc()
+    doc["page"]["widgets"][1]["row_link_ref"] = "sample-detail"
+
+    ok, errors = validate_page_ir(doc)
+
+    assert ok is True
+    assert errors == []
+
+
 def test_legacy_v2_is_rejected():
     ok, errors = validate_page_ir({"version": 2, "widgets": []})
 

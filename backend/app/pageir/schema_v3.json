@@ -262,6 +262,9 @@
         "row_actions_ref": {
           "$ref": "#/$defs/slug"
         },
+        "row_link_ref": {
+          "$ref": "#/$defs/slug"
+        },
         "access_matrix": {
           "$ref": "#/$defs/widget_access_matrix"
         }

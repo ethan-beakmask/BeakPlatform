@@ -227,6 +227,15 @@
                                     </template>
                                 </select>
                             </div>
+                            <div class="ird-field">
+                                <label>{{ _('列連結目標') }}</label>
+                                <select :value="selectedWidget.row_link_ref || ''" @change="setOptionalWidgetValue(selectedWidget, 'row_link_ref', $event.target.value)">
+                                    <option value="" :selected="!selectedWidget.row_link_ref">{{ _('不啟用') }}</option>
+                                    <template x-for="target in rowLinkTargets" :key="target.id">
+                                        <option :value="target.id" :selected="target.id === selectedWidget.row_link_ref" x-text="target.id"></option>
+                                    </template>
+                                </select>
+                            </div>
                         </div>
                     </template>
 

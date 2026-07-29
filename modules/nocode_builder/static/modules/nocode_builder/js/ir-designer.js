@@ -382,6 +382,12 @@ function irDesigner() {
             return this.treeRows.map((row) => row.widget).filter((widget) => widget.type === 'actions');
         },
 
+        get rowLinkTargets() {
+            return this.treeRows
+                .map((row) => row.widget)
+                .filter((widget) => widget.type === 'detail' || widget.type === 'form');
+        },
+
         get formActionRefs() {
             return (this.meta.actions || []).filter((ref) => /^[a-z][a-z0-9_.:-]{1,127}$/.test(ref));
         },

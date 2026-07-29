@@ -148,6 +148,12 @@ def _prepare_table(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     _check_rows_have_sc(widget["id"], rows)
     rows = apply_row_masks(rows, widget["columns"])
     row_actions = _row_actions(widget, widgets_by_id)
+    row_link_target = _row_link_target(widget, widgets_by_id)
+    if row_link_target:
+        rows = [
+            {**row, "_link": _row_link_url(row_link_target, row["_sc"])}
+            for row in rows
+        ]
 
     return {
         "type": "table",
@@ -164,6 +170,7 @@ def _prepare_table(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
         "sort_dir": sort_dir,
         "egress_resource": resource.get("egress_resource"),
         "row_actions": row_actions,
+        "row_link_target": row_link_target,
         "caps": caps,
         "form_fields": form_fields,
     }
@@ -295,6 +302,17 @@ def _row_actions(widget: dict, widgets_by_id: dict[str, dict]) -> list[dict]:
     if not action_widget or action_widget.get("type") != "actions":
         raise PageIrRenderError(f"row_actions_ref does not resolve: {ref}")
     return _prepare_action_buttons(action_widget)
+
+
+def _row_link_target(widget: dict, widgets_by_id: dict[str, dict]) -> str | None:
+    """回傳列連結要指向的 widget id；未設定回 None。"""
+    ref = widget.get("row_link_ref")
+    if not ref:
+        return None
+    target = widgets_by_id.get(ref)
+    if not target or target.get("type") not in {"detail", "form", "master_detail"}:
+        raise PageIrRenderError(f"row_link_ref does not resolve: {ref}")
+    return ref
 
 
 def _prepare_detail(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
@@ -518,10 +536,26 @@ def _positive_int(value: str | None, default: int) -> int:
     return parsed if parsed > 0 else default
 
 
+def _self_url(args: dict) -> str:
+    """組出指向本頁的網址。
+
+    必須帶 `request.script_root`：本 app 掛在 nginx 的 `/beakplatform` 前綴下，
+    而 Flask 的 `request.path` **不含**該前綴。只用 request.path 產生的
+    `/public/portal/...` 在瀏覽器上會解析成缺前綴的絕對路徑而 404。
+    """
+    return f"{request.script_root}{request.path}?{urlencode(args, doseq=True)}"
+
+
 def _page_url(widget_id: str, page: int) -> str:
     args = request.args.to_dict(flat=False)
     args[f"{widget_id}__page"] = [str(page)]
-    return f"{request.path}?{urlencode(args, doseq=True)}"
+    return _self_url(args)
+
+
+def _row_link_url(target_id: str, row_sc: str) -> str:
+    args = request.args.to_dict(flat=False)
+    args[f"{target_id}__sc"] = [row_sc]
+    return _self_url(args)
 
 
 def _sort_url(
@@ -536,7 +570,7 @@ def _sort_url(
         "desc" if current_field == field and current_dir == "asc" else "asc"
     ]
     args[f"{widget_id}__page"] = ["1"]
-    return f"{request.path}?{urlencode(args, doseq=True)}"
+    return _self_url(args)
 
 
 def _action_url(url: str, record_sc: str) -> str:
