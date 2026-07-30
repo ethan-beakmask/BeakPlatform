@@ -483,8 +483,8 @@ CRUD 與 context 端點回 400 `filter_variable_not_supported`，
 `_build_sub_system_context()` 沿既有慣例回 `None`。
 測試 `backend/tests/test_platform_fixed_filters.py`（28 項）。
 
-**仍待用戶裁決的是「要不要支援 portal 版的『只看自己』」**，並且它不是
-「加一個變數」就能了事，有兩個硬前提：
+**「只看自己」已於 2026-07-30 實作完成**（見本節末「列級擁有權已落地」），
+底下這兩個硬前提是當時的分析，保留作為脈絡：
 
 1. **子系統 SQLite 業務表沒有欄位記得「誰建的」**（注意範圍：
    **formflow 送件那條路早就有**——`fw_workflow_instances.nocode_sub_system_sc`
@@ -530,13 +530,58 @@ curl -b p4.txt -X PUT \
 SQLite 業務表沒有材料所以沒有這道檢查。派工 spec 也沒寫這條
 （同 #4906：漏的是 spec 沒想到的，不是模型不遵守規範）。
 
-**修法方向（等用戶裁決三個細節後動工）**：在 SQLite 業務表注入
-`portal_user_ref TEXT`，值沿用 `nocode_user_ref()` 的同一套語彙，
-照集團 DB `owner_org_code` 的既有模式做（`_auto_fill_owner_org_code()`
-寫入自動填、update 時 `pop` 掉禁止改、列進 `_SYSTEM_COLUMNS` 不進表單），
-並把擁有權過濾套進 `get_row` / `update_row` / `delete_row`。
-待裁決：注入範圍（一律加 vs 逐表 opt-in）、既有 NULL 列的歸屬、
-視圖層 `row_owner_scope` 的預設值（`own` fail-closed vs `all` 相容）。
+#### 【2026-07-30】列級擁有權已落地
+
+用戶裁決（三題全選 fail-closed 方向）：**所有業務表一律注入欄位**、
+**NULL 列視為無主誰都看不到**、**`row_owner_scope` 預設 `own`**。
+
+實作：
+
+- `dc_crud_views.row_owner_scope VARCHAR(8) NOT NULL DEFAULT 'own'`
+  （migration `scripts/migrations/089_portal_row_owner_scope.sql`，已執行；
+  現有 19 個視圖全部是 `own`）
+- 業務表系統欄位 `portal_user_ref TEXT`，值即 `nocode_user_ref()` 的
+  `u:<user_id>` / `g:<guest_token>`。新表由建表端點自動注入；
+  既有表用 `scripts/add_portal_user_ref.py --apply`（冪等，已對 4 張表執行）
+- `SqliteCrudService` 五個方法（`query_rows` / `get_row` / `create_row` /
+  `update_row` / `delete_row`）新增 `owner_ref` 參數 + 共用
+  `_owner_scope_condition()`。語意：身分字串 → 加 WHERE 並在 create 時自動填；
+  `OWNER_REF_PLATFORM` → 不過濾（平台管理視角，必須顯式傳）；
+  `None`（漏傳）→ **raise `PortalFilterNotSupported`**
+- **列級只在 portal 語境生效**，平台端點一律顯式傳 `OWNER_REF_PLATFORM`。
+  這是刻意的：平台側是設計者/管理者視角，且已有 `module_access_required`
+  與租戶隔離把關；若平台也 fail-closed，設計器預覽與管理頁會完全看不到資料
+- **不可**用 `get_render_context()` 取代 `owner_ref` 參數 ——
+  `_resolve_portal_widget_write()` 在 `finally` 就 clear context，
+  而端點在那之後才呼叫寫入函式，讀 context 會拿到預設的 `platform`。
+  portal 側身分在 `_resolve_portal_resource()` 解析時算好並由閉包 capture
+- `portal_user_ref` 進 `_SYSTEM_COLUMNS`（不可寫、不進表單）；
+  create/update 都先 `pop` 掉 payload 裡的該欄位，**不接受呼叫端指定擁有者**
+- create 時「表有欄位就填」，與 scope 無關 —— 這樣 scope 之後才改成 own 的表，
+  舊列不會全變無主
+
+測試 233 → **248 passed**（新增 `backend/tests/test_portal_row_owner_scope.py`）。
+
+**瀏覽器/HTTP 實測（p4tester，測完資料已還原）**：
+
+| 案例 | 結果 |
+|---|---|
+| 改無主的別人列 `PUT rows/1` | 400 `row_not_found`（原本是 200） |
+| own 模式讀清單 | 0 列（3 筆舊列都是 NULL 無主） |
+| 自己新增 | 201，`portal_user_ref` 自動填 `u:1` |
+| 改自己的列 | 200 |
+| payload 塞 `portal_user_ref: u:999` 冒名 | 被忽略，實際存 `u:1` |
+
+（`DELETE rows/3` 回 404 是被 `access_matrix` 的 delete 規則擋下——
+該 widget 要求 ADMIN 群組，p4tester 是 STAFF。delete 的 owner 過濾由單元測試涵蓋。）
+
+**已知行為（不是 bug）**：`data_bridge_service` 從平台單向同步進 portal_data
+的列沒有 portal 身分，`portal_user_ref` 為 NULL → own 模式下看不到。
+橋接資料本質是共享參考資料，對應視圖應設 `row_owner_scope='all'`。
+
+**已知限制**：`row_owner_scope` 目前只能透過 API（`POST/PUT /api/nocode-builder/views`）
+或 SQL 設定，因為視圖設定本來就沒有現行 UI（IR 設計器只「選」既有視圖，不編輯它）。
+要 UI 是另一張工單。
 
 匿名語境已由用戶定調：匿名場景（問卷之類）只收資料、不提供查詢，
 所以匿名一律拒絕身分變數，不需要拿 `guest_token` 當 owner。

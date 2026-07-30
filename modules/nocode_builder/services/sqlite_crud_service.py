@@ -64,8 +64,12 @@ def _serialize_value(val):
     return str(val)
 
 
+# 呼叫端明確表示「這是平台管理視角，刻意不做列級過濾」
+OWNER_REF_PLATFORM = '__platform_admin_view__'
+
+
 # ── 系統欄位識別 (同 crud_service) ──
-_SYSTEM_COLUMNS = {'id', 'form_instance_secure_code', 'row_index', 'owner_org_code'}
+_SYSTEM_COLUMNS = {'id', 'form_instance_secure_code', 'row_index', 'owner_org_code', 'portal_user_ref'}
 
 
 def _is_system_column(col_cfg: dict) -> bool:
@@ -133,6 +137,46 @@ def _find_row_id_column(view) -> Optional[str]:
         if c.get('is_pk'):
             return c.get('column')
     return None
+
+
+def _table_has_column(session, table_name: str, column_name: str) -> bool:
+    if not _validate_identifier(table_name) or not _validate_identifier(column_name):
+        return False
+    rows = session.execute(text(f'PRAGMA table_info({_quote(table_name)})')).fetchall()
+    return any(row[1] == column_name for row in rows)
+
+
+def _owner_scope_condition(view, owner_ref, session, table_name):
+    """
+    回傳 (sql_fragment, params) 或 (None, {})。
+
+    scope != 'own'                      → (None, {})   不過濾
+    scope == 'own' 且 owner_ref 是 OWNER_REF_PLATFORM → (None, {}) 不過濾
+    scope == 'own' 且 owner_ref is None → raise PortalFilterNotSupported
+    scope == 'own' 且 owner_ref 是身分字串:
+        表沒有 portal_user_ref 欄位     → raise PortalFilterNotSupported
+        否則 → ('"portal_user_ref" = :__owner_ref', {'__owner_ref': owner_ref})
+    """
+    scope = getattr(view, 'row_owner_scope', 'own') or 'own'
+    if scope != 'own':
+        return None, {}
+    if owner_ref == OWNER_REF_PLATFORM:
+        return None, {}
+    if owner_ref is None:
+        logger.warning(
+            'Portal owner_ref missing for own-scope view: view=%s table=%s',
+            getattr(view, 'secure_code', None),
+            table_name,
+        )
+        raise PortalFilterNotSupported('portal_owner_ref_required')
+    if not _table_has_column(session, table_name, 'portal_user_ref'):
+        logger.warning(
+            'Portal owner column missing for own-scope view: view=%s table=%s',
+            getattr(view, 'secure_code', None),
+            table_name,
+        )
+        raise PortalFilterNotSupported('portal_owner_column_missing')
+    return f'{_quote("portal_user_ref")} = :__owner_ref', {'__owner_ref': owner_ref}
 
 
 def resolve_filter_variables(filters: Dict[str, str], user=None) -> Dict[str, str]:
@@ -211,6 +255,7 @@ class SqliteCrudService:
         sort_column: Optional[str] = None,
         sort_dir: str = 'ASC',
         dynamic_filters: Optional[Dict[str, str]] = None,
+        owner_ref=None,
     ) -> Dict[str, Any]:
         """查詢目標表的資料（分頁）"""
         table_name = view.table_name
@@ -244,6 +289,11 @@ class SqliteCrudService:
                     where_parts.append(f'{_quote(col)} = :{pname}')
                     params[pname] = val
                     param_idx += 1
+
+        owner_fragment, owner_params = _owner_scope_condition(view, owner_ref, session, table_name)
+        if owner_fragment:
+            where_parts.append(owner_fragment)
+            params.update(owner_params)
 
         # 動態篩選
         if dynamic_filters:
@@ -312,7 +362,7 @@ class SqliteCrudService:
         }
 
     @staticmethod
-    def get_row(session, view, row_id: str) -> Dict[str, Any]:
+    def get_row(session, view, row_id: str, owner_ref=None) -> Dict[str, Any]:
         """取得單筆資料"""
         table_name = view.table_name
         if not _validate_identifier(table_name):
@@ -333,11 +383,21 @@ class SqliteCrudService:
         if row_id_col not in form_cols:
             form_cols.insert(0, row_id_col)
 
+        owner_fragment, owner_params = _owner_scope_condition(view, owner_ref, session, table_name)
+        where_parts = [f'{_quote(row_id_col)} = :rid']
+        params = {'rid': row_id}
+        if owner_fragment:
+            where_parts.append(owner_fragment)
+            params.update(owner_params)
+
         select_part = ', '.join(_quote(c) for c in form_cols)
-        sql = f'SELECT {select_part} FROM {_quote(table_name)} WHERE {_quote(row_id_col)} = :rid LIMIT 1'
+        sql = (
+            f'SELECT {select_part} FROM {_quote(table_name)} '
+            f'WHERE {" AND ".join(where_parts)} LIMIT 1'
+        )
 
         try:
-            result = session.execute(text(sql), {'rid': row_id})
+            result = session.execute(text(sql), params)
             db_row = result.fetchone()
             if not db_row:
                 return {'success': False, 'error': 'Row not found'}
@@ -351,11 +411,15 @@ class SqliteCrudService:
             return {'success': False, 'error': str(e)}
 
     @staticmethod
-    def create_row(session, view, row_data: Dict) -> Dict[str, Any]:
+    def create_row(session, view, row_data: Dict, owner_ref=None) -> Dict[str, Any]:
         """新增一筆資料"""
         table_name = view.table_name
         if not _validate_identifier(table_name):
             return {'success': False, 'error': 'Invalid table name'}
+
+        row_data = dict(row_data or {})
+        row_data.pop('portal_user_ref', None)
+        owner_fragment, _owner_params = _owner_scope_condition(view, owner_ref, session, table_name)
 
         writable = _get_writable_columns(view)
         if not writable:
@@ -365,6 +429,14 @@ class SqliteCrudService:
         for col in writable:
             if col in row_data:
                 insert_data[col] = row_data[col]
+
+        # 表有 portal_user_ref 就記建立者，與 row_owner_scope 無關 --
+        # scope 之後才改成 own 的表，舊列才不會全變無主。
+        if (
+            owner_ref not in (OWNER_REF_PLATFORM, None)
+            and _table_has_column(session, table_name, 'portal_user_ref')
+        ):
+            insert_data['portal_user_ref'] = owner_ref
 
         if not insert_data:
             return {'success': False, 'error': 'No valid data provided'}
@@ -388,7 +460,7 @@ class SqliteCrudService:
             return {'success': False, 'error': str(e)}
 
     @staticmethod
-    def update_row(session, view, row_id: str, row_data: Dict) -> Dict[str, Any]:
+    def update_row(session, view, row_id: str, row_data: Dict, owner_ref=None) -> Dict[str, Any]:
         """更新一筆資料"""
         table_name = view.table_name
         if not _validate_identifier(table_name):
@@ -397,6 +469,10 @@ class SqliteCrudService:
         row_id_col = _find_row_id_column(view)
         if not row_id_col:
             return {'success': False, 'error': 'Cannot determine row identifier'}
+
+        row_data = dict(row_data or {})
+        row_data.pop('portal_user_ref', None)
+        owner_fragment, owner_params = _owner_scope_condition(view, owner_ref, session, table_name)
 
         writable = _get_writable_columns(view)
         if not writable:
@@ -414,8 +490,12 @@ class SqliteCrudService:
         set_clause = ', '.join(f'{_quote(c)} = :u_{i}' for i, c in enumerate(cols))
         params = {f'u_{i}': update_data[c] for i, c in enumerate(cols)}
         params['_rid'] = row_id
+        params.update(owner_params)
 
-        sql = f'UPDATE {_quote(table_name)} SET {set_clause} WHERE {_quote(row_id_col)} = :_rid'
+        where_parts = [f'{_quote(row_id_col)} = :_rid']
+        if owner_fragment:
+            where_parts.append(owner_fragment)
+        sql = f'UPDATE {_quote(table_name)} SET {set_clause} WHERE {" AND ".join(where_parts)}'
 
         try:
             result = session.execute(text(sql), params)
@@ -428,7 +508,7 @@ class SqliteCrudService:
             return {'success': False, 'error': str(e)}
 
     @staticmethod
-    def delete_row(session, view, row_id: str) -> Dict[str, Any]:
+    def delete_row(session, view, row_id: str, owner_ref=None) -> Dict[str, Any]:
         """刪除一筆資料（軟刪除或物理刪除）"""
         table_name = view.table_name
         if not _validate_identifier(table_name):
@@ -438,17 +518,25 @@ class SqliteCrudService:
         if not row_id_col:
             return {'success': False, 'error': 'Cannot determine row identifier'}
 
+        owner_fragment, owner_params = _owner_scope_condition(view, owner_ref, session, table_name)
+        where_parts = [f'{_quote(row_id_col)} = :_rid']
+        if owner_fragment:
+            where_parts.append(owner_fragment)
+        where_sql = ' AND '.join(where_parts)
+
         if view.soft_delete_column and _validate_identifier(view.soft_delete_column):
             sql = (
                 f'UPDATE {_quote(table_name)} '
                 f'SET {_quote(view.soft_delete_column)} = 1 '
-                f'WHERE {_quote(row_id_col)} = :_rid'
+                f'WHERE {where_sql}'
             )
         else:
-            sql = f'DELETE FROM {_quote(table_name)} WHERE {_quote(row_id_col)} = :_rid'
+            sql = f'DELETE FROM {_quote(table_name)} WHERE {where_sql}'
 
         try:
-            result = session.execute(text(sql), {'_rid': row_id})
+            params = {'_rid': row_id}
+            params.update(owner_params)
+            result = session.execute(text(sql), params)
             if result.rowcount == 0:
                 return {'success': False, 'error': 'Row not found'}
             session.flush()

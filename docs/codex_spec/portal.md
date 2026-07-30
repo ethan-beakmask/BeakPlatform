@@ -54,6 +54,34 @@ UI 措辭要讓使用者知道「沒啟用就是沒人能寫」，**不可**寫�
   `filter_variable_not_supported`）。**不要**改回「保持原值」——
   那會拿字面字串 `'$FOO'` 去比對欄位，靜默回空資料
 
+### 列級擁有權（row-level ownership）
+
+`access_matrix` 是**表級**授權（這個階級可不可以動這張表），列級是另一層：
+
+- 業務表固定有系統欄位 `portal_user_ref`，值即
+  `portal_auth_service.nocode_user_ref()` 產出的 `u:<portal user_id>` / `g:<guest_token>`
+  （與 `fw_workflow_instances.nocode_user_ref` 同一套語彙）
+- 視圖 `DcCrudView.row_owner_scope`：`own`（**預設**，只能存取自己建的列）/ `all`（表級授權）
+- `portal_user_ref IS NULL` 的列在 own 模式下**誰都看不到**（無主，刻意的 fail-closed）
+
+`SqliteCrudService` 的 `query_rows` / `get_row` / `create_row` / `update_row` /
+`delete_row` 都吃 `owner_ref` 參數，語意：
+
+| owner_ref | scope=own 時 |
+|---|---|
+| 身分字串（`u:` / `g:`） | 加 `WHERE portal_user_ref = ?`；create 時自動填 |
+| `OWNER_REF_PLATFORM` | 不過濾（平台管理視角，**必須顯式傳**） |
+| `None`（漏傳） | **raise `PortalFilterNotSupported`** |
+
+**不可**在 service 層用 `get_render_context()` 判斷語境來替代這個參數：
+`_resolve_portal_widget_write()` 在 `finally` 就 `clear_render_context()`，
+而端點是在那之後才呼叫 `create_row` / `update_row` / `delete_row` ——
+讀 context 會拿到預設的 `platform`，portal 寫入被誤判成管理視角就是破口。
+portal 側的身分在 `_resolve_portal_resource()` 解析時算好並由閉包 capture。
+
+`portal_user_ref` 列在 `_SYSTEM_COLUMNS`（不可寫、不進表單）；
+create/update 都會先 `pop` 掉 payload 裡的該欄位，**不接受呼叫端指定擁有者**。
+
 ### 寫入還要再過兩道
 
 1. `DcCrudView.allow_create / allow_edit / allow_delete`（view 層開關）

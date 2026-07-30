@@ -17,6 +17,7 @@ from .sqlite_crud_service import (
     _get_visible_columns,
     _get_writable_columns,
 )
+from .portal_auth_service import nocode_user_ref
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,16 @@ def _resolve_portal_resource(code: str, ctx: dict) -> dict | None:
     sub_sc = ctx.get("sub_system_sc")
     if not sub_sc:
         return None
+    portal_user = ctx.get("portal_user")
+    try:
+        owner_ref = nocode_user_ref(sub_sc, portal_user)
+    except ValueError:
+        logger.warning(
+            "Portal owner_ref unavailable while resolving resource: view=%s sub_system=%s",
+            view_sc,
+            sub_sc,
+        )
+        raise PageIrRenderError("portal_owner_ref_unavailable")
 
     view = DcCrudView.query.filter_by(
         secure_code=view_sc,
@@ -70,15 +81,16 @@ def _resolve_portal_resource(code: str, ctx: dict) -> dict | None:
     writable_fields = _strip_sensitive_columns(_get_writable_columns(view))
 
     def fetch_list(fields_arg, page, page_size, sort_field, sort_dir):
-        return _fetch_list(view, sub_sc, fields, fields_arg, page, page_size, sort_field, sort_dir)
+        return _fetch_list(view, sub_sc, owner_ref, fields, fields_arg, page, page_size, sort_field, sort_dir)
 
     def fetch_detail(record_sc, fields_arg):
-        return _fetch_detail(view, sub_sc, fields, record_sc, fields_arg)
+        return _fetch_detail(view, sub_sc, owner_ref, fields, record_sc, fields_arg)
 
     def fetch_related(filter_field, filter_value, fields_arg, page, page_size, sort_field, sort_dir):
         return _fetch_related(
             view,
             sub_sc,
+            owner_ref,
             fields,
             filter_field,
             filter_value,
@@ -90,13 +102,13 @@ def _resolve_portal_resource(code: str, ctx: dict) -> dict | None:
         )
 
     def create_row(payload):
-        return _create_row(view, sub_sc, payload)
+        return _create_row(view, sub_sc, owner_ref, payload)
 
     def update_row(record_sc, payload):
-        return _update_row(view, sub_sc, record_sc, payload)
+        return _update_row(view, sub_sc, owner_ref, record_sc, payload)
 
     def delete_row(record_sc):
-        return _delete_row(view, sub_sc, record_sc)
+        return _delete_row(view, sub_sc, owner_ref, record_sc)
 
     return {
         "fields": fields,
@@ -117,7 +129,7 @@ def _resolve_portal_resource(code: str, ctx: dict) -> dict | None:
     }
 
 
-def _fetch_list(view, sub_sc, whitelist, fields, page, page_size, sort_field, sort_dir):
+def _fetch_list(view, sub_sc, owner_ref, whitelist, fields, page, page_size, sort_field, sort_dir):
     sort_column = sort_field if sort_field in whitelist else view.default_sort_column
     try:
         with DataSourceManager().get_session(sub_sc, view.data_source) as session:
@@ -129,6 +141,7 @@ def _fetch_list(view, sub_sc, whitelist, fields, page, page_size, sort_field, so
                 search="",
                 sort_column=sort_column,
                 sort_dir=sort_dir or view.default_sort_dir,
+                owner_ref=owner_ref,
             )
     except FileNotFoundError:
         return [], 0
@@ -151,6 +164,7 @@ def _fetch_list(view, sub_sc, whitelist, fields, page, page_size, sort_field, so
 def _fetch_related(
     view,
     sub_sc,
+    owner_ref,
     whitelist,
     filter_field,
     filter_value,
@@ -175,6 +189,7 @@ def _fetch_related(
                 sort_column=sort_column,
                 sort_dir=sort_dir or view.default_sort_dir,
                 dynamic_filters={filter_field: filter_value},
+                owner_ref=owner_ref,
             )
     except FileNotFoundError:
         return [], 0
@@ -195,10 +210,15 @@ def _fetch_related(
     return rows, result.get("total", 0)
 
 
-def _fetch_detail(view, sub_sc, whitelist, record_sc, fields):
+def _fetch_detail(view, sub_sc, owner_ref, whitelist, record_sc, fields):
     try:
         with DataSourceManager().get_session(sub_sc, view.data_source) as session:
-            result = SqliteCrudService.get_row(session=session, view=view, row_id=record_sc)
+            result = SqliteCrudService.get_row(
+                session=session,
+                view=view,
+                row_id=record_sc,
+                owner_ref=owner_ref,
+            )
     except FileNotFoundError:
         return None
     except PortalFilterNotSupported:
@@ -216,21 +236,29 @@ def _fetch_detail(view, sub_sc, whitelist, record_sc, fields):
     return _portal_row(view, result.get("data") or {}, requested)
 
 
-def _create_row(view, sub_sc, payload):
+def _create_row(view, sub_sc, owner_ref, payload):
     try:
         with DataSourceManager().get_session(sub_sc, view.data_source) as session:
             result = SqliteCrudService.create_row(
                 session=session,
                 view=view,
                 row_data=payload,
+                owner_ref=owner_ref,
             )
     except FileNotFoundError:
         return False, "portal_db_missing"
+    except PortalFilterNotSupported:
+        logger.warning(
+            "Portal create rejected by row owner scope: view=%s sub_system=%s",
+            getattr(view, "secure_code", None),
+            sub_sc,
+        )
+        return False, "not_found"
 
     return bool(result.get("success")), result.get("error") or ""
 
 
-def _update_row(view, sub_sc, record_sc, payload):
+def _update_row(view, sub_sc, owner_ref, record_sc, payload):
     try:
         with DataSourceManager().get_session(sub_sc, view.data_source) as session:
             result = SqliteCrudService.update_row(
@@ -238,23 +266,41 @@ def _update_row(view, sub_sc, record_sc, payload):
                 view=view,
                 row_id=record_sc,
                 row_data=payload,
+                owner_ref=owner_ref,
             )
     except FileNotFoundError:
         return False, "portal_db_missing"
+    except PortalFilterNotSupported:
+        logger.warning(
+            "Portal update rejected by row owner scope: view=%s sub_system=%s record=%s",
+            getattr(view, "secure_code", None),
+            sub_sc,
+            record_sc,
+        )
+        return False, "not_found"
 
     return bool(result.get("success")), result.get("error") or ""
 
 
-def _delete_row(view, sub_sc, record_sc):
+def _delete_row(view, sub_sc, owner_ref, record_sc):
     try:
         with DataSourceManager().get_session(sub_sc, view.data_source) as session:
             result = SqliteCrudService.delete_row(
                 session=session,
                 view=view,
                 row_id=record_sc,
+                owner_ref=owner_ref,
             )
     except FileNotFoundError:
         return False, "portal_db_missing"
+    except PortalFilterNotSupported:
+        logger.warning(
+            "Portal delete rejected by row owner scope: view=%s sub_system=%s record=%s",
+            getattr(view, "secure_code", None),
+            sub_sc,
+            record_sc,
+        )
+        return False, "not_found"
 
     return bool(result.get("success")), result.get("error") or ""
 

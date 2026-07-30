@@ -168,6 +168,10 @@ def create_view():
     if data_source not in ('org', 'conglomerate'):
         return jsonify({'success': False, 'error': 'Invalid data_source'}), 400
 
+    row_owner_scope = data.get('row_owner_scope', 'own')
+    if row_owner_scope not in {'own', 'all'}:
+        return jsonify({'success': False, 'error': 'invalid_row_owner_scope'}), 400
+
     view = ResourceGateway.create(
         DcCrudView,
         check_permission=False,
@@ -185,6 +189,7 @@ def create_view():
         fixed_filters=data.get('fixed_filters', {}),
         is_active=data.get('is_active', True),
         data_source=data_source,
+        row_owner_scope=row_owner_scope,
     )
     ResourceGateway.commit()
 
@@ -242,7 +247,7 @@ def update_view(secure_code):
         'name', 'description', 'columns_config',
         'allow_create', 'allow_edit', 'allow_delete',
         'soft_delete_column', 'default_sort_column', 'default_sort_dir',
-        'page_size', 'fixed_filters', 'is_active', 'data_source',
+        'page_size', 'fixed_filters', 'is_active', 'data_source', 'row_owner_scope',
     ]
     for field in allowed_fields:
         if field in data:
@@ -250,6 +255,8 @@ def update_view(secure_code):
 
     if 'name' in update_fields and not update_fields['name'].strip():
         return jsonify({'success': False, 'error': 'Name cannot be empty'}), 400
+    if 'row_owner_scope' in update_fields and update_fields['row_owner_scope'] not in {'own', 'all'}:
+        return jsonify({'success': False, 'error': 'invalid_row_owner_scope'}), 400
 
     ResourceGateway.update(view, check_permission=False, **update_fields)
     ResourceGateway.commit()
@@ -607,9 +614,10 @@ def query_rows(secure_code):
     try:
         if is_sqlite_source(view.data_source):
             # SQLite 路徑
-            from ..services.sqlite_crud_service import SqliteCrudService
+            from ..services.sqlite_crud_service import OWNER_REF_PLATFORM, SqliteCrudService
             ss_sc = request.args.get('sub_system_sc', '') or _resolve_sub_system_sc(view)
             with get_sqlite_session(ss_sc, view.data_source) as session:
+                # 平台管理視角，刻意不做列級過濾（列級只在 portal 語境生效）。
                 result = SqliteCrudService.query_rows(
                     session=session,
                     view=view,
@@ -619,6 +627,7 @@ def query_rows(secure_code):
                     sort_column=sort_col,
                     sort_dir=sort_dir,
                     dynamic_filters=dynamic_filters,
+                    owner_ref=OWNER_REF_PLATFORM,
                 )
         else:
             # PostgreSQL 路徑
@@ -662,10 +671,16 @@ def get_row(secure_code, row_id):
 
     try:
         if is_sqlite_source(view.data_source):
-            from ..services.sqlite_crud_service import SqliteCrudService
+            from ..services.sqlite_crud_service import OWNER_REF_PLATFORM, SqliteCrudService
             ss_sc = request.args.get('sub_system_sc', '') or _resolve_sub_system_sc(view)
             with get_sqlite_session(ss_sc, view.data_source) as session:
-                result = SqliteCrudService.get_row(session=session, view=view, row_id=row_id)
+                # 平台管理視角，刻意不做列級過濾（列級只在 portal 語境生效）。
+                result = SqliteCrudService.get_row(
+                    session=session,
+                    view=view,
+                    row_id=row_id,
+                    owner_ref=OWNER_REF_PLATFORM,
+                )
         else:
             with get_data_conn(view.org_secure_code, view.data_source) as conn:
                 result = CrudService.get_row(conn=conn, view=view, row_id=row_id)
@@ -772,11 +787,15 @@ def create_row(secure_code):
     data = request.get_json() or {}
     try:
         if is_sqlite_source(view.data_source):
-            from ..services.sqlite_crud_service import SqliteCrudService
+            from ..services.sqlite_crud_service import OWNER_REF_PLATFORM, SqliteCrudService
             ss_sc = request.args.get('sub_system_sc', '') or _resolve_sub_system_sc(view)
             with get_sqlite_session(ss_sc, view.data_source) as session:
+                # 平台管理視角，刻意不做列級過濾（列級只在 portal 語境生效）。
                 result = SqliteCrudService.create_row(
-                    session=session, view=view, row_data=data,
+                    session=session,
+                    view=view,
+                    row_data=data,
+                    owner_ref=OWNER_REF_PLATFORM,
                 )
         else:
             with get_data_conn(view.org_secure_code, view.data_source) as conn:
@@ -830,11 +849,16 @@ def update_row(secure_code, row_id):
     data = request.get_json() or {}
     try:
         if is_sqlite_source(view.data_source):
-            from ..services.sqlite_crud_service import SqliteCrudService
+            from ..services.sqlite_crud_service import OWNER_REF_PLATFORM, SqliteCrudService
             ss_sc = request.args.get('sub_system_sc', '') or _resolve_sub_system_sc(view)
             with get_sqlite_session(ss_sc, view.data_source) as session:
+                # 平台管理視角，刻意不做列級過濾（列級只在 portal 語境生效）。
                 result = SqliteCrudService.update_row(
-                    session=session, view=view, row_id=row_id, row_data=data,
+                    session=session,
+                    view=view,
+                    row_id=row_id,
+                    row_data=data,
+                    owner_ref=OWNER_REF_PLATFORM,
                 )
         else:
             with get_data_conn(view.org_secure_code, view.data_source) as conn:
@@ -887,11 +911,15 @@ def delete_row(secure_code, row_id):
 
     try:
         if is_sqlite_source(view.data_source):
-            from ..services.sqlite_crud_service import SqliteCrudService
+            from ..services.sqlite_crud_service import OWNER_REF_PLATFORM, SqliteCrudService
             ss_sc = request.args.get('sub_system_sc', '') or _resolve_sub_system_sc(view)
             with get_sqlite_session(ss_sc, view.data_source) as session:
+                # 平台管理視角，刻意不做列級過濾（列級只在 portal 語境生效）。
                 result = SqliteCrudService.delete_row(
-                    session=session, view=view, row_id=row_id,
+                    session=session,
+                    view=view,
+                    row_id=row_id,
+                    owner_ref=OWNER_REF_PLATFORM,
                 )
         else:
             with get_data_conn(view.org_secure_code, view.data_source) as conn:

@@ -711,7 +711,7 @@ def create_portal_data_table(secure_code):
     from ..services.sqlite_crud_service import _quote, _validate_identifier
 
     allowed_types = {'TEXT', 'INTEGER', 'REAL', 'DATE', 'DATETIME', 'BOOLEAN'}
-    reserved_columns = {'id', 'created_at'}
+    reserved_columns = {'id', 'created_at', 'portal_user_ref'}
 
     ss = ResourceGateway.get(
         DcSubSystem, secure_code,
@@ -744,6 +744,7 @@ def create_portal_data_table(secure_code):
     column_defs = [
         f'{_quote("id")} INTEGER PRIMARY KEY AUTOINCREMENT',
         f'{_quote("created_at")} DATETIME DEFAULT CURRENT_TIMESTAMP',
+        f'{_quote("portal_user_ref")} TEXT',
     ]
     for column in columns:
         if not isinstance(column, dict):

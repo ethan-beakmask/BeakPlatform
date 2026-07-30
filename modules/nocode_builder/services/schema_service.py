@@ -22,7 +22,7 @@ SYSTEM_TABLE_NAMES = {
 # --- 系統欄位識別 ---
 # SQL Sync 產生的系統欄位（主表 + 明細子表共用）
 # owner_org_code: 集團 DB RLS 隔離欄位，由系統自動填入
-_SYSTEM_COLUMNS = {'id', 'form_instance_secure_code', 'row_index', 'owner_org_code'}
+_SYSTEM_COLUMNS = {'id', 'form_instance_secure_code', 'row_index', 'owner_org_code', 'portal_user_ref'}
 
 # 簽核子表後綴
 _APPROVAL_TABLE_SUFFIX = '_approvals'

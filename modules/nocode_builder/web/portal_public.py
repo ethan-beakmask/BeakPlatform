@@ -846,6 +846,7 @@ def portal_widget_master_detail_submit(path_id, page_sc, widget_id):
         MasterDetailWriteError,
         save_master_detail,
     )
+    from ..services.portal_auth_service import nocode_user_ref
 
     common = _resolve_portal_widget_common(path_id, page_sc, widget_id, 'create')
     ss = common['ss']
@@ -980,6 +981,17 @@ def portal_widget_master_detail_submit(path_id, page_sc, widget_id):
         abort(404)
 
     try:
+        owner_ref = nocode_user_ref(ss.secure_code, portal_user)
+    except ValueError:
+        logger.warning(
+            'Portal master-detail owner_ref unavailable: page=%s widget=%s sub_system=%s',
+            page_sc,
+            widget_id,
+            ss.secure_code,
+        )
+        abort(404)
+
+    try:
         data = save_master_detail(
             sub_system_sc=ss.secure_code,
             master_view=master_view,
@@ -989,6 +1001,7 @@ def portal_widget_master_detail_submit(path_id, page_sc, widget_id):
             detail_payloads=detail_payloads,
             foreign_key=foreign_key,
             update_master=update_master_allowed,
+            owner_ref=owner_ref,
         )
     except MasterDetailWriteError as exc:
         return jsonify({'success': False, 'error': _portal_write_error(exc.error)}), 400

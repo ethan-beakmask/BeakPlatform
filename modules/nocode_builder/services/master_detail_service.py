@@ -25,18 +25,30 @@ def save_master_detail(
     detail_payloads: list[dict[str, Any]],
     foreign_key: str,
     update_master: bool,
+    owner_ref,
 ) -> dict[str, Any]:
     """Create/update a master row and create detail rows in one portal_data transaction."""
     with DataSourceManager().get_session(sub_system_sc, 'portal_data') as session:
         if master_sc is None:
-            result = SqliteCrudService.create_row(session, master_view, master_payload)
+            result = SqliteCrudService.create_row(
+                session,
+                master_view,
+                master_payload,
+                owner_ref=owner_ref,
+            )
             if not result.get('success'):
                 raise MasterDetailWriteError(result.get('error') or 'write_failed')
             master_sc = result.get('row_id')
             if master_sc is None:
                 raise MasterDetailWriteError('row_identifier_missing')
         elif update_master and master_payload:
-            result = SqliteCrudService.update_row(session, master_view, master_sc, master_payload)
+            result = SqliteCrudService.update_row(
+                session,
+                master_view,
+                master_sc,
+                master_payload,
+                owner_ref=owner_ref,
+            )
             if not result.get('success'):
                 raise MasterDetailWriteError(result.get('error') or 'write_failed')
 
@@ -44,7 +56,12 @@ def save_master_detail(
             detail_payload = dict(source_payload)
             detail_payload.pop(foreign_key, None)
             detail_payload[foreign_key] = master_sc
-            result = SqliteCrudService.create_row(session, detail_view, detail_payload)
+            result = SqliteCrudService.create_row(
+                session,
+                detail_view,
+                detail_payload,
+                owner_ref=owner_ref,
+            )
             if not result.get('success'):
                 raise MasterDetailWriteError(result.get('error') or 'write_failed')
 

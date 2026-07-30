@@ -151,6 +151,7 @@ def test_portal_resolver_fetch_list_whitelists_fields_and_adds_sc(tmp_path, monk
         fixed_filters={},
         default_sort_column="id",
         default_sort_dir="ASC",
+        row_owner_scope="all",
     )
     sub_system = SimpleNamespace(secure_code="ss_123", org_secure_code="org_1")
 
@@ -194,7 +195,7 @@ def test_portal_resolver_fetch_list_whitelists_fields_and_adds_sc(tmp_path, monk
 
     config = portal_resources._resolve_portal_resource(
         "portal:View1234",
-        {"world": "portal", "sub_system_sc": "ss_123"},
+        {"world": "portal", "sub_system_sc": "ss_123", "portal_user": {"user_id": 1}},
     )
     assert config is not None
     assert config["fields"] == ["id", "name"]
@@ -248,6 +249,7 @@ def test_portal_resolver_hard_excludes_sensitive_columns(monkeypatch):
         fixed_filters={},
         default_sort_column="username",
         default_sort_dir="ASC",
+        row_owner_scope="all",
     )
     sub_system = SimpleNamespace(secure_code="ss_123", org_secure_code="org_1")
 
@@ -266,7 +268,7 @@ def test_portal_resolver_hard_excludes_sensitive_columns(monkeypatch):
 
     config = portal_resources._resolve_portal_resource(
         "portal:View5678",
-        {"world": "portal", "sub_system_sc": "ss_123"},
+        {"world": "portal", "sub_system_sc": "ss_123", "portal_user": {"user_id": 1}},
     )
     assert config is not None
     # columns_config 標 visible 也擋：password_hash / reset_token / api_key 硬排除

@@ -559,6 +559,13 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 - **在 Page IR 頁面放 form.io 送出按鈕時必須寫 `"input": false`**，
   否則 payload 會多一個 `submit: true` 欄位，被後端欄位白名單擋成
   400 `unknown_field`
+- **portal 業務表有列級擁有權**（2026-07-30 起）：表固定有系統欄位 `portal_user_ref`
+  （值 `u:<portal user_id>` / `g:<guest_token>`），視圖 `DcCrudView.row_owner_scope`
+  預設 **`own`**（只能存取自己建的列），要共享的表必須明確設 `all`。
+  `portal_user_ref IS NULL` 的舊列在 own 模式下誰都看不到——
+  **「portal 頁表格突然空了」第一個要查的就是這個**，不是權限判定壞了。
+  既有表補欄位用 `scripts/add_portal_user_ref.py --apply`（冪等）。
+  細節與 `owner_ref` 傳參規則見 `docs/codex_spec/portal.md`
 - 權限判定失敗**一律回 404**（不洩漏存在與否）；查原因看
   `sudo journalctl -u beakplatform-dev.service --since "-5 min" | grep reason=`
 - 權限模型與判定鏈：`docs/PORTAL_ACCOUNT_SPEC.md`；
