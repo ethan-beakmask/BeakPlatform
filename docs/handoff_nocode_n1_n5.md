@@ -440,8 +440,15 @@ IR 的 `table.columns[]` / `detail.fields[]` 加 optional `mask`
 
 ### 6.8 其他登記在案
 
-- **action registry 平台側仍無任何實際註冊**（P2 遺留）。第一個真 action 落地時要補 E2E。
-  **需用戶指定**第一個 action 是什麼（資源、permission code、UI 觸發點、預期行為）。
+- **action registry 平台側仍無任何實際註冊**（P2 遺留）。
+  **portal 側已於 2026-07-30 落地兩個**（`portal.form.submit`、`portal.form.cancel`），
+  見 `docs/handoff_nocode_form_detail_actions.md` §4.0。
+  平台側要註冊什麼仍**需用戶指定**（資源、permission code、UI 觸發點、預期行為）。
+  - **撤單只有單元測試 + 手動瀏覽器驗收，沒有自動化 E2E**
+    （`backend/tests/test_pageir_portal_action_cancel.py` 用 monkeypatch 測渲染與
+    准入判定，沒有跨 HTTP 的完整流程測試）。要補的話對象是
+    `portal_widget_cancel_submission`：登入 portal → 送件 → 撤單 → 驗 status/軌跡，
+    以及 IDOR（撤別人的單回 404）。
 - **`DcCrudView.fixed_filters` 含 `$CURRENT_USER` 類變數時，portal 語境行為未定義**。
   `resolve_filter_variables()` 在 `services/crud_service.py`，目前吃的是平台 `current_user`。
   **需用戶裁決**三種語境各自的行為：portal 匿名（無 user_id）、portal 登入帳號、平台使用者。

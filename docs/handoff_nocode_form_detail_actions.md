@@ -262,20 +262,20 @@
 | SQL 把變數改 false（不重啟） | 下一次請求即變 readonly，PUT 404 |
 | 送新件後查流程變數 | `nocode_sub_system` / `nocode_user_ref` 都在 |
 
-### 撤單（用戶已裁決，尚未做）
+### 撤單（用戶已裁決）—— **【2026-07-30 已完成，見 §4.0】**
 
 > 「至於撤單（資料會保存直到 DBA 刪除）應該用 action 做比較適合。」
 
-→ 留到 actions 階段，本輪明確不做。
+→ 已於 actions 階段落地為 `portal.form.cancel`。
 
-### 尚未做的必要配套
+### 尚未做的必要配套 —— **【已完成：`row_link_ref`，commit f59d6957】**
 
 **目前沒有任何機制能從 table 列連到 `?<widget>__sc=`。**
 detail widget 一直只能手改 URL，form 的 edit / readonly 模式同樣觸達不了。
 計畫：table widget 加選填 `row_link_ref` 指向同頁 form/detail widget，
 每列產生導覽連結。
 
-### detail 階段動工前要問的事
+### detail 階段動工前要問的事 —— **【已裁決並落地為主細表，見 §2.9】**
 
 用戶說「以上 form 的說明也適用於 detail，這算是對應 form.io 開發表單時的
 data grid 或 edit grid」。這裡有個要攤開來確認的差異：
