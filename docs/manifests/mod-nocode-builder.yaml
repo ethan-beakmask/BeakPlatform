@@ -59,6 +59,8 @@ files:
     - backend/app/pageir/renderer.py
     - backend/app/pageir/schema_v3.json
     - backend/app/services/nocode_service_account.py  # portal 送件公用帳號
+  tests:
+    - backend/tests/test_platform_fixed_filters.py
 
 note: |
   准入控制使用 grant-based permission 模式（部門/社群/個人多重選擇）。

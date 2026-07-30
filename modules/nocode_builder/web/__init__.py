@@ -320,7 +320,7 @@ def _build_sub_system_context(sub_sc, ssp_sc):
     """
     from ..models import DcSubSystem, DcSubSystemPage
     from ..services.sub_system_service import SubSystemService
-    from ..services.crud_service import resolve_filter_variables
+    from ..services.crud_service import FilterVariableNotSupported, resolve_filter_variables
     from app.security.resource_gateway import ResourceGateway
 
     try:
@@ -358,6 +358,9 @@ def _build_sub_system_context(sub_sc, ssp_sc):
             'data_filters': ctx['data_filters'],
             'sub_system_name': ss.name,
         }
+    except FilterVariableNotSupported:
+        logger.warning('Failed to build sub system context: filter variable not supported')
+        return None
     except Exception as e:
         logger.warning('Failed to build sub system context: %s', e)
         return None

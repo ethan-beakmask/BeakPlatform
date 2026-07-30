@@ -514,7 +514,7 @@ def get_site_map_node_context(ss_sc, node_sc):
     from ..models import DcSubSystem
     from ..services.site_map_service import SiteMapService
     from ..services.sub_system_service import SubSystemService
-    from ..services.crud_service import resolve_filter_variables
+    from ..services.crud_service import FilterVariableNotSupported, resolve_filter_variables
 
     ss = ResourceGateway.get(
         DcSubSystem, ss_sc,
@@ -543,9 +543,12 @@ def get_site_map_node_context(ss_sc, node_sc):
         }), 403
 
     context = SiteMapService.get_node_context(node, role_type)
-    context['data_filters'] = resolve_filter_variables(
-        context['data_filters'], current_user
-    )
+    try:
+        context['data_filters'] = resolve_filter_variables(
+            context['data_filters'], current_user
+        )
+    except FilterVariableNotSupported:
+        return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
 
     # 提供已解析的變數值，供前端解析 widget-level roleFilters
     resolved_vars = {

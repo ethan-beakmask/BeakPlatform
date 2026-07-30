@@ -412,10 +412,13 @@ def get_page_permission_context(ss_sc, ssp_sc):
     context = SubSystemService.get_page_context(role_type, ssp)
 
     # 替換資料篩選中的變數
-    from ..services.crud_service import resolve_filter_variables
-    context['data_filters'] = resolve_filter_variables(
-        context['data_filters'], current_user
-    )
+    from ..services.crud_service import FilterVariableNotSupported, resolve_filter_variables
+    try:
+        context['data_filters'] = resolve_filter_variables(
+            context['data_filters'], current_user
+        )
+    except FilterVariableNotSupported:
+        return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
 
     return jsonify({
         'success': True,

@@ -449,12 +449,11 @@ IR 的 `table.columns[]` / `detail.fields[]` 加 optional `mask`
     准入判定，沒有跨 HTTP 的完整流程測試）。要補的話對象是
     `portal_widget_cancel_submission`：登入 portal → 送件 → 撤單 → 驗 status/軌跡，
     以及 IDOR（撤別人的單回 404）。
-- **`DcCrudView.fixed_filters` 含 `$CURRENT_USER` 類變數時，portal 語境行為未定義**。
-  `resolve_filter_variables()` 在 `services/crud_service.py`，目前吃的是平台 `current_user`。
-  **需用戶裁決**三種語境各自的行為：portal 匿名（無 user_id）、portal 登入帳號、平台使用者。
-  目前的安全預設應該是「portal 語境遇到未知變數就拒絕查詢」，但**尚未實作也未驗證**。
-- **v2 頁面清理**：31 筆仍在 DB（`/p/` 存取回 410），24 個 site map 節點指向它們。
-  **需用戶裁決**刪除／封存／保留。清單用 SQL 現查（數量會變動，別用寫死的 ID）：
+- ~~**`DcCrudView.fixed_filters` 含 `$CURRENT_USER` 類變數時，portal 語境行為未定義**~~
+  **【2026-07-30 已釐清，見下方「fixed_filters 變數現況」】**
+- ~~**v2 頁面清理**：31 筆仍在 DB~~ **【2026-07-30 複查：31 筆已全部 `is_deleted=true`，
+  且沒有任何活著的 site map 節點指向 v2 頁面，實質已處置完成。只剩「軟刪要不要改硬刪」，
+  本機測試資料可放著。】** 複查 SQL 仍附在下面備用：
   ```sql
   -- v2 頁面清單
   SELECT secure_code, name, status, org_secure_code FROM dc_page_layouts
@@ -464,7 +463,52 @@ IR 的 `table.columns[]` / `detail.fields[]` 加 optional `mask`
   FROM dc_site_map_nodes n JOIN dc_page_layouts p ON p.secure_code=n.page_layout_secure_code
   WHERE n.is_deleted=false AND p.layout_json->>'version'='2';
   ```
-- **`studio.css` 保留中**。判斷條件明確：它目前**只**被
+#### fixed_filters 變數現況（2026-07-30 查證 + 修正）
+
+**portal 語境的 fail-closed 早已實作，不是待辦。** 權威實作在
+`modules/nocode_builder/services/sqlite_crud_service.py` 的
+`resolve_filter_variables()`：依 `app.pageir.context` 的 `world` 分流，
+portal 語境只放行 `$TODAY` 與字面值，遇身分變數或未知變數丟
+`PortalFilterNotSupported`；`pageir_portal_resources.py` 三個 fetch 都捕捉並轉
+`PageIrRenderError`。測試 `backend/tests/test_portal_fixed_filters.py`
+（含「平台 user 硬塞進來也要拒絕」）。
+
+**平台語境本輪（2026-07-30）也改成 fail-closed**：兩份
+`resolve_filter_variables`（`crud_service.py` PostgreSQL 版、
+`sqlite_crud_service.py` 平台分支）原本對未知變數與「變數認得但 user 取不到」
+都是保持原值 → 拿字面 `'$FOO'` 去比對 → **靜默回空資料**。
+現在一律 `logger.warning` 後 raise `FilterVariableNotSupported`
+（`PortalFilterNotSupported` 繼承它，所以捕捉父類即涵蓋兩種語境），
+CRUD 與 context 端點回 400 `filter_variable_not_supported`，
+`_build_sub_system_context()` 沿既有慣例回 `None`。
+測試 `backend/tests/test_platform_fixed_filters.py`（28 項）。
+
+**仍待用戶裁決的是「要不要支援 portal 版的『只看自己』」**，並且它不是
+「加一個變數」就能了事，有兩個硬前提：
+
+1. **沒有欄位記得「誰建的」**。`SqliteCrudService.create_row()` 不寫入任何身分欄位；
+   前端 `datalist-widget.js` 新增時刻意跳過 `$` 開頭的值
+   （註解寫「變數由後端處理」，但後端其實沒處理）。
+   要做就得決定：自動注入系統欄位（例如 `portal_user_ref` 存 `u:<user_id>`，
+   須動 SQLite 建表流程並回填既有子系統），或由設計者指定欄位、後端新增時自動填。
+2. **只過濾列表等於白做**。`get_row()` / `update_row()` / `delete_row()`
+   完全不套 fixed_filters，只用 row id 定位，而 row id 優先取 `secure_code`、
+   沒有就取 PK（很可能是自增 id）。portal 的
+   `rows/<row_id>` PUT / DELETE 是公開路由，准入只看 widget `access_matrix`
+   的階級判定（表級授權），**沒有任何列級擁有權過濾** ——
+   等於任何被允許編輯的訪客都能改同表其他人的列。
+   要支援「只看自己」就必須把擁有權過濾一併套進這三個操作
+   （對照組：撤單走 `_owned_submission()` 的三重過濾）。
+
+現況風險評估：DB 內 `fixed_filters` **一筆都沒有設**（0 筆），所以此功能從未被實際使用，
+這也是洞一直沒現形的原因；但 portal 相關的 7 個視圖 `allow_create/edit/delete` 全開，
+一旦有多訪客共用的表（報名、留言）就會踩到第 2 點。
+
+匿名語境已由用戶定調：匿名場景（問卷之類）只收資料、不提供查詢，
+所以匿名一律拒絕身分變數，不需要拿 `guest_token` 當 owner。
+
+- **`studio.css` 保留中**（**2026-07-30 複查結論不變，這條不是待辦**，
+  等模板退役時的附帶事項）。判斷條件明確：它目前**只**被
   `templates/.../sub_system_portal_v2.html` 引用（N5 驗證過）。
   該模板本身**不在**退役範圍（它是子系統 Portal V2 導航頁，仍在服役），
   所以 CSS 要留著。**等該模板哪天也退役時再一併清**，

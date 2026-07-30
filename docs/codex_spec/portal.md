@@ -49,6 +49,10 @@ UI 措辭要讓使用者知道「沒啟用就是沒人能寫」，**不可**寫�
 - portal 語境找不到 access evaluator → 拒絕
 - `fixed_filters` 在 portal 語境遇到平台變數（`$CURRENT_USER` 等）→ 拒絕整個查詢
   （只有 `$TODAY` 放行）
+- `fixed_filters` 在**平台**語境遇到未知變數，或身分變數但 user 不可用（未登入／匿名）
+  → 一樣拒絕（`FilterVariableNotSupported`，端點回 400
+  `filter_variable_not_supported`）。**不要**改回「保持原值」——
+  那會拿字面字串 `'$FOO'` 去比對欄位，靜默回空資料
 
 ### 寫入還要再過兩道
 

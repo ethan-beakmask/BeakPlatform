@@ -15,6 +15,11 @@ from .schema_service import _SYSTEM_COLUMNS, is_approval_table, _PII_DB_TYPE
 
 logger = logging.getLogger(__name__)
 
+
+class FilterVariableNotSupported(Exception):
+    """fixed_filters 變數無法在當前語境解析（fail-closed）。"""
+
+
 # 合法的 SQL 識別符格式（支援 Unicode，psql.Identifier 會自動加引號）
 IDENTIFIER_RE = re.compile(r'^\w+$', re.UNICODE)
 
@@ -51,23 +56,43 @@ def resolve_filter_variables(filters: Dict[str, str], user=None) -> Dict[str, st
         except RuntimeError:
             pass
 
+    identity_variables = {
+        '$CURRENT_USER': 'secure_code',
+        '$CURRENT_USER_NAME': 'username',
+        '$CURRENT_ORG': 'org_secure_code',
+    }
+
     resolved = {}
     for col, val in filters.items():
         if not isinstance(val, str) or not val.startswith('$'):
             resolved[col] = val
             continue
 
-        if val == '$CURRENT_USER' and user:
-            resolved[col] = user.secure_code
-        elif val == '$CURRENT_USER_NAME' and user:
-            resolved[col] = getattr(user, 'username', '')
-        elif val == '$CURRENT_ORG' and user:
-            resolved[col] = getattr(user, 'org_secure_code', '')
-        elif val == '$TODAY':
+        if val == '$TODAY':
             resolved[col] = date.today().isoformat()
-        else:
-            # 不認識的變數保持原值
-            resolved[col] = val
+            continue
+
+        attr_name = identity_variables.get(val)
+        if attr_name:
+            try:
+                is_authenticated = (
+                    getattr(user, 'is_authenticated', True)
+                    if user is not None else False
+                )
+                attr_value = getattr(user, attr_name, None) if is_authenticated else None
+            except RuntimeError:
+                attr_value = None
+
+            if attr_value is not None and attr_value != '':
+                resolved[col] = attr_value
+                continue
+
+        logger.warning(
+            'Fixed filter variable not resolvable: column=%s variable=%s',
+            col,
+            val,
+        )
+        raise FilterVariableNotSupported('filter_variable_not_supported')
 
     return resolved
 

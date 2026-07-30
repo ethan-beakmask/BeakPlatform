@@ -570,7 +570,7 @@ def _auto_ensure_registry(org_secure_code, table_name, columns_config):
 def query_rows(secure_code):
     """查詢視圖資料（分頁）"""
     from ..models import DcCrudView
-    from ..services.crud_service import CrudService
+    from ..services.crud_service import CrudService, FilterVariableNotSupported
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
         OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
@@ -633,6 +633,8 @@ def query_rows(secure_code):
                     sort_dir=sort_dir,
                     dynamic_filters=dynamic_filters,
                 )
+    except FilterVariableNotSupported:
+        return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
     except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
@@ -644,7 +646,7 @@ def query_rows(secure_code):
 def get_row(secure_code, row_id):
     """取得單筆資料"""
     from ..models import DcCrudView
-    from ..services.crud_service import CrudService
+    from ..services.crud_service import CrudService, FilterVariableNotSupported
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
         OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
@@ -667,6 +669,8 @@ def get_row(secure_code, row_id):
         else:
             with get_data_conn(view.org_secure_code, view.data_source) as conn:
                 result = CrudService.get_row(conn=conn, view=view, row_id=row_id)
+    except FilterVariableNotSupported:
+        return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
     except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
@@ -738,7 +742,7 @@ def _check_formgrid_lock(request_obj):
 def create_row(secure_code):
     """新增一筆資料"""
     from ..models import DcCrudView
-    from ..services.crud_service import CrudService
+    from ..services.crud_service import CrudService, FilterVariableNotSupported
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
         OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
@@ -780,6 +784,8 @@ def create_row(secure_code):
                     conn=conn, view=view, row_data=data,
                     is_conglomerate=(view.data_source == 'conglomerate'),
                 )
+    except FilterVariableNotSupported:
+        return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
     except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
@@ -794,7 +800,7 @@ def create_row(secure_code):
 def update_row(secure_code, row_id):
     """更新一筆資料"""
     from ..models import DcCrudView
-    from ..services.crud_service import CrudService
+    from ..services.crud_service import CrudService, FilterVariableNotSupported
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
         OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
@@ -836,6 +842,8 @@ def update_row(secure_code, row_id):
                     conn=conn, view=view, row_id=row_id, row_data=data,
                     is_conglomerate=(view.data_source == 'conglomerate'),
                 )
+    except FilterVariableNotSupported:
+        return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
     except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
@@ -850,7 +858,7 @@ def update_row(secure_code, row_id):
 def delete_row(secure_code, row_id):
     """刪除一筆資料"""
     from ..models import DcCrudView
-    from ..services.crud_service import CrudService
+    from ..services.crud_service import CrudService, FilterVariableNotSupported
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
         OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
@@ -891,6 +899,8 @@ def delete_row(secure_code, row_id):
                     conn=conn, view=view, row_id=row_id,
                     is_conglomerate=(view.data_source == 'conglomerate'),
                 )
+    except FilterVariableNotSupported:
+        return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
     except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
