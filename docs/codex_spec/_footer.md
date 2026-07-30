@@ -10,13 +10,31 @@ node --check <改過的每一支 .js>
 cd backend && ../venv/bin/python -c "import app; print('import ok')"
 # 改過 JSON（schema 等）
 python3 -c "import json; json.load(open('<path>'))"
-# 相關測試（基準 155 passed，不得退步）
+# 相關測試（基準 205 passed，不得退步）
 cd /opt/BeakPlatform-dev/backend && ../venv/bin/python -m pytest \
   tests/test_pageir_*.py tests/test_portal_*.py tests/test_sitemap_access_matrix.py -q
 ```
 
 **跑完整 `pytest tests/` 會有 13 個既有 error**（測試用 SQLite 但平台有 PostgreSQL
 JSONB 欄位），與任何變更無關，不要試圖修。只跑相關測試檔。
+
+### 使用者要點擊的東西，驗收必須用瀏覽器
+
+**只要變更涉及連結、按鈕、select 的初次渲染值，curl 驗完還不算完成，
+必須用 chrome-devtools 實際載入頁面並點一次。**
+
+curl 對這三類有結構性盲區：
+
+- **連結**：用 curl 測時是自己帶完整路徑，永遠測不出程式組出的網址少了
+  nginx 的 `/beakplatform` 前綴（Page IR 的排序連結從第一版就是壞的，
+  歷來都用 curl 驗收，直到有人真的點過表頭才發現）
+- **select 初次渲染**：漏 `:selected` 時 HTML 原始碼看起來正常，
+  要渲染後才知道顯示的是第一個選項
+- **按鈕**：`BkCaps.can()` 漏注入 `__PAGE_CAPS` 時按鈕照樣渲染出來，
+  點下去沒反應且 console 不報錯
+
+若你的環境無法操作瀏覽器，**在回報中明確列出「哪些互動元素只做了 curl 驗證、
+需要人工在瀏覽器點過」**，不要當成已驗收。
 
 ### 不要做的事
 

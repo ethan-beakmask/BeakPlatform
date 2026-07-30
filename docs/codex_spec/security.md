@@ -36,6 +36,32 @@
 
 - **禁止**在 URL 使用自增 ID，一律用 `secure_code`
 
+### 公開端點必須評估 rate limit
+
+**新增任何不需登入即可呼叫的端點（`@public_route`、portal `/public/...`、
+webhook、匿名送件），都必須在交付回報中明確說明有沒有掛 rate limit 與理由。**
+沒評估等於漏掉——匿名端點沒有帳號可以鎖，rate limit 是唯一的節流手段。
+
+掛法（`limiter` 從 `app` 匯入，裝飾器疊在路由下方）：
+
+```python
+from app import limiter
+
+@bp.route('/public/xxx', methods=['POST'])
+@limiter.limit('10 per minute; 100 per hour')
+def xxx():
+    ...
+```
+
+- 寫入型匿名端點（送件、留言）參考既有 portal 的
+  `10 per minute; 100 per hour`（`modules/nocode_builder/web/portal_public.py`）
+- 帶 API Key 的機器端點用 `key_func` 以 key 而非 IP 計數，並額外疊
+  `@limiter.limit(**auth_failure_limit_kwargs())` 限制認證失敗次數
+  （範例：`modules/form_workflow/api/external_trigger.py`）
+- 限額若需讓管理者可調，走 `RateLimitService.get_limit('<category>')`
+  的 lambda 形式，不要寫死字串
+- 純讀取且結果可公開的端點可以不掛，但**必須在回報中說出這個判斷**
+
 ### 元件級權限（D2，PERM-02）
 
 觸及動作按鈕（增刪改查、簽核、撤銷）與動作型 API 的任務：

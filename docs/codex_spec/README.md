@@ -32,9 +32,9 @@ sudo -u ethan timeout 900 codex exec --sandbox danger-full-access \
 |---|---|
 | `frontend.md` | 任務碰到模板 / JS / CSS |
 | `i18n.md` | 任務新增任何 user-facing 字串 |
-| `security.md` | 任務碰到 API / DB / 權限 / 租戶資料 |
+| `security.md` | 任務碰到 API / DB / 權限 / 租戶資料 / 新增公開端點 |
 | `portal.md` | 任務碰到 NoCode 子系統 portal 或 Page IR |
-| `_footer.md` | **每次都貼**（自我驗證指令 + 反規避提示） |
+| `_footer.md` | **每次都貼**（自我驗證指令 + 瀏覽器驗收要求 + 反規避提示） |
 
 ## 維護規則
 
