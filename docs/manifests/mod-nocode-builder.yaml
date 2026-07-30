@@ -63,6 +63,7 @@ files:
     - scripts/migrations/089_portal_row_owner_scope.sql
     - scripts/add_portal_user_ref.py  # 089 的 SQLite 部分（既有業務表補 portal_user_ref，冪等）
   tests:
+    - backend/tests/test_e2e_portal_cancel.py
     - backend/tests/test_platform_fixed_filters.py
     - backend/tests/test_portal_row_owner_scope.py
 

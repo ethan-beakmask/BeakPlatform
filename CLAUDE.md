@@ -581,8 +581,13 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 ```bash
 cd /opt/BeakPlatform-dev/backend
 ../venv/bin/python -m pytest tests/test_pageir_*.py tests/test_portal_*.py \
-  tests/test_sitemap_access_matrix.py -q     # 基準 198 passed（2026-07-30）
+  tests/test_sitemap_access_matrix.py tests/test_platform_fixed_filters.py -q
+# 基準 248 passed（2026-07-30）
 ```
+
+**`tests/test_e2e_portal_cancel.py` 刻意不在基準清單內**（掛 `pytest.mark.e2e`，
+需要本機實跑服務 + PostgreSQL，服務沒起來會 skip）。要跑它就單獨跑：
+`../venv/bin/python -m pytest tests/test_e2e_portal_cancel.py -q`
 
 ### form_workflow 發行（publish）陷阱
 - `POST /api/mappings/<sc>/publish` 以表單/流程模板的 **version+revision** 判斷有無變更；

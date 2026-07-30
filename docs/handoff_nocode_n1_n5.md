@@ -444,11 +444,33 @@ IR 的 `table.columns[]` / `detail.fields[]` 加 optional `mask`
   **portal 側已於 2026-07-30 落地兩個**（`portal.form.submit`、`portal.form.cancel`），
   見 `docs/handoff_nocode_form_detail_actions.md` §4.0。
   平台側要註冊什麼仍**需用戶指定**（資源、permission code、UI 觸發點、預期行為）。
-  - **撤單只有單元測試 + 手動瀏覽器驗收，沒有自動化 E2E**
-    （`backend/tests/test_pageir_portal_action_cancel.py` 用 monkeypatch 測渲染與
-    准入判定，沒有跨 HTTP 的完整流程測試）。要補的話對象是
-    `portal_widget_cancel_submission`：登入 portal → 送件 → 撤單 → 驗 status/軌跡，
-    以及 IDOR（撤別人的單回 404）。
+  - ~~**撤單只有單元測試 + 手動瀏覽器驗收，沒有自動化 E2E**~~
+    **【2026-07-30 已補：`backend/tests/test_e2e_portal_cancel.py`】**
+    pytest + `requests` 打本機實跑服務 + psycopg2 直查，全檔掛
+    `pytest.mark.e2e`（marker 已宣告在 `pyproject.toml`）。
+    **刻意不列入基準測試指令**（基準必須可重現、不依賴外部服務）；
+    單獨跑：`../venv/bin/python -m pytest tests/test_e2e_portal_cancel.py -q`。
+    服務沒起來會 skip 而不是 fail（已實測）。
+
+    涵蓋：送件（順帶驗 `nocode_user_ref` / `nocode_sub_system_sc` 確實帶入）→
+    缺 CSRF 回 400 → IDOR 回 404 → 正常撤單回 200 →
+    輪詢收斂後驗 `wi.status='CANCELLED'`、queue 無非終態節點、
+    自造的 WAITING 節點變 CANCELLED、`FORCE_END` 軌跡恰好一筆且
+    `approver_name` 以 `portal:` 開頭、`comment` 含 `user_ref=u:1` →
+    重複撤單回 409 `not_cancellable`。清理在 `finally`，跑兩次都通過、無殘留。
+
+    **兩個與原規劃不同的地方（規劃過時，實測修正）**：
+    1. 送件後 `wi.status` 已經是 `RUNNING`，不需要人工 UPDATE
+    2. **流程引擎（同進程 daemon thread）與撤單並行**，撤單回 200 後
+       queue 狀態還會變（實測：`node-Delay-2` 當下是 PENDING，幾秒後才 CANCELLED，
+       因為 `SubSystemProvision` 在撤單後才完成並 enqueue 了下一個節點）。
+       所以 queue 斷言必須**輪詢等收斂**，且不能斷言「全部節點都是 CANCELLED」
+       （正常跑完的是 SUCCESS）。測試改成撤單前自己 INSERT 一筆 WAITING
+       Approve 節點（引擎不會主動推進它），對那一筆做確定性斷言
+    3. IDOR 案例改成「暫時把 `nocode_user_ref` 改成 `u:999` → 打 cancel 應 404 →
+       改回」，取代原規劃的「找一筆別人的單，找不到就 skip」——
+       skip 的測試等於沒測試；而且它自帶對照組：同一個 URL 改回擁有者後回 200，
+       證明 404 確實來自擁有權過濾而非其他原因
 - ~~**`DcCrudView.fixed_filters` 含 `$CURRENT_USER` 類變數時，portal 語境行為未定義**~~
   **【2026-07-30 已釐清，見下方「fixed_filters 變數現況」】**
 - ~~**v2 頁面清理**：31 筆仍在 DB~~ **【2026-07-30 複查：31 筆已全部 `is_deleted=true`，

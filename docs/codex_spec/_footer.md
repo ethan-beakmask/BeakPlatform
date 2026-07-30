@@ -10,9 +10,11 @@ node --check <改過的每一支 .js>
 cd backend && ../venv/bin/python -c "import app; print('import ok')"
 # 改過 JSON（schema 等）
 python3 -c "import json; json.load(open('<path>'))"
-# 相關測試（基準 205 passed，不得退步）
+# 相關測試（基準 248 passed，不得退步）
 cd /opt/BeakPlatform-dev/backend && ../venv/bin/python -m pytest \
-  tests/test_pageir_*.py tests/test_portal_*.py tests/test_sitemap_access_matrix.py -q
+  tests/test_pageir_*.py tests/test_portal_*.py tests/test_sitemap_access_matrix.py \
+  tests/test_platform_fixed_filters.py -q
+# tests/test_e2e_portal_cancel.py 不在基準內（需實跑服務，掛 pytest.mark.e2e）
 ```
 
 **跑完整 `pytest tests/` 會有 13 個既有 error**（測試用 SQLite 但平台有 PostgreSQL

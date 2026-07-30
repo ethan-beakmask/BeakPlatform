@@ -47,6 +47,9 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+markers = [
+    "e2e: 需要本機實跑服務與 PostgreSQL 的端到端測試",
+]
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
