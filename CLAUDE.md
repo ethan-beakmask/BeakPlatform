@@ -549,6 +549,16 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 
 - `path_id` 不等於 `sub_system_sc`，對照在 `lookup_items.value_str`：
   `SELECT code, value_str FROM lookup_items WHERE value_str='<sub_system_sc>';`
+- **Page IR 設計器網址是 `/nocode/ir-designer/<page_layout_secure_code>`**
+  （預覽是同路徑 `+ /preview`）。它吃的是**頁面** secure_code，不是子系統 sc，
+  路由定義在 `modules/nocode_builder/web/__init__.py:42`
+- **portal 頁是獨立模板 `portal_page_v3.html`，不繼承 `layouts/base.html`**。
+  平台頁自動有的東西（`timezone.js`／`BkTime`、i18n、capability.js）在這裡
+  **都要自己載入**。portal 又是公開路由，`auth_interceptor` 在設定
+  `g.locale` / `g.timezone` 之前就 return 了，所以時區一律吃 fallback `Asia/Taipei`
+- **在 Page IR 頁面放 form.io 送出按鈕時必須寫 `"input": false`**，
+  否則 payload 會多一個 `submit: true` 欄位，被後端欄位白名單擋成
+  400 `unknown_field`
 - 權限判定失敗**一律回 404**（不洩漏存在與否）；查原因看
   `sudo journalctl -u beakplatform-dev.service --since "-5 min" | grep reason=`
 - 權限模型與判定鏈：`docs/PORTAL_ACCOUNT_SPEC.md`；
