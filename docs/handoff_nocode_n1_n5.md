@@ -486,7 +486,13 @@ CRUD 與 context 端點回 400 `filter_variable_not_supported`，
 **仍待用戶裁決的是「要不要支援 portal 版的『只看自己』」**，並且它不是
 「加一個變數」就能了事，有兩個硬前提：
 
-1. **沒有欄位記得「誰建的」**。`SqliteCrudService.create_row()` 不寫入任何身分欄位；
+1. **子系統 SQLite 業務表沒有欄位記得「誰建的」**（注意範圍：
+   **formflow 送件那條路早就有**——`fw_workflow_instances.nocode_sub_system_sc`
+   + `nocode_user_ref` + 複合索引 `ix_fw_wi_nocode`，值走
+   `portal_auth_service.nocode_user_ref()` 產出的 `u:<user_id>` / `g:<guest_token>`，
+   撤單的 `_owned_submission()` 三重過濾就是靠它。
+   缺的只有 table / 主細表元件直接操作的 SQLite 業務表）。
+   `SqliteCrudService.create_row()` 不寫入任何身分欄位；
    前端 `datalist-widget.js` 新增時刻意跳過 `$` 開頭的值
    （註解寫「變數由後端處理」，但後端其實沒處理）。
    要做就得決定：自動注入系統欄位（例如 `portal_user_ref` 存 `u:<user_id>`，
@@ -503,6 +509,34 @@ CRUD 與 context 端點回 400 `filter_variable_not_supported`，
 現況風險評估：DB 內 `fixed_filters` **一筆都沒有設**（0 筆），所以此功能從未被實際使用，
 這也是洞一直沒現形的原因；但 portal 相關的 7 個視圖 `allow_create/edit/delete` 全開，
 一旦有多訪客共用的表（報名、留言）就會踩到第 2 點。
+
+**第 2 點已實測證實（2026-07-30，測完已還原原值）**：
+
+```bash
+# p4tester 是 STAFF(rank 50)，feedback-table widget 的 update 要求 min_level=STAFF
+curl -b p4.txt -X PUT \
+  "$B/public/portal/ubwdM7Tp/api/pages/SavnwD-Te3EGRF4rNS8Uj0/widgets/feedback-table/rows/1" \
+  -H "X-CSRFToken: $T" -H 'Content-Type: application/json' \
+  -d '{"data":{"title":"IDOR-PROOF"}}'
+# → 200 {"success":true}，portal_data.db 的 feedback id=1 title 真的被改掉
+```
+
+四張既有業務表（`feedback` / `orders` / `md_customers_230517` / `md_services_230517`）
+的 PK 全是 `id INTEGER` 自增，**row id 猜測成本為零**。
+
+**根因不是「檢查被繞過」，而是列級授權這個維度從未存在**：`access_matrix`
+的授權單位是 widget ×（群組, 階級），語意是表級「這個階級可以編輯這張表」，
+與平台 CRUD 視圖一致。formflow 做得出列級是因為有 `nocode_user_ref` 這個材料，
+SQLite 業務表沒有材料所以沒有這道檢查。派工 spec 也沒寫這條
+（同 #4906：漏的是 spec 沒想到的，不是模型不遵守規範）。
+
+**修法方向（等用戶裁決三個細節後動工）**：在 SQLite 業務表注入
+`portal_user_ref TEXT`，值沿用 `nocode_user_ref()` 的同一套語彙，
+照集團 DB `owner_org_code` 的既有模式做（`_auto_fill_owner_org_code()`
+寫入自動填、update 時 `pop` 掉禁止改、列進 `_SYSTEM_COLUMNS` 不進表單），
+並把擁有權過濾套進 `get_row` / `update_row` / `delete_row`。
+待裁決：注入範圍（一律加 vs 逐表 opt-in）、既有 NULL 列的歸屬、
+視圖層 `row_owner_scope` 的預設值（`own` fail-closed vs `all` 相容）。
 
 匿名語境已由用戶定調：匿名場景（問卷之類）只收資料、不提供查詢，
 所以匿名一律拒絕身分變數，不需要拿 `guest_token` 當 owner。
