@@ -338,3 +338,14 @@
         grid-template-columns: 1fr !important;
     }
 }
+
+/* 捲動載入哨兵：必須有高度。
+   has_more 時程式會把 textContent 清成空字串，若沒有 min-height，
+   元素高度歸零，Chrome 的 IntersectionObserver 對零面積 target
+   不再回報 isIntersecting，捲動載入就從那一頁起永久停住。 */
+.pir-scroll-sentinel {
+    min-height: 24px;
+    padding: 4px 0;
+    color: var(--color-text-muted);
+    text-align: center;
+}

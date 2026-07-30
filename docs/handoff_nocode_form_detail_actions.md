@@ -669,15 +669,35 @@ portal 帳號 : p4tester / p4test123
 3. 驗收頁 `FORMTEST00000000000001` 原本的 form schema **沒有送出按鈕**
    （歷來都用 curl 送件），本輪已補上（`input: false`）。
 
-#### 順手發現、**尚未修**的既有問題（與 actions 無關）
+#### 順手發現並修掉的兩個既有問題（2026-07-30，同一晚）
 
-- **portal 頁沒有載入 `timezone.js`**（`typeof BkTime === 'undefined'`），
-  所以表格「捲動載入」的列時間直接印 API 回的 naive UTC ISO 字串
-  （`2026-07-28T20:23:...`），與伺服器端渲染的第一頁（`2026-07-29 04:23`）不一致。
-  違反 TZ-01。修法是 portal base 模板載入 timezone.js + appendRows 改用
-  `BkTime.format()`，但牽涉 portal 世界的時區來源，本輪未動。
-- **內容不足一屏時，無限捲動載不到第 3 頁以後**：sentinel 一直在視窗內，
-  IntersectionObserver 不再觸發回呼。page_size 小、資料少時可重現。
+**兩者都與 actions 無關，是 table 元件從一開始就有的缺陷。**
+
+1. **portal 頁沒有載入 `timezone.js`** → 表格「捲動載入」的列時間直接印
+   `/rows` API 回的 naive UTC ISO 字串（`2026-07-28T20:23:00`），
+   與伺服器端渲染的第一頁（`2026-07-29 04:23`）**格式不同且差 8 小時**，違反 TZ-01。
+   - 修法：`portal_page_v3.html`（獨立模板，不繼承 base.html）在 `pageir.js` **之前**
+     注入 `window.__TIMEZONE` 並載入 `timezone.js`；`appendRows()` 的欄位輸出
+     改走新 helper `displayValue()`，值長得像 ISO datetime 就 `BkTime.format(text,'short')`
+     （`'short'` 正好對應 SSR 的 `%Y-%m-%d %H:%M`）。
+   - portal 是公開路由，`auth_interceptor` **不設 `g.timezone`**（設定 locale/timezone
+     之前就 return 了），所以拿到的是 fallback `Asia/Taipei` ——
+     與 `tz_format_filter` 的 fallback 一致，兩邊因此不會再打架。
+   - `BkTime` 是 top-level `const`、**不掛 window**，判斷存在性只能用
+     `typeof BkTime !== 'undefined'`。
+
+2. **無限捲動會在某一頁永久停住**（原症狀：page_size 小時只載到第 2~3 頁）。
+   **根因是 sentinel 高度歸零**：`sentinel.textContent = data.has_more ? '' : ...`
+   把它清成空字串，而 `.pir-scroll-sentinel` **當時沒有任何 CSS**，
+   高度變 0 → Chrome 的 IntersectionObserver 對零面積 target 不再回報
+   `isIntersecting` → 從那一頁起再也不觸發。
+   - 修法三件套（缺一不可）：
+     `.pir-scroll-sentinel` 加 `min-height: 24px`；observer 加
+     `{ rootMargin: '200px' }`；每頁載完後延遲 150ms（等佈局吃進新列）
+     自己再判一次 `sentinelNear()` 並續載 —— 因為 IntersectionObserver
+     只在**相交狀態改變**時回呼，sentinel 停在視窗內而使用者沒再捲動時
+     不會有第二次回呼。
+   - 實測：6 頁 × 每頁 1 筆，不捲動即自動載完 6/6 並顯示「已載入全部」。
 
 #### 本機驗收資料（是事實，不要重建）
 

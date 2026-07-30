@@ -6,6 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ page_title }}</title>
     <script>window.__BP = '{{ app_prefix }}';</script>
+    <script>window.__TIMEZONE = {{ (g.get('timezone') or 'Asia/Taipei')|tojson }};</script>
+    <script src="{{ app_prefix }}/static/js/timezone.js"></script>
     <link rel="icon" href="{{ app_prefix }}/static/favicon.ico">
     <link rel="stylesheet" href="{{ app_prefix }}/static/css/common.css">
     <link rel="stylesheet" href="{{ app_prefix }}/static/css/pageir.css">

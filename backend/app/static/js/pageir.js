@@ -29,6 +29,21 @@
   };
 
   var tableCrudInitialized = false;
+  var ISO_DATETIME_RE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?Z?$/;
+
+  function displayValue(value) {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    var text = String(value);
+    // /rows API 回的是 naive UTC ISO 字串；伺服器端渲染的第一頁走
+    // Jinja2 |tz_format('%Y-%m-%d %H:%M')，這裡必須產出同樣的格式，
+    // 否則同一欄會出現兩種格式且差 8 小時（TZ-01）。
+    if (ISO_DATETIME_RE.test(text) && typeof BkTime !== 'undefined') {
+      return BkTime.format(text, 'short');
+    }
+    return text;
+  }
 
   function showToast(message, type) {
     var host = document.querySelector('.pir-toast-host');
@@ -222,7 +237,7 @@
       fields.forEach(function (field) {
         var td = document.createElement('td');
         var value = row && Object.prototype.hasOwnProperty.call(row, field) ? row[field] : '';
-        td.textContent = value === null || value === undefined ? '' : String(value);
+        td.textContent = displayValue(value);
         tr.appendChild(td);
       });
       if (hasActions) {
@@ -306,11 +321,21 @@
 
       var loading = false;
       var stopped = false;
-      var observer = new IntersectionObserver(function (entries) {
-        var visible = entries.some(function (entry) {
-          return entry.isIntersecting;
-        });
-        if (!visible || loading || stopped) {
+
+      // 緩衝 200px：與 observer 的 rootMargin 一致，讓 sentinel「快要進入視窗」
+      // 就開始載入。IntersectionObserver 只在相交狀態改變時回呼，
+      // sentinel 停在視窗內而使用者沒再捲動時不會有第二次回呼，
+      // 所以每載完一頁都要自己再判一次。
+      var SENTINEL_MARGIN = 200;
+
+      function sentinelNear() {
+        var rect = sentinel.getBoundingClientRect();
+        var viewport = window.innerHeight || document.documentElement.clientHeight;
+        return rect.top < viewport + SENTINEL_MARGIN && rect.bottom > -SENTINEL_MARGIN;
+      }
+
+      function loadNext() {
+        if (loading || stopped) {
           return;
         }
 
@@ -366,8 +391,20 @@
           })
           .finally(function () {
             loading = false;
+            // 等佈局吃進剛 append 的列再判，否則量到的是舊高度。
+            setTimeout(function () {
+              if (!stopped && sentinelNear()) {
+                loadNext();
+              }
+            }, 150);
           });
-      });
+      }
+
+      var observer = new IntersectionObserver(function (entries) {
+        if (entries.some(function (entry) { return entry.isIntersecting; })) {
+          loadNext();
+        }
+      }, { rootMargin: SENTINEL_MARGIN + 'px' });
       observer.observe(sentinel);
     });
   }
