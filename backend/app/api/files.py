@@ -183,11 +183,22 @@ def serve(secure_code):
     Serve 公開資源（如 Logo、背景圖）。
 
     標記為 @public_route 讓登入頁面也能載入 Logo。
-    透過 secure_code 存取，外部無法猜測。
+    僅供 PUBLIC_CONTEXT_TYPES；其他 context_type（form_attachment、
+    subsystem_file）必須登入並通過 can_access_file()，否則一律 404
+    （不洩漏檔案是否存在），避免本端點成為物件級授權的旁路。
     """
     record = file_service.get_file_by_sc(secure_code)
     if not record:
         return '', 404
+
+    if record.context_type not in file_service.PUBLIC_CONTEXT_TYPES:
+        if not current_user.is_authenticated or \
+                not file_service.can_access_file(current_user, record):
+            logger.warning(
+                "[SEC] serve 端非公開檔案存取被擋: context_type=%s file_sc=%s",
+                record.context_type, secure_code,
+            )
+            return '', 404
 
     try:
         data, mime_type, _ = file_service.serve_file(record)
