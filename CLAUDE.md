@@ -575,6 +575,18 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   （`FORMTEST00000000000001`、`qiHMpMCul-1KGxhU4Q7Trd` 就是這種）。
   2026-07-31 清孤兒時只看 site map，把這兩個 published 驗收頁誤刪，
   其中前者是 `test_e2e_portal_cancel.py` 的依賴，**刪掉會讓 E2E 靜默 skip 而不是報錯**。
+  此判定的**唯一實作**是
+  `modules/nocode_builder/services/page_ownership_service.py`
+  （`is_page_reachable()` / `get_owner_sub_system_codes()`），
+  存取層、刪除級聯、清理腳本共用，**禁止各自重寫**。
+  注意 `is_page_reachable()` 對「零關聯」回 `True`（純平台 IR 頁要放行），
+  所以判斷「該不該刪這個頁」時條件要寫成
+  `not is_page_reachable(sc) or not get_owner_sub_system_codes(sc)`。
+  既有孤兒用 `scripts/cleanup_orphan_nocode_pages.py --dry-run/--apply`（冪等）清。
+- **建立子系統會自動附贈一個 welcome 節點 + welcome 頁面**，
+  且 **site map 只允許一個根頁面**（再建根節點會回 400
+  「Site Map 只能有一個根頁面 (welcome)」，新節點要指定 `parent_secure_code`）。
+  測級聯或建測試資料時會撞到。
 - 權限判定失敗**一律回 404**（不洩漏存在與否）；查原因看
   `sudo journalctl -u beakplatform-dev.service --since "-5 min" | grep reason=`
 - 權限模型與判定鏈：`docs/PORTAL_ACCOUNT_SPEC.md`；
