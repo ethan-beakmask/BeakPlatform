@@ -566,6 +566,15 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   **「portal 頁表格突然空了」第一個要查的就是這個**，不是權限判定壞了。
   既有表補欄位用 `scripts/add_portal_user_ref.py --apply`（冪等）。
   細節與 `owner_ref` 傳參規則見 `docs/codex_spec/portal.md`
+- **判斷一個 NoCode 頁面「還活著」必須走雙路徑 OR**，只看 site map 會誤判：
+  ```
+  存活 = (有存活 dc_site_map_nodes 指向 且 該節點的子系統存活)
+      OR (有存活 dc_sub_system_pages 掛載 且 該子系統存活)
+  ```
+  portal 頁**不一定掛在 site map 節點下**，可能只透過 `dc_sub_system_pages` 關聯
+  （`FORMTEST00000000000001`、`qiHMpMCul-1KGxhU4Q7Trd` 就是這種）。
+  2026-07-31 清孤兒時只看 site map，把這兩個 published 驗收頁誤刪，
+  其中前者是 `test_e2e_portal_cancel.py` 的依賴，**刪掉會讓 E2E 靜默 skip 而不是報錯**。
 - 權限判定失敗**一律回 404**（不洩漏存在與否）；查原因看
   `sudo journalctl -u beakplatform-dev.service --since "-5 min" | grep reason=`
 - 權限模型與判定鏈：`docs/PORTAL_ACCOUNT_SPEC.md`；
