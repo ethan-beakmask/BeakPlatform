@@ -44,6 +44,25 @@ def index():
 @module_access_required('nocode_builder')
 def ir_designer(secure_code):
     """Page IR v3 設計器。"""
+    from app.security.resource_gateway import ResourceGateway
+    from ..models import DcPageLayout
+    from ..services.page_ownership_service import is_page_reachable
+
+    page = ResourceGateway.get(
+        DcPageLayout,
+        secure_code,
+        raise_on_not_found=False,
+        check_permission=False,
+    )
+    if not page or page.is_deleted:
+        abort(404)
+
+    if not is_page_reachable(secure_code):
+        logger.info(
+            'IR designer blocked: owner sub system deleted page=%s', secure_code
+        )
+        abort(404)
+
     return render_template(
         'modules/nocode_builder/ir_designer.html',
         secure_code=secure_code,
@@ -56,6 +75,18 @@ def ir_designer(secure_code):
 def workspace(sub_system_sc):
     """NoCode 統一工作區。"""
     from app.services.capability_service import build_caps
+    from app.security.resource_gateway import ResourceGateway
+    from ..models import DcSubSystem
+
+    ss = ResourceGateway.get(
+        DcSubSystem,
+        sub_system_sc,
+        raise_on_not_found=False,
+        check_permission=False,
+    )
+    if not ss or ss.is_deleted:
+        logger.info('Workspace blocked: sub system deleted sub_system=%s', sub_system_sc)
+        abort(404)
 
     return render_template(
         'modules/nocode_builder/workspace.html',
@@ -74,6 +105,7 @@ def ir_designer_preview(secure_code):
     from app.security.resource_gateway import ResourceGateway
     from ..models import DcPageLayout, DcSubSystem, DcSubSystemPage
     from ..services import portal_access_service, portal_auth_service
+    from ..services.page_ownership_service import is_page_reachable
 
     page = ResourceGateway.get(
         DcPageLayout,
@@ -82,6 +114,13 @@ def ir_designer_preview(secure_code):
         check_permission=False,
     )
     if not page or page.is_deleted:
+        abort(404)
+
+    if not is_page_reachable(secure_code):
+        logger.info(
+            'IR designer preview blocked: owner sub system deleted page=%s',
+            secure_code,
+        )
         abort(404)
 
     preview_banner = None

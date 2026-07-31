@@ -6,7 +6,8 @@
 ## 一句話
 
 刪掉子系統後，它底下的頁面在**平台側**還開得起來；根因是刪除不級聯。
-2026-07-31 已清掉既有孤兒資料，但**程式面的三段修法還沒做**。
+**2026-07-31 傍晚三段修法已全部完成並實測通過**（詳見文末「完成紀錄」）。
+以下「待做的三段」保留為設計說明，描述的是現在程式碼實際採用的判定與作法。
 
 ## 風險等級（先講清楚，避免誤判優先級）
 
@@ -228,3 +229,55 @@ portal 測試資料、驗收頁與 `test_e2e_portal_cancel.py` 全部依賴它�
 
 本機（`/opt/BeakPlatform-dev` 研發、`/opt/BeakPlatform` 測試）**全部都是測試資料**，
 用戶明確說可自由刪除；本系統定位 SaaS，日後要乾淨測試就建一個測試用公司客戶。
+
+---
+
+## 完成紀錄（2026-07-31 傍晚）
+
+### 對不上帳的答案：是租戶隔離，不是 bug
+
+DB 有 7 個存活子系統，但用戶只看到 2 個 —— 那 2 個
+（`nXwTFgUpsJptHhHUiMlpDy` test02、`8uopl3mNbDzGDUGAcNQqNe` 匿名問卷）
+的 `org_secure_code` 都是 `_9c8TewkRkCBEf3XsUdqeF`（beluga），
+另外 5 個屬於別的企業，列表本來就看不到。無需處理。
+
+### 實際落地的程式
+
+| 檔案 | 內容 |
+|---|---|
+| `modules/nocode_builder/services/page_ownership_service.py`（新） | `get_owner_sub_system_codes()` / `is_page_reachable()`，雙路徑 OR 判定 |
+| `backend/app/web/main.py` `published_page()` | `/p/<sc>` 不可達 → 404 |
+| `modules/nocode_builder/web/__init__.py` | `ir_designer()`（原本連頁面存不存在都不查）、`ir_designer_preview()` 加判定；`workspace()` 加「子系統存活」判定 |
+| `modules/nocode_builder/api/__init__.py` | `GET/PUT /pages/<sc>`、`publish`/`unpublish` 四個端點加判定（否則 UI 擋了、API 照樣讀寫孤兒頁的 IR） |
+| `modules/nocode_builder/services/project_service.py` `delete_project()` | 級聯軟刪節點 → 掛載 → `flush()` → 用雙路徑判定決定要不要軟刪頁面 |
+| `scripts/cleanup_orphan_nocode_pages.py`（新） | A/B/C 三類 + 孤兒掛載，`--dry-run`/`--apply`，冪等 |
+
+**級聯判定的一個細節**：`is_page_reachable()` 對「零關聯」回 `True`（純平台頁放行），
+所以級聯與清理腳本判斷頁面該不該刪時，條件是
+`not is_page_reachable(sc) or not get_owner_sub_system_codes(sc)`
+—— 後半段才收得掉「關聯剛被級聯刪光、變成零關聯」的頁。
+
+**刻意沒動**：`GET /api/nocode-builder/pages`（列表）仍會列出孤兒頁。
+理由是它是選頁器的資料來源，過濾掉的副作用大於效益；孤兒頁的正解是清理腳本。
+
+### 實測（都在本機實跑過）
+
+- 建實驗子系統 `53iLtkX9AIp_c2Ee9Q-pEc` + 兩頁（一頁走 site map 節點、一頁走
+  `dc_sub_system_pages` 掛載，兩條路徑都覆蓋）→ 刪除前 `/p/`、設計器、
+  `GET /api/.../pages/<sc>`、工作區全部 200
+- `DELETE /api/nocode-builder/sub-systems/<sc>` → DB 驗證節點、掛載、**兩頁**皆軟刪；
+  上述入口全部變 404（含 `/preview`、`PUT`）
+- 再用 SQL 把該子系統的關聯與頁面還原成「頁與關聯存活、子系統已刪」的**孤兒樣態** →
+  六個入口仍全部 404，證明存取層 fail-closed 不是只靠「頁面被刪掉」
+- 清理腳本 `--dry-run` 抓到 1 節點 + 3 掛載 + 2 頁面（其中兩筆掛載是前一輪沒清的殘留，
+  指向的頁面早已軟刪）→ `--apply` 後再跑 `--dry-run` 為 0/0/0（冪等）
+- 清理後存活頁面仍是 11 筆、與清理前完全一致（`FORMTEST00000000000001`、
+  `qiHMpMCul-1KGxhU4Q7Trd` 沒被誤殺）
+- `pytest tests/test_pageir_*.py tests/test_portal_*.py tests/test_sitemap_access_matrix.py
+  tests/test_platform_fixed_filters.py -q` → **248 passed**（基準持平）；
+  `tests/test_e2e_portal_cancel.py` → **1 passed**
+- 瀏覽器（chrome-devtools，`admin-ethanyu@beluga.com`）：test02 工作區 → 點 Site Map
+  節點 → 設計器正常載入頁面；改開已刪頁的設計器網址 → 404 頁面
+
+備份（本輪動資料前）：`/opt/tmp/beakplatform_backup/backup_orphan_fix_20260731_1702.sql`
+（`dc_site_map_nodes` / `dc_page_layouts` / `dc_sub_system_pages` 三表 data-only）。

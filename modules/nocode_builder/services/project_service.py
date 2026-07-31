@@ -21,7 +21,11 @@ from app.services.module_access_service import ModuleAccessService
 from app.security.resource_gateway import ResourceGateway
 from app.platform.data import get_current_org
 
+from ..models.page_layout import DcPageLayout
+from ..models.site_map_node import DcSiteMapNode
 from ..models.sub_system import DcSubSystem
+from ..models.sub_system_page import DcSubSystemPage
+from .page_ownership_service import get_owner_sub_system_codes, is_page_reachable
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +150,9 @@ class ProjectService:
         """
         軟刪除開發案
 
-        同時：停用選單 + 撤銷無其他開發案的開發者 nocode_builder 權限
+        同時停用選單、刪除公開 Portal 路徑記錄、撤銷無其他開發案的開發者
+        nocode_builder 權限，並級聯軟刪該子系統的 site map 節點、頁面掛載與
+        不再屬於任何存活子系統的候選頁面。
         """
         ss = ResourceGateway.get(
             DcSubSystem, secure_code,
@@ -176,6 +182,56 @@ class ProjectService:
         # 撤銷開發者 nocode_builder 權限（無其他開發案時才撤銷）
         for dev_sc in (ss.developers or []):
             _revoke_if_no_other_projects(org_sc, dev_sc, ss.secure_code)
+
+        site_map_nodes = DcSiteMapNode.query.filter(
+            DcSiteMapNode.sub_system_secure_code == ss.secure_code,
+            DcSiteMapNode.is_deleted == False,  # noqa: E712
+        ).all()
+        sub_system_pages = DcSubSystemPage.query.filter(
+            DcSubSystemPage.sub_system_secure_code == ss.secure_code,
+            DcSubSystemPage.is_deleted == False,  # noqa: E712
+        ).all()
+
+        candidate_page_scs = set()
+        for node in site_map_nodes:
+            page_sc = (node.page_layout_secure_code or '').strip()
+            if page_sc:
+                candidate_page_scs.add(page_sc)
+            ResourceGateway.delete(node, check_permission=False, soft=True)
+
+        for mounted_page in sub_system_pages:
+            page_sc = (mounted_page.page_layout_secure_code or '').strip()
+            if page_sc:
+                candidate_page_scs.add(page_sc)
+            ResourceGateway.delete(mounted_page, check_permission=False, soft=True)
+
+        db.session.flush()
+
+        deleted_page_count = 0
+        for page_sc in sorted(candidate_page_scs):
+            owner_codes = get_owner_sub_system_codes(page_sc)
+            should_delete_page = (
+                not is_page_reachable(page_sc)
+                or not owner_codes
+            )
+            if not should_delete_page:
+                continue
+
+            page = DcPageLayout.query.filter(
+                DcPageLayout.secure_code == page_sc,
+                DcPageLayout.is_deleted == False,  # noqa: E712
+            ).first()
+            if page:
+                ResourceGateway.delete(page, check_permission=False, soft=True)
+                deleted_page_count += 1
+
+        logger.info(
+            'Sub system cascade delete: sub_system=%s nodes=%d mounts=%d pages=%d',
+            ss.secure_code,
+            len(site_map_nodes),
+            len(sub_system_pages),
+            deleted_page_count,
+        )
 
         ResourceGateway.delete(ss, check_permission=False, soft=True)
         ResourceGateway.commit()

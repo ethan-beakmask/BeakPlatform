@@ -19,6 +19,8 @@ from app.security.decorators import public_route, module_access_required, admin_
 from app.security.resource_gateway import ResourceGateway
 from app.platform.data import get_current_org
 
+from ..services.page_ownership_service import is_page_reachable
+
 logger = logging.getLogger(__name__)
 
 # 合法的識別符格式（表名/欄位名，支援 Unicode）
@@ -1035,6 +1037,9 @@ def get_page(secure_code):
         if not page or page.is_deleted:
             return jsonify({'success': False, 'error': 'Page not found'}), 404
 
+        if not is_page_reachable(secure_code):
+            return jsonify({'success': False, 'error': 'Page not found'}), 404
+
         # 設計器要靠這個決定 portal 語境（元件准入 UI 的顯示條件）。
         # 純 form 頁沒有 portal: 前綴的 binding 可推導，只能從掛載關係取得。
         from ..models import DcSubSystemPage
@@ -1069,6 +1074,9 @@ def update_page(secure_code):
             check_permission=False
         )
         if not page or page.is_deleted:
+            return jsonify({'success': False, 'error': 'Page not found'}), 404
+
+        if not is_page_reachable(secure_code):
             return jsonify({'success': False, 'error': 'Page not found'}), 404
 
         data = request.get_json() or {}
@@ -1150,6 +1158,9 @@ def publish_page(secure_code):
         if not page or page.is_deleted:
             return jsonify({'success': False, 'error': 'Page not found'}), 404
 
+        if not is_page_reachable(secure_code):
+            return jsonify({'success': False, 'error': 'Page not found'}), 404
+
         ResourceGateway.update(page, check_permission=False, status='published')
         ResourceGateway.commit()
 
@@ -1178,6 +1189,9 @@ def unpublish_page(secure_code):
             check_permission=False
         )
         if not page or page.is_deleted:
+            return jsonify({'success': False, 'error': 'Page not found'}), 404
+
+        if not is_page_reachable(secure_code):
             return jsonify({'success': False, 'error': 'Page not found'}), 404
 
         ResourceGateway.update(page, check_permission=False, status='draft')

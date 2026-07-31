@@ -271,6 +271,14 @@ def published_page(secure_code):
     if not page or page.is_deleted or page.status != 'published':
         abort(404)
 
+    from modules.nocode_builder.services.page_ownership_service import is_page_reachable
+
+    if not is_page_reachable(secure_code):
+        logger.info(
+            'Published page blocked: owner sub system deleted page=%s', secure_code
+        )
+        abort(404)
+
     if isinstance(page.layout_json, dict) and page.layout_json.get('ir_version') == 3:
         from app.pageir import PageIrRenderError, render_page_ir_full
 
