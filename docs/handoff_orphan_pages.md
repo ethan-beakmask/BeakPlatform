@@ -257,8 +257,10 @@ DB 有 7 個存活子系統，但用戶只看到 2 個 —— 那 2 個
 `not is_page_reachable(sc) or not get_owner_sub_system_codes(sc)`
 —— 後半段才收得掉「關聯剛被級聯刪光、變成零關聯」的頁。
 
-**刻意沒動**：`GET /api/nocode-builder/pages`（列表）仍會列出孤兒頁。
-理由是它是選頁器的資料來源，過濾掉的副作用大於效益；孤兒頁的正解是清理腳本。
+**`GET /api/nocode-builder/pages`（列表）也過濾了**：它的回應含每一頁完整的
+`layout_json`，只掛 `@module_access_required`，不過濾等於整批繞過單頁端點的判定。
+（第一版曾以「它是選頁器的資料來源」為由放過 —— 那是誤判，全 repo grep 後確認
+前端沒有任何地方消費這個列表端點，過濾成本為零。）
 
 ### 實測（都在本機實跑過）
 

@@ -956,9 +956,14 @@ def list_pages():
             order_by='-updated_at'
         )
 
+        # 所屬子系統已刪的孤兒頁不列出（回應含完整 layout_json，
+        # 不過濾等於繞過單頁端點的 fail-closed 判定）
         return jsonify({
             'success': True,
-            'data': [p.to_dict() for p in result]
+            'data': [
+                p.to_dict() for p in result
+                if is_page_reachable(p.secure_code)
+            ]
         })
     except Exception as e:
         db.session.rollback()
