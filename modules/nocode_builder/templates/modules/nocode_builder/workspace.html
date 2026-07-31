@@ -31,7 +31,6 @@
             </div>
             <div class="wks-toolbar">
                 <button type="button" class="wks-btn wks-btn-primary" @click="addPage()">{{ _('新增網頁') }}</button>
-                <button type="button" class="wks-btn" @click="addFolder()">{{ _('新增資料夾') }}</button>
                 <button type="button" class="wks-btn" @click="saveReorder()" :disabled="!sortDirty">{{ _('儲存排序') }}</button>
                 <button type="button" class="wks-btn wks-btn-danger" @click="deleteNode()" :disabled="!selectedNode">{{ _('刪除節點') }}</button>
             </div>
@@ -86,7 +85,7 @@
             <template x-if="!currentPageSc">
                 <div class="wks-main-empty">
                     <h2>{{ _('從左側選擇或建立網頁') }}</h2>
-                    <p>{{ _('folder 節點只展開或收合，不會載入設計器。') }}</p>
+                    <p>{{ _('用拖拉調整網頁在 Site Map 中的層級關係。') }}</p>
                 </div>
             </template>
             <template x-if="designerMounted">

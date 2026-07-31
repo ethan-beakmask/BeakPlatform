@@ -109,6 +109,9 @@ function wksManager(subSystemSc) {
             }));
         },
 
+        // folder 節點已於 a6e0314e（2026-04-07）廢除，後端 create_node 只收 page，
+        // 新增入口也已移除；DB 仍有 3 筆歷史 folder 節點，以下讀取側分支只為相容它們，
+        // 不可因為「看起來沒人用」就刪掉（刪了點到舊節點會壞）。
         nodeLabel(node) {
             const typeLabel = node.node_type === 'folder' ? __('資料夾') : __('網頁');
             const accessLabel = node.access_matrix ? ` ${__('〔准入〕')}` : '';
@@ -216,23 +219,6 @@ function wksManager(subSystemSc) {
             await this.selectPage(freshNode, pageSc);
             this.markSelectedRow(freshNode.secure_code);
             this.showToast(__('網頁已建立'));
-        },
-
-        async addFolder() {
-            const name = prompt(__('請輸入資料夾名稱'));
-            if (!name || !name.trim()) return;
-            const parentSc = this.selectedNode ? this.selectedNode.secure_code : null;
-            const node = await this.createNode({
-                name: name.trim(),
-                node_type: 'folder',
-                parent_secure_code: parentSc,
-            });
-            if (!node) return;
-            await this.reloadTree();
-            this.selectedNode = this.findNodeBySecureCode(node.secure_code) || node;
-            this.markSelectedRow(node.secure_code);
-            this.syncAccessForm();
-            this.showToast(__('資料夾已建立'));
         },
 
         async createPageLayout(name) {
