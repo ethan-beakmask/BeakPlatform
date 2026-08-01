@@ -25,6 +25,7 @@ from .tenant_isolation import get_current_tenant
 SECURE_CODE_PATTERN = re.compile(r'^[A-Za-z0-9_-]{10,32}$')
 
 # Model 到資源類型的映射
+# 未列入本表且未列入 RBAC_EXEMPT_MODELS 的 model 經過 gateway 會被 fail-closed 拒絕。
 MODEL_RESOURCE_TYPE_MAP = {
     'User': 'user',
     'Organization': 'organization',
@@ -603,18 +604,37 @@ class ResourceGateway:
 
         優先序：
         1. require_permission 明確指定 -> 檢查該代碼
-        2. model 在 LIST_RBAC_ENFORCED_MODELS 且 check_permission=True
+        2. check_permission=False -> 不檢查（呼叫端明確逃生門）
+        3. model 在 RBAC_EXEMPT_MODELS -> 不檢查（明確豁免）
+        4. model 在 LIST_RBAC_ENFORCED_MODELS 且 check_permission=True
            -> 自動檢查 '{resource_type}:read'
-        3. 其餘 -> 不檢查（fail-open，待階段 B 分批收斂）
+        5. 其餘 -> 有用戶上下文時 fail-closed 拒絕
         """
         if require_permission:
             ResourceGateway._check_list_permission(require_permission)
             return
 
-        if check_permission and model_class.__name__ in LIST_RBAC_ENFORCED_MODELS:
+        if not check_permission:
+            return
+
+        name = model_class.__name__
+        if name in RBAC_EXEMPT_MODELS:
+            return
+
+        if name in LIST_RBAC_ENFORCED_MODELS:
             resource_type = ResourceGateway._get_resource_type(model_class)
             if resource_type:
                 ResourceGateway._check_list_permission(f"{resource_type}:read")
+            return
+
+        if ResourceGateway._get_current_user() is None:
+            return
+
+        from ..exceptions import PermissionDeniedError
+        raise PermissionDeniedError(
+            f"Unregistered model for ResourceGateway list RBAC: {name} "
+            f"(add to LIST_RBAC_ENFORCED_MODELS or RBAC_EXEMPT_MODELS)"
+        )
 
     @staticmethod
     def _check_list_permission(permission_code: str) -> None:
@@ -655,10 +675,16 @@ class ResourceGateway:
             # 無用戶上下文，跳過權限檢查（由認證層處理）
             return
 
+        if model_class.__name__ in RBAC_EXEMPT_MODELS:
+            return
+
         resource_type = ResourceGateway._get_resource_type(model_class)
         if resource_type is None:
-            # 未配置的資源類型，跳過權限檢查
-            return
+            from ..exceptions import PermissionDeniedError
+            raise PermissionDeniedError(
+                f"Unregistered model for ResourceGateway RBAC: {model_class.__name__} "
+                f"(add to MODEL_RESOURCE_TYPE_MAP or RBAC_EXEMPT_MODELS)"
+            )
 
         from ..services.permission_service import PermissionService
         if not PermissionService.can_view(user, resource_type, resource):
@@ -679,9 +705,16 @@ class ResourceGateway:
         if user is None:
             return
 
+        if model_class.__name__ in RBAC_EXEMPT_MODELS:
+            return
+
         resource_type = ResourceGateway._get_resource_type(model_class)
         if resource_type is None:
-            return
+            from ..exceptions import PermissionDeniedError
+            raise PermissionDeniedError(
+                f"Unregistered model for ResourceGateway RBAC: {model_class.__name__} "
+                f"(add to MODEL_RESOURCE_TYPE_MAP or RBAC_EXEMPT_MODELS)"
+            )
 
         from ..services.permission_service import PermissionService
         if not PermissionService.can_create(user, resource_type):
@@ -702,9 +735,16 @@ class ResourceGateway:
         if user is None:
             return
 
+        if model_class.__name__ in RBAC_EXEMPT_MODELS:
+            return
+
         resource_type = ResourceGateway._get_resource_type(model_class)
         if resource_type is None:
-            return
+            from ..exceptions import PermissionDeniedError
+            raise PermissionDeniedError(
+                f"Unregistered model for ResourceGateway RBAC: {model_class.__name__} "
+                f"(add to MODEL_RESOURCE_TYPE_MAP or RBAC_EXEMPT_MODELS)"
+            )
 
         from ..services.permission_service import PermissionService
         if not PermissionService.can_edit(user, resource_type, resource):
@@ -725,9 +765,16 @@ class ResourceGateway:
         if user is None:
             return
 
+        if model_class.__name__ in RBAC_EXEMPT_MODELS:
+            return
+
         resource_type = ResourceGateway._get_resource_type(model_class)
         if resource_type is None:
-            return
+            from ..exceptions import PermissionDeniedError
+            raise PermissionDeniedError(
+                f"Unregistered model for ResourceGateway RBAC: {model_class.__name__} "
+                f"(add to MODEL_RESOURCE_TYPE_MAP or RBAC_EXEMPT_MODELS)"
+            )
 
         from ..services.permission_service import PermissionService
         if not PermissionService.can_delete(user, resource_type, resource):
