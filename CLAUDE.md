@@ -541,6 +541,20 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 
 ### NoCode Builder / Portal 開發備忘（2026-07-28 起）
 
+**架構原則（2026-08-03 用戶定案，違反者不是 bug 是架構錯誤）**：
+
+- NoCode 子系統的資料**自給自足**。要與平台交換一律是**平台寫入、平台去讀**，
+  不從 SQLite / NoCode 側取用平台資料（流程元件取資料算平台本身的功能，不在此限）。
+  目的有二：把 NoCode 側的 SQL injection 受害範圍鎖在 SQLite 內攻不進平台；
+  以及保持 **NoCode 本來就能獨立成單一專案**的可分離性（整合進 BeakPlatform 是產品策略）
+- 因此 `registry.get_resource()` 在 portal 語境對無 prefix 的平台資源一律回 None
+  （`backend/app/pageir/registry.py:46-47`）**是這條原則的實作，不要放寬**。
+  症狀會是 `PageIrRenderError: Unregistered resource: user` → 422，
+  正解是把頁面改綁 `portal:` / `formflow:` 資源，不是去改 registry
+- **所有 nocode 子系統頁面一律以 portal 方式渲染**（員工也一樣，只是身分來源不同），
+  平台端不存在「nocode 頁面」。故 `_ACTIONS`（平台側動作白名單）永遠是 0 筆，
+  那是預期狀態不是待補項
+
 **兩個帳號世界完全分離**，測試時 cookie jar 要分開（同一個 jar 也能並存，但別混淆）：
 
 | | 平台世界 | Portal 世界 |
@@ -573,6 +587,13 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   平台頁自動有的東西（`timezone.js`／`BkTime`、i18n、capability.js）在這裡
   **都要自己載入**。portal 又是公開路由，`auth_interceptor` 在設定
   `g.locale` / `g.timezone` 之前就 return 了，所以時區一律吃 fallback `Asia/Taipei`
+- **這條對 portal 的錯誤頁與任何新增 portal 模板一律適用**，不只主頁。
+  錯誤路徑最容易漏：`pageir/page_error.html` 繼承了 `layouts/base.html`，
+  被 portal 端共用了很久，導致 portal 渲染失敗時**外部訪客拿到帶平台
+  navbar／選單／`capability.js` 的頁面**（2026-08-03 commit `853b5aaf` 修，
+  改用 `modules/nocode_builder/portal_page_error.html`）。
+  **新增任何 portal 端要用的模板前，先確認它沒有 `{% extends "layouts/base.html" %}`。**
+  平台世界的 `/p/` 與純平台預覽仍用原本的平台版錯誤頁，那是正確的
 - **在 Page IR 頁面放 form.io 送出按鈕時必須寫 `"input": false`**，
   否則 payload 會多一個 `submit: true` 欄位，被後端欄位白名單擋成
   400 `unknown_field`
