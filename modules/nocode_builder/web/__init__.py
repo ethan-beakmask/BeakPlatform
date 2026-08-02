@@ -234,7 +234,12 @@ def ir_designer_preview(secure_code):
                 secure_code,
                 ss.secure_code,
             )
-            return render_template('pageir/page_error.html'), 422
+            # portal 語境的錯誤頁不得繼承 layouts/base.html（會帶平台選單等平台物件）
+            return render_template(
+                'modules/nocode_builder/portal_page_error.html',
+                sub_system_name=ss.name,
+                sub_system_icon=ss.icon or '',
+            ), 422
         finally:
             clear_render_context()
 
