@@ -25,6 +25,7 @@
                         </template>
                     </select>
                 </label>
+                <p class="ird-hint" style="flex-basis: 100%; margin: 0; color: var(--color-text-muted);">{{ _('預覽身分僅影響[預覽]的檢視結果，不會隨頁面儲存。') }}</p>
             </div>
             <button type="button" class="ird-btn" @click="previewPage()">{{ _('預覽') }}</button>
             {% if secure_code is defined %}

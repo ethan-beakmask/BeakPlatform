@@ -86,6 +86,8 @@ function irDesigner() {
         ],
 
         async init() {
+            this.$watch('previewGroup', () => this.persistPreviewIdentity());
+            this.$watch('previewLevel', () => this.persistPreviewIdentity());
             const cfg = window.__IR_DESIGNER_CONFIG || {};
             this.secureCode = cfg.secureCode || '';
             this.designerUrl = cfg.designerUrl || '';
@@ -287,8 +289,7 @@ function irDesigner() {
         },
 
         async onScopeChange() {
-            this.previewGroup = '';
-            this.previewLevel = '';
+            this.resetPreviewIdentity();
             this.resetSiteMap();
             await this.loadMeta(this.dataScope);
             await this.ensurePortalOrg();
@@ -426,7 +427,58 @@ function irDesigner() {
             return (levels[0] && levels[0].code) || 'GUEST';
         },
 
+        previewIdentityStorageKey() {
+            if (!this.dataScope) return '';
+            return `bk.ir-designer.preview-identity.${this.dataScope}`;
+        },
+
+        loadStoredPreviewIdentity() {
+            const key = this.previewIdentityStorageKey();
+            if (!key) return null;
+            try {
+                const raw = sessionStorage.getItem(key);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== 'object') return null;
+                return {
+                    group: String(parsed.group || ''),
+                    level: String(parsed.level || ''),
+                };
+            } catch (err) {
+                return null;
+            }
+        },
+
+        persistPreviewIdentity() {
+            const key = this.previewIdentityStorageKey();
+            if (!key) return;
+            // 切換 dataScope 的過程中 previewGroup/Level 會被清空，此時若寫入，
+            // 會把「即將切過去的那個子系統」的既有存檔洗成空值。
+            // 等該子系統的組織資料真正載完（portalOrgScope 對齊 dataScope）才寫。
+            if (!this.portalOrgLoaded || this.portalOrgScope !== this.dataScope) return;
+            try {
+                sessionStorage.setItem(key, JSON.stringify({
+                    group: this.previewGroup || '',
+                    level: this.previewLevel || '',
+                }));
+            } catch (err) {
+                // sessionStorage may be unavailable in private browsing modes.
+            }
+        },
+
+        resetPreviewIdentity() {
+            this.previewGroup = '';
+            this.previewLevel = '';
+        },
+
         syncPreviewIdentity() {
+            if (!this.previewGroup && !this.previewLevel) {
+                const stored = this.loadStoredPreviewIdentity();
+                if (stored) {
+                    this.previewGroup = stored.group;
+                    this.previewLevel = stored.level;
+                }
+            }
             if (this.previewGroup && !this.activePortalGroups().some((group) => group.code === this.previewGroup)) {
                 this.previewGroup = '';
             }
