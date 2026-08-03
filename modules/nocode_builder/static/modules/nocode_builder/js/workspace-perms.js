@@ -184,6 +184,12 @@ function wksPermsManager(subSystemSc) {
             return __('權限碼制');
         },
 
+        matchModeLabel(mode) {
+            // 值本身是機器可讀的 any / all，只在顯示層加中文
+            if (mode === 'all') return __('全部 (all)');
+            return __('任一 (any)');
+        },
+
         permLabel(perm) {
             const code = String((perm && perm.code) || '').trim();
             const description = String((perm && perm.description) || '').trim();

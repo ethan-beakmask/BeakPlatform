@@ -83,7 +83,7 @@
                             <template x-for="perm in permissions" :key="'page:' + perm.code">
                                 <th><code x-text="permLabel(perm)"></code></th>
                             </template>
-                            <th>{{ _('match mode') }}</th>
+                            <th>{{ _('符合方式') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -101,7 +101,7 @@
                                 <td>
                                     <select x-model="row.perm_match_mode" @change="updatePageMatchMode(row)" :disabled="saving || !canManage()">
                                         <template x-for="mode in matchModes" :key="mode">
-                                            <option :value="mode" :selected="mode === row.perm_match_mode" x-text="mode"></option>
+                                            <option :value="mode" :selected="mode === row.perm_match_mode" x-text="matchModeLabel(mode)"></option>
                                         </template>
                                     </select>
                                 </td>
