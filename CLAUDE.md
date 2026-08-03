@@ -773,6 +773,12 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   `pageir.css` 那條 720px 塌一欄的規則只作用於 flow 才輸出的 `--responsive` 變體，
   **新增任何會受該規則影響的 widget 時要記得跟著輸出這個 class**
   （master_detail 的 master 區塊就漏過一次）。
+  **menu widget 的 provider 要求 render context 同時有 `sub_system_sc`、`portal_user`、
+  `path_id`**（連結必須指向 `/public/portal/<path_id>/...`），少任何一個一律回空陣列，
+  畫面上就是「沒有可顯示的項目」。IR 設計器預覽從 menu widget 上線起就漏傳 `path_id`，
+  導致**預覽的選單永遠是空的**（2026-08-05 修，`web/__init__.py::ir_designer_preview`）。
+  新增任何會呼叫 `set_render_context('portal', ...)` 的路徑時，
+  對照 `portal_public.py` 的參數清單，不要只傳前兩個。
   設計器在 `/nocode/ir-designer/<page_sc>`：grid 用 `grid-layout-editor.js` 的
   `layoutOnly` 模式，free 用 GridStack。**zone／frame 消失時（合併、重建矩陣、刪除框）
   裡面的元件必須有去處**（併入接手的 zone 或回未放置清單），

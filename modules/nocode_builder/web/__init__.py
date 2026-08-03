@@ -245,7 +245,18 @@ def ir_designer_preview(secure_code):
             group_code or None,
             level_code,
         )
-        set_render_context('portal', sub_system_sc=ss.secure_code, portal_user=preview_user)
+        # menu widget 的 provider 要求 path_id 與 portal_user 齊備才會產生項目
+        # （連結必須指向 /public/portal/<path_id>/...），少傳的話選單一律渲染成
+        # 「沒有可顯示的項目」——預覽從 menu widget 上線起就是這個狀態。
+        from ..services import portal_path_service
+        portal_path_item = portal_path_service.get_by_sub_system(ss.secure_code)
+        set_render_context(
+            'portal',
+            sub_system_sc=ss.secure_code,
+            portal_user=preview_user,
+            path_id=portal_path_item.code if portal_path_item else None,
+            page_sc=secure_code,
+        )
         try:
             rendered = render_page_ir_full(page.layout_json or {})
         except PageIrRenderError:
