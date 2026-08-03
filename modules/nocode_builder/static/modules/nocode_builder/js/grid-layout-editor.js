@@ -58,6 +58,7 @@ class GridLayoutEditor {
         this.onZoneSelect = null;
         this.onWidgetSelect = null;
         this.onChanged = null;
+        this.onZoneDrop = null;
 
         // DOM refs
         this._toolbar = null;
@@ -729,22 +730,30 @@ class GridLayoutEditor {
             el.addEventListener('mousedown', (e) => this._onCellDown(e, reg.id));
             el.addEventListener('mouseenter', () => this._onCellEnter(reg.id));
 
-            if (!this.layoutOnly) {
-                // Drop widget from component library
-                el.addEventListener('dragover', (e) => {
+            // Drop widget from component library. In layoutOnly mode the editor
+            // does not know widget semantics, so the host decides what to do.
+            el.addEventListener('dragover', (e) => {
+                if (!this.layoutOnly || this.onZoneDrop) {
                     e.preventDefault();
+                    e.stopPropagation();
                     el.classList.add('drag-over');
-                });
-                el.addEventListener('dragleave', () => {
-                    el.classList.remove('drag-over');
-                });
-                el.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    el.classList.remove('drag-over');
-                    const type = e.dataTransfer.getData('text/plain');
-                    if (type) this._placeWidget(reg.id, type);
-                });
-            }
+                }
+            });
+            el.addEventListener('dragleave', () => {
+                el.classList.remove('drag-over');
+            });
+            el.addEventListener('drop', (e) => {
+                if (this.layoutOnly && !this.onZoneDrop) return;
+                e.preventDefault();
+                e.stopPropagation();
+                el.classList.remove('drag-over');
+                if (this.layoutOnly) {
+                    this.onZoneDrop(this._zoneIdForRegion(reg.id), e);
+                    return;
+                }
+                const type = e.dataTransfer.getData('text/plain');
+                if (type) this._placeWidget(reg.id, type);
+            });
 
             // Right click context menu
             el.addEventListener('contextmenu', (e) => {
@@ -1204,6 +1213,7 @@ class GridLayoutEditor {
         this.onZoneSelect = null;
         this.onWidgetSelect = null;
         this.onChanged = null;
+        this.onZoneDrop = null;
     }
 
     // ===== DataListWidget Instance Management =====

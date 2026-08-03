@@ -2,6 +2,8 @@
 
 {% block title %}{{ _('NoCode 工作區') }}{% endblock %}
 
+{% block topbar %}{% endblock %}
+
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/formio.full.min.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.css') }}">
@@ -23,7 +25,10 @@
                 <button type="button" class="wks-tab" :class="{ 'wks-tab-active': activeTab === 'tables' }" @click="activeTab = 'tables'">{{ _('資料表') }}</button>
             </nav>
         </div>
-        <a class="wks-link" href="{{ app_prefix }}/nocode-builder/sub-systems">{{ _('返回子系統列表') }}</a>
+        <div class="wks-header-links">
+            <a class="wks-link" href="{{ app_prefix }}/nocode-builder/sub-systems">{{ _('返回子系統列表') }}</a>
+            <a class="wks-link" href="{{ url_for('main.dashboard') }}">{{ _('回平台儀表板') }}</a>
+        </div>
     </header>
 
     <main class="wks-layout" :class="{ 'wks-layout-full': activeTab === 'org' || activeTab === 'perms' || activeTab === 'tables' }">

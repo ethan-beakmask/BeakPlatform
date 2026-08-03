@@ -60,6 +60,7 @@ function irDesigner() {
         canvasMeta: {},
         _zoneGeometry: {},   // zone id -> 幾何快照，供 zone 消失時判斷元件由誰接手
         errors: [],
+        showIssueModal: false,
         dirty: false,
         savedSnapshot: '',
         dragType: '',
@@ -862,6 +863,24 @@ function irDesigner() {
             return (this.doc.page.widgets || []).filter((widget) => widget && widget.id && !assigned.has(widget.id));
         },
 
+        topLevelWidgetRows() {
+            return (this.doc.page.widgets || []).filter((widget) => widget && widget.id).map((widget) => ({
+                widget,
+                zoneId: this.zoneIdForWidget(widget.id),
+            }));
+        },
+
+        zoneIdForWidget(widgetId) {
+            for (const [zoneId, meta] of Object.entries(this.canvasMeta || {})) {
+                if (Array.isArray(meta.widget_ids) && meta.widget_ids.includes(widgetId)) return zoneId;
+            }
+            return '';
+        },
+
+        widgetPlacementLabel(widgetId) {
+            return this.zoneIdForWidget(widgetId) || tr('未放置');
+        },
+
         selectedZoneMeta() {
             return (this.selectedZoneId && this.canvasMeta[this.selectedZoneId]) || null;
         },
@@ -943,6 +962,25 @@ function irDesigner() {
             if (widget.type === 'menu' && !this.menuBackgroundsLoaded && !this.menuBackgroundError) {
                 this.loadMenuBackgrounds();
             }
+            this.markDirty();
+        },
+
+        addWidgetToZone(type, zoneId) {
+            if (!type || !zoneId || !this.canvasMeta[zoneId]) return;
+            const widget = this.newWidget(type);
+            this.doc.page.widgets.push(widget);
+            if (!Array.isArray(this.canvasMeta[zoneId].widget_ids)) this.canvasMeta[zoneId].widget_ids = [];
+            this.canvasMeta[zoneId].widget_ids.push(widget.id);
+            this.selectedId = widget.id;
+            this.activeWidget = widget;
+            this.selectedZoneId = '';
+            if (widget.type === 'menu' && !this.siteMapLoaded && !this.siteMapError) {
+                this.loadSiteMap();
+            }
+            if (widget.type === 'menu' && !this.menuBackgroundsLoaded && !this.menuBackgroundError) {
+                this.loadMenuBackgrounds();
+            }
+            this.refreshZoneContents();
             this.markDirty();
         },
 
@@ -1097,6 +1135,11 @@ function irDesigner() {
                     this.syncCanvasMetaWithGeometry();
                     this.markDirty();
                 };
+                this.gridEditor.onZoneDrop = (zoneId, event) => {
+                    const type = this.dragType || (event.dataTransfer && event.dataTransfer.getData('text/plain'));
+                    this.addWidgetToZone(type, zoneId);
+                    this.dragType = '';
+                };
             }
             this.gridEditor.loadCanvas(this.doc.page.canvas);
             this.syncCanvasMetaWithGeometry();
@@ -1151,6 +1194,22 @@ function irDesigner() {
             const content = document.createElement('div');
             content.className = 'grid-stack-item-content';
             content.onclick = () => this.selectFreeFrame(frame.id);
+            content.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                content.classList.add('ird-free-frame-drag-over');
+            });
+            content.addEventListener('dragleave', () => {
+                content.classList.remove('ird-free-frame-drag-over');
+            });
+            content.addEventListener('drop', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                content.classList.remove('ird-free-frame-drag-over');
+                const type = this.dragType || (event.dataTransfer && event.dataTransfer.getData('text/plain'));
+                this.addWidgetToZone(type, frame.id);
+                this.dragType = '';
+            });
             item.appendChild(content);
             return item;
         },
@@ -1498,7 +1557,7 @@ function irDesigner() {
                 this.activeWidget = null;
             }
             this.markDirty();
-            if (this.engine === 'free') this.refreshZoneContents();
+            if (this.engine !== 'flow') this.refreshZoneContents();
         },
 
         onIdInput(value) {
@@ -2088,6 +2147,7 @@ function irDesigner() {
                 if (widget.type === 'menu' && this.menuItemCount(widget) === 0) {
                     errors.push({
                         path: widgetPath,
+                        widget_id: widget.id,
                         severity: 'error',
                         message: tr('選單「{id}」尚未選擇任何網頁或系統連結', { id: widget.id }),
                     });
@@ -2095,6 +2155,7 @@ function irDesigner() {
                 if (widget.type === 'menu' && !this.navKeyValid(widget)) {
                     errors.push({
                         path: widgetPath,
+                        widget_id: widget.id,
                         severity: 'error',
                         message: tr('選單「{id}」的聯動參數名只能使用英數字、底線或連字號，長度 1 到 32', { id: widget.id }),
                     });
@@ -2147,6 +2208,7 @@ function irDesigner() {
                 if (widget && widget.id && !assigned.has(widget.id)) {
                     issues.push({
                         path: `page.widgets.${widget.id}`,
+                        widget_id: widget.id,
                         severity: 'warning',
                         message: tr('元件「{id}」還沒有放進任何區塊，儲存後不會顯示', { id: widget.id }),
                     });
@@ -2194,6 +2256,7 @@ function irDesigner() {
                 if (widget && widget.id && !assigned.has(widget.id)) {
                     issues.push({
                         path: `page.widgets.${widget.id}`,
+                        widget_id: widget.id,
                         severity: 'warning',
                         message: tr('元件「{id}」還沒有放進任何框，儲存後不會顯示', { id: widget.id }),
                     });
@@ -2204,10 +2267,12 @@ function irDesigner() {
 
         async savePage() {
             this.errors = [];
+            this.showIssueModal = false;
             const localErrors = this.localSaveErrors(this.doc.page.widgets, 'page.widgets');
             const blockingErrors = localErrors.filter((err) => err.severity !== 'warning');
             if (blockingErrors.length) {
                 this.errors = localErrors;
+                this.openIssueModal();
                 return;
             }
             this.errors = localErrors;
@@ -2227,15 +2292,18 @@ function irDesigner() {
                 const data = await res.json();
                 if (!res.ok || !data.success) {
                     this.errors = data.errors || [{ path: '', message: data.error || tr('儲存失敗') }];
+                    this.openIssueModal();
                     return;
                 }
                 this.pageName = data.data.name || body.name;
                 this.dirty = false;
                 this.savedSnapshot = this.snapshot();
                 this.errors = localErrors;
+                if (localErrors.length) this.openIssueModal();
                 alert(tr('已儲存'));
             } catch (err) {
                 this.errors = [{ path: '', message: err.message || tr('儲存失敗') }];
+                this.openIssueModal();
             }
         },
 
@@ -2272,9 +2340,61 @@ function irDesigner() {
             return JSON.stringify(this.buildDoc());
         },
 
+        // 訊息本身已經寫明是哪個元件，再前置 page.widgets[1] 這種技術路徑
+        // 只會讓使用者看不懂。只有無法定位到元件時才退回顯示 path。
         formatError(err) {
+            const message = err.message || tr('驗證失敗');
+            if (err.widget_id) return message;
             const path = err.path ? `${err.path}: ` : '';
-            return `${path}${err.message || tr('驗證失敗')}`;
+            return `${path}${message}`;
+        },
+
+        issueSummary() {
+            const count = this.errors.length;
+            const errorCount = this.errors.filter((err) => err.severity !== 'warning').length;
+            const warningCount = count - errorCount;
+            if (errorCount && warningCount) {
+                return tr('{errors} 個錯誤，{warnings} 個警告，點此查看', { errors: errorCount, warnings: warningCount });
+            }
+            if (errorCount) return tr('{count} 個錯誤，點此查看', { count: errorCount });
+            return tr('{count} 個警告，點此查看', { count: warningCount });
+        },
+
+        openIssueModal() {
+            this.showIssueModal = true;
+        },
+
+        closeIssueModal() {
+            this.showIssueModal = false;
+        },
+
+        canLocateIssue(err) {
+            return !!(err && (err.widget_id || this.zoneIdFromIssue(err)));
+        },
+
+        zoneIdFromIssue(err) {
+            const path = err && err.path ? String(err.path) : '';
+            for (const zoneId of Object.keys(this.canvasMeta || {})) {
+                if (path.includes(zoneId)) return zoneId;
+            }
+            return '';
+        },
+
+        selectIssueTarget(err) {
+            if (!err) return;
+            if (err.widget_id && this.findWidget(err.widget_id)) {
+                this.selectWidget(err.widget_id);
+                this.closeIssueModal();   // 不關的話 modal 正好蓋住剛選取的元件屬性
+                return;
+            }
+            const zoneId = this.zoneIdFromIssue(err);
+            if (zoneId && this.canvasMeta[zoneId]) {
+                this.selectedZoneId = zoneId;
+                this.selectedId = '';
+                this.activeWidget = null;
+                if (this.engine === 'free') this.refreshFreeFrameContents();
+                this.closeIssueModal();
+            }
         },
     };
 }

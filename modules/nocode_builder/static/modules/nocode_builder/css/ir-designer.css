@@ -61,6 +61,12 @@
     align-items: end;
 }
 
+.ird-preview-line {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--color-text-muted);
+}
+
 .ird-preview-identity label {
     display: flex;
     flex-direction: column;
@@ -110,13 +116,15 @@
     line-height: 1;
 }
 
-.ird-errors {
+.ird-errors-summary {
     grid-column: 1 / -1;
-    display: grid;
-    gap: 4px;
+    justify-self: start;
     padding: 8px;
+    color: #b91c1c;
     background: var(--color-bg-light);
     border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
 }
 
 .ird-error,
@@ -138,11 +146,16 @@
     grid-template-columns: 220px minmax(360px, 1fr) 420px;
     gap: 12px;
     margin-top: 12px;
-    min-height: calc(100vh - 190px);
+    /* --topbar-height 由 topbar-offset.js 依實際平台選單高度設定（選單會換行，
+       寫死數值在選單多的企業會算錯）。workspace 全螢幕版面沒有 topbar，
+       該變數為 0，並由 .wks-designer-mount .ird-grid 覆寫成 100%。 */
+    height: calc(100vh - var(--topbar-height, 0px) - 145px);
+    min-height: 0;
 }
 
 .ird-panel {
     min-width: 0;
+    min-height: 0;
     padding: 12px;
     background: var(--color-bg-white);
     border: 1px solid var(--color-border);
@@ -189,16 +202,23 @@
 
 .ird-grid-designer {
     display: grid;
+    grid-template-rows: minmax(360px, 1fr) auto auto;
     gap: 12px;
+    min-height: 0;
 }
 
 .ird-grid-layout-editor {
-    min-height: 520px;
+    min-height: 0;
     border: 1px solid var(--color-border);
 }
 
+.ird-grid-layout-editor.gle-root {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
 .ird-grid-layout-editor .gle-wrapper {
-    min-height: 420px;
+    min-height: 0;
     overflow: auto;
 }
 
@@ -211,9 +231,54 @@
     gap: 8px;
 }
 
+.ird-widget-inventory {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.ird-widget-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-widget-row-selected {
+    border-color: var(--color-primary);
+}
+
+.ird-widget-row-main {
+    display: grid;
+    grid-template-columns: minmax(80px, 1fr) minmax(90px, 1fr) minmax(72px, auto);
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    padding: 6px 8px;
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.ird-widget-zone {
+    color: var(--color-text-muted);
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .ird-free-designer {
     display: grid;
+    grid-template-rows: auto minmax(360px, 1fr) auto auto;
     gap: 12px;
+    min-height: 0;
 }
 
 .ird-free-toolbar {
@@ -224,6 +289,7 @@
 
 .ird-free-scroll {
     overflow: auto;
+    min-height: 0;
     padding: 8px;
     background: var(--color-bg-light);
     border: 1px solid var(--color-border);
@@ -248,6 +314,11 @@
 
 .ird-free-gridstack .ird-free-frame-selected .grid-stack-item-content {
     border-color: var(--color-primary);
+}
+
+.ird-free-gridstack .ird-free-frame-drag-over {
+    border-color: var(--color-primary);
+    background: var(--color-bg-light);
 }
 
 .ird-free-frame-head {
@@ -535,6 +606,89 @@
 .ird-form-builder {
     overflow: auto;
     padding: 12px;
+}
+
+.ird-issue-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.ird-issue-box {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    width: min(760px, 96vw);
+    max-height: min(680px, 90vh);
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+}
+
+.ird-issue-head,
+.ird-issue-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.ird-issue-head h2 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.ird-issue-actions {
+    justify-content: flex-end;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 0;
+}
+
+.ird-issue-list {
+    display: grid;
+    gap: 8px;
+    max-height: 520px;
+    padding: 12px;
+    overflow: auto;
+    user-select: text;
+}
+
+.ird-issue-item {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+    color: #b91c1c;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid #b91c1c;
+    cursor: pointer;
+    text-align: left;
+    user-select: text;
+}
+
+.ird-issue-item[aria-disabled="true"] {
+    cursor: text;
+}
+
+.ird-issue-warning {
+    color: #92400e;
+    border-left-color: #92400e;
+}
+
+.ird-issue-level {
+    font-weight: 600;
+}
+
+.ird-issue-message {
+    overflow-wrap: anywhere;
 }
 
 /* 矩陣格子上的元件標示（GridLayoutEditor 的 layoutOnly 模式使用，

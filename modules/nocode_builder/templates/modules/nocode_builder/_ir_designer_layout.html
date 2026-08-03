@@ -42,6 +42,22 @@
 <template x-if="engine === 'grid'">
     <div class="ird-grid-designer">
         <div id="ird-grid-layout-editor" class="ird-grid-layout-editor"></div>
+        <div class="ird-widget-inventory">
+            <div class="ird-subtitle">{{ _('全部頂層元件') }}</div>
+            <template x-if="topLevelWidgetRows().length === 0">
+                <div class="ird-empty">{{ _('尚無頂層元件') }}</div>
+            </template>
+            <template x-for="row in topLevelWidgetRows()" :key="'grid-widget-row-' + row.widget.id">
+                <div class="ird-widget-row" :class="{'ird-widget-row-selected': row.widget.id === selectedId}">
+                    <button type="button" class="ird-widget-row-main" @click="selectWidget(row.widget.id)">
+                        <span class="ird-node-id" x-text="row.widget.id"></span>
+                        <span class="ird-node-type" x-text="widgetTypeLabel(row.widget)"></span>
+                        <span class="ird-widget-zone" x-text="row.zoneId || __('未放置')"></span>
+                    </button>
+                    <button type="button" class="ird-icon-btn" @click="removeWidget(row.widget.id)" title="{{ _('刪除') }}">×</button>
+                </div>
+            </template>
+        </div>
         <div class="ird-unplaced">
             <div class="ird-subtitle">{{ _('未放置元件') }}</div>
             <template x-if="unplacedTopLevelWidgets().length === 0">
@@ -64,6 +80,22 @@
         </div>
         <div class="ird-free-scroll">
             <div id="ird-free-gridstack" class="grid-stack ird-free-gridstack"></div>
+        </div>
+        <div class="ird-widget-inventory">
+            <div class="ird-subtitle">{{ _('全部頂層元件') }}</div>
+            <template x-if="topLevelWidgetRows().length === 0">
+                <div class="ird-empty">{{ _('尚無頂層元件') }}</div>
+            </template>
+            <template x-for="row in topLevelWidgetRows()" :key="'free-widget-row-' + row.widget.id">
+                <div class="ird-widget-row" :class="{'ird-widget-row-selected': row.widget.id === selectedId}">
+                    <button type="button" class="ird-widget-row-main" @click="selectWidget(row.widget.id)">
+                        <span class="ird-node-id" x-text="row.widget.id"></span>
+                        <span class="ird-node-type" x-text="widgetTypeLabel(row.widget)"></span>
+                        <span class="ird-widget-zone" x-text="row.zoneId || __('未放置')"></span>
+                    </button>
+                    <button type="button" class="ird-icon-btn" @click="removeWidget(row.widget.id)" title="{{ _('刪除') }}">×</button>
+                </div>
+            </template>
         </div>
         <div class="ird-unplaced">
             <div class="ird-subtitle">{{ _('未放置元件') }}</div>

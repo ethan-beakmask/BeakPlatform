@@ -1,5 +1,8 @@
 .wks-shell {
-    min-height: calc(100vh - 120px);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: calc(100vh - 32px);
+    min-height: 0;
     color: var(--color-text);
 }
 
@@ -16,6 +19,14 @@
 .wks-title-group {
     display: grid;
     gap: 10px;
+}
+
+.wks-header-links {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .wks-title-group h1,
@@ -101,6 +112,7 @@
     grid-template-columns: 260px minmax(0, 1fr);
     gap: 12px;
     margin-top: 12px;
+    min-height: 0;
 }
 
 .wks-layout-full {
@@ -118,8 +130,9 @@
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr) auto auto;
     gap: 10px;
-    min-height: calc(100vh - 200px);
+    min-height: 0;
     padding: 12px;
+    overflow: auto;
 }
 
 .wks-sidebar-head {
@@ -140,7 +153,7 @@
 }
 
 .wks-tree-wrap {
-    min-height: 280px;
+    min-height: 0;
     overflow: auto;
     border: 1px solid var(--color-border);
     background: var(--color-bg);
@@ -156,13 +169,13 @@
 }
 
 .wks-tree-wrap .wks-tree-multiselected {
-    background: var(--color-info-light);
+    background: var(--color-bg-light);
     outline: 1px solid var(--color-primary);
     outline-offset: -1px;
 }
 
 .wks-tree-wrap .wks-tree-selected.wks-tree-multiselected {
-    background: var(--color-info-light);
+    background: var(--color-bg-light);
 }
 
 .wks-empty,
@@ -182,7 +195,7 @@
 }
 
 .wks-main {
-    min-height: calc(100vh - 200px);
+    min-height: 0;
     overflow: auto;
     padding: 12px;
 }
@@ -202,7 +215,19 @@
 }
 
 .wks-designer-mount .ird-grid {
-    min-height: calc(100vh - 290px);
+    height: auto;
+    min-height: 0;
+}
+
+.wks-designer-mount,
+.wks-designer-mount .ird-shell {
+    min-height: 0;
+    height: 100%;
+}
+
+.wks-designer-mount .ird-shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
 }
 
 .wks-main-org {
@@ -303,7 +328,7 @@
     position: sticky;
     top: 0;
     z-index: 2;
-    background: var(--color-bg-header);
+    background: var(--color-primary);
     color: var(--color-bg-white);
 }
 
@@ -367,14 +392,14 @@
 }
 
 .wks-matrix-drag-over {
-    background: var(--color-info-light);
+    background: var(--color-bg-light);
     outline: 2px dashed var(--color-primary);
     outline-offset: -2px;
 }
 
 .wks-matrix-cell-blocked.wks-matrix-drag-over {
-    background: var(--color-warning-light);
-    outline-color: var(--color-warning);
+    background: var(--color-bg-light);
+    outline-color: var(--color-primary);
 }
 
 .wks-matrix-unassigned {
@@ -390,7 +415,7 @@
     padding: 4px 9px;
     border: 1px solid var(--color-border);
     border-radius: 4px;
-    background: var(--color-info-light);
+    background: var(--color-bg-light);
     color: var(--color-primary);
     cursor: grab;
     font: inherit;

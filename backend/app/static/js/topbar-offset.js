@@ -8,12 +8,10 @@
     function adjustOffset() {
         var topbar = document.querySelector('.bk-topbar-fixed');
         var main = document.querySelector('.main-content');
-        if (topbar) {
-            var h = topbar.offsetHeight;
-            document.documentElement.style.setProperty('--topbar-height', h + 'px');
-            if (main) {
-                main.style.paddingTop = (h + 30) + 'px';
-            }
+        var h = topbar ? topbar.offsetHeight : 0;
+        document.documentElement.style.setProperty('--topbar-height', h + 'px');
+        if (main) {
+            main.style.paddingTop = topbar ? (h + 30) + 'px' : '0';
         }
     }
 
