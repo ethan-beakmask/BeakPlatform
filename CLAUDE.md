@@ -763,6 +763,20 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   尚未移植 v2 SITEMENU 的：橫式圖示位置、選單高度、懸停延遲
   （BBN 待辦 **PF-19**，內含 v2 的值域／預設值、要改的檔案清單、驗收與留證方式；
   用 `note_search("PF-19")` → `note_get` 取全文，**動工前先讀，不要自己猜規格**）。
+- **Page IR v3 有三個版面引擎**（2026-08-05 起，定版 `docs/PAGE_IR_LAYOUT_ENGINES.md`）：
+  `page.engine` = `flow`（預設，即原本的縱向流 + layout widget 等分）／
+  `grid`（矩陣切格合併，欄寬 fr、列高 px）／`free`（12 欄 × `row_unit` 自由放置）。
+  **沒有 `engine` 欄位＝flow，既有 IR 一行都不用改。**
+  核心約束：**三個引擎只差外殼，zone／frame 內部一律是既有 flow widget 序列**，
+  `render_widget` macro 不因引擎而異，禁止跨引擎巢狀。
+  `grid`／`free` 的窄螢幕行為是**水平捲動 + `min_width`，不塌不縮放**（設計者自己決定場景）。
+  `pageir.css` 那條 720px 塌一欄的規則只作用於 flow 才輸出的 `--responsive` 變體，
+  **新增任何會受該規則影響的 widget 時要記得跟著輸出這個 class**
+  （master_detail 的 master 區塊就漏過一次）。
+  設計器在 `/nocode/ir-designer/<page_sc>`：grid 用 `grid-layout-editor.js` 的
+  `layoutOnly` 模式，free 用 GridStack。**zone／frame 消失時（合併、重建矩陣、刪除框）
+  裡面的元件必須有去處**（併入接手的 zone 或回未放置清單），
+  否則會靜默遺失且使用者無從察覺——這個坑 grid 與 free 各踩過一次。
 - **portal 業務表有列級擁有權**（2026-07-30 起）：表固定有系統欄位 `portal_user_ref`
   （值 `u:<portal user_id>` / `g:<guest_token>`），視圖 `DcCrudView.row_owner_scope`
   預設 **`own`**（只能存取自己建的列），要共享的表必須明確設 `all`。
