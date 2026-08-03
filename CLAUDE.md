@@ -398,6 +398,23 @@ curl 對「連結、按鈕、select 初次渲染值」有**結構性盲區**：
 
 → 只要變更涉及使用者要點的東西，curl 驗完**還要**用 chrome-devtools 實際點一次。
 
+### VERIFY-03: AI 產出的自我檢查表不算驗收（2026-08-04 起）
+
+codex／subagent **開不了瀏覽器**，它的「自我檢查七項全過」只證明程式碼有寫，
+不證明串得起來。2026-08-04 menu 設計器面板那批，codex 自述七項全過，實測抓到兩個 P1：
+
+- 底圖下拉存錯 sc（`DcBackground.secure_code` vs `platform_files.secure_code`）
+  → 選了底圖**完全沒反應也不報錯**
+- 「不使用底圖」寫入空字串違反 schema pattern
+  → **整頁存不了**，而且 400 指向不相干的 widget，使用者無從聯想
+
+**工具能力歸屬**：chrome-devtools MCP 只有主 Claude 有，codex／subagent 沒有。
+所以「要點、要 hover、要看渲染結果」的驗收**只能由主 Claude 做**，不可外包後採信回報。
+
+→ 凡 AI 產出的前端與跨層串接，一律自己用 chrome-devtools 走一次真實操作；
+驗收 checklist 逐項自己跑，不採信它的回報。與 VERIFY-01 同源，
+差別在這裡強調「AI 說通過」比「沒測」更危險——它讀起來像已驗收。
+
 ### VERIFY-02: 驗收輸出必須留證（2026-08-01 起）
 
 **驗收的原始輸出一律落地到 `/opt/tmp/verify/<日期>-<主題>.log`，不要只留在對話裡。**
@@ -560,7 +577,7 @@ portal SQLite 全數刪除（備份 `/opt/tmp/backup/nocode-20260803-1507/`）�
 |---|---|
 | 子系統（published） | `HJGEoAh6PBv5IXNHhMTu5P`（急難救助物資捐贈） |
 | portal_path_id | `HdjFFvF-` |
-| welcome 頁 | `QlqVasK5fsLFMfUpPEvvFz` |
+| welcome 頁（2026-08-04 起已 published，內含雙 menu 示範） | `QlqVasK5fsLFMfUpPEvvFz` |
 | 我的捐贈登記（要 `donation.manage`） | `Gqm4tuQEsBgituXVaDrCrr` |
 | 物資公佈欄（要 `bulletin.read`） | `Ogi303_5kwPZdEE2IildYG` |
 
@@ -701,20 +718,51 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   角色／階級權限與帳號角色一律**整組覆寫**（PUT 全量 codes），不是增量。
   建立子系統會自動 seed 六個 `is_system` 管理角色；既有子系統在首次讀 permission-model 時補 seed。
   權限碼被角色／階級／個人覆寫／site map access_matrix 引用時**拒絕刪除（409）**。
-- **Page IR v3 有 menu widget 了（PF-8c，2026-08-03）**：
-  `{"type":"menu","items":[{"kind":"node","node":"<site_map_node_sc>"},{"kind":"system","link":"login|register|logout"}]}`。
-  **只存被勾選的節點集合，不複製結構**——層級與順序渲染時即時取自 site map，
-  拖拉調整位置後 menu 自動跟著變。未勾選的祖先會以**純結構層**（不可點）出現；
-  不可點又沒有可見子孫的節點整枝移除。
-  顯示條件 = 被勾選 AND `check_page_access` 通過（menu 是導覽、不是授權邊界，
+- **Page IR v3 menu widget（PF-8c 起，2026-08-03/04 強化定版）**：
+
+  ```jsonc
+  {"type":"menu","id":"menu-1","title_i18n":{...},
+   "items":[{"kind":"node","node":"<site_map_node_sc>","children":[...]},
+            {"kind":"system","link":"login|register|logout"}],
+   "orientation":"vertical|horizontal","item_gap":6,"hover_expand":true,
+   "nav_source":"self|parent_selection","nav_key":"nav",
+   "style":{"bg_color":"#ffffff", ...六色..., "border_color":"#dddddd",
+            "border_width":1,"border_radius":4,
+            "background_file":"<platform_files.secure_code>",
+            "background_size":"cover","background_repeat":"no-repeat",
+            "background_position":"center"}}
+  ```
+
+  **items 是完全自訂的樹**：陣列順序＝顯示順序、`children` 巢狀＝階層（深度上限 5），
+  **不再跟著 site map 的結構與順序走**（2026-08-03 用戶定案改的，早期版本相反）。
+  名稱與圖示仍即時取自 site map，所以改名會反映；節點被刪或停用時該項連同
+  children 整枝消失（fail-closed）。
+  顯示條件 = 在 items 樹中 AND `check_page_access` 通過（menu 是導覽、不是授權邊界，
   各頁自己仍會再判一次）。
+  **樣式顏色一律 `^#[0-9a-fA-F]{6}$`**（schema 擋一次、renderer `_menu_style()`
+  白名單化再擋一次——值最後會進 inline style，兩道防線缺一不可）；
+  底圖只認 `context_type == 'nc_background'` 的 platform file，不接受任意 URL。
+  **底圖存的是 `platform_files.secure_code`，不是 `DcBackground.secure_code`**
+  （`/api/nocode-builder/backgrounds` 的 `platform_file_sc` 欄位），
+  存錯的話症狀是「選了底圖完全沒反應、也不報錯」。
+  兩個 menu 聯動：`nav_source=parent_selection` 依 `?<nav_key>=` 只渲染該節點的
+  children，純伺服器端；聯動連結**只沿用本頁各 menu 的 nav_key**
+  （`renderer._menu_nav_keys()`），不可整包複製 `request.args`（表格的
+  `xxx__page`／`xxx__sort` 會被帶去別頁撞上同 id 的 widget）。
+  橫式子選單是純 CSS hover 浮出，父子之間的 gap 必須有透明 `::before` 橋接，
+  否則滑鼠移過去的瞬間就離開 `:hover`、子選單當場消失（commit `71e8ea54`）。
   平台層走 registry：`register_menu_provider(world, fn)`，portal 實作在
   `services/pageir_portal_menu.py`；**platform world 沒有 provider 是預期狀態**
   （entries 回空陣列，不 raise）。
   `system_link` 值域是**後端白名單**（login/register/logout），不接受任意 URL；
   login/register 只在未登入時出現，register 另需 `allow_registration`，logout 反之。
   site map 的 `folder` 節點型別已放行（不建 page layout、不可當根節點）。
-  尚未做：設計器裡勾選節點的 UI（目前 menu widget 只能靠 API／SQL 寫入 layout_json）。
+  設計器屬性面板已完備（已選項目樹的 ↑↓ 排序／→← 升降階／× 連 children 移除、
+  可加入的網頁清單、方向／間隔／懸停展開、選單來源與聯動參數名、七個色票、
+  框線寬度與圓角、底圖選取／上傳／預覽）。
+  尚未移植 v2 SITEMENU 的：橫式圖示位置、選單高度、懸停延遲
+  （BBN 待辦 **PF-19**，內含 v2 的值域／預設值、要改的檔案清單、驗收與留證方式；
+  用 `note_search("PF-19")` → `note_get` 取全文，**動工前先讀，不要自己猜規格**）。
 - **portal 業務表有列級擁有權**（2026-07-30 起）：表固定有系統欄位 `portal_user_ref`
   （值 `u:<portal user_id>` / `g:<guest_token>`），視圖 `DcCrudView.row_owner_scope`
   預設 **`own`**（只能存取自己建的列），要共享的表必須明確設 `all`。
