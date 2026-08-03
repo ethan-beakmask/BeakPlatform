@@ -20,9 +20,11 @@ files:
     - modules/nocode_builder/static/modules/nocode_builder/js/ir-designer.js
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace.js
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace-org.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/workspace-perms.js  # PF-8 權限矩陣分頁
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace-tables.js
   templates:
     - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_access_matrix.html
+    - modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html  # PF-8 權限矩陣分頁
   models:
     - modules/nocode_builder/models/permission_policy.py
   web:
@@ -55,6 +57,7 @@ files:
     - modules/nocode_builder/api/sub_system_api.py    # 子系統/資料來源/建表/resolve-view
     - modules/nocode_builder/api/site_map_api.py
     - modules/nocode_builder/api/portal_org_api.py
+    - modules/nocode_builder/api/portal_permission_api.py  # PF-8 權限碼/角色管理 API
   platform_deps:
     - backend/app/pageir/masking.py                   # 欄位視覺遮罩（server 端唯一實作）
     - backend/app/pageir/renderer.py
@@ -68,9 +71,12 @@ files:
     - backend/tests/test_platform_fixed_filters.py
     - backend/tests/test_portal_row_owner_scope.py
     - backend/tests/test_portal_permission_pf7.py  # PF-7 權限碼模型 + access_matrix 新舊並存
+    - backend/tests/test_portal_permission_admin_pf8.py  # PF-8 權限碼/角色管理服務
 
 note: |
   准入控制使用 grant-based permission 模式（部門/社群/個人多重選擇）。
   模式規範見 docs/GRANT_PERMISSION_PATTERN.md。
-  工作區三個 tab：頁面設計 / 帳號權限 / 資料表（建表限 portal_data，掛 nocode_builder.manage）。
+  工作區四個 tab：頁面設計 / 帳號權限 / 權限矩陣 / 資料表（建表限 portal_data，掛 nocode_builder.manage）。
+  「權限矩陣」tab（PF-8）走權限碼制：權限碼管理、表1 網頁×權限碼、表2 等級／角色×權限碼、
+  帳號×角色與個人 allow/deny 覆寫、三個權限模板套用；舊的 groups+min_level 形式仍並存。
   IR 設計器可設定四個 action 的元件准入與欄位遮罩；預覽支援 ?sub=&group=&level= 模擬 portal 身分。

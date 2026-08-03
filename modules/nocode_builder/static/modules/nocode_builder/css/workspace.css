@@ -506,6 +506,193 @@
     box-shadow: 0 8px 22px var(--color-border);
 }
 
+.wks-main-perms {
+    display: grid;
+    gap: 12px;
+}
+
+.wks-perm-head,
+.wks-perm-panel-head,
+.wks-perm-template-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.wks-perm-head h2,
+.wks-perm-head p,
+.wks-perm-panel-head h3,
+.wks-perm-template-item p {
+    margin: 0;
+}
+
+.wks-perm-head h2 {
+    font-size: 18px;
+}
+
+.wks-perm-head p,
+.wks-perm-template-item p {
+    color: var(--color-text-muted);
+}
+
+.wks-perm-grid,
+.wks-perm-panel,
+.wks-perm-template-list {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.wks-perm-panel {
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+}
+
+.wks-perm-panel-head {
+    align-items: center;
+}
+
+.wks-perm-panel-head h3 {
+    font-size: 16px;
+}
+
+.wks-perm-form {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(220px, 2fr) minmax(130px, 160px) auto;
+    align-items: end;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-light);
+}
+
+.wks-perm-role-form {
+    grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) minmax(180px, 2fr) minmax(110px, 130px) auto;
+}
+
+.wks-perm-form label,
+.wks-perm-exception-form {
+    display: grid;
+    gap: 4px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.wks-perm-form input:not([type="radio"]):not([type="checkbox"]),
+.wks-perm-form select,
+.wks-perm-table select,
+.wks-perm-exception-form select {
+    min-height: 34px;
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    padding: 6px 8px;
+}
+
+.wks-perm-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+}
+
+.wks-perm-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.wks-perm-matrix-table,
+.wks-perm-user-table {
+    width: max-content;
+    min-width: 100%;
+}
+
+.wks-perm-table th,
+.wks-perm-table td {
+    border-bottom: 1px solid var(--color-border);
+    padding: 9px 10px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.wks-perm-table th {
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+}
+
+.wks-perm-matrix-table th,
+.wks-perm-matrix-table td,
+.wks-perm-user-table th,
+.wks-perm-user-table td {
+    border-right: 1px solid var(--color-border);
+}
+
+.wks-perm-table code {
+    color: var(--color-text);
+}
+
+.wks-perm-check-cell {
+    min-width: 92px;
+    text-align: center;
+}
+
+.wks-perm-check-cell input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+.wks-perm-page-name {
+    display: inline-block;
+    min-width: 180px;
+    white-space: nowrap;
+}
+
+.wks-perm-pill,
+.wks-perm-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 3px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.wks-perm-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 180px;
+}
+
+.wks-perm-tag {
+    cursor: pointer;
+}
+
+.wks-perm-tag:disabled {
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+}
+
+.wks-perm-exception-form {
+    grid-template-columns: minmax(150px, 1fr) minmax(90px, 110px) auto;
+    align-items: end;
+    min-width: 330px;
+}
+
+.wks-perm-template-item {
+    align-items: center;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-light);
+}
+
 .wks-main-tables {
     display: grid;
     gap: 12px;
@@ -714,6 +901,17 @@
 
     .wks-org-head {
         flex-direction: column;
+    }
+
+    .wks-perm-head,
+    .wks-perm-template-item {
+        flex-direction: column;
+    }
+
+    .wks-perm-form,
+    .wks-perm-role-form,
+    .wks-perm-exception-form {
+        grid-template-columns: 1fr;
     }
 
     .wks-tables-head,

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-29 23:22+0800\n"
+"POT-Creation-Date: 2026-08-03 13:33+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -474,9 +474,9 @@ msgstr ""
 #: app/api/enterprise_settings.py:214 app/api/enterprise_settings.py:242
 #: app/api/enterprise_settings.py:262 app/api/enterprise_settings.py:301
 #: app/api/enterprise_settings.py:326 app/api/enterprise_settings.py:369
-#: app/api/files.py:142 app/api/files.py:224 app/api/files.py:390
-#: app/api/files.py:426 app/api/files.py:460 app/api/files.py:493
-#: app/api/files.py:528
+#: app/api/files.py:142 app/api/files.py:235 app/api/files.py:401
+#: app/api/files.py:437 app/api/files.py:471 app/api/files.py:504
+#: app/api/files.py:539
 msgid "找不到企業"
 msgstr ""
 
@@ -798,7 +798,7 @@ msgstr ""
 #: ../modules/form_workflow/api/backgrounds.py:192
 #: ../modules/form_workflow/api/categories.py:353
 #: ../modules/form_workflow/api/form_themes.py:257
-#: app/api/enterprise_settings.py:381 app/api/files.py:445
+#: app/api/enterprise_settings.py:381 app/api/files.py:456
 #: app/web/approval_categories.py:327 app/web/delegations.py:287
 #: app/web/external_users.py:651 app/web/job_families.py:369
 #: app/web/job_families.py:370 app/web/job_levels.py:318
@@ -831,53 +831,53 @@ msgstr ""
 msgid "上傳成功"
 msgstr ""
 
-#: app/api/files.py:228 app/api/files.py:317 app/api/files.py:327
-#: app/api/files.py:394 app/api/files.py:430 app/api/files.py:464
+#: app/api/files.py:239 app/api/files.py:328 app/api/files.py:338
+#: app/api/files.py:405 app/api/files.py:441 app/api/files.py:475
 msgid "檔案不存在"
 msgstr ""
 
-#: app/api/files.py:239 app/api/files.py:405
+#: app/api/files.py:250 app/api/files.py:416
 msgid "無此檔案的存取權限"
 msgstr ""
 
-#: app/api/files.py:252
+#: app/api/files.py:263
 msgid "檔案異常！疑似竄改"
 msgstr ""
 
-#: app/api/files.py:270 app/api/files.py:306
+#: app/api/files.py:281 app/api/files.py:317
 msgid "系統暫時無法處理下載"
 msgstr ""
 
-#: app/api/files.py:336 app/api/files.py:354
+#: app/api/files.py:347 app/api/files.py:365
 msgid "檔案完整性驗證失敗，已通報管理員"
 msgstr ""
 
-#: app/api/files.py:344
+#: app/api/files.py:355
 msgid "下載失敗，檔案異常"
 msgstr ""
 
-#: app/api/files.py:434
+#: app/api/files.py:445
 msgid "只能刪除自己上傳的檔案"
 msgstr ""
 
-#: app/api/files.py:441
+#: app/api/files.py:452
 msgid "檔案已標記刪除"
 msgstr ""
 
-#: app/api/files.py:467
+#: app/api/files.py:478
 msgid "只能撤銷自己標記刪除的檔案"
 msgstr ""
 
-#: app/api/files.py:472
+#: app/api/files.py:483
 msgid "已撤銷刪除"
 msgstr ""
 
-#: app/api/files.py:478 app/web/delegations.py:267
+#: app/api/files.py:489 app/web/delegations.py:267
 #, python-format
 msgid "撤銷失敗: %(error)s"
 msgstr ""
 
-#: app/api/files.py:498
+#: app/api/files.py:509
 msgid "未指定 context_id"
 msgstr ""
 
@@ -1159,12 +1159,12 @@ msgstr ""
 msgid "名稱長度不可超過 255 字元（目前 %(length)s 字元）"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:100
-#: ../modules/nocode_builder/api/site_map_api.py:157
-#: ../modules/nocode_builder/api/site_map_api.py:605
-#: ../modules/nocode_builder/api/site_map_api.py:638
+#: ../modules/nocode_builder/api/site_map_api.py:123
+#: ../modules/nocode_builder/api/site_map_api.py:180
+#: ../modules/nocode_builder/api/site_map_api.py:631
+#: ../modules/nocode_builder/api/site_map_api.py:664
 #: ../modules/nocode_builder/api/template_api.py:123
-#: ../modules/nocode_builder/services/project_service.py:124
+#: ../modules/nocode_builder/services/project_service.py:128
 #: ../modules/spec_formulate/api/_mf_specs_crud.py:45
 #: app/api/organizational_units.py:334 app/api/work_schedules.py:185
 msgid "名稱不可為空"
@@ -1234,7 +1234,7 @@ msgstr ""
 msgid "請提供用戶 ID"
 msgstr ""
 
-#: ../modules/nocode_builder/services/project_service.py:306
+#: ../modules/nocode_builder/services/project_service.py:362
 #: app/api/organizational_units.py:769 app/api/organizational_units.py:877
 #: app/api/organizational_units.py:982 app/api/organizational_units.py:1199
 #: app/api/organizational_units.py:1445 app/api/organizational_units.py:1679
@@ -2117,7 +2117,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:140
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:388
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:423
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:538
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:552
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:323
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:490
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:119
@@ -2128,7 +2128,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:128
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:149
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:227
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:359
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:361
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:118
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:140
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:232
@@ -2214,7 +2214,7 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:42
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:28
-#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:40
+#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:42
 #: app/templates/auth/change_password.html:86
 #: app/templates/layouts/base.html:87
 #: app/templates/pages/admin/initial_setup.html:298
@@ -2235,6 +2235,7 @@ msgstr ""
 msgid "請輸入您的帳號，我們將寄送密碼重設驗證信到您的信箱。"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:200
 #: app/templates/auth/forgot_password.html:36
 #: app/templates/auth/forgot_password.html:59 app/templates/auth/login.html:161
 #: app/templates/auth/login.html:217
@@ -2413,6 +2414,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:86
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:332
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:343
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:39
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:214
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:471
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:269
@@ -2446,7 +2448,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:48
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:54
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
-#: app/templates/pageir/_page_ir.html:32 app/templates/pageir/_page_ir.html:143
+#: app/templates/pageir/_page_ir.html:32 app/templates/pageir/_page_ir.html:145
 #: app/templates/pages/access_center/_tab_roles.html:59
 #: app/templates/pages/admin/_settings_recipients_section.html:32
 #: app/templates/pages/admin/_settings_smtp_section.html:33
@@ -2486,7 +2488,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:295
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:218
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:73
-#: app/templates/pageir/_page_ir.html:58
+#: app/templates/pageir/_page_ir.html:60
 #: app/templates/pages/access_center/_tab_roles.html:101
 #: app/templates/pages/admin/_settings_recipients_section.html:52
 #: app/templates/pages/admin/_settings_recipients_section.html:54
@@ -2521,13 +2523,15 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:147
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:227
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:79
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:60
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:180
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:222
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:74
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:218
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:85
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:352
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:354
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:74
-#: app/templates/pageir/_page_ir.html:59
+#: app/templates/pageir/_page_ir.html:61
 #: app/templates/pages/access_center/_tab_roles.html:102
 #: app/templates/pages/admin/_settings_recipients_section.html:56
 #: app/templates/pages/admin/_settings_recipients_section.html:58
@@ -2554,12 +2558,12 @@ msgstr ""
 msgid "刪除"
 msgstr ""
 
-#: app/templates/pageir/_page_ir.html:64 app/templates/pageir/_page_ir.html:147
-#: app/templates/pageir/_page_ir.html:179
+#: app/templates/pageir/_page_ir.html:66 app/templates/pageir/_page_ir.html:149
+#: app/templates/pageir/_page_ir.html:181
 msgid "沒有資料"
 msgstr ""
 
-#: app/templates/pageir/_page_ir.html:69 app/templates/pageir/_page_ir.html:184
+#: app/templates/pageir/_page_ir.html:71 app/templates/pageir/_page_ir.html:186
 #: app/templates/pages/access_center/_tab_health.html:77
 msgid "總數"
 msgstr ""
@@ -2567,7 +2571,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:85
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:119
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:312
-#: app/templates/pageir/_page_ir.html:70 app/templates/pageir/_page_ir.html:185
+#: app/templates/pageir/_page_ir.html:72 app/templates/pageir/_page_ir.html:187
 #: app/templates/pages/access_center/_tab_accounts.html:121
 #: app/templates/pages/users/list.html:89
 msgid "上一頁"
@@ -2577,32 +2581,35 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
-#: app/templates/pageir/_page_ir.html:72 app/templates/pageir/_page_ir.html:187
+#: app/templates/pageir/_page_ir.html:74 app/templates/pageir/_page_ir.html:189
 #: app/templates/pages/access_center/_tab_accounts.html:124
 #: app/templates/pages/users/list.html:93
 msgid "下一頁"
 msgstr ""
 
-#: app/templates/pageir/_page_ir.html:94
+#: app/templates/pageir/_page_ir.html:96
 msgid "請選擇一筆資料"
 msgstr ""
 
-#: app/templates/pageir/_page_ir.html:125
+#: app/templates/pageir/_page_ir.html:127
 msgid "本次服務項目"
 msgstr ""
 
-#: app/templates/pageir/_page_ir.html:127
+#: app/templates/pageir/_page_ir.html:129
 msgid "歷史記錄"
 msgstr ""
 
-#: app/templates/pageir/_page_ir.html:133
+#: app/templates/pageir/_page_ir.html:135
 msgid "新增一筆"
 msgstr ""
 
-#: app/templates/pageir/_page_ir.html:194
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:246
+#: app/templates/pageir/_page_ir.html:196
 msgid "送出"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_error.html:6
+#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_error.html:28
 #: app/templates/pageir/page_error.html:2
 #: app/templates/pageir/page_error.html:12
 msgid "頁面無法顯示"
@@ -2616,11 +2623,12 @@ msgstr ""
 msgid "此頁面仍使用已廢棄的 v2 版面格式，請以 IR 設計器重建後再發布。"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_error.html:29
 #: app/templates/pageir/page_error.html:13
 msgid "頁面定義無效或引用了未註冊的資源"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:48
+#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:50
 #: app/templates/pageir/page_v3.html:13
 #, python-format
 msgid "預覽模式：以「%(group)s / %(level)s」身分檢視，資料為唯讀，寫入操作不會生效。"
@@ -2628,8 +2636,8 @@ msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_access_matrix.html:20
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:14
-#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:37
-#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:48
+#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:39
+#: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:50
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:52
 #: app/templates/pageir/page_v3.html:13
 msgid "不限群組"
@@ -2980,6 +2988,7 @@ msgstr ""
 msgid "角色指派"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:171
 #: app/templates/pages/access_center/_tab_accounts.html:58
 #: app/templates/pages/admin/_settings_recipients_section.html:45
 #: app/templates/pages/admin/_settings_smtp_section.html:54
@@ -3085,8 +3094,9 @@ msgstr ""
 msgid "選單樹"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:7
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:110
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:257
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:259
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:16
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:16
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:22
@@ -3230,6 +3240,8 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:37
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:74
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:240
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:127
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:146
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:294
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:91
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:164
@@ -3266,6 +3278,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:326
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:466
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:551
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:145
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:250
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:20
@@ -3668,6 +3681,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:82
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:213
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:31
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:12
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:228
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:26
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:153
@@ -3677,7 +3691,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_portal_v2.html:123
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:41
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:203
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:269
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:271
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:49
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:25
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:24
@@ -3858,6 +3872,9 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:19
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:557
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:94
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:27
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:47
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:131
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:313
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:45
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:96
@@ -3911,6 +3928,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:208
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:79
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:248
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:81
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:484
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:43
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:52
@@ -4565,6 +4583,7 @@ msgstr ""
 msgid "設定角色及其權限。"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:168
 #: app/templates/pages/admin/index.html:26
 msgid "管理角色"
 msgstr ""
@@ -6318,6 +6337,8 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:55
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:321
 #: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:49
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:49
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:150
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:32
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:55
@@ -6913,6 +6934,7 @@ msgstr ""
 msgid "等級說明"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:156
 #: app/templates/pages/hostconfig/_system_settings_section_audit.html:46
 #: app/templates/pages/platform_help/org_admin.html:34
 msgid "等級"
@@ -7463,8 +7485,8 @@ msgstr ""
 msgid "涉及資料表:"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:20
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:235
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:21
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:237
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:39
 #: app/templates/pages/hostconfig/data_maintenance.html:44
 #: app/templates/pages/hostconfig/data_maintenance.html:99
@@ -8282,6 +8304,7 @@ msgstr ""
 msgid "勾選可看見此選單的用戶類型（平行關係，非繼承）"
 msgstr ""
 
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:135
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:124
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:145
 #: app/templates/pages/menu/create.html:103
@@ -8456,7 +8479,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:594
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:120
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:113
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:360
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:362
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:112
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:120
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:554
@@ -11203,8 +11226,8 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:114
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:142
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:468
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:295
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:350
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:297
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:352
 #: app/templates/pages/users/import.html:94
 msgid "必填"
 msgstr ""
@@ -12261,7 +12284,7 @@ msgstr ""
 msgid "已建立 %(name)s"
 msgstr ""
 
-#: ../modules/nocode_builder/services/project_service.py:81
+#: ../modules/nocode_builder/services/project_service.py:85
 #: app/web/units.py:169
 msgid "名稱為必填"
 msgstr ""
@@ -13596,7 +13619,7 @@ msgstr ""
 msgid "讀入資料表"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:320
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:322
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:91
 msgid "新建資料表"
 msgstr ""
@@ -13683,7 +13706,7 @@ msgid "進階設定"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:457
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:297
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:299
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:311
 msgid "預設值"
 msgstr ""
@@ -13839,52 +13862,52 @@ msgstr ""
 msgid "匯出 PDF"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:726
+#: ../modules/nocode_builder/api/__init__.py:747
 msgid "此 Master 記錄已鎖定，無法修改關聯資料"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:954
-#: ../modules/nocode_builder/api/__init__.py:1051
+#: ../modules/nocode_builder/api/__init__.py:999
+#: ../modules/nocode_builder/api/__init__.py:1102
 #: ../modules/nocode_builder/api/template_api.py:69
 msgid "Page IR validation failed"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1121
+#: ../modules/nocode_builder/api/__init__.py:1175
 msgid "頁面已發布"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1151
+#: ../modules/nocode_builder/api/__init__.py:1208
 msgid "頁面已取消發布"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1243
-#: ../modules/nocode_builder/api/__init__.py:1289
+#: ../modules/nocode_builder/api/__init__.py:1300
+#: ../modules/nocode_builder/api/__init__.py:1346
 msgid "非子系統成員"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1258
-#: ../modules/nocode_builder/api/__init__.py:1306
-#: ../modules/nocode_builder/api/__init__.py:1317
+#: ../modules/nocode_builder/api/__init__.py:1315
+#: ../modules/nocode_builder/api/__init__.py:1363
+#: ../modules/nocode_builder/api/__init__.py:1374
 #, python-format
 msgid "您的角色 (%(role_type)s) 不允許此操作"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1401
+#: ../modules/nocode_builder/api/__init__.py:1458
 msgid "子系統預設樣式已更新"
 msgstr ""
 
-#: ../modules/nocode_builder/api/__init__.py:1443
+#: ../modules/nocode_builder/api/__init__.py:1500
 #, python-format
 msgid "已套用到 %(count)s 個頁面"
 msgstr ""
 
 #: ../modules/form_workflow/api/backgrounds.py:103
-#: ../modules/nocode_builder/api/__init__.py:1528
+#: ../modules/nocode_builder/api/__init__.py:1585
 msgid "底圖上傳成功"
 msgstr ""
 
 #: ../modules/form_workflow/api/backgrounds.py:187
-#: ../modules/nocode_builder/api/__init__.py:1560
+#: ../modules/nocode_builder/api/__init__.py:1617
 msgid "底圖已刪除"
 msgstr ""
 
@@ -13935,7 +13958,7 @@ msgid "規則已更新"
 msgstr ""
 
 #: ../modules/nocode_builder/api/bridge_api.py:425
-#: ../modules/nocode_builder/api/site_map_api.py:754
+#: ../modules/nocode_builder/api/site_map_api.py:780
 msgid "規則已刪除"
 msgstr ""
 
@@ -13947,7 +13970,18 @@ msgstr ""
 #: ../modules/nocode_builder/api/portal_org_api.py:68
 #: ../modules/nocode_builder/api/portal_org_api.py:101
 #: ../modules/nocode_builder/api/portal_org_api.py:135
-#: ../modules/nocode_builder/api/site_map_api.py:272
+#: ../modules/nocode_builder/api/portal_permission_api.py:33
+#: ../modules/nocode_builder/api/portal_permission_api.py:44
+#: ../modules/nocode_builder/api/portal_permission_api.py:53
+#: ../modules/nocode_builder/api/portal_permission_api.py:74
+#: ../modules/nocode_builder/api/portal_permission_api.py:92
+#: ../modules/nocode_builder/api/portal_permission_api.py:116
+#: ../modules/nocode_builder/api/portal_permission_api.py:131
+#: ../modules/nocode_builder/api/portal_permission_api.py:147
+#: ../modules/nocode_builder/api/portal_permission_api.py:163
+#: ../modules/nocode_builder/api/portal_permission_api.py:179
+#: ../modules/nocode_builder/api/portal_permission_api.py:201
+#: ../modules/nocode_builder/api/site_map_api.py:295
 msgid "Sub system not found"
 msgstr ""
 
@@ -13975,132 +14009,156 @@ msgstr ""
 msgid "帳號歸屬已更新"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:33
+#: ../modules/nocode_builder/api/site_map_api.py:34
 msgid "access_matrix 必須為物件或 null"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:35
+#: ../modules/nocode_builder/api/site_map_api.py:36
 msgid "access_matrix 目前只允許 read 設定"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:39
+#: ../modules/nocode_builder/api/site_map_api.py:40
 msgid "access_matrix.read 必須為物件"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:41
-msgid "access_matrix.read 必須包含 groups 與 min_level"
+#: ../modules/nocode_builder/api/site_map_api.py:43
+msgid "access_matrix.read 包含不支援的欄位"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:46
-msgid "groups 必須為 null 或非空陣列"
+#: ../modules/nocode_builder/api/site_map_api.py:47
+msgid "access_matrix.read 必須包含 required_permissions 或 groups"
 msgstr ""
 
 #: ../modules/nocode_builder/api/site_map_api.py:49
+msgid "access_matrix.read 必須包含 groups 與 min_level"
+msgstr ""
+
+#: ../modules/nocode_builder/api/site_map_api.py:55
+msgid "groups 必須為 null 或非空陣列"
+msgstr ""
+
+#: ../modules/nocode_builder/api/site_map_api.py:58
 msgid "groups 代碼格式不正確"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:53
+#: ../modules/nocode_builder/api/site_map_api.py:62
 msgid "min_level 代碼格式不正確"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:119
+#: ../modules/nocode_builder/api/site_map_api.py:67
+msgid "required_permissions 必須為非空陣列"
+msgstr ""
+
+#: ../modules/nocode_builder/api/site_map_api.py:70
+msgid "required_permissions 權限碼格式不正確"
+msgstr ""
+
+#: ../modules/nocode_builder/api/site_map_api.py:74
+msgid "match_mode 只能與 required_permissions 一起使用"
+msgstr ""
+
+#: ../modules/nocode_builder/api/site_map_api.py:76
+msgid "match_mode 必須為 any 或 all"
+msgstr ""
+
+#: ../modules/nocode_builder/api/site_map_api.py:142
 msgid "網頁已建立"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:169
+#: ../modules/nocode_builder/api/site_map_api.py:192
 msgid "節點已更新"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:195
+#: ../modules/nocode_builder/api/site_map_api.py:218
 #, python-format
 msgid "已刪除 %(count)s 個節點"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:226
+#: ../modules/nocode_builder/api/site_map_api.py:249
 #, python-format
 msgid "已更新 %(count)s 個節點"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:255
+#: ../modules/nocode_builder/api/site_map_api.py:278
 msgid "您不是此子系統的開發者"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:277
+#: ../modules/nocode_builder/api/site_map_api.py:300
 msgid "node_secure_codes 必須為非空陣列"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:279
+#: ../modules/nocode_builder/api/site_map_api.py:302
 msgid "一次最多套用 200 個節點"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:281
+#: ../modules/nocode_builder/api/site_map_api.py:304
 msgid "node_secure_codes 格式不正確"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:283
+#: ../modules/nocode_builder/api/site_map_api.py:306
 msgid "access_matrix 為必填"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:298
+#: ../modules/nocode_builder/api/site_map_api.py:321
 msgid "節點不屬於此子系統或租戶"
 msgstr ""
 
 #: ../modules/form_workflow/api/mapping_permissions.py:92
-#: ../modules/nocode_builder/api/site_map_api.py:364
+#: ../modules/nocode_builder/api/site_map_api.py:387
 msgid "grant_type 必須為 department / group / user"
 msgstr ""
 
 #: ../modules/form_workflow/api/mapping_permissions.py:106
-#: ../modules/nocode_builder/api/site_map_api.py:380
+#: ../modules/nocode_builder/api/site_map_api.py:403
 msgid "此規則已存在"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:384
+#: ../modules/nocode_builder/api/site_map_api.py:407
 msgid "准入規則已新增"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:398
+#: ../modules/nocode_builder/api/site_map_api.py:421
 msgid "grant_type+grant_target 或 target_type+target_secure_code 為必填"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:404
+#: ../modules/nocode_builder/api/site_map_api.py:427
 msgid "此權限已存在"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:408
+#: ../modules/nocode_builder/api/site_map_api.py:431
 msgid "權限已新增"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:434
+#: ../modules/nocode_builder/api/site_map_api.py:457
 msgid "權限已刪除"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:541
+#: ../modules/nocode_builder/api/site_map_api.py:564
 msgid "您沒有存取此頁面的權限"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:614
+#: ../modules/nocode_builder/api/site_map_api.py:640
 msgid "政策組已建立"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:643
+#: ../modules/nocode_builder/api/site_map_api.py:669
 msgid "政策組已更新"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:670
+#: ../modules/nocode_builder/api/site_map_api.py:696
 #, python-format
 msgid "政策組已刪除，%(n)s 個節點權限已重設"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:718
+#: ../modules/nocode_builder/api/site_map_api.py:744
 msgid "缺少必要欄位"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:729
+#: ../modules/nocode_builder/api/site_map_api.py:755
 msgid "規則已新增"
 msgstr ""
 
-#: ../modules/nocode_builder/api/site_map_api.py:788
+#: ../modules/nocode_builder/api/site_map_api.py:814
 #, python-format
 msgid "已套用到 %(affected)s 個子節點"
 msgstr ""
@@ -14142,23 +14200,23 @@ msgstr ""
 msgid "您不是此子系統的成員"
 msgstr ""
 
-#: ../modules/nocode_builder/api/sub_system_api.py:470
+#: ../modules/nocode_builder/api/sub_system_api.py:473
 msgid "企業資料庫"
 msgstr ""
 
-#: ../modules/nocode_builder/api/sub_system_api.py:479
+#: ../modules/nocode_builder/api/sub_system_api.py:482
 msgid "集團共享資料庫"
 msgstr ""
 
-#: ../modules/nocode_builder/api/sub_system_api.py:491
+#: ../modules/nocode_builder/api/sub_system_api.py:494
 msgid "Portal 帳號資料庫"
 msgstr ""
 
-#: ../modules/nocode_builder/api/sub_system_api.py:497
+#: ../modules/nocode_builder/api/sub_system_api.py:500
 msgid "Portal 公開資料庫"
 msgstr ""
 
-#: ../modules/nocode_builder/api/sub_system_api.py:843
+#: ../modules/nocode_builder/api/sub_system_api.py:847
 msgid "(未知社群)"
 msgstr ""
 
@@ -14187,16 +14245,16 @@ msgstr ""
 msgid "模板已刪除"
 msgstr ""
 
-#: ../modules/nocode_builder/services/crud_service.py:449
+#: ../modules/nocode_builder/services/crud_service.py:474
 #, python-format
 msgid "必填欄位缺少值且無法自動填入: %(names)s"
 msgstr ""
 
-#: ../modules/nocode_builder/services/crud_service.py:517
+#: ../modules/nocode_builder/services/crud_service.py:542
 msgid "找不到資料，或該筆資料屬於其他企業無法修改"
 msgstr ""
 
-#: ../modules/nocode_builder/services/crud_service.py:558
+#: ../modules/nocode_builder/services/crud_service.py:583
 msgid "找不到資料，或該筆資料屬於其他企業無法刪除"
 msgstr ""
 
@@ -14308,7 +14366,7 @@ msgid "target_db 不合法: %(target_db)s"
 msgstr ""
 
 #: ../modules/nocode_builder/services/data_source_manager.py:106
-#: ../modules/nocode_builder/services/data_source_manager.py:265
+#: ../modules/nocode_builder/services/data_source_manager.py:342
 #, python-format
 msgid "SQLite 檔案不存在: %(path)s (子系統 %(sc)s 可能尚未初始化)"
 msgstr ""
@@ -14367,13 +14425,13 @@ msgstr ""
 msgid "我送出的表單"
 msgstr ""
 
-#: ../modules/nocode_builder/services/pageir_formflow_resources.py:328
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:329
 msgid "審核中"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:23
-#: ../modules/nocode_builder/services/pageir_formflow_resources.py:328
-#: ../modules/nocode_builder/services/pageir_formflow_resources.py:333
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:329
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:334
 msgid "處理中"
 msgstr ""
 
@@ -14381,34 +14439,34 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:55
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:482
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:24
-#: ../modules/nocode_builder/services/pageir_formflow_resources.py:330
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:331
 msgid "已完成"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_pending.py:594
-#: ../modules/nocode_builder/services/pageir_formflow_resources.py:332
+#: ../modules/nocode_builder/services/pageir_formflow_resources.py:333
 msgid "已退回"
 msgstr ""
 
-#: ../modules/nocode_builder/services/project_service.py:116
-#: ../modules/nocode_builder/services/project_service.py:157
-#: ../modules/nocode_builder/services/project_service.py:204
-#: ../modules/nocode_builder/services/project_service.py:235
-#: ../modules/nocode_builder/services/project_service.py:266
-#: ../modules/nocode_builder/services/project_service.py:298
-#: ../modules/nocode_builder/services/project_service.py:343
+#: ../modules/nocode_builder/services/project_service.py:120
+#: ../modules/nocode_builder/services/project_service.py:163
+#: ../modules/nocode_builder/services/project_service.py:260
+#: ../modules/nocode_builder/services/project_service.py:291
+#: ../modules/nocode_builder/services/project_service.py:322
+#: ../modules/nocode_builder/services/project_service.py:354
+#: ../modules/nocode_builder/services/project_service.py:399
 msgid "開發案不存在"
 msgstr ""
 
-#: ../modules/nocode_builder/services/project_service.py:310
+#: ../modules/nocode_builder/services/project_service.py:366
 msgid "該用戶已是開發者"
 msgstr ""
 
-#: ../modules/nocode_builder/services/project_service.py:347
+#: ../modules/nocode_builder/services/project_service.py:403
 msgid "該用戶不是開發者"
 msgstr ""
 
-#: ../modules/nocode_builder/services/project_service.py:350
+#: ../modules/nocode_builder/services/project_service.py:406
 msgid "至少需要保留一位開發者"
 msgstr ""
 
@@ -14569,8 +14627,8 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:383
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:175
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:244
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:293
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:331
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:295
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:333
 msgid "欄位"
 msgstr ""
 
@@ -14620,7 +14678,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:269
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:327
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:396
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:332
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:334
 msgid "新增欄位"
 msgstr ""
 
@@ -14696,58 +14754,174 @@ msgstr ""
 msgid "未啟用新增時無法送出；編輯需同時勾選主檔可編輯"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:454
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:455
 msgid "按鈕"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:475
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:471
+msgid "未設定（此按鈕不會顯示）"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:472
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:523
+msgid "子系統 Portal"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:477
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:528
+msgid "平台"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:486
+msgid "權限欄位僅平台頁面生效；子系統 Portal 一律以下方「元件准入」判定。"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:487
 msgid "新增按鈕"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:488
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:489
+msgid "未啟用「執行動作」時，portal 訪客看不到任何按鈕。"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:502
 msgid "編輯表單"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:15
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:490
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:504
 msgid "表單流程配對"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:492
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:508
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:506
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:522
 msgid "未設定（表單唯讀）"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:499
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:513
 msgid "無法載入表單配對清單，請確認你有表單流程模組的權限"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:502
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:516
 msgid "手動輸入 secure_code"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:506
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:520
 msgid "送出動作"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:509
-msgid "子系統 Portal"
-msgstr ""
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:514
-msgid "平台"
-msgstr ""
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:522
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:536
 msgid "未啟用新增時，portal 訪客無法送出此表單。"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:533
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:547
 msgid "表單編輯"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:539
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:553
 msgid "儲存表單"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:4
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:20
+msgid "權限矩陣"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:5
+msgid "未設限代表所有 portal 訪客可讀；空白不是禁止。"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:17
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:23
+msgid "權限碼"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:31
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:48
+msgid "風險等級"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:33
+msgid "低"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:34
+msgid "一般"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:35
+msgid "高"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:36
+msgid "重大"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:46
+msgid "code"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:74
+msgid "表1 網頁 × 權限碼"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:82
+msgid "網頁"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:86
+msgid "match mode"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:113
+msgid "尚無網頁節點"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:118
+msgid "表2 等級／角色 × 權限碼"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:123
+msgid "角色 code"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:138
+msgid "新增角色"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:194
+msgid "帳號 × 角色"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:201
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:218
+msgid "階級"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:205
+msgid "個人覆寫"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:206
+msgid "新增例外"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:259
+msgid "權限模板"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:260
+msgid "套用是疊加，不會移除既有設定。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:143
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:271
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:78
+msgid "套用"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:275
+msgid "尚無權限模板"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html:3
@@ -14901,8 +15075,8 @@ msgid "簡易模式"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:430
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:294
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:341
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:296
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:343
 msgid "型別"
 msgstr ""
 
@@ -15186,24 +15360,20 @@ msgstr ""
 msgid "帳號權限"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:23
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:24
 msgid "返回子系統列表"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:29
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:30
 msgid "Site Map"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:30
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:31
 msgid "排序未儲存"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:33
-msgid "新增網頁"
-msgstr ""
-
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:34
-msgid "新增資料夾"
+msgid "新增網頁"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:35
@@ -15230,11 +15400,6 @@ msgstr ""
 msgid "GUEST"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:143
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:78
-msgid "套用"
-msgstr ""
-
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:79
 msgid "清除設定"
 msgstr ""
@@ -15244,7 +15409,7 @@ msgid "從左側選擇或建立網頁"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:89
-msgid "folder 節點只展開或收合，不會載入設計器。"
+msgid "用拖拉調整網頁在 Site Map 中的層級關係。"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:105
@@ -15290,55 +15455,51 @@ msgstr ""
 msgid "調整帳號歸屬"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:218
-msgid "階級"
-msgstr ""
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:236
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:238
 msgid "管理 portal_data 業務資料表與 CRUD View。"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:242
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:244
 msgid "新建表"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:243
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:245
 msgid "建立 CRUD View"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:250
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:252
 msgid "資料來源"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:264
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:266
 msgid "資料表清單"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:266
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:268
 msgid "表"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:270
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:272
 msgid "尚無資料表"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:287
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:289
 msgid "從左側選擇資料表查看欄位。"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:288
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:290
 msgid "尚無欄位資料"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:296
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:298
 msgid "主鍵"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:326
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:328
 msgid "表名"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:337
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:339
 msgid "欄位名"
 msgstr ""
 

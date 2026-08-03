@@ -17,13 +17,14 @@
             <nav class="wks-tabs" aria-label="{{ _('工作區分頁') }}">
                 <button type="button" class="wks-tab" :class="{ 'wks-tab-active': activeTab === 'design' }" @click="activeTab = 'design'">{{ _('頁面設計') }}</button>
                 <button type="button" class="wks-tab" :class="{ 'wks-tab-active': activeTab === 'org' }" @click="activeTab = 'org'">{{ _('帳號權限') }}</button>
+                <button type="button" class="wks-tab" :class="{ 'wks-tab-active': activeTab === 'perms' }" @click="activeTab = 'perms'">{{ _('權限矩陣') }}</button>
                 <button type="button" class="wks-tab" :class="{ 'wks-tab-active': activeTab === 'tables' }" @click="activeTab = 'tables'">{{ _('資料表') }}</button>
             </nav>
         </div>
         <a class="wks-link" href="{{ app_prefix }}/nocode-builder/sub-systems">{{ _('返回子系統列表') }}</a>
     </header>
 
-    <main class="wks-layout" :class="{ 'wks-layout-full': activeTab === 'org' || activeTab === 'tables' }">
+    <main class="wks-layout" :class="{ 'wks-layout-full': activeTab === 'org' || activeTab === 'perms' || activeTab === 'tables' }">
         <aside class="wks-sidebar" x-show="activeTab === 'design'">
             <div class="wks-sidebar-head">
                 <h2>{{ _('Site Map') }}</h2>
@@ -228,6 +229,8 @@
             </div>
         </section>
 
+        {% include "modules/nocode_builder/_workspace_perms.html" %}
+
         <section class="wks-main wks-main-tables" x-show="activeTab === 'tables'" x-data='wksTablesManager(subSystemSc)'>
             <div class="wks-tables-head">
                 <div>
@@ -376,5 +379,6 @@
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/ir-designer.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace-org.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace-perms.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace-tables.js"></script>
 {% endblock %}

@@ -610,7 +610,13 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   寫入端驗證有兩處，改格式要同時改：`api/site_map_api.py::_validate_access_matrix`
   與 `backend/app/pageir/schema_v3.json` 的 `$defs.portal_access_rule`。
   權限碼格式固定 `resource.action`（小寫 snake_case），與平台的 permission code 不共用。
-  PF-7 只做資料形狀，尚無管理 UI／API（那是 PF-8）。
+  管理面（PF-8a/8b）在 `services/portal_permission_admin_service.py` +
+  `api/portal_permission_api.py`（前綴 `/api/nocode-builder/sub-systems/<ss>/portal/...`）與
+  工作區第四個分頁「權限矩陣」（`_workspace_perms.html` + `workspace-perms.js`）。
+  角色／階級權限與帳號角色一律**整組覆寫**（PUT 全量 codes），不是增量。
+  建立子系統會自動 seed 六個 `is_system` 管理角色；既有子系統在首次讀 permission-model 時補 seed。
+  權限碼被角色／階級／個人覆寫／site map access_matrix 引用時**拒絕刪除（409）**。
+  尚未做：menu 元件與 system_link（PF-8b 第二輪）。
 - **portal 業務表有列級擁有權**（2026-07-30 起）：表固定有系統欄位 `portal_user_ref`
   （值 `u:<portal user_id>` / `g:<guest_token>`），視圖 `DcCrudView.row_owner_scope`
   預設 **`own`**（只能存取自己建的列），要共享的表必須明確設 `all`。
