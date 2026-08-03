@@ -410,6 +410,15 @@ curl ... 2>&1 | tee -a /opt/tmp/verify/20260801-file-authz.log
 
 瀏覽器驗收同理：chrome-devtools 的截圖存檔、關鍵 console/network 觀察貼進同一個 log。
 
+**chrome-devtools 的截圖不能直接寫 `/opt/tmp`**（工具限制在 workspace root 內，
+會回 `Access denied: path ... is not within any of the configured workspace roots`）。
+做法是先存到專案內再搬走：
+
+```
+take_screenshot(filePath="/opt/BeakPlatform-dev/.verify-xxx.png")
+mv /opt/BeakPlatform-dev/.verify-xxx.png /opt/tmp/verify/<日期>-xxx.png
+```
+
 **理由**：2026-08-01 對四個 session 做事後幻覺稽核（363 條事實斷言逐條查證，見知識庫 #4957），
 41 條判定為 UNVERIFIABLE——絕大多數是瀏覽器實測與 rate-limit 觀察，**輸出當下就沒落地，
 事後無論花多少成本都查不回來**。「我測過了」若沒有留下輸出，事後與「我以為我測過了」無法區分。
