@@ -240,8 +240,14 @@ schema 表達不了的，一律在此檢查。錯誤 code 沿用既有風格：
 現行規則在 `ir-designer.js::syncCanvasMetaWithGeometry`：用 `_zoneGeometry`
 幾何快照找「覆蓋原左上角的新 zone」接手，找不到才回到未放置清單。
 
-**批次 2b（free，待辦）**：GridStack 拖放式自由版面設計器。後端已完整支援 free 引擎，
-缺的只是 UI。
+**批次 2b（free，2026-08-05 完成）**：GridStack 12 欄拖放式自由版面設計器。
+新增框／刪除框（框內有元件時 `confirm()` 提示，元件回未放置清單）、
+拖放與縮放後幾何回寫 `frames`、框上顯示 frame id 與其中元件、
+畫布屬性 `min_width` / `row_unit` / `gap`。
+
+**踩過的坑**：`GridStack.removeWidget(el, false)` 的第二參數是 `removeDOM`，
+傳 `false` 會讓被刪掉的框留在畫面上——資料層已消失、視覺還在，
+存檔後才會發現對不上。一律傳 `true`。
 
 ### 原始設計（保留供 2b 參考）
 

@@ -55,6 +55,7 @@ function irDesigner() {
         activeWidget: null,
         engine: 'flow',
         gridEditor: null,
+        freeGrid: null,
         selectedZoneId: '',
         canvasMeta: {},
         _zoneGeometry: {},   // zone id -> 幾何快照，供 zone 消失時判斷元件由誰接手
@@ -132,6 +133,7 @@ function irDesigner() {
             this.initLayoutEngineState();
             await Alpine.nextTick();
             this.mountGridEditor();
+            this.mountFreeGrid();
             this.savedSnapshot = this.snapshot();
         },
 
@@ -1032,7 +1034,9 @@ function irDesigner() {
             const page = this.doc.page || {};
             this.engine = page.engine === 'grid' || page.engine === 'free' ? page.engine : 'flow';
             this.canvasMeta = {};
-            const zones = page.canvas && Array.isArray(page.canvas.zones) ? page.canvas.zones : [];
+            const zones = this.engine === 'free'
+                ? (page.canvas && Array.isArray(page.canvas.frames) ? page.canvas.frames : [])
+                : (page.canvas && Array.isArray(page.canvas.zones) ? page.canvas.zones : []);
             for (const zone of zones) {
                 if (!zone || !zone.id) continue;
                 this.canvasMeta[zone.id] = {
@@ -1042,6 +1046,10 @@ function irDesigner() {
             }
             if (this.engine === 'grid' && !page.canvas) {
                 this.doc.page.canvas = this.defaultGridCanvas();
+                this.initLayoutEngineState();
+            }
+            if (this.engine === 'free' && !page.canvas) {
+                this.doc.page.canvas = this.defaultFreeCanvas();
                 this.initLayoutEngineState();
             }
         },
@@ -1057,6 +1065,18 @@ function irDesigner() {
                     { id: 'z2', row: 1, col: 2, row_span: 1, col_span: 1, overflow: 'auto', widget_ids: [] },
                     { id: 'z3', row: 2, col: 1, row_span: 1, col_span: 1, overflow: 'auto', widget_ids: [] },
                     { id: 'z4', row: 2, col: 2, row_span: 1, col_span: 1, overflow: 'auto', widget_ids: [] },
+                ],
+            };
+        },
+
+        defaultFreeCanvas() {
+            return {
+                min_width: 1280,
+                row_unit: 60,
+                columns: 12,
+                gap: 8,
+                frames: [
+                    { id: 'f1', x: 0, y: 0, w: 6, h: 4, overflow: 'auto', widget_ids: [] },
                 ],
             };
         },
@@ -1082,16 +1102,199 @@ function irDesigner() {
             this.syncCanvasMetaWithGeometry();
         },
 
+        mountFreeGrid() {
+            if (this.engine !== 'free') return;
+            const el = document.getElementById('ird-free-gridstack');
+            if (!el || typeof GridStack === 'undefined') return;
+            if (!this.doc.page.canvas) this.doc.page.canvas = this.defaultFreeCanvas();
+            if (this.freeGrid) {
+                this.freeGrid.destroy(false);
+                this.freeGrid = null;
+            }
+            const canvas = this.normalizeFreeCanvas(this.doc.page.canvas);
+            this.doc.page.canvas = canvas;
+            el.style.minWidth = `${canvas.min_width}px`;
+            this.freeGrid = GridStack.init({
+                column: 12,
+                cellHeight: `${canvas.row_unit}px`,
+                margin: canvas.gap / 2,
+                float: true,
+                disableOneColumnMode: true,
+            }, el);
+            this.renderFreeFrames(canvas.frames || []);
+            this.syncFreeMetaWithGeometry();
+            this.freeGrid.on('change', () => {
+                this.syncFreeMetaWithGeometry();
+                this.markDirty();
+            });
+        },
+
+        renderFreeFrames(frames) {
+            if (!this.freeGrid) return;
+            this.freeGrid.removeAll(false);
+            for (const frame of frames || []) {
+                this.freeGrid.addWidget(this.createFreeFrameElement(frame));
+            }
+            this.refreshZoneContents();
+        },
+
+        createFreeFrameElement(frame) {
+            const item = document.createElement('div');
+            item.className = 'grid-stack-item';
+            item.setAttribute('gs-id', frame.id);
+            item.setAttribute('gs-x', frame.x);
+            item.setAttribute('gs-y', frame.y);
+            item.setAttribute('gs-w', frame.w);
+            item.setAttribute('gs-h', frame.h);
+            item.dataset.frameId = frame.id;
+
+            const content = document.createElement('div');
+            content.className = 'grid-stack-item-content';
+            content.onclick = () => this.selectFreeFrame(frame.id);
+            item.appendChild(content);
+            return item;
+        },
+
+        selectFreeFrame(frameId) {
+            if (!frameId || !this.canvasMeta[frameId]) return;
+            this.selectedZoneId = frameId;
+            this.selectedId = '';
+            this.activeWidget = null;
+            this.refreshFreeFrameContents();
+        },
+
+        addFreeFrame() {
+            if (this.engine !== 'free') return;
+            if (!this.doc.page.canvas) this.doc.page.canvas = this.defaultFreeCanvas();
+            const id = this.nextFreeFrameId();
+            const frame = { id, x: 0, y: 0, w: 4, h: 3, overflow: 'auto', widget_ids: [] };
+            this.canvasMeta[id] = { overflow: 'auto', widget_ids: [] };
+            if (this.freeGrid) {
+                this.freeGrid.addWidget(this.createFreeFrameElement(frame));
+                this.syncFreeMetaWithGeometry();
+            } else {
+                this.doc.page.canvas.frames = [...(this.doc.page.canvas.frames || []), frame];
+            }
+            this.selectFreeFrame(id);
+            this.markDirty();
+        },
+
+        deleteFreeFrame(frameId) {
+            if (this.engine !== 'free' || !frameId || !this.canvasMeta[frameId]) return;
+            const widgetIds = Array.isArray(this.canvasMeta[frameId].widget_ids) ? this.canvasMeta[frameId].widget_ids : [];
+            if (widgetIds.length && !confirm(tr('此框內的元件會回到未放置清單，確定刪除？'))) return;
+            if (this.freeGrid) {
+                const nodes = this.freeGrid.engine && this.freeGrid.engine.nodes ? this.freeGrid.engine.nodes : [];
+                const node = nodes.find((item) => String(item.id || (item.el && item.el.getAttribute('gs-id')) || '') === frameId);
+                const el = node && node.el;
+                // 第二參數是 removeDOM，傳 false 會讓被刪掉的框留在畫面上
+                // （資料層已消失、視覺還在，存檔後使用者才發現對不上）
+                if (el) this.freeGrid.removeWidget(el, true);
+            }
+            delete this.canvasMeta[frameId];
+            if (this.doc.page.canvas && Array.isArray(this.doc.page.canvas.frames)) {
+                this.doc.page.canvas.frames = this.doc.page.canvas.frames.filter((frame) => frame.id !== frameId);
+            }
+            if (this.selectedZoneId === frameId) this.selectedZoneId = '';
+            this.syncFreeMetaWithGeometry();
+            this.markDirty();
+        },
+
+        nextFreeFrameId() {
+            const used = new Set(Object.keys(this.canvasMeta || {}));
+            let index = 1;
+            while (used.has(`f${index}`) || this.findWidget(`f${index}`)) index += 1;
+            return `f${index}`;
+        },
+
+        normalizeFreeCanvas(canvas) {
+            const minWidth = this._clampNumber(canvas && canvas.min_width, 1280, 320, 4096);
+            const rowUnit = this._clampNumber(canvas && canvas.row_unit, 60, 20, 200);
+            const gap = this._clampNumber(canvas && canvas.gap, 8, 0, 64);
+            const used = new Set();
+            const frames = [];
+            const sourceFrames = canvas && Array.isArray(canvas.frames) ? canvas.frames : [];
+            for (const raw of sourceFrames) {
+                if (!raw) continue;
+                let id = String(raw.id || '');
+                if (!this.isValidSlug(id) || used.has(id)) id = this.nextFreeFrameId();
+                used.add(id);
+                const x = this._clampNumber(raw.x, 0, 0, 11);
+                const w = this._clampNumber(raw.w, 4, 1, 12 - x);
+                frames.push({
+                    id,
+                    x,
+                    y: this._clampNumber(raw.y, 0, 0, 999),
+                    w,
+                    h: this._clampNumber(raw.h, 3, 1, 200),
+                    overflow: raw.overflow === 'visible' ? 'visible' : 'auto',
+                    widget_ids: Array.isArray(raw.widget_ids) ? raw.widget_ids.filter((widgetId) => this.findTopLevelWidget(widgetId)) : [],
+                });
+            }
+            return { min_width: minWidth, row_unit: rowUnit, columns: 12, gap, frames };
+        },
+
+        updateFreeCanvasOptions() {
+            if (this.engine !== 'free') return;
+            if (!this.doc.page.canvas) this.doc.page.canvas = this.defaultFreeCanvas();
+            const canvas = this.normalizeFreeCanvas(this.doc.page.canvas);
+            this.doc.page.canvas.min_width = canvas.min_width;
+            this.doc.page.canvas.row_unit = canvas.row_unit;
+            this.doc.page.canvas.columns = 12;
+            this.doc.page.canvas.gap = canvas.gap;
+            if (this.freeGrid) {
+                this.freeGrid.cellHeight(`${canvas.row_unit}px`);
+                this.freeGrid.margin(canvas.gap / 2);
+                this.freeGrid.el.style.minWidth = `${canvas.min_width}px`;
+            }
+            this.markDirty();
+        },
+
+        syncFreeMetaWithGeometry() {
+            if (!this.freeGrid) return;
+            const frames = [];
+            const next = {};
+            const nodes = (this.freeGrid.engine && this.freeGrid.engine.nodes ? this.freeGrid.engine.nodes : [])
+                .slice()
+                .sort((a, b) => (a.y - b.y) || (a.x - b.x) || String(a.id || '').localeCompare(String(b.id || '')));
+            for (const node of nodes) {
+                const id = String(node.id || (node.el && node.el.getAttribute('gs-id')) || '');
+                if (!id) continue;
+                const old = this.canvasMeta[id] || {};
+                next[id] = {
+                    overflow: old.overflow === 'visible' ? 'visible' : 'auto',
+                    widget_ids: Array.isArray(old.widget_ids) ? old.widget_ids.filter((widgetId) => this.findTopLevelWidget(widgetId)) : [],
+                };
+                frames.push({
+                    id,
+                    x: this._clampNumber(node.x, 0, 0, 11),
+                    y: this._clampNumber(node.y, 0, 0, 999),
+                    w: this._clampNumber(node.w, 1, 1, 12),
+                    h: this._clampNumber(node.h, 1, 1, 200),
+                });
+            }
+            this.canvasMeta = next;
+            if (this.selectedZoneId && !this.canvasMeta[this.selectedZoneId]) this.selectedZoneId = '';
+            if (!this.doc.page.canvas) this.doc.page.canvas = this.defaultFreeCanvas();
+            this.doc.page.canvas.frames = frames;
+            this.refreshZoneContents();
+        },
+
         onEngineChange(value) {
             if (value === this.engine) return;
+            if ((this.engine !== 'flow' || value !== 'flow') && !confirm(tr('版面配置會被清除，元件不會被刪除'))) return;
             if (value === 'free') {
                 this.engine = 'free';
+                this.doc.page.engine = 'free';
+                this.doc.page.canvas = this.defaultFreeCanvas();
+                this.initLayoutEngineState();
                 this.selectedZoneId = '';
                 if (this.gridEditor) {
                     this.gridEditor.destroy();
                     this.gridEditor = null;
                 }
                 this.markDirty();
+                Alpine.nextTick(() => this.mountFreeGrid());
                 return;
             }
             if (value === 'grid') {
@@ -1100,11 +1303,14 @@ function irDesigner() {
                 this.doc.page.canvas = this.defaultGridCanvas();
                 this.initLayoutEngineState();
                 this.selectedZoneId = '';
+                if (this.freeGrid) {
+                    this.freeGrid.destroy(false);
+                    this.freeGrid = null;
+                }
                 this.markDirty();
                 Alpine.nextTick(() => this.mountGridEditor());
                 return;
             }
-            if (!confirm(tr('版面配置會被清除，元件不會被刪除'))) return;
             this.engine = 'flow';
             delete this.doc.page.engine;
             delete this.doc.page.canvas;
@@ -1113,6 +1319,10 @@ function irDesigner() {
             if (this.gridEditor) {
                 this.gridEditor.destroy();
                 this.gridEditor = null;
+            }
+            if (this.freeGrid) {
+                this.freeGrid.destroy(false);
+                this.freeGrid = null;
             }
             this.markDirty();
         },
@@ -1165,6 +1375,10 @@ function irDesigner() {
 
         // 把每個 zone 放了哪些元件標到矩陣格子上（只看 zone id 看不出哪格有內容）
         refreshZoneContents() {
+            if (this.engine === 'free') {
+                this.refreshFreeFrameContents();
+                return;
+            }
             if (!this.gridEditor) return;
             const map = {};
             for (const [zoneId, meta] of Object.entries(this.canvasMeta || {})) {
@@ -1175,6 +1389,38 @@ function irDesigner() {
                     });
             }
             this.gridEditor.setZoneContents(map);
+        },
+
+        refreshFreeFrameContents() {
+            if (!this.freeGrid) return;
+            const nodes = this.freeGrid.engine && this.freeGrid.engine.nodes ? this.freeGrid.engine.nodes : [];
+            for (const node of nodes) {
+                const id = String(node.id || (node.el && node.el.getAttribute('gs-id')) || '');
+                const content = node.el && node.el.querySelector('.grid-stack-item-content');
+                if (!id || !content) continue;
+                node.el.classList.toggle('ird-free-frame-selected', id === this.selectedZoneId);
+                content.innerHTML = '';
+                const head = document.createElement('div');
+                head.className = 'ird-free-frame-head';
+                const label = document.createElement('span');
+                label.className = 'ird-free-frame-id';
+                label.textContent = id;
+                head.appendChild(label);
+                content.appendChild(head);
+
+                const list = document.createElement('div');
+                list.className = 'ird-free-frame-items';
+                const meta = this.canvasMeta[id] || {};
+                for (const widgetId of meta.widget_ids || []) {
+                    const widget = this.findTopLevelWidget(widgetId);
+                    const item = document.createElement('div');
+                    item.className = 'ird-free-frame-widget';
+                    item.textContent = widget ? `${widgetId} (${widget.type})` : widgetId;
+                    list.appendChild(item);
+                }
+                content.appendChild(list);
+                content.onclick = () => this.selectFreeFrame(id);
+            }
         },
 
         buildGridCanvas() {
@@ -1189,6 +1435,23 @@ function irDesigner() {
                 });
             });
             return Object.assign({}, base, { min_width: minWidth, gap, zones });
+        },
+
+        buildFreeCanvas() {
+            if (this.freeGrid) this.syncFreeMetaWithGeometry();
+            const base = this.normalizeFreeCanvas(this.doc.page.canvas || this.defaultFreeCanvas());
+            const frames = (base.frames || []).map((frame) => {
+                const meta = this.canvasMeta[frame.id] || {};
+                const x = this._clampNumber(frame.x, 0, 0, 11);
+                const w = this._clampNumber(frame.w, 1, 1, 12 - x);
+                return Object.assign({}, frame, {
+                    x,
+                    w,
+                    overflow: meta.overflow === 'visible' ? 'visible' : 'auto',
+                    widget_ids: Array.isArray(meta.widget_ids) ? [...meta.widget_ids] : [],
+                });
+            });
+            return Object.assign({}, base, { columns: 12, frames });
         },
 
         _clampNumber(value, fallback, min, max) {
@@ -1235,6 +1498,7 @@ function irDesigner() {
                 this.activeWidget = null;
             }
             this.markDirty();
+            if (this.engine === 'free') this.refreshZoneContents();
         },
 
         onIdInput(value) {
@@ -1784,6 +2048,9 @@ function irDesigner() {
             if (this.engine === 'grid') {
                 doc.page.engine = 'grid';
                 doc.page.canvas = this.buildGridCanvas();
+            } else if (this.engine === 'free') {
+                doc.page.engine = 'free';
+                doc.page.canvas = this.buildFreeCanvas();
             } else {
                 delete doc.page.engine;
                 delete doc.page.canvas;
@@ -1810,15 +2077,11 @@ function irDesigner() {
         // 使用者看不出「選單一個項目都沒勾」這種小事。先在前端講人話。
         localSaveErrors(widgets, path, includePageIssues = true) {
             const errors = [];
-            if (includePageIssues && this.engine === 'free') {
-                errors.push({
-                    path: 'page.engine',
-                    severity: 'error',
-                    message: tr('自由版面尚未支援，請用矩陣或流式'),
-                });
-            }
             if (includePageIssues && this.engine === 'grid') {
                 errors.push(...this.localGridSaveIssues());
+            }
+            if (includePageIssues && this.engine === 'free') {
+                errors.push(...this.localFreeSaveIssues());
             }
             (widgets || []).forEach((widget, index) => {
                 const widgetPath = `${path}[${index}]`;
@@ -1886,6 +2149,53 @@ function irDesigner() {
                         path: `page.widgets.${widget.id}`,
                         severity: 'warning',
                         message: tr('元件「{id}」還沒有放進任何區塊，儲存後不會顯示', { id: widget.id }),
+                    });
+                }
+            }
+            return issues;
+        },
+
+        localFreeSaveIssues() {
+            const issues = [];
+            const canvas = this.buildFreeCanvas();
+            const occupied = new Set();
+            for (const frame of canvas.frames || []) {
+                const x1 = frame.x;
+                const y1 = frame.y;
+                const x2 = frame.x + frame.w - 1;
+                const y2 = frame.y + frame.h - 1;
+                if (x1 < 0 || y1 < 0 || x2 > 11 || y2 > 999 || frame.w < 1 || frame.h < 1) {
+                    issues.push({
+                        path: `page.canvas.frames.${frame.id}`,
+                        severity: 'error',
+                        message: tr('框「{id}」超出自由畫布範圍', { id: frame.id }),
+                    });
+                    continue;
+                }
+                for (let y = y1; y <= y2; y++) {
+                    for (let x = x1; x <= x2; x++) {
+                        const key = `${x}:${y}`;
+                        if (occupied.has(key)) {
+                            issues.push({
+                                path: `page.canvas.frames.${frame.id}`,
+                                severity: 'error',
+                                message: tr('框「{id}」和其他框重疊', { id: frame.id }),
+                            });
+                        }
+                        occupied.add(key);
+                    }
+                }
+            }
+            const assigned = new Set();
+            for (const frame of canvas.frames || []) {
+                for (const id of frame.widget_ids || []) assigned.add(id);
+            }
+            for (const widget of this.doc.page.widgets || []) {
+                if (widget && widget.id && !assigned.has(widget.id)) {
+                    issues.push({
+                        path: `page.widgets.${widget.id}`,
+                        severity: 'warning',
+                        message: tr('元件「{id}」還沒有放進任何框，儲存後不會顯示', { id: widget.id }),
                     });
                 }
             }

@@ -5,6 +5,8 @@
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/formio.full.min.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.css') }}">
+<link rel="stylesheet" href="{{ app_prefix }}/static/vendor/gridstack/gridstack.min.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/studio.css">
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/ir-designer.css">
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/workspace.css">
 {% endblock %}
@@ -333,10 +335,12 @@
 {% block scripts %}
 <script>window.__PAGE_CAPS = {{ page_caps | default({}) | tojson }};</script>
 <script src="{{ url_for('static', filename='vendor/formio.full.min.js') }}"></script>
+<script src="{{ app_prefix }}/static/vendor/gridstack/gridstack-all.js"></script>
 <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-model.js"></script>
 <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.js"></script>
 <script src="{{ app_prefix }}/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
 <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-drag.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/grid-layout-editor.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/ir-designer.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace-org.js"></script>

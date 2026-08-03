@@ -70,10 +70,13 @@
 
         <aside class="ird-panel ird-props">
             <h2>{{ _('屬性') }}</h2>
-            <template x-if="engine === 'grid' && selectedZoneId && selectedZoneMeta()">
+            <template x-if="engine !== 'flow' && selectedZoneId && selectedZoneMeta()">
                 <div class="ird-prop-body">
                     <div class="ird-section">
                         <div class="ird-subtitle">{{ _('區塊') }} <span x-text="selectedZoneId"></span></div>
+                        <template x-if="engine === 'free'">
+                            <button type="button" class="ird-btn" @click="deleteFreeFrame(selectedZoneId)">{{ _('刪除框') }}</button>
+                        </template>
                         <div class="ird-field">
                             <label>{{ _('溢出處理') }}</label>
                             <select :value="selectedZoneMeta().overflow" @change="setSelectedZoneOverflow($event.target.value)">
@@ -112,10 +115,10 @@
                     </div>
                 </div>
             </template>
-            <template x-if="!(engine === 'grid' && selectedZoneId && selectedZoneMeta()) && !selectedWidget">
+            <template x-if="!(engine !== 'flow' && selectedZoneId && selectedZoneMeta()) && !selectedWidget">
                 <div class="ird-empty">{{ _('請選擇元件') }}</div>
             </template>
-            <template x-if="!(engine === 'grid' && selectedZoneId && selectedZoneMeta()) && selectedWidget">
+            <template x-if="!(engine !== 'flow' && selectedZoneId && selectedZoneMeta()) && selectedWidget">
                 <div class="ird-prop-body">
                     <div class="ird-field">
                         <label>ID</label>

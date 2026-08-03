@@ -6,7 +6,6 @@
                 <option :value="item.code" :selected="item.code === engine" x-text="item.name"></option>
             </template>
         </select>
-        <p class="ird-hint" x-show="engine === 'free'">{{ _('自由版面尚未支援，請用矩陣或流式') }}</p>
     </div>
 
     <template x-if="engine === 'grid'">
@@ -18,6 +17,23 @@
             <div class="ird-field">
                 <label>{{ _('區塊間距') }}</label>
                 <input type="number" min="0" max="64" x-model.number="doc.page.canvas.gap" @input="markDirty()">
+            </div>
+        </div>
+    </template>
+
+    <template x-if="engine === 'free'">
+        <div class="ird-layout-free-fields">
+            <div class="ird-field">
+                <label>{{ _('畫布最小寬度') }}</label>
+                <input type="number" min="320" max="4096" x-model.number="doc.page.canvas.min_width" @input="updateFreeCanvasOptions()">
+            </div>
+            <div class="ird-field">
+                <label>{{ _('列高單位') }}</label>
+                <input type="number" min="20" max="200" x-model.number="doc.page.canvas.row_unit" @input="updateFreeCanvasOptions()">
+            </div>
+            <div class="ird-field">
+                <label>{{ _('區塊間距') }}</label>
+                <input type="number" min="0" max="64" x-model.number="doc.page.canvas.gap" @input="updateFreeCanvasOptions()">
             </div>
         </div>
     </template>
@@ -41,11 +57,31 @@
     </div>
 </template>
 
-<template x-if="engine !== 'grid'">
+<template x-if="engine === 'free'">
+    <div class="ird-free-designer">
+        <div class="ird-free-toolbar">
+            <button type="button" class="ird-btn" @click="addFreeFrame()">{{ _('新增框') }}</button>
+        </div>
+        <div class="ird-free-scroll">
+            <div id="ird-free-gridstack" class="grid-stack ird-free-gridstack"></div>
+        </div>
+        <div class="ird-unplaced">
+            <div class="ird-subtitle">{{ _('未放置元件') }}</div>
+            <template x-if="unplacedTopLevelWidgets().length === 0">
+                <div class="ird-empty">{{ _('所有頂層元件都已放入區塊') }}</div>
+            </template>
+            <template x-for="widget in unplacedTopLevelWidgets()" :key="'unplaced-free-' + widget.id">
+                <button type="button" class="ird-unplaced-item" @click="selectWidget(widget.id)">
+                    <span class="ird-node-type" x-text="widgetTypeLabel(widget)"></span>
+                    <span class="ird-node-id" x-text="widget.id"></span>
+                </button>
+            </template>
+        </div>
+    </div>
+</template>
+
+<template x-if="engine === 'flow'">
     <div>
-        <template x-if="engine === 'free'">
-            <div class="ird-empty">{{ _('自由版面尚未支援，請用矩陣或流式') }}</div>
-        </template>
         <template x-if="treeRows.length === 0">
             <div class="ird-empty">{{ _('尚無元件') }}</div>
         </template>
