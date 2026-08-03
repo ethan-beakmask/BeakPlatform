@@ -736,7 +736,13 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   （2026-08-03 commit `d61b79fb` 改走 `get_owner_sub_system_codes()` 修正）。
   **同一個坑犯過第二次**：`ir_designer_preview()` 帶 `?sub=` 時也只查
   `dc_sub_system_pages`，導致**每個子系統的 welcome 頁 portal 預覽必然 404**
-  （commit `93c648fa` 修）。凡是要判斷「這頁屬不屬於這個子系統」，
+  （commit `93c648fa` 修）。
+  **第三次、而且是在公開路由上**：`portal_public.py` 三處掛載判定
+  （`portal_page` / `portal_widget_rows` / `_resolve_portal_widget_common`）
+  同樣只查 `dc_sub_system_pages`，導致**每個子系統的 welcome 頁在正式 portal 上
+  必定 404**，即使已 published。現收斂成單一 `_portal_page_mounted()`：雙路徑 OR，
+  有掛載記錄但全部停用一律拒絕，走 site map 節點時可見性交給 `check_page_access`。
+  凡是要判斷「這頁屬不屬於這個子系統」，
   一律用 `get_owner_sub_system_codes()`，不要自己查單一張表。
   2026-07-31 清孤兒時只看 site map，把這兩個 published 驗收頁誤刪，
   其中前者是 `test_e2e_portal_cancel.py` 的依賴，**刪掉會讓 E2E 靜默 skip 而不是報錯**。

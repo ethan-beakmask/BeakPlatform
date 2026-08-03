@@ -263,7 +263,7 @@ def _resolve_portal_widget_write(path_id, page_sc, widget_id, action):
 def _resolve_portal_widget_common(path_id, page_sc, widget_id, action='read'):
     """Run common portal admission checks and resolve a Page IR widget."""
     from app.security.resource_gateway import ResourceGateway
-    from ..models import DcPageLayout, DcSubSystemPage
+    from ..models import DcPageLayout
     from ..services.portal_auth_service import (
         create_guest_session,
         get_current_portal_user,
@@ -296,13 +296,7 @@ def _resolve_portal_widget_common(path_id, page_sc, widget_id, action='read'):
         _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'page_not_found')
         abort(404)
 
-    mount = DcSubSystemPage.query.filter_by(
-        sub_system_secure_code=ss.secure_code,
-        page_layout_secure_code=page_sc,
-        is_deleted=False,
-        is_active=True,
-    ).first()
-    if not mount or not _portal_role_allowed(mount.visible_roles, portal_user):
+    if not _portal_page_mounted(ss.secure_code, page_sc, portal_user):
         _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'mount_denied')
         abort(404)
 
@@ -383,7 +377,7 @@ def portal_page(path_id, page_sc):
     from app.pageir import PageIrRenderError, render_page_ir_full
     from app.pageir.context import clear_render_context, set_render_context
     from app.security.resource_gateway import ResourceGateway
-    from ..models import DcPageLayout, DcSubSystemPage
+    from ..models import DcPageLayout
     from ..services.portal_auth_service import (
         create_guest_session,
         get_current_portal_user,
@@ -416,13 +410,7 @@ def portal_page(path_id, page_sc):
     ):
         abort(404)
 
-    mount = DcSubSystemPage.query.filter_by(
-        sub_system_secure_code=ss.secure_code,
-        page_layout_secure_code=page_sc,
-        is_deleted=False,
-        is_active=True,
-    ).first()
-    if not mount or not _portal_role_allowed(mount.visible_roles, portal_user):
+    if not _portal_page_mounted(ss.secure_code, page_sc, portal_user):
         abort(404)
 
     allowed, reason = portal_access_service.check_page_access(
@@ -481,7 +469,7 @@ def portal_widget_rows(path_id, page_sc, widget_id):
     from app.pageir.context import clear_render_context, set_render_context
     from app.pageir.registry import get_resource
     from app.security.resource_gateway import ResourceGateway
-    from ..models import DcPageLayout, DcSubSystemPage
+    from ..models import DcPageLayout
     from ..services.sqlite_crud_service import PortalFilterNotSupported
     from ..services.portal_auth_service import (
         create_guest_session,
@@ -514,13 +502,7 @@ def portal_widget_rows(path_id, page_sc, widget_id):
     ):
         abort(404)
 
-    mount = DcSubSystemPage.query.filter_by(
-        sub_system_secure_code=ss.secure_code,
-        page_layout_secure_code=page_sc,
-        is_deleted=False,
-        is_active=True,
-    ).first()
-    if not mount or not _portal_role_allowed(mount.visible_roles, portal_user):
+    if not _portal_page_mounted(ss.secure_code, page_sc, portal_user):
         abort(404)
 
     allowed, reason = portal_access_service.check_page_access(
@@ -1334,6 +1316,45 @@ def portal_widget_delete_row(path_id, page_sc, widget_id, row_id):
     if not ok:
         return jsonify({'success': False, 'error': _portal_write_error(error)}), 400
     return jsonify({'success': True})
+
+
+def _portal_page_mounted(sub_system_sc: str, page_sc: str, portal_user: dict) -> bool:
+    """頁面是否掛在此子系統下、且對此身分開放。
+
+    掛載採**雙路徑 OR**（同 page_ownership_service 的可達性判定）：
+    `dc_sub_system_pages` 掛載，或 `dc_site_map_nodes` 節點指向。
+    每個子系統自動附贈的 welcome 頁**只有後者**，只查前者的話
+    welcome 頁在公開 portal 上必定 404（2026-08-03 修）。
+
+    fail-closed 規則：
+    - 有掛載記錄但全部停用 → 拒絕（明確關閉，不因另一條路而放行）
+    - 走 site map 節點時沒有 visible_roles 可判，可見性交給後續的
+      `check_page_access`（節點 access_matrix），本函式只回答「掛沒掛」
+    """
+    from ..models import DcSubSystemPage
+    from ..models.site_map_node import DcSiteMapNode
+
+    mounts = DcSubSystemPage.query.filter_by(
+        sub_system_secure_code=sub_system_sc,
+        page_layout_secure_code=page_sc,
+        is_deleted=False,
+    ).all()
+    if mounts:
+        active_mounts = [mount for mount in mounts if mount.is_active]
+        if not active_mounts:
+            return False
+        return any(
+            _portal_role_allowed(mount.visible_roles, portal_user)
+            for mount in active_mounts
+        )
+
+    node = DcSiteMapNode.query.filter_by(
+        sub_system_secure_code=sub_system_sc,
+        page_layout_secure_code=page_sc,
+        is_deleted=False,
+        is_active=True,
+    ).first()
+    return node is not None
 
 
 def _portal_role_allowed(visible_roles, portal_user: dict) -> bool:
