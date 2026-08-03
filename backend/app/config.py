@@ -16,6 +16,18 @@ class BaseConfig:
     if not SECRET_KEY:
         raise ValueError("SECRET_KEY environment variable is required")
 
+    # NET-01: 可信前置代理白名單（逗號分隔 IP）
+    # 只有直連來源落在此清單時，才採信 CF-Connecting-IP 這類由代理注入的 header。
+    # 本平台的 Cloudflare 路徑為：
+    #   訪客 -> Cloudflare edge -> cloudflared -> nginx 192.168.0.20:8080 -> nginx :7000
+    # 故 ProxyFix 還原出的 remote_addr 對 tunnel 流量恆為 192.168.0.20，
+    # 真實訪客 IP 只能從 CF-Connecting-IP 取得。清單外的來源一律以 remote_addr 為準，
+    # 避免直連者自帶 header 偽造來源 IP。
+    TRUSTED_PROXY_IPS = tuple(
+        ip.strip() for ip in os.getenv('TRUSTED_PROXY_IPS', '192.168.0.20').split(',')
+        if ip.strip()
+    )
+
     # Database
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False

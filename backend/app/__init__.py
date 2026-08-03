@@ -141,6 +141,18 @@ def create_app(config_name: str = None) -> Flask:
 
         app.wsgi_app = DispatcherMiddleware(_root_fallback, {app_prefix: app.wsgi_app})
 
+    # NET-01: 還原反向代理後的真實來源 IP
+    # 平台一律部署在 nginx 之後（app 只綁 127.0.0.1），未套用時 request.remote_addr
+    # 恆為 127.0.0.1，會讓所有以 IP 為基礎的機制靜默失效：
+    #   - rate_limiter 的未認證限流全部共用同一個 bucket
+    #   - api_key_service.check_source_ip() 的來源 IP 限制形同虛設
+    #   - dev.internal_network_only 的內網判定永遠通過
+    # nginx 用 $proxy_add_x_forwarded_for（會把實際來源附加在鏈尾），
+    # 故 x_for=1 取最右一筆，用戶端自帶的 XFF 前段無法偽造成最終結果。
+    # 必須是最外層 middleware（先於 DispatcherMiddleware 改寫 environ）。
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=0, x_prefix=0)
+
     return app
 
 

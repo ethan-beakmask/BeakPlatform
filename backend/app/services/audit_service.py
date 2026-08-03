@@ -8,6 +8,7 @@ from typing import Optional
 from flask import request
 from flask_login import current_user
 
+from ..security.client_ip import get_client_ip
 from ..models.audit_log import AuditLog
 from ..models.system_setting import SystemSetting
 from .. import db
@@ -16,14 +17,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_real_ip() -> Optional[str]:
-    """取得真實用戶 IP (Cloudflare > X-Forwarded-For > remote_addr)"""
-    if not request:
-        return None
-    ip = request.headers.get('CF-Connecting-IP',
-         request.headers.get('X-Forwarded-For', request.remote_addr))
-    if ip and ',' in ip:
-        ip = ip.split(',')[0].strip()
-    return ip
+    """取得真實用戶 IP。
+
+    NET-01：實作已收斂到 security/client_ip.py。舊版直接讀 X-Forwarded-For
+    的第一段，任何直連者自帶該 header 即可偽造稽核日誌裡的來源 IP。
+    """
+    return get_client_ip()
 
 # 稽核等級
 AUDIT_LEVEL_MINIMAL = 'MINIMAL'    # 僅登入/登出 + 失敗嘗試

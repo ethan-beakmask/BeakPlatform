@@ -12,6 +12,8 @@ from logging.handlers import RotatingFileHandler
 from datetime import datetime
 from flask import Flask, request
 
+from .client_ip import get_client_ip
+
 
 # 根據專案路徑產生唯一後綴，與 config.py session 目錄同一策略
 # __file__ 在 backend/app/security/，往上 3 層到 backend/
@@ -47,10 +49,8 @@ def register_access_logger(app: Flask) -> None:
         if request.path.startswith(('/static/', '/favicon.ico')):
             return response
 
-        ip = request.headers.get('CF-Connecting-IP',
-             request.headers.get('X-Forwarded-For', request.remote_addr))
-        if ip and ',' in ip:
-            ip = ip.split(',')[0].strip()
+        # NET-01：來源 IP 一律走 client_ip.get_client_ip()，不自行讀 header
+        ip = get_client_ip() or '-'
 
         country = request.headers.get('CF-IPCountry', '-')
         user_agent = request.headers.get('User-Agent', '-')

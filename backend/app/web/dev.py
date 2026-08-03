@@ -8,6 +8,7 @@ BeakMask Development Tools
 功能：
 - 快速登入（免密碼切換帳號）
 """
+import ipaddress
 import logging
 from functools import wraps
 from flask import Blueprint, render_template, request, abort, jsonify, redirect, url_for
@@ -17,6 +18,7 @@ from sqlalchemy import text
 
 from .. import db, csrf
 from ..models import User, Organization
+from ..security.client_ip import get_client_ip
 from ..security.decorators import public_route
 
 logger = logging.getLogger(__name__)
@@ -25,24 +27,40 @@ logger = logging.getLogger(__name__)
 dev_bp = Blueprint('dev', __name__)
 
 
+_INTERNAL_NETWORKS = tuple(ipaddress.ip_network(cidr) for cidr in (
+    '10.0.0.0/8',
+    '172.16.0.0/12',
+    '192.168.0.0/16',
+    '127.0.0.0/8',
+    '::1/128',
+    'fc00::/7',
+))
+
+
 def internal_network_only(f):
-    """限制只有內網 IP 可以存取"""
+    """限制只有內網 IP 可以存取。
+
+    這是縱深防禦的最內層，不是唯一防線 -- 第一線是 iptables 的來源白名單，
+    第二線是 nginx（LAN vhost 只綁 192.168.0.16，公開 tunnel vhost 對
+    ^/beakplatform/dev(/|$) 回 444）。
+
+    判定用網段包含關係而非字串前綴：前綴比對會誤放 127.0.0.100（'127.0.0.1' 前綴）
+    與 ::1234:: （'::1' 前綴）。
+
+    來源 IP 走 NET-01 的 get_client_ip()，不直接讀 remote_addr -- 經 Cloudflare
+    tunnel 進來的流量其 remote_addr 恆為前置代理 192.168.0.20（內網位址），
+    直接用 remote_addr 會讓全部外網流量被判定為內網。
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        client_ip = request.remote_addr
+        client_ip = get_client_ip()
 
-        allowed_prefixes = (
-            '192.168.',
-            '10.',
-            '172.16.', '172.17.', '172.18.', '172.19.',
-            '172.20.', '172.21.', '172.22.', '172.23.',
-            '172.24.', '172.25.', '172.26.', '172.27.',
-            '172.28.', '172.29.', '172.30.', '172.31.',
-            '127.0.0.1',
-            '::1',
-        )
+        try:
+            addr = ipaddress.ip_address(client_ip)
+        except (TypeError, ValueError):
+            abort(403, description='此功能僅限內網存取')
 
-        if not client_ip or not client_ip.startswith(allowed_prefixes):
+        if not any(addr in net for net in _INTERNAL_NETWORKS):
             abort(403, description='此功能僅限內網存取')
 
         return f(*args, **kwargs)
