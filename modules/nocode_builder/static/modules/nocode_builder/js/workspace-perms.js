@@ -184,6 +184,12 @@ function wksPermsManager(subSystemSc) {
             return __('權限碼制');
         },
 
+        permLabel(perm) {
+            const code = String((perm && perm.code) || '').trim();
+            const description = String((perm && perm.description) || '').trim();
+            return description ? `${code} - ${description}` : code;
+        },
+
         pageHasPermission(row, code) {
             return (row.perm_codes || []).includes(code);
         },

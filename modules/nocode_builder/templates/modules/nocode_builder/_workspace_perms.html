@@ -81,7 +81,7 @@
                             <th>{{ _('狀態') }}</th>
                             <th>{{ _('網頁') }}</th>
                             <template x-for="perm in permissions" :key="'page:' + perm.code">
-                                <th><code x-text="perm.code"></code></th>
+                                <th><code x-text="permLabel(perm)"></code></th>
                             </template>
                             <th>{{ _('match mode') }}</th>
                         </tr>
@@ -145,7 +145,7 @@
                             <th>{{ _('類型') }}</th>
                             <th>{{ _('名稱') }}</th>
                             <template x-for="perm in permissions" :key="'rolelevel:' + perm.code">
-                                <th><code x-text="perm.code"></code></th>
+                                <th><code x-text="permLabel(perm)"></code></th>
                             </template>
                             <th>{{ _('動作') }}</th>
                         </tr>

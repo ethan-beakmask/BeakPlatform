@@ -103,9 +103,12 @@ def ir_designer_preview(secure_code):
     from app.pageir import PageIrRenderError, render_page_ir_full
     from app.pageir.context import clear_render_context, set_render_context
     from app.security.resource_gateway import ResourceGateway
-    from ..models import DcPageLayout, DcSubSystem, DcSubSystemPage
+    from ..models import DcPageLayout, DcSubSystem
     from ..services import portal_access_service, portal_auth_service
-    from ..services.page_ownership_service import is_page_reachable
+    from ..services.page_ownership_service import (
+        get_owner_sub_system_codes,
+        is_page_reachable,
+    )
 
     page = ResourceGateway.get(
         DcPageLayout,
@@ -135,12 +138,7 @@ def ir_designer_preview(secure_code):
         if not ss or ss.is_deleted:
             abort(404)
 
-        mounted_page = DcSubSystemPage.query.filter_by(
-            sub_system_secure_code=ss.secure_code,
-            page_layout_secure_code=secure_code,
-            is_deleted=False,
-        ).first()
-        if not mounted_page:
+        if ss.secure_code not in get_owner_sub_system_codes(secure_code):
             abort(404)
 
         group_code = (request.args.get('group') or '').strip()
@@ -271,6 +269,35 @@ def ir_designer_preview(secure_code):
         has_form=rendered['has_form'],
         preview_banner=None,
     )
+
+
+@web_bp.route('/sub-systems/<secure_code>/preview')
+@nocode_short_bp.route('/sub-systems/<secure_code>/preview')
+@module_access_required('nocode_builder')
+def sub_system_preview(secure_code):
+    """子系統預覽：導向 site map 根頁面（welcome）的 portal 預覽。"""
+    from app.security.resource_gateway import ResourceGateway
+    from ..models import DcSubSystem
+    from ..services.site_map_service import SiteMapService
+
+    ss = ResourceGateway.get(
+        DcSubSystem,
+        secure_code,
+        raise_on_not_found=False,
+        check_permission=False,
+    )
+    if not ss or ss.is_deleted or not ss.is_active:
+        abort(404)
+
+    root_node = SiteMapService.get_root_node(ss.secure_code, ss.org_secure_code)
+    if not root_node or not root_node.page_layout_secure_code:
+        abort(404)
+
+    return redirect(url_for(
+        'nocode_builder_web.ir_designer_preview',
+        secure_code=root_node.page_layout_secure_code,
+        sub=ss.secure_code,
+    ))
 
 
 @web_bp.route('/sub-systems/<secure_code>/portal')
