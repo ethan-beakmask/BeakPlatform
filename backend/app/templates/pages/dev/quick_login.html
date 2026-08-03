@@ -198,6 +198,10 @@
                 此頁面僅供開發測試使用，可快速切換不同帳號而無需輸入密碼。
                 正式環境部署前必須移除此功能。
             </p>
+            <p style="font-size: 13px; margin-top: 8px;">
+                <i class="fas fa-door-open"></i>
+                <a href="{{ url_for('dev.portal_quick_login_page') }}">{{ _('portal 帳號快速切換（NoCode 公開子系統）') }}</a>
+            </p>
         </div>
     </div>
 

@@ -8,14 +8,18 @@ BeakMask Development Tools
 功能：
 - 快速登入（免密碼切換帳號）
 """
+import logging
 from functools import wraps
 from flask import Blueprint, render_template, request, abort, jsonify, redirect, url_for
+from flask_babel import gettext as _
 from flask_login import login_user, logout_user, current_user
 from sqlalchemy import text
 
 from .. import db, csrf
 from ..models import User, Organization
 from ..security.decorators import public_route
+
+logger = logging.getLogger(__name__)
 
 
 dev_bp = Blueprint('dev', __name__)
@@ -53,6 +57,113 @@ def internal_network_only(f):
 def quick_login_page():
     """快速登入頁面"""
     return render_template('pages/dev/quick_login.html')
+
+
+def _is_safe_relative_path(value):
+    """只允許本站相對路徑，避免 open redirect。"""
+    return bool(value and value.startswith('/') and not value.startswith('//'))
+
+
+def _portal_sub_systems():
+    from modules.nocode_builder.models.sub_system import DcSubSystem
+    from modules.nocode_builder.services.data_source_manager import DataSourceManager
+    from modules.nocode_builder.services.portal_path_service import get_by_sub_system
+
+    mgr = DataSourceManager()
+    sub_systems = DcSubSystem.query.filter(
+        DcSubSystem.is_deleted == False,
+        DcSubSystem.is_active == True,
+    ).order_by(DcSubSystem.name).all()
+
+    data = []
+    for ss in sub_systems:
+        if not mgr.has_sqlite(ss.secure_code):
+            continue
+        portal_path = get_by_sub_system(ss.secure_code)
+        data.append({
+            'secure_code': ss.secure_code,
+            'name': ss.name,
+            'code': ss.code or '',
+            'portal_path_id': portal_path.code if portal_path else '',
+        })
+    return data
+
+
+def _get_portal_sub_system(sub_system_sc):
+    return next(
+        (item for item in _portal_sub_systems() if item['secure_code'] == sub_system_sc),
+        None,
+    )
+
+
+def _portal_admin_roles(sess, user_id):
+    rows = sess.execute(
+        text(
+            'SELECT r.code '
+            'FROM portal_user_roles AS ur '
+            'JOIN portal_admin_roles AS r ON r.id = ur.role_id '
+            'WHERE ur.user_id = :user_id '
+            'AND r.enabled = 1 '
+            "AND (ur.valid_from IS NULL OR ur.valid_from <= datetime('now')) "
+            "AND (ur.valid_until IS NULL OR ur.valid_until > datetime('now')) "
+            'ORDER BY r.display_order ASC, r.code ASC'
+        ),
+        {'user_id': user_id},
+    ).mappings().all()
+    return [row['code'] for row in rows]
+
+
+def _portal_users(sub_system_sc):
+    from modules.nocode_builder.services.data_source_manager import DataSourceManager, ensure_portal_schema
+    from modules.nocode_builder.services.portal_auth_service import _level_rank
+
+    ensure_portal_schema(sub_system_sc)
+    mgr = DataSourceManager()
+    with mgr.get_session(sub_system_sc, 'portal') as sess:
+        rows = sess.execute(
+            text(
+                'SELECT id, secure_code, username, display_name, email, role_code, '
+                'group_code, level_code, is_active, created_at '
+                'FROM portal_users ORDER BY username ASC'
+            )
+        ).mappings().all()
+        users = []
+        for row in rows:
+            level_code, level_rank = _level_rank(sess, row['level_code'])
+            admin_roles = _portal_admin_roles(sess, row['id'])
+            users.append({
+                'id': row['secure_code'],
+                'secure_code': row['secure_code'],
+                'username': row['username'],
+                'display_name': row['display_name'] or row['username'],
+                'email': row['email'] or '',
+                'role_code': row['role_code'],
+                'group_code': row['group_code'],
+                'level_code': level_code,
+                'level_rank': level_rank,
+                'roles': [row['role_code']],
+                'admin_roles': admin_roles,
+                'is_active': bool(row['is_active']),
+                'created_at': row['created_at'],
+            })
+        return users
+
+
+@dev_bp.route('/portal-quick-login')
+@public_route  # 開發工具，內網限制
+@internal_network_only
+def portal_quick_login_page():
+    """Portal 帳號快速切換頁面"""
+    sub_systems = _portal_sub_systems()
+    requested_sub = (request.args.get('sub') or '').strip()
+    selected_sub = requested_sub if any(ss['secure_code'] == requested_sub for ss in sub_systems) else ''
+    safe_next = request.args.get('next') if _is_safe_relative_path(request.args.get('next')) else ''
+    return render_template(
+        'pages/dev/portal_quick_login.html',
+        sub_systems=sub_systems,
+        selected_sub_system_sc=selected_sub,
+        safe_next=safe_next,
+    )
 
 
 # ==================== API 端點 ====================
@@ -125,6 +236,36 @@ def get_users(org_secure_code):
         }), 500
 
 
+@dev_bp.route('/portal-quick-login/users/<sub_system_sc>')
+@public_route  # 開發工具，內網限制
+@internal_network_only
+def get_portal_quick_login_users(sub_system_sc):
+    """取得指定公開子系統的 portal 帳號列表"""
+    try:
+        sub_system = _get_portal_sub_system(sub_system_sc)
+        if not sub_system:
+            return jsonify({
+                'success': False,
+                'message': _('找不到子系統，或此子系統沒有 portal.db')
+            }), 400
+
+        return jsonify({
+            'success': True,
+            'data': _portal_users(sub_system_sc),
+            'sub_system': sub_system,
+        })
+    except FileNotFoundError:
+        return jsonify({
+            'success': False,
+            'message': _('此子系統尚未初始化 portal.db')
+        }), 400
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
 @dev_bp.route('/quick-login', methods=['POST'])
 @public_route  # 開發工具，內網限制
 @csrf.exempt  # 快速登入不需要 CSRF（開發工具，僅內網存取）
@@ -175,6 +316,112 @@ def quick_login():
                     'user_type': user.user_type
                 }
             }
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
+@dev_bp.route('/portal-quick-login', methods=['POST'])
+@public_route  # 開發工具，內網限制
+@csrf.exempt  # 快速登入不需要 CSRF（開發工具，僅內網存取）
+@internal_network_only
+def portal_quick_login():
+    """執行 portal 帳號快速切換"""
+    try:
+        data = request.get_json() or {}
+        sub_system_sc = (data.get('sub_system_sc') or '').strip()
+        user_secure_code = (data.get('user_secure_code') or '').strip()
+
+        if not sub_system_sc:
+            return jsonify({
+                'success': False,
+                'message': _('請選擇子系統')
+            }), 400
+        if not user_secure_code:
+            return jsonify({
+                'success': False,
+                'message': _('請選擇帳號')
+            }), 400
+
+        sub_system = _get_portal_sub_system(sub_system_sc)
+        if not sub_system:
+            return jsonify({
+                'success': False,
+                'message': _('找不到子系統，或此子系統沒有 portal.db')
+            }), 400
+
+        # 免密碼切換的邏輯刻意留在 dev.py（本檔已在 push_github.sh 排除清單，
+        # 正式部署會整個移除）。portal_auth_service 只提供「組裝／寫入 session」
+        # 這兩個不含身分驗證語意的介面，避免正式服務層留下可免密碼登入的函式。
+        from modules.nocode_builder.services.data_source_manager import (
+            DataSourceManager, ensure_portal_schema,
+        )
+        from modules.nocode_builder.services import portal_auth_service
+
+        try:
+            ensure_portal_schema(sub_system_sc)
+            with DataSourceManager().get_session(sub_system_sc, 'portal') as sess:
+                row = sess.execute(
+                    text(
+                        'SELECT id, secure_code, username, display_name, '
+                        'password_hash, role_code, group_code, level_code, is_active '
+                        'FROM portal_users WHERE secure_code = :sc'
+                    ),
+                    {'sc': user_secure_code},
+                ).mappings().first()
+                if not row:
+                    return jsonify({
+                        'success': False,
+                        'message': _('帳號不存在')
+                    }), 400
+                session_data = portal_auth_service.build_session_data(sub_system_sc, sess, row)
+        except FileNotFoundError:
+            return jsonify({
+                'success': False,
+                'message': _('系統尚未初始化')
+            }), 400
+
+        portal_auth_service.store_session(sub_system_sc, session_data)
+        logger.info(
+            'Portal dev quick login: user=%s sub_system=%s',
+            session_data.get('user_id'), sub_system_sc,
+        )
+
+        return jsonify({
+            'success': True,
+            'data': session_data
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
+@dev_bp.route('/portal-quick-login/logout', methods=['POST'])
+@public_route  # 開發工具，內網限制
+@csrf.exempt  # 登出不需要 CSRF（開發工具，僅內網存取）
+@internal_network_only
+def portal_quick_login_logout():
+    """清除 portal session"""
+    from flask import session as flask_session
+    from modules.nocode_builder.services.portal_auth_service import logout as portal_logout
+
+    try:
+        data = request.get_json(silent=True) or {}
+        sub_system_sc = (data.get('sub_system_sc') or '').strip()
+        if sub_system_sc:
+            portal_logout(sub_system_sc)
+        else:
+            for existing_sub in list((flask_session.get('portal_sessions') or {}).keys()):
+                portal_logout(existing_sub)
+
+        return jsonify({
+            'success': True,
+            'message': _('Portal session 已清除')
         })
     except Exception as e:
         return jsonify({

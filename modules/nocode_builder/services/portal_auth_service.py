@@ -66,6 +66,35 @@ def _level_rank(sess, level_code: str | None) -> tuple[str, int]:
     return level_code, int(row[0])
 
 
+def _build_session_data(sub_system_sc: str, sess, user_row) -> dict:
+    level_code, level_rank = _level_rank(sess, user_row['level_code'])
+    return {
+        'sub_system_sc': sub_system_sc,
+        'user_id': user_row['id'],
+        'user_type': 'PUBLIC_USER',
+        'group_code': user_row['group_code'],
+        'level_code': level_code,
+        'level_rank': level_rank,
+        'roles': [user_row['role_code']],
+        'display_name': user_row['display_name'] or user_row['username'],
+    }
+
+
+def build_session_data(sub_system_sc: str, sess, user_row) -> dict:
+    """組裝 portal session data。
+
+    **只做組裝，不做任何身分驗證**（密碼、帳號狀態一律由呼叫端負責）。
+    開放給開發工具重用，避免各處自拼 session dict 造成
+    「session 身分與 DB 不一致」的假登入。
+    """
+    return _build_session_data(sub_system_sc, sess, user_row)
+
+
+def store_session(sub_system_sc: str, data: dict) -> dict:
+    """寫入 portal session。呼叫端必須自行確保 data 來自 build_session_data()。"""
+    return _store_session(sub_system_sc, data)
+
+
 def _valid_code(code: str) -> bool:
     return bool(_CODE_RE.fullmatch((code or '').strip()))
 
@@ -154,7 +183,7 @@ def login(sub_system_sc: str, username: str, password: str) -> tuple[dict | None
                 ),
                 {'u': username},
             ).mappings().first()
-            level_code, level_rank = _level_rank(sess, row['level_code'] if row else None)
+            data = _build_session_data(sub_system_sc, sess, row) if row else None
     except FileNotFoundError:
         logger.error('Portal DB not found for %s', sub_system_sc)
         return None, '系統尚未初始化'
@@ -168,16 +197,6 @@ def login(sub_system_sc: str, username: str, password: str) -> tuple[dict | None
     if not check_password_hash(row['password_hash'], password):
         return None, '帳號或密碼錯誤'
 
-    data = {
-        'sub_system_sc': sub_system_sc,
-        'user_id': row['id'],
-        'user_type': 'PUBLIC_USER',
-        'group_code': row['group_code'],
-        'level_code': level_code,
-        'level_rank': level_rank,
-        'roles': [row['role_code']],
-        'display_name': row['display_name'] or row['username'],
-    }
     _store_session(sub_system_sc, data)
     logger.info('Portal login: user=%s sub_system=%s', username, sub_system_sc)
     return data, ''
