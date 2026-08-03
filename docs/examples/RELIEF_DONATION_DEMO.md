@@ -171,17 +171,28 @@ table  bulletin   binding -> bulletin_board(all)
 
 ## 7. 這個實例暴露出的平台缺口
 
-以下都不是本實例的設定錯誤，是 NoCode 目前的能力邊界，記錄供後續評估：
+以下都不是本實例的設定錯誤，是 NoCode 目前的能力邊界。
+2026-08-03 已由用戶逐條裁決並開單，決策脈絡見知識庫 atom #4993。
 
-| 缺口 | 影響 | 目前的替代做法 |
-|---|---|---|
-| 無聚合視圖（GROUP BY / SUM） | 任何「統計、彙總、排行」都做不出來 | 彙總表 + SQLite trigger（要寫 SQL） |
-| CRUD View 綁不上 SQLite VIEW | 同上，連唯讀彙總都不能用 view 表達 | 同上 |
-| portal 首頁不列出可用頁面 | 使用者進站後只看到「Portal 已就緒」，**走不到任何頁面** | 只能給對方頁面直達網址 |
-| Page IR v3 沒有連結／導覽 widget | 頁與頁之間無法互相跳轉 | 同上 |
-| master_detail 無「載入本人那列」 | 一人一筆的 master 需要額外一個 table + row_link 才進得去 | 本例的 `my-profile` widget |
-| `portal_settings` 無 API | 開放註冊／匿名只能直接改 SQLite | 建置腳本第 8 步 |
-| 欄位無選項清單（lookup）可綁 | 物資項目自由輸入，彙總會因錯字而分裂 | 無，只能靠說明文字 |
+| 缺口 | 影響 | 目前的替代做法 | 追蹤 |
+|---|---|---|---|
+| 無聚合視圖（GROUP BY / SUM） | 任何「統計、彙總、排行」都做不出來 | 彙總表 + SQLite trigger（要寫 SQL） | #28 |
+| CRUD View 綁不上 SQLite VIEW | 同上，連唯讀彙總都不能用 view 表達 | 同上 | #28 |
+| master_detail 無「載入本人那列」 | 一人一筆的 master 需要額外一個 table + row_link 才進得去 | 本例的 `my-profile` widget | #28 |
+| portal 首頁不列出可用頁面 | 使用者進站後只看到「Portal 已就緒」，**走不到任何頁面** | 只能給對方頁面直達網址 | #29 |
+| Page IR v3 沒有連結／導覽 widget | 頁與頁之間無法互相跳轉 | 同上 | #29 |
+| `portal_settings` 無 API | 開放註冊／匿名只能直接改 SQLite | 建置腳本第 8 步 | #30 |
+| 欄位無選項清單（lookup）可綁 | 物資項目自由輸入，彙總會因錯字而分裂 | 無，只能靠說明文字 | #31 |
 
-其中**前三項對「給外人用的公開系統」影響最大**：
+其中**導覽（#29）對「給外人用的公開系統」影響最大**：
 沒有導覽等於使用者進得來、走不動，實務上必須先解決。
+
+### 已查證的實作事實（動工前必讀）
+
+- v2 的 SITEMENU widget 仍在（`js/sitemenu-widget.js`、`SiteMapService.get_menu_tree()`），
+  但 Page IR v3 schema 沒有對應 widget
+- `get_menu_tree()` 吃的是**平台 user**、走平台 grant permission，
+  portal 世界不能直接沿用
+- v2 SITEMENU 只有子樹起點（`startNodeSc` / `startLevel`），**沒有逐頁勾選**
+- 匿名身分 `g:<token>` 在 own scope 下同樣被隔離，
+  破口不在匿名本身而在「view 被設成 `all`」或「widget 誤宣告寫入 action」
