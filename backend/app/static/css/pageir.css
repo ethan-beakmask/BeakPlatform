@@ -121,6 +121,28 @@
     left: calc(100% + var(--pir-menu-gap, 6px));
 }
 
+/* hover 橋接：父項與浮出的子選單之間隔著 gap，那段空白不屬於任何 hover 區域，
+   滑鼠一移過去就離開 :hover、子選單當場消失，使用者永遠點不到子項。
+   用透明的 ::before 把間隙補進子選單自己的 hover 範圍。 */
+.pir-menu--horizontal .pir-menu-list .pir-menu-list::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(-1 * (var(--pir-menu-gap, 6px) + var(--pir-menu-border-width, 1px)));
+    height: calc(var(--pir-menu-gap, 6px) + var(--pir-menu-border-width, 1px));
+}
+
+/* 第三層以下往右展開，橋接改補在左側 */
+.pir-menu--horizontal .pir-menu-list .pir-menu-list .pir-menu-list::before {
+    top: 0;
+    bottom: 0;
+    right: auto;
+    left: calc(-1 * (var(--pir-menu-gap, 6px) + var(--pir-menu-border-width, 1px)));
+    width: calc(var(--pir-menu-gap, 6px) + var(--pir-menu-border-width, 1px));
+    height: auto;
+}
+
 .pir-menu--horizontal.pir-menu--hover .pir-menu-item:hover > .pir-menu-list {
     display: flex;
 }
