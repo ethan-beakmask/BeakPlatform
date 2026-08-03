@@ -550,13 +550,78 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 
 ### NoCode Builder / Portal 開發備忘（2026-07-28 起）
 
-**環境事實（2026-08-03 起）：開發機上沒有任何 NoCode 子系統。**
-為了清空舊制 access_matrix 資料以便移除 `{groups, min_level}` 形式，
-8 個子系統連同 site map 節點、頁面、portal SQLite 全數刪除
-（備份 `/opt/tmp/backup/nocode-20260803-1507/`，含 pg_dump 與 portal.db tar）。
-要測 NoCode 就自己建，或跑 `scripts/examples/provision_relief_donation_demo.py`
-重建教學實例（會產生**全新的** secure_code 與 path_id，文件裡的舊值都失效）。
+**環境事實（2026-08-03 晚間更新）：開發機上目前有一個可用的 NoCode 子系統。**
+
+當日稍早為了清空舊制 access_matrix，8 個子系統連同 site map 節點、頁面、
+portal SQLite 全數刪除（備份 `/opt/tmp/backup/nocode-20260803-1507/`）。
+之後以 `scripts/examples/provision_relief_donation_demo.py --force` 重建了教學實例：
+
+| 項目 | 值 |
+|---|---|
+| 子系統（published） | `HJGEoAh6PBv5IXNHhMTu5P`（急難救助物資捐贈） |
+| portal_path_id | `HdjFFvF-` |
+| welcome 頁 | `QlqVasK5fsLFMfUpPEvvFz` |
+| 我的捐贈登記（要 `donation.manage`） | `Gqm4tuQEsBgituXVaDrCrr` |
+| 物資公佈欄（要 `bulletin.read`） | `Ogi303_5kwPZdEE2IildYG` |
+
+另有一個 `DzSQ8oTRKCnMVbuxS-431u`（`Ethan的test`，draft，用戶自建，**不要動**）。
+重建腳本會**產生全新識別碼**，跑過就要回頭更新本表。
 `tests/test_e2e_portal_cancel.py` 因依賴的驗收頁已刪而 **skip，這是預期狀態不是退步**。
+
+**portal 測試帳號**（username 是完整 e-mail，密碼一律 `relief123456`）：
+
+| username | 階級 | 管理角色 |
+|---|---|---|
+| `guest_demo@example.com` | GUEST (0) | — |
+| `member_demo@example.com` | MEMBER (10) | — |
+| `staff_demo@example.com` | STAFF (50) | — |
+| `admin_demo@example.com` | ADMIN (90) | SYSTEM_ADMIN |
+| `bulletin_mgr@example.com` | MEMBER (10) | BULLETIN_MANAGER |
+| `auditor_demo@example.com` | MEMBER (10) | AUDITOR |
+| `donor_a_pf13@example.com` / `donor_b_pf13@example.com` | MEMBER (10) | — |
+
+`bulletin_mgr` / `auditor` 的管理角色刻意留在 MEMBER 階級，
+才驗得出「管理角色是聯集、不隨階級繼承」；`donor_a` / `donor_b` **有捐贈資料**，
+可驗列級隔離（兩人互相看不到對方）。
+
+**識別碼被重建後怎麼重查**（provision 只印子系統 sc 與 path_id）：
+
+```bash
+PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -t -A -F'|' -c "
+SELECT s.secure_code, s.name, s.status, n.secure_code AS node_sc, n.name, n.node_type,
+       n.parent_secure_code, n.page_layout_secure_code
+FROM dc_sub_systems s LEFT JOIN dc_site_map_nodes n
+  ON n.sub_system_secure_code = s.secure_code AND n.is_deleted = false
+WHERE s.is_deleted = false ORDER BY s.created_at DESC, n.display_order;"
+# portal_path_id
+PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -t -A -F'|' -c \
+  "SELECT code, value_str FROM lookup_items WHERE value_str LIKE '%' ORDER BY id DESC LIMIT 20;"
+# portal 帳號
+sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<SS>/portal.db \
+  "SELECT username, group_code, level_code, is_active FROM portal_users;"
+```
+
+**portal 帳號快速切換（開發工具，2026-08-03 起）**：
+`/dev/portal-quick-login` 選子系統 + 帳號即免密碼切換，
+之後走**正式**公開路由，列級擁有權／管理角色／個人覆寫全部真實生效
+——這是 IR 設計器「預覽階級」做不到的（那是合成身分，`user_id=None`、`roles=[]`，
+只驗得了階級/群組層的准入）。curl 版：
+
+```bash
+BASE=http://192.168.0.16:7000/beakplatform; SS=HJGEoAh6PBv5IXNHhMTu5P
+USC=$(curl -s "$BASE/dev/portal-quick-login/users/$SS" | python3 -c \
+  "import sys,json;d=json.load(sys.stdin);print([x['secure_code'] for x in d['data'] if x['username']=='member_demo@example.com'][0])")
+curl -s -c q.txt -b q.txt -X POST "$BASE/dev/portal-quick-login" \
+  -H 'Content-Type: application/json' \
+  -d "{\"sub_system_sc\":\"$SS\",\"user_secure_code\":\"$USC\"}"
+curl -s -b q.txt -o /dev/null -w '%{http_code}\n' "$BASE/public/portal/HdjFFvF-/p/$PAGE_SC"
+```
+
+**免密碼登入的邏輯一律留在 `backend/app/web/dev.py`**（該檔在 `push_github.sh`
+排除清單、正式部署整個移除）。`portal_auth_service` 只提供
+`build_session_data()` / `store_session()` 兩個**不含身分驗證語意**的介面。
+**禁止**在正式服務層新增任何可免密碼登入的函式——那會被推上公開 repo，
+等於在正式程式碼裡預留後門。
 
 **架構原則（2026-08-03 用戶定案，違反者不是 bug 是架構錯誤）**：
 
@@ -669,6 +734,10 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   welcome 就是），只查 `DcSubSystemPage` 一樣會誤判。`/api/nocode-builder/pages/<sc>`
   的 `sub_system_secure_code` 就犯過這個錯，害設計器的 menu 面板選不到任何節點
   （2026-08-03 commit `d61b79fb` 改走 `get_owner_sub_system_codes()` 修正）。
+  **同一個坑犯過第二次**：`ir_designer_preview()` 帶 `?sub=` 時也只查
+  `dc_sub_system_pages`，導致**每個子系統的 welcome 頁 portal 預覽必然 404**
+  （commit `93c648fa` 修）。凡是要判斷「這頁屬不屬於這個子系統」，
+  一律用 `get_owner_sub_system_codes()`，不要自己查單一張表。
   2026-07-31 清孤兒時只看 site map，把這兩個 published 驗收頁誤刪，
   其中前者是 `test_e2e_portal_cancel.py` 的依賴，**刪掉會讓 E2E 靜默 skip 而不是報錯**。
   此判定的**唯一實作**是
