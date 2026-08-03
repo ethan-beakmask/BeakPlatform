@@ -6,6 +6,7 @@ from sqlalchemy import text
 
 from ..models.site_map_node import DcSiteMapNode
 from .data_source_manager import DataSourceManager, ensure_portal_schema
+from . import portal_permission_service
 
 logger = logging.getLogger(__name__)
 
@@ -102,30 +103,47 @@ def _evaluate_rule(sub_system_sc, rule, portal_user) -> tuple[bool, str]:
     if not isinstance(rule, dict):
         return False, 'bad_matrix'
 
-    if 'groups' not in rule:
+    has_perm = 'required_permissions' in rule
+    has_legacy = 'groups' in rule
+    if not has_perm and not has_legacy:
         return False, 'bad_matrix'
 
-    groups = rule.get('groups')
-    if groups is not None:
-        if not isinstance(groups, list) or not groups:
+    if has_perm:
+        perms = rule.get('required_permissions')
+        if (
+            not isinstance(perms, list)
+            or not perms
+            or any(not isinstance(code, str) for code in perms)
+        ):
             return False, 'bad_matrix'
-        group_code = portal_user.get('group_code')
-        if not group_code or group_code not in groups:
-            return False, 'group_denied'
+        mode = rule.get('match_mode', 'any')
+        if mode not in {'any', 'all'}:
+            return False, 'bad_matrix'
+        if not portal_permission_service.has_permissions(sub_system_sc, portal_user, perms, mode):
+            return False, 'permission_denied'
 
-    min_level = rule.get('min_level')
-    if not isinstance(min_level, str):
-        return False, 'bad_matrix'
+    if has_legacy:
+        groups = rule.get('groups')
+        if groups is not None:
+            if not isinstance(groups, list) or not groups:
+                return False, 'bad_matrix'
+            group_code = portal_user.get('group_code')
+            if not group_code or group_code not in groups:
+                return False, 'group_denied'
 
-    min_rank = _get_level_rank(sub_system_sc, min_level)
-    if min_rank is None:
-        return False, 'level_missing'
+        min_level = rule.get('min_level')
+        if not isinstance(min_level, str):
+            return False, 'bad_matrix'
 
-    user_rank = portal_user.get('level_rank')
-    if not isinstance(user_rank, int) or isinstance(user_rank, bool):
-        user_rank = 0
-    if user_rank < min_rank:
-        return False, 'level_denied'
+        min_rank = _get_level_rank(sub_system_sc, min_level)
+        if min_rank is None:
+            return False, 'level_missing'
+
+        user_rank = portal_user.get('level_rank')
+        if not isinstance(user_rank, int) or isinstance(user_rank, bool):
+            user_rank = 0
+        if user_rank < min_rank:
+            return False, 'level_denied'
 
     return True, 'ok'
 

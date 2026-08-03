@@ -597,6 +597,20 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 - **在 Page IR 頁面放 form.io 送出按鈕時必須寫 `"input": false`**，
   否則 payload 會多一個 `submit: true` 欄位，被後端欄位白名單擋成
   400 `unknown_field`
+- **portal.db schema 已升到 v3（PF-7，2026-08-03 起）**：新增六張權限碼制表
+  `portal_permissions` / `portal_admin_roles` / `portal_role_permissions` /
+  `portal_user_roles` / `portal_user_permissions` / `portal_level_permissions`。
+  升級由 `ensure_portal_schema()` 階梯式自動執行（0→2→3，冪等），
+  **改 portal.db schema 一律加在該函式，不要另寫 migration 腳本**。
+  有效權限計算的唯一實作是 `services/portal_permission_service.py`
+  （階級 rank 向下繼承、管理角色聯集不繼承、個人 deny 最優先、停用帳號回空集合、
+  匿名只吃階級權限），**禁止各處自行組 SQL 算權限**。
+  access_matrix 規則新增 `{"required_permissions": [...], "match_mode": "any"|"all"}` 形式，
+  與舊的 `{groups, min_level}` **並存**；同一 rule 兩者都寫時是 **AND**。
+  寫入端驗證有兩處，改格式要同時改：`api/site_map_api.py::_validate_access_matrix`
+  與 `backend/app/pageir/schema_v3.json` 的 `$defs.portal_access_rule`。
+  權限碼格式固定 `resource.action`（小寫 snake_case），與平台的 permission code 不共用。
+  PF-7 只做資料形狀，尚無管理 UI／API（那是 PF-8）。
 - **portal 業務表有列級擁有權**（2026-07-30 起）：表固定有系統欄位 `portal_user_ref`
   （值 `u:<portal user_id>` / `g:<guest_token>`），視圖 `DcCrudView.row_owner_scope`
   預設 **`own`**（只能存取自己建的列），要共享的表必須明確設 `all`。

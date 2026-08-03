@@ -239,6 +239,83 @@ VALUES
     ('ADMIN', '管理', 90, 90);
 """
 
+_PORTAL_SCHEMA_V3 = """
+CREATE TABLE IF NOT EXISTS portal_permissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    resource TEXT NOT NULL,
+    action TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    risk_level TEXT NOT NULL DEFAULT 'normal' CHECK (risk_level IN ('low', 'normal', 'high', 'critical')),
+    enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (resource, action)
+);
+
+CREATE TABLE IF NOT EXISTS portal_admin_roles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    is_system INTEGER NOT NULL DEFAULT 0 CHECK (is_system IN (0, 1)),
+    enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+    display_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS portal_role_permissions (
+    role_id INTEGER NOT NULL,
+    permission_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (role_id, permission_id),
+    FOREIGN KEY (role_id) REFERENCES portal_admin_roles(id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES portal_permissions(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS portal_user_roles (
+    user_id INTEGER NOT NULL,
+    role_id INTEGER NOT NULL,
+    valid_from TEXT,
+    valid_until TEXT,
+    assigned_by INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, role_id),
+    FOREIGN KEY (user_id) REFERENCES portal_users(id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES portal_admin_roles(id) ON DELETE CASCADE,
+    CHECK (valid_until IS NULL OR valid_from IS NULL OR valid_until > valid_from)
+);
+
+CREATE TABLE IF NOT EXISTS portal_user_permissions (
+    user_id INTEGER NOT NULL,
+    permission_id INTEGER NOT NULL,
+    effect TEXT NOT NULL CHECK (effect IN ('allow', 'deny')),
+    valid_from TEXT,
+    valid_until TEXT,
+    reason TEXT,
+    assigned_by INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, permission_id),
+    FOREIGN KEY (user_id) REFERENCES portal_users(id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES portal_permissions(id) ON DELETE CASCADE,
+    CHECK (valid_until IS NULL OR valid_from IS NULL OR valid_until > valid_from)
+);
+
+CREATE TABLE IF NOT EXISTS portal_level_permissions (
+    level_id INTEGER NOT NULL,
+    permission_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (level_id, permission_id),
+    FOREIGN KEY (level_id) REFERENCES portal_levels(id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES portal_permissions(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_portal_user_roles_user ON portal_user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_portal_user_roles_role ON portal_user_roles(role_id);
+CREATE INDEX IF NOT EXISTS idx_portal_role_permissions_role ON portal_role_permissions(role_id);
+CREATE INDEX IF NOT EXISTS idx_portal_user_permissions_user ON portal_user_permissions(user_id);
+CREATE INDEX IF NOT EXISTS idx_portal_level_permissions_level ON portal_level_permissions(level_id);
+"""
+
 
 def _execute_schema(conn, schema: str):
     """逐句執行 SQLite schema script。"""
@@ -277,17 +354,23 @@ def ensure_portal_schema(sub_system_sc: str):
             conn.execute(text("PRAGMA foreign_keys=ON"))
             conn.execute(text("PRAGMA busy_timeout=5000"))
             version = conn.execute(text('PRAGMA user_version')).scalar() or 0
-            if version >= 2:
+            if version >= 3:
                 conn.commit()
                 return
 
-            _execute_schema(conn, _PORTAL_SCHEMA_V2)
-            columns = _table_columns(conn, 'portal_users')
-            if 'group_code' not in columns:
-                conn.execute(text('ALTER TABLE portal_users ADD COLUMN group_code TEXT DEFAULT NULL'))
-            if 'level_code' not in columns:
-                conn.execute(text('ALTER TABLE portal_users ADD COLUMN level_code TEXT DEFAULT NULL'))
-            conn.execute(text('PRAGMA user_version = 2'))
+            if version < 2:
+                _execute_schema(conn, _PORTAL_SCHEMA_V2)
+                columns = _table_columns(conn, 'portal_users')
+                if 'group_code' not in columns:
+                    conn.execute(text('ALTER TABLE portal_users ADD COLUMN group_code TEXT DEFAULT NULL'))
+                if 'level_code' not in columns:
+                    conn.execute(text('ALTER TABLE portal_users ADD COLUMN level_code TEXT DEFAULT NULL'))
+                conn.execute(text('PRAGMA user_version = 2'))
+
+            if version < 3:
+                _execute_schema(conn, _PORTAL_SCHEMA_V3)
+                conn.execute(text('PRAGMA user_version = 3'))
+
             conn.commit()
     finally:
         engine.dispose()

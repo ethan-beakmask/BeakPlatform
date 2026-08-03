@@ -36,7 +36,19 @@
     "portal_access_rule": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["groups", "min_level"],
+      "anyOf": [
+        {
+          "required": ["required_permissions"]
+        },
+        {
+          "required": ["groups", "min_level"]
+        }
+      ],
+      "dependentRequired": {
+        "groups": ["min_level"],
+        "min_level": ["groups"],
+        "match_mode": ["required_permissions"]
+      },
       "properties": {
         "groups": {
           "oneOf": [
@@ -56,6 +68,17 @@
         "min_level": {
           "type": "string",
           "pattern": "^[A-Z][A-Z0-9_]{0,31}$"
+        },
+        "required_permissions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
+          }
+        },
+        "match_mode": {
+          "enum": ["any", "all"]
         }
       }
     },
