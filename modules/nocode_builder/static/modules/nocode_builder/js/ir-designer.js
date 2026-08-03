@@ -417,6 +417,16 @@ function irDesigner() {
                 .sort((a, b) => Number(a.rank || 0) - Number(b.rank || 0));
         },
 
+        previewIdentityLabel() {
+            const group = this.activePortalGroups().find((item) => item.code === this.previewGroup);
+            const groupText = group ? `${group.name} (${group.code})` : tr('不限群組');
+            const level = this.sortedPortalLevels().find((item) => item.code === this.previewLevel);
+            const levelText = level
+                ? `${level.name} (${level.code}, rank ${level.rank})`
+                : (this.previewLevel || '-');
+            return `${groupText} / ${levelText}`;
+        },
+
         activePortalPermissions() {
             return (this.portalPermissions || []).filter((perm) => perm && perm.code);
         },

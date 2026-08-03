@@ -25,6 +25,9 @@
                         </template>
                     </select>
                 </label>
+                <p class="ird-hint" style="flex-basis: 100%; margin: 0; color: var(--color-text-muted);">
+                    {{ _('目前以此身分預覽：') }}<span x-text="previewIdentityLabel()"></span>
+                </p>
                 <p class="ird-hint" style="flex-basis: 100%; margin: 0; color: var(--color-text-muted);">{{ _('預覽身分僅影響[預覽]的檢視結果，不會隨頁面儲存。') }}</p>
             </div>
             <button type="button" class="ird-btn" @click="previewPage()">{{ _('預覽') }}</button>
@@ -114,10 +117,10 @@
                             <div class="ird-field">
                                 <label>{{ _('文字大小層級') }}</label>
                                 <select x-model="selectedWidget.level" @change="markDirty()">
-                                    <option value="h1">h1</option>
-                                    <option value="h2">h2</option>
-                                    <option value="h3">h3</option>
-                                    <option value="p">p</option>
+                                    <option value="h1">h1 {{ _('大標題') }}</option>
+                                    <option value="h2">h2 {{ _('中標題') }}</option>
+                                    <option value="h3">h3 {{ _('小標題') }}</option>
+                                    <option value="p">p {{ _('段落內文') }}</option>
                                 </select>
                             </div>
                             <div class="ird-field">
