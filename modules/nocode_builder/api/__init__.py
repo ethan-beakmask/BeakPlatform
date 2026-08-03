@@ -1056,8 +1056,16 @@ def get_page(secure_code):
             is_active=True,
         ).order_by(DcSubSystemPage.display_order).first()
 
+        # 頁面也可能只掛在 site map 節點上（雙路徑 OR），此時 DcSubSystemPage 查不到，
+        # 走 page_ownership_service 這個唯一實作補齊，否則設計器會誤判成「未掛在子系統下」
+        sub_system_sc = mount.sub_system_secure_code if mount else None
+        if not sub_system_sc:
+            from ..services.page_ownership_service import get_owner_sub_system_codes
+            owner_codes = sorted(get_owner_sub_system_codes(secure_code))
+            sub_system_sc = owner_codes[0] if owner_codes else None
+
         data = page.to_dict()
-        data['sub_system_secure_code'] = mount.sub_system_secure_code if mount else None
+        data['sub_system_secure_code'] = sub_system_sc
         return jsonify({'success': True, 'data': data})
     except Exception as e:
         db.session.rollback()

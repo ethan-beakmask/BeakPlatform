@@ -223,6 +223,40 @@
     overflow-wrap: anywhere;
 }
 
+.ird-field input[type="checkbox"],
+.ird-checks input[type="checkbox"],
+.ird-menu-row input[type="checkbox"] {
+    width: auto;
+}
+
+.ird-menu-list {
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-menu-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    min-height: 28px;
+    color: var(--color-text-secondary);
+}
+
+.ird-menu-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ird-menu-kind {
+    color: var(--color-text-muted);
+    font-size: 12px;
+}
+
 .ird-list-item {
     display: grid;
     grid-template-columns: minmax(80px, 1fr);

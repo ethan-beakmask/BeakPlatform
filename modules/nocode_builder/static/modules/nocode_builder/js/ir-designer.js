@@ -37,6 +37,9 @@ function irDesigner() {
         mountedSubSystem: '',
         formMappings: [],
         formMappingsLoadFailed: false,
+        siteMapNodes: [],
+        siteMapLoaded: false,
+        siteMapError: '',
         previewGroup: '',
         previewLevel: '',
         portalOrgLoaded: false,
@@ -56,6 +59,7 @@ function irDesigner() {
         palette: [
             { type: 'layout', label: tr('版面') },
             { type: 'text', label: tr('文字') },
+            { type: 'menu', label: tr('選單') },
             { type: 'table', label: tr('表格') },
             { type: 'detail', label: tr('明細') },
             { type: 'master_detail', label: tr('主細表') },
@@ -127,8 +131,15 @@ function irDesigner() {
                 if (widget.type === 'table') this.normalizeMasks(widget.columns || []);
                 if (widget.type === 'detail') this.normalizeMasks(widget.fields || []);
                 if (widget.type === 'master_detail') this.normalizeMasterDetailWidget(widget);
+                if (widget.type === 'menu') this.normalizeMenuWidget(widget);
                 if (widget.type === 'layout') this.normalizeWidgets(widget.children || []);
             }
+        },
+
+        normalizeMenuWidget(widget) {
+            if (!widget.title_i18n) widget.title_i18n = { 'zh-TW': '', en: '' };
+            if (widget.title_i18n.en === undefined) widget.title_i18n.en = '';
+            if (!Array.isArray(widget.items)) widget.items = [];
         },
 
         normalizeMasterDetailWidget(widget) {
@@ -275,8 +286,77 @@ function irDesigner() {
         async onScopeChange() {
             this.previewGroup = '';
             this.previewLevel = '';
+            this.resetSiteMap();
             await this.loadMeta(this.dataScope);
             await this.ensurePortalOrg();
+            if (this.selectedWidget && this.selectedWidget.type === 'menu') {
+                await this.loadSiteMap();
+            }
+        },
+
+        siteMapScope() {
+            return this.dataScope || this.mountedSubSystem || '';
+        },
+
+        resetSiteMap() {
+            this.siteMapNodes = [];
+            this.siteMapLoaded = false;
+            this.siteMapError = '';
+        },
+
+        flattenSiteMap(nodes) {
+            const rows = [];
+            const sortNodes = (items) => [...(items || [])].sort((a, b) => {
+                const orderA = Number(a && a.display_order);
+                const orderB = Number(b && b.display_order);
+                if (Number.isFinite(orderA) && Number.isFinite(orderB) && orderA !== orderB) return orderA - orderB;
+                if (Number.isFinite(orderA) && !Number.isFinite(orderB)) return -1;
+                if (!Number.isFinite(orderA) && Number.isFinite(orderB)) return 1;
+                return 0;
+            });
+            const walk = (items, depth) => {
+                for (const node of sortNodes(items)) {
+                    if (!node || !node.secure_code) continue;
+                    rows.push({
+                        secure_code: node.secure_code,
+                        name: node.name || node.secure_code,
+                        node_type: node.node_type || '',
+                        depth,
+                        page_layout_secure_code: node.page_layout_secure_code || '',
+                    });
+                    walk(node.children || [], depth + 1);
+                }
+            };
+            walk(nodes, 0);
+            return rows;
+        },
+
+        async loadSiteMap() {
+            const scope = this.siteMapScope();
+            this.siteMapError = '';
+            if (!scope) {
+                this.siteMapNodes = [];
+                this.siteMapLoaded = false;
+                return;
+            }
+            try {
+                const res = await fetch(`${apiBase}/sub-systems/${encodeURIComponent(scope)}/site-map`);
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    this.siteMapNodes = [];
+                    this.siteMapLoaded = false;
+                    this.siteMapError = tr('載入 Site Map 失敗');
+                    console.error('[IR Designer] site map load failed:', data.error || data);
+                    return;
+                }
+                this.siteMapNodes = this.flattenSiteMap(data.data || []);
+                this.siteMapLoaded = true;
+            } catch (err) {
+                this.siteMapNodes = [];
+                this.siteMapLoaded = false;
+                this.siteMapError = tr('載入 Site Map 失敗');
+                console.error('[IR Designer] site map load failed:', err);
+            }
         },
 
         async ensurePortalOrg() {
@@ -603,6 +683,9 @@ function irDesigner() {
             }
             this.selectedId = widget.id;
             this.activeWidget = widget;
+            if (widget.type === 'menu' && !this.siteMapLoaded && !this.siteMapError) {
+                this.loadSiteMap();
+            }
             this.markDirty();
         },
 
@@ -615,6 +698,9 @@ function irDesigner() {
             }
             if (type === 'text') {
                 return { id, type, level: 'p', content_i18n: { 'zh-TW': tr('文字'), en: '' } };
+            }
+            if (type === 'menu') {
+                return { id, type, title_i18n: { 'zh-TW': tr('選單'), en: '' }, items: [] };
             }
             if (type === 'table') {
                 return {
@@ -679,6 +765,9 @@ function irDesigner() {
         selectWidget(id) {
             this.selectedId = id;
             this.activeWidget = this.findWidget(id);
+            if (this.activeWidget && this.activeWidget.type === 'menu' && !this.siteMapLoaded && !this.siteMapError) {
+                this.loadSiteMap();
+            }
         },
 
         moveWidget(id, dir) {
@@ -887,6 +976,62 @@ function irDesigner() {
                 if (Number.isInteger(parsed)) obj[key] = parsed;
             }
             this.markDirty();
+        },
+
+        menuHasNode(widget, sc) {
+            return !!(widget && Array.isArray(widget.items) && widget.items.some((item) => item.kind === 'node' && item.node === sc));
+        },
+
+        menuHasSystemLink(widget, link) {
+            return !!(widget && Array.isArray(widget.items) && widget.items.some((item) => item.kind === 'system' && item.link === link));
+        },
+
+        orderedMenuItems(widget, overrides) {
+            const items = Array.isArray(widget && widget.items) ? widget.items : [];
+            const selectedNodes = new Set(items.filter((item) => item.kind === 'node' && item.node).map((item) => item.node));
+            const selectedLinks = new Set(items.filter((item) => item.kind === 'system' && item.link).map((item) => item.link));
+            if (overrides && overrides.kind === 'node') {
+                if (overrides.checked) selectedNodes.add(overrides.value);
+                else selectedNodes.delete(overrides.value);
+            }
+            if (overrides && overrides.kind === 'system') {
+                if (overrides.checked) selectedLinks.add(overrides.value);
+                else selectedLinks.delete(overrides.value);
+            }
+            const ordered = [];
+            const emittedNodes = new Set();
+            for (const node of this.siteMapNodes) {
+                if (selectedNodes.has(node.secure_code)) {
+                    ordered.push({ kind: 'node', node: node.secure_code });
+                    emittedNodes.add(node.secure_code);
+                }
+            }
+            for (const item of items) {
+                if (item.kind === 'node' && selectedNodes.has(item.node) && !emittedNodes.has(item.node)) {
+                    ordered.push({ kind: 'node', node: item.node });
+                    emittedNodes.add(item.node);
+                }
+            }
+            for (const link of ['login', 'register', 'logout']) {
+                if (selectedLinks.has(link)) ordered.push({ kind: 'system', link });
+            }
+            return ordered;
+        },
+
+        toggleMenuNode(widget, sc, checked) {
+            if (!widget || !sc) return;
+            widget.items = this.orderedMenuItems(widget, { kind: 'node', value: sc, checked });
+            this.markDirty();
+        },
+
+        toggleMenuSystemLink(widget, link, checked) {
+            if (!widget || !link) return;
+            widget.items = this.orderedMenuItems(widget, { kind: 'system', value: link, checked });
+            this.markDirty();
+        },
+
+        menuItemCount(widget) {
+            return Array.isArray(widget && widget.items) ? widget.items.length : 0;
         },
 
         setMasterEditable(enabled) {

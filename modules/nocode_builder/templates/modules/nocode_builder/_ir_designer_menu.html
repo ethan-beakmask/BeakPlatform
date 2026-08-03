@@ -1,0 +1,59 @@
+<template x-if="selectedWidget.type === 'menu'">
+    <div class="ird-section">
+        <div class="ird-field">
+            <label>{{ _('標題 zh-TW') }}</label>
+            <input type="text" x-model="selectedWidget.title_i18n['zh-TW']" @input="markDirty()">
+        </div>
+        <div class="ird-field">
+            <label>{{ _('標題 en') }}</label>
+            <input type="text" x-model="selectedWidget.title_i18n.en" @input="markDirty()">
+        </div>
+        <p class="ird-hint">{{ _('選單只存被勾選的網頁，層級與順序會自動跟著 Site Map 走；只勾子頁時父層會顯示為不可點的結構層；權限不通過的網頁在 portal 上會自動隱藏。') }}</p>
+
+        <div class="ird-field">
+            <label>{{ _('網頁') }}</label>
+            <div class="ird-menu-list">
+                <template x-for="node in siteMapNodes" :key="node.secure_code">
+                    <label class="ird-menu-row">
+                        <input type="checkbox"
+                               :checked="menuHasNode(selectedWidget, node.secure_code)"
+                               :disabled="node.node_type === 'folder'"
+                               @change="toggleMenuNode(selectedWidget, node.secure_code, $event.target.checked)">
+                        <span class="ird-menu-name" :style="'padding-left:' + (node.depth * 18) + 'px'" x-text="node.name"></span>
+                        <span class="ird-menu-kind" x-show="node.node_type === 'folder'">{{ _('資料夾') }}</span>
+                    </label>
+                </template>
+            </div>
+            <p class="ird-hint" x-show="siteMapError" x-text="siteMapError"></p>
+            <p class="ird-hint" x-show="siteMapLoaded && !siteMapError && siteMapNodes.length === 0">{{ _('此子系統尚無網頁節點') }}</p>
+            <p class="ird-hint" x-show="!dataScope && !mountedSubSystem">{{ _('此頁尚未掛在子系統下，無法選擇網頁；仍可只放系統連結') }}</p>
+        </div>
+
+        <div class="ird-field">
+            <label>{{ _('系統連結') }}</label>
+            <div class="ird-checks">
+                <label>
+                    <input type="checkbox"
+                           :checked="menuHasSystemLink(selectedWidget, 'login')"
+                           @change="toggleMenuSystemLink(selectedWidget, 'login', $event.target.checked)">
+                    {{ _('登入') }}
+                </label>
+                <label>
+                    <input type="checkbox"
+                           :checked="menuHasSystemLink(selectedWidget, 'register')"
+                           @change="toggleMenuSystemLink(selectedWidget, 'register', $event.target.checked)">
+                    {{ _('註冊') }}
+                </label>
+                <label>
+                    <input type="checkbox"
+                           :checked="menuHasSystemLink(selectedWidget, 'logout')"
+                           @change="toggleMenuSystemLink(selectedWidget, 'logout', $event.target.checked)">
+                    {{ _('登出') }}
+                </label>
+            </div>
+            <p class="ird-hint">{{ _('登入與註冊只在未登入時出現，註冊需子系統開放註冊；登出只在已登入時出現。') }}</p>
+        </div>
+
+        <p class="ird-hint" x-show="menuItemCount(selectedWidget) === 0">{{ _('尚未選擇任何項目，儲存會失敗') }}</p>
+    </div>
+</template>
