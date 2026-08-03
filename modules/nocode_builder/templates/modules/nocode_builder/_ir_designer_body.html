@@ -41,7 +41,7 @@
                      Alpine x-for 撞到重複 key 會丟 "Cannot read properties of undefined (reading 'after')"，
                      整個錯誤區塊渲染失敗變成空白（使用者看到的症狀是「按儲存沒反應」）。 -->
                 <template x-for="(err, errIndex) in errors" :key="errIndex">
-                    <div class="ird-error" x-text="formatError(err)"></div>
+                    <div class="ird-error" :class="{'ird-warning': err.severity === 'warning'}" x-text="formatError(err)"></div>
                 </template>
             </div>
         </template>
@@ -63,38 +63,59 @@
               @drop.prevent="addWidget(dragType); dragType = ''">
             <div class="ird-canvas-head">
                 <h2>{{ _('頁面結構') }}</h2>
-                <button type="button" class="ird-btn" @click="selectedId = ''">{{ _('根層') }}</button>
+                <button type="button" class="ird-btn" @click="selectedId = ''; selectedZoneId = ''">{{ _('根層') }}</button>
             </div>
-            <template x-if="treeRows.length === 0">
-                <div class="ird-empty">{{ _('尚無元件') }}</div>
-            </template>
-            <template x-for="row in treeRows" :key="row.widget.id">
-                <div class="ird-node"
-                     :class="{'ird-node-selected': row.widget.id === selectedId}"
-                     :style="'padding-left:' + (12 + row.depth * 22) + 'px'"
-                     @click="selectWidget(row.widget.id)">
-                    <div class="ird-node-main">
-                        <span class="ird-node-type" x-text="widgetTypeLabel(row.widget)"></span>
-                        <span class="ird-node-id" x-text="row.widget.id"></span>
-                    </div>
-                    <div class="ird-node-actions">
-                        <button type="button" class="ird-icon-btn" @click.stop="moveWidget(row.widget.id, -1)" title="{{ _('上移') }}">↑</button>
-                        <button type="button" class="ird-icon-btn" @click.stop="moveWidget(row.widget.id, 1)" title="{{ _('下移') }}">↓</button>
-                        <template x-if="row.widget.type === 'layout'">
-                            <button type="button" class="ird-icon-btn" @click.stop="selectedId = row.widget.id" title="{{ _('加入到此 layout') }}">＋</button>
-                        </template>
-                        <button type="button" class="ird-icon-btn" @click.stop="removeWidget(row.widget.id)" title="{{ _('刪除') }}">×</button>
-                    </div>
-                </div>
-            </template>
+            {% include "modules/nocode_builder/_ir_designer_layout.html" %}
         </main>
 
         <aside class="ird-panel ird-props">
             <h2>{{ _('屬性') }}</h2>
-            <template x-if="!selectedWidget">
+            <template x-if="engine === 'grid' && selectedZoneId && selectedZoneMeta()">
+                <div class="ird-prop-body">
+                    <div class="ird-section">
+                        <div class="ird-subtitle">{{ _('區塊') }} <span x-text="selectedZoneId"></span></div>
+                        <div class="ird-field">
+                            <label>{{ _('溢出處理') }}</label>
+                            <select :value="selectedZoneMeta().overflow" @change="setSelectedZoneOverflow($event.target.value)">
+                                <template x-for="item in overflowOptions" :key="item.code">
+                                    <option :value="item.code" :selected="item.code === selectedZoneMeta().overflow" x-text="item.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="ird-section">
+                        <div class="ird-subtitle">{{ _('區塊內元件') }}</div>
+                        <template x-if="selectedZoneWidgets().length === 0">
+                            <div class="ird-empty">{{ _('此區塊尚未放入元件') }}</div>
+                        </template>
+                        <template x-for="(widget, idx) in selectedZoneWidgets()" :key="'zone-widget-' + widget.id">
+                            <div class="ird-list-item ird-zone-widget">
+                                <button type="button" class="ird-zone-widget-main" @click="selectWidget(widget.id)">
+                                    <span class="ird-node-id" x-text="widget.id"></span>
+                                    <span class="ird-node-type" x-text="widgetTypeLabel(widget)"></span>
+                                </button>
+                                <button type="button" class="ird-icon-btn" @click="moveWidgetInSelectedZone(widget.id, -1)" title="{{ _('上移') }}">↑</button>
+                                <button type="button" class="ird-icon-btn" @click="moveWidgetInSelectedZone(widget.id, 1)" title="{{ _('下移') }}">↓</button>
+                                <button type="button" class="ird-icon-btn" @click="removeWidgetFromSelectedZone(widget.id)" title="{{ _('移除') }}">×</button>
+                            </div>
+                        </template>
+                        <div class="ird-field">
+                            <label>{{ _('加入元件') }}</label>
+                            <select value="" @change="addWidgetToSelectedZone($event.target.value); $event.target.value = ''">
+                                <option value="" :selected="true">{{ _('-- 請選擇 --') }}</option>
+                                <template x-for="widget in unplacedTopLevelWidgets()" :key="'zone-add-' + widget.id">
+                                    <option :value="widget.id" :selected="false" x-text="widget.id + ' / ' + widgetTypeLabel(widget)"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template x-if="!(engine === 'grid' && selectedZoneId && selectedZoneMeta()) && !selectedWidget">
                 <div class="ird-empty">{{ _('請選擇元件') }}</div>
             </template>
-            <template x-if="selectedWidget">
+            <template x-if="!(engine === 'grid' && selectedZoneId && selectedZoneMeta()) && selectedWidget">
                 <div class="ird-prop-body">
                     <div class="ird-field">
                         <label>ID</label>

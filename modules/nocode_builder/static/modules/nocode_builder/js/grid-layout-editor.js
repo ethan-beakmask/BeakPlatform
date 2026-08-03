@@ -18,8 +18,10 @@ class GridLayoutEditor {
         this.container = typeof container === 'string'
             ? document.querySelector(container) : container;
 
-        const rows = (options && options.rows) || 4;
-        const cols = (options && options.cols) || 4;
+        options = options || {};
+        const rows = options.rows || 4;
+        const cols = options.cols || 4;
+        this.layoutOnly = options.layoutOnly === true;
 
         // Core state (matrix-based)
         this.matrix = [];
@@ -43,6 +45,8 @@ class GridLayoutEditor {
 
         // Widget storage: regionId -> widget config
         this.widgetMap = {};
+        this.regionZoneIds = {};
+        this.nextZoneNumber = 1;
 
         // DataListWidget live instances: zoneKey -> DataListWidget
         this._dlwInstances = {};
@@ -89,9 +93,9 @@ class GridLayoutEditor {
         this._toolbar.innerHTML = `
             <div class="gle-tb-group">
                 <label>${__('列:')}</label>
-                <input type="number" class="gle-input-rows" value="4" min="1" max="30">
+                <input type="number" class="gle-input-rows" value="4" min="1" max="${this.layoutOnly ? 24 : 30}">
                 <label>${__('欄:')}</label>
-                <input type="number" class="gle-input-cols" value="4" min="1" max="30">
+                <input type="number" class="gle-input-cols" value="4" min="1" max="${this.layoutOnly ? 24 : 30}">
                 <button class="gle-tb-btn primary" data-action="create">${__('建立')}</button>
             </div>
             <div class="gle-tb-sep"></div>
@@ -186,26 +190,34 @@ class GridLayoutEditor {
     // ===== Grid Init =====
 
     _createFromInput() {
-        const r = this._clamp(parseInt(this._toolbar.querySelector('.gle-input-rows').value) || 4, 1, 30);
-        const c = this._clamp(parseInt(this._toolbar.querySelector('.gle-input-cols').value) || 4, 1, 30);
+        const max = this.layoutOnly ? 24 : 30;
+        const r = this._clamp(parseInt(this._toolbar.querySelector('.gle-input-rows').value) || 4, 1, max);
+        const c = this._clamp(parseInt(this._toolbar.querySelector('.gle-input-cols').value) || 4, 1, max);
         this.widgetMap = {};
         this._initGrid(r, c);
         this._fireChanged();
     }
 
     _initGrid(rows, cols) {
+        const max = this.layoutOnly ? 24 : this.MAX_GRID;
+        rows = this._clamp(Number(rows) || 1, 1, max);
+        cols = this._clamp(Number(cols) || 1, 1, max);
         this.matrix = [];
         this.nextId = 1;
+        this.regionZoneIds = {};
+        this.nextZoneNumber = 1;
         this.selected.clear();
         this.history = [];
         for (let r = 0; r < rows; r++) {
             this.matrix[r] = [];
             for (let c = 0; c < cols; c++) {
-                this.matrix[r][c] = this.nextId++;
+                const rid = this.nextId++;
+                this.matrix[r][c] = rid;
+                this.regionZoneIds[rid] = this._nextZoneId();
             }
         }
         this.colWidths = new Array(cols).fill(1);
-        this.rowHeights = new Array(rows).fill(1);
+        this.rowHeights = new Array(rows).fill(this.layoutOnly ? 120 : 1);
         this._toolbar.querySelector('.gle-input-rows').value = rows;
         this._toolbar.querySelector('.gle-input-cols').value = cols;
         this.render();
@@ -219,6 +231,8 @@ class GridLayoutEditor {
             colWidths: [...this.colWidths],
             rowHeights: [...this.rowHeights],
             nextId: this.nextId,
+            regionZoneIds: Object.assign({}, this.regionZoneIds),
+            nextZoneNumber: this.nextZoneNumber,
         });
         if (this.history.length > this.MAX_HISTORY) this.history.shift();
         this._updateButtons();
@@ -231,6 +245,8 @@ class GridLayoutEditor {
         this.colWidths = s.colWidths;
         this.rowHeights = s.rowHeights;
         this.nextId = s.nextId;
+        this.regionZoneIds = Object.assign({}, s.regionZoneIds || {});
+        this.nextZoneNumber = s.nextZoneNumber || 1;
         this.selected.clear();
         this.render();
         this._fireChanged();
@@ -251,6 +267,22 @@ class GridLayoutEditor {
             }
         }
         return Object.values(map).sort((a, b) => a.r1 !== b.r1 ? a.r1 - b.r1 : a.c1 - b.c1);
+    }
+
+    _nextZoneId() {
+        let id = '';
+        do {
+            id = 'z' + this.nextZoneNumber;
+            this.nextZoneNumber++;
+        } while (Object.values(this.regionZoneIds).includes(id));
+        return id;
+    }
+
+    _zoneIdForRegion(regionId) {
+        if (!this.regionZoneIds[regionId]) {
+            this.regionZoneIds[regionId] = this._nextZoneId();
+        }
+        return this.regionZoneIds[regionId];
     }
 
     _getBounds(id) {
@@ -285,15 +317,19 @@ class GridLayoutEditor {
         // Collect widgets from selected regions, keep at most one
         const oldIds = new Set(this.selected);
         let keptWidget = null;
+        const selectedRegions = this._getRegions().filter((reg) => oldIds.has(reg.id));
+        const keptZoneId = selectedRegions.length ? this._zoneIdForRegion(selectedRegions[0].id) : this._nextZoneId();
         for (const rid of oldIds) {
             const key = 'r' + rid;
             if (this.widgetMap[key]) {
                 if (!keptWidget) keptWidget = this.widgetMap[key];
                 delete this.widgetMap[key];
             }
+            delete this.regionZoneIds[rid];
         }
 
         const mid = this.nextId++;
+        this.regionZoneIds[mid] = keptZoneId;
         for (let r = r1; r <= r2; r++)
             for (let c = c1; c <= c2; c++) this.matrix[r][c] = mid;
 
@@ -323,19 +359,20 @@ class GridLayoutEditor {
 
         // Remove widget from split region
         delete this.widgetMap['r' + regionId];
+        delete this.regionZoneIds[regionId];
 
         let b = this._getBounds(regionId);
         let curR = b.r2 - b.r1 + 1;
         let curC = b.c2 - b.c1 + 1;
 
         while (curR < sRows) {
-            if (this.matrix.length >= this.MAX_GRID) return;
+            if (this.matrix.length >= (this.layoutOnly ? 24 : this.MAX_GRID)) return;
             this._insertRow(b.r2);
             b = this._getBounds(regionId);
             curR = b.r2 - b.r1 + 1;
         }
         while (curC < sCols) {
-            if (this.matrix[0].length >= this.MAX_GRID) return;
+            if (this.matrix[0].length >= (this.layoutOnly ? 24 : this.MAX_GRID)) return;
             this._insertCol(b.c2);
             b = this._getBounds(regionId);
             curC = b.c2 - b.c1 + 1;
@@ -348,6 +385,7 @@ class GridLayoutEditor {
             let sc = b.c1;
             for (let j = 0; j < sCols; j++) {
                 const nid = this.nextId++;
+                this.regionZoneIds[nid] = this._nextZoneId();
                 for (let r = sr; r < sr + rd[i]; r++)
                     for (let c = sc; c < sc + cd[j]; c++) this.matrix[r][c] = nid;
                 sc += cd[j];
@@ -362,14 +400,14 @@ class GridLayoutEditor {
     _insertRow(atRow) {
         const newRow = [...this.matrix[atRow]];
         this.matrix.splice(atRow + 1, 0, newRow);
-        const h = this.rowHeights[atRow] / 2;
+        const h = this.layoutOnly ? Math.max(48, this.rowHeights[atRow] / 2) : this.rowHeights[atRow] / 2;
         this.rowHeights.splice(atRow, 1, h, h);
     }
 
     _insertCol(atCol) {
         for (let r = 0; r < this.matrix.length; r++)
             this.matrix[r].splice(atCol + 1, 0, this.matrix[r][atCol]);
-        const w = this.colWidths[atCol] / 2;
+        const w = Math.max(0.1, this.colWidths[atCol] / 2);
         this.colWidths.splice(atCol, 1, w, w);
     }
 
@@ -413,10 +451,10 @@ class GridLayoutEditor {
         // Notify zone select
         if (this.selected.size === 1) {
             const key = 'r' + regionId;
-            if (this.widgetMap[key] && this.onWidgetSelect) {
+            if (!this.layoutOnly && this.widgetMap[key] && this.onWidgetSelect) {
                 this.onWidgetSelect(key, this.widgetMap[key]);
             } else if (this.onZoneSelect) {
-                this.onZoneSelect(key);
+                this.onZoneSelect(this.layoutOnly ? this._zoneIdForRegion(regionId) : key);
             }
         }
     }
@@ -482,13 +520,17 @@ class GridLayoutEditor {
             this._gridWrapper.appendChild(h);
         }
 
-        const totalR = this.rowHeights.reduce((a, b) => a + b, 0);
         acc = 0;
         for (let r = 0; r < this.rowHeights.length - 1; r++) {
             acc += this.rowHeights[r];
             const h = document.createElement('div');
             h.className = 'gle-row-handle';
-            h.style.top = `calc(${(acc / totalR) * 100}% - 4px)`;
+            if (this.layoutOnly) {
+                h.style.top = `${Math.round(acc) - 4}px`;
+            } else {
+                const totalR = this.rowHeights.reduce((a, b) => a + b, 0);
+                h.style.top = `calc(${(acc / totalR) * 100}% - 4px)`;
+            }
             h.dataset.idx = r;
             h.addEventListener('mousedown', (e) => this._startRowResize(e));
             this._gridWrapper.appendChild(h);
@@ -532,8 +574,14 @@ class GridLayoutEditor {
         } else {
             const totalFr = s.orig.reduce((a, b) => a + b, 0);
             const dFr = (e.clientY - s.startY) / s.h * totalFr;
-            this.rowHeights[s.idx] = Math.max(0.1, s.orig[s.idx] + dFr);
-            this.rowHeights[s.idx + 1] = Math.max(0.1, s.orig[s.idx + 1] - dFr);
+            if (this.layoutOnly) {
+                const dPx = e.clientY - s.startY;
+                this.rowHeights[s.idx] = this._clamp(Math.round(s.orig[s.idx] + dPx), 48, 2000);
+                this.rowHeights[s.idx + 1] = this._clamp(Math.round(s.orig[s.idx + 1] - dPx), 48, 2000);
+            } else {
+                this.rowHeights[s.idx] = Math.max(0.1, s.orig[s.idx] + dFr);
+                this.rowHeights[s.idx + 1] = Math.max(0.1, s.orig[s.idx + 1] - dFr);
+            }
         }
         this._applyTemplate();
         this._initHandles();
@@ -574,7 +622,7 @@ class GridLayoutEditor {
 
     render() {
         // Destroy all existing DataListWidget instances before re-rendering
-        this._destroyAllDlw();
+        if (!this.layoutOnly) this._destroyAllDlw();
 
         this._gridContainer.innerHTML = '';
         this._applyTemplate();
@@ -593,7 +641,7 @@ class GridLayoutEditor {
 
             // Check widget
             const wKey = 'r' + reg.id;
-            const widget = this.widgetMap[wKey];
+            const widget = this.layoutOnly ? null : this.widgetMap[wKey];
 
             if (widget) {
                 el.classList.add('has-widget');
@@ -654,8 +702,23 @@ class GridLayoutEditor {
                 // Zone number label
                 const label = document.createElement('span');
                 label.className = 'gle-cell-label';
-                label.textContent = i + 1;
+                const zoneId = this.layoutOnly ? this._zoneIdForRegion(reg.id) : null;
+                label.textContent = this.layoutOnly ? zoneId : i + 1;
                 el.appendChild(label);
+                // layoutOnly：格子上列出這個 zone 放了哪些元件。
+                // 只顯示 zone id 的話，使用者在畫布上看不出哪一格有內容。
+                const contents = this.layoutOnly && this.zoneContents ? this.zoneContents[zoneId] : null;
+                if (contents && contents.length) {
+                    const list = document.createElement('div');
+                    list.className = 'gle-cell-contents';
+                    for (const text of contents) {
+                        const item = document.createElement('div');
+                        item.className = 'gle-cell-content-item';
+                        item.textContent = text;
+                        list.appendChild(item);
+                    }
+                    el.appendChild(list);
+                }
                 if (rs > 1 || cs > 1) {
                     el.title = `${rs} x ${cs}`;
                     el.classList.add('merged');
@@ -666,20 +729,22 @@ class GridLayoutEditor {
             el.addEventListener('mousedown', (e) => this._onCellDown(e, reg.id));
             el.addEventListener('mouseenter', () => this._onCellEnter(reg.id));
 
-            // Drop widget from component library
-            el.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                el.classList.add('drag-over');
-            });
-            el.addEventListener('dragleave', () => {
-                el.classList.remove('drag-over');
-            });
-            el.addEventListener('drop', (e) => {
-                e.preventDefault();
-                el.classList.remove('drag-over');
-                const type = e.dataTransfer.getData('text/plain');
-                if (type) this._placeWidget(reg.id, type);
-            });
+            if (!this.layoutOnly) {
+                // Drop widget from component library
+                el.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    el.classList.add('drag-over');
+                });
+                el.addEventListener('dragleave', () => {
+                    el.classList.remove('drag-over');
+                });
+                el.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    el.classList.remove('drag-over');
+                    const type = e.dataTransfer.getData('text/plain');
+                    if (type) this._placeWidget(reg.id, type);
+                });
+            }
 
             // Right click context menu
             el.addEventListener('contextmenu', (e) => {
@@ -703,7 +768,10 @@ class GridLayoutEditor {
 
     _applyTemplate() {
         this._gridContainer.style.gridTemplateColumns = this.colWidths.map(w => w + 'fr').join(' ');
-        this._gridContainer.style.gridTemplateRows = this.rowHeights.map(h => h + 'fr').join(' ');
+        this._gridContainer.style.gridTemplateRows = this.rowHeights.map(h => this.layoutOnly ? Math.round(h) + 'px' : h + 'fr').join(' ');
+        this._gridContainer.style.height = this.layoutOnly
+            ? this.rowHeights.reduce((sum, h) => sum + Math.round(h), 0) + 'px'
+            : '100%';
     }
 
     /**
@@ -782,10 +850,15 @@ class GridLayoutEditor {
             this._addCtxItem(menu, __('取消合併'), () => {
                 this._saveState();
                 delete this.widgetMap[wKey];
+                delete this.regionZoneIds[regionId];
                 // Split back: assign new IDs to each cell
                 for (let r = b.r1; r <= b.r2; r++)
                     for (let c = b.c1; c <= b.c2; c++)
-                        this.matrix[r][c] = this.nextId++;
+                        {
+                            const nid = this.nextId++;
+                            this.matrix[r][c] = nid;
+                            this.regionZoneIds[nid] = this._nextZoneId();
+                        }
                 this.selected.clear();
                 this.render();
                 this._fireChanged();
@@ -854,6 +927,7 @@ class GridLayoutEditor {
     // ===== Widget Operations (designer interface) =====
 
     _placeWidget(regionId, type) {
+        if (this.layoutOnly) return;
         const key = 'r' + regionId;
         if (this.widgetMap[key]) return;
 
@@ -891,6 +965,7 @@ class GridLayoutEditor {
 
     /** Add widget to currently selected empty zone. */
     addWidgetToSelected(type) {
+        if (this.layoutOnly) return;
         if (this.selected.size !== 1) return;
         const regionId = [...this.selected][0];
         const key = 'r' + regionId;
@@ -909,6 +984,100 @@ class GridLayoutEditor {
 
     clearSelection() {
         this.selected.clear();
+        this.render();
+    }
+
+    /**
+     * layoutOnly：設定各 zone 要顯示在格子上的內容標籤。
+     * map 形如 { z1: ['menu-1', 'table-2'] }。不觸發 onChanged。
+     */
+    setZoneContents(map) {
+        this.zoneContents = map || {};
+        this.render();
+    }
+
+    // ===== Page IR Canvas Import/Export =====
+
+    toCanvas() {
+        const regions = this._getRegions();
+        const slugRe = /^[a-z][a-z0-9-]{1,63}$/;
+        const used = new Set();
+        const zones = regions.map((reg) => {
+            let zoneId = this._zoneIdForRegion(reg.id);
+            if (!slugRe.test(zoneId) || used.has(zoneId)) {
+                zoneId = this._nextZoneId();
+                this.regionZoneIds[reg.id] = zoneId;
+            }
+            used.add(zoneId);
+            return {
+                id: zoneId,
+                row: reg.r1 + 1,
+                col: reg.c1 + 1,
+                row_span: reg.r2 - reg.r1 + 1,
+                col_span: reg.c2 - reg.c1 + 1,
+            };
+        });
+        return {
+            col_widths: this.colWidths.map((w) => Math.max(0.1, Math.min(20, Number(w) || 1))),
+            row_heights: this.rowHeights.map((h) => this._clamp(Math.round(Number(h) || 120), 48, 2000)),
+            zones: zones,
+        };
+    }
+
+    loadCanvas(canvas) {
+        if (!canvas || !Array.isArray(canvas.col_widths) || !Array.isArray(canvas.row_heights)) {
+            this._initGrid(2, 2);
+            return;
+        }
+        const cols = this._clamp(canvas.col_widths.length || 2, 1, 24);
+        const rows = this._clamp(canvas.row_heights.length || 2, 1, 24);
+        this.matrix = [];
+        this.nextId = 1;
+        this.regionZoneIds = {};
+        this.nextZoneNumber = 1;
+
+        for (let r = 0; r < rows; r++) {
+            this.matrix[r] = [];
+            for (let c = 0; c < cols; c++) {
+                const rid = this.nextId++;
+                this.matrix[r][c] = rid;
+                this.regionZoneIds[rid] = this._nextZoneId();
+            }
+        }
+
+        const slugRe = /^[a-z][a-z0-9-]{1,63}$/;
+        const usedZoneIds = new Set();
+        for (const zone of canvas.zones || []) {
+            const r1 = this._clamp((Number(zone.row) || 1) - 1, 0, rows - 1);
+            const c1 = this._clamp((Number(zone.col) || 1) - 1, 0, cols - 1);
+            const rowSpan = Math.max(1, Number(zone.row_span) || 1);
+            const colSpan = Math.max(1, Number(zone.col_span) || 1);
+            const r2 = Math.min(rows - 1, r1 + rowSpan - 1);
+            const c2 = Math.min(cols - 1, c1 + colSpan - 1);
+            const rid = this.nextId++;
+            let zoneId = String(zone.id || '');
+            if (!slugRe.test(zoneId) || usedZoneIds.has(zoneId)) zoneId = this._nextZoneId();
+            usedZoneIds.add(zoneId);
+            this.regionZoneIds[rid] = zoneId;
+            const numeric = zoneId.match(/^z(\d+)$/);
+            if (numeric) this.nextZoneNumber = Math.max(this.nextZoneNumber, Number(numeric[1]) + 1);
+            for (let r = r1; r <= r2; r++) {
+                for (let c = c1; c <= c2; c++) {
+                    this.matrix[r][c] = rid;
+                }
+            }
+        }
+
+        this.colWidths = canvas.col_widths.slice(0, cols).map((w) => Math.max(0.1, Math.min(20, Number(w) || 1)));
+        this.rowHeights = canvas.row_heights.slice(0, rows).map((h) => {
+            const value = this.layoutOnly ? Math.round(Number(h) || 120) : Number(h) || 1;
+            return this.layoutOnly ? this._clamp(value, 48, 2000) : Math.max(0.1, value);
+        });
+        this.widgetMap = {};
+        this.selected.clear();
+        this.history = [];
+        this._toolbar.querySelector('.gle-input-rows').value = rows;
+        this._toolbar.querySelector('.gle-input-cols').value = cols;
         this.render();
     }
 

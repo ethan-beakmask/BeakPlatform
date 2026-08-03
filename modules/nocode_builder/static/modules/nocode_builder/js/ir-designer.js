@@ -53,6 +53,11 @@ function irDesigner() {
         portalPermissions: [],
         selectedId: '',
         activeWidget: null,
+        engine: 'flow',
+        gridEditor: null,
+        selectedZoneId: '',
+        canvasMeta: {},
+        _zoneGeometry: {},   // zone id -> 幾何快照，供 zone 消失時判斷元件由誰接手
         errors: [],
         dirty: false,
         savedSnapshot: '',
@@ -103,6 +108,15 @@ function irDesigner() {
             { key: 'accent_color', label: tr('強調色') },
             { key: 'border_color', label: tr('框線色') },
         ],
+        engineOptions: [
+            { code: 'flow', name: tr('流式') },
+            { code: 'grid', name: tr('矩陣') },
+            { code: 'free', name: tr('自由') },
+        ],
+        overflowOptions: [
+            { code: 'auto', name: tr('內部捲動') },
+            { code: 'visible', name: tr('不裁切') },
+        ],
 
         async init() {
             this.$watch('previewGroup', () => this.persistPreviewIdentity());
@@ -115,6 +129,9 @@ function irDesigner() {
             await this.detectPortalScope();
             await this.ensurePortalOrg();
             this.syncCounters();
+            this.initLayoutEngineState();
+            await Alpine.nextTick();
+            this.mountGridEditor();
             this.savedSnapshot = this.snapshot();
         },
 
@@ -826,6 +843,74 @@ function irDesigner() {
             return null;
         },
 
+        findTopLevelWidget(id) {
+            return (this.doc.page.widgets || []).find((widget) => widget.id === id) || null;
+        },
+
+        assignedWidgetIds() {
+            const ids = new Set();
+            for (const meta of Object.values(this.canvasMeta || {})) {
+                for (const id of meta.widget_ids || []) ids.add(id);
+            }
+            return ids;
+        },
+
+        unplacedTopLevelWidgets() {
+            const assigned = this.assignedWidgetIds();
+            return (this.doc.page.widgets || []).filter((widget) => widget && widget.id && !assigned.has(widget.id));
+        },
+
+        selectedZoneMeta() {
+            return (this.selectedZoneId && this.canvasMeta[this.selectedZoneId]) || null;
+        },
+
+        selectedZoneWidgets() {
+            const meta = this.selectedZoneMeta();
+            if (!meta) return [];
+            return (meta.widget_ids || []).map((id) => this.findTopLevelWidget(id)).filter(Boolean);
+        },
+
+        addWidgetToSelectedZone(widgetId) {
+            const meta = this.selectedZoneMeta();
+            const widget = this.findTopLevelWidget(widgetId);
+            if (!meta || !widget) return;
+            if (!Array.isArray(meta.widget_ids)) meta.widget_ids = [];
+            if (!meta.widget_ids.includes(widgetId)) {
+                meta.widget_ids.push(widgetId);
+                this.markDirty();
+                this.refreshZoneContents();
+            }
+        },
+
+        removeWidgetFromSelectedZone(widgetId) {
+            const meta = this.selectedZoneMeta();
+            if (!meta || !Array.isArray(meta.widget_ids)) return;
+            const index = meta.widget_ids.indexOf(widgetId);
+            if (index < 0) return;
+            meta.widget_ids.splice(index, 1);
+            this.markDirty();
+            this.refreshZoneContents();
+        },
+
+        moveWidgetInSelectedZone(widgetId, dir) {
+            const meta = this.selectedZoneMeta();
+            if (!meta || !Array.isArray(meta.widget_ids)) return;
+            const index = meta.widget_ids.indexOf(widgetId);
+            const target = index + dir;
+            if (index < 0 || target < 0 || target >= meta.widget_ids.length) return;
+            const item = meta.widget_ids.splice(index, 1)[0];
+            meta.widget_ids.splice(target, 0, item);
+            this.markDirty();
+            this.refreshZoneContents();
+        },
+
+        setSelectedZoneOverflow(value) {
+            const meta = this.selectedZoneMeta();
+            if (!meta) return;
+            meta.overflow = value === 'visible' ? 'visible' : 'auto';
+            this.markDirty();
+        },
+
         findParent(id, widgets, parent) {
             const list = widgets || this.doc.page.widgets || [];
             for (const widget of list) {
@@ -849,6 +934,7 @@ function irDesigner() {
             }
             this.selectedId = widget.id;
             this.activeWidget = widget;
+            this.selectedZoneId = '';
             if (widget.type === 'menu' && !this.siteMapLoaded && !this.siteMapError) {
                 this.loadSiteMap();
             }
@@ -942,9 +1028,179 @@ function irDesigner() {
             });
         },
 
+        initLayoutEngineState() {
+            const page = this.doc.page || {};
+            this.engine = page.engine === 'grid' || page.engine === 'free' ? page.engine : 'flow';
+            this.canvasMeta = {};
+            const zones = page.canvas && Array.isArray(page.canvas.zones) ? page.canvas.zones : [];
+            for (const zone of zones) {
+                if (!zone || !zone.id) continue;
+                this.canvasMeta[zone.id] = {
+                    overflow: zone.overflow === 'visible' ? 'visible' : 'auto',
+                    widget_ids: Array.isArray(zone.widget_ids) ? [...zone.widget_ids] : [],
+                };
+            }
+            if (this.engine === 'grid' && !page.canvas) {
+                this.doc.page.canvas = this.defaultGridCanvas();
+                this.initLayoutEngineState();
+            }
+        },
+
+        defaultGridCanvas() {
+            return {
+                min_width: 1280,
+                gap: 8,
+                col_widths: [1, 1],
+                row_heights: [120, 120],
+                zones: [
+                    { id: 'z1', row: 1, col: 1, row_span: 1, col_span: 1, overflow: 'auto', widget_ids: [] },
+                    { id: 'z2', row: 1, col: 2, row_span: 1, col_span: 1, overflow: 'auto', widget_ids: [] },
+                    { id: 'z3', row: 2, col: 1, row_span: 1, col_span: 1, overflow: 'auto', widget_ids: [] },
+                    { id: 'z4', row: 2, col: 2, row_span: 1, col_span: 1, overflow: 'auto', widget_ids: [] },
+                ],
+            };
+        },
+
+        mountGridEditor() {
+            if (this.engine !== 'grid') return;
+            const el = document.getElementById('ird-grid-layout-editor');
+            if (!el || typeof GridLayoutEditor === 'undefined') return;
+            if (!this.doc.page.canvas) this.doc.page.canvas = this.defaultGridCanvas();
+            if (!this.gridEditor) {
+                this.gridEditor = new GridLayoutEditor(el, { rows: 2, cols: 2, layoutOnly: true });
+                this.gridEditor.onZoneSelect = (zoneId) => {
+                    this.selectedZoneId = zoneId;
+                    this.selectedId = '';
+                    this.activeWidget = null;
+                };
+                this.gridEditor.onChanged = () => {
+                    this.syncCanvasMetaWithGeometry();
+                    this.markDirty();
+                };
+            }
+            this.gridEditor.loadCanvas(this.doc.page.canvas);
+            this.syncCanvasMetaWithGeometry();
+        },
+
+        onEngineChange(value) {
+            if (value === this.engine) return;
+            if (value === 'free') {
+                this.engine = 'free';
+                this.selectedZoneId = '';
+                if (this.gridEditor) {
+                    this.gridEditor.destroy();
+                    this.gridEditor = null;
+                }
+                this.markDirty();
+                return;
+            }
+            if (value === 'grid') {
+                this.engine = 'grid';
+                this.doc.page.engine = 'grid';
+                this.doc.page.canvas = this.defaultGridCanvas();
+                this.initLayoutEngineState();
+                this.selectedZoneId = '';
+                this.markDirty();
+                Alpine.nextTick(() => this.mountGridEditor());
+                return;
+            }
+            if (!confirm(tr('版面配置會被清除，元件不會被刪除'))) return;
+            this.engine = 'flow';
+            delete this.doc.page.engine;
+            delete this.doc.page.canvas;
+            this.canvasMeta = {};
+            this.selectedZoneId = '';
+            if (this.gridEditor) {
+                this.gridEditor.destroy();
+                this.gridEditor = null;
+            }
+            this.markDirty();
+        },
+
+        // 合併 / 拆分 / 重建矩陣都會讓某些 zone 消失。消失的 zone 若還放著元件，
+        // 元件必須有去處，否則會靜默消失（實測：z3 空 + z4 有元件 合併後元件不見，
+        // 未放置清單也不會列回來，使用者完全無從察覺）。
+        // 規則：消失 zone 的元件併入「覆蓋它原本左上角的新 zone」（合併必然成立），
+        // 找不到覆蓋者（例如整個矩陣被重建）就讓它回到未放置清單。
+        syncCanvasMetaWithGeometry() {
+            if (!this.gridEditor) return;
+            const geometry = this.gridEditor.toCanvas();
+            const zones = geometry.zones || [];
+            const next = {};
+            for (const zone of zones) {
+                const old = this.canvasMeta[zone.id] || {};
+                next[zone.id] = {
+                    overflow: old.overflow === 'visible' ? 'visible' : 'auto',
+                    widget_ids: Array.isArray(old.widget_ids) ? old.widget_ids.filter((id) => this.findTopLevelWidget(id)) : [],
+                };
+            }
+
+            const covering = (row, col) => zones.find((zone) => (
+                row >= zone.row && row < zone.row + zone.row_span
+                && col >= zone.col && col < zone.col + zone.col_span
+            ));
+            for (const [zoneId, meta] of Object.entries(this.canvasMeta || {})) {
+                if (next[zoneId]) continue;
+                const orphans = (Array.isArray(meta.widget_ids) ? meta.widget_ids : [])
+                    .filter((id) => this.findTopLevelWidget(id));
+                if (!orphans.length) continue;
+                const geo = (this._zoneGeometry || {})[zoneId];
+                const host = geo ? covering(geo.row, geo.col) : null;
+                if (!host || !next[host.id]) continue;   // 找不到接手者：留在未放置清單
+                for (const id of orphans) {
+                    if (!next[host.id].widget_ids.includes(id)) next[host.id].widget_ids.push(id);
+                }
+            }
+
+            this._zoneGeometry = {};
+            for (const zone of zones) {
+                this._zoneGeometry[zone.id] = {
+                    row: zone.row, col: zone.col, row_span: zone.row_span, col_span: zone.col_span,
+                };
+            }
+            this.canvasMeta = next;
+            if (this.selectedZoneId && !this.canvasMeta[this.selectedZoneId]) this.selectedZoneId = '';
+            this.refreshZoneContents();
+        },
+
+        // 把每個 zone 放了哪些元件標到矩陣格子上（只看 zone id 看不出哪格有內容）
+        refreshZoneContents() {
+            if (!this.gridEditor) return;
+            const map = {};
+            for (const [zoneId, meta] of Object.entries(this.canvasMeta || {})) {
+                map[zoneId] = (Array.isArray(meta.widget_ids) ? meta.widget_ids : [])
+                    .map((id) => {
+                        const widget = this.findTopLevelWidget(id);
+                        return widget ? `${id} (${widget.type})` : id;
+                    });
+            }
+            this.gridEditor.setZoneContents(map);
+        },
+
+        buildGridCanvas() {
+            const base = this.gridEditor ? this.gridEditor.toCanvas() : (this.doc.page.canvas || this.defaultGridCanvas());
+            const minWidth = this._clampNumber(this.doc.page.canvas && this.doc.page.canvas.min_width, 1280, 320, 4096);
+            const gap = this._clampNumber(this.doc.page.canvas && this.doc.page.canvas.gap, 8, 0, 64);
+            const zones = (base.zones || []).map((zone) => {
+                const meta = this.canvasMeta[zone.id] || {};
+                return Object.assign({}, zone, {
+                    overflow: meta.overflow === 'visible' ? 'visible' : 'auto',
+                    widget_ids: Array.isArray(meta.widget_ids) ? [...meta.widget_ids] : [],
+                });
+            });
+            return Object.assign({}, base, { min_width: minWidth, gap, zones });
+        },
+
+        _clampNumber(value, fallback, min, max) {
+            const n = Number.parseInt(value, 10);
+            if (!Number.isFinite(n)) return fallback;
+            return Math.min(max, Math.max(min, n));
+        },
+
         selectWidget(id) {
             this.selectedId = id;
             this.activeWidget = this.findWidget(id);
+            this.selectedZoneId = '';
             if (this.activeWidget && this.activeWidget.type === 'menu' && !this.siteMapLoaded && !this.siteMapError) {
                 this.loadSiteMap();
             }
@@ -969,6 +1225,11 @@ function irDesigner() {
             if (!found) return;
             const index = found.siblings.findIndex((widget) => widget.id === id);
             found.siblings.splice(index, 1);
+            for (const meta of Object.values(this.canvasMeta || {})) {
+                if (Array.isArray(meta.widget_ids)) {
+                    meta.widget_ids = meta.widget_ids.filter((widgetId) => widgetId !== id);
+                }
+            }
             if (this.selectedId === id) {
                 this.selectedId = '';
                 this.activeWidget = null;
@@ -1520,6 +1781,13 @@ function irDesigner() {
             this.doc.page.title_i18n['zh-TW'] = this.pageTitleZh || this.pageName || '';
             if (!this.doc.page.id) this.doc.page.id = slugify(this.pageTitleZh || this.pageName).slice(0, 64);
             const doc = clone(this.doc);
+            if (this.engine === 'grid') {
+                doc.page.engine = 'grid';
+                doc.page.canvas = this.buildGridCanvas();
+            } else {
+                delete doc.page.engine;
+                delete doc.page.canvas;
+            }
             this.normalizeWidgetMasks(doc.page.widgets || []);
             this.normalizeAccessMatrix(doc.page.widgets || []);
             this.normalizeActionButtons(doc.page.widgets || []);
@@ -1540,36 +1808,99 @@ function irDesigner() {
 
         // 存檔前的本地檢查：後端 schema 擋得住，但回來的是一大串 JSON Schema 術語，
         // 使用者看不出「選單一個項目都沒勾」這種小事。先在前端講人話。
-        localSaveErrors(widgets, path) {
+        localSaveErrors(widgets, path, includePageIssues = true) {
             const errors = [];
+            if (includePageIssues && this.engine === 'free') {
+                errors.push({
+                    path: 'page.engine',
+                    severity: 'error',
+                    message: tr('自由版面尚未支援，請用矩陣或流式'),
+                });
+            }
+            if (includePageIssues && this.engine === 'grid') {
+                errors.push(...this.localGridSaveIssues());
+            }
             (widgets || []).forEach((widget, index) => {
                 const widgetPath = `${path}[${index}]`;
                 if (widget.type === 'menu' && this.menuItemCount(widget) === 0) {
                     errors.push({
                         path: widgetPath,
+                        severity: 'error',
                         message: tr('選單「{id}」尚未選擇任何網頁或系統連結', { id: widget.id }),
                     });
                 }
                 if (widget.type === 'menu' && !this.navKeyValid(widget)) {
                     errors.push({
                         path: widgetPath,
+                        severity: 'error',
                         message: tr('選單「{id}」的聯動參數名只能使用英數字、底線或連字號，長度 1 到 32', { id: widget.id }),
                     });
                 }
                 if (widget.type === 'layout') {
-                    errors.push(...this.localSaveErrors(widget.children, `${widgetPath}.children`));
+                    errors.push(...this.localSaveErrors(widget.children, `${widgetPath}.children`, false));
                 }
             });
             return errors;
         },
 
+        localGridSaveIssues() {
+            const issues = [];
+            const canvas = this.buildGridCanvas();
+            const rows = (canvas.row_heights || []).length;
+            const cols = (canvas.col_widths || []).length;
+            const occupied = new Set();
+            for (const zone of canvas.zones || []) {
+                const r1 = zone.row;
+                const c1 = zone.col;
+                const r2 = zone.row + zone.row_span - 1;
+                const c2 = zone.col + zone.col_span - 1;
+                if (r1 < 1 || c1 < 1 || r2 > rows || c2 > cols) {
+                    issues.push({
+                        path: `page.canvas.zones.${zone.id}`,
+                        severity: 'error',
+                        message: tr('區塊「{id}」超出矩陣範圍', { id: zone.id }),
+                    });
+                    continue;
+                }
+                for (let r = r1; r <= r2; r++) {
+                    for (let c = c1; c <= c2; c++) {
+                        const key = `${r}:${c}`;
+                        if (occupied.has(key)) {
+                            issues.push({
+                                path: `page.canvas.zones.${zone.id}`,
+                                severity: 'error',
+                                message: tr('區塊「{id}」和其他區塊重疊', { id: zone.id }),
+                            });
+                        }
+                        occupied.add(key);
+                    }
+                }
+            }
+            const assigned = new Set();
+            for (const zone of canvas.zones || []) {
+                for (const id of zone.widget_ids || []) assigned.add(id);
+            }
+            for (const widget of this.doc.page.widgets || []) {
+                if (widget && widget.id && !assigned.has(widget.id)) {
+                    issues.push({
+                        path: `page.widgets.${widget.id}`,
+                        severity: 'warning',
+                        message: tr('元件「{id}」還沒有放進任何區塊，儲存後不會顯示', { id: widget.id }),
+                    });
+                }
+            }
+            return issues;
+        },
+
         async savePage() {
             this.errors = [];
             const localErrors = this.localSaveErrors(this.doc.page.widgets, 'page.widgets');
-            if (localErrors.length) {
+            const blockingErrors = localErrors.filter((err) => err.severity !== 'warning');
+            if (blockingErrors.length) {
                 this.errors = localErrors;
                 return;
             }
+            this.errors = localErrors;
             const body = {
                 name: this.pageTitleZh || this.pageName || tr('未命名頁面'),
                 layout_json: this.buildDoc(),
@@ -1591,6 +1922,7 @@ function irDesigner() {
                 this.pageName = data.data.name || body.name;
                 this.dirty = false;
                 this.savedSnapshot = this.snapshot();
+                this.errors = localErrors;
                 alert(tr('已儲存'));
             } catch (err) {
                 this.errors = [{ path: '', message: err.message || tr('儲存失敗') }];

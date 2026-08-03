@@ -4,6 +4,7 @@
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/formio.full.min.css') }}">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/studio.css">
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/ir-designer.css">
 {% endblock %}
 
@@ -22,5 +23,6 @@ window.__IR_DESIGNER_CONFIG = {
 };
 </script>
 <script src="{{ url_for('static', filename='vendor/formio.full.min.js') }}"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/grid-layout-editor.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/ir-designer.js"></script>
 {% endblock %}
