@@ -409,6 +409,8 @@ def init_portal_sqlite(sub_system_sc: str) -> Path:
         conn.commit()
     engine.dispose()
     ensure_portal_schema(sub_system_sc)
+    from .portal_permission_admin_service import seed_default_admin_roles
+    seed_default_admin_roles(sub_system_sc)
 
     # portal_data.db — 公開資料 (空, 只建檔 + PRAGMA)
     data_path = portal_dir / 'portal_data.db'

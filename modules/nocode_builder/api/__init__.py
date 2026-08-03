@@ -1627,6 +1627,7 @@ def delete_background(secure_code):
 from . import sub_system_api  # noqa: E402, F401
 from . import site_map_api  # noqa: E402, F401
 from . import portal_org_api  # noqa: E402, F401
+from . import portal_permission_api  # noqa: E402, F401
 from . import project_api  # noqa: E402, F401
 from . import template_api  # noqa: E402, F401
 from . import bridge_api  # noqa: E402, F401
