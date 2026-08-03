@@ -20,7 +20,14 @@
 
 ### 存取位置
 
-| 項目 | 值 |
+> **2026-08-03 起本實例已不存在於開發機**：為了清空舊制 access_matrix 資料，
+> 全部 NoCode 子系統已刪除（備份在 `/opt/tmp/backup/nocode-20260803-1507/`）。
+> 下表的 secure_code 與 path_id 是**當時**的值，重建後會全部不同。
+> 要重跑本實例：`python3 scripts/examples/provision_relief_donation_demo.py`
+> （會輸出新的 sub_system_secure_code 與 portal_path_id），再用
+> `verify_relief_donation_demo.py` 帶新值驗收。
+
+| 項目 | 值（2026-08-03 刪除前） |
 |---|---|
 | 子系統 secure_code | `kRsmLJEwJiUghp_rB_Rjwc` |
 | portal path_id | `8AMAUAh9` |

@@ -541,6 +541,14 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 
 ### NoCode Builder / Portal 開發備忘（2026-07-28 起）
 
+**環境事實（2026-08-03 起）：開發機上沒有任何 NoCode 子系統。**
+為了清空舊制 access_matrix 資料以便移除 `{groups, min_level}` 形式，
+8 個子系統連同 site map 節點、頁面、portal SQLite 全數刪除
+（備份 `/opt/tmp/backup/nocode-20260803-1507/`，含 pg_dump 與 portal.db tar）。
+要測 NoCode 就自己建，或跑 `scripts/examples/provision_relief_donation_demo.py`
+重建教學實例（會產生**全新的** secure_code 與 path_id，文件裡的舊值都失效）。
+`tests/test_e2e_portal_cancel.py` 因依賴的驗收頁已刪而 **skip，這是預期狀態不是退步**。
+
 **架構原則（2026-08-03 用戶定案，違反者不是 bug 是架構錯誤）**：
 
 - NoCode 子系統的資料**自給自足**。要與平台交換一律是**平台寫入、平台去讀**，
@@ -643,7 +651,12 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
       OR (有存活 dc_sub_system_pages 掛載 且 該子系統存活)
   ```
   portal 頁**不一定掛在 site map 節點下**，可能只透過 `dc_sub_system_pages` 關聯
-  （`FORMTEST00000000000001`、`qiHMpMCul-1KGxhU4Q7Trd` 就是這種）。
+  （`FORMTEST00000000000001`、`qiHMpMCul-1KGxhU4Q7Trd` 就是這種；
+  這兩個 sc 已隨 2026-08-03 的全面清除而不存在，例子留著是為了說明形態）。
+  **反向也成立**：只掛在 site map 節點、沒有 `dc_sub_system_pages` 的頁（每個子系統的
+  welcome 就是），只查 `DcSubSystemPage` 一樣會誤判。`/api/nocode-builder/pages/<sc>`
+  的 `sub_system_secure_code` 就犯過這個錯，害設計器的 menu 面板選不到任何節點
+  （2026-08-03 commit `d61b79fb` 改走 `get_owner_sub_system_codes()` 修正）。
   2026-07-31 清孤兒時只看 site map，把這兩個 published 驗收頁誤刪，
   其中前者是 `test_e2e_portal_cancel.py` 的依賴，**刪掉會讓 E2E 靜默 skip 而不是報錯**。
   此判定的**唯一實作**是
