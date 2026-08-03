@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime
 from math import ceil
 from urllib.parse import quote, urlencode
@@ -21,6 +22,22 @@ from app.pageir.validator import validate_page_ir
 
 logger = logging.getLogger(__name__)
 PORTAL_RECORD_PLACEHOLDER = "__PIR_RECORD_SC__"
+_MENU_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
+_MENU_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+_MENU_STYLE_DEFAULTS = {
+    "bg_color": "#ffffff",
+    "item_bg_color": "#ffffff",
+    "item_text_color": "#333333",
+    "item_hover_bg_color": "#e9ecef",
+    "item_hover_text_color": "#333333",
+    "accent_color": "#e67e22",
+    "border_color": "#dddddd",
+    "border_width": 1,
+    "border_radius": 4,
+    "background_size": "cover",
+    "background_repeat": "no-repeat",
+    "background_position": "center",
+}
 
 
 class PageIrRenderError(Exception):
@@ -139,14 +156,25 @@ def _prepare_text(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
 
 
 def _prepare_menu(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
-    del widgets_by_id
     ctx = get_render_context()
     world = ctx.get("world", "platform")
     provider = get_menu_provider(world)
+    orientation = widget.get("orientation") if widget.get("orientation") in {"vertical", "horizontal"} else "vertical"
+    item_gap = _clamped_int(widget.get("item_gap", 6), 0, 32, 6)
+    hover_expand = bool(widget.get("hover_expand", True))
+    nav_source = widget.get("nav_source") if widget.get("nav_source") in {"self", "parent_selection"} else "self"
+    nav_key = widget.get("nav_key") if _valid_menu_token(widget.get("nav_key")) else "nav"
+    items = _menu_items_for_nav(widget.get("items", []), nav_source, nav_key)
     entries = []
     if provider is not None:
         try:
-            entries = provider(widget.get("items", []), ctx) or []
+            menu_ctx = {
+                **ctx,
+                "menu_nav_source": nav_source,
+                "menu_nav_key": nav_key,
+                "menu_nav_keys": _menu_nav_keys(widgets_by_id),
+            }
+            entries = provider(items, menu_ctx) or []
         except Exception:
             logger.exception(
                 "Page IR menu provider failed: widget=%s world=%s",
@@ -159,7 +187,148 @@ def _prepare_menu(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
         "id": widget["id"],
         "title": _i18n(widget["title_i18n"]) if widget.get("title_i18n") else None,
         "entries": entries,
+        "orientation": orientation,
+        "item_gap": item_gap,
+        "hover_expand": hover_expand,
+        "style": _menu_style(widget),
+        "style_css": _menu_style_css(widget, item_gap),
     }
+
+
+def _menu_nav_keys(widgets_by_id: dict[str, dict]) -> list[str]:
+    """本頁所有 menu widget 用到的 nav 參數名。
+
+    聯動連結只該沿用這些參數（讓同頁多組聯動的選擇並存），
+    不能把整個 request.args 複製過去——那會把表格的分頁／排序參數
+    一起帶到別的頁面，撞上目標頁同 id 的 widget。
+    """
+    keys = set()
+    for widget in (widgets_by_id or {}).values():
+        if widget.get("type") != "menu":
+            continue
+        nav_key = widget.get("nav_key")
+        keys.add(nav_key if _valid_menu_token(nav_key) else "nav")
+    return sorted(keys)
+
+
+def _menu_items_for_nav(items: list[dict], nav_source: str, nav_key: str) -> list[dict]:
+    if nav_source != "parent_selection":
+        return items
+    selected = request.args.get(nav_key)
+    if not _valid_menu_token(selected):
+        return []
+    node = _find_menu_node(items, selected)
+    if not node:
+        return []
+    children = node.get("children")
+    return children if isinstance(children, list) else []
+
+
+def _find_menu_node(items: list[dict], node_sc: str) -> dict | None:
+    for item in items or []:
+        if item.get("kind") != "node":
+            continue
+        if item.get("node") == node_sc:
+            return item
+        found = _find_menu_node(item.get("children") or [], node_sc)
+        if found:
+            return found
+    return None
+
+
+def _menu_style(widget: dict) -> dict:
+    """把使用者自訂樣式收斂成安全值。
+
+    值最後會輸出成 inline style，所以這裡是第二道防線（第一道是 schema pattern）：
+    顏色只認 ^#[0-9a-fA-F]{6}$，數值 clamp 到範圍，列舉值只認白名單，
+    任何不合的值一律丟棄回預設，不要嘗試修補。
+    """
+    raw = widget.get("style") if isinstance(widget.get("style"), dict) else {}
+    style = dict(_MENU_STYLE_DEFAULTS)
+    for key in (
+        "bg_color",
+        "item_bg_color",
+        "item_text_color",
+        "item_hover_bg_color",
+        "item_hover_text_color",
+        "accent_color",
+        "border_color",
+    ):
+        value = raw.get(key)
+        if isinstance(value, str) and _MENU_COLOR_RE.fullmatch(value):
+            style[key] = value
+
+    style["border_width"] = _clamped_int(raw.get("border_width"), 0, 8, style["border_width"])
+    style["border_radius"] = _clamped_int(raw.get("border_radius"), 0, 32, style["border_radius"])
+
+    if raw.get("background_size") in {"cover", "contain", "auto"}:
+        style["background_size"] = raw["background_size"]
+    if raw.get("background_repeat") in {"no-repeat", "repeat", "repeat-x", "repeat-y"}:
+        style["background_repeat"] = raw["background_repeat"]
+    if raw.get("background_position") in {"center", "top", "bottom", "left", "right"}:
+        style["background_position"] = raw["background_position"]
+
+    background_file = raw.get("background_file")
+    if _valid_menu_token(background_file):
+        background_url = _menu_background_url(background_file)
+        if background_url:
+            style["background_image"] = background_url
+    return style
+
+
+def _menu_background_url(secure_code: str) -> str | None:
+    try:
+        from app.services import file_service
+
+        record = file_service.get_file_by_sc(secure_code)
+        if not record or getattr(record, "is_deleted", False):
+            return None
+        if getattr(record, "context_type", None) != "nc_background":
+            return None
+        return f"{request.script_root}/api/files/{secure_code}/serve"
+    except Exception:
+        logger.exception("Page IR menu background lookup failed")
+        return None
+
+
+def _menu_style_css(widget: dict, item_gap: int) -> str:
+    style = _menu_style(widget)
+    pairs = [
+        ("--pir-menu-bg", style["bg_color"]),
+        ("--pir-menu-item-bg", style["item_bg_color"]),
+        ("--pir-menu-item-text", style["item_text_color"]),
+        ("--pir-menu-item-hover-bg", style["item_hover_bg_color"]),
+        ("--pir-menu-item-hover-text", style["item_hover_text_color"]),
+        ("--pir-menu-accent", style["accent_color"]),
+        ("--pir-menu-border", style["border_color"]),
+        ("--pir-menu-border-width", f"{style['border_width']}px"),
+        ("--pir-menu-border-radius", f"{style['border_radius']}px"),
+        ("--pir-menu-gap", f"{item_gap}px"),
+    ]
+    if style.get("background_image"):
+        pairs.extend(
+            [
+                ("--pir-menu-bg-image", f'url("{_css_string_escape(style["background_image"])}")'),
+                ("--pir-menu-bg-size", style["background_size"]),
+                ("--pir-menu-bg-repeat", style["background_repeat"]),
+                ("--pir-menu-bg-position", style["background_position"]),
+            ]
+        )
+    return ";".join(f"{key}:{value}" for key, value in pairs) + ";"
+
+
+def _css_string_escape(value: str) -> str:
+    return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _valid_menu_token(value) -> bool:
+    return isinstance(value, str) and bool(_MENU_TOKEN_RE.fullmatch(value))
+
+
+def _clamped_int(value, minimum: int, maximum: int, default: int) -> int:
+    if not isinstance(value, int):
+        return default
+    return min(max(value, minimum), maximum)
 
 
 def _prepare_table(widget: dict, widgets_by_id: dict[str, dict]) -> dict:

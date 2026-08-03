@@ -37,6 +37,18 @@
       "type": "string",
       "pattern": "^[A-Za-z0-9_-]{16,32}$"
     },
+    "menu_nav_key": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,32}$"
+    },
+    "menu_color": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "menu_background_file": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,32}$"
+    },
     "portal_access_rule": {
       "type": "object",
       "additionalProperties": false,
@@ -501,38 +513,116 @@
           "type": "array",
           "minItems": 1,
           "items": {
-            "oneOf": [
-              {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["kind", "node"],
-                "properties": {
-                  "kind": {
-                    "const": "node"
-                  },
-                  "node": {
-                    "$ref": "#/$defs/site_map_node_ref"
-                  }
-                }
-              },
-              {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["kind", "link"],
-                "properties": {
-                  "kind": {
-                    "const": "system"
-                  },
-                  "link": {
-                    "enum": ["login", "register", "logout"]
-                  }
-                }
-              }
-            ]
+            "$ref": "#/$defs/menu_item"
           }
+        },
+        "orientation": {
+          "enum": ["vertical", "horizontal"]
+        },
+        "item_gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        },
+        "hover_expand": {
+          "type": "boolean"
+        },
+        "nav_source": {
+          "enum": ["self", "parent_selection"]
+        },
+        "nav_key": {
+          "$ref": "#/$defs/menu_nav_key"
+        },
+        "style": {
+          "$ref": "#/$defs/menu_style"
         },
         "access_matrix": {
           "$ref": "#/$defs/widget_access_matrix"
+        }
+      }
+    },
+    "menu_item": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "node"],
+          "properties": {
+            "kind": {
+              "const": "node"
+            },
+            "node": {
+              "$ref": "#/$defs/site_map_node_ref"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/menu_item"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "link"],
+          "properties": {
+            "kind": {
+              "const": "system"
+            },
+            "link": {
+              "enum": ["login", "register", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    "menu_style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bg_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "item_bg_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "item_text_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "item_hover_bg_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "item_hover_text_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "accent_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "border_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "border_width": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "border_radius": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        },
+        "background_file": {
+          "$ref": "#/$defs/menu_background_file"
+        },
+        "background_size": {
+          "enum": ["cover", "contain", "auto"]
+        },
+        "background_repeat": {
+          "enum": ["no-repeat", "repeat", "repeat-x", "repeat-y"]
+        },
+        "background_position": {
+          "enum": ["center", "top", "bottom", "left", "right"]
         }
       }
     },

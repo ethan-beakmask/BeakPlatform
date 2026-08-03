@@ -144,6 +144,40 @@ function irDesigner() {
             if (!widget.title_i18n) widget.title_i18n = { 'zh-TW': '', en: '' };
             if (widget.title_i18n.en === undefined) widget.title_i18n.en = '';
             if (!Array.isArray(widget.items)) widget.items = [];
+            const normalizeItems = (items) => {
+                for (const item of items || []) {
+                    if (item && item.kind === 'node') {
+                        if (!Array.isArray(item.children)) item.children = [];
+                        normalizeItems(item.children);
+                    }
+                }
+            };
+            normalizeItems(widget.items);
+            if (!widget.orientation) widget.orientation = 'vertical';
+            if (!Number.isInteger(widget.item_gap)) widget.item_gap = 6;
+            if (widget.hover_expand === undefined) widget.hover_expand = true;
+            if (!widget.nav_source) widget.nav_source = 'self';
+            if (!widget.nav_key) widget.nav_key = 'nav';
+            if (!widget.style || typeof widget.style !== 'object' || Array.isArray(widget.style)) {
+                widget.style = {};
+            }
+            const styleDefaults = {
+                bg_color: '#ffffff',
+                item_bg_color: '#ffffff',
+                item_text_color: '#333333',
+                item_hover_bg_color: '#e9ecef',
+                item_hover_text_color: '#333333',
+                accent_color: '#e67e22',
+                border_color: '#dddddd',
+                border_width: 1,
+                border_radius: 4,
+                background_size: 'cover',
+                background_repeat: 'no-repeat',
+                background_position: 'center',
+            };
+            for (const [key, value] of Object.entries(styleDefaults)) {
+                if (widget.style[key] === undefined) widget.style[key] = value;
+            }
         },
 
         normalizeMasterDetailWidget(widget) {

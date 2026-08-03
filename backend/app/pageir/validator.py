@@ -151,6 +151,9 @@ def _semantic_errors(doc: dict[str, Any]) -> list[dict]:
         if widget_type == "detail":
             _check_detail_fields(widget, path, errors)
 
+        if widget_type == "menu":
+            _check_menu(widget, path, errors)
+
         # form.submit_action_ref 是 L2 action registry 參照（渲染期 fail-closed 解析），
         # 不是頁內 actions widget 參照，故不列入 dangling_ref 檢查。
 
@@ -235,3 +238,52 @@ def _check_detail_fields(widget: dict[str, Any], path: str, errors: list[dict]) 
                     "field_not_in_binding",
                 )
             )
+
+
+def _check_menu(widget: dict[str, Any], path: str, errors: list[dict]) -> None:
+    seen_nodes: dict[str, str] = {}
+    has_node_with_children = False
+
+    def walk(items: list[dict], item_path: str, depth: int) -> None:
+        nonlocal has_node_with_children
+        if depth > 5:
+            errors.append(
+                _error(
+                    item_path,
+                    "Menu nesting depth exceeds the maximum of 5",
+                    "menu_depth",
+                )
+            )
+            return
+        for index, item in enumerate(items or []):
+            current_path = f"{item_path}[{index}]"
+            if item.get("kind") != "node":
+                continue
+            node_sc = item.get("node")
+            if node_sc:
+                node_path = f"{current_path}.node"
+                if node_sc in seen_nodes:
+                    errors.append(
+                        _error(
+                            node_path,
+                            f"Menu node '{node_sc}' duplicates node at {seen_nodes[node_sc]}",
+                            "menu_duplicate_node",
+                        )
+                    )
+                else:
+                    seen_nodes[node_sc] = node_path
+            children = item.get("children") or []
+            if children:
+                has_node_with_children = True
+                walk(children, f"{current_path}.children", depth + 1)
+
+    walk(widget.get("items", []), f"{path}.items", 1)
+
+    if widget.get("nav_source") == "parent_selection" and not has_node_with_children:
+        errors.append(
+            _error(
+                f"{path}.nav_source",
+                "Menu parent_selection requires at least one node with children",
+                "menu_nav_no_children",
+            )
+        )

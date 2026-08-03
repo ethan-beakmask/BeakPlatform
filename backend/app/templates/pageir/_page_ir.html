@@ -25,7 +25,9 @@
 {% elif widget.type == 'text' %}
 <{{ widget.level }} id="{{ widget.id }}" class="pir-text pir-text-{{ widget.level }}">{{ widget.content }}</{{ widget.level }}>
 {% elif widget.type == 'menu' %}
-<nav id="{{ widget.id }}" class="pir-menu">
+<nav id="{{ widget.id }}"
+     class="pir-menu pir-menu--{{ widget.orientation }}{% if widget.hover_expand %} pir-menu--hover{% endif %}"
+     style="{{ widget.style_css }}">
     {% if widget.title %}
     <div class="pir-menu-title">{{ widget.title }}</div>
     {% endif %}

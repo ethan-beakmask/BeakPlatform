@@ -159,7 +159,7 @@ def test_portal_provider_shows_unselected_parent_for_selected_child(monkeypatch,
 
     with pir_app.test_request_context("/", environ_overrides={"SCRIPT_NAME": "/beakplatform"}):
         entries = pageir_portal_menu._build_portal_menu(
-            [{"kind": "node", "node": child.secure_code}],
+            [{"kind": "node", "node": parent.secure_code, "children": [{"kind": "node", "node": child.secure_code}]}],
             {"sub_system_sc": "ss_123", "portal_user": {"user_id": 1}, "path_id": "portal1"},
         )
 
@@ -178,14 +178,14 @@ def test_portal_provider_removes_denied_leaf_and_empty_parent(monkeypatch, pir_a
 
     with pir_app.test_request_context("/"):
         entries = pageir_portal_menu._build_portal_menu(
-            [{"kind": "node", "node": child.secure_code}],
+            [{"kind": "node", "node": parent.secure_code, "children": [{"kind": "node", "node": child.secure_code}]}],
             {"sub_system_sc": "ss_123", "portal_user": {"user_id": 1}, "path_id": "portal1"},
         )
 
     assert entries == []
 
 
-def test_portal_provider_orders_nodes_by_site_map_not_items(monkeypatch, pir_app):
+def test_portal_provider_orders_nodes_by_items(monkeypatch, pir_app):
     first = _node("FirstSecureCode001", "First", order=1, page_sc="PageFirst001")
     second = _node("SecondSecureCode01", "Second", order=2, page_sc="PageSecond01")
     _patch_nodes(monkeypatch, [second, first])
@@ -200,7 +200,7 @@ def test_portal_provider_orders_nodes_by_site_map_not_items(monkeypatch, pir_app
             {"sub_system_sc": "ss_123", "portal_user": {"user_id": 1}, "path_id": "portal1"},
         )
 
-    assert [entry["label"] for entry in entries] == ["First", "Second"]
+    assert [entry["label"] for entry in entries] == ["Second", "First"]
 
 
 def test_portal_provider_system_links_follow_user_state(monkeypatch, pir_app):
