@@ -631,6 +631,44 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   完整交接與踩坑清單：`docs/handoff_nocode_n1_n5.md`
 - v2 `layout_json` 已退役，`/p/` 遇到會回 410；設計器只認 `ir_version: 3`
 
+### NoCode Builder API 操作備忘（2026-08-03 以 API 全程建出一個子系統後實測）
+
+以下每一條都是**靠試誤才弄對**的，照抄可省一輪除錯。
+完整可執行範例：`scripts/examples/provision_relief_donation_demo.py`（建置，九步）
+與 `verify_relief_donation_demo.py`（端對端驗收，11 項）。
+
+- **API 前綴是 `/api/nocode-builder`**（不是 `/api/nocode`）
+- **部分 API 未豁免 CSRF**（例如建表 `POST /sub-systems/<sc>/tables`），
+  token 只能從登入後頁面的 meta 取，登入回應不含
+- `POST /sub-systems` 回傳的是 **`sub_system_secure_code` / `portal_path_id`**，
+  沒有 `secure_code` 這個 key
+- **子系統 `status` 不是 `published`，公開 portal 全部 404**
+  → `POST /projects/<sc>/publish`（連動啟用選單與 portal 路徑）
+- 頁面同樣要發布：`PATCH /pages/<sc>/publish`
+- portal rows API 回應是**頂層 `rows`**，不是 `data.rows`
+- master-detail submit 成功回 **201**（不是 200）
+- `portal_settings`（`allow_registration` / `allow_anonymous`）**沒有 API**，
+  只能直接寫子系統的 `portal.db`
+- 建表 API 一律自動加 `id` / `created_at` / `portal_user_ref`，
+  自行宣告這三欄會被擋成 `reserved_column_name`
+- `POST /views` 的 `data_source` 只收 `org` / `conglomerate`；
+  portal 業務表要用 `POST /sub-systems/<sc>/resolve-view`（會自動讀表結構生成 columns_config）
+- **`admin-ethanyu@beluga.com` 的密碼 `ApiKeyTest2026` 已失效**（2026-08-03 實測 401，
+  不要再猜密碼會鎖定）。自動化一律走 quick-login：
+
+```bash
+BASE=http://192.168.0.16:7000/beakplatform
+# ORG_ADMIN admin-ethanyu@beluga.com
+curl -s -c cj.txt -X POST "$BASE/dev/quick-login" \
+  -H 'Content-Type: application/json' -d '{"user_id":"jIYEQ-_lZMZNBkVy-hijal"}'
+TOKEN=$(curl -s -b cj.txt "$BASE/dashboard" | grep -o 'csrf-token" content="[^"]*' | cut -d'"' -f3)
+```
+
+**NoCode 沒有聚合能力**：`DcCrudView` 只 SELECT 單一實體表、無 GROUP BY／SUM，
+且 `SqliteCrudService` 只認 `sqlite_master.type='table'`，**SQLite VIEW 綁不上去**。
+要做統計只能「實體彙總表 + SQLite trigger」，這步必然落在 SQL 層。
+範例見 `docs/examples/RELIEF_DONATION_DEMO.md` 第 2 節。
+
 ### pytest 既有環境問題（不要試圖修）
 
 跑完整 `pytest tests/` 會有 **13 個 error**，原因是測試 app 用 SQLite `db.create_all()`
