@@ -207,7 +207,29 @@ def ir_designer_preview(secure_code):
                 level_code,
                 page_access_reason,
             )
-            abort(403)
+            required_permission_codes = _preview_required_permissions(ss.secure_code, secure_code)
+            permission_descriptions = _preview_permission_descriptions(
+                ss.secure_code,
+                required_permission_codes,
+            )
+            return render_template(
+                'modules/nocode_builder/preview_denied.html',
+                sub_system_name=ss.name,
+                sub_system_icon=ss.icon or '',
+                group_code=group_code or None,
+                group_name=active_groups[group_code].get('name') if group_code else '',
+                level_code=level_code,
+                level_name=level.get('name') or level_code,
+                level_rank=level_rank,
+                required_permissions=[
+                    {
+                        'code': code,
+                        'description': permission_descriptions.get(code, ''),
+                    }
+                    for code in required_permission_codes
+                ],
+                deny_reason=page_access_reason,
+            ), 403
         preview_banner = {
             'group': active_groups[group_code].get('name') if group_code else None,
             'level': level.get('name') or level_code,
@@ -533,3 +555,49 @@ def _page_ir_title(page):
     title_i18n = (page.layout_json or {}).get('page', {}).get('title_i18n', {})
     locale = str(get_locale() or 'zh-TW')
     return title_i18n.get(locale) or title_i18n.get('zh-TW') or page.name or ''
+
+
+def _preview_required_permissions(sub_system_sc, page_layout_sc):
+    """Return read.required_permissions for the portal preview page node."""
+    from ..models.site_map_node import DcSiteMapNode
+
+    node = DcSiteMapNode.query.filter_by(
+        sub_system_secure_code=sub_system_sc,
+        page_layout_secure_code=page_layout_sc,
+        is_deleted=False,
+    ).first()
+    matrix = getattr(node, 'access_matrix', None) if node else None
+    if not isinstance(matrix, dict):
+        return []
+    rule = matrix.get('read')
+    if not isinstance(rule, dict):
+        return []
+    permissions = rule.get('required_permissions')
+    if not isinstance(permissions, list):
+        return []
+    return [code for code in permissions if isinstance(code, str)]
+
+
+def _preview_permission_descriptions(sub_system_sc, permission_codes):
+    """Return known portal permission descriptions keyed by code."""
+    if not permission_codes:
+        return {}
+
+    try:
+        from ..services import portal_permission_admin_service
+
+        permission_model = portal_permission_admin_service.get_permission_model(sub_system_sc)
+    except Exception:
+        logger.exception(
+            'Failed to load portal permission descriptions: sub_system=%s',
+            sub_system_sc,
+        )
+        return {}
+
+    wanted = set(permission_codes)
+    descriptions = {}
+    for permission in permission_model.get('permissions', []):
+        code = permission.get('code')
+        if code in wanted:
+            descriptions[code] = permission.get('description') or ''
+    return descriptions
