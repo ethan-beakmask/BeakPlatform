@@ -616,7 +616,20 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   角色／階級權限與帳號角色一律**整組覆寫**（PUT 全量 codes），不是增量。
   建立子系統會自動 seed 六個 `is_system` 管理角色；既有子系統在首次讀 permission-model 時補 seed。
   權限碼被角色／階級／個人覆寫／site map access_matrix 引用時**拒絕刪除（409）**。
-  尚未做：menu 元件與 system_link（PF-8b 第二輪）。
+- **Page IR v3 有 menu widget 了（PF-8c，2026-08-03）**：
+  `{"type":"menu","items":[{"kind":"node","node":"<site_map_node_sc>"},{"kind":"system","link":"login|register|logout"}]}`。
+  **只存被勾選的節點集合，不複製結構**——層級與順序渲染時即時取自 site map，
+  拖拉調整位置後 menu 自動跟著變。未勾選的祖先會以**純結構層**（不可點）出現；
+  不可點又沒有可見子孫的節點整枝移除。
+  顯示條件 = 被勾選 AND `check_page_access` 通過（menu 是導覽、不是授權邊界，
+  各頁自己仍會再判一次）。
+  平台層走 registry：`register_menu_provider(world, fn)`，portal 實作在
+  `services/pageir_portal_menu.py`；**platform world 沒有 provider 是預期狀態**
+  （entries 回空陣列，不 raise）。
+  `system_link` 值域是**後端白名單**（login/register/logout），不接受任意 URL；
+  login/register 只在未登入時出現，register 另需 `allow_registration`，logout 反之。
+  site map 的 `folder` 節點型別已放行（不建 page layout、不可當根節點）。
+  尚未做：設計器裡勾選節點的 UI（目前 menu widget 只能靠 API／SQL 寫入 layout_json）。
 - **portal 業務表有列級擁有權**（2026-07-30 起）：表固定有系統欄位 `portal_user_ref`
   （值 `u:<portal user_id>` / `g:<guest_token>`），視圖 `DcCrudView.row_owner_scope`
   預設 **`own`**（只能存取自己建的列），要共享的表必須明確設 `all`。

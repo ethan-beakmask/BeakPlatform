@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-03 13:33+0800\n"
+"POT-Creation-Date: 2026-08-03 14:34+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -2237,6 +2237,7 @@ msgstr "Cancel"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:42
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:28
+#: ../modules/nocode_builder/services/pageir_portal_menu.py:134
 #: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:42
 #: app/templates/auth/change_password.html:86
 #: app/templates/layouts/base.html:87
@@ -2297,6 +2298,7 @@ msgstr "Back to login"
 msgid "格式：帳號@企業網域"
 msgstr "Format: username@company-domain"
 
+#: ../modules/nocode_builder/services/pageir_portal_menu.py:126
 #: app/templates/auth/login.html:8 app/templates/auth/login.html:10
 #: app/templates/auth/login.html:126 app/templates/auth/login.html:130
 #: app/templates/auth/login.html:132 app/templates/auth/login.html:136
@@ -2436,6 +2438,10 @@ msgstr "Host settings"
 msgid "登入系統"
 msgstr "Log in"
 
+#: app/templates/pageir/_page_ir.html:35
+msgid "沒有可顯示的項目"
+msgstr "No items to display"
+
 #: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:86
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:332
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:343
@@ -2443,7 +2449,7 @@ msgstr "Log in"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:214
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:471
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:269
-#: app/templates/pageir/_page_ir.html:14
+#: app/templates/pageir/_page_ir.html:42
 #: app/templates/pages/admin/groups.html:191
 #: app/templates/pages/organizations/list.html:423
 #: app/templates/pages/units/create.html:3
@@ -2473,7 +2479,7 @@ msgstr "Add"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:48
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:54
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
-#: app/templates/pageir/_page_ir.html:32 app/templates/pageir/_page_ir.html:145
+#: app/templates/pageir/_page_ir.html:60 app/templates/pageir/_page_ir.html:173
 #: app/templates/pages/access_center/_tab_roles.html:59
 #: app/templates/pages/admin/_settings_recipients_section.html:32
 #: app/templates/pages/admin/_settings_smtp_section.html:33
@@ -2499,7 +2505,7 @@ msgstr "Add"
 msgid "操作"
 msgstr "Actions"
 
-#: app/templates/pageir/_page_ir.html:53
+#: app/templates/pageir/_page_ir.html:81
 msgid "開啟"
 msgstr "Open"
 
@@ -2513,7 +2519,7 @@ msgstr "Open"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:295
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:218
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:73
-#: app/templates/pageir/_page_ir.html:60
+#: app/templates/pageir/_page_ir.html:88
 #: app/templates/pages/access_center/_tab_roles.html:101
 #: app/templates/pages/admin/_settings_recipients_section.html:52
 #: app/templates/pages/admin/_settings_recipients_section.html:54
@@ -2556,7 +2562,7 @@ msgstr "Edit"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:85
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:354
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:74
-#: app/templates/pageir/_page_ir.html:61
+#: app/templates/pageir/_page_ir.html:89
 #: app/templates/pages/access_center/_tab_roles.html:102
 #: app/templates/pages/admin/_settings_recipients_section.html:56
 #: app/templates/pages/admin/_settings_recipients_section.html:58
@@ -2583,12 +2589,12 @@ msgstr "Edit"
 msgid "刪除"
 msgstr "Delete"
 
-#: app/templates/pageir/_page_ir.html:66 app/templates/pageir/_page_ir.html:149
-#: app/templates/pageir/_page_ir.html:181
+#: app/templates/pageir/_page_ir.html:94 app/templates/pageir/_page_ir.html:177
+#: app/templates/pageir/_page_ir.html:209
 msgid "沒有資料"
 msgstr "No data"
 
-#: app/templates/pageir/_page_ir.html:71 app/templates/pageir/_page_ir.html:186
+#: app/templates/pageir/_page_ir.html:99 app/templates/pageir/_page_ir.html:214
 #: app/templates/pages/access_center/_tab_health.html:77
 msgid "總數"
 msgstr "Total"
@@ -2596,7 +2602,8 @@ msgstr "Total"
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:85
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:119
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:312
-#: app/templates/pageir/_page_ir.html:72 app/templates/pageir/_page_ir.html:187
+#: app/templates/pageir/_page_ir.html:100
+#: app/templates/pageir/_page_ir.html:215
 #: app/templates/pages/access_center/_tab_accounts.html:121
 #: app/templates/pages/users/list.html:89
 msgid "上一頁"
@@ -2606,30 +2613,31 @@ msgstr "Previous"
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
-#: app/templates/pageir/_page_ir.html:74 app/templates/pageir/_page_ir.html:189
+#: app/templates/pageir/_page_ir.html:102
+#: app/templates/pageir/_page_ir.html:217
 #: app/templates/pages/access_center/_tab_accounts.html:124
 #: app/templates/pages/users/list.html:93
 msgid "下一頁"
 msgstr "Next"
 
-#: app/templates/pageir/_page_ir.html:96
+#: app/templates/pageir/_page_ir.html:124
 msgid "請選擇一筆資料"
 msgstr "Select a record"
 
-#: app/templates/pageir/_page_ir.html:127
+#: app/templates/pageir/_page_ir.html:155
 msgid "本次服務項目"
 msgstr "Current service items"
 
-#: app/templates/pageir/_page_ir.html:129
+#: app/templates/pageir/_page_ir.html:157
 msgid "歷史記錄"
 msgstr "History"
 
-#: app/templates/pageir/_page_ir.html:135
+#: app/templates/pageir/_page_ir.html:163
 msgid "新增一筆"
 msgstr "Add row"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:246
-#: app/templates/pageir/_page_ir.html:196
+#: app/templates/pageir/_page_ir.html:224
 msgid "送出"
 msgstr "Submit"
 
@@ -10135,11 +10143,11 @@ msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:253
 msgid "-- 建立或調整選單結構"
-msgstr ""
+msgstr "-- Create or adjust the menu structure"
 
 #: app/templates/pages/platform_help/org_admin.html:254
 msgid "-- 設定選單可見性與角色門檻"
-msgstr ""
+msgstr "-- Configure menu visibility and role thresholds"
 
 #: app/templates/pages/platform_help/org_admin.html:255
 msgid "-- 建立或選擇角色，指派角色給帳號"
@@ -14976,6 +14984,10 @@ msgstr "Completed"
 msgid "已退回"
 msgstr "Returned"
 
+#: ../modules/nocode_builder/services/pageir_portal_menu.py:132
+msgid "註冊"
+msgstr "Register"
+
 #: ../modules/nocode_builder/services/project_service.py:120
 #: ../modules/nocode_builder/services/project_service.py:163
 #: ../modules/nocode_builder/services/project_service.py:260
@@ -15012,22 +15024,26 @@ msgstr "Developer account does not exist or is disabled"
 msgid "子系統 %(code)s 不存在"
 msgstr "Subsystem %(code)s does not exist"
 
-#: ../modules/nocode_builder/services/site_map_service.py:286
+#: ../modules/nocode_builder/services/site_map_service.py:287
 #, python-format
-msgid "Invalid node_type: %(node_type)s，僅支援 page"
-msgstr "Invalid node_type: %(node_type)s; only page is supported"
+msgid "Invalid node_type: %(node_type)s，僅支援 page 或 folder"
+msgstr "Invalid node_type: %(node_type)s. Only page or folder is supported"
 
-#: ../modules/nocode_builder/services/site_map_service.py:298
+#: ../modules/nocode_builder/services/site_map_service.py:292
+msgid "根節點只能是 page"
+msgstr "The root node must be a page"
+
+#: ../modules/nocode_builder/services/site_map_service.py:301
 msgid "Site Map 只能有一個根頁面 (welcome)，請將新網頁建立在根頁面下"
 msgstr ""
 "The Site Map can have only one root page (welcome). Create new pages "
 "under the root page"
 
-#: ../modules/nocode_builder/services/site_map_service.py:302
+#: ../modules/nocode_builder/services/site_map_service.py:305
 msgid "根頁面名稱必須為 welcome"
 msgstr "The root page name must be welcome"
 
-#: ../modules/nocode_builder/services/site_map_service.py:375
+#: ../modules/nocode_builder/services/site_map_service.py:380
 msgid "根頁面 (welcome) 不可刪除"
 msgstr "The root page (welcome) cannot be deleted"
 
@@ -15260,7 +15276,7 @@ msgstr "Editable when loading an existing master record"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:343
 msgid "未勾選時，帶入既有主檔只能檢視，仍可新增明細"
-msgstr "When unchecked, an existing master record is view-only, but detail rows can still be added"
+msgstr ""
 "When unchecked, an existing master record is view-only, but detail rows "
 "can still be added"
 
@@ -15274,7 +15290,7 @@ msgstr "Foreign key field"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:405
 msgid "明細表中指向主檔的欄位；送出時由系統填入，使用者不可指定"
-msgstr "The detail table field that points to the master record; the system fills it on submit and users cannot set it"
+msgstr ""
 "The detail table field that points to the master record; the system fills"
 " it on submit and users cannot set it"
 
@@ -15287,13 +15303,13 @@ msgstr "history"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:420
 msgid "顯示此主檔既有的明細記錄，唯讀。新增主檔時不會出現"
-msgstr "Shows existing detail records for this master record as read-only. It is not shown when creating a new master record"
+msgstr ""
 "Shows existing detail records for this master record as read-only. It is "
 "not shown when creating a new master record"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:448
 msgid "未啟用新增時無法送出；編輯需同時勾選主檔可編輯"
-msgstr "Submitting requires create access; editing also requires the master editable option"
+msgstr ""
 "Submitting requires create access; editing also requires the master "
 "editable option"
 
@@ -15317,7 +15333,7 @@ msgstr "Platform"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:486
 msgid "權限欄位僅平台頁面生效；子系統 Portal 一律以下方「元件准入」判定。"
-msgstr "The permission field applies to platform pages only; subsystem Portal always uses the widget access rules below."
+msgstr ""
 "The permission field applies to platform pages only; subsystem Portal "
 "always uses the widget access rules below."
 
@@ -15376,7 +15392,9 @@ msgstr "Permission Matrix"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:5
 msgid "未設限代表所有 portal 訪客可讀；空白不是禁止。"
-msgstr "Unrestricted means all portal visitors can read it; blank does not mean denied."
+msgstr ""
+"Unrestricted means all portal visitors can read it; blank does not mean "
+"denied."
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:17
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:23
@@ -15683,7 +15701,7 @@ msgstr "Developer"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:68
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:79
 msgid "工作區"
-msgstr ""
+msgstr "Workspace"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:92
 msgid "例: 訂餐系統"

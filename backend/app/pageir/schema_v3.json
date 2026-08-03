@@ -33,6 +33,10 @@
       "type": "string",
       "pattern": "^[a-z][a-z0-9_.:-]{1,127}$"
     },
+    "site_map_node_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{16,32}$"
+    },
     "portal_access_rule": {
       "type": "object",
       "additionalProperties": false,
@@ -189,6 +193,9 @@
         },
         {
           "$ref": "#/$defs/actions_widget"
+        },
+        {
+          "$ref": "#/$defs/menu_widget"
         },
         {
           "$ref": "#/$defs/text_widget"
@@ -500,6 +507,59 @@
           "minItems": 1,
           "items": {
             "$ref": "#/$defs/action_button"
+          }
+        },
+        "access_matrix": {
+          "$ref": "#/$defs/widget_access_matrix"
+        }
+      }
+    },
+    "menu_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "items"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "menu"
+        },
+        "title_i18n": {
+          "$ref": "#/$defs/i18n"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "node"],
+                "properties": {
+                  "kind": {
+                    "const": "node"
+                  },
+                  "node": {
+                    "$ref": "#/$defs/site_map_node_ref"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "link"],
+                "properties": {
+                  "kind": {
+                    "const": "system"
+                  },
+                  "link": {
+                    "enum": ["login", "register", "logout"]
+                  }
+                }
+              }
+            ]
           }
         },
         "access_matrix": {

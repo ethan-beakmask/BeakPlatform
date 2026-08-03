@@ -1,3 +1,20 @@
+{% macro render_menu_entries(entries) %}
+<ul class="pir-menu-list">
+    {% for entry in entries %}
+    <li class="pir-menu-item">
+        {% if entry.url %}
+        <a class="pir-menu-link" href="{{ entry.url }}">{% if entry.icon %}<i class="{{ entry.icon }}"></i>{% endif %}<span>{{ entry.label }}</span></a>
+        {% else %}
+        <span class="pir-menu-label">{% if entry.icon %}<i class="{{ entry.icon }}"></i>{% endif %}<span>{{ entry.label }}</span></span>
+        {% endif %}
+        {% if entry.children %}
+        {{ render_menu_entries(entry.children) }}
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endmacro %}
+
 {% macro render_widget(widget) %}
 {% if widget.type == 'layout' %}
 <div id="{{ widget.id }}" class="pir-layout" style="grid-template-columns: repeat({{ widget.columns }}, 1fr); gap: {{ widget.gap }}px">
@@ -7,6 +24,17 @@
 </div>
 {% elif widget.type == 'text' %}
 <{{ widget.level }} id="{{ widget.id }}" class="pir-text pir-text-{{ widget.level }}">{{ widget.content }}</{{ widget.level }}>
+{% elif widget.type == 'menu' %}
+<nav id="{{ widget.id }}" class="pir-menu">
+    {% if widget.title %}
+    <div class="pir-menu-title">{{ widget.title }}</div>
+    {% endif %}
+    {% if widget.entries %}
+    {{ render_menu_entries(widget.entries) }}
+    {% else %}
+    <div class="pir-menu-empty">{{ _('沒有可顯示的項目') }}</div>
+    {% endif %}
+</nav>
 {% elif widget.type == 'table' %}
 <div id="{{ widget.id }}" class="pir-table-wrap" data-pir-table="{{ widget.id }}" data-pir-page="{{ widget.page }}" data-pir-pages="{{ widget.pages }}" data-pir-sort="{{ widget.sort_field or '' }}" data-pir-dir="{{ widget.sort_dir or '' }}" data-pir-cols="{{ widget.columns|length }}" data-pir-actions="{{ 'true' if widget.row_link_target or widget.row_actions or widget.caps['update'] or widget.caps['delete'] else 'false' }}" data-pir-row-link="{{ widget.row_link_target or '' }}" data-pir-row-actions="{{ widget.row_actions|tojson|forceescape }}" data-pir-can-create="{{ 'true' if widget.caps['create'] else 'false' }}" data-pir-can-update="{{ 'true' if widget.caps['update'] else 'false' }}" data-pir-can-delete="{{ 'true' if widget.caps['delete'] else 'false' }}">
     {% if widget.caps['create'] %}

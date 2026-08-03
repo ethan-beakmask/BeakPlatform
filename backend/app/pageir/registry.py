@@ -15,6 +15,7 @@ _PORTAL_ACTIONS: dict[str, dict[str, Any]] = {}
 _PROVIDERS: dict[str, Callable[[str, dict], dict | None]] = {}
 _RESOURCE_LISTERS: list[Callable[[str], list[dict]]] = []
 _ACCESS_EVALUATORS: dict[str, Callable[[dict, str, dict], bool]] = {}
+_MENU_PROVIDERS: dict[str, Callable[[list[dict], dict], list[dict]]] = {}
 
 
 def register_resource(code: str, config: dict) -> None:
@@ -87,6 +88,16 @@ def register_access_evaluator(world: str, fn: Callable[[dict, str, dict], bool])
 def get_access_evaluator(world: str) -> Callable[[dict, str, dict], bool] | None:
     """取得指定 render world 的 access_matrix 評估器；未註冊回 None。"""
     return _ACCESS_EVALUATORS.get(world)
+
+
+def register_menu_provider(world: str, fn: Callable[[list[dict], dict], list[dict]]) -> None:
+    """註冊指定 render world 的 Page IR menu 樹提供者；同 world 後註冊者覆蓋前者。"""
+    _MENU_PROVIDERS[world] = fn
+
+
+def get_menu_provider(world: str) -> Callable[[list[dict], dict], list[dict]] | None:
+    """取得指定 render world 的 menu provider；未註冊回 None。"""
+    return _MENU_PROVIDERS.get(world)
 
 
 def register_action(ref: str, config: dict) -> None:

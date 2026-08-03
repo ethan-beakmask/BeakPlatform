@@ -281,12 +281,15 @@ class SiteMapService:
         建立節點
 
         page 類型若未指定 page_layout_sc，自動建立空白 DcPageLayout。
+        folder 類型不建立 DcPageLayout，且不可作為根節點。
         """
-        if node_type != 'page':
-            raise ValueError(_('Invalid node_type: %(node_type)s，僅支援 page', node_type=node_type))
+        if node_type not in ('page', 'folder'):
+            raise ValueError(_('Invalid node_type: %(node_type)s，僅支援 page 或 folder', node_type=node_type))
 
         # 限制只能有一個根頁面，且名稱必須為 welcome
         if not parent_sc:
+            if node_type != 'page':
+                raise ValueError(_('根節點只能是 page'))
             existing_root = DcSiteMapNode.query.filter(
                 DcSiteMapNode.sub_system_secure_code == sub_system_sc,
                 DcSiteMapNode.org_secure_code == org_sc,
@@ -320,6 +323,8 @@ class SiteMapService:
             db.session.add(layout)
             db.session.flush()
             page_layout_sc = layout.secure_code
+        elif node_type == 'folder':
+            page_layout_sc = None
 
         node = DcSiteMapNode(
             sub_system_secure_code=sub_system_sc,

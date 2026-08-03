@@ -39,6 +39,7 @@ files:
     - modules/nocode_builder/services/portal_access_service.py   # 三層判定核心
     - modules/nocode_builder/services/portal_permission_service.py # PF-7 權限碼有效權限計算（唯一實作）
     - modules/nocode_builder/services/pageir_portal_resources.py # portal L2 resolver
+    - modules/nocode_builder/services/pageir_portal_menu.py     # PF-8 menu widget 的 portal provider
     - modules/nocode_builder/services/pageir_formflow_resources.py # formflow portal submissions resolver
     - modules/nocode_builder/services/pageir_mapping_usage.py    # form workflow mapping 引用查詢
   css:
@@ -72,6 +73,7 @@ files:
     - backend/tests/test_portal_row_owner_scope.py
     - backend/tests/test_portal_permission_pf7.py  # PF-7 權限碼模型 + access_matrix 新舊並存
     - backend/tests/test_portal_permission_admin_pf8.py  # PF-8 權限碼/角色管理服務
+    - backend/tests/test_pageir_menu_pf8.py  # PF-8 menu widget（schema/renderer/portal provider/folder）
 
 note: |
   准入控制使用 grant-based permission 模式（部門/社群/個人多重選擇）。

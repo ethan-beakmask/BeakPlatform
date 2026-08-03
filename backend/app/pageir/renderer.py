@@ -13,6 +13,7 @@ from app.pageir.masking import apply_record_masks, apply_row_masks, masked_field
 from app.pageir.registry import (
     get_access_evaluator,
     get_action,
+    get_menu_provider,
     get_portal_action,
     get_resource,
 )
@@ -83,6 +84,7 @@ def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict]) -> dict | None
         "master_detail": _prepare_master_detail,
         "actions": _prepare_actions,
         "form": _prepare_form,
+        "menu": _prepare_menu,
     }
     handler = dispatch.get(widget.get("type"))
     if handler is None:
@@ -133,6 +135,30 @@ def _prepare_text(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
         "id": widget["id"],
         "level": widget["level"],
         "content": _i18n(widget["content_i18n"]),
+    }
+
+
+def _prepare_menu(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
+    del widgets_by_id
+    ctx = get_render_context()
+    world = ctx.get("world", "platform")
+    provider = get_menu_provider(world)
+    entries = []
+    if provider is not None:
+        try:
+            entries = provider(widget.get("items", []), ctx) or []
+        except Exception:
+            logger.exception(
+                "Page IR menu provider failed: widget=%s world=%s",
+                widget.get("id"),
+                world,
+            )
+            entries = []
+    return {
+        "type": "menu",
+        "id": widget["id"],
+        "title": _i18n(widget["title_i18n"]) if widget.get("title_i18n") else None,
+        "entries": entries,
     }
 
 
