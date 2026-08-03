@@ -622,8 +622,11 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   有效權限計算的唯一實作是 `services/portal_permission_service.py`
   （階級 rank 向下繼承、管理角色聯集不繼承、個人 deny 最優先、停用帳號回空集合、
   匿名只吃階級權限），**禁止各處自行組 SQL 算權限**。
-  access_matrix 規則新增 `{"required_permissions": [...], "match_mode": "any"|"all"}` 形式，
-  與舊的 `{groups, min_level}` **並存**；同一 rule 兩者都寫時是 **AND**。
+  access_matrix 規則**只認**權限碼制 `{"required_permissions": [...], "match_mode": "any"|"all"}`
+  （PF-13，2026-08-03 起）。舊的 `{groups, min_level}` 形式已完全移除，寫入會被 400 擋下，
+  runtime 判定回 `bad_matrix`（`group_denied` / `level_missing` / `level_denied` 三個 reason
+  已不存在）。`portal_groups` / `portal_levels` 兩張表**仍在**——階級 rank 是
+  `portal_level_permissions` 的權限來源，群組則降為單純的帳號屬性、不再參與准入判定。
   寫入端驗證有兩處，改格式要同時改：`api/site_map_api.py::_validate_access_matrix`
   與 `backend/app/pageir/schema_v3.json` 的 `$defs.portal_access_rule`。
   權限碼格式固定 `resource.action`（小寫 snake_case），與平台的 permission code 不共用。

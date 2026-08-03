@@ -90,7 +90,6 @@ function wksPermsManager(subSystemSc) {
             const readRule = this.readRule(row);
             row.perm_codes = readRule ? [...(readRule.required_permissions || [])] : [];
             row.perm_match_mode = readRule && this.matchModes.includes(readRule.match_mode) ? readRule.match_mode : 'any';
-            row.perm_original_status = this.accessStatus(row);
         },
 
         portalUrl(path) {
@@ -175,24 +174,14 @@ function wksPermsManager(subSystemSc) {
             return null;
         },
 
-        legacyRule(row) {
-            const access = row.access_matrix || {};
-            const rule = access.read || access;
-            return !!(rule && (Object.prototype.hasOwnProperty.call(rule, 'groups') || Object.prototype.hasOwnProperty.call(rule, 'min_level')));
-        },
-
         accessStatus(row) {
-            if (!row.access_matrix) return 'open';
-            if (this.readRule(row)) return 'permission';
-            if (this.legacyRule(row)) return 'legacy';
-            return 'legacy';
+            return this.readRule(row) ? 'permission' : 'open';
         },
 
         accessStatusLabel(row) {
             const status = this.accessStatus(row);
             if (status === 'open') return __('未設限');
-            if (status === 'permission') return __('權限碼制');
-            return __('舊制（群組＋階級）');
+            return __('權限碼制');
         },
 
         pageHasPermission(row, code) {
@@ -219,12 +208,6 @@ function wksPermsManager(subSystemSc) {
         },
 
         async savePageRule(row, codes) {
-            if (row.perm_original_status === 'legacy') {
-                if (!confirm(__('將改用權限碼制，原本的群組與階級設定會被取代'))) {
-                    this.syncPageState(row);
-                    return;
-                }
-            }
             if (!codes.length && !confirm(__('此頁將對所有訪客開放'))) {
                 this.syncPageState(row);
                 return;

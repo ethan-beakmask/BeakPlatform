@@ -1,5 +1,12 @@
 # 交接：NoCode Builder 工作區改造 N1~N5（2026-07-28 完成）
 
+> **過時警告（2026-08-03 / PF-13）**：本文件描述的 portal 准入格式
+> `{groups, min_level}` **已完全移除**，現行只認權限碼制
+> `{"required_permissions": [...], "match_mode": "any"|"all"}`，
+> reason 短碼 `group_denied` / `level_missing` / `level_denied` 亦已不存在。
+> 文中相關 SQL 與判定敘述僅供了解歷史脈絡，**不可照抄**。
+> 現行規格見 `docs/PORTAL_ACCOUNT_SPEC.md` 與 `docs/codex_spec/portal.md`。
+
 本文件是給**新 session 冷讀**用的。目標是不必猜測、不必重新探索，就能接手後續工作。
 前情文件：`docs/handoff_pageir_p4.md`（Page IR P1~P4）、`docs/PAGE_IR_SPEC.md`、
 `docs/PORTAL_ACCOUNT_SPEC.md`。

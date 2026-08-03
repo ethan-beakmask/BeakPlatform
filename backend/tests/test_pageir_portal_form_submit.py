@@ -87,21 +87,21 @@ def _form_widget(**overrides):
 
 
 def _read_only_matrix():
-    return {"read": {"groups": None, "min_level": "GUEST"}}
+    return {"read": {"required_permissions": ["bulletin.read"]}}
 
 
 def _create_matrix():
     return {
-        "read": {"groups": None, "min_level": "GUEST"},
-        "create": {"groups": None, "min_level": "GUEST"},
+        "read": {"required_permissions": ["bulletin.read"]},
+        "create": {"required_permissions": ["bulletin.create"]},
     }
 
 
 def _create_update_matrix():
     return {
-        "read": {"groups": None, "min_level": "GUEST"},
-        "create": {"groups": None, "min_level": "GUEST"},
-        "update": {"groups": None, "min_level": "GUEST"},
+        "read": {"required_permissions": ["bulletin.read"]},
+        "create": {"required_permissions": ["bulletin.create"]},
+        "update": {"required_permissions": ["bulletin.update"]},
     }
 
 
@@ -140,7 +140,7 @@ def test_prepare_form_portal_without_mapping_ref_is_readonly(pir_app):
             page_sc="page123456",
         )
         rendered = render_page_ir_full(_doc(_form_widget(
-            access_matrix={"create": {"groups": None, "min_level": "GUEST"}},
+            access_matrix={"create": {"required_permissions": ["bulletin.create"]}},
         )))
         clear_render_context()
 
@@ -308,7 +308,7 @@ def test_portal_and_platform_action_registries_do_not_fallback(pir_app):
 def test_schema_accepts_form_mapping_ref_and_access_matrix():
     ok, errors = validate_page_ir(_doc(_form_widget(
         mapping_ref="map123456",
-        access_matrix={"create": {"groups": None, "min_level": "GUEST"}},
+        access_matrix={"create": {"required_permissions": ["bulletin.create"]}},
     )))
 
     assert ok, errors
@@ -317,7 +317,7 @@ def test_schema_accepts_form_mapping_ref_and_access_matrix():
 def test_schema_rejects_invalid_form_mapping_ref():
     ok, _errors = validate_page_ir(_doc(_form_widget(
         mapping_ref="bad",
-        access_matrix={"create": {"groups": None, "min_level": "GUEST"}},
+        access_matrix={"create": {"required_permissions": ["bulletin.create"]}},
     )))
 
     assert not ok

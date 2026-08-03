@@ -46,6 +46,7 @@ function irDesigner() {
         portalOrgScope: '',
         portalGroups: [],
         portalLevels: [],
+        portalPermissions: [],
         selectedId: '',
         activeWidget: null,
         errors: [],
@@ -190,15 +191,17 @@ function irDesigner() {
             for (const widget of widgets || []) {
                 const matrix = widget.access_matrix;
                 if (matrix) {
-                    for (const action of ['read', 'create', 'update', 'delete']) {
-                        if (matrix[action] && Array.isArray(matrix[action].groups) && matrix[action].groups.length === 0) {
-                            matrix[action].groups = null;
-                        }
-                    }
                     for (const action of Object.keys(matrix)) {
-                        if (!matrix[action] || Object.keys(matrix[action]).length === 0) {
+                        const rule = matrix[action];
+                        if (!rule || Object.keys(rule).length === 0) {
                             delete matrix[action];
+                            continue;
                         }
+                        if (!Array.isArray(rule.required_permissions) || rule.required_permissions.length === 0) {
+                            delete matrix[action];
+                            continue;
+                        }
+                        rule.match_mode = rule.match_mode === 'all' ? 'all' : 'any';
                     }
                 }
                 if (matrix && Object.keys(matrix).length === 0) {
@@ -368,6 +371,7 @@ function irDesigner() {
                 if (!res.ok || !data.success) {
                     this.portalGroups = [];
                     this.portalLevels = [];
+                    this.portalPermissions = [];
                     this.portalOrgScope = '';
                     this.portalOrgLoaded = false;
                     console.warn('[IR Designer] portal org load failed:', data.error || data);
@@ -376,16 +380,30 @@ function irDesigner() {
                 const orgData = data.data || {};
                 this.portalGroups = orgData.groups || [];
                 this.portalLevels = orgData.levels || [];
+                await this.loadPortalPermissions(this.dataScope);
                 this.portalOrgScope = this.dataScope;
                 this.portalOrgLoaded = true;
                 this.syncPreviewIdentity();
             } catch (err) {
                 this.portalGroups = [];
                 this.portalLevels = [];
+                this.portalPermissions = [];
                 this.portalOrgScope = '';
                 this.portalOrgLoaded = false;
                 console.warn('[IR Designer] portal org load failed:', err);
             }
+        },
+
+        async loadPortalPermissions(scope) {
+            const res = await fetch(`${BP}/api/nocode-builder/sub-systems/${encodeURIComponent(scope)}/portal/permission-model`);
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                this.portalPermissions = [];
+                console.warn('[IR Designer] portal permission model load failed:', data.error || data);
+                return;
+            }
+            const model = data.data || {};
+            this.portalPermissions = Array.isArray(model.permissions) ? model.permissions : [];
         },
 
         activePortalGroups() {
@@ -398,7 +416,11 @@ function irDesigner() {
                 .sort((a, b) => Number(a.rank || 0) - Number(b.rank || 0));
         },
 
-        defaultWidgetMinLevel() {
+        activePortalPermissions() {
+            return (this.portalPermissions || []).filter((perm) => perm && perm.code);
+        },
+
+        defaultPreviewLevel() {
             const levels = this.sortedPortalLevels();
             if (levels.some((level) => level.code === 'GUEST')) return 'GUEST';
             return (levels[0] && levels[0].code) || 'GUEST';
@@ -410,7 +432,7 @@ function irDesigner() {
             }
             const levels = this.sortedPortalLevels();
             if (!levels.some((level) => level.code === this.previewLevel)) {
-                this.previewLevel = this.defaultWidgetMinLevel();
+                this.previewLevel = this.defaultPreviewLevel();
             }
         },
 
@@ -425,7 +447,7 @@ function irDesigner() {
             if (enabled) {
                 if (!widget.access_matrix) widget.access_matrix = {};
                 if (!widget.access_matrix[action]) {
-                    widget.access_matrix[action] = { groups: null, min_level: this.defaultWidgetMinLevel() };
+                    widget.access_matrix[action] = { required_permissions: [], match_mode: 'any' };
                 }
             } else if (widget.access_matrix) {
                 delete widget.access_matrix[action];
@@ -436,51 +458,37 @@ function irDesigner() {
             this.markDirty();
         },
 
-        widgetGroupMode(action) {
+        widgetActionPermissions(action) {
             const widget = this.selectedWidget;
             const rule = widget && widget.access_matrix && widget.access_matrix[action];
-            return rule && Array.isArray(rule.groups) ? 'limited' : 'all';
+            return rule && Array.isArray(rule.required_permissions) ? rule.required_permissions : [];
         },
 
-        setWidgetGroupMode(action, mode) {
-            const widget = this.selectedWidget;
-            const rule = widget && widget.access_matrix && widget.access_matrix[action];
-            if (!rule) return;
-            rule.groups = mode === 'limited' ? (Array.isArray(rule.groups) ? rule.groups : []) : null;
-            this.markDirty();
-        },
-
-        toggleWidgetGroup(action, code) {
+        toggleWidgetPermission(action, code) {
             const widget = this.selectedWidget;
             const rule = widget && widget.access_matrix && widget.access_matrix[action];
             if (!rule || !code) return;
-            if (!Array.isArray(rule.groups)) rule.groups = [];
-            const index = rule.groups.indexOf(code);
+            if (!Array.isArray(rule.required_permissions)) rule.required_permissions = [];
+            const index = rule.required_permissions.indexOf(code);
             if (index >= 0) {
-                rule.groups.splice(index, 1);
+                rule.required_permissions.splice(index, 1);
             } else {
-                rule.groups.push(code);
+                rule.required_permissions.push(code);
             }
             this.markDirty();
         },
 
-        widgetActionGroups(action) {
+        widgetActionMatchMode(action) {
             const widget = this.selectedWidget;
             const rule = widget && widget.access_matrix && widget.access_matrix[action];
-            return rule && Array.isArray(rule.groups) ? rule.groups : [];
+            return rule && rule.match_mode === 'all' ? 'all' : 'any';
         },
 
-        widgetActionMinLevel(action) {
+        setWidgetActionMatchMode(action, mode) {
             const widget = this.selectedWidget;
             const rule = widget && widget.access_matrix && widget.access_matrix[action];
-            return (rule && rule.min_level) || this.defaultWidgetMinLevel();
-        },
-
-        setWidgetActionMinLevel(action, code) {
-            const widget = this.selectedWidget;
-            const rule = widget && widget.access_matrix && widget.access_matrix[action];
-            if (!rule || !code) return;
-            rule.min_level = code;
+            if (!rule) return;
+            rule.match_mode = mode === 'all' ? 'all' : 'any';
             this.markDirty();
         },
 

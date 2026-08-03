@@ -87,9 +87,9 @@ NoCode 的 `DcCrudView` 只會對**單一實體表**做 SELECT，
 
 ```
 我的捐贈登記 / donation (master_detail)
-    read/create/update = {groups: [GENERAL], min_level: MEMBER}
+    read/create/update = {required_permissions: [donation.manage], match_mode: any}
 物資公佈欄 / bulletin (table)
-    read = {groups: null, min_level: GUEST}      <- 只宣告 read
+    read = {required_permissions: [bulletin.read], match_mode: any}   <- 只宣告 read
 ```
 
 `read` 未宣告是**放行**，`create` / `update` / `delete` 未宣告是**拒絕**。
@@ -98,8 +98,10 @@ NoCode 的 `DcCrudView` 只會對**單一實體表**做 SELECT，
 
 ### 頁面級 access_matrix（site map 節點）
 
-捐贈頁 `min_level: MEMBER`（要註冊才進得去）、
-公佈欄 `min_level: GUEST`（匿名可看）。
+捐贈頁要 `donation.manage`（授予 MEMBER rank 10，要註冊才進得去）、
+公佈欄要 `bulletin.read`（授予 GUEST rank 0，匿名可看）。
+階級權限**向下繼承**（rank <= 使用者 rank 的階級權限都拿得到），
+所以 MEMBER 同時具備 `bulletin.read`。
 子系統的 `allow_anonymous = true` 讓沒登入的訪客自動取得 GUEST session。
 
 ---

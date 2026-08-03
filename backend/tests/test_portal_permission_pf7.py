@@ -302,8 +302,8 @@ def test_evaluate_rule_permission_form_any_and_all_allow_and_deny(portal_base):
     ) == (False, "permission_denied")
 
 
-def test_evaluate_rule_combines_permission_and_legacy_as_and(portal_base):
-    sub_sc = "ss_rule_and"
+def test_evaluate_rule_permission_denies_when_code_not_effective(portal_base):
+    sub_sc = "ss_rule_denied"
     dsm.init_portal_sqlite(sub_sc)
     user_id = _insert_user(sub_sc)
     with dsm.DataSourceManager().get_session(sub_sc, "portal") as sess:
@@ -314,29 +314,17 @@ def test_evaluate_rule_combines_permission_and_legacy_as_and(portal_base):
 
     assert access._evaluate_rule(
         sub_sc,
-        {
-            "groups": ["GENERAL"],
-            "min_level": "MEMBER",
-            "required_permissions": ["bulletin.read"],
-        },
+        {"required_permissions": ["bulletin.read"]},
         user,
     ) == (True, "ok")
     assert access._evaluate_rule(
         sub_sc,
-        {
-            "groups": ["VIP"],
-            "min_level": "MEMBER",
-            "required_permissions": ["bulletin.read"],
-        },
+        {"required_permissions": ["bulletin.missing"]},
         user,
-    ) == (False, "group_denied")
+    ) == (False, "permission_denied")
     assert access._evaluate_rule(
         sub_sc,
-        {
-            "groups": ["GENERAL"],
-            "min_level": "MEMBER",
-            "required_permissions": ["bulletin.missing"],
-        },
+        {"required_permissions": ["bulletin.missing"], "match_mode": "all"},
         user,
     ) == (False, "permission_denied")
 
@@ -348,6 +336,7 @@ def test_evaluate_rule_combines_permission_and_legacy_as_and(portal_base):
         {"required_permissions": "bulletin.read"},
         {"required_permissions": ["bulletin.read", 123]},
         {"required_permissions": ["bulletin.read"], "match_mode": "none"},
+        {"required_permissions": ["bulletin.read"], "unknown": True},
     ],
 )
 def test_evaluate_rule_permission_bad_matrix_forms(portal_base, rule):
@@ -375,7 +364,7 @@ def test_validate_access_matrix_accepts_permission_forms(monkeypatch):
 @pytest.mark.parametrize(
     "value",
     [
-        {"read": {"groups": ["GENERAL"]}},
+        {"read": {"required_permissions": ["bulletin.read"], "unknown": True}},
         {"read": {"required_permissions": []}},
         {"read": {"required_permissions": ["Bulletin.Read"]}},
         {"read": {"required_permissions": ["bulletinread"]}},
@@ -393,7 +382,7 @@ def test_validate_access_matrix_rejects_bad_permission_forms(monkeypatch, value)
     assert err
 
 
-def test_pageir_schema_v3_portal_access_rule_accepts_legacy_and_permission_forms():
+def test_pageir_schema_v3_portal_access_rule_accepts_permission_forms_only():
     import json
 
     from jsonschema import Draft202012Validator
@@ -410,16 +399,15 @@ def test_pageir_schema_v3_portal_access_rule_accepts_legacy_and_permission_forms
 
     valid_rules = [
         {"required_permissions": ["bulletin.read"]},
-        {"groups": ["GENERAL"], "min_level": "MEMBER"},
-        {
-            "groups": ["GENERAL"],
-            "min_level": "MEMBER",
-            "required_permissions": ["bulletin.read"],
-            "match_mode": "all",
-        },
+        {"required_permissions": ["bulletin.read"], "match_mode": "all"},
     ]
     invalid_rules = [
-        {"groups": ["GENERAL"]},
+        {"unknown": True},
+        {"required_permissions": ["bulletin.read"], "unknown": True},
+        {"required_permissions": []},
+        {"required_permissions": ["Bulletin.Read"]},
+        {"required_permissions": ["bulletinread"]},
+        {"required_permissions": ["bulletin.read"], "match_mode": "none"},
         {"required_permissions": ["bulletin.read"], "unknown": True},
     ]
 

@@ -67,7 +67,7 @@ def _doc(widgets):
 
 
 def _matrix(**overrides):
-    rule = {"groups": ["VIP"], "min_level": "GUEST"}
+    rule = {"required_permissions": ["bulletin.read"]}
     matrix = {
         "read": rule,
         "create": rule,

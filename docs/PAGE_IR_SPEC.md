@@ -111,7 +111,7 @@ AI 幻覺出的屬性在存檔時即被拒絕，不靜默帶病上線。
   "page_size": 20,
   "default_sort": {"field": "created_at", "dir": "desc"},
   "access_matrix": {
-    "read": {"groups": ["VIP"], "min_level": "GUEST"}
+    "read": {"required_permissions": ["enrollment.read"], "match_mode": "any"}
   },
   "row_actions_ref": "enroll-row-actions"
 }
@@ -132,7 +132,7 @@ AI 幻覺出的屬性在存檔時即被拒絕，不靜默帶病上線。
   "binding": {"resource": "enrollment", "view": "detail", "fields": ["name", "email", "id_number"]},
   "layout_columns": 2,
   "access_matrix": {
-    "read": {"groups": null, "min_level": "GUEST"}
+    "read": {"required_permissions": ["enrollment.read"], "match_mode": "any"}
   },
   "fields": [
     {"field": "id_number", "label_i18n": {"zh-TW": "身分證字號"}}
@@ -300,21 +300,24 @@ can(permission, ctx) -> bool
 
   ```json
   {
-    "read": {"groups": ["VIP"], "min_level": "GUEST"},
-    "create": {"groups": null, "min_level": "STAFF"},
-    "update": {"groups": ["VIP"], "min_level": "STAFF"},
-    "delete": {"groups": ["VIP"], "min_level": "ADMIN"}
+    "read": {"required_permissions": ["enrollment.read"], "match_mode": "any"},
+    "create": {"required_permissions": ["enrollment.create"], "match_mode": "any"},
+    "update": {"required_permissions": ["enrollment.update"], "match_mode": "any"},
+    "delete": {"required_permissions": ["enrollment.delete"], "match_mode": "all"}
   }
   ```
 
-  `groups` 為 `null` 代表不限制群組；若為陣列，必須是既有
-  `portal_groups.code`。`min_level` 引用既有 `portal_levels.code`，判定時以
-  runtime 查得的 rank 比較。此欄位只在 `portal` 語境生效；`platform` 語境仍走
+  `required_permissions` 必須是既有 `portal_permissions.code`（格式
+  `resource.action`，小寫 snake_case），至少一項；`match_mode` 選填，
+  `any`（預設，任一即可）或 `all`（全部都要）。有效權限由
+  `portal_permission_service` 計算（階級 rank 向下繼承、管理角色聯集、
+  個人 deny 最優先）。此欄位只在 `portal` 語境生效；`platform` 語境仍走
   ResourceGateway / EGRESS / can()，不消費此宣告。Portal 語境下未宣告
   `access_matrix` 代表不額外限制；宣告後 `read` 不通過、評估器未註冊、
-  `min_level` 查無或格式錯誤，該元件不進 render tree，也不取資料。
+  或 rule 格式不合法（空陣列、未知 match_mode、多餘欄位），
+  該元件不進 render tree，也不取資料。
 
-  與 INV-2 的關係：這是「准入宣告」，只引用既有 group / level code（呼應
+  與 INV-2 的關係：這是「准入宣告」，只引用既有 permission code（呼應
   INV-6），不是欄位 clear/masked/hidden 覆寫。欄位能見度仍由 EGRESS 或
   portal resolver 白名單在 runtime 決定，IR 只宣告元件准入條件。
 

@@ -15,31 +15,25 @@
                 <template x-if="widgetActionEnabled(action.key)">
                     <div>
                         <div class="ird-field">
-                            <label>{{ _('群組限制') }}</label>
-                            <select :value="widgetGroupMode(action.key)" @change="setWidgetGroupMode(action.key, $event.target.value)">
-                                <option value="all">{{ _('不限群組') }}</option>
-                                <option value="limited">{{ _('限定群組') }}</option>
+                            <label>{{ _('符合方式') }}</label>
+                            <select :value="widgetActionMatchMode(action.key)" @change="setWidgetActionMatchMode(action.key, $event.target.value)">
+                                <option value="any" :selected="widgetActionMatchMode(action.key) === 'any'">{{ _('任一') }}</option>
+                                <option value="all" :selected="widgetActionMatchMode(action.key) === 'all'">{{ _('全部') }}</option>
                             </select>
-                        </div>
-                        <div class="ird-checks" x-show="widgetGroupMode(action.key) === 'limited'">
-                            <template x-for="group in activePortalGroups()" :key="group.code">
-                                <label>
-                                    <input type="checkbox"
-                                           :checked="widgetActionGroups(action.key).includes(group.code)"
-                                           @change="toggleWidgetGroup(action.key, group.code)">
-                                    <span x-text="group.name + ' (' + group.code + ')'"></span>
-                                </label>
-                            </template>
                         </div>
                         <div class="ird-field">
-                            <label>{{ _('最低階級') }}</label>
-                            <select @change="setWidgetActionMinLevel(action.key, $event.target.value)">
-                                <template x-for="level in sortedPortalLevels()" :key="level.code">
-                                    <option :value="level.code"
-                                            :selected="level.code === widgetActionMinLevel(action.key)"
-                                            x-text="level.name + ' (' + level.code + ', rank ' + level.rank + ')'"></option>
+                            <label>{{ _('權限碼') }}</label>
+                            <div class="ird-checks">
+                                <template x-for="perm in activePortalPermissions()" :key="perm.code">
+                                    <label>
+                                        <input type="checkbox"
+                                               :checked="widgetActionPermissions(action.key).includes(perm.code)"
+                                               @change="toggleWidgetPermission(action.key, perm.code)">
+                                        <span x-text="perm.description ? perm.code + ' - ' + perm.description : perm.code"></span>
+                                    </label>
                                 </template>
-                            </select>
+                                <span class="ird-hint" x-show="portalOrgLoaded && activePortalPermissions().length === 0">{{ _('尚無權限碼，請先到工作區「權限矩陣」分頁建立') }}</span>
+                            </div>
                         </div>
                     </div>
                 </template>

@@ -22,7 +22,6 @@ from . import api_bp
 
 logger = logging.getLogger(__name__)
 
-_PORTAL_CODE_RE = re.compile(r'^[A-Z][A-Z0-9_]{0,31}$')
 _PORTAL_PERMISSION_RE = re.compile(r'^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$')
 
 
@@ -38,28 +37,12 @@ def _validate_access_matrix(value):
     read = value.get('read')
     if not isinstance(read, dict):
         return False, _('access_matrix.read 必須為物件')
-    allowed_read_keys = {'groups', 'min_level', 'required_permissions', 'match_mode'}
+    allowed_read_keys = {'required_permissions', 'match_mode'}
     if not set(read.keys()).issubset(allowed_read_keys):
         return False, _('access_matrix.read 包含不支援的欄位')
     has_required_permissions = 'required_permissions' in read
-    has_groups = 'groups' in read
-    if not has_required_permissions and not has_groups:
-        return False, _('access_matrix.read 必須包含 required_permissions 或 groups')
-    if has_groups and 'min_level' not in read:
-        return False, _('access_matrix.read 必須包含 groups 與 min_level')
-
-    if has_groups:
-        groups = read.get('groups')
-        if groups is not None:
-            if not isinstance(groups, list) or not groups:
-                return False, _('groups 必須為 null 或非空陣列')
-            for group_code in groups:
-                if not isinstance(group_code, str) or not _PORTAL_CODE_RE.match(group_code):
-                    return False, _('groups 代碼格式不正確')
-
-        min_level = read.get('min_level')
-        if not isinstance(min_level, str) or not _PORTAL_CODE_RE.match(min_level):
-            return False, _('min_level 代碼格式不正確')
+    if not has_required_permissions:
+        return False, _('access_matrix.read 必須包含 required_permissions')
 
     if has_required_permissions:
         required_permissions = read.get('required_permissions')
@@ -70,8 +53,6 @@ def _validate_access_matrix(value):
                 return False, _('required_permissions 權限碼格式不正確')
 
     if 'match_mode' in read:
-        if not has_required_permissions:
-            return False, _('match_mode 只能與 required_permissions 一起使用')
         if read.get('match_mode') not in ('any', 'all'):
             return False, _('match_mode 必須為 any 或 all')
 

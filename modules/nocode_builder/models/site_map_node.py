@@ -13,10 +13,8 @@ page 類型連結到 DcPageLayout。
 不符合准入的用戶一律轉向 redirect_to (預設 /dashboard)。
 
 Portal 准入 (access_matrix):
-  {"read":{"groups":null|[codes],"min_level":code}}
   {"read":{"required_permissions":["bulletin.read"],"match_mode":"any"|"all"}}
-  {"read":{"groups":[codes],"min_level":code,"required_permissions":["bulletin.read"]}}
-  NULL = 尚未設定，沿用舊制行為（runtime 由 N3 定義）。
+  NULL = 尚未設定，runtime 由 N3 定義。
 """
 from typing import Dict, Any
 

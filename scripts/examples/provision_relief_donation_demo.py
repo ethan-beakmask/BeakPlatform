@@ -42,6 +42,10 @@ DEFAULT_USER_SC = 'jIYEQ-_lZMZNBkVy-hijal'   # admin-ethanyu@beluga.com (ORG_ADM
 SUB_SYSTEM_NAME = '急難救助物資捐贈'
 PORTAL_ROOT = Path('/opt/BeakPlatform-dev/data/nocode_portals')
 
+# ── 權限碼（准入一律走權限碼制，格式固定 resource.action）────────
+PERM_BULLETIN_READ = 'bulletin.read'          # 授予 GUEST(rank 0)，匿名訪客亦適用
+PERM_DONATION_MANAGE = 'donation.manage'      # 授予 MEMBER(rank 10) 以上
+
 # ── 資料表設計 ────────────────────────────────────────────────
 # 建表 API 一律自動附加系統欄位 id / created_at / portal_user_ref，
 # 這三欄不可自行宣告（reserved_column_name）。
@@ -152,8 +156,9 @@ def build_page_ir(view_sc: dict) -> tuple[dict, dict]:
     """回傳 (我的捐贈登記 IR, 物資公佈欄 IR)。"""
 
     # 註冊後的預設身分是 group=GENERAL / level=MEMBER（rank 10）。
-    member_rule = {'groups': ['GENERAL'], 'min_level': 'MEMBER'}
-    guest_rule = {'groups': None, 'min_level': 'GUEST'}
+    # 准入一律走權限碼制：階級 rank 向下繼承，故 GUEST(rank 0) 授予的權限匿名訪客也拿得到。
+    member_rule = {'required_permissions': [PERM_DONATION_MANAGE], 'match_mode': 'any'}
+    guest_rule = {'required_permissions': [PERM_BULLETIN_READ], 'match_mode': 'any'}
 
     donate_page = {
         'ir_version': 3,
@@ -379,14 +384,32 @@ def main() -> int:
         nodes[key] = n['secure_code']
     print(f'[7/9] Site map 節點 {json.dumps(nodes, ensure_ascii=False)}')
 
-    # 8. 頁面級准入矩陣 + 開放自助註冊
+    # 8. 權限碼 + 階級授權 + 頁面級准入矩陣 + 開放自助註冊
+    #    准入只認權限碼制；階級 rank 向下繼承，GUEST(rank 0) 的權限匿名訪客也拿得到。
+    for code, description in (
+        (PERM_BULLETIN_READ, '瀏覽物資公佈欄'),
+        (PERM_DONATION_MANAGE, '登記與維護自己的捐贈'),
+    ):
+        api.call('POST', f'/sub-systems/{ss_sc}/portal/permissions', {
+            'code': code,
+            'description': description,
+            'risk_level': 'normal',
+        })
+    # 階級權限一律整組覆寫（PUT 全量 codes），不是增量
+    api.call('PUT', f'/sub-systems/{ss_sc}/portal/levels/GUEST/permissions',
+             {'codes': [PERM_BULLETIN_READ]})
+    api.call('PUT', f'/sub-systems/{ss_sc}/portal/levels/MEMBER/permissions',
+             {'codes': [PERM_DONATION_MANAGE]})
+
     api.call('POST', f'/sub-systems/{ss_sc}/site-map/access-matrix/batch', {
         'node_secure_codes': [nodes['donate']],
-        'access_matrix': {'read': {'groups': ['GENERAL'], 'min_level': 'MEMBER'}},
+        'access_matrix': {'read': {'required_permissions': [PERM_DONATION_MANAGE],
+                                   'match_mode': 'any'}},
     })
     api.call('POST', f'/sub-systems/{ss_sc}/site-map/access-matrix/batch', {
         'node_secure_codes': [nodes['bulletin']],
-        'access_matrix': {'read': {'groups': None, 'min_level': 'GUEST'}},
+        'access_matrix': {'read': {'required_permissions': [PERM_BULLETIN_READ],
+                                   'match_mode': 'any'}},
     })
 
     portal_db = PORTAL_ROOT / ss_sc / 'portal.db'

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 from flask import Flask
+from sqlalchemy import text
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -42,7 +43,7 @@ def portal_app():
 
 def _user(group_code=None, level_rank=0):
     return {
-        "user_id": 123,
+        "user_id": None,
         "group_code": group_code,
         "level_code": "GUEST",
         "level_rank": level_rank,
@@ -50,7 +51,34 @@ def _user(group_code=None, level_rank=0):
     }
 
 
-@pytest.mark.parametrize("matrix", [None, {}, {"read": {"groups": None, "min_level": "GUEST"}}])
+def _grant_level_permission(sub_sc, level_code, code):
+    resource, action = code.split(".", 1)
+    with dsm.DataSourceManager().get_session(sub_sc, "portal") as sess:
+        sess.execute(
+            text(
+                "INSERT INTO portal_permissions (code, resource, action) "
+                "VALUES (:code, :resource, :action)"
+            ),
+            {"code": code, "resource": resource, "action": action},
+        )
+        permission_id = sess.execute(
+            text("SELECT id FROM portal_permissions WHERE code = :code"),
+            {"code": code},
+        ).scalar()
+        level_id = sess.execute(
+            text("SELECT id FROM portal_levels WHERE code = :code"),
+            {"code": level_code},
+        ).scalar()
+        sess.execute(
+            text(
+                "INSERT INTO portal_level_permissions (level_id, permission_id) "
+                "VALUES (:level_id, :permission_id)"
+            ),
+            {"level_id": level_id, "permission_id": permission_id},
+        )
+
+
+@pytest.mark.parametrize("matrix", [None, {}, {"read": {"required_permissions": ["bulletin.read"]}}])
 @pytest.mark.parametrize("action", ["create", "update", "delete"])
 def test_widget_write_access_requires_explicit_action(portal_base, portal_app, matrix, action):
     dsm.init_portal_sqlite("ss_write_explicit")
@@ -61,38 +89,39 @@ def test_widget_write_access_requires_explicit_action(portal_base, portal_app, m
 
 
 @pytest.mark.parametrize(
-    ("group_code", "level_rank", "expected"),
+    ("required_permission", "level_rank", "expected"),
     [
-        ("GENERAL", 50, True),
-        ("VIP", 50, False),
-        ("GENERAL", 10, False),
+        ("bulletin.create", 50, True),
+        ("bulletin.update", 50, False),
+        ("bulletin.create", 10, False),
     ],
 )
-def test_widget_write_access_uses_group_and_level_rule(
+def test_widget_write_access_uses_permission_rule(
     portal_base,
     portal_app,
-    group_code,
+    required_permission,
     level_rank,
     expected,
 ):
     dsm.init_portal_sqlite("ss_write_rule")
+    _grant_level_permission("ss_write_rule", "STAFF", "bulletin.create")
     ctx = {
         "sub_system_sc": "ss_write_rule",
-        "portal_user": _user(group_code=group_code, level_rank=level_rank),
+        "portal_user": _user(level_rank=level_rank),
     }
-    matrix = {"create": {"groups": ["GENERAL"], "min_level": "STAFF"}}
+    matrix = {"create": {"required_permissions": [required_permission]}}
 
     with portal_app.test_request_context("/"):
         assert access.check_widget_write_access(matrix, "create", ctx) is expected
 
 
-def test_widget_write_access_missing_min_level_fails_closed(portal_base, portal_app):
+def test_widget_write_access_missing_required_permissions_fails_closed(portal_base, portal_app):
     dsm.init_portal_sqlite("ss_write_missing_level")
     ctx = {
         "sub_system_sc": "ss_write_missing_level",
         "portal_user": _user(group_code="GENERAL", level_rank=90),
     }
-    matrix = {"create": {"groups": ["GENERAL"], "min_level": "NO_SUCH_LEVEL"}}
+    matrix = {"create": {"match_mode": "any"}}
 
     with portal_app.test_request_context("/"):
         assert access.check_widget_write_access(matrix, "create", ctx) is False
@@ -106,9 +135,9 @@ def test_widget_write_access_rejects_unknown_action(portal_base, portal_app, act
         "portal_user": _user(group_code="GENERAL", level_rank=50),
     }
     matrix = {
-        "create": {"groups": ["GENERAL"], "min_level": "STAFF"},
-        "update": {"groups": ["GENERAL"], "min_level": "STAFF"},
-        "delete": {"groups": ["GENERAL"], "min_level": "STAFF"},
+        "create": {"required_permissions": ["bulletin.create"]},
+        "update": {"required_permissions": ["bulletin.update"]},
+        "delete": {"required_permissions": ["bulletin.delete"]},
     }
 
     with portal_app.test_request_context("/"):

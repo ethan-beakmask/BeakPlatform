@@ -9,11 +9,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from modules.nocode_builder.api.site_map_api import _validate_access_matrix
 
 
-def test_validate_access_matrix_accepts_group_unlimited():
+def test_validate_access_matrix_accepts_required_permissions_default_any():
     ok, err = _validate_access_matrix({
         "read": {
-            "groups": None,
-            "min_level": "GUEST",
+            "required_permissions": ["bulletin.read"],
         },
     })
 
@@ -21,11 +20,11 @@ def test_validate_access_matrix_accepts_group_unlimited():
     assert err == ""
 
 
-def test_validate_access_matrix_accepts_group_list():
+def test_validate_access_matrix_accepts_required_permissions_all():
     ok, err = _validate_access_matrix({
         "read": {
-            "groups": ["GENERAL", "VIP_GROUP"],
-            "min_level": "MEMBER",
+            "required_permissions": ["bulletin.read", "bulletin.create"],
+            "match_mode": "all",
         },
     })
 
@@ -40,11 +39,10 @@ def test_validate_access_matrix_accepts_null_clear():
     assert err == ""
 
 
-def test_validate_access_matrix_rejects_empty_groups():
+def test_validate_access_matrix_rejects_empty_required_permissions():
     ok, err = _validate_access_matrix({
         "read": {
-            "groups": [],
-            "min_level": "MEMBER",
+            "required_permissions": [],
         },
     })
 
@@ -52,11 +50,10 @@ def test_validate_access_matrix_rejects_empty_groups():
     assert err
 
 
-def test_validate_access_matrix_rejects_lowercase_code():
+def test_validate_access_matrix_rejects_uppercase_permission_code():
     ok, err = _validate_access_matrix({
         "read": {
-            "groups": ["general"],
-            "min_level": "MEMBER",
+            "required_permissions": ["Bulletin.Read"],
         },
     })
 
@@ -64,10 +61,10 @@ def test_validate_access_matrix_rejects_lowercase_code():
     assert err
 
 
-def test_validate_access_matrix_rejects_missing_min_level():
+def test_validate_access_matrix_rejects_missing_required_permissions():
     ok, err = _validate_access_matrix({
         "read": {
-            "groups": None,
+            "match_mode": "any",
         },
     })
 
@@ -78,12 +75,10 @@ def test_validate_access_matrix_rejects_missing_min_level():
 def test_validate_access_matrix_rejects_extra_top_level_key():
     ok, err = _validate_access_matrix({
         "read": {
-            "groups": None,
-            "min_level": "MEMBER",
+            "required_permissions": ["bulletin.read"],
         },
         "write": {
-            "groups": None,
-            "min_level": "ADMIN",
+            "required_permissions": ["bulletin.create"],
         },
     })
 

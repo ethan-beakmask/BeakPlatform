@@ -66,10 +66,10 @@ def _doc(widgets):
 
 
 def _matrix():
-    rule = {"groups": ["VIP"], "min_level": "GUEST"}
+    rule = {"required_permissions": ["bulletin.read"]}
     return {
         "read": rule,
-        "create": {"groups": None, "min_level": "GUEST"},
+        "create": {"required_permissions": ["bulletin.create"]},
         "update": rule,
         "delete": rule,
     }
@@ -144,10 +144,10 @@ def test_schema_accepts_detail_access_matrix():
 @pytest.mark.parametrize(
     "access_matrix",
     [
-        {"read": {"groups": [], "min_level": "GUEST"}},
-        {"read": {"groups": ["vip"], "min_level": "GUEST"}},
-        {"read": {"groups": None, "min_level": "guest"}},
-        {"read": {"groups": None, "min_level": "GUEST"}, "export": {"groups": None, "min_level": "GUEST"}},
+        {"read": {"required_permissions": []}},
+        {"read": {"required_permissions": ["Bulletin.Read"]}},
+        {"read": {"required_permissions": ["bulletinread"]}},
+        {"read": {"required_permissions": ["bulletin.read"]}, "export": {"required_permissions": ["bulletin.read"]}},
         {},
     ],
 )

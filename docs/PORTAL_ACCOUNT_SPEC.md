@@ -144,12 +144,15 @@ Portal 頁面 runtime 會在既有 `DcSubSystemPage.visible_roles` 通過後，�
 | 2 | 找不到 active、未刪除且對應子系統/頁面的 site map node | 放行，`no_matrix` |
 | 3 | node 存在但 `access_matrix` 為 `NULL` | 放行，`no_matrix` |
 | 4 | `access_matrix` 不是物件、缺 `read`、`read` 不是物件 | 拒絕，`bad_matrix` |
-| 5 | `read.groups` 為 `null` | 群組條件通過 |
-| 6 | `read.groups` 為清單 | `portal_user.group_code` 必須在清單內，否則拒絕 `group_denied` |
-| 7 | `read.min_level` 缺少或不是字串 | 拒絕，`bad_matrix` |
-| 8 | `read.min_level` 在該子系統 active `portal_levels` 查無 | 拒絕，`level_missing` |
-| 9 | `portal_user.level_rank` 小於 min level rank | 拒絕，`level_denied` |
-| 10 | 群組與階級皆通過 | 放行，`ok` |
+| 5 | `read` 出現 `required_permissions` / `match_mode` 以外的欄位 | 拒絕，`bad_matrix` |
+| 6 | `read.required_permissions` 缺少、不是清單、空清單或元素非字串 | 拒絕，`bad_matrix` |
+| 7 | `read.match_mode` 存在但不是 `any` / `all` | 拒絕，`bad_matrix` |
+| 8 | 使用者有效權限不滿足（`any`：一個都沒有；`all`：缺任一個） | 拒絕，`permission_denied` |
+| 9 | 權限條件通過 | 放行，`ok` |
+
+有效權限由 `portal_permission_service.resolve_effective_permissions()` 計算：
+階級 rank 向下繼承、管理角色聯集不繼承、個人 deny 最優先、停用帳號回空集合、
+匿名只吃階級權限（`level_rank = 0`）。`match_mode` 未提供時預設 `any`。
 
 Reason 短碼只供稽核與 log 使用，不是 user-facing 訊息：
 
@@ -158,13 +161,11 @@ Reason 短碼只供稽核與 log 使用，不是 user-facing 訊息：
 | `no_session` | 沒有 portal session |
 | `no_matrix` | 沒有對應 node，或 node 尚未設定 `access_matrix` |
 | `bad_matrix` | `access_matrix` runtime 格式不合法 |
-| `group_denied` | 使用者群組不符合 `read.groups` |
-| `level_missing` | `read.min_level` 指向不存在或停用的 portal level |
-| `level_denied` | 使用者 `level_rank` 未達門檻 |
+| `permission_denied` | 使用者有效權限不滿足 `read.required_permissions` |
 | `ok` | 判定通過 |
 | `error` | 未預期例外，例如 `portal.db` 不存在 |
 
-Fail-closed 原則：只要 `access_matrix` 已設定，格式錯誤、`min_level` 查無、
+Fail-closed 原則：只要 `access_matrix` 已設定，格式錯誤、權限不足、
 portal DB 讀取錯誤或其他未預期例外都一律拒絕。`access_matrix = NULL` 是向下相容語意，
 代表此節點尚未啟用 N3a 矩陣判定，runtime 交回既有 `visible_roles` 機制把關。
 
@@ -180,7 +181,7 @@ N4a runtime 只判定 `read`。`read` 不通過時，該 widget 不進 server-si
 key 未宣告即放行，讓 N4b 的 create/update/delete 呼叫端可自行決定預設策略。
 
 `create` / `update` / `delete` 三個 key 已保留在 schema 與型別語意中，但本階段不由
-渲染流程消費。格式錯誤、`min_level` 查無、portal session/context 缺失或未預期例外
+渲染流程消費。格式錯誤、權限不足、portal session/context 缺失或未預期例外
 皆 fail-closed。
 
 ## 6.3 寫入判定（N4b）

@@ -25,7 +25,16 @@ portal 語境解析平台資源也回 None。跨界一律 fail-closed。
    → check_widget_access()（read）/ check_widget_write_access()（create/update/delete）
 ```
 
-判定規則：`(groups 為 null 或 user.group_code ∈ groups) AND (user.level_rank >= min_level 的 rank)`
+判定規則（**只認權限碼制**，PF-13 起；舊的 `{groups, min_level}` 已完全移除）：
+
+```json
+{"required_permissions": ["resource.action", ...], "match_mode": "any"}
+```
+
+`match_mode` 選填，`any`（預設，任一即可）／`all`（全部都要）。
+有效權限的唯一實作是 `services/portal_permission_service.py`
+（階級 rank 向下繼承、管理角色聯集不繼承、個人 deny 最優先、停用帳號回空集合、
+匿名只吃階級權限），**禁止各處自行組 SQL 算權限**。
 
 ### read 與 write 的語意刻意不同（弄錯就是安全破口）
 
@@ -43,8 +52,9 @@ UI 措辭要讓使用者知道「沒啟用就是沒人能寫」，**不可**寫�
 
 ### fail-closed 清單（已實作，不可改成放行）
 
-- `access_matrix` 格式錯 → 拒絕（不是忽略）
-- `min_level` 指向不存在或停用的 level → 拒絕（不是當作 rank 0）
+- `access_matrix` 格式錯 → 拒絕（不是忽略）。含缺 `required_permissions`、
+  空陣列、元素非字串、未知 `match_mode`、出現多餘欄位，一律回 `bad_matrix`
+- 權限碼查無（未在 `portal_permissions` 定義）→ 該碼視為不具備，判定不通過
 - portal.db 不存在 / 任何未預期例外 → 拒絕
 - portal 語境找不到 access evaluator → 拒絕
 - `fixed_filters` 在 portal 語境遇到平台變數（`$CURRENT_USER` 等）→ 拒絕整個查詢

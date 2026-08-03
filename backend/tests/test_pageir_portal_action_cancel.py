@@ -61,7 +61,7 @@ def reset_registries():
 
 
 def _update_matrix():
-    return {"update": {"groups": None, "min_level": "GUEST"}}
+    return {"update": {"required_permissions": ["bulletin.update"]}}
 
 
 def _actions_widget(**overrides):

@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 from flask import Flask
+from sqlalchemy import text
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -60,7 +61,7 @@ def _node(matrix):
 
 def _user(group_code=None, level_rank=0):
     return {
-        "user_id": 123,
+        "user_id": None,
         "group_code": group_code,
         "level_code": "GUEST",
         "level_rank": level_rank,
@@ -71,6 +72,33 @@ def _user(group_code=None, level_rank=0):
 def _check(portal_app, sub_sc, page_sc, user):
     with portal_app.test_request_context("/"):
         return access.check_page_access(sub_sc, page_sc, user)
+
+
+def _grant_level_permission(sub_sc, level_code, code):
+    resource, action = code.split(".", 1)
+    with dsm.DataSourceManager().get_session(sub_sc, "portal") as sess:
+        sess.execute(
+            text(
+                "INSERT INTO portal_permissions (code, resource, action) "
+                "VALUES (:code, :resource, :action)"
+            ),
+            {"code": code, "resource": resource, "action": action},
+        )
+        permission_id = sess.execute(
+            text("SELECT id FROM portal_permissions WHERE code = :code"),
+            {"code": code},
+        ).scalar()
+        level_id = sess.execute(
+            text("SELECT id FROM portal_levels WHERE code = :code"),
+            {"code": level_code},
+        ).scalar()
+        sess.execute(
+            text(
+                "INSERT INTO portal_level_permissions (level_id, permission_id) "
+                "VALUES (:level_id, :permission_id)"
+            ),
+            {"level_id": level_id, "permission_id": permission_id},
+        )
 
 
 def test_no_node_allows_no_matrix(portal_base, portal_app, monkeypatch):
@@ -87,59 +115,68 @@ def test_node_without_access_matrix_allows_no_matrix(portal_base, portal_app, mo
     assert _check(portal_app, "ss_null_matrix", "page_1", _user()) == (True, "no_matrix")
 
 
-def test_guest_passes_group_unlimited_guest_level(portal_base, portal_app, monkeypatch):
+def test_guest_passes_required_permission_from_guest_level(portal_base, portal_app, monkeypatch):
     dsm.init_portal_sqlite("ss_guest")
-    _patch_node(monkeypatch, _node({"read": {"groups": None, "min_level": "GUEST"}}))
+    _grant_level_permission("ss_guest", "GUEST", "bulletin.read")
+    _patch_node(monkeypatch, _node({"read": {"required_permissions": ["bulletin.read"]}}))
 
     assert _check(portal_app, "ss_guest", "page_1", _user(group_code=None, level_rank=0)) == (True, "ok")
 
 
 @pytest.mark.parametrize(
-    ("group_code", "expected"),
+    ("required_permission", "expected"),
     [
-        ("GENERAL", (True, "ok")),
-        (None, (False, "group_denied")),
-        ("VIP", (False, "group_denied")),
+        ("bulletin.read", (True, "ok")),
+        ("bulletin.create", (False, "permission_denied")),
+        ("bulletin.update", (False, "permission_denied")),
     ],
 )
-def test_group_matrix_checks_user_group(portal_base, portal_app, monkeypatch, group_code, expected):
+def test_permission_matrix_checks_effective_permissions(
+    portal_base,
+    portal_app,
+    monkeypatch,
+    required_permission,
+    expected,
+):
     dsm.init_portal_sqlite("ss_group")
+    _grant_level_permission("ss_group", "GUEST", "bulletin.read")
     _patch_node(
         monkeypatch,
-        _node({"read": {"groups": ["GENERAL"], "min_level": "GUEST"}}),
+        _node({"read": {"required_permissions": [required_permission]}}),
     )
 
-    assert _check(portal_app, "ss_group", "page_1", _user(group_code=group_code)) == expected
+    assert _check(portal_app, "ss_group", "page_1", _user()) == expected
 
 
 @pytest.mark.parametrize(
     ("level_rank", "expected"),
     [
-        (10, (False, "level_denied")),
+        (10, (False, "permission_denied")),
         (50, (True, "ok")),
         (90, (True, "ok")),
     ],
 )
-def test_min_level_checks_active_level_rank(portal_base, portal_app, monkeypatch, level_rank, expected):
+def test_level_permissions_follow_active_level_rank(portal_base, portal_app, monkeypatch, level_rank, expected):
     dsm.init_portal_sqlite("ss_level")
+    _grant_level_permission("ss_level", "STAFF", "bulletin.read")
     _patch_node(
         monkeypatch,
-        _node({"read": {"groups": None, "min_level": "STAFF"}}),
+        _node({"read": {"required_permissions": ["bulletin.read"]}}),
     )
 
     assert _check(portal_app, "ss_level", "page_1", _user(level_rank=level_rank)) == expected
 
 
-def test_missing_min_level_fails_closed(portal_base, portal_app, monkeypatch):
+def test_missing_required_permissions_fails_closed(portal_base, portal_app, monkeypatch):
     dsm.init_portal_sqlite("ss_missing_level")
     _patch_node(
         monkeypatch,
-        _node({"read": {"groups": None, "min_level": "NO_SUCH_LEVEL"}}),
+        _node({"read": {"match_mode": "any"}}),
     )
 
     assert _check(portal_app, "ss_missing_level", "page_1", _user(level_rank=90)) == (
         False,
-        "level_missing",
+        "bad_matrix",
     )
 
 
@@ -149,10 +186,10 @@ def test_missing_min_level_fails_closed(portal_base, portal_app, monkeypatch):
         ["GENERAL"],
         {},
         {"read": "bad"},
-        {"read": {"groups": None}},
-        {"read": {"min_level": "GUEST"}},
-        {"read": {"groups": [], "min_level": "GUEST"}},
-        {"read": {"groups": None, "min_level": 123}},
+        {"read": {"required_permissions": []}},
+        {"read": {"required_permissions": "bulletin.read"}},
+        {"read": {"required_permissions": ["bulletin.read", 123]}},
+        {"read": {"required_permissions": ["bulletin.read"], "match_mode": "none"}},
     ],
 )
 def test_bad_access_matrix_fails_closed(portal_base, portal_app, monkeypatch, matrix):
@@ -164,15 +201,15 @@ def test_bad_access_matrix_fails_closed(portal_base, portal_app, monkeypatch, ma
 
 def test_portal_user_none_denies_no_session(portal_base, portal_app, monkeypatch):
     dsm.init_portal_sqlite("ss_no_session")
-    _patch_node(monkeypatch, _node({"read": {"groups": None, "min_level": "GUEST"}}))
+    _patch_node(monkeypatch, _node({"read": {"required_permissions": ["bulletin.read"]}}))
 
     assert _check(portal_app, "ss_no_session", "page_1", None) == (False, "no_session")
 
 
 def test_missing_portal_db_returns_error(portal_base, portal_app, monkeypatch):
-    _patch_node(monkeypatch, _node({"read": {"groups": None, "min_level": "GUEST"}}))
+    _patch_node(monkeypatch, _node({"read": {"required_permissions": ["bulletin.read"]}}))
 
-    assert _check(portal_app, "ss_missing_db", "page_1", _user()) == (False, "error")
+    assert _check(portal_app, "ss_missing_db", "page_1", _user()) == (False, "permission_denied")
 
 
 def test_widget_access_undeclared_action_allows(portal_base, portal_app):
@@ -180,7 +217,7 @@ def test_widget_access_undeclared_action_allows(portal_base, portal_app):
     ctx = {"sub_system_sc": "ss_widget_action", "portal_user": _user(group_code="GENERAL")}
 
     assert access.check_widget_access(
-        {"read": {"groups": ["VIP"], "min_level": "GUEST"}},
+        {"read": {"required_permissions": ["bulletin.read"]}},
         "create",
         ctx,
     ) is True
@@ -192,8 +229,8 @@ def test_widget_access_undeclared_action_allows(portal_base, portal_app):
         None,
         ["VIP"],
         {"read": "bad"},
-        {"read": {"groups": None}},
-        {"read": {"groups": None, "min_level": 123}},
+        {"read": {"required_permissions": []}},
+        {"read": {"required_permissions": ["bulletin.read"], "match_mode": "none"}},
     ],
 )
 def test_widget_access_bad_matrix_or_rule_fails_closed(portal_base, portal_app, matrix):
@@ -204,22 +241,29 @@ def test_widget_access_bad_matrix_or_rule_fails_closed(portal_base, portal_app, 
 
 
 @pytest.mark.parametrize(
-    ("group_code", "level_rank", "expected"),
+    ("required_permission", "level_rank", "expected"),
     [
-        ("VIP", 50, True),
-        ("GENERAL", 50, False),
-        ("VIP", 10, False),
+        ("bulletin.read", 50, True),
+        ("bulletin.create", 50, False),
+        ("bulletin.read", 10, False),
     ],
 )
-def test_widget_access_uses_same_group_and_level_rule(portal_base, portal_app, group_code, level_rank, expected):
+def test_widget_access_uses_same_permission_rule(
+    portal_base,
+    portal_app,
+    required_permission,
+    level_rank,
+    expected,
+):
     dsm.init_portal_sqlite("ss_widget_rule")
+    _grant_level_permission("ss_widget_rule", "STAFF", "bulletin.read")
     ctx = {
         "sub_system_sc": "ss_widget_rule",
-        "portal_user": _user(group_code=group_code, level_rank=level_rank),
+        "portal_user": _user(level_rank=level_rank),
     }
 
     assert access.check_widget_access(
-        {"read": {"groups": ["VIP"], "min_level": "STAFF"}},
+        {"read": {"required_permissions": [required_permission]}},
         "read",
         ctx,
     ) is expected

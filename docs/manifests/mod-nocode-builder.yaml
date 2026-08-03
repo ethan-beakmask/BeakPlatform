@@ -81,5 +81,6 @@ note: |
   模式規範見 docs/GRANT_PERMISSION_PATTERN.md。
   工作區四個 tab：頁面設計 / 帳號權限 / 權限矩陣 / 資料表（建表限 portal_data，掛 nocode_builder.manage）。
   「權限矩陣」tab（PF-8）走權限碼制：權限碼管理、表1 網頁×權限碼、表2 等級／角色×權限碼、
-  帳號×角色與個人 allow/deny 覆寫、三個權限模板套用；舊的 groups+min_level 形式仍並存。
+  帳號×角色與個人 allow/deny 覆寫、三個權限模板套用。
+  准入規則只認權限碼制（PF-13 起），舊的 groups+min_level 形式已完全移除。
   IR 設計器可設定四個 action 的元件准入與欄位遮罩；預覽支援 ?sub=&group=&level= 模擬 portal 身分。

@@ -151,7 +151,7 @@ def _doc(widgets):
 
 
 def _matrix():
-    rule = {"groups": None, "min_level": "GUEST"}
+    rule = {"required_permissions": ["bulletin.read"]}
     return {"read": rule, "create": rule, "update": rule, "delete": rule}
 
 

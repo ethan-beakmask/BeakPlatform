@@ -54,7 +54,7 @@ def reset_pageir_registry():
 
 
 def _matrix():
-    rule = {"groups": ["VIP"], "min_level": "GUEST"}
+    rule = {"required_permissions": ["bulletin.read"]}
     return {"read": rule, "create": rule, "update": rule}
 
 
