@@ -37,7 +37,10 @@
         </div>
         <template x-if="errors.length">
             <div class="ird-errors">
-                <template x-for="err in errors" :key="err.path + err.message">
+                <!-- key 用 index：同一 path 可能出現訊息相同的多筆錯誤，用 path+message 當 key 會重複，
+                     Alpine x-for 撞到重複 key 會丟 "Cannot read properties of undefined (reading 'after')"，
+                     整個錯誤區塊渲染失敗變成空白（使用者看到的症狀是「按儲存沒反應」）。 -->
+                <template x-for="(err, errIndex) in errors" :key="errIndex">
                     <div class="ird-error" x-text="formatError(err)"></div>
                 </template>
             </div>

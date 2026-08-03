@@ -55,10 +55,43 @@ def _schema_error(err: ValidationError) -> dict:
 
 
 def _flatten_schema_errors(err: ValidationError) -> list[ValidationError]:
-    errors = [err]
-    for child in err.context:
+    context = _relevant_context(err)
+    # 已經指出是哪一支不合時，oneOf 自己那句「不符合任何 schema」只是噪音
+    narrowed = err.validator == "oneOf" and 0 < len(context) < len(err.context)
+    errors = [] if narrowed else [err]
+    for child in context:
         errors.extend(_flatten_schema_errors(child))
     return errors
+
+
+def _relevant_context(err: ValidationError) -> list[ValidationError]:
+    """oneOf 錯誤只保留「型別相符」的那個分支。
+
+    widget 是 `oneOf` 的一堆分支（每支用 `type` 的 const 區分），jsonschema 會把
+    每一支的失敗全部塞進 err.context。全展開的話，放一個空 items 的 menu widget
+    會冒出 28 條錯誤（其他分支的 'binding' is required、additionalProperties 等），
+    真正那條 `items should be non-empty` 淹沒在裡面。
+    分支中出現 `type` 的 const 失敗 = 這個 widget 根本不是那一支，整組丟棄。
+    僅影響錯誤呈現，不影響通過與否。
+    """
+    if err.validator != "oneOf" or not err.context:
+        return list(err.context)
+
+    branches: dict[object, list[ValidationError]] = {}
+    for child in err.context:
+        branch_key = child.schema_path[0] if child.schema_path else None
+        branches.setdefault(branch_key, []).append(child)
+
+    relevant: list[ValidationError] = []
+    for children in branches.values():
+        if any(_is_type_const_mismatch(child) for child in children):
+            continue
+        relevant.extend(children)
+    return relevant or list(err.context)
+
+
+def _is_type_const_mismatch(err: ValidationError) -> bool:
+    return err.validator == "const" and list(err.absolute_path)[-1:] == ["type"]
 
 
 def _error(path: str, message: str, code: str) -> dict:

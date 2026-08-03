@@ -57,15 +57,16 @@ function irDesigner() {
         showFormModal: false,
         formBuilder: null,
         formBuilderWidget: null,
+        // label 一律「英文型別 中文名」並列，方便對照 layout_json 裡的 type
         palette: [
-            { type: 'layout', label: tr('版面') },
-            { type: 'text', label: tr('文字') },
-            { type: 'menu', label: tr('選單') },
-            { type: 'table', label: tr('表格') },
-            { type: 'detail', label: tr('明細') },
-            { type: 'master_detail', label: tr('主細表') },
-            { type: 'actions', label: tr('動作') },
-            { type: 'form', label: tr('表單') },
+            { type: 'layout', label: `layout ${tr('版面')}` },
+            { type: 'text', label: `text ${tr('文字')}` },
+            { type: 'menu', label: `menu ${tr('選單')}` },
+            { type: 'table', label: `table ${tr('表格')}` },
+            { type: 'detail', label: `detail ${tr('明細')}` },
+            { type: 'master_detail', label: `master_detail ${tr('主細表')}` },
+            { type: 'actions', label: `actions ${tr('動作')}` },
+            { type: 'form', label: `form ${tr('表單')}` },
         ],
         accessActions: [
             { key: 'read', label: tr('檢視') },
@@ -1197,8 +1198,32 @@ function irDesigner() {
             return doc;
         },
 
+        // 存檔前的本地檢查：後端 schema 擋得住，但回來的是一大串 JSON Schema 術語，
+        // 使用者看不出「選單一個項目都沒勾」這種小事。先在前端講人話。
+        localSaveErrors(widgets, path) {
+            const errors = [];
+            (widgets || []).forEach((widget, index) => {
+                const widgetPath = `${path}[${index}]`;
+                if (widget.type === 'menu' && this.menuItemCount(widget) === 0) {
+                    errors.push({
+                        path: widgetPath,
+                        message: tr('選單「{id}」尚未選擇任何網頁或系統連結', { id: widget.id }),
+                    });
+                }
+                if (widget.type === 'layout') {
+                    errors.push(...this.localSaveErrors(widget.children, `${widgetPath}.children`));
+                }
+            });
+            return errors;
+        },
+
         async savePage() {
             this.errors = [];
+            const localErrors = this.localSaveErrors(this.doc.page.widgets, 'page.widgets');
+            if (localErrors.length) {
+                this.errors = localErrors;
+                return;
+            }
             const body = {
                 name: this.pageTitleZh || this.pageName || tr('未命名頁面'),
                 layout_json: this.buildDoc(),

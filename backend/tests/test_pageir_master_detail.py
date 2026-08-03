@@ -166,7 +166,12 @@ def test_schema_accepts_master_detail_and_requires_foreign_key():
     del invalid["detail"]["foreign_key"]
     ok, errors = validate_page_ir(_doc(invalid))
     assert ok is False
-    assert any(error["code"] == "oneOf" for error in errors)
+    # 驗證器只保留型別相符的 oneOf 分支（見 validator._relevant_context），
+    # 所以這裡拿到的是精確的缺欄位錯誤，不再是籠統的 oneOf
+    assert any(
+        error["code"] == "required" and "foreign_key" in error["message"]
+        for error in errors
+    )
 
 
 def test_foreign_key_must_be_writable(pir_app):
