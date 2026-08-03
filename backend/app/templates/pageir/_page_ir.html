@@ -17,7 +17,7 @@
 
 {% macro render_widget(widget) %}
 {% if widget.type == 'layout' %}
-<div id="{{ widget.id }}" class="pir-layout" style="grid-template-columns: repeat({{ widget.columns }}, 1fr); gap: {{ widget.gap }}px">
+<div id="{{ widget.id }}" class="pir-layout{% if widget.responsive %} pir-layout--responsive{% endif %}" style="grid-template-columns: repeat({{ widget.columns }}, 1fr); gap: {{ widget.gap }}px">
     {% for child in widget.children %}
     {{ render_widget(child) }}
     {% endfor %}
@@ -105,7 +105,7 @@
     </div>
 </div>
 {% elif widget.type == 'detail' %}
-<div id="{{ widget.id }}" class="pir-detail" style="grid-template-columns: repeat({{ widget.layout_columns }}, 1fr)">
+<div id="{{ widget.id }}" class="pir-detail{% if widget.responsive %} pir-detail--responsive{% endif %}" style="grid-template-columns: repeat({{ widget.layout_columns }}, 1fr)">
     {% if widget.record %}
     {% for field in widget.fields %}
     {% set value = widget.record.get(field.field) %}
@@ -132,7 +132,7 @@
      data-pir-mode="{{ widget.mode }}"
      data-pir-master-sc="{{ widget.master.record.get('_sc') if widget.master.record else '' }}"
      {% if widget.submit_url %}data-pir-submit-url="{{ widget.submit_url }}"{% endif %}>
-    <div class="pir-detail pir-md-master" style="grid-template-columns: repeat({{ widget.master.layout_columns }}, 1fr)">
+    <div class="pir-detail pir-md-master{% if widget.responsive %} pir-detail--responsive{% endif %}" style="grid-template-columns: repeat({{ widget.master.layout_columns }}, 1fr)">
         {% for field in widget.master.fields %}
         {% set value = widget.master.record.get(field.field) if widget.master.record else '' %}
         <div class="pir-detail-item">
@@ -245,6 +245,32 @@
 {% endif %}
 {% endmacro %}
 
+{% if engine == "grid" %}
+<div class="pir-canvas-wrap">
+    <div class="pir-canvas pir-canvas--grid" style="min-width: {{ canvas.min_width }}px; grid-template-columns: {{ canvas.col_template }}; grid-template-rows: {{ canvas.row_template }}; gap: {{ canvas.gap }}px">
+        {% for zone in canvas.zones %}
+        <div id="{{ zone.id }}" class="pir-zone{% if zone.overflow == "auto" %} pir-zone--scroll{% endif %}" style="grid-area: {{ zone.row }} / {{ zone.col }} / span {{ zone.row_span }} / span {{ zone.col_span }}">
+            {% for widget in zone.widgets %}
+            {{ render_widget(widget) }}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% elif engine == "free" %}
+<div class="pir-canvas-wrap">
+    <div class="pir-canvas pir-canvas--free" style="min-width: {{ canvas.min_width }}px; grid-auto-rows: {{ canvas.row_unit }}px; gap: {{ canvas.gap }}px">
+        {% for frame in canvas.frames %}
+        <div id="{{ frame.id }}" class="pir-zone{% if frame.overflow == "auto" %} pir-zone--scroll{% endif %}" style="grid-column: {{ frame.col }} / span {{ frame.w }}; grid-row: {{ frame.row }} / span {{ frame.h }}">
+            {% for widget in frame.widgets %}
+            {{ render_widget(widget) }}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
 {% for widget in widgets %}
 {{ render_widget(widget) }}
 {% endfor %}
+{% endif %}

@@ -140,6 +140,68 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "title_i18n", "widgets"],
+      "allOf": [
+        {
+          "if": {
+            "anyOf": [
+              {
+                "not": {
+                  "required": ["engine"]
+                }
+              },
+              {
+                "required": ["engine"],
+                "properties": {
+                  "engine": {
+                    "const": "flow"
+                  }
+                }
+              }
+            ]
+          },
+          "then": {
+            "not": {
+              "required": ["canvas"]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["engine"],
+            "properties": {
+              "engine": {
+                "const": "grid"
+              }
+            }
+          },
+          "then": {
+            "required": ["canvas"],
+            "properties": {
+              "canvas": {
+                "$ref": "#/$defs/grid_canvas"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["engine"],
+            "properties": {
+              "engine": {
+                "const": "free"
+              }
+            }
+          },
+          "then": {
+            "required": ["canvas"],
+            "properties": {
+              "canvas": {
+                "$ref": "#/$defs/free_canvas"
+              }
+            }
+          }
+        }
+      ],
       "properties": {
         "id": {
           "$ref": "#/$defs/slug"
@@ -147,10 +209,164 @@
         "title_i18n": {
           "$ref": "#/$defs/i18n"
         },
+        "engine": {
+          "enum": ["flow", "grid", "free"]
+        },
+        "canvas": {
+          "type": "object"
+        },
         "widgets": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/widget"
+          }
+        }
+      }
+    },
+    "grid_canvas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["col_widths", "row_heights", "zones"],
+      "properties": {
+        "min_width": {
+          "type": "integer",
+          "minimum": 320,
+          "maximum": 4096
+        },
+        "col_widths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 20
+          }
+        },
+        "row_heights": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "type": "integer",
+            "minimum": 48,
+            "maximum": 2000
+          }
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "zones": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/grid_zone"
+          }
+        }
+      }
+    },
+    "grid_zone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "row", "col", "row_span", "col_span", "widget_ids"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "col": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "row_span": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "col_span": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "overflow": {
+          "enum": ["auto", "visible"]
+        },
+        "widget_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slug"
+          }
+        }
+      }
+    },
+    "free_canvas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frames"],
+      "properties": {
+        "min_width": {
+          "type": "integer",
+          "minimum": 320,
+          "maximum": 4096
+        },
+        "row_unit": {
+          "type": "integer",
+          "minimum": 20,
+          "maximum": 200
+        },
+        "columns": {
+          "const": 12
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "frames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/free_frame"
+          }
+        }
+      }
+    },
+    "free_frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "x", "y", "w", "h", "widget_ids"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "x": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 11
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 999
+        },
+        "w": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "h": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "overflow": {
+          "enum": ["auto", "visible"]
+        },
+        "widget_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slug"
           }
         }
       }

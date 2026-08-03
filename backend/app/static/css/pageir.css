@@ -3,6 +3,12 @@
     color: var(--color-text);
 }
 
+/* grid/free 畫布需要突破外層容器限寬（portal 的 .portal-content 是 1180px）。
+   平台頁的 .pir-page 本來就沒有限寬，此 class 對它不產生變化。 */
+.pir-page--wide {
+    max-width: none;
+}
+
 .pir-page-title {
     margin: 0 0 16px;
     color: var(--color-text);
@@ -22,6 +28,34 @@
     flex-direction: column;
     gap: 16px;
 }
+
+.pir-canvas-wrap {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.pir-canvas {
+    display: grid;
+}
+
+.pir-canvas--free {
+    grid-template-columns: repeat(12, 1fr);
+}
+
+/* zone/frame 是版面容器，正式渲染時不帶任何裝飾——空 zone 不該在頁面上留下空框。
+   格線與邊界由設計器自己畫。 */
+.pir-zone {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    min-height: 0;
+}
+
+.pir-zone--scroll {
+    overflow: auto;
+}
+
 
 .pir-layout {
     display: grid;
@@ -452,8 +486,8 @@
 }
 
 @media (max-width: 720px) {
-    .pir-layout,
-    .pir-detail {
+    .pir-layout--responsive,
+    .pir-detail--responsive {
         grid-template-columns: 1fr !important;
     }
 }

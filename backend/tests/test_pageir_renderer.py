@@ -118,7 +118,7 @@ def test_text_layout_render_tags_and_grid(pir_app):
     with pir_app.test_request_context("/"):
         html = render_page_ir(doc)
 
-    assert 'class="pir-layout"' in html
+    assert 'class="pir-layout pir-layout--responsive"' in html
     assert "grid-template-columns: repeat(2, 1fr); gap: 16px" in html
     assert '<h2 id="intro"' in html
     assert "&lt;安全標題&gt;" in html

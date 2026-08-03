@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pageir.css') }}">
 {% endblock %}
 {% block content %}
-<div class="pir-page">
+<div class="pir-page{% if engine in ['grid', 'free'] %} pir-page--wide{% endif %}">
     {% if preview_banner %}
     <div class="pir-preview-banner">
         {{ _('預覽模式：以「%(group)s / %(level)s」身分檢視，資料為唯讀，寫入操作不會生效。', group=preview_banner.group or _('不限群組'), level=preview_banner.level) }}

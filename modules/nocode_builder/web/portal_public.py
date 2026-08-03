@@ -454,6 +454,7 @@ def portal_page(path_id, page_sc):
         page_title=_page_ir_title(page),
         body_html=rendered['html'],
         has_form=rendered['has_form'],
+        engine=rendered['engine'],
         sub_system_name=ss.name,
         sub_system_icon=ss.icon or '',
         path_id=path_id,

@@ -59,15 +59,24 @@ def render_page_ir_full(doc: dict) -> dict:
     current_app.jinja_env.globals["pir_sort_url"] = _sort_url
     current_app.jinja_env.globals["pir_action_url"] = _action_url
 
-    widgets_by_id = _index_widgets(doc["page"].get("widgets", []))
+    page = doc["page"]
+    engine = page.get("engine", "flow")
+    widgets = page.get("widgets", [])
+    widgets_by_id = _index_widgets(widgets)
     prepared = [
         prepared_widget
-        for widget in doc["page"].get("widgets", [])
-        if (prepared_widget := _prepare_widget(widget, widgets_by_id)) is not None
+        for widget in widgets
+        if (prepared_widget := _prepare_widget(widget, widgets_by_id, responsive=engine == "flow")) is not None
     ]
+    canvas = _prepare_canvas(page, prepared) if engine in {"grid", "free"} else None
+    rendered_widgets = prepared
+    if canvas is not None:
+        containers = canvas["zones"] if engine == "grid" else canvas["frames"]
+        rendered_widgets = [widget for container in containers for widget in container["widgets"]]
     return {
-        "html": render_template("pageir/_page_ir.html", widgets=prepared),
-        "has_form": _has_widget_type(prepared, "form"),
+        "html": render_template("pageir/_page_ir.html", widgets=prepared, engine=engine, canvas=canvas),
+        "has_form": _has_widget_type(rendered_widgets, "form"),
+        "engine": engine,
     }
 
 
@@ -89,7 +98,134 @@ def _has_widget_type(widgets: list[dict], widget_type: str) -> bool:
     return False
 
 
-def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict]) -> dict | None:
+def _prepare_canvas(page: dict, prepared_widgets: list[dict]) -> dict:
+    engine = page.get("engine", "flow")
+    canvas = page.get("canvas")
+    if not isinstance(canvas, dict):
+        raise PageIrRenderError("Canvas must be an object")
+
+    prepared_by_id = {widget["id"]: widget for widget in prepared_widgets}
+    top_widget_ids = {widget.get("id") for widget in page.get("widgets", [])}
+    referenced: set[str] = set()
+    if engine == "grid":
+        prepared_canvas = _prepare_grid_canvas(canvas, prepared_by_id, top_widget_ids, referenced)
+    elif engine == "free":
+        prepared_canvas = _prepare_free_canvas(canvas, prepared_by_id, top_widget_ids, referenced)
+    else:
+        raise PageIrRenderError(f"Unsupported canvas engine: {engine}")
+
+    for widget in prepared_widgets:
+        if widget["id"] not in referenced:
+            logger.info("Page IR top-level widget is not placed on canvas: widget=%s", widget["id"])
+    return prepared_canvas
+
+
+def _prepare_grid_canvas(
+    canvas: dict,
+    prepared_by_id: dict[str, dict],
+    top_widget_ids: set[str],
+    referenced: set[str],
+) -> dict:
+    col_widths = [_safe_float(value, 0.1, 20, "grid col_width") for value in canvas.get("col_widths", [])]
+    row_heights = [_safe_int(value, 48, 2000, "grid row_height") for value in canvas.get("row_heights", [])]
+    zones = []
+    for zone in canvas.get("zones", []):
+        row = _safe_int(zone.get("row"), 1, len(row_heights), "grid zone row")
+        col = _safe_int(zone.get("col"), 1, len(col_widths), "grid zone col")
+        row_span = _safe_int(zone.get("row_span"), 1, len(row_heights), "grid zone row_span")
+        col_span = _safe_int(zone.get("col_span"), 1, len(col_widths), "grid zone col_span")
+        if row + row_span - 1 > len(row_heights) or col + col_span - 1 > len(col_widths):
+            raise PageIrRenderError("Grid zone out of range")
+        widgets = _canvas_widgets(zone.get("widget_ids", []), prepared_by_id, top_widget_ids, referenced)
+        zones.append({
+            "id": zone["id"],
+            "row": row,
+            "col": col,
+            "row_span": row_span,
+            "col_span": col_span,
+            "overflow": zone.get("overflow", "auto"),
+            "widgets": widgets,
+        })
+    return {
+        "min_width": _safe_int(canvas.get("min_width", 1280), 320, 4096, "grid min_width"),
+        "col_template": " ".join(_format_fr(value) for value in col_widths),
+        "row_template": " ".join(f"{value}px" for value in row_heights),
+        "gap": _safe_int(canvas.get("gap", 8), 0, 64, "grid gap"),
+        "zones": zones,
+    }
+
+
+def _prepare_free_canvas(
+    canvas: dict,
+    prepared_by_id: dict[str, dict],
+    top_widget_ids: set[str],
+    referenced: set[str],
+) -> dict:
+    frames = []
+    for frame in canvas.get("frames", []):
+        x = _safe_int(frame.get("x"), 0, 11, "free frame x")
+        y = _safe_int(frame.get("y"), 0, 999, "free frame y")
+        w = _safe_int(frame.get("w"), 1, 12, "free frame w")
+        h = _safe_int(frame.get("h"), 1, 200, "free frame h")
+        if x + w > 12:
+            raise PageIrRenderError("Free frame out of range")
+        widgets = _canvas_widgets(frame.get("widget_ids", []), prepared_by_id, top_widget_ids, referenced)
+        frames.append({
+            "id": frame["id"],
+            "col": x + 1,
+            "row": y + 1,
+            "w": w,
+            "h": h,
+            "overflow": frame.get("overflow", "auto"),
+            "widgets": widgets,
+        })
+    return {
+        "min_width": _safe_int(canvas.get("min_width", 1280), 320, 4096, "free min_width"),
+        "row_unit": _safe_int(canvas.get("row_unit", 60), 20, 200, "free row_unit"),
+        "gap": _safe_int(canvas.get("gap", 8), 0, 64, "free gap"),
+        "frames": frames,
+    }
+
+def _canvas_widgets(
+    widget_ids: list[str],
+    prepared_by_id: dict[str, dict],
+    top_widget_ids: set[str],
+    referenced: set[str],
+) -> list[dict]:
+    widgets = []
+    for widget_id in widget_ids:
+        if widget_id not in top_widget_ids:
+            raise PageIrRenderError(f"Canvas widget ref does not resolve: {widget_id}")
+        referenced.add(widget_id)
+        widget = prepared_by_id.get(widget_id)
+        if widget is not None:
+            widgets.append(widget)
+    return widgets
+
+
+def _safe_int(value, minimum: int, maximum: int, label: str) -> int:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        raise PageIrRenderError(f"Invalid canvas integer: {label}")
+    return min(max(number, minimum), maximum)
+
+
+def _safe_float(value, minimum: float, maximum: float, label: str) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        raise PageIrRenderError(f"Invalid canvas number: {label}")
+    return min(max(number, minimum), maximum)
+
+
+def _format_fr(value: float) -> str:
+    text = f"{value:.4f}".rstrip("0").rstrip(".")
+    return f"{text}fr"
+
+
+
+def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict], *, responsive: bool = False) -> dict | None:
     if not _widget_read_allowed(widget):
         return None
 
@@ -106,7 +242,13 @@ def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict]) -> dict | None
     handler = dispatch.get(widget.get("type"))
     if handler is None:
         raise PageIrRenderError(f"Unknown widget type: {widget.get('type')}")
-    return handler(widget, widgets_by_id)
+    if widget.get("type") == "layout":
+        return _prepare_layout(widget, widgets_by_id, responsive)
+    prepared = handler(widget, widgets_by_id)
+    # master_detail 的 master 區塊也是 .pir-detail，同樣要吃 720px 塌一欄的規則
+    if prepared.get("type") in {"detail", "master_detail"}:
+        prepared["responsive"] = responsive
+    return prepared
 
 
 def _widget_read_allowed(widget: dict) -> bool:
@@ -131,16 +273,17 @@ def _widget_read_allowed(widget: dict) -> bool:
         return False
 
 
-def _prepare_layout(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
+def _prepare_layout(widget: dict, widgets_by_id: dict[str, dict], responsive: bool) -> dict:
     return {
         "type": "layout",
         "id": widget["id"],
+        "responsive": responsive,
         "columns": widget["columns"],
         "gap": widget.get("gap", 0),
         "children": [
             prepared_child
             for child in widget.get("children", [])
-            if (prepared_child := _prepare_widget(child, widgets_by_id)) is not None
+            if (prepared_child := _prepare_widget(child, widgets_by_id, responsive=responsive)) is not None
         ],
     }
 

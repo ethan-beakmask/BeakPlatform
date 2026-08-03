@@ -313,6 +313,7 @@ def published_page(secure_code):
             page_title=_page_ir_title(page),
             body_html=rendered['html'],
             has_form=rendered['has_form'],
+            engine=rendered['engine'],
         )
 
     # v2 已廢棄：不再渲染，回明確錯誤頁。

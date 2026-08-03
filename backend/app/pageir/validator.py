@@ -109,12 +109,15 @@ def _format_path(path_parts) -> str:
 
 
 def _semantic_errors(doc: dict[str, Any]) -> list[dict]:
-    widgets = doc.get("page", {}).get("widgets", [])
+    page = doc.get("page", {})
+    widgets = page.get("widgets", [])
     errors: list[dict] = []
     seen_ids: dict[str, str] = {}
     actions_ids: set[str] = set()
     widget_types_by_id: dict[str, str] = {}
     refs: list[tuple[str, str]] = []
+    top_widget_ids: set[str] = set()
+    nested_widget_ids: set[str] = set()
 
     for widget, path, layout_depth in _iter_widgets(widgets, "page.widgets", 0):
         widget_id = widget.get("id")
@@ -124,6 +127,10 @@ def _semantic_errors(doc: dict[str, Any]) -> list[dict]:
         if widget_type == "actions":
             actions_ids.add(widget_id)
         widget_types_by_id[widget_id] = widget_type
+        if ".children" not in path:
+            top_widget_ids.add(widget_id)
+        else:
+            nested_widget_ids.add(widget_id)
 
         if widget_type == "layout" and layout_depth > 4:
             errors.append(
@@ -157,6 +164,8 @@ def _semantic_errors(doc: dict[str, Any]) -> list[dict]:
         # form.submit_action_ref 是 L2 action registry 參照（渲染期 fail-closed 解析），
         # 不是頁內 actions widget 參照，故不列入 dangling_ref 檢查。
 
+    _check_canvas(page, seen_ids, top_widget_ids, nested_widget_ids, errors)
+
     for path, ref_id in refs:
         if ref_id not in actions_ids:
             ref_type = widget_types_by_id.get(ref_id)
@@ -172,6 +181,84 @@ def _semantic_errors(doc: dict[str, Any]) -> list[dict]:
     return errors
 
 
+def _check_canvas(
+    page: dict[str, Any],
+    seen_ids: dict[str, str],
+    top_widget_ids: set[str],
+    nested_widget_ids: set[str],
+    errors: list[dict],
+) -> None:
+    engine = page.get("engine", "flow")
+    if engine == "flow":
+        return
+
+    canvas = page.get("canvas") or {}
+    used_widget_ids: dict[str, str] = {}
+    if engine == "grid":
+        col_count = len(canvas.get("col_widths", []))
+        row_count = len(canvas.get("row_heights", []))
+        occupied: dict[tuple[int, int], str] = {}
+        for index, zone in enumerate(canvas.get("zones", [])):
+            path = f"page.canvas.zones[{index}]"
+            _check_unique_id(zone.get("id"), path, seen_ids, errors)
+            row = zone.get("row", 0)
+            col = zone.get("col", 0)
+            row_span = zone.get("row_span", 0)
+            col_span = zone.get("col_span", 0)
+            if row < 1 or col < 1 or row + row_span - 1 > row_count or col + col_span - 1 > col_count:
+                errors.append(_error(path, "Grid zone exceeds canvas bounds", "zone_out_of_range"))
+                continue
+            for r in range(row, row + row_span):
+                for c in range(col, col + col_span):
+                    key = (r, c)
+                    if key in occupied:
+                        errors.append(_error(path, f"Grid zone overlaps {occupied[key]}", "zone_overlap"))
+                    else:
+                        occupied[key] = zone.get("id")
+            _check_canvas_widget_refs(zone.get("widget_ids", []), path, top_widget_ids, nested_widget_ids, used_widget_ids, errors)
+    elif engine == "free":
+        occupied: dict[tuple[int, int], str] = {}
+        for index, frame in enumerate(canvas.get("frames", [])):
+            path = f"page.canvas.frames[{index}]"
+            _check_unique_id(frame.get("id"), path, seen_ids, errors)
+            x = frame.get("x", 0)
+            y = frame.get("y", 0)
+            w = frame.get("w", 0)
+            h = frame.get("h", 0)
+            if x < 0 or y < 0 or w < 1 or h < 1 or x + w > 12:
+                errors.append(_error(path, "Free frame exceeds canvas bounds", "frame_out_of_range"))
+                continue
+            for row in range(y, y + h):
+                for col in range(x, x + w):
+                    key = (row, col)
+                    if key in occupied:
+                        errors.append(_error(path, f"Free frame overlaps {occupied[key]}", "frame_overlap"))
+                    else:
+                        occupied[key] = frame.get("id")
+            _check_canvas_widget_refs(frame.get("widget_ids", []), path, top_widget_ids, nested_widget_ids, used_widget_ids, errors)
+
+def _check_canvas_widget_refs(
+    widget_ids: list[str],
+    path: str,
+    top_widget_ids: set[str],
+    nested_widget_ids: set[str],
+    used_widget_ids: dict[str, str],
+    errors: list[dict],
+) -> None:
+    for index, widget_id in enumerate(widget_ids):
+        ref_path = f"{path}.widget_ids[{index}]"
+        if widget_id in nested_widget_ids:
+            errors.append(_error(ref_path, f"Widget ref {widget_id} points to a nested widget", "nested_widget_ref"))
+            continue
+        if widget_id not in top_widget_ids:
+            errors.append(_error(ref_path, f"Widget ref {widget_id} does not exist", "dangling_widget_ref"))
+            continue
+        if widget_id in used_widget_ids:
+            errors.append(_error(ref_path, f"Widget ref {widget_id} duplicates ref at {used_widget_ids[widget_id]}", "duplicate_widget_ref"))
+        else:
+            used_widget_ids[widget_id] = ref_path
+
+# canvas semantic validation helpers
 def _iter_widgets(widgets: list[dict], path: str, layout_depth: int):
     for index, widget in enumerate(widgets):
         widget_path = f"{path}[{index}]"

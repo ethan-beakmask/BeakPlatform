@@ -269,6 +269,7 @@ def ir_designer_preview(secure_code):
             page_title=_page_ir_title(page),
             body_html=rendered['html'],
             has_form=rendered['has_form'],
+            engine=rendered['engine'],
             preview_banner=preview_banner,
             is_preview=True,
             sub_system_name=ss.name,
@@ -289,6 +290,7 @@ def ir_designer_preview(secure_code):
         page_title=_page_ir_title(page),
         body_html=rendered['html'],
         has_form=rendered['has_form'],
+        engine=rendered['engine'],
         preview_banner=None,
     )
 
