@@ -26,11 +26,11 @@
     color: var(--color-text-secondary);
 }
 
-.ird-title-field input,
-.ird-field input,
+.ird-title-field input:not([type="radio"]):not([type="checkbox"]),
+.ird-field input:not([type="radio"]):not([type="checkbox"]),
 .ird-field select,
 .ird-field textarea,
-.ird-list-item input,
+.ird-list-item input:not([type="radio"]):not([type="checkbox"]),
 .ird-list-item select {
     width: 100%;
     box-sizing: border-box;
@@ -255,6 +255,74 @@
 .ird-menu-kind {
     color: var(--color-text-muted);
     font-size: 12px;
+}
+
+.ird-menu-tree-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.ird-menu-row-deleted .ird-menu-name {
+    color: var(--color-text-muted);
+}
+
+.ird-menu-actions,
+.ird-inline-actions,
+.ird-color-control,
+.ird-inline-check {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ird-menu-actions {
+    flex-wrap: nowrap;
+}
+
+.ird-menu-actions .ird-icon-btn:disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+.ird-menu-add-btn {
+    min-height: 28px;
+    padding: 4px 10px;
+}
+
+.ird-inline-check {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.ird-inline-actions select {
+    min-width: 0;
+}
+
+.ird-color-control input[type="color"] {
+    width: 44px;
+    min-width: 44px;
+    height: 34px;
+    padding: 3px;
+}
+
+.ird-color-control span {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.ird-file-input {
+    display: none;
+}
+
+.ird-bg-preview {
+    width: 100%;
+    max-height: 160px;
+    object-fit: contain;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-hint-danger {
+    color: #b00020;
 }
 
 .ird-list-item {

@@ -35,6 +35,10 @@ class DcBackground(ModuleBaseModel):
             'width': self.width,
             'height': self.height,
             'description': self.description,
+            # menu widget 的底圖存的是 platform_files 的 secure_code（renderer 會用它
+            # 查 context_type=nc_background），不是 DcBackground 自己的 secure_code。
+            # 少了這個欄位，前端只能存錯的 sc，底圖選了永遠不生效。
+            'platform_file_sc': self.platform_file_sc,
             'url': url,
         })
         return data

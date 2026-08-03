@@ -40,6 +40,10 @@ function irDesigner() {
         siteMapNodes: [],
         siteMapLoaded: false,
         siteMapError: '',
+        menuBackgrounds: [],
+        menuBackgroundsLoaded: false,
+        menuBackgroundError: '',
+        menuUploadingBackground: false,
         previewGroup: '',
         previewLevel: '',
         portalOrgLoaded: false,
@@ -84,6 +88,20 @@ function irDesigner() {
         actionsAccessActions: [
             { key: 'read', label: tr('檢視') },
             { key: 'update', label: tr('執行動作') },
+        ],
+        menuSystemLinks: [
+            { link: 'login', label: tr('登入') },
+            { link: 'register', label: tr('註冊') },
+            { link: 'logout', label: tr('登出') },
+        ],
+        menuColorFields: [
+            { key: 'bg_color', label: tr('背景色') },
+            { key: 'item_bg_color', label: tr('項目背景色') },
+            { key: 'item_text_color', label: tr('項目文字色') },
+            { key: 'item_hover_bg_color', label: tr('滑過背景色') },
+            { key: 'item_hover_text_color', label: tr('滑過文字色') },
+            { key: 'accent_color', label: tr('強調色') },
+            { key: 'border_color', label: tr('框線色') },
         ],
 
         async init() {
@@ -145,10 +163,17 @@ function irDesigner() {
             if (widget.title_i18n.en === undefined) widget.title_i18n.en = '';
             if (!Array.isArray(widget.items)) widget.items = [];
             const normalizeItems = (items) => {
-                for (const item of items || []) {
+                for (let index = (items || []).length - 1; index >= 0; index -= 1) {
+                    const item = items[index];
+                    if (!item || !['node', 'system'].includes(item.kind)) {
+                        items.splice(index, 1);
+                        continue;
+                    }
                     if (item && item.kind === 'node') {
                         if (!Array.isArray(item.children)) item.children = [];
                         normalizeItems(item.children);
+                    } else if (item && item.kind === 'system') {
+                        delete item.children;
                     }
                 }
             };
@@ -171,6 +196,7 @@ function irDesigner() {
                 border_color: '#dddddd',
                 border_width: 1,
                 border_radius: 4,
+                background_file: '',
                 background_size: 'cover',
                 background_repeat: 'no-repeat',
                 background_position: 'center',
@@ -178,6 +204,16 @@ function irDesigner() {
             for (const [key, value] of Object.entries(styleDefaults)) {
                 if (widget.style[key] === undefined) widget.style[key] = value;
             }
+            for (const key of ['bg_color', 'item_bg_color', 'item_text_color', 'item_hover_bg_color', 'item_hover_text_color', 'accent_color', 'border_color']) {
+                if (!/^#[0-9a-fA-F]{6}$/.test(widget.style[key] || '')) widget.style[key] = styleDefaults[key];
+            }
+            const borderWidth = Number.parseInt(widget.style.border_width, 10);
+            const borderRadius = Number.parseInt(widget.style.border_radius, 10);
+            widget.style.border_width = Number.isFinite(borderWidth) ? Math.min(8, Math.max(0, borderWidth)) : 1;
+            widget.style.border_radius = Number.isFinite(borderRadius) ? Math.min(32, Math.max(0, borderRadius)) : 4;
+            if (!['cover', 'contain', 'auto'].includes(widget.style.background_size)) widget.style.background_size = 'cover';
+            if (!['no-repeat', 'repeat', 'repeat-x', 'repeat-y'].includes(widget.style.background_repeat)) widget.style.background_repeat = 'no-repeat';
+            if (!['center', 'top', 'bottom', 'left', 'right'].includes(widget.style.background_position)) widget.style.background_position = 'center';
         },
 
         normalizeMasterDetailWidget(widget) {
@@ -253,6 +289,7 @@ function irDesigner() {
                 if (widget.type === 'table') this.normalizeMasks(widget.columns || []);
                 if (widget.type === 'detail') this.normalizeMasks(widget.fields || []);
                 if (widget.type === 'master_detail') this.normalizeMasterDetailWidget(widget);
+                if (widget.type === 'menu') this.normalizeMenuWidget(widget);
                 if (widget.type === 'layout') this.normalizeWidgetMasks(widget.children || []);
             }
         },
@@ -395,6 +432,30 @@ function irDesigner() {
                 this.siteMapLoaded = false;
                 this.siteMapError = tr('載入 Site Map 失敗');
                 console.error('[IR Designer] site map load failed:', err);
+            }
+        },
+
+        async loadMenuBackgrounds() {
+            this.menuBackgroundError = '';
+            try {
+                const res = await fetch(`${apiBase}/backgrounds`);
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    this.menuBackgrounds = [];
+                    this.menuBackgroundsLoaded = false;
+                    this.menuBackgroundError = tr('載入底圖失敗');
+                    return;
+                }
+                // 只留有 platform_file_sc 的底圖：renderer 認的是 platform_files 的
+                // secure_code，早期上傳到 static/uploads 的舊底圖沒有對應檔案記錄，
+                // 選了也不會生效，不如不給選。
+                const rows = Array.isArray(data.data) ? data.data : [];
+                this.menuBackgrounds = rows.filter((bg) => bg && bg.platform_file_sc);
+                this.menuBackgroundsLoaded = true;
+            } catch (err) {
+                this.menuBackgrounds = [];
+                this.menuBackgroundsLoaded = false;
+                this.menuBackgroundError = tr('載入底圖失敗');
             }
         },
 
@@ -791,6 +852,9 @@ function irDesigner() {
             if (widget.type === 'menu' && !this.siteMapLoaded && !this.siteMapError) {
                 this.loadSiteMap();
             }
+            if (widget.type === 'menu' && !this.menuBackgroundsLoaded && !this.menuBackgroundError) {
+                this.loadMenuBackgrounds();
+            }
             this.markDirty();
         },
 
@@ -805,7 +869,18 @@ function irDesigner() {
                 return { id, type, level: 'p', content_i18n: { 'zh-TW': tr('文字'), en: '' } };
             }
             if (type === 'menu') {
-                return { id, type, title_i18n: { 'zh-TW': tr('選單'), en: '' }, items: [] };
+                return {
+                    id,
+                    type,
+                    title_i18n: { 'zh-TW': tr('選單'), en: '' },
+                    items: [],
+                    orientation: 'vertical',
+                    item_gap: 6,
+                    hover_expand: true,
+                    nav_source: 'self',
+                    nav_key: 'nav',
+                    style: this.menuStyleDefaults(),
+                };
             }
             if (type === 'table') {
                 return {
@@ -872,6 +947,9 @@ function irDesigner() {
             this.activeWidget = this.findWidget(id);
             if (this.activeWidget && this.activeWidget.type === 'menu' && !this.siteMapLoaded && !this.siteMapError) {
                 this.loadSiteMap();
+            }
+            if (this.activeWidget && this.activeWidget.type === 'menu' && !this.menuBackgroundsLoaded && !this.menuBackgroundError) {
+                this.loadMenuBackgrounds();
             }
         },
 
@@ -1083,60 +1161,276 @@ function irDesigner() {
             this.markDirty();
         },
 
+        menuStyleDefaults() {
+            return {
+                bg_color: '#ffffff',
+                item_bg_color: '#ffffff',
+                item_text_color: '#333333',
+                item_hover_bg_color: '#e9ecef',
+                item_hover_text_color: '#333333',
+                accent_color: '#e67e22',
+                border_color: '#dddddd',
+                border_width: 1,
+                border_radius: 4,
+                background_file: '',
+                background_size: 'cover',
+                background_repeat: 'no-repeat',
+                background_position: 'center',
+            };
+        },
+
+        menuWalk(items, visit, depth = 0, path = []) {
+            for (let index = 0; index < (items || []).length; index += 1) {
+                const item = items[index];
+                visit(item, depth, path.concat(index), items, index);
+                if (item && item.kind === 'node') this.menuWalk(item.children || [], visit, depth + 1, path.concat(index));
+            }
+        },
+
+        menuPath(value) {
+            return String(value || '').split('.').filter((part) => part !== '').map((part) => Number(part));
+        },
+
+        menuPathKey(path) {
+            return (path || []).join('.');
+        },
+
+        menuParentByPath(widget, path) {
+            if (!widget || !Array.isArray(widget.items) || !Array.isArray(path) || path.length === 0) return null;
+            let siblings = widget.items;
+            for (let depth = 0; depth < path.length - 1; depth += 1) {
+                const item = siblings[path[depth]];
+                if (!item || item.kind !== 'node') return null;
+                if (!Array.isArray(item.children)) item.children = [];
+                siblings = item.children;
+            }
+            const index = path[path.length - 1];
+            if (index < 0 || index >= siblings.length) return null;
+            return { siblings, index, item: siblings[index] };
+        },
+
+        menuFindNode(sc) {
+            return (this.siteMapNodes || []).find((node) => node.secure_code === sc) || null;
+        },
+
+        menuItemLabel(item) {
+            if (!item) return '';
+            if (item.kind === 'system') {
+                const found = this.menuSystemLinks.find((row) => row.link === item.link);
+                return found ? found.label : item.link;
+            }
+            const node = this.menuFindNode(item.node);
+            return node ? node.name : tr('（節點已刪除）');
+        },
+
+        menuItemKindLabel(item) {
+            if (!item) return '';
+            if (item.kind === 'system') return tr('系統連結');
+            const node = this.menuFindNode(item.node);
+            if (!node) return tr('已刪除');
+            return node.node_type === 'folder' ? tr('資料夾') : tr('網頁');
+        },
+
+        selectedMenuRows(widget) {
+            const rows = [];
+            this.menuWalk((widget && widget.items) || [], (item, depth, path, siblings, index) => {
+                rows.push({
+                    item,
+                    depth,
+                    path: this.menuPathKey(path),
+                    key: `${this.menuPathKey(path)}:${item.kind}:${item.node || item.link || ''}`,
+                    canUp: index > 0,
+                    canDown: index < siblings.length - 1,
+                    canOutdent: path.length > 1,
+                    canIndent: item.kind === 'node' && index > 0 && siblings[index - 1] && siblings[index - 1].kind === 'node' && this.menuSubtreeDepth(item) + path.length <= 5,
+                    label: this.menuItemLabel(item),
+                    kindLabel: this.menuItemKindLabel(item),
+                    deleted: item.kind === 'node' && !this.menuFindNode(item.node),
+                });
+            });
+            return rows;
+        },
+
+        menuSubtreeDepth(item) {
+            if (!item || item.kind !== 'node' || !Array.isArray(item.children) || item.children.length === 0) return 1;
+            return 1 + Math.max(...item.children.map((child) => this.menuSubtreeDepth(child)));
+        },
+
         menuHasNode(widget, sc) {
-            return !!(widget && Array.isArray(widget.items) && widget.items.some((item) => item.kind === 'node' && item.node === sc));
+            let found = false;
+            this.menuWalk((widget && widget.items) || [], (item) => {
+                if (item && item.kind === 'node' && item.node === sc) found = true;
+            });
+            return found;
         },
 
         menuHasSystemLink(widget, link) {
-            return !!(widget && Array.isArray(widget.items) && widget.items.some((item) => item.kind === 'system' && item.link === link));
+            let found = false;
+            this.menuWalk((widget && widget.items) || [], (item) => {
+                if (item && item.kind === 'system' && item.link === link) found = true;
+            });
+            return found;
         },
 
-        orderedMenuItems(widget, overrides) {
-            const items = Array.isArray(widget && widget.items) ? widget.items : [];
-            const selectedNodes = new Set(items.filter((item) => item.kind === 'node' && item.node).map((item) => item.node));
-            const selectedLinks = new Set(items.filter((item) => item.kind === 'system' && item.link).map((item) => item.link));
-            if (overrides && overrides.kind === 'node') {
-                if (overrides.checked) selectedNodes.add(overrides.value);
-                else selectedNodes.delete(overrides.value);
-            }
-            if (overrides && overrides.kind === 'system') {
-                if (overrides.checked) selectedLinks.add(overrides.value);
-                else selectedLinks.delete(overrides.value);
-            }
-            const ordered = [];
-            const emittedNodes = new Set();
-            for (const node of this.siteMapNodes) {
-                if (selectedNodes.has(node.secure_code)) {
-                    ordered.push({ kind: 'node', node: node.secure_code });
-                    emittedNodes.add(node.secure_code);
-                }
-            }
-            for (const item of items) {
-                if (item.kind === 'node' && selectedNodes.has(item.node) && !emittedNodes.has(item.node)) {
-                    ordered.push({ kind: 'node', node: item.node });
-                    emittedNodes.add(item.node);
-                }
-            }
-            for (const link of ['login', 'register', 'logout']) {
-                if (selectedLinks.has(link)) ordered.push({ kind: 'system', link });
-            }
-            return ordered;
+        availableMenuNodes(widget) {
+            return (this.siteMapNodes || []).filter((node) => !this.menuHasNode(widget, node.secure_code));
+        },
+
+        addMenuNode(widget, sc) {
+            if (!widget || !sc || this.menuHasNode(widget, sc)) return;
+            if (!Array.isArray(widget.items)) widget.items = [];
+            widget.items.push({ kind: 'node', node: sc, children: [] });
+            this.markDirty();
         },
 
         toggleMenuNode(widget, sc, checked) {
             if (!widget || !sc) return;
-            widget.items = this.orderedMenuItems(widget, { kind: 'node', value: sc, checked });
-            this.markDirty();
+            if (checked) {
+                this.addMenuNode(widget, sc);
+            } else {
+                this.removeMenuNode(widget, sc, false);
+            }
         },
 
         toggleMenuSystemLink(widget, link, checked) {
             if (!widget || !link) return;
-            widget.items = this.orderedMenuItems(widget, { kind: 'system', value: link, checked });
+            if (!Array.isArray(widget.items)) widget.items = [];
+            if (checked) {
+                if (!this.menuHasSystemLink(widget, link)) {
+                    widget.items.push({ kind: 'system', link });
+                    this.markDirty();
+                }
+                return;
+            }
+            let changed = false;
+            const removeFrom = (items) => {
+                for (let index = (items || []).length - 1; index >= 0; index -= 1) {
+                    const item = items[index];
+                    if (item.kind === 'system' && item.link === link) {
+                        items.splice(index, 1);
+                        changed = true;
+                    } else if (item.kind === 'node') {
+                        removeFrom(item.children || []);
+                    }
+                }
+            };
+            removeFrom(widget.items);
+            if (changed) this.markDirty();
+        },
+
+        removeMenuNode(widget, sc, ask = true) {
+            if (!widget || !sc) return;
+            let removed = false;
+            const removeFrom = (items) => {
+                for (let index = (items || []).length - 1; index >= 0; index -= 1) {
+                    const item = items[index];
+                    if (item.kind === 'node' && item.node === sc) {
+                        items.splice(index, 1);
+                        removed = true;
+                    } else if (item.kind === 'node') {
+                        removeFrom(item.children || []);
+                    }
+                }
+            };
+            if (ask && !window.confirm(tr('確定要移除此項目與其子項目？'))) return;
+            removeFrom(widget.items || []);
+            if (removed) this.markDirty();
+        },
+
+        moveMenuItem(widget, pathValue, dir) {
+            const found = this.menuParentByPath(widget, this.menuPath(pathValue));
+            if (!found) return;
+            const target = found.index + dir;
+            if (target < 0 || target >= found.siblings.length) return;
+            const item = found.siblings.splice(found.index, 1)[0];
+            found.siblings.splice(target, 0, item);
+            this.markDirty();
+        },
+
+        indentMenuItem(widget, pathValue) {
+            const path = this.menuPath(pathValue);
+            const found = this.menuParentByPath(widget, path);
+            if (!found || found.index === 0 || !found.item || found.item.kind !== 'node') return;
+            if (this.menuSubtreeDepth(found.item) + path.length > 5) return;
+            const prev = found.siblings[found.index - 1];
+            if (!prev || prev.kind !== 'node') return;
+            if (!Array.isArray(prev.children)) prev.children = [];
+            const item = found.siblings.splice(found.index, 1)[0];
+            prev.children.push(item);
+            this.markDirty();
+        },
+
+        outdentMenuItem(widget, pathValue) {
+            const path = this.menuPath(pathValue);
+            if (path.length < 2) return;
+            const found = this.menuParentByPath(widget, path);
+            const parent = this.menuParentByPath(widget, path.slice(0, -1));
+            if (!found || !parent) return;
+            const item = found.siblings.splice(found.index, 1)[0];
+            parent.siblings.splice(parent.index + 1, 0, item);
+            this.markDirty();
+        },
+
+        removeMenuItem(widget, pathValue) {
+            const found = this.menuParentByPath(widget, this.menuPath(pathValue));
+            if (!found) return;
+            if (!window.confirm(tr('確定要移除此項目與其子項目？'))) return;
+            found.siblings.splice(found.index, 1);
             this.markDirty();
         },
 
         menuItemCount(widget) {
-            return Array.isArray(widget && widget.items) ? widget.items.length : 0;
+            let count = 0;
+            this.menuWalk((widget && widget.items) || [], () => { count += 1; });
+            return count;
+        },
+
+        menuBackgroundUrl(sc) {
+            return sc ? `${BP}/api/files/${encodeURIComponent(sc)}/serve` : '';
+        },
+
+        async uploadMenuBackground(event) {
+            const input = event && event.target;
+            const file = input && input.files && input.files[0];
+            if (!file) return;
+            this.menuUploadingBackground = true;
+            this.menuBackgroundError = '';
+            try {
+                const form = new FormData();
+                form.append('file', file);
+                const res = await fetch(`${apiBase}/backgrounds/upload`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken() },
+                    body: form,
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    this.menuBackgroundError = data.error || tr('上傳底圖失敗');
+                    return;
+                }
+                await this.loadMenuBackgrounds();
+                const widget = this.selectedWidget;
+                if (widget && widget.type === 'menu') {
+                    this.normalizeMenuWidget(widget);
+                    widget.style.background_file = (data.data && data.data.platform_file_sc) || '';
+                    this.markDirty();
+                }
+            } catch (err) {
+                this.menuBackgroundError = tr('上傳底圖失敗');
+            } finally {
+                this.menuUploadingBackground = false;
+                if (input) input.value = '';
+            }
+        },
+
+        resetMenuStyle(widget) {
+            if (!widget) return;
+            widget.style = this.menuStyleDefaults();
+            this.markDirty();
+        },
+
+        navKeyValid(widget) {
+            return /^[A-Za-z0-9_-]{1,32}$/.test((widget && widget.nav_key) || '');
         },
 
         setMasterEditable(enabled) {
@@ -1229,7 +1523,19 @@ function irDesigner() {
             this.normalizeWidgetMasks(doc.page.widgets || []);
             this.normalizeAccessMatrix(doc.page.widgets || []);
             this.normalizeActionButtons(doc.page.widgets || []);
+            this.normalizeMenuOnSave(doc.page.widgets || []);
             return doc;
+        },
+
+        // 「不使用底圖」在 UI 上是空字串，但 schema 的 background_file 有 pattern，
+        // 空字串會被擋成 400。沒選底圖就不該送這個 key。
+        normalizeMenuOnSave(widgets) {
+            for (const widget of widgets || []) {
+                if (widget.type === 'menu' && widget.style && !widget.style.background_file) {
+                    delete widget.style.background_file;
+                }
+                if (widget.type === 'layout') this.normalizeMenuOnSave(widget.children || []);
+            }
         },
 
         // 存檔前的本地檢查：後端 schema 擋得住，但回來的是一大串 JSON Schema 術語，
@@ -1242,6 +1548,12 @@ function irDesigner() {
                     errors.push({
                         path: widgetPath,
                         message: tr('選單「{id}」尚未選擇任何網頁或系統連結', { id: widget.id }),
+                    });
+                }
+                if (widget.type === 'menu' && !this.navKeyValid(widget)) {
+                    errors.push({
+                        path: widgetPath,
+                        message: tr('選單「{id}」的聯動參數名只能使用英數字、底線或連字號，長度 1 到 32', { id: widget.id }),
                     });
                 }
                 if (widget.type === 'layout') {
