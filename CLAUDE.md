@@ -980,30 +980,58 @@ TOKEN=$(curl -s -b cj.txt "$BASE/dashboard" | grep -o 'csrf-token" content="[^"]
 要做統計只能「實體彙總表 + SQLite trigger」，這步必然落在 SQL 層。
 範例見 `docs/examples/RELIEF_DONATION_DEMO.md` 第 2 節。
 
-### pytest 既有環境問題（不要試圖修）
-
-跑完整 `pytest tests/` 會有 **13 個 error**，原因是測試 app 用 SQLite `db.create_all()`
-但平台有 PostgreSQL `JSONB` 欄位（最早卡在 `menu_defaults.title_i18n`），
-與任何功能變更無關。**驗收時只跑相關測試檔**，或以這 13 個為基準線比對是否退步：
+### 跑測試一律用 `scripts/run_tests.sh`（2026-08-05 起，強制）
 
 ```bash
-cd /opt/BeakPlatform-dev/backend
-../venv/bin/python -m pytest tests/test_pageir_*.py tests/test_portal_*.py \
-  tests/test_sitemap_access_matrix.py tests/test_platform_fixed_filters.py \
-  tests/test_seed_system_templates.py -q
-# 基準 323 passed（2026-08-04；含 PF-29 新增的 test_pageir_shared_menu.py 4 項）
-# 舊基準 248 passed（2026-07-30，當時清單不含 seed_system_templates）
+cd /opt/BeakPlatform-dev
+bash scripts/run_tests.sh                                  # 全部
+bash scripts/run_tests.sh tests/test_pageir_shared_menu.py -q
+bash scripts/run_tests.sh -k menu -q
 ```
 
-**`tests/test_page_template_instantiate.py` 另有 12 個 error，同樣是既有環境問題**：
-該檔用真 PostgreSQL，而 `organizations` 有一列 2026-07-06 留下的
-`secure_code='test_org_00000000001'`，conftest 的 fixture 每次插入都撞 unique。
-**它被 `audit_logs` 的 FK 參照、刪不掉**，所以驗收時把這個檔排除或以 12 為基準線，
-不要花時間修（2026-08-04 查證）。
+**不要自己 `source .env` 之後直接叫 pytest。**
+`TestingConfig` 的資料庫是 `os.getenv('DATABASE_URL', 'sqlite:///:memory:')`，
+而 `.env` 的 `DATABASE_URL` 指向**開發庫 `beakplatform_dev`**；
+`conftest.py` 與另外三個測試檔的 `app` fixture 收尾都會呼叫 **`db.drop_all()`**。
+也就是說照舊寫法跑測試 ＝ 對開發資料庫 create_all + drop_all。
+在 2026-08-05 之前一直沒毀掉資料，**只是因為 `drop_all()` 被 FK 相依擋下來而拋例外**
+（那批 `ERROR at teardown` 就是它），不是有防護。
 
-**`tests/test_e2e_portal_cancel.py` 刻意不在基準清單內**（掛 `pytest.mark.e2e`，
-需要本機實跑服務 + PostgreSQL，服務沒起來會 skip）。要跑它就單獨跑：
-`../venv/bin/python -m pytest tests/test_e2e_portal_cancel.py -q`
+`scripts/run_tests.sh` 會在 source .env **之後**把 `DATABASE_URL` 覆寫成
+拋棄式的 `beakplatform_test`。另有一道防呆在
+`backend/tests/conftest.py::pytest_configure`：庫名不是 `_test` 結尾且非 sqlite
+就直接 `pytest.exit`（放在 `pytest_configure` 而不是 app fixture，因為
+`test_smoke.py` / `test_page_template_instantiate.py` / `test_page_template_scope.py`
+各自定義的 app fixture 會覆蓋 conftest 的版本）。
+
+測試庫不存在時（`beakplatform` 帳號沒有 CREATEDB 權限）：
+```bash
+sudo -u postgres createdb -O beakplatform beakplatform_test
+```
+
+**基準（2026-08-05，測試庫上跑完整 `tests/`）：`382 passed, 1 failed, 1 skipped`。**
+以此比對是否退步。
+
+那 **1 failed 是已知且成因明確**（不是「不明原因，別管它」）：
+`test_auth_interceptor.py::TestAuthDecorators::test_admin_required_for_admin`
+拿到 403 而非 200，因為測試庫是 `db.create_all()` 建的空表、**沒有 RBAC seed**
+（log 會印 `Unknown permission code: user:read`）。
+要修就補 permission → role → `user_role_assignments` 整條鏈，
+權威清單在 `scripts/migrations/075_seed_resource_crud_permissions.py`（BBN 待辦 PF-34）。
+1 skipped 是 `test_e2e_portal_cancel.py`（需要實跑服務）。
+
+**`tests/test_e2e_portal_cancel.py` 需要本機實跑服務**（掛 `pytest.mark.e2e`，
+服務沒起來會 skip）。要跑它就單獨跑：
+`bash scripts/run_tests.sh tests/test_e2e_portal_cancel.py -q`
+
+#### 歷史註記：別再相信「13 個 error 是 SQLite JSONB 問題，不要修」
+
+那句話只對**沒有** `DATABASE_URL` 時（走 SQLite in-memory）成立。
+一旦 source 過 .env，錯誤集合完全不同（撞開發庫的殘留 + drop_all 失敗），
+卻長期被歸進同一句「已知問題」而沒人再看。
+改用測試庫後，先前被判定為「既有環境問題、12 個 error」的
+`tests/test_page_template_instantiate.py` 直接變成 **14 passed**。
+寫「已知問題不要修」時務必連**成因與判別方式**一起寫，否則它會保護錯的東西。
 
 ### form_workflow 發行（publish）陷阱
 - `POST /api/mappings/<sc>/publish` 以表單/流程模板的 **version+revision** 判斷有無變更；

@@ -2,6 +2,8 @@
 BeakMask Test Configuration
 pytest fixtures and configuration
 """
+import os
+
 import pytest
 from flask import session
 from flask_login import login_user
@@ -9,10 +11,53 @@ from app import create_app, db
 from app.models import User, Organization
 
 
+def pytest_configure(config):
+    """整個 session 開跑前先擋。
+
+    放在這裡而不是只放 app fixture，是因為 test_smoke.py /
+    test_page_template_instantiate.py / test_page_template_scope.py
+    都各自定義了會 drop_all() 的 app fixture，覆蓋掉本檔的版本。
+    """
+    del config
+    _assert_disposable_database(os.getenv('DATABASE_URL', 'sqlite:///:memory:'))
+
+
+def _assert_disposable_database(uri: str) -> None:
+    """擋下「測試跑在非拋棄式資料庫」的情況。
+
+    TestingConfig 的 URI 是 os.getenv('DATABASE_URL', 'sqlite:///:memory:')，
+    而專案的標準操作是先 `set -a && source .env && set +a` 再跑 flask/pytest。
+    .env 的 DATABASE_URL 指向開發庫 beakplatform_dev，於是整組測試會直接跑在
+    開發資料庫上，而底下的 app fixture 收尾時會呼叫 db.drop_all()。
+
+    2026-08-05 之前一直沒出事，只是因為 drop_all() 被大量 FK 相依擋下來而拋例外
+    （症狀就是那批 "ERROR at teardown"），不是設計上有防護。同一批 error 的另一半
+    "ERROR at setup" 則是前一次跑測試留在開發庫裡的 test_org 撞 unique。
+
+    允許的目標只有兩種：SQLite（含 in-memory）、或名稱以 _test 結尾的資料庫。
+    CI（.forgejo/workflows/security-check.yml）本來就用 beakplatform_test，符合。
+    """
+    if uri.startswith('sqlite'):
+        return
+    db_name = uri.rsplit('/', 1)[-1].split('?', 1)[0]
+    if db_name.endswith('_test'):
+        return
+    pytest.exit(
+        f"拒絕在非測試資料庫上執行測試：{db_name}\n"
+        "app fixture 會呼叫 db.drop_all()，跑在開發庫上等於準備刪光它。\n"
+        "請改成：\n"
+        "  DATABASE_URL=postgresql://beakplatform:postgres123@localhost/beakplatform_test \\\n"
+        "    ../venv/bin/python -m pytest ...\n"
+        "（測試庫不存在時：sudo -u postgres createdb -O beakplatform beakplatform_test）",
+        returncode=1,
+    )
+
+
 @pytest.fixture(scope='function')
 def app():
     """Create application for testing."""
     app = create_app('testing')
+    _assert_disposable_database(app.config.get('SQLALCHEMY_DATABASE_URI', ''))
 
     with app.app_context():
         db.create_all()
