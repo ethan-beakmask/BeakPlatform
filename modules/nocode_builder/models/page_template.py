@@ -12,6 +12,11 @@ class DcPageTemplate(ModuleBaseModel):
     """頁面模板"""
     __tablename__ = 'dc_page_templates'
 
+    # scope='system' 的內建樣板不屬任何企業，故此表的 org_secure_code 允許 NULL。
+    org_secure_code = Column(String(32), nullable=True, index=True)
+    scope = Column(String(20), nullable=False, default='org', server_default='org', index=True)
+    sub_system_secure_code = Column(String(32), nullable=True, index=True)
+    source_sub_system_sc = Column(String(32), nullable=True)
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     category = Column(String(50), nullable=False, default='常用', server_default='常用')
@@ -24,6 +29,9 @@ class DcPageTemplate(ModuleBaseModel):
     def to_dict(self):
         data = super().to_dict()
         data.update({
+            'scope': self.scope or 'org',
+            'sub_system_secure_code': self.sub_system_secure_code,
+            'source_sub_system_sc': self.source_sub_system_sc,
             'name': self.name,
             'description': self.description,
             'category': self.category or '常用',

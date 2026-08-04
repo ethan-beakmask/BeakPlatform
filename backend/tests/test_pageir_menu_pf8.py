@@ -112,9 +112,11 @@ def test_schema_menu_widget_accepts_node_system_and_mixed():
         assert ok, errors
 
 
-def test_schema_menu_widget_rejects_invalid_items():
+def test_schema_menu_widget_accepts_empty_items_and_rejects_invalid_items():
+    ok, errors = validate_page_ir(_doc(_menu([])))
+    assert ok, errors
+
     invalid_widgets = [
-        _menu([]),
         _menu([{"kind": "system", "link": "profile"}]),
         _menu([{"kind": "node", "node": "bad.node.code0000"}]),
         _menu([{"kind": "node", "node": "YWuxwE3kg-_WjDSZOpihQI", "extra": True}]),
