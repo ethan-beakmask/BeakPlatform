@@ -1,19 +1,31 @@
 #!/bin/bash
 # BeakPlatform 資料庫初始化腳本
-# 用途：建立乾淨的 beakplatform_dev 資料庫
+# 用途：建立乾淨的資料庫（庫名取自本 repo 的 .env）
 #
 # 使用方式：
 #   sudo ./init_database.sh
 #
-# 注意：此腳本會刪除現有的 beakplatform_dev 資料庫！
+# 路徑一律由腳本自身位置推導，同一份腳本可用於開發與正式環境，
+# 不得再出現硬編碼的 /opt/BeakPlatform 或 /opt/BeakPlatform-dev。
+#
+# 注意：此腳本會刪除現有資料庫！執行前務必確認第一行印出的庫名。
 
 set -e
 
-DB_NAME="beakplatform_dev"
-DB_USER="beakplatform"
-DB_PASS="postgres123"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# 庫名優先序：環境變數 DB_NAME > 本 repo .env 的 DATABASE_URL > 保守預設
+if [ -z "$DB_NAME" ]; then
+    DB_NAME="$(grep -m1 '^DATABASE_URL=' "$REPO_ROOT/.env" 2>/dev/null \
+        | sed -E 's#^DATABASE_URL=.*/([^/?[:space:]]+).*$#\1#')"
+fi
+DB_NAME="${DB_NAME:-beakplatform_dev}"
+DB_USER="${DB_USER:-beakplatform}"
+DB_PASS="${DB_PASS:-postgres123}"
 
 echo "=== BeakPlatform 資料庫初始化 ==="
+echo "    Repo: $REPO_ROOT"
+echo "    資料庫: $DB_NAME"
 echo ""
 
 # 確認執行
@@ -62,9 +74,9 @@ else
 fi
 
 echo "7. 執行 Flask 資料庫遷移..."
-cd /opt/BeakPlatform/backend
-source /opt/BeakPlatform/venv/bin/activate
-set -a && source ../.env && set +a
+cd "$REPO_ROOT/backend"
+source "$REPO_ROOT/venv/bin/activate"
+set -a && source "$REPO_ROOT/.env" && set +a
 
 # 使用 Flask-Migrate 或直接建立表（跳過模組同步）
 SKIP_MODULE_SYNC=1 python3 << 'EOF'
@@ -123,17 +135,20 @@ with app.app_context():
 EOF
 
 echo "9. 初始化平台選單..."
-python3 /opt/BeakPlatform/scripts/init_menus.py --force
+python3 "$REPO_ROOT/scripts/init_menus.py" --force
 
 echo ""
 echo "=== 初始化完成 ==="
 echo ""
+echo "系統企業代碼 (SYSTEM_ORG_CODE)： $SYSTEM_ORG_CODE"
+echo "  日後忘記可查： grep SYSTEM_ORG_CODE $REPO_ROOT/.env"
+echo ""
 echo "管理員帳號："
-echo "  帳號: admin@\$SYSTEM_ORG_CODE"
+echo "  帳號: admin@$SYSTEM_ORG_CODE"
 echo "  密碼: (安裝時設定的密碼，首次登入須變更)"
 echo ""
 echo "啟動服務："
-echo "  cd /opt/BeakPlatform/backend"
-echo "  source /opt/BeakPlatform/venv/bin/activate"
-echo "  set -a && source ../.env && set +a"
+echo "  cd $REPO_ROOT/backend"
+echo "  source $REPO_ROOT/venv/bin/activate"
+echo "  set -a && source $REPO_ROOT/.env && set +a"
 echo "  flask run --host=0.0.0.0 --port=7000"

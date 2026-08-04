@@ -1162,6 +1162,27 @@ bash scripts/run_tests.sh tests/test_e2e_portal_cancel.py -q
 授權判定一律繞過快取直接查 `FwWorkflowVariable`
 （範例：`pageir_formflow_resources.is_submission_editable()`）。
 
+### 正式環境已退役（2026-08-05 起，看到 :8000 回 502 先讀這段）
+
+`/opt/BeakPlatform` 已改名 `/opt/BeakPlatform_OLD`，三個 systemd unit
+（`beakplatform.service` / `-executor` / `-sync-worker`）已 disable + 刪檔，
+用戶將從 GitHub 重新安裝。**本機唯一活著的 BeakPlatform 是 `/opt/BeakPlatform-dev`。**
+
+| 現象 | 是不是故障 |
+|---|---|
+| `192.168.0.16:8000` 回 502 | **預期**。nginx 設定與 iptables 白名單刻意保留（重裝後沿用），後端沒了 |
+| 外網 Cloudflare `/beakplatform/` 不通 | **預期**，同上 |
+| `systemctl status beakplatform.service` 查無此 unit | **預期**，已刪檔 |
+
+不要為了「修好 502」去改 nginx、重啟 gunicorn 或復活 unit。
+重裝步驟與必須沿用的 `ENCRYPTION_MASTER_KEY` 見 BBN 待辦 **PF-39**
+（`note_search("PF-39")`），舊 unit 原檔備份在
+`/opt/tmp/backup/systemd-beakplatform-20260805/`。
+
+`scripts/init_database.sh` 的路徑一律由 `${BASH_SOURCE[0]}` 推導 `REPO_ROOT`、
+`DB_NAME` 從該 repo `.env` 的 `DATABASE_URL` 解析（`DB_NAME` 環境變數可覆寫），
+一份腳本 dev 與正式環境通用。**禁止再往裡面寫死 `/opt/BeakPlatform` 或 `-dev`。**
+
 ### 服務啟動
 - **正式管道是 systemd 服務**：`sudo systemctl restart beakplatform-dev.service`（重啟後 `systemctl is-active` 確認）
 - 開發服務以**非 debug 模式**跑，Python/模板變更**不會自動重載，必須重啟**
