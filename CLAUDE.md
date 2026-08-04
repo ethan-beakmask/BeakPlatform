@@ -227,6 +227,85 @@ SELECT code, link_type, link_target FROM menu_items WHERE parent_secure_code = '
 
 完整 API 用法、context_type 對應表、金鑰架構：**`docs/FILE_SERVICE.md`**
 
+### NET-01: 來源 IP 一律走 `get_client_ip()`（2026-08-05 起）
+
+**禁止直接讀 `request.remote_addr`、`X-Forwarded-For`、`CF-Connecting-IP`，
+也禁止用 flask_limiter 的 `get_remote_address`。**
+唯一實作是 `backend/app/security/client_ip.py`：
+
+```python
+from app.security.client_ip import get_client_ip    # 一般用途，可能回 None
+from app.security.client_ip import client_ip_key    # 限流 key_func 用，保證回字串
+```
+
+平台有兩條互斥的信任鏈（**這是環境事實，猜不到**）：
+
+```
+LAN 直連    訪客 → nginx 192.168.0.16:7000 → Flask
+Cloudflare  訪客 → CF edge → cloudflared(.16) → nginx 192.168.0.20:8080
+                  → nginx 192.168.0.16:7000 → Flask
+```
+
+`create_app()` 掛的 `ProxyFix(x_for=1)` 取 XFF 最右一筆＝「直連我方 nginx 的對象」：
+LAN 路徑得到真實訪客 IP，**Cloudflare 路徑恆為 `192.168.0.20`**，真實訪客 IP
+只存在於 `CF-Connecting-IP`。因此信任邊界看直連對象：`remote_addr` 落在
+`TRUSTED_PROXY_IPS`（config.py，預設 `192.168.0.20`，env 可覆寫）時才採信該 header，
+否則一律用 `remote_addr` —— 直連者自帶 header 偽造不了。
+
+**為什麼這條非寫不可**：此前全專案缺 ProxyFix，`remote_addr` 恆為 `127.0.0.1`，
+造成三個機制**靜默失效且不報錯**：`dev.internal_network_only` 內網判定恆真、
+未認證限流全站共用單一 bucket、`api_key_service.check_source_ip()` 的來源 IP
+限制形同虛設。改用 `remote_addr` 而不處理 CF 分支則會走向另一個極端：
+所有外網訪客塌縮成 `192.168.0.20` 一個身分。
+
+**回傳 None 的處理**：`get_client_ip()` 在無 request 語境會回 `None`，
+呼叫點若假設是字串（字串格式化、DB 非空欄位、比對）必須自己給 fallback；
+限流 key_func 一律用 `client_ip_key()`（保證回字串）。
+
+**哪些該改**：只要該值代表「請求從哪裡來」就要改——稽核 `ip_address=`／
+`source_ip=`、log 訊息裡的來源、任何 IP 比對或分桶。測試檔裡刻意造的
+`REMOTE_ADDR` environ 不算。
+
+**本機模擬兩條路徑驗收**（不必真的走 Cloudflare，本 session 驗證過可用）：
+
+```python
+from app import create_app
+from app.security.client_ip import get_client_ip
+app = create_app('development')
+# 經 CF：remote_addr 為可信代理，採信 header
+with app.test_request_context('/', environ_base={'REMOTE_ADDR': '192.168.0.20'},
+                              headers={'CF-Connecting-IP': '203.0.113.7'}):
+    assert get_client_ip() == '203.0.113.7'
+# 非可信代理送同一個 header：必須被忽略
+with app.test_request_context('/', environ_base={'REMOTE_ADDR': '192.168.0.50'},
+                              headers={'CF-Connecting-IP': '203.0.113.7'}):
+    assert get_client_ip() == '192.168.0.50'
+```
+
+尚未收斂的 28 處記錄用 `remote_addr`（`api/auth.py` 12、`api/files.py` 6、
+四個模組 10）見待辦 **PF-36**（內含完整 grep 指令與驗收步驟）。
+
+### 開發工具 `/dev/*` 的三層防護（別再重查一次）
+
+`/dev/quick-login` 這類工具的「僅限內網」由三層構成，**真正在管來源 IP 的是第一層**：
+
+| 層 | 位置 | 作用 |
+|---|---|---|
+| iptables | `/etc/iptables/rules.v4`（netfilter-persistent 持久化） | 來源白名單，清單外一律 DROP |
+| nginx | LAN vhost 只 `listen 192.168.0.16:7000`；tunnel vhost 對 `^/beakplatform/dev(/\|$)` `return 444` | 阻斷公開通道 |
+| 應用層 | `dev.py::internal_network_only`（`ipaddress` 網段判定 + `get_client_ip()`） | 縱深防禦最內層 |
+
+現行 iptables 白名單：`.10/.12/.13/.16` 全 port、`.20` 80/7000/8000/2222、
+`.100` 7000/8000、`.17` 5180/5050、`.14` 7000。新增裝置要連 7000 就得加規則，
+否則症狀是**連線逾時而非 403**（封包在 nginx 之前就被丟掉）。
+
+```bash
+sudo cp /etc/iptables/rules.v4 /etc/iptables/rules.v4.bak.$(date +%Y%m%d-%H%M)
+sudo iptables -I INPUT <最後DROP的行號> -s <IP>/32 -p tcp --dport 7000 \
+  -m comment --comment "<用途>" -j ACCEPT
+sudo netfilter-persistent save
+```
+
 ---
 
 ## 專案結構
