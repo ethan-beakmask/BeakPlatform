@@ -831,6 +831,47 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 - 權限模型與判定鏈：`docs/PORTAL_ACCOUNT_SPEC.md`；
   完整交接與踩坑清單：`docs/handoff_nocode_n1_n5.md`
 - v2 `layout_json` 已退役，`/p/` 遇到會回 410；設計器只認 `ir_version: 3`
+- **頁面版面樣板庫（PF-24~28，2026-08-04 起）**：`dc_page_templates` 有三種
+  `scope`——`system`（平台內建，`org_secure_code` 與 `sub_system_secure_code`
+  **必須為 NULL**，DB 有 CHECK 約束；**只能由種子腳本建立，API 一律 403**）／
+  `org`（企業自建）／`sub_system`（子系統私有）。
+
+  | 端點 | 用途 |
+  |---|---|
+  | `GET /api/nocode-builder/templates?sub_system=<sc>` | 三段 union：內建 + 本企業 + 該子系統私有 |
+  | `POST /api/nocode-builder/templates` | 另存為樣板（`scope='system'` → 403） |
+  | `POST /api/nocode-builder/templates/<sc>/instantiate` | 以樣板建頁，回 `{page, report}` |
+
+  `instantiate` **只建 `DcPageLayout`**，不建 site map 節點、不做子系統掛載
+  ——那是前端 `workspace.js` 的 `finishPageCreation()` 接手做的。
+  它也會把 IR 的 `page.title_i18n` 覆寫成新頁名稱（不覆寫的話 portal 上會顯示樣板名）。
+
+  **跨子系統套用一定會淨化**（判定依據是樣板的 `source_sub_system_sc`；
+  為 NULL 一律走淨化路徑）。唯一實作是
+  `modules/nocode_builder/services/page_template_service.py::sanitize_template_ir()`，
+  純函式、不碰 DB，**禁止各處自行清理引用**。規則的分水嶺是 schema 能不能省略：
+  menu 的 `items[].node` 可整枝移除；`binding.resource` 是必填 → 整個 widget 移除
+  （並同步清 canvas `widget_ids`／layout `children`／`row_link_ref`）；
+  權限碼類（`action_ref`／`access_matrix`）**保留並列進 `report.warnings`**
+  ——系統本來就 fail-closed，擅自清掉反而讓使用者以為設定過了。
+  `report` 內是**機器可讀碼**（`binding_unavailable` 等），中文對照在前端
+  `page-template.js` 的 `describeReport()`，**後端不要翻譯**。
+
+  內建樣板用 `scripts/seed_system_page_templates.py --apply` 種入（冪等，
+  固定 secure_code `sys_tpl_*` 六個：`top_left_main` / `top_main` / `left_main` /
+  `single` / `dashboard` / `free_blank`）。它們**一律零綁定**（空 menu + 佔位 text）
+  ——會被所有企業的所有子系統套用，任何綁定必然是錯的。
+  `--purge-legacy` 可軟刪沒有 `ir_version` 的 v2 舊樣板（預設不做）。
+
+  `thumbnail_svg` **留空即可**，前端 `templateThumbnailSrc()` 會從 IR 即時生成，
+  不要在 Python 裡重寫 SVG 產生器。該欄位是可經 API 寫入的自由文字，
+  所以**一律用 `<img src="data:image/svg+xml,...">` 呈現、禁止 `x-html`**
+  （img 內的 SVG 不執行腳本），後端另有 `_validate_thumbnail_svg()` 擋
+  `<script>`／`on*=`／`xlink:href`／超長。
+
+  **IR 的 `zone.row` / `zone.col` 是 1-based**（schema `minimum: 1`），
+  換算成陣列索引要減 1。`gridSvg` 犯過這個錯，所有 zone 疊在同一格、
+  縮圖只剩右下一塊（2026-08-04 commit `324842d8` 修）。
 
 ### NoCode Builder API 操作備忘（2026-08-03 以 API 全程建出一個子系統後實測）
 
