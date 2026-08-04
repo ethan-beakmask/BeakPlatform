@@ -54,3 +54,12 @@ def get_client_ip() -> Optional[str]:
             return forwarded
 
     return peer
+
+
+def client_ip_key() -> str:
+    """限流分桶用：與 get_client_ip() 同語意，但保證回傳字串。
+
+    flask_limiter 的 key_func 不接受 None。取不到來源時回 'unknown'，
+    該情況只會出現在無 request 語境（實務上限流器不會在那裡被呼叫）。
+    """
+    return get_client_ip() or 'unknown'

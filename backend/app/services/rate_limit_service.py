@@ -6,7 +6,7 @@ import logging
 import re
 
 from flask import current_app, request
-from flask_limiter.util import get_remote_address
+from ..security.client_ip import client_ip_key
 
 from ..models.system_setting import SystemSetting
 from ..models.organization import Organization
@@ -251,7 +251,7 @@ def make_auth_key_func(identifier_field: str, domain_from_url: bool = False):
         key function: '{identifier}:{IP}' 或 fallback '{IP}'
     """
     def key_func():
-        ip = get_remote_address()
+        ip = client_ip_key()   # NET-01：反向代理後不能用 get_remote_address()
 
         if request.method != 'POST':
             return ip

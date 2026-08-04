@@ -11,7 +11,6 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_session import Session
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_babel import Babel
 
 from .security.auth_interceptor import register_auth_interceptor
@@ -31,7 +30,10 @@ def _rate_limit_key():
             return f"user:{current_user.secure_code}"
     except Exception:
         pass
-    return get_remote_address()
+    # NET-01: 反向代理後 get_remote_address() 只會拿到前置代理位址，
+    # 未認證流量會全部塌縮成同一個 bucket
+    from .security.client_ip import client_ip_key
+    return client_ip_key()
 
 
 # Extensions

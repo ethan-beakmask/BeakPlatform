@@ -11,7 +11,8 @@ OpenDefense 模組要求 /api/open_defense/* 端點以 key_id / sa_id 為計數�
 from typing import Optional
 
 from flask import request, g
-from flask_limiter.util import get_remote_address
+
+from .client_ip import client_ip_key
 
 
 def _intake_key_id() -> Optional[str]:
@@ -30,7 +31,7 @@ def key_func_from_intake_key() -> str:
     key_id = _intake_key_id()
     if key_id:
         return f'od_intake:{key_id}'
-    return f'od_intake_anon:{get_remote_address()}'
+    return f'od_intake_anon:{client_ip_key()}'
 
 
 def key_func_from_api_key() -> str:
@@ -43,7 +44,7 @@ def key_func_from_api_key() -> str:
     key_id = request.headers.get('X-BP-Key-Id') or None
     if key_id:
         return f'bp_apikey:{key_id}'
-    return f'bp_apikey_anon:{get_remote_address()}'
+    return f'bp_apikey_anon:{client_ip_key()}'
 
 
 def auth_failure_limit_kwargs() -> dict:
@@ -59,7 +60,7 @@ def auth_failure_limit_kwargs() -> dict:
     """
     return {
         'limit_value': '30 per minute',
-        'key_func': lambda: f'auth_fail:{get_remote_address()}',
+        'key_func': lambda: f'auth_fail:{client_ip_key()}',
         'deduct_when': lambda response: response.status_code == 401,
     }
 
@@ -76,4 +77,4 @@ def key_func_from_sa_id() -> str:
         sa_id = getattr(sa, 'sa_id', None)
         if sa_id:
             return f'od_sa:{sa_id}'
-    return f'od_sa_anon:{get_remote_address()}'
+    return f'od_sa_anon:{client_ip_key()}'

@@ -7,7 +7,7 @@ POST /api/open_defense/sa/login -- 對外執行端登入,回傳短期 JWT
 import logging
 
 from flask import request, jsonify
-from flask_limiter.util import get_remote_address
+from app.security.client_ip import client_ip_key
 
 from app import limiter, csrf
 from app.security.decorators import public_route
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 @api_bp.route('/sa/login', methods=['POST'])
 @csrf.exempt
-@limiter.limit('10 per minute', key_func=get_remote_address)
+@limiter.limit('10 per minute', key_func=client_ip_key)
 @public_route
 def sa_login():
     """

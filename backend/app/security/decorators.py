@@ -15,6 +15,10 @@ from functools import wraps
 from flask import abort, g, request, jsonify
 from flask_login import current_user
 
+# NET-01: 來源 IP 一律走 client_ip，不直接讀 request.remote_addr
+# （反向代理後 remote_addr 是前置代理位址，check_source_ip 會比對錯對象）
+from .client_ip import get_client_ip as _client_ip
+
 logger = logging.getLogger(__name__)
 
 
@@ -285,7 +289,7 @@ def _verify_platform_api_key(key_id: str, timestamp: str,
     """
     if not key_id or not timestamp or not signature_header:
         logger.warning('%s: missing headers path=%s ip=%s',
-                       tag, request.path, request.remote_addr)
+                       tag, request.path, _client_ip())
         return None
 
     from .hmac_verifier import is_timestamp_valid, verify_signature
@@ -298,12 +302,12 @@ def _verify_platform_api_key(key_id: str, timestamp: str,
     key_record = api_key_service.lookup_active_key(key_id)
     if key_record is None:
         logger.warning('%s: key not found/inactive key_id=%s ip=%s',
-                       tag, key_id, request.remote_addr)
+                       tag, key_id, _client_ip())
         return None
 
-    if not api_key_service.check_source_ip(key_record, request.remote_addr):
+    if not api_key_service.check_source_ip(key_record, _client_ip()):
         logger.warning('%s: source ip not allowed key_id=%s ip=%s',
-                       tag, key_id, request.remote_addr)
+                       tag, key_id, _client_ip())
         return None
 
     try:
@@ -316,7 +320,7 @@ def _verify_platform_api_key(key_id: str, timestamp: str,
     body = request.get_data(cache=True) or b''
     if not verify_signature(secret, timestamp, body, signature_header):
         logger.warning('%s: signature mismatch key_id=%s ip=%s',
-                       tag, key_id, request.remote_addr)
+                       tag, key_id, _client_ip())
         return None
 
     return key_record
@@ -491,7 +495,7 @@ def service_account_required(f):
             claims = decode_jwt(token)
         except ServiceAccountError as exc:
             logger.warning('service_account: jwt decode fail code=%s ip=%s',
-                           exc.code, request.remote_addr)
+                           exc.code, _client_ip())
             return jsonify({'error': exc.code, 'message': str(exc)}), 401
 
         sa_id = claims.get('sub')
