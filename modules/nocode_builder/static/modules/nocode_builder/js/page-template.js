@@ -68,8 +68,11 @@
             body += `<line x1="0" y1="${rows[i].start.toFixed(2)}" x2="${VIEW_W}" y2="${rows[i].start.toFixed(2)}" stroke="#dcdcdc" stroke-width="1"/>`;
         }
         for (const zone of (canvas.zones || [])) {
-            const r = clamp(Math.floor(num(zone.row, 0)), 0, rows.length - 1);
-            const c = clamp(Math.floor(num(zone.col, 0)), 0, cols.length - 1);
+            // IR 的 row / col 是 1-based（schema minimum: 1），陣列索引要減 1。
+            // 當成 0-based 用的話所有 zone 會擠到同一格互相蓋掉，
+            // 縮圖看起來只剩右下一塊。
+            const r = clamp(Math.floor(num(zone.row, 1)) - 1, 0, rows.length - 1);
+            const c = clamp(Math.floor(num(zone.col, 1)) - 1, 0, cols.length - 1);
             const rs = clamp(Math.floor(num(zone.row_span || zone.rowSpan, 1)), 1, rows.length - r);
             const cs = clamp(Math.floor(num(zone.col_span || zone.colSpan, 1)), 1, cols.length - c);
             const x = cols[c].start + 3;
