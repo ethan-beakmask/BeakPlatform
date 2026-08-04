@@ -28,6 +28,7 @@ def sanitize_template_ir(
             "row_link_refs": 0,
             "row_actions_refs": 0,
             "menu_nav_sources": 0,
+            "shared_menu_refs": 0,
         },
         "warnings": [],
     }
@@ -72,6 +73,11 @@ def _sanitize_widgets(widgets: list[dict[str, Any]], report: dict, cross_org: bo
         if widget_type == "layout":
             _sanitize_widgets(widget.get("children") or [], report, cross_org)
         elif widget_type == "menu":
+            if widget.get("shared_ref"):
+                widget.pop("shared_ref", None)
+                report["cleared"]["shared_menu_refs"] += 1
+                if "items" not in widget:
+                    widget["items"] = []
             widget["items"] = _sanitize_menu_items(widget.get("items") or [], report)
             if cross_org:
                 _clear_menu_background(widget, report)

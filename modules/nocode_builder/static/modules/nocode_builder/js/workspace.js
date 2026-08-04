@@ -42,6 +42,8 @@ function wksManager(subSystemSc) {
             selectedSc: '',
             templates: [],
             reportLines: [],
+            showHidden: false,
+            busySc: '',
         },
 
         async init() {
@@ -251,16 +253,28 @@ function wksManager(subSystemSc) {
                 selectedSc: '',
                 templates: [],
                 reportLines: [],
+                showHidden: false,
+                busySc: '',
             };
+            await this.reloadTemplates();
+        },
+
+        async reloadTemplates() {
+            const previousSc = this.templateModal.selectedSc;
+            this.templateModal.loading = true;
+            this.templateModal.error = '';
             try {
-                const items = await window.BkPageTemplate.fetchTemplates(this.subSystemSc);
+                const items = await window.BkPageTemplate.fetchTemplates(this.subSystemSc, this.templateModal.showHidden);
                 const templates = (items || []).filter((item) => window.BkPageTemplate.isSupported(item.layout_json));
                 this.templateModal.templates = templates;
-                this.templateModal.selectedSc = templates.length ? templates[0].secure_code : '';
+                const previous = templates.find((item) => item.secure_code === previousSc && !item.is_hidden);
+                const firstAvailable = templates.find((item) => !item.is_hidden);
+                this.templateModal.selectedSc = previous ? previous.secure_code : (firstAvailable ? firstAvailable.secure_code : '');
             } catch (err) {
                 this.templateModal.error = err.message || __('載入樣板失敗');
             } finally {
                 this.templateModal.loading = false;
+                this.templateModal.busySc = '';
             }
         },
 
@@ -283,6 +297,47 @@ function wksManager(subSystemSc) {
             return (this.templateModal.templates || []).find((item) => item.secure_code === this.templateModal.selectedSc) || null;
         },
 
+        canManageTemplates() {
+            return window.BkCaps ? window.BkCaps.can('nocode_builder.manage') : false;
+        },
+
+        async toggleShowHiddenTemplates() {
+            await this.reloadTemplates();
+        },
+
+        selectTemplateItem(item) {
+            if (!item || item.is_hidden) return;
+            this.templateModal.selectedSc = item.secure_code;
+        },
+
+        async hideTemplateItem(item) {
+            if (!item || this.templateModal.busySc) return;
+            this.templateModal.busySc = item.secure_code;
+            this.templateModal.error = '';
+            try {
+                await window.BkPageTemplate.hideTemplate(this.subSystemSc, item.secure_code);
+                await this.reloadTemplates();
+                this.showToast(__('已隱藏此樣板'));
+            } catch (err) {
+                this.templateModal.error = err.message || __('隱藏樣板失敗');
+                this.templateModal.busySc = '';
+            }
+        },
+
+        async unhideTemplateItem(item) {
+            if (!item || this.templateModal.busySc) return;
+            this.templateModal.busySc = item.secure_code;
+            this.templateModal.error = '';
+            try {
+                await window.BkPageTemplate.unhideTemplate(this.subSystemSc, item.secure_code);
+                await this.reloadTemplates();
+                this.showToast(__('已取消隱藏'));
+            } catch (err) {
+                this.templateModal.error = err.message || __('取消隱藏失敗');
+                this.templateModal.busySc = '';
+            }
+        },
+
         templateScopeLabel(scope) {
             if (scope === 'system') return __('內建');
             if (scope === 'org') return __('企業');
@@ -300,6 +355,10 @@ function wksManager(subSystemSc) {
             const template = this.selectedTemplate();
             const name = (this.templateModal.pageName || '').trim();
             if (!template) {
+                this.templateModal.error = __('請選擇樣板');
+                return;
+            }
+            if (template.is_hidden) {
                 this.templateModal.error = __('請選擇樣板');
                 return;
             }

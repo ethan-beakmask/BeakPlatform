@@ -436,6 +436,20 @@ take_screenshot(filePath="/opt/BeakPlatform-dev/.verify-xxx.png")
 mv /opt/BeakPlatform-dev/.verify-xxx.png /opt/tmp/verify/<日期>-xxx.png
 ```
 
+**但 2026-08-04 起 `take_screenshot` 在本機一律逾時**
+（`Page.captureScreenshot timed out`，png / jpeg 皆然，各卡滿 120s 才失敗，
+試過三次）。**留證改用 `evaluate_script` 取關鍵區塊的 `innerText`**——
+成本更低、可 grep、也更適合寫進 log：
+
+```
+evaluate_script(function="() => document.querySelector('.modal-overlay').innerText")
+→ 把回傳文字貼進 /opt/tmp/verify/<日期>-<主題>.log
+```
+
+DOM 狀態類的斷言（class 有沒有、按鈕文字、哪個卡片 active、欄位可見性）
+一律用 `evaluate_script` 回結構化 JSON，比截圖更精確也更好覆核。
+截圖工具修好之前不要再浪費 120s 去試。
+
 **理由**：2026-08-01 對四個 session 做事後幻覺稽核（363 條事實斷言逐條查證，見知識庫 #4957），
 41 條判定為 UNVERIFIABLE——絕大多數是瀏覽器實測與 rate-limit 觀察，**輸出當下就沒落地，
 事後無論花多少成本都查不回來**。「我測過了」若沒有留下輸出，事後與「我以為我測過了」無法區分。
@@ -831,16 +845,31 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 - 權限模型與判定鏈：`docs/PORTAL_ACCOUNT_SPEC.md`；
   完整交接與踩坑清單：`docs/handoff_nocode_n1_n5.md`
 - v2 `layout_json` 已退役，`/p/` 遇到會回 410；設計器只認 `ir_version: 3`
-- **頁面版面樣板庫（PF-24~28，2026-08-04 起）**：`dc_page_templates` 有三種
+- **頁面版面樣板庫（PF-24~28、PF-32，2026-08-04 起）**：`dc_page_templates` 有三種
   `scope`——`system`（平台內建，`org_secure_code` 與 `sub_system_secure_code`
   **必須為 NULL**，DB 有 CHECK 約束；**只能由種子腳本建立，API 一律 403**）／
   `org`（企業自建）／`sub_system`（子系統私有）。
 
   | 端點 | 用途 |
   |---|---|
-  | `GET /api/nocode-builder/templates?sub_system=<sc>` | 三段 union：內建 + 本企業 + 該子系統私有 |
+  | `GET /api/nocode-builder/templates?sub_system=<sc>[&include_hidden=1]` | 三段 union：內建 + 本企業 + 該子系統私有 |
   | `POST /api/nocode-builder/templates` | 另存為樣板（`scope='system'` → 403） |
   | `POST /api/nocode-builder/templates/<sc>/instantiate` | 以樣板建頁，回 `{page, report}` |
+  | `POST /api/nocode-builder/sub-systems/<ss>/template-hides` | 隱藏內建樣板（冪等，非 system → 400） |
+  | `DELETE /api/nocode-builder/sub-systems/<ss>/template-hides/<tpl>` | 取消隱藏（冪等） |
+
+  **`scope='sub_system'` 的樣板只有來源子系統看得到**（`list_templates` 第三段以
+  `sub_system_secure_code` 過濾）。所以**跨子系統套用在 UI 上唯一走得到的路徑是
+  `scope='org'` 樣板**——要重現淨化行為時別選 sub_system 的（會看不到），
+  也別選內建的（零綁定、淨化是 no-op）。
+
+  **隱藏是「可見性」不是「授權邊界」**（PF-32）：`dc_sub_system_template_hides`
+  記錄 per 子系統的隱藏名單，只作用於 `scope='system'`。
+  `list_templates` 預設扣掉、`include_hidden=1` 保留並標 `is_hidden`。
+  `instantiate` **刻意不檢查隱藏**（UI 觸發不到，且隱藏不是安全邊界）。
+  **取消隱藏一律硬刪列**（`db.session.delete`），不可軟刪
+  ——unique `(sub_system_secure_code, template_secure_code)` 會擋住之後重新隱藏。
+  隱藏**不得**用「軟刪 system 樣板」實作：種子腳本會把 `is_deleted` 設回 False 復活它。
 
   `instantiate` **只建 `DcPageLayout`**，不建 site map 節點、不做子系統掛載
   ——那是前端 `workspace.js` 的 `finishPageCreation()` 接手做的。
@@ -872,6 +901,46 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   **IR 的 `zone.row` / `zone.col` 是 1-based**（schema `minimum: 1`），
   換算成陣列索引要減 1。`gridSvg` 犯過這個錯，所有 zone 疊在同一格、
   縮圖只剩右下一塊（2026-08-04 commit `324842d8` 修）。
+
+- **子系統層級共用選單（PF-29，2026-08-04 起）**：樣板是**複製語意**，
+  共用選單是**引用語意**——改一次，所有引用它的頁面同步生效。
+
+  `dc_shared_menus`（子系統層級）存 `items`（menu items 樹）與
+  `config`（預設外觀，白名單
+  `orientation` / `item_gap` / `hover_expand` / `nav_source` / `nav_key` / `style`）。
+  頁面端寫 `{"type":"menu","id":...,"shared_ref":"<sc>","items":[]}`。
+
+  | 端點（全部 `@permission_required('nocode_builder.manage')`） | 用途 |
+  |---|---|
+  | `GET/POST /api/nocode-builder/sub-systems/<ss>/shared-menus` | 列出／建立 |
+  | `PUT/DELETE /api/nocode-builder/sub-systems/<ss>/shared-menus/<sc>` | 更新／刪除（被引用 → 409 並回 `usages`） |
+
+  **合併優先序（使用者定案）：`items` 一律取共用元件的；
+  `orientation`／`item_gap`／`hover_expand`／`nav_source`／`nav_key`／`style`
+  是「頁面 widget 有寫用頁面的，沒寫才用共用元件的」**
+  ——同一份選單可以在 A 頁橫式置頂、B 頁縱式置左。
+
+  **展開只在 `renderer._prepare_menu` 一處做**，透過
+  `registry.register_shared_menu_resolver(world, fn)`（portal 實作在
+  `services/pageir_portal_menu.py::_resolve_shared_menu`，
+  **platform world 不註冊是預期狀態**）。
+  三個渲染入口（`portal_public.py`、平台 `/p/`、設計器預覽）都吃得到，
+  **不要在入口各判一次**——這專案已因「三處各自查」在正式 portal 上全數 404 過。
+  resolver 必須驗共用選單屬於 ctx 的 `sub_system_sc`；解析不到一律
+  **fail-closed（items 視為空）不 raise**。
+
+  schema 的 `menu_widget` 因此改為 `required: ["id","type"]` 加
+  `anyOf: [{required:[items]}, {required:[shared_ref]}]`；
+  `validator._check_menu` 在有 `shared_ref` 時整段跳過（items 不存在也合法）。
+
+  **跨子系統套用樣板時會清掉 `shared_ref` 並補 `items: []`**
+  （report 碼 `shared_menu_refs`）。少補 items 的話淨化產物過不了
+  `validate_page_ir`，整個 instantiate 會 500。
+
+  設計器 menu 屬性面板就地操作：引用下拉／[另存為共用選單]／[編輯共用選單]
+  （獨立 modal，存檔與頁面儲存分開）／[解除引用]。
+  **引用中時「已選項目」「可加入的網頁」「系統連結」三區隱藏**，
+  外觀欄位維持可編輯。
 
 ### NoCode Builder API 操作備忘（2026-08-03 以 API 全程建出一個子系統後實測）
 
@@ -920,9 +989,17 @@ TOKEN=$(curl -s -b cj.txt "$BASE/dashboard" | grep -o 'csrf-token" content="[^"]
 ```bash
 cd /opt/BeakPlatform-dev/backend
 ../venv/bin/python -m pytest tests/test_pageir_*.py tests/test_portal_*.py \
-  tests/test_sitemap_access_matrix.py tests/test_platform_fixed_filters.py -q
-# 基準 248 passed（2026-07-30）
+  tests/test_sitemap_access_matrix.py tests/test_platform_fixed_filters.py \
+  tests/test_seed_system_templates.py -q
+# 基準 323 passed（2026-08-04；含 PF-29 新增的 test_pageir_shared_menu.py 4 項）
+# 舊基準 248 passed（2026-07-30，當時清單不含 seed_system_templates）
 ```
+
+**`tests/test_page_template_instantiate.py` 另有 12 個 error，同樣是既有環境問題**：
+該檔用真 PostgreSQL，而 `organizations` 有一列 2026-07-06 留下的
+`secure_code='test_org_00000000001'`，conftest 的 fixture 每次插入都撞 unique。
+**它被 `audit_logs` 的 FK 參照、刪不掉**，所以驗收時把這個檔排除或以 12 為基準線，
+不要花時間修（2026-08-04 查證）。
 
 **`tests/test_e2e_portal_cancel.py` 刻意不在基準清單內**（掛 `pytest.mark.e2e`，
 需要本機實跑服務 + PostgreSQL，服務沒起來會 skip）。要跑它就單獨跑：

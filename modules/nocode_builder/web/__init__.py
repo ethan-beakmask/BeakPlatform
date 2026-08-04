@@ -44,6 +44,7 @@ def index():
 @module_access_required('nocode_builder')
 def ir_designer(secure_code):
     """Page IR v3 設計器。"""
+    from app.services.capability_service import build_caps
     from app.security.resource_gateway import ResourceGateway
     from ..models import DcPageLayout
     from ..services.page_ownership_service import is_page_reachable
@@ -66,6 +67,7 @@ def ir_designer(secure_code):
     return render_template(
         'modules/nocode_builder/ir_designer.html',
         secure_code=secure_code,
+        page_caps=build_caps(['nocode_builder.manage']),
     )
 
 

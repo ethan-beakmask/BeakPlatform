@@ -17,6 +17,7 @@
 
 {% block scripts %}
 <script>
+window.__PAGE_CAPS = {{ page_caps | default({}) | tojson }};
 window.__IR_DESIGNER_CONFIG = {
     secureCode: {{ secure_code|tojson }},
     designerUrl: {{ (app_prefix ~ '/nocode/ir-designer/' ~ secure_code)|tojson }},
@@ -27,5 +28,6 @@ window.__IR_DESIGNER_CONFIG = {
 <script src="{{ app_prefix }}/static/vendor/gridstack/gridstack-all.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/grid-layout-editor.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/page-template.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/shared-menu.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/ir-designer.js"></script>
 {% endblock %}

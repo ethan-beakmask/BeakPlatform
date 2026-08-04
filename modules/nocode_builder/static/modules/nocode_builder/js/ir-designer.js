@@ -70,6 +70,18 @@ function irDesigner() {
             category: '常用',
             scope: 'sub_system',
         },
+        sharedMenus: [],
+        sharedMenusLoaded: false,
+        sharedMenusError: '',
+        sharedMenusScope: '',
+        sharedMenuEditor: {
+            open: false,
+            saving: false,
+            error: '',
+            source: null,
+            draft: null,
+            dirty: false,
+        },
         saveTemplateToast: { show: false, message: '' },
         dirty: false,
         savedSnapshot: '',
@@ -140,6 +152,7 @@ function irDesigner() {
             await Promise.all([this.loadPage(), this.loadSubSystems(), this.loadMeta(this.dataScope), this.loadFormMappings()]);
             await this.detectPortalScope();
             await this.ensurePortalOrg();
+            await this.loadSharedMenus();
             this.syncCounters();
             this.initLayoutEngineState();
             await Alpine.nextTick();
@@ -395,6 +408,7 @@ function irDesigner() {
             this.resetSiteMap();
             await this.loadMeta(this.dataScope);
             await this.ensurePortalOrg();
+            await this.loadSharedMenus(true);
             if (this.selectedWidget && this.selectedWidget.type === 'menu') {
                 await this.loadSiteMap();
             }
@@ -402,6 +416,41 @@ function irDesigner() {
 
         siteMapScope() {
             return this.dataScope || this.mountedSubSystem || '';
+        },
+
+        canManageSharedMenus() {
+            return !window.BkCaps || window.BkCaps.can('nocode_builder.manage');
+        },
+
+        async loadSharedMenus(force = false) {
+            const scope = this.siteMapScope();
+            this.sharedMenusError = '';
+            if (!scope || !window.BkSharedMenu) {
+                this.sharedMenus = [];
+                this.sharedMenusLoaded = false;
+                this.sharedMenusScope = '';
+                return;
+            }
+            if (!force && this.sharedMenusLoaded && this.sharedMenusScope === scope) return;
+            try {
+                this.sharedMenus = await window.BkSharedMenu.list(scope) || [];
+                this.sharedMenusLoaded = true;
+                this.sharedMenusScope = scope;
+            } catch (err) {
+                this.sharedMenus = [];
+                this.sharedMenusLoaded = false;
+                this.sharedMenusScope = '';
+                this.sharedMenusError = err.message || tr('載入共用選單失敗');
+            }
+        },
+
+        sharedMenuByRef(ref) {
+            return (this.sharedMenus || []).find((row) => row.secure_code === ref) || null;
+        },
+
+        selectedSharedMenuName(widget) {
+            const row = this.sharedMenuByRef(widget && widget.shared_ref);
+            return row ? row.name : '';
         },
 
         resetSiteMap() {
@@ -1539,6 +1588,9 @@ function irDesigner() {
             if (this.activeWidget && this.activeWidget.type === 'menu' && !this.menuBackgroundsLoaded && !this.menuBackgroundError) {
                 this.loadMenuBackgrounds();
             }
+            if (this.activeWidget && this.activeWidget.type === 'menu') {
+                this.loadSharedMenus();
+            }
         },
 
         moveWidget(id, dir) {
@@ -1807,6 +1859,14 @@ function irDesigner() {
             return (this.siteMapNodes || []).find((node) => node.secure_code === sc) || null;
         },
 
+        menuMarkChanged(widget) {
+            if (this.sharedMenuEditor.open && widget === this.sharedMenuEditor.draft) {
+                this.sharedMenuEditor.dirty = true;
+                return;
+            }
+            this.markDirty();
+        },
+
         menuItemLabel(item) {
             if (!item) return '';
             if (item.kind === 'system') {
@@ -1874,7 +1934,7 @@ function irDesigner() {
             if (!widget || !sc || this.menuHasNode(widget, sc)) return;
             if (!Array.isArray(widget.items)) widget.items = [];
             widget.items.push({ kind: 'node', node: sc, children: [] });
-            this.markDirty();
+            this.menuMarkChanged(widget);
         },
 
         toggleMenuNode(widget, sc, checked) {
@@ -1892,7 +1952,7 @@ function irDesigner() {
             if (checked) {
                 if (!this.menuHasSystemLink(widget, link)) {
                     widget.items.push({ kind: 'system', link });
-                    this.markDirty();
+                    this.menuMarkChanged(widget);
                 }
                 return;
             }
@@ -1909,7 +1969,7 @@ function irDesigner() {
                 }
             };
             removeFrom(widget.items);
-            if (changed) this.markDirty();
+            if (changed) this.menuMarkChanged(widget);
         },
 
         removeMenuNode(widget, sc, ask = true) {
@@ -1928,7 +1988,7 @@ function irDesigner() {
             };
             if (ask && !window.confirm(tr('確定要移除此項目與其子項目？'))) return;
             removeFrom(widget.items || []);
-            if (removed) this.markDirty();
+            if (removed) this.menuMarkChanged(widget);
         },
 
         moveMenuItem(widget, pathValue, dir) {
@@ -1938,7 +1998,7 @@ function irDesigner() {
             if (target < 0 || target >= found.siblings.length) return;
             const item = found.siblings.splice(found.index, 1)[0];
             found.siblings.splice(target, 0, item);
-            this.markDirty();
+            this.menuMarkChanged(widget);
         },
 
         indentMenuItem(widget, pathValue) {
@@ -1951,7 +2011,7 @@ function irDesigner() {
             if (!Array.isArray(prev.children)) prev.children = [];
             const item = found.siblings.splice(found.index, 1)[0];
             prev.children.push(item);
-            this.markDirty();
+            this.menuMarkChanged(widget);
         },
 
         outdentMenuItem(widget, pathValue) {
@@ -1962,7 +2022,7 @@ function irDesigner() {
             if (!found || !parent) return;
             const item = found.siblings.splice(found.index, 1)[0];
             parent.siblings.splice(parent.index + 1, 0, item);
-            this.markDirty();
+            this.menuMarkChanged(widget);
         },
 
         removeMenuItem(widget, pathValue) {
@@ -1970,13 +2030,124 @@ function irDesigner() {
             if (!found) return;
             if (!window.confirm(tr('確定要移除此項目與其子項目？'))) return;
             found.siblings.splice(found.index, 1);
-            this.markDirty();
+            this.menuMarkChanged(widget);
         },
 
         menuItemCount(widget) {
             let count = 0;
             this.menuWalk((widget && widget.items) || [], () => { count += 1; });
             return count;
+        },
+
+        sharedMenuScope() {
+            return this.siteMapScope();
+        },
+
+        menuAppearanceConfig(widget) {
+            const config = {};
+            for (const key of ['orientation', 'item_gap', 'hover_expand', 'nav_source', 'nav_key']) {
+                if (widget && widget[key] !== undefined) config[key] = clone(widget[key]);
+            }
+            if (widget && widget.style && typeof widget.style === 'object') {
+                config.style = clone(widget.style);
+            }
+            return config;
+        },
+
+        async applySharedMenuRef(widget, ref) {
+            if (!widget || !ref || !this.canManageSharedMenus()) return;
+            await this.loadSharedMenus();
+            if (!this.sharedMenuByRef(ref)) return;
+            widget.shared_ref = ref;
+            widget.items = [];
+            this.markDirty();
+        },
+
+        async saveWidgetAsSharedMenu(widget) {
+            if (!widget || !this.canManageSharedMenus()) return;
+            const scope = this.sharedMenuScope();
+            if (!scope) {
+                alert(tr('此頁尚未掛在子系統下，無法建立共用選單'));
+                return;
+            }
+            const name = (window.prompt(tr('共用選單名稱')) || '').trim();
+            if (!name) return;
+            try {
+                const created = await window.BkSharedMenu.create(scope, {
+                    name,
+                    items: clone(widget.items || []),
+                    config: this.menuAppearanceConfig(widget),
+                });
+                await this.loadSharedMenus(true);
+                widget.shared_ref = created.secure_code;
+                widget.items = [];
+                this.markDirty();
+            } catch (err) {
+                alert(err.message || tr('建立共用選單失敗'));
+            }
+        },
+
+        unlinkSharedMenu(widget) {
+            if (!widget || !widget.shared_ref || !this.canManageSharedMenus()) return;
+            const row = this.sharedMenuByRef(widget.shared_ref);
+            widget.items = clone((row && row.items) || []);
+            delete widget.shared_ref;
+            this.normalizeMenuWidget(widget);
+            this.markDirty();
+        },
+
+        openSharedMenuEditor(widget) {
+            if (!widget || !widget.shared_ref || !this.canManageSharedMenus()) return;
+            const row = this.sharedMenuByRef(widget.shared_ref);
+            if (!row) return;
+            this.sharedMenuEditor = {
+                open: true,
+                saving: false,
+                error: '',
+                source: row,
+                draft: {
+                    id: 'shared-menu-editor',
+                    type: 'menu',
+                    items: clone(row.items || []),
+                },
+                dirty: false,
+            };
+            this.normalizeMenuWidget(this.sharedMenuEditor.draft);
+            if (!this.siteMapLoaded && !this.siteMapError) this.loadSiteMap();
+        },
+
+        closeSharedMenuEditor() {
+            if (this.sharedMenuEditor.saving) return;
+            this.sharedMenuEditor = {
+                open: false,
+                saving: false,
+                error: '',
+                source: null,
+                draft: null,
+                dirty: false,
+            };
+        },
+
+        async saveSharedMenuEditor() {
+            const editor = this.sharedMenuEditor;
+            const scope = this.sharedMenuScope();
+            if (!editor.open || !editor.source || !editor.draft || !scope || !this.canManageSharedMenus()) return;
+            editor.saving = true;
+            editor.error = '';
+            try {
+                await window.BkSharedMenu.update(scope, editor.source.secure_code, {
+                    items: clone(editor.draft.items || []),
+                });
+                await this.loadSharedMenus(true);
+                // closeSharedMenuEditor() 在 saving 為真時會直接 return，
+                // 所以要先放掉 saving 再關，否則存檔成功後 modal 停在原地不動。
+                editor.saving = false;
+                this.closeSharedMenuEditor();
+            } catch (err) {
+                editor.error = err.message || tr('儲存共用選單失敗');
+            } finally {
+                editor.saving = false;
+            }
         },
 
         menuBackgroundUrl(sc) {
@@ -2154,7 +2325,7 @@ function irDesigner() {
             }
             (widgets || []).forEach((widget, index) => {
                 const widgetPath = `${path}[${index}]`;
-                if (widget.type === 'menu' && this.menuItemCount(widget) === 0) {
+                if (widget.type === 'menu' && !widget.shared_ref && this.menuItemCount(widget) === 0) {
                     errors.push({
                         path: widgetPath,
                         widget_id: widget.id,

@@ -17,6 +17,7 @@ from app.pageir.registry import (
     get_menu_provider,
     get_portal_action,
     get_resource,
+    get_shared_menu_resolver,
 )
 from app.pageir.validator import validate_page_ir
 
@@ -302,12 +303,44 @@ def _prepare_menu(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     ctx = get_render_context()
     world = ctx.get("world", "platform")
     provider = get_menu_provider(world)
-    orientation = widget.get("orientation") if widget.get("orientation") in {"vertical", "horizontal"} else "vertical"
-    item_gap = _clamped_int(widget.get("item_gap", 6), 0, 32, 6)
-    hover_expand = bool(widget.get("hover_expand", True))
-    nav_source = widget.get("nav_source") if widget.get("nav_source") in {"self", "parent_selection"} else "self"
-    nav_key = widget.get("nav_key") if _valid_menu_token(widget.get("nav_key")) else "nav"
-    items = _menu_items_for_nav(widget.get("items", []), nav_source, nav_key)
+    menu_widget = widget
+    raw_items = widget.get("items", [])
+    shared_ref = widget.get("shared_ref")
+    if shared_ref:
+        resolver = get_shared_menu_resolver(world)
+        shared = None
+        if resolver is not None:
+            try:
+                shared = resolver(shared_ref, ctx)
+            except Exception:
+                logger.exception(
+                    "Page IR shared menu resolver failed: widget=%s world=%s shared_ref=%s",
+                    widget.get("id"),
+                    world,
+                    shared_ref,
+                )
+        if not shared:
+            logger.warning(
+                "Page IR shared menu unresolved: widget=%s world=%s shared_ref=%s",
+                widget.get("id"),
+                world,
+                shared_ref,
+            )
+            shared = {"items": [], "config": {}}
+        config = shared.get("config") if isinstance(shared.get("config"), dict) else {}
+        merged = dict(widget)
+        for key in ("orientation", "item_gap", "hover_expand", "nav_source", "nav_key", "style"):
+            if key not in widget and key in config:
+                merged[key] = config[key]
+        raw_items = shared.get("items") if isinstance(shared.get("items"), list) else []
+        menu_widget = merged
+
+    orientation = menu_widget.get("orientation") if menu_widget.get("orientation") in {"vertical", "horizontal"} else "vertical"
+    item_gap = _clamped_int(menu_widget.get("item_gap", 6), 0, 32, 6)
+    hover_expand = bool(menu_widget.get("hover_expand", True))
+    nav_source = menu_widget.get("nav_source") if menu_widget.get("nav_source") in {"self", "parent_selection"} else "self"
+    nav_key = menu_widget.get("nav_key") if _valid_menu_token(menu_widget.get("nav_key")) else "nav"
+    items = _menu_items_for_nav(raw_items, nav_source, nav_key)
     entries = []
     if provider is not None:
         try:
@@ -333,8 +366,8 @@ def _prepare_menu(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
         "orientation": orientation,
         "item_gap": item_gap,
         "hover_expand": hover_expand,
-        "style": _menu_style(widget),
-        "style_css": _menu_style_css(widget, item_gap),
+        "style": _menu_style(menu_widget),
+        "style_css": _menu_style_css(menu_widget, item_gap),
     }
 
 

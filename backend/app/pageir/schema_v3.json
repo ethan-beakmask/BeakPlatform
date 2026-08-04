@@ -49,6 +49,12 @@
       "type": "string",
       "pattern": "^[A-Za-z0-9_-]{1,32}$"
     },
+    "shared_menu_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
     "portal_access_rule": {
       "type": "object",
       "additionalProperties": false,
@@ -714,7 +720,8 @@
     "menu_widget": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "items"],
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["items"]}, {"required": ["shared_ref"]}],
       "properties": {
         "id": {
           "$ref": "#/$defs/slug"
@@ -731,6 +738,9 @@
           "items": {
             "$ref": "#/$defs/menu_item"
           }
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_menu_ref"
         },
         "orientation": {
           "enum": ["vertical", "horizontal"]

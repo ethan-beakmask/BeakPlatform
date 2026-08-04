@@ -14,6 +14,7 @@ from app.pageir import validate_page_ir
 from app.security.decorators import admin_required
 from app.security.resource_gateway import ResourceGateway
 from app.security.tenant_isolation import get_current_tenant
+from app.services.capability_service import permission_required
 
 from . import api_bp
 from ..services.page_template_service import sanitize_template_ir
@@ -54,10 +55,20 @@ def _validate_thumbnail_svg(value):
 def list_templates():
     """列出當前企業的所有模板"""
     try:
-        from ..models import DcPageTemplate
+        from ..models import DcPageTemplate, DcSubSystemTemplateHide
 
         sub_system_sc = (request.args.get('sub_system') or '').strip()
+        include_hidden = (request.args.get('include_hidden') or '').strip().lower() in {'1', 'true'}
         common = dict(is_deleted=False, is_active=True, order_by='-created_at')
+        hidden_sc_set = set()
+        if sub_system_sc:
+            hidden_rows = ResourceGateway.filter(
+                DcSubSystemTemplateHide,
+                check_permission=False,
+                sub_system_secure_code=sub_system_sc,
+                is_deleted=False,
+            )
+            hidden_sc_set = {row.template_secure_code for row in hidden_rows}
 
         # scope 已鎖死為 system 且這些列 org_secure_code 為 NULL，跳過租戶過濾不會外洩企業資料。
         system_items = ResourceGateway.filter(
@@ -66,6 +77,8 @@ def list_templates():
             scope='system',
             **common,
         )
+        if sub_system_sc and not include_hidden:
+            system_items = [item for item in system_items if item.secure_code not in hidden_sc_set]
         org_items = ResourceGateway.filter(DcPageTemplate, scope='org', **common)
         sub_items = []
         if sub_system_sc:
@@ -84,13 +97,132 @@ def list_templates():
                 -(t.created_at.timestamp() if t.created_at else 0),
             ),
         )
+        data = []
+        for template in result:
+            item = template.to_dict()
+            item['is_hidden'] = bool(
+                sub_system_sc
+                and template.scope == 'system'
+                and template.secure_code in hidden_sc_set
+            )
+            data.append(item)
         return jsonify({
             'success': True,
-            'data': [t.to_dict() for t in result]
+            'data': data,
         })
     except Exception as e:
         db.session.rollback()
         logger.exception('[Template] list_templates error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/sub-systems/<sub_system_sc>/template-hides', methods=['POST'])
+@csrf.exempt
+@admin_required
+@permission_required('nocode_builder.manage')
+def hide_system_template(sub_system_sc):
+    """隱藏子系統中的平台內建樣板。"""
+    try:
+        from ..models import DcPageTemplate, DcSubSystem, DcSubSystemTemplateHide
+
+        sub_system = ResourceGateway.get(
+            DcSubSystem,
+            sub_system_sc,
+            raise_on_not_found=False,
+            check_permission=False,
+        )
+        if not sub_system or sub_system.is_deleted:
+            return jsonify({'success': False, 'error': _('子系統不存在')}), 404
+
+        data = request.get_json() or {}
+        template_sc = (data.get('template_secure_code') or '').strip()
+        if not template_sc:
+            return jsonify({'success': False, 'error': _('模板不存在')}), 404
+
+        template = ResourceGateway.get(
+            DcPageTemplate,
+            template_sc,
+            raise_on_not_found=False,
+            check_permission=False,
+        )
+        if template and not template.is_deleted and template.scope != 'system':
+            return jsonify({'success': False, 'error': _('只有平台內建樣板可以隱藏')}), 400
+
+        if not template or template.is_deleted:
+            system_templates = ResourceGateway.filter(
+                DcPageTemplate,
+                skip_tenant_filter=True,
+                check_permission=False,
+                scope='system',
+                secure_code=template_sc,
+                is_deleted=False,
+            )
+            template = system_templates[0] if system_templates else None
+
+        if not template:
+            return jsonify({'success': False, 'error': _('模板不存在')}), 404
+        if template.scope != 'system':
+            return jsonify({'success': False, 'error': _('只有平台內建樣板可以隱藏')}), 400
+
+        existing = ResourceGateway.filter(
+            DcSubSystemTemplateHide,
+            check_permission=False,
+            sub_system_secure_code=sub_system.secure_code,
+            template_secure_code=template.secure_code,
+            is_deleted=False,
+        )
+        if existing:
+            return jsonify({'success': True, 'data': existing[0].to_dict()})
+
+        row = ResourceGateway.create(
+            DcSubSystemTemplateHide,
+            check_permission=False,
+            org_secure_code=get_current_tenant(),
+            sub_system_secure_code=sub_system.secure_code,
+            template_secure_code=template.secure_code,
+        )
+        ResourceGateway.commit()
+
+        return jsonify({'success': True, 'data': row.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[Template] hide_system_template error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/sub-systems/<sub_system_sc>/template-hides/<template_sc>', methods=['DELETE'])
+@csrf.exempt
+@admin_required
+@permission_required('nocode_builder.manage')
+def unhide_system_template(sub_system_sc, template_sc):
+    """取消隱藏子系統中的平台內建樣板。"""
+    try:
+        from ..models import DcSubSystem, DcSubSystemTemplateHide
+
+        sub_system = ResourceGateway.get(
+            DcSubSystem,
+            sub_system_sc,
+            raise_on_not_found=False,
+            check_permission=False,
+        )
+        if not sub_system or sub_system.is_deleted:
+            return jsonify({'success': False, 'error': _('子系統不存在')}), 404
+
+        rows = ResourceGateway.filter(
+            DcSubSystemTemplateHide,
+            check_permission=False,
+            sub_system_secure_code=sub_system.secure_code,
+            template_secure_code=(template_sc or '').strip(),
+            is_deleted=False,
+        )
+        if rows:
+            db.session.delete(rows[0])
+            ResourceGateway.commit()
+
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[Template] unhide_system_template error')
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

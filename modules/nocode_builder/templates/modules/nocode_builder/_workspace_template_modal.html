@@ -5,6 +5,12 @@
             <button type="button" class="wks-icon-btn" @click="closeTemplateModal()">×</button>
         </div>
         <div class="wks-template-body">
+            <label class="wks-template-toggle" x-show="canManageTemplates()">
+                <input type="checkbox"
+                       x-model="templateModal.showHidden"
+                       @change="toggleShowHiddenTemplates()">
+                <span>{{ _('顯示已隱藏的樣板') }}</span>
+            </label>
             <div class="wks-status wks-status-error" x-show="templateModal.error" x-text="templateModal.error"></div>
             <div class="wks-status" x-show="templateModal.loading">{{ _('載入中...') }}</div>
             <div class="wks-empty" x-show="!templateModal.loading && templateModal.templates.length === 0">{{ _('目前沒有可用的版面樣板') }}</div>
@@ -17,15 +23,26 @@
                                 <h3 x-text="group.category"></h3>
                                 <div class="wks-template-cards">
                                     <template x-for="item in group.items" :key="item.secure_code">
-                                        <button type="button"
-                                                class="wks-template-card"
-                                                :class="{ 'wks-template-card-active': templateModal.selectedSc === item.secure_code }"
-                                                @click="templateModal.selectedSc = item.secure_code">
+                                        <div class="wks-template-card"
+                                             role="button"
+                                             tabindex="0"
+                                             :class="{ 'wks-template-card-active': templateModal.selectedSc === item.secure_code, 'wks-template-card-hidden': item.is_hidden }"
+                                             @click="selectTemplateItem(item)"
+                                             @keydown.enter.prevent="selectTemplateItem(item)"
+                                             @keydown.space.prevent="selectTemplateItem(item)">
                                             <img class="wks-template-thumb" :src="templateThumbnailSrc(item)" alt="">
                                             <span class="wks-template-card-title" x-text="item.name"></span>
                                             <span class="wks-template-badge" x-text="templateScopeLabel(item.scope)"></span>
                                             <small x-text="item.description || ''"></small>
-                                        </button>
+                                            <template x-if="item.scope === 'system' && canManageTemplates()">
+                                                <button type="button"
+                                                        class="wks-template-hide-btn"
+                                                        @click.stop="item.is_hidden ? unhideTemplateItem(item) : hideTemplateItem(item)"
+                                                        :disabled="templateModal.busySc === item.secure_code || templateModal.loading">
+                                                    <span x-text="item.is_hidden ? '{{ _('取消隱藏') }}' : '{{ _('隱藏') }}'"></span>
+                                                </button>
+                                            </template>
+                                        </div>
                                     </template>
                                 </div>
                             </div>

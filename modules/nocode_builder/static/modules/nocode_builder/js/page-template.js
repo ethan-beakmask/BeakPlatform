@@ -9,6 +9,11 @@
         return window.__ ? window.__(text, params) : text;
     }
 
+    function csrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.content : '';
+    }
+
     function num(value, fallback) {
         const n = Number(value);
         return Number.isFinite(n) ? n : fallback;
@@ -153,6 +158,7 @@
         const cleared = (report && report.cleared) || {};
         const clearedMap = [
             ['menu_nodes', tr('已移除 {count} 個選單項目（指向其他子系統的網頁）')],
+            ['shared_menu_refs', tr('已解除 {count} 個共用選單引用（屬於其他子系統）')],
             ['menu_nav_sources', tr('已取消 {count} 個選單的聯動設定（來源選單項目已不存在）')],
             ['background_files', tr('已清除 {count} 張選單底圖（來自其他企業）')],
             ['mapping_refs', tr('已清除 {count} 個表單流程綁定')],
@@ -170,13 +176,35 @@
         return { lines, hasIssue: lines.length > 0 };
     }
 
-    async function fetchTemplates(subSystemSc) {
+    async function fetchTemplates(subSystemSc, includeHidden) {
         const url = new URL(`${BP}/api/nocode-builder/templates`, window.location.origin);
         if (subSystemSc) url.searchParams.set('sub_system', subSystemSc);
+        if (includeHidden) url.searchParams.set('include_hidden', '1');
         const res = await fetch(url.toString());
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || tr('載入樣板失敗'));
         return data.data || [];
+    }
+
+    async function hideTemplate(subSystemSc, templateSc) {
+        const res = await fetch(`${BP}/api/nocode-builder/sub-systems/${subSystemSc}/template-hides`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+            body: JSON.stringify({ template_secure_code: templateSc }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || tr('隱藏樣板失敗'));
+        return data.data || null;
+    }
+
+    async function unhideTemplate(subSystemSc, templateSc) {
+        const res = await fetch(`${BP}/api/nocode-builder/sub-systems/${subSystemSc}/template-hides/${templateSc}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrfToken() },
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || tr('取消隱藏失敗'));
+        return data.data || null;
     }
 
     window.BkPageTemplate = {
@@ -184,5 +212,7 @@
         isSupported,
         describeReport,
         fetchTemplates,
+        hideTemplate,
+        unhideTemplate,
     };
 }());

@@ -16,6 +16,7 @@ _PROVIDERS: dict[str, Callable[[str, dict], dict | None]] = {}
 _RESOURCE_LISTERS: list[Callable[[str], list[dict]]] = []
 _ACCESS_EVALUATORS: dict[str, Callable[[dict, str, dict], bool]] = {}
 _MENU_PROVIDERS: dict[str, Callable[[list[dict], dict], list[dict]]] = {}
+_SHARED_MENU_RESOLVERS: dict[str, Callable[[str, dict], dict | None]] = {}
 
 
 def register_resource(code: str, config: dict) -> None:
@@ -98,6 +99,16 @@ def register_menu_provider(world: str, fn: Callable[[list[dict], dict], list[dic
 def get_menu_provider(world: str) -> Callable[[list[dict], dict], list[dict]] | None:
     """取得指定 render world 的 menu provider；未註冊回 None。"""
     return _MENU_PROVIDERS.get(world)
+
+
+def register_shared_menu_resolver(world: str, fn: Callable[[str, dict], dict | None]) -> None:
+    """註冊指定 render world 的共用選單 resolver；同 world 後註冊者覆蓋前者。"""
+    _SHARED_MENU_RESOLVERS[world] = fn
+
+
+def get_shared_menu_resolver(world: str) -> Callable[[str, dict], dict | None] | None:
+    """取得指定 render world 的共用選單 resolver；未註冊回 None。"""
+    return _SHARED_MENU_RESOLVERS.get(world)
 
 
 def register_action(ref: str, config: dict) -> None:

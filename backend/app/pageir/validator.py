@@ -328,6 +328,9 @@ def _check_detail_fields(widget: dict[str, Any], path: str, errors: list[dict]) 
 
 
 def _check_menu(widget: dict[str, Any], path: str, errors: list[dict]) -> None:
+    if widget.get("shared_ref"):
+        return
+
     seen_nodes: dict[str, str] = {}
     has_node_with_children = False
 
