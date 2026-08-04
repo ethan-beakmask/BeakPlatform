@@ -1008,9 +1008,30 @@ bash scripts/run_tests.sh -k menu -q
 ```bash
 sudo -u postgres createdb -O beakplatform beakplatform_test
 ```
+本機 `ethan` 可直接 sudo、不需密碼。連線參數就是上面「資料庫資訊」那組
+（`localhost:5432 / beakplatform / postgres123`）；`run_tests.sh` 可用
+`TEST_DB_NAME` / `DB_USER` / `DB_PASS` / `DB_HOST` 環境變數覆寫。
 
-**基準（2026-08-05，測試庫上跑完整 `tests/`）：`382 passed, 1 failed, 1 skipped`。**
-以此比對是否退步。
+**測試庫可以一直重複使用、不必每次重建**——每個 app fixture 都是
+`create_all()` 開場、`drop_all()` 收尾。反過來說**不要拿它存任何想留的東西**。
+
+**`tests/test_e2e_portal_cancel.py` 需要 systemd 服務實際在跑**：
+```bash
+sudo systemctl restart beakplatform-dev.service && systemctl is-active beakplatform-dev.service
+bash scripts/run_tests.sh tests/test_e2e_portal_cancel.py -q
+```
+服務沒起來它會 skip（不是 fail），所以看到 skip 先確認服務狀態再下結論。
+
+**跑出基準以外的失敗時，歸因順序**（照這個順序查，不要跳）：
+1. 先看是不是**測試資料殘留**——`bash scripts/run_tests.sh -q` 重跑一次，
+   結果不同就是殘留或測試間互相污染，不是功能回歸
+2. 再看 log 有沒有 `Unknown permission code` / `Modules already loaded`
+   這類**環境訊息**（前者是測試庫缺 seed，見 PF-34）
+3. 都不是才當作功能回歸，用 `git stash` 比對改動前後
+
+**基準（2026-08-05，commit `0e1e1157`，測試庫上跑完整 `tests/`）：
+`382 passed, 1 failed, 1 skipped`（約 4 分鐘）。** 以此比對是否退步；
+數字對不上時先看下面的歸因順序，不要直接假設是自己改壞的。
 
 那 **1 failed 是已知且成因明確**（不是「不明原因，別管它」）：
 `test_auth_interceptor.py::TestAuthDecorators::test_admin_required_for_admin`
