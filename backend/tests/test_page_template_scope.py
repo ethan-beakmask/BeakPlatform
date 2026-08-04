@@ -207,6 +207,50 @@ def test_create_sub_system_scope_rejects_missing_sub_system(admin_client):
     assert resp.status_code == 404
 
 
+def test_create_accepts_safe_thumbnail_svg(admin_client, db_session):
+    svg = '  <svg viewBox="0 0 160 100"><rect x="0" y="0" width="160" height="100"/></svg>  '
+    resp = admin_client.post(
+        f"{API_PREFIX}/templates",
+        json=_payload(thumbnail_svg=svg),
+    )
+
+    assert resp.status_code == 200
+    secure_code = resp.get_json()["data"]["secure_code"]
+    tpl = db_session.query(DcPageTemplate).filter_by(secure_code=secure_code).one()
+    assert tpl.thumbnail_svg == svg.strip()
+
+
+def test_create_rejects_thumbnail_svg_with_script(admin_client):
+    resp = admin_client.post(
+        f"{API_PREFIX}/templates",
+        json=_payload(thumbnail_svg='<svg><script>alert(1)</script></svg>'),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "縮圖格式不正確"
+
+
+def test_create_rejects_thumbnail_svg_with_onload(admin_client):
+    resp = admin_client.post(
+        f"{API_PREFIX}/templates",
+        json=_payload(thumbnail_svg='<svg onload="alert(1)"><rect/></svg>'),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "縮圖格式不正確"
+
+
+def test_create_rejects_oversized_thumbnail_svg(admin_client):
+    svg = f'<svg>{" " * 20001}</svg>'
+    resp = admin_client.post(
+        f"{API_PREFIX}/templates",
+        json=_payload(thumbnail_svg=svg),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "縮圖格式不正確"
+
+
 def test_list_without_sub_system_returns_system_and_org_only(
     admin_client,
     db_session,

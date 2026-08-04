@@ -3,6 +3,7 @@ NoCode Builder - Template API
 頁面模板 CRUD API
 """
 import logging
+import re
 
 from flask import jsonify, request
 from flask_babel import gettext as _
@@ -18,6 +19,30 @@ from . import api_bp
 from ..services.page_template_service import sanitize_template_ir
 
 logger = logging.getLogger(__name__)
+
+_THUMBNAIL_SVG_DENY_RE = re.compile(
+    r'(<\s*script|javascript:|<\s*foreignobject|<\s*image|xlink:href|onload|onerror|on[a-z]+\s*=)',
+    re.IGNORECASE,
+)
+
+
+def _validate_thumbnail_svg(value):
+    if value is None:
+        return True, ''
+    if not isinstance(value, str):
+        return False, ''
+    cleaned = value.strip()
+    if not cleaned:
+        return True, ''
+    lowered = cleaned.lower()
+    if (
+        len(cleaned) > 20000
+        or not lowered.startswith('<svg')
+        or not lowered.endswith('</svg>')
+        or _THUMBNAIL_SVG_DENY_RE.search(cleaned)
+    ):
+        return False, ''
+    return True, cleaned
 
 
 # =============================================================================
@@ -117,6 +142,9 @@ def create_template():
             }), 400
 
         category = data.get('category', '常用').strip() or '常用'
+        thumbnail_ok, thumbnail_svg = _validate_thumbnail_svg(data.get('thumbnail_svg', ''))
+        if not thumbnail_ok:
+            return jsonify({'success': False, 'error': _('縮圖格式不正確')}), 400
 
         template = ResourceGateway.create(
             DcPageTemplate,
@@ -126,7 +154,7 @@ def create_template():
             category=category,
             layout_json=layout_json,
             style_config=data.get('style_config', {}),
-            thumbnail_svg=data.get('thumbnail_svg', ''),
+            thumbnail_svg=thumbnail_svg,
             created_by_sc=current_user.secure_code,
             is_active=True,
             scope=scope,
@@ -196,6 +224,12 @@ def instantiate_template(secure_code):
             source_org_sc=template.org_secure_code,
             target_org_sc=get_current_tenant(),
         )
+        # 樣板的 title_i18n 是樣板自己的標題，套用後必須換成新頁名稱，
+        # 否則 portal 上渲染出來的頁面標題會是樣板名（設計器標題欄也會顯示錯的）。
+        page_node = new_ir.get('page')
+        if isinstance(page_node, dict):
+            page_node['title_i18n'] = {'zh-TW': name}
+
         ok, errors = validate_page_ir(new_ir)
         if not ok:
             logger.error(

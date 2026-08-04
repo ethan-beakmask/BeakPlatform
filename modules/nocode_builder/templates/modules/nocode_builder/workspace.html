@@ -39,6 +39,9 @@
             </div>
             <div class="wks-toolbar">
                 <button type="button" class="wks-btn wks-btn-primary" @click="addPage()">{{ _('新增網頁') }}</button>
+                {% if can('nocode_builder.manage') %}
+                <button type="button" class="wks-btn" @click="openTemplateModal()">{{ _('從樣板新增') }}</button>
+                {% endif %}
                 <button type="button" class="wks-btn" @click="saveReorder()" :disabled="!sortDirty">{{ _('儲存排序') }}</button>
                 <button type="button" class="wks-btn wks-btn-danger" @click="deleteNode()" :disabled="!selectedNode">{{ _('刪除節點') }}</button>
             </div>
@@ -334,6 +337,7 @@
             </template>
         </section>
     </main>
+    {% include "modules/nocode_builder/_workspace_template_modal.html" %}
 </div>
 {% endblock %}
 
@@ -346,6 +350,7 @@
 <script src="{{ app_prefix }}/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
 <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-drag.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/grid-layout-editor.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/page-template.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/ir-designer.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace.js"></script>
 <script src="{{ app_prefix }}/static/modules/nocode_builder/js/workspace-org.js"></script>

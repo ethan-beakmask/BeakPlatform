@@ -61,6 +61,16 @@ function irDesigner() {
         _zoneGeometry: {},   // zone id -> 幾何快照，供 zone 消失時判斷元件由誰接手
         errors: [],
         showIssueModal: false,
+        saveTemplateModal: {
+            open: false,
+            saving: false,
+            error: '',
+            name: '',
+            description: '',
+            category: '常用',
+            scope: 'sub_system',
+        },
+        saveTemplateToast: { show: false, message: '' },
         dirty: false,
         savedSnapshot: '',
         dragType: '',
@@ -2305,6 +2315,73 @@ function irDesigner() {
                 this.errors = [{ path: '', message: err.message || tr('儲存失敗') }];
                 this.openIssueModal();
             }
+        },
+
+        openSaveTemplateModal() {
+            this.saveTemplateModal = {
+                open: true,
+                saving: false,
+                error: '',
+                name: this.pageTitleZh || this.pageName || '',
+                description: '',
+                category: tr('常用'),
+                scope: this.mountedSubSystem ? 'sub_system' : 'org',
+            };
+        },
+
+        closeSaveTemplateModal() {
+            this.saveTemplateModal.open = false;
+            this.saveTemplateModal.saving = false;
+        },
+
+        async saveAsTemplate() {
+            const name = (this.saveTemplateModal.name || '').trim();
+            const category = (this.saveTemplateModal.category || '').trim() || tr('常用');
+            let scope = this.saveTemplateModal.scope === 'org' ? 'org' : 'sub_system';
+            if (!this.mountedSubSystem) scope = 'org';
+            if (!name) {
+                this.saveTemplateModal.error = tr('名稱為必填');
+                return;
+            }
+            this.saveTemplateModal.saving = true;
+            this.saveTemplateModal.error = '';
+            const layoutJson = this.buildDoc();
+            const thumbnailSvg = window.BkPageTemplate.buildThumbnailSvg(layoutJson);
+            try {
+                const res = await fetch(`${apiBase}/templates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken(),
+                    },
+                    body: JSON.stringify({
+                        name,
+                        description: this.saveTemplateModal.description || '',
+                        category,
+                        scope,
+                        sub_system_secure_code: this.mountedSubSystem,
+                        source_sub_system_sc: this.mountedSubSystem,
+                        layout_json: layoutJson,
+                        thumbnail_svg: thumbnailSvg,
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    this.saveTemplateModal.error = data.error || tr('儲存樣板失敗');
+                    return;
+                }
+                this.closeSaveTemplateModal();
+                this.showSaveTemplateToast(tr('已另存為樣板'));
+            } catch (err) {
+                this.saveTemplateModal.error = err.message || tr('儲存樣板失敗');
+            } finally {
+                this.saveTemplateModal.saving = false;
+            }
+        },
+
+        showSaveTemplateToast(message) {
+            this.saveTemplateToast = { show: true, message };
+            setTimeout(() => { this.saveTemplateToast.show = false; }, 2600);
         },
 
         previewPage() {

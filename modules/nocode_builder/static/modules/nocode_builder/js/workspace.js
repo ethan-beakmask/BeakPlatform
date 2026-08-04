@@ -33,6 +33,16 @@ function wksManager(subSystemSc) {
         sortDirty: false,
         _bkTree: null,
         toast: { show: false, message: '' },
+        templateModal: {
+            open: false,
+            loading: false,
+            saving: false,
+            error: '',
+            pageName: '',
+            selectedSc: '',
+            templates: [],
+            reportLines: [],
+        },
 
         async init() {
             await this.loadSubSystem();
@@ -190,23 +200,154 @@ function wksManager(subSystemSc) {
         async addPage() {
             const name = prompt(__('請輸入網頁名稱'));
             if (!name || !name.trim()) return;
-            const parentSc = this.selectedNode ? this.selectedNode.secure_code : null;
             const pageSc = await this.createPageLayout(name.trim());
             if (!pageSc) return;
+            await this.finishPageCreation(pageSc, name.trim());
+        },
+
+        // 回傳 true 才代表整條鏈（節點 + 掛載）都成功。
+        // 任一步失敗就把剛建好的頁面佈局收回去，不要留下沒有節點的孤兒頁，
+        // 呼叫端也才不會在失敗後還顯示「網頁已建立」。
+        async finishPageCreation(pageSc, name, showSuccessToast = true) {
+            const parentSc = this.selectedNode ? this.selectedNode.secure_code : null;
             const node = await this.createNode({
                 name: name.trim(),
                 node_type: 'page',
                 parent_secure_code: parentSc,
                 page_layout_secure_code: pageSc,
             });
-            if (!node) return;
+            if (!node) {
+                await this.discardPageLayout(pageSc);
+                return false;
+            }
             const mounted = await this.mountSubSystemPage(pageSc, name.trim());
-            if (!mounted) return;
+            if (!mounted) return false;
             await this.reloadTree();
             const freshNode = this.findNodeBySecureCode(node.secure_code) || node;
             await this.selectPage(freshNode, pageSc);
             this.markSelectedRow(freshNode.secure_code);
-            this.showToast(__('網頁已建立'));
+            if (showSuccessToast) this.showToast(__('網頁已建立'));
+            return true;
+        },
+
+        async discardPageLayout(pageSc) {
+            try {
+                await fetch(`${BP}/api/nocode-builder/pages/${pageSc}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken() },
+                });
+            } catch (err) {
+                console.warn('discardPageLayout failed', err);
+            }
+        },
+
+        async openTemplateModal() {
+            this.templateModal = {
+                open: true,
+                loading: true,
+                saving: false,
+                error: '',
+                pageName: '',
+                selectedSc: '',
+                templates: [],
+                reportLines: [],
+            };
+            try {
+                const items = await window.BkPageTemplate.fetchTemplates(this.subSystemSc);
+                const templates = (items || []).filter((item) => window.BkPageTemplate.isSupported(item.layout_json));
+                this.templateModal.templates = templates;
+                this.templateModal.selectedSc = templates.length ? templates[0].secure_code : '';
+            } catch (err) {
+                this.templateModal.error = err.message || __('載入樣板失敗');
+            } finally {
+                this.templateModal.loading = false;
+            }
+        },
+
+        closeTemplateModal() {
+            this.templateModal.open = false;
+            this.templateModal.saving = false;
+        },
+
+        templateGroups() {
+            const grouped = new Map();
+            for (const item of this.templateModal.templates || []) {
+                const category = item.category || __('未分類');
+                if (!grouped.has(category)) grouped.set(category, []);
+                grouped.get(category).push(item);
+            }
+            return Array.from(grouped.entries()).map(([category, items]) => ({ category, items }));
+        },
+
+        selectedTemplate() {
+            return (this.templateModal.templates || []).find((item) => item.secure_code === this.templateModal.selectedSc) || null;
+        },
+
+        templateScopeLabel(scope) {
+            if (scope === 'system') return __('內建');
+            if (scope === 'org') return __('企業');
+            if (scope === 'sub_system') return __('本子系統');
+            return scope || '';
+        },
+
+        templateThumbnailSrc(item) {
+            if (!item) return '';
+            const svg = item.thumbnail_svg || window.BkPageTemplate.buildThumbnailSvg(item.layout_json || {});
+            return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+        },
+
+        async createPageFromTemplate() {
+            const template = this.selectedTemplate();
+            const name = (this.templateModal.pageName || '').trim();
+            if (!template) {
+                this.templateModal.error = __('請選擇樣板');
+                return;
+            }
+            if (!name) {
+                this.templateModal.error = __('請輸入網頁名稱');
+                return;
+            }
+            this.templateModal.saving = true;
+            this.templateModal.error = '';
+            this.templateModal.reportLines = [];
+            try {
+                const res = await fetch(`${BP}/api/nocode-builder/templates/${template.secure_code}/instantiate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                    body: JSON.stringify({
+                        name,
+                        sub_system_secure_code: this.subSystemSc,
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    this.templateModal.error = data.error || __('建立失敗');
+                    return;
+                }
+                const pageSc = data.data && data.data.page ? data.data.page.secure_code : '';
+                if (!pageSc) {
+                    this.templateModal.error = __('建立失敗');
+                    return;
+                }
+                const created = await this.finishPageCreation(pageSc, name, false);
+                if (!created) {
+                    // createNode / mountSubSystemPage 已經各自 toast 過原因，
+                    // 但 modal 蓋在上面，所以再寫一次到 modal 裡並保持開啟。
+                    this.templateModal.error = __('網頁建立失敗，請確認是否已在左側選取父節點');
+                    return;
+                }
+                const report = window.BkPageTemplate.describeReport(data.data.report || {});
+                if (report.hasIssue) {
+                    this.templateModal.reportLines = report.lines;
+                    return;
+                }
+                this.showToast(__('網頁已建立'));
+                this.closeTemplateModal();
+            } catch (err) {
+                this.templateModal.error = err.message || __('建立失敗');
+            } finally {
+                this.templateModal.saving = false;
+            }
         },
 
         async createPageLayout(name) {

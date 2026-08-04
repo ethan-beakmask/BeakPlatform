@@ -6,6 +6,9 @@
         </div>
         <div class="ird-actions">
             <button type="button" class="ird-btn ird-btn-primary" @click="savePage()">{{ _('儲存') }}</button>
+            {% if can('nocode_builder.manage') %}
+            <button type="button" class="ird-btn" @click="openSaveTemplateModal()">{{ _('另存為樣板') }}</button>
+            {% endif %}
             <div class="ird-preview-identity" x-show="dataScope">
                 <label>
                     <span>{{ _('預覽群組') }}</span>
@@ -40,6 +43,8 @@
     </div>
 
     {% include "modules/nocode_builder/_ir_designer_issue_modal.html" %}
+    {% include "modules/nocode_builder/_ir_designer_save_template.html" %}
+    <div class="ird-toast" x-show="saveTemplateToast.show" x-text="saveTemplateToast.message"></div>
 
     <div class="ird-grid">
         <aside class="ird-panel">

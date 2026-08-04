@@ -1,6 +1,7 @@
 """PF-26 page template instantiation sanitization tests."""
 from __future__ import annotations
 
+import copy
 import os
 import sys
 from pathlib import Path
@@ -246,7 +247,11 @@ def test_same_sub_system_instantiate_preserves_layout_exactly(admin_client, db_s
     data = resp.get_json()["data"]
     assert data["report"]["sanitized"] is False
     page = db_session.query(DcPageLayout).filter_by(secure_code=data["page"]["secure_code"]).one()
-    assert page.layout_json == layout
+    # 除了頁面標題換成新頁名稱之外，同子系統套用不動任何引用
+    assert page.layout_json["page"]["title_i18n"] == {"zh-TW": "新頁面"}
+    expected = copy.deepcopy(layout)
+    expected["page"]["title_i18n"] = {"zh-TW": "新頁面"}
+    assert page.layout_json == expected
 
 
 def test_create_sub_system_template_defaults_source_sub_system(admin_client, db_session, test_org):
@@ -516,4 +521,35 @@ def test_sanitize_drops_parent_selection_nav_and_stays_valid():
     assert report["cleared"]["menu_nav_sources"] == 1
 
     ok, errors = validate_page_ir(new_ir)
+    assert ok, errors
+
+
+def test_instantiate_overwrites_page_title_with_new_name(admin_client, db_session, test_org):
+    """樣板的 title_i18n 是樣板自己的標題，套用後必須換成新頁名稱。
+
+    不換的話 portal 上渲染出來的頁面標題會是樣板名，
+    設計器的標題欄也會顯示錯的（使用者以為自己建錯了）。
+    """
+    sub = _sub_system(db_session, test_org.secure_code, "subsystem_00000091")
+    tpl = _template(
+        db_session,
+        secure_code="template_000000091",
+        org_secure_code=test_org.secure_code,
+        scope="org",
+        source_sub_system_sc=sub.secure_code,
+        layout_json=_doc([_text()]),
+    )
+
+    resp = admin_client.post(
+        f"{API_PREFIX}/templates/{tpl.secure_code}/instantiate",
+        json={"name": "我的新頁", "sub_system_secure_code": sub.secure_code},
+    )
+    assert resp.status_code == 201, resp.get_json()
+
+    page_sc = resp.get_json()["data"]["page"]["secure_code"]
+    page = db_session.query(DcPageLayout).filter_by(secure_code=page_sc).one()
+    assert page.name == "我的新頁"
+    assert page.layout_json["page"]["title_i18n"] == {"zh-TW": "我的新頁"}
+
+    ok, errors = validate_page_ir(page.layout_json)
     assert ok, errors
