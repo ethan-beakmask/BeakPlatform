@@ -261,6 +261,29 @@ SELECT code, link_type, link_target FROM menu_items WHERE parent_secure_code = '
 
 完整 API 用法、context_type 對應表、金鑰架構：**`docs/FILE_SERVICE.md`**
 
+**回送檔案內容時 `Content-Type` 一律用 `file_service.get_serve_mime(record)`**
+（副檔名 → MIME 白名單），**禁止使用 `platform_files.mime_type`**——
+該欄位存的是上傳時 multipart 宣告的值，**完全由上傳者控制**。
+2026-08-05 因此修掉一個儲存型 XSS：傳 `.png` 卻宣告 `Content-Type: text/html`
+（或直接傳 `.svg`），serve 端原樣回送，JS 就在平台同源執行。
+`nosniff` 擋不住（型別是攻擊者明確宣告的，nosniff 反而確保照他說的渲染），
+全域 CSP 的 `unsafe-inline` 也擋不住。修補配套三件，缺一不可：
+
+```python
+mimetype=file_service.get_serve_mime(record)          # 白名單推導
+g._bk_strict_file_csp = True                          # → default-src 'none'; sandbox
+if ext in file_service.FORCE_DOWNLOAD_EXT:            # 目前是 {'svg'}
+    headers['Content-Disposition'] = _make_cd_header(record.original_name)
+```
+
+`<img src>` 不理會 `Content-Disposition`，所以 SVG 加 attachment **不會**弄壞
+logo／背景（已實測）。詳見知識庫 #5048。
+
+**未修的已知缺口**：`/api/files/upload` 只有 `@login_required`，不檢查
+context_type 與身分的關係——任何登入帳號（含 EXTERNAL）都能寫入
+`org_logo` / `nc_background` / `wf_background`，而這三個屬 `PUBLIC_CONTEXT_TYPES`
+（匿名可讀、**無租戶隔離**、無頻率限制）。待辦 **PF-43**。
+
 ### NET-01: 來源 IP 一律走 `get_client_ip()`（2026-08-05 起）
 
 **禁止直接讀 `request.remote_addr`、`X-Forwarded-For`、`CF-Connecting-IP`，
