@@ -17,6 +17,36 @@
 **維護原則**：新的踩坑先問「這是 codex 猜不到的專案特有事實，還是通用工程常識？」
 前者才寫進來；屬於「派工時要貼給 codex」的，寫進 `docs/codex_spec/` 並在本檔留指針。
 
+## 開發模式（Codex-first，2026-08-05 定版）
+
+**本專案的標準開發迴路：主 Claude 寫 spec → `codex exec` 實作 → 主 Claude 驗收。**
+呼叫規範（sandbox 參數、timeout、stdin 餵 prompt）見
+`~/.claude/knowledge_base/standards/coding_standards/codex_first_policy.md`。
+
+### 組 spec 的固定步驟
+
+1. **檔案清單**：讀 `docs/manifests/README.yaml` → 對應 manifest，spec 中列出精確檔案
+   路徑與現有結構說明（codex 對專案無記憶，context 要餵足）
+2. **規範片段**：依觸及範圍貼 `docs/codex_spec/` 對應檔（frontend / i18n / security /
+   portal），**`_footer.md` 每次必貼**。codex 不讀 CLAUDE.md——沒貼進 prompt 的規範
+   一律視同不存在
+3. **本檔的專案特有事實**（nginx 前綴、CSS 變數白名單、TZ-01、FILE-01 等）凡與任務
+   相關，逐條複製進 spec，不能只給檔案路徑
+
+### 驗收（主 Claude 專屬職責，不可外包）
+
+- **VERIFY-03**：codex 開不了瀏覽器，它的自我檢查表不算驗收。互動元素一律由主 Claude
+  用 chrome-devtools 實際點過（VERIFY-01），輸出落地 `/opt/tmp/verify/`（VERIFY-02）
+- **反向檢查先於功能測試**：每個抽象層搜尋「繞過它的直接寫法」（全域 CLAUDE.md
+  Agent 協作規範）
+- codex 常見瑕疵必查：死碼、拆字串規避檢查、manifest 只刪不補、裸中文未包 gettext、
+  沒重啟服務就宣稱驗證通過
+- 退回上限 2 次，之後改由 Claude 依既有規範直接實作
+
+### Claude 直接動手的例外
+
+約 10 行內微改、codex 連續失敗 2 次、配額耗盡/限流、緊急修復、純文件/設定變更。
+
 ## 專案定位
 
 **BeakPlatform 是一個多租戶權限管理平台**
@@ -72,7 +102,7 @@ Generated with Claude Code"
 - GitHub 的 history 與 origin 不同步是正常的（過濾 commit），不要 merge github/main 回 local
 
 ### 2. 更新追蹤
-- 完成 Forgejo Issue 時，用 API 關閉：`curl -X PATCH ... -d '{"state":"closed"}'`
+- 完成 BBN 待辦（PF-xx）時，回寫該原子標註完成狀態
 - 如果涉及架構變更，更新相關文件
 
 ---
@@ -80,12 +110,14 @@ Generated with Claude Code"
 ## Manifest 導向開發流程（強制）
 
 **所有程式修改必須先查 manifest，禁止盲目探索。**
+（Codex-first 模式下，manifest 同時是「組 codex spec 檔案清單」的唯一來源。）
 
 ### 流程
 
 1. **收到工單** → 讀 `docs/manifests/README.yaml` 找到目標 manifest
 2. **讀 manifest** → 取得精確的檔案清單（route、api、service、model、template、js）
-3. **只讀 manifest 列出的檔案** → 在這些檔案中定位問題並修正
+3. **只讀 manifest 列出的檔案** → 定位問題後把檔案清單與結構說明寫進 codex spec
+   （Claude 直接動手的例外情況則自行修正）
 4. **如果不夠** → 向用戶說明需要查看哪些額外檔案及原因，等確認後再讀
 
 ### 禁止
@@ -122,7 +154,9 @@ Generated with Claude Code"
 
 平台基礎建設與模組化標準已完成。目前處於**功能完善階段**。
 
-待辦事項追蹤在 [Forgejo Issues](http://192.168.0.16:3000/forgejoadmin/BeakPlatform/issues)。
+待辦事項以 **BBN 待辦為主**（ref_code `PF-xx`，`project_tasks` 查詢、
+`note_search("PF-xx")` 取全文）。Forgejo Issues 已全數移回 BBN，若見殘留直接忽略，
+不需搬移或關閉（用戶會自行在 BBN 新增）。
 架構與模組化標準詳見 `docs/PLATFORM_MODULARIZATION_PLAN.md`。
 
 ---
@@ -775,6 +809,23 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 - **Page IR 設計器網址是 `/nocode/ir-designer/<page_layout_secure_code>`**
   （預覽是同路徑 `+ /preview`）。它吃的是**頁面** secure_code，不是子系統 sc，
   路由定義在 `modules/nocode_builder/web/__init__.py:42`
+- **設計器模板已於 2026-08-04 拆分**（`_ir_designer_body.html` 只剩 4.5KB 外殼，
+  舊文件與舊卡片都還指著它，照著找會找不到東西）：
+
+  ```
+  ir_designer.html
+  └── _ir_designer_body.html          外殼 + 頂部工具列（預覽身分區塊）
+      ├── _ir_designer_issue_modal.html
+      ├── _ir_designer_save_template.html
+      ├── _ir_designer_layout.html     版面編輯區
+      └── _ir_designer_props.html      全部 widget 屬性面板（42KB，改屬性面板來這裡）
+          ├── (import) _ir_designer_access_matrix.html   元件准入 macro render()
+          └── (include) _ir_designer_menu.html           menu widget 面板
+  ```
+
+  元件准入是 `access_matrix.render(actions_expr, write_hint)` macro，
+  在 props 內被呼叫四次（一般 widget／master_detail／actions／form），
+  **改准入 UI 只要改 macro 一處**，不要在四個地方各改一份
 - **portal 頁是獨立模板 `portal_page_v3.html`，不繼承 `layouts/base.html`**。
   平台頁自動有的東西（`timezone.js`／`BkTime`、i18n、capability.js）在這裡
   **都要自己載入**。portal 又是公開路由，`auth_interceptor` 在設定
@@ -1208,4 +1259,4 @@ cd backend && flask run --host=127.0.0.1 --port=7000
 
 ---
 
-*最後更新: 2026-03-27*
+*最後更新: 2026-08-05（定版 Codex-first 開發模式、待辦改指 BBN 白板）*

@@ -489,7 +489,7 @@ ORDER BY scheduled_at;
 | 交易寫入 | `modules/nocode_builder/services/master_detail_service.py` |
 | 送出 API | `POST /public/portal/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/master-detail` |
 | 建表 FK | `sub_system_api.create_portal_data_table` 的 `columns[i].references` |
-| 設計器 | `_ir_designer_body.html` 的 `master_detail` 區塊 |
+| 設計器 | `_ir_designer_props.html` 的 `master_detail` 區塊（2026-08-04 前在 `_ir_designer_body.html`，已拆分） |
 
 ### 關鍵事實（省下重新查證的時間）
 
@@ -616,7 +616,7 @@ portal 帳號 : p4tester / p4test123
 | portal action 註冊 `portal.form.cancel` | `modules/nocode_builder/__init__.py` `init_runtime()` |
 | `can_cancel` 判定 | `pageir_formflow_resources._submission_row()` 的 `row["_can_cancel"]` |
 | toast + 送出後回空白表單 + 撤單後回清單 | `backend/app/static/js/pageir.js`、`pageir.css` |
-| 設計器 actions 面板（分組 select + 元件准入） | `ir-designer.js`、`_ir_designer_body.html` |
+| 設計器 actions 面板（分組 select + 元件准入） | `ir-designer.js`、`_ir_designer_props.html`（2026-08-04 前在 `_ir_designer_body.html`） |
 | 新測試 | `backend/tests/test_pageir_portal_action_cancel.py` |
 
 基準測試 **198 → 205 passed**（新增 7 條）。
@@ -1120,7 +1120,7 @@ de383028  主細表設計器
 
 | 能力 | 位置 | 備註 |
 |---|---|---|
-| 元件准入四動作 UI | `_ir_designer_body.html` + `ir-designer.js` | read/create/update/delete 各自可設群組+階級 |
+| 元件准入四動作 UI | `_ir_designer_access_matrix.html` 的 `render()` macro（由 `_ir_designer_props.html` import）+ `ir-designer.js` | read/create/update/delete 各自可設權限碼與符合方式（原為群組+階級，PF-13 已收斂） |
 | 欄位視覺遮罩 | `backend/app/pageir/masking.py` | partial/full/email/phone；masked 欄位不可排序、不可寫 |
 | 工作區「資料表」tab | `workspace.html` + `workspace-tables.js` | 建表限 portal_data，掛 `nocode_builder.manage` |
 | portal 預覽 | `web/__init__.py` 的 `ir_designer_preview()` | `?sub=&group=&level=`，走真實判定鏈，portal 外殼、唯讀 |

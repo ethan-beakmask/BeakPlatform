@@ -153,7 +153,7 @@ def _portal_widget_evaluator(matrix, action, ctx):
 | `static/.../js/workspace-org.js` | 帳號權限矩陣 |
 | `static/.../js/ir-designer.js` | IR 設計器（含元件准入面板、buildDoc 正規化） |
 | `templates/.../workspace.html` | 工作區（兩個 tab） |
-| `templates/.../_ir_designer_body.html` | 設計器主體 partial（工作區與獨立路由共用） |
+| `templates/.../_ir_designer_body.html` | 設計器主體 partial（工作區與獨立路由共用）。**2026-08-04 已拆分**：本檔只剩外殼與頂部工具列（含預覽身分區塊），widget 屬性面板全部移到 `_ir_designer_props.html`，menu 面板在 `_ir_designer_menu.html`，元件准入 macro 在 `_ir_designer_access_matrix.html` |
 | `templates/.../portal_page_v3.html` | portal 頁殼（注入 `__PIR_ROWS_URL_BASE` 與 csrf meta） |
 
 ### 前端共用
@@ -380,6 +380,12 @@ reason 短碼：`no_session` / `no_matrix` / `bad_matrix` / `group_denied` /
 > 存檔後 portal 頁的按鈕與 API 判定同步生效，125 個既有測試不退步。
 
 ### 6.4 設計器補 create/update/delete 元件准入 UI ← **建議先做這個**
+
+> **已完成且形態已變（2026-08-05 註）**：四個 action 的 UI 早已做完，
+> 且 PF-13 後條件改為權限碼制（不再是群組/階級）。現行實作是
+> `_ir_designer_access_matrix.html` 的 `render()` macro，由
+> `_ir_designer_props.html` import 後在四處呼叫（一般 widget／master_detail／
+> actions／form）。以下敘述僅供了解當時脈絡，**不可照抄**。
 
 範圍明確、不需新的產品決策。schema 與 runtime 都已支援（N4a/N4b 完成），純缺 UI。
 知識庫待辦 **#4902**（含可執行驗證指令）。

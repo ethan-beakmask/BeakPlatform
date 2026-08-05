@@ -10,15 +10,16 @@ node --check <改過的每一支 .js>
 cd backend && ../venv/bin/python -c "import app; print('import ok')"
 # 改過 JSON（schema 等）
 python3 -c "import json; json.load(open('<path>'))"
-# 相關測試（基準 248 passed，不得退步）
-cd /opt/BeakPlatform-dev/backend && ../venv/bin/python -m pytest \
-  tests/test_pageir_*.py tests/test_portal_*.py tests/test_sitemap_access_matrix.py \
-  tests/test_platform_fixed_filters.py -q
-# tests/test_e2e_portal_cancel.py 不在基準內（需實跑服務，掛 pytest.mark.e2e）
+# 相關測試：一律經由 run_tests.sh（會把 DATABASE_URL 指向拋棄式 beakplatform_test）
+bash scripts/run_tests.sh tests/test_pageir_*.py tests/test_portal_*.py -q   # 依任務挑相關檔
+# 全量基準（2026-08-05）：382 passed / 1 failed / 1 skipped
+#   1 failed = test_admin_required_for_admin（測試庫缺 RBAC seed，已知，非你造成）
+#   1 skipped = test_e2e_portal_cancel.py（需實跑服務，掛 pytest.mark.e2e，不在基準內）
 ```
 
-**跑完整 `pytest tests/` 會有 13 個既有 error**（測試用 SQLite 但平台有 PostgreSQL
-JSONB 欄位），與任何變更無關，不要試圖修。只跑相關測試檔。
+**禁止自己 `source .env` 之後直接叫 pytest**——`.env` 的 DATABASE_URL 指向開發庫，
+測試收尾的 `db.drop_all()` 會打在開發資料庫上。必須走 `scripts/run_tests.sh`。
+跑出基準以外的失敗時先重跑一次排除測試殘留，不要直接當成自己改壞。
 
 ### 使用者要點擊的東西，驗收必須用瀏覽器
 
