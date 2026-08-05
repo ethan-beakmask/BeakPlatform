@@ -510,6 +510,15 @@
     background: var(--color-bg-white);
 }
 
+/* 功能塊交替淡底色，便於區分各區塊範圍 */
+.wks-perm-panel:nth-of-type(odd) {
+    background: #eef3f9;
+}
+
+.wks-perm-panel:nth-of-type(even) {
+    background: #f8f4ec;
+}
+
 .wks-perm-panel-head {
     align-items: center;
 }
