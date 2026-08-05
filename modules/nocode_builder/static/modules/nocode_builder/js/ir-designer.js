@@ -82,7 +82,8 @@ function irDesigner() {
             draft: null,
             dirty: false,
         },
-        saveTemplateToast: { show: false, message: '' },
+        toast: { show: false, message: '' },
+        _toastTimer: null,
         dirty: false,
         savedSnapshot: '',
         dragType: '',
@@ -2446,6 +2447,7 @@ function irDesigner() {
             return issues;
         },
 
+        // 回傳是否儲存成功（previewPage 會依此決定要不要開預覽分頁）
         async savePage() {
             this.errors = [];
             this.showIssueModal = false;
@@ -2454,7 +2456,7 @@ function irDesigner() {
             if (blockingErrors.length) {
                 this.errors = localErrors;
                 this.openIssueModal();
-                return;
+                return false;
             }
             this.errors = localErrors;
             const body = {
@@ -2474,17 +2476,19 @@ function irDesigner() {
                 if (!res.ok || !data.success) {
                     this.errors = data.errors || [{ path: '', message: data.error || tr('儲存失敗') }];
                     this.openIssueModal();
-                    return;
+                    return false;
                 }
                 this.pageName = data.data.name || body.name;
                 this.dirty = false;
                 this.savedSnapshot = this.snapshot();
                 this.errors = localErrors;
                 if (localErrors.length) this.openIssueModal();
-                alert(tr('已儲存'));
+                this.showToast(tr('已儲存'));
+                return true;
             } catch (err) {
                 this.errors = [{ path: '', message: err.message || tr('儲存失敗') }];
                 this.openIssueModal();
+                return false;
             }
         },
 
@@ -2542,7 +2546,7 @@ function irDesigner() {
                     return;
                 }
                 this.closeSaveTemplateModal();
-                this.showSaveTemplateToast(tr('已另存為樣板'));
+                this.showToast(tr('已另存為樣板'));
             } catch (err) {
                 this.saveTemplateModal.error = err.message || tr('儲存樣板失敗');
             } finally {
@@ -2550,20 +2554,31 @@ function irDesigner() {
             }
         },
 
-        showSaveTemplateToast(message) {
-            this.saveTemplateToast = { show: true, message };
-            setTimeout(() => { this.saveTemplateToast.show = false; }, 2600);
+        showToast(message) {
+            this.toast = { show: true, message };
+            if (this._toastTimer) clearTimeout(this._toastTimer);
+            this._toastTimer = setTimeout(() => { this.toast.show = false; }, 3000);
         },
 
-        previewPage() {
-            if (this.dirty || this.snapshot() !== this.savedSnapshot) {
-                alert(tr('請先儲存'));
+        async previewPage() {
+            const needSave = this.dirty || this.snapshot() !== this.savedSnapshot;
+            // window.open 必須在使用者點擊的同步階段呼叫，否則 await savePage() 之後
+            // 已不在手勢語境、會被瀏覽器的彈窗封鎖擋掉。先開空白分頁佔位，存檔失敗再關掉。
+            const win = needSave ? window.open('', '_blank') : null;
+            if (needSave && !(await this.savePage())) {
+                if (win) win.close();
                 return;
             }
-            if (!this.dataScope) {
-                window.open(this.previewUrl, '_blank');
-                return;
+            const target = this.buildPreviewUrl();
+            if (win && !win.closed) {
+                win.location = target;
+            } else {
+                window.open(target, '_blank');
             }
+        },
+
+        buildPreviewUrl() {
+            if (!this.dataScope) return this.previewUrl;
             this.syncPreviewIdentity();
             const url = new URL(this.previewUrl, window.location.origin);
             url.searchParams.set('sub', this.dataScope);
@@ -2577,7 +2592,7 @@ function irDesigner() {
             } else {
                 url.searchParams.delete('level');
             }
-            window.open(url.toString(), '_blank');
+            return url.toString();
         },
 
         markDirty() {
