@@ -335,6 +335,90 @@ CREATE TABLE IF NOT EXISTS portal_file_acl (
   `file_service.GENERIC_UPLOAD_CONTEXT_TYPES`（`form_attachment` / `subsystem_file`），
   `portal_file` 只能走平台側專屬端點。讀取端語境化（PF-43 的另一半）仍未做
 
+### 驗收用測試資料（階段 B~E 直接照抄，本 session 實際跑過）
+
+IR 還沒有 `file_box` 的設計器 UI（階段 D 才有），驗收時用 SQL 直接造一個
+**draft、不掛 site map** 的頁（不會被 portal 公開渲染，驗完刪掉）：
+
+```sql
+-- 建立（org/子系統識別碼見 CLAUDE.md「NoCode Builder / Portal 開發備忘」）
+INSERT INTO dc_page_layouts (secure_code, org_secure_code, name, layout_json, is_active, status)
+VALUES ('PF44TESTPAGE0000000001', '_9c8TewkRkCBEf3XsUdqeF', 'PF-44 驗收頁', '{
+  "ir_version": 3,
+  "page": {"id": "pf44-verify", "title_i18n": {"zh-TW": "PF-44 驗收頁"}, "widgets": [
+    {"id": "files-designer", "type": "file_box", "mode": "both", "upload_by": "designer",
+     "read_scope": ["*"], "per_file_acl": true, "guest_readable": false,
+     "max_files": 2, "allowed_ext": ["pdf", "png", "txt"]},
+    {"id": "layout-1", "type": "layout", "children": [
+      {"id": "files-nested", "type": "file_box", "upload_by": "designer",
+       "per_file_acl": false, "max_files": 20}]},
+    {"id": "files-user", "type": "file_box", "upload_by": "portal_user",
+     "per_file_acl": false, "max_files": 5},
+    {"id": "text-1", "type": "text", "text_i18n": {"zh-TW": "hi"}}]}}'::jsonb, true, 'draft');
+
+INSERT INTO dc_sub_system_pages (secure_code, org_secure_code, sub_system_secure_code,
+                                 page_layout_secure_code, display_name, display_order, is_active)
+VALUES ('PF44TESTSSP00000000001', '_9c8TewkRkCBEf3XsUdqeF', 'HJGEoAh6PBv5IXNHhMTu5P',
+        'PF44TESTPAGE0000000001', 'PF-44 驗收頁', 99, true);
+
+-- 清理
+DELETE FROM dc_sub_system_pages WHERE page_layout_secure_code = 'PF44TESTPAGE0000000001';
+DELETE FROM dc_page_layouts WHERE secure_code = 'PF44TESTPAGE0000000001';
+```
+
+四個 widget 分別對應：一般情況（含 ACL 與 `max_files=2` 上限）、
+`layout` 巢狀、`upload_by=portal_user`（平台側上傳必須被拒的反例）、非 file_box（必須 404）。
+
+**階段 B 要改成兩個頁**（2026-08-05 冷讀審核抓到）：上面這頁是 `status='draft'`，
+只夠驗平台側（設計者發布前就要能放檔）。portal 側判定鏈第 1、2 條要求
+**子系統與頁面都 published**，所以階段 B 需要：
+
+- 一個 `status='published'` 的頁（複製上面的 INSERT，改 secure_code 與 `'published'`）
+  驗正常存取路徑
+- 保留一個 `draft` 頁驗「未 published → 404」
+
+子系統 `HJGEoAh6PBv5IXNHhMTu5P` 本身已是 published，不必再處理。
+
+**驗交易補償路徑的技法**（階段 A 用過，階段 B 的 portal 上傳端一樣要驗）：
+直接把 portal.db 設唯讀**驗不到**——WAL 模式下連 SELECT 都會先炸在讀取階段。
+要讓 SELECT 成功、INSERT 失敗，用 trigger：
+
+```bash
+DB=/opt/BeakPlatform-dev/data/nocode_portals/HJGEoAh6PBv5IXNHhMTu5P/portal.db
+sqlite3 $DB "CREATE TRIGGER pf44_block_insert BEFORE INSERT ON portal_files
+             BEGIN SELECT RAISE(ABORT, 'pf44 test'); END;"
+# ...執行上傳，預期 500 + platform_files 該筆為 deleted + 實體檔已刪 + SQLite 無新列...
+sqlite3 $DB "DROP TRIGGER pf44_block_insert;"
+```
+
+清理驗收殘留（實體檔要自己刪，`delete_file` 只對走 API 的路徑生效）：
+
+```bash
+PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -t -A -F'|' -c \
+ "SELECT storage_type, storage_ref FROM platform_files WHERE created_at >= '<UTC 起始>';" |
+while IFS='|' read st ref; do
+  [ "$st" = encrypted ] && P="backend/encrypted_storage/$ref" || P="backend/uploads/$ref"
+  rm -f "$P"
+done
+# 再刪 file_access_logs → platform_files（有 FK 順序），SQLite 端 portal_file_acl → portal_files
+```
+
+### 階段 B 動工前的補充判讀（2026-08-05 冷讀審核後補，不同意就在動工時提出）
+
+規格原文留白、冷讀者確實會卡住的四點，先給定案避免試誤：
+
+- **`GET /list` 對匿名**：`guest_readable=false` 時**回 404**（該 widget 對匿名等同不存在），
+  不是回空清單。其他身分回「過濾後的可讀集合」，集合為空就是空陣列 200
+  ——「看得到這個元件但裡面沒東西」與「不該看到這個元件」是兩件事
+- **portal 側 DELETE 僅限上傳者本人**（`uploader_ref` 相符）。
+  不要在 portal 側再造一套「管理者」概念——管理者刪除走平台側既有的
+  `DELETE /api/nocode-builder/sub-systems/<ss>/portal-files/<sc>`
+- **階段 B 要寫測試**：service 層的判定函式（可測）放
+  `backend/tests/test_portal_file_stage_b.py`；端點層因 PF-46（test app 未載模組
+  blueprint）仍需 curl 實測，測試檔內註明即可
+- **manifest 是 `docs/manifests/mod-nocode-builder.yaml`**
+  （階段 A 已把 `portal_file_api.py` / `portal_file_service.py` / 測試檔補進去）
+
 ## 11. 已知待決
 
 - `read_scope` 為 `["*"]` 時是否包含匿名？**不包含**——匿名只吃 `guest_readable`
