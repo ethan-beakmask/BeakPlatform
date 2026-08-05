@@ -5,7 +5,7 @@ import logging
 import re
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from flask import request
+from flask import request, url_for
 from flask_babel import gettext as _
 
 from app.pageir.registry import register_menu_provider, register_shared_menu_resolver
@@ -110,10 +110,19 @@ def _build_item_entry(
             portal_user,
         )
         if allowed:
-            url = (
-                f"{request.script_root}/public/portal/{path_id}/p/"
-                f"{node.page_layout_secure_code}"
-            )
+            # 設計器預覽的合成身分不存在於公開 portal，連結必須留在預覽路徑，
+            # 否則點下去會跳出預覽、且未發布的子系統／頁面一律 404。
+            if _is_preview(portal_user):
+                url = _preview_url(
+                    node.page_layout_secure_code,
+                    sub_system_sc,
+                    portal_user,
+                )
+            else:
+                url = (
+                    f"{request.script_root}/public/portal/{path_id}/p/"
+                    f"{node.page_layout_secure_code}"
+                )
             if ctx.get("menu_nav_source") == "self":
                 url = _url_with_nav(
                     url,
@@ -133,7 +142,29 @@ def _build_item_entry(
     }
 
 
+def _is_preview(portal_user: dict) -> bool:
+    """設計器預覽的合成身分（web/__init__.py 的 preview_user）。"""
+    return portal_user.get("user_type") == "PREVIEW"
+
+
+def _preview_url(page_layout_sc: str, sub_system_sc: str, portal_user: dict) -> str:
+    """組出留在設計器預覽內的頁面連結，並沿用當前預覽身分。"""
+    params = {"sub": sub_system_sc}
+    for key, source in (("level", "level_code"), ("group", "group_code")):
+        value = portal_user.get(source)
+        if value:
+            params[key] = value
+    return url_for(
+        "nocode_builder_short_web.ir_designer_preview",
+        secure_code=page_layout_sc,
+        **params,
+    )
+
+
 def _system_entry_for_item(item: dict, sub_system_sc: str, portal_user: dict, path_id: str) -> dict | None:
+    # 預覽身分沒有 portal session，登入／註冊／登出在預覽內無從走通（點了必離開預覽）。
+    if _is_preview(portal_user):
+        return None
     user_id = portal_user.get("user_id")
     script_root = request.script_root
     link = item.get("link")
