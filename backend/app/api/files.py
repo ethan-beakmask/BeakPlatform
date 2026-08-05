@@ -201,20 +201,28 @@ def serve(secure_code):
             return '', 404
 
     try:
-        data, mime_type, _ = file_service.serve_file(record)
+        data, _mime_unused, _name = file_service.serve_file(record)
     except FileNotFoundError:
         return '', 404
     except Exception as e:
         logger.exception("serve 檔案失敗: %s", secure_code)
         return '', 500
 
+    # Content-Type 一律由副檔名推導，不採信 DB 的 mime_type（上傳者可控）
+    headers = {
+        'Cache-Control': 'public, max-age=86400',
+        'X-Content-Type-Options': 'nosniff',
+    }
+    if (record.file_ext or '').lower() in file_service.FORCE_DOWNLOAD_EXT:
+        headers['Content-Disposition'] = _make_cd_header(record.original_name)
+
+    # 告知 security_headers 對本回應套用「檔案內容」專用的嚴格 CSP
+    g._bk_strict_file_csp = True
+
     return Response(
         data,
-        mimetype=mime_type or 'application/octet-stream',
-        headers={
-            'Cache-Control': 'public, max-age=86400',
-            'X-Content-Type-Options': 'nosniff',
-        }
+        mimetype=file_service.get_serve_mime(record),
+        headers=headers,
     )
 
 
@@ -364,9 +372,11 @@ def token_download(token):
         )
         return jsonify({'success': False, 'message': _('檔案完整性驗證失敗，已通報管理員')}), 500
 
+    g._bk_strict_file_csp = True
+
     return Response(
         data,
-        mimetype=mime_type or 'application/octet-stream',
+        mimetype=file_service.get_serve_mime(record),
         headers={
             'Content-Disposition': _make_cd_header(original_name),
             'X-Content-Type-Options': 'nosniff',

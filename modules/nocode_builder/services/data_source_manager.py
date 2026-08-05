@@ -16,6 +16,7 @@ data_source 類型:
   'portal_data' → 子系統公開資料 DB (SQLite)
 """
 import os
+import re
 import shutil
 import logging
 import threading
@@ -42,10 +43,27 @@ SQLITE_SOURCES = frozenset(_SOURCE_DB_FILE.keys())
 # 基礎目錄 (相對於專案根)
 _BASE_DIR = Path(__file__).resolve().parents[3] / 'data' / 'nocode_portals'
 
+# sub_system_sc 會直接成為檔案系統路徑的一段，字元集必須白名單化，
+# 否則 '../' 之類的值可讓路徑逃出 _BASE_DIR (路徑穿越)。
+# secure_code 由 secrets.token_urlsafe 產生，字元集為 [A-Za-z0-9_-]；
+# 長度放寬到 64 以相容測試與腳本使用的短代號。
+_SC_PATTERN = re.compile(r'^[A-Za-z0-9_-]{1,64}$')
+
+
+def _validate_sc(sub_system_sc) -> str:
+    """
+    驗證 sub_system_sc 可安全用於組成路徑，不合法一律拒絕 (fail-closed)。
+
+    這是所有 SQLite 路徑組成的唯一入口，不要在其他地方另行拼接路徑。
+    """
+    if not isinstance(sub_system_sc, str) or not _SC_PATTERN.match(sub_system_sc):
+        raise ValueError(f'Invalid sub_system_sc for path construction: {sub_system_sc!r}')
+    return sub_system_sc
+
 
 def _get_portal_dir(sub_system_sc: str) -> Path:
     """取得子系統 portal 目錄路徑"""
-    return _BASE_DIR / sub_system_sc
+    return _BASE_DIR / _validate_sc(sub_system_sc)
 
 
 def _get_db_path(sub_system_sc: str, source_type: str) -> Path:

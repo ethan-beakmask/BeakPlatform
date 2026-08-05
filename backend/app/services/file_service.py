@@ -73,6 +73,50 @@ DEFAULT_MAX_SIZE = 50 * 1024 * 1024  # 50MB
 # 公開級 context_type（serve 端本來就是 @public_route，不做物件級授權）
 PUBLIC_CONTEXT_TYPES = {'org_logo', 'wf_background', 'nc_background'}
 
+# 副檔名 → 回應 Content-Type。
+# 回應型別一律由副檔名推導，**不採信 platform_files.mime_type**——
+# 該欄位存的是上傳時 multipart 宣告的值，完全由上傳者控制。
+# 曾可上傳 .png 卻宣告 text/html，serve 端原樣回送而在平台同源執行 JS（儲存型 XSS）。
+SERVE_MIME_BY_EXT = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'bmp': 'image/bmp',
+    'svg': 'image/svg+xml',
+    'pdf': 'application/pdf',
+    'txt': 'text/plain',
+    'csv': 'text/csv',
+    'rtf': 'application/rtf',
+    'doc': 'application/msword',
+    'docx': ('application/vnd.openxmlformats-officedocument'
+             '.wordprocessingml.document'),
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': ('application/vnd.openxmlformats-officedocument'
+             '.spreadsheetml.sheet'),
+    'ppt': 'application/vnd.ms-powerpoint',
+    'pptx': ('application/vnd.openxmlformats-officedocument'
+             '.presentationml.presentation'),
+    'odt': 'application/vnd.oasis.opendocument.text',
+    'ods': 'application/vnd.oasis.opendocument.spreadsheet',
+    'zip': 'application/zip',
+    '7z': 'application/x-7z-compressed',
+    'rar': 'application/vnd.rar',
+}
+
+# 直接導航時會被瀏覽器當成「文件」解析（可執行內嵌腳本）的副檔名。
+# serve 端對這些一律加 Content-Disposition: attachment，
+# <img src> 引用不受影響（img 不理會 Content-Disposition）。
+FORCE_DOWNLOAD_EXT = {'svg'}
+
+
+def get_serve_mime(record: 'PlatformFile') -> str:
+    """取得回應用的 Content-Type（由副檔名推導，白名單外一律視為二進位）"""
+    return SERVE_MIME_BY_EXT.get(
+        (record.file_ext or '').lower(), 'application/octet-stream'
+    )
+
 # context_type → authorizer 函式註冊表
 # authorizer 簽名: fn(user, record: PlatformFile) -> bool
 # 模組在 init_runtime() 時呼叫 register_file_authorizer() 註冊自己的判定
