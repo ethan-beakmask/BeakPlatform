@@ -40,6 +40,7 @@ CONTEXT_STORAGE_MAP = {
     'wf_background': 'local',
     'form_attachment': 'encrypted',
     'subsystem_file': 'encrypted',
+    'portal_file': 'encrypted',
     'nc_background': 'local',
 }
 
@@ -55,6 +56,10 @@ CONTEXT_ALLOWED_EXT = {
                        'odt', 'ods', 'csv', 'txt', 'rtf',
                        'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
                        'zip', '7z', 'rar'},
+    'portal_file': {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+                    'odt', 'ods', 'csv', 'txt', 'rtf',
+                    'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
+                    'zip', '7z', 'rar'},
     'nc_background': {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'},
 }
 
@@ -64,6 +69,7 @@ CONTEXT_MAX_SIZE = {
     'wf_background': 5 * 1024 * 1024,   # 5MB
     'form_attachment': 50 * 1024 * 1024, # 50MB
     'subsystem_file': 50 * 1024 * 1024,  # 50MB
+    'portal_file': 50 * 1024 * 1024,     # 50MB
     'nc_background': 5 * 1024 * 1024,    # 5MB
 }
 
@@ -72,6 +78,15 @@ DEFAULT_MAX_SIZE = 50 * 1024 * 1024  # 50MB
 
 # 公開級 context_type（serve 端本來就是 @public_route，不做物件級授權）
 PUBLIC_CONTEXT_TYPES = {'org_logo', 'wf_background', 'nc_background'}
+
+# 通用上傳端點 /api/files/upload 允許的 context_type。
+# 其餘 context_type 各有專屬端點並各自做授權:
+#   org_logo      -> POST /api/enterprise-settings/logo      (@admin_required)
+#   nc_background -> POST /api/nocode-builder/backgrounds/upload (@admin_required)
+#   wf_background -> POST /api/form-workflow/backgrounds/upload  (@module_access_required)
+#   portal_file   -> POST /api/nocode-builder/sub-systems/<ss>/portal-files
+# 未列出的（含未知值）一律拒絕：未知 context_type 會讓副檔名白名單失效。
+GENERIC_UPLOAD_CONTEXT_TYPES = {'form_attachment', 'subsystem_file'}
 
 # 副檔名 → 回應 Content-Type。
 # 回應型別一律由副檔名推導，**不採信 platform_files.mime_type**——

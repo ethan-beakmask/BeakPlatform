@@ -7,7 +7,7 @@
 ```
 前端 BkFileAttachment → POST /api/files/upload → file_service.upload_file()
                                                       ├── local (org_logo, wf_background)
-                                                      └── encrypted (form_attachment, subsystem_file)
+                                                      └── encrypted (form_attachment, subsystem_file, portal_file)
                                                            └── crypto/key_manager.py (AES-256-GCM)
 ```
 
@@ -27,8 +27,11 @@
 | `wf_background` | `local` | 否 | 工作流設計器底圖 |
 | `form_attachment` | `encrypted` | 是 | 表單簽核附件 |
 | `subsystem_file` | `encrypted` | 是 | 子系統業務附件 |
+| `portal_file` | `encrypted` | 是 | NoCode portal 末端用戶檔案（PF-44） |
 
 **新增 context_type 時**：在 `file_service.py` 的 `CONTEXT_STORAGE_MAP`、`CONTEXT_ALLOWED_EXT`、`CONTEXT_MAX_SIZE` 三個 dict 中加入對應設定。
+
+`/api/files/upload` 只接受 `GENERIC_UPLOAD_CONTEXT_TYPES`（`form_attachment` / `subsystem_file`）。其他 context_type 必須走各自專屬端點，例如 Logo、背景圖與 portal 檔案端點，避免未知 context_type 繞過副檔名白名單或低權限帳號寫入公開檔案語境。
 
 ## 後端開發 - 上傳
 

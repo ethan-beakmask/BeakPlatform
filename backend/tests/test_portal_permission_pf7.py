@@ -164,7 +164,7 @@ def test_schema_v3_upgrade_is_idempotent_from_v2_and_preserves_users(portal_base
         "portal_level_permissions",
     }
     with sqlite3.connect(db_path) as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
         tables = {
             row[0]
             for row in conn.execute(

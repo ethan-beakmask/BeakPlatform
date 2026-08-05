@@ -279,10 +279,22 @@ if ext in file_service.FORCE_DOWNLOAD_EXT:            # 目前是 {'svg'}
 `<img src>` 不理會 `Content-Disposition`，所以 SVG 加 attachment **不會**弄壞
 logo／背景（已實測）。詳見知識庫 #5048。
 
-**未修的已知缺口**：`/api/files/upload` 只有 `@login_required`，不檢查
-context_type 與身分的關係——任何登入帳號（含 EXTERNAL）都能寫入
-`org_logo` / `nc_background` / `wf_background`，而這三個屬 `PUBLIC_CONTEXT_TYPES`
-（匿名可讀、**無租戶隔離**、無頻率限制）。待辦 **PF-43**。
+**通用上傳端點只收兩種 context_type**（PF-43，2026-08-05 起）：
+`/api/files/upload` 只接受 `file_service.GENERIC_UPLOAD_CONTEXT_TYPES`
+＝ `{'form_attachment', 'subsystem_file'}`，其餘一律 400。
+在此之前它只有 `@login_required`、不檢查 context_type 與身分的關係，
+任何登入帳號（含 EXTERNAL）都能寫入 `org_logo` / `nc_background` /
+`wf_background` 這三個 `PUBLIC_CONTEXT_TYPES`（匿名可讀、**無租戶隔離**）。
+**新增 context_type 時要一併決定它走哪個端點**——通用端點只放通用附件，
+其餘各自建專屬端點並自行授權（`org_logo`→`/api/enterprise-settings/logo`、
+`nc_background`→`/api/nocode-builder/backgrounds/upload`、
+`wf_background`→`/api/form-workflow/backgrounds/upload`、
+`portal_file`→`/api/nocode-builder/sub-systems/<ss>/portal-files`）。
+未知 context_type 一律拒絕不只是授權問題：`CONTEXT_ALLOWED_EXT.get()` 對未知鍵回
+`None`，副檔名白名單會**整個被跳過**。
+
+**PF-43 的另一半尚未做**：讀取端 `/api/files/<sc>/serve` 仍是無語境的全域路徑，
+`PUBLIC_CONTEXT_TYPES` 的檔案在任何子系統路徑下都取得到。
 
 ### NET-01: 來源 IP 一律走 `get_client_ip()`（2026-08-05 起）
 
@@ -863,11 +875,19 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 - **在 Page IR 頁面放 form.io 送出按鈕時必須寫 `"input": false`**，
   否則 payload 會多一個 `submit: true` 欄位，被後端欄位白名單擋成
   400 `unknown_field`
-- **portal.db schema 已升到 v3（PF-7，2026-08-03 起）**：新增六張權限碼制表
+- **portal.db schema 現行版本 v4**。v3（PF-7，2026-08-03 起）新增六張權限碼制表
   `portal_permissions` / `portal_admin_roles` / `portal_role_permissions` /
-  `portal_user_roles` / `portal_user_permissions` / `portal_level_permissions`。
-  升級由 `ensure_portal_schema()` 階梯式自動執行（0→2→3，冪等），
+  `portal_user_roles` / `portal_user_permissions` / `portal_level_permissions`；
+  v4（PF-44 階段 A，2026-08-05 起）新增 `portal_files` / `portal_file_acl`
+  （portal 檔案元件的歸屬與個別檔案 ACL，實體與加密仍在平台 `platform_files`）。
+  升級由 `ensure_portal_schema()` 階梯式自動執行（0→2→3→4，冪等，**lazy**
+  ——子系統被存取到才升，所以看到某個子系統還是舊版本不代表壞掉），
   **改 portal.db schema 一律加在該函式，不要另寫 migration 腳本**。
+- **Page IR widget 的設定值一律直接掛在 widget 物件上**
+  （`{"type": "file_box", "upload_by": "designer", ...}`），**沒有 `settings` 子物件**。
+  這條對所有 widget 皆然，但 `file_box` 上已經有人猜錯過一次——
+  讀成 `widget["settings"]` 時每個欄位都回退預設值，症狀是**設定看起來存了、
+  行為卻永遠是預設值**（設計者上傳被判成 `upload_by=portal_user` 而全數 400）。
   有效權限計算的唯一實作是 `services/portal_permission_service.py`
   （階級 rank 向下繼承、管理角色聯集不繼承、個人 deny 最優先、停用帳號回空集合、
   匿名只吃階級權限），**禁止各處自行組 SQL 算權限**。

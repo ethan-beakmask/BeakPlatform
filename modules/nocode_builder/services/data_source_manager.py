@@ -334,6 +334,35 @@ CREATE INDEX IF NOT EXISTS idx_portal_user_permissions_user ON portal_user_permi
 CREATE INDEX IF NOT EXISTS idx_portal_level_permissions_level ON portal_level_permissions(level_id);
 """
 
+_PORTAL_SCHEMA_V4 = """
+CREATE TABLE IF NOT EXISTS portal_files (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    secure_code       TEXT NOT NULL UNIQUE,
+    platform_file_sc  TEXT NOT NULL,
+    page_sc           TEXT NOT NULL,
+    widget_id         TEXT NOT NULL,
+    uploader_ref      TEXT NOT NULL,
+    original_name     TEXT NOT NULL,
+    file_size         INTEGER NOT NULL DEFAULT 0,
+    file_ext          TEXT DEFAULT '',
+    is_deleted        INTEGER NOT NULL DEFAULT 0,
+    deleted_at        TEXT,
+    created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_portal_files_widget ON portal_files(page_sc, widget_id, is_deleted);
+CREATE INDEX IF NOT EXISTS idx_portal_files_uploader ON portal_files(uploader_ref, is_deleted);
+
+CREATE TABLE IF NOT EXISTS portal_file_acl (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_secure_code  TEXT NOT NULL,
+    grantee_type      TEXT NOT NULL,
+    grantee_code      TEXT NOT NULL,
+    created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(file_secure_code, grantee_type, grantee_code)
+);
+"""
+
 
 def _execute_schema(conn, schema: str):
     """逐句執行 SQLite schema script。"""
@@ -353,6 +382,12 @@ def ensure_portal_schema(sub_system_sc: str):
     確保 portal.db schema 已升級至最新版本。
 
     不負責建立 DB；portal.db 不存在時維持 FileNotFoundError。
+
+    v4 portal_files 欄位語意:
+      - secure_code: portal 側識別碼，未來會出現在公開 URL。
+      - platform_file_sc: 對應 platform_files.secure_code，實體與加密在平台側。
+      - uploader_ref: designer:<平台 users.secure_code> 或 u:<portal_users.secure_code>。
+        portal 使用者上傳時不寫 platform_files.uploader_sc，避免平台帳號授權誤判。
     """
     portal_path = _get_db_path(sub_system_sc, 'portal')
     if not portal_path.exists():
@@ -372,7 +407,7 @@ def ensure_portal_schema(sub_system_sc: str):
             conn.execute(text("PRAGMA foreign_keys=ON"))
             conn.execute(text("PRAGMA busy_timeout=5000"))
             version = conn.execute(text('PRAGMA user_version')).scalar() or 0
-            if version >= 3:
+            if version >= 4:
                 conn.commit()
                 return
 
@@ -388,6 +423,10 @@ def ensure_portal_schema(sub_system_sc: str):
             if version < 3:
                 _execute_schema(conn, _PORTAL_SCHEMA_V3)
                 conn.execute(text('PRAGMA user_version = 3'))
+
+            if version < 4:
+                _execute_schema(conn, _PORTAL_SCHEMA_V4)
+                conn.execute(text('PRAGMA user_version = 4'))
 
             conn.commit()
     finally:

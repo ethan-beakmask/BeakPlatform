@@ -74,7 +74,7 @@ def test_init_portal_sqlite_sets_v2_defaults(portal_base):
     dsm.init_portal_sqlite("ss_init")
     db_path = _db_path(portal_base, "ss_init")
 
-    assert _read_scalar(db_path, "PRAGMA user_version") == 3
+    assert _read_scalar(db_path, "PRAGMA user_version") == 4
     assert _read_scalar(db_path, "SELECT COUNT(*) FROM portal_groups WHERE code = 'GENERAL'") == 1
     assert _read_scalar(db_path, "SELECT rank FROM portal_levels WHERE code = 'ADMIN'") == 90
 
@@ -96,7 +96,7 @@ def test_ensure_portal_schema_upgrades_old_v1_idempotently(portal_base):
     dsm.ensure_portal_schema(sub_sc)
     dsm.ensure_portal_schema(sub_sc)
 
-    assert _read_scalar(db_path, "PRAGMA user_version") == 3
+    assert _read_scalar(db_path, "PRAGMA user_version") == 4
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
         row = conn.execute(

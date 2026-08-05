@@ -18,6 +18,7 @@ from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import login_required, public_route
+from ..security.client_ip import get_client_ip
 from .. import db, csrf
 from ..services import file_service
 from ..services.file_service import FileTamperError
@@ -136,6 +137,13 @@ def upload():
 
     if not context_type:
         return jsonify({'success': False, 'message': _('未指定 context_type')}), 400
+
+    if context_type not in file_service.GENERIC_UPLOAD_CONTEXT_TYPES:
+        logger.warning(
+            "[SEC] 通用上傳端點拒絕 context_type=%s user=%s ip=%s",
+            context_type, getattr(current_user, 'username', '?'), get_client_ip(),
+        )
+        return jsonify({'success': False, 'message': _('不支援的 context_type')}), 400
 
     org = current_user.organization
     if not org:

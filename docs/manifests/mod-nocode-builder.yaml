@@ -50,6 +50,7 @@ files:
     - modules/nocode_builder/services/pageir_portal_menu.py     # PF-8 menu widget 的 portal provider
     - modules/nocode_builder/services/pageir_formflow_resources.py # formflow portal submissions resolver
     - modules/nocode_builder/services/pageir_mapping_usage.py    # form workflow mapping 引用查詢
+    - modules/nocode_builder/services/portal_file_service.py  # PF-44 portal_files / portal_file_acl 存取
   css:
     - modules/nocode_builder/static/modules/nocode_builder/css/nocode-builder.css
     - modules/nocode_builder/static/modules/nocode_builder/css/studio.css
@@ -67,6 +68,7 @@ files:
     - modules/nocode_builder/api/site_map_api.py
     - modules/nocode_builder/api/portal_org_api.py
     - modules/nocode_builder/api/portal_permission_api.py  # PF-8 權限碼/角色管理 API
+    - modules/nocode_builder/api/portal_file_api.py  # PF-44 portal 檔案（平台側）
   platform_deps:
     - backend/app/pageir/masking.py                   # 欄位視覺遮罩（server 端唯一實作）
     - backend/app/pageir/renderer.py
@@ -82,6 +84,7 @@ files:
     - backend/tests/test_portal_permission_pf7.py  # PF-7 權限碼模型 + access_matrix 新舊並存
     - backend/tests/test_portal_permission_admin_pf8.py  # PF-8 權限碼/角色管理服務
     - backend/tests/test_pageir_menu_pf8.py  # PF-8 menu widget（schema/renderer/portal provider/folder）
+    - backend/tests/test_portal_file_stage_a.py
 
 note: |
   准入控制使用 grant-based permission 模式（部門/社群/個人多重選擇）。

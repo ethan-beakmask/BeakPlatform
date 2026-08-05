@@ -1,6 +1,6 @@
 # Portal 檔案元件規格（Page IR `file_box` widget）
 
-**狀態**：設計定案，未實作
+**狀態**：**階段 A 已完成並驗收（2026-08-05）**，階段 B~E 未實作
 **日期**：2026-08-05
 **關聯**：PF-42（發布快照，上線前應完成）、FILE-01、PF-7（portal 權限模型）
 
@@ -218,7 +218,7 @@ CREATE TABLE IF NOT EXISTS portal_file_acl (
 
 | 階段 | 內容 | 可驗收的產出 |
 |---|---|---|
-| A | portal.db v4 schema + `context_type` 註冊 + 平台側四個 API | 設計者能放檔、SQLite 有對照列 |
+| A ✅ | portal.db v4 schema + `context_type` 註冊 + 平台側四個 API | 設計者能放檔、SQLite 有對照列 |
 | B | portal 側四個端點 + 判定鏈 | curl 四種身分矩陣測試全綠 |
 | C | `schema_v3.json` + renderer | 頁面能渲染出上傳區與清單 |
 | D | 設計器屬性面板 | 瀏覽器實際設定並驗證生效 |
@@ -318,6 +318,22 @@ CREATE TABLE IF NOT EXISTS portal_file_acl (
 可用的識別碼與登入指令見 BBN 待辦 **PF-44**（`note_search("PF-44")`），
 內含本機已驗證過的 quick-login、portal-quick-login、sqlite3 直查指令，
 以及六種身分的測試帳號 secure_code。照抄即可，不要自己找帳號。
+
+### 階段 A 完成後的既成事實（2026-08-05，階段 B 起照這個走）
+
+- 落地檔案：`modules/nocode_builder/services/portal_file_service.py`（SQLite 存取層，
+  含 `find_file_box_widget` / `widget_setting`）、`modules/nocode_builder/api/portal_file_api.py`
+  （平台側四個端點）。階段 B 的 portal 端點**重用同一個 service**，不要再寫一份 SQL
+- **widget 設定直接掛在 widget 物件上，沒有 `settings` 子物件**（見 §6）。
+  `widget_setting()` 對型別錯誤一律回退預設值、不 raise
+- 平台側端點的 decorator 組合：`@csrf.exempt` + `@admin_required` +
+  `@permission_required('nocode_builder.manage')`（與 PF-29 共用選單端點一致）
+- **回應一律不含 `platform_file_sc`**（少一條餵給 `/api/files/<sc>/serve` 的旁路）
+- 失敗回應用 `message` key（非同 blueprint 舊檔的 `error`）
+- 軟刪檔案時**一併硬刪該檔的 ACL 列**
+- **PF-43 的上傳端收斂已在階段 A 一併完成**：`/api/files/upload` 只收
+  `file_service.GENERIC_UPLOAD_CONTEXT_TYPES`（`form_attachment` / `subsystem_file`），
+  `portal_file` 只能走平台側專屬端點。讀取端語境化（PF-43 的另一半）仍未做
 
 ## 11. 已知待決
 
