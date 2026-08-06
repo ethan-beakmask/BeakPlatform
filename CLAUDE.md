@@ -1106,45 +1106,84 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   換算成陣列索引要減 1。`gridSvg` 犯過這個錯，所有 zone 疊在同一格、
   縮圖只剩右下一塊（2026-08-04 commit `324842d8` 修）。
 
-- **子系統層級共用選單（PF-29，2026-08-04 起）**：樣板是**複製語意**，
-  共用選單是**引用語意**——改一次，所有引用它的頁面同步生效。
+- **子系統層級共用元件（2026-08-06 起，取代 PF-29 的「共用選單」）**：
+  樣板是**複製語意**，共用元件是**引用語意**——改一次，所有引用它的頁面同步生效。
+  定版規格 `docs/SHARED_COMPONENTS_SPEC.md`。
 
-  `dc_shared_menus`（子系統層級）存 `items`（menu items 樹）與
-  `config`（預設外觀，白名單
-  `orientation` / `item_gap` / `hover_expand` / `nav_source` / `nav_key` / `style`）。
-  頁面端寫 `{"type":"menu","id":...,"shared_ref":"<sc>","items":[]}`。
+  **舊的 `dc_shared_menus` 表與 `/shared-menus` 端點已停用**（表保留為備份、
+  程式不再讀寫，13 筆資料已由 `scripts/migrations/094_shared_components.sql`
+  遷入新表）。看到舊名一律視為過時。
+
+  `dc_shared_components`（子系統層級）：`name`（同子系統內唯一）、
+  `widget_type`、`widget_json`（**完整 widget 組態，不含 id**）。
+  頁面端只寫 `{"type":"menu","id":"menu-1","shared_ref":"<sc>"}`。
 
   | 端點（全部 `@permission_required('nocode_builder.manage')`） | 用途 |
   |---|---|
-  | `GET/POST /api/nocode-builder/sub-systems/<ss>/shared-menus` | 列出／建立 |
-  | `PUT/DELETE /api/nocode-builder/sub-systems/<ss>/shared-menus/<sc>` | 更新／刪除（被引用 → 409 並回 `usages`） |
+  | `GET /api/nocode-builder/sub-systems/<ss>/shared-components?widget_type=menu` | 列出（型別選填） |
+  | `POST` 同上路徑 | 建立（`widget_type` 由 `widget_json.type` 推導；名稱重複 → 409） |
+  | `PUT/DELETE .../shared-components/<sc>` | 更新／刪除（被引用 → 409 並回 `usages`） |
 
-  **合併優先序（使用者定案）：`items` 一律取共用元件的；
-  `orientation`／`item_gap`／`hover_expand`／`nav_source`／`nav_key`／`style`
-  是「頁面 widget 有寫用頁面的，沒寫才用共用元件的」**
-  ——同一份選單可以在 A 頁橫式置頂、B 頁縱式置左。
+  **完全共用（2026-08-06 使用者裁決，推翻 PF-29 的合併優先序）**：
+  引用時**一律取共用元件的值，頁面端不覆寫任何欄位**。
+  同一份選單要 A 頁橫式、B 頁縱式 → **建兩個共用元件**（menu-1 橫、menu-2 直）。
 
-  **展開只在 `renderer._prepare_menu` 一處做**，透過
-  `registry.register_shared_menu_resolver(world, fn)`（portal 實作在
-  `services/pageir_portal_menu.py::_resolve_shared_menu`，
-  **platform world 不註冊是預期狀態**）。
+  **唯一例外是 `access_matrix`，語意是交集**：共用元件與頁面 widget 兩份
+  **都要通過**才渲染（`renderer._widget_read_allowed` 兩份都判）。
+  它是授權邊界不是外觀，取其一會讓某邊設定靜默失效。
+
+  **展開只在 `renderer._prepare_widget` 開頭一處做**（dispatch 之前，
+  所有 widget 型別共用），透過
+  `registry.register_shared_component_resolver(world, fn)`（portal 實作在
+  `services/pageir_shared_component.py`，**platform world 不註冊是預期狀態**）。
   三個渲染入口（`portal_public.py`、平台 `/p/`、設計器預覽）都吃得到，
   **不要在入口各判一次**——這專案已因「三處各自查」在正式 portal 上全數 404 過。
-  resolver 必須驗共用選單屬於 ctx 的 `sub_system_sc`；解析不到一律
-  **fail-closed（items 視為空）不 raise**。
+  resolver 驗 ctx 的 `sub_system_sc` **與 `org_secure_code`**，
+  所以**每個 `set_render_context('portal', ...)` 呼叫點都必須傳 `org_secure_code`**
+  （目前 9 處都有），漏傳的路徑上共用元件會整批消失。
+  解析不到一律 **fail-closed：整個 widget 不渲染**（不是空選單），並記 warning。
 
-  schema 的 `menu_widget` 因此改為 `required: ["id","type"]` 加
-  `anyOf: [{required:[items]}, {required:[shared_ref]}]`；
-  `validator._check_menu` 在有 `shared_ref` 時整段跳過（items 不存在也合法）。
+  schema 八個 widget 型別**全部**是 `required: ["id","type"]` 加
+  `anyOf: [{required:[<原必填>]}, {required:["shared_ref"]}]`；
+  `validator` 對任何有 `shared_ref` 的 widget 跳過欄位語意檢查。
 
-  **跨子系統套用樣板時會清掉 `shared_ref` 並補 `items: []`**
-  （report 碼 `shared_menu_refs`）。少補 items 的話淨化產物過不了
-  `validate_page_ir`，整個 instantiate 會 500。
+  **跨子系統套用樣板時清掉所有型別的 `shared_ref`**（report 碼
+  `shared_component_refs`）：menu 清掉後補 `items: []`（少補的話淨化產物過不了
+  `validate_page_ir`，整個 instantiate 會 500），其他型別因缺必填欄位
+  **整個 widget 移除**（reason `shared_component_unavailable`）。
 
   設計器 menu 屬性面板就地操作：引用下拉／[另存為共用選單]／[編輯共用選單]
-  （獨立 modal，存檔與頁面儲存分開）／[解除引用]。
-  **引用中時「已選項目」「可加入的網頁」「系統連結」三區隱藏**，
-  外觀欄位維持可編輯。
+  （獨立 modal，按 **[儲存共用選單]** 存檔，與頁面 [儲存] 完全無關）／[解除引用]。
+  **引用中時「已選項目」「可加入的網頁」「系統連結」三區隱藏。**
+  **目前只有 menu 型別有這組 UI**，其餘型別後端已支援但設計器未開放
+  （待辦 PF-53 批次 3）。
+
+  **寫入端要正規化 `style.background_file`**：UI 上「不使用底圖」是空字串，
+  但 schema 的 pattern 不收空字串。頁面存檔走
+  `ir-designer.js::normalizeMenuOnSave`，共用元件走
+  `shared_component_api._normalize_widget_json`——**兩條路都要有**，
+  漏掉的那條會讓使用者一編輯舊資料就 400。
+
+- **menu 自動模式（2026-08-06 起）**：`source_mode: "manual" | "auto"`
+  （預設 manual）＋ `include_system_links`（預設 false）。
+
+  `auto` 時**忽略 items**，由
+  `pageir_portal_menu._build_auto_items()` 依 site map 即時生成同形狀的 items 樹
+  （`parent_secure_code` 組樹、`display_order` 排序、深度上限 5），
+  再交給既有 `_build_item_entry` ——**權限過濾、預覽語境連結、nav 聯動全部沿用，
+  不要另寫一套**，`_build_auto_items` 內**不做**任何 `check_page_access`。
+  renderer 不查 site map，只把 `menu_source_mode` / `menu_include_system_links`
+  放進 `menu_ctx`。
+
+  schema 為此在 `menu_widget` 的 `anyOf` 加第三支
+  `{"required":["source_mode"],"properties":{"source_mode":{"const":"auto"}}}`
+  ——只有 auto 免寫 items。前端 `localSaveErrors` 的
+  「選單尚未選擇任何網頁」也要排除 auto，否則自動模式一律存不了。
+
+- **grid／free 引擎下，widget 只加進 `page.widgets` 不會顯示**，
+  必須同時放進某個 `canvas.zones[].widget_ids`（free 是 `frames[]`）。
+  `_canvas_widgets` 對未放置者靜默略過（只記 info log），
+  症狀是「存了、DB 裡也有、畫面就是沒有」。用 API 直接改 IR 時最容易踩到。
 
 ### NoCode Builder API 操作備忘（2026-08-03 以 API 全程建出一個子系統後實測）
 

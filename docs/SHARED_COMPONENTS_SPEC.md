@@ -42,7 +42,7 @@ widget `id` 降為頁面內部識別。這解掉「UI 上同名稱看起來就�
 |---|---|---|
 | `sub_system_secure_code` | String(32) NOT NULL index | 歸屬子系統 |
 | `name` | String(200) NOT NULL | 顯示名稱，同子系統內唯一 |
-| `widget_type` | String(32) NOT NULL | `menu` / `table` / `detail` / `form` / `actions` / `text` / `layout` |
+| `widget_type` | String(32) NOT NULL | 八種：`menu` / `table` / `detail` / `master_detail` / `form` / `actions` / `text` / `layout` |
 | `widget_json` | JSONB NOT NULL | **完整 widget 組態，不含 `id`**（含 `type`） |
 | `is_active` | Boolean NOT NULL default true | |
 
@@ -126,7 +126,10 @@ portal 實作移到
 
 - 從該子系統的根節點起遞迴，取 `is_deleted=false AND is_active=true`，依 `display_order`
 - `folder` 節點 → 無連結的群組項（label + children）
-- `page` 節點 → 過 `check_page_access`；不通過且無可見 children 時整枝消失（沿用現行行為）
+- `page` 節點 → **`_build_auto_items` 自己不做任何權限判斷**，
+  照樣產出項目；`check_page_access` 由下游的 `_build_item_entry` 執行
+  （不通過且無可見 children 時整枝消失）。
+  **兩處都判會讓規則有機會分岔，所以只在一處判**
 - 深度上限 5（與手動模式一致）
 - `include_system_links=true` 時，在最後附上 login / register / logout
   （沿用現行白名單與顯示規則：login/register 僅未登入時、register 另需
@@ -149,9 +152,18 @@ portal 實作移到
 | DELETE | `/shared-components/<sc>` | 被引用時 409 並回 `usages`（掃**所有** widget 型別） |
 
 `widget_json` 驗證：包成單 widget 的假頁面過 `validate_page_ir`
-（沿用現行 `shared_menu_api._validate_items` 的手法，改成整個 widget）。
+（實作在 `shared_component_api._validate_widget_json`，補一個假 `id` 再驗）。
 
-**舊 `/shared-menus` 端點與前端呼叫一併移除**，不留 alias。
+**POST 的 `widget_type` 由後端從 `widget_json.type` 推導，呼叫端不必也不應傳。**
+`widget_json` 內**不可含 `id`**（含了回 400）。
+
+寫入前會過 `_normalize_widget_json()`：menu 的 `style.background_file` 若是空字串
+（UI 上的「不使用底圖」）就移除該鍵，否則 schema pattern 會擋成 400。
+頁面存檔路徑另有一份同語意的 `ir-designer.js::normalizeMenuOnSave`，
+**兩條路都要有**。
+
+**舊 `/shared-menus` 端點與前端呼叫一併移除**，不留 alias
+（`window.BkSharedMenu` 也已改名 `window.BkSharedComponent`）。
 
 ## 7. 樣板淨化（`page_template_service.sanitize_template_ir`）
 
@@ -200,6 +212,32 @@ report 碼改為 `shared_component_refs`（取代 `shared_menu_refs`），
 `{% block scripts %}` **各寫各的**。新增 JS 檔時兩邊都要加，
 日常用的是工作區那邊。
 
+### 8.5 現行 menu 實作已定的語意（泛化時照抄，不要重新發明）
+
+批次 1、2 只做了 menu 的 UI，以下行為是既成事實，泛化時沿用：
+
+| 動作 | 現行行為（`ir-designer.js`） |
+|---|---|
+| 另存為共用元件 | `window.prompt` 取名 → POST 建立 → **自動把當前 widget 設成 `shared_ref` 並清空本地 `items`** → `markDirty()`（要按頁面 [儲存] 才寫進頁面） |
+| 解除引用 | 把**共用元件當下的 `items` 複製回本地 widget**，刪掉 `shared_ref`，`markDirty()` |
+| 編輯共用元件 | 獨立 modal，按 `[儲存共用元件]` 直接 PUT，**與頁面 [儲存] 完全無關**；存檔成功自動關閉 |
+| 引用中隱藏 | 目前只隱藏「已選項目」「可加入的網頁」「系統連結」三區，**外觀欄位仍可編輯**（批次 3 要一併隱藏） |
+
+**UI 文案現況仍是「共用選單」字樣**（`[另存為共用選單]` 等），
+泛化時要改成「共用元件」，記得同步 i18n。
+
+### 8.6 泛化到 layout / master_detail 的未決問題（動工前先定）
+
+- **`layout` 當共用元件時，`children` 算不算共用內容？**
+  `widget_json` 不含 `id`，但 children 是完整 widget 陣列、各自有 id。
+  引用時這些 id 會與頁面上其他 widget 撞號的風險未評估。
+  最保守的做法是**先不開放 layout 與 master_detail**，只做
+  table / detail / form / actions / text 五種
+- `table.row_link_ref` / `actions` 的 target 這類**指向同頁其他 widget 的引用**，
+  跨頁共用時會指向不存在的對象。fail-closed 是否足夠、要不要在建立時擋掉，未定
+- 解除引用後，若共用元件與頁面端**都有 `access_matrix`**（交集語意），
+  要保留哪一份？現行 menu 沒踩到（menu 的 access_matrix 少用）
+
 ## 9. 驗收
 
 - 反向檢查先於功能測試：搜尋是否有繞過 `resolve_shared_component` 的直接寫法、
@@ -207,7 +245,21 @@ report 碼改為 `shared_component_refs`（取代 `shared_menu_refs`），
 - 瀏覽器實測（VERIFY-01/03，主 Claude 執行，不可外包）：
   引用／解除引用／編輯共用元件／自動模式開關／跨頁生效
 - 留證 `/opt/tmp/verify/<日期>-shared-components.log`（VERIFY-02）
-- 迴歸基準：`bash scripts/run_tests.sh` 對照 `382 passed, 1 failed, 1 skipped`
+- 迴歸基準：`bash scripts/run_tests.sh` → **`395 passed, 1 failed, 2 skipped`**
+  （2026-08-06 批次 2 完成後實測）。
+  那 1 failed 是 `tests/security/test_auth_interceptor.py::TestAuthDecorators::test_admin_required_for_admin`
+  ——測試庫是空表、缺 RBAC seed（log 會印 `Unknown permission code: user:read`），
+  2 skipped 是 `test_e2e_portal_cancel.py`（需實跑服務且依賴的驗收頁已刪）
+  與 `test_portal_file_stage_a.py`（test app 未註冊 nocode_builder blueprint）。
+  **這三個都不要去修。**
+
+### 9.1 動手前的定位資訊
+
+- manifest：`docs/manifests/mod-nocode-builder.yaml`（本次已加入新檔）
+- 測試帳號與 curl 指令、可用子系統／頁面 secure_code、預覽網址：
+  見 BBN 待辦 **PF-53**（`note_get(5068)`），內含本 session 實際跑通的指令
+- 設計器屬性面板全在 `_ir_designer_props.html`（42KB），
+  menu 的共用元件 UI 在 `_ir_designer_menu.html`
 
 ## 10. 本規格**不**包含（留在 PF-47）
 
