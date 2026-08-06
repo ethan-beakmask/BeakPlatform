@@ -80,10 +80,17 @@ AI 幻覺出的屬性在存檔時即被拒絕，不靜默帶病上線。
 
 ---
 
-## 3. L1：首發 Widget 目錄（v3.0，六項）
+## 3. L1：Widget 目錄
 
-全部對應平台既有能力，不發明新機制。圖表、tab、卡片等列入 v3.1 之後。
+全部對應平台既有能力，不發明新機制。圖表、tab、卡片等列入後續版本。
 目錄採**註冊制**：runtime 維護 widget registry，未註冊 type 渲染期直接拒絕。
+
+3.1~3.6 是 v3.0 首發六項；**3.7 之後為後續新增**
+（`menu` 見 3.7；`master_detail`、`file_box` 另見
+`docs/PORTAL_FILE_WIDGET_SPEC.md` 與各自的實作）。
+所有型別在 schema 中皆為 `required: ["id","type"]` 加
+`anyOf: [{required:[<原必填>]}, {required:["shared_ref"]}]`——
+`shared_ref` 是共用元件引用，見 `docs/SHARED_COMPONENTS_SPEC.md`。
 
 ### 3.1 `layout` -- 區塊/欄格容器（唯一容器型 widget）
 
@@ -193,6 +200,72 @@ AI 幻覺出的屬性在存檔時即被拒絕，不靜默帶病上線。
 ```
 
 - `level`: `h1|h2|h3|p`。無安全語意、無綁定。content 渲染時一律 HTML escape（禁 raw HTML）。
+
+### 3.7 `menu` -- 導覽選單（PF-8c 起，2026-08-03/04 定版）
+
+> 2026-08-06 自 `CLAUDE.md` 移入。自動模式（`source_mode`／`include_system_links`）
+> 的完整規則在 `docs/SHARED_COMPONENTS_SPEC.md` §5。
+
+```jsonc
+{"type":"menu","id":"menu-1","title_i18n":{...},
+ "items":[{"kind":"node","node":"<site_map_node_sc>","children":[...]},
+          {"kind":"system","link":"login|register|logout"}],
+ "orientation":"vertical|horizontal","item_gap":6,"hover_expand":true,
+ "nav_source":"self|parent_selection","nav_key":"nav",
+ "style":{"bg_color":"#ffffff", ...六色..., "border_color":"#dddddd",
+          "border_width":1,"border_radius":4,
+          "background_file":"<platform_files.secure_code>",
+          "background_size":"cover","background_repeat":"no-repeat",
+          "background_position":"center"}}
+```
+
+**items 是完全自訂的樹**：陣列順序＝顯示順序、`children` 巢狀＝階層（深度上限 5），
+**不跟著 site map 的結構與順序走**（2026-08-03 用戶定案改的，早期版本相反）。
+名稱與圖示仍即時取自 site map，所以改名會反映；節點被刪或停用時該項連同
+children 整枝消失（fail-closed）。
+
+顯示條件 = 在 items 樹中 AND `check_page_access` 通過
+（menu 是導覽、不是授權邊界，各頁自己仍會再判一次）。
+
+**樣式顏色一律 `^#[0-9a-fA-F]{6}$`**：schema 擋一次、renderer `_menu_style()`
+白名單化再擋一次——值最後會進 inline style，兩道防線缺一不可。
+
+底圖只認 `context_type == 'nc_background'` 的 platform file，不接受任意 URL。
+**存的是 `platform_files.secure_code`，不是 `DcBackground.secure_code`**
+（`/api/nocode-builder/backgrounds` 回應的 `platform_file_sc` 欄位）——
+存錯的症狀是「選了底圖完全沒反應、也不報錯」。
+UI 上「不使用底圖」是空字串，但 schema pattern 不收空字串，**寫入端必須正規化**：
+頁面存檔走 `ir-designer.js::normalizeMenuOnSave`，共用元件走
+`shared_component_api._normalize_widget_json`，**兩條路都要有**。
+
+**兩個 menu 聯動**：`nav_source=parent_selection` 依 `?<nav_key>=` 只渲染該節點的
+children，純伺服器端。聯動連結**只沿用本頁各 menu 的 nav_key**
+（`renderer._menu_nav_keys()`），不可整包複製 `request.args`
+（表格的 `xxx__page`／`xxx__sort` 會被帶去別頁撞上同 id 的 widget）。
+
+橫式子選單是純 CSS hover 浮出，**父子之間的 gap 必須有透明 `::before` 橋接**，
+否則滑鼠移過去的瞬間就離開 `:hover`、子選單當場消失（commit `71e8ea54`）。
+
+平台層走 registry：`register_menu_provider(world, fn)`，portal 實作在
+`services/pageir_portal_menu.py`；**platform world 沒有 provider 是預期狀態**
+（entries 回空陣列，不 raise）。provider 要求 render context 同時有
+`sub_system_sc`、`portal_user`、`path_id`，**少任何一個一律回空陣列**，
+畫面上就是「沒有可顯示的項目」。
+
+`system_link` 值域是**後端白名單**（login/register/logout），不接受任意 URL；
+login/register 只在未登入時出現，register 另需 `allow_registration`，logout 反之。
+
+**設計器預覽的 menu 連結留在預覽語境**（2026-08-06 起，commit `a0272748`）：
+`portal_user['user_type'] == 'PREVIEW'` 時，node 連結組成
+`/nocode/ir-designer/<目標頁sc>/preview?sub=&level=&group=`（沿用當前預覽身分），
+system_link 一律不輸出（預覽沒有 portal session，登入／登出走不通）。
+在此之前連結一律指向公開 portal，**未發布的子系統／頁面點下去必定 404**——
+症狀是「直接按預覽正常、從預覽的選單點過去 404」。正式 portal 行為不變。
+
+site map 的 `folder` 節點型別已放行（不建 page layout、不可當根節點）。
+
+尚未移植 v2 SITEMENU 的：橫式圖示位置、選單高度、懸停延遲（待辦 **PF-19**，
+內含 v2 的值域／預設值與要改的檔案清單，動工前先讀）。
 
 ---
 

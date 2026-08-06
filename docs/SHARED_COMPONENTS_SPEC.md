@@ -34,6 +34,8 @@ widget `id` 降為頁面內部識別。這解掉「UI 上同名稱看起來就�
 理由：同一個元件在不同頁面可能需要不同准入；且系統一貫 fail-closed，
 「取其一」的任何方向都會讓某一邊的設定靜默失效。
 
+實作點：`renderer._widget_read_allowed` 對兩份 access_matrix 各判一次。
+
 ## 2. 資料模型
 
 新表 `dc_shared_components`（`modules/nocode_builder/models/shared_component.py`）：
@@ -76,6 +78,14 @@ widget `id` 降為頁面內部識別。這解掉「UI 上同名稱看起來就�
 
 有 `shared_ref` 時頁面端其他欄位**允許存在但渲染時忽略**
 （設計器「解除引用」要能還原成本地副本，故不強制刪除）。
+`validator` 對任何帶 `shared_ref` 的 widget **跳過欄位語意檢查**。
+
+`menu_widget` 的 `anyOf` 另有**第三支**，讓自動模式免寫 `items`：
+
+```jsonc
+{ "required": ["source_mode"],
+  "properties": { "source_mode": { "const": "auto" } } }
+```
 
 ## 4. Renderer：展開點統一提前
 
@@ -139,6 +149,9 @@ portal 實作移到
 與手動模式**同形狀**的 items 樹，之後完全複用既有 `_build_item_entry`
 （權限過濾、預覽語境連結、nav 聯動全部沿用，不另寫一套）。
 
+**renderer 不查 site map**，只把 `menu_source_mode` / `menu_include_system_links`
+兩個鍵放進 `menu_ctx` 交給 provider——site map 的存取一律留在 portal 側。
+
 ## 6. API
 
 前綴 `/api/nocode-builder/sub-systems/<ss>/shared-components`，
@@ -199,8 +212,24 @@ report 碼改為 `shared_component_refs`（取代 `shared_menu_refs`），
 
 引用中的 widget 在頁面 IR 只保留 `id` / `type` / `shared_ref` / `access_matrix`
 （有設定時），其餘型別設定鍵一律剝除，避免留下不會生效的死資料。
+剝除由 `ir-designer.js::stripLocalConfig` 負責。
 
 `access_matrix` 區塊**例外，維持可編輯**（§1.3 的交集語意）。
+
+**補預設值的函式必須整個略過引用中的 widget**（`ir-designer.js`，2026-08-06 實作時踩過）：
+
+```javascript
+if (widget.shared_ref) continue;   // normalizeWidgets / normalizeWidgetMasks 都要
+```
+
+漏了就會把 `items`、`title_i18n` 這類**不會生效的設定寫回頁面**。
+同理 `localSaveErrors` 也要整個略過引用中的 widget，
+否則「選單尚未選擇任何網頁」之類的本地檢查會讓引用中的頁面存不了。
+
+建立／更新共用元件的 `widget_json` 一律走 `buildSharedWidgetJson()`：
+剝掉 `id` / `shared_ref` / `access_matrix`，table 另剝
+`row_actions_ref` / `row_link_ref`（見 §8.6——它們指向同頁其他 widget，
+在共用元件的單 widget 假頁面裡必然 `dangling_ref` → 後端 400）。
 
 ### 8.3 編輯共用元件：就地切換屬性面板
 
@@ -210,6 +239,12 @@ report 碼改為 `shared_component_refs`（取代 `shared_menu_refs`），
 - `[儲存共用元件]` 直接 PUT 共用元件，與頁面 `[儲存]` 無關
 - `[取消]` 若有未儲存變更需二次確認
 - 編輯期間不允許切換選取的頁面 widget
+
+實作方式：`get selectedWidget()` 在編輯模式回 `sharedComponentEditor.draft`、
+`markDirty()` 改標 `editor.dirty`（不污染頁面的 dirty 狀態）、
+`selectWidget()` 與 `addWidget()` 一律 return。
+代價是**共用 layout 的 children 無法在編輯模式增修**（左側樹顯示的是頁面不是 draft）——
+要改內容得先解除引用、在頁面上編好，再另存為新的共用元件（見 PF-54）。
 
 理由：table / detail / form / actions / text / layout 都已有完整屬性面板。
 就地切換可避免複製約 400 行屬性面板，也不用改寫二十餘個既有欄位處理函式。

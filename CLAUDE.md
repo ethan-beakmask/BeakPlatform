@@ -11,6 +11,10 @@
 | 改哪些檔案（工單導向） | `docs/manifests/README.yaml` → 對應 manifest |
 | 安全踩坑清單 | `docs/manifests/SECURITY_PITFALLS.md` |
 | 權限模型定版 | `docs/PERMISSION_MODEL.md`、`docs/COMPONENT_VISIBILITY_GUIDE.md` |
+| Page IR schema 與各 widget 欄位（含 menu） | `docs/PAGE_IR_SPEC.md`、`docs/PAGE_IR_LAYOUT_ENGINES.md` |
+| 共用元件（引用語意） | `docs/SHARED_COMPONENTS_SPEC.md` |
+| 頁面版面樣板庫（複製語意） | `docs/PAGE_TEMPLATE_SPEC.md` |
+| 用 API 操作 NoCode 子系統的實測陷阱 | `docs/codex_spec/portal.md` 尾段 |
 | 名詞對照 | `docs/GLOSSARY.md` |
 | 跨 session 待辦與決策脈絡 | BeakBroodNest 知識庫（`note_search` / `note_get`） |
 
@@ -35,8 +39,8 @@
 
 ### 驗收（主 Claude 專屬職責，不可外包）
 
-- **VERIFY-03**：codex 開不了瀏覽器，它的自我檢查表不算驗收。互動元素一律由主 Claude
-  用 chrome-devtools 實際點過（VERIFY-01），輸出落地 `/opt/tmp/verify/`（VERIFY-02）
+- **VERIFY-01**（見下方同名章節）：codex 開不了瀏覽器，它的自我檢查表不算驗收。
+  互動元素一律由主 Claude 用 chrome-devtools 實際點過，輸出落地 `/opt/tmp/verify/`
 - **反向檢查先於功能測試**：每個抽象層搜尋「繞過它的直接寫法」（全域 CLAUDE.md
   Agent 協作規範）
 - codex 常見瑕疵必查：死碼、拆字串規避檢查、manifest 只刪不補、裸中文未包 gettext、
@@ -215,6 +219,11 @@ Generated with Claude Code"
 - API 層禁止直接使用 `Model.query`
 - 必須透過 `ResourceGateway` 存取
 
+### URL-01: 對外識別碼一律用 secure_code
+
+- **禁止**在 URL、API 路徑與回應中出現自增 ID（`users/12` 這種）
+- 動態組 SQL 一律走參數化；NoCode 側動態表名／欄名必須先過白名單比對
+
 ### DATA-01: 帳號查詢必須過濾刪除與停用
 - **所有查詢用戶/帳號的地方**，必須同時過濾 `is_deleted=False` 和 `is_active=True`
 - 包含但不限於：用戶列表、組織樹、簽核人選擇、角色成員解析、部門成員解析
@@ -358,55 +367,22 @@ with app.test_request_context('/', environ_base={'REMOTE_ADDR': '192.168.0.50'},
     assert get_client_ip() == '192.168.0.50'
 ```
 
-尚未收斂的 28 處記錄用 `remote_addr`（`api/auth.py` 12、`api/files.py` 6、
-四個模組 10）見待辦 **PF-36**（內含完整 grep 指令與驗收步驟）。
+記錄用途的 `remote_addr` 尚未全面收斂，見待辦 **PF-36**（內含完整 grep 指令與驗收步驟）。
+**不要相信任何寫死的「還剩 N 處」**——動工前自己數：
+
+```bash
+grep -rn "remote_addr" --include=*.py backend/app modules | grep -v client_ip.py
+```
+
+（`config.py` / `__init__.py` 的 ProxyFix 設定與 `client_ip.py` 本身不算待改項。）
 
 ### 開發工具 `/dev/*` 的三層防護（別再重查一次）
 
-`/dev/quick-login` 這類工具的「僅限內網」由三層構成，**真正在管來源 IP 的是第一層**：
-
-| 層 | 位置 | 作用 |
-|---|---|---|
-| iptables | `/etc/iptables/rules.v4`（netfilter-persistent 持久化） | 來源白名單，清單外一律 DROP |
-| nginx | LAN vhost 只 `listen 192.168.0.16:7000`；tunnel vhost 對 `^/beakplatform/dev(/\|$)` `return 444` | 阻斷公開通道 |
-| 應用層 | `dev.py::internal_network_only`（`ipaddress` 網段判定 + `get_client_ip()`） | 縱深防禦最內層 |
-
-現行 iptables 白名單：`.10/.12/.13/.16` 全 port、`.20` 80/7000/8000/2222、
-`.100` 7000/8000、`.17` 5180/5050、`.14` 7000。新增裝置要連 7000 就得加規則，
-否則症狀是**連線逾時而非 403**（封包在 nginx 之前就被丟掉）。
-
-```bash
-sudo cp /etc/iptables/rules.v4 /etc/iptables/rules.v4.bak.$(date +%Y%m%d-%H%M)
-sudo iptables -I INPUT <最後DROP的行號> -s <IP>/32 -p tcp --dport 7000 \
-  -m comment --comment "<用途>" -j ACCEPT
-sudo netfilter-persistent save
-```
-
----
-
-## 專案結構
-
-```
-/opt/BeakPlatform-dev/
-├── backend/
-│   ├── app/
-│   │   ├── security/       # 安全核心（勿隨意修改）
-│   │   ├── crypto/         # 檔案加密模組 (AES-256-GCM)
-│   │   ├── api/            # API 路由
-│   │   ├── web/            # Web 路由
-│   │   ├── models/         # 資料模型
-│   │   ├── services/       # 業務邏輯
-│   │   └── templates/      # Jinja2 模板
-│   └── tests/
-├── modules/                # 模組目錄
-├── docs/
-│   ├── GLOSSARY.md                    # 溝通對照表
-│   ├── PLATFORM_MODULARIZATION_PLAN.md  # 架構與模組化標準
-│   └── archive/                       # 已完成的歷史文件
-├── scripts/
-│   └── migrations/         # 資料庫遷移
-└── .semgrep/               # 安全規則
-```
+`/dev/quick-login` 這類工具的「僅限內網」由 iptables → nginx → `dev.py::internal_network_only`
+三層構成，**真正在管來源 IP 的是 iptables**。現行白名單、新增裝置的指令、
+「連線逾時而非 403」的判別方式，全部寫在全域
+`~/.claude/knowledge_base/configurations/system_configs/network_architecture.md`
+的 Layer 1 段——**這是系統層事實，不要在本檔另存一份會漂移的副本**。
 
 ---
 
@@ -543,71 +519,51 @@ f"{request.script_root}{request.path}?{urlencode(args)}"
 Page IR 的排序連結**從第一版起就是壞的**，直到 2026-07-29 才發現
 （`renderer._self_url()` 已修）。原因見下條。
 
-### VERIFY-01: 使用者要點擊的東西，驗收必須用瀏覽器
+### VERIFY-01: 驗收規範（瀏覽器實測 + 留證，主 Claude 專屬職責）
 
-curl 對「連結、按鈕、select 初次渲染值」有**結構性盲區**：
+> 2026-08-06 起，原 VERIFY-01（瀏覽器實測）／VERIFY-02（留證）／VERIFY-03（AI 自檢不算數）
+> 三條合併於此。舊文件引用到 VERIFY-02／VERIFY-03 時一律看本節。
+
+**一、使用者要點的東西，curl 驗完還要用 chrome-devtools 實際點一次。**
+curl 對「連結、按鈕、select 初次渲染值」有結構性盲區：
 
 - 用 curl 測連結時都是自己帶完整路徑，永遠測不出網址少了前綴（FRONT-10 的成因）
 - select 顯示錯值（FRONT-08）在 HTML 原始碼裡看不出來，要渲染後才知道
 - `BkCaps.can()` 漏注入（FRONT-09）的症狀是「按鈕點了沒反應、console 不報錯」
 
-→ 只要變更涉及使用者要點的東西，curl 驗完**還要**用 chrome-devtools 實際點一次。
+**二、AI 產出的自我檢查表不算驗收。**
+codex／subagent 開不了瀏覽器（chrome-devtools MCP **只有主 Claude 有**），
+它的「自我檢查七項全過」只證明程式碼有寫，不證明串得起來——
+而且**讀起來像已驗收，比「沒測」更危險**。
+2026-08-04 menu 設計器面板那批 codex 自述七項全過，實測抓到兩個 P1：底圖下拉存錯 sc
+（選了完全沒反應也不報錯）、「不使用底圖」寫空字串違反 schema pattern（整頁存不了，
+400 還指向不相干的 widget）。
+→ 凡 AI 產出的前端與跨層串接，checklist 逐項自己跑，不採信回報。
 
-### VERIFY-03: AI 產出的自我檢查表不算驗收（2026-08-04 起）
-
-codex／subagent **開不了瀏覽器**，它的「自我檢查七項全過」只證明程式碼有寫，
-不證明串得起來。2026-08-04 menu 設計器面板那批，codex 自述七項全過，實測抓到兩個 P1：
-
-- 底圖下拉存錯 sc（`DcBackground.secure_code` vs `platform_files.secure_code`）
-  → 選了底圖**完全沒反應也不報錯**
-- 「不使用底圖」寫入空字串違反 schema pattern
-  → **整頁存不了**，而且 400 指向不相干的 widget，使用者無從聯想
-
-**工具能力歸屬**：chrome-devtools MCP 只有主 Claude 有，codex／subagent 沒有。
-所以「要點、要 hover、要看渲染結果」的驗收**只能由主 Claude 做**，不可外包後採信回報。
-
-→ 凡 AI 產出的前端與跨層串接，一律自己用 chrome-devtools 走一次真實操作；
-驗收 checklist 逐項自己跑，不採信它的回報。與 VERIFY-01 同源，
-差別在這裡強調「AI 說通過」比「沒測」更危險——它讀起來像已驗收。
-
-### VERIFY-02: 驗收輸出必須留證（2026-08-01 起）
-
-**驗收的原始輸出一律落地到 `/opt/tmp/verify/<日期>-<主題>.log`，不要只留在對話裡。**
+**三、驗收的原始輸出一律落地到 `/opt/tmp/verify/<日期>-<主題>.log`。**
 
 ```bash
 mkdir -p /opt/tmp/verify
 curl ... 2>&1 | tee -a /opt/tmp/verify/20260801-file-authz.log
-../venv/bin/python -m pytest tests/test_xxx.py -q 2>&1 | tee -a /opt/tmp/verify/20260801-file-authz.log
+bash scripts/run_tests.sh tests/test_xxx.py -q 2>&1 | tee -a /opt/tmp/verify/20260801-file-authz.log
 ```
 
-瀏覽器驗收同理：chrome-devtools 的截圖存檔、關鍵 console/network 觀察貼進同一個 log。
-
-**chrome-devtools 的截圖不能直接寫 `/opt/tmp`**（工具限制在 workspace root 內，
-會回 `Access denied: path ... is not within any of the configured workspace roots`）。
-做法是先存到專案內再搬走：
-
-```
-take_screenshot(filePath="/opt/BeakPlatform-dev/.verify-xxx.png")
-mv /opt/BeakPlatform-dev/.verify-xxx.png /opt/tmp/verify/<日期>-xxx.png
-```
-
-**但 2026-08-04 起 `take_screenshot` 在本機一律逾時**
-（`Page.captureScreenshot timed out`，png / jpeg 皆然，各卡滿 120s 才失敗，
-試過三次）。**留證改用 `evaluate_script` 取關鍵區塊的 `innerText`**——
-成本更低、可 grep、也更適合寫進 log：
+**留證用 `evaluate_script` 取 `innerText` 或結構化 JSON，不要用截圖。**
+DOM 狀態類斷言（class 有沒有、按鈕文字、哪個卡片 active、欄位可見性）這樣做比截圖
+更精確、可 grep、也更適合寫進 log：
 
 ```
 evaluate_script(function="() => document.querySelector('.modal-overlay').innerText")
-→ 把回傳文字貼進 /opt/tmp/verify/<日期>-<主題>.log
 ```
 
-DOM 狀態類的斷言（class 有沒有、按鈕文字、哪個卡片 active、欄位可見性）
-一律用 `evaluate_script` 回結構化 JSON，比截圖更精確也更好覆核。
-截圖工具修好之前不要再浪費 120s 去試。
+**2026-08-04 起 `take_screenshot` 在本機一律逾時**（`Page.captureScreenshot timed out`，
+png / jpeg 皆然，各卡滿 120s 才失敗，試過三次）——**修好之前不要再浪費 120s 去試**。
+（它另有一個限制：只能寫 workspace root 內，要先存專案內再 `mv` 到 `/opt/tmp/verify/`。）
 
-**理由**：2026-08-01 對四個 session 做事後幻覺稽核（363 條事實斷言逐條查證，見知識庫 #4957），
-41 條判定為 UNVERIFIABLE——絕大多數是瀏覽器實測與 rate-limit 觀察，**輸出當下就沒落地，
-事後無論花多少成本都查不回來**。「我測過了」若沒有留下輸出，事後與「我以為我測過了」無法區分。
+**為什麼非留證不可**：2026-08-01 對四個 session 做事後幻覺稽核
+（363 條事實斷言逐條查證，見知識庫 #4957），41 條判定為 UNVERIFIABLE——
+絕大多數是瀏覽器實測與 rate-limit 觀察，**輸出當下就沒落地，事後無論花多少成本都查不回來**。
+「我測過了」若沒有留下輸出，事後與「我以為我測過了」無法區分。
 留證的成本是一個 `tee`，缺證的成本是整段驗收失去可覆核性。
 
 ### CACHE-01: 靜態資源 Cache-Busting
@@ -671,26 +627,6 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 ```
 
 
-## 禁止事項
-
-1. **禁止** 繞過認證攔截器
-2. **禁止** API 直接查詢 Model
-3. **禁止** 在 URL 使用自增 ID
-4. **禁止** 硬編碼密鑰/密碼
-5. **禁止** SQL 字串拼接
-6. **禁止** 在平台內實作業務功能（應透過模組）
-7. **禁止** 將模組靜態檔案複製到 `backend/app/static/`（會造成雙份不同步）
-8. **禁止** 在 API 程式碼中硬編碼 node type 定義（應查 DB）
-9. **禁止** HTML 模板內嵌大量 JS/CSS（應抽為獨立靜態檔或 partial）
-10. **禁止** 後端模板直接 `.strftime()` 顯示 datetime 欄位（應用 `|tz_format`，參見 TZ-01）
-11. **禁止** 前端 JS 用 `new Date().toLocaleString()` 顯示 DB 時間（應用 `BkTime.format()`，參見 TZ-01）
-12. **禁止** 繞過 `file_service` 直接操作檔案儲存目錄（參見 FILE-01）
-13. **禁止** 手動呼叫 `crypto/engine.py` 加解密（應透過 `file_service` 自動處理）
-14. **禁止** 在有 `x-show` 的元素上用 inline style 設定 `display`（應用 CSS class，參見 FRONT-06）
-15. **禁止** select 綁動態 `x-for` options 卻不加 `:selected`（初次渲染會顯示錯值，參見 FRONT-05/06 段）
-
----
-
 ## 資料庫資訊
 
 - **Host**: localhost
@@ -705,26 +641,22 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 ## 備忘
 
 ### Forgejo
-- **URL**: http://192.168.0.16:3000/
-- **Repo**: http://192.168.0.16:3000/forgejoadmin/BeakPlatform
-- **API Token**: `be6f8e52f155aa026ac12c5bd470114aa7c54333`
+- **Repo**: http://192.168.0.16:3000/forgejoadmin/BeakPlatform（URL 與 API Token 見全域 CLAUDE.md）
 
 ### 開發測試登入（本開發機獨有）
 - **快速切換帳號（免密碼）**: `http://192.168.0.16:7000/beakplatform/dev/quick-login`，點帳號即登入
 - **用完必按該頁 [登出] 按鈕**（曾發生登出不乾淨，該按鈕即為補救設計）
-- SYSTEM_ADMIN 唯一帳號: `admin@system.local`（密碼不明，不要用猜的，會鎖定）
-- curl 自動化登入（E2E 用，JSON 版；表單版有防機器人三欄位，勿用）:
-  ```bash
-  BASE=http://192.168.0.16:7000/beakplatform
-  curl -s -c cj.txt -X POST "$BASE/auth/login" -H 'Content-Type: application/json' \
-    -d '{"account":"admin-ethanyu@beluga.com","password":"ApiKeyTest2026"}'
-  ```
+- **自動化一律走 quick-login，不要用帳密登入**：現有測試帳號的密碼多已失效
+  （`admin-ethanyu@beluga.com` / `ApiKeyTest2026` 2026-08-03 實測 401），
+  SYSTEM_ADMIN `admin@system.local` 密碼不明——**猜密碼會觸發鎖定**
 - curl 快速切換**任意帳號**（免密碼免 CSRF，POST JSON 版，E2E 多帳號矩陣測試首選）:
   ```bash
+  BASE=http://192.168.0.16:7000/beakplatform
   USC=$(psql -h localhost -U beakplatform -d beakplatform_dev -t -A \
     -c "SELECT secure_code FROM users WHERE email='ethan@lion.com' AND is_deleted=false;")
   curl -s -c cj.txt -X POST "$BASE/dev/quick-login" \
     -H 'Content-Type: application/json' -d "{\"user_id\":\"$USC\"}"
+  # ORG_ADMIN admin-ethanyu@beluga.com 的 user_id 是 jIYEQ-_lZMZNBkVy-hijal
   ```
 - 常用 API 回應格式備忘：`GET /api/menu` 回 `{menu:[...]}`（樹狀，key 是 `menu` 不是 items）；
   權限中央 API（/api/permissions/*）的企業參數名是 `org_code`（不是 org）
@@ -736,11 +668,8 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 
 ### NoCode Builder / Portal 開發備忘（2026-07-28 起）
 
-**環境事實（2026-08-03 晚間更新）：開發機上目前有一個可用的 NoCode 子系統。**
-
-當日稍早為了清空舊制 access_matrix，8 個子系統連同 site map 節點、頁面、
-portal SQLite 全數刪除（備份 `/opt/tmp/backup/nocode-20260803-1507/`）。
-之後以 `scripts/examples/provision_relief_donation_demo.py --force` 重建了教學實例：
+**環境事實：開發機上目前有一個可用的 NoCode 子系統**，由
+`scripts/examples/provision_relief_donation_demo.py --force` 建置：
 
 | 項目 | 值 |
 |---|---|
@@ -752,7 +681,6 @@ portal SQLite 全數刪除（備份 `/opt/tmp/backup/nocode-20260803-1507/`）�
 
 另有一個 `DzSQ8oTRKCnMVbuxS-431u`（`Ethan的test`，draft，用戶自建，**不要動**）。
 重建腳本會**產生全新識別碼**，跑過就要回頭更新本表。
-`tests/test_e2e_portal_cancel.py` 因依賴的驗收頁已刪而 **skip，這是預期狀態不是退步**。
 
 **portal 測試帳號**（username 是完整 e-mail，密碼一律 `relief123456`）：
 
@@ -929,57 +857,15 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   角色／階級權限與帳號角色一律**整組覆寫**（PUT 全量 codes），不是增量。
   建立子系統會自動 seed 六個 `is_system` 管理角色；既有子系統在首次讀 permission-model 時補 seed。
   權限碼被角色／階級／個人覆寫／site map access_matrix 引用時**拒絕刪除（409）**。
-- **Page IR v3 menu widget（PF-8c 起，2026-08-03/04 強化定版）**：
-
-  ```jsonc
-  {"type":"menu","id":"menu-1","title_i18n":{...},
-   "items":[{"kind":"node","node":"<site_map_node_sc>","children":[...]},
-            {"kind":"system","link":"login|register|logout"}],
-   "orientation":"vertical|horizontal","item_gap":6,"hover_expand":true,
-   "nav_source":"self|parent_selection","nav_key":"nav",
-   "style":{"bg_color":"#ffffff", ...六色..., "border_color":"#dddddd",
-            "border_width":1,"border_radius":4,
-            "background_file":"<platform_files.secure_code>",
-            "background_size":"cover","background_repeat":"no-repeat",
-            "background_position":"center"}}
-  ```
-
-  **items 是完全自訂的樹**：陣列順序＝顯示順序、`children` 巢狀＝階層（深度上限 5），
-  **不再跟著 site map 的結構與順序走**（2026-08-03 用戶定案改的，早期版本相反）。
-  名稱與圖示仍即時取自 site map，所以改名會反映；節點被刪或停用時該項連同
-  children 整枝消失（fail-closed）。
-  顯示條件 = 在 items 樹中 AND `check_page_access` 通過（menu 是導覽、不是授權邊界，
-  各頁自己仍會再判一次）。
-  **樣式顏色一律 `^#[0-9a-fA-F]{6}$`**（schema 擋一次、renderer `_menu_style()`
-  白名單化再擋一次——值最後會進 inline style，兩道防線缺一不可）；
-  底圖只認 `context_type == 'nc_background'` 的 platform file，不接受任意 URL。
-  **底圖存的是 `platform_files.secure_code`，不是 `DcBackground.secure_code`**
-  （`/api/nocode-builder/backgrounds` 的 `platform_file_sc` 欄位），
-  存錯的話症狀是「選了底圖完全沒反應、也不報錯」。
-  兩個 menu 聯動：`nav_source=parent_selection` 依 `?<nav_key>=` 只渲染該節點的
-  children，純伺服器端；聯動連結**只沿用本頁各 menu 的 nav_key**
-  （`renderer._menu_nav_keys()`），不可整包複製 `request.args`（表格的
-  `xxx__page`／`xxx__sort` 會被帶去別頁撞上同 id 的 widget）。
-  橫式子選單是純 CSS hover 浮出，父子之間的 gap 必須有透明 `::before` 橋接，
-  否則滑鼠移過去的瞬間就離開 `:hover`、子選單當場消失（commit `71e8ea54`）。
-  平台層走 registry：`register_menu_provider(world, fn)`，portal 實作在
-  `services/pageir_portal_menu.py`；**platform world 沒有 provider 是預期狀態**
-  （entries 回空陣列，不 raise）。
-  `system_link` 值域是**後端白名單**（login/register/logout），不接受任意 URL；
-  login/register 只在未登入時出現，register 另需 `allow_registration`，logout 反之。
-  **設計器預覽的 menu 連結留在預覽語境**（2026-08-06 起，commit `a0272748`）：
-  `portal_user['user_type'] == 'PREVIEW'` 時，node 連結組成
-  `/nocode/ir-designer/<目標頁sc>/preview?sub=&level=&group=`（沿用當前預覽身分），
-  system_link 一律不輸出（預覽沒有 portal session，登入／登出走不通）。
-  在此之前連結一律指向公開 portal，**未發布的子系統／頁面點下去必定 404**
-  ——症狀是「直接按預覽正常、從預覽的選單點過去 404」。正式 portal 行為不變。
-  site map 的 `folder` 節點型別已放行（不建 page layout、不可當根節點）。
-  設計器屬性面板已完備（已選項目樹的 ↑↓ 排序／→← 升降階／× 連 children 移除、
-  可加入的網頁清單、方向／間隔／懸停展開、選單來源與聯動參數名、七個色票、
-  框線寬度與圓角、底圖選取／上傳／預覽）。
-  尚未移植 v2 SITEMENU 的：橫式圖示位置、選單高度、懸停延遲
-  （BBN 待辦 **PF-19**，內含 v2 的值域／預設值、要改的檔案清單、驗收與留證方式；
-  用 `note_search("PF-19")` → `note_get` 取全文，**動工前先讀，不要自己猜規格**）。
+- **Page IR v3 menu widget**：完整欄位規格見 `docs/PAGE_IR_SPEC.md` §3.7
+  （自動模式在 `docs/SHARED_COMPONENTS_SPEC.md` §5）。三件最容易靜默失效的：
+  - **items 是完全自訂的樹**，不跟著 site map 的結構與順序走（早期版本相反）。
+    名稱與圖示仍即時取自 site map；節點被刪或停用時該項連同 children 整枝消失
+  - **底圖存 `platform_files.secure_code`，不是 `DcBackground.secure_code`**
+    （用 `/api/nocode-builder/backgrounds` 回應的 `platform_file_sc`）——
+    存錯的症狀是「選了底圖完全沒反應、也不報錯」
+  - 顏色一律 `^#[0-9a-fA-F]{6}$`，schema 與 renderer `_menu_style()` **兩道都要擋**
+    （值最後會進 inline style）
 - **Page IR v3 有三個版面引擎**（2026-08-05 起，定版 `docs/PAGE_IR_LAYOUT_ENGINES.md`）：
   `page.engine` = `flow`（預設，即原本的縱向流 + layout widget 等分）／
   `grid`（矩陣切格合併，欄寬 fr、列高 px）／`free`（12 欄 × `row_unit` 自由放置）。
@@ -1012,9 +898,7 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   存活 = (有存活 dc_site_map_nodes 指向 且 該節點的子系統存活)
       OR (有存活 dc_sub_system_pages 掛載 且 該子系統存活)
   ```
-  portal 頁**不一定掛在 site map 節點下**，可能只透過 `dc_sub_system_pages` 關聯
-  （`FORMTEST00000000000001`、`qiHMpMCul-1KGxhU4Q7Trd` 就是這種；
-  這兩個 sc 已隨 2026-08-03 的全面清除而不存在，例子留著是為了說明形態）。
+  portal 頁**不一定掛在 site map 節點下**，可能只透過 `dc_sub_system_pages` 關聯。
   **反向也成立**：只掛在 site map 節點、沒有 `dc_sub_system_pages` 的頁（每個子系統的
   welcome 就是），只查 `DcSubSystemPage` 一樣會誤判。`/api/nocode-builder/pages/<sc>`
   的 `sub_system_secure_code` 就犯過這個錯，害設計器的 menu 面板選不到任何節點
@@ -1029,8 +913,9 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   有掛載記錄但全部停用一律拒絕，走 site map 節點時可見性交給 `check_page_access`。
   凡是要判斷「這頁屬不屬於這個子系統」，
   一律用 `get_owner_sub_system_codes()`，不要自己查單一張表。
-  2026-07-31 清孤兒時只看 site map，把這兩個 published 驗收頁誤刪，
-  其中前者是 `test_e2e_portal_cancel.py` 的依賴，**刪掉會讓 E2E 靜默 skip 而不是報錯**。
+  2026-07-31 清孤兒時只看 site map，就這樣誤刪了兩個 published 驗收頁，
+  其中一個是 `test_e2e_portal_cancel.py` 寫死依賴的
+  `FORMTEST00000000000001`，**刪掉會讓 E2E 靜默 skip 而不是報錯**（至今未恢復）。
   此判定的**唯一實作**是
   `modules/nocode_builder/services/page_ownership_service.py`
   （`is_page_reachable()` / `get_owner_sub_system_codes()`），
@@ -1048,211 +933,47 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 - 權限模型與判定鏈：`docs/PORTAL_ACCOUNT_SPEC.md`；
   完整交接與踩坑清單：`docs/handoff_nocode_n1_n5.md`
 - v2 `layout_json` 已退役，`/p/` 遇到會回 410；設計器只認 `ir_version: 3`
-- **頁面版面樣板庫（PF-24~28、PF-32，2026-08-04 起）**：`dc_page_templates` 有三種
-  `scope`——`system`（平台內建，`org_secure_code` 與 `sub_system_secure_code`
-  **必須為 NULL**，DB 有 CHECK 約束；**只能由種子腳本建立，API 一律 403**）／
-  `org`（企業自建）／`sub_system`（子系統私有）。
+- **頁面版面樣板庫（PF-24~28、PF-32）＝複製語意**，規格 `docs/PAGE_TEMPLATE_SPEC.md`。
+  只有三件事在動工前非知道不可：
+  - **同子系統套用完全不淨化**（menu 的 `items[].node`、`shared_ref`、access_matrix
+    原封不動保留）。「另存為樣板」存的是**當下那頁的完整 IR**，內建樣板的「零綁定」
+    是那六筆種子資料的內容、**不是會傳染的屬性**。跨子系統才淨化，唯一實作是
+    `page_template_service.sanitize_template_ir()`，**禁止各處自行清理引用**
+  - `instantiate` **只建 `DcPageLayout`**，site map 節點與子系統掛載是前端
+    `workspace.js::finishPageCreation()` 接手做的
+  - `scope='system'` 只能由 `scripts/seed_system_page_templates.py` 建立，API 一律 403
 
-  | 端點 | 用途 |
-  |---|---|
-  | `GET /api/nocode-builder/templates?sub_system=<sc>[&include_hidden=1]` | 三段 union：內建 + 本企業 + 該子系統私有 |
-  | `POST /api/nocode-builder/templates` | 另存為樣板（`scope='system'` → 403） |
-  | `POST /api/nocode-builder/templates/<sc>/instantiate` | 以樣板建頁，回 `{page, report}` |
-  | `POST /api/nocode-builder/sub-systems/<ss>/template-hides` | 隱藏內建樣板（冪等，非 system → 400） |
-  | `DELETE /api/nocode-builder/sub-systems/<ss>/template-hides/<tpl>` | 取消隱藏（冪等） |
-
-  **`scope='sub_system'` 的樣板只有來源子系統看得到**（`list_templates` 第三段以
-  `sub_system_secure_code` 過濾）。所以**跨子系統套用在 UI 上唯一走得到的路徑是
-  `scope='org'` 樣板**——要重現淨化行為時別選 sub_system 的（會看不到），
-  也別選內建的（零綁定、淨化是 no-op）。
-
-  **隱藏是「可見性」不是「授權邊界」**（PF-32）：`dc_sub_system_template_hides`
-  記錄 per 子系統的隱藏名單，只作用於 `scope='system'`。
-  `list_templates` 預設扣掉、`include_hidden=1` 保留並標 `is_hidden`。
-  `instantiate` **刻意不檢查隱藏**（UI 觸發不到，且隱藏不是安全邊界）。
-  **取消隱藏一律硬刪列**（`db.session.delete`），不可軟刪
-  ——unique `(sub_system_secure_code, template_secure_code)` 會擋住之後重新隱藏。
-  隱藏**不得**用「軟刪 system 樣板」實作：種子腳本會把 `is_deleted` 設回 False 復活它。
-
-  `instantiate` **只建 `DcPageLayout`**，不建 site map 節點、不做子系統掛載
-  ——那是前端 `workspace.js` 的 `finishPageCreation()` 接手做的。
-  它也會把 IR 的 `page.title_i18n` 覆寫成新頁名稱（不覆寫的話 portal 上會顯示樣板名）。
-
-  **同子系統套用完全不淨化**（`sanitized = (not source) or (source != target)`，
-  `page_template_service.py:18` 一開頭就 `return`）——所以 menu 的 `items[].node`、
-  `shared_ref`、access_matrix **原封不動保留**，`create_template` 也是原樣存
-  `layout_json` 不做任何處理。「另存為樣板」存的是**當下那頁的完整 IR**，
-  不是內建樣板的副本；內建樣板的「零綁定」是那六筆種子資料的內容，
-  **不是會傳染的屬性**（2026-08-06 API 實測確認）。
-  要讓新頁一建出來就有選單，正解是先設好一頁（menu 引用共用選單）再另存為
-  子系統私有樣板；既有頁面沒有批次套用的方法，見待辦 **PF-47**。
-
-  **跨子系統套用一定會淨化**（判定依據是樣板的 `source_sub_system_sc`；
-  為 NULL 一律走淨化路徑）。唯一實作是
-  `modules/nocode_builder/services/page_template_service.py::sanitize_template_ir()`，
-  純函式、不碰 DB，**禁止各處自行清理引用**。規則的分水嶺是 schema 能不能省略：
-  menu 的 `items[].node` 可整枝移除；`binding.resource` 是必填 → 整個 widget 移除
-  （並同步清 canvas `widget_ids`／layout `children`／`row_link_ref`）；
-  權限碼類（`action_ref`／`access_matrix`）**保留並列進 `report.warnings`**
-  ——系統本來就 fail-closed，擅自清掉反而讓使用者以為設定過了。
-  `report` 內是**機器可讀碼**（`binding_unavailable` 等），中文對照在前端
-  `page-template.js` 的 `describeReport()`，**後端不要翻譯**。
-
-  內建樣板用 `scripts/seed_system_page_templates.py --apply` 種入（冪等，
-  固定 secure_code `sys_tpl_*` 六個：`top_left_main` / `top_main` / `left_main` /
-  `single` / `dashboard` / `free_blank`）。它們**一律零綁定**（空 menu + 佔位 text）
-  ——會被所有企業的所有子系統套用，任何綁定必然是錯的。
-  `--purge-legacy` 可軟刪沒有 `ir_version` 的 v2 舊樣板（預設不做）。
-
-  `thumbnail_svg` **留空即可**，前端 `templateThumbnailSrc()` 會從 IR 即時生成，
-  不要在 Python 裡重寫 SVG 產生器。該欄位是可經 API 寫入的自由文字，
-  所以**一律用 `<img src="data:image/svg+xml,...">` 呈現、禁止 `x-html`**
-  （img 內的 SVG 不執行腳本），後端另有 `_validate_thumbnail_svg()` 擋
-  `<script>`／`on*=`／`xlink:href`／超長。
-
-  **IR 的 `zone.row` / `zone.col` 是 1-based**（schema `minimum: 1`），
-  換算成陣列索引要減 1。`gridSvg` 犯過這個錯，所有 zone 疊在同一格、
-  縮圖只剩右下一塊（2026-08-04 commit `324842d8` 修）。
-
-- **子系統層級共用元件（2026-08-06 起，取代 PF-29 的「共用選單」）**：
-  樣板是**複製語意**，共用元件是**引用語意**——改一次，所有引用它的頁面同步生效。
-  定版規格 `docs/SHARED_COMPONENTS_SPEC.md`。
-
-  **舊的 `dc_shared_menus` 表與 `/shared-menus` 端點已停用**（表保留為備份、
-  程式不再讀寫，13 筆資料已由 `scripts/migrations/094_shared_components.sql`
-  遷入新表）。看到舊名一律視為過時。
-
-  `dc_shared_components`（子系統層級）：`name`（同子系統內唯一）、
-  `widget_type`、`widget_json`（**完整 widget 組態，不含 id**）。
+- **子系統層級共用元件＝引用語意**（2026-08-06 起，取代 PF-29 的「共用選單」）——
+  改一次，所有引用它的頁面同步生效。**定版規格 `docs/SHARED_COMPONENTS_SPEC.md`
+  （資料模型、API、schema、設計器 UI、menu 自動模式全在裡面，動工前整份讀完）**。
   頁面端只寫 `{"type":"menu","id":"menu-1","shared_ref":"<sc>"}`。
-
-  | 端點（全部 `@permission_required('nocode_builder.manage')`） | 用途 |
-  |---|---|
-  | `GET /api/nocode-builder/sub-systems/<ss>/shared-components?widget_type=menu` | 列出（型別選填） |
-  | `POST` 同上路徑 | 建立（`widget_type` 由 `widget_json.type` 推導；名稱重複 → 409） |
-  | `PUT/DELETE .../shared-components/<sc>` | 更新／刪除（被引用 → 409 並回 `usages`） |
-
-  **完全共用（2026-08-06 使用者裁決，推翻 PF-29 的合併優先序）**：
-  引用時**一律取共用元件的值，頁面端不覆寫任何欄位**。
-  同一份選單要 A 頁橫式、B 頁縱式 → **建兩個共用元件**（menu-1 橫、menu-2 直）。
-
-  **唯一例外是 `access_matrix`，語意是交集**：共用元件與頁面 widget 兩份
-  **都要通過**才渲染（`renderer._widget_read_allowed` 兩份都判）。
-  它是授權邊界不是外觀，取其一會讓某邊設定靜默失效。
-
-  **展開只在 `renderer._prepare_widget` 開頭一處做**（dispatch 之前，
-  所有 widget 型別共用），透過
-  `registry.register_shared_component_resolver(world, fn)`（portal 實作在
-  `services/pageir_shared_component.py`，**platform world 不註冊是預期狀態**）。
-  三個渲染入口（`portal_public.py`、平台 `/p/`、設計器預覽）都吃得到，
-  **不要在入口各判一次**——這專案已因「三處各自查」在正式 portal 上全數 404 過。
-  resolver 驗 ctx 的 `sub_system_sc` **與 `org_secure_code`**，
-  所以**每個 `set_render_context('portal', ...)` 呼叫點都必須傳 `org_secure_code`**
-  （目前 9 處都有），漏傳的路徑上共用元件會整批消失。
-  解析不到一律 **fail-closed：整個 widget 不渲染**（不是空選單），並記 warning。
-
-  schema 八個 widget 型別**全部**是 `required: ["id","type"]` 加
-  `anyOf: [{required:[<原必填>]}, {required:["shared_ref"]}]`；
-  `validator` 對任何有 `shared_ref` 的 widget 跳過欄位語意檢查。
-
-  **跨子系統套用樣板時清掉所有型別的 `shared_ref`**（report 碼
-  `shared_component_refs`）：menu 清掉後補 `items: []`（少補的話淨化產物過不了
-  `validate_page_ir`，整個 instantiate 會 500），其他型別因缺必填欄位
-  **整個 widget 移除**（reason `shared_component_unavailable`）。
-
-  **設計器 UI（PF-53 批次 3，2026-08-06 起泛化到 `menu` / `table` / `detail` /
-  `form` / `actions` / `text` / `layout` 七型別；`master_detail` 後端支援但
-  設計器未開放）**：共用元件區塊是
-  `_ir_designer_shared_component.html` 的 `render()` macro，在
-  `_ir_designer_props.html` 對 `master_detail` 以外的型別統一呼叫一次——
-  **要改這組 UI 只改 macro，不要在各型別面板各寫一份**。
-  未引用時是引用下拉（依 `widget.type` 過濾）＋[另存為共用元件]；
-  引用中是名稱＋[編輯共用元件]／[解除引用]（共用元件不存在時兩鈕 disabled）。
-
-  **引用中的 widget 在頁面 IR 只留 `id` / `type` / `shared_ref` / `access_matrix`**，
-  其餘設定鍵由 `ir-designer.js::stripLocalConfig` 剝除。因此
-  `normalizeWidgets` / `normalizeWidgetMasks` 兩個補預設值的函式都必須
-  `if (widget.shared_ref) continue;`——漏了就會把 `items`、`title_i18n`
-  這類不會生效的設定寫回頁面。同理 `localSaveErrors` 也整個略過引用中的 widget。
-
-  **[編輯共用元件] 不是 modal，是把右側屬性面板就地切換成編輯
-  `sharedComponentEditor.draft`**（`get selectedWidget()` 在編輯模式回 draft、
-  `markDirty()` 改標 `editor.dirty`、`selectWidget()` 與 `addWidget()` 一律 return）。
-  這樣七個型別的既有欄位標記完全複用，不必複製第二份屬性面板。
-  代價是**共用 layout 的 children 無法在編輯模式增修**（左側樹顯示的是頁面不是 draft），
-  要改內容得先解除引用、在頁面上編好再另存為新的共用元件。
-
-  建立／更新共用元件的 `widget_json` 一律走 `buildSharedWidgetJson()`：
-  剝掉 `id` / `shared_ref` / `access_matrix`，table 另剝
-  `row_actions_ref` / `row_link_ref`（指向同頁其他 widget，在共用元件的
-  單 widget 假頁面裡必然 `dangling_ref` → 後端 400）。
-  `access_matrix` 留在頁面端、引用中仍可編輯（§交集語意）；
-  解除引用時以頁面端那份為準，頁面端沒有才取共用元件的。
-
-  **寫入端要正規化 `style.background_file`**：UI 上「不使用底圖」是空字串，
-  但 schema 的 pattern 不收空字串。頁面存檔走
-  `ir-designer.js::normalizeMenuOnSave`，共用元件走
-  `shared_component_api._normalize_widget_json`——**兩條路都要有**，
-  漏掉的那條會讓使用者一編輯舊資料就 400。
-
-- **menu 自動模式（2026-08-06 起）**：`source_mode: "manual" | "auto"`
-  （預設 manual）＋ `include_system_links`（預設 false）。
-
-  `auto` 時**忽略 items**，由
-  `pageir_portal_menu._build_auto_items()` 依 site map 即時生成同形狀的 items 樹
-  （`parent_secure_code` 組樹、`display_order` 排序、深度上限 5），
-  再交給既有 `_build_item_entry` ——**權限過濾、預覽語境連結、nav 聯動全部沿用，
-  不要另寫一套**，`_build_auto_items` 內**不做**任何 `check_page_access`。
-  renderer 不查 site map，只把 `menu_source_mode` / `menu_include_system_links`
-  放進 `menu_ctx`。
-
-  schema 為此在 `menu_widget` 的 `anyOf` 加第三支
-  `{"required":["source_mode"],"properties":{"source_mode":{"const":"auto"}}}`
-  ——只有 auto 免寫 items。前端 `localSaveErrors` 的
-  「選單尚未選擇任何網頁」也要排除 auto，否則自動模式一律存不了。
+  留在本檔的是四條「猜不到且錯了會靜默失效」：
+  - **完全共用**：引用時一律取共用元件的值，**頁面端不覆寫任何欄位**。
+    同一份選單要 A 頁橫式、B 頁縱式 → 建兩個共用元件
+  - **唯一例外 `access_matrix` 是交集**：共用元件與頁面 widget 兩份都要通過才渲染。
+    它是授權邊界不是外觀，取其一會讓某邊設定靜默失效
+  - **展開只在 `renderer._prepare_widget` 開頭一處做**（dispatch 之前，所有型別共用），
+    三個渲染入口都吃得到，**不要在入口各判一次**——這專案已因「三處各自查」
+    在正式 portal 上全數 404 過。resolver 驗 ctx 的 `sub_system_sc` **與
+    `org_secure_code`**，所以**每個 `set_render_context('portal', ...)` 呼叫點
+    都必須傳 `org_secure_code`**，漏傳的路徑上共用元件會整批消失
+  - 解析不到一律 **fail-closed：整個 widget 不渲染**（不是空選單），並記 warning
+  - （舊的 `dc_shared_menus` 表與 `/shared-menus` 端點已停用、程式無殘留，
+    看到舊名一律視為過時）
 
 - **grid／free 引擎下，widget 只加進 `page.widgets` 不會顯示**，
   必須同時放進某個 `canvas.zones[].widget_ids`（free 是 `frames[]`）。
   `_canvas_widgets` 對未放置者靜默略過（只記 info log），
   症狀是「存了、DB 裡也有、畫面就是沒有」。用 API 直接改 IR 時最容易踩到。
 
-### NoCode Builder API 操作備忘（2026-08-03 以 API 全程建出一個子系統後實測）
+### 用 API 操作 NoCode 子系統
 
-以下每一條都是**靠試誤才弄對**的，照抄可省一輪除錯。
-完整可執行範例：`scripts/examples/provision_relief_donation_demo.py`（建置，九步）
-與 `verify_relief_donation_demo.py`（端對端驗收，11 項）。
-
-- **API 前綴是 `/api/nocode-builder`**（不是 `/api/nocode`）
-- **部分 API 未豁免 CSRF**（例如建表 `POST /sub-systems/<sc>/tables`），
-  token 只能從登入後頁面的 meta 取，登入回應不含
-- `POST /sub-systems` 回傳的是 **`sub_system_secure_code` / `portal_path_id`**，
-  沒有 `secure_code` 這個 key
-- **子系統 `status` 不是 `published`，公開 portal 全部 404**
-  → `POST /projects/<sc>/publish`（連動啟用選單與 portal 路徑）
-- 頁面同樣要發布：`PATCH /pages/<sc>/publish`
-- portal rows API 回應是**頂層 `rows`**，不是 `data.rows`
-- master-detail submit 成功回 **201**（不是 200）
-- `portal_settings`（`allow_registration` / `allow_anonymous`）**沒有 API**，
-  只能直接寫子系統的 `portal.db`
-- 建表 API 一律自動加 `id` / `created_at` / `portal_user_ref`，
-  自行宣告這三欄會被擋成 `reserved_column_name`
-- `POST /views` 的 `data_source` 只收 `org` / `conglomerate`；
-  portal 業務表要用 `POST /sub-systems/<sc>/resolve-view`（會自動讀表結構生成 columns_config）
-- **`admin-ethanyu@beluga.com` 的密碼 `ApiKeyTest2026` 已失效**（2026-08-03 實測 401，
-  不要再猜密碼會鎖定）。自動化一律走 quick-login：
-
-```bash
-BASE=http://192.168.0.16:7000/beakplatform
-# ORG_ADMIN admin-ethanyu@beluga.com
-curl -s -c cj.txt -X POST "$BASE/dev/quick-login" \
-  -H 'Content-Type: application/json' -d '{"user_id":"jIYEQ-_lZMZNBkVy-hijal"}'
-TOKEN=$(curl -s -b cj.txt "$BASE/dashboard" | grep -o 'csrf-token" content="[^"]*' | cut -d'"' -f3)
-```
-
-**NoCode 沒有聚合能力**：`DcCrudView` 只 SELECT 單一實體表、無 GROUP BY／SUM，
-且 `SqliteCrudService` 只認 `sqlite_master.type='table'`，**SQLite VIEW 綁不上去**。
-要做統計只能「實體彙總表 + SQLite trigger」，這步必然落在 SQL 層。
-範例見 `docs/examples/RELIEF_DONATION_DEMO.md` 第 2 節。
+前綴是 `/api/nocode-builder`（不是 `/api/nocode`）。**11 條實測陷阱
+（CSRF 未豁免、發布狀態、回應 key、保留欄名、聚合能力缺口等）在
+`docs/codex_spec/portal.md` 尾段「以 API 操作子系統時的實測陷阱」**，
+動手前整段讀完可省一輪除錯。
+可執行範例：`scripts/examples/provision_relief_donation_demo.py`（建置）
+與 `verify_relief_donation_demo.py`（端對端驗收）。
 
 ### 跑測試一律用 `scripts/run_tests.sh`（2026-08-05 起，強制）
 
@@ -1289,13 +1010,6 @@ sudo -u postgres createdb -O beakplatform beakplatform_test
 **測試庫可以一直重複使用、不必每次重建**——每個 app fixture 都是
 `create_all()` 開場、`drop_all()` 收尾。反過來說**不要拿它存任何想留的東西**。
 
-**`tests/test_e2e_portal_cancel.py` 需要 systemd 服務實際在跑**：
-```bash
-sudo systemctl restart beakplatform-dev.service && systemctl is-active beakplatform-dev.service
-bash scripts/run_tests.sh tests/test_e2e_portal_cancel.py -q
-```
-服務沒起來它會 skip（不是 fail），所以看到 skip 先確認服務狀態再下結論。
-
 **跑出基準以外的失敗時，歸因順序**（照這個順序查，不要跳）：
 1. 先看是不是**測試資料殘留**——`bash scripts/run_tests.sh -q` 重跑一次，
    結果不同就是殘留或測試間互相污染，不是功能回歸
@@ -1303,30 +1017,19 @@ bash scripts/run_tests.sh tests/test_e2e_portal_cancel.py -q
    這類**環境訊息**（前者是測試庫缺 seed，見 PF-34）
 3. 都不是才當作功能回歸，用 `git stash` 比對改動前後
 
-**基準（2026-08-05，commit `0e1e1157`，測試庫上跑完整 `tests/`）：
-`382 passed, 1 failed, 1 skipped`（約 4 分鐘）。** 以此比對是否退步；
-數字對不上時先看下面的歸因順序，不要直接假設是自己改壞的。
+**基準不寫死數字**（測試會持續新增，寫死的通過數必然腐爛而誤導）。
+判斷有無退步的做法：**動工前先跑一次完整 `tests/` 記下當時的數字**，改完再跑一次比對。
+完整跑約 4 分鐘。以下兩個非綠是**長期已知、成因明確**，不列入退步：
 
-那 **1 failed 是已知且成因明確**（不是「不明原因，別管它」）：
-`test_auth_interceptor.py::TestAuthDecorators::test_admin_required_for_admin`
-拿到 403 而非 200，因為測試庫是 `db.create_all()` 建的空表、**沒有 RBAC seed**
-（log 會印 `Unknown permission code: user:read`）。
-要修就補 permission → role → `user_role_assignments` 整條鏈，
-權威清單在 `scripts/migrations/075_seed_resource_crud_permissions.py`（BBN 待辦 PF-34）。
-1 skipped 是 `test_e2e_portal_cancel.py`（需要實跑服務）。
+| 項目 | 狀態 | 成因 |
+|---|---|---|
+| `test_auth_interceptor.py::TestAuthDecorators::test_admin_required_for_admin` | failed | 測試庫是 `db.create_all()` 建的空表、**沒有 RBAC seed**（log 印 `Unknown permission code: user:read`），拿到 403 而非 200。要修就補 permission → role → `user_role_assignments` 整條鏈，權威清單在 `scripts/migrations/075_seed_resource_crud_permissions.py`（待辦 **PF-34**） |
+| `test_e2e_portal_cancel.py` | skipped | **永久 skip，重啟服務也救不回來**。它寫死 `PAGE_SC = "FORMTEST00000000000001"`，該驗收頁 2026-08-03 隨全面清除消失，測試在 line 87 就 skip。它另外掛 `pytest.mark.e2e`、服務沒起來也會 skip（line 238），但目前**先卡在找不到頁面**。要恢復必須重建驗收頁並改寫死的常數 |
 
-**`tests/test_e2e_portal_cancel.py` 需要本機實跑服務**（掛 `pytest.mark.e2e`，
-服務沒起來會 skip）。要跑它就單獨跑：
-`bash scripts/run_tests.sh tests/test_e2e_portal_cancel.py -q`
-
-#### 歷史註記：別再相信「13 個 error 是 SQLite JSONB 問題，不要修」
-
-那句話只對**沒有** `DATABASE_URL` 時（走 SQLite in-memory）成立。
-一旦 source 過 .env，錯誤集合完全不同（撞開發庫的殘留 + drop_all 失敗），
-卻長期被歸進同一句「已知問題」而沒人再看。
-改用測試庫後，先前被判定為「既有環境問題、12 個 error」的
-`tests/test_page_template_instantiate.py` 直接變成 **14 passed**。
-寫「已知問題不要修」時務必連**成因與判別方式**一起寫，否則它會保護錯的東西。
+寫「已知問題不要修」時務必連**成因與判別方式**一起寫，否則它會保護錯的東西——
+先前那句「13 個 error 是 SQLite JSONB 問題，不要修」只在無 `DATABASE_URL` 時成立，
+卻長期覆蓋掉「撞開發庫殘留」這組完全不同的錯誤，改用測試庫後其中
+`tests/test_page_template_instantiate.py` 直接變成 14 passed。
 
 ### form_workflow 發行（publish）陷阱
 - `POST /api/mappings/<sc>/publish` 以表單/流程模板的 **version+revision** 判斷有無變更；
@@ -1397,10 +1100,10 @@ cd backend && flask run --host=127.0.0.1 --port=7000
 ```
 - 對外經 nginx `192.168.0.16:7000/beakplatform` 反代，flask 只綁 127.0.0.1
 
-### 檔案輸出
-- **輸出目錄**: `/mnt/smb`（SMB 共享）
-- Windows 路徑: `\\192.168.0.16\smb`
-
 ---
 
-*最後更新: 2026-08-05（定版 Codex-first 開發模式、待辦改指 BBN 白板）*
+*最後更新: 2026-08-06（A：清除已失效/自我矛盾條目——失效密碼、e2e skip 成因、
+會腐爛的計數與測試基準、與全域 CLAUDE.md 重複的段落；
+B：樣板庫→`docs/PAGE_TEMPLATE_SPEC.md`、menu widget→`docs/PAGE_IR_SPEC.md` §3.7、
+API 陷阱→`docs/codex_spec/portal.md`、iptables→全域 network_architecture.md，
+共用元件段收斂為指針，VERIFY 三條合併）*

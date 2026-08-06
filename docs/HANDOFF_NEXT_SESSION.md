@@ -25,13 +25,9 @@ MCP 工具 `mcp__beak_broodnest__note_get(atom_id=<編號>)`。本檔相關原�
 - **#4609** F12 除錯標準 SOP
 - **#4607** BeakDevF12 專案（已 DEPRECATED，勿照做）
 
-自動化登入範例（curl，保留供後續 E2E 使用）：
-```bash
-BASE=http://192.168.0.16:7000/beakplatform
-curl -s -c cj.txt -X POST "$BASE/auth/login" -H 'Content-Type: application/json' \
-  -d '{"account":"admin-ethanyu@beluga.com","password":"ApiKeyTest2026"}'
-# 之後帶 -b cj.txt 打 API；表單版登入有三欄位防機器人機制，不要用
-```
+自動化登入：**此處原本的帳密範例（`admin-ethanyu@beluga.com` / `ApiKeyTest2026`）
+已於 2026-08-03 實測失效（401），照打會逼近帳號鎖定**。
+一律改走 `/dev/quick-login`，指令見 `CLAUDE.md` 的「開發測試登入」段。
 
 ## 待辦（依優先序）
 
