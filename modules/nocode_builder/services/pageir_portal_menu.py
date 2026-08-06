@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from flask import request, url_for
@@ -29,6 +30,8 @@ def _build_portal_menu(items: list[dict], ctx: dict) -> list[dict]:
         path_id = ctx.get("path_id")
         if not sub_system_sc or portal_user is None or not path_id:
             return []
+        if ctx.get("menu_source_mode") == "auto":
+            items = _build_auto_items(sub_system_sc, ctx)
 
         nodes = DcSiteMapNode.query.filter_by(
             sub_system_secure_code=sub_system_sc,
@@ -46,6 +49,42 @@ def _build_portal_menu(items: list[dict], ctx: dict) -> list[dict]:
     except Exception:
         logger.exception("Page IR portal menu provider failed")
         return []
+
+
+def _build_auto_items(sub_system_sc: str, ctx: dict) -> list[dict]:
+    nodes = DcSiteMapNode.query.filter_by(
+        sub_system_secure_code=sub_system_sc,
+        is_deleted=False,
+        is_active=True,
+    ).all()
+    children_by_parent: dict[str | None, list[object]] = {}
+    for node in nodes:
+        children_by_parent.setdefault(node.parent_secure_code, []).append(node)
+    for siblings in children_by_parent.values():
+        # created_at 是 NOT NULL，但 fallback 給 datetime.min 而不是 ""，
+        # 否則萬一有 None 就會拿 datetime 跟 str 比較而 TypeError。
+        siblings.sort(key=lambda node: (node.display_order or 0, node.created_at or datetime.min))
+
+    def build(parent_sc: str | None, depth: int) -> list[dict]:
+        if depth > 5:
+            return []
+        return [
+            {
+                "kind": "node",
+                "node": node.secure_code,
+                "children": build(node.secure_code, depth + 1),
+            }
+            for node in children_by_parent.get(parent_sc, [])
+        ]
+
+    items = build(None, 1)
+    if ctx.get("menu_include_system_links"):
+        items.extend([
+            {"kind": "system", "link": "login"},
+            {"kind": "system", "link": "register"},
+            {"kind": "system", "link": "logout"},
+        ])
+    return items
 
 
 def _build_item_entry(

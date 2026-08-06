@@ -340,6 +340,8 @@ def _prepare_menu(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     provider = get_menu_provider(world)
     menu_widget = widget
     raw_items = widget.get("items", [])
+    source_mode = menu_widget.get("source_mode") if menu_widget.get("source_mode") in {"manual", "auto"} else "manual"
+    include_system_links = bool(menu_widget.get("include_system_links"))
 
     orientation = menu_widget.get("orientation") if menu_widget.get("orientation") in {"vertical", "horizontal"} else "vertical"
     item_gap = _clamped_int(menu_widget.get("item_gap", 6), 0, 32, 6)
@@ -355,6 +357,8 @@ def _prepare_menu(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
                 "menu_nav_source": nav_source,
                 "menu_nav_key": nav_key,
                 "menu_nav_keys": _menu_nav_keys(widgets_by_id),
+                "menu_source_mode": source_mode,
+                "menu_include_system_links": include_system_links,
             }
             entries = provider(items, menu_ctx) or []
         except Exception:

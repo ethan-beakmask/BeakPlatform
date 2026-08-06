@@ -222,6 +222,8 @@ function irDesigner() {
                 }
             };
             normalizeItems(widget.items);
+            widget.source_mode = widget.source_mode === 'auto' ? 'auto' : 'manual';
+            widget.include_system_links = Boolean(widget.include_system_links);
             if (!widget.orientation) widget.orientation = 'vertical';
             if (!Number.isInteger(widget.item_gap)) widget.item_gap = 6;
             if (widget.hover_expand === undefined) widget.hover_expand = true;
@@ -1060,6 +1062,8 @@ function irDesigner() {
                     type,
                     title_i18n: { 'zh-TW': tr('選單'), en: '' },
                     items: [],
+                    source_mode: 'manual',
+                    include_system_links: false,
                     orientation: 'vertical',
                     item_gap: 6,
                     hover_expand: true,
@@ -2046,7 +2050,7 @@ function irDesigner() {
 
         menuAppearanceConfig(widget) {
             const config = {};
-            for (const key of ['orientation', 'item_gap', 'hover_expand', 'nav_source', 'nav_key']) {
+            for (const key of ['source_mode', 'include_system_links', 'orientation', 'item_gap', 'hover_expand', 'nav_source', 'nav_key']) {
                 if (widget && widget[key] !== undefined) config[key] = clone(widget[key]);
             }
             if (widget && widget.style && typeof widget.style === 'object') {
@@ -2334,7 +2338,7 @@ function irDesigner() {
             }
             (widgets || []).forEach((widget, index) => {
                 const widgetPath = `${path}[${index}]`;
-                if (widget.type === 'menu' && !widget.shared_ref && this.menuItemCount(widget) === 0) {
+                if (widget.type === 'menu' && !widget.shared_ref && widget.source_mode !== 'auto' && this.menuItemCount(widget) === 0) {
                     errors.push({
                         path: widgetPath,
                         widget_id: widget.id,

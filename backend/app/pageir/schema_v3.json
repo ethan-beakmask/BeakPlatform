@@ -743,7 +743,18 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "type"],
-      "anyOf": [{"required": ["items"]}, {"required": ["shared_ref"]}],
+      "anyOf": [
+        {"required": ["items"]},
+        {"required": ["shared_ref"]},
+        {
+          "required": ["source_mode"],
+          "properties": {
+            "source_mode": {
+              "const": "auto"
+            }
+          }
+        }
+      ],
       "properties": {
         "id": {
           "$ref": "#/$defs/slug"
@@ -760,6 +771,12 @@
           "items": {
             "$ref": "#/$defs/menu_item"
           }
+        },
+        "source_mode": {
+          "enum": ["manual", "auto"]
+        },
+        "include_system_links": {
+          "type": "boolean"
         },
         "shared_ref": {
           "$ref": "#/$defs/shared_component_ref"

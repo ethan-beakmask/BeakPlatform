@@ -45,6 +45,19 @@
         </div>
 
         <div class="ird-field" x-show="!selectedWidget.shared_ref">
+            <label>{{ _('選單資料來源') }}</label>
+            <select x-model="selectedWidget.source_mode" @change="markDirty()">
+                <option value="manual">{{ _('手動挑選') }}</option>
+                <option value="auto">{{ _('依 Site Map 自動產生') }}</option>
+            </select>
+        </div>
+
+        <label class="ird-inline-check" x-show="!selectedWidget.shared_ref && selectedWidget.source_mode === 'auto'">
+            <input type="checkbox" x-model="selectedWidget.include_system_links" @change="markDirty()">
+            <span>{{ _('包含系統連結（登入／註冊／登出）') }}</span>
+        </label>
+
+        <div class="ird-field" x-show="!selectedWidget.shared_ref && selectedWidget.source_mode !== 'auto'">
             <label>{{ _('已選項目') }}</label>
             <div class="ird-menu-list">
                 <template x-for="row in selectedMenuRows(selectedWidget)" :key="row.key">
@@ -65,7 +78,7 @@
             <p class="ird-hint">{{ _('權限不通過的網頁在 portal 上會自動隱藏。') }}</p>
         </div>
 
-        <div class="ird-field" x-show="!selectedWidget.shared_ref">
+        <div class="ird-field" x-show="!selectedWidget.shared_ref && selectedWidget.source_mode !== 'auto'">
             <label>{{ _('可加入的網頁') }}</label>
             <div class="ird-menu-list">
                 <template x-for="node in availableMenuNodes(selectedWidget)" :key="node.secure_code">
@@ -82,7 +95,7 @@
             </div>
         </div>
 
-        <div class="ird-field" x-show="!selectedWidget.shared_ref">
+        <div class="ird-field" x-show="!selectedWidget.shared_ref && selectedWidget.source_mode !== 'auto'">
             <label>{{ _('系統連結') }}</label>
             <div class="ird-checks">
                 <template x-for="link in menuSystemLinks" :key="link.link">
@@ -208,6 +221,17 @@
                     </div>
                     <div class="ird-issue-body">
                         <div class="ird-field">
+                            <label>{{ _('選單資料來源') }}</label>
+                            <select x-model="sharedComponentEditor.draft.source_mode" @change="menuMarkChanged(sharedComponentEditor.draft)">
+                                <option value="manual">{{ _('手動挑選') }}</option>
+                                <option value="auto">{{ _('依 Site Map 自動產生') }}</option>
+                            </select>
+                        </div>
+                        <label class="ird-inline-check" x-show="sharedComponentEditor.draft.source_mode === 'auto'">
+                            <input type="checkbox" x-model="sharedComponentEditor.draft.include_system_links" @change="menuMarkChanged(sharedComponentEditor.draft)">
+                            <span>{{ _('包含系統連結（登入／註冊／登出）') }}</span>
+                        </label>
+                        <div class="ird-field" x-show="sharedComponentEditor.draft.source_mode !== 'auto'">
                             <label>{{ _('已選項目') }}</label>
                             <div class="ird-menu-list">
                                 <template x-for="row in selectedMenuRows(sharedComponentEditor.draft)" :key="row.key">
@@ -225,7 +249,7 @@
                                 </template>
                             </div>
                         </div>
-                        <div class="ird-field">
+                        <div class="ird-field" x-show="sharedComponentEditor.draft.source_mode !== 'auto'">
                             <label>{{ _('可加入的網頁') }}</label>
                             <div class="ird-menu-list">
                                 <template x-for="node in availableMenuNodes(sharedComponentEditor.draft)" :key="node.secure_code">
@@ -237,7 +261,7 @@
                                 </template>
                             </div>
                         </div>
-                        <div class="ird-field">
+                        <div class="ird-field" x-show="sharedComponentEditor.draft.source_mode !== 'auto'">
                             <label>{{ _('系統連結') }}</label>
                             <div class="ird-checks">
                                 <template x-for="link in menuSystemLinks" :key="link.link">
