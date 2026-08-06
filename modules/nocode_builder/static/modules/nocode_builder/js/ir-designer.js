@@ -70,11 +70,11 @@ function irDesigner() {
             category: '常用',
             scope: 'sub_system',
         },
-        sharedMenus: [],
-        sharedMenusLoaded: false,
-        sharedMenusError: '',
-        sharedMenusScope: '',
-        sharedMenuEditor: {
+        sharedComponents: [],
+        sharedComponentsLoaded: false,
+        sharedComponentsError: '',
+        sharedComponentsScope: '',
+        sharedComponentEditor: {
             open: false,
             saving: false,
             error: '',
@@ -153,7 +153,7 @@ function irDesigner() {
             await Promise.all([this.loadPage(), this.loadSubSystems(), this.loadMeta(this.dataScope), this.loadFormMappings()]);
             await this.detectPortalScope();
             await this.ensurePortalOrg();
-            await this.loadSharedMenus();
+            await this.loadSharedComponents();
             this.syncCounters();
             this.initLayoutEngineState();
             await Alpine.nextTick();
@@ -409,7 +409,7 @@ function irDesigner() {
             this.resetSiteMap();
             await this.loadMeta(this.dataScope);
             await this.ensurePortalOrg();
-            await this.loadSharedMenus(true);
+            await this.loadSharedComponents(true);
             if (this.selectedWidget && this.selectedWidget.type === 'menu') {
                 await this.loadSiteMap();
             }
@@ -419,38 +419,38 @@ function irDesigner() {
             return this.dataScope || this.mountedSubSystem || '';
         },
 
-        canManageSharedMenus() {
+        canManageSharedComponents() {
             return !window.BkCaps || window.BkCaps.can('nocode_builder.manage');
         },
 
-        async loadSharedMenus(force = false) {
+        async loadSharedComponents(force = false) {
             const scope = this.siteMapScope();
-            this.sharedMenusError = '';
-            if (!scope || !window.BkSharedMenu) {
-                this.sharedMenus = [];
-                this.sharedMenusLoaded = false;
-                this.sharedMenusScope = '';
+            this.sharedComponentsError = '';
+            if (!scope || !window.BkSharedComponent) {
+                this.sharedComponents = [];
+                this.sharedComponentsLoaded = false;
+                this.sharedComponentsScope = '';
                 return;
             }
-            if (!force && this.sharedMenusLoaded && this.sharedMenusScope === scope) return;
+            if (!force && this.sharedComponentsLoaded && this.sharedComponentsScope === scope) return;
             try {
-                this.sharedMenus = await window.BkSharedMenu.list(scope) || [];
-                this.sharedMenusLoaded = true;
-                this.sharedMenusScope = scope;
+                this.sharedComponents = await window.BkSharedComponent.list(scope) || [];
+                this.sharedComponentsLoaded = true;
+                this.sharedComponentsScope = scope;
             } catch (err) {
-                this.sharedMenus = [];
-                this.sharedMenusLoaded = false;
-                this.sharedMenusScope = '';
-                this.sharedMenusError = err.message || tr('載入共用選單失敗');
+                this.sharedComponents = [];
+                this.sharedComponentsLoaded = false;
+                this.sharedComponentsScope = '';
+                this.sharedComponentsError = err.message || tr('載入共用選單失敗');
             }
         },
 
-        sharedMenuByRef(ref) {
-            return (this.sharedMenus || []).find((row) => row.secure_code === ref) || null;
+        sharedComponentByRef(ref) {
+            return (this.sharedComponents || []).find((row) => row.secure_code === ref) || null;
         },
 
-        selectedSharedMenuName(widget) {
-            const row = this.sharedMenuByRef(widget && widget.shared_ref);
+        selectedSharedComponentName(widget) {
+            const row = this.sharedComponentByRef(widget && widget.shared_ref);
             return row ? row.name : '';
         },
 
@@ -1590,7 +1590,7 @@ function irDesigner() {
                 this.loadMenuBackgrounds();
             }
             if (this.activeWidget && this.activeWidget.type === 'menu') {
-                this.loadSharedMenus();
+                this.loadSharedComponents();
             }
         },
 
@@ -1861,8 +1861,8 @@ function irDesigner() {
         },
 
         menuMarkChanged(widget) {
-            if (this.sharedMenuEditor.open && widget === this.sharedMenuEditor.draft) {
-                this.sharedMenuEditor.dirty = true;
+            if (this.sharedComponentEditor.open && widget === this.sharedComponentEditor.draft) {
+                this.sharedComponentEditor.dirty = true;
                 return;
             }
             this.markDirty();
@@ -2040,7 +2040,7 @@ function irDesigner() {
             return count;
         },
 
-        sharedMenuScope() {
+        sharedComponentScope() {
             return this.siteMapScope();
         },
 
@@ -2055,18 +2055,18 @@ function irDesigner() {
             return config;
         },
 
-        async applySharedMenuRef(widget, ref) {
-            if (!widget || !ref || !this.canManageSharedMenus()) return;
-            await this.loadSharedMenus();
-            if (!this.sharedMenuByRef(ref)) return;
+        async applySharedComponentRef(widget, ref) {
+            if (!widget || !ref || !this.canManageSharedComponents()) return;
+            await this.loadSharedComponents();
+            if (!this.sharedComponentByRef(ref)) return;
             widget.shared_ref = ref;
             widget.items = [];
             this.markDirty();
         },
 
-        async saveWidgetAsSharedMenu(widget) {
-            if (!widget || !this.canManageSharedMenus()) return;
-            const scope = this.sharedMenuScope();
+        async saveWidgetAsSharedComponent(widget) {
+            if (!widget || !this.canManageSharedComponents()) return;
+            const scope = this.sharedComponentScope();
             if (!scope) {
                 alert(tr('此頁尚未掛在子系統下，無法建立共用選單'));
                 return;
@@ -2074,12 +2074,15 @@ function irDesigner() {
             const name = (window.prompt(tr('共用選單名稱')) || '').trim();
             if (!name) return;
             try {
-                const created = await window.BkSharedMenu.create(scope, {
+                const created = await window.BkSharedComponent.create(scope, {
                     name,
-                    items: clone(widget.items || []),
-                    config: this.menuAppearanceConfig(widget),
+                    widget_json: {
+                        type: 'menu',
+                        items: clone(widget.items || []),
+                        ...this.menuAppearanceConfig(widget),
+                    },
                 });
-                await this.loadSharedMenus(true);
+                await this.loadSharedComponents(true);
                 widget.shared_ref = created.secure_code;
                 widget.items = [];
                 this.markDirty();
@@ -2088,38 +2091,41 @@ function irDesigner() {
             }
         },
 
-        unlinkSharedMenu(widget) {
-            if (!widget || !widget.shared_ref || !this.canManageSharedMenus()) return;
-            const row = this.sharedMenuByRef(widget.shared_ref);
-            widget.items = clone((row && row.items) || []);
+        unlinkSharedComponent(widget) {
+            if (!widget || !widget.shared_ref || !this.canManageSharedComponents()) return;
+            const row = this.sharedComponentByRef(widget.shared_ref);
+            const widgetJson = (row && row.widget_json) || {};
+            for (const [key, value] of Object.entries(clone(widgetJson))) {
+                if (key !== 'id') widget[key] = value;
+            }
             delete widget.shared_ref;
             this.normalizeMenuWidget(widget);
             this.markDirty();
         },
 
-        openSharedMenuEditor(widget) {
-            if (!widget || !widget.shared_ref || !this.canManageSharedMenus()) return;
-            const row = this.sharedMenuByRef(widget.shared_ref);
+        openSharedComponentEditor(widget) {
+            if (!widget || !widget.shared_ref || !this.canManageSharedComponents()) return;
+            const row = this.sharedComponentByRef(widget.shared_ref);
             if (!row) return;
-            this.sharedMenuEditor = {
+            const widgetJson = row.widget_json || {};
+            this.sharedComponentEditor = {
                 open: true,
                 saving: false,
                 error: '',
                 source: row,
                 draft: {
                     id: 'shared-menu-editor',
-                    type: 'menu',
-                    items: clone(row.items || []),
+                    ...clone(widgetJson),
                 },
                 dirty: false,
             };
-            this.normalizeMenuWidget(this.sharedMenuEditor.draft);
+            this.normalizeMenuWidget(this.sharedComponentEditor.draft);
             if (!this.siteMapLoaded && !this.siteMapError) this.loadSiteMap();
         },
 
-        closeSharedMenuEditor() {
-            if (this.sharedMenuEditor.saving) return;
-            this.sharedMenuEditor = {
+        closeSharedComponentEditor() {
+            if (this.sharedComponentEditor.saving) return;
+            this.sharedComponentEditor = {
                 open: false,
                 saving: false,
                 error: '',
@@ -2129,21 +2135,23 @@ function irDesigner() {
             };
         },
 
-        async saveSharedMenuEditor() {
-            const editor = this.sharedMenuEditor;
-            const scope = this.sharedMenuScope();
-            if (!editor.open || !editor.source || !editor.draft || !scope || !this.canManageSharedMenus()) return;
+        async saveSharedComponentEditor() {
+            const editor = this.sharedComponentEditor;
+            const scope = this.sharedComponentScope();
+            if (!editor.open || !editor.source || !editor.draft || !scope || !this.canManageSharedComponents()) return;
             editor.saving = true;
             editor.error = '';
             try {
-                await window.BkSharedMenu.update(scope, editor.source.secure_code, {
-                    items: clone(editor.draft.items || []),
+                const widgetJson = clone(editor.draft);
+                delete widgetJson.id;
+                await window.BkSharedComponent.update(scope, editor.source.secure_code, {
+                    widget_json: widgetJson,
                 });
-                await this.loadSharedMenus(true);
-                // closeSharedMenuEditor() 在 saving 為真時會直接 return，
+                await this.loadSharedComponents(true);
+                // closeSharedComponentEditor() 在 saving 為真時會直接 return，
                 // 所以要先放掉 saving 再關，否則存檔成功後 modal 停在原地不動。
                 editor.saving = false;
-                this.closeSharedMenuEditor();
+                this.closeSharedComponentEditor();
             } catch (err) {
                 editor.error = err.message || tr('儲存共用選單失敗');
             } finally {
@@ -2520,6 +2528,15 @@ function irDesigner() {
             }
             this.saveTemplateModal.saving = true;
             this.saveTemplateModal.error = '';
+            // 樣板存的是「當下畫面」的 IR，未存檔時會與頁面實際內容不一致。
+            // 這一步由程式代勞，不能指望使用者記得先按儲存。
+            if (this.dirty || this.snapshot() !== this.savedSnapshot) {
+                if (!(await this.savePage())) {
+                    // 儲存失敗時 savePage 已開啟問題清單，關掉本視窗才看得到。
+                    this.closeSaveTemplateModal();
+                    return;
+                }
+            }
             const layoutJson = this.buildDoc();
             const thumbnailSvg = window.BkPageTemplate.buildThumbnailSvg(layoutJson);
             try {

@@ -153,12 +153,15 @@
             if (item.reason === 'binding_unavailable') {
                 const type = removedType[item.type] || item.type || tr('元件');
                 lines.push(`${type}${item.id ? ` ${item.id} ` : ' '}${tr('因資料來源不屬於此子系統而移除')}`);
+            } else if (item.reason === 'shared_component_unavailable') {
+                const type = removedType[item.type] || item.type || tr('元件');
+                lines.push(`${type}${item.id ? ` ${item.id} ` : ' '}${tr('因共用元件屬於其他子系統而移除')}`);
             }
         }
         const cleared = (report && report.cleared) || {};
         const clearedMap = [
             ['menu_nodes', tr('已移除 {count} 個選單項目（指向其他子系統的網頁）')],
-            ['shared_menu_refs', tr('已解除 {count} 個共用選單引用（屬於其他子系統）')],
+            ['shared_component_refs', tr('已解除 {count} 個共用元件引用（屬於其他子系統）')],
             ['menu_nav_sources', tr('已取消 {count} 個選單的聯動設定（來源選單項目已不存在）')],
             ['background_files', tr('已清除 {count} 張選單底圖（來自其他企業）')],
             ['mapping_refs', tr('已清除 {count} 個表單流程綁定')],

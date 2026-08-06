@@ -5,7 +5,7 @@ from .crud_view import DcCrudView
 from .page_layout import DcPageLayout
 from .page_template import DcPageTemplate
 from .page_template_hide import DcSubSystemTemplateHide
-from .shared_menu import DcSharedMenu
+from .shared_component import DcSharedComponent
 from .sub_system import DcSubSystem
 from .sub_system_page import DcSubSystemPage
 from .site_map_node import DcSiteMapNode
@@ -16,7 +16,7 @@ from .bridge_log import DcBridgeLog
 
 __all__ = [
     'DcCrudView', 'DcPageLayout', 'DcPageTemplate', 'DcSubSystemTemplateHide',
-    'DcSharedMenu',
+    'DcSharedComponent',
     'DcSubSystem',
     'DcSubSystemPage', 'DcSiteMapNode', 'DcSiteMapPermission',
     'DcPermissionPolicyGroup', 'DcPermissionPolicyRule', 'DcBackground',

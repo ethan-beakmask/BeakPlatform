@@ -17,7 +17,7 @@ from app.pageir.registry import (
     get_menu_provider,
     get_portal_action,
     get_resource,
-    get_shared_menu_resolver,
+    get_shared_component_resolver,
 )
 from app.pageir.validator import validate_page_ir
 
@@ -227,6 +227,35 @@ def _format_fr(value: float) -> str:
 
 
 def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict], *, responsive: bool = False) -> dict | None:
+    ctx = get_render_context()
+    shared_ref = widget.get("shared_ref")
+    if shared_ref:
+        world = ctx.get("world", "platform")
+        resolver = get_shared_component_resolver(world)
+        resolved = None
+        if resolver is not None:
+            try:
+                resolved = resolver(shared_ref, ctx)
+            except Exception:
+                logger.exception(
+                    "Page IR shared component resolver failed: widget=%s world=%s shared_ref=%s",
+                    widget.get("id"),
+                    world,
+                    shared_ref,
+                )
+        if not isinstance(resolved, dict) or not resolved.get("type"):
+            logger.warning(
+                "Page IR shared component unresolved: widget=%s world=%s shared_ref=%s",
+                widget.get("id"),
+                world,
+                shared_ref,
+            )
+            return None
+        page_matrix = widget.get("access_matrix")
+        widget = {**resolved, "id": widget["id"]}
+        if page_matrix:
+            widget["_page_access_matrix"] = page_matrix
+
     if not _widget_read_allowed(widget):
         return None
 
@@ -246,6 +275,8 @@ def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict], *, responsive:
     if widget.get("type") == "layout":
         return _prepare_layout(widget, widgets_by_id, responsive)
     prepared = handler(widget, widgets_by_id)
+    if prepared is None:
+        return None
     # master_detail 的 master 區塊也是 .pir-detail，同樣要吃 720px 塌一欄的規則
     if prepared.get("type") in {"detail", "master_detail"}:
         prepared["responsive"] = responsive
@@ -253,25 +284,29 @@ def _prepare_widget(widget: dict, widgets_by_id: dict[str, dict], *, responsive:
 
 
 def _widget_read_allowed(widget: dict) -> bool:
-    matrix = widget.get("access_matrix")
+    matrices = [widget.get("access_matrix"), widget.get("_page_access_matrix")]
     ctx = get_render_context()
     world = ctx.get("world", "platform")
     if world == "platform":
         return True
-    if not matrix:
+    matrices = [matrix for matrix in matrices if matrix]
+    if not matrices:
         return True
     evaluator = get_access_evaluator(world)
     if evaluator is None:
         return False
-    try:
-        return bool(evaluator(matrix, "read", ctx))
-    except Exception:
-        logger.exception(
-            "Page IR widget access evaluator failed: widget=%s world=%s",
-            widget.get("id"),
-            world,
-        )
-        return False
+    for matrix in matrices:
+        try:
+            if not bool(evaluator(matrix, "read", ctx)):
+                return False
+        except Exception:
+            logger.exception(
+                "Page IR widget access evaluator failed: widget=%s world=%s",
+                widget.get("id"),
+                world,
+            )
+            return False
+    return True
 
 
 def _prepare_layout(widget: dict, widgets_by_id: dict[str, dict], responsive: bool) -> dict:
@@ -305,35 +340,6 @@ def _prepare_menu(widget: dict, widgets_by_id: dict[str, dict]) -> dict:
     provider = get_menu_provider(world)
     menu_widget = widget
     raw_items = widget.get("items", [])
-    shared_ref = widget.get("shared_ref")
-    if shared_ref:
-        resolver = get_shared_menu_resolver(world)
-        shared = None
-        if resolver is not None:
-            try:
-                shared = resolver(shared_ref, ctx)
-            except Exception:
-                logger.exception(
-                    "Page IR shared menu resolver failed: widget=%s world=%s shared_ref=%s",
-                    widget.get("id"),
-                    world,
-                    shared_ref,
-                )
-        if not shared:
-            logger.warning(
-                "Page IR shared menu unresolved: widget=%s world=%s shared_ref=%s",
-                widget.get("id"),
-                world,
-                shared_ref,
-            )
-            shared = {"items": [], "config": {}}
-        config = shared.get("config") if isinstance(shared.get("config"), dict) else {}
-        merged = dict(widget)
-        for key in ("orientation", "item_gap", "hover_expand", "nav_source", "nav_key", "style"):
-            if key not in widget and key in config:
-                merged[key] = config[key]
-        raw_items = shared.get("items") if isinstance(shared.get("items"), list) else []
-        menu_widget = merged
 
     orientation = menu_widget.get("orientation") if menu_widget.get("orientation") in {"vertical", "horizontal"} else "vertical"
     item_gap = _clamped_int(menu_widget.get("item_gap", 6), 0, 32, 6)

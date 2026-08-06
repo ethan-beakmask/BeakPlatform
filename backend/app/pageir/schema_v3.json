@@ -49,11 +49,9 @@
       "type": "string",
       "pattern": "^[A-Za-z0-9_-]{1,32}$"
     },
-    "shared_menu_ref": {
+    "shared_component_ref": {
       "type": "string",
-      "minLength": 1,
-      "maxLength": 32,
-      "pattern": "^[A-Za-z0-9_-]+$"
+      "pattern": "^[A-Za-z0-9_-]{1,32}$"
     },
     "portal_access_rule": {
       "type": "object",
@@ -408,13 +406,17 @@
     "layout_widget": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "columns", "children"],
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["columns", "children"]}, {"required": ["shared_ref"]}],
       "properties": {
         "id": {
           "$ref": "#/$defs/slug"
         },
         "type": {
           "const": "layout"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
         },
         "columns": {
           "type": "integer",
@@ -469,13 +471,17 @@
     "table_widget": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "binding", "columns"],
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["binding", "columns"]}, {"required": ["shared_ref"]}],
       "properties": {
         "id": {
           "$ref": "#/$defs/slug"
         },
         "type": {
           "const": "table"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
         },
         "binding": {
           "$ref": "#/$defs/binding"
@@ -525,13 +531,17 @@
     "detail_widget": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "binding", "fields"],
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["binding", "fields"]}, {"required": ["shared_ref"]}],
       "properties": {
         "id": {
           "$ref": "#/$defs/slug"
         },
         "type": {
           "const": "detail"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
         },
         "binding": {
           "$ref": "#/$defs/binding"
@@ -556,13 +566,17 @@
     "master_detail_widget": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "master", "detail"],
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["master", "detail"]}, {"required": ["shared_ref"]}],
       "properties": {
         "id": {
           "$ref": "#/$defs/slug"
         },
         "type": {
           "const": "master_detail"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
         },
         "master": {
           "$ref": "#/$defs/md_master"
@@ -649,13 +663,17 @@
     "form_widget": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "formio_schema"],
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["formio_schema"]}, {"required": ["shared_ref"]}],
       "properties": {
         "id": {
           "$ref": "#/$defs/slug"
         },
         "type": {
           "const": "form"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
         },
         "formio_schema": {
           "type": "object"
@@ -697,13 +715,17 @@
     "actions_widget": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "buttons"],
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["buttons"]}, {"required": ["shared_ref"]}],
       "properties": {
         "id": {
           "$ref": "#/$defs/slug"
         },
         "type": {
           "const": "actions"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
         },
         "buttons": {
           "type": "array",
@@ -740,7 +762,7 @@
           }
         },
         "shared_ref": {
-          "$ref": "#/$defs/shared_menu_ref"
+          "$ref": "#/$defs/shared_component_ref"
         },
         "orientation": {
           "enum": ["vertical", "horizontal"]
@@ -855,13 +877,17 @@
     "text_widget": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "level", "content_i18n"],
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["level", "content_i18n"]}, {"required": ["shared_ref"]}],
       "properties": {
         "id": {
           "$ref": "#/$defs/slug"
         },
         "type": {
           "const": "text"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
         },
         "level": {
           "enum": ["h1", "h2", "h3", "p"]

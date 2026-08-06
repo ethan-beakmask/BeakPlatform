@@ -1,6 +1,6 @@
 """
-NoCode Builder - Shared Menu API
-子系統層級共用選單 CRUD
+NoCode Builder - Shared Component API
+子系統層級共用元件 CRUD
 """
 from __future__ import annotations
 
@@ -23,33 +23,7 @@ from ..services.page_ownership_service import get_owner_sub_system_codes
 
 logger = logging.getLogger(__name__)
 
-_CONFIG_KEYS = {"orientation", "item_gap", "hover_expand", "nav_source", "nav_key", "style"}
-
-
-def _shared_menu_config(value: Any) -> dict:
-    if not isinstance(value, dict):
-        return {}
-    return {key: value[key] for key in _CONFIG_KEYS if key in value}
-
-
-def _validate_items(items: Any) -> tuple[bool, list[dict]]:
-    if not isinstance(items, list):
-        return False, [{"path": "items", "message": _("items 必須是陣列"), "code": "type"}]
-    doc = {
-        "ir_version": 3,
-        "page": {
-            "id": "shared-menu-check",
-            "title_i18n": {"zh-TW": "Shared Menu Check"},
-            "widgets": [
-                {
-                    "id": "shared-check",
-                    "type": "menu",
-                    "items": items,
-                }
-            ],
-        },
-    }
-    return validate_page_ir(doc)
+_WIDGET_TYPES = {"menu", "table", "detail", "form", "actions", "text", "layout", "master_detail"}
 
 
 def _sub_system_or_404(sub_system_sc: str):
@@ -66,30 +40,68 @@ def _sub_system_or_404(sub_system_sc: str):
     return sub_system
 
 
-def _find_shared_menu(sub_system_sc: str, shared_menu_sc: str):
-    from ..models import DcSharedMenu
+def _find_shared_component(sub_system_sc: str, shared_component_sc: str):
+    from ..models import DcSharedComponent
 
     rows = ResourceGateway.filter(
-        DcSharedMenu,
+        DcSharedComponent,
         check_permission=False,
         sub_system_secure_code=sub_system_sc,
-        secure_code=(shared_menu_sc or "").strip(),
+        secure_code=(shared_component_sc or "").strip(),
         is_deleted=False,
     )
     return rows[0] if rows else None
 
 
 def _name_exists(sub_system_sc: str, name: str, exclude_sc: str = "") -> bool:
-    from ..models import DcSharedMenu
+    from ..models import DcSharedComponent
 
     rows = ResourceGateway.filter(
-        DcSharedMenu,
+        DcSharedComponent,
         check_permission=False,
         sub_system_secure_code=sub_system_sc,
         name=name,
         is_deleted=False,
     )
     return any(row.secure_code != exclude_sc for row in rows)
+
+
+def _normalize_widget_json(widget_json: Any) -> Any:
+    """「不使用底圖」在 UI 上是空字串，但 schema 的 background_file 有 pattern，
+    空字串會被擋成 400。與前端 normalizeMenuOnSave 同語意：沒選底圖就不留這個 key。"""
+    if not isinstance(widget_json, dict):
+        return widget_json
+    if widget_json.get("type") == "menu":
+        style = widget_json.get("style")
+        if isinstance(style, dict) and not style.get("background_file"):
+            style.pop("background_file", None)
+    for child in widget_json.get("children") or []:
+        _normalize_widget_json(child)
+    return widget_json
+
+
+def _validate_widget_json(widget_json: Any) -> tuple[bool, str, list[dict]]:
+    if not isinstance(widget_json, dict):
+        return False, "", [{"path": "widget_json", "message": _("widget_json 必須是物件"), "code": "type"}]
+    _normalize_widget_json(widget_json)
+    if "id" in widget_json:
+        return False, "", [{"path": "widget_json.id", "message": _("共用元件組態不可包含 id"), "code": "additional_property"}]
+    widget_type = widget_json.get("type")
+    if widget_type not in _WIDGET_TYPES:
+        return False, "", [{"path": "widget_json.type", "message": _("元件型別不支援"), "code": "enum"}]
+
+    widget = dict(widget_json)
+    widget["id"] = "shared-check"
+    doc = {
+        "ir_version": 3,
+        "page": {
+            "id": "shared-component-check",
+            "title_i18n": {"zh-TW": "Shared Component Check"},
+            "widgets": [widget],
+        },
+    }
+    ok, errors = validate_page_ir(doc)
+    return ok, widget_type, errors
 
 
 def _iter_widgets(widgets):
@@ -101,7 +113,7 @@ def _iter_widgets(widgets):
             yield from _iter_widgets(widget.get("children") or [])
 
 
-def _shared_menu_usages(sub_system_sc: str, shared_menu_sc: str) -> list[dict]:
+def _shared_component_usages(sub_system_sc: str, shared_component_sc: str) -> list[dict]:
     from ..models import DcPageLayout
 
     pages = ResourceGateway.filter(
@@ -117,7 +129,7 @@ def _shared_menu_usages(sub_system_sc: str, shared_menu_sc: str) -> list[dict]:
             continue
         layout_json = page.layout_json if isinstance(page.layout_json, dict) else {}
         widgets = ((layout_json.get("page") or {}).get("widgets") or [])
-        if any(widget.get("shared_ref") == shared_menu_sc for widget in _iter_widgets(widgets)):
+        if any(widget.get("shared_ref") == shared_component_sc for widget in _iter_widgets(widgets)):
             if page.secure_code in seen:
                 continue
             seen.add(page.secure_code)
@@ -128,41 +140,50 @@ def _shared_menu_usages(sub_system_sc: str, shared_menu_sc: str) -> list[dict]:
     return usages
 
 
-@api_bp.route("/sub-systems/<sub_system_sc>/shared-menus", methods=["GET"])
+@api_bp.route("/sub-systems/<sub_system_sc>/shared-components", methods=["GET"])
 @csrf.exempt
 @admin_required
 @permission_required("nocode_builder.manage")
-def list_shared_menus(sub_system_sc):
-    """列出子系統共用選單。"""
+def list_shared_components(sub_system_sc):
+    """列出子系統共用元件。"""
     try:
-        from ..models import DcSharedMenu
+        from ..models import DcSharedComponent
 
         sub_system = _sub_system_or_404(sub_system_sc)
         if not sub_system:
             return jsonify({"success": False, "error": _("子系統不存在")}), 404
 
+        widget_type = (request.args.get("widget_type") or "").strip()
+        if widget_type and widget_type not in _WIDGET_TYPES:
+            return jsonify({"success": False, "error": _("元件型別不支援")}), 400
+
+        filters = {
+            "sub_system_secure_code": sub_system.secure_code,
+            "is_deleted": False,
+        }
+        if widget_type:
+            filters["widget_type"] = widget_type
         rows = ResourceGateway.filter(
-            DcSharedMenu,
+            DcSharedComponent,
             check_permission=False,
-            sub_system_secure_code=sub_system.secure_code,
-            is_deleted=False,
             order_by="name",
+            **filters,
         )
         return jsonify({"success": True, "data": [row.to_dict() for row in rows]})
     except Exception as e:
         db.session.rollback()
-        logger.exception("[SharedMenu] list error")
+        logger.exception("[SharedComponent] list error")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@api_bp.route("/sub-systems/<sub_system_sc>/shared-menus", methods=["POST"])
+@api_bp.route("/sub-systems/<sub_system_sc>/shared-components", methods=["POST"])
 @csrf.exempt
 @admin_required
 @permission_required("nocode_builder.manage")
-def create_shared_menu(sub_system_sc):
-    """建立子系統共用選單。"""
+def create_shared_component(sub_system_sc):
+    """建立子系統共用元件。"""
     try:
-        from ..models import DcSharedMenu
+        from ..models import DcSharedComponent
 
         sub_system = _sub_system_or_404(sub_system_sc)
         if not sub_system:
@@ -171,64 +192,65 @@ def create_shared_menu(sub_system_sc):
         data = request.get_json() or {}
         name = (data.get("name") or "").strip()
         if not name:
-            return jsonify({"success": False, "error": _("共用選單名稱為必填")}), 400
+            return jsonify({"success": False, "error": _("共用元件名稱為必填")}), 400
         if _name_exists(sub_system.secure_code, name):
-            return jsonify({"success": False, "error": _("同一子系統已有相同名稱的共用選單")}), 400
+            return jsonify({"success": False, "error": _("同一子系統已有相同名稱的共用元件")}), 409
 
-        items = data.get("items")
-        ok, errors = _validate_items(items)
+        widget_json = data.get("widget_json")
+        ok, widget_type, errors = _validate_widget_json(widget_json)
         if not ok:
-            return jsonify({"success": False, "error": _("選單項目格式不正確"), "errors": errors}), 400
+            return jsonify({"success": False, "error": _("共用元件組態格式不正確"), "errors": errors}), 400
 
         row = ResourceGateway.create(
-            DcSharedMenu,
+            DcSharedComponent,
             check_permission=False,
             org_secure_code=get_current_tenant(),
             sub_system_secure_code=sub_system.secure_code,
             name=name,
-            items=items,
-            config=_shared_menu_config(data.get("config")),
+            widget_type=widget_type,
+            widget_json=widget_json,
             is_active=True,
         )
         ResourceGateway.commit()
         return jsonify({"success": True, "data": row.to_dict()})
     except Exception as e:
         db.session.rollback()
-        logger.exception("[SharedMenu] create error")
+        logger.exception("[SharedComponent] create error")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@api_bp.route("/sub-systems/<sub_system_sc>/shared-menus/<shared_menu_sc>", methods=["PUT"])
+@api_bp.route("/sub-systems/<sub_system_sc>/shared-components/<shared_component_sc>", methods=["PUT"])
 @csrf.exempt
 @admin_required
 @permission_required("nocode_builder.manage")
-def update_shared_menu(sub_system_sc, shared_menu_sc):
-    """更新子系統共用選單。"""
+def update_shared_component(sub_system_sc, shared_component_sc):
+    """更新子系統共用元件。"""
     try:
         sub_system = _sub_system_or_404(sub_system_sc)
         if not sub_system:
             return jsonify({"success": False, "error": _("子系統不存在")}), 404
 
-        row = _find_shared_menu(sub_system.secure_code, shared_menu_sc)
+        row = _find_shared_component(sub_system.secure_code, shared_component_sc)
         if not row:
-            return jsonify({"success": False, "error": _("共用選單不存在")}), 404
+            return jsonify({"success": False, "error": _("共用元件不存在")}), 404
 
         data = request.get_json() or {}
         update_fields = {}
         if "name" in data:
             name = (data.get("name") or "").strip()
             if not name:
-                return jsonify({"success": False, "error": _("共用選單名稱為必填")}), 400
+                return jsonify({"success": False, "error": _("共用元件名稱為必填")}), 400
             if _name_exists(sub_system.secure_code, name, exclude_sc=row.secure_code):
-                return jsonify({"success": False, "error": _("同一子系統已有相同名稱的共用選單")}), 400
+                return jsonify({"success": False, "error": _("同一子系統已有相同名稱的共用元件")}), 409
             update_fields["name"] = name
-        if "items" in data:
-            ok, errors = _validate_items(data.get("items"))
+        if "widget_json" in data:
+            ok, widget_type, errors = _validate_widget_json(data.get("widget_json"))
             if not ok:
-                return jsonify({"success": False, "error": _("選單項目格式不正確"), "errors": errors}), 400
-            update_fields["items"] = data.get("items")
-        if "config" in data:
-            update_fields["config"] = _shared_menu_config(data.get("config"))
+                return jsonify({"success": False, "error": _("共用元件組態格式不正確"), "errors": errors}), 400
+            update_fields["widget_json"] = data.get("widget_json")
+            update_fields["widget_type"] = widget_type
+        if "is_active" in data:
+            update_fields["is_active"] = bool(data.get("is_active"))
 
         if update_fields:
             ResourceGateway.update(row, check_permission=False, **update_fields)
@@ -236,30 +258,30 @@ def update_shared_menu(sub_system_sc, shared_menu_sc):
         return jsonify({"success": True, "data": row.to_dict()})
     except Exception as e:
         db.session.rollback()
-        logger.exception("[SharedMenu] update error")
+        logger.exception("[SharedComponent] update error")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@api_bp.route("/sub-systems/<sub_system_sc>/shared-menus/<shared_menu_sc>", methods=["DELETE"])
+@api_bp.route("/sub-systems/<sub_system_sc>/shared-components/<shared_component_sc>", methods=["DELETE"])
 @csrf.exempt
 @admin_required
 @permission_required("nocode_builder.manage")
-def delete_shared_menu(sub_system_sc, shared_menu_sc):
-    """刪除子系統共用選單；被頁面引用時拒絕。"""
+def delete_shared_component(sub_system_sc, shared_component_sc):
+    """刪除子系統共用元件；被頁面引用時拒絕。"""
     try:
         sub_system = _sub_system_or_404(sub_system_sc)
         if not sub_system:
             return jsonify({"success": False, "error": _("子系統不存在")}), 404
 
-        row = _find_shared_menu(sub_system.secure_code, shared_menu_sc)
+        row = _find_shared_component(sub_system.secure_code, shared_component_sc)
         if not row:
-            return jsonify({"success": False, "error": _("共用選單不存在")}), 404
+            return jsonify({"success": False, "error": _("共用元件不存在")}), 404
 
-        usages = _shared_menu_usages(sub_system.secure_code, row.secure_code)
+        usages = _shared_component_usages(sub_system.secure_code, row.secure_code)
         if usages:
             return jsonify({
                 "success": False,
-                "error": _("共用選單仍被頁面引用，請先解除引用"),
+                "error": _("共用元件仍被頁面引用，請先解除引用"),
                 "data": {"usages": usages},
             }), 409
 
@@ -273,5 +295,5 @@ def delete_shared_menu(sub_system_sc, shared_menu_sc):
         return jsonify({"success": True})
     except Exception as e:
         db.session.rollback()
-        logger.exception("[SharedMenu] delete error")
+        logger.exception("[SharedComponent] delete error")
         return jsonify({"success": False, "error": str(e)}), 500

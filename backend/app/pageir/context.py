@@ -7,13 +7,22 @@ from flask import g
 _VALID_WORLDS = {"platform", "portal"}
 
 
-def set_render_context(world, sub_system_sc=None, portal_user=None, path_id=None, page_sc=None) -> None:
+def set_render_context(
+    world,
+    sub_system_sc=None,
+    portal_user=None,
+    path_id=None,
+    page_sc=None,
+    org_secure_code=None,
+) -> None:
     """Set the server-side Page IR render context for the current request."""
     if world not in _VALID_WORLDS:
         raise ValueError(f"Invalid Page IR render world: {world}")
     ctx = {"world": world}
     if sub_system_sc is not None:
         ctx["sub_system_sc"] = sub_system_sc
+    if org_secure_code is not None:
+        ctx["org_secure_code"] = org_secure_code
     if portal_user is not None:
         ctx["portal_user"] = portal_user
     if path_id is not None:

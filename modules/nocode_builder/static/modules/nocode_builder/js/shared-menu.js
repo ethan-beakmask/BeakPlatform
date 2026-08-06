@@ -20,11 +20,11 @@
     }
 
     function list(subSystemSc) {
-        return requestJson(`${apiBase}/sub-systems/${encodeURIComponent(subSystemSc)}/shared-menus`);
+        return requestJson(`${apiBase}/sub-systems/${encodeURIComponent(subSystemSc)}/shared-components?widget_type=menu`);
     }
 
     function create(subSystemSc, payload) {
-        return requestJson(`${apiBase}/sub-systems/${encodeURIComponent(subSystemSc)}/shared-menus`, {
+        return requestJson(`${apiBase}/sub-systems/${encodeURIComponent(subSystemSc)}/shared-components`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
             body: JSON.stringify(payload || {}),
@@ -32,7 +32,7 @@
     }
 
     function update(subSystemSc, secureCode, payload) {
-        return requestJson(`${apiBase}/sub-systems/${encodeURIComponent(subSystemSc)}/shared-menus/${encodeURIComponent(secureCode)}`, {
+        return requestJson(`${apiBase}/sub-systems/${encodeURIComponent(subSystemSc)}/shared-components/${encodeURIComponent(secureCode)}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
             body: JSON.stringify(payload || {}),
@@ -40,11 +40,11 @@
     }
 
     function remove(subSystemSc, secureCode) {
-        return requestJson(`${apiBase}/sub-systems/${encodeURIComponent(subSystemSc)}/shared-menus/${encodeURIComponent(secureCode)}`, {
+        return requestJson(`${apiBase}/sub-systems/${encodeURIComponent(subSystemSc)}/shared-components/${encodeURIComponent(secureCode)}`, {
             method: 'DELETE',
             headers: { 'X-CSRFToken': csrfToken() },
         });
     }
 
-    window.BkSharedMenu = { list, create, update, remove };
+    window.BkSharedComponent = { list, create, update, remove };
 }());

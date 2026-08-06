@@ -221,6 +221,7 @@ def _resolve_portal_widget_write(path_id, page_sc, widget_id, action):
         set_render_context(
             'portal',
             sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
             portal_user=portal_user,
             path_id=path_id,
             page_sc=page_sc,
@@ -432,6 +433,7 @@ def portal_page(path_id, page_sc):
         set_render_context(
             'portal',
             sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
             portal_user=portal_user,
             path_id=path_id,
             page_sc=page_sc,
@@ -530,6 +532,7 @@ def portal_widget_rows(path_id, page_sc, widget_id):
         set_render_context(
             'portal',
             sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
             portal_user=portal_user,
             path_id=path_id,
             page_sc=page_sc,
@@ -684,6 +687,7 @@ def portal_widget_submit(path_id, page_sc, widget_id):
         set_render_context(
             'portal',
             sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
             portal_user=portal_user,
             path_id=path_id,
             page_sc=page_sc,
@@ -868,6 +872,7 @@ def portal_widget_master_detail_submit(path_id, page_sc, widget_id):
         set_render_context(
             'portal',
             sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
             portal_user=portal_user,
             path_id=path_id,
             page_sc=page_sc,
@@ -912,6 +917,7 @@ def portal_widget_master_detail_submit(path_id, page_sc, widget_id):
             set_render_context(
                 'portal',
                 sub_system_sc=ss.secure_code,
+                org_secure_code=ss.org_secure_code,
                 portal_user=portal_user,
                 path_id=path_id,
                 page_sc=page_sc,
@@ -982,6 +988,7 @@ def portal_widget_master_detail_submit(path_id, page_sc, widget_id):
     try:
         data = save_master_detail(
             sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
             master_view=master_view,
             detail_view=detail_view,
             master_sc=master_sc,
@@ -1067,6 +1074,7 @@ def portal_widget_update_submission(path_id, page_sc, widget_id, record_sc):
         set_render_context(
             'portal',
             sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
             portal_user=portal_user,
             path_id=path_id,
             page_sc=page_sc,
@@ -1186,6 +1194,7 @@ def portal_widget_cancel_submission(path_id, page_sc, widget_id, record_sc):
         set_render_context(
             'portal',
             sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
             portal_user=portal_user,
             path_id=path_id,
             page_sc=page_sc,
@@ -1492,6 +1501,7 @@ def portal_register_post(path_id):
 
     user_data, error = register(
         sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
         username=username,
         password=password,
         display_name=display_name,

@@ -141,6 +141,9 @@ def _semantic_errors(doc: dict[str, Any]) -> list[dict]:
                 )
             )
 
+        if widget.get("shared_ref"):
+            continue
+
         if widget_type == "actions":
             for index, button in enumerate(widget.get("buttons", [])):
                 _check_unique_id(

@@ -255,6 +255,7 @@ def ir_designer_preview(secure_code):
         set_render_context(
             'portal',
             sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
             portal_user=preview_user,
             path_id=portal_path_item.code if portal_path_item else None,
             page_sc=secure_code,

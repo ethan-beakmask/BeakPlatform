@@ -8,9 +8,8 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from flask import request, url_for
 from flask_babel import gettext as _
 
-from app.pageir.registry import register_menu_provider, register_shared_menu_resolver
+from app.pageir.registry import register_menu_provider
 
-from ..models.shared_menu import DcSharedMenu
 from ..models.site_map_node import DcSiteMapNode
 from . import portal_auth_service, portal_access_service
 
@@ -21,25 +20,6 @@ _MENU_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 def init_portal_pageir_menu() -> None:
     """Register portal Page IR menu provider."""
     register_menu_provider("portal", _build_portal_menu)
-    register_shared_menu_resolver("portal", _resolve_shared_menu)
-
-
-def _resolve_shared_menu(shared_ref: str, ctx: dict) -> dict | None:
-    sub_system_sc = (ctx.get("sub_system_sc") or "").strip()
-    if not sub_system_sc:
-        return None
-    shared = DcSharedMenu.query.filter_by(
-        secure_code=shared_ref,
-        sub_system_secure_code=sub_system_sc,
-        is_deleted=False,
-        is_active=True,
-    ).first()
-    if not shared:
-        return None
-    return {
-        "items": shared.items or [],
-        "config": shared.config or {},
-    }
 
 
 def _build_portal_menu(items: list[dict], ctx: dict) -> list[dict]:

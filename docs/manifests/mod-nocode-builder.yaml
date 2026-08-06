@@ -17,6 +17,7 @@ files:
     - modules/nocode_builder/static/modules/nocode_builder/js/lookup-manager.js
     - modules/nocode_builder/static/modules/nocode_builder/js/sitemenu-widget.js
     - modules/nocode_builder/static/modules/nocode_builder/js/sub-system-config.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/shared-menu.js
     - modules/nocode_builder/static/modules/nocode_builder/js/ir-designer.js
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace.js
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace-org.js
@@ -35,6 +36,7 @@ files:
     - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_menu.html  # PF-8 menu widget 屬性面板
   models:
     - modules/nocode_builder/models/permission_policy.py
+    - modules/nocode_builder/models/shared_component.py
   web:
     - modules/nocode_builder/web/portal_public.py
     - modules/nocode_builder/web/__init__.py          # workspace / ir_designer / preview 路由
@@ -48,6 +50,7 @@ files:
     - modules/nocode_builder/services/portal_permission_service.py # PF-7 權限碼有效權限計算（唯一實作）
     - modules/nocode_builder/services/pageir_portal_resources.py # portal L2 resolver
     - modules/nocode_builder/services/pageir_portal_menu.py     # PF-8 menu widget 的 portal provider
+    - modules/nocode_builder/services/pageir_shared_component.py # portal 共用元件 resolver
     - modules/nocode_builder/services/pageir_formflow_resources.py # formflow portal submissions resolver
     - modules/nocode_builder/services/pageir_mapping_usage.py    # form workflow mapping 引用查詢
     - modules/nocode_builder/services/portal_file_service.py  # PF-44 portal_files / portal_file_acl 存取
@@ -69,6 +72,7 @@ files:
     - modules/nocode_builder/api/portal_org_api.py
     - modules/nocode_builder/api/portal_permission_api.py  # PF-8 權限碼/角色管理 API
     - modules/nocode_builder/api/portal_file_api.py  # PF-44 portal 檔案（平台側）
+    - modules/nocode_builder/api/shared_component_api.py
   platform_deps:
     - backend/app/pageir/masking.py                   # 欄位視覺遮罩（server 端唯一實作）
     - backend/app/pageir/renderer.py
@@ -76,6 +80,7 @@ files:
     - backend/app/services/nocode_service_account.py  # portal 送件公用帳號
   migrations:
     - scripts/migrations/089_portal_row_owner_scope.sql
+    - scripts/migrations/094_shared_components.sql
     - scripts/add_portal_user_ref.py  # 089 的 SQLite 部分（既有業務表補 portal_user_ref，冪等）
   tests:
     - backend/tests/test_e2e_portal_cancel.py
@@ -84,6 +89,7 @@ files:
     - backend/tests/test_portal_permission_pf7.py  # PF-7 權限碼模型 + access_matrix 新舊並存
     - backend/tests/test_portal_permission_admin_pf8.py  # PF-8 權限碼/角色管理服務
     - backend/tests/test_pageir_menu_pf8.py  # PF-8 menu widget（schema/renderer/portal provider/folder）
+    - backend/tests/test_pageir_shared_menu.py
     - backend/tests/test_portal_file_stage_a.py
 
 note: |

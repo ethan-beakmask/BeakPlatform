@@ -28,7 +28,7 @@ def sanitize_template_ir(
             "row_link_refs": 0,
             "row_actions_refs": 0,
             "menu_nav_sources": 0,
-            "shared_menu_refs": 0,
+            "shared_component_refs": 0,
         },
         "warnings": [],
     }
@@ -62,6 +62,16 @@ def _sanitize_widgets(widgets: list[dict[str, Any]], report: dict, cross_org: bo
         widget_type = widget.get("type")
         widget_id = widget.get("id")
 
+        if widget.get("shared_ref") and widget_type != "menu":
+            widget.pop("shared_ref", None)
+            report["cleared"]["shared_component_refs"] += 1
+            report["removed_widgets"].append({
+                "id": widget_id,
+                "type": widget_type,
+                "reason": "shared_component_unavailable",
+            })
+            continue
+
         if widget_type in {"table", "detail", "master_detail"}:
             report["removed_widgets"].append({
                 "id": widget_id,
@@ -75,7 +85,7 @@ def _sanitize_widgets(widgets: list[dict[str, Any]], report: dict, cross_org: bo
         elif widget_type == "menu":
             if widget.get("shared_ref"):
                 widget.pop("shared_ref", None)
-                report["cleared"]["shared_menu_refs"] += 1
+                report["cleared"]["shared_component_refs"] += 1
                 if "items" not in widget:
                     widget["items"] = []
             widget["items"] = _sanitize_menu_items(widget.get("items") or [], report)
