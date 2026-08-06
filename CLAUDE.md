@@ -41,6 +41,13 @@
   Agent 協作規範）
 - codex 常見瑕疵必查：死碼、拆字串規避檢查、manifest 只刪不補、裸中文未包 gettext、
   沒重啟服務就宣稱驗證通過
+- **「機制對、目標錯」是最難抓的一類**（2026-08-06 批次 3 實例）：spec 要求
+  「編輯共用元件時隱藏 table 的『列動作』『列連結目標』」，codex 用了正確的
+  `x-show="!sharedComponentEditor.open"`，卻加在隔壁的「每頁筆數」「預設排序欄位」上。
+  grep 條件字串會命中、`node --check` 會過、codex 的自我檢查表也會勾——
+  **只有逐一列出受影響欄位的可見性才看得出來**。驗收互動 UI 時的通用手法：
+  `evaluate_script` 回傳每個欄位的 label + `offsetParent === null`（是否隱藏），
+  拿這份清單對 spec，不要只確認「條件有加」
 - 退回上限 2 次，之後改由 Claude 依既有規範直接實作
 
 ### Claude 直接動手的例外
