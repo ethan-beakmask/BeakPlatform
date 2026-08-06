@@ -861,6 +861,22 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   元件准入是 `access_matrix.render(actions_expr, write_hint)` macro，
   在 props 內被呼叫四次（一般 widget／master_detail／actions／form），
   **改准入 UI 只要改 macro 一處**，不要在四個地方各改一份
+- **`_ir_designer_body.html` 有兩個宿主頁，`<script>` 清單各自維護**
+  （2026-08-06 踩到，commit `86a75b75`）：
+
+  | 宿主 | 網址 | 特徵 |
+  |---|---|---|
+  | `ir_designer.html` | `/nocode/ir-designer/<頁sc>` | 單頁設計器，**沒有 Site Map** |
+  | `workspace.html` | `/nocode/workspace/<子系統sc>` | 工作區「頁面設計」分頁，**內嵌整套設計器** |
+
+  兩邊共用同一份 partial 與同一個 Alpine 元件 `irDesigner()`，
+  但 `{% block scripts %}` 是各寫各的。**新增設計器要用的 JS 時兩邊都要加**——
+  PF-29 加 `shared-menu.js` 時只加了 `ir_designer.html`，
+  導致工作區內 `window.BkSharedMenu` 恆 `undefined`，
+  按[另存為共用選單]噴 `Cannot read properties of undefined (reading 'create')`。
+  **日常用的是工作區那邊，冷門的單頁設計器反而是好的**，所以測試時要測工作區。
+  現行依賴：`window.BkCaps`（base.html 的 capability.js）／`BkPageTemplate`
+  （`page-template.js`）／`BkSharedMenu`（`shared-menu.js`）
 - **portal 頁是獨立模板 `portal_page_v3.html`，不繼承 `layouts/base.html`**。
   平台頁自動有的東西（`timezone.js`／`BkTime`、i18n、capability.js）在這裡
   **都要自己載入**。portal 又是公開路由，`auth_interceptor` 在設定
@@ -943,6 +959,12 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   （entries 回空陣列，不 raise）。
   `system_link` 值域是**後端白名單**（login/register/logout），不接受任意 URL；
   login/register 只在未登入時出現，register 另需 `allow_registration`，logout 反之。
+  **設計器預覽的 menu 連結留在預覽語境**（2026-08-06 起，commit `a0272748`）：
+  `portal_user['user_type'] == 'PREVIEW'` 時，node 連結組成
+  `/nocode/ir-designer/<目標頁sc>/preview?sub=&level=&group=`（沿用當前預覽身分），
+  system_link 一律不輸出（預覽沒有 portal session，登入／登出走不通）。
+  在此之前連結一律指向公開 portal，**未發布的子系統／頁面點下去必定 404**
+  ——症狀是「直接按預覽正常、從預覽的選單點過去 404」。正式 portal 行為不變。
   site map 的 `folder` 節點型別已放行（不建 page layout、不可當根節點）。
   設計器屬性面板已完備（已選項目樹的 ↑↓ 排序／→← 升降階／× 連 children 移除、
   可加入的網頁清單、方向／間隔／懸停展開、選單來源與聯動參數名、七個色票、
@@ -1047,6 +1069,15 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   `instantiate` **只建 `DcPageLayout`**，不建 site map 節點、不做子系統掛載
   ——那是前端 `workspace.js` 的 `finishPageCreation()` 接手做的。
   它也會把 IR 的 `page.title_i18n` 覆寫成新頁名稱（不覆寫的話 portal 上會顯示樣板名）。
+
+  **同子系統套用完全不淨化**（`sanitized = (not source) or (source != target)`，
+  `page_template_service.py:18` 一開頭就 `return`）——所以 menu 的 `items[].node`、
+  `shared_ref`、access_matrix **原封不動保留**，`create_template` 也是原樣存
+  `layout_json` 不做任何處理。「另存為樣板」存的是**當下那頁的完整 IR**，
+  不是內建樣板的副本；內建樣板的「零綁定」是那六筆種子資料的內容，
+  **不是會傳染的屬性**（2026-08-06 API 實測確認）。
+  要讓新頁一建出來就有選單，正解是先設好一頁（menu 引用共用選單）再另存為
+  子系統私有樣板；既有頁面沒有批次套用的方法，見待辦 **PF-47**。
 
   **跨子系統套用一定會淨化**（判定依據是樣板的 `source_sub_system_sc`；
   為 NULL 一律走淨化路徑）。唯一實作是
