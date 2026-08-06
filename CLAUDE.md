@@ -8,7 +8,7 @@
 |---|---|
 | 派工給 codex 時要貼的規範片段 | **`docs/codex_spec/`**（frontend / i18n / security / portal / _footer） |
 | 檔案上傳下載的完整 API 用法 | `docs/FILE_SERVICE.md` |
-| 改哪些檔案（工單導向） | `docs/manifests/README.yaml` → 對應 manifest |
+| 改哪些檔案（任務導向） | `docs/manifests/README.yaml` → 對應 manifest |
 | 安全踩坑清單 | `docs/manifests/SECURITY_PITFALLS.md` |
 | 權限模型定版 | `docs/PERMISSION_MODEL.md`、`docs/COMPONENT_VISIBILITY_GUIDE.md` |
 | Page IR schema 與各 widget 欄位（含 menu） | `docs/PAGE_IR_SPEC.md`、`docs/PAGE_IR_LAYOUT_ENGINES.md` |
@@ -118,23 +118,31 @@ Generated with Claude Code"
 
 ---
 
-## Manifest 導向開發流程（強制）
+## Manifest 優先的檔案定位（2026-08-06 放寬措辭）
 
-**所有程式修改必須先查 manifest，禁止盲目探索。**
-（Codex-first 模式下，manifest 同時是「組 codex spec 檔案清單」的唯一來源。）
+**manifest 的用意是避免盲猜，不是禁止思考。**
+動程式之前先查 manifest，是因為它已經把某個功能牽涉的 route／api／service／
+model／template／js 列齊了——比自己從零搜尋更快也更不會漏。
+（Codex-first 模式下，manifest 同時是「組 codex spec 檔案清單」的起點。）
 
 ### 流程
 
-1. **收到工單** → 讀 `docs/manifests/README.yaml` 找到目標 manifest
-2. **讀 manifest** → 取得精確的檔案清單（route、api、service、model、template、js）
-3. **只讀 manifest 列出的檔案** → 定位問題後把檔案清單與結構說明寫進 codex spec
-   （Claude 直接動手的例外情況則自行修正）
-4. **如果不夠** → 向用戶說明需要查看哪些額外檔案及原因，等確認後再讀
+1. **收到任務** → 讀 `docs/manifests/README.yaml` 找到目標 manifest
+2. **讀 manifest** → 取得檔案清單，優先只讀這些檔案
+3. **不足時可自行搜尋**（grep/glob），但**要在回覆裡說明搜了什麼、為什麼 manifest
+   不夠**，並把找到的檔案補進對應 manifest——漏列會一直漏下去
+4. 定位完成後把檔案清單與結構說明寫進 codex spec（Claude 直接動手的例外則自行修正）
 
-### 禁止
+**manifest 涵蓋不到的任務不必硬套**：全域性的檢查（例如「全專案還有幾處
+`remote_addr`」）、文件整理、跨模組稽核，本來就沒有對應 manifest，直接搜尋即可。
 
-- **禁止** 收到 URL 後自行 grep/glob 搜尋相關程式（manifest 已列出）
-- **禁止** 在 manifest 範圍外自行讀取檔案（除非向用戶說明並獲同意）
+### 已知落差（別以為 manifest 是完備的）
+
+`workspace.html`、`page_template_service.py` 這類日常會改的檔案就不在
+`mod-nocode-builder.yaml` 裡。**manifest 沒列 ≠ 不該讀**，只代表它待補。
+
+### 這條仍是硬禁止
+
 - **禁止** 修改 `security-core.yaml` 列出的安全核心檔案（除非用戶明確要求）
 
 ### 安全防雷
@@ -146,18 +154,12 @@ Generated with Claude Code"
 - 雙鑰匙選單安全（MenuPermission + MenuRoleRequirement）
 - 時區處理（TZ-01 規範）
 
-### 工單格式
+### 任務怎麼來（2026-08-06 起，取消工單格式）
 
-用戶會以此格式提交工單：
-```
-目標頁面: /users/
-問題類型: bug | 功能調整 | 新增欄位 | UI 修正
-症狀: （問題描述）
-影響範圍: list / create / edit / view
-已知線索: （選填）
-```
-
-完整工單模板見 `docs/manifests/TICKET_TEMPLATE.md`。
+用戶以口語交辦，或指向 BBN 待辦原子（`PF-xx`）。
+**沒有固定工單格式**——本專案是有因果脈絡的中級以上專案，
+規格與決策脈絡在 BBN 原子裡，填欄位式的工單只適合無因果關係的單一任務。
+（原 `docs/manifests/TICKET_TEMPLATE.md` 已刪除。）
 
 ---
 
@@ -1106,4 +1108,5 @@ cd backend && flask run --host=127.0.0.1 --port=7000
 會腐爛的計數與測試基準、與全域 CLAUDE.md 重複的段落；
 B：樣板庫→`docs/PAGE_TEMPLATE_SPEC.md`、menu widget→`docs/PAGE_IR_SPEC.md` §3.7、
 API 陷阱→`docs/codex_spec/portal.md`、iptables→全域 network_architecture.md，
-共用元件段收斂為指針，VERIFY 三條合併）*
+共用元件段收斂為指針，VERIFY 三條合併；
+C：取消工單格式、manifest 由「禁止自行 grep」放寬為「不足時可搜尋但要說明並回補」）*
