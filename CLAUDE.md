@@ -871,12 +871,13 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 
   兩邊共用同一份 partial 與同一個 Alpine 元件 `irDesigner()`，
   但 `{% block scripts %}` 是各寫各的。**新增設計器要用的 JS 時兩邊都要加**——
-  PF-29 加 `shared-menu.js` 時只加了 `ir_designer.html`，
-  導致工作區內 `window.BkSharedMenu` 恆 `undefined`，
+  PF-29 加當時的 `shared-menu.js` 時只加了 `ir_designer.html`，
+  導致工作區內該檔掛的全域恆 `undefined`，
   按[另存為共用選單]噴 `Cannot read properties of undefined (reading 'create')`。
+  （該檔 2026-08-06 已更名 `shared-component.js`、全域改為 `BkSharedComponent`。）
   **日常用的是工作區那邊，冷門的單頁設計器反而是好的**，所以測試時要測工作區。
   現行依賴：`window.BkCaps`（base.html 的 capability.js）／`BkPageTemplate`
-  （`page-template.js`）／`BkSharedMenu`（`shared-menu.js`）
+  （`page-template.js`）／`BkSharedComponent`（`shared-component.js`）
 - **portal 頁是獨立模板 `portal_page_v3.html`，不繼承 `layouts/base.html`**。
   平台頁自動有的東西（`timezone.js`／`BkTime`、i18n、capability.js）在這裡
   **都要自己載入**。portal 又是公開路由，`auth_interceptor` 在設定
@@ -1152,11 +1153,34 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   `validate_page_ir`，整個 instantiate 會 500），其他型別因缺必填欄位
   **整個 widget 移除**（reason `shared_component_unavailable`）。
 
-  設計器 menu 屬性面板就地操作：引用下拉／[另存為共用選單]／[編輯共用選單]
-  （獨立 modal，按 **[儲存共用選單]** 存檔，與頁面 [儲存] 完全無關）／[解除引用]。
-  **引用中時「已選項目」「可加入的網頁」「系統連結」三區隱藏。**
-  **目前只有 menu 型別有這組 UI**，其餘型別後端已支援但設計器未開放
-  （待辦 PF-53 批次 3）。
+  **設計器 UI（PF-53 批次 3，2026-08-06 起泛化到 `menu` / `table` / `detail` /
+  `form` / `actions` / `text` / `layout` 七型別；`master_detail` 後端支援但
+  設計器未開放）**：共用元件區塊是
+  `_ir_designer_shared_component.html` 的 `render()` macro，在
+  `_ir_designer_props.html` 對 `master_detail` 以外的型別統一呼叫一次——
+  **要改這組 UI 只改 macro，不要在各型別面板各寫一份**。
+  未引用時是引用下拉（依 `widget.type` 過濾）＋[另存為共用元件]；
+  引用中是名稱＋[編輯共用元件]／[解除引用]（共用元件不存在時兩鈕 disabled）。
+
+  **引用中的 widget 在頁面 IR 只留 `id` / `type` / `shared_ref` / `access_matrix`**，
+  其餘設定鍵由 `ir-designer.js::stripLocalConfig` 剝除。因此
+  `normalizeWidgets` / `normalizeWidgetMasks` 兩個補預設值的函式都必須
+  `if (widget.shared_ref) continue;`——漏了就會把 `items`、`title_i18n`
+  這類不會生效的設定寫回頁面。同理 `localSaveErrors` 也整個略過引用中的 widget。
+
+  **[編輯共用元件] 不是 modal，是把右側屬性面板就地切換成編輯
+  `sharedComponentEditor.draft`**（`get selectedWidget()` 在編輯模式回 draft、
+  `markDirty()` 改標 `editor.dirty`、`selectWidget()` 與 `addWidget()` 一律 return）。
+  這樣七個型別的既有欄位標記完全複用，不必複製第二份屬性面板。
+  代價是**共用 layout 的 children 無法在編輯模式增修**（左側樹顯示的是頁面不是 draft），
+  要改內容得先解除引用、在頁面上編好再另存為新的共用元件。
+
+  建立／更新共用元件的 `widget_json` 一律走 `buildSharedWidgetJson()`：
+  剝掉 `id` / `shared_ref` / `access_matrix`，table 另剝
+  `row_actions_ref` / `row_link_ref`（指向同頁其他 widget，在共用元件的
+  單 widget 假頁面裡必然 `dangling_ref` → 後端 400）。
+  `access_matrix` 留在頁面端、引用中仍可編輯（§交集語意）；
+  解除引用時以頁面端那份為準，頁面端沒有才取共用元件的。
 
   **寫入端要正規化 `style.background_file`**：UI 上「不使用底圖」是空字串，
   但 schema 的 pattern 不收空字串。頁面存檔走

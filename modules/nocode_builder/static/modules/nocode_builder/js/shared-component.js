@@ -15,12 +15,14 @@
     async function requestJson(url, options) {
         const res = await fetch(url, options || {});
         const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.error || tr('共用選單操作失敗'));
+        if (!res.ok || !data.success) throw new Error(data.error || tr('共用元件操作失敗'));
         return data.data || null;
     }
 
-    function list(subSystemSc) {
-        return requestJson(`${apiBase}/sub-systems/${encodeURIComponent(subSystemSc)}/shared-components?widget_type=menu`);
+    function list(subSystemSc, widgetType) {
+        let url = `${apiBase}/sub-systems/${encodeURIComponent(subSystemSc)}/shared-components`;
+        if (widgetType) url += `?widget_type=${encodeURIComponent(widgetType)}`;
+        return requestJson(url);
     }
 
     function create(subSystemSc, payload) {

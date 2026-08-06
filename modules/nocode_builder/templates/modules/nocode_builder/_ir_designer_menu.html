@@ -1,113 +1,79 @@
-<template x-if="selectedWidget.type === 'menu'">
-    <div class="ird-section">
-        <div class="ird-field">
-            <label>{{ _('標題 zh-TW') }}</label>
-            <input type="text" x-model="selectedWidget.title_i18n['zh-TW']" @input="markDirty()">
-        </div>
-        <div class="ird-field">
-            <label>{{ _('標題 en') }}</label>
-            <input type="text" x-model="selectedWidget.title_i18n.en" @input="markDirty()">
-        </div>
+<template x-if="selectedWidget.type === 'menu' && !selectedWidget.shared_ref">
+    <div>
+        <div class="ird-section">
+            <div class="ird-field">
+                <label>{{ _('標題 zh-TW') }}</label>
+                <input type="text" x-model="selectedWidget.title_i18n['zh-TW']" @input="markDirty()">
+            </div>
+            <div class="ird-field">
+                <label>{{ _('標題 en') }}</label>
+                <input type="text" x-model="selectedWidget.title_i18n.en" @input="markDirty()">
+            </div>
+            <div class="ird-field">
+                <label>{{ _('選單資料來源') }}</label>
+                <select x-model="selectedWidget.source_mode" @change="markDirty()">
+                    <option value="manual">{{ _('手動挑選') }}</option>
+                    <option value="auto">{{ _('依 Site Map 自動產生') }}</option>
+                </select>
+            </div>
 
-        <div class="ird-field">
-            <label>{{ _('共用選單') }}</label>
-            <template x-if="!selectedWidget.shared_ref">
-                <div class="ird-shared-menu-box">
-                    <div class="ird-inline-actions">
-                        <select @change="applySharedComponentRef(selectedWidget, $event.target.value); $event.target.value = ''">
-                            <option value="">{{ _('引用共用選單') }}</option>
-                            <template x-for="menu in sharedComponents" :key="menu.secure_code">
-                                <option :value="menu.secure_code"
-                                        :selected="menu.secure_code === selectedWidget.shared_ref"
-                                        x-text="menu.name"></option>
-                            </template>
-                        </select>
-                        {% if can('nocode_builder.manage') %}
-                        <button type="button" class="ird-btn" x-show="canManageSharedComponents()" @click="saveWidgetAsSharedComponent(selectedWidget)">{{ _('另存為共用選單') }}</button>
-                        {% endif %}
-                    </div>
-                    <p class="ird-hint" x-show="sharedComponentsError" x-text="sharedComponentsError"></p>
-                    <p class="ird-hint" x-show="!sharedComponentScope()">{{ _('此頁尚未掛在子系統下，無法使用共用選單') }}</p>
+            <label class="ird-inline-check" x-show="selectedWidget.source_mode === 'auto'">
+                <input type="checkbox" x-model="selectedWidget.include_system_links" @change="markDirty()">
+                <span>{{ _('包含系統連結（登入／註冊／登出）') }}</span>
+            </label>
+
+            <div class="ird-field" x-show="selectedWidget.source_mode !== 'auto'">
+                <label>{{ _('已選項目') }}</label>
+                <div class="ird-menu-list">
+                    <template x-for="row in selectedMenuRows(selectedWidget)" :key="row.key">
+                        <div class="ird-menu-row ird-menu-tree-row" :class="{ 'ird-menu-row-deleted': row.deleted }">
+                            <span class="ird-menu-name" :style="'padding-left:' + (row.depth * 18) + 'px'" x-text="row.label"></span>
+                            <span class="ird-menu-kind" x-text="row.kindLabel"></span>
+                            <span class="ird-menu-actions">
+                                <button type="button" class="ird-icon-btn" :disabled="!row.canUp" @click="moveMenuItem(selectedWidget, row.path, -1)" title="{{ _('上移') }}">↑</button>
+                                <button type="button" class="ird-icon-btn" :disabled="!row.canDown" @click="moveMenuItem(selectedWidget, row.path, 1)" title="{{ _('下移') }}">↓</button>
+                                <button type="button" class="ird-icon-btn" :disabled="!row.canIndent" @click="indentMenuItem(selectedWidget, row.path)" title="{{ _('降一層') }}">→</button>
+                                <button type="button" class="ird-icon-btn" :disabled="!row.canOutdent" @click="outdentMenuItem(selectedWidget, row.path)" title="{{ _('升一層') }}">←</button>
+                                <button type="button" class="ird-icon-btn" @click="removeMenuItem(selectedWidget, row.path)" title="{{ _('移除') }}">×</button>
+                            </span>
+                        </div>
+                    </template>
+                    <p class="ird-hint" x-show="menuItemCount(selectedWidget) === 0">{{ _('尚未選擇任何項目，儲存會失敗') }}</p>
                 </div>
-            </template>
-            <template x-if="selectedWidget.shared_ref">
-                <div class="ird-shared-menu-box">
-                    <p class="ird-hint" x-show="selectedSharedComponentName(selectedWidget)" x-text="selectedSharedComponentName(selectedWidget)"></p>
-                    <p class="ird-hint ird-hint-danger" x-show="!selectedSharedComponentName(selectedWidget)">{{ _('共用選單已不存在') }}</p>
-                    <div class="ird-inline-actions">
-                        {% if can('nocode_builder.manage') %}
-                        <button type="button" class="ird-btn" x-show="canManageSharedComponents()" :disabled="!selectedSharedComponentName(selectedWidget)" @click="openSharedComponentEditor(selectedWidget)">{{ _('編輯共用選單') }}</button>
-                        <button type="button" class="ird-btn" x-show="canManageSharedComponents()" @click="unlinkSharedComponent(selectedWidget)">{{ _('解除引用') }}</button>
-                        {% endif %}
-                    </div>
+                <p class="ird-hint">{{ _('權限不通過的網頁在 portal 上會自動隱藏。') }}</p>
+            </div>
+
+            <div class="ird-field" x-show="selectedWidget.source_mode !== 'auto'">
+                <label>{{ _('可加入的網頁') }}</label>
+                <div class="ird-menu-list">
+                    <template x-for="node in availableMenuNodes(selectedWidget)" :key="node.secure_code">
+                        <div class="ird-menu-row">
+                            <span class="ird-menu-name" :style="'padding-left:' + (node.depth * 18) + 'px'" x-text="node.name"></span>
+                            <span class="ird-menu-kind" x-show="node.node_type === 'folder'">{{ _('資料夾') }}</span>
+                            <button type="button" class="ird-btn ird-menu-add-btn" @click="addMenuNode(selectedWidget, node.secure_code)">{{ _('加入') }}</button>
+                        </div>
+                    </template>
+                    <p class="ird-hint" x-show="siteMapLoaded && !siteMapError && siteMapNodes.length > 0 && availableMenuNodes(selectedWidget).length === 0">{{ _('所有網頁都已加入') }}</p>
+                    <p class="ird-hint" x-show="siteMapError" x-text="siteMapError"></p>
+                    <p class="ird-hint" x-show="siteMapLoaded && !siteMapError && siteMapNodes.length === 0">{{ _('此子系統尚無網頁節點') }}</p>
+                    <p class="ird-hint" x-show="!dataScope && !mountedSubSystem">{{ _('此頁尚未掛在子系統下，無法選擇網頁；仍可只放系統連結') }}</p>
                 </div>
-            </template>
-        </div>
-
-        <div class="ird-field" x-show="!selectedWidget.shared_ref">
-            <label>{{ _('選單資料來源') }}</label>
-            <select x-model="selectedWidget.source_mode" @change="markDirty()">
-                <option value="manual">{{ _('手動挑選') }}</option>
-                <option value="auto">{{ _('依 Site Map 自動產生') }}</option>
-            </select>
-        </div>
-
-        <label class="ird-inline-check" x-show="!selectedWidget.shared_ref && selectedWidget.source_mode === 'auto'">
-            <input type="checkbox" x-model="selectedWidget.include_system_links" @change="markDirty()">
-            <span>{{ _('包含系統連結（登入／註冊／登出）') }}</span>
-        </label>
-
-        <div class="ird-field" x-show="!selectedWidget.shared_ref && selectedWidget.source_mode !== 'auto'">
-            <label>{{ _('已選項目') }}</label>
-            <div class="ird-menu-list">
-                <template x-for="row in selectedMenuRows(selectedWidget)" :key="row.key">
-                    <div class="ird-menu-row ird-menu-tree-row" :class="{ 'ird-menu-row-deleted': row.deleted }">
-                        <span class="ird-menu-name" :style="'padding-left:' + (row.depth * 18) + 'px'" x-text="row.label"></span>
-                        <span class="ird-menu-kind" x-text="row.kindLabel"></span>
-                        <span class="ird-menu-actions">
-                            <button type="button" class="ird-icon-btn" :disabled="!row.canUp" @click="moveMenuItem(selectedWidget, row.path, -1)" title="{{ _('上移') }}">↑</button>
-                            <button type="button" class="ird-icon-btn" :disabled="!row.canDown" @click="moveMenuItem(selectedWidget, row.path, 1)" title="{{ _('下移') }}">↓</button>
-                            <button type="button" class="ird-icon-btn" :disabled="!row.canIndent" @click="indentMenuItem(selectedWidget, row.path)" title="{{ _('降一層') }}">→</button>
-                            <button type="button" class="ird-icon-btn" :disabled="!row.canOutdent" @click="outdentMenuItem(selectedWidget, row.path)" title="{{ _('升一層') }}">←</button>
-                            <button type="button" class="ird-icon-btn" @click="removeMenuItem(selectedWidget, row.path)" title="{{ _('移除') }}">×</button>
-                        </span>
-                    </div>
-                </template>
-                <p class="ird-hint" x-show="menuItemCount(selectedWidget) === 0">{{ _('尚未選擇任何項目，儲存會失敗') }}</p>
             </div>
-            <p class="ird-hint">{{ _('權限不通過的網頁在 portal 上會自動隱藏。') }}</p>
-        </div>
 
-        <div class="ird-field" x-show="!selectedWidget.shared_ref && selectedWidget.source_mode !== 'auto'">
-            <label>{{ _('可加入的網頁') }}</label>
-            <div class="ird-menu-list">
-                <template x-for="node in availableMenuNodes(selectedWidget)" :key="node.secure_code">
-                    <div class="ird-menu-row">
-                        <span class="ird-menu-name" :style="'padding-left:' + (node.depth * 18) + 'px'" x-text="node.name"></span>
-                        <span class="ird-menu-kind" x-show="node.node_type === 'folder'">{{ _('資料夾') }}</span>
-                        <button type="button" class="ird-btn ird-menu-add-btn" @click="addMenuNode(selectedWidget, node.secure_code)">{{ _('加入') }}</button>
-                    </div>
-                </template>
-                <p class="ird-hint" x-show="siteMapLoaded && !siteMapError && siteMapNodes.length > 0 && availableMenuNodes(selectedWidget).length === 0">{{ _('所有網頁都已加入') }}</p>
-                <p class="ird-hint" x-show="siteMapError" x-text="siteMapError"></p>
-                <p class="ird-hint" x-show="siteMapLoaded && !siteMapError && siteMapNodes.length === 0">{{ _('此子系統尚無網頁節點') }}</p>
-                <p class="ird-hint" x-show="!dataScope && !mountedSubSystem">{{ _('此頁尚未掛在子系統下，無法選擇網頁；仍可只放系統連結') }}</p>
+            <div class="ird-field" x-show="selectedWidget.source_mode !== 'auto'">
+                <label>{{ _('系統連結') }}</label>
+                <div class="ird-checks">
+                    <template x-for="link in menuSystemLinks" :key="link.link">
+                        <label>
+                            <input type="checkbox"
+                                   :checked="menuHasSystemLink(selectedWidget, link.link)"
+                                   @change="toggleMenuSystemLink(selectedWidget, link.link, $event.target.checked)">
+                            <span x-text="link.label"></span>
+                        </label>
+                    </template>
+                </div>
+                <p class="ird-hint">{{ _('登入與註冊只在未登入時出現，註冊需子系統開放註冊；登出只在已登入時出現。') }}</p>
             </div>
-        </div>
-
-        <div class="ird-field" x-show="!selectedWidget.shared_ref && selectedWidget.source_mode !== 'auto'">
-            <label>{{ _('系統連結') }}</label>
-            <div class="ird-checks">
-                <template x-for="link in menuSystemLinks" :key="link.link">
-                    <label>
-                        <input type="checkbox"
-                               :checked="menuHasSystemLink(selectedWidget, link.link)"
-                               @change="toggleMenuSystemLink(selectedWidget, link.link, $event.target.checked)">
-                        <span x-text="link.label"></span>
-                    </label>
-                </template>
-            </div>
-            <p class="ird-hint">{{ _('登入與註冊只在未登入時出現，註冊需子系統開放註冊；登出只在已登入時出現。') }}</p>
         </div>
 
         <div class="ird-section">
@@ -211,77 +177,5 @@
             </div>
             <button type="button" class="ird-btn" @click="resetMenuStyle(selectedWidget)">{{ _('回復預設樣式') }}</button>
         </div>
-
-        <template x-if="sharedComponentEditor.open">
-            <div class="ird-issue-modal">
-                <div class="ird-issue-box ird-shared-menu-modal">
-                    <div class="ird-issue-head">
-                        <h3>{{ _('編輯共用選單') }}</h3>
-                        <button type="button" class="ird-icon-btn" @click="closeSharedComponentEditor()" title="{{ _('關閉') }}">×</button>
-                    </div>
-                    <div class="ird-issue-body">
-                        <div class="ird-field">
-                            <label>{{ _('選單資料來源') }}</label>
-                            <select x-model="sharedComponentEditor.draft.source_mode" @change="menuMarkChanged(sharedComponentEditor.draft)">
-                                <option value="manual">{{ _('手動挑選') }}</option>
-                                <option value="auto">{{ _('依 Site Map 自動產生') }}</option>
-                            </select>
-                        </div>
-                        <label class="ird-inline-check" x-show="sharedComponentEditor.draft.source_mode === 'auto'">
-                            <input type="checkbox" x-model="sharedComponentEditor.draft.include_system_links" @change="menuMarkChanged(sharedComponentEditor.draft)">
-                            <span>{{ _('包含系統連結（登入／註冊／登出）') }}</span>
-                        </label>
-                        <div class="ird-field" x-show="sharedComponentEditor.draft.source_mode !== 'auto'">
-                            <label>{{ _('已選項目') }}</label>
-                            <div class="ird-menu-list">
-                                <template x-for="row in selectedMenuRows(sharedComponentEditor.draft)" :key="row.key">
-                                    <div class="ird-menu-row ird-menu-tree-row" :class="{ 'ird-menu-row-deleted': row.deleted }">
-                                        <span class="ird-menu-name" :style="'padding-left:' + (row.depth * 18) + 'px'" x-text="row.label"></span>
-                                        <span class="ird-menu-kind" x-text="row.kindLabel"></span>
-                                        <span class="ird-menu-actions">
-                                            <button type="button" class="ird-icon-btn" :disabled="!row.canUp" @click="moveMenuItem(sharedComponentEditor.draft, row.path, -1)" title="{{ _('上移') }}">↑</button>
-                                            <button type="button" class="ird-icon-btn" :disabled="!row.canDown" @click="moveMenuItem(sharedComponentEditor.draft, row.path, 1)" title="{{ _('下移') }}">↓</button>
-                                            <button type="button" class="ird-icon-btn" :disabled="!row.canIndent" @click="indentMenuItem(sharedComponentEditor.draft, row.path)" title="{{ _('降一層') }}">→</button>
-                                            <button type="button" class="ird-icon-btn" :disabled="!row.canOutdent" @click="outdentMenuItem(sharedComponentEditor.draft, row.path)" title="{{ _('升一層') }}">←</button>
-                                            <button type="button" class="ird-icon-btn" @click="removeMenuItem(sharedComponentEditor.draft, row.path)" title="{{ _('移除') }}">×</button>
-                                        </span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                        <div class="ird-field" x-show="sharedComponentEditor.draft.source_mode !== 'auto'">
-                            <label>{{ _('可加入的網頁') }}</label>
-                            <div class="ird-menu-list">
-                                <template x-for="node in availableMenuNodes(sharedComponentEditor.draft)" :key="node.secure_code">
-                                    <div class="ird-menu-row">
-                                        <span class="ird-menu-name" :style="'padding-left:' + (node.depth * 18) + 'px'" x-text="node.name"></span>
-                                        <span class="ird-menu-kind" x-show="node.node_type === 'folder'">{{ _('資料夾') }}</span>
-                                        <button type="button" class="ird-btn ird-menu-add-btn" @click="addMenuNode(sharedComponentEditor.draft, node.secure_code)">{{ _('加入') }}</button>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                        <div class="ird-field" x-show="sharedComponentEditor.draft.source_mode !== 'auto'">
-                            <label>{{ _('系統連結') }}</label>
-                            <div class="ird-checks">
-                                <template x-for="link in menuSystemLinks" :key="link.link">
-                                    <label>
-                                        <input type="checkbox"
-                                               :checked="menuHasSystemLink(sharedComponentEditor.draft, link.link)"
-                                               @change="toggleMenuSystemLink(sharedComponentEditor.draft, link.link, $event.target.checked)">
-                                        <span x-text="link.label"></span>
-                                    </label>
-                                </template>
-                            </div>
-                        </div>
-                        <p class="ird-hint ird-hint-danger" x-show="sharedComponentEditor.error" x-text="sharedComponentEditor.error"></p>
-                    </div>
-                    <div class="ird-issue-actions">
-                        <button type="button" class="ird-btn" @click="closeSharedComponentEditor()">{{ _('取消') }}</button>
-                        <button type="button" class="ird-btn ird-btn-primary" :disabled="sharedComponentEditor.saving" @click="saveSharedComponentEditor()">{{ _('儲存共用選單') }}</button>
-                    </div>
-                </div>
-            </div>
-        </template>
     </div>
 </template>

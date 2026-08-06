@@ -1,5 +1,5 @@
 {% macro render(actions_expr, write_hint) %}
-<template x-if="dataScope">
+<template x-if="dataScope && !sharedComponentEditor.open">
     <div class="ird-section">
         <div class="ird-subtitle">{{ _('元件准入') }}</div>
         <template x-for="action in {{ actions_expr|safe }}" :key="action.key">

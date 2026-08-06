@@ -163,7 +163,8 @@ portal 實作移到
 **兩條路都要有**。
 
 **舊 `/shared-menus` 端點與前端呼叫一併移除**，不留 alias
-（`window.BkSharedMenu` 也已改名 `window.BkSharedComponent`）。
+（舊的前端全域 `window.BkSharedMenu` 已改名 `window.BkSharedComponent`，
+檔案 `shared-menu.js` 也在批次 3 更名為 `shared-component.js`）。
 
 ## 7. 樣板淨化（`page_template_service.sanitize_template_ir`）
 
@@ -182,13 +183,13 @@ report 碼改為 `shared_component_refs`（取代 `shared_menu_refs`），
 
 ### 8.1 共用元件區塊（macro，各型別複用）
 
-新增 `_ir_designer_shared_component.html`，提供 `render(widget_expr)` macro：
+新增 `_ir_designer_shared_component.html`，提供 `render()` 與 `editor_bar()` macro：
 
 - 未引用：`引用共用元件` 下拉（依 `widget.type` 過濾）＋ `[另存為共用元件]`
 - 引用中：顯示共用元件名稱 ＋ `[編輯共用元件]` / `[解除引用]`
 - 全部按鈕包 `{% if can('nocode_builder.manage') %}`（D2）
 
-在**每個** widget 型別的屬性面板頂部呼叫此 macro。
+在 `master_detail` 以外的 widget 型別屬性面板頂部呼叫此 macro。
 
 ### 8.2 引用中的欄位處理
 
@@ -196,15 +197,22 @@ report 碼改為 `shared_component_refs`（取代 `shared_menu_refs`），
 只留共用元件名稱、四個動作與唯讀摘要。
 理由：完全共用之後頁面端改了也不生效，留著可編輯的欄位比隱藏更誤導。
 
+引用中的 widget 在頁面 IR 只保留 `id` / `type` / `shared_ref` / `access_matrix`
+（有設定時），其餘型別設定鍵一律剝除，避免留下不會生效的死資料。
+
 `access_matrix` 區塊**例外，維持可編輯**（§1.3 的交集語意）。
 
-### 8.3 編輯共用元件 modal
+### 8.3 編輯共用元件：就地切換屬性面板
 
-沿用現行共用選單 modal 的形狀（存檔與頁面儲存分開，按鈕 `[儲存共用元件]`）：
+編輯共用元件時不再開獨立 modal，而是讓右側屬性面板改為編輯
+`sharedComponentEditor.draft`，並在面板頂部顯示 `editor_bar()`：
 
-- menu 型別：items 樹編輯 ＋ **自動模式開關** ＋ `include_system_links`
-  （自動模式開啟時，items 編輯區隱藏）
-- 其他型別：該型別的完整屬性欄位
+- `[儲存共用元件]` 直接 PUT 共用元件，與頁面 `[儲存]` 無關
+- `[取消]` 若有未儲存變更需二次確認
+- 編輯期間不允許切換選取的頁面 widget
+
+理由：table / detail / form / actions / text / layout 都已有完整屬性面板。
+就地切換可避免複製約 400 行屬性面板，也不用改寫二十餘個既有欄位處理函式。
 
 ### 8.4 兩個宿主都要改
 
@@ -218,25 +226,21 @@ report 碼改為 `shared_component_refs`（取代 `shared_menu_refs`），
 
 | 動作 | 現行行為（`ir-designer.js`） |
 |---|---|
-| 另存為共用元件 | `window.prompt` 取名 → POST 建立 → **自動把當前 widget 設成 `shared_ref` 並清空本地 `items`** → `markDirty()`（要按頁面 [儲存] 才寫進頁面） |
-| 解除引用 | 把**共用元件當下的 `items` 複製回本地 widget**，刪掉 `shared_ref`，`markDirty()` |
-| 編輯共用元件 | 獨立 modal，按 `[儲存共用元件]` 直接 PUT，**與頁面 [儲存] 完全無關**；存檔成功自動關閉 |
-| 引用中隱藏 | 目前只隱藏「已選項目」「可加入的網頁」「系統連結」三區，**外觀欄位仍可編輯**（批次 3 要一併隱藏） |
+| 另存為共用元件 | `window.prompt` 取名 → POST 建立 → 自動把當前 widget 設成 `shared_ref` 並剝除本地設定 → `markDirty()`（要按頁面 [儲存] 才寫進頁面） |
+| 解除引用 | 把共用元件當下的 `widget_json` 複製回本地 widget，刪掉 `shared_ref`，`markDirty()` |
+| 編輯共用元件 | 就地切換屬性面板，按 `[儲存共用元件]` 直接 PUT，**與頁面 [儲存] 完全無關**；存檔成功自動關閉 |
+| 引用中隱藏 | `master_detail` 以外的型別設定欄位全部隱藏；`access_matrix` 例外，仍由頁面端編輯 |
 
-**UI 文案現況仍是「共用選單」字樣**（`[另存為共用選單]` 等），
-泛化時要改成「共用元件」，記得同步 i18n。
+UI 文案統一使用「共用元件」，並同步 i18n。
 
-### 8.6 泛化到 layout / master_detail 的未決問題（動工前先定）
+### 8.6 泛化裁決
 
-- **`layout` 當共用元件時，`children` 算不算共用內容？**
-  `widget_json` 不含 `id`，但 children 是完整 widget 陣列、各自有 id。
-  引用時這些 id 會與頁面上其他 widget 撞號的風險未評估。
-  最保守的做法是**先不開放 layout 與 master_detail**，只做
-  table / detail / form / actions / text 五種
-- `table.row_link_ref` / `actions` 的 target 這類**指向同頁其他 widget 的引用**，
-  跨頁共用時會指向不存在的對象。fail-closed 是否足夠、要不要在建立時擋掉，未定
-- 解除引用後，若共用元件與頁面端**都有 `access_matrix`**（交集語意），
-  要保留哪一份？現行 menu 沒踩到（menu 的 access_matrix 少用）
+- `layout` 開放共用；引用時頁面 widget 的 `children` 會被剝除，flow 樹的
+  `加入到此 layout` 按鈕停用。
+- 跨 widget 引用（`table.row_actions_ref` / `table.row_link_ref`）在建立或更新
+  共用元件時一律剝除，後端 `dangling_ref` 驗證是最後防線。
+- 解除引用時 `access_matrix` 以頁面端那份為準；頁面端沒有才取共用元件的。
+- `master_detail` 本批不做設計器 UI，後端能力保留給後續批次。
 
 ## 9. 驗收
 

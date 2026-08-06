@@ -17,7 +17,7 @@ files:
     - modules/nocode_builder/static/modules/nocode_builder/js/lookup-manager.js
     - modules/nocode_builder/static/modules/nocode_builder/js/sitemenu-widget.js
     - modules/nocode_builder/static/modules/nocode_builder/js/sub-system-config.js
-    - modules/nocode_builder/static/modules/nocode_builder/js/shared-menu.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/shared-component.js
     - modules/nocode_builder/static/modules/nocode_builder/js/ir-designer.js
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace.js
     - modules/nocode_builder/static/modules/nocode_builder/js/workspace-org.js
@@ -32,6 +32,7 @@ files:
     - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_issue_modal.html
     - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_save_template.html
     - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_access_matrix.html  # 元件准入 macro render()
+    - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_shared_component.html  # 共用元件區塊 macro
     - modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html  # PF-8 權限矩陣分頁
     - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_menu.html  # PF-8 menu widget 屬性面板
   models:

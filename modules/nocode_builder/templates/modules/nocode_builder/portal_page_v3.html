@@ -46,14 +46,8 @@
                 {% endif %}
             </div>
         </header>
-        {% if preview_banner %}
-        <div class="pir-preview-banner">
-            {{ _('預覽模式：以「%(group)s / %(level)s」身分檢視，資料為唯讀，寫入操作不會生效。', group=preview_banner.group or _('不限群組'), level=preview_banner.level) }}
-        </div>
-        {% endif %}
         <main class="portal-content{% if engine in ['grid', 'free'] %} portal-content--wide{% endif %}">
             <div class="pir-page{% if engine in ['grid', 'free'] %} pir-page--wide{% endif %}">
-                <h1 class="pir-page-title">{{ page_title }}</h1>
                 <div class="pir-body">{{ body_html|safe }}</div>
             </div>
         </main>

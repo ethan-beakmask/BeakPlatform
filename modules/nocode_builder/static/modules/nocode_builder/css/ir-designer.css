@@ -506,10 +506,6 @@
     border: 1px solid var(--color-border);
 }
 
-.ird-shared-menu-modal {
-    width: min(820px, 96vw);
-}
-
 .ird-inline-check {
     color: var(--color-text-secondary);
     font-size: 12px;

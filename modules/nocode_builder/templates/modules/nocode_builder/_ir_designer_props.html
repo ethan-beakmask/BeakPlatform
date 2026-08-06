@@ -1,7 +1,8 @@
 {% import "modules/nocode_builder/_ir_designer_access_matrix.html" as access_matrix %}
+{% import "modules/nocode_builder/_ir_designer_shared_component.html" as shared_component %}
         <aside class="ird-panel ird-props">
             <h2>{{ _('屬性') }}</h2>
-            <template x-if="engine !== 'flow' && selectedZoneId && selectedZoneMeta()">
+            <template x-if="showZonePanel()">
                 <div class="ird-prop-body">
                     <div class="ird-section">
                         <div class="ird-subtitle">{{ _('區塊') }} <span x-text="selectedZoneId"></span></div>
@@ -45,17 +46,21 @@
                     </div>
                 </div>
             </template>
-            <template x-if="!(engine !== 'flow' && selectedZoneId && selectedZoneMeta()) && !selectedWidget">
+            <template x-if="!showZonePanel() && !selectedWidget">
                 <div class="ird-empty">{{ _('請選擇元件') }}</div>
             </template>
-            <template x-if="!(engine !== 'flow' && selectedZoneId && selectedZoneMeta()) && selectedWidget">
+            <template x-if="!showZonePanel() && selectedWidget">
                 <div class="ird-prop-body">
-                    <div class="ird-field">
-                        <label>ID</label>
-                        <input type="text" x-model="selectedWidget.id" @input="onIdInput($event.target.value)">
-                        <div class="ird-hint" x-show="!isValidSlug(selectedWidget.id)">{{ _('ID 格式不正確') }}</div>
-                    </div>
-                    <template x-if="selectedWidget.type === 'layout'">
+                    {{ shared_component.editor_bar() }}
+                    <template x-if="!sharedComponentEditor.open">
+                        <div class="ird-field">
+                            <label>ID</label>
+                            <input type="text" x-model="selectedWidget.id" @input="onIdInput($event.target.value)">
+                            <div class="ird-hint" x-show="!isValidSlug(selectedWidget.id)">{{ _('ID 格式不正確') }}</div>
+                        </div>
+                    </template>
+                    <template x-if="selectedWidget.type !== 'master_detail'"><div>{{ shared_component.render() }}</div></template>
+                    <template x-if="selectedWidget.type === 'layout' && !selectedWidget.shared_ref">
                         <div class="ird-section">
                             <div class="ird-field">
                                 <label>{{ _('欄數') }}</label>
@@ -67,7 +72,7 @@
                             </div>
                         </div>
                     </template>
-                    <template x-if="selectedWidget.type === 'text'">
+                    <template x-if="selectedWidget.type === 'text' && !selectedWidget.shared_ref">
                         <div class="ird-section">
                             <div class="ird-field">
                                 <label>{{ _('文字大小層級') }}</label>
@@ -91,7 +96,7 @@
                     {% include "modules/nocode_builder/_ir_designer_menu.html" %}
                     <template x-if="['table', 'detail'].includes(selectedWidget.type)">
                         <div>
-                            <div class="ird-section">
+                            <template x-if="!selectedWidget.shared_ref"><div class="ird-section">
                                 <div class="ird-subtitle">{{ _('資料綁定') }}</div>
                                 <div class="ird-field">
                                     <label>{{ _('資料範圍') }}</label>
@@ -124,11 +129,11 @@
                                         <label><input type="checkbox" :value="field" x-model="selectedWidget.binding.fields" @change="syncBindingFields()"> <span x-text="field"></span></label>
                                     </template>
                                 </div>
-                            </div>
+                            </div></template>
                             {{ access_matrix.render('accessActions', _('檢視（read）：未啟用時不額外限制；新增／編輯／刪除：未啟用時任何 portal 帳號都無法執行')) }}
                         </div>
                     </template>
-                    <template x-if="selectedWidget.type === 'table'">
+                    <template x-if="selectedWidget.type === 'table' && !selectedWidget.shared_ref">
                         <div class="ird-section">
                             <div class="ird-subtitle">{{ _('欄位') }}</div>
                             <template x-for="(col, idx) in selectedWidget.columns" :key="idx">
@@ -176,7 +181,8 @@
                                     <option value="desc">desc</option>
                                 </select>
                             </div>
-                            <div class="ird-field">
+                            <!-- 列動作／列連結目標指向同頁其他 widget，共用元件裡必然 dangling（後端會擋 400） -->
+                            <div class="ird-field" x-show="!sharedComponentEditor.open">
                                 <label>{{ _('列動作') }}</label>
                                 <select x-model="selectedWidget.row_actions_ref" @change="emptyToDelete(selectedWidget, 'row_actions_ref')">
                                     <option value="">{{ _('無') }}</option>
@@ -185,7 +191,7 @@
                                     </template>
                                 </select>
                             </div>
-                            <div class="ird-field">
+                            <div class="ird-field" x-show="!sharedComponentEditor.open">
                                 <label>{{ _('列連結目標') }}</label>
                                 <select :value="selectedWidget.row_link_ref || ''" @change="setOptionalWidgetValue(selectedWidget, 'row_link_ref', $event.target.value)">
                                     <option value="" :selected="!selectedWidget.row_link_ref">{{ _('不啟用') }}</option>
@@ -196,7 +202,7 @@
                             </div>
                         </div>
                     </template>
-                    <template x-if="selectedWidget.type === 'detail'">
+                    <template x-if="selectedWidget.type === 'detail' && !selectedWidget.shared_ref">
                         <div class="ird-section">
                             <div class="ird-subtitle">{{ _('欄位') }}</div>
                             <template x-for="(fieldDef, idx) in selectedWidget.fields" :key="idx">
@@ -403,10 +409,9 @@
                             {{ access_matrix.render('masterDetailAccessActions', _('未啟用新增時無法送出；編輯需同時勾選主檔可編輯')) }}
                         </div>
                     </template>
-
                     <template x-if="selectedWidget.type === 'actions'">
                         <div>
-                            <div class="ird-section">
+                            <template x-if="!selectedWidget.shared_ref"><div class="ird-section">
                                 <div class="ird-subtitle">{{ _('按鈕') }}</div>
                                 <template x-for="(btn, idx) in selectedWidget.buttons" :key="idx">
                                     <div class="ird-list-item">
@@ -440,14 +445,14 @@
                                 </template>
                                 <p class="ird-hint">{{ _('權限欄位僅平台頁面生效；子系統 Portal 一律以下方「元件准入」判定。') }}</p>
                                 <button type="button" class="ird-btn" @click="addActionButton()">{{ _('新增按鈕') }}</button>
-                            </div>
+                            </div></template>
                             {{ access_matrix.render('actionsAccessActions', _('未啟用「執行動作」時，portal 訪客看不到任何按鈕。')) }}
                         </div>
                     </template>
 
                     <template x-if="selectedWidget.type === 'form'">
                         <div>
-                            <div class="ird-section">
+                            <template x-if="!selectedWidget.shared_ref"><div class="ird-section">
                                 <p class="ird-hint">
                                     <span x-text="formSubmitReady() ? __('可送出') : __('唯讀：尚缺設定')"></span>
                                     <template x-if="!formSubmitReady()">
@@ -487,7 +492,7 @@
                                         </optgroup>
                                     </select>
                                 </div>
-                            </div>
+                            </div></template>
                             {{ access_matrix.render('formAccessActions', _('未啟用新增時，portal 訪客無法送出此表單。')) }}
                         </div>
                     </template>

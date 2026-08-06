@@ -1,0 +1,56 @@
+{% macro render() %}
+<template x-if="!sharedComponentEditor.open">
+    <div class="ird-field">
+        <label>{{ _('共用元件') }}</label>
+        <template x-if="!selectedWidget.shared_ref">
+            <div class="ird-shared-menu-box">
+                <div class="ird-inline-actions">
+                    <select @change="applySharedComponentRef(selectedWidget, $event.target.value); $event.target.value = ''">
+                        <option value="">{{ _('引用共用元件') }}</option>
+                        <template x-for="component in sharedComponentsForWidget(selectedWidget)" :key="component.secure_code">
+                            <option :value="component.secure_code"
+                                    :selected="component.secure_code === selectedWidget.shared_ref"
+                                    x-text="component.name"></option>
+                        </template>
+                    </select>
+                    {% if can('nocode_builder.manage') %}
+                    <button type="button" class="ird-btn" x-show="canManageSharedComponents()" @click="saveWidgetAsSharedComponent(selectedWidget)">{{ _('另存為共用元件') }}</button>
+                    {% endif %}
+                </div>
+                <p class="ird-hint" x-show="sharedComponentsError" x-text="sharedComponentsError"></p>
+                <p class="ird-hint" x-show="!sharedComponentScope()">{{ _('此頁尚未掛在子系統下，無法使用共用元件') }}</p>
+            </div>
+        </template>
+        <template x-if="selectedWidget.shared_ref">
+            <div class="ird-shared-menu-box">
+                <p class="ird-hint" x-show="selectedSharedComponentName(selectedWidget)" x-text="selectedSharedComponentName(selectedWidget)"></p>
+                <p class="ird-hint ird-hint-danger" x-show="!selectedSharedComponentName(selectedWidget)">{{ _('共用元件已不存在') }}</p>
+                <p class="ird-hint">{{ _('此元件的設定由共用元件統一管理，頁面端的設定不會生效。') }}</p>
+                <div class="ird-inline-actions">
+                    {% if can('nocode_builder.manage') %}
+                    <button type="button" class="ird-btn" x-show="canManageSharedComponents()" :disabled="!selectedSharedComponentName(selectedWidget)" @click="openSharedComponentEditor(selectedWidget)">{{ _('編輯共用元件') }}</button>
+                    <button type="button" class="ird-btn" x-show="canManageSharedComponents()" :disabled="!selectedSharedComponentName(selectedWidget)" @click="unlinkSharedComponent(selectedWidget)">{{ _('解除引用') }}</button>
+                    {% endif %}
+                </div>
+            </div>
+        </template>
+    </div>
+</template>
+{% endmacro %}
+
+{% macro editor_bar() %}
+<template x-if="sharedComponentEditor.open">
+    <div class="ird-section">
+        <div class="ird-subtitle">
+            {{ _('編輯共用元件') }}：<span x-text="sharedComponentEditor.source ? sharedComponentEditor.source.name : ''"></span>
+        </div>
+        <p class="ird-hint">{{ _('這裡的修改會套用到所有引用此共用元件的頁面，與頁面的儲存無關。') }}</p>
+        <p class="ird-hint" x-show="sharedComponentEditor.draft && sharedComponentEditor.draft.type === 'layout'">{{ _('共用 layout 的內含元件不能在這裡增修；要改內容請先解除引用，在頁面上編好後另存為新的共用元件。') }}</p>
+        <p class="ird-hint ird-hint-danger" x-show="sharedComponentEditor.error" x-text="sharedComponentEditor.error"></p>
+        <div class="ird-inline-actions">
+            <button type="button" class="ird-btn ird-btn-primary" :disabled="sharedComponentEditor.saving" @click="saveSharedComponentEditor()">{{ _('儲存共用元件') }}</button>
+            <button type="button" class="ird-btn" @click="closeSharedComponentEditor()">{{ _('取消') }}</button>
+        </div>
+    </div>
+</template>
+{% endmacro %}
