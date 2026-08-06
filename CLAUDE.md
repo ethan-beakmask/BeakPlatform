@@ -202,16 +202,30 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
   對應動作 API 掛 `@permission_required('<permission_code>')`（capability_service）；
   指引 `docs/COMPONENT_VISIBILITY_GUIDE.md`（四層防線總表 + NoCode_Builder 消費規則）
 
-### PERM-02: D2 元件級推廣檢查（強制，2026-07-18 起）
+### PERM-02: D2 元件級一律預設套用（2026-08-06 起，取消事前詢問）
 
-**任何開發或修改工單，凡觸及「頁面模板、動作按鈕（增刪改查/簽核/撤銷等）、動作型 API」，
-動工前必須先問用戶：「本次是否依 D2 標準進行？」**，取得答覆後才能實作。
+**凡觸及「頁面模板、動作按鈕（增刪改查/簽核/撤銷等）、動作型 API」，
+一律直接依 D2 標準實作，不必先問用戶。** 只有用戶明說「這次不要套」才不套。
 
-- D2 標準 = 按鈕包 `can()`、動作 API 掛 `@permission_required`、code 沿用 API 層既有
-  permission code（詳見 `docs/COMPONENT_VISIBILITY_GUIDE.md` §2.5）
-- 用戶答「是」→ 該工單範圍內的按鈕與 API 一併完成 D2 改造；答「否」→ 照原樣修改，不擅自加
-- 純資料修正、CSS、i18n、文件等不觸及按鈕/動作 API 的工單不必問
-- 全新頁面**不必問，一律直接套 D2 標準**（新程式碼沒有理由用舊模式）
+- D2 標準 = 按鈕包 `can()`（JS 用 `BkCaps.can()`）、對應動作 API 掛
+  `@permission_required`、code 沿用 API 層既有 permission code
+  （詳見 `docs/COMPONENT_VISIBILITY_GUIDE.md` §2.5）
+- **前端隱藏不是防線**：API 沒掛檢查，F12 改一下照樣打得進去。兩件事必須成對
+- 純資料修正、CSS、i18n、文件等不觸及按鈕/動作 API 的變更本來就不涉及 D2
+
+**NoCode 的兩面都不得省**（用戶 2026-08-06 特別指明，因為 portal 對 Internet 開放）：
+
+| 面 | 世界 | 等價機制 |
+|---|---|---|
+| 管理端（設計器、工作區、共用元件／樣板 API） | 平台 | D2 本身：`can()` + `@permission_required('nocode_builder.manage')` |
+| portal 公開頁 | portal | widget／頁面 access_matrix + portal 權限碼制，判定失敗一律 404、解析不到一律 fail-closed |
+
+**在 portal 側掛平台的 `@permission_required` 是無效的**（portal 帳號不在平台
+`users` 表裡）——那邊的元件級控制走 access_matrix，規則見
+`docs/codex_spec/portal.md` 與 `docs/PORTAL_ACCOUNT_SPEC.md`。
+
+**修訂緣由**：原規定是「動工前先問用戶是否依 D2 進行」。D2 已是定版標準，
+每次停下來問與「規格明確就直接執行」相衝突，且新程式碼沒有理由用舊模式。
 
 ### TENANT-01: 強制企業隔離
 - 所有查詢包含 `org_secure_code` 過濾
@@ -1109,4 +1123,5 @@ cd backend && flask run --host=127.0.0.1 --port=7000
 B：樣板庫→`docs/PAGE_TEMPLATE_SPEC.md`、menu widget→`docs/PAGE_IR_SPEC.md` §3.7、
 API 陷阱→`docs/codex_spec/portal.md`、iptables→全域 network_architecture.md，
 共用元件段收斂為指針，VERIFY 三條合併；
-C：取消工單格式、manifest 由「禁止自行 grep」放寬為「不足時可搜尋但要說明並回補」）*
+C：取消工單格式、manifest 由「禁止自行 grep」放寬為「不足時可搜尋但要說明並回補」、
+PERM-02 取消事前詢問改為預設套用 D2）*
