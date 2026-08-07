@@ -1,7 +1,41 @@
 """
 NoCode Builder Module - 子系統開發模組
 無碼子系統開發平台：視圖管理、頁面管理、子系統開發、選項清單
+
+選單隱藏開關（2026-08-07 起）：
+環境變數 NOCODE_BUILDER_MENU 不等於 'on' 時，本模組不註冊任何平台選單。
+模組本身照常載入 —— 路由、API、portal 公開頁全部可用，只是介面上看不到入口。
+復原步驟見 docs/NOCODE_MENU_HIDE.md（.env 加一行 + 一句 SQL + 重啟）。
 """
+import os
+
+# 平台選單定義。是否註冊由 NOCODE_BUILDER_MENU 決定，見檔頭說明。
+_MENU_ITEMS = [
+    {
+        'code': 'nocode_builder',
+        'name': '子系統開發模組',
+        'icon': 'ri-database-2-line',
+        'parent': None,
+        'sort_order': 5,
+        'user_types': ['ORG_ADMIN'],
+        'children': [
+            {
+                'code': 'nocode_builder.sub_systems',
+                'name': '子系統開發',
+                'url': 'nocode_builder_web.sub_system_list',
+                'sort_order': 0
+            },
+            {
+                'code': 'nocode_builder.lookup',
+                'name': '選項-清單-資料樹',
+                'url': 'nocode_builder_web.lookup_manager',
+                'sort_order': 1
+            },
+        ]
+    }
+]
+
+_MENU_ENABLED = os.getenv('NOCODE_BUILDER_MENU', '').strip().lower() == 'on'
 
 MODULE_INFO = {
     'name': 'nocode_builder',
@@ -13,30 +47,7 @@ MODULE_INFO = {
     'platform_version': '>=1.0.0',
     'enabled': True,
 
-    'menu_items': [
-        {
-            'code': 'nocode_builder',
-            'name': '子系統開發模組',
-            'icon': 'ri-database-2-line',
-            'parent': None,
-            'sort_order': 5,
-            'user_types': ['ORG_ADMIN'],
-            'children': [
-                {
-                    'code': 'nocode_builder.sub_systems',
-                    'name': '子系統開發',
-                    'url': 'nocode_builder_web.sub_system_list',
-                    'sort_order': 0
-                },
-                {
-                    'code': 'nocode_builder.lookup',
-                    'name': '選項-清單-資料樹',
-                    'url': 'nocode_builder_web.lookup_manager',
-                    'sort_order': 1
-                },
-            ]
-        }
-    ],
+    'menu_items': _MENU_ITEMS if _MENU_ENABLED else [],
 
     'permissions': [
         {

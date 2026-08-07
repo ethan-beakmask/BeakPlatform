@@ -707,6 +707,14 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
   curl -s -b cj.txt -X POST "$BASE/api/xxx" -H 'Content-Type: application/json' -H "X-CSRFToken: $TOKEN" -d '{...}'
   ```
 
+### NoCode 選單目前刻意隱藏中（2026-08-07 起，鐵人賽期間）
+
+**看不到「子系統開發模組」選單是預期狀態，不是壞了，不要去修。**
+`MODULE_INFO['menu_items']` 由環境變數 `NOCODE_BUILDER_MENU` 控制（不等於 `on` 即為空），
+既有三筆 `menu_items` 已設 `is_deleted=true`。模組本身照常載入——路由、API、portal
+全部可用，直接輸入網址進得去。復原步驟與「為什麼用 is_deleted 而非 is_active」
+見 `docs/NOCODE_MENU_HIDE.md`。
+
 ### NoCode Builder / Portal 開發備忘（2026-07-28 起）
 
 **環境事實：開發機上目前有一個可用的 NoCode 子系統**，由
