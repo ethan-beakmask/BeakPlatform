@@ -1,0 +1,37 @@
+{
+  "platform-no-module-import": {
+    "backend/app/api/code_service.py": {
+      "nocode_builder": 1
+    },
+    "backend/app/api/conglomerates.py": {
+      "form_workflow": 1,
+      "spec_formulate": 1
+    },
+    "backend/app/api/store.py": {
+      "form_workflow": 4
+    },
+    "backend/app/security/decorators.py": {
+      "open_defense": 1
+    },
+    "backend/app/services/_menu_module_filter.py": {
+      "nocode_builder": 1
+    },
+    "backend/app/services/conglomerate_service.py": {
+      "form_workflow": 1
+    },
+    "backend/app/services/lookup_org_service.py": {
+      "form_workflow": 3
+    },
+    "backend/app/web/cg_databases.py": {
+      "form_workflow": 1
+    },
+    "backend/app/web/main.py": {
+      "form_workflow": 1,
+      "nocode_builder": 3
+    },
+    "backend/app/web/org_databases.py": {
+      "form_workflow": 7,
+      "nocode_builder": 2
+    }
+  }
+}
