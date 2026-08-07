@@ -118,6 +118,31 @@ Generated with Claude Code"
 
 ---
 
+## BBN 白板已人機分離（2026-08-07，由 BeakBroodNest 端變更）
+
+BeakBroodNest 把人類白板與 AI 白板拆成兩套，本專案的白板換了：
+
+| 項目 | 舊 | 新 |
+|---|---|---|
+| BeakPlatform 專案白板 | canvas 29 / slug `tMU_fnXu` | **canvas 72 / slug `2a_YbjqA`** |
+| 舊白板 | — | 改名 `👤 BeakPlatform`，清掉 `code` 與 `project_path`，成為使用者自用白板 |
+
+- `project_tasks(cwd='/opt/BeakPlatform-dev')` 已自動指向新白板，**待辦、`PF-xx` 短代號、發號計數器全部照舊**，呼叫方式不用改
+- **禁止使用記憶或舊文件裡的 slug `tMU_fnXu` 寫卡**，那會污染使用者的自用白板。一律用 `project_tasks` 當下回傳的 slug
+- 使用者原本建的「claude建的卡片」群組（67 張）已整批搬到新白板，群組本身已刪除
+
+### AI 可見性：`canvases.audience` 三態
+
+`human`（使用者自用，AI 預設不讀）/ `ai`（AI 工作區）/ `shared`（雙方共用）。
+
+- `note_search` 與 `note_overview` 預設排除「只出現在 `human` 白板上」的卡片；排除生效時回傳帶 `human_boards_hidden`
+- 要查使用者白板內容：`note_search(..., include_human_boards=True)`
+- **`shared` 只解除讀取隔離，不解除人機分離**：AI 讀得到，但使用者的卡仍不得改內容、不得搬位置、不得改白板名稱
+- 判定**不掛 `owner`**。`atom.owner` 是建立者兼寫入權限閘門，不是受眾；而且 `source='ai'` 也不代表內容是 AI 產出 —— 使用者常把 Claude 的回答貼進自己白板當筆記
+- 詳細規範在 `/opt/BeakBroodNest/CLAUDE.md` 與 `docs/PROJECT_FACTS.md`，設計理由見 BBN 知識庫 atom 5082
+
+---
+
 ## Manifest 優先的檔案定位（2026-08-06 放寬措辭）
 
 **manifest 的用意是避免盲猜，不是禁止思考。**
