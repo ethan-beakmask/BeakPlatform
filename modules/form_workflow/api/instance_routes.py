@@ -14,6 +14,7 @@ from app.platform.auth import current_user, has_permission, require_permission
 from app.platform.data import get_current_org
 
 from . import api_bp
+from ..services.task_authorizer import can_act_on_task, get_actor_role_codes
 from flask_babel import gettext as _
 
 
@@ -110,13 +111,11 @@ def list_pending_tasks():
     ).order_by(FwNodeExecutionQueue.scheduled_at.asc()).all()
 
     user_code = current_user.secure_code
+    role_codes = get_actor_role_codes(user_code, org.secure_code)
     result = []
     for task in tasks:
         # 檢查當前用戶是否為指定簽核人
-        task_result_data = (task.result or {}).get('data', {})
-        assignee_type = task_result_data.get('assignee_type')
-        assignees = task_result_data.get('assignees', [])
-        if assignee_type and user_code not in assignees:
+        if not can_act_on_task(task, user_code, org.secure_code, role_codes):
             continue
 
         # 取得關聯的表單實例資訊
@@ -163,10 +162,7 @@ def get_pending_task(secure_code):
         return jsonify({'success': False, 'error': 'Task not found'}), 404
 
     # 檢查當前用戶是否為指定簽核人
-    task_result_data = (task.result or {}).get('data', {})
-    assignee_type = task_result_data.get('assignee_type')
-    assignees = task_result_data.get('assignees', [])
-    if assignee_type and current_user.secure_code not in assignees:
+    if not can_act_on_task(task, current_user.secure_code, org.secure_code):
         return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
     # 取得關聯的表單實例
@@ -218,9 +214,7 @@ def approve_task(secure_code):
 
     # 檢查當前用戶是否為指定簽核人
     task_result_data = (task.result or {}).get('data', {})
-    assignee_type = task_result_data.get('assignee_type')
-    assignees = task_result_data.get('assignees', [])
-    if assignee_type and current_user.secure_code not in assignees:
+    if not can_act_on_task(task, current_user.secure_code, org.secure_code):
         return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
     data = request.get_json() or {}

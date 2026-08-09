@@ -13,6 +13,7 @@ from app.platform.data import get_current_org
 from app import db, csrf
 
 from .form_center import form_center_bp
+from ..services.task_authorizer import can_act_on_task, get_actor_role_codes
 from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ def batch_approve_tasks():
         return jsonify({'success': False, 'error': _('單次批次簽核上限 100 筆')}), 400
 
     user_code = current_user.secure_code
+    role_codes = get_actor_role_codes(user_code, org.secure_code)
     results = []        # 每筆處理結果
     success_count = 0
     fail_count = 0
@@ -71,9 +73,7 @@ def batch_approve_tasks():
 
             # 檢查是否為指定簽核人
             task_result_data = (task.result or {}).get('data', {})
-            assignee_type = task_result_data.get('assignee_type')
-            assignees = task_result_data.get('assignees', [])
-            if assignee_type and user_code not in assignees:
+            if not can_act_on_task(task, user_code, org.secure_code, role_codes):
                 results.append({'queue_secure_code': qsc, 'success': False, 'error': _('非指定簽核人')})
                 fail_count += 1
                 db.session.rollback()

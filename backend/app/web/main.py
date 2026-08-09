@@ -81,6 +81,9 @@ def dashboard():
     pending_count = 0
     try:
         from modules.form_workflow.models import FwNodeExecutionQueue
+        from modules.form_workflow.services.task_authorizer import (
+            can_act_on_task, get_actor_role_codes,
+        )
         from sqlalchemy import and_
 
         user_code = current_user.secure_code
@@ -95,11 +98,9 @@ def dashboard():
                 )
             ).all()
 
+            role_codes = get_actor_role_codes(user_code, org_code)
             for task in tasks:
-                task_data = (task.result or {}).get('data', {})
-                assignee_type = task_data.get('assignee_type')
-                assignees = task_data.get('assignees', [])
-                if not assignee_type or user_code in assignees:
+                if can_act_on_task(task, user_code, org_code, role_codes):
                     pending_count += 1
     except Exception as e:
         logger.warning('Dashboard pending count query failed: %s', e)

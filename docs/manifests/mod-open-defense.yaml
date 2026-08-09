@@ -106,3 +106,7 @@ note: |
     flask module sync 補種,碰撞跳過)。beluga 原自訂 SOC_L1 已由 migration 082
     收編為 SECURITY_STAFF。企業自行分工設計見 docs/guides/SOC_ROLE_DESIGN_GUIDE.md,
     機制實作在 backend/app/services/module_role_service.py。
+  - 2026-08-09 資安案件處置中心 can_act 改走
+    modules.form_workflow.services.task_authorizer.can_act_on_task，支援 ROLE 當前角色
+    即時比對；原本 assignees 快照為空即全員可操作的 fail-open 行為同步收緊為
+    fail-closed。

@@ -14,6 +14,7 @@ from app import db, csrf
 
 from .form_center import form_center_bp
 from .fc_utils import _apply_field_permissions_to_schema
+from ..services.task_authorizer import can_act_on_task, get_actor_role_codes
 from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
@@ -37,15 +38,13 @@ def list_pending_tasks():
     ).order_by(FwNodeExecutionQueue.scheduled_at.asc()).all()
 
     user_code = current_user.secure_code
+    role_codes = get_actor_role_codes(user_code, org.secure_code)
 
     # 先過濾出指派給當前用戶的任務
     my_tasks = []
     form_sc_set = set()
     for task in tasks:
-        task_result_data = (task.result or {}).get('data', {})
-        assignee_type = task_result_data.get('assignee_type')
-        assignees = task_result_data.get('assignees', [])
-        if assignee_type and user_code not in assignees:
+        if not can_act_on_task(task, user_code, org.secure_code, role_codes):
             continue
         my_tasks.append(task)
         if task.form_instance_secure_code:
@@ -156,10 +155,8 @@ def get_pending_task(secure_code):
         return jsonify({'success': False, 'error': _('找不到指定的任務')}), 404
 
     # 檢查當前用戶是否為指定簽核人
-    task_result_data = (task.result or {}).get('data', {})
-    assignee_type = task_result_data.get('assignee_type')
-    assignees = task_result_data.get('assignees', [])
-    if assignee_type and current_user.secure_code not in assignees:
+    user_can_act = can_act_on_task(task, current_user.secure_code, org.secure_code)
+    if not user_can_act:
         return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
     # 取得表單資訊（使用 secure_code）
@@ -183,7 +180,7 @@ def get_pending_task(secure_code):
 
     # 判斷用戶角色 (approver/reader) 並取得欄位權限
     field_permissions = node_config.get('field_permissions', {})
-    is_approver = current_user.secure_code in (task_result_data.get('assignees', []))
+    is_approver = user_can_act
     user_role = 'approver' if is_approver else 'reader'
     role_permissions = field_permissions.get(user_role, {})
 
@@ -289,10 +286,7 @@ def lock_task(secure_code):
             return jsonify({'success': False, 'error': _('找不到任務或已處理')}), 404
 
         # 檢查當前用戶是否為指定簽核人
-        task_result_data = (task.result or {}).get('data', {})
-        assignee_type = task_result_data.get('assignee_type')
-        assignees = task_result_data.get('assignees', [])
-        if assignee_type and current_user.secure_code not in assignees:
+        if not can_act_on_task(task, current_user.secure_code, org.secure_code):
             return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
         # 檢查是否已被鎖定
@@ -393,9 +387,7 @@ def approve_task(secure_code):
 
         # 檢查當前用戶是否為指定簽核人
         task_result_data = (task.result or {}).get('data', {})
-        assignee_type = task_result_data.get('assignee_type')
-        assignees = task_result_data.get('assignees', [])
-        if assignee_type and current_user.secure_code not in assignees:
+        if not can_act_on_task(task, current_user.secure_code, org.secure_code):
             return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
         # 驗證鎖定持有者：必須是當前用戶且未逾時

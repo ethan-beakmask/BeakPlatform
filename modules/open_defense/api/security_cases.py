@@ -74,6 +74,9 @@ def list_cases():
         limit:  最多筆數（預設 200）
     """
     from modules.form_workflow.models import FwNodeExecutionQueue
+    from modules.form_workflow.services.task_authorizer import (
+        can_act_on_task, get_actor_role_codes,
+    )
 
     org = get_current_org()
     if not org:
@@ -94,6 +97,7 @@ def list_cases():
     # 批次查各案件的待簽核節點（1-click 處置的入口鍵）
     wi_scs = [wi.secure_code for _, wi in rows]
     waiting_map = {}
+    queue_map = {}
     if wi_scs:
         waiting = FwNodeExecutionQueue.query.filter(
             FwNodeExecutionQueue.org_secure_code == org.secure_code,
@@ -108,8 +112,10 @@ def list_cases():
                 'node_name': q.node_name,
                 'assignees': ((q.result or {}).get('data') or {}).get('assignees', []),
             }
+            queue_map[q.workflow_instance_secure_code] = q
 
     user_sc = current_user.secure_code
+    role_codes = get_actor_role_codes(user_sc, org.secure_code)
     result = []
     for fi, wi in rows:
         fd = fi.form_data or {}
@@ -134,8 +140,14 @@ def list_cases():
             'completed_at': fi.completed_at.isoformat() if fi.completed_at else None,
             'sla_minutes': _sla_minutes(severity),
             'waiting_node': waiting,
-            'can_act': bool(waiting and (
-                not waiting['assignees'] or user_sc in waiting['assignees'])),
+            'can_act': bool(
+                waiting and can_act_on_task(
+                    queue_map.get(wi.secure_code),
+                    user_sc,
+                    org.secure_code,
+                    role_codes,
+                )
+            ),
         })
 
     # EGRESS-01:form_data 衍生欄位過 list 語境政策（資源=fw_form:<模板SC>，
