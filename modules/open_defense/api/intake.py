@@ -11,6 +11,7 @@ from flask import request, jsonify, g
 
 from app import limiter
 from app.security.decorators import webhook_hmac_required
+from app.security.client_ip import get_client_ip
 from app.security.rate_limiter import (
     key_func_from_intake_key, auth_failure_limit_kwargs,
 )
@@ -33,9 +34,10 @@ def intake():
     """事件接收 webhook(契約 §4)。P2 起認證走平台 ApiKey(g.api_key)。"""
     # 1. scope 授權:key 必須具備 od_intake scope
     if not isinstance((g.api_key.scopes or {}).get('od_intake'), dict):
+        client_ip = get_client_ip()
         logger.warning(
             'intake scope denied key=%s ip=%s',
-            g.api_key.key_id, request.remote_addr,
+            g.api_key.key_id, client_ip,
         )
         return jsonify({'error': 'scope_denied'}), 403
 
@@ -63,7 +65,7 @@ def intake():
         event, is_dup = process_intake(
             api_key=g.api_key,
             body=normalized,
-            source_ip=request.remote_addr,
+            source_ip=get_client_ip(),
         )
     except IntakeError as exc:
         logger.warning(

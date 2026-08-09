@@ -1,0 +1,38 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('事件路由設定 - OpenDefense') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/open_defense/css/od-common.css">
+{% endblock %}
+
+{% block content %}
+<div class="od-container" x-data="odEventRouting()" x-init="load()">
+    <div class="od-header">
+        <div>
+            <h1>{{ _('事件路由設定') }}</h1>
+            <p>{{ _('設定外部安全事件要套用的表單模板，以及 native SOC 通報的欄位解析方式。') }}</p>
+        </div>
+        <button class="btn btn-secondary" @click="load()">{{ _('重新整理') }}</button>
+    </div>
+
+    <div class="od-tabs">
+        <button type="button" :class="{active: activeTab === 'rules'}" @click="activeTab = 'rules'">{{ _('路由規則') }}</button>
+        <button type="button" :class="{active: activeTab === 'profiles'}" @click="activeTab = 'profiles'">{{ _('來源格式') }}</button>
+    </div>
+
+    <div x-show="activeTab === 'rules'">
+        {% include "modules/open_defense/_event_routing_rules.html" %}
+    </div>
+    <div x-show="activeTab === 'profiles'">
+        {% include "modules/open_defense/_event_routing_profiles.html" %}
+    </div>
+</div>
+
+<script>
+window.__OD_API = window.__BP + '/api/open_defense/admin';
+window.__FW_TEMPLATE_API = window.__BP + '/api/form-workflow/templates';
+</script>
+<script src="{{ app_prefix }}/static/modules/open_defense/js/od-common.js"></script>
+<script>window.__PAGE_CAPS = {{ page_caps | default({}) | tojson }};</script>
+<script src="{{ app_prefix }}/static/modules/open_defense/js/od-event-routing.js"></script>
+{% endblock %}

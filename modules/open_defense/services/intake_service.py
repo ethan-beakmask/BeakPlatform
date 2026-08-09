@@ -21,6 +21,7 @@ from app.models.api_key import ApiKey
 from app.utils.security import generate_secure_code
 
 from ..models import OdIntakeEvent
+from . import payload_profile_service
 from .routing_service import resolve_form_template
 
 logger = logging.getLogger(__name__)
@@ -521,6 +522,146 @@ def process_intake(
 
     logger.info(
         'intake processed correlation_id=%s event_sc=%s workflow_sc=%s',
+        correlation_id, event.secure_code, workflow_instance_sc,
+    )
+    return event, False
+
+
+def _native_subject(payload: Dict[str, Any], profile, axis: Dict[str, Any]) -> str:
+    details = payload_profile_service.extract_details(
+        payload,
+        profile.detail_path,
+        profile.detail_item_key,
+    ) if profile.detail_path else []
+    # 明細列的標題欄位名由 profile 指定,不同來源的欄位名不同,不可寫死
+    event_name = None
+    if profile.subject_detail_key and details and isinstance(details[0], dict):
+        event_name = details[0].get(profile.subject_detail_key)
+
+    parts = [
+        value for value in (axis.get('finding_rule_id'), event_name)
+        if value
+    ]
+    if parts:
+        return ' '.join(str(value) for value in parts)
+    return f'{profile.source_system} {profile.code}'
+
+
+def process_native_intake(
+    *,
+    api_key: ApiKey,
+    payload: Dict[str, Any],
+    profile,
+    source_ip: Optional[str] = None,
+) -> Tuple[OdIntakeEvent, bool]:
+    """
+    原生格式事件接收。與 process_intake 共用冪等/聚合/建案，差別只在
+    payload 解析方式與路由的 payload_kind。
+    """
+    org_sc = api_key.org_secure_code
+    correlation_id = payload_profile_service.resolve_correlation_id(payload, profile)
+    if not correlation_id:
+        raise IntakeError(
+            _('缺少 correlation_id'),
+            code='missing_correlation_id', status=400,
+        )
+
+    existing = OdIntakeEvent.query.filter_by(
+        correlation_id=correlation_id,
+    ).first()
+    if existing:
+        logger.info('native intake duplicate correlation_id=%s key=%s',
+                    correlation_id, api_key.key_id)
+        return existing, True
+
+    od_scope = (api_key.scopes or {}).get('od_intake') or {}
+    allowed = od_scope.get('source_systems') or []
+    if profile.source_system not in allowed:
+        raise IntakeError(
+            _('source_system %(source_system)r 不在 key 允許清單',
+              source_system=profile.source_system),
+            code='source_not_allowed', status=403,
+        )
+
+    axis = payload_profile_service.normalize_axis_fields(payload, profile)
+
+    template_sc = resolve_form_template(org_sc, payload, payload_kind='native')
+    if not template_sc:
+        raise IntakeError(
+            _('原生 payload 在本企業無命中的 form_template 路由規則,請至 /open-defense/routing-rules 設定'),
+            code='no_mapping', status=422,
+        )
+
+    event = OdIntakeEvent(
+        secure_code=generate_secure_code(),
+        org_secure_code=org_sc,
+        correlation_id=correlation_id,
+        intake_key_secure_code=api_key.secure_code,
+        source_system=profile.source_system,
+        event_class='native',
+        severity_id=axis.get('severity_id'),
+        raw_body=payload,
+        signature_verified=True,
+        case_secure_code=None,
+        received_at=datetime.utcnow(),
+    )
+    db.session.add(event)
+    try:
+        db.session.flush()
+    except Exception:
+        db.session.rollback()
+        existing = OdIntakeEvent.query.filter_by(
+            correlation_id=correlation_id,
+        ).first()
+        if existing:
+            return existing, True
+        raise
+
+    mergeable = None
+    if axis.get('actor_ip') and axis.get('finding_rule_id'):
+        mergeable = _find_mergeable_case(
+            org_secure_code=org_sc,
+            actor_ip=axis.get('actor_ip'),
+            rule_id=axis.get('finding_rule_id'),
+            severity_id=axis.get('severity_id'),
+        )
+    if mergeable is not None:
+        _merge_event_into_case(event, mergeable)
+        db.session.commit()
+        logger.info(
+            'native intake merged correlation_id=%s into case=%s',
+            correlation_id, mergeable.execution_code,
+        )
+        return event, False
+
+    form_data = payload_profile_service.build_native_form_data(payload, profile)
+    _enrich_form_data(org_sc, form_data)
+    subject = _native_subject(payload, profile, axis)
+
+    try:
+        _form_instance_sc, workflow_instance_sc = _create_form_instance_and_start_workflow(
+            org_secure_code=org_sc,
+            form_template_sc=template_sc,
+            form_data=form_data,
+            subject=subject,
+            source_ip=source_ip,
+        )
+    except IntakeError:
+        db.session.rollback()
+        raise
+    except Exception as exc:
+        db.session.rollback()
+        logger.exception('native intake workflow start failed')
+        raise IntakeError(
+            _('啟動 workflow 失敗: %(error)s', error=exc),
+            code='workflow_start_failed', status=500,
+        )
+
+    event.case_secure_code = workflow_instance_sc
+    db.session.commit()
+
+    logger.info(
+        'native intake processed correlation_id=%s event_sc=%s workflow_sc=%s',
         correlation_id, event.secure_code, workflow_instance_sc,
     )
     return event, False

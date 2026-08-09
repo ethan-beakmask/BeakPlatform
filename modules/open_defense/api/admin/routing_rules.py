@@ -35,6 +35,18 @@ def _validate_event_class(event_class):
     return None
 
 
+def _normalize_payload_kind(value):
+    if value in (None, ''):
+        return None
+    return value
+
+
+def _validate_payload_kind(payload_kind):
+    if payload_kind is not None and payload_kind not in ('ocsf', 'native'):
+        return _('payload_kind 必須為 ocsf 或 native')
+    return None
+
+
 def _validate_form_template(org_sc, form_template_sc):
     if not form_template_sc:
         return _('form_template_secure_code 必填')
@@ -83,6 +95,11 @@ def create_routing_rule():
     if event_error:
         return _error('invalid_event_class', event_error, 400)
 
+    payload_kind = _normalize_payload_kind(body.get('payload_kind'))
+    payload_kind_error = _validate_payload_kind(payload_kind)
+    if payload_kind_error:
+        return _error('invalid_payload_kind', payload_kind_error, 400)
+
     form_template_sc = (body.get('form_template_secure_code') or '').strip()
     template_error = _validate_form_template(org_sc, form_template_sc)
     if template_error:
@@ -97,6 +114,7 @@ def create_routing_rule():
         org_secure_code=org_sc,
         name=(body.get('name') or '').strip() or None,
         event_class=event_class,
+        payload_kind=payload_kind,
         form_template_secure_code=form_template_sc,
         priority=priority,
         match_rules=match_rules,
@@ -146,6 +164,12 @@ def update_routing_rule(secure_code):
         if template_error:
             return _error('invalid_form_template', template_error, 400)
 
+    if 'payload_kind' in body:
+        payload_kind = _normalize_payload_kind(body.get('payload_kind'))
+        payload_kind_error = _validate_payload_kind(payload_kind)
+        if payload_kind_error:
+            return _error('invalid_payload_kind', payload_kind_error, 400)
+
     try:
         if 'priority' in body:
             record.priority = int(body.get('priority') or 0)
@@ -156,6 +180,8 @@ def update_routing_rule(secure_code):
         record.name = (body.get('name') or '').strip() or None
     if 'event_class' in body:
         record.event_class = _normalize_event_class(body.get('event_class'))
+    if 'payload_kind' in body:
+        record.payload_kind = _normalize_payload_kind(body.get('payload_kind'))
     if 'form_template_secure_code' in body:
         record.form_template_secure_code = (body.get('form_template_secure_code') or '').strip()
     if 'match_rules' in body:
@@ -204,18 +230,28 @@ def delete_routing_rule(secure_code):
 @permission_required('open_defense.admin')
 def test_routing_rule():
     raw_body = request.get_json(force=True, silent=True) or {}
-    try:
-        event_body = validate_intake_body(raw_body)
-    except IntakeValidationError as exc:
-        return jsonify({
-            'error': 'invalid_event_body',
-            'message': _('事件 body 格式不合法'),
-            'details': exc.details,
-        }), 400
+    payload_kind = _normalize_payload_kind(raw_body.get('payload_kind'))
+    payload_kind_error = _validate_payload_kind(payload_kind)
+    if payload_kind_error:
+        return _error('invalid_payload_kind', payload_kind_error, 400)
+
+    event_body = raw_body.get('payload') if payload_kind == 'native' else raw_body
+    if payload_kind != 'native':
+        try:
+            event_body = validate_intake_body(raw_body)
+        except IntakeValidationError as exc:
+            return jsonify({
+                'error': 'invalid_event_body',
+                'message': _('事件 body 格式不合法'),
+                'details': exc.details,
+            }), 400
+    if not isinstance(event_body, dict):
+        return _error('invalid_event_body', _('事件 body 格式不合法'), 400)
 
     matched, evaluated = evaluate_routing_rules(
         current_user.org_secure_code,
         event_body,
+        payload_kind=payload_kind,
     )
     matched_payload = None
     if matched:

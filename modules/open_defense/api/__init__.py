@@ -13,6 +13,7 @@ api_bp = Blueprint(
 
 # 匯入 view 子模組,讓 route 註冊到 api_bp
 from . import intake             # noqa: E402,F401
+from . import intake_native      # noqa: E402,F401
 from . import service_accounts   # noqa: E402,F401
 from . import decisions          # noqa: E402,F401
 from . import security_cases     # noqa: E402,F401

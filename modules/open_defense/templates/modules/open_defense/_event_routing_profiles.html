@@ -1,0 +1,211 @@
+<div class="od-section">
+    <div class="od-section-header">
+        <h2>{{ _('來源格式') }}</h2>
+        {% if can('open_defense.admin') %}
+        <button class="btn btn-primary" @click="openProfileModal()">{{ _('新增格式') }}</button>
+        {% endif %}
+    </div>
+    <div x-show="loading.profiles" class="od-empty">{{ _('載入中...') }}</div>
+    <div x-show="!loading.profiles && error.profiles" class="od-alert od-alert-error" x-text="error.profiles"></div>
+    <div x-show="!loading.profiles && !error.profiles && profiles.length === 0" class="od-empty">{{ _('無資料') }}</div>
+    <table x-show="!loading.profiles && !error.profiles && profiles.length > 0" class="od-table">
+        <thead>
+            <tr>
+                <th>code</th>
+                <th>{{ _('名稱') }}</th>
+                <th>{{ _('來源系統') }}</th>
+                <th>{{ _('冪等鍵路徑') }}</th>
+                <th>{{ _('明細路徑') }}</th>
+                <th>{{ _('啟用狀態') }}</th>
+                <th>{{ _('操作') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <template x-for="profile in profiles" :key="profile.secure_code">
+                <tr>
+                    <td><span class="od-mono" x-text="profile.code"></span></td>
+                    <td>
+                        <div x-text="profile.name"></div>
+                        <div class="od-muted" x-text="profile.note || ''"></div>
+                    </td>
+                    <td x-text="profile.source_system"></td>
+                    <td><span class="od-mono" x-text="profile.correlation_id_path"></span></td>
+                    <td><span class="od-mono" x-text="profile.detail_path || '-'"></span></td>
+                    <td>
+                        <span class="od-badge" :class="profile.is_active ? 'od-badge-active' : 'od-badge-inactive'"
+                              x-text="profile.is_active ? __('啟用') : __('停用')"></span>
+                    </td>
+                    <td class="od-actions">
+                        {% if can('open_defense.admin') %}
+                        <button class="btn btn-sm btn-secondary" @click="openProfileModal(profile)">{{ _('編輯') }}</button>
+                        <button class="btn btn-sm btn-secondary" @click="selectProfileTest(profile)">{{ _('試算') }}</button>
+                        <button class="btn btn-sm btn-danger" @click="deleteProfile(profile)">{{ _('刪除') }}</button>
+                        {% endif %}
+                    </td>
+                </tr>
+            </template>
+        </tbody>
+    </table>
+</div>
+
+<div class="od-section">
+    <div class="od-section-header">
+        <h2>{{ _('來源格式試算') }}</h2>
+        <button class="btn btn-secondary" @click="runProfileTest()">{{ _('執行試算') }}</button>
+    </div>
+    <div class="od-section-body">
+        <div class="od-test-grid">
+            <div>
+                <div class="od-field">
+                    <label>{{ _('設定檔') }}</label>
+                    <select x-model="profileTest.secure_code">
+                        <option value="" :selected="'' === profileTest.secure_code">{{ _('請選擇') }}</option>
+                        <template x-for="profile in profiles" :key="profile.secure_code">
+                            <option :value="profile.secure_code" :selected="profile.secure_code === profileTest.secure_code"
+                                    x-text="profile.code + ' - ' + profile.name"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="od-field">
+                    <label>{{ _('事件 JSON') }}</label>
+                    <textarea class="od-json-input" x-model="profileTest.input"></textarea>
+                </div>
+            </div>
+            <div>
+                <div x-show="profileTest.error" class="od-alert od-alert-error" x-text="profileTest.error"></div>
+                <div x-show="profileTest.result" class="od-profile-result">
+                    <dl>
+                        <dt>{{ _('冪等鍵') }}</dt><dd x-text="profileTest.result?.correlation_id || '-'"></dd>
+                        <dt>{{ _('明細筆數') }}</dt><dd x-text="profileTest.result?.detail_count"></dd>
+                        <dt>{{ _('扁平欄位數') }}</dt><dd x-text="profileTest.result?.flat_key_count"></dd>
+                    </dl>
+                    <h4>{{ _('軸線解析') }}</h4>
+                    <table class="od-table">
+                        <tbody>
+                            <template x-for="field in axisFields" :key="field.key">
+                                <tr>
+                                    <th x-text="field.label"></th>
+                                    <td x-text="displayValue(profileTest.result?.axis?.[field.key])"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                    <h4>{{ _('form_data_preview') }}</h4>
+                    <pre class="od-json-preview" x-text="formatJSON(profileTest.result?.form_data_preview)"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" x-show="profileModal.open" x-cloak>
+    <div class="modal-content od-modal-wide">
+        <div class="modal-header">
+            <h3 x-text="profileModal.mode === 'create' ? __('新增格式') : __('編輯格式')"></h3>
+            <button type="button" class="modal-close" @click="closeProfileModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div x-show="profileModal.error" class="od-alert od-alert-error" x-text="profileModal.error"></div>
+            <div class="od-form-grid">
+                <div class="od-field">
+                    <label>code</label>
+                    <input type="text" x-model="profileForm.code">
+                </div>
+                <div class="od-field">
+                    <label>{{ _('名稱') }}</label>
+                    <input type="text" x-model="profileForm.name">
+                </div>
+                <div class="od-field">
+                    <label>{{ _('來源系統') }}</label>
+                    <input type="text" x-model="profileForm.source_system">
+                </div>
+                <div class="od-field">
+                    <label>{{ _('冪等鍵路徑') }}</label>
+                    <input type="text" x-model="profileForm.correlation_id_path">
+                </div>
+                <div class="od-field od-form-span">
+                    <label>{{ _('備註') }}</label>
+                    <textarea x-model="profileForm.note"></textarea>
+                </div>
+                <label class="od-check od-form-span">
+                    <input type="checkbox" x-model="profileForm.is_active">
+                    <span>{{ _('啟用') }}</span>
+                </label>
+            </div>
+
+            <h4>{{ _('field_map') }}</h4>
+            <div class="od-form-grid">
+                <template x-for="field in axisFields" :key="field.key">
+                    <div class="od-field">
+                        <label x-text="field.label"></label>
+                        <input type="text" x-model="profileForm.field_map[field.key]">
+                    </div>
+                </template>
+            </div>
+
+            <div class="od-editor-head">
+                <h4>{{ _('severity_map') }}</h4>
+                <button type="button" class="btn btn-secondary btn-sm" @click="addSeverityMapRow()">{{ _('新增對照') }}</button>
+            </div>
+            <template x-for="(row, idx) in profileForm.severity_rows" :key="idx">
+                <div class="od-pair-row">
+                    <input type="text" x-model="row.source" placeholder="{{ _('來源值') }}">
+                    <select x-model="row.platform">
+                        <template x-for="level in severityLevels" :key="level">
+                            <option :value="level" :selected="level === Number(row.platform)" x-text="level"></option>
+                        </template>
+                    </select>
+                    <button type="button" class="btn btn-sm btn-danger" @click="removeSeverityMapRow(idx)">{{ _('刪除') }}</button>
+                </div>
+            </template>
+
+            <h4>{{ _('明細設定') }}</h4>
+            <div class="od-form-grid">
+                <div class="od-field">
+                    <label>detail_path</label>
+                    <input type="text" x-model="profileForm.detail_path">
+                </div>
+                <div class="od-field">
+                    <label>detail_item_key</label>
+                    <input type="text" x-model="profileForm.detail_item_key">
+                </div>
+                <div class="od-field">
+                    <label>subject_detail_key</label>
+                    <input type="text" x-model="profileForm.subject_detail_key">
+                </div>
+            </div>
+
+            <div class="od-editor-head">
+                <h4>detail_columns</h4>
+                <button type="button" class="btn btn-secondary btn-sm" @click="addDetailColumn()">{{ _('新增欄位') }}</button>
+            </div>
+            <template x-for="(col, idx) in profileForm.detail_columns" :key="idx">
+                <div class="od-pair-row">
+                    <input type="text" x-model="col.key" placeholder="EventDate">
+                    <input type="text" x-model="col.label" placeholder="{{ _('顯示標籤') }}">
+                    <button type="button" class="btn btn-sm btn-secondary" @click="moveDetailColumn(idx, -1)">{{ _('上移') }}</button>
+                    <button type="button" class="btn btn-sm btn-secondary" @click="moveDetailColumn(idx, 1)">{{ _('下移') }}</button>
+                    <button type="button" class="btn btn-sm btn-danger" @click="removeDetailColumn(idx)">{{ _('刪除') }}</button>
+                </div>
+            </template>
+
+            <div class="od-editor-head">
+                <h4>kv_expansions</h4>
+                <button type="button" class="btn btn-secondary btn-sm" @click="addKvExpansion()">{{ _('新增展開') }}</button>
+            </div>
+            <template x-for="(kv, idx) in profileForm.kv_expansions" :key="idx">
+                <div class="od-kv-row">
+                    <input type="text" x-model="kv.path" placeholder="Extensions">
+                    <input type="text" x-model="kv.key_field" placeholder="PropertyName">
+                    <input type="text" x-model="kv.value_field" placeholder="PropertyValue">
+                    <input type="text" x-model="kv.prefix" placeholder="Extensions">
+                    <button type="button" class="btn btn-sm btn-danger" @click="removeKvExpansion(idx)">{{ _('刪除') }}</button>
+                </div>
+            </template>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeProfileModal()">{{ _('取消') }}</button>
+            <button type="button" class="btn btn-primary" @click="saveProfile()">{{ _('儲存') }}</button>
+        </div>
+    </div>
+</div>

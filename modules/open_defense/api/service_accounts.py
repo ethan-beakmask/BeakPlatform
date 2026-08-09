@@ -7,7 +7,7 @@ POST /api/open_defense/sa/login -- 對外執行端登入,回傳短期 JWT
 import logging
 
 from flask import request, jsonify
-from app.security.client_ip import client_ip_key
+from app.security.client_ip import client_ip_key, get_client_ip
 
 from app import limiter, csrf
 from app.security.decorators import public_route
@@ -53,7 +53,7 @@ def sa_login():
         record, token = authenticate(
             sa_id=sa_id,
             secret_b64=sa_secret,
-            source_ip=request.remote_addr,
+            source_ip=get_client_ip(),
         )
     except ServiceAccountError as exc:
         # 不洩漏哪個欄位錯,統一回 401

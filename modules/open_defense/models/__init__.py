@@ -16,6 +16,7 @@ from .defense_decision import (
 )
 from .service_account import OdServiceAccount
 from .form_template_mapping import OdFormTemplateMapping
+from .payload_profile import OdPayloadProfile
 
 __all__ = [
     'OdBaseModel',
@@ -24,6 +25,7 @@ __all__ = [
     'OdDefenseDecision',
     'OdServiceAccount',
     'OdFormTemplateMapping',
+    'OdPayloadProfile',
     'VALID_ACTIONS',
     'VALID_TARGET_TYPES',
     'VALID_DECIDED_VIA',

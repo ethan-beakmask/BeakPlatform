@@ -6,6 +6,7 @@ page:
   - /open-defense/intake-keys
   - /open-defense/service-accounts
   - /open-defense/security-cases
+  - /open-defense/event-routing
 description: |
   Open Defense 是 BeakPlatform 與外部 OSS 安全堆疊的整合模組。
   事件來源端(Suricata/Coraza/Falco/Vector 等)透過 HMAC webhook 推 OCSF 事件;
@@ -19,14 +20,17 @@ files:
   route:       modules/open_defense/web/
   api:
     - modules/open_defense/api/intake.py            # POST /api/open_defense/intake (HMAC webhook)
+    - modules/open_defense/api/intake_native.py     # POST /api/open_defense/intake/native (HMAC webhook)
     - modules/open_defense/api/decisions.py         # GET/PATCH /api/open_defense/decisions
     - modules/open_defense/api/intake_keys.py       # CRUD intake keys (內部用)
     - modules/open_defense/api/service_accounts.py  # CRUD SA + POST sa/login
     - modules/open_defense/api/security_cases.py    # 資安案件處置中心唯讀聚合 (清單/統計/決策關聯)
     - modules/open_defense/api/admin/routing_rules.py # CRUD routing rules + 試算
+    - modules/open_defense/api/admin/payload_profiles.py # CRUD native payload profiles + 試算
   service:
     - modules/open_defense/services/intake_service.py        # webhook 接收 + 啟流程
     - modules/open_defense/services/routing_service.py       # 事件規則式路由
+    - modules/open_defense/services/payload_profile_service.py # 原生 payload 扁平化 + 軸線正規化
     - modules/open_defense/services/decision_service.py      # 決策 CRUD + 過期處理
     - modules/open_defense/services/intake_key_service.py    # HMAC key 管理
     - modules/open_defense/services/service_account_service.py
@@ -36,24 +40,34 @@ files:
     - modules/open_defense/models/intake_event.py            # OdIntakeEvent (冪等記錄)
     - modules/open_defense/models/defense_decision.py        # OdDefenseDecision
     - modules/open_defense/models/service_account.py         # OdServiceAccount
+    - modules/open_defense/models/form_template_mapping.py   # OdFormTemplateMapping (規則式路由)
+    - modules/open_defense/models/payload_profile.py         # OdPayloadProfile (原生 payload 來源格式)
+  cron:
+    - scripts/cron/od_canary_check.py       # 每小時 canary 事件到案檢查(來源 IP 203.0.113.1)
+    - scripts/cron/od_expire_decisions.py   # 過期決策回收(TTL 到期改 expired)
   template:
     - modules/open_defense/templates/modules/open_defense/dashboard.html
     - modules/open_defense/templates/modules/open_defense/decisions.html
     - modules/open_defense/templates/modules/open_defense/intake_keys.html
     - modules/open_defense/templates/modules/open_defense/service_accounts.html
     - modules/open_defense/templates/modules/open_defense/security_cases.html
+    - modules/open_defense/templates/modules/open_defense/event_routing.html
+    - modules/open_defense/templates/modules/open_defense/_event_routing_rules.html
+    - modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html
   js:
     - modules/open_defense/static/modules/open_defense/js/od-dashboard.js
     - modules/open_defense/static/modules/open_defense/js/od-decisions.js
     - modules/open_defense/static/modules/open_defense/js/od-intake-keys.js
     - modules/open_defense/static/modules/open_defense/js/od-service-accounts.js
     - modules/open_defense/static/modules/open_defense/js/sc-cases.js
+    - modules/open_defense/static/modules/open_defense/js/od-event-routing.js
   css:
     - modules/open_defense/static/modules/open_defense/css/od-common.css
     - modules/open_defense/static/modules/open_defense/css/sc-cases.css
   migration:
     - scripts/migrations/<TS>_create_open_defense.sql
     - scripts/migrations/095_od_routing_rules.sql
+    - scripts/migrations/096_od_payload_profiles.sql
 
 # 此模組會延伸的安全核心檔案(需小幅修改,但不改變既有行為)
 security_core_touch:
@@ -116,3 +130,8 @@ note: |
   - 2026-08-09 OpenDefense intake form_template 選取改為規則式路由:
     od_form_template_mappings 支援 priority、event_class 可空、match_rules JSONB
     條件與 is_active；既有 event_class 對照資料保留為 priority=0、match_rules=NULL。
+  - 2026-08-10 OpenDefense 新增 native payload intake:
+    /api/open_defense/intake/native 以 OdPayloadProfile 指定來源格式,原始 payload
+    扁平化進 form_data,共同軸線欄位維持 severity_id/actor_ip/target_host/
+    source_system/finding_rule_id/occurred_at；routing rule 以 payload_kind 區隔
+    ocsf/native/不限。

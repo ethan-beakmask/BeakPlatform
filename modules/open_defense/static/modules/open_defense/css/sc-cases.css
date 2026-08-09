@@ -96,6 +96,49 @@
 }
 .sc-detail-header h3 { margin: 0; font-size: 16px; }
 
+.sc-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #e5e7eb;
+    margin: 0 0 12px 0;
+    overflow-x: auto;
+}
+.sc-tab {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 12px;
+    white-space: nowrap;
+}
+.sc-tab:hover {
+    color: #111827;
+    background: #f9fafb;
+}
+.sc-tab.active {
+    color: #1d4ed8;
+    border-bottom-color: #1d4ed8;
+}
+.sc-tab-panel {
+    min-width: 0;
+}
+.sc-table-scroll {
+    overflow-x: auto;
+    max-width: 100%;
+}
+.sc-table-scroll .od-table {
+    min-width: 720px;
+}
+.sc-table-scroll th,
+.sc-table-scroll td {
+    white-space: nowrap;
+    vertical-align: top;
+}
+
 .sc-fields {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

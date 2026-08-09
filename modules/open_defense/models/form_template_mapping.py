@@ -19,6 +19,7 @@ class OdFormTemplateMapping(OdBaseModel):
     form_template_secure_code = Column(String(32), nullable=False)
 
     name = Column(String(100), nullable=True)
+    payload_kind = Column(String(10), nullable=True)
     priority = Column(Integer, nullable=False, default=0)
     match_rules = Column(JSONB, nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
@@ -30,6 +31,7 @@ class OdFormTemplateMapping(OdBaseModel):
             'event_class': self.event_class,
             'form_template_secure_code': self.form_template_secure_code,
             'name': self.name,
+            'payload_kind': self.payload_kind,
             'priority': self.priority,
             'match_rules': self.match_rules,
             'is_active': self.is_active,

@@ -41,6 +41,13 @@ def decisions():
     return render_template('modules/open_defense/decisions.html', page_caps=caps)
 
 
+@web_bp.route('/event-routing')
+@module_access_required('open_defense', False)
+def event_routing():
+    caps = build_caps(['open_defense.admin'])
+    return render_template('modules/open_defense/event_routing.html', page_caps=caps)
+
+
 @web_bp.route('/intake-keys')
 @module_access_required('open_defense', False)
 def intake_keys():

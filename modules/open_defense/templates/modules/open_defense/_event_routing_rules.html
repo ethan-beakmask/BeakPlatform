@@ -1,0 +1,175 @@
+<div class="od-section">
+    <div class="od-section-header">
+        <h2>{{ _('路由規則') }}</h2>
+        {% if can('open_defense.admin') %}
+        <button class="btn btn-primary" @click="openRuleModal()">{{ _('新增規則') }}</button>
+        {% endif %}
+    </div>
+    <div x-show="loading.rules" class="od-empty">{{ _('載入中...') }}</div>
+    <div x-show="!loading.rules && error.rules" class="od-alert od-alert-error" x-text="error.rules"></div>
+    <div x-show="!loading.rules && !error.rules && sortedRules().length === 0" class="od-empty">{{ _('無資料') }}</div>
+    <table x-show="!loading.rules && !error.rules && sortedRules().length > 0" class="od-table">
+        <thead>
+            <tr>
+                <th>{{ _('名稱') }}</th>
+                <th>{{ _('格式') }}</th>
+                <th>event_class</th>
+                <th>{{ _('優先序') }} ↓</th>
+                <th>{{ _('目標表單') }}</th>
+                <th>{{ _('條件數') }}</th>
+                <th>{{ _('啟用狀態') }}</th>
+                <th>{{ _('操作') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <template x-for="rule in sortedRules()" :key="rule.secure_code">
+                <tr>
+                    <td>
+                        <div x-text="rule.name || '-'"></div>
+                        <div class="od-muted" x-text="rule.note || ''"></div>
+                    </td>
+                    <td><span class="od-mono" x-text="rule.payload_kind || __('不限')"></span></td>
+                    <td><span class="od-mono" x-text="rule.event_class || '-'"></span></td>
+                    <td x-text="rule.priority"></td>
+                    <td x-text="templateName(rule.form_template_secure_code)"></td>
+                    <td x-text="(rule.match_rules || []).length"></td>
+                    <td>
+                        <span class="od-badge" :class="rule.is_active ? 'od-badge-active' : 'od-badge-inactive'"
+                              x-text="rule.is_active ? __('啟用') : __('停用')"></span>
+                    </td>
+                    <td class="od-actions">
+                        {% if can('open_defense.admin') %}
+                        <button class="btn btn-sm btn-secondary" @click="openRuleModal(rule)">{{ _('編輯') }}</button>
+                        <button class="btn btn-sm btn-danger" @click="deleteRule(rule)">{{ _('刪除') }}</button>
+                        {% endif %}
+                    </td>
+                </tr>
+            </template>
+        </tbody>
+    </table>
+</div>
+
+<div class="od-section">
+    <div class="od-section-header">
+        <h2>{{ _('路由試算') }}</h2>
+        <button class="btn btn-secondary" @click="runRuleTest()">{{ _('執行試算') }}</button>
+    </div>
+    <div class="od-section-body">
+        <div class="od-test-grid">
+            <div class="od-field">
+                <label>{{ _('事件 JSON') }}</label>
+                <textarea class="od-json-input" x-model="ruleTest.input" placeholder='{"Summary":{"RuleId":"AV-017A"}}'></textarea>
+            </div>
+            <div>
+                <div class="od-field">
+                    <label>{{ _('格式') }}</label>
+                    <select x-model="ruleTest.payload_kind">
+                        <option value="native" :selected="'native' === ruleTest.payload_kind">native</option>
+                        <option value="ocsf" :selected="'ocsf' === ruleTest.payload_kind">ocsf</option>
+                    </select>
+                </div>
+                <div x-show="ruleTest.error" class="od-alert od-alert-error" x-text="ruleTest.error"></div>
+                <div x-show="ruleTest.matched" class="od-alert od-alert-success">
+                    <span>{{ _('命中規則') }}: </span><strong x-text="ruleTest.matched?.name || ruleTest.matched?.secure_code"></strong>
+                </div>
+                <div class="od-test-results">
+                    <template x-for="item in ruleTest.evaluated" :key="item.secure_code">
+                        <div class="od-test-result" :class="{matched: item.matched}">
+                            <div>
+                                <strong x-text="item.name || item.secure_code"></strong>
+                                <span class="od-badge" :class="item.matched ? 'od-badge-active' : 'od-badge-inactive'"
+                                      x-text="item.matched ? __('命中') : __('未命中')"></span>
+                            </div>
+                            <div x-show="!item.matched && item.failed_condition" class="od-muted">
+                                <span>{{ _('阻擋條件') }}: </span>
+                                <span x-text="formatCondition(item.failed_condition)"></span>
+                            </div>
+                            <div x-show="!item.matched && !item.failed_condition" class="od-muted">{{ _('規則無效或未通過內建條件') }}</div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" x-show="ruleModal.open" x-cloak>
+    <div class="modal-content od-modal-wide">
+        <div class="modal-header">
+            <h3 x-text="ruleModal.mode === 'create' ? __('新增規則') : __('編輯規則')"></h3>
+            <button type="button" class="modal-close" @click="closeRuleModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div x-show="ruleModal.error" class="od-alert od-alert-error" x-text="ruleModal.error"></div>
+            <div class="od-form-grid">
+                <div class="od-field">
+                    <label>{{ _('規則名稱') }}</label>
+                    <input type="text" x-model="ruleForm.name">
+                </div>
+                <div class="od-field">
+                    <label>{{ _('優先序') }}</label>
+                    <input type="number" x-model="ruleForm.priority">
+                </div>
+                <div class="od-field">
+                    <label>{{ _('格式') }}</label>
+                    <select x-model="ruleForm.payload_kind">
+                        <option value="" :selected="'' === ruleForm.payload_kind">{{ _('不限') }}</option>
+                        <option value="ocsf" :selected="'ocsf' === ruleForm.payload_kind">ocsf</option>
+                        <option value="native" :selected="'native' === ruleForm.payload_kind">native</option>
+                    </select>
+                </div>
+                <div class="od-field">
+                    <label>event_class</label>
+                    <select x-model="ruleForm.event_class">
+                        <option value="" :selected="'' === ruleForm.event_class">{{ _('不限') }}</option>
+                        <template x-for="cls in eventClasses" :key="cls">
+                            <option :value="cls" :selected="cls === ruleForm.event_class" x-text="cls"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="od-field od-form-span">
+                    <label>{{ _('目標表單') }}</label>
+                    <select x-model="ruleForm.form_template_secure_code">
+                        <option value="" :selected="'' === ruleForm.form_template_secure_code">{{ _('請選擇') }}</option>
+                        <template x-for="tpl in templates" :key="tpl.secure_code">
+                            <option :value="tpl.secure_code" :selected="tpl.secure_code === ruleForm.form_template_secure_code"
+                                    x-text="templateOptionLabel(tpl)"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="od-field od-form-span">
+                    <label>{{ _('備註') }}</label>
+                    <textarea x-model="ruleForm.note"></textarea>
+                </div>
+                <label class="od-check od-form-span">
+                    <input type="checkbox" x-model="ruleForm.is_active">
+                    <span>{{ _('啟用') }}</span>
+                </label>
+            </div>
+            <div class="od-editor-head">
+                <h4>{{ _('條件') }}</h4>
+                <button type="button" class="btn btn-secondary btn-sm" @click="addMatchRule()">{{ _('新增條件') }}</button>
+            </div>
+            <template x-for="(cond, idx) in ruleForm.match_rules" :key="idx">
+                <div class="od-condition-row">
+                    <input type="text" x-model="cond.field" placeholder="Summary.RuleId">
+                    <select x-model="cond.op" @change="normalizeConditionValue(cond)">
+                        <template x-for="op in matchOps" :key="op">
+                            <option :value="op" :selected="op === cond.op" x-text="op"></option>
+                        </template>
+                    </select>
+                    <select x-show="cond.op === 'exists'" x-model="cond.value">
+                        <option :value="true" :selected="cond.value === true">true</option>
+                        <option :value="false" :selected="cond.value === false">false</option>
+                    </select>
+                    <input x-show="cond.op !== 'exists'" type="text" x-model="cond.value" :placeholder="cond.op === 'in' || cond.op === 'not_in' ? __('以逗號分隔') : __('值')">
+                    <button type="button" class="btn btn-sm btn-danger" @click="removeMatchRule(idx)">{{ _('刪除') }}</button>
+                </div>
+            </template>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeRuleModal()">{{ _('取消') }}</button>
+            <button type="button" class="btn btn-primary" @click="saveRule()">{{ _('儲存') }}</button>
+        </div>
+    </div>
+</div>

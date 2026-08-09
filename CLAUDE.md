@@ -731,24 +731,28 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   curl -s -b cj.txt -X POST "$BASE/api/xxx" -H 'Content-Type: application/json' -H "X-CSRFToken: $TOKEN" -d '{...}'
   ```
 
-### open_defense 開發備忘（2026-08-09 補；本檔原本對此模組零篇幅）
+### open_defense 開發備忘
 
-`docs/` 的 open_defense 文件停在 2026-07-16，程式碼卻改到 08-09，
-**8 月的成果只存在 BBN 不在 repo**（見待辦 PF-72）。動這個模組前先
-`note_get(5123)` 取交接原子，再看 `docs/manifests/mod-open-defense.yaml`。
+**平台側架構的權威文件是 `docs/OPEN_DEFENSE_ARCHITECTURE.md`（2026-08-10 建立），
+動這個模組前整份讀完。** 平台外組件（`.20` 的 Vector / Suricata / CrowdSec /
+od-bridge / EDL enforcer / ClickHouse）的權威在
+`/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`，**不要在本 repo 複製一份**。
 
-三個「唯一實作」，新增功能一律加在這裡，**不要各自重寫**：
+留在本檔的是四個「唯一實作」，新增功能一律加在這裡，**不要各自重寫**：
 
 | 檔案 | 管什麼 | 繞過的後果 |
 |---|---|---|
 | `modules/form_workflow/services/task_authorizer.py` | 簽核授權（快照 ∪ 當前角色 ∪ 生效中代理） | 判定點共 **12 處**，漏一處就出現「清單看得到但點不了」 |
 | `modules/open_defense/services/routing_service.py` | intake 事件 → form_template 的規則式路由 | intake 是對外 webhook，各自查表會讓路由行為分歧 |
+| `modules/open_defense/services/payload_profile_service.py` | 原生 payload 的路徑取值、扁平化、共同軸線正規化 | 各自攤平會讓 form_data 的 key 命名分歧，表單欄位對不上就整片空白 |
 | `wf-dnd-nodes.js::resolveNodeIconUrl()` | 流程設計器節點圖示 URL | 6 處曾各寫一份，導致所有從 DB 載入的 graph 節點全變空方框 |
 
+- **共同軸線 6 個 key 是相容性契約**：`severity_id` / `actor_ip` / `target_host` /
+  `source_system` / `finding_rule_id` / `occurred_at`。不論 OCSF 或原生 payload，
+  intake 都會把它們正規化後寫進 `form_data`；SLA、聚合降噪、風險分數、
+  處置中心清單全部讀這組。**改名等於同時弄壞四個機制**
 - **nginx 前綴一律渲染時補、不寫進 DB**（`workflow_node_definitions` 與所有
   既有 graph 的 icon 都是 `/static/...` 無前綴，這是正確的存法）
-- 路由規則管理 API：`/api/open_defense/admin/routing-rules`（CRUD + `/test` 試算），
-  **目前沒有 UI**（PF-70）
 - 資安案件處置中心的清單 API 是 `/api/open_defense/cases`（不在 `/admin` 底下）
 
 ### NoCode 選單目前刻意隱藏中（2026-08-07 起，鐵人賽期間）

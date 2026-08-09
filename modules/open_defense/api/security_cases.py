@@ -21,7 +21,7 @@ from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
 
 from . import api_bp
-from ..models import OdDefenseDecision
+from ..models import OdDefenseDecision, OdPayloadProfile
 
 # SLA（分鐘）：severity>=4 快速通道 15 分、=3 標準 60 分；低危自動歸檔無 SLA
 SLA_MINUTES_HIGH = 15
@@ -29,6 +29,14 @@ SLA_MINUTES_MEDIUM = 60
 
 # SOC 簽核節點型別（與 fc_pending 同一組）
 _APPROVAL_NODE_TYPES = ('Approve', 'FormAdapter', 'FORMADAPTER')
+_PAYLOAD_ROW_LIMIT = 500
+_PAYLOAD_COLUMN_LIMIT = 40
+_PAYLOAD_COLUMN_SCAN_LIMIT = 20
+_PAYLOAD_EXCLUDED_FIELD_KEYS = {
+    'severity_id', 'actor_ip', 'target_host', 'source_system',
+    'finding_rule_id', 'occurred_at',
+    'risk_score', 'recommended_action', 'correlation_id',
+}
 
 
 def _sla_minutes(severity_id) -> int:
@@ -61,6 +69,113 @@ def _security_case_query(org_sc):
         FwFormInstance.is_deleted == False,  # noqa: E712
         FT.category_secure_code.like(f'{SECURITY_CATEGORY_PREFIX}%'),
     )
+
+
+def _payload_detail_key(profile):
+    if not profile or not profile.detail_path:
+        return None
+    return str(profile.detail_path).split('.')[-1]
+
+
+def _payload_detail_columns(profile, rows):
+    configured = profile.detail_columns if profile else None
+    columns = []
+    seen = set()
+
+    if isinstance(configured, list):
+        for col in configured:
+            if not isinstance(col, dict):
+                continue
+            key = str(col.get('key') or '').strip()
+            if not key or key in seen:
+                continue
+            label = str(col.get('label') or key)
+            columns.append({'key': key, 'label': label})
+            seen.add(key)
+            if len(columns) >= _PAYLOAD_COLUMN_LIMIT:
+                break
+        if columns:
+            return columns
+
+    for row in rows[:_PAYLOAD_COLUMN_SCAN_LIMIT]:
+        if not isinstance(row, dict):
+            continue
+        for key in row.keys():
+            key = str(key)
+            if not key or key in seen:
+                continue
+            columns.append({'key': key, 'label': key})
+            seen.add(key)
+            if len(columns) >= _PAYLOAD_COLUMN_LIMIT:
+                return columns
+    return columns
+
+
+def _payload_scalar_fields(form_data, detail_key):
+    excluded = set(_PAYLOAD_EXCLUDED_FIELD_KEYS)
+    if detail_key:
+        excluded.add(detail_key)
+
+    fields = []
+    for key in sorted(form_data.keys()):
+        if key in excluded or key.startswith('od_'):
+            continue
+        value = form_data.get(key)
+        if isinstance(value, (dict, list)):
+            continue
+        fields.append({'key': key, 'value': value})
+    return fields
+
+
+def _apply_payload_egress(form_instance, fields, rows, columns):
+    from app.services import egress_service
+
+    payload = {
+        'form_instance_secure_code': form_instance.secure_code,
+    }
+    for field in fields:
+        payload[field['key']] = field['value']
+
+    column_keys = [col['key'] for col in columns]
+    for key in column_keys:
+        if key in payload:
+            continue
+        for row in rows:
+            if isinstance(row, dict) and key in row:
+                payload[key] = row.get(key)
+                break
+
+    filtered = egress_service.apply(
+        f'fw_form:{form_instance.form_template_secure_code}', 'detail',
+        [payload], record_sc_key='form_instance_secure_code',
+    )[0]
+
+    visible_fields = [
+        {'key': field['key'], 'value': filtered[field['key']]}
+        for field in fields
+        if field['key'] in filtered
+    ]
+    visible_columns = [
+        col for col in columns
+        if col['key'] in filtered or col['key'] not in payload
+    ]
+
+    visible_rows = []
+    for row in rows:
+        if not isinstance(row, dict):
+            visible_rows.append(row)
+            continue
+        visible_row = {}
+        for col in visible_columns:
+            key = col['key']
+            if (key in filtered and isinstance(filtered[key], dict) and
+                    filtered[key].get('__masked')):
+                visible_row[key] = filtered[key]
+            elif key in row:
+                visible_row[key] = row.get(key)
+        visible_rows.append(visible_row)
+
+    return visible_fields, visible_rows, visible_columns
 
 
 @api_bp.route('/cases')
@@ -228,6 +343,79 @@ def case_stats():
         'today_block_count': today_blocks,
         'today_case_count': today_cases,
     }})
+
+
+@api_bp.route('/cases/<wi_sc>/payload')
+@module_access_required('open_defense', False)
+def case_payload(wi_sc):
+    """案件原生 payload 明細與扁平欄位（detail 語境出口政策）。"""
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    row = _security_case_query(org.secure_code).filter(
+        db.text('fw_workflow_instances.secure_code = :wi_sc').bindparams(
+            wi_sc=wi_sc)
+    ).first()
+    if not row:
+        return jsonify({'success': False, 'error': 'Not found'}), 404
+
+    form_instance, _workflow_instance = row
+    form_data = form_instance.form_data or {}
+
+    profile = None
+    detail = None
+    detail_key = None
+    rows = []
+    columns = []
+    truncated = False
+
+    profile_code = form_data.get('od_payload_profile')
+    if profile_code:
+        profile = OdPayloadProfile.query.filter_by(
+            org_secure_code=org.secure_code,
+            code=profile_code,
+            is_deleted=False,
+        ).first()
+
+    if profile:
+        detail_key = _payload_detail_key(profile)
+        detail_rows = form_data.get(detail_key) if detail_key else None
+        if isinstance(detail_rows, list):
+            truncated = len(detail_rows) > _PAYLOAD_ROW_LIMIT
+            rows = detail_rows[:_PAYLOAD_ROW_LIMIT]
+            columns = _payload_detail_columns(profile, rows)
+            detail = {
+                'key': detail_key,
+                'columns': columns,
+                'rows': rows,
+            }
+
+    fields = _payload_scalar_fields(form_data, detail_key)
+    if detail:
+        fields, rows, columns = _apply_payload_egress(
+            form_instance, fields, rows, columns)
+        detail = {
+            'key': detail_key,
+            'columns': columns,
+            'rows': rows,
+        }
+    else:
+        fields, _rows, _columns = _apply_payload_egress(
+            form_instance, fields, [], [])
+
+    data = {
+        'profile': ({
+            'code': profile.code,
+            'name': profile.name,
+        } if profile else None),
+        'detail': detail,
+        'fields': fields,
+    }
+    if truncated:
+        data['truncated'] = True
+
+    return jsonify({'success': True, 'data': data})
 
 
 @api_bp.route('/cases/<wi_sc>/decisions')

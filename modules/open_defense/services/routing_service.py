@@ -8,8 +8,10 @@ from numbers import Number
 from typing import Any, Optional, Tuple
 
 from flask_babel import gettext as _
+from sqlalchemy import or_
 
 from ..models import OdFormTemplateMapping
+from .payload_profile_service import get_path
 
 logger = logging.getLogger(__name__)
 
@@ -53,23 +55,39 @@ def validate_match_rules(match_rules) -> tuple[bool, str]:
     return True, ''
 
 
-def resolve_form_template(org_secure_code: str, body: dict) -> Optional[str]:
+def resolve_form_template(
+    org_secure_code: str,
+    body: dict,
+    payload_kind: str = None,
+) -> Optional[str]:
     """依規則決定這個事件要用哪張表單模板，回傳 form_template_secure_code。"""
-    matched, _evaluated = evaluate_routing_rules(org_secure_code, body)
+    # 注意:本模組的 `_` 是 flask_babel.gettext,不可拿來當拋棄式變數
+    matched, _unused_evaluated = evaluate_routing_rules(
+        org_secure_code, body, payload_kind)
     return matched.form_template_secure_code if matched else None
 
 
-def evaluate_routing_rules(org_secure_code: str, body: dict):
+def evaluate_routing_rules(org_secure_code: str, body: dict, payload_kind: str = None):
     """
     回傳 (matched_rule, evaluated)。
 
     evaluated 供管理 API 試算使用；實際 intake 與試算共用相同命中邏輯。
+    payload_kind 有值時只評估 payload_kind 為 NULL 或相同種類的規則。
+    原生 payload 沒有 event_class；_rule_matches() 保留 event_class 比對,
+    因此原生規則 event_class 為 NULL 時會跳過該條件。
     """
-    rules = OdFormTemplateMapping.query.filter_by(
+    query = OdFormTemplateMapping.query.filter_by(
         org_secure_code=org_secure_code,
         is_deleted=False,
         is_active=True,
-    ).order_by(
+    )
+    if payload_kind is not None:
+        query = query.filter(or_(
+            OdFormTemplateMapping.payload_kind.is_(None),
+            OdFormTemplateMapping.payload_kind == payload_kind,
+        ))
+
+    rules = query.order_by(
         OdFormTemplateMapping.priority.desc(),
         OdFormTemplateMapping.id.asc(),
     ).all()
@@ -114,7 +132,7 @@ def _rule_matches(rule: OdFormTemplateMapping, body: dict) -> Tuple[bool, Option
 
 
 def _condition_matches(body: dict, condition: dict) -> bool:
-    actual = _get_field_value(body, condition['field'])
+    actual = get_path(body, condition['field'])
     op = condition['op']
     expected = condition.get('value')
 
@@ -145,15 +163,6 @@ def _condition_matches(body: dict, condition: dict) -> bool:
         return actual_text.endswith(expected_text)
 
     return False
-
-
-def _get_field_value(body: dict, field: str) -> Any:
-    current: Any = body
-    for part in field.split('.'):
-        if not isinstance(current, dict) or part not in current:
-            return None
-        current = current.get(part)
-    return current
 
 
 def _values_equal(actual: Any, expected: Any) -> bool:

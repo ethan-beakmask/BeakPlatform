@@ -9,10 +9,13 @@ function scCases() {
         statusFilter: 'open',
         selected: null,        // 清單項
         detail: null,          // pending-tasks 詳情（進行中案件才有）
+        payload: null,         // native payload 明細與原始欄位
         decisions: [],
         comment: '',
         acting: false,
         loading: false,
+        payloadLoading: false,
+        activeTab: 'summary',
         _clock: null,
         now: Date.now(),
 
@@ -37,26 +40,38 @@ function scCases() {
             this.statusFilter = f;
             this.selected = null;
             this.detail = null;
+            this.payload = null;
+            this.activeTab = 'summary';
             await this.load();
         },
 
         async selectCase(c) {
             this.selected = c;
             this.detail = null;
+            this.payload = null;
             this.decisions = [];
             this.comment = '';
+            this.activeTab = 'summary';
+            this.payloadLoading = true;
 
             const wiSc = c.workflow_instance_secure_code;
             const jobs = [
                 OD.fetchJSON(`${BP}/api/open_defense/cases/${wiSc}/decisions`),
+                OD.fetchJSON(`${BP}/api/open_defense/cases/${wiSc}/payload`),
             ];
             if (c.waiting_node) {
                 jobs.push(OD.fetchJSON(
                     `${BP}/api/form-center/pending-tasks/${c.waiting_node.queue_secure_code}`));
             }
-            const [d, p] = await Promise.all(jobs);
-            if (d.body?.success) this.decisions = d.body.data;
-            if (p && p.body?.success) this.detail = p.body.data;
+            try {
+                const [d, payload, pending] = await Promise.all(jobs);
+                if (d.body?.success) this.decisions = d.body.data;
+                if (payload.body?.success) this.payload = payload.body.data;
+                if (pending && pending.body?.success) this.detail = pending.body.data;
+                this.ensureActiveTab();
+            } finally {
+                this.payloadLoading = false;
+            }
 
             this.$nextTick(() => {
                 if (window.BkEgress) BkEgress.bind(document.getElementById('sc-detail'));
@@ -114,6 +129,25 @@ function scCases() {
         get actionOptions() {
             return this.detail?.available_paths || [];
         },
+        /* 純 getter：不可在此寫 this.activeTab。
+         * x-for 會在 effect 中讀取本 getter，在 effect 內寫入自己的依賴會讓
+         * Alpine 的更新順序不穩定 —— 實測症狀是點分頁後 activeTab 已經改了、
+         * 但 x-show 沒有跟著重算，畫面停在前一個分頁。 */
+        get tabs() {
+            const items = [{ id: 'summary', label: __('案件摘要') }];
+            if (this.payload?.detail?.rows?.length) {
+                items.push({ id: 'detail', label: __('事件明細') });
+            }
+            if (this.payload?.fields?.length) {
+                items.push({ id: 'fields', label: __('原始欄位') });
+            }
+            return items;
+        },
+        ensureActiveTab() {
+            if (!this.tabs.some((tab) => tab.id === this.activeTab)) {
+                this.activeTab = 'summary';
+            }
+        },
 
         // ---- 顯示 helper ----
         sevNum(v) {
@@ -125,6 +159,9 @@ function scCases() {
             const div = document.createElement('div');
             div.textContent = String(v);
             return div.innerHTML;
+        },
+        cellVal(row, key) {
+            return this.val(row ? row[key] : undefined);
         },
         riskClass(score) {
             const n = parseInt(score, 10) || 0;
