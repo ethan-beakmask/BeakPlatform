@@ -43,15 +43,26 @@ def _bootstrap():
 
 
 def _setup_logging():
+    """
+    2026-08-09 修訂：原設定讓此 log 長到 1.2 GB（每分鐘一輪，全量 INFO）。
+    兩個成因各修一半：
+      1. 根 logger 開在 INFO → Flask create_app() 的 module loader 每輪吐數十行。
+         改成根 WARNING，只把本排程與 open_defense 自己的 logger 留在 INFO。
+      2. 同時掛 FileHandler + StreamHandler(stdout)，而 crontab 又用
+         `>> 同一個檔 2>&1`，於是每一行都被寫進去兩次。
+         改成只在互動式執行(tty)時才額外輸出到 stdout。
+    """
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    handlers = [logging.FileHandler(LOG_PATH, encoding='utf-8')]
+    if sys.stdout.isatty():
+        handlers.append(logging.StreamHandler(sys.stdout))
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.WARNING,
         format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-        handlers=[
-            logging.FileHandler(LOG_PATH, encoding='utf-8'),
-            logging.StreamHandler(sys.stdout),
-        ],
+        handlers=handlers,
     )
+    logging.getLogger('od_expire_decisions').setLevel(logging.INFO)
+    logging.getLogger('modules.open_defense').setLevel(logging.INFO)
 
 
 def _write_heartbeat():
