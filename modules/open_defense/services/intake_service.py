@@ -502,7 +502,11 @@ def process_intake(
     _enrich_form_data(org_sc, form_data)
 
     try:
-        _, workflow_instance_sc = _create_form_instance_and_start_workflow(
+        # 這裡不能用 `_` 當拋棄式變數:模組層有 `from flask_babel import gettext as _`,
+        # 函式內任何一處對 `_` 賦值,整個函式的 `_` 就變成區域變數,
+        # 導致本函式前段(第 440/449 行)的 `_('...')` 拋 UnboundLocalError
+        # ——本該回 403/400 的清楚錯誤變成 500,而 500 會讓 Vector 無限重試。
+        _form_instance_sc, workflow_instance_sc = _create_form_instance_and_start_workflow(
             org_secure_code=org_sc,
             form_template_sc=template_sc,
             form_data=form_data,
