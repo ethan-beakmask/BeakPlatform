@@ -396,17 +396,8 @@
                         parent: node.parent || __('(無)')
                     });
 
-                    // 取得圖示 URL（支援本地 SVG 路徑和 Font Awesome class）
-                    let iconUrl = node.iconUrl || '';
-                    if (!iconUrl && node.icon) {
-                        if (node.icon.startsWith(window.__BP + '/static/') || node.icon.startsWith('http')) {
-                            // 已經是 URL 路徑，直接使用
-                            iconUrl = node.icon;
-                        } else {
-                            // 舊的 Font Awesome class，使用舊方法轉換（向後兼容）
-                            iconUrl = getSvgDataUrl(node.icon, '#333333');
-                        }
-                    }
+                    // 取得圖示 URL（唯一實作見 wf-dnd-nodes.js::resolveNodeIconUrl）
+                    const iconUrl = node.iconUrl || resolveNodeIconUrl(node.icon);
 
                     const nodeData = {
                         id: node.id,

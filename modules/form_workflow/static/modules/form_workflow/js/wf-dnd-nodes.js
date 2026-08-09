@@ -118,7 +118,29 @@
             'fas fa-cog': 'M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z'
         };
 
-        // 將 SVG path 轉換��� data URL
+        /**
+         * 把節點的 icon 欄位解析成可直接餵給 cytoscape background-image 的 URL。
+         *
+         * icon 有三種來源格式：
+         *   1. 已含 nginx 前綴的路徑或完整 http URL -> 原樣使用
+         *   2. `/static/...`（不含前綴）-> 補上 window.__BP。
+         *      workflow_node_definitions 與所有既有 graph 存的都是這種格式，
+         *      **前綴一律在渲染時補、不寫進資料**（寫進去會在部署路徑改變時整批失效）。
+         *   3. 舊的 Font Awesome class -> 走 getSvgDataUrl 轉 data URL（向後兼容）
+         *
+         * 解析不出來時回空字串，呼叫端據此不套 background-image。
+         * 這是全設計器唯一的 icon 解析實作，新增用到 icon 的地方一律呼叫它，
+         * 不要各自重寫 startsWith 判斷（曾因此讓所有 API 建立的流程節點全變空方框）。
+         */
+        function resolveNodeIconUrl(icon) {
+            if (!icon) return '';
+            const bp = window.__BP || '';
+            if (icon.startsWith(bp + '/static/') || icon.startsWith('http')) return icon;
+            if (icon.startsWith('/static/')) return bp + icon;
+            return getSvgDataUrl(icon, '#333333');
+        }
+
+        // 將 SVG path 轉換為 data URL
         function getSvgDataUrl(iconClass, color = '#333333') {
             const path = faIconSvgMap[iconClass];
             if (!path) return '';
@@ -160,16 +182,7 @@
             const nodeId = `node-${type}-${nodeCounter}`;
 
             // 判斷 icon 是本地 SVG 路徑還是 Font Awesome class
-            let iconUrl = '';
-            if (icon) {
-                if (icon.startsWith(window.__BP + '/static/') || icon.startsWith('http')) {
-                    // 已經是 URL 路徑，直接使用
-                    iconUrl = icon;
-                } else {
-                    // 舊的 Font Awesome class，使用舊方法轉換（向後兼容）
-                    iconUrl = getSvgDataUrl(icon, '#333333');
-                }
-            }
+            const iconUrl = resolveNodeIconUrl(icon);
 
             const newNode = cy.add({
                 data: {

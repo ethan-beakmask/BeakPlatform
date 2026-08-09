@@ -569,12 +569,7 @@
 
                         let iconUrl = node.data('iconUrl') || '';
                         if (!iconUrl && node.data('icon')) {
-                            const icon = node.data('icon');
-                            if (icon.startsWith(window.__BP + '/static/') || icon.startsWith('http')) {
-                                iconUrl = icon;
-                            } else {
-                                iconUrl = getSvgDataUrl(icon, '#333333');
-                            }
+                            iconUrl = resolveNodeIconUrl(node.data('icon'));
                             node.data('iconUrl', iconUrl);
                         }
                         if (iconUrl) {

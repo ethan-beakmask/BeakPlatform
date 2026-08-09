@@ -40,7 +40,7 @@ SELECT
     '安全',
     '防禦決策',
     '寫入一筆 OpenDefense 防禦決策(廠牌中性);任何外部執行端依 enforcement_points 篩選後拉取執行。target_value 通常引用表單欄位,如 ${f.actor_ip}。',
-    'ri-shield-check-line',
+    '/static/modules/form_workflow/icons/workflow/decisionwriter.svg',
     'modules.form_workflow.services.node_handlers.decision_writer_handler.DecisionWriterHandler',
     '{
         "action": "string",

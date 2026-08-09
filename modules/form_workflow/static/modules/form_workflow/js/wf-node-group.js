@@ -228,14 +228,7 @@
             });
 
             // 套用圖示
-            let iconUrl = buf.data.iconUrl || '';
-            if (!iconUrl && buf.icon) {
-                if (buf.icon.startsWith(window.__BP + '/static/') || buf.icon.startsWith('http')) {
-                    iconUrl = buf.icon;
-                } else {
-                    iconUrl = getSvgDataUrl(buf.icon, '#333333');
-                }
-            }
+            const iconUrl = buf.data.iconUrl || resolveNodeIconUrl(buf.icon);
             if (iconUrl) {
                 restoredNode.style({
                     'background-image': iconUrl,
@@ -387,10 +380,7 @@
 
             // 套用新節點的圖示
             if (newIcon) {
-                let iconUrl = newIcon;
-                if (!newIcon.startsWith(window.__BP + '/static/') && !newIcon.startsWith('http')) {
-                    iconUrl = getSvgDataUrl(newIcon, '#333333');
-                }
+                const iconUrl = resolveNodeIconUrl(newIcon);
                 newNode.style({
                     'background-image': iconUrl,
                     'background-fit': 'contain',
