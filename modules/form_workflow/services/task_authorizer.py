@@ -1,11 +1,24 @@
 """
 FormWorkflow task action authorization helpers.
+
+簽核授權判定的唯一實作。判定來源有三層，任一成立即放行：
+
+1. **快照**：節點啟動當下解析出的 `assignees`（原始行為，永不縮減）
+2. **當前角色**：`assignee_type == 'ROLE'` 時即時比對使用者現在持有的角色，
+   讓「新進/輪替/調職」對已經停在關卡上的單立即生效（L1，2026-08-09）
+3. **代理授權**：使用者是某個「原本可簽的人」的生效中代理人（2026-08-09）
+
+呼叫端一律用 `build_actor()` 先把身分資訊算好再進迴圈，避免清單 API 的 N+1。
 """
 from app.models.associations import UserRoleAssignment
 
 
 def get_actor_role_codes(user_secure_code: str, org_secure_code: str) -> set:
-    """取得使用者在指定企業當前有效的角色 secure_code 集合。"""
+    """取得使用者在指定企業當前有效的角色 secure_code 集合。
+
+    平台另有 `UserRoleAssignment.get_active_role_secure_codes()`，但它不帶
+    org 條件，本模組一律自行查詢並補上（TENANT-01）。
+    """
     assignments = UserRoleAssignment.query.filter(
         UserRoleAssignment.user_secure_code == user_secure_code,
         UserRoleAssignment.org_secure_code == org_secure_code,
@@ -14,39 +27,99 @@ def get_actor_role_codes(user_secure_code: str, org_secure_code: str) -> set:
     return {a.role_secure_code for a in assignments if a.is_valid}
 
 
+def get_delegated_identities(user_secure_code: str, org_secure_code: str) -> dict:
+    """取得「這個人目前代理了誰」，回傳 {授權人 secure_code: 授權人的角色集合}。
+
+    只採計對簽核任務有意義且判得準的代理型別：
+
+    | 型別 | 是否採計 | 理由 |
+    |------|---------|------|
+    | FULL     | 是 | 全權代理 |
+    | APPROVAL | 僅 `approval_limit` 為空時 | 有金額上限時，佇列項層拿不到單據金額，放行等於忽略上限 |
+    | SPECIFIC | 否 | 需比對 `allowed_process_types`，而 process_type 的語意（表單名稱／流程 code）尚未定案 |
+
+    不採計者一律不放行（fail-closed）。代理筆數在實務上極少（通常 0），
+    因此逐筆查授權人角色不會造成效能問題。
+    """
+    from app.models.delegation import Delegation, DelegationType
+
+    rows = Delegation.query.filter(
+        Delegation.delegate_secure_code == user_secure_code,
+        Delegation.org_secure_code == org_secure_code,
+        Delegation.is_deleted == False,  # noqa: E712
+    ).all()
+
+    result = {}
+    for d in rows:
+        if not d.is_active:          # status == ACTIVE 且今日在生效期間內
+            continue
+        if d.delegation_type == DelegationType.APPROVAL and d.approval_limit is not None:
+            continue
+        if d.delegation_type not in (DelegationType.FULL, DelegationType.APPROVAL):
+            continue
+        if d.delegator_secure_code in result:
+            continue
+        result[d.delegator_secure_code] = get_actor_role_codes(
+            d.delegator_secure_code, org_secure_code)
+    return result
+
+
+def build_actor(user_secure_code: str, org_secure_code: str) -> dict:
+    """一次算好授權判定需要的身分資訊，供迴圈重複使用。"""
+    return {
+        'user_sc': user_secure_code,
+        'role_codes': get_actor_role_codes(user_secure_code, org_secure_code),
+        'delegations': get_delegated_identities(user_secure_code, org_secure_code),
+    }
+
+
+def _identity_matches(task_result_data: dict, user_secure_code: str,
+                      role_codes: set) -> bool:
+    """單一身分是否符合這個佇列項的指派條件。"""
+    assignee_type = task_result_data.get('assignee_type')
+    if not assignee_type:
+        return True
+
+    if user_secure_code in (task_result_data.get('assignees') or []):
+        return True
+
+    if assignee_type == 'ROLE':
+        assignee_value = task_result_data.get('assignee_value')
+        if not assignee_value:
+            return False
+        return assignee_value in (role_codes or set())
+
+    # DEPARTMENT 刻意維持 snapshot-only（部門調動不即時生效，範圍決定不是遺漏）；
+    # INITIATOR / USER / DYNAMIC 的語意本來就是「指定的那個人」，不適用角色比對。
+    return False
+
+
 def can_act_on_task(
     task,
     user_secure_code: str,
     org_secure_code: str,
-    role_codes: set = None,
+    actor: dict = None,
 ) -> bool:
     """判斷使用者能否對這個簽核佇列項採取行動。
 
-    role_codes 可由呼叫端預先算好傳入（清單/批次 API 用，避免迴圈內重複查詢）。
+    actor 可由呼叫端以 `build_actor()` 預先算好傳入（清單／批次 API 用，
+    避免迴圈內重複查詢）；不傳則自行計算。
     """
     if not task:
         return False
 
     task_result_data = (task.result or {}).get('data', {})
-    assignee_type = task_result_data.get('assignee_type')
-    assignee_value = task_result_data.get('assignee_value')
-    assignees = task_result_data.get('assignees') or []
+    if actor is None:
+        actor = build_actor(user_secure_code, org_secure_code)
 
-    if not assignee_type:
+    if _identity_matches(task_result_data, user_secure_code, actor.get('role_codes')):
         return True
 
-    if user_secure_code in assignees:
-        return True
+    # 代理授權：任一被代理人可簽，代理人就可簽
+    for delegator_sc, delegator_roles in (actor.get('delegations') or {}).items():
+        if _identity_matches(task_result_data, delegator_sc, delegator_roles):
+            return True
 
-    if assignee_type == 'ROLE':
-        if not assignee_value:
-            return False
-        if role_codes is None:
-            role_codes = get_actor_role_codes(user_secure_code, org_secure_code)
-        return assignee_value in role_codes
-
-    # DEPARTMENT is intentionally snapshot-only in L1; INITIATOR/USER/DYNAMIC
-    # also keep their original fixed-person semantics.
     return False
 
 
@@ -54,7 +127,7 @@ def is_pending_assignee(
     task,
     user_secure_code: str,
     org_secure_code: str,
-    role_codes: set = None,
+    actor: dict = None,
 ) -> bool:
     """是否為此佇列項的「當前待簽者」。
 
@@ -68,4 +141,4 @@ def is_pending_assignee(
         return False
     if not ((task.result or {}).get('data') or {}).get('assignee_type'):
         return False
-    return can_act_on_task(task, user_secure_code, org_secure_code, role_codes)
+    return can_act_on_task(task, user_secure_code, org_secure_code, actor)

@@ -54,7 +54,7 @@ def is_form_participant(user, record) -> bool:
 
 def _check_participant(user_sc: str, fi_sc: str, org_sc: str) -> bool:
     from ..models import FwFormInstance, FwApprovalRecord, FwNodeExecutionQueue
-    from .task_authorizer import get_actor_role_codes, is_pending_assignee
+    from .task_authorizer import build_actor, is_pending_assignee
 
     instance = FwFormInstance.query.filter_by(
         secure_code=fi_sc,
@@ -81,9 +81,9 @@ def _check_participant(user_sc: str, fi_sc: str, org_sc: str) -> bool:
         org_secure_code=org_sc,
         status='WAITING',
     ).all()
-    role_codes = get_actor_role_codes(user_sc, org_sc)
+    actor = build_actor(user_sc, org_sc)
     for task in waiting_tasks:
-        if is_pending_assignee(task, user_sc, org_sc, role_codes):
+        if is_pending_assignee(task, user_sc, org_sc, actor):
             return True
 
     return False

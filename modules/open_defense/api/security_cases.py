@@ -75,7 +75,7 @@ def list_cases():
     """
     from modules.form_workflow.models import FwNodeExecutionQueue
     from modules.form_workflow.services.task_authorizer import (
-        can_act_on_task, get_actor_role_codes,
+        can_act_on_task, build_actor,
     )
 
     org = get_current_org()
@@ -115,7 +115,7 @@ def list_cases():
             queue_map[q.workflow_instance_secure_code] = q
 
     user_sc = current_user.secure_code
-    role_codes = get_actor_role_codes(user_sc, org.secure_code)
+    actor = build_actor(user_sc, org.secure_code)
     result = []
     for fi, wi in rows:
         fd = fi.form_data or {}
@@ -145,7 +145,7 @@ def list_cases():
                     queue_map.get(wi.secure_code),
                     user_sc,
                     org.secure_code,
-                    role_codes,
+                    actor,
                 )
             ),
         })

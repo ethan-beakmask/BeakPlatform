@@ -14,7 +14,7 @@ from app import db, csrf
 
 from .form_center import form_center_bp
 from .fc_utils import _apply_field_permissions_to_schema
-from ..services.task_authorizer import can_act_on_task, get_actor_role_codes
+from ..services.task_authorizer import can_act_on_task, build_actor
 from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
@@ -38,13 +38,13 @@ def list_pending_tasks():
     ).order_by(FwNodeExecutionQueue.scheduled_at.asc()).all()
 
     user_code = current_user.secure_code
-    role_codes = get_actor_role_codes(user_code, org.secure_code)
+    actor = build_actor(user_code, org.secure_code)
 
     # 先過濾出指派給當前用戶的任務
     my_tasks = []
     form_sc_set = set()
     for task in tasks:
-        if not can_act_on_task(task, user_code, org.secure_code, role_codes):
+        if not can_act_on_task(task, user_code, org.secure_code, actor):
             continue
         my_tasks.append(task)
         if task.form_instance_secure_code:

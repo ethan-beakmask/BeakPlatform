@@ -14,7 +14,7 @@ from app.platform.auth import current_user, has_permission, require_permission
 from app.platform.data import get_current_org
 
 from . import api_bp
-from ..services.task_authorizer import can_act_on_task, get_actor_role_codes
+from ..services.task_authorizer import can_act_on_task, build_actor
 from flask_babel import gettext as _
 
 
@@ -111,11 +111,11 @@ def list_pending_tasks():
     ).order_by(FwNodeExecutionQueue.scheduled_at.asc()).all()
 
     user_code = current_user.secure_code
-    role_codes = get_actor_role_codes(user_code, org.secure_code)
+    actor = build_actor(user_code, org.secure_code)
     result = []
     for task in tasks:
         # 檢查當前用戶是否為指定簽核人
-        if not can_act_on_task(task, user_code, org.secure_code, role_codes):
+        if not can_act_on_task(task, user_code, org.secure_code, actor):
             continue
 
         # 取得關聯的表單實例資訊
