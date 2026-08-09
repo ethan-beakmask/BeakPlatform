@@ -4,7 +4,7 @@ OpenDefense Module - Intake Service
 接收正規化後的 OCSF 事件,執行:
   1. 冪等檢查(correlation_id)
   2. source_system 白名單比對
-  3. event_class -> form_template 對應(查 OdFormTemplateMapping)
+  3. 規則式路由決定 form_template(查 OdFormTemplateMapping)
   4. 聚合降噪:同 攻擊者IP+rule_id 於時間窗內合併升級既有案件,不開新案
   5. 建立 FwFormInstance(含情報 enrichment 欄位) + 啟動 workflow
   6. 寫 OdIntakeEvent 並回填 case_secure_code
@@ -20,7 +20,8 @@ from app import db
 from app.models.api_key import ApiKey
 from app.utils.security import generate_secure_code
 
-from ..models import OdIntakeEvent, OdFormTemplateMapping
+from ..models import OdIntakeEvent
+from .routing_service import resolve_form_template
 
 logger = logging.getLogger(__name__)
 
@@ -229,16 +230,6 @@ def _merge_event_into_case(event: OdIntakeEvent, workflow_instance) -> None:
         )
 
 
-def _lookup_form_template(org_secure_code: str, event_class: str) -> Optional[str]:
-    """查 OdFormTemplateMapping 取得 form_template_secure_code"""
-    mapping = OdFormTemplateMapping.query.filter_by(
-        org_secure_code=org_secure_code,
-        event_class=event_class,
-        is_deleted=False,
-    ).first()
-    return mapping.form_template_secure_code if mapping else None
-
-
 def _generate_serial_number(org_secure_code: str) -> str:
     """OD 專用流水號:OD-YYYYMMDD-<8 hex>"""
     date_str = datetime.utcnow().strftime('%Y%m%d')
@@ -442,11 +433,11 @@ def process_intake(
             code='source_not_allowed', status=403,
         )
 
-    # 3. mapping
-    template_sc = _lookup_form_template(org_sc, event_class)
+    # 3. routing
+    template_sc = resolve_form_template(org_sc, body)
     if not template_sc:
         raise IntakeError(
-            _('event_class %(event_class)r 在本企業無對應 form_template,請至 /open-defense/intake-keys 設定 mapping',
+            _('event_class %(event_class)r 在本企業無命中的 form_template 路由規則,請至 /open-defense/routing-rules 設定',
               event_class=event_class),
             code='no_mapping', status=422,
         )

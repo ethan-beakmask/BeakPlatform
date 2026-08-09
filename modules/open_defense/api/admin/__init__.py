@@ -18,3 +18,4 @@ from . import dashboard      # noqa: E402,F401
 from . import intake_keys    # noqa: E402,F401
 from . import service_accounts  # noqa: E402,F401
 from . import decisions      # noqa: E402,F401
+from . import routing_rules  # noqa: E402,F401

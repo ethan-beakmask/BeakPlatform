@@ -23,8 +23,10 @@ files:
     - modules/open_defense/api/intake_keys.py       # CRUD intake keys (內部用)
     - modules/open_defense/api/service_accounts.py  # CRUD SA + POST sa/login
     - modules/open_defense/api/security_cases.py    # 資安案件處置中心唯讀聚合 (清單/統計/決策關聯)
+    - modules/open_defense/api/admin/routing_rules.py # CRUD routing rules + 試算
   service:
     - modules/open_defense/services/intake_service.py        # webhook 接收 + 啟流程
+    - modules/open_defense/services/routing_service.py       # 事件規則式路由
     - modules/open_defense/services/decision_service.py      # 決策 CRUD + 過期處理
     - modules/open_defense/services/intake_key_service.py    # HMAC key 管理
     - modules/open_defense/services/service_account_service.py
@@ -51,6 +53,7 @@ files:
     - modules/open_defense/static/modules/open_defense/css/sc-cases.css
   migration:
     - scripts/migrations/<TS>_create_open_defense.sql
+    - scripts/migrations/095_od_routing_rules.sql
 
 # 此模組會延伸的安全核心檔案(需小幅修改,但不改變既有行為)
 security_core_touch:
@@ -110,3 +113,6 @@ note: |
     modules.form_workflow.services.task_authorizer.can_act_on_task，支援 ROLE 當前角色
     即時比對；原本 assignees 快照為空即全員可操作的 fail-open 行為同步收緊為
     fail-closed。
+  - 2026-08-09 OpenDefense intake form_template 選取改為規則式路由:
+    od_form_template_mappings 支援 priority、event_class 可空、match_rules JSONB
+    條件與 is_active；既有 event_class 對照資料保留為 priority=0、match_rules=NULL。
