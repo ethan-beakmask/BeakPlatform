@@ -687,6 +687,7 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 | 表單模板是否發行 | `fw_form_templates.status` | **`is_published`**（發行快照在 `fw_published_form_workflows.status='Published'`） |
 | API Key 是否可用 | `api_keys.is_active` | **`api_keys.status`**（`active` / `suspended`） |
 | 角色是否唯一 | `roles.code` 唯一 | **只有 `secure_code` 唯一**，`ix_roles_code` 是非唯一索引 —— 不同企業的 `SECURITY_STAFF` 是兩筆不同 secure_code |
+| OD 路由規則的條件 | `od_form_template_mappings.conditions` | **`match_rules`**（jsonb） |
 
 **`od_intake_events.case_secure_code` 指向 `fw_workflow_instances`，不是 form_instance。**
 要拿到表單得再 join 一層，直接 join `fw_form_instances` 會全部 NULL：
@@ -754,6 +755,25 @@ od-bridge / EDL enforcer / ClickHouse）的權威在
 - **nginx 前綴一律渲染時補、不寫進 DB**（`workflow_node_definitions` 與所有
   既有 graph 的 icon 都是 `/static/...` 無前綴，這是正確的存法）
 - 資安案件處置中心的清單 API 是 `/api/open_defense/cases`（不在 `/admin` 底下）
+
+**打 intake webhook 做端對端測試時，API key 的 secret 用 `decrypt_secret()` 取回**
+（secret 是加密存的，不是 hash——**不必為了測試另建一把 key**）：
+
+```python
+from app import create_app
+from app.models.api_key import ApiKey
+from app.services import api_key_service
+app = create_app('development')
+with app.app_context():
+    rec = ApiKey.query.filter_by(key_id='ak_a9bf7cf8a60f7d97').first()
+    secret = api_key_service.decrypt_secret(rec)      # bytes
+```
+
+簽章是 `sha256=<hex(HMAC-SHA256(secret, f"{ts}\n{body}"))>`，
+headers 用 `X-BP-Key-Id` / `X-BP-Timestamp` / `X-BP-Signature`
+（舊契約的 `X-OD-*` 仍相容）。body 必須與計算簽章時**同一份 bytes**，
+不要 `json.dumps` 兩次（key 順序或空白不同就 401）。
+跑腳本前要 `set -a && source .env && set +a`（缺 SECRET_KEY 會 ValueError）。
 
 ### NoCode 選單目前刻意隱藏中（2026-08-07 起，鐵人賽期間）
 

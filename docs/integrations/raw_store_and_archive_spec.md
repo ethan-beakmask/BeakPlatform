@@ -415,7 +415,11 @@ sec-vm 端只需扛熱+溫，**不超過 100 GB** 對 VM 完全可接受。5 年
 
 ## 9. 與既有系統的關係
 
-- **不取代** Platform 端的 `od_intake_events` 表（v2 後該表只留 incident metadata，不再存原文）
+- **不取代** Platform 端的 `od_intake_events` 表（v2 後該表只留 incident metadata，不再存原文）。
+  **但「只留 metadata」目前沒有落地規格、也沒排進 §5 遷移計畫的任何 phase**
+  （冷讀審核指出，2026-08-10）：保留哪些欄位、何時停止寫完整 `raw_body`、
+  既有 7981 筆怎麼處理，三件都未定。**這不阻塞 v2 其他工作**，
+  但在動手縮減 `raw_body` 之前必須先補這段——現階段照舊全存
 - **不取代** sec-vm 既有的 ClickHouse。2026-08-10 已確認 `secstack.events` 存在且
   語意相符，本 spec 是**擴充該表（補 `incident_id`）而非另起**，見 §3.1／§3.2
 - **不取代** 冷層目標上其他部門既有歸檔結構，只是新開一個 `soc_archive/` 目錄

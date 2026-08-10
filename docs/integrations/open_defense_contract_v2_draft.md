@@ -114,8 +114,23 @@ v2 的動機因此仍成立，只是急迫性下降。
 `_find_mergeable_case()` 是**滑動視窗**（`received_at >= now - 60min`），不是切齊視窗。
 若 `.20` 每 60 分鐘送出一個 incident 而攻擊持續，平台側會把後續 incident
 一直併進同一個 `RUNNING` 案件，**案件永遠不結案**。
-→ `.20` 聚合上線時，平台側對 `payload_kind=native` 且來源為 v2 envelope 的事件
-**必須停用合併**（envelope 已是聚合結果，再合一次是錯的）。
+→ `.20` 聚合上線時，平台側對 v2 envelope **必須停用合併**
+（envelope 已是聚合結果，再合一次是錯的）。
+
+**停用範圍以 profile 為準，不是以 `payload_kind` 為準**（冷讀審核補，2026-08-10）：
+
+| 進來的東西 | 平台側是否仍聚合 |
+|---|---|
+| v2 incident envelope（`profile=od_incident_envelope_v2`） | **否**，已在 `.20` 聚合過 |
+| 其他 native profile（`soc_splunk_v1` 等單一事件通報） | **是**，維持現行 60 分鐘窗 |
+| v1 OCSF（`payload_kind=ocsf`） | **是**，直到 v1 端點下線 |
+
+`payload_kind=native` 涵蓋所有原生 payload，拿它當開關會**誤停掉一般 SOC 通報的
+降噪**。判定依據應是「這個 profile 送來的是否已聚合」——建議在
+`od_payload_profiles` 加一個布林欄位（例如 `pre_aggregated`）由設定決定，
+而不是在程式裡寫死 profile code。
+擴充點：`modules/open_defense/services/intake_service.py` 的
+`_find_mergeable_case()`（PF-75 已把 `payload_kind` 參數化）。
 
 **二、`.20` 熱層 TTL 是 180 天，本契約與 raw store 規格都寫 90 天。**
 以 `.20` 現況 180 天為準，raw store §3 的 90 天改為溫層轉檔門檻的建議值，
@@ -294,6 +309,19 @@ Platform 端註冊為 sec-vm 的 Service Account（角色互換 v1 的方向）�
   "truncated": false
 }
 ```
+
+**回應欄位 ← `secstack.events` 欄位對照**（冷讀審核補，2026-08-10。
+契約欄位名與 `.20` 實際表不同名，不對照會實作錯）：
+
+| 回應欄位 | `secstack.events` 來源 | 轉換 |
+|---|---|---|
+| `ts` | `event_time` | `DateTime64(3,'UTC')` → ISO 8601 含 `Z` |
+| `source_system` | `source_system` | 原樣 |
+| `raw_payload` | `raw` | 存的是原文字串；**能 parse 成 JSON 就回 object，不能就原樣回字串**，不要拋錯 |
+| （查詢條件） | `incident_id` | 需先完成 raw store §3.2 的 `ALTER TABLE` |
+
+`actor_ip` 在表內是 `IPv6` 型別（IPv4 會被存成 v4-mapped），
+若要放進回應一律先轉成人類可讀字串，不要回 ClickHouse 的原生表示。
 
 ### 3.4 Rate Limit
 
