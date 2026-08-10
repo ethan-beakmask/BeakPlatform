@@ -68,6 +68,8 @@ files:
     - scripts/migrations/<TS>_create_open_defense.sql
     - scripts/migrations/095_od_routing_rules.sql
     - scripts/migrations/096_od_payload_profiles.sql
+  test:
+    - backend/tests/test_od_aggregation.py
 
 # 此模組會延伸的安全核心檔案(需小幅修改,但不改變既有行為)
 security_core_touch:

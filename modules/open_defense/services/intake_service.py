@@ -115,11 +115,27 @@ def _enrich_form_data(org_secure_code: str, form_data: Dict[str, Any]) -> None:
     repeat_count = 0
     history_block_count = 0
     if actor_ip:
+        from modules.form_workflow.models import FwWorkflowInstance, FwFormInstance
+
         lookback = datetime.utcnow() - timedelta(hours=REPEAT_LOOKBACK_HOURS)
-        repeat_count = OdIntakeEvent.query.filter(
+        # 比對走案件表單的共同軸線 actor_ip,不讀 raw_body(PF-75)。
+        # OCSF 的 raw_body 是 {actor:{ip}},原生 payload 是來源系統的原始結構,
+        # 讀 raw_body['actor']['ip'] 對原生事件恆為 NULL ->
+        # repeat_count 永遠 0 -> 風險分數被低估 -> 建議處置偏向 observe。
+        # form_data 的 6 個共同軸線才是兩種格式的交會點。
+        # 這裡刻意不做格式隔離:同一 IP 被不同偵測器看到,正是風險升高的訊號。
+        repeat_count = db.session.query(OdIntakeEvent).join(
+            FwWorkflowInstance,
+            OdIntakeEvent.case_secure_code == FwWorkflowInstance.secure_code,
+        ).join(
+            FwFormInstance,
+            FwFormInstance.secure_code == FwWorkflowInstance.form_instance_secure_code,
+        ).filter(
             OdIntakeEvent.org_secure_code == org_secure_code,
             OdIntakeEvent.received_at >= lookback,
-            OdIntakeEvent.raw_body['actor']['ip'].astext == actor_ip,
+            FwWorkflowInstance.org_secure_code == org_secure_code,
+            FwWorkflowInstance.is_deleted.is_(False),
+            FwFormInstance.form_data['actor_ip'].astext == actor_ip,
         ).count()
         history_block_count = OdDefenseDecision.query.filter_by(
             org_secure_code=org_secure_code,
@@ -149,6 +165,8 @@ def _find_mergeable_case(
     actor_ip: Optional[str],
     rule_id: Optional[str],
     severity_id: Optional[int],
+    payload_kind: str,
+    source_system: Optional[str] = None,
 ):
     """
     聚合降噪:找時間窗內同 攻擊者IP+rule_id 的既有案件。
@@ -159,33 +177,54 @@ def _find_mergeable_case(
     Returns:
         FwWorkflowInstance 或 None
     """
-    from modules.form_workflow.models import FwWorkflowInstance
-
     if not actor_ip or not rule_id:
         return None
+
+    if payload_kind not in ('ocsf', 'native'):
+        logger.warning('intake aggregation skipped: invalid payload_kind=%r', payload_kind)
+        return None
+
+    if payload_kind == 'native' and not source_system:
+        logger.warning('native intake aggregation skipped: missing source_system')
+        return None
+
+    from modules.form_workflow.models import FwWorkflowInstance, FwFormInstance
 
     from datetime import timedelta
     cutoff = datetime.utcnow() - timedelta(minutes=AGGREGATION_WINDOW_MINUTES)
 
-    candidates = OdIntakeEvent.query.filter(
+    query = db.session.query(FwWorkflowInstance).join(
+        OdIntakeEvent,
+        OdIntakeEvent.case_secure_code == FwWorkflowInstance.secure_code,
+    ).join(
+        FwFormInstance,
+        FwFormInstance.secure_code == FwWorkflowInstance.form_instance_secure_code,
+    ).filter(
         OdIntakeEvent.org_secure_code == org_secure_code,
         OdIntakeEvent.received_at >= cutoff,
         OdIntakeEvent.case_secure_code.isnot(None),
-        OdIntakeEvent.raw_body['actor']['ip'].astext == actor_ip,
-        OdIntakeEvent.raw_body['finding']['rule_id'].astext == rule_id,
-    ).order_by(OdIntakeEvent.received_at.desc()).limit(20).all()
+        FwWorkflowInstance.org_secure_code == org_secure_code,
+        FwWorkflowInstance.is_deleted.is_(False),
+        FwFormInstance.form_data['actor_ip'].astext == actor_ip,
+        FwFormInstance.form_data['finding_rule_id'].astext == rule_id,
+    )
+
+    if payload_kind == 'native':
+        query = query.filter(
+            OdIntakeEvent.event_class == 'native',
+            OdIntakeEvent.source_system == source_system,
+        )
+    else:
+        query = query.filter(OdIntakeEvent.event_class != 'native')
+
+    candidates = query.order_by(
+        OdIntakeEvent.received_at.desc()
+    ).limit(20).all()
 
     merge_closed_ok = (severity_id or 0) <= 2
-    for candidate in candidates:
-        wi = FwWorkflowInstance.query.filter_by(
-            secure_code=candidate.case_secure_code,
-            org_secure_code=org_secure_code,
-            is_deleted=False,
-        ).first()
-        if wi is None:
-            continue
-        if wi.status == 'RUNNING' or merge_closed_ok:
-            return wi
+    for workflow_instance in candidates:
+        if workflow_instance.status == 'RUNNING' or merge_closed_ok:
+            return workflow_instance
     return None
 
 
@@ -478,6 +517,7 @@ def process_intake(
         actor_ip=actor.get('ip'),
         rule_id=finding.get('rule_id'),
         severity_id=body.get('severity_id'),
+        payload_kind='ocsf',
     )
     if mergeable is not None:
         _merge_event_into_case(event, mergeable)
@@ -624,6 +664,8 @@ def process_native_intake(
             actor_ip=axis.get('actor_ip'),
             rule_id=axis.get('finding_rule_id'),
             severity_id=axis.get('severity_id'),
+            payload_kind='native',
+            source_system=profile.source_system,
         )
     if mergeable is not None:
         _merge_event_into_case(event, mergeable)
