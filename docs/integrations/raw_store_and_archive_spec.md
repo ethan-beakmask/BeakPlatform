@@ -16,10 +16,24 @@
 
 | 本規格假設 | 平台側現況（2026-08-10） |
 |---|---|
-| 熱層 ClickHouse 在 sec-vm | `.20` 已有 ClickHouse 並做過報表化與歷史回灌（2026-08 上旬），**是否符合 §3 的 schema 未確認** |
+| 熱層 ClickHouse 在 sec-vm | **已有雛形**（2026-08-10 實查 `.20` `secstack-clickhouse-1`，ClickHouse 24.8.14）：資料庫 `secstack` 有 `events`（2321 列）、`findings`（0 列）與三個物化視圖（`attacker_ip_daily` / `events_hourly_dim` / `events_per_minute`）。`events` 的欄位是 **OCSF v1 契約的扁平化版本**（`correlation_id` / `source_system` / `event_class` / `severity_id` / `actor_*` / `target_*` / `finding_*`）**且含 `raw String` 存原文**——本規格 §3 的熱層需求實質上已被覆蓋，差別只在表名與欄位命名不同，且沒有 §3 的 `incident_id` 維度。**要沿用它擴充，不要另建一套** |
 | §9：v2 後 `od_intake_events` 只留 metadata、不再存原文 | **仍完整存 `raw_body` JSONB**。v2 未上線，這條還沒到執行時機 |
 | §6 查詢介面（案件詳情頁「查原文」按鈕） | **零實作**。處置中心的「事件明細」分頁讀的是 `form_data` 內的明細陣列，不會打 sec-vm |
 | 溫層 Parquet、冷層 NAS 歸檔 | 零實作，NAS 路徑與帳號（§8.2）仍未定 |
+
+**因此本規格的剩餘工作實際上是三件**：熱層補 `incident_id` 維度（等 v2 定案）、
+溫層 Parquet 與冷層 NAS（全新）、以及 §6 的查詢介面（平台端「查原文」按鈕，
+即 v2 §3 反向通道）。**熱層不必重做。**
+
+### 連線資訊（2026-08-10 用戶授權 Claude Code 直接進 .20 取環境資料）
+
+```bash
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20      # hostname sec-vm，ethan 有 sudo NOPASSWD
+docker exec secstack-clickhouse-1 clickhouse-client -q 'SHOW TABLES FROM secstack'
+```
+
+`.20` 的運維權威文件在 `/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`，
+**查得到的事實寫在那邊或本節，不要在本 repo 另存一份會漂移的副本。**
 
 ### 一個新出現的相關事實
 

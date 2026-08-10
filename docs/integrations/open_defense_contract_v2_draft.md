@@ -75,7 +75,8 @@ v2 的動機因此仍成立，只是急迫性下降。
 
 ### 定稿前要先確認的（除了 §6 原有五點）
 
-6. 平台側是否真的要另開 `/v2/incidents` 端點，還是走 `?profile=` 收 envelope
+6. ~~平台側是否真的要另開 `/v2/incidents` 端點~~
+   → **2026-08-10 已決：不另開**，走 `?profile=` 收 envelope，§2.1 已改寫並附實測證據
 7. 反向通道要不要做——沒有它，`related_locators` 只是死欄位
 
 ---
@@ -110,13 +111,48 @@ JSON/其他            ─┘ Layer 2 normalize (OCSF)
 
 ## 2. Incident Envelope -- 入口 API
 
-### 2.1 端點
+### 2.1 端點（2026-08-10 定案：不另開，走既有 native intake）
 
 ```
-POST /api/open_defense/v2/incidents
+POST /api/open_defense/intake/native?profile=od_incident_envelope_v2
 ```
 
-Headers 沿用 v1（HMAC + Intake Key），改為 v2 端點獨立計數。
+Headers 沿用 v1（HMAC + Intake Key）。
+
+**原本規劃的 `POST /api/open_defense/v2/incidents` 已確認不必要，本節作廢。**
+2026-08-10 實測：把 §2.2 的 envelope 原樣送進 native intake，
+由 `od_payload_profiles` 的一筆設定描述解析方式即可，
+證據在 `/opt/tmp/verify/20260810-v2-envelope-via-profile.log`：
+
+| v2 契約要求 | 實測結果 |
+|---|---|
+| 200 + `case_secure_code` + `workflow_started`（§2.4） | 一致 |
+| 重送回 `duplicate: true`（§2.4） | 一致，冪等鍵取自 `incident_id` |
+| `primary` / `aggregation` / `context` / `detector_hint` 全部保留 | 全部進 `form_data`，key 為 `primary.finding.rule_id` 這種點號形式 |
+| `related_locators` 不傳原文、只傳指標 | 陣列原樣保留 |
+
+對應的 profile 設定（`correlation_id_path` 與 `field_map` 是全部所需）：
+
+```json
+{
+  "code": "od_incident_envelope_v2",
+  "correlation_id_path": "incident_id",
+  "field_map": {
+    "severity_id": "primary.severity_id",
+    "actor_ip": "primary.actor.ip",
+    "target_host": "primary.target.host",
+    "source_system": "primary.source_system",
+    "finding_rule_id": "primary.finding.rule_id",
+    "occurred_at": "aggregation.last_seen"
+  },
+  "detail_path": "related_locators"
+}
+```
+
+**契約層仍要凍結 §2.2 的 envelope schema**——sec-vm 端送什麼是契約，
+平台端怎麼解析是實作。差別只在平台不需要為此多維護一個端點、一套限流、
+一套分流規則。路由條件可直接寫 `primary.source_system` 這種點號路徑
+（規則的 `payload_kind` 設 `native`）。
 
 ### 2.2 Body Schema
 
@@ -263,9 +299,14 @@ sec-vm 端**不自動套用**，只入規則檢討佇列。實際修規則仍由
 
 ## 5. v1 → v2 遷移計畫
 
+**Phase 1 已因 §2.1 定案而簡化**：平台側不需要開發新端點，
+只要建一筆 `od_incident_envelope_v2` profile 與一條 `payload_kind=native`
+的路由規則就具備接收能力（兩者都能在 `/open-defense/event-routing` 上設定，
+不必改程式、不必重啟服務）。
+
 | 階段 | 內容 | 時長 |
 |---|---|---|
-| Phase 1 | v2 端點上線，v1 並行 | 立即 |
+| Phase 1 | 建 profile + 路由規則，v1 並行 | 立即 |
 | Phase 2 | sec-vm 端遷移到 v2 incident push，v1 端點記錄 deprecation log | T+1 月 |
 | Phase 3 | v1 端點回 200 + warning header，仍接受 | T+6 月 |
 | Phase 4 | v1 端點下線 | T+12 月 |
