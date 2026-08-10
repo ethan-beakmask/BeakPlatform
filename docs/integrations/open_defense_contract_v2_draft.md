@@ -3,6 +3,7 @@
 **版本**: v2.0-draft
 **狀態**: 草稿，待 sec-vm 端對齊後定稿
 **建立**: 2026-05-13
+**最後現況對齊**: 2026-08-10（見 §0.5）
 **對 v1 的關係**: v1.0 端點維持運作並標 deprecated，**12 個月雙版本平行期**後下線
 
 ---
@@ -18,6 +19,64 @@
 | OCSF 對齊 | event_class 多種 | event_class 改放在 incident.primary 內 |
 
 **設計動機**：v1 的「single event push」造成 Platform 端案件爆量、SQL 漸鎖死（公司端 ELK/Splunk 拉 SQL 已驗證此反模式）。v2 把聚合下推到 sec-vm，Platform 只處理 incident。
+
+---
+
+## 0.5 現況對齊（2026-08-10）
+
+本草稿寫於 2026-05-13，此後平台側走了三個月的實作。**這一節只寫平台側可驗證的
+事實**；sec-vm（`.20`）側的現況一律標為待確認，權威在
+`/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`。
+
+### 這份草稿仍然有效
+
+聚合下推、反向通道、Platform 只處理 incident 這三個方向**都還沒實施**，
+草稿描述的仍是下一代架構，不是已完成的事。§2/§3/§4 的端點在平台側都不存在。
+
+### 但有三件事改變了前提
+
+**一、平台側自己做了聚合降噪（2026-07-16 起）**
+
+`intake_service._find_mergeable_case()`：同 `actor_ip` + `finding_rule_id`、
+60 分鐘窗內的事件併進既有案件，`od_event_count` 累加、severity 取 max。
+這是 v1 架構下的補救，**緩解了案件爆量但沒有解決事件量**——
+每包事件仍然要進 `od_intake_events` 並完整存 `raw_body`。
+v2 的動機因此仍成立，只是急迫性下降。
+
+**二、`?profile=` 機制讓 §2 可能不需要新端點（2026-08-10 起）**
+
+`POST /api/open_defense/intake/native?profile=<code>` 收任意 JSON，
+由 `od_payload_profiles` 描述怎麼解析。把 incident envelope 對上去是這樣：
+
+| envelope 欄位 | profile 設定 |
+|---|---|
+| `incident_id` | `correlation_id_path` |
+| `primary.severity_id` / `primary.actor.ip` / `primary.finding.rule_id` … | `field_map` 的軸線映射 |
+| `aggregation.*` / `context.*` | 自動扁平化成 `aggregation.event_count` 這種 key，表單 TABS 直接綁 |
+| `related_locators` | 陣列原樣保留在 form_data |
+
+`duplicate` 回應語意也已經一致。**因此 §2.1 的 `/api/open_defense/v2/incidents`
+是否還要另開，應在定稿前重新評估**——用一個 profile 就能收，
+差別只在契約要不要明文凍結 envelope 的 schema（明文凍結有它的價值，
+但那是契約層的決定，不是實作限制）。這會連帶簡化 §5 的遷移計畫。
+
+**三、路由已改為規則式（2026-08-09 起）**
+
+`od_form_template_mappings` 支援 priority + 條件 + `payload_kind`，
+一條規則＝一種案件類型。v2 若採 envelope，路由條件可以直接寫
+`primary.finding.rule_id` 這種點號路徑，不需要為 v2 另做一套分流。
+
+### 仍未實作、且 v2 依賴的東西
+
+- 反向通道（§3 查原文、§4 規則回饋）：平台側零實作。
+  處置中心的「事件明細」目前是讀 `form_data` 內的明細陣列，不查 sec-vm
+- `related_locators` 的消費端：平台收得下這個欄位，但沒有任何 UI 會去解析它
+- `od_intake_events.raw_body` 仍完整存原文（§9 of raw store spec 說 v2 後只留 metadata）
+
+### 定稿前要先確認的（除了 §6 原有五點）
+
+6. 平台側是否真的要另開 `/v2/incidents` 端點，還是走 `?profile=` 收 envelope
+7. 反向通道要不要做——沒有它，`related_locators` 只是死欄位
 
 ---
 
