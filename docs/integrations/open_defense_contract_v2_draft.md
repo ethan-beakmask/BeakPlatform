@@ -1,9 +1,9 @@
 # Open Defense 整合契約 v2 -- 草稿
 
 **版本**: v2.0-draft
-**狀態**: 草稿，待 sec-vm 端對齊後定稿
+**狀態**: **§6 的六個決策點已於 2026-08-10 全部拍板（見 §0.6）**，剩餘為實作，不再是規格待決
 **建立**: 2026-05-13
-**最後現況對齊**: 2026-08-10（見 §0.5）
+**最後現況對齊**: 2026-08-10（見 §0.5、§0.6）
 **對 v1 的關係**: v1.0 端點維持運作並標 deprecated，**12 個月雙版本平行期**後下線
 
 ---
@@ -77,7 +77,54 @@ v2 的動機因此仍成立，只是急迫性下降。
 
 6. ~~平台側是否真的要另開 `/v2/incidents` 端點~~
    → **2026-08-10 已決：不另開**，走 `?profile=` 收 envelope，§2.1 已改寫並附實測證據
-7. 反向通道要不要做——沒有它，`related_locators` 只是死欄位
+7. ~~反向通道要不要做~~ → **2026-08-10 已決：要做，先做 §3 查原文**，見 §0.6
+
+---
+
+## 0.6 定案決議（2026-08-10 下午，用戶拍板）
+
+動工前實地登入 `.20` 取得環境事實（`ssh -i ~/.ssh/company-wsl ethan@192.168.0.20`），
+用戶據此拍板。**以下六項為規格定案，實作時不要再回頭重議。**
+
+### `.20` 實地事實（決策依據，2026-08-10 實查）
+
+| 項目 | 實測值 |
+|---|---|
+| 磁碟 | `sda` 300G；`ubuntu-vg` **VFree 198G**；root LV 只切 100G（用 35G） |
+| ClickHouse | `secstack.events` **2329 列 / 333 KiB**，`TTL event_time + 180 DAY`（不是本契約假設的 90 天） |
+| events 欄位 | `event_time` / `ingested_at` / `correlation_id` / `source_system` / `event_class` / `severity_id` / `confidence` / `actor_ip`(IPv6) / `actor_asn` / `actor_country` / `actor_ua` / `target_host` / `target_url` / `target_service` / `finding_title` / `finding_rule_id` / `finding_rule_set` / `raw`(ZSTD 7)。**無 `incident_id`** |
+| 聚合 | od-bridge（`/home/ethan/sec-vm-bootstrap/od-bridge/`）**零聚合實作**，只在 `ingest.py:42` 檢查 `correlation_id` 與 `source_system` 必填。§1 拓樸圖的「Layer 4 correlate」在 `.20` 上不存在 |
+| NAS | `mount` / `/etc/fstab` / `.env` **完全沒有 cifs / nfs / smb** |
+| 容器 | od-bridge / vector / clickhouse / suricata / crowdsec / evebox / grafana / waf-nginx / portainer，皆 Up |
+
+### 決議
+
+| # | 決策點 | 決議 |
+|---|---|---|
+| 1 | Layer 4 聚合視窗 | **聚合下推到 `.20`，視窗 60 分鐘**（不是草稿的 5 分鐘）。理由：與平台側 `intake_service.AGGREGATION_WINDOW_MINUTES = 60` 對齊，避免兩側視窗不一致把同一波攻擊切成不同案件 |
+| 2 | `dedup_key` 規則 | **維持 `actor.ip + finding.rule_id`，不納入 target**。理由：同一攻擊者對多個 target 掃描本來就該是一個 incident，納入 target 會把橫向掃描炸成 N 個案件——那正是 v2 要消滅的爆量。target 清單改放 `aggregation.targets[]` 供處置參考 |
+| 3 | raw store 路徑命名 | **`raw_events/<YYYY-MM-DD>/<incident_id>`**（日期在前）。理由：歸檔、TTL、整包搬遷都以時間為單位；`source` 已是 store 內的欄位，可查詢不需進路徑 |
+| 4 | 反向通道部署 | **`.20` 上 nginx + Flask 服務，不讓平台直打 ClickHouse**。理由：§3.4 的 rate limit、§3.2 的 SA 認證、存取稽核都需要應用層；直打 ClickHouse 等於把 DB 憑證交給平台，且無法只暴露單一查詢語意 |
+| 5 | 規則回饋審核者 | **隨 §4 一併延後**，§4 進入實作前再決定 `queued_for_review_by` 的值 |
+| 6 | 反向通道要不要做 | **要做，但只先做 §3 查原文；§4 規則回饋延後**。`related_locators` 因此不是死欄位 |
+
+### 連帶影響（實作時必須一起處理）
+
+**一、平台側聚合與 `.20` 聚合的疊加風險。**
+`_find_mergeable_case()` 是**滑動視窗**（`received_at >= now - 60min`），不是切齊視窗。
+若 `.20` 每 60 分鐘送出一個 incident 而攻擊持續，平台側會把後續 incident
+一直併進同一個 `RUNNING` 案件，**案件永遠不結案**。
+→ `.20` 聚合上線時，平台側對 `payload_kind=native` 且來源為 v2 envelope 的事件
+**必須停用合併**（envelope 已是聚合結果，再合一次是錯的）。
+
+**二、`.20` 熱層 TTL 是 180 天，本契約與 raw store 規格都寫 90 天。**
+以 `.20` 現況 180 天為準，raw store §3 的 90 天改為溫層轉檔門檻的建議值，
+實際採用 180 天（見 raw store 規格 §0）。
+
+**三、`secstack.events` 缺 `incident_id`。**
+這是 §2.2 `related_locators` 能否解析回原文的前提，
+屬於 `.20` 側工作（`ALTER TABLE ... ADD COLUMN incident_id String`，
+搭配 Vector 或 od-bridge 寫入端補值）。
 
 ---
 
@@ -93,8 +140,8 @@ JSON/其他            ─┘ Layer 2 normalize (OCSF)
                           ↓
                        Layer 3 enrich (GeoIP/ASN/TI)
                           ↓
-                       Layer 4 correlate (5min 視窗)         POST /api/open_defense/v2/incidents
-                          ↓                       ─HMAC─►   (incident envelope)
+                       Layer 4 correlate (60min 視窗)   POST /api/open_defense/intake/native
+                          ↓                       ─HMAC─►   ?profile=od_incident_envelope_v2
                        raw_store (ClickHouse)                    │
                        (Layer 0 全保留)            ◄─JWT pull─   │
                           ▲                                      ▼
@@ -216,6 +263,8 @@ Headers 沿用 v1（HMAC + Intake Key）。
 
 ## 3. 反向通道 -- 原文查詢 API
 
+**狀態：2026-08-10 拍板要做，是反向通道的第一批。**
+
 **Platform → sec-vm 方向。** 由 sec-vm 端開 endpoint，Platform 端持 SA 憑證呼叫。
 
 ### 3.1 端點（在 sec-vm 上）
@@ -224,6 +273,11 @@ Headers 沿用 v1（HMAC + Intake Key）。
 GET  https://sec-vm.internal/api/raw_query?locator=<locator>&limit=100
 POST https://sec-vm.internal/api/raw_query/batch   (locator 陣列)
 ```
+
+**部署方式（2026-08-10 定案）：`.20` 上 nginx + Flask 應用服務，
+平台端一律不直連 ClickHouse。** 這條同時決定了三件事的落點：
+§3.2 的 SA 認證、§3.4 的 rate limit、存取稽核 log，全部在該應用層做。
+ClickHouse 憑證只存在於該服務內，不外流到平台。
 
 ### 3.2 認證
 
@@ -252,6 +306,10 @@ sec-vm 不可達或 locator 失效時，Platform UI 顯示「原文暫不可查�
 ---
 
 ## 4. 反向通道 -- 規則回饋 API
+
+**狀態：2026-08-10 拍板延後。** §3 上線並實際使用一段時間後再評估。
+本節規格保留不動，但**在 §3 完成前不要開工**——包含 §6 第 5 項
+（`queued_for_review_by` 的審核者）也一併延後決定。
 
 ### 4.1 設計原則
 
@@ -304,24 +362,39 @@ sec-vm 端**不自動套用**，只入規則檢討佇列。實際修規則仍由
 的路由規則就具備接收能力（兩者都能在 `/open-defense/event-routing` 上設定，
 不必改程式、不必重啟服務）。
 
-| 階段 | 內容 | 時長 |
-|---|---|---|
-| Phase 1 | 建 profile + 路由規則，v1 並行 | 立即 |
-| Phase 2 | sec-vm 端遷移到 v2 incident push，v1 端點記錄 deprecation log | T+1 月 |
-| Phase 3 | v1 端點回 200 + warning header，仍接受 | T+6 月 |
-| Phase 4 | v1 端點下線 | T+12 月 |
+| 階段 | 內容 | 落點 | 時長 |
+|---|---|---|---|
+| Phase 1 | 建 profile + 路由規則，v1 並行 | 平台（已具備） | 立即 |
+| Phase 2a | `.20` od-bridge 新增 Layer 4 聚合層（60 分鐘視窗，dedup_key = `actor.ip + finding.rule_id`） | `.20` | T+1 月 |
+| Phase 2b | `secstack.events` 補 `incident_id` 欄位與寫入端補值 | `.20` | 與 2a 同批 |
+| Phase 2c | 平台側對 v2 envelope **停用** `_find_mergeable_case()` 合併 | 平台 | 與 2a 同批，**不可晚於 2a** |
+| Phase 2d | sec-vm 端切換為 v2 incident push，v1 端點記錄 deprecation log | `.20` | T+1 月 |
+| Phase 3a | `.20` 反向通道查原文服務（nginx + Flask，見 §3） | `.20` | T+2 月 |
+| Phase 3b | 平台案件詳情頁「查原文」按鈕，消費 `related_locators` | 平台 | 接 3a |
+| Phase 3c | v1 端點回 200 + warning header，仍接受 | 平台 | T+6 月 |
+| Phase 4 | v1 端點下線 | 平台 | T+12 月 |
+
+**Phase 2c 的順序是硬性的**：`.20` 開始送已聚合的 envelope 之後，
+平台側若仍套用 60 分鐘滑動視窗合併，持續攻擊會讓案件永遠停在 `RUNNING`
+（每個新 envelope 都併進舊案）。詳見 §0.6「連帶影響」第一條。
 
 Decision API (`GET/PATCH /api/open_defense/decisions/...`) 不在此範圍，**v2 不動 decision API**。
 
 ---
 
-## 6. 待 sec-vm 端確認的決策點
+## 6. 決策點（2026-08-10 全部結案）
 
-1. **Layer 4 聚合視窗**：5 分鐘是否合理？某些攻擊（慢速暴破）可能需要 1 小時視窗
-2. **dedup_key 規則**：`actor.ip + rule_id` 是否足夠？要不要納入 target？
-3. **raw store 路徑命名**：`raw_events/<date>/<incident_id>` 還是 `raw_events/<source>/<date>/...`
-4. **反向通道 endpoint 部署**：sec-vm 上跑 nginx + Flask？還是直接打 ClickHouse？前者較好做 audit 與 rate limit
-5. **規則回饋的審核者**：sec-vm 端誰負責看 review queue？（影響 §4.4 的 `queued_for_review_by` 值）
+**這一節已無待決事項，保留是為了記錄決議與理由。完整版見 §0.6。**
+
+| # | 原問題 | 結果 |
+|---|---|---|
+| 1 | Layer 4 聚合視窗 5 分鐘是否合理 | **改 60 分鐘**，並下推到 `.20` |
+| 2 | `dedup_key` 要不要納入 target | **不納入**，維持 `actor.ip + finding.rule_id` |
+| 3 | raw store 路徑命名 | **`raw_events/<YYYY-MM-DD>/<incident_id>`** |
+| 4 | 反向通道部署方式 | **`.20` 上 nginx + Flask**，不直打 ClickHouse |
+| 5 | 規則回饋審核者 | **隨 §4 延後**，§3 上線後再定 |
+| 6 | 是否另開 `/v2/incidents` | **不開**，走 `intake/native?profile=`（2026-08-10 上午已實測定案） |
+| 7 | 反向通道要不要做 | **要做，先做 §3**；§4 延後 |
 
 ---
 

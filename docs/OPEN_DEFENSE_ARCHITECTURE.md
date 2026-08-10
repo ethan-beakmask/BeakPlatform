@@ -151,6 +151,16 @@ API 掛 `@permission_required`）。在此之前這兩張表只能用 API 或直
 兩個鍵**任一為空就不聚合**（原生 SOC 通報常常沒有來源 IP，
 此時每包事件各自開案才是對的）。
 
+**已知缺陷：原生路徑的聚合完全失效**（2026-08-10 查證，見 §11）。
+`_find_mergeable_case()` 的候選查詢寫死 v1 OCSF 的 JSONB 巢狀路徑
+（`raw_body['actor']['ip']`、`raw_body['finding']['rule_id']`），
+而原生 payload 的 `raw_body` 是來源系統的原始結構（`Summary.RuleId` 這類）。
+實測 `od_intake_events` 中 `event_class='native'` 的 3 筆，
+兩個路徑取值**全為 NULL**——原生事件因此永遠找不到可合併的候選，
+且反過來可能誤合進某筆碰巧同 IP／同 rule_id 的 OCSF 案件。
+正解是改查案件 `form_data` 的共同軸線 `actor_ip` / `finding_rule_id`
+（那才是兩種格式的交會點，見 §3），不是查 `raw_body`。
+
 ## 6. 資安案件處置中心 `/open-defense/security-cases`
 
 SOC 值班介面。案件的判定是**表單分類前綴** `CAT_SECURITY_`
@@ -239,8 +249,17 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
 - **`?profile=` 不在 HMAC 簽章範圍內**：簽章只涵蓋 timestamp 與 body。
   持有效 key 者可自行更換 profile（受 `scopes.od_intake.payload_profiles` 白名單約束）
 - 封鎖時長仍是 DecisionWriter 節點上的常數（BBN atom #5114 有決策庫構想）
+- **原生路徑聚合降噪失效**（見 §5）：`_find_mergeable_case()` 查 `raw_body` 的
+  v1 OCSF 巢狀路徑，對 native payload 恆為 NULL。修法是改查 `form_data` 的
+  共同軸線欄位。**PF-75**
 - `docs/integrations/open_defense_contract_v2_draft.md` 與
-  `raw_store_and_archive_spec.md` 停在 2026-05-13 未推進，狀態未定
+  `raw_store_and_archive_spec.md` 的**決策點已於 2026-08-10 全部拍板**
+  （v2 契約 §0.6、raw store §8），狀態改為「規格定案、待實作」。
+  已定的六件事：聚合下推 `.20` 且視窗 60 分鐘、`dedup_key` 不納入 target、
+  locator 路徑 `raw_events/<date>/<incident_id>`、反向通道走 `.20` 的
+  nginx + Flask、只先做查原文（§3）規則回饋（§4）延後、冷層過渡到
+  `.16` 的 `/mnt/smb/soc_archive/`。**實作主體在 `.20`**，
+  平台側只有兩件：Phase 2c 停用 v2 envelope 的合併、Phase 3b 案件詳情頁「查原文」按鈕
 
 ## 12. 相關文件
 

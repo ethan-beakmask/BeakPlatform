@@ -2,8 +2,8 @@
 
 **版本**: v1.0-draft
 **建立**: 2026-05-13
-**狀態**: 草稿
-**最後現況對齊**: 2026-08-10（見 §0）
+**狀態**: **§8 的五個待決策已於 2026-08-10 全部拍板（見 §8）**，剩餘為實作
+**最後現況對齊**: 2026-08-10（見 §0、§0.5）
 **對應契約**: Open Defense v2（incident envelope 內 `related_locators` 指向本 store）
 
 ---
@@ -42,7 +42,30 @@ docker exec secstack-clickhouse-1 clickhouse-client -q 'SHOW TABLES FROM secstac
 也就是說**「案件詳情頁看得到原文」這件事，在小資料量情境已經達成，
 不需要反向通道**。本規格要解決的是另一個層級的問題：
 事件量大到不能塞進 form_data、以及 5 年保存與跨資料源統一查詢。
-定稿時要把兩者的分界寫清楚，避免重複建設。
+
+**分界（2026-08-10 定）**：
+form_data 扁平化負責「這一件案子的原文」，raw store 負責
+「跨案件、跨資料源、跨時間的原文」。兩者不重複建設——
+案件詳情頁的「事件明細」分頁讀 form_data（免網路往返、離線可讀），
+「查原文」按鈕才走 §6 反向通道。
+
+---
+
+## 0.5 `.20` 實地量測（2026-08-10，取代 §7 的紙上估算）
+
+用戶授權後實際登入 `.20` 取得，**這些數字是 §8 決策的依據**：
+
+| 項目 | 實測值 | 與本規格假設的差異 |
+|---|---|---|
+| VM 磁碟 | `sda` 300G，`ubuntu-vg` **VFree 198G**，root LV 只切 100G（用 35G，38%） | §8.1 的「100 GB 起跳」**不需要動 VM 硬體**，`lvextend` 即可 |
+| `secstack.events` 現量 | **2329 列 / 333.41 KiB on disk** | §7 估算表最小級距是「1 萬事件/日 → 90 天 1.4 GB」。實際量比該級距**低三個數量級** |
+| 熱層 TTL | `TTL event_time + INTERVAL 180 DAY`（無 volume 搬移） | 本規格 §2/§3 寫 90 天。**以現況 180 天為準**，90 天改為「溫層轉檔門檻的建議下限」 |
+| 壓縮 | `raw String CODEC(ZSTD(7))`、時間欄 `Delta + ZSTD(3)` | 已與 §3 的「payload 一律 ZSTD」一致 |
+| 分區 | `PARTITION BY toYYYYMMDD(event_time)`（日分區） | §3 草案寫 `toYYYYMM`（月分區）。**以現況日分區為準**，溫層仍按月打包 |
+| NAS | `mount` / `/etc/fstab` / `.env` 皆無 cifs / nfs / smb | §5 的 `nas://` 目標在 `.20` 上**不存在**，見 §8.2 決議 |
+
+**結論：容量在可預見的將來不是瓶頸**，§7 的估算表留作規模成長後的參考，
+不要拿它當現在的採購或配額依據。
 
 ---
 
@@ -51,7 +74,7 @@ docker exec secstack-clickhouse-1 clickhouse-client -q 'SHOW TABLES FROM secstac
 | 目標 | 動機 |
 |---|---|
 | **跨資料源統一儲存** | OD intake / ELK / Splunk export / email / csv / xlsx / MariaDB / SQLite / JSON 全部歸到同一個 store，案件詳情頁查原文只要一個 API |
-| **熱資料快查** | 案件詳情頁需 < 3 秒查到原文（最近 90 天案件最多被查） |
+| **熱資料快查** | 案件詳情頁需 < 3 秒查到原文（最近 180 天案件最多被查） |
 | **5 年保存** | 公司規定，但實際冷資料可離線 |
 | **5 年後仍可讀** | 不被特定產品綁死，匯出格式必須 self-describing |
 | **責任分層** | NAS 歸檔後由其他部門保管，本系統只負責「查得到、讀得出」 |
@@ -62,30 +85,90 @@ docker exec secstack-clickhouse-1 clickhouse-client -q 'SHOW TABLES FROM secstac
 
 ```
 ┌─ 熱層（ClickHouse, on sec-vm）────────────┐
-│  最近 90 天，案件詳情頁查詢用              │
-│  schema: raw_events 表（見 §3）            │
+│  最近 180 天，案件詳情頁查詢用             │
+│  表: secstack.events（見 §3.1，已存在）    │
 └────────────────┬───────────────────────────┘
-                 │ 90 天後自動轉檔
+                 │ 180 天後轉檔（TTL 到期前匯出）
                  ▼
 ┌─ 溫層（Parquet, on sec-vm 本機）───────────┐
-│  91 天 ~ 1 年，按月 partition              │
+│  181 天 ~ 1 年，按月 partition             │
 │  路徑: /var/raw_archive/YYYY-MM/*.parquet  │
 │  仍可用 DuckDB / ClickHouse external 查詢  │
 └────────────────┬───────────────────────────┘
                  │ 1 年後自動匯出
                  ▼
-┌─ 冷層（NAS, 由其他部門保管）───────────────┐
+┌─ 冷層（過渡: .16 的 /mnt/smb；未來 NAS）───┐
 │  1 年 ~ 5 年，Parquet + manifest + SOP     │
-│  路徑: nas://soc_archive/YYYY-MM/          │
-│  本系統不再持有，但保有「怎麼讀」的 SOP    │
+│  路徑: /mnt/smb/soc_archive/YYYY-MM/       │
+│  （NAS 就緒後 → nas://soc_archive/YYYY-MM/）│
 └────────────────────────────────────────────┘
 ```
 
 熱→溫→冷三段保留各自的查詢能力，**冷層不要求即時查**，調舊資料時用 DuckDB 開檔即可。
 
+**保留天數以 `.20` 現況 180 天為準**（§0.5）。原草案寫 90 天，
+改動 TTL 會讓現有資料提早消失，沒有理由為了對齊文件而縮短保存期。
+
 ---
 
 ## 3. 熱層 ClickHouse Schema
+
+> **2026-08-10：本節的 `raw_events` 是 2026-05-13 的草案，`.20` 上並不存在。**
+> 實際運作的是 `secstack.events`（見 §3.1），欄位語意已覆蓋本草案的九成。
+> **不要照本節建新表**，剩餘工作只有「補 `incident_id`」一項。
+> 本草案保留供對照命名差異。
+
+### 3.1 `.20` 現行表（實查，這才是實作依據）
+
+```sql
+CREATE TABLE secstack.events (
+    event_time      DateTime64(3,'UTC') CODEC(Delta(8), ZSTD(3)),
+    ingested_at     DateTime64(3,'UTC') DEFAULT now64() CODEC(Delta(8), ZSTD(3)),
+    correlation_id  String CODEC(ZSTD(3)),
+    source_system   LowCardinality(String),
+    event_class     LowCardinality(String),
+    severity_id     UInt8,
+    confidence      UInt8 DEFAULT 0,
+    actor_ip        IPv6,
+    actor_asn       UInt32 DEFAULT 0,
+    actor_country   FixedString(2) DEFAULT '\0\0',
+    actor_ua        String CODEC(ZSTD(3)),
+    target_host     String CODEC(ZSTD(3)),
+    target_url      String CODEC(ZSTD(3)),
+    target_service  LowCardinality(String),
+    finding_title   String CODEC(ZSTD(3)),
+    finding_rule_id String CODEC(ZSTD(3)),
+    finding_rule_set LowCardinality(String),
+    raw             String CODEC(ZSTD(7))
+) ENGINE = MergeTree
+PARTITION BY toYYYYMMDD(event_time)
+ORDER BY (event_class, source_system, event_time, correlation_id)
+TTL toDateTime(event_time) + toIntervalDay(180);
+```
+
+| 本草案欄位 | `secstack.events` 對應 | 備註 |
+|---|---|---|
+| `ts` | `event_time` | 命名不同，語意相同 |
+| `payload` | `raw` | 同樣 ZSTD |
+| `payload_format` | **無** | 目前單一格式，需要時再加 |
+| `rule_id` | `finding_rule_id` | |
+| `source` | `source_system` | |
+| `incident_id` | **無** | **唯一實質缺口**，見 §3.2 |
+
+### 3.2 唯一待補：`incident_id`
+
+v2 契約 §2.2 的 `related_locators` 要能解析回原文，前提是熱層有 incident 維度。
+
+```sql
+ALTER TABLE secstack.events ADD COLUMN incident_id String CODEC(ZSTD(3)) AFTER correlation_id;
+```
+
+寫入端（Vector 或 od-bridge 的 Layer 4 聚合層）在聚合時一併填入。
+**這是 `.20` 側工作**，權威文件 `/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`。
+`ORDER BY` 不動（改排序鍵要重建表，代價遠大於收益；`incident_id` 用
+`WHERE` + 日分區裁剪已足夠，現量 2329 列更不成問題）。
+
+### 3.3 原始草案（2026-05-13，僅供對照）
 
 ```
 CREATE TABLE raw_events (
@@ -108,22 +191,29 @@ TTL ts + INTERVAL 90 DAY TO VOLUME 'warm'      -- 90 天後搬溫層
 SETTINGS index_granularity = 8192;
 ```
 
-設計重點：
+草案的設計重點，以及它們在現行表上的落實情況：
 
-- **payload 一律 ZSTD 壓縮**，混雜格式對壓縮率影響不大（同源資料重複度高）
-- **常查欄位拉出來建索引**（ts/incident_id/actor_ip/source），其他丟 payload
-- **payload_format 標記**，讀的時候才知道怎麼 parse
-- TTL 自動搬 volume，不需要排程
+| 草案重點 | `secstack.events` 現況 |
+|---|---|
+| payload 一律 ZSTD 壓縮 | 已落實（`raw` 用 ZSTD(7)，比草案的 6 更高） |
+| 常查欄位拉出來建索引 | 已落實，`ORDER BY (event_class, source_system, event_time, correlation_id)` |
+| `payload_format` 標記 | **未落實**，目前單一格式。引入第二種 payload 格式時再加 |
+| TTL 自動搬 volume | **未落實**，現行 TTL 是**直接刪除**——所以溫層匯出必須排程，見 §4 |
 
 ### 寫入路徑
 
-Layer 1 parser → 統一 dict → 寫入 raw_events 表（一個 source 一條 INSERT，批次 1000 筆）。
+Layer 1 parser → 統一 dict → 寫入 **`secstack.events`**（一個 source 一條 INSERT，批次 1000 筆）。
+現行寫入端是 `.20` 的 Vector（`timberio/vector:0.41.1-alpine`）。
 
 ---
 
 ## 4. 溫層 Parquet 規格
 
-ClickHouse 90 天 TTL 觸發後，**每月 partition 由 cron 匯出為 Parquet**：
+ClickHouse 180 天 TTL 到期**前**，**每月 partition 由 cron 匯出為 Parquet**：
+
+**順序是硬性的**：`secstack.events` 的 TTL 是直接刪除（無 `TO VOLUME`），
+匯出排程必須在資料被 TTL 清掉之前跑完，否則就是永久遺失。
+匯出腳本要先確認目標月份的 `max(event_time)` 距今 < 180 天才動手。
 
 ```
 /var/raw_archive/2026-02/
@@ -161,14 +251,41 @@ ClickHouse 90 天 TTL 觸發後，**每月 partition 由 cron 匯出為 Parquet*
 
 ---
 
-## 5. 冷層 NAS 歸檔規格
+## 5. 冷層歸檔規格
+
+> **2026-08-10 決議：公司 NAS 資訊未定，改用過渡歸檔目標，`nas://` 語意不變。**
+> `.20` 上沒有任何 NAS 掛載，`.16` 已掛著 `//192.168.0.10/SMB`（327G，可用 106G）。
+> 冷層先落在該處，NAS 就緒後**只換掛載點，目錄結構與 SOP 一字不改**。
+
+### 5.0 過渡期歸檔目標與搬運路徑
+
+```
+[.20 溫層]                       [.16]                    [Windows 192.168.0.10]
+/var/raw_archive/YYYY-MM/  ──rsync over ssh──►  /mnt/smb/soc_archive/YYYY-MM/
+                             (.16 排程拉取)        （= D:\Server\SMB\soc_archive）
+```
+
+**由 `.16` 主動拉取，不在 `.20` 上新增 SMB 掛載與憑證**——
+`.20` 是對外暴露面較大的那台，少一組憑證少一分風險，
+且 `.16` 本來就掛好了 `/mnt/smb`（fstab，`nofail`，憑證在 `/etc/smb-credentials`）。
+
+過渡方案的三個已知限制，實作時必須處理：
+
+1. **`/mnt/smb` 是使用者 Windows 的共享，關機即不可寫**。
+   fstab 用 `nofail`，開機掛不上會**靜默變成本機空目錄**——
+   歸檔腳本必須先 `df /mnt/smb` 或檢查 magic file 確認真的掛著，
+   **掛不上一律中止並告警，不可寫進本機空目錄後就刪掉 `.20` 上的來源**
+2. **搬完不立即刪來源**。§5.3 的「清掉該月資料」在過渡期改為
+   **校驗 sha256 通過後才刪**，且保留一個月緩衝
+3. 這不是異地備援等級的保存，**只是 NAS 就緒前不讓資料堆在 `.20`**。
+   真正的 5 年保存責任在拿到 NAS 之後才成立
 
 ### 5.1 觸發時機
 
-每月 1 號 03:00，掃描溫層中**滿 12 個月**的 partition，整包搬 NAS：
+每月 1 號 03:00，掃描溫層中**滿 12 個月**的 partition，整包搬冷層：
 
 ```
-nas://soc_archive/2025-05/
+/mnt/smb/soc_archive/2025-05/          # NAS 就緒後 → nas://soc_archive/2025-05/
   raw_events_2025-05.parquet
   raw_events_2025-05.manifest.json
   schema.md
@@ -195,11 +312,18 @@ nas://soc_archive/2025-05/
 
 - 搬完後本系統發 email 給檔案管理部門 + 留 `archive_handover.log`
 - 本系統 ClickHouse 與本機 `/var/raw_archive/` **清掉該月資料**
-- 之後任何查舊資料的需求 → 走 NAS（本系統提供「locator → NAS 路徑」轉換工具）
+- 之後任何查舊資料的需求 → 走冷層（本系統提供「locator → 歸檔路徑」轉換工具）
+
+**過渡期（NAS 未就緒）例外**：無檔案管理部門可移交，
+`archive_handover.log` 仍留但 email 收件者改為本系統維運 owner；
+刪來源改為 §5.0 的「sha256 校驗通過 + 一個月緩衝」。
 
 ---
 
 ## 6. 查詢介面（給 Platform 案件詳情頁用）
+
+**狀態：2026-08-10 拍板要做**（v2 契約 §0.6 第 6/7 項），
+部署方式定案為 **`.20` 上 nginx + Flask，平台端不直連 ClickHouse**。
 
 對應 v2 契約 §3 的反向通道，sec-vm 上跑：
 
@@ -209,12 +333,16 @@ GET /api/raw_query?locator=<locator>
 
 實作邏輯：
 
-1. 解析 locator 取得 `incident_id` 與 `ts` 範圍
+1. 解析 locator（格式 `raw_events/<YYYY-MM-DD>/<incident_id>`，見 v2 §0.6 第 3 項）
+   取得 `incident_id` 與日期
 2. 依時間判斷查熱 / 溫 / 冷層：
-   - < 90 天 → ClickHouse SELECT
-   - 91 天 ~ 1 年 → DuckDB 查 `/var/raw_archive/`
-   - \> 1 年 → 回 `410 Gone` + NAS 路徑提示，由人工到 NAS 取
+   - < 180 天 → ClickHouse `SELECT ... WHERE incident_id = ?`（需先完成 §3.2）
+   - 181 天 ~ 1 年 → DuckDB 查 `/var/raw_archive/`
+   - \> 1 年 → 回 `410 Gone` + 冷層路徑提示，由人工取
 3. 回傳統一 JSON 格式（v2 契約 §3.3）
+
+平台端的消費者是案件詳情頁的「查原文」按鈕（v2 遷移計畫 Phase 3b）。
+`.20` 不可達時**不阻塞案件流轉**（v2 §3.5）。
 
 ---
 
@@ -222,7 +350,7 @@ GET /api/raw_query?locator=<locator>
 
 假設來源混合後 **平均事件大小 2 KB（壓縮前）/ 500 B（ZSTD 後）**：
 
-| 規模 | 熱層（90 天） | 溫層（1 年） | 5 年總量 |
+| 規模 | 熱層（表列按 90 天算；現行 TTL 180 天需 ×2） | 溫層（1 年） | 5 年總量 |
 |---|---|---|---|
 | 1 萬事件/日 | ~1.4 GB | ~5.5 GB | ~27 GB |
 | 10 萬事件/日 | ~14 GB | ~55 GB | ~270 GB |
@@ -230,23 +358,67 @@ GET /api/raw_query?locator=<locator>
 
 sec-vm 端只需扛熱+溫，**不超過 100 GB** 對 VM 完全可接受。5 年總量丟 NAS 也不算大。
 
+**2026-08-10 實測校正**：`.20` 現有 2329 列 / 333 KiB，
+比上表最小級距低三個數量級。上表是規模成長後的參考，**不是現在的配額依據**（見 §0.5）。
+
 ---
 
-## 8. 待決策
+## 8. 決策點（2026-08-10 全部結案）
 
-1. **sec-vm VM 磁碟規劃**：需保留多少給 raw_archive？建議 100 GB 起跳
-2. **NAS 路徑與帳號**：歸檔目標 SMB / NFS？掛載點？寫入帳號權限範圍？
-3. **單一資料量上限**：單 incident 的 related_events 超過 N 筆（例 10000）時要不要拆？避免單一 incident 的 payload 撐爆查詢
-4. **schema 演進**：未來新增 source 是否一律走「新增欄位 nullable」？舊 Parquet 不回填，新查詢工具相容處理
-5. **email 類資料的 PII**：email 內文常含 PII，要在 Layer 1 parser 就遮罩，還是 raw 全存（合規風險）？建議遮罩後再進 store
+**本節已無待決事項。** 決策依據見 §0.5 的 `.20` 實地量測。
+
+### 8.1 sec-vm 磁碟配額 → **不預先切，用 LVM 餘裕按需擴**
+
+`ubuntu-vg` 有 **198 GB VFree**，root LV 只切了 100 GB。
+現階段資料量（333 KiB）離 100 GB 極遠，預先切一個空的
+`/var/raw_archive` LV 只是把空間鎖死。
+
+實作方式：溫層先用 root LV 下的 `/var/raw_archive/`；
+**當 root 使用率超過 70% 時，`lvextend -L +100G` 再 `resize2fs`**（線上可做，不需停機）。
+監控門檻寫進歸檔腳本的前置檢查。
+
+### 8.2 NAS 路徑與帳號 → **過渡：`.16` 的 `/mnt/smb/soc_archive/`**
+
+`.20` 上零 NAS 掛載，公司 NAS 資訊未取得。
+改由 `.16` rsync 拉取後落 `/mnt/smb`，完整規格與三個限制見 §5.0。
+**NAS 就緒後只換掛載點**，目錄結構、manifest、README SOP 全部不變。
+
+### 8.3 單 incident 事件數上限 → **10000 筆，超過則拆包**
+
+超過 10000 筆的 incident，`related_locators` 拆成多個 locator，
+每個 locator 最多指向 10000 筆，命名 `<incident_id>#0` / `#1`。
+反向通道（v2 §3）的 `limit` 預設 100、上限 1000，
+回應的 `truncated: true` 即代表還有下一頁。
+
+**現況下不會觸發**（總共 2329 列），這條是預防性上限，
+目的是讓「單一 incident 撐爆查詢」在架構上不可能發生，而不是現在要做的事。
+
+### 8.4 schema 演進 → **一律新增 nullable 欄位，不改既有欄位語意**
+
+- 新 source 需要新欄位時：`ALTER TABLE ... ADD COLUMN <name> <type> DEFAULT <零值>`
+- **禁止**改既有欄位的型別或語意（舊 Parquet 無法回填，會讓歷史資料讀出錯誤語意）
+- 每次變更 bump `manifest.json` 的 `schema_version`，並在該月 `schema.md` 記錄差異
+- 舊 Parquet 不回填；讀取工具遇到缺欄位視為 NULL
+
+### 8.5 email 類資料的 PII → **raw 全存，不在 Layer 1 遮罩**
+
+用戶 2026-08-10 定調：
+
+> 資安人員要有足夠的資訊才方便處理案件，備份也該完整備份，
+> 所以資安相關的功能應先提供足夠資料，至於是否看見太多或備份都是其他的議題。
+
+因此本規格**只負責完整保存**。「誰看得到多少」屬於存取控制議題，
+落在 ClickHouse 帳號最小授權與反向通道（v2 §3）的輸出控制，
+**不在本規格範圍內展開**，也不因此在寫入路徑加遮罩。
 
 ---
 
 ## 9. 與既有系統的關係
 
 - **不取代** Platform 端的 `od_intake_events` 表（v2 後該表只留 incident metadata，不再存原文）
-- **不取代** sec-vm 既有的 ClickHouse（若已有，本 spec 是擴充 schema 而非另起）
-- **不取代** NAS 上其他部門既有歸檔結構，只是新開一個 `soc_archive/` 目錄
+- **不取代** sec-vm 既有的 ClickHouse。2026-08-10 已確認 `secstack.events` 存在且
+  語意相符，本 spec 是**擴充該表（補 `incident_id`）而非另起**，見 §3.1／§3.2
+- **不取代** 冷層目標上其他部門既有歸檔結構，只是新開一個 `soc_archive/` 目錄
 
 ---
 
