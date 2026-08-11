@@ -9,17 +9,21 @@
     padding: 16px;
 }
 
+/* 頁首與統計帶一律走扁平：這些頁面的重點在下方的清單與內容，
+ * 上方只留辨識與數字，不佔垂直空間。 */
 .od-header {
     background: #fff;
     border: 1px solid #ddd;
-    padding: 16px 20px;
-    margin-bottom: 16px;
+    padding: 8px 14px;
+    margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
-.od-header h1 { margin: 0; font-size: 20px; font-weight: 600; }
-.od-header p  { margin: 4px 0 0 0; font-size: 13px; color: #666; }
+.od-header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+.od-header p  { margin: 2px 0 0 0; font-size: 12px; color: #666; }
+/* 平台 .btn 的 8px 16px 會把扁平頁首又撐回 56px */
+.od-header .btn { padding: 5px 12px; font-size: 12px; }
 
 .od-section {
     background: #fff;
@@ -45,25 +49,32 @@
 /* 統計卡 */
 .od-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 6px;
+    margin-bottom: 10px;
 }
+/* 一張卡一行：row-reverse 讓 HTML 上先寫的數值落在右側，標籤在左，
+ * 不動模板結構就能從「數字上、標籤下」的方塊變成單行。 */
 .od-stat-card {
     background: #fff;
     border: 1px solid #ddd;
-    padding: 16px 20px;
+    padding: 5px 10px;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
 }
 .od-stat-value {
-    font-size: 28px;
+    font-size: 18px;
     font-weight: 600;
     color: #0066cc;
     line-height: 1.2;
 }
 .od-stat-label {
-    font-size: 12px;
+    font-size: 11px;
     color: #666;
-    margin-top: 4px;
+    margin-top: 0;
 }
 .od-stat-value.warn   { color: #f59e0b; }
 .od-stat-value.danger { color: #dc2626; }

@@ -15,7 +15,9 @@
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 6px;
-    max-height: calc(100vh - 260px);
+    /* 320 = 平台固定頂欄 137 + 容器上下 padding 32 + 扁平頁首 49+10
+     *       + 統計帶 34+10 + 邊距，實測到「貼齊視窗底且整頁不出現捲軸」 */
+    max-height: calc(100vh - 320px);
     overflow-y: auto;
 }
 .sc-sort-bar {
@@ -134,7 +136,7 @@
     border: 1px solid #e5e7eb;
     border-radius: 6px;
     padding: 16px;
-    max-height: calc(100vh - 260px);
+    max-height: calc(100vh - 320px);
     overflow-y: auto;
 }
 .sc-detail-empty {

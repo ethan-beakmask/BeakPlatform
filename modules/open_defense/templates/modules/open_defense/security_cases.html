@@ -10,10 +10,7 @@
 <div class="od-container" x-data="scCases()" x-init="load()">
 
     <div class="od-header">
-        <div>
-            <h1>{{ _('資安案件處置中心') }}</h1>
-            <p>{{ _('SOC 值班介面：嚴重度優先、SLA 倒數、1-click 處置。案件由 OpenDefense 事件自動建立。') }}</p>
-        </div>
+        <h1>{{ _('資安案件處置中心') }}</h1>
         <div class="od-actions">
             <button class="btn btn-secondary" :class="{ 'btn-primary': statusFilter === 'open' }"
                     @click="setFilter('open')">{{ _('進行中') }}</button>

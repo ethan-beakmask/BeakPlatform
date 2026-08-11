@@ -9,10 +9,7 @@
 <div class="od-container" x-data="odDashboard()" x-init="load()">
 
     <div class="od-header">
-        <div>
-            <h1>{{ _('OpenDefense 儀表板') }}</h1>
-            <p>{{ _('對外整合的安全堆疊狀態 / 決策流轉 / 金鑰管理總覽。') }}</p>
-        </div>
+        <h1>{{ _('OpenDefense 儀表板') }}</h1>
         <button class="btn btn-secondary" @click="load()">{{ _('重新整理') }}</button>
     </div>
 
