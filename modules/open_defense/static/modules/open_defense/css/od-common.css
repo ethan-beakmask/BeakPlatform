@@ -365,7 +365,13 @@
 
 /* 決策列表（/open-defense/decisions）的欄寬微調。
  * 表格是 auto layout，欄寬本來由內容決定（目標 106px / TTL 56px），
- * 這裡各留 +10px 餘裕避免長 IP 與 "86400s" 貼邊。 */
+ * 這裡各留 +10px 餘裕避免長 IP 與 "86400s" 貼邊。
+ *
+ * width:auto 讓表格只佔內容需要的寬度（約 1050px）。維持 .od-table 的
+ * width:100% 時，容器多出來的 400~700px 會被 auto layout 按 max-content
+ * 比例分散到每一欄，下面的 min-width 就等於失效（實測目標欄被撐到 166px）。 */
+.od-decisions-table { width: auto; }
+
 .od-decisions-table th:nth-child(3),
 .od-decisions-table td:nth-child(3),
 .od-decisions-table th:nth-child(6),
@@ -374,6 +380,33 @@
 .od-decisions-table td:nth-child(3) { min-width: 116px; }
 .od-decisions-table th:nth-child(6),
 .od-decisions-table td:nth-child(6) { min-width: 66px; }
+
+/* 建立時間固定單行（"2026-08-09 06:24" 需要約 120px） */
+.od-decisions-table th:nth-child(1),
+.od-decisions-table td:nth-child(1) { white-space: nowrap; }
+
+/* 表格 width:100% 撐滿容器，多出來的寬度一定要有欄位承接。
+ * 預設 auto layout 是照 max-content 比例分配，而 error_message 是 200+ 字元的
+ * 單行 JSON —— 執行方欄因此實測吃掉 800~1080px，還把建立時間壓成兩行。
+ * 這裡把剩餘空間指定給最後的操作欄（撤銷鈕，靠右對齊），
+ * 前面幾欄才會各自收斂到自然寬 + 上面的 min-width。 */
+.od-decisions-table th:nth-child(10),
+.od-decisions-table td:nth-child(10) { text-align: right; }
+.od-decisions-table .od-err {
+    max-width: 320px;
+    overflow-wrap: anywhere;
+}
+
+/* 目標值限寬截斷：target_type 合法值有 9 種，user_agent（100~150 字元）與
+ * 長 URL 若照 max-content 展開會把整張表撐出容器。截斷後完整值掛在
+ * title，滑鼠停留即可看到。 */
+.od-decisions-table .od-target-value {
+    display: block;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 @media (max-width: 900px) {
     .od-form-grid,

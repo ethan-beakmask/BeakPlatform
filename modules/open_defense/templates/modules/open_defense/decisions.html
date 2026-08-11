@@ -75,7 +75,8 @@
                                  從值不一定分辨得出，照常顯示 -->
                             <div style="font-size:11px;color:#888;"
                                  x-show="d.target_type !== 'ip'" x-text="d.target_type"></div>
-                            <div class="od-mono" x-text="d.target_value"></div>
+                            <div class="od-mono od-target-value"
+                                 :title="d.target_value" x-text="d.target_value"></div>
                         </td>
                         <td>
                             <template x-for="ep in d.enforcement_points">
@@ -94,7 +95,8 @@
                         </td>
                         <td>
                             <div x-text="d.applied_by || '-'" style="font-size:12px;"></div>
-                            <div x-show="d.error_message" style="font-size:11px;color:#dc2626;" x-text="d.error_message"></div>
+                            <div class="od-err" x-show="d.error_message"
+                                 style="font-size:11px;color:#dc2626;" x-text="d.error_message"></div>
                         </td>
                         <td>
                             <div style="font-size:11px;" x-text="d.decided_via"></div>
