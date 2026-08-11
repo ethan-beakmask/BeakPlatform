@@ -52,6 +52,16 @@
     <div class="sc-main">
         <!-- 左：案件清單 -->
         <div class="sc-case-list">
+            <div class="sc-sort-bar">
+                <button type="button" class="sc-sort-btn" :class="sortKey === 'time' ? 'active' : ''"
+                        @click="setSort('time')">{{ _('時間') }}<span x-text="sortArrow('time')"></span></button>
+                <button type="button" class="sc-sort-btn" :class="sortKey === 'code' ? 'active' : ''"
+                        @click="setSort('code')">{{ _('案件編號') }}<span x-text="sortArrow('code')"></span></button>
+                <button type="button" class="sc-sort-btn" :class="sortKey === 'severity' ? 'active' : ''"
+                        @click="setSort('severity')">{{ _('緊急度') }}<span x-text="sortArrow('severity')"></span></button>
+                <button type="button" class="sc-sort-btn" :class="sortKey === 'overdue' ? 'active' : ''"
+                        @click="setSort('overdue')">{{ _('逾時') }}<span x-text="sortArrow('overdue')"></span></button>
+            </div>
             <template x-if="truncated">
                 <div class="sc-truncated-note">{{ _('案件數超過單次顯示上限，僅列出最新的部分案件') }}</div>
             </template>
@@ -61,7 +71,7 @@
                              ? '{{ _('目前沒有輪到您簽核的案件') }}'
                              : '{{ _('目前沒有案件') }}'"></div>
             </template>
-            <template x-for="c in cases" :key="c.workflow_instance_secure_code">
+            <template x-for="c in sortedCases" :key="c.workflow_instance_secure_code">
                 <!-- :class 用單一字串表達式：Alpine 的陣列語法元素必須是字串，
                      混入 { selected: ... } 物件會被轉成字面 "[object Object]"，
                      選取高亮從第一版起就沒生效過 -->

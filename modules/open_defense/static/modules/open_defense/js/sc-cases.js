@@ -8,6 +8,8 @@ function scCases() {
         cases: [],
         truncated: false,
         statusFilter: 'open',
+        sortKey: 'time',
+        sortDir: 'desc',
         // 值班預設視角：只列輪到自己簽核的案件（僅對「進行中」生效，
         // 已結案案件沒有 WAITING 節點，過濾後必然全空）
         onlyMine: true,
@@ -150,6 +152,51 @@ function scCases() {
         get actionOptions() {
             return this.detail?.available_paths || [];
         },
+        _defaultSortDir(key) {
+            return 'desc';
+        },
+        setSort(key) {
+            if (this.sortKey === key) {
+                this.sortDir = this.sortDir === 'desc' ? 'asc' : 'desc';
+            } else {
+                this.sortKey = key;
+                this.sortDir = this._defaultSortDir(key);
+            }
+        },
+        sortArrow(key) {
+            if (this.sortKey !== key) return '⇅';
+            return this.sortDir === 'desc' ? '▼' : '▲';
+        },
+        _utcMillis(s) {
+            if (!s) return null;
+            const iso = s.endsWith('Z') ? s : s + 'Z';
+            const ms = new Date(iso).getTime();
+            return Number.isFinite(ms) ? ms : null;
+        },
+        _sortValue(c, key, now) {
+            if (key === 'time') {
+                return this._utcMillis(c.submitted_at);
+            }
+            if (key === 'code') {
+                return c.execution_code || null;
+            }
+            if (key === 'severity') {
+                const v = c.severity_id;
+                if (v && typeof v === 'object') return null;
+                const n = parseInt(v, 10);
+                return Number.isFinite(n) ? n : null;
+            }
+            if (key === 'overdue') {
+                if (!c.sla_minutes || !c.submitted_at || c.status !== 'RUNNING') {
+                    return null;
+                }
+                const submitted = this._utcMillis(c.submitted_at);
+                if (submitted === null) return null;
+                const deadline = submitted + c.sla_minutes * 60000;
+                return Math.floor((now - deadline) / 60000);
+            }
+            return null;
+        },
         /* 純 getter：不可在此寫 this.activeTab。
          * x-for 會在 effect 中讀取本 getter，在 effect 內寫入自己的依賴會讓
          * Alpine 的更新順序不穩定 —— 實測症狀是點分頁後 activeTab 已經改了、
@@ -163,6 +210,30 @@ function scCases() {
                 items.push({ id: 'fields', label: __('原始欄位') });
             }
             return items;
+        },
+        get sortedCases() {
+            const now = Date.now();
+            return [...this.cases].sort((a, b) => {
+                const av = this._sortValue(a, this.sortKey, now);
+                const bv = this._sortValue(b, this.sortKey, now);
+                if (av === null && bv !== null) return 1;
+                if (av !== null && bv === null) return -1;
+                if (av !== null && bv !== null) {
+                    let cmp;
+                    if (typeof av === 'string' || typeof bv === 'string') {
+                        cmp = String(av).localeCompare(String(bv));
+                    } else {
+                        cmp = av - bv;
+                    }
+                    if (cmp !== 0) return this.sortDir === 'desc' ? -cmp : cmp;
+                }
+
+                const at = this._utcMillis(a.submitted_at);
+                const bt = this._utcMillis(b.submitted_at);
+                const atTie = at === null ? Number.NEGATIVE_INFINITY : at;
+                const btTie = bt === null ? Number.NEGATIVE_INFINITY : bt;
+                return btTie - atTie;
+            });
         },
         ensureActiveTab() {
             if (!this.tabs.some((tab) => tab.id === this.activeTab)) {

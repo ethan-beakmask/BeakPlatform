@@ -18,6 +18,45 @@
     max-height: calc(100vh - 260px);
     overflow-y: auto;
 }
+.sc-sort-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+    /* 清單容器自己捲動（overflow-y: auto），不釘住的話捲兩筆案件就看不到排序鈕 */
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.sc-sort-btn {
+    appearance: none;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1.2;
+    padding: 4px 7px;
+    white-space: nowrap;
+}
+.sc-sort-btn:hover {
+    color: var(--color-text);
+    background: var(--color-bg-light);
+}
+.sc-sort-btn.active {
+    color: var(--color-primary);
+    background: var(--color-bg-light);
+    border-color: var(--color-primary);
+}
+.sc-sort-btn span {
+    margin-left: 4px;
+}
+.sc-sort-btn:not(.active) span {
+    color: var(--color-text-muted);
+}
 .sc-truncated-note {
     color: var(--color-text-muted);
     font-size: 12px;

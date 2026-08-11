@@ -3,7 +3,8 @@
 提供 IANA 時區列表（按洲分組），供模板下拉選單使用
 """
 from collections import defaultdict
-from zoneinfo import available_timezones
+from datetime import datetime
+from zoneinfo import ZoneInfo, available_timezones
 
 
 # 洲名中文對照
@@ -61,3 +62,31 @@ def get_timezone_choices():
             result.append((label, items))
 
     return result
+
+
+def local_day_start_utc(tz_name: str, ref: datetime = None) -> datetime:
+    """回傳「該時區當地今日零點」對應的 naive UTC datetime（TZ-01）。
+
+    DB 存 naive UTC，但統計的日界必須依使用者看到的當地日曆日切分，
+    否則台北 08:00 之前的「今日」實際涵蓋的是當地昨天 08:00 起。
+
+    ref 視為 naive UTC（預設 datetime.utcnow()）；時區名稱無效時退回 Asia/Taipei。
+    """
+    try:
+        target_tz = ZoneInfo(tz_name)
+    except Exception:
+        target_tz = ZoneInfo('Asia/Taipei')
+
+    utc_tz = ZoneInfo('UTC')
+    if ref is None:
+        ref = datetime.utcnow()
+    if ref.tzinfo is None:
+        ref_utc = ref.replace(tzinfo=utc_tz)
+    else:
+        ref_utc = ref.astimezone(utc_tz)
+
+    local_now = ref_utc.astimezone(target_tz)
+    # DST 邊界：極少數時區當地零點不存在時，replace 的結果由 fold 規則決定；
+    # 最多可能有 1 小時誤差，屬此 naive UTC 儲存模型下的已知限制。
+    local_start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    return local_start.astimezone(utc_tz).replace(tzinfo=None)

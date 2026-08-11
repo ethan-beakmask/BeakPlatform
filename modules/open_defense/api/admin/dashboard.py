@@ -1,12 +1,13 @@
 """Admin API:dashboard 統計"""
 from datetime import datetime, timedelta
 
-from flask import jsonify
+from flask import g, jsonify
 from flask_login import current_user
 from sqlalchemy import func
 
 from app import db
 from app.security.decorators import page_keys_required
+from app.utils.timezone import local_day_start_utc
 
 from . import admin_bp
 from ...models import (
@@ -18,8 +19,9 @@ from ...models import (
 @page_keys_required('open_defense.dashboard')  # PERM-01 試點：與 dashboard 頁共用雙鑰匙
 def dashboard_stats():
     org_sc = current_user.org_secure_code
-    today_start = datetime.utcnow().replace(
-        hour=0, minute=0, second=0, microsecond=0)
+    now = datetime.utcnow()
+    today_start = local_day_start_utc(
+        getattr(g, 'timezone', 'Asia/Taipei'), now)
 
     def _count(model, **filters):
         q = model.query.filter_by(org_secure_code=org_sc, is_deleted=False)

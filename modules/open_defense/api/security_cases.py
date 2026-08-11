@@ -13,12 +13,13 @@ OpenDefense Module - 資安案件處置中心 API（原子 4845）
 """
 from datetime import datetime, timedelta
 
-from flask import current_app, jsonify, request
+from flask import current_app, g, jsonify, request
 from flask_login import current_user
 
 from app import db
 from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
+from app.utils.timezone import local_day_start_utc
 
 from . import api_bp
 from ..models import OdDefenseDecision, OdPayloadProfile
@@ -236,6 +237,8 @@ def list_cases():
         mine:   1/true 時只回傳當前帳號有權簽核的案件（can_act），
                 值班人員預設視角；closed 案件無待簽核節點，帶此參數會全空
         limit:  最多筆數（預設 200）
+
+    回傳順序為 SQL 的 submitted_at DESC（最新在前），細部排序由前端負責。
     """
     from modules.form_workflow.models import FwWorkflowInstance
     from modules.form_workflow.services.task_authorizer import build_actor
@@ -335,14 +338,6 @@ def list_cases():
             record_sc_key='form_instance_secure_code',
         )
 
-    # 進行中在前，嚴重度高在前，其次新案在前
-    result.sort(key=lambda c: (
-        c['status'] != 'RUNNING',
-        -(int(c['severity_id'] or 0) if isinstance(c['severity_id'], (int, str))
-          and str(c['severity_id']).isdigit() else 0),
-        c['submitted_at'] or '',
-    ))
-
     return jsonify({'success': True, 'data': result, 'truncated': truncated})
 
 
@@ -357,7 +352,8 @@ def case_stats():
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
     now = datetime.utcnow()
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = local_day_start_utc(
+        getattr(g, 'timezone', 'Asia/Taipei'), now)
 
     open_rows = _security_case_query(org.secure_code).filter(
         db.text("fw_workflow_instances.status = 'RUNNING'")).all()
