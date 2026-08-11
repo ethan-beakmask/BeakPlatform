@@ -363,6 +363,18 @@
     max-width: 96vw;
 }
 
+/* 決策列表（/open-defense/decisions）的欄寬微調。
+ * 表格是 auto layout，欄寬本來由內容決定（目標 106px / TTL 56px），
+ * 這裡各留 +10px 餘裕避免長 IP 與 "86400s" 貼邊。 */
+.od-decisions-table th:nth-child(3),
+.od-decisions-table td:nth-child(3),
+.od-decisions-table th:nth-child(6),
+.od-decisions-table td:nth-child(6) { box-sizing: border-box; }
+.od-decisions-table th:nth-child(3),
+.od-decisions-table td:nth-child(3) { min-width: 116px; }
+.od-decisions-table th:nth-child(6),
+.od-decisions-table td:nth-child(6) { min-width: 66px; }
+
 @media (max-width: 900px) {
     .od-form-grid,
     .od-test-grid {

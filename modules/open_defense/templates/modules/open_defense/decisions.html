@@ -48,7 +48,7 @@
         </div>
         <div x-show="loading" class="od-empty">{{ _('載入中...') }}</div>
         <div x-show="!loading && decisions.length===0" class="od-empty">{{ _('無資料') }}</div>
-        <table x-show="!loading && decisions.length>0" class="od-table">
+        <table x-show="!loading && decisions.length>0" class="od-table od-decisions-table">
             <thead>
                 <tr>
                     <th>{{ _('建立時間') }}</th>
@@ -69,7 +69,12 @@
                         <td x-text="OD.formatTime(d.created_at, 'short')"></td>
                         <td><span class="od-mono" x-text="d.action"></span></td>
                         <td>
-                            <div style="font-size:11px;color:#888;" x-text="d.target_type"></div>
+                            <!-- target_type 為 ip 時不另起一行：值本身已看得出是 IP，
+                                 多一行只是讓整列變兩倍高。其餘 8 種型別
+                                 （ipv6/cidr/domain/url/asn/country/user_agent/jwt_sub）
+                                 從值不一定分辨得出，照常顯示 -->
+                            <div style="font-size:11px;color:#888;"
+                                 x-show="d.target_type !== 'ip'" x-text="d.target_type"></div>
                             <div class="od-mono" x-text="d.target_value"></div>
                         </td>
                         <td>
