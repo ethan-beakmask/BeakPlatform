@@ -13,7 +13,7 @@ OpenDefense Module - 資安案件處置中心 API（原子 4845）
 """
 from datetime import datetime, timedelta
 
-from flask import jsonify, request
+from flask import current_app, jsonify, request
 from flask_login import current_user
 
 from app import db
@@ -29,6 +29,8 @@ SLA_MINUTES_MEDIUM = 60
 
 # SOC 簽核節點型別（與 fc_pending 同一組）
 _APPROVAL_NODE_TYPES = ('Approve', 'FormAdapter', 'FORMADAPTER')
+# mine=1 反查時掃描的 WAITING 簽核佇列上限（beluga 現況全企業 68 筆，留足餘裕）
+_WAITING_SCAN_LIMIT = 3000
 _PAYLOAD_ROW_LIMIT = 500
 _PAYLOAD_COLUMN_LIMIT = 40
 _PAYLOAD_COLUMN_SCAN_LIMIT = 20
@@ -69,6 +71,51 @@ def _security_case_query(org_sc):
         FwFormInstance.is_deleted == False,  # noqa: E712
         FT.category_secure_code.like(f'{SECURITY_CATEGORY_PREFIX}%'),
     )
+
+
+def _waiting_queues_by_case(org_sc, wi_scs=None):
+    from modules.form_workflow.models import FwNodeExecutionQueue
+
+    if wi_scs == []:
+        return {}
+
+    query = FwNodeExecutionQueue.query.filter(
+        FwNodeExecutionQueue.org_secure_code == org_sc,
+        FwNodeExecutionQueue.status == 'WAITING',
+        FwNodeExecutionQueue.node_type.in_(_APPROVAL_NODE_TYPES),
+    )
+    if wi_scs is not None:
+        query = query.filter(
+            FwNodeExecutionQueue.workflow_instance_secure_code.in_(wi_scs),
+        )
+        queues = query.all()
+    else:
+        queues = query.order_by(FwNodeExecutionQueue.id.desc()).limit(
+            _WAITING_SCAN_LIMIT + 1,
+        ).all()
+        if len(queues) > _WAITING_SCAN_LIMIT:
+            current_app.logger.warning(
+                'WAITING approval queue scan exceeded limit; mine=1 list may be incomplete',
+            )
+            queues = queues[:_WAITING_SCAN_LIMIT]
+
+    grouped = {}
+    for q in queues:
+        grouped.setdefault(q.workflow_instance_secure_code, []).append(q)
+    return grouped
+
+
+def _pick_waiting(queues, user_sc, org_sc, actor):
+    from modules.form_workflow.services.task_authorizer import can_act_on_task
+
+    if not queues:
+        return None, False
+
+    first = queues[0]
+    for q in queues:
+        if can_act_on_task(q, user_sc, org_sc, actor):
+            return q, True
+    return first, False
 
 
 def _payload_detail_key(profile):
@@ -190,10 +237,8 @@ def list_cases():
                 值班人員預設視角；closed 案件無待簽核節點，帶此參數會全空
         limit:  最多筆數（預設 200）
     """
-    from modules.form_workflow.models import FwNodeExecutionQueue
-    from modules.form_workflow.services.task_authorizer import (
-        can_act_on_task, build_actor,
-    )
+    from modules.form_workflow.models import FwWorkflowInstance
+    from modules.form_workflow.services.task_authorizer import build_actor
 
     org = get_current_org()
     if not org:
@@ -209,47 +254,54 @@ def list_cases():
     elif status == 'closed':
         query = query.filter(db.text("fw_workflow_instances.status != 'RUNNING'"))
 
-    rows = query.order_by(db.text('fw_form_instances.submitted_at DESC')
-                          ).limit(limit).all()
-
-    # 批次查各案件的待簽核節點（1-click 處置的入口鍵）
-    wi_scs = [wi.secure_code for _, wi in rows]
-    waiting_map = {}
-    queue_map = {}
-    if wi_scs:
-        waiting = FwNodeExecutionQueue.query.filter(
-            FwNodeExecutionQueue.org_secure_code == org.secure_code,
-            FwNodeExecutionQueue.workflow_instance_secure_code.in_(wi_scs),
-            FwNodeExecutionQueue.status == 'WAITING',
-            FwNodeExecutionQueue.node_type.in_(_APPROVAL_NODE_TYPES),
-        ).all()
-        for q in waiting:
-            waiting_map[q.workflow_instance_secure_code] = {
-                'queue_secure_code': q.secure_code,
-                'node_id': q.node_id,
-                'node_name': q.node_name,
-                'assignees': ((q.result or {}).get('data') or {}).get('assignees', []),
-            }
-            queue_map[q.workflow_instance_secure_code] = q
-
     user_sc = current_user.secure_code
     actor = build_actor(user_sc, org.secure_code)
+
+    actionable = {}
+    if only_mine:
+        grouped = _waiting_queues_by_case(org.secure_code)
+        for wi_sc, queues in grouped.items():
+            picked, can_act = _pick_waiting(queues, user_sc, org.secure_code, actor)
+            if can_act:
+                actionable[wi_sc] = picked
+        if not actionable:
+            return jsonify({'success': True, 'data': [], 'truncated': False})
+        query = query.filter(
+            FwWorkflowInstance.secure_code.in_(list(actionable.keys())),
+        )
+
+    rows = query.order_by(db.text('fw_form_instances.submitted_at DESC')
+                          ).limit(limit + 1).all()
+    truncated = len(rows) > limit
+    rows = rows[:limit]
+
+    if only_mine:
+        picked_map = {
+            wi.secure_code: (actionable[wi.secure_code], True)
+            for _, wi in rows
+        }
+    else:
+        grouped = _waiting_queues_by_case(
+            org.secure_code,
+            [wi.secure_code for _, wi in rows],
+        )
+        picked_map = {
+            wi_sc: _pick_waiting(queues, user_sc, org.secure_code, actor)
+            for wi_sc, queues in grouped.items()
+        }
+
     result = []
     by_template = {}
     for fi, wi in rows:
         fd = fi.form_data or {}
         severity = fd.get('severity_id')
-        waiting = waiting_map.get(wi.secure_code)
-        can_act = bool(
-            waiting and can_act_on_task(
-                queue_map.get(wi.secure_code),
-                user_sc,
-                org.secure_code,
-                actor,
-            )
-        )
-        if only_mine and not can_act:
-            continue
+        picked, can_act = picked_map.get(wi.secure_code, (None, False))
+        waiting = ({
+            'queue_secure_code': picked.secure_code,
+            'node_id': picked.node_id,
+            'node_name': picked.node_name,
+            'assignees': ((picked.result or {}).get('data') or {}).get('assignees', []),
+        } if picked else None)
         item = {
             'workflow_instance_secure_code': wi.secure_code,
             'form_instance_secure_code': fi.secure_code,
@@ -291,7 +343,7 @@ def list_cases():
         c['submitted_at'] or '',
     ))
 
-    return jsonify({'success': True, 'data': result})
+    return jsonify({'success': True, 'data': result, 'truncated': truncated})
 
 
 @api_bp.route('/cases/stats')

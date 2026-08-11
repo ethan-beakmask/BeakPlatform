@@ -52,6 +52,9 @@
     <div class="sc-main">
         <!-- 左：案件清單 -->
         <div class="sc-case-list">
+            <template x-if="truncated">
+                <div class="sc-truncated-note">{{ _('案件數超過單次顯示上限，僅列出最新的部分案件') }}</div>
+            </template>
             <template x-if="!loading && cases.length === 0">
                 <div class="sc-detail-empty"
                      x-text="onlyMine && statusFilter === 'open'

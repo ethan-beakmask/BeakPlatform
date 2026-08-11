@@ -6,6 +6,7 @@ function scCases() {
     return {
         stats: {},
         cases: [],
+        truncated: false,
         statusFilter: 'open',
         // 值班預設視角：只列輪到自己簽核的案件（僅對「進行中」生效，
         // 已結案案件沒有 WAITING 節點，過濾後必然全空）
@@ -24,6 +25,7 @@ function scCases() {
 
         async load() {
             this.loading = true;
+            this.truncated = false;
             const mine = (this.onlyMine && this.statusFilter === 'open') ? '&mine=1' : '';
             try {
                 const [s, c] = await Promise.all([
@@ -32,7 +34,10 @@ function scCases() {
                         `${BP}/api/open_defense/cases?status=${this.statusFilter}${mine}`),
                 ]);
                 if (s.body?.success) this.stats = s.body.data;
-                if (c.body?.success) this.cases = c.body.data;
+                if (c.body?.success) {
+                    this.cases = c.body.data;
+                    this.truncated = c.body?.truncated === true;
+                }
             } finally {
                 this.loading = false;
             }
