@@ -7,6 +7,9 @@ function scCases() {
         stats: {},
         cases: [],
         statusFilter: 'open',
+        // 值班預設視角：只列輪到自己簽核的案件（僅對「進行中」生效，
+        // 已結案案件沒有 WAITING 節點，過濾後必然全空）
+        onlyMine: true,
         selected: null,        // 清單項
         detail: null,          // pending-tasks 詳情（進行中案件才有）
         payload: null,         // native payload 明細與原始欄位
@@ -21,10 +24,12 @@ function scCases() {
 
         async load() {
             this.loading = true;
+            const mine = (this.onlyMine && this.statusFilter === 'open') ? '&mine=1' : '';
             try {
                 const [s, c] = await Promise.all([
                     OD.fetchJSON(`${BP}/api/open_defense/cases/stats`),
-                    OD.fetchJSON(`${BP}/api/open_defense/cases?status=${this.statusFilter}`),
+                    OD.fetchJSON(
+                        `${BP}/api/open_defense/cases?status=${this.statusFilter}${mine}`),
                 ]);
                 if (s.body?.success) this.stats = s.body.data;
                 if (c.body?.success) this.cases = c.body.data;
@@ -38,11 +43,22 @@ function scCases() {
 
         async setFilter(f) {
             this.statusFilter = f;
+            this._resetSelection();
+            await this.load();
+        },
+
+        /** 切換「僅我可簽核 / 全部案件」（只在進行中視角有按鈕） */
+        async toggleMine() {
+            this.onlyMine = !this.onlyMine;
+            this._resetSelection();
+            await this.load();
+        },
+
+        _resetSelection() {
             this.selected = null;
             this.detail = null;
             this.payload = null;
             this.activeTab = 'summary';
-            await this.load();
         },
 
         async selectCase(c) {

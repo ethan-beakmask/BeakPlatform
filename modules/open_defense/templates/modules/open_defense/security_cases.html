@@ -19,6 +19,9 @@
                     @click="setFilter('open')">{{ _('進行中') }}</button>
             <button class="btn btn-secondary" :class="{ 'btn-primary': statusFilter === 'closed' }"
                     @click="setFilter('closed')">{{ _('已結案') }}</button>
+            <button class="btn btn-secondary" x-show="statusFilter === 'open'"
+                    :class="{ 'btn-primary': onlyMine }"
+                    @click="toggleMine()">{{ _('僅我可簽核') }}</button>
             <button class="btn btn-secondary" @click="load()">{{ _('重新整理') }}</button>
         </div>
     </div>
@@ -50,28 +53,34 @@
         <!-- 左：案件清單 -->
         <div class="sc-case-list">
             <template x-if="!loading && cases.length === 0">
-                <div class="sc-detail-empty">{{ _('目前沒有案件') }}</div>
+                <div class="sc-detail-empty"
+                     x-text="onlyMine && statusFilter === 'open'
+                             ? '{{ _('目前沒有輪到您簽核的案件') }}'
+                             : '{{ _('目前沒有案件') }}'"></div>
             </template>
             <template x-for="c in cases" :key="c.workflow_instance_secure_code">
+                <!-- :class 用單一字串表達式：Alpine 的陣列語法元素必須是字串，
+                     混入 { selected: ... } 物件會被轉成字面 "[object Object]"，
+                     選取高亮從第一版起就沒生效過 -->
                 <div class="sc-case-item"
-                     :class="[`sev-${sevNum(c.severity_id)}`,
-                              { selected: selected?.workflow_instance_secure_code === c.workflow_instance_secure_code }]"
+                     :class="`sev-${sevNum(c.severity_id)}` +
+                             (selected?.workflow_instance_secure_code === c.workflow_instance_secure_code
+                              ? ' selected' : '')"
                      @click="selectCase(c)">
                     <div class="sc-case-row1">
-                        <span class="sc-case-ip" x-html="val(c.actor_ip)"></span>
+                        <span class="sc-case-subject" x-text="c.subject || c.form_name"></span>
                         <span class="sc-sev" :class="`sc-sev-${sevNum(c.severity_id)}`"
                               x-text="'S' + sevNum(c.severity_id)"></span>
                     </div>
                     <div class="sc-case-row2">
-                        <span class="sc-case-subject" x-text="c.subject || c.form_name"></span>
-                        <template x-if="slaInfo(c)">
-                            <span class="sc-sla" :class="slaInfo(c).cls"
-                                  x-text="slaInfo(c).text"></span>
-                        </template>
-                    </div>
-                    <div class="sc-case-row2">
                         <span class="od-mono" x-text="c.execution_code"></span>
-                        <span x-text="(c.od_event_count > 1 ? `×${c.od_event_count} ` : '') + fmtTime(c.submitted_at)"></span>
+                        <span class="sc-case-meta">
+                            <span x-text="fmtTime(c.submitted_at)"></span>
+                            <template x-if="slaInfo(c)">
+                                <span class="sc-sla" :class="slaInfo(c).cls"
+                                      x-text="slaInfo(c).text"></span>
+                            </template>
+                        </span>
                     </div>
                 </div>
             </template>

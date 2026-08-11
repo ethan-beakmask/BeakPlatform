@@ -186,6 +186,8 @@ def list_cases():
 
     Query:
         status: open(預設，流程進行中) / closed / all
+        mine:   1/true 時只回傳當前帳號有權簽核的案件（can_act），
+                值班人員預設視角；closed 案件無待簽核節點，帶此參數會全空
         limit:  最多筆數（預設 200）
     """
     from modules.form_workflow.models import FwNodeExecutionQueue
@@ -198,6 +200,7 @@ def list_cases():
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
     status = request.args.get('status', 'open')
+    only_mine = str(request.args.get('mine', '')).lower() in ('1', 'true')
     limit = min(int(request.args.get('limit', 200)), 500)
 
     query = _security_case_query(org.secure_code)
@@ -232,11 +235,22 @@ def list_cases():
     user_sc = current_user.secure_code
     actor = build_actor(user_sc, org.secure_code)
     result = []
+    by_template = {}
     for fi, wi in rows:
         fd = fi.form_data or {}
         severity = fd.get('severity_id')
         waiting = waiting_map.get(wi.secure_code)
-        result.append({
+        can_act = bool(
+            waiting and can_act_on_task(
+                queue_map.get(wi.secure_code),
+                user_sc,
+                org.secure_code,
+                actor,
+            )
+        )
+        if only_mine and not can_act:
+            continue
+        item = {
             'workflow_instance_secure_code': wi.secure_code,
             'form_instance_secure_code': fi.secure_code,
             'execution_code': wi.execution_code,
@@ -255,22 +269,14 @@ def list_cases():
             'completed_at': fi.completed_at.isoformat() if fi.completed_at else None,
             'sla_minutes': _sla_minutes(severity),
             'waiting_node': waiting,
-            'can_act': bool(
-                waiting and can_act_on_task(
-                    queue_map.get(wi.secure_code),
-                    user_sc,
-                    org.secure_code,
-                    actor,
-                )
-            ),
-        })
+            'can_act': can_act,
+        }
+        result.append(item)
+        by_template.setdefault(fi.form_template_secure_code, []).append(item)
 
     # EGRESS-01:form_data 衍生欄位過 list 語境政策（資源=fw_form:<模板SC>，
     # 未設政策 no-op；masked 欄位下發哨兵由前端 BkEgress 渲染）
     from app.services import egress_service
-    by_template = {}
-    for (fi, wi), item in zip(rows, result):
-        by_template.setdefault(fi.form_template_secure_code, []).append(item)
     for template_sc, items in by_template.items():
         egress_service.apply(
             f'fw_form:{template_sc}', 'list', items,

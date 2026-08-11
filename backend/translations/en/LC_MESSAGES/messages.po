@@ -13818,6 +13818,14 @@ msgstr ""
 msgid "已結案"
 msgstr "Closed"
 
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:24
+msgid "僅我可簽核"
+msgstr "Only mine to approve"
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:58
+msgid "目前沒有輪到您簽核的案件"
+msgstr "No cases awaiting your approval"
+
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:29
 msgid "進行中案件"
 msgstr "Open Cases"
