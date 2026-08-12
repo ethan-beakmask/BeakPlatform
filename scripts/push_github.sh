@@ -22,6 +22,10 @@ EXCLUDE_DIRS=(
     ".forgejo"
     "scripts/systemd"
     "backend/app/templates/pages/dev"
+    # E2E 測試依賴 /dev/quick-login 免密碼登入（backend/app/web/dev.py 本身已在
+    # 排除清單、正式部署不存在）。推上公開 repo 只會得到一組必然跑不起來的測試，
+    # 而且等於公開描述開發後門的用法。
+    "tests/e2e"
 )
 
 # 個別檔案
