@@ -207,6 +207,9 @@ class BranchHandler(BaseNodeHandler):
             self.log_warning(f'條件比較失敗: {variable_expr} {operator} {compare_value}')
             return False
 
+    # 這些前綴由 base.replace_variables() 解析，見 _resolve_value()
+    _DELEGATED_PREFIXES = ('wi.', 'n.', 't.', 'workflow.', 'timestamp', 'node.')
+
     def _resolve_value(self, expr: str) -> Any:
         """解析變數表達式"""
         if not isinstance(expr, str):
@@ -227,7 +230,14 @@ class BranchHandler(BaseNodeHandler):
             # 過渡期: 舊 form.* 語法
             if var_name.startswith('form.'):
                 return self.get_form_field(var_name[5:])
-            # 查詢 workflow 變數 (NODE > FLOW > TREE)
+            # 其餘 v2 前綴 (wi. / n. / t.) 與舊語法交給 base.replace_variables 統一解析。
+            # 不在這裡逐一補前綴，是因為這份清單一旦與 base 漂移就會靜默失效：
+            # 落到下面的 get_var() 時，這些前綴查不到任何流程變數，一律回空字串，
+            # 條件恆為 False 而且不報錯（2026-08-13 踩到：Branch 用 ${t.time} 做
+            # 上班時段判斷，regex 永遠不匹配、案件全部走 fallback 路徑）。
+            if var_name.startswith(self._DELEGATED_PREFIXES):
+                return self.replace_variables(expr)
+            # 無前綴: 查詢 workflow 變數 (NODE > FLOW > TREE)
             return self.get_var(var_name, '')
 
         return self.replace_variables(expr)

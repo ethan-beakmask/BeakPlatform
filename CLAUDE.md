@@ -771,6 +771,27 @@ od-bridge / EDL enforcer / ClickHouse）的權威在
   既有 graph 的 icon 都是 `/static/...` 無前綴，這是正確的存法）
 - 資安案件處置中心的清單 API 是 `/api/open_defense/cases`（不在 `/admin` 底下）
 
+**現有三個處置流程，各綁一張表單**（2026-08-13 建置，指南
+`docs/guides/OD_WORKFLOW_VARIANTS.md`，建置腳本
+`scripts/examples/provision_od_workflow_variants.py` + `od_workflow_graphs.py`）：
+
+| 流程 | 表單 code | 適用編制 |
+|---|---|---|
+| `SEC_INCIDENT_FLOW`（原有） | `SEC_INCIDENT_RESPONSE` | 假設 15 分鐘內有人看，適合輪班 SOC |
+| `SEC_IR_FLOW_SOC_TEAM` | `SEC_IR_SOC_TEAM` | 3~8 人輪班，簽核＋SLA 計時雙軌，逾時只催辦 |
+| `SEC_IR_FLOW_SOLO` | `SEC_IR_SOLO` | 單人 8 小時班，夜間自動封鎖 TTL 24h 後人工複核 |
+
+**一張 form_template 同時只有一個生效流程**——intake 是「依 form_template 取
+**最新 Published** 的 `fw_published_form_workflows`」（`intake_service.py:314-319`）。
+所以「切換流程」＝同一張表單重新發行綁不同 workflow；
+「不同案件走不同流程」＝**必須不同的 form_template**，靠 `od_form_template_mappings`
+的 `match_rules` + `priority` 分派。新表單的 `category_secure_code` 必須沿用資安分類
+（`CAT_SECURITY_%`），否則案件不會出現在處置中心。
+
+二線簽核角色是 `SOC_SUPERVISOR`（命名沿用 `docs/guides/SOC_ROLE_DESIGN_GUIDE.md`）。
+**新增資安角色後必須把它加進 `menu_role_requirements`**（雙鑰匙 Key2），
+否則只持有該角色的人看不到處置中心選單，簽核任務變成「清單看得到、點不進去」。
+
 **打 intake webhook 做端對端測試時，API key 的 secret 用 `decrypt_secret()` 取回**
 （secret 是加密存的，不是 hash——**不必為了測試另建一把 key**）：
 
@@ -1206,6 +1227,30 @@ PF-79 這組就是這樣驗的（記錄在 `/opt/tmp/verify/20260812-e2e-od-pf79
 - intake / 表單中心都只讀 `fw_published_form_workflows` 最新 Published 快照，改模板不重發行等於沒改
 - 流程變數：流程編號（OD-YYYYMMDD-NNNN）是 `${wi.exec_code}`；`${wi.code}` 是 workflow instance 的 secure_code，
   沒有 `${wi.execution_code}` 這個變數（替換結果為空字串）
+
+### 流程 graph 的引擎行為（2026-08-13 實測，設計流程前必讀）
+
+寫或改 `fw_workflow_templates.graph` 之前先看這張表，都是「存得進 DB、跑起來才炸」的：
+
+| 行為 | 事實 | 後果 |
+|---|---|---|
+| Branch 命中多條規則 | **展開全部命中的規則**（`branch_handler.py:128-147`），不是 first-match-wins | 規則不互斥就會同時走多條路徑 |
+| Branch 條件的 `logic` | 是 **group 切分符**：遇 `OR` 或掃到最後一條就收尾。group 內 AND、group 間 OR | 想寫「A 且 B」要兩條都標 AND |
+| Branch 比較失敗 | 欄位缺值／型別不符一律回 False（`branch_handler.py:204-208`） | 可以刻意用來做 fail-safe，讓缺值案件落到 fallback |
+| Branch 條件裡的變數前綴 | `_resolve_value()` 的快路徑原本只認 `f. / fi. / v. / form.`，`wi. / n. / t.` 全部落到流程變數查詢而**必定回空字串**（2026-08-13 修，改為委派 `replace_variables`） | 這類錯誤不報錯：條件恆 False、案件全部走 fallback，行為看起來還「正常」。用非 `f./v.` 前綴寫條件時務必做一次 mutation 驗證 |
+| Branch 的 fallback `action='log'` | **不回 selected_edges → `advance_to_next_nodes` 取所有出邊**（`node_runner.py:237-243`） | 想「什麼都不做」不能靠 log fallback，會全部走一遍 |
+| 無出邊的節點 | 安全終止該分支，不報錯也不結束流程（`workflow_engine.py:360`） | 並行分支要靜靜收尾就指向這種節點，**不要指向 End** |
+| End 的 `finish_mode` | `detach`（預設，直接結束）／`cancel`（結束並取消所有未完成節點）／`strict`（等全部完成） | 有並行分支一律用 `cancel`，否則計時分支殘留 |
+| 並行分支各自走 End | End 是**流程級**結束，任一分支走到就整個流程 COMPLETED | 另一條的簽核任務會被 executor 視為流程已結束 |
+| `AlertBroadcast.broadcast_code` | **不做變數替換**（只有 title/message 有），同 code 覆蓋前一則並清掉已讀記錄 | 它是「最新一則橫幅」不是每案通知，別拿來當逐案稽核 |
+| `fw_workflow_templates.timeout_minutes` | 只被寫入 `timeout_at`（`workflow_engine.py:124-139`），**全專案沒有任何地方讀它** | 填了不會有任何效果，逾時要用流程內 Delay 節點 |
+| `DecisionWriter.decided_via` 自動推斷 | 看 `last_completed_node_type`，並行分支下不可靠 | 一律在節點 config 明確標 `human` / `auto` |
+| `DecisionWriter.target_value` 替換後為空 | 節點回 error、流程卡住 | 自動封鎖前必須先用 Branch 擋掉 `actor_ip` 為空的案件 |
+
+Delay 與 ParallelFork 都可用：executor 會撿 `status=WAITING` 且 `node_type in (Delay, End, ParallelJoin)`
+且 `scheduled_at` 到期的節點（`workflow_executor.py:117-133`）。
+`ParallelJoin` 另有 `enable_timeout` / `timeout_minutes` / `timeout_edge_id`，
+但它要靠 Fork 的另一條分支推進才會開始計時。
 
 ### form_workflow 流程變數的儲存位置（寫錯地方＝流程引用不到）
 
