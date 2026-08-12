@@ -667,6 +667,19 @@ const iso = s.endsWith('Z') ? s : s + 'Z';   // naive UTC 補 Z
 const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 ```
 
+**統計的「今日／本週」日界一律用顯示時區換算，禁止 `utcnow().replace(hour=0, ...)`**
+（2026-08-12 起）。DB 存的是 naive UTC，但使用者看到的日期是 `g.timezone` 的日曆日：
+台北 08:00 之前，UTC 日界涵蓋的其實是「當地昨天 08:00 起」。處置中心的「今日新案」
+就因此長期與清單對不上（顯示 7，當地今天只有 1 筆）。唯一實作：
+
+```python
+from app.utils.timezone import local_day_start_utc
+today_start = local_day_start_utc(getattr(g, 'timezone', 'Asia/Taipei'), datetime.utcnow())
+```
+
+**時間差運算（SLA 倒數、逾時判定、滾動 24h 視窗）不受此條影響**，維持 UTC——
+那是兩個時間點相減，與時區無關。只有「切在某個日曆日邊界」才要換算。
+
 
 ## 資料庫資訊
 
@@ -688,6 +701,8 @@ const deadline = new Date(iso).getTime() + slaMinutes * 60000;
 | API Key 是否可用 | `api_keys.is_active` | **`api_keys.status`**（`active` / `suspended`） |
 | 角色是否唯一 | `roles.code` 唯一 | **只有 `secure_code` 唯一**，`ix_roles_code` 是非唯一索引 —— 不同企業的 `SECURITY_STAFF` 是兩筆不同 secure_code |
 | OD 路由規則的條件 | `od_form_template_mappings.conditions` | **`match_rules`**（jsonb） |
+| intake 事件的處理狀態 | `od_intake_events.status` | **沒有這個欄位**；有沒有建成案件看 `case_secure_code IS NOT NULL` |
+| 資安案件的分類前綴 | `SECCAT%` | **`CAT_SECURITY_%`**（`security_center.py::SECURITY_CATEGORY_PREFIX`） |
 
 **`od_intake_events.case_secure_code` 指向 `fw_workflow_instances`，不是 form_instance。**
 要拿到表單得再 join 一層，直接 join `fw_form_instances` 會全部 NULL：
