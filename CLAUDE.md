@@ -1163,6 +1163,41 @@ sudo -u postgres createdb -O beakplatform beakplatform_test
 卻長期覆蓋掉「撞開發庫殘留」這組完全不同的錯誤，改用測試庫後其中
 `tests/test_page_template_instantiate.py` 直接變成 14 passed。
 
+### 瀏覽器互動的 E2E：Playwright（2026-08-12 起）
+
+pytest 之外另有一組 **Playwright E2E**，測的是 curl 與 pytest 都測不到的東西
+（連結前綴、按鈕可見性、點擊後有沒有發某支 API、console 有沒有紅字）。
+
+```bash
+cd /opt/BeakPlatform-dev
+bash scripts/run_e2e.sh                    # 跑全部，輸出自動 tee 到 /opt/tmp/verify/
+bash scripts/run_e2e.sh --headed           # 讓人看得到瀏覽器
+bash scripts/run_e2e.sh -g "A. 點不可簽核"  # 其餘參數原樣傳給 npx playwright test
+```
+
+- 測試在 `tests/e2e/`（**不是** `backend/tests/`，那是 pytest 的領地）
+- **需要服務在跑**（走 nginx `http://192.168.0.16:7000/beakplatform`），
+  但不需要測試資料庫——它打的是開發庫，且**只讀不寫**
+- Playwright 1.62.1 裝在 repo 根（`package.json` + `node_modules/`，均已 gitignore）
+- 登入走 `/dev/quick-login`（`tests/e2e/helpers/login.js`），免密碼免 CSRF
+- 現有覆蓋：`od-pf79.spec.js`（資安案件處置中心的可簽核／不可簽核兩條路徑、
+  OD 四頁副標、intake-keys 的 nginx 前綴）
+
+**寫新 E2E 時的三條硬規則**（AI 派工時要逐條貼進 spec，否則必漏）：
+
+1. **禁止 `page.evaluate(() => el.click())`**，一律 `locator.click()`。
+   後者會先跑 actionability checks（visible / stable 連兩幀 box 相同 / enabled /
+   receives events 的 hit-test），DOM click 把這層整個拿掉，
+   被 overlay 蓋住的按鈕照樣觸發＝測不出使用者點不點得到
+2. **禁止 `waitForTimeout` 或任何固定 sleep**，用 web-first assertion 與 `waitForResponse`
+3. **禁止寫死 secure_code / 案件編號 / 密碼**，識別碼一律從 API 動態挑；
+   資料前提不成立時 `test.skip()` 並印中文說明，不要讓它變紅、也不要靜默 pass
+
+**新測試第一次就全綠時，必須做一次 mutation 驗證**：把被測的修復暫時改回壞掉的樣子，
+確認測試會紅。恆真斷言（locator 打錯 → count 恆 0、監聽器沒掛上 → 陣列恆空）
+會穩定通過而什麼都沒驗，**讀起來像有保障，比沒測更危險**。
+PF-79 這組就是這樣驗的（記錄在 `/opt/tmp/verify/20260812-e2e-od-pf79.log`）。
+
 ### form_workflow 發行（publish）陷阱
 - `POST /api/mappings/<sc>/publish` 以表單/流程模板的 **version+revision** 判斷有無變更；
   直接改 `fw_workflow_templates.graph`（SQL 或 PUT API）**不會** bump revision，

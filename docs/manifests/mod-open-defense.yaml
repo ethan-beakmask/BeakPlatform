@@ -70,6 +70,11 @@ files:
     - scripts/migrations/096_od_payload_profiles.sql
   test:
     - backend/tests/test_od_aggregation.py
+    - tests/e2e/od-pf79.spec.js
+    - tests/e2e/helpers/login.js
+    - tests/e2e/playwright.config.js
+    - tests/e2e/README.md
+    - scripts/run_e2e.sh
 
 # 此模組會延伸的安全核心檔案(需小幅修改,但不改變既有行為)
 security_core_touch:
