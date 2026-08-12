@@ -9,10 +9,7 @@
 <div class="od-container" x-data="odDecisions()" x-init="load()">
 
     <div class="od-header">
-        <div>
-            <h1>{{ _('防禦決策') }}</h1>
-            <p>{{ _('所有經本平台簽發的決策。pending = 等執行端拉取;applied = 已落地;expired/revoked = 已結束。') }}</p>
-        </div>
+        <h1>{{ _('防禦決策') }}</h1>
         <button class="btn btn-secondary" @click="load()">{{ _('重新整理') }}</button>
     </div>
 

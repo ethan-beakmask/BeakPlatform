@@ -9,12 +9,9 @@
 <div class="od-container" x-data="odIntakeKeys()" x-init="load()">
 
     <div class="od-header">
-        <div>
-            <h1>{{ _('事件接收金鑰(唯讀遺留)') }}</h1>
-            <p>{{ _('Intake key 已遷移至平台 API Key。建立/暫停/撤銷請至') }}
-               <a href="{{ app_prefix }}/security/api-keys/">{{ _('API Key 管理') }}</a>(scope: od_intake)。
-               {{ _('本頁僅供比對遷移前資料,將於下一版本移除。') }}</p>
-        </div>
+        <h1>{{ _('事件接收金鑰(唯讀遺留)') }}</h1>
+        <!-- 副標移除後，這頁唯一的「去哪管理」入口改掛成按鈕，不能一起刪掉 -->
+        <a class="btn btn-secondary" href="{{ app_prefix }}/security/api-keys/">{{ _('API Key 管理') }}</a>
     </div>
 
     <div class="od-section">

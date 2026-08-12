@@ -197,10 +197,15 @@
                                         </div>
                                     </div>
                                 </template>
-                                <template x-if="!selected.can_act">
-                                    <p class="sc-field-label">{{ _('您不是此案件目前節點的指定簽核人。') }}</p>
-                                </template>
                             </div>
+                        </template>
+
+                        <!-- 不可簽核：detail 根本不會請求（會 403），所以這段必須放在
+                             x-if="detail" 之外，否則永遠不會顯示 -->
+                        <template x-if="selected.waiting_node && !selected.can_act">
+                            <p class="sc-field-label"
+                               x-text="'{{ _('目前卡在') }}「' + (selected.waiting_node.node_name || '-') +
+                                       '」{{ _('，您不是此節點的指定簽核人。') }}'"></p>
                         </template>
 
                         <!-- 關聯防禦決策 -->

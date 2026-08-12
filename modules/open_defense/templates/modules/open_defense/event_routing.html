@@ -8,10 +8,7 @@
 {% block content %}
 <div class="od-container" x-data="odEventRouting()" x-init="load()">
     <div class="od-header">
-        <div>
-            <h1>{{ _('事件路由設定') }}</h1>
-            <p>{{ _('設定外部安全事件要套用的表單模板，以及 native SOC 通報的欄位解析方式。') }}</p>
-        </div>
+        <h1>{{ _('事件路由設定') }}</h1>
         <button class="btn btn-secondary" @click="load()">{{ _('重新整理') }}</button>
     </div>
 

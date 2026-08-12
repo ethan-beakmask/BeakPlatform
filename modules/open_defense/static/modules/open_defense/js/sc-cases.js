@@ -82,7 +82,9 @@ function scCases() {
                 OD.fetchJSON(`${BP}/api/open_defense/cases/${wiSc}/decisions`),
                 OD.fetchJSON(`${BP}/api/open_defense/cases/${wiSc}/payload`),
             ];
-            if (c.waiting_node) {
+            // 只有簽得動的人才請求簽核詳情：pending-tasks 對無權者一律 403，
+            // 照發只會在 console 留一筆紅字，畫面拿不到任何東西
+            if (c.waiting_node && c.can_act) {
                 jobs.push(OD.fetchJSON(
                     `${BP}/api/form-center/pending-tasks/${c.waiting_node.queue_secure_code}`));
             }
