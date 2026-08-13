@@ -1,0 +1,214 @@
+/* User manual index and document pages */
+
+.manual-shell {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 24px;
+    max-width: 1700px;
+    margin: 24px auto;
+    padding: 0 24px;
+}
+
+.manual-shell__nav {
+    min-width: 0;
+}
+
+.manual-shell__content {
+    min-width: 0;
+}
+
+.manual-nav {
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 104px);
+    overflow: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg-white);
+    padding: 10px;
+}
+
+.manual-nav__chapter + .manual-nav__chapter {
+    border-top: 1px solid var(--color-border);
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.manual-nav__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 32px;
+    gap: 6px;
+    align-items: center;
+}
+
+.manual-nav__title,
+.manual-nav__link {
+    display: block;
+    color: var(--color-text);
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.manual-nav__title {
+    padding: 8px 10px;
+    font-weight: 600;
+}
+
+.manual-nav__title:hover,
+.manual-nav__link:hover {
+    background: var(--color-bg-light);
+    color: var(--color-primary);
+}
+
+.manual-nav__toggle {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg-white);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.manual-nav__toggle:hover {
+    color: var(--color-primary);
+    background: var(--color-bg-light);
+}
+
+.manual-nav__list {
+    display: grid;
+    gap: 4px;
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0 0 0 12px;
+}
+
+.manual-nav__link {
+    padding: 7px 10px;
+    color: var(--color-text-secondary);
+}
+
+.manual-nav__title.is-active,
+.manual-nav__link.is-active {
+    background: var(--color-bg-light);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.manual-index__header {
+    margin-bottom: 24px;
+}
+
+.manual-index__grid {
+    display: grid;
+    gap: 18px;
+}
+
+.manual-chapter {
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg-white);
+    padding: 18px 20px;
+}
+
+.manual-chapter h2 {
+    margin: 0 0 12px;
+    font-size: 1.2rem;
+}
+
+.manual-chapter ul {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding-left: 20px;
+}
+
+.manual-empty {
+    color: var(--color-text-secondary);
+    padding: 32px 0;
+}
+
+.manual-footer {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid var(--color-border);
+}
+
+.help-doc {
+    padding: 24px 32px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+
+.help-doc__back {
+    margin-bottom: 18px;
+}
+
+.help-doc h1,
+.help-doc h2,
+.help-doc h3 {
+    margin-top: 1.4em;
+    margin-bottom: 0.6em;
+}
+
+.help-doc h2 {
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 6px;
+}
+
+.help-doc p {
+    line-height: 1.7;
+    margin: 0.8em 0;
+}
+
+.help-doc ul,
+.help-doc ol {
+    line-height: 1.7;
+    padding-left: 24px;
+}
+
+.help-doc code {
+    background: var(--color-bg-light);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.92em;
+}
+
+.help-doc pre {
+    background: var(--color-bg-light);
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.help-doc table {
+    border-collapse: collapse;
+    margin: 12px 0;
+}
+
+.help-doc th,
+.help-doc td {
+    border: 1px solid var(--color-border);
+    padding: 6px 12px;
+}
+
+.help-doc th {
+    background: var(--color-bg-light);
+}
+
+@media (max-width: 900px) {
+    .manual-shell {
+        grid-template-columns: 1fr;
+        padding: 0 16px;
+    }
+
+    .manual-nav {
+        position: static;
+        max-height: none;
+    }
+
+    .help-doc {
+        padding: 20px;
+    }
+}

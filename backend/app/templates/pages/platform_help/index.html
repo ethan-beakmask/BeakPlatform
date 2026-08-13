@@ -3,76 +3,44 @@
 {% block title %}{{ _('使用者手冊') }} - BeakPlatform{% endblock %}
 
 {% block head %}
-<style>
-.manual-index {
-    max-width: 960px;
-    margin: 24px auto;
-    padding: 0 24px;
-}
-.manual-index__header {
-    margin-bottom: 24px;
-}
-.manual-index__grid {
-    display: grid;
-    gap: 18px;
-}
-.manual-chapter {
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    background: var(--color-bg-white);
-    padding: 18px 20px;
-}
-.manual-chapter h2 {
-    margin: 0 0 12px;
-    font-size: 1.2rem;
-}
-.manual-chapter ul {
-    display: grid;
-    gap: 8px;
-    margin: 0;
-    padding-left: 20px;
-}
-.manual-empty {
-    color: var(--color-text-secondary);
-    padding: 32px 0;
-}
-.manual-footer {
-    margin-top: 28px;
-    padding-top: 18px;
-    border-top: 1px solid var(--color-border);
-}
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/platform-manual.css') }}">
 {% endblock %}
 
 {% block content %}
-<main class="manual-index">
-    <header class="manual-index__header">
-        <h1>{{ _('使用者手冊') }}</h1>
-    </header>
+<main class="manual-shell">
+    <aside class="manual-shell__nav">
+        {% include 'pages/platform_help/_manual_nav.html' %}
+    </aside>
 
-    {% if chapters %}
-    <div class="manual-index__grid">
-        {% for chapter in chapters %}
-        <section class="manual-chapter">
-            <h2>
-                <a href="{{ url_for('platform_help.manual_doc', doc_id=chapter.index_doc_id) }}">{{ chapter.title }}</a>
-            </h2>
-            <ul>
-                {% for doc in chapter.docs %}
-                <li><a href="{{ url_for('platform_help.manual_doc', doc_id=doc.doc_id) }}">{{ doc.title }}</a></li>
-                {% endfor %}
-            </ul>
-        </section>
-        {% endfor %}
-    </div>
-    {% else %}
-    <p class="manual-empty">{{ _('目前沒有可閱讀的說明文件。') }}</p>
-    {% endif %}
+    <section class="manual-shell__content manual-index">
+        <header class="manual-index__header">
+            <h1>{{ _('使用者手冊') }}</h1>
+        </header>
 
-    {% if current_user.user_type|string in ['SYSTEM_ADMIN', 'ORG_ADMIN'] %}
-    <footer class="manual-footer">
-        <a href="{{ url_for('platform_help.concepts') }}">{{ _('平台概念說明') }}</a>
-    </footer>
-    {% endif %}
+        {% if chapters %}
+        <div class="manual-index__grid">
+            {% for chapter in chapters %}
+            <section class="manual-chapter">
+                <h2>
+                    <a href="{{ url_for('platform_help.manual_doc', doc_id=chapter.index_doc_id) }}">{{ chapter.title }}</a>
+                </h2>
+                <ul>
+                    {% for doc in chapter.docs %}
+                    <li><a href="{{ url_for('platform_help.manual_doc', doc_id=doc.doc_id) }}">{{ doc.title }}</a></li>
+                    {% endfor %}
+                </ul>
+            </section>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="manual-empty">{{ _('目前沒有可閱讀的說明文件。') }}</p>
+        {% endif %}
+
+        {% if current_user.user_type|string in ['SYSTEM_ADMIN', 'ORG_ADMIN'] %}
+        <footer class="manual-footer">
+            <a href="{{ url_for('platform_help.concepts') }}">{{ _('平台概念說明') }}</a>
+        </footer>
+        {% endif %}
+    </section>
 </main>
 {% endblock %}

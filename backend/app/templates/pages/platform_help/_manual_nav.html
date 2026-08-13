@@ -1,0 +1,27 @@
+<nav class="manual-nav" aria-label="{{ _('手冊目錄') }}" x-data='{ open: {{ open_map | tojson }} }'>
+    {% for chapter in chapters %}
+    <div class="manual-nav__chapter">
+        <div class="manual-nav__head">
+            <a href="{{ url_for('platform_help.manual_doc', doc_id=chapter.index_doc_id) }}"
+               class="manual-nav__title {{ 'is-active' if chapter.index_doc_id == current_doc_id else '' }}">{{ chapter.title }}</a>
+            <button type="button"
+                    class="manual-nav__toggle"
+                    @click="open['{{ chapter.chapter_id }}'] = !open['{{ chapter.chapter_id }}']"
+                    :aria-expanded="open['{{ chapter.chapter_id }}'] ? 'true' : 'false'"
+                    aria-label="{{ _('切換章節') }}">
+                <span x-text="open['{{ chapter.chapter_id }}'] ? '▾' : '▸'"></span>
+            </button>
+        </div>
+        <ul class="manual-nav__list" x-show="open['{{ chapter.chapter_id }}']" x-cloak>
+            {% for doc in chapter.docs %}
+            <li>
+                <a href="{{ url_for('platform_help.manual_doc', doc_id=doc.doc_id) }}"
+                   class="manual-nav__link {{ 'is-active' if doc.doc_id == current_doc_id else '' }}">
+                    {{ doc.title }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</nav>

@@ -40,6 +40,8 @@ url_index:
 
   # === 選單 ===
   /menu/:                        menu.yaml
+  /help/:                        platform-help.yaml
+  /help/manual/*:                platform-help.yaml
 
   # === 人資架構 ===
   /job-levels/:                  hr-structure.yaml
@@ -112,6 +114,7 @@ manifest_files:
   - roles.yaml                   # 角色管理
   - menu.yaml                    # 選單管理
   - permissions.yaml             # 權限中央+帳號角色
+  - platform-help.yaml           # 平台說明與使用者手冊
   - admin-accounts.yaml          # 管理員與特殊帳號
   - hr-structure.yaml            # 人資架構
   - approval-delegation.yaml     # 核決+代理授權

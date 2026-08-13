@@ -16,9 +16,13 @@ platform_help_bp = Blueprint('platform_help', __name__)
 @login_required
 def index():
     """依登入者身分顯示可閱讀的手冊目錄"""
+    chapters = doc_catalog_service.list_manual(current_user)
     return render_template(
         'pages/platform_help/index.html',
-        chapters=doc_catalog_service.list_manual(current_user),
+        chapters=chapters,
+        current_doc_id=None,
+        current_chapter_id=None,
+        open_map={chapter['chapter_id']: True for chapter in chapters},
     )
 
 
@@ -29,7 +33,26 @@ def manual_doc(doc_id: str):
     doc = doc_catalog_service.get_manual_doc(doc_id, current_user)
     if doc is None:
         abort(404)
-    return render_template('pages/platform_help/manual_doc.html', doc=doc)
+    chapters = doc_catalog_service.list_manual(current_user)
+    current_chapter_id = _chapter_id_from_doc_id(doc['doc_id'])
+    return render_template(
+        'pages/platform_help/manual_doc.html',
+        doc=doc,
+        chapters=chapters,
+        current_doc_id=doc['doc_id'],
+        current_chapter_id=current_chapter_id,
+        open_map={
+            chapter['chapter_id']: chapter['chapter_id'] == current_chapter_id
+            for chapter in chapters
+        },
+    )
+
+
+def _chapter_id_from_doc_id(doc_id: str) -> str | None:
+    parts = doc_id.split('/')
+    if len(parts) >= 2 and parts[0] == 'manual':
+        return parts[1]
+    return None
 
 
 @platform_help_bp.route('/concepts')

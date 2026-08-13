@@ -600,9 +600,9 @@ CORE_MENUS = [
 
     # -- 說明 (platform_help) --
     {
-        'code': 'platform_help.system_admin',
-        'title': '系統管理員說明',
-        'title_i18n': {'en': 'System Administrator Guide'},
+        'code': 'platform_help.manual',
+        'title': '使用者手冊',
+        'title_i18n': {'en': 'User Manual'},
         'parent_code': 'platform_help',
         'link_type': 'route',
         'link_target': 'platform_help.index',
@@ -610,46 +610,7 @@ CORE_MENUS = [
         'depth': 1,
         'required_level': 0,
         'is_shared': False,
-        '_user_types_override': ['SYSTEM_ADMIN'],
-    },
-    {
-        'code': 'platform_help.org_admin',
-        'title': '企業管理員說明',
-        'title_i18n': {'en': 'Organization Admin Guide'},
-        'parent_code': 'platform_help',
-        'link_type': 'route',
-        'link_target': 'platform_help.index',
-        'display_order': 1,
-        'depth': 1,
-        'required_level': 30,
-        'is_shared': False,
-        '_user_types_override': ['ORG_ADMIN'],
-    },
-    {
-        'code': 'platform_help.employee',
-        'title': '企業成員說明',
-        'title_i18n': {'en': 'Employee Guide'},
-        'parent_code': 'platform_help',
-        'link_type': 'route',
-        'link_target': 'platform_help.index',
-        'display_order': 2,
-        'depth': 1,
-        'required_level': 2,
-        'is_shared': False,
-        '_user_types_override': ['EMPLOYEE'],
-    },
-    {
-        'code': 'platform_help.external',
-        'title': '外部廠商說明',
-        'title_i18n': {'en': 'External Vendor Guide'},
-        'parent_code': 'platform_help',
-        'link_type': 'route',
-        'link_target': 'platform_help.index',
-        'display_order': 3,
-        'depth': 1,
-        'required_level': 2,
-        'is_shared': False,
-        '_user_types_override': ['EXTERNAL'],
+        '_user_types_override': ['SYSTEM_ADMIN', 'ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL'],
     },
 ]
 
@@ -672,10 +633,8 @@ MENU_ROLE_DEFAULTS = {
     'personal_settings': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
     'form_workflow.center': ['ORG_ADMIN', 'EMPLOYEE'],
 
-    # 說明子選單（各 user_type 專屬）
-    'platform_help.org_admin': ['ORG_ADMIN'],
-    'platform_help.employee': ['EMPLOYEE'],
-    'platform_help.external': ['EXTERNAL_USERS'],
+    # 說明子選單（共用使用者手冊）
+    'platform_help.manual': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
 
     # 表單流程模組（ORG_ADMIN + FORM_DESIGNER + FLOW_DESIGNER）
     'form_workflow.categories': ['ORG_ADMIN', 'FORM_DESIGNER', 'FLOW_DESIGNER'],
