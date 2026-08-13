@@ -754,13 +754,14 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
 od-bridge / EDL enforcer / ClickHouse）的權威在
 `/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`，**不要在本 repo 複製一份**。
 
-留在本檔的是四個「唯一實作」，新增功能一律加在這裡，**不要各自重寫**：
+留在本檔的是五個「唯一實作」，新增功能一律加在這裡，**不要各自重寫**：
 
 | 檔案 | 管什麼 | 繞過的後果 |
 |---|---|---|
 | `modules/form_workflow/services/task_authorizer.py` | 簽核授權（快照 ∪ 當前角色 ∪ 生效中代理） | 判定點共 **12 處**，漏一處就出現「清單看得到但點不了」 |
 | `modules/open_defense/services/routing_service.py` | intake 事件 → form_template 的規則式路由 | intake 是對外 webhook，各自查表會讓路由行為分歧 |
 | `modules/open_defense/services/payload_profile_service.py` | 原生 payload 的路徑取值、扁平化、共同軸線正規化 | 各自攤平會讓 form_data 的 key 命名分歧，表單欄位對不上就整片空白 |
+| `modules/open_defense/services/protected_target_service.py` | 封鎖目標的保護清單判定（PF-83） | 各自比對網段會讓「不得封鎖」的邊界分歧，而錯誤方向是封掉自家設備 |
 | `wf-dnd-nodes.js::resolveNodeIconUrl()` | 流程設計器節點圖示 URL | 6 處曾各寫一份，導致所有從 DB 載入的 graph 節點全變空方框 |
 
 - **共同軸線 6 個 key 是相容性契約**：`severity_id` / `actor_ip` / `target_host` /
@@ -799,7 +800,29 @@ Suricata 架在 `.20` 這個流量出口上，外部訪客經反代進來時它�
 而且無人時段的自動處置沒有人會發現（2026-08-13 差 12 分鐘就真的發生）。
 小企業單人版的分流節點已內建這道排除（`od_workflow_graphs.py::PUBLIC_IP_REGEX`／
 `PRIVATE_IP_REGEX`），這類案件改走人工路徑而非忽略。
-**在 `od_defense_decisions` 寫入端加一道全域保護仍是待辦**（見 BBN 待辦 PF-83）。
+
+**服務層保護已於 2026-08-13 完成（PF-83），流程怎麼寫都繞不過去**：
+
+- `create_decision()` 是**唯一的 block 寫入點**——另外兩處直接 `OdDefenseDecision(...)`
+  （`api/admin/decisions.py` 人工撤銷、`expiry_service.py` TTL 到期）都硬編碼
+  `action='unblock'`，不必也不該加保護。**新增任何會寫 block 的路徑一律走
+  `create_decision()`**，別自己 new model
+- 只擋 `action='block'` 且 `target_type in (ip, ipv6, cidr)`；命中拋
+  `ProtectedTargetError`（繼承 `DecisionValidationError`，既有 catch 接得住）
+- 保護來源三層：程式內建網段（RFC1918／回送／link-local／CGNAT／群播／保留＋IPv6
+  ULA、link-local）∪ 設定（`OD_PROTECTED_EXTRA_NETWORKS` env ＋ `TRUSTED_PROXY_IPS`）
+  ∪ 企業自訂（`od_protected_targets`，管理頁 `/open-defense/protected-targets`）
+- **保護比對用 `overlaps`、豁免比對用 `subnet_of`，兩者不對稱是刻意的**：
+  前者用包含語意會漏掉封 `0.0.0.0/0`；後者用交集語意會讓「豁免一台內網主機」
+  變成「整個 `/0` 都能封」。改動這兩個判定前先看
+  `backend/tests/test_od_protected_targets.py`（含 mutation 驗證過的案例）
+- `::ffff:192.168.0.20` 會正規化成 IPv4 再比對，否則那是一條繞過路徑
+- **TEST-NET（`203.0.113.0/24` 等）刻意不納入內建清單**——端對端驗證拿它當
+  「公網攻擊者」，保護了會讓驗證失真
+- 正當的內網封鎖（例：內部被入侵主機要隔離）有兩條路：管理頁加一筆 `exempt`
+  項目，或流程節點設 `allow_protected_target: true`（後者會在
+  `decision_metadata.protected_override` 留稽核痕跡）。節點另有
+  `on_protected: 'error'|'skip'`，預設 `error`（流程停住等人處理）
 
 **`od_form_template_mappings` 是 `priority` 由大到小評估、命中即停**
 （`routing_service.py::evaluate_routing_rules`，`order_by(priority.desc(), id.asc())`）。

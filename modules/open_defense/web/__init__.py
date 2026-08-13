@@ -48,6 +48,13 @@ def event_routing():
     return render_template('modules/open_defense/event_routing.html', page_caps=caps)
 
 
+@web_bp.route('/protected-targets')
+@module_access_required('open_defense', False)
+def protected_targets():
+    caps = build_caps(['open_defense.admin'])
+    return render_template('modules/open_defense/protected_targets.html', page_caps=caps)
+
+
 @web_bp.route('/intake-keys')
 @module_access_required('open_defense', False)
 def intake_keys():

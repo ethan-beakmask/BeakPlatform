@@ -7,6 +7,7 @@ page:
   - /open-defense/service-accounts
   - /open-defense/security-cases
   - /open-defense/event-routing
+  - /open-defense/protected-targets
 description: |
   Open Defense 是 BeakPlatform 與外部 OSS 安全堆疊的整合模組。
   事件來源端(Suricata/Coraza/Falco/Vector 等)透過 HMAC webhook 推 OCSF 事件;
@@ -27,11 +28,13 @@ files:
     - modules/open_defense/api/security_cases.py    # 資安案件處置中心唯讀聚合 (清單/統計/決策關聯)
     - modules/open_defense/api/admin/routing_rules.py # CRUD routing rules + 試算
     - modules/open_defense/api/admin/payload_profiles.py # CRUD native payload profiles + 試算
+    - modules/open_defense/api/admin/protected_targets.py # CRUD protected targets + 試算
   service:
     - modules/open_defense/services/intake_service.py        # webhook 接收 + 啟流程
     - modules/open_defense/services/routing_service.py       # 事件規則式路由
     - modules/open_defense/services/payload_profile_service.py # 原生 payload 扁平化 + 軸線正規化
     - modules/open_defense/services/decision_service.py      # 決策 CRUD + 過期處理
+    - modules/open_defense/services/protected_target_service.py # PF-83 封鎖保護清單判定
     - modules/open_defense/services/intake_key_service.py    # HMAC key 管理
     - modules/open_defense/services/service_account_service.py
     - modules/open_defense/services/hmac_verifier.py         # 簽章驗證
@@ -42,6 +45,7 @@ files:
     - modules/open_defense/models/service_account.py         # OdServiceAccount
     - modules/open_defense/models/form_template_mapping.py   # OdFormTemplateMapping (規則式路由)
     - modules/open_defense/models/payload_profile.py         # OdPayloadProfile (原生 payload 來源格式)
+    - modules/open_defense/models/protected_target.py        # OdProtectedTarget (PF-83 封鎖保護清單)
   cron:
     - scripts/cron/od_canary_check.py       # 每小時 canary 事件到案檢查(來源 IP 203.0.113.1)
     - scripts/cron/od_expire_decisions.py   # 過期決策回收(TTL 到期改 expired)
@@ -54,6 +58,7 @@ files:
     - modules/open_defense/templates/modules/open_defense/event_routing.html
     - modules/open_defense/templates/modules/open_defense/_event_routing_rules.html
     - modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html
+    - modules/open_defense/templates/modules/open_defense/protected_targets.html
   js:
     - modules/open_defense/static/modules/open_defense/js/od-dashboard.js
     - modules/open_defense/static/modules/open_defense/js/od-decisions.js
@@ -61,6 +66,7 @@ files:
     - modules/open_defense/static/modules/open_defense/js/od-service-accounts.js
     - modules/open_defense/static/modules/open_defense/js/sc-cases.js
     - modules/open_defense/static/modules/open_defense/js/od-event-routing.js
+    - modules/open_defense/static/modules/open_defense/js/od-protected-targets.js
   css:
     - modules/open_defense/static/modules/open_defense/css/od-common.css
     - modules/open_defense/static/modules/open_defense/css/sc-cases.css
@@ -68,8 +74,11 @@ files:
     - scripts/migrations/<TS>_create_open_defense.sql
     - scripts/migrations/095_od_routing_rules.sql
     - scripts/migrations/096_od_payload_profiles.sql
+    - scripts/migrations/097_od_protected_targets.sql
+    - scripts/migrations/098_od_decision_writer_protected_config.sql
   test:
     - backend/tests/test_od_aggregation.py
+    - backend/tests/test_od_protected_targets.py
     - tests/e2e/od-pf79.spec.js
     - tests/e2e/helpers/login.js
     - tests/e2e/playwright.config.js
@@ -142,3 +151,12 @@ note: |
     扁平化進 form_data,共同軸線欄位維持 severity_id/actor_ip/target_host/
     source_system/finding_rule_id/occurred_at；routing rule 以 payload_kind 區隔
     ocsf/native/不限。
+  - 2026-08-13 PF-83 OpenDefense 封鎖決策新增服務層保護:
+    decision_service.create_decision() 在唯一寫入點檢查內建保護網段、設定來源
+    OD_PROTECTED_EXTRA_NETWORKS/TRUSTED_PROXY_IPS,以及自訂 OdProtectedTarget
+    protect/exempt；只攔截 action='block' 且 target_type in (ip, ipv6, cidr)。
+    命中時預設拒絕寫入,流程節點可用 allow_protected_target 明確覆寫並寫入稽核 metadata。
+  - 2026-08-13 PF-83 第二批新增 /open-defense/protected-targets 管理頁:
+    企業管理員可維護自訂 protect/exempt 清單、查看內建與設定來源保護網段,
+    並試算封鎖目標是否會被保護；DecisionWriter config_schema 同步補入
+    allow_protected_target / on_protected 供流程設計器屬性面板使用。

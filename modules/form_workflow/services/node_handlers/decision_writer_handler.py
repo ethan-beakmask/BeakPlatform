@@ -28,6 +28,11 @@ class DecisionWriterHandler(BaseNodeHandler):
         severity = self.get_config_value('severity') or None
         ttl_seconds = self.get_config_value('ttl_seconds')
         reason_template = self.get_config_value('reason_template', '') or ''
+        allow_protected_target = self._as_bool(
+            self.get_config_value('allow_protected_target', False)
+        )
+        on_protected = self.get_config_value('on_protected', 'error')
+        on_protected = 'skip' if on_protected == 'skip' else 'error'
 
         if not action:
             self.log_error('DecisionWriter 未設定 action')
@@ -79,7 +84,7 @@ class DecisionWriterHandler(BaseNodeHandler):
 
         try:
             from modules.open_defense.services.decision_service import (
-                create_decision, DecisionValidationError,
+                create_decision, DecisionValidationError, ProtectedTargetError,
             )
         except Exception as exc:
             self.log_error(f'載入 decision_service 失敗: {exc}')
@@ -100,8 +105,32 @@ class DecisionWriterHandler(BaseNodeHandler):
                 case_secure_code=self.queue_item.workflow_instance_secure_code,
                 workflow_node_id=self.queue_item.node_id,
                 intake_event_secure_code=self._lookup_source_event(),
+                allow_protected_target=allow_protected_target,
                 commit=True,
             )
+        except ProtectedTargetError as exc:
+            hit = getattr(exc, 'hit', None)
+            self.log_error(f'DecisionWriter 命中封鎖保護清單: {exc}', {
+                'action': action,
+                'target_type': target_type,
+                'target_value': target_value,
+                'hit_source': hit.source if hit else None,
+                'hit_network': hit.network if hit else None,
+            })
+            if on_protected == 'skip':
+                return {
+                    'status': 'success',
+                    'message': str(exc),
+                    'data': {
+                        'skipped': True,
+                        'action': action,
+                        'target_type': target_type,
+                        'target_value': target_value,
+                        'hit_source': hit.source if hit else None,
+                        'hit_network': hit.network if hit else None,
+                    },
+                }
+            return {'status': 'error', 'message': str(exc)}
         except DecisionValidationError as exc:
             self.log_error(f'DecisionWriter 驗證失敗: {exc}')
             return {'status': 'error', 'message': str(exc)}
@@ -136,6 +165,11 @@ class DecisionWriterHandler(BaseNodeHandler):
     # ------------------------------------------------------------------
     # 內部輔助
     # ------------------------------------------------------------------
+    def _as_bool(self, value) -> bool:
+        if isinstance(value, str):
+            return value.strip().lower() in ('true', '1', 'yes')
+        return bool(value)
+
     def _infer_decided_via(self) -> str:
         """
         推斷此決策的決策來源:

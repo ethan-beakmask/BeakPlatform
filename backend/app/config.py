@@ -28,6 +28,12 @@ class BaseConfig:
         if ip.strip()
     )
 
+    # PF-83: OpenDefense 封鎖決策的額外保護網段（逗號分隔 IP 或 CIDR）
+    OD_PROTECTED_EXTRA_NETWORKS = tuple(
+        item.strip() for item in os.getenv('OD_PROTECTED_EXTRA_NETWORKS', '').split(',')
+        if item.strip()
+    )
+
     # Database
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False

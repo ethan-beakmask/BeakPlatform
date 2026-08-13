@@ -21,12 +21,25 @@ from ..models import (
     VALID_DECIDED_VIA,
     VALID_SEVERITIES,
 )
+from .protected_target_service import (
+    CHECKED_ACTIONS,
+    CHECKED_TARGET_TYPES,
+    InvalidTargetValueError,
+    check_block_target,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class DecisionValidationError(ValueError):
     """決策參數驗證失敗"""
+
+
+class ProtectedTargetError(DecisionValidationError):
+    """目標命中封鎖保護清單，拒絕寫入"""
+    def __init__(self, message, hit=None):
+        super().__init__(message)
+        self.hit = hit
 
 
 def _validate(action: str, target_type: str, target_value: str,
@@ -62,6 +75,8 @@ def create_decision(
     intake_event_secure_code: Optional[str] = None,
     related_finding_ids: Optional[List[str]] = None,
     decision_metadata: Optional[Dict[str, Any]] = None,
+    allow_protected_target: bool = False,
+    protected_override_reason: Optional[str] = None,
     commit: bool = True,
 ) -> OdDefenseDecision:
     """
@@ -74,6 +89,49 @@ def create_decision(
         raise DecisionValidationError(_('org_secure_code 必填'))
 
     _validate(action, target_type, target_value, decided_via, severity)
+
+    protected_hit = None
+    if action in CHECKED_ACTIONS and target_type in CHECKED_TARGET_TYPES:
+        try:
+            protected_hit = check_block_target(
+                org_secure_code=org_secure_code,
+                action=action,
+                target_type=target_type,
+                target_value=target_value,
+            )
+        except InvalidTargetValueError:
+            raise DecisionValidationError(
+                _('target_value 不是合法的 IP 或 CIDR: %(v)s', v=target_value)
+            )
+
+        if protected_hit is not None and not allow_protected_target:
+            logger.warning(
+                'OpenDefense blocked a protected target org=%s action=%s target=%s/%s '
+                'hit_source=%s hit_network=%s case=%s node=%s',
+                org_secure_code, action, target_type, target_value,
+                protected_hit.source, protected_hit.network,
+                case_secure_code, workflow_node_id,
+            )
+            raise ProtectedTargetError(
+                _('目標 %(target)s 命中封鎖保護清單（%(network)s），已拒絕寫入封鎖決策。'
+                  '若確認要封鎖此位址，請由管理員在保護清單設定豁免項目，'
+                  '或在流程節點明確允許覆寫。',
+                  target=target_value, network=protected_hit.network),
+                hit=protected_hit,
+            )
+
+        if protected_hit is not None:
+            logger.warning(
+                'OpenDefense protected-target override org=%s target=%s hit=%s reason=%s',
+                org_secure_code, target_value, protected_hit.network, protected_override_reason,
+            )
+            decision_metadata = dict(decision_metadata or {})
+            decision_metadata['protected_override'] = {
+                'source': protected_hit.source,
+                'network': protected_hit.network,
+                'entry_secure_code': protected_hit.entry_secure_code,
+                'reason': protected_override_reason or None,
+            }
 
     if ttl_seconds is not None and ttl_seconds <= 0:
         raise DecisionValidationError(_('ttl_seconds 必須 > 0,或不傳'))

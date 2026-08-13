@@ -1,0 +1,199 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('封鎖保護清單 - OpenDefense') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/open_defense/css/od-common.css">
+{% endblock %}
+
+{% block content %}
+<div class="od-container" x-data="odProtectedTargets()" x-init="load()">
+    <div class="od-header">
+        <div>
+            <h1>{{ _('封鎖保護清單') }}</h1>
+            <p>{{ _('管理不得被寫成封鎖決策的位址與豁免項目') }}</p>
+        </div>
+        <button class="btn btn-secondary" @click="load()">{{ _('重新整理') }}</button>
+    </div>
+
+    <div class="od-section">
+        <div class="od-section-header">
+            <h2>{{ _('自訂保護清單') }}</h2>
+            {% if can('open_defense.admin') %}
+            <button class="btn btn-primary" @click="openTargetModal()">{{ _('新增項目') }}</button>
+            {% endif %}
+        </div>
+        <div x-show="loading.targets" class="od-empty">{{ _('載入中...') }}</div>
+        <div x-show="!loading.targets && error.targets" class="od-alert od-alert-error" x-text="error.targets"></div>
+        <div x-show="!loading.targets && !error.targets && sortedTargets().length === 0" class="od-empty">{{ _('尚無自訂項目') }}</div>
+        <table x-show="!loading.targets && !error.targets && sortedTargets().length > 0" class="od-table">
+            <thead>
+                <tr>
+                    <th>{{ _('類型') }}</th>
+                    <th>{{ _('目標') }}</th>
+                    <th>{{ _('名稱') }}</th>
+                    <th>{{ _('狀態') }}</th>
+                    <th>{{ _('備註') }}</th>
+                    <th>{{ _('建立時間') }}</th>
+                    <th>{{ _('操作') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="target in sortedTargets()" :key="target.secure_code">
+                    <tr>
+                        <td>
+                            <span class="od-badge" :class="target.entry_type === 'protect' ? 'od-badge-locked' : 'od-badge-active'"
+                                  x-text="entryTypeLabel(target.entry_type)"></span>
+                            <div class="od-muted" x-text="entryTypeHelp(target.entry_type)"></div>
+                        </td>
+                        <td><span class="od-mono" x-text="target.target_value"></span></td>
+                        <td x-text="target.name || '-'"></td>
+                        <td>
+                            <span class="od-badge" :class="target.is_active ? 'od-badge-active' : 'od-badge-inactive'"
+                                  x-text="target.is_active ? __('啟用') : __('停用')"></span>
+                        </td>
+                        <td x-text="target.note || '-'"></td>
+                        <td x-text="OD.formatTime(target.created_at)"></td>
+                        <td class="od-actions">
+                            {% if can('open_defense.admin') %}
+                            <button class="btn btn-sm btn-secondary" @click="openTargetModal(target)">{{ _('編輯') }}</button>
+                            <button class="btn btn-sm btn-danger" @click="deleteTarget(target)">{{ _('刪除') }}</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="od-section">
+        <div class="od-section-header">
+            <h2>{{ _('內建與設定來源（唯讀）') }}</h2>
+        </div>
+        <div class="od-section-body">
+            <p class="od-muted">{{ _('這些是程式內建與環境設定的保護網段，無法在此編輯；要允許封鎖其中某個位址，請新增「豁免」項目。') }}</p>
+            <div class="od-network-grid">
+                <div>
+                    <h3 class="od-subtitle">{{ _('內建保護網段') }}</h3>
+                    <table class="od-table">
+                        <thead>
+                            <tr>
+                                <th>{{ _('網段') }}</th>
+                                <th>{{ _('來源說明') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="net in builtinNetworks" :key="net.network + net.label">
+                                <tr>
+                                    <td><span class="od-mono" x-text="net.network"></span></td>
+                                    <td x-text="net.label"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <div>
+                    <h3 class="od-subtitle">{{ _('設定來源保護網段') }}</h3>
+                    <div x-show="configNetworks.length === 0" class="od-empty">{{ _('目前沒有設定來源網段') }}</div>
+                    <table x-show="configNetworks.length > 0" class="od-table">
+                        <thead>
+                            <tr>
+                                <th>{{ _('網段') }}</th>
+                                <th>{{ _('來源說明') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="net in configNetworks" :key="net.network + net.label">
+                                <tr>
+                                    <td><span class="od-mono" x-text="net.network"></span></td>
+                                    <td x-text="net.label"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="od-section">
+        <div class="od-section-header">
+            <h2>{{ _('保護試算') }}</h2>
+        </div>
+        <div class="od-section-body">
+            <div class="od-test-inline">
+                <div class="od-field">
+                    <label>{{ _('封鎖目標') }}</label>
+                    <input type="text" x-model="test.target_value" placeholder="192.168.0.20">
+                    <div class="od-field-hint">{{ _('輸入 IP 或 CIDR，試算寫成封鎖決策時是否會被保護。') }}</div>
+                </div>
+                <button class="btn btn-secondary" @click="runTest()">{{ _('試算') }}</button>
+            </div>
+            <div x-show="test.error" class="od-alert od-alert-error" x-text="test.error"></div>
+            <div x-show="test.result && !test.result.error && test.result.protected" class="od-alert od-alert-error">
+                <span>{{ _('會被保護') }}</span>
+                <span x-text="testHitText()"></span>
+            </div>
+            <div x-show="test.result && !test.result.error && !test.result.protected" class="od-alert od-alert-success">
+                {{ _('不受保護，可正常封鎖') }}
+            </div>
+            <div x-show="test.result && test.result.error === 'invalid_target'" class="od-alert od-alert-error">
+                {{ _('目標不是合法的 IP 或 CIDR') }}
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" x-show="targetModal.open" x-cloak>
+        <div class="modal-content od-modal-wide">
+            <div class="modal-header">
+                <h3 x-text="targetModal.mode === 'create' ? __('新增項目') : __('編輯項目')"></h3>
+                <button type="button" class="modal-close" @click="closeTargetModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div x-show="targetModal.error" class="od-alert od-alert-error" x-text="targetModal.error"></div>
+                <div class="od-form-grid">
+                    <div class="od-field">
+                        <label>{{ _('類型') }}</label>
+                        <select x-model="targetForm.entry_type">
+                            <option value="protect" :selected="'protect' === targetForm.entry_type">{{ _('保護（protect）') }}</option>
+                            <option value="exempt" :selected="'exempt' === targetForm.entry_type">{{ _('豁免（exempt）') }}</option>
+                        </select>
+                        <div class="od-field-hint" x-text="entryTypeHelp(targetForm.entry_type)"></div>
+                    </div>
+                    <div class="od-field">
+                        <label>{{ _('目標') }}</label>
+                        <input type="text" x-model="targetForm.target_value" placeholder="203.0.113.0/24">
+                    </div>
+                    <div class="od-field">
+                        <label>{{ _('名稱') }}</label>
+                        <input type="text" x-model="targetForm.name">
+                    </div>
+                    <div class="od-field">
+                        <label>{{ _('狀態') }}</label>
+                        <label class="od-check">
+                            <input type="checkbox" x-model="targetForm.is_active">
+                            <span>{{ _('啟用') }}</span>
+                        </label>
+                    </div>
+                    <div class="od-field od-form-span">
+                        <label>{{ _('備註') }}</label>
+                        <textarea x-model="targetForm.note"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @click="closeTargetModal()">{{ _('取消') }}</button>
+                {% if can('open_defense.admin') %}
+                <button class="btn btn-primary" @click="saveTarget()">{{ _('儲存') }}</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+window.__OD_API = window.__BP + '/api/open_defense/admin';
+</script>
+<script src="{{ app_prefix }}/static/modules/open_defense/js/od-common.js"></script>
+<script>window.__PAGE_CAPS = {{ page_caps | default({}) | tojson }};</script>
+<script src="{{ app_prefix }}/static/modules/open_defense/js/od-protected-targets.js"></script>
+{% endblock %}
