@@ -12,6 +12,15 @@ from ..services import doc_catalog_service, help_service
 platform_help_bp = Blueprint('platform_help', __name__)
 
 
+CONCEPTS_NAV_ID = '__concepts__'
+CONCEPTS_USER_TYPES = ('SYSTEM_ADMIN', 'ORG_ADMIN')
+
+
+def _can_read_concepts() -> bool:
+    """平台概念說明限管理員閱讀（左側目錄與路由共用同一個判定）"""
+    return str(current_user.user_type) in CONCEPTS_USER_TYPES
+
+
 @platform_help_bp.route('/')
 @login_required
 def index():
@@ -22,6 +31,7 @@ def index():
         chapters=chapters,
         current_doc_id=None,
         current_chapter_id=None,
+        show_concepts=_can_read_concepts(),
         open_map={chapter['chapter_id']: True for chapter in chapters},
     )
 
@@ -41,6 +51,7 @@ def manual_doc(doc_id: str):
         chapters=chapters,
         current_doc_id=doc['doc_id'],
         current_chapter_id=current_chapter_id,
+        show_concepts=_can_read_concepts(),
         open_map={
             chapter['chapter_id']: chapter['chapter_id'] == current_chapter_id
             for chapter in chapters
@@ -58,10 +69,18 @@ def _chapter_id_from_doc_id(doc_id: str) -> str | None:
 @platform_help_bp.route('/concepts')
 @login_required
 def concepts():
-    """顯示平台概念說明"""
-    if str(current_user.user_type) not in ('SYSTEM_ADMIN', 'ORG_ADMIN'):
+    """顯示平台概念說明（版面與手冊一致，左側掛同一份目錄）"""
+    if not _can_read_concepts():
         abort(404)
-    return render_template('pages/platform_help/org_admin.html')
+    chapters = doc_catalog_service.list_manual(current_user)
+    return render_template(
+        'pages/platform_help/org_admin.html',
+        chapters=chapters,
+        current_doc_id=CONCEPTS_NAV_ID,
+        current_chapter_id=None,
+        show_concepts=True,
+        open_map={chapter['chapter_id']: False for chapter in chapters},
+    )
 
 
 @platform_help_bp.route('/page/<menu_code>')

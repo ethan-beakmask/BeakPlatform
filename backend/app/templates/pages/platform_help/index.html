@@ -35,12 +35,6 @@
         {% else %}
         <p class="manual-empty">{{ _('目前沒有可閱讀的說明文件。') }}</p>
         {% endif %}
-
-        {% if current_user.user_type|string in ['SYSTEM_ADMIN', 'ORG_ADMIN'] %}
-        <footer class="manual-footer">
-            <a href="{{ url_for('platform_help.concepts') }}">{{ _('平台概念說明') }}</a>
-        </footer>
-        {% endif %}
     </section>
 </main>
 {% endblock %}

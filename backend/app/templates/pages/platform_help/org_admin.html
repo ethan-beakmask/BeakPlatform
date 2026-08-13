@@ -3,10 +3,17 @@
 {% block title %}{{ _('平台說明 - 企業管理員') }} - BeakPlatform{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/platform-manual.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/platform-help.css') }}">
 {% endblock %}
 
 {% block content %}
+<main class="manual-shell">
+<aside class="manual-shell__nav">
+    {% include 'pages/platform_help/_manual_nav.html' %}
+</aside>
+
+<section class="manual-shell__content">
 <div x-data="{ activeTab: 'overview' }">
 
 <h2>{{ _('平台說明 - 企業管理員') }}</h2>
@@ -461,4 +468,6 @@
 </div>
 
 </div>
+</section>
+</main>
 {% endblock %}

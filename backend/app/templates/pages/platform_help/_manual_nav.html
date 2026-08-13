@@ -24,4 +24,11 @@
         </ul>
     </div>
     {% endfor %}
+
+    {% if show_concepts %}
+    <div class="manual-nav__extra">
+        <a href="{{ url_for('platform_help.concepts') }}"
+           class="manual-nav__title {{ 'is-active' if current_doc_id == '__concepts__' else '' }}">{{ _('平台概念說明') }}</a>
+    </div>
+    {% endif %}
 </nav>
