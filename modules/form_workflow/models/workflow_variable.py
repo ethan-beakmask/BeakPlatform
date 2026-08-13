@@ -2,7 +2,7 @@
 FormWorkflow Module - Workflow Variable Model
 工作流變數模型
 
-Scope 定義 (見 docs/VARIABLE_SYSTEM_SPEC.md):
+Scope 定義 (見 dev-notes/VARIABLE_SYSTEM_SPEC.md):
 - TREE: 跨流程共享（整棵流程樹），隔離鍵 = root_instance_code
 - FLOW: 單一流程實例，隔離鍵 = workflow_instance_secure_code
 - NODE: 節點級，節點完成後自動清除

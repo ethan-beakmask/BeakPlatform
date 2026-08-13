@@ -1,5 +1,5 @@
 -- 078: 「API Key 管理」選單(系統安全群組下)
--- 規格: docs/API_KEY_TRIGGER_SPEC.md §4
+-- 規格: dev-notes/API_KEY_TRIGGER_SPEC.md §4
 -- 注意: 全新安裝時由 init_menus.py(menu_defaults.py)建立，此 migration 僅供升級使用
 
 INSERT INTO menu_items (

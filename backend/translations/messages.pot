@@ -10586,7 +10586,7 @@ msgstr ""
 #, python-brace-format
 msgid ""
 "簽章方式：HMAC-SHA256(secret, \"{timestamp}\\n{body}\")，headers：X-BP-Key-Id / "
-"X-BP-Timestamp / X-BP-Signature。詳見 docs/API_KEY_TRIGGER_SPEC.md。"
+"X-BP-Timestamp / X-BP-Signature。詳見 dev-notes/API_KEY_TRIGGER_SPEC.md。"
 msgstr ""
 
 #: app/templates/pages/security/_api_keys_modals.html:118

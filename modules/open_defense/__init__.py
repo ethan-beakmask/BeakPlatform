@@ -5,8 +5,8 @@ OpenDefense Module - 對外安全事件接收 + 決策廣播表
 經由表單流程處理後,將決策結果寫入 od_defense_decisions 表,
 供外部執行端(CrowdSec / nftables / Cloudflare 等)以 Service Account JWT 拉取後落地實施。
 
-對外整合契約: docs/integrations/open_defense_contract.md (v1.0)
-Manifest: docs/manifests/mod-open-defense.yaml
+對外整合契約: dev-notes/integrations/open_defense_contract.md (v1.0)
+Manifest: dev-notes/manifests/mod-open-defense.yaml
 """
 
 MODULE_INFO = {

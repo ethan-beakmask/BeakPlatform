@@ -2,7 +2,7 @@
 BeakMask ScheduleAdjustment Model
 排班調整 - 請假、加班、調班、取消班次
 
-參考：docs/knowledge/time-management-spec.md
+參考：dev-notes/knowledge/time-management-spec.md
 
 此 Model 預留給第三階段的請假單/加班單整合使用
 """

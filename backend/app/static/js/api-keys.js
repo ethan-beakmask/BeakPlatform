@@ -1,6 +1,6 @@
 /**
  * API Key 管理頁面 (/security/api-keys/)
- * 規格: docs/API_KEY_TRIGGER_SPEC.md §4
+ * 規格: dev-notes/API_KEY_TRIGGER_SPEC.md §4
  *
  * 依賴 window.__APIKEYS_CONFIG = { appPrefix }（模板橋接注入）
  */

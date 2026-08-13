@@ -50,7 +50,7 @@ def _help_dir() -> str:
     base = current_app.config.get('HELP_DOC_DIR')
     if base:
         return base
-    # backend/app -> ../../docs/help
+    # backend/app -> ../../dev-notes/help
     return os.path.normpath(os.path.join(
         current_app.root_path, '..', '..', 'docs', 'help'
     ))

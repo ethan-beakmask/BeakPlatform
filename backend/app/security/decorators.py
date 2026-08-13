@@ -330,8 +330,8 @@ def webhook_hmac_required(f):
     """
     HMAC 簽章驗證裝飾器(對外 webhook 入口用,P2 起改讀平台 ApiKey)。
 
-    對外契約: docs/integrations/open_defense_contract.md §3.1, §4.2
-    規格: docs/API_KEY_TRIGGER_SPEC.md(P2:OdIntakeKey 遷移平台 ApiKey)
+    對外契約: dev-notes/integrations/open_defense_contract.md §3.1, §4.2
+    規格: dev-notes/API_KEY_TRIGGER_SPEC.md(P2:OdIntakeKey 遷移平台 ApiKey)
 
     雙軌收頭(擇一,X-BP-* 優先):
       X-BP-Key-Id / X-BP-Timestamp / X-BP-Signature   (平台標準)
@@ -399,7 +399,7 @@ def api_key_hmac_required(f):
     """
     平台級 API Key HMAC 簽章驗證裝飾器(外部發動閘道用)。
 
-    規格: docs/API_KEY_TRIGGER_SPEC.md §2
+    規格: dev-notes/API_KEY_TRIGGER_SPEC.md §2
 
     必要 headers:
       X-BP-Key-Id     : api key 公開識別碼(ak_ 開頭)

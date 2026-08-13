@@ -1,0 +1,162 @@
+# Open Defense 模組
+# 對外接收 OCSF 安全事件,啟動表單流程,結果寫決策表供外部執行端拉取
+page:
+  - /open-defense/dashboard
+  - /open-defense/decisions
+  - /open-defense/intake-keys
+  - /open-defense/service-accounts
+  - /open-defense/security-cases
+  - /open-defense/event-routing
+  - /open-defense/protected-targets
+description: |
+  Open Defense 是 BeakPlatform 與外部 OSS 安全堆疊的整合模組。
+  事件來源端(Suricata/Coraza/Falco/Vector 等)透過 HMAC webhook 推 OCSF 事件;
+  決策結果寫入 od_defense_decisions 表,供決策執行端(CrowdSec bridge / nftables executor 等)
+  以 Service Account JWT 拉取後落地實施。
+
+  對外整合契約: dev-notes/integrations/open_defense_contract.md (v1.0)
+
+files:
+  module_root: modules/open_defense/
+  route:       modules/open_defense/web/
+  api:
+    - modules/open_defense/api/intake.py            # POST /api/open_defense/intake (HMAC webhook)
+    - modules/open_defense/api/intake_native.py     # POST /api/open_defense/intake/native (HMAC webhook)
+    - modules/open_defense/api/decisions.py         # GET/PATCH /api/open_defense/decisions
+    - modules/open_defense/api/intake_keys.py       # CRUD intake keys (內部用)
+    - modules/open_defense/api/service_accounts.py  # CRUD SA + POST sa/login
+    - modules/open_defense/api/security_cases.py    # 資安案件處置中心唯讀聚合 (清單/統計/決策關聯)
+    - modules/open_defense/api/admin/routing_rules.py # CRUD routing rules + 試算
+    - modules/open_defense/api/admin/payload_profiles.py # CRUD native payload profiles + 試算
+    - modules/open_defense/api/admin/protected_targets.py # CRUD protected targets + 試算
+  service:
+    - modules/open_defense/services/intake_service.py        # webhook 接收 + 啟流程
+    - modules/open_defense/services/routing_service.py       # 事件規則式路由
+    - modules/open_defense/services/payload_profile_service.py # 原生 payload 扁平化 + 軸線正規化
+    - modules/open_defense/services/decision_service.py      # 決策 CRUD + 過期處理
+    - modules/open_defense/services/protected_target_service.py # PF-83 封鎖保護清單判定
+    - modules/open_defense/services/intake_key_service.py    # HMAC key 管理
+    - modules/open_defense/services/service_account_service.py
+    - modules/open_defense/services/hmac_verifier.py         # 簽章驗證
+  model:
+    - modules/open_defense/models/intake_key.py              # OdIntakeKey
+    - modules/open_defense/models/intake_event.py            # OdIntakeEvent (冪等記錄)
+    - modules/open_defense/models/defense_decision.py        # OdDefenseDecision
+    - modules/open_defense/models/service_account.py         # OdServiceAccount
+    - modules/open_defense/models/form_template_mapping.py   # OdFormTemplateMapping (規則式路由)
+    - modules/open_defense/models/payload_profile.py         # OdPayloadProfile (原生 payload 來源格式)
+    - modules/open_defense/models/protected_target.py        # OdProtectedTarget (PF-83 封鎖保護清單)
+  cron:
+    - scripts/cron/od_canary_check.py       # 每小時 canary 事件到案檢查(來源 IP 203.0.113.1)
+    - scripts/cron/od_expire_decisions.py   # 過期決策回收(TTL 到期改 expired)
+  template:
+    - modules/open_defense/templates/modules/open_defense/dashboard.html
+    - modules/open_defense/templates/modules/open_defense/decisions.html
+    - modules/open_defense/templates/modules/open_defense/intake_keys.html
+    - modules/open_defense/templates/modules/open_defense/service_accounts.html
+    - modules/open_defense/templates/modules/open_defense/security_cases.html
+    - modules/open_defense/templates/modules/open_defense/event_routing.html
+    - modules/open_defense/templates/modules/open_defense/_event_routing_rules.html
+    - modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html
+    - modules/open_defense/templates/modules/open_defense/protected_targets.html
+  js:
+    - modules/open_defense/static/modules/open_defense/js/od-dashboard.js
+    - modules/open_defense/static/modules/open_defense/js/od-decisions.js
+    - modules/open_defense/static/modules/open_defense/js/od-intake-keys.js
+    - modules/open_defense/static/modules/open_defense/js/od-service-accounts.js
+    - modules/open_defense/static/modules/open_defense/js/sc-cases.js
+    - modules/open_defense/static/modules/open_defense/js/od-event-routing.js
+    - modules/open_defense/static/modules/open_defense/js/od-protected-targets.js
+  css:
+    - modules/open_defense/static/modules/open_defense/css/od-common.css
+    - modules/open_defense/static/modules/open_defense/css/sc-cases.css
+  migration:
+    - scripts/migrations/<TS>_create_open_defense.sql
+    - scripts/migrations/095_od_routing_rules.sql
+    - scripts/migrations/096_od_payload_profiles.sql
+    - scripts/migrations/097_od_protected_targets.sql
+    - scripts/migrations/098_od_decision_writer_protected_config.sql
+  test:
+    - backend/tests/test_od_aggregation.py
+    - backend/tests/test_od_protected_targets.py
+    - tests/e2e/od-pf79.spec.js
+    - tests/e2e/helpers/login.js
+    - tests/e2e/playwright.config.js
+    - tests/e2e/README.md
+    - scripts/run_e2e.sh
+
+# 此模組會延伸的安全核心檔案(需小幅修改,但不改變既有行為)
+security_core_touch:
+  - backend/app/security/decorators.py         # 新增 @webhook_hmac_required, @service_account_required
+  - backend/app/security/rate_limiter.py       # 新增自訂 key_func helper(per key_id / per sa_id)
+  - backend/app/security/auth_interceptor.py   # 白名單加入 /api/open_defense/intake, /api/open_defense/sa/login
+  # 變動須先取得用戶同意,且每個 PR 均需額外人工 review
+
+# 此模組依賴的既有功能
+depends_on:
+  - mod-form-workflow.yaml          # 啟動 workflow instance + decision_writer node handler
+  - security-core.yaml              # ResourceGateway, decorators, limiter
+  - backend/app/crypto/             # HMAC secret + SA secret 加密儲存(沿用 Org Key 架構)
+
+# Workflow 整合
+workflow_integration:
+  new_node_type: decision_writer
+  handler_path: modules/form_workflow/services/node_handlers/decision_writer_handler.py
+  factory_register: modules/form_workflow/services/node_handlers/factory.py
+  db_seed: workflow_node_definitions 需加入 decision_writer 一筆(透過 migration 或 seed script)
+
+note: |
+  - 對外契約凍結於 dev-notes/integrations/open_defense_contract.md v1.0,內部實作不得擅自偏離。
+  - P2(2026-07-08):OdIntakeKey 已由 migration 079 遷移至平台 ApiKey(api_keys 表,
+    scopes.od_intake)。intake 認證走 @webhook_hmac_required -> 平台 ApiKey,
+    雙軌收頭 X-BP-*(優先)/X-OD-*(deprecated)。od_intake_keys 表與
+    /open-defense/intake-keys 頁為唯讀遺留,保留一個版本週期後刪除。
+    金鑰管理改在 /security/api-keys/(security-center.yaml)。
+  - sa_secret 一律加密存 DB,沿用 crypto/key_manager 的 Org Key 架構,
+    但金鑰用途為 HMAC/SA 驗證,**不得**與檔案加密金鑰共用同一 DEK。
+  - od_defense_decisions 表的 status 流轉受限,執行端只能寫 picked_up/applied/partial/failed。
+    expired/revoked 由 BeakPlatform 排程獨佔。
+  - decision_writer node handler 寫表時必須帶 org_secure_code(從 form_instance 取),
+    避免跨租戶決策汙染。
+  - 2026-07-16 intake 聚合降噪 + 情報 enrichment(原子 4844):
+    同 攻擊者IP+rule_id 60 分鐘窗內合併進既有案件(RUNNING 案必合併,
+    severity<=2 連已結案也合併純計數),severity 取 max、od_event_count 累加、
+    risk_score 重算。新案 form_data 帶 enrichment 欄位(od_repeat_count/
+    od_history_block_count/risk_score/recommended_action 等,規則式計分)。
+    detection_finding 已改綁「資安事件處置」表單(SEC_INCIDENT_RESPONSE)+
+    「資安事件處置流程」(severity 三段分流 -> SOC_L1 簽核 -> 封鎖/放行/派工/誤判
+    -> DecisionWriter -> AlertBroadcast)。其餘三個 event_class 暫維持舊綁定。
+  - 2026-07-16 資安案件處置中心(原子 4845):/open-defense/security-cases,
+    SOC 值班介面(統計帶/嚴重度清單/SLA 倒數/1-click 處置)。完全共用 form_workflow
+    引擎--簽核走既有 /api/form-center/pending-tasks lock/approve,本模組只加唯讀
+    聚合 API(security_cases.py)。資安分類隔離:fw_categories secure_code 前綴
+    CAT_SECURITY_(常數在 modules/form_workflow/services/security_center.py),
+    一般表單中心(fc_available/fc_pending/fc_my_forms)已排除此前綴。
+    清單 API 的 form_data 衍生欄位有過 egress list 語境(fw_form:<模板SC>)。
+  - 2026-07-16 模組預設角色(原子 4852):MODULE_INFO 宣告 default_roles
+    (SECURITY_STAFF/資安人員) + default_menu_role_requirements
+    (security_cases Key2)。採購本模組的企業自動獲得該角色(合約 hook +
+    flask module sync 補種,碰撞跳過)。beluga 原自訂 SOC_L1 已由 migration 082
+    收編為 SECURITY_STAFF。企業自行分工設計見 docs/guides/SOC_ROLE_DESIGN_GUIDE.md,
+    機制實作在 backend/app/services/module_role_service.py。
+  - 2026-08-09 資安案件處置中心 can_act 改走
+    modules.form_workflow.services.task_authorizer.can_act_on_task，支援 ROLE 當前角色
+    即時比對；原本 assignees 快照為空即全員可操作的 fail-open 行為同步收緊為
+    fail-closed。
+  - 2026-08-09 OpenDefense intake form_template 選取改為規則式路由:
+    od_form_template_mappings 支援 priority、event_class 可空、match_rules JSONB
+    條件與 is_active；既有 event_class 對照資料保留為 priority=0、match_rules=NULL。
+  - 2026-08-10 OpenDefense 新增 native payload intake:
+    /api/open_defense/intake/native 以 OdPayloadProfile 指定來源格式,原始 payload
+    扁平化進 form_data,共同軸線欄位維持 severity_id/actor_ip/target_host/
+    source_system/finding_rule_id/occurred_at；routing rule 以 payload_kind 區隔
+    ocsf/native/不限。
+  - 2026-08-13 PF-83 OpenDefense 封鎖決策新增服務層保護:
+    decision_service.create_decision() 在唯一寫入點檢查內建保護網段、設定來源
+    OD_PROTECTED_EXTRA_NETWORKS/TRUSTED_PROXY_IPS,以及自訂 OdProtectedTarget
+    protect/exempt；只攔截 action='block' 且 target_type in (ip, ipv6, cidr)。
+    命中時預設拒絕寫入,流程節點可用 allow_protected_target 明確覆寫並寫入稽核 metadata。
+  - 2026-08-13 PF-83 第二批新增 /open-defense/protected-targets 管理頁:
+    企業管理員可維護自訂 protect/exempt 清單、查看內建與設定來源保護網段,
+    並試算封鎖目標是否會被保護；DecisionWriter config_schema 同步補入
+    allow_protected_target / on_protected 供流程設計器屬性面板使用。

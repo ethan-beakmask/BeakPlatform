@@ -5,7 +5,7 @@ FormWorkflow Module - External Trigger API(外部發動閘道)
   POST /api/trigger/form    送出表單並啟動流程
   GET  /api/trigger/forms   列出該 key scope 內可發動的表單
 
-規格: docs/API_KEY_TRIGGER_SPEC.md §3
+規格: dev-notes/API_KEY_TRIGGER_SPEC.md §3
 scope 解釋(本模組負責):
   scopes.form_category : FwCategory SC 清單,父分類自動含子分類
   scopes.form          : published SC 直綁(例外用法)

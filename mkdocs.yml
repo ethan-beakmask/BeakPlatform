@@ -1,0 +1,92 @@
+# BeakPlatform 使用者文件 -- MkDocs 設定
+#
+# 產出對象是「最終使用者」（企業管理員、資安人員、一般員工），不是開發者。
+# 內部開發筆記在 dev-notes/，不在這裡，也不會被 build 進站台。
+#
+# 建置：venv-docs/bin/mkdocs build      （產出 site/，純靜態，可離線開）
+# 預覽：venv-docs/bin/mkdocs serve -a 192.168.0.16:8899
+# 撰寫規格：dev-notes/DOCS_AUTHORING_SPEC.md（動筆前先讀）
+#
+# 封閉網路要求：build 產出不得有任何外部請求。改設定後務必用
+#   grep -rE 'https?://(unpkg|cdn|fonts)' site/ --include='*.html'
+# 確認，theme.font 一旦沒設 false，Material 會去抓 Google Fonts。
+
+site_name: BeakPlatform 使用手冊
+site_description: 多租戶權限管理平台 -- 最終使用者文件
+docs_dir: docs
+site_dir: site
+use_directory_urls: false   # 產出 xxx.html，file:// 可直接開（離線包用）
+
+theme:
+  name: material
+  language: zh-TW
+  font: false               # 關閉 Google Fonts，封閉網路必要，不要拿掉
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: 切換深色
+    - scheme: slate
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: 切換淺色
+
+# docs/help/ 是站內 help 的資料來源（help_service.py 讀取），
+# 內文包在 YAML 的 sections[].body 裡，MkDocs 直接渲染會是一片空白，
+# 因此排除。兩個出口共用同一批檔的整併方式見撰寫規格。
+exclude_docs: |
+  help/
+
+nav:
+  - 開始使用: index.md
+  - 作業流程:
+      - 資安事件處置流程: guides/OD_WORKFLOW_VARIANTS.md
+      - 資安團隊角色設計: guides/SOC_ROLE_DESIGN_GUIDE.md
+
+plugins:
+  - search:
+      lang: [ja]            # lunr 沒有 zh 分詞器，ja 的 bigram 對中文檢索堪用
+
+markdown_extensions:
+  - admonition              # !!! warning "前置條件"
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details        # ??? 可摺疊區塊
+  - pymdownx.tabbed:
+      alternate_style: true # 同頁切換不同作業模式
+  - pymdownx.superfences:
+      custom_fences:
+        # class 刻意不叫 mermaid：Material 內建的 mermaid 支援會從 unpkg CDN
+        # 動態 import，封閉網路不能用。改名後由 docs/javascripts/mermaid-init.js
+        # 以本地 docs/assets/mermaid.min.js 全權接手。
+        - name: mermaid
+          class: mermaid-diagram
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+hooks:
+  - scripts/mkdocs_hooks/doc_relations.py
+
+extra_javascript:
+  - assets/mermaid.min.js
+  - javascripts/mermaid-init.js

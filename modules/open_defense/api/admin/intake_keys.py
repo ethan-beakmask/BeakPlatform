@@ -2,7 +2,7 @@
 
 OdIntakeKey 已由 migration 079 遷移至平台 ApiKey(scopes.od_intake),
 金鑰的建立/暫停/撤銷改在 /security/api-keys/ 管理。
-本表保留唯讀一個版本週期後刪除(規格: docs/API_KEY_TRIGGER_SPEC.md P2)。
+本表保留唯讀一個版本週期後刪除(規格: dev-notes/API_KEY_TRIGGER_SPEC.md P2)。
 """
 from flask import jsonify
 from flask_babel import gettext as _

@@ -5,7 +5,7 @@ FormWorkflow Module - Form Submit Service
 供表單中心 Submit API(fc_fill.py)與外部發動閘道(external_trigger.py)共用,
 避免兩處各自維護造成漂移。
 
-規格: docs/API_KEY_TRIGGER_SPEC.md §3
+規格: dev-notes/API_KEY_TRIGGER_SPEC.md §3
 """
 import secrets
 import logging

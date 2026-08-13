@@ -1,0 +1,103 @@
+# 無程式碼建構模組
+# 頁面設計器、查詢表管理、子系統設定
+page:
+  - /nocode/workspace
+  - /nocode/ir-designer
+  - /nocode/lookup-manager
+  - /nocode/sub-system-config
+description: 無程式碼建構模組（頁面設計器、查詢表管理、子系統設定、存取矩陣）
+
+files:
+  module_root: modules/nocode_builder/
+  template:    modules/nocode_builder/templates/modules/nocode_builder/
+  js:
+    - modules/nocode_builder/static/modules/nocode_builder/js/page-context.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/datalist-widget.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/grid-layout-editor.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/lookup-manager.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/sitemenu-widget.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/sub-system-config.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/shared-component.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/ir-designer.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/workspace.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/workspace-org.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/workspace-perms.js  # PF-8 權限矩陣分頁
+    - modules/nocode_builder/static/modules/nocode_builder/js/workspace-tables.js
+  templates:
+    # 設計器模板 2026-08-04 拆分，屬性面板一律改 _ir_designer_props.html（body 只剩外殼）
+    - modules/nocode_builder/templates/modules/nocode_builder/ir_designer.html
+    - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html      # 外殼 + 頂部工具列（預覽身分）
+    - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html     # 全部 widget 屬性面板
+    - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_layout.html    # 版面編輯區
+    - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_issue_modal.html
+    - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_save_template.html
+    - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_access_matrix.html  # 元件准入 macro render()
+    - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_shared_component.html  # 共用元件區塊 macro
+    - modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html  # PF-8 權限矩陣分頁
+    - modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_menu.html  # PF-8 menu widget 屬性面板
+  models:
+    - modules/nocode_builder/models/permission_policy.py
+    - modules/nocode_builder/models/shared_component.py
+  web:
+    - modules/nocode_builder/web/portal_public.py
+    - modules/nocode_builder/web/__init__.py          # workspace / ir_designer / preview 路由
+  services:
+    - modules/nocode_builder/services/permission_policy_service.py
+    - modules/nocode_builder/services/data_source_manager.py
+    - modules/nocode_builder/services/master_detail_service.py
+    - modules/nocode_builder/services/sqlite_crud_service.py
+    - modules/nocode_builder/services/portal_path_service.py
+    - modules/nocode_builder/services/portal_access_service.py   # 三層判定核心
+    - modules/nocode_builder/services/portal_permission_service.py # PF-7 權限碼有效權限計算（唯一實作）
+    - modules/nocode_builder/services/pageir_portal_resources.py # portal L2 resolver
+    - modules/nocode_builder/services/pageir_portal_menu.py     # PF-8 menu widget 的 portal provider
+    - modules/nocode_builder/services/pageir_shared_component.py # portal 共用元件 resolver
+    - modules/nocode_builder/services/pageir_formflow_resources.py # formflow portal submissions resolver
+    - modules/nocode_builder/services/pageir_mapping_usage.py    # form workflow mapping 引用查詢
+    - modules/nocode_builder/services/portal_file_service.py  # PF-44 portal_files / portal_file_acl 存取
+  css:
+    - modules/nocode_builder/static/modules/nocode_builder/css/nocode-builder.css
+    - modules/nocode_builder/static/modules/nocode_builder/css/studio.css
+    - modules/nocode_builder/static/modules/nocode_builder/css/datalist-widget.css
+    - modules/nocode_builder/static/modules/nocode_builder/css/sitemenu-widget.css
+    - modules/nocode_builder/static/modules/nocode_builder/css/workspace.css
+    - modules/nocode_builder/static/modules/nocode_builder/css/ir-designer.css
+  vendor_deps:
+    - backend/app/static/vendor/gridstack/            # 柵欄佈局
+    - backend/app/static/vendor/beak-trellis/         # 樹狀元件
+    - backend/app/static/vendor/wunderbaum/           # 高效樹
+
+  api:
+    - modules/nocode_builder/api/sub_system_api.py    # 子系統/資料來源/建表/resolve-view
+    - modules/nocode_builder/api/site_map_api.py
+    - modules/nocode_builder/api/portal_org_api.py
+    - modules/nocode_builder/api/portal_permission_api.py  # PF-8 權限碼/角色管理 API
+    - modules/nocode_builder/api/portal_file_api.py  # PF-44 portal 檔案（平台側）
+    - modules/nocode_builder/api/shared_component_api.py
+  platform_deps:
+    - backend/app/pageir/masking.py                   # 欄位視覺遮罩（server 端唯一實作）
+    - backend/app/pageir/renderer.py
+    - backend/app/pageir/schema_v3.json
+    - backend/app/services/nocode_service_account.py  # portal 送件公用帳號
+  migrations:
+    - scripts/migrations/089_portal_row_owner_scope.sql
+    - scripts/migrations/094_shared_components.sql
+    - scripts/add_portal_user_ref.py  # 089 的 SQLite 部分（既有業務表補 portal_user_ref，冪等）
+  tests:
+    - backend/tests/test_e2e_portal_cancel.py
+    - backend/tests/test_platform_fixed_filters.py
+    - backend/tests/test_portal_row_owner_scope.py
+    - backend/tests/test_portal_permission_pf7.py  # PF-7 權限碼模型 + access_matrix 新舊並存
+    - backend/tests/test_portal_permission_admin_pf8.py  # PF-8 權限碼/角色管理服務
+    - backend/tests/test_pageir_menu_pf8.py  # PF-8 menu widget（schema/renderer/portal provider/folder）
+    - backend/tests/test_pageir_shared_menu.py
+    - backend/tests/test_portal_file_stage_a.py
+
+note: |
+  准入控制使用 grant-based permission 模式（部門/社群/個人多重選擇）。
+  模式規範見 dev-notes/GRANT_PERMISSION_PATTERN.md。
+  工作區四個 tab：頁面設計 / 帳號權限 / 權限矩陣 / 資料表（建表限 portal_data，掛 nocode_builder.manage）。
+  「權限矩陣」tab（PF-8）走權限碼制：權限碼管理、表1 網頁×權限碼、表2 等級／角色×權限碼、
+  帳號×角色與個人 allow/deny 覆寫、三個權限模板套用。
+  准入規則只認權限碼制（PF-13 起），舊的 groups+min_level 形式已完全移除。
+  IR 設計器可設定四個 action 的元件准入與欄位遮罩；預覽支援 ?sub=&group=&level= 模擬 portal 身分。

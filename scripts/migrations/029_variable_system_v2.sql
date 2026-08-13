@@ -1,6 +1,6 @@
 -- Migration 029: Variable System v2
 -- 變數系統改版：GLOBAL→FLOW, LOCAL→NODE, 新增 TREE scope + root_instance_code 欄位
--- 規格文件: docs/VARIABLE_SYSTEM_SPEC.md
+-- 規格文件: dev-notes/VARIABLE_SYSTEM_SPEC.md
 
 BEGIN;
 

@@ -47,7 +47,7 @@ def widget_setting(widget: dict) -> dict:
     """回傳 file_box 設定，型別不符一律回退預設值。
 
     設定值**直接掛在 widget 物件上**（`{"type": "file_box", "upload_by": ...}`），
-    沒有 `settings` 子物件——見 docs/PORTAL_FILE_WIDGET_SPEC.md §6 的 IR 定義。
+    沒有 `settings` 子物件——見 dev-notes/PORTAL_FILE_WIDGET_SPEC.md §6 的 IR 定義。
     """
     raw = widget if isinstance(widget, dict) else {}
 

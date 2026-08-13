@@ -1,6 +1,6 @@
 -- 073: OpenDefense 模組建表
 -- 建立日期: 2026-05-09
--- 對外契約: docs/integrations/open_defense_contract.md (v1.0)
+-- 對外契約: dev-notes/integrations/open_defense_contract.md (v1.0)
 --
 -- 5 張表:
 --   od_intake_keys              事件接收金鑰(HMAC,Org Key 加密儲存)

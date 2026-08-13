@@ -1,3 +1,14 @@
+---
+title: 資安團隊角色設計
+audience: ORG_ADMIN
+requires: [guides/OD_WORKFLOW_VARIANTS]
+produces: [資安角色配置]
+covers:
+  - backend/app/api/roles.py
+  - backend/app/models/menu_role_requirement.py
+  - backend/app/services/module_role_service.py
+---
+
 # 資安團隊角色設計建議（開放防禦模組）
 
 > 對象：企業管理員（ORG_ADMIN）

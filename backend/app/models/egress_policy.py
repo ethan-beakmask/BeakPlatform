@@ -2,7 +2,7 @@
 Egress Policy Models
 資料出口政策：欄位能見度、計量閾值、出口稽核
 
-規格：docs/EGRESS_POLICY_SPEC.md
+規格：dev-notes/EGRESS_POLICY_SPEC.md
 """
 from sqlalchemy import Column, String, Integer, Boolean, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB

@@ -370,8 +370,9 @@ class DirectoryAnalyzer:
         'backend/app/templates': 'Jinja2 模板',
         'backend/tests': '測試檔案',
         'scripts': '輔助腳本',
-        'docs': '專案文件',
-        'docs/knowledge': '知識庫 (經驗累積)',
+        'docs': '使用者文件 (公開，MkDocs 來源)',
+        'dev-notes': '內部開發筆記 (不公開)',
+        'dev-notes/knowledge': '知識庫 (經驗累積)',
         '.semgrep': '安全掃描規則',
     }
 

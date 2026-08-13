@@ -16,7 +16,10 @@ TEMP_BRANCH="_github_filtered"
 # === 排除清單 ===
 # 完整目錄
 EXCLUDE_DIRS=(
-    "docs"
+    # 內部開發筆記（handoff、規格、踩坑紀錄、manifest）。
+    # 對外的使用者文件在 docs/，不在這裡，會照常推上 GitHub。
+    # 兩個目錄的分界規則見 CLAUDE.md「文件目錄：docs/ 與 dev-notes/」。
+    "dev-notes"
     "tools"
     "devtools"
     ".forgejo"

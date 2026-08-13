@@ -1,7 +1,7 @@
 """
 Platform HMAC Verifier (Pure Functions)
 
-平台級 API Key 簽章驗證(規格: docs/API_KEY_TRIGGER_SPEC.md §2):
+平台級 API Key 簽章驗證(規格: dev-notes/API_KEY_TRIGGER_SPEC.md §2):
     canonical_string = f"{timestamp}\n{body_raw}"
     signature = hex(HMAC-SHA256(secret, canonical_string))
     header X-BP-Signature: "sha256=" + signature

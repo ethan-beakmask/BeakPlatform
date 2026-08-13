@@ -1,10 +1,17 @@
+---
+title: 資安事件處置流程
+audience: ORG_ADMIN
+produces: [封鎖決策紀錄, 案件處置紀錄, 封鎖保護清單]
+covers:
+  - modules/open_defense/**
+  - modules/form_workflow/services/node_handlers/decision_writer_handler.py
+  - scripts/examples/*od_workflow*.py
+---
+
 # 資安事件處置流程使用指南（三個編制版本）
 
 > 對象：導入開放防禦模組的組織、負責設定處置流程的管理員
-> 相關：`docs/guides/SOC_ROLE_DESIGN_GUIDE.md`（角色怎麼設計）、
-> `docs/OPEN_DEFENSE_ARCHITECTURE.md`（平台側架構）
->
-> 本文件預定作為未來線上說明系統的素材來源之一。
+> 相關：[資安團隊角色設計](SOC_ROLE_DESIGN_GUIDE.md)（角色怎麼設計）
 
 ## 先問一個問題：你的組織有沒有人在看？
 
@@ -188,10 +195,10 @@ flowchart LR
 **偵測器通常架在流量出口的那台主機上，而外部訪客經反向代理進來時，
 偵測器看到的來源會是代理自己的內網位址。**
 
-這不是理論風險。本專案開發環境近 200 筆真實 Suricata 告警裡，有 25 筆的
-來源位址是 `192.168.0.20`——那正是平台自己 Cloudflare 路徑上的 nginx。
-如果沒有排除規則，小企業版的自動封鎖會反覆把自家基礎設施加進封鎖清單，
-而且因為是無人時段的自動處置，**沒有人會發現**。
+這不是理論風險。實測環境近 200 筆真實 Suricata 告警裡，超過一成的來源位址
+指向反向代理自己，而不是外部訪客。如果沒有排除規則，小企業版的自動封鎖
+會反覆把自家基礎設施加進封鎖清單，而且因為是無人時段的自動處置，
+**沒有人會發現**。
 
 分流節點因此在「可自動封鎖」的條件裡要求來源位址不落在下列範圍：
 
@@ -236,6 +243,11 @@ flowchart LR
 節點另有 `on_protected` 設定，決定命中保護清單時該停還是該跳過：預設是**停**
 （節點回報錯誤、流程停在那裡等人處理），設成 `skip` 則是不寫決策但讓流程繼續走
 （適合後面還接通知節點的設計）。
+
+> **注意**：上述兩個節點設定目前**還不能在流程設計器的畫面上點選**——
+> 防禦決策節點尚未有屬性面板，設定值要改流程的 graph JSON
+> （建置腳本 `scripts/examples/od_workflow_graphs.py`，或流程 API）。
+> 日常情境用「豁免」項目就夠了，那個在畫面上可以直接維護。
 
 同一頁面提供**保護試算**：輸入一個位址就能知道它會不會被擋、被哪一條擋，
 不需要真的送一筆事件進來試。
@@ -336,7 +348,7 @@ priority 100  (無條件，catch-all)                  -> SEC_IR_SOLO
 ## 附錄：建置指令
 
 ```bash
-cd /opt/BeakPlatform-dev
+cd <平台安裝目錄>
 set -a && source .env && set +a
 venv/bin/python scripts/examples/provision_od_workflow_variants.py --org <企業sc> --apply
 ```

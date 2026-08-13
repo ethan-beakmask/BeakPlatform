@@ -1,7 +1,7 @@
 """
 OpenDefense Module - API Routes
 
-由 module_loader 自動掛載。對外契約: docs/integrations/open_defense_contract.md
+由 module_loader 自動掛載。對外契約: dev-notes/integrations/open_defense_contract.md
 """
 from flask import Blueprint
 

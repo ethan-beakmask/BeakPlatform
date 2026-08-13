@@ -49,7 +49,7 @@ def key_func_from_api_key() -> str:
 
 def auth_failure_limit_kwargs() -> dict:
     """
-    認證失敗限流(B-1 修復,規格: docs/API_KEY_TRIGGER_SPEC.md §5)。
+    認證失敗限流(B-1 修復,規格: dev-notes/API_KEY_TRIGGER_SPEC.md §5)。
 
     per-key 限流的 bucket 取自未驗證的 header,攻擊者輪替假 key_id 可各自取得
     獨立額度。此限流以來源 IP 為軸、僅對 401 回應扣次:

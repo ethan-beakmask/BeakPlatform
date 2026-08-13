@@ -2,7 +2,7 @@
 BeakPlatform API Key Management API
 
 企業級 API Key 管理(/security/api-keys 頁面後端)。
-規格: docs/API_KEY_TRIGGER_SPEC.md §4
+規格: dev-notes/API_KEY_TRIGGER_SPEC.md §4
 
 安全設計:
 - 所有端點 @admin_required,強制以 current_user.org_secure_code 為租戶軸

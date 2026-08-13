@@ -3,7 +3,7 @@ FormWorkflow Module - Base Node Handler
 節點處理器基礎類別
 
 定義所有節點處理器的標準介面。
-變數系統 v2: 前綴制 (f./fi./v./wi./n./t.)，見 docs/VARIABLE_SYSTEM_SPEC.md
+變數系統 v2: 前綴制 (f./fi./v./wi./n./t.)，見 dev-notes/VARIABLE_SYSTEM_SPEC.md
 """
 import logging
 import os
@@ -344,7 +344,7 @@ class BaseNodeHandler(ABC):
         """
         通用變數替換方法 (v2)
 
-        前綴制語法 (見 docs/VARIABLE_SYSTEM_SPEC.md):
+        前綴制語法 (見 dev-notes/VARIABLE_SYSTEM_SPEC.md):
         - ${f.field_key}       表單欄位值 (form_data JSON)
         - ${fi.applicant}      表單資訊 (form_instance model 欄位)
         - ${v.var_name}        流程變數 (NODE > FLOW > TREE)

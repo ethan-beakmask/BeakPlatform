@@ -1,7 +1,7 @@
 -- 080: 註冊 ApiKeyAction 節點到 workflow_node_definitions (P3)
 -- 建立日期: 2026-07-08
 -- 對應 handler: modules/form_workflow/services/node_handlers/api_key_action_handler.py
--- 規格: docs/API_KEY_TRIGGER_SPEC.md
+-- 規格: dev-notes/API_KEY_TRIGGER_SPEC.md
 --
 -- 暫停/復原平台 API Key 的機器處置節點。處置對象限本企業 key
 -- (handler 以 org_secure_code 強制租戶隔離)，故不需 require_system_admin。

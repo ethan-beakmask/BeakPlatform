@@ -1,0 +1,58 @@
+# 安全中心
+# 登入失敗紀錄、速率限制、警報廣播、API Key 管理
+page:
+  - /security/login-failures/
+  - /security/rate-limits/
+  - /security/alert-broadcasts/
+  - /security/api-keys/
+description: 安全中心（登入失敗監控、速率限制設定、警報廣播管理、API Key 管理）
+
+files:
+  route:    backend/app/web/security_center.py
+  api:
+    - backend/app/api/security_center.py
+    - backend/app/api/broadcasts.py
+    - backend/app/api/api_keys.py                    # API Key 管理 CRUD
+  service:
+    - backend/app/services/rate_limit_service.py
+    - backend/app/services/api_key_service.py        # API Key 建立/驗證/暫停/撤銷
+  model:
+    - backend/app/models/audit_log.py
+    - backend/app/models/broadcast_acknowledgment.py
+    - backend/app/models/system_setting.py
+    - backend/app/models/api_key.py                  # 平台級 API Key
+  template:
+    - backend/app/templates/pages/security/login_failures.html
+    - backend/app/templates/pages/security/org_rate_limits.html
+    - backend/app/templates/pages/security/alert_broadcasts.html
+    - backend/app/templates/pages/security/api_keys.html
+    - backend/app/templates/pages/security/_api_keys_modals.html
+  js:
+    - backend/app/static/js/login-failures.js
+    - backend/app/static/js/broadcast-poller.js     # 全域廣播輪詢
+    - backend/app/static/js/api-keys.js
+  css:
+    - backend/app/static/css/login-failures.css
+    - backend/app/static/css/broadcast.css           # 全域廣播樣式
+    - backend/app/static/css/api-keys.css
+
+related:
+  external_trigger:                                  # API Key 的表單消費端(HMAC 閘道)
+    - modules/form_workflow/api/external_trigger.py
+    - modules/form_workflow/services/form_submit_service.py
+    - backend/app/security/hmac_verifier.py
+    - backend/app/security/rate_limiter.py
+  spec: dev-notes/API_KEY_TRIGGER_SPEC.md
+
+tables:
+  primary:
+    - audit_logs
+    - broadcast_acknowledgments
+    - system_settings          # 速率限制設定
+    - api_keys                 # 平台級 API Key
+  related:
+    - users
+    - organizations
+
+security:
+  decorator: "@admin_required"

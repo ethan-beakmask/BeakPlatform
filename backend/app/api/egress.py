@@ -3,7 +3,7 @@
 
 [標準 AUTH-02] 統一認證 decorator
 [標準 TENANT-01] 強制企業隔離
-規格：docs/EGRESS_POLICY_SPEC.md
+規格：dev-notes/EGRESS_POLICY_SPEC.md
 
 端點：
 - POST /api/egress/reveal            揭示單一 masked 格（登入用戶）

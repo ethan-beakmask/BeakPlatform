@@ -1,5 +1,5 @@
 -- 077: 平台級 API Key(外部系統 HMAC 認證)
--- 規格: docs/API_KEY_TRIGGER_SPEC.md
+-- 規格: dev-notes/API_KEY_TRIGGER_SPEC.md
 -- secret 用 Org Key 加密儲存(同 od_intake_keys 五欄位模式)
 
 BEGIN;

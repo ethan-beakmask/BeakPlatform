@@ -2,7 +2,7 @@
 BeakMask ScheduleHoliday Model
 班表假日/補班日
 
-參考：docs/knowledge/time-management-spec.md
+參考：dev-notes/knowledge/time-management-spec.md
 """
 from typing import Dict, Any, List
 from datetime import date

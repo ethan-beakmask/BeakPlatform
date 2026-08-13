@@ -6,20 +6,20 @@
 
 | 找什麼 | 去哪 |
 |---|---|
-| 派工給 codex 時要貼的規範片段 | **`docs/codex_spec/`**（frontend / i18n / security / portal / _footer） |
-| 檔案上傳下載的完整 API 用法 | `docs/FILE_SERVICE.md` |
-| 改哪些檔案（任務導向） | `docs/manifests/README.yaml` → 對應 manifest |
-| 安全踩坑清單 | `docs/manifests/SECURITY_PITFALLS.md` |
-| 權限模型定版 | `docs/PERMISSION_MODEL.md`、`docs/COMPONENT_VISIBILITY_GUIDE.md` |
-| Page IR schema 與各 widget 欄位（含 menu） | `docs/PAGE_IR_SPEC.md`、`docs/PAGE_IR_LAYOUT_ENGINES.md` |
-| 共用元件（引用語意） | `docs/SHARED_COMPONENTS_SPEC.md` |
-| 頁面版面樣板庫（複製語意） | `docs/PAGE_TEMPLATE_SPEC.md` |
-| 用 API 操作 NoCode 子系統的實測陷阱 | `docs/codex_spec/portal.md` 尾段 |
-| 名詞對照 | `docs/GLOSSARY.md` |
+| 派工給 codex 時要貼的規範片段 | **`dev-notes/codex_spec/`**（frontend / i18n / security / portal / _footer） |
+| 檔案上傳下載的完整 API 用法 | `dev-notes/FILE_SERVICE.md` |
+| 改哪些檔案（任務導向） | `dev-notes/manifests/README.yaml` → 對應 manifest |
+| 安全踩坑清單 | `dev-notes/manifests/SECURITY_PITFALLS.md` |
+| 權限模型定版 | `dev-notes/PERMISSION_MODEL.md`、`dev-notes/COMPONENT_VISIBILITY_GUIDE.md` |
+| Page IR schema 與各 widget 欄位（含 menu） | `dev-notes/PAGE_IR_SPEC.md`、`dev-notes/PAGE_IR_LAYOUT_ENGINES.md` |
+| 共用元件（引用語意） | `dev-notes/SHARED_COMPONENTS_SPEC.md` |
+| 頁面版面樣板庫（複製語意） | `dev-notes/PAGE_TEMPLATE_SPEC.md` |
+| 用 API 操作 NoCode 子系統的實測陷阱 | `dev-notes/codex_spec/portal.md` 尾段 |
+| 名詞對照 | `dev-notes/GLOSSARY.md` |
 | 跨 session 待辦與決策脈絡 | BeakBroodNest 知識庫（`note_search` / `note_get`） |
 
 **維護原則**：新的踩坑先問「這是 codex 猜不到的專案特有事實，還是通用工程常識？」
-前者才寫進來；屬於「派工時要貼給 codex」的，寫進 `docs/codex_spec/` 並在本檔留指針。
+前者才寫進來；屬於「派工時要貼給 codex」的，寫進 `dev-notes/codex_spec/` 並在本檔留指針。
 
 ## 開發模式（Codex-first，2026-08-05 定版）
 
@@ -29,9 +29,9 @@
 
 ### 組 spec 的固定步驟
 
-1. **檔案清單**：讀 `docs/manifests/README.yaml` → 對應 manifest，spec 中列出精確檔案
+1. **檔案清單**：讀 `dev-notes/manifests/README.yaml` → 對應 manifest，spec 中列出精確檔案
    路徑與現有結構說明（codex 對專案無記憶，context 要餵足）
-2. **規範片段**：依觸及範圍貼 `docs/codex_spec/` 對應檔（frontend / i18n / security /
+2. **規範片段**：依觸及範圍貼 `dev-notes/codex_spec/` 對應檔（frontend / i18n / security /
    portal），**`_footer.md` 每次必貼**。codex 不讀 CLAUDE.md——沒貼進 prompt 的規範
    一律視同不存在
 3. **本檔的專案特有事實**（nginx 前綴、CSS 變數白名單、TZ-01、FILE-01 等）凡與任務
@@ -76,7 +76,7 @@
 
 ## 溝通對照表
 
-用戶提到系統功能時，參照 `docs/GLOSSARY.md` 快速定位。
+用戶提到系統功能時，參照 `dev-notes/GLOSSARY.md` 快速定位。
 
 用戶溝通慣例：
 - `/path/` — URL 路徑（如 `/menu/` = `http://192.168.0.16:7000/beakplatform/menu/`，**app 掛在 nginx 的 `/beakplatform` 前綴下，缺前綴會 404**）
@@ -118,6 +118,45 @@ Generated with Claude Code"
 
 ---
 
+## 文件目錄：docs/ 與 dev-notes/（2026-08-13 拆分）
+
+**`docs/` 會推上 GitHub 公開，`dev-notes/` 不會。放錯目錄等於直接外流。**
+
+`scripts/push_github.sh` 的 `EXCLUDE_DIRS` 只排除 `dev-notes`，
+沒有第二道防線——沒有白名單、沒有內容掃描，目錄就是唯一的分界。
+
+| 目錄 | 內容 | 讀者 |
+|------|------|------|
+| `docs/` | 使用者手冊、操作指南、作業流程、站內 help 素材 | 客戶、企業管理員、一般員工 |
+| `dev-notes/` | 規格書、handoff、踩坑筆記、manifests、codex spec、架構設計 | 開發者、維護的 AI session |
+
+任一項成立就寫進 `dev-notes/`：
+
+- 提到內部 IP、主機名、`/opt/...` 路徑、埠號、資料庫名
+- 描述「為什麼這樣寫」而不是「使用者怎麼操作」
+- 是給下一個 session 的交接（`handoff_*`、`HANDOFF_*`）
+- 是實作規格（`*_SPEC.md`）或模組清單（`manifests/`）
+- 引用尚未發行或未定案的設計
+
+**不確定就放 `dev-notes/`。** 事後從 dev-notes 搬進 docs 是零成本的，
+反向則是已經外流了。
+
+2026-08-13 之前寫在 `docs/` 的 54 項全數移入 `dev-notes/`，
+只有 `docs/help/` 與 `docs/guides/` 留下——那兩者本來就是使用者文件。
+其他 session 若記得舊路徑，一律以現況為準，不要搬回去。
+
+### 要寫使用者文件時
+
+**先讀 `dev-notes/DOCS_AUTHORING_SPEC.md`**，裡面有 frontmatter 規格
+（`title` / `audience` / `requires` / `produces` / `covers`）、可用語法、
+建置驗收指令，以及三處不可擅改的 `mkdocs.yml` 設定。
+
+新增或修改程式後，用這個確認有沒有文件跟著過期：
+
+```bash
+./venv-docs/bin/python scripts/docs_impact.py --docs docs --base origin/main
+```
+
 ## BBN 白板已人機分離（2026-08-07，由 BeakBroodNest 端變更）
 
 BeakBroodNest 把人類白板與 AI 白板拆成兩套，本專案的白板換了：
@@ -139,7 +178,7 @@ BeakBroodNest 把人類白板與 AI 白板拆成兩套，本專案的白板換�
 - 要查使用者白板內容：`note_search(..., include_human_boards=True)`
 - **`shared` 只解除讀取隔離，不解除人機分離**：AI 讀得到，但使用者的卡仍不得改內容、不得搬位置、不得改白板名稱
 - 判定**不掛 `owner`**。`atom.owner` 是建立者兼寫入權限閘門，不是受眾；而且 `source='ai'` 也不代表內容是 AI 產出 —— 使用者常把 Claude 的回答貼進自己白板當筆記
-- 詳細規範在 `/opt/BeakBroodNest/CLAUDE.md` 與 `docs/PROJECT_FACTS.md`，設計理由見 BBN 知識庫 atom 5082
+- 詳細規範在 `/opt/BeakBroodNest/CLAUDE.md` 與 `dev-notes/PROJECT_FACTS.md`，設計理由見 BBN 知識庫 atom 5082
 
 ---
 
@@ -152,7 +191,7 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 
 ### 流程
 
-1. **收到任務** → 讀 `docs/manifests/README.yaml` 找到目標 manifest
+1. **收到任務** → 讀 `dev-notes/manifests/README.yaml` 找到目標 manifest
 2. **讀 manifest** → 取得檔案清單，優先只讀這些檔案
 3. **不足時可自行搜尋**（grep/glob），但**要在回覆裡說明搜了什麼、為什麼 manifest
    不夠**，並把找到的檔案補進對應 manifest——漏列會一直漏下去
@@ -172,7 +211,7 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 
 ### 安全防雷
 
-修改程式前必須查閱 `docs/manifests/SECURITY_PITFALLS.md`，確認不踩以下坑：
+修改程式前必須查閱 `dev-notes/manifests/SECURITY_PITFALLS.md`，確認不踩以下坑：
 - 租戶隔離（org_secure_code 過濾）
 - 帳號狀態過濾（is_deleted + is_active）
 - ResourceGateway 使用（API 層禁止 Model.query）
@@ -184,7 +223,7 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 用戶以口語交辦，或指向 BBN 待辦原子（`PF-xx`）。
 **沒有固定工單格式**——本專案是有因果脈絡的中級以上專案，
 規格與決策脈絡在 BBN 原子裡，填欄位式的工單只適合無因果關係的單一任務。
-（原 `docs/manifests/TICKET_TEMPLATE.md` 已刪除。）
+（原 `dev-notes/manifests/TICKET_TEMPLATE.md` 已刪除。）
 
 ---
 
@@ -195,7 +234,7 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 待辦事項以 **BBN 待辦為主**（ref_code `PF-xx`，`project_tasks` 查詢、
 `note_search("PF-xx")` 取全文）。Forgejo Issues 已全數移回 BBN，若見殘留直接忽略，
 不需搬移或關閉（用戶會自行在 BBN 新增）。
-架構與模組化標準詳見 `docs/PLATFORM_MODULARIZATION_PLAN.md`。
+架構與模組化標準詳見 `dev-notes/PLATFORM_MODULARIZATION_PLAN.md`。
 
 ---
 
@@ -217,15 +256,15 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 - 四層 user_type 硬界線（角色永不跨層）+ NoCode 公開資料隔離區
 - 選單/頁面 = 雙鑰匙（Key1 user_type 層界 + Key2 角色，僅 EMPLOYEE/EXTERNAL 吃 Key2）；欄位 = EGRESS-01
 - `menu_items.required_permission` 已退役不再影響選單；permission code 僅存在 API/資源層
-- 定版文件：`docs/PERMISSION_MODEL.md`（bypass 規則、功能開放多層 SOP、已知備忘）
+- 定版文件：`dev-notes/PERMISSION_MODEL.md`（bypass 規則、功能開放多層 SOP、已知備忘）
 - 權限管理 UI 統一入口：`/access/` 權限管理中心（功能授權/角色/帳號配角色/健檢；
   舊 `/permissions/`、`/roles/`、`/admin/account-roles/` 已退役，`/menu/` 只管選單結構）；
-  規格 `docs/ACCESS_CENTER_SPEC.md`
+  規格 `dev-notes/ACCESS_CENTER_SPEC.md`
 - Phase B 起頁面路由**不掛身分 decorator**：url 型選單路徑前綴即 PageRoleGuard 領地；
   單頁專屬資料 API 掛 `@page_keys_required('<menu_code>')`
 - Phase D 元件級：動作按鈕一律包 `{% if can('<permission_code>') %}`（JS 用 `BkCaps.can()`），
   對應動作 API 掛 `@permission_required('<permission_code>')`（capability_service）；
-  指引 `docs/COMPONENT_VISIBILITY_GUIDE.md`（四層防線總表 + NoCode_Builder 消費規則）
+  指引 `dev-notes/COMPONENT_VISIBILITY_GUIDE.md`（四層防線總表 + NoCode_Builder 消費規則）
 
 ### PERM-02: D2 元件級一律預設套用（2026-08-06 起，取消事前詢問）
 
@@ -234,7 +273,7 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 
 - D2 標準 = 按鈕包 `can()`（JS 用 `BkCaps.can()`）、對應動作 API 掛
   `@permission_required`、code 沿用 API 層既有 permission code
-  （詳見 `docs/COMPONENT_VISIBILITY_GUIDE.md` §2.5）
+  （詳見 `dev-notes/COMPONENT_VISIBILITY_GUIDE.md` §2.5）
 - **前端隱藏不是防線**：API 沒掛檢查，F12 改一下照樣打得進去。兩件事必須成對
 - 純資料修正、CSS、i18n、文件等不觸及按鈕/動作 API 的變更本來就不涉及 D2
 
@@ -247,7 +286,7 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 
 **在 portal 側掛平台的 `@permission_required` 是無效的**（portal 帳號不在平台
 `users` 表裡）——那邊的元件級控制走 access_matrix，規則見
-`docs/codex_spec/portal.md` 與 `docs/PORTAL_ACCOUNT_SPEC.md`。
+`dev-notes/codex_spec/portal.md` 與 `dev-notes/PORTAL_ACCOUNT_SPEC.md`。
 
 **修訂緣由**：原規定是「動工前先問用戶是否依 D2 進行」。D2 已是定版標準，
 每次停下來問與「規格明確就直接執行」相衝突，且新程式碼沒有理由用舊模式。
@@ -273,7 +312,7 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 ### EGRESS-01: 資料出口政策
 
 設有出口政策的資源，欄位依 (角色, 語境) 呈現 clear / masked / hidden。
-規格：`docs/EGRESS_POLICY_SPEC.md`，防雷：`docs/manifests/SECURITY_PITFALLS.md` 第 9 節。
+規格：`dev-notes/EGRESS_POLICY_SPEC.md`，防雷：`dev-notes/manifests/SECURITY_PITFALLS.md` 第 9 節。
 
 - API 序列化：to_dict 之後過 `egress_service.apply(resource, context, items)`
 - 後端模板：`egress_value()` / `egress_visibility()` template globals + `BkEgress.bind()`
@@ -316,7 +355,7 @@ SELECT code, link_type, link_target FROM menu_items WHERE parent_secure_code = '
 - **禁止**手動呼叫 `crypto/engine.py`
 - **禁止**將 `ENCRYPTION_MASTER_KEY` 硬編碼或寫入版控
 
-完整 API 用法、context_type 對應表、金鑰架構：**`docs/FILE_SERVICE.md`**
+完整 API 用法、context_type 對應表、金鑰架構：**`dev-notes/FILE_SERVICE.md`**
 
 **回送檔案內容時 `Content-Type` 一律用 `file_service.get_serve_mime(record)`**
 （副檔名 → MIME 白名單），**禁止使用 `platform_files.mime_type`**——
@@ -464,7 +503,7 @@ modules/<module_name>/static/modules/<module_name>/
 需要把 Jinja2 變數帶進 JS 時用 window bridge（`window.__PAGE_CONFIG = {...}`）。
 JS 與 Jinja2 深度交織無法乾淨分離時，才保留 `{% include "_xxx_methods.html" %}` partial。
 
-抽離模式範例與完整說明：**`docs/codex_spec/frontend.md`**
+抽離模式範例與完整說明：**`dev-notes/codex_spec/frontend.md`**
 
 
 ### FRONT-02: HTML 模板行數上限
@@ -478,7 +517,7 @@ JS 與 Jinja2 深度交織無法乾淨分離時，才保留 `{% include "_xxx_me
 - **禁止**在 API 程式碼中硬編碼 node type 定義
 - `workflow_node_definitions` DB 表是 **single source of truth**
 - API 透過 `WorkflowNodeDefinition` ORM Model 查詢
-- 新增 node type 流程見 `docs/archive/NODE_TYPE_NORMALIZATION_PLAN.md`
+- 新增 node type 流程見 `dev-notes/archive/NODE_TYPE_NORMALIZATION_PLAN.md`
 
 ### FRONT-04: Code 欄位自動建議規範
 
@@ -492,7 +531,7 @@ JS 與 Jinja2 深度交織無法乾淨分離時，才保留 `{% include "_xxx_me
 ### FRONT-05 / FRONT-06 / FRONT-08: 前端框架陷阱
 
 以下三條寫錯會造成排版錯亂或功能靜默失效，**派工給 codex 時必須貼進 prompt**
-（完整說明與範例在 `docs/codex_spec/frontend.md`）：
+（完整說明與範例在 `dev-notes/codex_spec/frontend.md`）：
 
 - **FRONT-05**：CSS 全寬規則必須排除 radio/checkbox
   （`input:not([type="radio"]):not([type="checkbox"])`），否則同列文字被擠成直排
@@ -640,8 +679,8 @@ Python `_('中文')`、Jinja2 `{{ _('中文') }}`、JS `__('中文')`。
 nocode_builder / form_workflow）——少帶任何一個，該模組 msgid 會被打成 obsolete
 並喪失翻譯（已發生過事故）。新模組包裹後要加進清單。
 
-完整指令、JS 字典規則、FormIO locale 陷阱：**`docs/codex_spec/i18n.md`**
-進度計畫：`docs/I18N_PLAN.md`
+完整指令、JS 字典規則、FormIO locale 陷阱：**`dev-notes/codex_spec/i18n.md`**
+進度計畫：`dev-notes/I18N_PLAN.md`
 
 
 ## 時區處理規範 (TZ-01)
@@ -749,7 +788,7 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
 
 ### open_defense 開發備忘
 
-**平台側架構的權威文件是 `docs/OPEN_DEFENSE_ARCHITECTURE.md`（2026-08-10 建立），
+**平台側架構的權威文件是 `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md`（2026-08-10 建立），
 動這個模組前整份讀完。** 平台外組件（`.20` 的 Vector / Suricata / CrowdSec /
 od-bridge / EDL enforcer / ClickHouse）的權威在
 `/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`，**不要在本 repo 複製一份**。
@@ -823,6 +862,10 @@ Suricata 架在 `.20` 這個流量出口上，外部訪客經反代進來時它�
   項目，或流程節點設 `allow_protected_target: true`（後者會在
   `decision_metadata.protected_override` 留稽核痕跡）。節點另有
   `on_protected: 'error'|'skip'`，預設 `error`（流程停住等人處理）
+- **節點的這兩個設定目前只能改 graph JSON**：DecisionWriter 沒有設計器屬性面板，
+  而 `config_schema` 沒有任何前端消費者（面板是 `wf-node-*.js` 的硬編碼 switch，
+  現有分支只涵蓋 15 種節點型別）。migration 098 是為了讓 DB 定義完整，
+  **不會讓設計器多出可設定的欄位**。補面板見待辦 PF-84
 
 **`od_form_template_mappings` 是 `priority` 由大到小評估、命中即停**
 （`routing_service.py::evaluate_routing_rules`，`order_by(priority.desc(), id.asc())`）。
@@ -861,7 +904,7 @@ headers 用 `X-BP-Key-Id` / `X-BP-Timestamp` / `X-BP-Signature`
 `MODULE_INFO['menu_items']` 由環境變數 `NOCODE_BUILDER_MENU` 控制（不等於 `on` 即為空），
 既有三筆 `menu_items` 已設 `is_deleted=true`。模組本身照常載入——路由、API、portal
 全部可用，直接輸入網址進得去。復原步驟與「為什麼用 is_deleted 而非 is_active」
-見 `docs/NOCODE_MENU_HIDE.md`。
+見 `dev-notes/NOCODE_MENU_HIDE.md`。
 
 ### NoCode Builder / Portal 開發備忘（2026-07-28 起）
 
@@ -1054,8 +1097,8 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   角色／階級權限與帳號角色一律**整組覆寫**（PUT 全量 codes），不是增量。
   建立子系統會自動 seed 六個 `is_system` 管理角色；既有子系統在首次讀 permission-model 時補 seed。
   權限碼被角色／階級／個人覆寫／site map access_matrix 引用時**拒絕刪除（409）**。
-- **Page IR v3 menu widget**：完整欄位規格見 `docs/PAGE_IR_SPEC.md` §3.7
-  （自動模式在 `docs/SHARED_COMPONENTS_SPEC.md` §5）。三件最容易靜默失效的：
+- **Page IR v3 menu widget**：完整欄位規格見 `dev-notes/PAGE_IR_SPEC.md` §3.7
+  （自動模式在 `dev-notes/SHARED_COMPONENTS_SPEC.md` §5）。三件最容易靜默失效的：
   - **items 是完全自訂的樹**，不跟著 site map 的結構與順序走（早期版本相反）。
     名稱與圖示仍即時取自 site map；節點被刪或停用時該項連同 children 整枝消失
   - **底圖存 `platform_files.secure_code`，不是 `DcBackground.secure_code`**
@@ -1063,7 +1106,7 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
     存錯的症狀是「選了底圖完全沒反應、也不報錯」
   - 顏色一律 `^#[0-9a-fA-F]{6}$`，schema 與 renderer `_menu_style()` **兩道都要擋**
     （值最後會進 inline style）
-- **Page IR v3 有三個版面引擎**（2026-08-05 起，定版 `docs/PAGE_IR_LAYOUT_ENGINES.md`）：
+- **Page IR v3 有三個版面引擎**（2026-08-05 起，定版 `dev-notes/PAGE_IR_LAYOUT_ENGINES.md`）：
   `page.engine` = `flow`（預設，即原本的縱向流 + layout widget 等分）／
   `grid`（矩陣切格合併，欄寬 fr、列高 px）／`free`（12 欄 × `row_unit` 自由放置）。
   **沒有 `engine` 欄位＝flow，既有 IR 一行都不用改。**
@@ -1089,7 +1132,7 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   `portal_user_ref IS NULL` 的舊列在 own 模式下誰都看不到——
   **「portal 頁表格突然空了」第一個要查的就是這個**，不是權限判定壞了。
   既有表補欄位用 `scripts/add_portal_user_ref.py --apply`（冪等）。
-  細節與 `owner_ref` 傳參規則見 `docs/codex_spec/portal.md`
+  細節與 `owner_ref` 傳參規則見 `dev-notes/codex_spec/portal.md`
 - **判斷一個 NoCode 頁面「還活著」必須走雙路徑 OR**，只看 site map 會誤判：
   ```
   存活 = (有存活 dc_site_map_nodes 指向 且 該節點的子系統存活)
@@ -1127,10 +1170,10 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   測級聯或建測試資料時會撞到。
 - 權限判定失敗**一律回 404**（不洩漏存在與否）；查原因看
   `sudo journalctl -u beakplatform-dev.service --since "-5 min" | grep reason=`
-- 權限模型與判定鏈：`docs/PORTAL_ACCOUNT_SPEC.md`；
-  完整交接與踩坑清單：`docs/handoff_nocode_n1_n5.md`
+- 權限模型與判定鏈：`dev-notes/PORTAL_ACCOUNT_SPEC.md`；
+  完整交接與踩坑清單：`dev-notes/handoff_nocode_n1_n5.md`
 - v2 `layout_json` 已退役，`/p/` 遇到會回 410；設計器只認 `ir_version: 3`
-- **頁面版面樣板庫（PF-24~28、PF-32）＝複製語意**，規格 `docs/PAGE_TEMPLATE_SPEC.md`。
+- **頁面版面樣板庫（PF-24~28、PF-32）＝複製語意**，規格 `dev-notes/PAGE_TEMPLATE_SPEC.md`。
   只有三件事在動工前非知道不可：
   - **同子系統套用完全不淨化**（menu 的 `items[].node`、`shared_ref`、access_matrix
     原封不動保留）。「另存為樣板」存的是**當下那頁的完整 IR**，內建樣板的「零綁定」
@@ -1141,7 +1184,7 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   - `scope='system'` 只能由 `scripts/seed_system_page_templates.py` 建立，API 一律 403
 
 - **子系統層級共用元件＝引用語意**（2026-08-06 起，取代 PF-29 的「共用選單」）——
-  改一次，所有引用它的頁面同步生效。**定版規格 `docs/SHARED_COMPONENTS_SPEC.md`
+  改一次，所有引用它的頁面同步生效。**定版規格 `dev-notes/SHARED_COMPONENTS_SPEC.md`
   （資料模型、API、schema、設計器 UI、menu 自動模式全在裡面，動工前整份讀完）**。
   頁面端只寫 `{"type":"menu","id":"menu-1","shared_ref":"<sc>"}`。
   留在本檔的是四條「猜不到且錯了會靜默失效」：
@@ -1167,7 +1210,7 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 
 前綴是 `/api/nocode-builder`（不是 `/api/nocode`）。**11 條實測陷阱
 （CSRF 未豁免、發布狀態、回應 key、保留欄名、聚合能力缺口等）在
-`docs/codex_spec/portal.md` 尾段「以 API 操作子系統時的實測陷阱」**，
+`dev-notes/codex_spec/portal.md` 尾段「以 API 操作子系統時的實測陷阱」**，
 動手前整段讀完可省一輪除錯。
 可執行範例：`scripts/examples/provision_relief_donation_demo.py`（建置）
 與 `verify_relief_donation_demo.py`（端對端驗收）。
@@ -1360,8 +1403,8 @@ cd backend && flask run --host=127.0.0.1 --port=7000
 
 *最後更新: 2026-08-06（A：清除已失效/自我矛盾條目——失效密碼、e2e skip 成因、
 會腐爛的計數與測試基準、與全域 CLAUDE.md 重複的段落；
-B：樣板庫→`docs/PAGE_TEMPLATE_SPEC.md`、menu widget→`docs/PAGE_IR_SPEC.md` §3.7、
-API 陷阱→`docs/codex_spec/portal.md`、iptables→全域 network_architecture.md，
+B：樣板庫→`dev-notes/PAGE_TEMPLATE_SPEC.md`、menu widget→`dev-notes/PAGE_IR_SPEC.md` §3.7、
+API 陷阱→`dev-notes/codex_spec/portal.md`、iptables→全域 network_architecture.md，
 共用元件段收斂為指針，VERIFY 三條合併；
 C：取消工單格式、manifest 由「禁止自行 grep」放寬為「不足時可搜尋但要說明並回補」、
 PERM-02 取消事前詢問改為預設套用 D2）*

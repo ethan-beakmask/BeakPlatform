@@ -2,7 +2,7 @@
 BeakMask ShiftType Model
 班次定義 - 早班、中班、晚班等
 
-參考：docs/knowledge/time-management-spec.md
+參考：dev-notes/knowledge/time-management-spec.md
 """
 from typing import Dict, Any, List
 

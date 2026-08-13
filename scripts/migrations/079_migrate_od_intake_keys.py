@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-079 - OdIntakeKey 遷移至平台 ApiKey(P2,規格: docs/API_KEY_TRIGGER_SPEC.md)
+079 - OdIntakeKey 遷移至平台 ApiKey(P2,規格: dev-notes/API_KEY_TRIGGER_SPEC.md)
 
 將 od_intake_keys 中未刪除的金鑰複製到 api_keys:
   - key_id 沿用(ik_ 開頭,新發平台 key 一律 ak_,用戶拍板)

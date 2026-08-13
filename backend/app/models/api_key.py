@@ -8,7 +8,7 @@ secret 用 Org Key 加密(沿用 crypto.key_manager.encrypt_file/decrypt_file),
 scopes 為 JSONB,平台層不解釋語意,由各消費端解釋自己的 scope type:
     {"form_category": ["<FwCategory SC>", ...], "form": ["<published SC>", ...]}
 
-規格: docs/API_KEY_TRIGGER_SPEC.md
+規格: dev-notes/API_KEY_TRIGGER_SPEC.md
 """
 from sqlalchemy import Column, String, DateTime, LargeBinary
 from sqlalchemy.dialects.postgresql import JSONB

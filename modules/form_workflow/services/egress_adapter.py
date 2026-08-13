@@ -1,5 +1,5 @@
 """
-EGRESS-01 form_node 語境接入 (規格: docs/EGRESS_POLICY_SPEC.md)
+EGRESS-01 form_node 語境接入 (規格: dev-notes/EGRESS_POLICY_SPEC.md)
 
 約定：
 - resource_code: fw_form:<form_template_secure_code>（每個表單模板一個資源代碼）

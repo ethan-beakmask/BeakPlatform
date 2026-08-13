@@ -1,6 +1,6 @@
 /**
  * wf-node-api-key-action.js -- ApiKeyAction「API Key 處置」節點配置
- * 面板 render + 選項載入 + 套用 (P3, docs/API_KEY_TRIGGER_SPEC.md)
+ * 面板 render + 選項載入 + 套用 (P3, dev-notes/API_KEY_TRIGGER_SPEC.md)
  *
  * config: { action: 'suspend'|'resume',
  *           key_source: 'trigger'|'static'|'variable',

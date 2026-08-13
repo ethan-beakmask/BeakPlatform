@@ -7,7 +7,7 @@ Platform API Key Service
   - 暫停 / 復原 / 撤銷 / 更新
   - allowed_ips 檢查(含 CIDR)
 
-規格: docs/API_KEY_TRIGGER_SPEC.md
+規格: dev-notes/API_KEY_TRIGGER_SPEC.md
 """
 import base64
 import ipaddress

@@ -2,7 +2,7 @@
  * BeakPlatform Egress Mask
  *
  * 遮罩哨兵渲染 + hover 揭示。搭配後端 egress_service（規格見
- * docs/EGRESS_POLICY_SPEC.md）：masked 欄位的 API 值為
+ * dev-notes/EGRESS_POLICY_SPEC.md）：masked 欄位的 API 值為
  *   { "__masked": true, "resource": "...", "record_sc": "...", "field": "..." }
  * 真值不在初始 payload，hover 時才逐格呼叫 POST /api/egress/reveal。
  *

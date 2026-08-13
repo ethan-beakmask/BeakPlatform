@@ -6,7 +6,7 @@ Egress Service - 資料出口政策引擎
   2. 逐格揭示（masked 欄位唯一取值通道）
   3. 三水表計量（list_rows/reveal/export）與警戒告警
 
-規格：docs/EGRESS_POLICY_SPEC.md
+規格：dev-notes/EGRESS_POLICY_SPEC.md
 
 接入方式（API 序列化處，to_dict 之後）：
     from app.services import egress_service

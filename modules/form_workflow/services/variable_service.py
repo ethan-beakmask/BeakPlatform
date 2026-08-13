@@ -4,7 +4,7 @@ FormWorkflow Module - Variable Service
 
 提供統一的變數存取介面，採用混合儲存模式（記憶體快取 + 資料庫持久化）。
 
-Scope 定義 (見 docs/VARIABLE_SYSTEM_SPEC.md):
+Scope 定義 (見 dev-notes/VARIABLE_SYSTEM_SPEC.md):
 - TREE: 跨流程共享，隔離鍵 = root_instance_code
 - FLOW: 單一流程實例，隔離鍵 = workflow_instance_secure_code
 - NODE: 節點級，節點完成後自動清除

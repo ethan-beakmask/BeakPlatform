@@ -5,7 +5,7 @@ NoCode Builder Module - 子系統開發模組
 選單隱藏開關（2026-08-07 起）：
 環境變數 NOCODE_BUILDER_MENU 不等於 'on' 時，本模組不註冊任何平台選單。
 模組本身照常載入 —— 路由、API、portal 公開頁全部可用，只是介面上看不到入口。
-復原步驟見 docs/NOCODE_MENU_HIDE.md（.env 加一行 + 一句 SQL + 重啟）。
+復原步驟見 dev-notes/NOCODE_MENU_HIDE.md（.env 加一行 + 一句 SQL + 重啟）。
 """
 import os
 

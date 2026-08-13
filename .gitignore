@@ -42,9 +42,13 @@ MANIFEST
 
 # Virtual environments
 venv/
+venv-docs/
 ENV/
 env/
 .venv/
+
+# MkDocs 建置產物（使用者文件站，由 docs/ 產生）
+site/
 
 # IDE
 .idea/
@@ -112,5 +116,5 @@ E-MailRelay/*.pid
 temp_*
 
 # Brand assets (原始設計檔，不進版控)
-docs/BeakMask*
+dev-notes/BeakMask*
 backend/encrypted_storage/

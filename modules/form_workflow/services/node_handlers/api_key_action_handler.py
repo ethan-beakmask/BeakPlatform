@@ -1,6 +1,6 @@
 """
 FormWorkflow Module - ApiKeyAction Handler
-API Key 處置節點處理器 (P3, docs/API_KEY_TRIGGER_SPEC.md)
+API Key 處置節點處理器 (P3, dev-notes/API_KEY_TRIGGER_SPEC.md)
 
 暫停 (suspend) 或復原 (resume) 平台級 API Key，供資安流程機器處置疑似盜用。
 處置對象三種來源：

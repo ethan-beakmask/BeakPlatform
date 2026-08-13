@@ -2,7 +2,7 @@
 BeakMask WorkSchedule Model
 共用班表 - 企業+地區+時區的標準工時
 
-參考：docs/knowledge/time-management-spec.md
+參考：dev-notes/knowledge/time-management-spec.md
 """
 from typing import Dict, Any, List, Optional
 from datetime import date, time, datetime
