@@ -148,14 +148,42 @@ Generated with Claude Code"
 ### 要寫使用者文件時
 
 **先讀 `dev-notes/DOCS_AUTHORING_SPEC.md`**，裡面有 frontmatter 規格
-（`title` / `audience` / `requires` / `produces` / `covers`）、可用語法、
-建置驗收指令，以及三處不可擅改的 `mkdocs.yml` 設定。
+（`title` / `audience` / `requires` / `produces` / `covers` / `nav_menu` /
+`visible_user_types` / `visible_roles` / `order`）、可用語法、建置驗收指令，
+以及三處不可擅改的 `mkdocs.yml` 設定。
 
 新增或修改程式後，用這個確認有沒有文件跟著過期：
 
 ```bash
 ./venv-docs/bin/python scripts/docs_impact.py --docs docs --base origin/main
 ```
+
+### 使用者手冊有兩個出口，同一批來源（2026-08-13 起）
+
+`docs/manual/` 八章的 md 同時餵給兩個地方，**寫一次、兩邊生效**：
+
+| 出口 | 特性 |
+|---|---|
+| 站內 `/help/`（Flask，`doc_catalog_service.py`） | **依登入帳號動態過濾**標題清單 |
+| MkDocs 站（`mkdocs build`） | 靜態全集，每頁自動標「適用對象」 |
+
+**站內可見性直接複用選單雙鑰匙**——frontmatter 寫
+`nav_menu: <menu_items.code>`，該選單對此帳號可見則文件可見。
+不要另建權限判定，也不要自己查 `MenuPermission` / `MenuRoleRequirement`。
+跨階角色、企業間差異、模組合約授權全部自動生效（實測 lion 企業的管理員
+比 beluga 少 4 篇，因為 lion 沒有弱點管理模組授權）。
+
+**`nav_menu` 綁錯 code 的症狀是「這頁誰都看不到」，而且不會報錯。**
+新增頁面後用該功能的實際使用者身分開一次 `/help/` 確認標題有出現。
+
+```bash
+# 新增頁面後必做兩件事
+NO_MKDOCS_2_WARNING=1 ./venv-docs/bin/mkdocs build --strict   # nav 漏加不會報錯但站上點不到
+# 然後用對應身分登入 http://192.168.0.16:7000/beakplatform/help/ 確認標題出現
+```
+
+`/help/concepts` 是舊的平台概念說明（`org_admin.html`，限管理員），
+掛在左側目錄最下方，不屬於 `docs/manual/`。
 
 ## BBN 白板已人機分離（2026-08-07，由 BeakBroodNest 端變更）
 
@@ -343,6 +371,21 @@ SELECT code, link_type, link_target FROM menu_items WHERE parent_secure_code = '
 **禁止事項**：
 - **禁止** 為了「選單無法點擊」而修改 `menu_service.py` 的 `_resolve_link()` -- 問題一定出在 DB 的 link_type 設定
 - **禁止** 為了選單顯示問題而修改權限控制邏輯（`auth_interceptor`、`page_permission_service`、`page_role_guard`）-- 這些是安全核心，選單顯示異常的根因是 DB 資料設定錯誤
+
+**改選單一定是「DB + 出廠預設」兩件事**（2026-08-13 踩到）：
+`backend/app/defaults/menu_defaults.py` 的 `CORE_MENUS` 與 `MENU_ROLE_DEFAULTS`
+是**新建企業時的出廠值**。只寫 migration 改 DB，現有企業會對、
+**新建的企業會長回舊的樣子**，而且不會有任何錯誤訊息。
+
+- `CORE_MENUS` 的 `_user_types_override` 不寫時走該檔的預設推導，
+  要開放給多個 user_type 時**明寫**，不要賭預設值
+- `MENU_ROLE_DEFAULTS` 是雙鑰匙 Key2 的出廠值，**禁止列入 header 型 code**
+  （結構元素不吃 Key2，種了只會產生永不被讀取的死資料）
+- 遷移腳本沿用既有 `menu_items.secure_code` 原地改 `code`，
+  可省下重建 `menu_permissions` / `menu_role_requirements`；
+  逐企業補 `menu_role_requirements` 時記得 **`roles.code` 跨企業不唯一**，
+  要用該企業自己的 role secure_code
+- 範例：`scripts/migrations/099_merge_platform_help_menu.py`（含 `--dry-run`，冪等）
 
 ### FILE-01: 檔案上傳/下載統一規範
 
