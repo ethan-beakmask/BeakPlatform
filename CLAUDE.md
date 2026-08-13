@@ -792,6 +792,18 @@ od-bridge / EDL enforcer / ClickHouse）的權威在
 **新增資安角色後必須把它加進 `menu_role_requirements`**（雙鑰匙 Key2），
 否則只持有該角色的人看不到處置中心選單，簽核任務變成「清單看得到、點不進去」。
 
+**`od_form_template_mappings` 是 `priority` 由大到小評估、命中即停**
+（`routing_service.py::evaluate_routing_rules`，`order_by(priority.desc(), id.asc())`）。
+`match_rules=[]` 且 `event_class=NULL` 即 catch-all。所以切換全站流程最省事又可逆的
+做法是加一條 priority 極高的 catch-all，要切回去只要停用它，不必逐條改回原本
+依 event_class 分派的四條 priority 0 規則。**切換後一定要試算確認命中**
+（`evaluate_routing_rules(org, body, payload_kind)`），不要等真實事件進來才發現沒切成功。
+
+**重複送測試事件時，聚合降噪會把「同 `finding.rule_id` + 同 `actor.ip` + 同
+`target.host`」的事件併進既有案件**，不會開新案、不會重跑流程——拿到的是上一輪的
+節點軌跡。驗證流程改動時三個鍵都要換（例：`rule_id` 加隨機後綴、`target.host` 帶
+nonce），否則會誤判成「改了沒用」。
+
 **打 intake webhook 做端對端測試時，API key 的 secret 用 `decrypt_secret()` 取回**
 （secret 是加密存的，不是 hash——**不必為了測試另建一把 key**）：
 
