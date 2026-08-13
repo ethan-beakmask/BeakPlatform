@@ -187,24 +187,3 @@ def menu_code_for_endpoint(endpoint: Optional[str], path: Optional[str] = None) 
             return best.code
 
     return None
-
-
-def list_all_docs() -> List[Dict[str, Any]]:
-    """列出所有 help doc 的 metadata（給索引頁用）"""
-    base = _help_dir()
-    if not os.path.isdir(base):
-        return []
-    out = []
-    for fn in sorted(os.listdir(base)):
-        if not fn.endswith('.md'):
-            continue
-        code = fn[:-3]
-        doc = load_doc(code)
-        if not doc:
-            continue
-        out.append({
-            'menu_code': code,
-            'title': doc.get('title') or code,
-            'audiences': doc.get('audiences') or [],
-        })
-    return out

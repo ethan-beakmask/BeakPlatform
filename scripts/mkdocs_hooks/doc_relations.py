@@ -30,6 +30,13 @@ _H1_RE = re.compile(r'^#\s+(.+?)\s*$', re.MULTILINE)
 _INDEX: dict[str, dict] = {}
 # doc_id -> [依賴它的 doc_id]
 _DEPENDENTS: dict[str, list[str]] = {}
+_USER_TYPE_LABELS = {
+    'SYSTEM_ADMIN': '系統管理員',
+    'ORG_ADMIN': '企業管理員',
+    'EMPLOYEE': '企業成員',
+    'EXTERNAL': '外部廠商',
+    'ALL': '所有使用者',
+}
 
 
 def _doc_id(src_uri: str) -> str:
@@ -74,6 +81,12 @@ def on_files(files, config):
             'produces': _as_list(meta.get('produces')),
             'covers': _as_list(meta.get('covers')),
             'audience': meta.get('audience', ''),
+            'nav_menu': meta.get('nav_menu', ''),
+            'visible_user_types': _as_list(meta.get('visible_user_types')),
+            'visible_roles': _as_list(meta.get('visible_roles')),
+            'order': meta.get('order', 999999),
+            'chapter_order': meta.get('chapter_order', 999999),
+            'chapter_index': meta.get('chapter_index') is True,
             'src_uri': f.src_uri,
         }
 
@@ -107,6 +120,41 @@ def _prereq_block(did: str, src_uri: str) -> str:
             # 宣告了不存在的前置頁，build 時就要看得見，不要靜默略過
             lines.append(f'    - **（缺文件）`{r}`**')
     return '\n'.join(lines) + '\n\n'
+
+
+def _user_type_label(code: str) -> str:
+    return _USER_TYPE_LABELS.get(code, code)
+
+
+def _audience_block(did: str) -> str:
+    info = _INDEX[did]
+    # 章總覽與站台首頁不掛徽章：前者的適用對象由章內各頁決定，
+    # 後者本來就是給所有人看的入口。
+    if info.get('chapter_index') or did == 'index':
+        return ''
+
+    audience = str(info.get('audience') or '')
+    nav_menu = info.get('nav_menu')
+    visible_roles = info.get('visible_roles') or []
+
+    if nav_menu:
+        text = (
+            f'{_user_type_label(audience)}。實際可見範圍依平台的選單授權而定，'
+            '跨部門角色（例如資安人員）也可能看得到。'
+        )
+    elif visible_roles:
+        user_types = info.get('visible_user_types') or [audience]
+        labels = '、'.join(_user_type_label(str(t)) for t in user_types)
+        text = f'{labels}；持有下列角色的企業成員也看得到：{"、".join(visible_roles)}'
+    else:
+        text = _user_type_label(audience)
+
+    return '\n'.join([
+        '!!! info "適用對象"',
+        '',
+        f'    {text}',
+        '',
+    ]) + '\n'
 
 
 def _followup_block(did: str, src_uri: str) -> str:
@@ -152,6 +200,67 @@ def _dep_graph() -> str:
     return '\n'.join(lines)
 
 
+def _table_escape(value: str) -> str:
+    return str(value).replace('|', '\\|')
+
+
+def _role_index() -> str:
+    """產生使用者手冊的角色索引表。"""
+    chapter_titles: dict[str, str] = {}
+    chapter_orders: dict[str, int] = {}
+    for did, info in _INDEX.items():
+        if not did.startswith('manual/') or not info.get('chapter_index'):
+            continue
+        parts = did.split('/')
+        if len(parts) >= 2:
+            chapter_id = parts[1]
+            chapter_titles[chapter_id] = info['title']
+            chapter_orders[chapter_id] = info.get('chapter_order', 999999)
+
+    rows = []
+    for did, info in _INDEX.items():
+        if not did.startswith('manual/') or info.get('chapter_index'):
+            continue
+        parts = did.split('/')
+        if len(parts) < 3:
+            continue
+        chapter_id = parts[1]
+        cross_roles = '—'
+        if info.get('visible_roles'):
+            cross_roles = '、'.join(info['visible_roles'])
+        elif info.get('nav_menu'):
+            cross_roles = '依選單授權'
+        rows.append((
+            chapter_orders.get(chapter_id, 999999),
+            chapter_id,
+            info.get('order', 999999),
+            did,
+            chapter_titles.get(chapter_id, chapter_id),
+            info['title'],
+            _user_type_label(str(info.get('audience') or '')),
+            cross_roles,
+        ))
+
+    if not rows:
+        return '*（目前尚無使用者手冊頁面。）*'
+
+    lines = [
+        '??? note "完整清單"',
+        '',
+        '    | 章 | 頁 | 主要對象 | 跨階角色 |',
+        '    |---|---|---|---|',
+    ]
+    for _, _, _, _, chapter, title, audience, cross_roles in sorted(rows):
+        lines.append(
+            '    | '
+            f'{_table_escape(chapter)} | '
+            f'{_table_escape(title)} | '
+            f'{_table_escape(audience)} | '
+            f'{_table_escape(cross_roles)} |'
+        )
+    return '\n'.join(lines)
+
+
 def on_page_markdown(markdown, page, config, files):
     did = _doc_id(page.file.src_uri)
     if did not in _INDEX:
@@ -159,19 +268,23 @@ def on_page_markdown(markdown, page, config, files):
 
     if '<!-- DEP_GRAPH -->' in markdown:
         markdown = markdown.replace('<!-- DEP_GRAPH -->', _dep_graph())
+    if '<!-- ROLE_INDEX -->' in markdown:
+        markdown = markdown.replace('<!-- ROLE_INDEX -->', _role_index())
 
     src_uri = page.file.src_uri
+    audience = _audience_block(did)
     prereq = _prereq_block(did, src_uri)
     followup = _followup_block(did, src_uri)
 
-    if prereq:
+    insert = audience + prereq
+    if insert:
         # 插在 H1 之後，不要蓋掉頁面標題
         m = _H1_RE.search(markdown)
         if m:
             cut = m.end()
-            markdown = markdown[:cut] + '\n\n' + prereq + markdown[cut:]
+            markdown = markdown[:cut] + '\n\n' + insert + markdown[cut:]
         else:
-            markdown = prereq + markdown
+            markdown = insert + markdown
 
     return markdown + followup
 

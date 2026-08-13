@@ -46,9 +46,10 @@
 
 | 內容性質 | 放哪 |
 |----------|------|
+| 某個功能頁怎麼操作（使用者手冊本體） | `docs/manual/<章>/`，見第八節 |
 | 作業流程、操作指南 | `docs/guides/` |
 | 前置設定（部門、角色、帳號等一次性建置） | `docs/setup/` |
-| 站內 help 素材（綁選單的 `menu_code`） | `docs/help/`，格式不同，見第六節 |
+| 站內 [?] 按鈕素材（綁選單的 `menu_code`） | `docs/help/`，格式不同，見第六節 |
 
 檔名沿用該目錄的既有慣例：`guides/` 用大寫底線（`OD_WORKFLOW_VARIANTS.md`），
 `help/` 用小寫底線且必須等於 `menu_code`（`menu_manage.md`）。
@@ -78,6 +79,9 @@ covers:                         # 選填但強烈建議。本頁對應的程式�
   - backend/app/api/roles.py
 ---
 ```
+
+`docs/manual/` 底下的使用者手冊還有四個欄位，決定**站內 `/help/` 依帳號顯示什麼**，
+規格見第八節：`nav_menu`、`visible_user_types`、`visible_roles`、`order`。
 
 `doc_id` 是相對 `docs/` 的路徑去掉 `.md`，例如
 `docs/guides/OD_WORKFLOW_VARIANTS.md` 的 doc_id 是 `guides/OD_WORKFLOW_VARIANTS`。
@@ -227,28 +231,26 @@ grep -rhoE 'href="https?://[^"]+' site --include='*.html' | sort -u
 
 ---
 
-## 六、與站內 help 的關係（未整併）
-
-目前是兩套並存：
+## 六、三個出口，一批來源
 
 | 出口 | 來源 | 特性 |
 |------|------|------|
-| 站內 help（`help_service.py`） | `docs/help/<menu_code>.md` | 依登入者 `user_type` 過濾 sections，即時 |
-| 官方站（MkDocs） | `docs/` 其餘檔案 | 靜態，build 當下的快照 |
+| 站內使用者手冊（`/help/`） | `docs/manual/**` | **依登入者身分動態過濾**，即時 |
+| 站內頁內 [?] 按鈕 | `docs/help/<menu_code>.md` | 依 `user_type` 過濾 sections，即時 |
+| 官方站（MkDocs） | `docs/` 全部（`help/` 除外） | 靜態全集，build 當下的快照 |
 
-**寫新頁時要不要同步做站內 help？** 判準是這頁有沒有對應的選單：
-描述某個選單頁怎麼操作 → 兩邊都要（`docs/help/<menu_code>.md` 給站內、
-`docs/guides/` 或 `docs/setup/` 給手冊）；描述跨多個選單的作業流程 → 只寫手冊。
-兩邊格式不同，目前得各寫一份，這正是下面要整併的原因。
+**寫新頁時放哪？**
 
-兩者格式不同，目前互不相通。整併方向（尚未實作）是寫一個 MkDocs hook
-把 `help/` 的 `sections[].audience` 展開成 content tabs——同一份檔案，
-站內 help 依角色只顯示該角色那段，官方站用 tabs 全部顯示。
-要做時先評估 `help_service.py` 是否需要同步調整。
+- 描述某個選單頁怎麼操作 → `docs/manual/` 對應章節，frontmatter 綁 `nav_menu`
+- 想讓使用者在該功能頁點 [?] 就看到 → 另外寫一份 `docs/help/<menu_code>.md`
+  （格式不同，見 `help_service.py` 的 docstring）
+- 跨多個選單的作業流程 → `docs/guides/`
 
-「即時資料」只有站內 help 能提供（Flask 動態渲染）。官方站是靜態產物，
+「即時資料」只有站內出口能提供（Flask 動態渲染）。官方站是靜態產物，
 需要嵌入 DB 內容時只能靠 build 時查詢產生快照（`mkdocs-macros-plugin`），
 而且租戶資料本來就不該出現在公開站上。
+
+`docs/help/` 與 `docs/manual/` 尚未整併，兩邊格式不同。整併方向見 BBN #5159。
 
 ---
 
@@ -262,3 +264,93 @@ Material 9.7.5 起已把依賴鎖在 `mkdocs<2`。
 自訂邏輯只有 `doc_relations.py` 與 `docs_impact.py` 兩支薄薄的檔案，
 內容本身是純 markdown，將來換底座的成本在 `mkdocs.yml`，不在文件內容。
 **不要為了規避這個風險而把自訂邏輯寫進文件內容裡。**
+
+---
+
+## 八、使用者手冊的可見性宣告（`docs/manual/`）
+
+2026-08-13 建立。站內 `/help/` 會依登入者身分決定顯示哪些標題，
+**判定完全複用選單的雙鑰匙結果，不是另一套權限**。
+
+### 目錄結構
+
+```
+docs/manual/
+  01_getting_started/   開始使用      （全體）
+  02_platform_admin/    平台管理      （系統管理員）
+  03_org_setup/         企業建置      （企業管理員）
+  04_form_workflow/     表單與流程    （跨階：表單/流程設計師）
+  05_security_ops/      資安作業      （跨階：資安人員）
+  06_subsystem/         子系統開發    （跨階：子系統設計師）
+  07_daily_work/        日常操作      （企業成員）
+  08_external/          外部協作      （外部廠商）
+```
+
+每章一定要有 `index.md`（章總覽），其 frontmatter 多兩個欄位：
+
+```yaml
+---
+title: 資安作業
+audience: ORG_ADMIN
+chapter_order: 5        # 章順序
+chapter_index: true     # 標記這是章總覽
+---
+```
+
+**章總覽的內容在站內是動態產生的**（列出該帳號在這章看得到的頁），
+骨架裡寫的靜態清單只有 MkDocs 站會用到。
+
+### 一般頁的四個欄位
+
+```yaml
+---
+title: 資安案件處置中心
+audience: ORG_ADMIN                      # 既有欄位，MkDocs 顯示「適用對象」用
+order: 10                                # 章內排序，10/20/30…
+nav_menu: open_defense.security_cases    # 綁 menu_items.code
+---
+```
+
+沒有對應選單的頁面改用靜態宣告：
+
+```yaml
+visible_user_types: [ORG_ADMIN, EMPLOYEE]
+visible_roles: [SUBSYS_DESIGNER]         # 選填，Key2 語意
+```
+
+### 判定順序（唯一實作 `backend/app/services/doc_catalog_service.py`）
+
+1. **有 `nav_menu` → 只看它**：該 code 在此帳號可見選單中就顯示，
+   其餘欄位一律不參與判定
+2. 否則看 `visible_user_types`（沒宣告則由 `audience` 推導，`ALL` = 四種都算）
+3. 再看 `visible_roles`：沒宣告就通過；SYSTEM_ADMIN / ORG_ADMIN 一律 bypass；
+   EMPLOYEE / EXTERNAL 必須持有其中一個角色
+
+**優先用 `nav_menu`。** 它讓文件可見性自動跟著企業自己的角色設定走——
+同一份「資安案件處置中心」，在把資安工作交給專責角色的企業由資安人員看到，
+在企業管理員包辦的企業則由管理員看到，文件端一個字都不用改。
+靜態宣告是給沒有選單可綁的頁面用的退路。
+
+### 對應的選單 code 從哪查
+
+```sql
+SELECT code, title, link_type, link_target FROM menu_items
+WHERE is_deleted = false AND is_active = true ORDER BY depth, code;
+```
+
+**綁錯 code 的症狀是「這頁誰都看不到」，而且不會報錯**。新增頁面後用
+`/help/` 以該功能的實際使用者身分看一次，確認標題有出現。
+
+### 章節歸屬與選單授權可能不一致
+
+章節是依功能領域編排的，選單授權是各企業自己設定的，兩者不保證吻合。
+例如「內部商場」放在「平台管理」章，但它的選單同時開給企業管理員，
+於是企業管理員會看到一個只有一篇文章的「平台管理」章。
+**這是預期行為，不是判定錯誤**——要改的是章節歸屬，不是可見性邏輯。
+
+### 尚未做的兩件事（2026-08-13 用戶交辦，見 BBN #5162）
+
+1. **統一的寫作風格規範**（章節骨架、句式、稱謂、術語、步驟編號慣例）——
+   本文目前只規範格式與可見性，沒有規範文風
+2. 內容一律以**最終操作人員**為讀者，不寫程式路徑、資料表名、API 端點、
+   實作理由；那些留在 `dev-notes/`

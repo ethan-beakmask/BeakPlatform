@@ -7,7 +7,7 @@ from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import login_required
-from ..services import help_service
+from ..services import doc_catalog_service, help_service
 
 platform_help_bp = Blueprint('platform_help', __name__)
 
@@ -15,17 +15,30 @@ platform_help_bp = Blueprint('platform_help', __name__)
 @platform_help_bp.route('/')
 @login_required
 def index():
-    """依用戶類型導向對應總覽頁"""
-    user_type = str(current_user.user_type)
-    template_map = {
-        'SYSTEM_ADMIN': 'pages/platform_help/system_admin.html',
-        'ORG_ADMIN': 'pages/platform_help/org_admin.html',
-        'EMPLOYEE': 'pages/platform_help/employee.html',
-        'EXTERNAL': 'pages/platform_help/external.html',
-    }
-    template = template_map.get(user_type, 'pages/platform_help/org_admin.html')
-    docs = help_service.list_all_docs()
-    return render_template(template, help_docs=docs)
+    """依登入者身分顯示可閱讀的手冊目錄"""
+    return render_template(
+        'pages/platform_help/index.html',
+        chapters=doc_catalog_service.list_manual(current_user),
+    )
+
+
+@platform_help_bp.route('/manual/<path:doc_id>')
+@login_required
+def manual_doc(doc_id: str):
+    """顯示單頁使用者手冊"""
+    doc = doc_catalog_service.get_manual_doc(doc_id, current_user)
+    if doc is None:
+        abort(404)
+    return render_template('pages/platform_help/manual_doc.html', doc=doc)
+
+
+@platform_help_bp.route('/concepts')
+@login_required
+def concepts():
+    """顯示平台概念說明"""
+    if str(current_user.user_type) not in ('SYSTEM_ADMIN', 'ORG_ADMIN'):
+        abort(404)
+    return render_template('pages/platform_help/org_admin.html')
 
 
 @platform_help_bp.route('/page/<menu_code>')

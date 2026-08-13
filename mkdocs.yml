@@ -50,6 +50,87 @@ exclude_docs: |
 
 nav:
   - 開始使用: index.md
+  - 使用手冊:
+      - 開始使用:
+          - manual/01_getting_started/index.md
+          - 登入與登出: manual/01_getting_started/login.md
+          - 介面導覽: manual/01_getting_started/interface_tour.md
+          - 個人設定: manual/01_getting_started/personal_settings.md
+          - 儀表板: manual/01_getting_started/dashboard.md
+          - 取得說明與手冊: manual/01_getting_started/getting_help.md
+      - 平台管理:
+          - manual/02_platform_admin/index.md
+          - 企業與合約管理: manual/02_platform_admin/organizations.md
+          - 企業獨立資料庫管理: manual/02_platform_admin/org_databases.md
+          - 集團資料庫總覽: manual/02_platform_admin/cg_databases.md
+          - 系統管理員帳號: manual/02_platform_admin/sys_accounts.md
+          - 模組管理: manual/02_platform_admin/modules.md
+          - 內部商場: manual/02_platform_admin/store.md
+          - 主機設定: manual/02_platform_admin/server_settings.md
+          - 資料維護: manual/02_platform_admin/data_maintenance.md
+          - Redis 監看: manual/02_platform_admin/redis_monitor.md
+          - 本機登入錯誤監看: manual/02_platform_admin/login_failures_local.md
+      - 企業建置:
+          - manual/03_org_setup/index.md
+          - 組織單位: manual/03_org_setup/units.md
+          - 部門設定: manual/03_org_setup/departments.md
+          - 社群設定: manual/03_org_setup/groups.md
+          - 職等設定: manual/03_org_setup/job_levels.md
+          - 職系設定: manual/03_org_setup/job_families.md
+          - 職稱設定: manual/03_org_setup/job_titles.md
+          - 職位設定: manual/03_org_setup/positions.md
+          - 職級職稱矩陣: manual/03_org_setup/job_matrix.md
+          - 核決權限: manual/03_org_setup/job_approval_categories.md
+          - 企業成員帳號: manual/03_org_setup/users.md
+          - 外部廠商帳號: manual/03_org_setup/external_users.md
+          - 代理授權: manual/03_org_setup/delegations.md
+          - 基本班表: manual/03_org_setup/work_schedules.md
+          - 編號設定: manual/03_org_setup/numbering.md
+          - 權限管理中心: manual/03_org_setup/access_center.md
+          - 選單管理: manual/03_org_setup/menu_manage.md
+          - 模組權限管理: manual/03_org_setup/module_permissions.md
+          - 企業管理員: manual/03_org_setup/org_admins.md
+          - 企業系統設定: manual/03_org_setup/system_settings.md
+          - 企業獨立資料庫: manual/03_org_setup/org_database.md
+      - 表單與流程:
+          - manual/04_form_workflow/index.md
+          - 分類管理: manual/04_form_workflow/categories.md
+          - 表單範本: manual/04_form_workflow/templates.md
+          - 流程設計: manual/04_form_workflow/workflows.md
+          - 配對管理與發行: manual/04_form_workflow/mappings.md
+          - 表單風格管理: manual/04_form_workflow/form_themes.md
+          - 表單中心: manual/04_form_workflow/center.md
+          - 規格制定: manual/04_form_workflow/spec_formulate.md
+      - 資安作業:
+          - manual/05_security_ops/index.md
+          - 資安案件處置中心: manual/05_security_ops/security_cases.md
+          - 開放防禦儀表板: manual/05_security_ops/od_dashboard.md
+          - 決策列表: manual/05_security_ops/decisions.md
+          - 封鎖保護清單: manual/05_security_ops/protected_targets.md
+          - 事件路由設定: manual/05_security_ops/event_routing.md
+          - 事件接收金鑰: manual/05_security_ops/intake_keys.md
+          - 執行端帳號: manual/05_security_ops/service_accounts.md
+          - 登入錯誤監看: manual/05_security_ops/login_failures.md
+          - 速率限制: manual/05_security_ops/rate_limits.md
+          - 緊急廣播管理: manual/05_security_ops/alert_broadcasts.md
+          - API Key 管理: manual/05_security_ops/api_keys.md
+          - 弱點儀表板: manual/05_security_ops/vuln_dashboard.md
+          - 資產清冊: manual/05_security_ops/vuln_assets.md
+          - 風險調整: manual/05_security_ops/vuln_risk.md
+          - KYND 弱點情報: manual/05_security_ops/vuln_kynd.md
+      - 子系統開發:
+          - manual/06_subsystem/index.md
+          - 子系統開發總覽: manual/06_subsystem/overview.md
+      - 日常操作:
+          - manual/07_daily_work/index.md
+          - 我的任務與簽核: manual/07_daily_work/my_tasks.md
+          - 填寫與送出表單: manual/07_daily_work/fill_form.md
+          - 設定代理人: manual/07_daily_work/my_delegation.md
+          - 追蹤案件進度: manual/07_daily_work/track_case.md
+      - 外部協作:
+          - manual/08_external/index.md
+          - 可存取的範圍: manual/08_external/scope.md
+          - 受邀的表單作業: manual/08_external/external_tasks.md
   - 作業流程:
       - 資安事件處置流程: guides/OD_WORKFLOW_VARIANTS.md
       - 資安團隊角色設計: guides/SOC_ROLE_DESIGN_GUIDE.md

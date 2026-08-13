@@ -9562,31 +9562,18 @@ msgstr ""
 msgid "結束日期 *"
 msgstr ""
 
-#: app/templates/pages/platform_help/employee.html:3
-#: app/templates/pages/platform_help/employee.html:7
 msgid "平台說明 - 企業成員"
 msgstr ""
 
-#: app/templates/pages/platform_help/employee.html:9
-#: app/templates/pages/platform_help/external.html:9
-#: app/templates/pages/platform_help/system_admin.html:9
 msgid "以下是各功能頁的操作說明。也可以直接在任何頁面點擊右下角的"
 msgstr ""
 
-#: app/templates/pages/platform_help/employee.html:10
-#: app/templates/pages/platform_help/external.html:10
-#: app/templates/pages/platform_help/system_admin.html:10
 msgid "按鈕，取得當前頁面的快速說明。"
 msgstr ""
 
-#: app/templates/pages/platform_help/employee.html:21
-#: app/templates/pages/platform_help/external.html:21
-#: app/templates/pages/platform_help/system_admin.html:21
 msgid "說明文件正在準備中。"
 msgstr ""
 
-#: app/templates/pages/platform_help/external.html:3
-#: app/templates/pages/platform_help/external.html:7
 msgid "平台說明 - 外部廠商"
 msgstr ""
 
@@ -10211,8 +10198,6 @@ msgstr ""
 msgid "此頁面（%(menu_code)s）尚未提供說明文件。"
 msgstr ""
 
-#: app/templates/pages/platform_help/system_admin.html:3
-#: app/templates/pages/platform_help/system_admin.html:7
 msgid "平台說明 - 系統管理員"
 msgstr ""
 
