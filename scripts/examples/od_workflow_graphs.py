@@ -49,6 +49,28 @@ B. 小企業單人版 (build_solo_graph)
 OFFICE_HOURS_UTC_REGEX = r'^0[1-9]:'
 OFFICE_HOURS_NOTE = '預設上班時段 09:00-18:00 (Asia/Taipei) = 01:00-09:59 (UTC)'
 
+# 可自動封鎖的來源位址：排除私有網段與回送位址。
+#
+# 為什麼非有不可（2026-08-13 實際踩到）：偵測器多半架在流量出口的那台主機上，
+# 外部訪客經反向代理進來時，偵測器看到的 actor.ip 會是**代理自己的內網位址**。
+# 本機環境近 200 筆真實 suricata 告警裡，有 25 筆的 actor_ip 是 192.168.0.20
+# ——那正是平台自己 Cloudflare 路徑上的 nginx。若沒有這道排除，
+# 小企業版的自動封鎖會反覆把自家基礎設施加進封鎖清單，而且沒有人在看。
+#
+# 這類案件不是不處理，是**改走人工路徑**：交給人判斷該封的是誰。
+# 用負向 lookahead 而不是 not_startswith，因為分支節點沒有這個運算子。
+# 分支節點沒有 not_matches 運算子，所以正反兩個 pattern 都要備妥：
+# 判「可自動封鎖」用負向 lookahead，判「不可自動封鎖」用正向列舉。
+_PRIVATE_IP_ALTERNATION = (
+    r'10\.|127\.|0\.|169\.254\.|192\.168\.|'
+    r'172\.(1[6-9]|2[0-9]|3[01])\.|::1$|[fF][cCdD]'
+)
+# 注意：負向 lookahead 對**空字串**是成立的（沒東西可否定）。所以用它的規則
+# 必須另外搭一條 not_empty，不能只靠這一條擋掉沒有 actor_ip 的案件。
+PUBLIC_IP_REGEX = r'^(?!' + _PRIVATE_IP_ALTERNATION + r')'
+PRIVATE_IP_REGEX = r'^(' + _PRIVATE_IP_ALTERNATION + r')'
+PUBLIC_IP_NOTE = '排除私有網段（RFC1918）、回送與 link-local'
+
 # 小企業版自動封鎖的 TTL：24 小時。
 # 選 24 小時而不是涵蓋週末的 72 小時，理由是攻擊持續就會重複觸發、重複開案、
 # 重複封鎖，短 TTL 不會留下永久缺口；反過來誤封會在 24 小時內自癒。
@@ -487,18 +509,24 @@ def build_solo_graph(role_staff_sc: str) -> dict:
             {
                 'rules': [
                     {
-                        'name': '高危且有可封鎖目標',
+                        'name': '高危且有可自動封鎖的公網來源',
                         'conditions': [
                             _cond('${f.severity_id}', '>=', 4),
                             _cond('${f.actor_ip}', 'not_empty', ''),
+                            _cond('${f.actor_ip}', 'matches', PUBLIC_IP_REGEX),
                         ],
                         'target_edges': ['edge-actionable'],
                     },
                     {
-                        'name': '高危但沒有來源 IP',
+                        # 兩個 group：沒有 IP，或 IP 落在私有網段。
+                        # conditions 的 logic 是 group 切分符：標 OR 的那一條收尾，
+                        # 所以這裡是 (sev>=4 AND 無IP) OR (sev>=4 AND 私有IP)。
+                        'name': '高危但無法自動處置（無來源 IP 或內網位址）',
                         'conditions': [
                             _cond('${f.severity_id}', '>=', 4),
-                            _cond('${f.actor_ip}', 'empty', ''),
+                            _cond('${f.actor_ip}', 'empty', '', logic='OR'),
+                            _cond('${f.severity_id}', '>=', 4),
+                            _cond('${f.actor_ip}', 'matches', PRIVATE_IP_REGEX),
                         ],
                         'target_edges': ['edge-manual'],
                     },
@@ -520,8 +548,10 @@ def build_solo_graph(role_staff_sc: str) -> dict:
                 },
             },
             -420, 0,
-            '第二條規則存在的理由：actor_ip 空的時候 DecisionWriter 會失敗讓節點 error，'
-            '必須在進自動封鎖之前先擋掉（實測 sev>=3 有 6/95 件缺 actor_ip）。',
+            '第二條規則擋掉兩種不該自動封鎖的案件：'
+            '(1) actor_ip 為空——DecisionWriter 會失敗讓節點 error（實測 sev>=3 有 6/95 件缺）；'
+            '(2) actor_ip 是內網位址——偵測器架在流量出口時，看到的來源會是反向代理自己，'
+            '自動封鎖等於封掉自家基礎設施。兩者都改走人工路徑，交給人判斷該封的是誰。',
         ),
         _archive_node('node-FieldWrite-archive', -280, -230),
         _node(

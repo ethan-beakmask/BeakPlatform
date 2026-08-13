@@ -792,6 +792,15 @@ od-bridge / EDL enforcer / ClickHouse）的權威在
 **新增資安角色後必須把它加進 `menu_role_requirements`**（雙鑰匙 Key2），
 否則只持有該角色的人看不到處置中心選單，簽核任務變成「清單看得到、點不進去」。
 
+**真實 suricata 告警的 `actor_ip` 大量是 `192.168.0.20`**（近 200 筆裡佔 25 筆）——
+那是本平台 Cloudflare 路徑上的 nginx，不是攻擊者。成因與 NET-01 同源：
+Suricata 架在 `.20` 這個流量出口上，外部訪客經反代進來時它看到的來源就是代理自己。
+**任何會自動處置 `actor_ip` 的流程都必須排除私有網段**，否則會反覆封鎖自家基礎設施，
+而且無人時段的自動處置沒有人會發現（2026-08-13 差 12 分鐘就真的發生）。
+小企業單人版的分流節點已內建這道排除（`od_workflow_graphs.py::PUBLIC_IP_REGEX`／
+`PRIVATE_IP_REGEX`），這類案件改走人工路徑而非忽略。
+**在 `od_defense_decisions` 寫入端加一道全域保護仍是待辦**（見 BBN 待辦 PF-83）。
+
 **`od_form_template_mappings` 是 `priority` 由大到小評估、命中即停**
 （`routing_service.py::evaluate_routing_rules`，`order_by(priority.desc(), id.asc())`）。
 `match_rules=[]` 且 `event_class=NULL` 即 catch-all。所以切換全站流程最省事又可逆的
