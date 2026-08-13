@@ -870,6 +870,7 @@
  "此成員": "This member",
  "此操作無法復原！": "This action cannot be undone!",
  "此政策組有 {n} 個網頁正在使用，刪除後這些網頁將變為禁止狀態。確定刪除?": "This policy group is used by {n} pages. Deleting it will make those pages denied. Continue?",
+ "此案件沒有綁定發行版本": "This case is not bound to a published version",
  "此節點尚未連結頁面": "This node is not linked to a page",
  "此節點未連結頁面": "This node is not linked to a page",
  "此職等有 ": "This Job Level has ",

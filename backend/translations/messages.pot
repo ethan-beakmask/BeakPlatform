@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-13 10:20+0800\n"
+"POT-Creation-Date: 2026-08-13 14:04+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2140,7 +2140,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:331
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:207
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:171
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:185
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:184
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:118
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:140
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:232
@@ -3292,7 +3292,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:14
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:27
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:33
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:168
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:167
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:26
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
 #: app/templates/pages/access_center/_tab_roles.html:51
@@ -3327,7 +3327,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:250
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:31
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:156
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:155
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:20
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:89
@@ -3369,7 +3369,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:485
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:132
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:146
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:175
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:174
 #: app/templates/pages/access_center/_tab_roles.html:58
 #: app/templates/pages/access_center/_tab_roles.html:169
 #: app/templates/pages/admin/_settings_recipients_section.html:44
@@ -3992,8 +3992,8 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:57
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:30
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:34
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:172
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:219
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:171
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:222
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:29
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:43
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:191
@@ -6396,7 +6396,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:54
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:219
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:222
 #: app/templates/pages/cg_databases/overview.html:250
 #: app/templates/pages/server_manage/redis_monitor.html:216
 msgid "時間"
@@ -6410,7 +6410,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:29
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:52
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:218
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:221
 #: app/templates/pages/cg_databases/overview.html:250
 msgid "動作"
 msgstr ""
@@ -6839,7 +6839,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:127
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:141
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:35
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:179
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:178
 #: app/templates/pages/external-users/create.html:105
 #: app/templates/pages/external-users/edit.html:54
 #: app/templates/pages/external-users/view.html:81
@@ -10840,7 +10840,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:8
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:208
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:172
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:187
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:186
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:64
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:76
 #: app/templates/pages/security/org_rate_limits.html:89
@@ -13111,8 +13111,7 @@ msgid "啟用狀態"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:41
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:121
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:130
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:129
 msgid "試算"
 msgstr ""
 
@@ -13331,8 +13330,8 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:53
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:32
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:164
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:218
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:163
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:221
 msgid "目標"
 msgstr ""
 
@@ -13446,31 +13445,31 @@ msgstr ""
 msgid "保護試算"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:126
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:125
 msgid "封鎖目標"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:128
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:127
 msgid "輸入 IP 或 CIDR，試算寫成封鎖決策時是否會被保護。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:134
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:133
 msgid "會被保護"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:138
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:137
 msgid "不受保護，可正常封鎖"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:141
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:140
 msgid "目標不是合法的 IP 或 CIDR"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:158
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:157
 msgid "保護（protect）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:159
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:158
 msgid "豁免（exempt）"
 msgstr ""
 
@@ -13555,57 +13554,61 @@ msgstr ""
 msgid "聚合事件數"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:153
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:145
+msgid "處置流程"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:156
 msgid "簽核歷程（前手判斷）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:173
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:176
 msgid "事件詳情（出口政策已套用）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:185
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:188
 msgid "處置（1-click，直接完成簽核）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:188
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:191
 msgid "處置意見（依流程設定可能必填）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:207
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:210
 msgid "目前卡在"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:208
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:211
 msgid "，您不是此節點的指定簽核人。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:212
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:215
 msgid "關聯防禦決策"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:214
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:217
 msgid "尚無決策"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:236
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:239
 msgid "事件明細"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:238
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:241
 msgid "明細超過 500 筆，已截斷顯示。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:263
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:266
 msgid "原始欄位"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:309
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:267
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:270
 msgid "欄位名"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:495
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:267
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:270
 msgid "值"
 msgstr ""
 

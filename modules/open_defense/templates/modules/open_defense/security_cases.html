@@ -142,6 +142,9 @@
                                  <div class="sc-field-value" x-text="selected.od_event_count ?? 1"></div></div>
                             <div><div class="sc-field-label">{{ _('建立時間') }}</div>
                                  <div class="sc-field-value" x-text="fmtTime(selected.submitted_at)"></div></div>
+                            <div><div class="sc-field-label">{{ _('處置流程') }}</div>
+                                 <div class="sc-field-value" x-text="selected.flow_label || '-'"
+                                      :title="selected.flow_label ? '' : __('此案件沒有綁定發行版本')"></div></div>
                         </div>
 
                         <!-- 進行中且輪到簽核：完整表單欄位 + 處置 -->

@@ -226,6 +226,50 @@ def _apply_payload_egress(form_instance, fields, rows, columns):
     return visible_fields, visible_rows, visible_columns
 
 
+def _attach_flow_labels(items, rows, org_secure_code):
+    """補上「這件案子是由哪個發行版本運行的」。
+
+    來源是案件當初綁定的 `fw_workflow_instances.published_secure_code`，
+    **不是配對目前生效的版本**——流程改版後舊案件仍跑舊快照，
+    顯示現行版本會讓人誤判當時走過的路徑。
+
+    名稱取 `form_snapshot['name']`（與 /forms/mappings 的「發行名稱」同一個來源）。
+    快照本身的 `name` 欄位是「表單名 + 流程名」的組合字串，過長不適合放在欄位格裡。
+    """
+    from modules.form_workflow.models import FwPublishedFormWorkflow
+
+    wi_to_pub = {
+        wi.secure_code: wi.published_secure_code
+        for _, wi in rows if wi.published_secure_code
+    }
+    if not wi_to_pub:
+        return
+
+    pubs = FwPublishedFormWorkflow.query.filter(
+        FwPublishedFormWorkflow.secure_code.in_(list(set(wi_to_pub.values()))),
+        FwPublishedFormWorkflow.org_secure_code == org_secure_code,
+        FwPublishedFormWorkflow.is_deleted == False,  # noqa: E712
+    ).all()
+
+    pub_map = {}
+    for pub in pubs:
+        snapshot = pub.form_snapshot or {}
+        name = snapshot.get('name') if isinstance(snapshot, dict) else None
+        pub_map[pub.secure_code] = {
+            'flow_name': name or pub.name,
+            'flow_version': pub.publish_version,
+        }
+
+    for item in items:
+        info = pub_map.get(wi_to_pub.get(item['workflow_instance_secure_code']))
+        if not info:
+            continue
+        item['flow_name'] = info['flow_name']
+        item['flow_version'] = info['flow_version']
+        # 格式沿用使用者指定的樣式：名稱直接接 v 版號，不加空格
+        item['flow_label'] = f"{info['flow_name']}v{info['flow_version']}"
+
+
 @api_bp.route('/cases')
 @module_access_required('open_defense', False)
 def list_cases():
@@ -337,6 +381,9 @@ def list_cases():
             f'fw_form:{template_sc}', 'list', items,
             record_sc_key='form_instance_secure_code',
         )
+
+    # 出口政策之後才補：flow_* 不是 form_data 衍生欄位，不受 fw_form 政策管轄
+    _attach_flow_labels(result, rows, org.secure_code)
 
     return jsonify({'success': True, 'data': result, 'truncated': truncated})
 
