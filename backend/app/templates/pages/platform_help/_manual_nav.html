@@ -13,13 +13,43 @@
             </button>
         </div>
         <ul class="manual-nav__list" x-show="open['{{ chapter.chapter_id }}']" x-cloak>
-            {% for doc in chapter.docs %}
+            {% for entry in chapter.entries %}
+            {% if entry.kind == 'section' %}
+            {% set section_key = 'section:' ~ chapter.chapter_id ~ '/' ~ entry.section_id %}
+            {% set section_prefix = 'manual/' ~ chapter.chapter_id ~ '/' ~ entry.section_id ~ '/' %}
+            <li class="manual-nav__section">
+                <div class="manual-nav__subhead">
+                    <a href="{{ url_for('platform_help.manual_doc', doc_id=entry.index_doc_id) }}"
+                       class="manual-nav__section-title {{ 'is-active' if current_doc_id == entry.index_doc_id or (current_doc_id and current_doc_id.startswith(section_prefix)) else '' }}">
+                        {{ entry.title }}
+                    </a>
+                    <button type="button"
+                            class="manual-nav__toggle"
+                            @click="open['{{ section_key }}'] = !open['{{ section_key }}']"
+                            :aria-expanded="open['{{ section_key }}'] ? 'true' : 'false'"
+                            aria-label="{{ _('切換小節') }}">
+                        <span x-text="open['{{ section_key }}'] ? '▾' : '▸'"></span>
+                    </button>
+                </div>
+                <ul class="manual-nav__sublist" x-show="open['{{ section_key }}']" x-cloak>
+                    {% for doc in entry.docs %}
+                    <li>
+                        <a href="{{ url_for('platform_help.manual_doc', doc_id=doc.doc_id) }}"
+                           class="manual-nav__link {{ 'is-active' if doc.doc_id == current_doc_id else '' }}">
+                            {{ doc.title }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </li>
+            {% else %}
             <li>
-                <a href="{{ url_for('platform_help.manual_doc', doc_id=doc.doc_id) }}"
-                   class="manual-nav__link {{ 'is-active' if doc.doc_id == current_doc_id else '' }}">
-                    {{ doc.title }}
+                <a href="{{ url_for('platform_help.manual_doc', doc_id=entry.doc_id) }}"
+                   class="manual-nav__link {{ 'is-active' if entry.doc_id == current_doc_id else '' }}">
+                    {{ entry.title }}
                 </a>
             </li>
+            {% endif %}
             {% endfor %}
         </ul>
     </div>

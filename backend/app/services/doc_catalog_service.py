@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import posixpath
 import re
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -20,7 +21,8 @@ from flask_babel import gettext as _
 logger = logging.getLogger(__name__)
 
 _FRONTMATTER_RE = re.compile(r'^---\s*\n(.*?)\n---\s*\n(.*)$', re.DOTALL)
-_DOC_ID_RE = re.compile(r'^manual/[0-9a-z_]+/[0-9a-z_]+$')
+_DOC_ID_RE = re.compile(r'^manual/[0-9a-z_]+/[0-9a-z_]+(/[0-9a-z_]+)?$')
+_MD_LINK_RE = re.compile(r'(\]\()([^)\s]+\.md(?:#[^)]+)?)(\))')
 _ALL_USER_TYPES = {'SYSTEM_ADMIN', 'ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL'}
 _CACHE: Dict[str, Any] = {'signature': None, 'catalog': None}
 
@@ -111,14 +113,20 @@ def _load_catalog() -> Dict[str, Any]:
                 'title': chapter_id,
                 'chapter_order': 999999,
                 'index_doc_id': f'manual/{chapter_id}/index',
-                'docs': [],
+                'entries': [],
             }
 
             for filename in sorted(os.listdir(chapter_dir)):
+                path = os.path.join(chapter_dir, filename)
+                if os.path.isdir(path):
+                    section = _load_section(chapter_id, filename, path, docs)
+                    if section:
+                        chapter['entries'].append(section)
+                    continue
+
                 if not filename.endswith('.md'):
                     continue
                 stem = filename[:-3]
-                path = os.path.join(chapter_dir, filename)
                 parsed = _parse_file(path)
                 if not parsed:
                     continue
@@ -134,6 +142,7 @@ def _load_catalog() -> Dict[str, Any]:
                     'meta': meta,
                     'body': parsed['body'],
                     'chapter_id': chapter_id,
+                    'section_id': None,
                 }
                 docs[doc_id] = item
 
@@ -142,7 +151,12 @@ def _load_catalog() -> Dict[str, Any]:
                     chapter['chapter_order'] = meta.get('chapter_order', 999999)
                     chapter['index_doc_id'] = doc_id
                 else:
-                    chapter['docs'].append(item)
+                    chapter['entries'].append({
+                        'kind': 'doc',
+                        'order': item['order'],
+                        'sort_key': item['filename'],
+                        **item,
+                    })
 
             chapters[chapter_id] = chapter
 
@@ -153,6 +167,64 @@ def _load_catalog() -> Dict[str, Any]:
     _CACHE['signature'] = sig
     _CACHE['catalog'] = catalog
     return catalog
+
+
+def _load_section(
+    chapter_id: str,
+    section_id: str,
+    section_dir: str,
+    docs: Dict[str, Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    section = {
+        'kind': 'section',
+        'chapter_id': chapter_id,
+        'section_id': section_id,
+        'title': section_id,
+        'order': 999999,
+        'sort_key': section_id,
+        'index_doc_id': None,
+        'index_item': None,
+        'docs': [],
+    }
+
+    for filename in sorted(os.listdir(section_dir)):
+        if not filename.endswith('.md'):
+            continue
+        stem = filename[:-3]
+        path = os.path.join(section_dir, filename)
+        if not os.path.isfile(path):
+            continue
+
+        parsed = _parse_file(path)
+        if not parsed:
+            continue
+
+        doc_id = f'manual/{chapter_id}/{section_id}/{stem}'
+        meta = parsed['meta']
+        item = {
+            'doc_id': doc_id,
+            'title': meta.get('title') or stem,
+            'order': meta.get('order', 999999),
+            'filename': stem,
+            'path': path,
+            'meta': meta,
+            'body': parsed['body'],
+            'chapter_id': chapter_id,
+            'section_id': section_id,
+        }
+        docs[doc_id] = item
+
+        if filename == 'index.md' or meta.get('section_index') is True:
+            section['title'] = meta.get('title') or section_id
+            section['order'] = meta.get('order', 999999)
+            section['index_doc_id'] = doc_id
+            section['index_item'] = item
+        else:
+            section['docs'].append(item)
+
+    if not section['index_doc_id'] and not section['docs']:
+        return None
+    return section
 
 
 def _flatten_menu_codes(nodes: Any, out: Set[str]) -> None:
@@ -228,6 +300,55 @@ def is_doc_visible(meta, user, menu_codes) -> bool:
     return bool(_user_role_codes(user) & visible_roles)
 
 
+def _manual_doc_href(doc_id: str) -> str:
+    try:
+        return url_for('platform_help.manual_doc', doc_id=doc_id)
+    except RuntimeError:
+        return f"/help/manual/{doc_id}"
+
+
+def _visible_doc_summary(item: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        'kind': 'doc',
+        'doc_id': item['doc_id'],
+        'title': item['title'],
+    }
+
+
+def _visible_section_summary(
+    section: Dict[str, Any],
+    user,
+    menu_codes: Set[str],
+) -> Optional[Dict[str, Any]]:
+    index_item = section.get('index_item')
+    if not index_item:
+        # 節必須有 index.md（或 frontmatter section_index: true）當總覽，
+        # 否則整節不會出現在目錄上。這裡出 warning 是為了避免靜默失效。
+        logger.warning(
+            "manual section without index doc, hidden from catalog: %s/%s",
+            section.get('chapter_id'), section.get('section_id'),
+        )
+        return None
+    if not is_doc_visible(index_item['meta'], user, menu_codes):
+        return None
+
+    visible_docs = [
+        doc for doc in section.get('docs', [])
+        if is_doc_visible(doc['meta'], user, menu_codes)
+    ]
+    if not visible_docs:
+        return None
+
+    visible_docs.sort(key=lambda d: (d['order'], d['filename']))
+    return {
+        'kind': 'section',
+        'section_id': section['section_id'],
+        'title': section['title'],
+        'index_doc_id': section['index_doc_id'],
+        'docs': [_visible_doc_summary(doc) for doc in visible_docs],
+    }
+
+
 def list_manual(user) -> List[dict]:
     """列出登入者可閱讀的手冊章節樹。"""
     catalog = _load_catalog()
@@ -235,34 +356,149 @@ def list_manual(user) -> List[dict]:
     chapters = []
 
     for chapter in catalog['chapters'].values():
-        visible_docs = []
-        for item in chapter['docs']:
-            if is_doc_visible(item['meta'], user, menu_codes):
-                visible_docs.append({
-                    'doc_id': item['doc_id'],
-                    'title': item['title'],
-                    '_order': item['order'],
-                    '_filename': item['filename'],
-                })
+        visible_entries = []
+        for entry in sorted(
+            chapter.get('entries', []),
+            key=lambda e: (e.get('order', 999999), e.get('sort_key', '')),
+        ):
+            if entry.get('kind') == 'section':
+                section_summary = _visible_section_summary(entry, user, menu_codes)
+                if section_summary:
+                    visible_entries.append(section_summary)
+                continue
 
-        if not visible_docs:
+            if is_doc_visible(entry['meta'], user, menu_codes):
+                visible_entries.append(_visible_doc_summary(entry))
+
+        if not visible_entries:
             continue
-
-        visible_docs.sort(key=lambda d: (d['_order'], d['_filename']))
-        for doc in visible_docs:
-            doc.pop('_order', None)
-            doc.pop('_filename', None)
 
         chapters.append({
             'chapter_id': chapter['chapter_id'],
             'title': chapter['title'],
             'chapter_order': chapter['chapter_order'],
             'index_doc_id': chapter['index_doc_id'],
-            'docs': visible_docs,
+            'entries': visible_entries,
         })
 
     chapters.sort(key=lambda c: (c['chapter_order'], c['chapter_id']))
     return chapters
+
+
+def _chapter_index_body(
+    item: Dict[str, Any],
+    chapter: Dict[str, Any],
+    user,
+    menu_codes: Set[str],
+) -> Optional[str]:
+    lines = [
+        f"# {item['title']}",
+        '',
+        _('本章包含以下主題：'),
+        '',
+    ]
+    has_entries = False
+
+    for entry in sorted(
+        chapter.get('entries', []),
+        key=lambda e: (e.get('order', 999999), e.get('sort_key', '')),
+    ):
+        if entry.get('kind') == 'section':
+            section_summary = _visible_section_summary(entry, user, menu_codes)
+            if not section_summary:
+                continue
+            lines.append(
+                f"- [{section_summary['title']}]"
+                f"({_manual_doc_href(section_summary['index_doc_id'])})"
+            )
+            has_entries = True
+            continue
+
+        if is_doc_visible(entry['meta'], user, menu_codes):
+            lines.append(f"- [{entry['title']}]({_manual_doc_href(entry['doc_id'])})")
+            has_entries = True
+
+    if not has_entries:
+        return None
+    return '\n'.join(lines)
+
+
+def _section_index_body(
+    item: Dict[str, Any],
+    catalog: Dict[str, Any],
+    user,
+    menu_codes: Set[str],
+) -> Optional[str]:
+    chapter = catalog['chapters'].get(item['chapter_id']) or {}
+    section = next(
+        (
+            entry for entry in chapter.get('entries', [])
+            if entry.get('kind') == 'section'
+            and entry.get('section_id') == item.get('section_id')
+        ),
+        None,
+    )
+    if not section:
+        return None
+
+    visible_docs = [
+        doc for doc in section.get('docs', [])
+        if is_doc_visible(doc['meta'], user, menu_codes)
+    ]
+    if not visible_docs:
+        return None
+
+    visible_docs.sort(key=lambda d: (d['order'], d['filename']))
+    # 與章總覽不同：節總覽保留 md 原文（引言），動態清單接在後面。
+    # 章總覽的 index.md 目前只有會過期的靜態清單，所以那邊仍是整段取代。
+    lines = [
+        item['body'].strip(),
+        '',
+        _('本節包含以下主題：'),
+        '',
+    ]
+    for doc in visible_docs:
+        lines.append(f"- [{doc['title']}]({_manual_doc_href(doc['doc_id'])})")
+    return '\n'.join(lines).lstrip('\n')
+
+
+def _rewrite_relative_md_links(
+    body: str,
+    doc_id: str,
+    catalog: Dict[str, Any],
+) -> str:
+    doc_parts = str(doc_id).split('/')
+    base_parts = doc_parts[1:-1]
+
+    def replace(match: re.Match) -> str:
+        target = match.group(2)
+        if (
+            target.startswith('#')
+            or re.match(r'^[a-z][a-z0-9+.-]*:', target, re.IGNORECASE)
+        ):
+            return match.group(0)
+
+        path_part, anchor = (target.split('#', 1) + [''])[:2] if '#' in target else (target, '')
+        if not path_part.endswith('.md'):
+            return match.group(0)
+
+        stem_path = path_part[:-3]
+        resolved = posixpath.normpath('/'.join([*base_parts, stem_path]))
+        if resolved == '.':
+            return match.group(0)
+        if resolved.startswith('../') or resolved == '..':
+            return match.group(0)
+
+        target_doc_id = f"manual/{resolved}"
+        if target_doc_id not in catalog['docs']:
+            return match.group(0)
+
+        href = _manual_doc_href(target_doc_id)
+        if anchor:
+            href = f"{href}#{anchor}"
+        return f"{match.group(1)}{href}{match.group(3)}"
+
+    return _MD_LINK_RE.sub(replace, body)
 
 
 def get_manual_doc(doc_id, user) -> Optional[dict]:
@@ -280,28 +516,19 @@ def get_manual_doc(doc_id, user) -> Optional[dict]:
     meta = item['meta']
     body = item['body']
     if meta.get('chapter_index') is True:
-        visible_docs = [
-            doc for doc in chapter.get('docs', [])
-            if is_doc_visible(doc['meta'], user, menu_codes)
-        ]
-        if not visible_docs:
+        body = _chapter_index_body(item, chapter, user, menu_codes)
+        if body is None:
             return None
-        visible_docs.sort(key=lambda d: (d['order'], d['filename']))
-        lines = [
-            f"# {item['title']}",
-            '',
-            _('本章包含以下主題：'),
-            '',
-        ]
-        for doc in visible_docs:
-            try:
-                href = url_for('platform_help.manual_doc', doc_id=doc['doc_id'])
-            except RuntimeError:
-                href = f"/help/manual/{doc['doc_id']}"
-            lines.append(f"- [{doc['title']}]({href})")
-        body = '\n'.join(lines)
+    elif meta.get('section_index') is True:
+        if not is_doc_visible(meta, user, menu_codes):
+            return None
+        body = _section_index_body(item, catalog, user, menu_codes)
+        if body is None:
+            return None
     elif not is_doc_visible(meta, user, menu_codes):
         return None
+
+    body = _rewrite_relative_md_links(body, item['doc_id'], catalog)
 
     return {
         'doc_id': item['doc_id'],

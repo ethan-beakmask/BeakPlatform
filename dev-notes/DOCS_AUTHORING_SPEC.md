@@ -272,6 +272,28 @@ Material 9.7.5 起已把依賴鎖在 `mkdocs<2`。
 2026-08-13 建立。站內 `/help/` 會依登入者身分決定顯示哪些標題，
 **判定完全複用選單的雙鑰匙結果，不是另一套權限**。
 
+### 這裡的「可見性」不是保密，唯一目的是降噪（用戶 2026-08-14 定調）
+
+**`docs/` 的內容是操作說明，沒有機密。全部給所有人看、甚至整包公開到
+Internet 都是可以接受的。** 之所以還要做 by 身分過濾，理由只有一個：
+
+> 不讓使用者看見與自己無關的過多文件，因而產生困擾與誤解。
+
+這條決定了後續所有取捨的方向，**不要把可見性當成安全機制來設計**：
+
+- **不要**因為「這頁講管理功能」就往保密方向加碼——不需要登入牆、
+  不需要加密、不需要把它移出 `docs/`
+- **判斷一頁該不該過濾，問的是「這個人看到會不會困惑」，
+  不是「這個人有沒有資格知道」**
+- 漏掉一頁沒過濾，後果是某些人多看到一頁用不到的說明，**不是資安事件**。
+  不必為此回頭補強
+- 真正的機密屬於 `dev-notes/`（第一節的分界線），那條線是安全邊界；
+  `docs/` 內部的可見性宣告不是
+
+MkDocs 站是靜態全集、沒有權限機制，`docs/` 又會整包推上 GitHub——
+**這兩件事都不是缺口，是預期行為**。看到「MkDocs 站沒有權限」時不要
+把它當成待修的問題。
+
 ### 目錄結構
 
 ```
@@ -299,6 +321,71 @@ chapter_index: true     # 標記這是章總覽
 
 **章總覽的內容在站內是動態產生的**（列出該帳號在這章看得到的頁），
 骨架裡寫的靜態清單只有 MkDocs 站會用到。
+
+### 第三層：節（2026-08-14 起）
+
+主題需要拆成多篇時，在章底下開一個子目錄當「節」：
+
+```
+docs/manual/05_security_ops/
+  index.md                    章總覽
+  security_cases.md           order: 10   ← 章的直屬頁
+  soc_planning/               ← 節
+    index.md                  節總覽（section_index: true, order: 5）
+    workflow_variants.md      order: 10
+    role_design.md            order: 20
+```
+
+doc_id 變成四段：`manual/05_security_ops/soc_planning/workflow_variants`。
+**只支援三層，不要再往下開子目錄**（`_DOC_ID_RE` 最多認到這一層）。
+
+節總覽的 frontmatter：
+
+```yaml
+---
+title: 資安監控團隊規劃
+audience: ORG_ADMIN
+order: 5                # 與同章直屬頁的 order 混排，5 會排在 order 10 的頁之前
+section_index: true     # 標記這是節總覽
+nav_menu: open_defense.security_cases
+---
+```
+
+四條會靜默失效的規則：
+
+- **節一定要有 `index.md`**（或 frontmatter `section_index: true` 的檔）。
+  缺了整個節不會出現在站內目錄上，只在 log 留一行 warning
+- **節內所有頁都不可見時，整個節連同節總覽一起消失**（比照「章內沒有可見文件
+  就整章不顯示」）。節總覽自己的 `nav_menu` 也要通過判定
+- **節總覽與章總覽的動態內容規則不同**：章總覽是整段取代（md 裡的靜態清單站內看不到），
+  **節總覽是保留 md 原文再把清單接在後面**——所以節總覽可以寫引言，
+  但不要在裡面手寫主題清單，會和自動產生的那份重複
+- 節與章的 `order` 是同一個排序空間，節用 `order`（不是 `chapter_order`）
+
+`mkdocs.yml` 的 nav 要跟著多一層縮排，節總覽放該層第一項（不寫標題）。
+
+### 頁與頁之間的連結
+
+站內 `/help/` 會把 markdown 裡的相對 `.md` 連結改寫成
+`/help/manual/<doc_id>`（`doc_catalog_service._rewrite_relative_md_links`），
+所以**直接寫相對路徑即可**，兩個出口都會通：
+
+```markdown
+建議先讀[資安事件處置流程](workflow_variants.md)
+```
+
+- 解析基準是該文件自己所在的目錄，支援 `xxx.md`、`sub/xxx.md`、`../xxx.md`、錨點
+- 解析不到對應 doc_id 時**保持原樣**（不會壞頁，但那個連結在站內點了會 404，
+  所以 `mkdocs build --strict` 過不過仍是唯一的把關）
+- **不要自己寫 `/beakplatform/help/manual/...` 絕對路徑**：MkDocs 站上會壞掉
+
+### 流程圖
+
+md 裡的 ```mermaid 區塊兩個出口都會渲染成圖：MkDocs 走
+`docs/javascripts/mermaid-init.js`，站內走
+`backend/app/static/js/manual-mermaid.js` + `static/vendor/mermaid.min.js`
+（只在 `manual_doc.html` 載入，3.3MB 不進全站 base）。
+兩份 mermaid.min.js 是同一個檔案的複本，升級時兩邊都要換。
 
 ### 一般頁的四個欄位
 

@@ -103,6 +103,10 @@ nav:
           - 規格制定: manual/04_form_workflow/spec_formulate.md
       - 資安作業:
           - manual/05_security_ops/index.md
+          - 資安監控團隊規劃:
+              - manual/05_security_ops/soc_planning/index.md
+              - 資安事件處置流程: manual/05_security_ops/soc_planning/workflow_variants.md
+              - 資安團隊角色設計: manual/05_security_ops/soc_planning/role_design.md
           - 資安案件處置中心: manual/05_security_ops/security_cases.md
           - 開放防禦儀表板: manual/05_security_ops/od_dashboard.md
           - 決策列表: manual/05_security_ops/decisions.md
@@ -131,9 +135,6 @@ nav:
           - manual/08_external/index.md
           - 可存取的範圍: manual/08_external/scope.md
           - 受邀的表單作業: manual/08_external/external_tasks.md
-  - 作業流程:
-      - 資安事件處置流程: guides/OD_WORKFLOW_VARIANTS.md
-      - 資安團隊角色設計: guides/SOC_ROLE_DESIGN_GUIDE.md
 
 plugins:
   - search:

@@ -42,7 +42,8 @@
 }
 
 .manual-nav__title,
-.manual-nav__link {
+.manual-nav__link,
+.manual-nav__section-title {
     display: block;
     color: var(--color-text);
     text-decoration: none;
@@ -55,7 +56,8 @@
 }
 
 .manual-nav__title:hover,
-.manual-nav__link:hover {
+.manual-nav__link:hover,
+.manual-nav__section-title:hover {
     background: var(--color-bg-light);
     color: var(--color-primary);
 }
@@ -88,8 +90,35 @@
     color: var(--color-text-secondary);
 }
 
+.manual-nav__section {
+    display: grid;
+    gap: 4px;
+}
+
+.manual-nav__subhead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 32px;
+    gap: 6px;
+    align-items: center;
+}
+
+.manual-nav__section-title {
+    padding: 7px 10px;
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+.manual-nav__sublist {
+    display: grid;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 14px;
+}
+
 .manual-nav__title.is-active,
-.manual-nav__link.is-active {
+.manual-nav__link.is-active,
+.manual-nav__section-title.is-active {
     background: var(--color-bg-light);
     color: var(--color-primary);
     font-weight: 600;
@@ -180,6 +209,22 @@
     padding: 12px;
     border-radius: 4px;
     overflow-x: auto;
+}
+
+/* Mermaid 流程圖：manual-mermaid.js 把 pre>code.language-mermaid 換成這個容器 */
+.manual-mermaid {
+    margin: 16px 0;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg-white);
+    overflow-x: auto;
+    text-align: center;
+}
+
+.manual-mermaid svg {
+    max-width: 100%;
+    height: auto;
 }
 
 .help-doc table {

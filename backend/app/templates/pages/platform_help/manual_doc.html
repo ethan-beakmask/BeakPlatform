@@ -20,3 +20,8 @@
     </article>
 </main>
 {% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/mermaid.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/manual-mermaid.js') }}"></script>
+{% endblock %}

@@ -1,7 +1,9 @@
 ---
 title: 資安團隊角色設計
 audience: ORG_ADMIN
-requires: [guides/OD_WORKFLOW_VARIANTS]
+order: 20
+nav_menu: open_defense.security_cases
+requires: [manual/05_security_ops/soc_planning/workflow_variants]
 produces: [資安角色配置]
 covers:
   - backend/app/api/roles.py
@@ -48,7 +50,7 @@ covers:
 
 流程簽核節點一律指向「資安人員」，誰值班誰處理。
 
-> 想直接用現成的？`docs/guides/OD_WORKFLOW_VARIANTS.md` 提供兩個依編制設計好的
+> 想直接用現成的？[資安事件處置流程](workflow_variants.md)提供兩個依編制設計好的
 > 處置流程（3~8 人輪班的「SOC 團隊版」、單人 8 小時班的「小企業單人版」），
 > 建置腳本會一併建立下面範例二用到的 `SOC_SUPERVISOR` 角色並綁好選單可見性。
 

@@ -173,6 +173,15 @@ Generated with Claude Code"
 跨階角色、企業間差異、模組合約授權全部自動生效（實測 lion 企業的管理員
 比 beluga 少 4 篇，因為 lion 沒有弱點管理模組授權）。
 
+**但這個可見性不是保密機制，唯一目的是降噪**（用戶 2026-08-14 定調）：
+`docs/` 全是操作說明、沒有機密，全部公開到 Internet 都可接受；
+過濾只是為了**不讓使用者看見與自己無關的過多文件而產生困擾與誤解**。
+因此判斷一頁該不該過濾，問的是「這個人看到會不會困惑」而非「有沒有資格知道」；
+漏過濾一頁不是資安事件，不必回頭補強。MkDocs 站沒有權限機制、`docs/` 整包上
+GitHub，**這兩件事是預期行為不是缺口**。完整條文見
+`dev-notes/DOCS_AUTHORING_SPEC.md` 第八節開頭。
+（真正的機密分界線是 `docs/` 對 `dev-notes/`，那條才是安全邊界。）
+
 **`nav_menu` 綁錯 code 的症狀是「這頁誰都看不到」，而且不會報錯。**
 新增頁面後用該功能的實際使用者身分開一次 `/help/` 確認標題有出現。
 
@@ -184,6 +193,17 @@ NO_MKDOCS_2_WARNING=1 ./venv-docs/bin/mkdocs build --strict   # nav 漏加不會
 
 `/help/concepts` 是舊的平台概念說明（`org_admin.html`，限管理員），
 掛在左側目錄最下方，不屬於 `docs/manual/`。
+
+**手冊支援三層（章 → 節 → 頁），但只到三層**（2026-08-14 起，第一個節是
+`docs/manual/05_security_ops/soc_planning/`）。節＝章底下的子目錄，
+**一定要有 `index.md`**，否則整節不出現在目錄上、只留一行 warning。
+節總覽與章總覽的動態內容規則相反：章總覽整段取代、節總覽保留原文再接清單。
+完整規則（frontmatter、排序、頁間相對連結改寫、mermaid 兩個出口）
+見 `dev-notes/DOCS_AUTHORING_SPEC.md` 第八節。
+
+`docs/guides/` 已於 2026-08-14 併入 `docs/manual/`，**現在 `docs/` 底下
+只剩 `manual/`（MkDocs 制度）與 `help/`（舊的頁內說明 YAML，另案處理）**。
+看到舊路徑 `docs/guides/OD_WORKFLOW_VARIANTS.md` 一律視為過時。
 
 ## BBN 白板已人機分離（2026-08-07，由 BeakBroodNest 端變更）
 

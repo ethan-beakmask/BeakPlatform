@@ -1,6 +1,8 @@
 ---
 title: 資安事件處置流程
 audience: ORG_ADMIN
+order: 10
+nav_menu: open_defense.security_cases
 produces: [封鎖決策紀錄, 案件處置紀錄, 封鎖保護清單]
 covers:
   - modules/open_defense/**
@@ -11,7 +13,7 @@ covers:
 # 資安事件處置流程使用指南（三個編制版本）
 
 > 對象：導入開放防禦模組的組織、負責設定處置流程的管理員
-> 相關：[資安團隊角色設計](SOC_ROLE_DESIGN_GUIDE.md)（角色怎麼設計）
+> 相關：[資安團隊角色設計](role_design.md)（角色怎麼設計）
 
 ## 先問一個問題：你的組織有沒有人在看？
 
@@ -26,7 +28,7 @@ covers:
 | 流程 | 流程 code | 表單 code | 適用編制 |
 |---|---|---|---|
 | 標準版 | `SEC_INCIDENT_FLOW` | `SEC_INCIDENT_RESPONSE` | 3~8 人、有人隨時在線 |
-| SOC 團隊版 | `SEC_IR_FLOW_SOC_TEAM` | `SEC_IR_SOC_TEAM` | 3~8 人輪班，要 SLA 有牙齒 |
+| SOC 團隊版 | `SEC_IR_FLOW_SOC_TEAM` | `SEC_IR_SOC_TEAM` | 3~8 人輪班，需要 SLA 逾時自動催辦 |
 | 小企業單人版 | `SEC_IR_FLOW_SOLO` | `SEC_IR_SOLO` | 1 人、每天 8 小時、16 小時無人 |
 
 三個流程各自綁一張表單，可以同時存在。選一個當預設，或依案件特徵分派給不同流程。

@@ -32,7 +32,7 @@ def index():
         current_doc_id=None,
         current_chapter_id=None,
         show_concepts=_can_read_concepts(),
-        open_map={chapter['chapter_id']: True for chapter in chapters},
+        open_map=_manual_open_map(chapters, open_all=True),
     )
 
 
@@ -52,10 +52,7 @@ def manual_doc(doc_id: str):
         current_doc_id=doc['doc_id'],
         current_chapter_id=current_chapter_id,
         show_concepts=_can_read_concepts(),
-        open_map={
-            chapter['chapter_id']: chapter['chapter_id'] == current_chapter_id
-            for chapter in chapters
-        },
+        open_map=_manual_open_map(chapters, current_doc_id=doc['doc_id']),
     )
 
 
@@ -64,6 +61,44 @@ def _chapter_id_from_doc_id(doc_id: str) -> str | None:
     if len(parts) >= 2 and parts[0] == 'manual':
         return parts[1]
     return None
+
+
+def _section_open_key(chapter_id: str, section_id: str) -> str:
+    return f"section:{chapter_id}/{section_id}"
+
+
+def _section_id_from_doc_id(doc_id: str) -> str | None:
+    parts = doc_id.split('/')
+    if len(parts) >= 4 and parts[0] == 'manual':
+        return parts[2]
+    return None
+
+
+def _manual_open_map(
+    chapters: list[dict],
+    current_doc_id: str | None = None,
+    open_all: bool = False,
+) -> dict[str, bool]:
+    current_chapter_id = _chapter_id_from_doc_id(current_doc_id or '')
+    current_section_id = _section_id_from_doc_id(current_doc_id or '')
+    open_map = {}
+
+    for chapter in chapters:
+        chapter_id = chapter['chapter_id']
+        open_map[chapter_id] = open_all or chapter_id == current_chapter_id
+        for entry in chapter.get('entries', []):
+            if entry.get('kind') != 'section':
+                continue
+            section_id = entry['section_id']
+            open_map[_section_open_key(chapter_id, section_id)] = (
+                open_all
+                or (
+                    chapter_id == current_chapter_id
+                    and section_id == current_section_id
+                )
+            )
+
+    return open_map
 
 
 @platform_help_bp.route('/concepts')
@@ -79,7 +114,7 @@ def concepts():
         current_doc_id=CONCEPTS_NAV_ID,
         current_chapter_id=None,
         show_concepts=True,
-        open_map={chapter['chapter_id']: False for chapter in chapters},
+        open_map=_manual_open_map(chapters),
     )
 
 

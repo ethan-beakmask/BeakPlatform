@@ -9,6 +9,7 @@ chapter_index: true
 
 本章包含以下主題：
 
+- [資安監控團隊規劃](soc_planning/index.md)
 - [資安案件處置中心](security_cases.md)
 - [開放防禦儀表板](od_dashboard.md)
 - [決策列表](decisions.md)
