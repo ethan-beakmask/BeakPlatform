@@ -1,10 +1,63 @@
 /* User manual index and document pages */
 
+.manual-page {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.manual-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+}
+
+.manual-topbar__logo {
+    color: var(--color-text);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.manual-topbar__right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.manual-topbar__identity {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.manual-topbar__back {
+    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.manual-topbar__back:hover {
+    color: var(--color-primary-hover);
+}
+
 .manual-shell {
     display: grid;
     grid-template-columns: 300px minmax(0, 1fr);
     gap: 24px;
-    max-width: 1700px;
+    max-width: 1200px;
     margin: 24px auto;
     padding: 0 24px;
 }
@@ -19,8 +72,8 @@
 
 .manual-nav {
     position: sticky;
-    top: 80px;
-    max-height: calc(100vh - 104px);
+    top: 64px;
+    max-height: calc(100vh - 88px);
     overflow: auto;
     border: 1px solid var(--color-border);
     border-radius: 6px;
@@ -124,6 +177,12 @@
     font-weight: 600;
 }
 
+.manual-nav__extra {
+    border-top: 1px solid var(--color-border);
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
 .manual-index__header {
     margin-bottom: 24px;
 }
@@ -157,58 +216,198 @@
     padding: 32px 0;
 }
 
-.manual-nav__extra {
-    border-top: 1px solid var(--color-border);
-    margin-top: 8px;
-    padding-top: 8px;
-}
-
 .help-doc {
-    padding: 24px 32px;
+    max-width: 46rem;
+    padding: 32px 40px;
     background: var(--color-bg-white);
     border: 1px solid var(--color-border);
     border-radius: 6px;
+    font-size: 16px;
+    line-height: 1.75;
 }
 
 .help-doc__back {
     margin-bottom: 18px;
 }
 
+.help-doc__back a,
+.help-doc a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.help-doc__back a:hover,
+.help-doc a:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+}
+
 .help-doc h1,
 .help-doc h2,
 .help-doc h3 {
-    margin-top: 1.4em;
-    margin-bottom: 0.6em;
+    color: var(--color-text);
+    line-height: 1.3;
+}
+
+.help-doc h1 {
+    margin: 0 0 0.8em;
+    font-size: 2rem;
+    font-weight: 600;
 }
 
 .help-doc h2 {
-    border-bottom: 1px solid var(--color-border);
+    margin: 2.2em 0 0.8em;
     padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.help-doc h3 {
+    margin: 1.8em 0 0.7em;
+    font-size: 1.25rem;
+    font-weight: 600;
 }
 
 .help-doc p {
-    line-height: 1.7;
     margin: 0.8em 0;
+    line-height: 1.75;
 }
 
 .help-doc ul,
 .help-doc ol {
-    line-height: 1.7;
-    padding-left: 24px;
+    display: grid;
+    gap: 0.4em;
+    margin: 0.8em 0;
+    padding-left: 1.6em;
+    line-height: 1.75;
+}
+
+.help-doc li {
+    line-height: 1.75;
+}
+
+.help-doc strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.help-doc table {
+    width: auto;
+    border-collapse: collapse;
+    margin: 1.2em 0;
+}
+
+.help-doc th,
+.help-doc td {
+    padding: 8px 14px;
+    vertical-align: top;
+}
+
+.help-doc th {
+    border-bottom: 2px solid var(--color-border);
+    background: transparent;
+    font-weight: 600;
+    text-align: left;
+}
+
+.help-doc td {
+    border-bottom: 1px solid var(--color-border-light);
 }
 
 .help-doc code {
     background: var(--color-bg-light);
     padding: 2px 6px;
     border-radius: 3px;
-    font-size: 0.92em;
+    font-size: 0.9em;
 }
 
 .help-doc pre {
     background: var(--color-bg-light);
-    padding: 12px;
+    padding: 16px;
     border-radius: 4px;
     overflow-x: auto;
+    line-height: 1.6;
+}
+
+.help-doc pre code {
+    background: transparent;
+    padding: 0;
+}
+
+.help-doc .admonition {
+    margin: 1.2em 0;
+    padding: 12px 16px;
+    border-left: 4px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg-light);
+}
+
+/* 預設標題色用 --color-text：色條可以是淺灰，文字不行
+   （--color-border 是 #ddd，配 --color-bg-light 背景幾乎讀不到） */
+.help-doc .admonition-title {
+    margin: 0 0 0.5em;
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.help-doc .admonition > :last-child {
+    margin-bottom: 0;
+}
+
+.help-doc .admonition.note,
+.help-doc .admonition.info {
+    border-left-color: var(--color-info);
+    background: var(--color-info-light);
+}
+
+.help-doc .admonition.note .admonition-title,
+.help-doc .admonition.info .admonition-title {
+    color: var(--color-info);
+}
+
+.help-doc .admonition.abstract,
+.help-doc .admonition.tip,
+.help-doc .admonition.hint {
+    border-left-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.help-doc .admonition.abstract .admonition-title,
+.help-doc .admonition.tip .admonition-title,
+.help-doc .admonition.hint .admonition-title {
+    color: var(--color-primary);
+}
+
+.help-doc .admonition.success {
+    border-left-color: var(--color-success);
+    background: var(--color-success-light);
+}
+
+.help-doc .admonition.success .admonition-title {
+    color: var(--color-success);
+}
+
+.help-doc .admonition.warning,
+.help-doc .admonition.caution {
+    border-left-color: var(--color-warning);
+    background: var(--color-warning-light);
+}
+
+.help-doc .admonition.warning .admonition-title,
+.help-doc .admonition.caution .admonition-title {
+    color: var(--color-warning);
+}
+
+.help-doc .admonition.danger,
+.help-doc .admonition.error {
+    border-left-color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+
+.help-doc .admonition.danger .admonition-title,
+.help-doc .admonition.error .admonition-title {
+    color: var(--color-danger);
 }
 
 /* Mermaid 流程圖：manual-mermaid.js 把 pre>code.language-mermaid 換成這個容器 */
@@ -227,22 +426,11 @@
     height: auto;
 }
 
-.help-doc table {
-    border-collapse: collapse;
-    margin: 12px 0;
-}
-
-.help-doc th,
-.help-doc td {
-    border: 1px solid var(--color-border);
-    padding: 6px 12px;
-}
-
-.help-doc th {
-    background: var(--color-bg-light);
-}
-
 @media (max-width: 900px) {
+    .manual-topbar__identity {
+        display: none;
+    }
+
     .manual-shell {
         grid-template-columns: 1fr;
         padding: 0 16px;
@@ -254,6 +442,7 @@
     }
 
     .help-doc {
-        padding: 20px;
+        max-width: 100%;
+        padding: 24px 20px;
     }
 }

@@ -1,10 +1,6 @@
-{% extends 'layouts/base.html' %}
+{% extends 'layouts/manual_base.html' %}
 
 {% block title %}{{ _('使用者手冊') }} - BeakPlatform{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/platform-manual.css') }}">
-{% endblock %}
 
 {% block content %}
 <main class="manual-shell">

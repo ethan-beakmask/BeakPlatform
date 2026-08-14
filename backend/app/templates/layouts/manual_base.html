@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale|default('zh-TW') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}BeakPlatform{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <script>window.__BP = '{{ app_prefix }}';</script>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    {% set _locale = current_locale|default('zh-TW') %}
+    {% if _locale != 'zh-TW' %}
+    <script src="{{ url_for('main.i18n_dict_js', locale=_locale) }}"></script>
+    {% endif %}
+    <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/platform-manual.css') }}">
+
+    {% block head %}{% endblock %}
+</head>
+<body class="manual-page">
+    {% set _user_type_code = current_user.user_type|string %}
+    {% set _user_type_labels = {
+        'SYSTEM_ADMIN': _('系統管理員'),
+        'ORG_ADMIN': _('企業管理員'),
+        'EMPLOYEE': _('企業成員'),
+        'EXTERNAL': _('外部廠商')
+    } %}
+    <div class="manual-topbar">
+        <a class="manual-topbar__logo" href="{{ url_for('platform_help.index') }}">
+            {{ _('BeakPlatform 使用手冊') }}
+        </a>
+        <div class="manual-topbar__right">
+            <span class="manual-topbar__identity">
+                {{ _('以 %(name)s（%(type)s）的身分檢視', name=current_user.display_name, type=_user_type_labels.get(_user_type_code, _user_type_code)) }}
+            </span>
+            <a class="manual-topbar__back" href="{{ url_for('main.dashboard') }}">
+                {{ _('回到平台') }}
+            </a>
+        </div>
+    </div>
+
+    {% block content %}{% endblock %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
