@@ -614,12 +614,24 @@ JS 與 Jinja2 深度交織無法乾淨分離時，才保留 `{% include "_xxx_me
   （寫了完全無效果，排版會全部擠在一起）
 - 排版用 CSS Grid / Flexbox；模組 class 加前綴（`wks-`、`ird-`、`fw-`、`pir-`）
 
-**CSS 變數白名單**（只能用這些，禁止自創）：
+**CSS 變數白名單**（只能用這些，禁止自創）——權威來源是
+`backend/app/static/css/common.css` 的 `:root`，2026-08-14 校對後的完整清單：
 
 ```
---color-primary  --color-text  --color-text-secondary  --color-text-muted
---color-bg  --color-bg-white  --color-bg-light  --color-border
+主色    --color-primary  --color-primary-hover  --color-primary-light
+語意色  --color-danger   --color-danger-hover   --color-danger-light
+        --color-success  --color-success-hover  --color-success-light
+        --color-warning  --color-warning-hover  --color-warning-light
+        --color-info     --color-info-hover     --color-info-light
+文字    --color-text  --color-text-secondary  --color-text-muted
+背景    --color-bg  --color-bg-white  --color-bg-light  --color-bg-header
+邊框    --color-border  --color-border-light
+其他    --border-radius  --border-radius-lg
+        --font-size-base  --font-size-sm  --font-size-xs
 ```
+
+（2026-08-14 前本檔只列 8 個，漏掉語意色與尺寸變數——但那些在 15 個既有 CSS
+檔裡早就在用。**看到舊版 8 個清單的 codex spec 或文件一律以本表為準**。）
 
 自創 `--text-primary`、`--surface-color` 這類不存在的變數時，CSS fallback 值會生效，
 曾造成整頁深色 fallback、白底白字。**派工給 codex/agent 時必須在 prompt 明列此白名單。**

@@ -14,8 +14,16 @@
 ### CSS 變數白名單（只能用這些，禁止自創）
 
 ```
---color-primary  --color-text  --color-text-secondary  --color-text-muted
---color-bg  --color-bg-white  --color-bg-light  --color-border
+主色    --color-primary  --color-primary-hover  --color-primary-light
+語意色  --color-danger   --color-danger-hover   --color-danger-light
+        --color-success  --color-success-hover  --color-success-light
+        --color-warning  --color-warning-hover  --color-warning-light
+        --color-info     --color-info-hover     --color-info-light
+文字    --color-text  --color-text-secondary  --color-text-muted
+背景    --color-bg  --color-bg-white  --color-bg-light  --color-bg-header
+邊框    --color-border  --color-border-light
+其他    --border-radius  --border-radius-lg
+        --font-size-base  --font-size-sm  --font-size-xs
 ```
 
 **禁止**自創 `--text-primary`、`--surface-color` 這類不存在的變數——
