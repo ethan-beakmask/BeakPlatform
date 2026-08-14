@@ -547,6 +547,29 @@ modules/<module_name>/static/modules/<module_name>/
 `backend/app/static/` 只放平台級資源（themes.css、vendor/、auth.js 等）。
 模組資源一律放在 `modules/<name>/static/` 下，由 module_loader 自動 serve。
 
+### VENDOR-01: 換 vendor 套件檔案時要同步版本標記（2026-08-14 起）
+
+`/api/system-settings/package-versions` 顯示的 vendor 版本是**從 minified 檔內容
+用正則抓的**，抓不準是常態，而且**錯了不會報錯**：
+
+- GridStack 13.0.2 的 dist 內仍寫 `GDRev="13.0.1"`（上游打包漏更新）
+  → 頁面恆顯示「可更新」，升幾次都一樣
+- mermaid 實際是 10.9.1，卻被抓到內嵌依賴的 `version="3.0.9"`
+  → 顯示的版本與事實無關，也就查不出它其實落後一個 major
+
+所以**換檔案後一律同步更新版本標記**（`_ss_packages.py` 會優先採用）：
+
+| 套件型態 | 標記位置 |
+|---|---|
+| 目錄型（`vendor/gridstack/`） | `vendor/<套件>/VERSION`，第一行 `X.Y.Z`（後面可接註記） |
+| 單檔型（`vendor/mermaid.min.js`） | `vendor/versions.json` 的 `{"<key>": "X.Y.Z"}` |
+
+- key 是目錄名／檔名第一個 `.` 之前的小寫（`_get_vendor_key()`）
+- 開頭不是 `X.Y.Z` 一律忽略、退回內容偵測（抓錯版本比抓不到更糟）；
+  沒列的套件行為完全不變（ace、bootstrap、alpine 等抓得準的不必列）
+- 新增 vendor 套件時記得一併加進 `VENDOR_META`（npm 名稱），否則查不到最新版，
+  狀態會一直停在 `checking`
+
 ---
 
 ## 前端開發規範

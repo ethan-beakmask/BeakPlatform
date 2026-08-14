@@ -1,0 +1,4 @@
+{
+  "_readme": "vendor 套件的版本覆寫，供 /api/system-settings/package-versions 使用。只在『從檔案內容抓不到或抓錯』時才需要列在這裡；目錄型套件請優先用 vendor/<套件>/VERSION 檔。更換套件檔案時記得同步更新對應版本，格式一律 X.Y.Z。",
+  "mermaid": "10.9.1"
+}

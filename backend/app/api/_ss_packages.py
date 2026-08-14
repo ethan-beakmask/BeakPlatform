@@ -4,6 +4,7 @@ System Settings - 套件版本查詢子模組
 端點：
 - GET    /api/system-settings/package-versions        查詢套件版本
 """
+import json
 import os
 import re
 import subprocess
@@ -35,10 +36,25 @@ VENDOR_META = {
     'ace': {'display': 'Ace Editor', 'npm': 'ace-builds'},
     'gridstack': {'display': 'GridStack', 'npm': 'gridstack'},
     'wunderbaum': {'display': 'Wunderbaum', 'npm': 'wunderbaum'},
+    'mermaid': {'display': 'Mermaid', 'npm': 'mermaid'},
 }
 
 # 掃描時略過的目錄/檔案（非套件項目）
 VENDOR_SCAN_SKIP = {'fonts', 'jstree-theme'}
+
+# 版本覆寫來源（優先於從檔案內容偵測）
+# 存在的理由：minified dist 內的版本字串會落後或根本不是套件自己的版本。
+#   - GridStack 13.0.2 的 dist 內仍寫 GDRev="13.0.1"（上游打包時漏更新）
+#   - 內容偵測會抓到內嵌依賴的版本（mermaid 曾被抓成 3.0.9）
+# 兩者都會讓套件版本頁顯示假的「可更新」或錯誤版本，且不會有任何錯誤訊息。
+VENDOR_VERSION_FILE = 'VERSION'          # 目錄型套件：vendor/<pkg>/VERSION
+VENDOR_VERSION_MANIFEST = 'versions.json'  # 單檔型套件：vendor/versions.json 的 {key: 版本}
+
+# 版本號格式（覆寫值不合格式一律忽略，退回檔案偵測）
+_VERSION_PATTERN = re.compile(r'\d+\.\d+\.\d+')
+
+# versions.json 的快取（依 mtime 失效）
+_version_manifest_cache = {'mtime': None, 'data': {}}
 
 
 def register(bp):
@@ -242,6 +258,74 @@ def _find_main_file_in_dir(dir_path, dir_name):
     return css_files[0] if css_files else None
 
 
+def _normalize_override(value):
+    """驗證覆寫值為 X.Y.Z 格式，不合格式回 None（退回檔案偵測）"""
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    return value if _VERSION_PATTERN.fullmatch(value) else None
+
+
+def _load_version_manifest(vendor_dir):
+    """讀 vendor/versions.json（不存在或壞掉一律回空 dict），依 mtime 快取"""
+    path = os.path.join(vendor_dir, VENDOR_VERSION_MANIFEST)
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        _version_manifest_cache['mtime'] = None
+        _version_manifest_cache['data'] = {}
+        return {}
+
+    if _version_manifest_cache['mtime'] != mtime:
+        data = {}
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict):
+                data = loaded
+        except Exception:
+            data = {}
+        _version_manifest_cache['mtime'] = mtime
+        _version_manifest_cache['data'] = data
+
+    return _version_manifest_cache['data']
+
+
+def _read_version_file(dir_path):
+    """
+    讀套件目錄下的 VERSION 檔
+
+    只取第一行的第一段，所以 `13.0.2  # 2026-08-14 下載` 這種帶註記的寫法可用；
+    但開頭仍必須是純版本號，不做模糊比對（抓錯版本比抓不到更糟）。
+    """
+    path = os.path.join(dir_path, VENDOR_VERSION_FILE)
+    try:
+        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+            parts = f.readline().split()
+    except OSError:
+        return None
+    return _normalize_override(parts[0]) if parts else None
+
+
+def _resolve_vendor_version(key, main_file, entry_path, manifest):
+    """
+    決定 vendor 套件的安裝版本
+
+    優先序：套件目錄的 VERSION 檔 > versions.json 的對應 key > 從檔案內容偵測。
+    回傳 (版本號或 None, 是否來自覆寫)
+    """
+    if os.path.isdir(entry_path):
+        override = _read_version_file(entry_path)
+        if override:
+            return override, True
+
+    override = _normalize_override(manifest.get(key))
+    if override:
+        return override, True
+
+    return _detect_version_from_file(main_file), False
+
+
 def _detect_version_from_file(file_path):
     """從檔案內容自動偵測版本號"""
     try:
@@ -292,11 +376,12 @@ def _scan_vendor_packages():
         return []
 
     packages = {}  # key -> package info
+    manifest = _load_version_manifest(vendor_dir)
 
     for entry in sorted(os.listdir(vendor_dir)):
         entry_path = os.path.join(vendor_dir, entry)
 
-        # 跳過隱藏檔案、JSON 資料檔、已知非套件項目
+        # 跳過隱藏檔案、JSON 資料檔（含 versions.json）、已知非套件項目
         if (entry.startswith('.')
                 or entry.endswith('.json')
                 or entry in VENDOR_SCAN_SKIP):
@@ -307,9 +392,11 @@ def _scan_vendor_packages():
         # 同 key 已處理（CSS + JS 同名時，JS 優先偵測版本）
         if key in packages:
             if entry.endswith('.js') and not packages[key]['source'].endswith('.js'):
-                installed = _detect_version_from_file(entry_path)
-                if installed:
-                    packages[key]['installed_version'] = installed
+                # 已被覆寫的版本不讓 JS 檔的偵測值蓋掉
+                if not packages[key]['_version_overridden']:
+                    installed = _detect_version_from_file(entry_path)
+                    if installed:
+                        packages[key]['installed_version'] = installed
                 packages[key]['source'] = f'vendor/{entry}'
             continue
 
@@ -324,8 +411,10 @@ def _scan_vendor_packages():
             main_file = entry_path
             source = f'vendor/{entry}'
 
-        # 偵測版本
-        installed = _detect_version_from_file(main_file)
+        # 決定版本（覆寫優先於檔案偵測）
+        installed, overridden = _resolve_vendor_version(
+            key, main_file, entry_path, manifest
+        )
 
         # 取得 metadata
         meta = VENDOR_META.get(key, {})
@@ -342,6 +431,7 @@ def _scan_vendor_packages():
             'source': source,
             '_npm_name': npm_name,
             '_is_custom': is_custom,
+            '_version_overridden': overridden,
         }
 
     return list(packages.values())
@@ -540,6 +630,7 @@ def _check_package_versions():
     for pkg in frontend_packages:
         pkg.pop('_npm_name', None)
         pkg.pop('_is_custom', None)
+        pkg.pop('_version_overridden', None)
 
     # === 系統服務 ===
     service_packages = _check_system_services()

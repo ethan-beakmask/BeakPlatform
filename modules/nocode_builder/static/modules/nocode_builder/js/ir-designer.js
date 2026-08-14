@@ -1262,7 +1262,9 @@ function irDesigner() {
             if (!this.freeGrid) return;
             this.freeGrid.removeAll(false);
             for (const frame of frames || []) {
-                this.freeGrid.addWidget(this.createFreeFrameElement(frame));
+                // GridStack v11 起 addWidget() 不收 HTMLElement（只會 console.error
+                // 後轉呼叫 makeWidget），既有元素一律直接走 makeWidget
+                this.freeGrid.makeWidget(this.createFreeFrameElement(frame));
             }
             this.refreshZoneContents();
         },
@@ -1315,7 +1317,7 @@ function irDesigner() {
             const frame = { id, x: 0, y: 0, w: 4, h: 3, overflow: 'auto', widget_ids: [] };
             this.canvasMeta[id] = { overflow: 'auto', widget_ids: [] };
             if (this.freeGrid) {
-                this.freeGrid.addWidget(this.createFreeFrameElement(frame));
+                this.freeGrid.makeWidget(this.createFreeFrameElement(frame));
                 this.syncFreeMetaWithGeometry();
             } else {
                 this.doc.page.canvas.frames = [...(this.doc.page.canvas.frames || []), frame];

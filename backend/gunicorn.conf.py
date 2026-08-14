@@ -6,7 +6,10 @@ import multiprocessing
 import os
 
 # Bind
-bind = os.getenv('GUNICORN_BIND', '0.0.0.0:5000')
+# NET-01：應用程式只綁 127.0.0.1，對外一律經 nginx 反代。
+# 不要為了「從別台連得到」而改成 0.0.0.0，那會讓 app 直接暴露在 LAN 上、
+# 繞過 nginx 那層（含根路徑 return 444 與各項存取控制）。
+bind = os.getenv('GUNICORN_BIND', '127.0.0.1:5000')
 
 # Workers
 # Rule of thumb: 2-4 x $(NUM_CORES)
