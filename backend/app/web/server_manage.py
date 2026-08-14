@@ -254,11 +254,15 @@ def api_redis_slowlog():
 
         results = []
         for entry in entries:
+            # SLOWLOG 的 command 不受 decode_responses 影響，一律是 bytes
+            command = entry.get('command', '')
+            if isinstance(command, bytes):
+                command = command.decode('utf-8', errors='replace')
             results.append({
                 'id': entry.get('id'),
                 'timestamp': entry.get('start_time'),
                 'duration_us': entry.get('duration'),
-                'command': entry.get('command', ''),
+                'command': command,
             })
 
         return jsonify({'ok': True, 'entries': results})
