@@ -633,6 +633,11 @@ JS 與 Jinja2 深度交織無法乾淨分離時，才保留 `{% include "_xxx_me
 （2026-08-14 前本檔只列 8 個，漏掉語意色與尺寸變數——但那些在 15 個既有 CSS
 檔裡早就在用。**看到舊版 8 個清單的 codex spec 或文件一律以本表為準**。）
 
+**這條管的是「引用全站色票」，不禁止區域變數**：在自己的 scope 定義、
+自己使用的版面變數（如 `platform-manual.css` 頂端的 `--manual-shell-max`）
+沒有 fallback 風險，而且能把散落的尺寸集中成一處。判別方式：
+**別人定義的（`common.css` 的 `:root`）必須照白名單，自己定義自己用的可以。**
+
 自創 `--text-primary`、`--surface-color` 這類不存在的變數時，CSS fallback 值會生效，
 曾造成整頁深色 fallback、白底白字。**派工給 codex/agent 時必須在 prompt 明列此白名單。**
 

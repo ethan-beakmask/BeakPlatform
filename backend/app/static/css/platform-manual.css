@@ -1,6 +1,24 @@
-/* User manual index and document pages */
+/* User manual index and document pages
+ *
+ * 版面尺寸一律用下方 .manual-page 的區域變數，不要在個別規則裡寫死數字。
+ * （2026-08-14：寬度原本散在 .manual-shell / .help-doc / .manual-nav 三處，
+ *   調一個值要改三個地方且容易漏。）
+ *
+ * 這裡的 --manual-* 是本檔自用的版面變數，與全站的 --color-* 色票是兩回事：
+ * 色票必須來自 common.css 的 :root（引用不存在的會靜默 fallback），
+ * 版面變數在自己的 scope 定義自己用，不存在 fallback 問題。
+ *
+ * 例外：media query 的 breakpoint 不能用 CSS 變數，只能寫死。
+ * 目前唯一的斷點是 900px，改的話要同時改本檔底部的 @media。
+ */
 
 .manual-page {
+    /* --- 版面尺寸，要調寬窄改這裡 --- */
+    --manual-shell-max: 1800px;      /* 整個版面（側欄 + 內容）的最大寬度 */
+    --manual-nav-width: 300px;       /* 左側目錄欄寬 */
+    --manual-topbar-height: 48px;
+    --manual-gutter: 24px;           /* 版面左右留白與欄間距 */
+
     margin: 0;
     min-height: 100vh;
     background: var(--color-bg);
@@ -15,7 +33,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 48px;
+    height: var(--manual-topbar-height);
     padding: 0 20px;
     border-bottom: 1px solid var(--color-border);
     background: var(--color-bg-white);
@@ -55,11 +73,11 @@
 
 .manual-shell {
     display: grid;
-    grid-template-columns: 300px minmax(0, 1fr);
-    gap: 24px;
-    max-width: 1200px;
-    margin: 24px auto;
-    padding: 0 24px;
+    grid-template-columns: var(--manual-nav-width) minmax(0, 1fr);
+    gap: var(--manual-gutter);
+    max-width: var(--manual-shell-max);
+    margin: var(--manual-gutter) auto;
+    padding: 0 var(--manual-gutter);
 }
 
 .manual-shell__nav {
@@ -72,8 +90,8 @@
 
 .manual-nav {
     position: sticky;
-    top: 64px;
-    max-height: calc(100vh - 88px);
+    top: calc(var(--manual-topbar-height) + 16px);
+    max-height: calc(100vh - var(--manual-topbar-height) - 40px);
     overflow: auto;
     border: 1px solid var(--color-border);
     border-radius: 6px;
@@ -216,8 +234,9 @@
     padding: 32px 0;
 }
 
+/* 內容區用滿版面寬度，不限行長：手冊預期會有大量流程圖與截圖，
+   限行長（原本 46rem）會讓圖被壓縮。文字行長因此偏長是刻意的取捨。 */
 .help-doc {
-    max-width: 46rem;
     padding: 32px 40px;
     background: var(--color-bg-white);
     border: 1px solid var(--color-border);
@@ -426,6 +445,8 @@
     height: auto;
 }
 
+/* 唯一的斷點。media query 不能用 CSS 變數，所以這個 900px 是寫死的，
+   要改的話只有這一處。 */
 @media (max-width: 900px) {
     .manual-topbar__identity {
         display: none;
@@ -442,7 +463,6 @@
     }
 
     .help-doc {
-        max-width: 100%;
         padding: 24px 20px;
     }
 }

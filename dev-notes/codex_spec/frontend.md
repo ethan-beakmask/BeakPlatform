@@ -29,6 +29,13 @@
 **禁止**自創 `--text-primary`、`--surface-color` 這類不存在的變數——
 CSS fallback 值會生效，曾造成整頁深色 fallback、白底白字。
 
+**這條管的是「引用全站色票」**。在自己的 scope 裡定義、自己使用的區域變數
+（例如某個版面檔在 `.xxx-page` 上定義 `--xxx-shell-max: 1800px`）不在此限，
+因為不存在「引用到不存在的變數」的風險，而且能把散落的尺寸集中成一處。
+判別方式：**變數是別人定義的（`common.css` 的 `:root`）就必須照白名單；
+是自己定義自己用的就可以**。
+範例：`backend/app/static/css/platform-manual.css` 頂端的 `--manual-*`。
+
 ### Alpine.js 四條硬規則
 
 **1. `x-for` / `x-if` 的直接子節點必須是單一 element**
