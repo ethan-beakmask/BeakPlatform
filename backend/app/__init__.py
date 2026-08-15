@@ -304,6 +304,18 @@ def register_context_processors(app: Flask) -> None:
         }
 
     @app.context_processor
+    def inject_manual_doc_exists():
+        """注入頁內手冊連結存在性檢查；手冊異常不得影響全站渲染。"""
+        def manual_doc_exists(doc_id):
+            try:
+                from .services import doc_catalog_service
+                return doc_catalog_service.doc_exists(doc_id)
+            except Exception:
+                return False
+
+        return {'manual_doc_exists': manual_doc_exists}
+
+    @app.context_processor
     def inject_app_prefix():
         """注入 URL 前綴（來自 SCRIPT_NAME），供模板和前端 JS 使用"""
         from flask import request as req

@@ -439,6 +439,33 @@ WHERE is_deleted = false AND is_active = true ORDER BY depth, code;
 
 內容一律以**最終操作人員**為讀者。寫作風格規範見第九節（PF-90 已定版）。
 
+### 頁內 [?] 與語系變體檔
+
+寫完一頁手冊後，若它對應某個實際平台畫面，就在該頁模板加一行：
+
+```jinja
+{% block help_doc %}<doc_id>{% endblock %}
+```
+
+`doc_id` 不存在時，右上角 `[?]` 按鈕不顯示。
+
+語系變體檔命名為 `<stem>.<lang>.md`，支援 `en` / `ja` / `zh-cn`。
+例如 `login.md` 的英文版是 `login.en.md`。變體檔只有 frontmatter 的
+`title` 與內文會被採用；`nav_menu`、`visible_user_types`、
+`visible_roles`、`audience`、`order` 等可見性與排序欄位一律以 zh-TW
+主檔為準。
+
+登入者語系缺少對應變體時，站內手冊會自動回退 zh-TW，並在頁面顯示提示。
+MkDocs 站不建立語系版本，變體檔已在 `mkdocs.yml` 的 `exclude_docs` 排除。
+
+兩個容易誤會的邊界（2026-08-15 實測確認）：
+
+- **變體檔只寫了 frontmatter、內文空白時視同沒有翻譯**：回退 zh-TW 並顯示提示，
+  不會給出一片空白的頁面
+- **找不到同名主檔的變體檔會被整個忽略**（例如只有 `foo.en.md`、沒有 `foo.md`），
+  不會產生 doc_id，只在 log 留一行 `locale variant ignored without base file`。
+  翻譯新頁時**先建 zh-TW 主檔**，否則翻譯檔在站上完全不會出現
+
 ---
 
 ## 九、寫作風格（PF-90，2026-08-14 用戶定版）

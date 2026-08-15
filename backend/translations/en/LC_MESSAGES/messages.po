@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-13 14:04+0800\n"
+"POT-Creation-Date: 2026-08-15 11:14+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -1923,6 +1923,14 @@ msgstr "%(imported)s records imported, %(skipped)s skipped"
 msgid "缺少權限：%(code)s"
 msgstr "Missing permission: %(code)s"
 
+#: app/services/doc_catalog_service.py:496
+msgid "本章包含以下主題："
+msgstr "This chapter covers:"
+
+#: app/services/doc_catalog_service.py:558
+msgid "本節包含以下主題："
+msgstr "This section covers:"
+
 #: app/services/role_assignment_service.py:26
 #: app/templates/pages/admin/groups.html:277
 msgid "團長"
@@ -1956,11 +1964,12 @@ msgid "員工"
 msgstr "Employee"
 
 #: app/services/role_assignment_service.py:56
+#: app/templates/layouts/manual_base.html:26
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:30
 #: app/templates/pages/menu/list.html:132
 #: app/templates/pages/modules/create.html:52
-#: app/templates/pages/platform_help/org_admin.html:46
-#: app/templates/pages/platform_help/org_admin.html:83
+#: app/templates/pages/platform_help/org_admin.html:52
+#: app/templates/pages/platform_help/org_admin.html:89
 #: app/templates/pages/profile/view.html:21
 #: app/templates/pages/users/edit.html:93
 #: app/templates/pages/users/edit.html:106
@@ -1969,11 +1978,12 @@ msgid "企業管理員"
 msgstr "Organization Admin"
 
 #: app/services/role_assignment_service.py:57
+#: app/templates/layouts/manual_base.html:27
 #: app/templates/pages/admin/departments.html:257
 #: app/templates/pages/admin/departments.html:437
 #: app/templates/pages/menu/list.html:136
-#: app/templates/pages/platform_help/org_admin.html:51
-#: app/templates/pages/platform_help/org_admin.html:136
+#: app/templates/pages/platform_help/org_admin.html:57
+#: app/templates/pages/platform_help/org_admin.html:142
 #: app/templates/pages/positions/edit.html:17
 #: app/templates/pages/positions/list.html:17
 #: app/templates/pages/positions/view.html:15
@@ -1981,13 +1991,14 @@ msgid "企業成員"
 msgstr "Employee"
 
 #: app/services/role_assignment_service.py:58
+#: app/templates/layouts/manual_base.html:28
 #: app/templates/pages/external-users/list.html:25
 #: app/templates/pages/external-users/view.html:23
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:35
 #: app/templates/pages/job_levels/create.html:110
 #: app/templates/pages/menu/list.html:140
 #: app/templates/pages/menu/list.html:152
-#: app/templates/pages/platform_help/org_admin.html:56
+#: app/templates/pages/platform_help/org_admin.html:62
 #: app/templates/pages/users/edit.html:92
 #: app/templates/pages/users/edit.html:107
 msgid "外部廠商"
@@ -1995,10 +2006,11 @@ msgstr "External Member"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:296
 #: app/services/role_assignment_service.py:59
+#: app/templates/layouts/manual_base.html:25
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:25
 #: app/templates/pages/menu/list.html:128
 #: app/templates/pages/modules/create.html:51
-#: app/templates/pages/platform_help/org_admin.html:41
+#: app/templates/pages/platform_help/org_admin.html:47
 #: app/templates/pages/profile/view.html:20
 #: app/templates/pages/users/edit.html:95
 #: app/templates/pages/users/edit.html:105
@@ -2047,12 +2059,12 @@ msgstr ""
 #: app/templates/auth/change_password.html:7
 #: app/templates/auth/change_password.html:11
 #: app/templates/auth/change_password.html:72
-#: app/templates/pages/change_password.html:3
-#: app/templates/pages/change_password.html:10
-#: app/templates/pages/change_password.html:52
+#: app/templates/pages/change_password.html:5
+#: app/templates/pages/change_password.html:12
+#: app/templates/pages/change_password.html:54
 #: app/templates/pages/external-users/edit.html:74
 #: app/templates/pages/external-users/edit.html:116
-#: app/templates/pages/personal_settings.html:51
+#: app/templates/pages/personal_settings.html:53
 #: app/templates/pages/profile/password.html:3
 #: app/templates/pages/profile/password.html:11
 #: app/templates/pages/profile/password.html:42
@@ -2069,15 +2081,15 @@ msgstr ""
 "continue using the system."
 
 #: app/templates/auth/change_password.html:36
-#: app/templates/pages/change_password.html:27
+#: app/templates/pages/change_password.html:29
 msgid "目前密碼"
 msgstr "Current password"
 
 #: app/templates/auth/change_password.html:44
 #: app/templates/pages/admin/org-admins/list.html:111
-#: app/templates/pages/change_password.html:33
+#: app/templates/pages/change_password.html:35
 #: app/templates/pages/external-users/edit.html:80
-#: app/templates/pages/organizations/admins.html:114
+#: app/templates/pages/organizations/admins.html:116
 #: app/templates/pages/sys_accounts/edit.html:64
 #: app/templates/pages/sys_accounts/list.html:136
 #: app/templates/pages/users/edit.html:132
@@ -2091,7 +2103,7 @@ msgid "密碼長度至少 %(min_length)s 碼"
 msgstr "Password length must be at least %(min_length)s characters"
 
 #: app/templates/auth/change_password.html:54
-#: app/templates/pages/change_password.html:39
+#: app/templates/pages/change_password.html:41
 #: app/templates/pages/sys_accounts/edit.html:86
 msgid "確認新密碼"
 msgstr "Confirm new password"
@@ -2099,8 +2111,8 @@ msgstr "Confirm new password"
 #: app/templates/auth/change_password.html:61
 #: app/templates/pages/admin/initial_setup.html:240
 #: app/templates/pages/admin/org-admins/list.html:133
-#: app/templates/pages/change_password.html:43
-#: app/templates/pages/organizations/admins.html:136
+#: app/templates/pages/change_password.html:45
+#: app/templates/pages/organizations/admins.html:138
 #: app/templates/pages/sys_accounts/create.html:82
 #: app/templates/pages/sys_accounts/edit.html:91
 #: app/templates/pages/sys_accounts/list.html:167
@@ -2112,8 +2124,8 @@ msgstr "Passwords do not match"
 #: app/templates/auth/change_password.html:64
 #: app/templates/pages/admin/initial_setup.html:244
 #: app/templates/pages/admin/org-admins/list.html:136
-#: app/templates/pages/change_password.html:46
-#: app/templates/pages/organizations/admins.html:139
+#: app/templates/pages/change_password.html:48
+#: app/templates/pages/organizations/admins.html:141
 #: app/templates/pages/users/view.html:210
 msgid "確認密碼一致"
 msgstr "Passwords match"
@@ -2195,7 +2207,7 @@ msgstr "Passwords match"
 #: app/templates/pages/approval_categories/edit.html:88
 #: app/templates/pages/approval_categories/list.html:212
 #: app/templates/pages/approval_categories/list.html:286
-#: app/templates/pages/change_password.html:53
+#: app/templates/pages/change_password.html:55
 #: app/templates/pages/delegations/create.html:97
 #: app/templates/pages/delegations/edit.html:97
 #: app/templates/pages/external-users/create.html:116
@@ -2222,12 +2234,12 @@ msgstr "Passwords match"
 #: app/templates/pages/modules/edit.html:55
 #: app/templates/pages/modules/list.html:181
 #: app/templates/pages/org_databases/monitor.html:365
-#: app/templates/pages/organizations/admins.html:142
-#: app/templates/pages/organizations/contract_form.html:91
-#: app/templates/pages/organizations/create.html:109
-#: app/templates/pages/organizations/edit.html:147
-#: app/templates/pages/organizations/list.html:63
-#: app/templates/pages/organizations/list.html:422
+#: app/templates/pages/organizations/admins.html:144
+#: app/templates/pages/organizations/contract_form.html:93
+#: app/templates/pages/organizations/create.html:111
+#: app/templates/pages/organizations/edit.html:149
+#: app/templates/pages/organizations/list.html:65
+#: app/templates/pages/organizations/list.html:424
 #: app/templates/pages/positions/create.html:123
 #: app/templates/pages/positions/edit.html:127
 #: app/templates/pages/profile/edit.html:39
@@ -2252,7 +2264,7 @@ msgstr "Cancel"
 #: ../modules/nocode_builder/services/pageir_portal_menu.py:199
 #: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:43
 #: app/templates/auth/change_password.html:86
-#: app/templates/layouts/base.html:88
+#: app/templates/layouts/base.html:96
 #: app/templates/pages/admin/initial_setup.html:298
 msgid "登出"
 msgstr "Logout"
@@ -2285,8 +2297,8 @@ msgstr ""
 #: app/templates/pages/dev/portal_quick_login.html:211
 #: app/templates/pages/external-users/list.html:34
 #: app/templates/pages/hostconfig/_system_settings_modals.html:56
-#: app/templates/pages/organizations/admins.html:46
-#: app/templates/pages/personal_settings.html:35
+#: app/templates/pages/organizations/admins.html:48
+#: app/templates/pages/personal_settings.html:37
 #: app/templates/pages/sys_accounts/create.html:32
 #: app/templates/pages/sys_accounts/edit.html:32
 #: app/templates/pages/sys_accounts/list.html:55
@@ -2437,9 +2449,26 @@ msgstr "Server Error"
 msgid "系統發生錯誤，請稍後再試。"
 msgstr "A system error occurred. Please try again later."
 
-#: app/templates/layouts/base.html:100
+#: app/templates/layouts/base.html:92
+msgid "本頁說明"
+msgstr "Page help"
+
+#: app/templates/layouts/base.html:108
 msgid "首頁"
 msgstr "Home"
+
+#: app/templates/layouts/manual_base.html:32
+msgid "BeakPlatform 使用手冊"
+msgstr "BeakPlatform User Manual"
+
+#: app/templates/layouts/manual_base.html:36
+#, python-format
+msgid "以 %(name)s（%(type)s）的身分檢視"
+msgstr "Viewing as %(name)s (%(type)s)"
+
+#: app/templates/layouts/manual_base.html:39
+msgid "回到平台"
+msgstr "Back to platform"
 
 #: app/templates/layouts/portal_base.html:18
 #: app/templates/pages/hostconfig/index.html:3
@@ -2465,7 +2494,7 @@ msgstr "No items to display"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:269
 #: app/templates/pageir/_page_ir.html:44
 #: app/templates/pages/admin/groups.html:191
-#: app/templates/pages/organizations/list.html:423
+#: app/templates/pages/organizations/list.html:425
 #: app/templates/pages/units/create.html:3
 #: app/templates/pages/units/create.html:11
 msgid "新增"
@@ -2513,8 +2542,8 @@ msgstr "Add"
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:36
 #: app/templates/pages/hostconfig/_system_settings_section_telegram.html:36
 #: app/templates/pages/modules/list.html:86
-#: app/templates/pages/organizations/admins.html:51
-#: app/templates/pages/organizations/list.html:266
+#: app/templates/pages/organizations/admins.html:53
+#: app/templates/pages/organizations/list.html:268
 #: app/templates/pages/positions/list.html:25
 #: app/templates/pages/security/api_keys.html:34
 #: app/templates/pages/units/list.html:29
@@ -2707,7 +2736,7 @@ msgstr ""
 msgid "不限群組"
 msgstr "All groups"
 
-#: app/templates/pages/change_password.html:7
+#: app/templates/pages/change_password.html:9
 msgid "返回個人設定"
 msgstr "Return to personal settings"
 
@@ -2796,14 +2825,14 @@ msgstr "Group name"
 msgid "位階"
 msgstr "Rank"
 
-#: app/templates/pages/personal_settings.html:3
-#: app/templates/pages/personal_settings.html:10
+#: app/templates/pages/personal_settings.html:5
+#: app/templates/pages/personal_settings.html:12
 #: app/templates/pages/users/edit.html:3 app/templates/pages/users/edit.html:15
 msgid "個人設定"
 msgstr "Personal Settings"
 
 #: app/templates/pages/external-users/edit.html:42
-#: app/templates/pages/personal_settings.html:30
+#: app/templates/pages/personal_settings.html:32
 #: app/templates/pages/sys_accounts/edit.html:116
 #: app/templates/pages/sys_accounts/list.html:182
 #: app/templates/pages/users/edit.html:46
@@ -2811,7 +2840,7 @@ msgstr "Personal Settings"
 msgid "帳號資訊"
 msgstr "Account Information"
 
-#: app/templates/pages/personal_settings.html:39
+#: app/templates/pages/personal_settings.html:41
 msgid "主要 Email"
 msgstr "Primary Email"
 
@@ -2819,9 +2848,9 @@ msgstr "Primary Email"
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:38
 #: app/templates/pages/admin/settings.html:215
 #: app/templates/pages/dev/portal_quick_login.html:215
-#: app/templates/pages/organizations/create.html:51
-#: app/templates/pages/organizations/edit.html:59
-#: app/templates/pages/personal_settings.html:45
+#: app/templates/pages/organizations/create.html:53
+#: app/templates/pages/organizations/edit.html:61
+#: app/templates/pages/personal_settings.html:47
 #: app/templates/pages/sys_accounts/create.html:48
 #: app/templates/pages/sys_accounts/edit.html:40
 #: app/templates/pages/sys_accounts/list.html:56
@@ -2833,7 +2862,7 @@ msgstr "Display Name"
 #: app/templates/pages/admin/_employee_create_form.html:57
 #: app/templates/pages/admin/initial_setup.html:206
 #: app/templates/pages/admin/org-admins/create.html:81
-#: app/templates/pages/personal_settings.html:49
+#: app/templates/pages/personal_settings.html:51
 #: app/templates/pages/sys_accounts/create.html:55
 #: app/templates/pages/sys_accounts/list.html:250
 #: app/templates/pages/users/create.html:89
@@ -2841,7 +2870,7 @@ msgid "密碼"
 msgstr "Password"
 
 #: app/templates/pages/admin/_employee_create_form.html:105
-#: app/templates/pages/personal_settings.html:61
+#: app/templates/pages/personal_settings.html:63
 #: app/templates/pages/profile/view.html:3
 #: app/templates/pages/profile/view.html:6
 #: app/templates/pages/users/create.html:178
@@ -2853,7 +2882,7 @@ msgstr "Profile"
 #: app/templates/pages/admin/_employee_create_form.html:23
 #: app/templates/pages/admin/initial_setup.html:157
 #: app/templates/pages/admin/settings.html:220
-#: app/templates/pages/personal_settings.html:66
+#: app/templates/pages/personal_settings.html:68
 #: app/templates/pages/users/create.html:51
 #: app/templates/pages/users/edit.html:65
 #: app/templates/pages/users/import.html:130
@@ -2864,7 +2893,7 @@ msgstr "English Name"
 #: app/templates/pages/admin/_employee_create_form.html:16
 #: app/templates/pages/admin/initial_setup.html:150
 #: app/templates/pages/admin/settings.html:219
-#: app/templates/pages/personal_settings.html:71
+#: app/templates/pages/personal_settings.html:73
 #: app/templates/pages/users/create.html:42
 #: app/templates/pages/users/edit.html:55
 #: app/templates/pages/users/import.html:135
@@ -2872,15 +2901,15 @@ msgstr "English Name"
 msgid "本國姓名"
 msgstr "Native Name"
 
-#: app/templates/pages/personal_settings.html:73
+#: app/templates/pages/personal_settings.html:75
 msgid "本國語言姓名"
 msgstr "Name in native language"
 
 #: app/templates/pages/admin/_employee_create_form.html:108
 #: app/templates/pages/admin/initial_setup.html:253
 #: app/templates/pages/admin/settings.html:221
-#: app/templates/pages/personal_settings.html:78
-#: app/templates/pages/personal_settings.html:137
+#: app/templates/pages/personal_settings.html:80
+#: app/templates/pages/personal_settings.html:139
 #: app/templates/pages/users/create.html:181
 #: app/templates/pages/users/edit.html:222
 #: app/templates/pages/users/edit.html:238
@@ -2890,7 +2919,7 @@ msgstr "Name in native language"
 msgid "暱稱"
 msgstr "Nickname"
 
-#: app/templates/pages/personal_settings.html:82
+#: app/templates/pages/personal_settings.html:84
 msgid "企業管理員可在此設定暱稱，否則 Navbar 只會顯示加上隱私保護的名稱（企業預設對管理員不適用）"
 msgstr ""
 "Organization admins can set a nickname here; otherwise the navbar shows "
@@ -2898,7 +2927,7 @@ msgstr ""
 " admins)"
 
 #: app/templates/pages/admin/_employee_create_form.html:127
-#: app/templates/pages/personal_settings.html:95
+#: app/templates/pages/personal_settings.html:97
 #: app/templates/pages/users/create.html:222
 #: app/templates/pages/users/edit.html:291
 #: app/templates/pages/users/view.html:127
@@ -2906,31 +2935,31 @@ msgid "聯絡方式"
 msgstr "Contact Information"
 
 #: app/templates/pages/admin/_employee_create_form.html:134
-#: app/templates/pages/personal_settings.html:100
-#: app/templates/pages/personal_settings.html:106
+#: app/templates/pages/personal_settings.html:102
+#: app/templates/pages/personal_settings.html:108
 #: app/templates/pages/users/edit.html:305
 msgid "備用 Email"
 msgstr "Backup email"
 
-#: app/templates/pages/personal_settings.html:103
+#: app/templates/pages/personal_settings.html:105
 msgid "系統通知專用（空白時自動使用主要 Email）"
 msgstr "For system notifications (falls back to primary email if blank)"
 
-#: app/templates/pages/personal_settings.html:113
-#: app/templates/pages/personal_settings.html:118
+#: app/templates/pages/personal_settings.html:115
+#: app/templates/pages/personal_settings.html:120
 msgid "手機"
 msgstr "Mobile"
 
-#: app/templates/pages/personal_settings.html:129
+#: app/templates/pages/personal_settings.html:131
 msgid "介面設定"
 msgstr "Interface Settings"
 
-#: app/templates/pages/personal_settings.html:134
+#: app/templates/pages/personal_settings.html:136
 #: app/templates/pages/users/edit.html:233
 msgid "Navbar 顯示"
 msgstr "Navbar display"
 
-#: app/templates/pages/personal_settings.html:136
+#: app/templates/pages/personal_settings.html:138
 #: app/templates/pages/users/create.html:195
 #: app/templates/pages/users/create.html:208
 #: app/templates/pages/users/edit.html:248
@@ -2943,7 +2972,7 @@ msgstr "Follow organization settings"
 #: app/templates/pages/admin/_employee_create_form.html:81
 #: app/templates/pages/admin/initial_setup.html:193
 #: app/templates/pages/admin/settings.html:223
-#: app/templates/pages/personal_settings.html:138
+#: app/templates/pages/personal_settings.html:140
 #: app/templates/pages/users/create.html:122
 #: app/templates/pages/users/edit.html:172
 #: app/templates/pages/users/edit.html:239
@@ -2953,39 +2982,39 @@ msgstr "Follow organization settings"
 msgid "用戶編號"
 msgstr "Employee ID"
 
-#: app/templates/pages/personal_settings.html:139
+#: app/templates/pages/personal_settings.html:141
 #: app/templates/pages/users/edit.html:240
 #: app/templates/pages/users/edit.html:247
 msgid "用戶編號 + 部門"
 msgstr "User ID + Department"
 
-#: app/templates/pages/personal_settings.html:141
+#: app/templates/pages/personal_settings.html:143
 #: app/templates/pages/users/edit.html:242
 msgid "在公開場所使用時，可改為不含真名的顯示方式"
 msgstr ""
 "When used in public places, you can switch to a display that hides your "
 "real name"
 
-#: app/templates/pages/personal_settings.html:144
+#: app/templates/pages/personal_settings.html:146
 msgid "語言"
 msgstr "Language"
 
 #: app/templates/pages/admin/time/schedules.html:31
 #: app/templates/pages/admin/time/schedules.html:128
-#: app/templates/pages/personal_settings.html:154
+#: app/templates/pages/personal_settings.html:156
 #: app/templates/pages/users/create.html:204
 #: app/templates/pages/users/edit.html:270
 msgid "時區"
 msgstr "Timezone"
 
-#: app/templates/pages/personal_settings.html:156
+#: app/templates/pages/personal_settings.html:158
 #: app/templates/pages/users/edit.html:213
 msgid "使用企業預設"
 msgstr "Use organization default"
 
 #: app/templates/pages/hostconfig/_system_settings_section_emailrelay.html:82
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:40
-#: app/templates/pages/personal_settings.html:175
+#: app/templates/pages/personal_settings.html:177
 msgid "儲存設定"
 msgstr "Save Settings"
 
@@ -3030,7 +3059,7 @@ msgstr "No matching accounts"
 #: app/templates/pages/admin/org-admins/list.html:40
 #: app/templates/pages/external-users/edit.html:32
 #: app/templates/pages/external-users/list.html:35
-#: app/templates/pages/organizations/admins.html:47
+#: app/templates/pages/organizations/admins.html:49
 #: app/templates/pages/profile/view.html:10
 #: app/templates/pages/security/alert_broadcasts.html:142
 #: app/templates/pages/security/alert_broadcasts.html:170
@@ -3082,12 +3111,12 @@ msgstr "Role Assignments"
 #: app/templates/pages/modules/view.html:82
 #: app/templates/pages/org_databases/monitor.html:43
 #: app/templates/pages/org_databases/monitor.html:68
-#: app/templates/pages/organizations/admins.html:80
-#: app/templates/pages/organizations/admins.html:95
-#: app/templates/pages/organizations/edit.html:88
-#: app/templates/pages/organizations/list.html:125
-#: app/templates/pages/organizations/list.html:189
-#: app/templates/pages/organizations/list.html:278
+#: app/templates/pages/organizations/admins.html:82
+#: app/templates/pages/organizations/admins.html:97
+#: app/templates/pages/organizations/edit.html:90
+#: app/templates/pages/organizations/list.html:127
+#: app/templates/pages/organizations/list.html:191
+#: app/templates/pages/organizations/list.html:280
 #: app/templates/pages/positions/list.html:69
 #: app/templates/pages/positions/view.html:97
 #: app/templates/pages/sys_accounts/edit.html:55
@@ -3119,10 +3148,10 @@ msgstr "Assign Role"
 #: app/templates/pages/dev/portal_quick_login.html:227
 #: app/templates/pages/external-users/edit.html:134
 #: app/templates/pages/modules/list.html:155
-#: app/templates/pages/platform_help/org_admin.html:77
-#: app/templates/pages/platform_help/org_admin.html:98
-#: app/templates/pages/platform_help/org_admin.html:127
-#: app/templates/pages/platform_help/org_admin.html:393
+#: app/templates/pages/platform_help/org_admin.html:83
+#: app/templates/pages/platform_help/org_admin.html:104
+#: app/templates/pages/platform_help/org_admin.html:133
+#: app/templates/pages/platform_help/org_admin.html:399
 #: app/templates/pages/profile/view.html:18
 #: app/templates/pages/users/edit.html:88
 #: app/templates/pages/users/edit.html:102
@@ -3345,7 +3374,7 @@ msgstr "No role data"
 #: app/templates/pages/job_levels/create.html:99
 #: app/templates/pages/job_levels/list.html:80
 #: app/templates/pages/modules/list.html:84
-#: app/templates/pages/platform_help/org_admin.html:275
+#: app/templates/pages/platform_help/org_admin.html:281
 #: app/templates/pages/security/_api_keys_modals.html:9
 #: app/templates/pages/units/list.html:25
 msgid "名稱"
@@ -3441,10 +3470,10 @@ msgstr "Holders"
 #: app/templates/pages/modules/edit.html:48
 #: app/templates/pages/modules/view.html:55
 #: app/templates/pages/modules/view.html:82
-#: app/templates/pages/organizations/admins.html:78
-#: app/templates/pages/organizations/admins.html:95
-#: app/templates/pages/organizations/edit.html:87
-#: app/templates/pages/organizations/list.html:188
+#: app/templates/pages/organizations/admins.html:80
+#: app/templates/pages/organizations/admins.html:97
+#: app/templates/pages/organizations/edit.html:89
+#: app/templates/pages/organizations/list.html:190
 #: app/templates/pages/positions/edit.html:119
 #: app/templates/pages/positions/list.html:69
 #: app/templates/pages/positions/view.html:97
@@ -3536,10 +3565,10 @@ msgstr "Sort"
 #: app/templates/pages/modules/create.html:44
 #: app/templates/pages/modules/edit.html:40
 #: app/templates/pages/modules/view.html:46
-#: app/templates/pages/organizations/create.html:69
-#: app/templates/pages/organizations/edit.html:103
-#: app/templates/pages/organizations/list.html:342
-#: app/templates/pages/organizations/list.html:393
+#: app/templates/pages/organizations/create.html:71
+#: app/templates/pages/organizations/edit.html:105
+#: app/templates/pages/organizations/list.html:344
+#: app/templates/pages/organizations/list.html:395
 #: app/templates/pages/units/create.html:54
 #: app/templates/pages/units/edit.html:49
 #: app/templates/pages/units/view.html:56
@@ -3641,8 +3670,8 @@ msgstr "Leave blank to automatically generate a strengthened password"
 #: app/templates/pages/admin/initial_setup.html:229
 #: app/templates/pages/admin/org-admins/create.html:102
 #: app/templates/pages/admin/org-admins/list.html:127
-#: app/templates/pages/organizations/admins.html:130
-#: app/templates/pages/organizations/create.html:101
+#: app/templates/pages/organizations/admins.html:132
+#: app/templates/pages/organizations/create.html:103
 #: app/templates/pages/sys_accounts/create.html:72
 #: app/templates/pages/sys_accounts/edit.html:81
 #: app/templates/pages/sys_accounts/list.html:154
@@ -4000,14 +4029,14 @@ msgstr "Group name"
 #: app/templates/pages/menu/list.html:107
 #: app/templates/pages/menu/list.html:123
 #: app/templates/pages/modules/create.html:71
-#: app/templates/pages/organizations/admins.html:162
-#: app/templates/pages/organizations/contract_form.html:36
-#: app/templates/pages/organizations/contract_form.html:109
-#: app/templates/pages/platform_help/org_admin.html:36
-#: app/templates/pages/platform_help/org_admin.html:128
-#: app/templates/pages/platform_help/org_admin.html:321
-#: app/templates/pages/platform_help/org_admin.html:352
-#: app/templates/pages/platform_help/org_admin.html:383
+#: app/templates/pages/organizations/admins.html:164
+#: app/templates/pages/organizations/contract_form.html:38
+#: app/templates/pages/organizations/contract_form.html:111
+#: app/templates/pages/platform_help/org_admin.html:42
+#: app/templates/pages/platform_help/org_admin.html:134
+#: app/templates/pages/platform_help/org_admin.html:327
+#: app/templates/pages/platform_help/org_admin.html:358
+#: app/templates/pages/platform_help/org_admin.html:389
 #: app/templates/pages/security/_api_keys_modals.html:18
 #: app/templates/pages/security/org_rate_limits.html:101
 #: app/templates/pages/users/import.html:93
@@ -4076,11 +4105,11 @@ msgstr "Number of recipients"
 #: app/templates/pages/job_titles/view.html:72
 #: app/templates/pages/modules/view.html:54
 #: app/templates/pages/modules/view.html:72
-#: app/templates/pages/organizations/admins.html:49
-#: app/templates/pages/organizations/contract_form.html:125
-#: app/templates/pages/organizations/edit.html:85
-#: app/templates/pages/organizations/list.html:185
-#: app/templates/pages/organizations/list.html:265
+#: app/templates/pages/organizations/admins.html:51
+#: app/templates/pages/organizations/contract_form.html:127
+#: app/templates/pages/organizations/edit.html:87
+#: app/templates/pages/organizations/list.html:187
+#: app/templates/pages/organizations/list.html:267
 #: app/templates/pages/positions/edit.html:114
 #: app/templates/pages/positions/list.html:24
 #: app/templates/pages/positions/view.html:96
@@ -4215,7 +4244,7 @@ msgstr "Notification mailbox"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_issue_modal.html:20
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_template_modal.html:77
 #: app/templates/pages/admin/_settings_recipients_section.html:267
-#: app/templates/pages/organizations/list.html:357
+#: app/templates/pages/organizations/list.html:359
 #: app/templates/pages/server_manage/redis_monitor.html:184
 msgid "關閉"
 msgstr "Close"
@@ -4300,7 +4329,7 @@ msgstr "sender"
 #: app/templates/pages/admin/time/schedules.html:43
 #: app/templates/pages/approval_categories/list.html:110
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:44
-#: app/templates/pages/organizations/admins.html:60 app/web/numbering.py:196
+#: app/templates/pages/organizations/admins.html:62 app/web/numbering.py:196
 msgid "預設"
 msgstr "Default"
 
@@ -4534,7 +4563,7 @@ msgid "人員不會離開原部門。"
 msgstr "Personnel will not leave the original Department."
 
 #: app/templates/pages/admin/departments.html:351
-#: app/templates/pages/platform_help/org_admin.html:133
+#: app/templates/pages/platform_help/org_admin.html:139
 msgid "部門成員"
 msgstr "Department member"
 
@@ -4663,8 +4692,8 @@ msgstr "No matching account"
 
 #: app/templates/pages/admin/index.html:3
 #: app/templates/pages/admin/index.html:6
-#: app/templates/pages/organizations/list.html:3
-#: app/templates/pages/organizations/list.html:25
+#: app/templates/pages/organizations/list.html:5
+#: app/templates/pages/organizations/list.html:27
 msgid "企業管理"
 msgstr "Organization Management"
 
@@ -4785,7 +4814,7 @@ msgstr ""
 
 #: app/templates/pages/admin/initial_setup.html:234
 #: app/templates/pages/admin/org-admins/list.html:129
-#: app/templates/pages/organizations/admins.html:132
+#: app/templates/pages/organizations/admins.html:134
 #: app/templates/pages/sys_accounts/create.html:77
 #: app/templates/pages/sys_accounts/list.html:159
 #: app/templates/pages/sys_accounts/list.html:272
@@ -4893,7 +4922,7 @@ msgstr "Expand"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:188
 #: app/templates/pages/admin/module_list.html:102
 #: app/templates/pages/job_titles/create.html:68
-#: app/templates/pages/organizations/edit.html:97
+#: app/templates/pages/organizations/edit.html:99
 msgid "無"
 msgstr "None"
 
@@ -4901,15 +4930,15 @@ msgstr "None"
 #: app/templates/pages/admin/module_list.html:112
 #: app/templates/pages/admin/settings.html:64
 #: app/templates/pages/cg_databases/overview.html:212
-#: app/templates/pages/organizations/create.html:32
-#: app/templates/pages/organizations/edit.html:54
-#: app/templates/pages/organizations/list.html:86
+#: app/templates/pages/organizations/create.html:34
+#: app/templates/pages/organizations/edit.html:56
+#: app/templates/pages/organizations/list.html:88
 msgid "企業名稱"
 msgstr "Organization name"
 
 #: app/templates/pages/admin/module_list.html:113
-#: app/templates/pages/organizations/contract_form.html:101
-#: app/templates/pages/organizations/list.html:257
+#: app/templates/pages/organizations/contract_form.html:103
+#: app/templates/pages/organizations/list.html:259
 msgid "合約編號"
 msgstr "Contract Number"
 
@@ -4924,7 +4953,7 @@ msgstr "Expiration Date"
 #: app/templates/pages/delegations/edit.html:86
 #: app/templates/pages/delegations/list.html:61
 #: app/templates/pages/delegations/view.html:69
-#: app/templates/pages/organizations/list.html:279 app/web/admin.py:26
+#: app/templates/pages/organizations/list.html:281 app/web/admin.py:26
 msgid "已過期"
 msgstr "Expired"
 
@@ -4942,8 +4971,8 @@ msgid "天"
 msgstr "days"
 
 #: app/templates/pages/admin/module_list.html:134
-#: app/templates/pages/organizations/contract_form.html:128
-#: app/templates/pages/organizations/list.html:280
+#: app/templates/pages/organizations/contract_form.html:130
+#: app/templates/pages/organizations/list.html:282
 msgid "有效"
 msgstr "Valid"
 
@@ -5030,13 +5059,13 @@ msgid "網域"
 msgstr "domain"
 
 #: app/templates/pages/admin/settings.html:72
-#: app/templates/pages/organizations/edit.html:76
-#: app/templates/pages/organizations/list.html:201
+#: app/templates/pages/organizations/edit.html:78
+#: app/templates/pages/organizations/list.html:203
 msgid "帳號上限"
 msgstr "Account limit"
 
 #: app/templates/pages/admin/settings.html:73
-#: app/templates/pages/organizations/list.html:201
+#: app/templates/pages/organizations/list.html:203
 msgid "&infin; -- 開源的沒打算商業化，大家盡量用吧^_^"
 msgstr ""
 "&infin; -- Open source is not intended for commercialization, please use "
@@ -5258,7 +5287,7 @@ msgstr "Return to rule list"
 #: app/templates/pages/admin/numbering/edit.html:45
 #: app/templates/pages/cg_databases/overview.html:163
 #: app/templates/pages/external-users/edit.html:29
-#: app/templates/pages/organizations/edit.html:37
+#: app/templates/pages/organizations/edit.html:39
 msgid "基本資訊"
 msgstr "Basic Information"
 
@@ -5512,7 +5541,7 @@ msgstr "Preview failed"
 #: app/templates/pages/job_titles/list.html:216
 #: app/templates/pages/menu/edit.html:108
 #: app/templates/pages/modules/edit.html:54
-#: app/templates/pages/organizations/edit.html:146
+#: app/templates/pages/organizations/edit.html:148
 #: app/templates/pages/positions/edit.html:125
 #: app/templates/pages/profile/edit.html:38
 #: app/templates/pages/sys_accounts/edit.html:98
@@ -5617,7 +5646,7 @@ msgstr "Return to administrator list"
 
 #: app/templates/pages/admin/org-admins/create.html:34
 #: app/templates/pages/admin/org-admins/list.html:41
-#: app/templates/pages/organizations/admins.html:48
+#: app/templates/pages/organizations/admins.html:50
 msgid "綁定企業成員"
 msgstr "Bind Employee"
 
@@ -5637,8 +5666,8 @@ msgid "自動帶入綁定企業成員姓名"
 msgstr "Automatically bring in the bound Employee name"
 
 #: app/templates/pages/admin/org-admins/create.html:61
-#: app/templates/pages/organizations/create.html:73
-#: app/templates/pages/organizations/create.html:76
+#: app/templates/pages/organizations/create.html:75
+#: app/templates/pages/organizations/create.html:78
 msgid "管理員帳號"
 msgstr "Administrator account"
 
@@ -5654,8 +5683,8 @@ msgstr "Automatically bring into the bound Employee notification mailbox"
 #: app/templates/pages/admin/org-admins/list.html:118
 #: app/templates/pages/external-users/create.html:64
 #: app/templates/pages/external-users/edit.html:93
-#: app/templates/pages/organizations/admins.html:121
-#: app/templates/pages/organizations/create.html:92
+#: app/templates/pages/organizations/admins.html:123
+#: app/templates/pages/organizations/create.html:94
 #: app/templates/pages/sys_accounts/create.html:63
 #: app/templates/pages/sys_accounts/edit.html:72
 #: app/templates/pages/sys_accounts/list.html:145
@@ -5685,7 +5714,7 @@ msgstr "Go to add Employee"
 
 #: app/templates/pages/admin/org-admins/create.html:140
 #: app/templates/pages/job_families/edit.html:106
-#: app/templates/pages/platform_help/org_admin.html:64
+#: app/templates/pages/platform_help/org_admin.html:70
 msgid "注意："
 msgstr "Note:"
 
@@ -5705,13 +5734,13 @@ msgid "新增管理員"
 msgstr "Add new administrator"
 
 #: app/templates/pages/admin/org-admins/list.html:30
-#: app/templates/pages/organizations/admins.html:36
+#: app/templates/pages/organizations/admins.html:38
 #, python-format
 msgid "目前啟用的管理員：%(count)s 人"
 msgstr "Currently active admins: %(count)s people"
 
 #: app/templates/pages/admin/org-admins/list.html:31
-#: app/templates/pages/organizations/admins.html:37
+#: app/templates/pages/organizations/admins.html:39
 msgid "（必須至少保留一個啟用的管理員）"
 msgstr "(Must retain at least one enabled administrator)"
 
@@ -5727,9 +5756,9 @@ msgstr "(Must retain at least one enabled administrator)"
 #: app/templates/pages/external-users/view.html:85
 #: app/templates/pages/job_levels/view.html:51
 #: app/templates/pages/modules/list.html:85
-#: app/templates/pages/organizations/admins.html:50
-#: app/templates/pages/organizations/contract_form.html:155
-#: app/templates/pages/organizations/list.html:214
+#: app/templates/pages/organizations/admins.html:52
+#: app/templates/pages/organizations/contract_form.html:157
+#: app/templates/pages/organizations/list.html:216
 #: app/templates/pages/positions/view.html:104
 #: app/templates/pages/sys_accounts/edit.html:119
 #: app/templates/pages/sys_accounts/list.html:185
@@ -5746,14 +5775,14 @@ msgid "(預設)"
 msgstr "(Default)"
 
 #: app/templates/pages/admin/org-admins/list.html:66
-#: app/templates/pages/organizations/admins.html:73
+#: app/templates/pages/organizations/admins.html:75
 msgid "未綁定"
 msgstr "Not bound"
 
 #: app/templates/pages/admin/org-admins/list.html:81
 #: app/templates/pages/admin/org-admins/list.html:107
-#: app/templates/pages/organizations/admins.html:87
-#: app/templates/pages/organizations/admins.html:108
+#: app/templates/pages/organizations/admins.html:89
+#: app/templates/pages/organizations/admins.html:110
 #: app/templates/pages/users/view.html:22
 #: app/templates/pages/users/view.html:181
 msgid "重設密碼"
@@ -5764,19 +5793,19 @@ msgid "（自己）"
 msgstr "(self)"
 
 #: app/templates/pages/admin/org-admins/list.html:108
-#: app/templates/pages/organizations/admins.html:111
+#: app/templates/pages/organizations/admins.html:113
 #: app/templates/pages/users/view.html:182
 msgid "為"
 msgstr "for"
 
 #: app/templates/pages/admin/org-admins/list.html:108
-#: app/templates/pages/organizations/admins.html:111
+#: app/templates/pages/organizations/admins.html:113
 #: app/templates/pages/users/view.html:182
 msgid "設定新密碼"
 msgstr "Set new password"
 
 #: app/templates/pages/admin/org-admins/list.html:141
-#: app/templates/pages/organizations/admins.html:144
+#: app/templates/pages/organizations/admins.html:146
 #: app/templates/pages/users/view.html:215
 msgid "確認重設"
 msgstr "Confirm reset"
@@ -5915,15 +5944,15 @@ msgid "年台灣假日"
 msgstr "annual taiwan holidays"
 
 #: app/templates/pages/admin/time/holidays.html:137
-#: app/templates/pages/organizations/list.html:378
+#: app/templates/pages/organizations/list.html:380
 msgid "開始日期 *"
 msgstr "Start date *"
 
 #: app/templates/pages/admin/time/holidays.html:142
-#: app/templates/pages/organizations/contract_form.html:48
-#: app/templates/pages/organizations/contract_form.html:117
-#: app/templates/pages/organizations/list.html:262
-#: app/templates/pages/organizations/list.html:340
+#: app/templates/pages/organizations/contract_form.html:50
+#: app/templates/pages/organizations/contract_form.html:119
+#: app/templates/pages/organizations/list.html:264
+#: app/templates/pages/organizations/list.html:342
 msgid "結束日期"
 msgstr "End Date"
 
@@ -6102,11 +6131,11 @@ msgstr "Copy the currently set first working day time to all working days"
 #: app/templates/pages/hostconfig/_system_settings_modals.html:122
 #: app/templates/pages/hostconfig/_system_settings_modals.html:187
 #: app/templates/pages/job_titles/list.html:88
-#: app/templates/pages/organizations/create.html:70
-#: app/templates/pages/organizations/list.html:373
-#: app/templates/pages/organizations/list.html:389
-#: app/templates/pages/organizations/list.html:394
-#: app/templates/pages/organizations/list.html:399
+#: app/templates/pages/organizations/create.html:72
+#: app/templates/pages/organizations/list.html:375
+#: app/templates/pages/organizations/list.html:391
+#: app/templates/pages/organizations/list.html:396
+#: app/templates/pages/organizations/list.html:401
 #: app/templates/pages/units/create.html:55
 msgid "選填"
 msgstr "Optional"
@@ -6376,7 +6405,7 @@ msgstr "No category information yet"
 #: app/templates/pages/job_titles/list.html:76
 #: app/templates/pages/job_titles/list.html:152
 #: app/templates/pages/modules/view.html:97
-#: app/templates/pages/platform_help/org_admin.html:35
+#: app/templates/pages/platform_help/org_admin.html:41
 #: app/templates/pages/units/list.html:24
 msgid "代碼"
 msgstr "Code"
@@ -6991,10 +7020,10 @@ msgstr "(Usage rules: %(name)s)"
 #: app/templates/pages/external-users/create.html:105
 #: app/templates/pages/external-users/edit.html:54
 #: app/templates/pages/external-users/view.html:81
-#: app/templates/pages/organizations/contract_form.html:82
-#: app/templates/pages/organizations/contract_form.html:151
-#: app/templates/pages/organizations/list.html:343
-#: app/templates/pages/organizations/list.html:398
+#: app/templates/pages/organizations/contract_form.html:84
+#: app/templates/pages/organizations/contract_form.html:153
+#: app/templates/pages/organizations/list.html:345
+#: app/templates/pages/organizations/list.html:400
 #: app/templates/pages/positions/create.html:115
 #: app/templates/pages/positions/edit.html:108
 #: app/templates/pages/positions/view.html:92
@@ -7242,7 +7271,7 @@ msgstr "Level description"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:156
 #: app/templates/pages/hostconfig/_system_settings_section_audit.html:46
-#: app/templates/pages/platform_help/org_admin.html:34
+#: app/templates/pages/platform_help/org_admin.html:40
 msgid "等級"
 msgstr "Level"
 
@@ -7558,7 +7587,7 @@ msgid "跨級標記"
 msgstr "Cross-level tag"
 
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:50
-#: app/templates/pages/platform_help/org_admin.html:438
+#: app/templates/pages/platform_help/org_admin.html:444
 msgid "模組"
 msgstr "Module"
 
@@ -9197,7 +9226,7 @@ msgstr "Page Type"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:90
 #: app/templates/pages/modules/view.html:71
-#: app/templates/pages/platform_help/org_admin.html:403
+#: app/templates/pages/platform_help/org_admin.html:409
 msgid "權限"
 msgstr "Permissions"
 
@@ -9351,331 +9380,331 @@ msgstr "\" -- deactivate"
 msgid "此操作無法復原。"
 msgstr "This operation cannot be undone."
 
-#: app/templates/pages/organizations/admins.html:3
+#: app/templates/pages/organizations/admins.html:5
 #, python-format
 msgid "管理員管理 - %(name)s"
 msgstr "Administrator management - %(name)s"
 
-#: app/templates/pages/organizations/admins.html:12
-#: app/templates/pages/organizations/contract_form.html:7
-#: app/templates/pages/organizations/contract_form.html:199
-#: app/templates/pages/organizations/edit.html:16
+#: app/templates/pages/organizations/admins.html:14
+#: app/templates/pages/organizations/contract_form.html:9
+#: app/templates/pages/organizations/contract_form.html:201
+#: app/templates/pages/organizations/edit.html:18
 msgid "返回企業管理"
 msgstr "Return to Organization management"
 
-#: app/templates/pages/organizations/admins.html:16
-#: app/templates/pages/organizations/list.html:159
+#: app/templates/pages/organizations/admins.html:18
+#: app/templates/pages/organizations/list.html:161
 msgid "管理員管理"
 msgstr "Administrator management"
 
-#: app/templates/pages/organizations/admins.html:31
+#: app/templates/pages/organizations/admins.html:33
 msgid "警告：此企業目前沒有啟用的管理員"
 msgstr ""
 "Warning: There are currently no enabled administrators for this "
 "Organization"
 
-#: app/templates/pages/organizations/admins.html:32
+#: app/templates/pages/organizations/admins.html:34
 msgid "請立即啟用至少一個管理員帳號"
 msgstr "Please enable at least one administrator account now"
 
-#: app/templates/pages/organizations/admins.html:158
+#: app/templates/pages/organizations/admins.html:160
 msgid "此企業尚無管理員帳號。"
 msgstr "This Organization does not yet have an administrator account."
 
-#: app/templates/pages/organizations/admins.html:164
+#: app/templates/pages/organizations/admins.html:166
 msgid "此頁面供系統管理員管理特定企業的管理員帳號"
 msgstr ""
 "This page is for System Administrator to manage the administrator account"
 " of a specific Organization"
 
-#: app/templates/pages/organizations/admins.html:165
+#: app/templates/pages/organizations/admins.html:167
 msgid "可啟用/停用管理員帳號，但必須至少保留一個啟用的管理員"
 msgstr ""
 "Administrator accounts can be enabled/deactivated, but at least one "
 "administrator must remain enabled"
 
-#: app/templates/pages/organizations/admins.html:166
+#: app/templates/pages/organizations/admins.html:168
 msgid "重設密碼後會通知該企業所有管理員（含停用帳號）"
 msgstr ""
 "After resetting the password, all administrators of the Organization will"
 " be notified (including deactivated accounts)"
 
-#: app/templates/pages/organizations/admins.html:167
+#: app/templates/pages/organizations/admins.html:169
 msgid "適用於企業管理員全部離職或忘記密碼的救援情境"
 msgstr ""
 "Applicable to rescue situations where all Organization Admin have "
 "resigned or forgotten their passwords"
 
-#: app/templates/pages/organizations/contract_form.html:3
-#: app/templates/pages/organizations/contract_form.html:10
-#: app/templates/pages/organizations/contract_form.html:90
+#: app/templates/pages/organizations/contract_form.html:5
+#: app/templates/pages/organizations/contract_form.html:12
+#: app/templates/pages/organizations/contract_form.html:92
 msgid "新增合約"
 msgstr "Added Contract"
 
-#: app/templates/pages/organizations/contract_form.html:3
-#: app/templates/pages/organizations/contract_form.html:10
+#: app/templates/pages/organizations/contract_form.html:5
+#: app/templates/pages/organizations/contract_form.html:12
 msgid "合約詳情"
 msgstr "Contract details"
 
-#: app/templates/pages/organizations/contract_form.html:11
+#: app/templates/pages/organizations/contract_form.html:13
 msgid "企業："
 msgstr "Organization:"
 
-#: app/templates/pages/organizations/contract_form.html:29
-#: app/templates/pages/organizations/contract_form.html:105
-#: app/templates/pages/organizations/list.html:258
-#: app/templates/pages/organizations/list.html:338
-#: app/templates/pages/organizations/list.html:372
+#: app/templates/pages/organizations/contract_form.html:31
+#: app/templates/pages/organizations/contract_form.html:107
+#: app/templates/pages/organizations/list.html:260
+#: app/templates/pages/organizations/list.html:340
+#: app/templates/pages/organizations/list.html:374
 msgid "合約名稱"
 msgstr "Contract name"
 
-#: app/templates/pages/organizations/contract_form.html:32
+#: app/templates/pages/organizations/contract_form.html:34
 msgid "例：2025年度服務合約"
 msgstr "Example: 2025 annual service Contract"
 
-#: app/templates/pages/organizations/contract_form.html:38
+#: app/templates/pages/organizations/contract_form.html:40
 msgid "合約的簡短說明"
 msgstr "Short description of Contract"
 
-#: app/templates/pages/organizations/contract_form.html:42
-#: app/templates/pages/organizations/contract_form.html:113
-#: app/templates/pages/organizations/list.html:260
-#: app/templates/pages/organizations/list.html:339
+#: app/templates/pages/organizations/contract_form.html:44
+#: app/templates/pages/organizations/contract_form.html:115
+#: app/templates/pages/organizations/list.html:262
+#: app/templates/pages/organizations/list.html:341
 #: app/templates/pages/users/view.html:86
 msgid "開始日期"
 msgstr "Start Date"
 
-#: app/templates/pages/organizations/contract_form.html:54
-#: app/templates/pages/organizations/contract_form.html:121
+#: app/templates/pages/organizations/contract_form.html:56
+#: app/templates/pages/organizations/contract_form.html:123
 msgid "合約金額"
 msgstr "Contract amount"
 
-#: app/templates/pages/organizations/contract_form.html:57
+#: app/templates/pages/organizations/contract_form.html:59
 msgid "（選填）"
 msgstr "(optional)"
 
-#: app/templates/pages/organizations/contract_form.html:62
-#: app/templates/pages/organizations/contract_form.html:136
-#: app/templates/pages/organizations/list.html:346
-#: app/templates/pages/organizations/list.html:403
+#: app/templates/pages/organizations/contract_form.html:64
+#: app/templates/pages/organizations/contract_form.html:138
+#: app/templates/pages/organizations/list.html:348
+#: app/templates/pages/organizations/list.html:405
 msgid "授權模組"
 msgstr "Authorized modules"
 
-#: app/templates/pages/organizations/contract_form.html:77
-#: app/templates/pages/organizations/list.html:418
+#: app/templates/pages/organizations/contract_form.html:79
+#: app/templates/pages/organizations/list.html:420
 msgid "選擇此合約授權使用的功能模組"
 msgstr "Select the function module authorized for use by this Contract"
 
-#: app/templates/pages/organizations/contract_form.html:84
+#: app/templates/pages/organizations/contract_form.html:86
 msgid "其他備註事項"
 msgstr "Other remarks"
 
-#: app/templates/pages/organizations/contract_form.html:130
+#: app/templates/pages/organizations/contract_form.html:132
 msgid "已停用"
 msgstr "Disabled"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:44
-#: app/templates/pages/organizations/contract_form.html:160
+#: app/templates/pages/organizations/contract_form.html:162
 msgid "最後修改"
 msgstr "last modified"
 
-#: app/templates/pages/organizations/contract_form.html:165
+#: app/templates/pages/organizations/contract_form.html:167
 msgid "剩餘天數"
 msgstr "Days remaining"
 
-#: app/templates/pages/organizations/contract_form.html:169
+#: app/templates/pages/organizations/contract_form.html:171
 #, python-format
 msgid "%(days)s 天"
 msgstr "%(days)s days"
 
-#: app/templates/pages/organizations/contract_form.html:171
+#: app/templates/pages/organizations/contract_form.html:173
 #, python-format
 msgid "已過期 %(days)s 天"
 msgstr "Expired %(days)s days"
 
-#: app/templates/pages/organizations/contract_form.html:182
-#: app/templates/pages/organizations/contract_form.html:191
-#: app/templates/pages/organizations/list.html:359
+#: app/templates/pages/organizations/contract_form.html:184
+#: app/templates/pages/organizations/contract_form.html:193
+#: app/templates/pages/organizations/list.html:361
 msgid "停用此合約"
 msgstr "Deactivate this Contract"
 
-#: app/templates/pages/organizations/contract_form.html:184
+#: app/templates/pages/organizations/contract_form.html:186
 msgid "合約建立後不可修改內容（稽核要求）。"
 msgstr ""
 "The content of Contract cannot be modified after it is created (audit "
 "requirement)."
 
-#: app/templates/pages/organizations/contract_form.html:185
+#: app/templates/pages/organizations/contract_form.html:187
 msgid "如需停用，請按下方按鈕。停用後不可再啟用，如需變更請建立新合約。"
 msgstr ""
 "To deactivate, press the button below. It cannot be reactivated after "
 "deactivation. If you need to change, please create a new Contract."
 
-#: app/templates/pages/organizations/contract_form.html:195
+#: app/templates/pages/organizations/contract_form.html:197
 msgid "此合約已停用，不可再啟用。如需恢復服務，請建立新合約。"
 msgstr ""
 "This Contract has been disabled and cannot be enabled again. If you need "
 "to restore service, please create a new Contract."
 
-#: app/templates/pages/organizations/create.html:3
-#: app/templates/pages/organizations/create.html:15
+#: app/templates/pages/organizations/create.html:5
+#: app/templates/pages/organizations/create.html:17
 msgid "新增企業"
 msgstr "Added Organization"
 
-#: app/templates/pages/organizations/create.html:12
+#: app/templates/pages/organizations/create.html:14
 msgid "返回企業列表"
 msgstr "Return to Organization list"
 
-#: app/templates/pages/organizations/create.html:40
-#: app/templates/pages/organizations/edit.html:42
-#: app/templates/pages/organizations/list.html:166
+#: app/templates/pages/organizations/create.html:42
+#: app/templates/pages/organizations/edit.html:44
+#: app/templates/pages/organizations/list.html:168
 msgid "企業代碼"
 msgstr "Organization code"
 
-#: app/templates/pages/organizations/create.html:46
+#: app/templates/pages/organizations/create.html:48
 msgid "選填，留空自動產生。如 ACME、DEMO_CORP"
 msgstr "Optional, leave blank to generate automatically. Such as ACME, DEMO_CORP"
 
-#: app/templates/pages/organizations/create.html:55
+#: app/templates/pages/organizations/create.html:57
 msgid "多語言顯示用，如不填則使用企業名稱"
 msgstr ""
 "For multi-language display, if left blank, the name Organization will be "
 "used."
 
-#: app/templates/pages/organizations/create.html:59
-#: app/templates/pages/organizations/edit.html:46
-#: app/templates/pages/organizations/list.html:87
-#: app/templates/pages/organizations/list.html:167
+#: app/templates/pages/organizations/create.html:61
+#: app/templates/pages/organizations/edit.html:48
+#: app/templates/pages/organizations/list.html:89
+#: app/templates/pages/organizations/list.html:169
 msgid "網域名稱"
 msgstr "Domain name"
 
-#: app/templates/pages/organizations/create.html:64
+#: app/templates/pages/organizations/create.html:66
 msgid "例: example.com (用於登入帳號，如 admin@example.com，會自動轉小寫)"
 msgstr ""
 "Example: example.com (used to log in to the account, such as "
 "admin@example.com, it will be automatically converted to lowercase)"
 
-#: app/templates/pages/organizations/create.html:65
+#: app/templates/pages/organizations/create.html:67
 msgid "不可使用公共信箱 Domain (如 gmail.com, yahoo.com)"
 msgstr "Public mailbox domains (such as gmail.com, yahoo.com) cannot be used"
 
-#: app/templates/pages/organizations/create.html:80
+#: app/templates/pages/organizations/create.html:82
 msgid "預設 admin，登入時為: admin@domain"
 msgstr "Default is admin, when logging in: admin@domain"
 
-#: app/templates/pages/organizations/create.html:84
+#: app/templates/pages/organizations/create.html:86
 msgid "管理員密碼"
 msgstr "Administrator password"
 
-#: app/templates/pages/organizations/create.html:108
+#: app/templates/pages/organizations/create.html:110
 msgid "建立企業"
 msgstr "Create Organization"
 
-#: app/templates/pages/organizations/edit.html:3
-#: app/templates/pages/organizations/edit.html:14
-#: app/templates/pages/organizations/list.html:161
+#: app/templates/pages/organizations/edit.html:5
+#: app/templates/pages/organizations/edit.html:16
+#: app/templates/pages/organizations/list.html:163
 msgid "編輯企業"
 msgstr "EditOrganization"
 
-#: app/templates/pages/organizations/edit.html:48
+#: app/templates/pages/organizations/edit.html:50
 msgid "企業代碼與網域名稱建立後不可變更"
 msgstr ""
 "Organization code and domain name cannot be changed after they are "
 "created."
 
-#: app/templates/pages/organizations/edit.html:62
+#: app/templates/pages/organizations/edit.html:64
 msgid "多語言顯示用，不填則使用企業名稱"
 msgstr ""
 "For multi-language display, if left blank, the name Organization will be "
 "used."
 
-#: app/templates/pages/organizations/edit.html:68
-#: app/templates/pages/organizations/list.html:193
+#: app/templates/pages/organizations/edit.html:70
+#: app/templates/pages/organizations/list.html:195
 msgid "客戶類型"
 msgstr "Customer type"
 
-#: app/templates/pages/organizations/edit.html:70
-#: app/templates/pages/organizations/list.html:195
+#: app/templates/pages/organizations/edit.html:72
+#: app/templates/pages/organizations/list.html:197
 msgid "試用"
 msgstr "trial"
 
-#: app/templates/pages/organizations/edit.html:71
-#: app/templates/pages/organizations/list.html:196
+#: app/templates/pages/organizations/edit.html:73
+#: app/templates/pages/organizations/list.html:198
 msgid "正式客戶"
 msgstr "Formal customer"
 
-#: app/templates/pages/organizations/edit.html:72
-#: app/templates/pages/organizations/list.html:197
+#: app/templates/pages/organizations/edit.html:74
+#: app/templates/pages/organizations/list.html:199
 msgid "黑名單"
 msgstr "blacklist"
 
-#: app/templates/pages/organizations/edit.html:79
+#: app/templates/pages/organizations/edit.html:81
 #, python-format
 msgid "目前已使用 %(count)s 個帳號 -- 開源的沒打算商業化，大家盡量用吧^_^"
 msgstr ""
 "Currently, %(count)s accounts have been used -- open source is not "
 "intended for commercialization, please use it as much as possible^_^"
 
-#: app/templates/pages/organizations/edit.html:91
+#: app/templates/pages/organizations/edit.html:93
 #, python-format
 msgid "此企業有 %(count)s 份未到期合約"
 msgstr "This Organization has %(count)s shares of unexpired Contract"
 
-#: app/templates/pages/organizations/edit.html:95
-#: app/templates/pages/organizations/list.html:203
+#: app/templates/pages/organizations/edit.html:97
+#: app/templates/pages/organizations/list.html:205
 msgid "所屬集團"
 msgstr "Belongs to Conglomerate"
 
-#: app/templates/pages/organizations/edit.html:98
+#: app/templates/pages/organizations/edit.html:100
 msgid "集團設定請至企業管理列表頁操作"
 msgstr ""
 "For Conglomerate settings, please go to the Organization management list "
 "page."
 
-#: app/templates/pages/organizations/edit.html:112
+#: app/templates/pages/organizations/edit.html:114
 msgid "聯絡資訊"
 msgstr "Contact information"
 
-#: app/templates/pages/organizations/edit.html:117
-#: app/templates/pages/organizations/list.html:206
+#: app/templates/pages/organizations/edit.html:119
+#: app/templates/pages/organizations/list.html:208
 msgid "聯絡人"
 msgstr "Contact person"
 
-#: app/templates/pages/organizations/edit.html:122
-#: app/templates/pages/organizations/list.html:209
+#: app/templates/pages/organizations/edit.html:124
+#: app/templates/pages/organizations/list.html:211
 msgid "聯絡信箱"
 msgstr "Contact email"
 
-#: app/templates/pages/organizations/edit.html:129
-#: app/templates/pages/organizations/list.html:212
+#: app/templates/pages/organizations/edit.html:131
+#: app/templates/pages/organizations/list.html:214
 msgid "聯絡電話"
 msgstr "Contact number"
 
-#: app/templates/pages/organizations/edit.html:138
+#: app/templates/pages/organizations/edit.html:140
 msgid "地址"
 msgstr "address"
 
-#: app/templates/pages/organizations/edit.html:155
+#: app/templates/pages/organizations/edit.html:157
 msgid "危險操作"
 msgstr "Dangerous operation"
 
-#: app/templates/pages/organizations/edit.html:159
+#: app/templates/pages/organizations/edit.html:161
 msgid "刪除此企業將無法復原，所有相關資料（帳號、合約、設定）都會被標記為刪除。"
 msgstr ""
 "Deleting this Organization will not be possible to recover, and all "
 "related information (account, Contract, settings) will be marked for "
 "deletion."
 
-#: app/templates/pages/organizations/edit.html:165
+#: app/templates/pages/organizations/edit.html:167
 msgid "刪除企業"
 msgstr "Delete Organization"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:35
-#: app/templates/pages/organizations/list.html:26
+#: app/templates/pages/organizations/list.html:28
 msgid "+ 新增"
 msgstr "+ New"
 
-#: app/templates/pages/organizations/list.html:30
+#: app/templates/pages/organizations/list.html:32
 msgid "搜尋企業名稱/網域"
 msgstr "Search for Organization name/domain"
 
@@ -9685,222 +9714,244 @@ msgstr "Search for Organization name/domain"
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:31
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:46
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:20
-#: app/templates/pages/organizations/list.html:32
+#: app/templates/pages/organizations/list.html:34
 #: app/templates/pages/store/index.html:16
 msgid "全部"
 msgstr "All"
 
-#: app/templates/pages/organizations/list.html:33
+#: app/templates/pages/organizations/list.html:35
 msgid "無集團"
 msgstr "No Conglomerate"
 
-#: app/templates/pages/organizations/list.html:49
+#: app/templates/pages/organizations/list.html:51
 msgid "集團名稱"
 msgstr "Conglomerate name"
 
-#: app/templates/pages/organizations/list.html:51
+#: app/templates/pages/organizations/list.html:53
 msgid "建立 ("
 msgstr "create ("
 
-#: app/templates/pages/organizations/list.html:60
+#: app/templates/pages/organizations/list.html:62
 msgid "更新 ("
 msgstr "update ("
 
-#: app/templates/pages/organizations/list.html:62
+#: app/templates/pages/organizations/list.html:64
 msgid "解散"
 msgstr "Disband"
 
-#: app/templates/pages/organizations/list.html:66
+#: app/templates/pages/organizations/list.html:68
 msgid "共享資料庫："
 msgstr "Shared database:"
 
-#: app/templates/pages/organizations/list.html:68
+#: app/templates/pages/organizations/list.html:70
 msgid "已建立 ("
 msgstr "Created ("
 
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:134
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:243
-#: app/templates/pages/organizations/list.html:72
+#: app/templates/pages/organizations/list.html:74
 msgid "未建立"
 msgstr "Not created"
 
-#: app/templates/pages/organizations/list.html:74
+#: app/templates/pages/organizations/list.html:76
 msgid "建立共享資料庫"
 msgstr "Create a shared database"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:98
-#: app/templates/pages/organizations/list.html:88
+#: app/templates/pages/organizations/list.html:90
 msgid "集團"
 msgstr "Conglomerate"
 
-#: app/templates/pages/organizations/list.html:89
-#: app/templates/pages/platform_help/org_admin.html:443
+#: app/templates/pages/organizations/list.html:91
+#: app/templates/pages/platform_help/org_admin.html:449
 msgid "合約"
 msgstr "Contract"
 
-#: app/templates/pages/organizations/list.html:115
+#: app/templates/pages/organizations/list.html:117
 msgid "系統"
 msgstr "system"
 
-#: app/templates/pages/organizations/list.html:122
+#: app/templates/pages/organizations/list.html:124
 msgid "無約"
 msgstr "No appointment"
 
-#: app/templates/pages/organizations/list.html:136
+#: app/templates/pages/organizations/list.html:138
 #, python-format
 msgid "共 %(total)s 筆"
 msgstr "%(total)s total"
 
-#: app/templates/pages/organizations/list.html:141
+#: app/templates/pages/organizations/list.html:143
 #, python-format
 msgid "第 %(page)s/%(pages)s 頁"
 msgstr "Page %(page)s/%(pages)s"
 
-#: app/templates/pages/organizations/list.html:170
+#: app/templates/pages/organizations/list.html:172
 msgid "企業成員登入 URL"
 msgstr "Employee login URL"
 
-#: app/templates/pages/organizations/list.html:177
+#: app/templates/pages/organizations/list.html:179
 msgid "外部廠商登入 URL"
 msgstr "External External Vendor login URL"
 
-#: app/templates/pages/organizations/list.html:187
+#: app/templates/pages/organizations/list.html:189
 msgid "系統企業（永久有效）"
 msgstr "System Organization (valid permanently)"
 
-#: app/templates/pages/organizations/list.html:222
+#: app/templates/pages/organizations/list.html:224
 #, python-format
 msgid "合約管理 (%(contracts)s)"
 msgstr "Contract Management (%(contracts)s)"
 
-#: app/templates/pages/organizations/list.html:223
+#: app/templates/pages/organizations/list.html:225
 msgid "+ 新增合約"
 msgstr "+ Added Contract"
 
-#: app/templates/pages/organizations/list.html:228
+#: app/templates/pages/organizations/list.html:230
 msgid "合約期間："
 msgstr "During Contract:"
 
-#: app/templates/pages/organizations/list.html:230
+#: app/templates/pages/organizations/list.html:232
 #, python-format
 msgid "剩餘 %(remaining)s"
 msgstr "Remaining %(remaining)s"
 
-#: app/templates/pages/organizations/list.html:234
+#: app/templates/pages/organizations/list.html:236
 msgid "系統企業："
 msgstr "System Organization:"
 
-#: app/templates/pages/organizations/list.html:234
+#: app/templates/pages/organizations/list.html:236
 msgid "永久有效，無需合約"
 msgstr "Valid permanently, no need for Contract"
 
-#: app/templates/pages/organizations/list.html:264
-#: app/templates/pages/organizations/list.html:341
-#: app/templates/pages/organizations/list.html:388
+#: app/templates/pages/organizations/list.html:266
+#: app/templates/pages/organizations/list.html:343
+#: app/templates/pages/organizations/list.html:390
 msgid "金額"
 msgstr "Amount"
 
-#: app/templates/pages/organizations/list.html:281
+#: app/templates/pages/organizations/list.html:283
 msgid "尚未生效"
 msgstr "Not yet effective"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:321
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:72
 #: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:48
-#: app/templates/pages/organizations/list.html:285
+#: app/templates/pages/organizations/list.html:287
 msgid "檢視"
 msgstr "View"
 
-#: app/templates/pages/organizations/list.html:291
+#: app/templates/pages/organizations/list.html:293
 msgid "此篩選條件下無合約"
 msgstr "There is no Contract in this filter"
 
-#: app/templates/pages/organizations/list.html:300
+#: app/templates/pages/organizations/list.html:302
 msgid "系統企業無需建立合約"
 msgstr "System Organization does not need to create Contract"
 
-#: app/templates/pages/organizations/list.html:302
+#: app/templates/pages/organizations/list.html:304
 msgid "尚無合約，點擊上方「+ 新增合約」建立"
 msgstr "There is no Contract yet, click \"+ Add Contract\" above to create one"
 
-#: app/templates/pages/organizations/list.html:313
+#: app/templates/pages/organizations/list.html:315
 msgid "請從左側選擇一家企業"
 msgstr "Please select a Organization from the left"
 
-#: app/templates/pages/organizations/list.html:314
+#: app/templates/pages/organizations/list.html:316
 msgid "查看詳情與合約管理"
 msgstr "View details and Contract management"
 
-#: app/templates/pages/organizations/list.html:335
+#: app/templates/pages/organizations/list.html:337
 msgid "合約建立後不可修改內容（稽核要求）。如需變更請建立新合約。"
 msgstr ""
 "The content of Contract cannot be modified after it is created (audit "
 "requirement). If you need to change, please create a new Contract."
 
-#: app/templates/pages/organizations/list.html:362
+#: app/templates/pages/organizations/list.html:364
 msgid "此合約已停用，不可再啟用"
 msgstr "This Contract has been disabled and cannot be enabled again"
 
-#: app/templates/pages/organizations/list.html:382
+#: app/templates/pages/organizations/list.html:384
 msgid "結束日期 *"
 msgstr "End date *"
 
-msgid "平台說明 - 企業成員"
-msgstr "Platform Description - Employee"
+#: app/templates/pages/platform_help/_manual_nav.html:1
+msgid "手冊目錄"
+msgstr "Manual contents"
 
-msgid "以下是各功能頁的操作說明。也可以直接在任何頁面點擊右下角的"
-msgstr ""
-"The following are the operation instructions for each function page. You "
-"can also directly click on the lower right corner of any page"
+#: app/templates/pages/platform_help/_manual_nav.html:11
+msgid "切換章節"
+msgstr "Toggle chapter"
 
-msgid "按鈕，取得當前頁面的快速說明。"
-msgstr "button to get a quick description of the current page."
+#: app/templates/pages/platform_help/_manual_nav.html:30
+msgid "切換小節"
+msgstr "Toggle section"
 
-msgid "說明文件正在準備中。"
-msgstr "Documentation is being prepared."
+#: app/templates/pages/platform_help/_manual_nav.html:61
+msgid "平台概念說明"
+msgstr "Platform concepts"
 
-msgid "平台說明 - 外部廠商"
-msgstr "Platform Description - External Vendor"
+#: app/templates/pages/platform_help/index.html:3
+#: app/templates/pages/platform_help/index.html:13
+msgid "使用者手冊"
+msgstr "User Manual"
+
+#: app/templates/pages/platform_help/index.html:43
+msgid "目前沒有可閱讀的說明文件。"
+msgstr "No documents are available for you to read."
+
+#: app/templates/pages/platform_help/manual_doc.html:3
+#: app/templates/pages/platform_help/page_doc.html:3
+#, python-format
+msgid "%(title)s 說明"
+msgstr "%(title)s Help"
+
+#: app/templates/pages/platform_help/manual_doc.html:13
+msgid "返回說明目錄"
+msgstr "Back to help index"
+
+#: app/templates/pages/platform_help/manual_doc.html:16
+msgid "本頁尚未提供您所選語言的版本，以下為繁體中文原文。"
+msgstr "This page is not available in your selected language yet. The Traditional Chinese original is shown below."
 
 #: app/templates/pages/platform_help/org_admin.html:3
-#: app/templates/pages/platform_help/org_admin.html:12
+#: app/templates/pages/platform_help/org_admin.html:18
 msgid "平台說明 - 企業管理員"
 msgstr "Platform Description - Organization Admin"
 
-#: app/templates/pages/platform_help/org_admin.html:13
+#: app/templates/pages/platform_help/org_admin.html:19
 msgid "本文件說明 BeakPlatform 的帳號等級、角色、權限架構與安全機制，供企業管理員參考。"
 msgstr ""
 "This document describes the account level of BeakPlatform, Role, "
 "permission structure and security mechanism, for reference by "
 "Organization Admin."
 
-#: app/templates/pages/platform_help/org_admin.html:17
+#: app/templates/pages/platform_help/org_admin.html:23
 msgid "帳號等級與角色"
 msgstr "Account level and Role"
 
-#: app/templates/pages/platform_help/org_admin.html:18
+#: app/templates/pages/platform_help/org_admin.html:24
 msgid "權限管理"
 msgstr "Permission Management"
 
-#: app/templates/pages/platform_help/org_admin.html:19
+#: app/templates/pages/platform_help/org_admin.html:25
 msgid "安全機制"
 msgstr "security mechanism"
 
-#: app/templates/pages/platform_help/org_admin.html:20
+#: app/templates/pages/platform_help/org_admin.html:26
 msgid "名詞對照"
 msgstr "noun contrast"
 
-#: app/templates/pages/platform_help/org_admin.html:29
+#: app/templates/pages/platform_help/org_admin.html:35
 msgid "帳號等級 (User Type)"
 msgstr "Account Level (User Type)"
 
-#: app/templates/pages/platform_help/org_admin.html:30
+#: app/templates/pages/platform_help/org_admin.html:36
 msgid "每個帳號有且只有一個等級，決定此人在系統中的基本身分與可見範圍。"
 msgstr ""
 "Each account has one and only one level, which determines the person's "
 "basic status and visibility in the system."
 
-#: app/templates/pages/platform_help/org_admin.html:43
+#: app/templates/pages/platform_help/org_admin.html:49
 #, python-format
 msgid "平台維運人員，隸屬特殊企業 %(SYSTEM_ORG_CODE)s。管理所有企業、主機設定、模組商店。不參與各企業內的業務操作。"
 msgstr ""
@@ -9909,26 +9960,26 @@ msgstr ""
 "module stores. Do not participate in the business operations within each "
 "Organization."
 
-#: app/templates/pages/platform_help/org_admin.html:48
+#: app/templates/pages/platform_help/org_admin.html:54
 msgid "企業內最高管理者。管理本企業的組織架構、帳號、角色、選單、模組設定。天生持有本企業內所有非系統級權限。"
 msgstr ""
 "The top manager in Organization. Manage the organizational structure, "
 "account, Role, Menu, and module settings of this Organization. Naturally "
 "holds all non-system level permissions in this Organization."
 
-#: app/templates/pages/platform_help/org_admin.html:53
+#: app/templates/pages/platform_help/org_admin.html:59
 msgid "企業內一般使用者。可見範圍由管理員透過選單授權和角色指派決定。"
 msgstr ""
 "General users in Organization. The visible range is determined by the "
 "administrator through Menu authorization and Role assignment."
 
-#: app/templates/pages/platform_help/org_admin.html:58
+#: app/templates/pages/platform_help/org_admin.html:64
 msgid "非本企業人員（供應商、顧問等）。可見範圍最小，由管理員明確開放。"
 msgstr ""
 "Non-Organization personnel (suppliers, consultants, etc.). The visible "
 "range is the smallest and is explicitly opened by the administrator."
 
-#: app/templates/pages/platform_help/org_admin.html:64
+#: app/templates/pages/platform_help/org_admin.html:70
 msgid "等級之間互相獨立，不是「企業管理員 = 企業成員 + 更多權限」的關係。各等級看到的選單和功能由管理員分別配置。"
 msgstr ""
 "The levels are independent of each other and are not related to "
@@ -9936,93 +9987,93 @@ msgstr ""
 "functions seen at each level are configured separately by the "
 "administrator."
 
-#: app/templates/pages/platform_help/org_admin.html:69
+#: app/templates/pages/platform_help/org_admin.html:75
 msgid "預設角色"
 msgstr "Default Role"
 
-#: app/templates/pages/platform_help/org_admin.html:70
+#: app/templates/pages/platform_help/org_admin.html:76
 msgid "系統內建以下角色，企業管理員可在 /access/ 自行增減角色。"
 msgstr ""
 "The system ships with the following roles; org admins can add or remove "
 "roles in /access/."
 
-#: app/templates/pages/platform_help/org_admin.html:72
+#: app/templates/pages/platform_help/org_admin.html:78
 msgid "企業級角色"
 msgstr "Organization-level Role"
 
-#: app/templates/pages/platform_help/org_admin.html:73
+#: app/templates/pages/platform_help/org_admin.html:79
 msgid "管理本企業的組織與模組。"
 msgstr "Manage the organization and modules of this Organization."
 
-#: app/templates/pages/platform_help/org_admin.html:78
-#: app/templates/pages/platform_help/org_admin.html:99
+#: app/templates/pages/platform_help/org_admin.html:84
+#: app/templates/pages/platform_help/org_admin.html:105
 msgid "職責"
 msgstr "Responsibilities"
 
-#: app/templates/pages/platform_help/org_admin.html:84
+#: app/templates/pages/platform_help/org_admin.html:90
 msgid "管理企業設定、組織架構、帳號、角色、模組配置"
 msgstr ""
 "Manage Organization settings, organizational structure, accounts, Role, "
 "and module configurations"
 
-#: app/templates/pages/platform_help/org_admin.html:87
+#: app/templates/pages/platform_help/org_admin.html:93
 msgid "表單流程管理者"
 msgstr "form process manager"
 
-#: app/templates/pages/platform_help/org_admin.html:88
+#: app/templates/pages/platform_help/org_admin.html:94
 msgid "設計表單範本、設計流程、指定開發者"
 msgstr "Design form template, design process, designated developer"
 
-#: app/templates/pages/platform_help/org_admin.html:93
+#: app/templates/pages/platform_help/org_admin.html:99
 msgid "模組級角色"
 msgstr "Module level Role"
 
-#: app/templates/pages/platform_help/org_admin.html:94
+#: app/templates/pages/platform_help/org_admin.html:100
 msgid "控制模組（如子系統開發模組）的存取層級，具有繼承關係。"
 msgstr ""
 "The access level of control modules (such as subsystem development "
 "modules) has an inheritance relationship."
 
-#: app/templates/pages/platform_help/org_admin.html:100
+#: app/templates/pages/platform_help/org_admin.html:106
 msgid "繼承"
 msgstr "inheritance"
 
-#: app/templates/pages/platform_help/org_admin.html:105
+#: app/templates/pages/platform_help/org_admin.html:111
 msgid "模組管理員"
 msgstr "Module Admin"
 
-#: app/templates/pages/platform_help/org_admin.html:106
+#: app/templates/pages/platform_help/org_admin.html:112
 msgid "管理模組成員、角色、刪除文章"
 msgstr "Manage module members, Role, delete articles"
 
-#: app/templates/pages/platform_help/org_admin.html:110
+#: app/templates/pages/platform_help/org_admin.html:116
 msgid "模組作者"
 msgstr "mod author"
 
-#: app/templates/pages/platform_help/org_admin.html:111
+#: app/templates/pages/platform_help/org_admin.html:117
 msgid "建立新文件、隱藏自己的文章"
 msgstr "Create new files and hide your own articles"
 
-#: app/templates/pages/platform_help/org_admin.html:112
-#: app/templates/pages/platform_help/org_admin.html:115
+#: app/templates/pages/platform_help/org_admin.html:118
+#: app/templates/pages/platform_help/org_admin.html:121
 msgid "模組讀者"
 msgstr "Mod Reader"
 
-#: app/templates/pages/platform_help/org_admin.html:116
+#: app/templates/pages/platform_help/org_admin.html:122
 msgid "閱讀已開放的項目"
 msgstr "Read open projects"
 
-#: app/templates/pages/platform_help/org_admin.html:122
+#: app/templates/pages/platform_help/org_admin.html:128
 msgid "成員級角色"
 msgstr "Member level Role"
 
-#: app/templates/pages/platform_help/org_admin.html:123
+#: app/templates/pages/platform_help/org_admin.html:129
 msgid "組織架構中的職務角色，用於流程簽核與組織管理。"
 msgstr ""
 "Duty Role in the organization structure, used for workflow approval and "
 "organization management."
 
-#: app/templates/pages/platform_help/org_admin.html:132
+#: app/templates/pages/platform_help/org_admin.html:138
 #: app/templates/pages/positions/create.html:74
 #: app/templates/pages/positions/edit.html:70
 #: app/templates/pages/positions/list.html:21
@@ -10030,373 +10081,373 @@ msgstr ""
 msgid "部門主管"
 msgstr "Department Manager"
 
-#: app/templates/pages/platform_help/org_admin.html:132
+#: app/templates/pages/platform_help/org_admin.html:138
 msgid "部門的負責人"
 msgstr "Person in charge of Department"
 
-#: app/templates/pages/platform_help/org_admin.html:133
+#: app/templates/pages/platform_help/org_admin.html:139
 msgid "隸屬於特定部門的企業成員"
 msgstr "Employee belonging to specific Department"
 
-#: app/templates/pages/platform_help/org_admin.html:134
+#: app/templates/pages/platform_help/org_admin.html:140
 msgid "社群團長"
 msgstr "Group leader"
 
-#: app/templates/pages/platform_help/org_admin.html:134
+#: app/templates/pages/platform_help/org_admin.html:140
 msgid "社群（跨部門群組）的負責人"
 msgstr "The person in charge of Group (cross-Department group)"
 
-#: app/templates/pages/platform_help/org_admin.html:135
+#: app/templates/pages/platform_help/org_admin.html:141
 msgid "群組成員"
 msgstr "Group members"
 
-#: app/templates/pages/platform_help/org_admin.html:135
+#: app/templates/pages/platform_help/org_admin.html:141
 msgid "隸屬於特定群組的成員"
 msgstr "Members of a specific group"
 
-#: app/templates/pages/platform_help/org_admin.html:136
+#: app/templates/pages/platform_help/org_admin.html:142
 msgid "標準企業成員角色"
 msgstr "Standard Employee Role"
 
-#: app/templates/pages/platform_help/org_admin.html:137
+#: app/templates/pages/platform_help/org_admin.html:143
 msgid "受限制企業成員"
 msgstr "Restricted Employee"
 
-#: app/templates/pages/platform_help/org_admin.html:137
+#: app/templates/pages/platform_help/org_admin.html:143
 msgid "臨時雇員或受限帳號"
 msgstr "Temporary employee or restricted account"
 
-#: app/templates/pages/platform_help/org_admin.html:138
+#: app/templates/pages/platform_help/org_admin.html:144
 msgid "外部顧問"
 msgstr "external consultant"
 
-#: app/templates/pages/platform_help/org_admin.html:138
+#: app/templates/pages/platform_help/org_admin.html:144
 msgid "外部廠商的顧問人員"
 msgstr "Consultants of External Vendor"
 
-#: app/templates/pages/platform_help/org_admin.html:139
+#: app/templates/pages/platform_help/org_admin.html:145
 msgid "廠商代表"
 msgstr "Manufacturer's representative"
 
-#: app/templates/pages/platform_help/org_admin.html:139
+#: app/templates/pages/platform_help/org_admin.html:145
 msgid "外部廠商的代表"
 msgstr "Representative of External Vendor"
 
-#: app/templates/pages/platform_help/org_admin.html:144
+#: app/templates/pages/platform_help/org_admin.html:150
 msgid "角色繼承："
 msgstr "Role inheritance:"
 
-#: app/templates/pages/platform_help/org_admin.html:144
+#: app/templates/pages/platform_help/org_admin.html:150
 msgid "部分角色會自動包含下級角色的權限。例如「模組作者」自動擁有「模組讀者」的所有權限。繼承關係在 /access/ 頁面可查看。"
 msgstr ""
 "Some roles automatically include the permissions of subordinate roles. "
 "For example, \"Module Author\" automatically has all permissions of "
 "\"Module Reader\". Inheritance can be viewed in /access/."
 
-#: app/templates/pages/platform_help/org_admin.html:156
+#: app/templates/pages/platform_help/org_admin.html:162
 msgid "權限管理概觀"
 msgstr "Permissions Management Overview"
 
-#: app/templates/pages/platform_help/org_admin.html:157
+#: app/templates/pages/platform_help/org_admin.html:163
 msgid "平台的權限分散在多個層面，各有不同的控制目標。企業管理員可透過「權限管理中心」(/access/) 進行統一檢視與管理。"
 msgstr ""
 "Platform permissions span multiple layers, each with its own control "
 "target. Org admins can review and manage them centrally in the Access "
 "Center (/access/)."
 
-#: app/templates/pages/platform_help/org_admin.html:162
+#: app/templates/pages/platform_help/org_admin.html:168
 msgid "權限層"
 msgstr "Permission level"
 
-#: app/templates/pages/platform_help/org_admin.html:163
+#: app/templates/pages/platform_help/org_admin.html:169
 msgid "管理位置"
 msgstr "Manage location"
 
-#: app/templates/pages/platform_help/org_admin.html:164
+#: app/templates/pages/platform_help/org_admin.html:170
 msgid "控制什麼"
 msgstr "control what"
 
-#: app/templates/pages/platform_help/org_admin.html:169
-#: app/templates/pages/platform_help/org_admin.html:212
-#: app/templates/pages/platform_help/org_admin.html:413
+#: app/templates/pages/platform_help/org_admin.html:175
+#: app/templates/pages/platform_help/org_admin.html:218
+#: app/templates/pages/platform_help/org_admin.html:419
 msgid "選單可見性"
 msgstr "Menu visibility"
 
-#: app/templates/pages/platform_help/org_admin.html:171
+#: app/templates/pages/platform_help/org_admin.html:177
 msgid "哪個帳號等級能看到哪些選單項目（如：企業成員能看到「表單中心」）"
 msgstr ""
 "Which account level can see which Menu items (for example: Employee can "
 "see the \"Form Center\")"
 
-#: app/templates/pages/platform_help/org_admin.html:174
-#: app/templates/pages/platform_help/org_admin.html:418
+#: app/templates/pages/platform_help/org_admin.html:180
+#: app/templates/pages/platform_help/org_admin.html:424
 msgid "選單角色需求"
 msgstr "Menu Role Requirements"
 
-#: app/templates/pages/platform_help/org_admin.html:176
+#: app/templates/pages/platform_help/org_admin.html:182
 msgid "選單項目需要持有哪些角色才能存取（如：需要「表單流程管理者」角色）"
 msgstr ""
 "Which Role do you need to hold to access the Menu project (for example: "
 "\"Form Process Manager\" Role is required)"
 
-#: app/templates/pages/platform_help/org_admin.html:179
+#: app/templates/pages/platform_help/org_admin.html:185
 msgid "角色權限 (RBAC)"
 msgstr "Role permissions (RBAC)"
 
-#: app/templates/pages/platform_help/org_admin.html:181
+#: app/templates/pages/platform_help/org_admin.html:187
 msgid "角色持有哪些具體操作權限（如：角色「表單流程管理者」持有 form_workflow.template.view）"
 msgstr ""
 "What specific operation permissions does Role hold (for example: Role "
 "\"form process manager\" holds form_workflow.template.view)"
 
-#: app/templates/pages/platform_help/org_admin.html:184
-#: app/templates/pages/platform_help/org_admin.html:217
-#: app/templates/pages/platform_help/org_admin.html:423
+#: app/templates/pages/platform_help/org_admin.html:190
+#: app/templates/pages/platform_help/org_admin.html:223
+#: app/templates/pages/platform_help/org_admin.html:429
 msgid "選單最低門檻"
 msgstr "Menu minimum threshold"
 
-#: app/templates/pages/platform_help/org_admin.html:185
+#: app/templates/pages/platform_help/org_admin.html:191
 msgid "程式定義"
 msgstr "program definition"
 
-#: app/templates/pages/platform_help/org_admin.html:186
+#: app/templates/pages/platform_help/org_admin.html:192
 msgid "選單的最低權限要求（如：選單「表單範本」要求使用者持有 form_workflow.template.view）"
 msgstr ""
 "Minimum permission requirements for Menu (for example: Menu \"form "
 "template\" requires users to hold form_workflow.template.view)"
 
-#: app/templates/pages/platform_help/org_admin.html:189
+#: app/templates/pages/platform_help/org_admin.html:195
 msgid "帳號角色指派"
 msgstr "Account number Role assigned"
 
-#: app/templates/pages/platform_help/org_admin.html:191
+#: app/templates/pages/platform_help/org_admin.html:197
 msgid "哪些帳號持有哪些角色（如：張三擁有「表單流程管理者」角色）"
 msgstr ""
 "Which accounts hold which Role (for example: Zhang San owns \"Form "
 "Process Manager\" Role)"
 
-#: app/templates/pages/platform_help/org_admin.html:198
+#: app/templates/pages/platform_help/org_admin.html:204
 msgid "選單可見性 vs. 存取權限"
 msgstr "Menu Visibility vs. Access Permissions"
 
-#: app/templates/pages/platform_help/org_admin.html:199
+#: app/templates/pages/platform_help/org_admin.html:205
 msgid "「看得到選單」和「能進入該頁面」是兩件不同的事。"
 msgstr "\"Can see Menu\" and \"can enter the page\" are two different things."
 
-#: app/templates/pages/platform_help/org_admin.html:204
+#: app/templates/pages/platform_help/org_admin.html:210
 msgid "步驟"
 msgstr "steps"
 
-#: app/templates/pages/platform_help/org_admin.html:205
+#: app/templates/pages/platform_help/org_admin.html:211
 msgid "檢查項目"
 msgstr "Check items"
 
-#: app/templates/pages/platform_help/org_admin.html:206
+#: app/templates/pages/platform_help/org_admin.html:212
 msgid "通過條件"
 msgstr "pass conditions"
 
-#: app/templates/pages/platform_help/org_admin.html:213
+#: app/templates/pages/platform_help/org_admin.html:219
 msgid "帳號等級在該選單的授權清單中"
 msgstr "The account level is in the authorization list of Menu"
 
-#: app/templates/pages/platform_help/org_admin.html:218
+#: app/templates/pages/platform_help/org_admin.html:224
 msgid "使用者持有選單要求的權限代碼（若有設定）"
 msgstr "The user holds the permission code required by Menu (if set)"
 
-#: app/templates/pages/platform_help/org_admin.html:222
+#: app/templates/pages/platform_help/org_admin.html:228
 msgid "頁面存取"
 msgstr "page access"
 
-#: app/templates/pages/platform_help/org_admin.html:223
+#: app/templates/pages/platform_help/org_admin.html:229
 msgid "使用者持有該頁面所需的角色（由選單角色需求決定）"
 msgstr ""
 "The user has the Role required for this page (determined by Menu Role "
 "requirements)"
 
-#: app/templates/pages/platform_help/org_admin.html:227
+#: app/templates/pages/platform_help/org_admin.html:233
 msgid "操作權限"
 msgstr "Operation permission"
 
-#: app/templates/pages/platform_help/org_admin.html:228
+#: app/templates/pages/platform_help/org_admin.html:234
 msgid "使用者的角色擁有該操作所需的 RBAC 權限（如：建立、編輯、刪除）"
 msgstr ""
 "The user's Role has the RBAC permissions required for this operation "
 "(such as: create, edit, delete)"
 
-#: app/templates/pages/platform_help/org_admin.html:234
+#: app/templates/pages/platform_help/org_admin.html:240
 msgid "常見問題："
 msgstr "FAQ:"
 
-#: app/templates/pages/platform_help/org_admin.html:234
+#: app/templates/pages/platform_help/org_admin.html:240
 msgid "如果企業成員反映「選單看得到但點進去沒權限」，通常是步驟 1 通過但步驟 3 或 4 未配置。請至 /access/ 檢查衝突偵測結果。"
 msgstr ""
 "If a member reports \"the menu is visible but access is denied\", step 1 "
 "passed while step 3 or 4 is not configured. Check the conflict detection "
 "results in /access/."
 
-#: app/templates/pages/platform_help/org_admin.html:239
+#: app/templates/pages/platform_help/org_admin.html:245
 msgid "企業管理員的天生權限"
 msgstr "The natural authority of Organization Admin"
 
-#: app/templates/pages/platform_help/org_admin.html:240
+#: app/templates/pages/platform_help/org_admin.html:246
 msgid "企業管理員（ORG_ADMIN）天生持有本企業內所有「企業級」和「模組級」權限，無需透過角色指派。"
 msgstr ""
 "Organization Admin (ORG_ADMIN) naturally holds all \"Organization level\""
 " and \"module level\" permissions in this Organization, and does not need"
 " to be assigned through Role."
 
-#: app/templates/pages/platform_help/org_admin.html:241
+#: app/templates/pages/platform_help/org_admin.html:247
 msgid "這代表："
 msgstr "This means:"
 
-#: app/templates/pages/platform_help/org_admin.html:243
+#: app/templates/pages/platform_help/org_admin.html:249
 msgid "企業管理員不需要被加入任何角色就能操作所有企業內功能"
 msgstr ""
 "Organization Admin does not need to be added to any Role to operate all "
 "functions in Organization"
 
-#: app/templates/pages/platform_help/org_admin.html:244
+#: app/templates/pages/platform_help/org_admin.html:250
 msgid "在 /access/ 的衝突偵測中，僅授權給 ORG_ADMIN 的選單不會被標記為缺少 RBAC 權限"
 msgstr ""
 "In /access/ conflict detection, menus granted only to ORG_ADMIN are not "
 "flagged as missing RBAC permissions"
 
-#: app/templates/pages/platform_help/org_admin.html:245
+#: app/templates/pages/platform_help/org_admin.html:251
 msgid "但「系統級」權限仍保留給系統管理員，企業管理員無法取得"
 msgstr ""
 "However, \"system-level\" permissions are still reserved for System "
 "Administrator, and Organization Admin cannot obtain them."
 
-#: app/templates/pages/platform_help/org_admin.html:250
+#: app/templates/pages/platform_help/org_admin.html:256
 msgid "權限管理建議流程"
 msgstr "Permissions Management Recommendation Process"
 
-#: app/templates/pages/platform_help/org_admin.html:251
+#: app/templates/pages/platform_help/org_admin.html:257
 msgid "新增一個需要權限控制的功能時，建議依以下順序操作："
 msgstr ""
 "When adding a function that requires permission control, it is "
 "recommended to operate in the following order:"
 
-#: app/templates/pages/platform_help/org_admin.html:253
+#: app/templates/pages/platform_help/org_admin.html:259
 msgid "-- 建立或調整選單結構"
 msgstr "-- Create or adjust the menu structure"
 
-#: app/templates/pages/platform_help/org_admin.html:254
+#: app/templates/pages/platform_help/org_admin.html:260
 msgid "-- 設定選單可見性與角色門檻"
 msgstr "-- Configure menu visibility and role thresholds"
 
-#: app/templates/pages/platform_help/org_admin.html:255
+#: app/templates/pages/platform_help/org_admin.html:261
 msgid "-- 建立或選擇角色，指派角色給帳號"
 msgstr "--Create or select Role and assign Role to the account"
 
-#: app/templates/pages/platform_help/org_admin.html:256
+#: app/templates/pages/platform_help/org_admin.html:262
 msgid "-- 為角色配置所需的 RBAC 權限並檢查衝突"
 msgstr "-- Configure required RBAC permissions for roles and check for conflicts"
 
-#: app/templates/pages/platform_help/org_admin.html:268
+#: app/templates/pages/platform_help/org_admin.html:274
 msgid "安全防護架構"
 msgstr "Security protection architecture"
 
-#: app/templates/pages/platform_help/org_admin.html:269
+#: app/templates/pages/platform_help/org_admin.html:275
 msgid "平台採用多層防護設計，每一層獨立運作，即使某一層被繞過，後續層仍然保護系統。"
 msgstr ""
 "The platform adopts a multi-layer protection design, with each layer "
 "operating independently. Even if one layer is bypassed, subsequent layers"
 " will still protect the system."
 
-#: app/templates/pages/platform_help/org_admin.html:274
+#: app/templates/pages/platform_help/org_admin.html:280
 msgid "層"
 msgstr "layer"
 
-#: app/templates/pages/platform_help/org_admin.html:276
+#: app/templates/pages/platform_help/org_admin.html:282
 msgid "作用"
 msgstr "function"
 
-#: app/templates/pages/platform_help/org_admin.html:277
+#: app/templates/pages/platform_help/org_admin.html:283
 msgid "未通過的結果"
 msgstr "failed result"
 
-#: app/templates/pages/platform_help/org_admin.html:283
+#: app/templates/pages/platform_help/org_admin.html:289
 msgid "全域認證攔截"
 msgstr "Global authentication interception"
 
-#: app/templates/pages/platform_help/org_admin.html:284
+#: app/templates/pages/platform_help/org_admin.html:290
 msgid "所有請求必須先通過身分驗證，未登入者一律阻擋"
 msgstr ""
 "All requests must pass identity verification first, and those who are not"
 " logged in will be blocked."
 
-#: app/templates/pages/platform_help/org_admin.html:285
+#: app/templates/pages/platform_help/org_admin.html:291
 msgid "導向登入頁面"
 msgstr "Direct to login page"
 
-#: app/templates/pages/platform_help/org_admin.html:289
+#: app/templates/pages/platform_help/org_admin.html:295
 msgid "路由層級檢查"
 msgstr "Routing level check"
 
-#: app/templates/pages/platform_help/org_admin.html:290
+#: app/templates/pages/platform_help/org_admin.html:296
 msgid "各頁面依功能要求不同的帳號等級（如管理員專用頁面）"
 msgstr ""
 "Each page has different account levels according to functional "
 "requirements (such as administrator-specific pages)"
 
-#: app/templates/pages/platform_help/org_admin.html:291
+#: app/templates/pages/platform_help/org_admin.html:297
 msgid "403 拒絕存取"
 msgstr "403 Access Denied"
 
-#: app/templates/pages/platform_help/org_admin.html:295
+#: app/templates/pages/platform_help/org_admin.html:301
 msgid "網頁角色守衛"
 msgstr "Web page Role guard"
 
-#: app/templates/pages/platform_help/org_admin.html:296
+#: app/templates/pages/platform_help/org_admin.html:302
 msgid "驗證使用者是否持有進入該頁面所需的角色"
 msgstr "Verify whether the user holds the Role required to enter this page"
 
-#: app/templates/pages/platform_help/org_admin.html:297
+#: app/templates/pages/platform_help/org_admin.html:303
 msgid "強制登出並記錄稽核日誌"
 msgstr "Force logout and record audit logs"
 
-#: app/templates/pages/platform_help/org_admin.html:301
+#: app/templates/pages/platform_help/org_admin.html:307
 msgid "資源權限檢查"
 msgstr "Resource permission check"
 
-#: app/templates/pages/platform_help/org_admin.html:302
+#: app/templates/pages/platform_help/org_admin.html:308
 msgid "驗證使用者是否有權執行特定操作（讀取、建立、編輯、刪除）"
 msgstr ""
 "Verify that the user has permission to perform a specific operation "
 "(read, create, edit, delete)"
 
-#: app/templates/pages/platform_help/org_admin.html:303
+#: app/templates/pages/platform_help/org_admin.html:309
 msgid "403 拒絕操作"
 msgstr "403 Operation refused"
 
-#: app/templates/pages/platform_help/org_admin.html:307
+#: app/templates/pages/platform_help/org_admin.html:313
 msgid "企業資料隔離"
 msgstr "Organization data isolation"
 
-#: app/templates/pages/platform_help/org_admin.html:308
+#: app/templates/pages/platform_help/org_admin.html:314
 msgid "每筆資料查詢都強制加入企業識別碼過濾，A 企業看不到 B 企業的資料"
 msgstr ""
 "Every data query is forced to add the Organization identification code "
 "filter. A Organization cannot see the data of B Organization."
 
-#: app/templates/pages/platform_help/org_admin.html:309
+#: app/templates/pages/platform_help/org_admin.html:315
 msgid "資料不可見"
 msgstr "Data is not visible"
 
-#: app/templates/pages/platform_help/org_admin.html:316
+#: app/templates/pages/platform_help/org_admin.html:322
 msgid "帳號安全"
 msgstr "Account Security"
 
-#: app/templates/pages/platform_help/org_admin.html:320
+#: app/templates/pages/platform_help/org_admin.html:326
 msgid "機制"
 msgstr "mechanism"
 
-#: app/templates/pages/platform_help/org_admin.html:326
+#: app/templates/pages/platform_help/org_admin.html:332
 msgid "預設管理員帳號"
 msgstr "Default administrator account"
 
-#: app/templates/pages/platform_help/org_admin.html:327
+#: app/templates/pages/platform_help/org_admin.html:333
 msgid "企業建立時自動產生 admin 帳號。建議盡快建立個人管理員帳號後停用此預設帳號，儀表板會持續提醒。"
 msgstr ""
 "The admin account is automatically generated when Organization is "
@@ -10404,11 +10455,11 @@ msgstr ""
 "soon as possible and then deactivate this default account. The dashboard "
 "will continue to remind you."
 
-#: app/templates/pages/platform_help/org_admin.html:330
+#: app/templates/pages/platform_help/org_admin.html:336
 msgid "帳號停用 vs 刪除"
 msgstr "Account deactivation vs deletion"
 
-#: app/templates/pages/platform_help/org_admin.html:331
+#: app/templates/pages/platform_help/org_admin.html:337
 msgid "停用（is_active=false）：帳號無法登入但資料保留，可隨時恢復。刪除（is_deleted=true）：軟刪除，資料保留但完全不可見。"
 msgstr ""
 "Deactivated (is_active=false): The account cannot be logged in but the "
@@ -10416,179 +10467,174 @@ msgstr ""
 "(is_deleted=true): Soft delete, the data is retained but completely "
 "invisible."
 
-#: app/templates/pages/platform_help/org_admin.html:334
+#: app/templates/pages/platform_help/org_admin.html:340
 msgid "URL 安全識別碼"
 msgstr "URL security code"
 
-#: app/templates/pages/platform_help/org_admin.html:335
+#: app/templates/pages/platform_help/org_admin.html:341
 msgid "所有資源在 URL 中使用隨機產生的安全識別碼（secure_code），而非可猜測的流水號，防止未授權的資料存取。"
 msgstr ""
 "All resources use randomly generated security identifiers (secure_code) "
 "in URLs instead of guessable serial numbers to prevent unauthorized data "
 "access."
 
-#: app/templates/pages/platform_help/org_admin.html:338
-#: app/templates/pages/platform_help/org_admin.html:448
+#: app/templates/pages/platform_help/org_admin.html:344
+#: app/templates/pages/platform_help/org_admin.html:454
 msgid "稽核日誌"
 msgstr "Audit log"
 
-#: app/templates/pages/platform_help/org_admin.html:339
+#: app/templates/pages/platform_help/org_admin.html:345
 msgid "重要操作（登入、權限變更、資料異動）自動記錄稽核日誌，供事後追溯。"
 msgstr ""
 "Important operations (login, permission changes, data changes) are "
 "automatically recorded in audit logs for subsequent tracing."
 
-#: app/templates/pages/platform_help/org_admin.html:346
+#: app/templates/pages/platform_help/org_admin.html:352
 msgid "模組存取控制"
 msgstr "module access control"
 
-#: app/templates/pages/platform_help/org_admin.html:347
+#: app/templates/pages/platform_help/org_admin.html:353
 msgid "模組（如表單流程、子系統開發）的存取受額外控制："
 msgstr ""
 "Access to modules (such as form processes, subsystem development) is "
 "subject to additional controls:"
 
-#: app/templates/pages/platform_help/org_admin.html:351
+#: app/templates/pages/platform_help/org_admin.html:357
 msgid "控制層"
 msgstr "control layer"
 
-#: app/templates/pages/platform_help/org_admin.html:357
+#: app/templates/pages/platform_help/org_admin.html:363
 msgid "合約驗證"
 msgstr "Contract verification"
 
-#: app/templates/pages/platform_help/org_admin.html:358
+#: app/templates/pages/platform_help/org_admin.html:364
 msgid "企業必須持有該模組的有效合約才能使用。合約過期後模組不可見。"
 msgstr ""
 "Organization must hold a valid Contract of this module to use it. After "
 "Contract expires, the module will not be visible."
 
-#: app/templates/pages/platform_help/org_admin.html:361
+#: app/templates/pages/platform_help/org_admin.html:367
 msgid "模組 ACL"
 msgstr "Module ACL"
 
-#: app/templates/pages/platform_help/org_admin.html:362
+#: app/templates/pages/platform_help/org_admin.html:368
 msgid "企業管理員在 /admin/module-users/ 設定哪些企業成員可存取哪些模組。企業管理員本身自動擁有所有模組的存取權。"
 msgstr ""
 "Organization Admin sets which Employee can access which modules in /admin"
 "/module-users/. Organization Admin itself automatically has access rights"
 " to all modules."
 
-#: app/templates/pages/platform_help/org_admin.html:376
+#: app/templates/pages/platform_help/org_admin.html:382
 msgid "名詞對照表"
 msgstr "Noun comparison table"
 
-#: app/templates/pages/platform_help/org_admin.html:381
+#: app/templates/pages/platform_help/org_admin.html:387
 msgid "名詞"
 msgstr "noun"
 
-#: app/templates/pages/platform_help/org_admin.html:382
+#: app/templates/pages/platform_help/org_admin.html:388
 msgid "英文"
 msgstr "English"
 
-#: app/templates/pages/platform_help/org_admin.html:388
+#: app/templates/pages/platform_help/org_admin.html:394
 msgid "帳號等級"
 msgstr "Account Level"
 
-#: app/templates/pages/platform_help/org_admin.html:390
+#: app/templates/pages/platform_help/org_admin.html:396
 msgid "帳號的基本身分分類：系統管理員、企業管理員、企業成員、外部廠商"
 msgstr ""
 "Basic classification of accounts: System Administrator, Organization "
 "Admin, Employee, External Vendor"
 
-#: app/templates/pages/platform_help/org_admin.html:395
+#: app/templates/pages/platform_help/org_admin.html:401
 msgid "可被指派給帳號的職務或功能身分，一個帳號可持有多個角色"
 msgstr ""
 "Duty or functional identity that can be assigned to an account, and one "
 "account can hold multiple Role"
 
-#: app/templates/pages/platform_help/org_admin.html:398
+#: app/templates/pages/platform_help/org_admin.html:404
 msgid "角色繼承"
 msgstr "Role inheritance"
 
-#: app/templates/pages/platform_help/org_admin.html:400
+#: app/templates/pages/platform_help/org_admin.html:406
 msgid "子角色自動擁有父角色的所有權限"
 msgstr "The child Role automatically has all the permissions of the parent Role"
 
-#: app/templates/pages/platform_help/org_admin.html:405
+#: app/templates/pages/platform_help/org_admin.html:411
 msgid "可被授予角色的具體操作能力（如：檢視表單範本、編輯流程）"
 msgstr ""
 "Can be granted the specific operational capabilities of Role (such as: "
 "viewing form templates, editing processes)"
 
-#: app/templates/pages/platform_help/org_admin.html:410
+#: app/templates/pages/platform_help/org_admin.html:416
 msgid "基於角色的存取控制。權限不直接授予帳號，而是授予角色，帳號透過持有角色間接獲得權限"
 msgstr ""
 "Access control based on Role. Permissions are not granted directly to the"
 " account, but to Role. The account obtains permissions indirectly by "
 "holding Role."
 
-#: app/templates/pages/platform_help/org_admin.html:415
+#: app/templates/pages/platform_help/org_admin.html:421
 msgid "控制哪些帳號等級能看到哪些選單項目"
 msgstr "Control which account levels can see which Menu projects"
 
-#: app/templates/pages/platform_help/org_admin.html:420
+#: app/templates/pages/platform_help/org_admin.html:426
 msgid "控制存取特定選單頁面需要持有哪些角色"
 msgstr "Control which Roles are required to access a specific Menu page"
 
-#: app/templates/pages/platform_help/org_admin.html:425
+#: app/templates/pages/platform_help/org_admin.html:431
 msgid "選單項目設定的最低權限代碼，使用者必須持有該權限才能看到選單"
 msgstr ""
 "The lowest permission code set by the Menu project. Users must have this "
 "permission to see Menu"
 
-#: app/templates/pages/platform_help/org_admin.html:428
+#: app/templates/pages/platform_help/org_admin.html:434
 msgid "企業隔離"
 msgstr "Organization isolation"
 
-#: app/templates/pages/platform_help/org_admin.html:430
+#: app/templates/pages/platform_help/org_admin.html:436
 msgid "不同企業的資料完全隔離，互不可見"
 msgstr ""
 "The data of different Organization are completely isolated and invisible "
 "to each other."
 
-#: app/templates/pages/platform_help/org_admin.html:433
+#: app/templates/pages/platform_help/org_admin.html:439
 msgid "安全識別碼"
 msgstr "Security ID"
 
-#: app/templates/pages/platform_help/org_admin.html:435
+#: app/templates/pages/platform_help/org_admin.html:441
 msgid "系統內部用於識別資源的隨機字串，取代可猜測的流水號"
 msgstr ""
 "A random string used within the system to identify resources, replacing "
 "guessable serial numbers."
 
-#: app/templates/pages/platform_help/org_admin.html:440
+#: app/templates/pages/platform_help/org_admin.html:446
 msgid "掛載在平台上的獨立功能單元（如表單流程、子系統開發），透過合約授權使用"
 msgstr ""
 "Independent functional units (such as form processes and subsystem "
 "development) mounted on the platform can be used through Contract "
 "authorization"
 
-#: app/templates/pages/platform_help/org_admin.html:445
+#: app/templates/pages/platform_help/org_admin.html:451
 msgid "企業與模組之間的授權關係，包含有效期限"
 msgstr ""
 "The authorization relationship between Organization and the module, "
 "including the validity period"
 
-#: app/templates/pages/platform_help/org_admin.html:450
+#: app/templates/pages/platform_help/org_admin.html:456
 msgid "系統自動記錄的操作歷史，用於事後追溯與合規"
 msgstr ""
 "The system automatically records the operation history for subsequent "
 "traceability and compliance."
 
-#: app/templates/pages/platform_help/org_admin.html:453
+#: app/templates/pages/platform_help/org_admin.html:459
 msgid "衝突偵測"
 msgstr "conflict detection"
 
-#: app/templates/pages/platform_help/org_admin.html:455
+#: app/templates/pages/platform_help/org_admin.html:461
 msgid "/access/ 中的功能，自動檢查權限配置是否有遺漏或矛盾"
 msgstr ""
 "A feature in /access/ that automatically checks the permission "
 "configuration for gaps or contradictions"
-
-#: app/templates/pages/platform_help/page_doc.html:3
-#, python-format
-msgid "%(title)s 說明"
-msgstr "%(title)s Help"
 
 #: app/templates/pages/platform_help/page_doc.html:48
 #, python-format
@@ -10599,9 +10645,6 @@ msgstr "Applicable: %(audience)s"
 #, python-format
 msgid "此頁面（%(menu_code)s）尚未提供說明文件。"
 msgstr "Documentation is not yet available for this page (%(menu_code)s)."
-
-msgid "平台說明 - 系統管理員"
-msgstr "Platform Description - System Administrator"
 
 #: app/templates/pages/positions/create.html:3
 msgid "新增職位"
@@ -10991,8 +11034,8 @@ msgid ""
 "X-BP-Timestamp / X-BP-Signature。詳見 dev-notes/API_KEY_TRIGGER_SPEC.md。"
 msgstr ""
 "Signature method: HMAC-SHA256(secret, \"{timestamp}\\n{body}\"), headers:"
-" X-BP-Key-Id / X-BP-Timestamp / X-BP-Signature. See "
-"dev-notes/API_KEY_TRIGGER_SPEC.md for details."
+" X-BP-Key-Id / X-BP-Timestamp / X-BP-Signature. See dev-"
+"notes/API_KEY_TRIGGER_SPEC.md for details."
 
 #: app/templates/pages/security/_api_keys_modals.html:118
 msgid "我已保存，關閉"
@@ -12806,7 +12849,7 @@ msgstr ""
 msgid "已刪除合約 %(number)s"
 msgstr "Contract %(number)s deleted"
 
-#: app/web/platform_help.py:63 app/web/platform_help.py:71
+#: app/web/platform_help.py:153 app/web/platform_help.py:161
 msgid "此頁面尚未提供說明文件"
 msgstr "No documentation is available for this page yet"
 
@@ -12855,7 +12898,7 @@ msgid "已變更密碼"
 msgstr "Password changed"
 
 #: app/web/server_manage.py:104 app/web/server_manage.py:164
-#: app/web/server_manage.py:267
+#: app/web/server_manage.py:271
 msgid "Redis 連線失敗"
 msgstr "Redis connection failed"
 
@@ -22458,3 +22501,24 @@ msgstr "Workflow tree diagram - BeakPlatform"
 #~ "accounts to obtain JWTs, pull decisions,"
 #~ " and enforce them."
 
+#~ msgid "平台說明 - 企業成員"
+#~ msgstr "Platform Description - Employee"
+
+#~ msgid "以下是各功能頁的操作說明。也可以直接在任何頁面點擊右下角的"
+#~ msgstr ""
+#~ "The following are the operation "
+#~ "instructions for each function page. You"
+#~ " can also directly click on the "
+#~ "lower right corner of any page"
+
+#~ msgid "按鈕，取得當前頁面的快速說明。"
+#~ msgstr "button to get a quick description of the current page."
+
+#~ msgid "說明文件正在準備中。"
+#~ msgstr "Documentation is being prepared."
+
+#~ msgid "平台說明 - 外部廠商"
+#~ msgstr "Platform Description - External Vendor"
+
+#~ msgid "平台說明 - 系統管理員"
+#~ msgstr "Platform Description - System Administrator"

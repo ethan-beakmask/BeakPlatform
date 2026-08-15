@@ -47,6 +47,9 @@ theme:
 # 因此排除。兩個出口共用同一批檔的整併方式見撰寫規格。
 exclude_docs: |
   help/
+  *.en.md
+  *.ja.md
+  *.zh-cn.md
 
 nav:
   - 開始使用: index.md

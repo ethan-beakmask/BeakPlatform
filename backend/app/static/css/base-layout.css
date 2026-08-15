@@ -86,6 +86,24 @@ input::placeholder, textarea::placeholder {
     margin-right: auto;
 }
 .bk-navbar-user { margin-left: 16px; color: #666; }
+.bk-navbar-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: 12px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #ffffff;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+}
+.bk-navbar-help:hover {
+    background: var(--color-primary-hover);
+    color: #ffffff;
+}
 
 /* ------------------------------------------
    Menubar (選單列)

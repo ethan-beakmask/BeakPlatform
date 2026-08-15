@@ -12,6 +12,9 @@
         <div class="help-doc__back">
             <a href="{{ url_for('platform_help.index') }}">{{ _('返回說明目錄') }}</a>
         </div>
+        {% if doc.locale_fallback %}
+        <div class="alert alert-info">{{ _('本頁尚未提供您所選語言的版本，以下為繁體中文原文。') }}</div>
+        {% endif %}
         {{ doc.html|safe }}
     </article>
 </main>

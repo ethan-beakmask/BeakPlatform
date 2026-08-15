@@ -42,6 +42,11 @@
     {% block head %}{% endblock %}
 </head>
 <body>
+    {# 頁內 [?]：子模板用 {% block help_doc %}manual/xx/yy{% endblock %} 宣告對應手冊頁。
+       block 必須在 base 定義過，子模板的覆寫才生效；但直接寫在版面上會把 doc_id
+       印在畫面上，所以包進一個永遠不呼叫的 macro，只取 self.help_doc() 的值。 #}
+    {% macro _define_help_doc_block() %}{% block help_doc %}{% endblock %}{% endmacro %}
+    {% set _help_doc = self.help_doc()|trim %}
     {% if current_user.is_authenticated %}
     {% macro render_menu_item(item) %}
         {# 權限顏色 class 由後端 bg_level + is_cross_level 決定 #}
@@ -83,6 +88,12 @@
             <div class="bk-navbar-content">
                 <a href="{{ url_for('main.dashboard') }}" class="bk-navbar-logo">BeakPlatform{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
                 <span class="bk-navbar-user">{% if current_user.navbar_display == 'nickname' %}{{ current_user.nickname or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id' %}{{ current_user.employee_id or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id_dept' %}{{ current_user.employee_id or current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% else %}{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% if current_user.employee_id %} ({{ current_user.employee_id }}){% endif %}{% endif %}</span>
+                {% if _help_doc and manual_doc_exists(_help_doc) %}
+                <a class="bk-navbar-help"
+                   href="{{ url_for('platform_help.manual_doc', doc_id=_help_doc) }}"
+                   target="_blank" rel="noopener"
+                   title="{{ _('本頁說明') }}" aria-label="{{ _('本頁說明') }}">?</a>
+                {% endif %}
                 <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit">{{ _('登出') }}</button>

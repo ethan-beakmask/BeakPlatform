@@ -1,5 +1,7 @@
 {% extends 'layouts/base.html' %}
 
+{% block help_doc %}manual/02_platform_admin/organizations{% endblock %}
+
 {% block title %}{% if action == 'add' %}{{ _('新增合約') }}{% else %}{{ _('合約詳情') }}{% endif %} - {{ organization.name }} - BeakMask{% endblock %}
 
 {% block content %}

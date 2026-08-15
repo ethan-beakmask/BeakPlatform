@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import yaml
 import markdown
-from flask import current_app, url_for
+from flask import current_app, g, has_request_context, url_for
 from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 _FRONTMATTER_RE = re.compile(r'^---\s*\n(.*?)\n---\s*\n(.*)$', re.DOTALL)
 _DOC_ID_RE = re.compile(r'^manual/[0-9a-z_]+/[0-9a-z_]+(/[0-9a-z_]+)?$')
 _MD_LINK_RE = re.compile(r'(\]\()([^)\s]+\.md(?:#[^)]+)?)(\))')
+_LOCALE_SUFFIXES = ('en', 'ja', 'zh-cn')
 _ALL_USER_TYPES = {'SYSTEM_ADMIN', 'ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL'}
 _CACHE: Dict[str, Any] = {'signature': None, 'catalog': None}
 
@@ -75,6 +76,68 @@ def _parse_file(path: str) -> Optional[Dict[str, Any]]:
     }
 
 
+def _variant_stem(stem: str) -> Tuple[str, Optional[str]]:
+    if '.' not in stem:
+        return stem, None
+    base_stem, suffix = stem.rsplit('.', 1)
+    suffix = suffix.lower()
+    if suffix in _LOCALE_SUFFIXES and base_stem:
+        return base_stem, suffix
+    return stem, None
+
+
+def _split_manual_files(directory: str) -> Tuple[
+    List[Tuple[str, str, str]],
+    Dict[str, Dict[str, Tuple[str, str]]],
+]:
+    main_files: List[Tuple[str, str, str]] = []
+    variants: Dict[str, Dict[str, Tuple[str, str]]] = {}
+
+    for filename in sorted(os.listdir(directory)):
+        path = os.path.join(directory, filename)
+        if not filename.endswith('.md') or not os.path.isfile(path):
+            continue
+
+        stem = filename[:-3]
+        base_stem, lang = _variant_stem(stem)
+        if lang:
+            variants.setdefault(base_stem, {})[lang] = (filename, path)
+        else:
+            main_files.append((filename, stem, path))
+
+    main_stems = {stem for _, stem, _ in main_files}
+    valid_variants: Dict[str, Dict[str, Tuple[str, str]]] = {}
+    for stem, stem_variants in variants.items():
+        if stem not in main_stems:
+            for filename, path in stem_variants.values():
+                logger.warning(
+                    "manual doc locale variant ignored without base file: %s",
+                    path,
+                )
+            continue
+        valid_variants[stem] = stem_variants
+
+    return main_files, valid_variants
+
+
+def _load_variants(
+    stem: str,
+    variants_by_stem: Dict[str, Dict[str, Tuple[str, str]]],
+) -> Dict[str, Dict[str, str]]:
+    variants: Dict[str, Dict[str, str]] = {}
+    for lang, (_, path) in sorted(variants_by_stem.get(stem, {}).items()):
+        parsed = _parse_file(path)
+        if not parsed:
+            logger.warning("manual doc locale variant ignored: %s", path)
+            continue
+        meta = parsed['meta']
+        variants[lang] = {
+            'title': str(meta.get('title') or ''),
+            'body': parsed['body'],
+        }
+    return variants
+
+
 def _signature(base: str) -> int:
     entries: List[Tuple[str, float]] = []
     if not os.path.isdir(base):
@@ -113,6 +176,7 @@ def _load_catalog() -> Dict[str, Any]:
                 'title': chapter_id,
                 'chapter_order': 999999,
                 'index_doc_id': f'manual/{chapter_id}/index',
+                'index_item': None,
                 'entries': [],
             }
 
@@ -124,9 +188,8 @@ def _load_catalog() -> Dict[str, Any]:
                         chapter['entries'].append(section)
                     continue
 
-                if not filename.endswith('.md'):
-                    continue
-                stem = filename[:-3]
+            main_files, variants_by_stem = _split_manual_files(chapter_dir)
+            for filename, stem, path in main_files:
                 parsed = _parse_file(path)
                 if not parsed:
                     continue
@@ -143,6 +206,7 @@ def _load_catalog() -> Dict[str, Any]:
                     'body': parsed['body'],
                     'chapter_id': chapter_id,
                     'section_id': None,
+                    'variants': _load_variants(stem, variants_by_stem),
                 }
                 docs[doc_id] = item
 
@@ -150,6 +214,7 @@ def _load_catalog() -> Dict[str, Any]:
                     chapter['title'] = meta.get('title') or chapter_id
                     chapter['chapter_order'] = meta.get('chapter_order', 999999)
                     chapter['index_doc_id'] = doc_id
+                    chapter['index_item'] = item
                 else:
                     chapter['entries'].append({
                         'kind': 'doc',
@@ -187,14 +252,8 @@ def _load_section(
         'docs': [],
     }
 
-    for filename in sorted(os.listdir(section_dir)):
-        if not filename.endswith('.md'):
-            continue
-        stem = filename[:-3]
-        path = os.path.join(section_dir, filename)
-        if not os.path.isfile(path):
-            continue
-
+    main_files, variants_by_stem = _split_manual_files(section_dir)
+    for filename, stem, path in main_files:
         parsed = _parse_file(path)
         if not parsed:
             continue
@@ -211,6 +270,7 @@ def _load_section(
             'body': parsed['body'],
             'chapter_id': chapter_id,
             'section_id': section_id,
+            'variants': _load_variants(stem, variants_by_stem),
         }
         docs[doc_id] = item
 
@@ -300,6 +360,40 @@ def is_doc_visible(meta, user, menu_codes) -> bool:
     return bool(_user_role_codes(user) & visible_roles)
 
 
+def _current_locale() -> Optional[str]:
+    if not has_request_context():
+        return None
+    locale = getattr(g, 'locale', None)
+    if locale is None:
+        return None
+    locale = str(locale).lower()
+    if locale in _LOCALE_SUFFIXES:
+        return locale
+    return None
+
+
+def resolve_localized(item: Dict[str, Any]) -> Tuple[str, str, bool]:
+    title = item['title']
+    body = item['body']
+    locale = _current_locale()
+    if not locale:
+        return title, body, False
+
+    variant = (item.get('variants') or {}).get(locale)
+    # 變體只有 frontmatter、內文空白時視同沒有翻譯：回主檔並標記 fallback，
+    # 否則使用者會看到一片空白而且沒有任何提示。
+    if variant and (variant.get('body') or '').strip():
+        return variant.get('title') or title, variant['body'], False
+
+    return title, body, True
+
+
+def doc_exists(doc_id) -> bool:
+    if not isinstance(doc_id, str) or not doc_id:
+        return False
+    return doc_id in _load_catalog()['docs']
+
+
 def _manual_doc_href(doc_id: str) -> str:
     try:
         return url_for('platform_help.manual_doc', doc_id=doc_id)
@@ -308,10 +402,11 @@ def _manual_doc_href(doc_id: str) -> str:
 
 
 def _visible_doc_summary(item: Dict[str, Any]) -> Dict[str, Any]:
+    title = resolve_localized(item)[0]
     return {
         'kind': 'doc',
         'doc_id': item['doc_id'],
-        'title': item['title'],
+        'title': title,
     }
 
 
@@ -340,10 +435,11 @@ def _visible_section_summary(
         return None
 
     visible_docs.sort(key=lambda d: (d['order'], d['filename']))
+    title = resolve_localized(index_item)[0]
     return {
         'kind': 'section',
         'section_id': section['section_id'],
-        'title': section['title'],
+        'title': title,
         'index_doc_id': section['index_doc_id'],
         'docs': [_visible_doc_summary(doc) for doc in visible_docs],
     }
@@ -373,9 +469,13 @@ def list_manual(user) -> List[dict]:
         if not visible_entries:
             continue
 
+        chapter_title = chapter['title']
+        if chapter.get('index_item'):
+            chapter_title = resolve_localized(chapter['index_item'])[0]
+
         chapters.append({
             'chapter_id': chapter['chapter_id'],
-            'title': chapter['title'],
+            'title': chapter_title,
             'chapter_order': chapter['chapter_order'],
             'index_doc_id': chapter['index_doc_id'],
             'entries': visible_entries,
@@ -391,8 +491,9 @@ def _chapter_index_body(
     user,
     menu_codes: Set[str],
 ) -> Optional[str]:
+    title = resolve_localized(item)[0]
     lines = [
-        f"# {item['title']}",
+        f"# {title}",
         '',
         _('本章包含以下主題：'),
         '',
@@ -415,7 +516,8 @@ def _chapter_index_body(
             continue
 
         if is_doc_visible(entry['meta'], user, menu_codes):
-            lines.append(f"- [{entry['title']}]({_manual_doc_href(entry['doc_id'])})")
+            entry_title = resolve_localized(entry)[0]
+            lines.append(f"- [{entry_title}]({_manual_doc_href(entry['doc_id'])})")
             has_entries = True
 
     if not has_entries:
@@ -451,14 +553,16 @@ def _section_index_body(
     visible_docs.sort(key=lambda d: (d['order'], d['filename']))
     # 與章總覽不同：節總覽保留 md 原文（引言），動態清單接在後面。
     # 章總覽的 index.md 目前只有會過期的靜態清單，所以那邊仍是整段取代。
+    body = resolve_localized(item)[1]
     lines = [
-        item['body'].strip(),
+        body.strip(),
         '',
         _('本節包含以下主題：'),
         '',
     ]
     for doc in visible_docs:
-        lines.append(f"- [{doc['title']}]({_manual_doc_href(doc['doc_id'])})")
+        doc_title = resolve_localized(doc)[0]
+        lines.append(f"- [{doc_title}]({_manual_doc_href(doc['doc_id'])})")
     return '\n'.join(lines).lstrip('\n')
 
 
@@ -514,7 +618,7 @@ def get_manual_doc(doc_id, user) -> Optional[dict]:
     menu_codes = visible_menu_codes(user)
     chapter = catalog['chapters'].get(item['chapter_id']) or {}
     meta = item['meta']
-    body = item['body']
+    title, body, locale_fallback = resolve_localized(item)
     if meta.get('chapter_index') is True:
         body = _chapter_index_body(item, chapter, user, menu_codes)
         if body is None:
@@ -529,11 +633,15 @@ def get_manual_doc(doc_id, user) -> Optional[dict]:
         return None
 
     body = _rewrite_relative_md_links(body, item['doc_id'], catalog)
+    chapter_title = chapter.get('title') or ''
+    if chapter.get('index_item'):
+        chapter_title = resolve_localized(chapter['index_item'])[0]
 
     return {
         'doc_id': item['doc_id'],
-        'title': item['title'],
-        'chapter_title': chapter.get('title') or '',
+        'title': title,
+        'chapter_title': chapter_title,
+        'locale_fallback': locale_fallback,
         'html': markdown.markdown(
             body,
             extensions=['extra', 'sane_lists', 'admonition'],
