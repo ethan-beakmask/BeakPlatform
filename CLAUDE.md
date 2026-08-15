@@ -206,6 +206,20 @@ doc_id 不存在時按鈕不顯示（`manual_doc_exists`）。語系變體檔 `<
 缺該語系自動回退並提示。決策脈絡見知識庫 #5177，完整規格見
 `dev-notes/DOCS_AUTHORING_SPEC.md`。
 
+**`manual_doc_exists()` 只看檔案在不在、不看身分，但單頁路由 `manual_doc()` 會依身分
+過濾並 404**。所以同一個模板服務兩種身分時，寫死單一 doc_id 會讓其中一種身分
+「按鈕看得到、點下去 404」，必須在 block 裡分流（`login_failures.html` 是現成範例）：
+
+```jinja
+{% block help_doc %}{% if is_system_admin %}manual/02_platform_admin/login_failures_local{% else %}manual/05_security_ops/login_failures{% endif %}{% endblock %}
+```
+
+**[?] 只在有宣告的頁面出現**（2026-08-15 盤點：繼承 `layouts/base.html` 的頁面模板
+122 個，已綁 9 個）。在別的功能頁找不到按鈕是預期狀態，不要去改 `base.html` 或
+`doc_catalog_service` 找原因。另有一套**舊的**頁內說明（右下浮動鈕 + modal，
+來源 `docs/help/<menu_code>.md`，會依 endpoint／path 反查）**2026-08-14 已在
+`layouts/base.html` 註解停用**，程式與 `/help/page/` 路由都還在——去留見知識庫 #5181。
+
 `/help/concepts` 是舊的平台概念說明（`org_admin.html`，限管理員），
 掛在左側目錄最下方，不屬於 `docs/manual/`。
 
