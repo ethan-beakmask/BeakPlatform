@@ -186,14 +186,22 @@ SOC 值班介面。案件的判定是**表單分類前綴** `CAT_SECURITY_`
 - 統計 `/api/open_defense/cases/stats`
 - 明細 `/api/open_defense/cases/<wi_sc>/payload`：原始欄位與事件明細表格
 - 決策關聯 `/api/open_defense/cases/<wi_sc>/decisions`
+- **跨系統關聯 `/api/open_defense/cases/<wi_sc>/cross-source`（PF-106，2026-08-15 起）**：
+  即時查 `.20` 的 ClickHouse（`secstack.events`），找同 `actor_ip` 在
+  `submitted_at~completed_at ± 24h` 時間窗內、各資安套件各自記錄的事件。
+  承接 PF-100 的問題分析——平台把同一攻擊者的多系統告警拆成各自獨立的案件，
+  這支端點把它們重新串起來（唯讀查詢，不改變既有聚合/建案邏輯）。
 
-詳情區是三個分頁（2026-08-10 起）：
+詳情區是動態分頁（2026-08-15 起，PF-106 在原本三個固定分頁之外，
+依 ClickHouse 查詢結果動態附加）：
 
 | 分頁 | 內容 | 何時出現 |
 |---|---|---|
-| 案件摘要 | 軸線六格、簽核歷程、1-click 處置、關聯決策 | 一律 |
+| 案件摘要 | 軸線六格、`first_detected_by`/`last_detected_by`（見下）、簽核歷程、1-click 處置、關聯決策 | 一律 |
 | 事件明細 | `form_data` 裡的明細陣列渲染成表格，欄位標籤取自 `profile.detail_columns`，沒設定就用原欄位名 | 有明細列時 |
 | 原始欄位 | 扁平化的原始欄位（排除軸線、`od_` 開頭、明細陣列本身） | 有欄位時 |
+| **跨系統關聯** | 時間窗內各系統的事件時間軸、相異來源數、各系統的 rule 與標題 | ClickHouse 查得到 ≥1 筆關聯事件時 |
+| **各套件（Coraza/WAF、Suricata、...）** | 該來源在時間窗內的原始事件列表（時間、嚴重度、規則、標題、目標、UA） | 每個實際出現的 `source_system` 各一頁，動態產生 |
 
 OCSF 案件沒有 profile 也沒有明細陣列，只會看到兩個分頁——這是預期。
 明細列裡的時間是**來源系統的原樣字串**（格式不保證），刻意不做時區換算。
@@ -203,7 +211,52 @@ OCSF 案件沒有 profile 也沒有明細陣列，只會看到兩個分頁——
   （快照 ∪ 當前角色 ∪ 生效中代理），**判定點共 12 處，不要另外寫**
 
 `form_data` 的欄位在 list 與 detail 語境都會過出口政策
-（EGRESS-01，資源代碼 `fw_form:<模板SC>`）。
+（EGRESS-01，資源代碼 `fw_form:<模板SC>`）。跨系統關聯回傳的
+`target_host` / `actor_xff` 沿用同一套政策（同資源代碼、`detail` 語境）。
+
+### 6.1 跨系統關聯查詢（PF-106）
+
+唯一實作：`modules/open_defense/services/cross_source_service.py`
+（查詢邏輯）+ `modules/open_defense/services/clickhouse_client.py`
+（低階 HTTP 客戶端，唯一允許呼叫 ClickHouse 的地方）。
+
+- **租戶隔離**：ClickHouse `secstack.events` 沒有 `org_secure_code`。
+  `case_cross_source()` 一律先用 `_security_case_query(org.secure_code)`
+  驗過案件屬於當前企業，才把驗證過的 `actor_ip` 交給
+  `cross_source_service.get_cross_source()`——**沒有任何路徑能繞過這層驗證
+  直接查 ClickHouse**。查無案件（不屬本企業或不存在）一律 404，
+  與既有 `payload`/`decisions` 端點一致
+- **認證**：header `X-ClickHouse-User` / `X-ClickHouse-Key`（`clickhouse_client.py`
+  唯一實作），設定在平台 `.env` 的 `CLICKHOUSE_URL` / `CLICKHOUSE_DB` /
+  `CLICKHOUSE_USER` / `CLICKHOUSE_PASSWORD`（`backend/app/config.py`）。
+  **禁止**改用 `?user=&password=` 或 `requests.get(..., auth=(...))`
+  （後者一樣是明文 HTTP Basic Auth，會觸發 Suricata 告警，PF-106 已踩過）
+- **SQL 注入防護**：查詢一律用 ClickHouse 參數化語法 `{name:Type}` +
+  query string `param_<name>`（含資料庫名，用 `{db:Identifier}`），
+  由伺服器端做型別化替換，**不是字串拼接**
+- **時間窗**：`submitted_at ~ completed_at`（進行中案件用現在時間頂替
+  `completed_at`）前後各加 24 小時，常數
+  `security_cases.py::CROSS_SOURCE_WINDOW_PAD`
+- **資料可信度**：`RELIABLE_FROM = 2026-08-08`（見本檔 §「重要修正」段落與
+  PF-106 工單同名段落）。查詢時間窗若跨過此日期，回應會帶
+  `window_crosses_backfill_boundary: true`，前端顯示提醒，
+  **不宣稱該期間筆數代表真實全量**
+- **first_detected_by / last_detected_by**：分開用一個 `GROUP BY source_system`
+  聚合查詢算（不是從明細列表取頭尾，避免明細被 `MAX_EVENTS=300` 截斷時
+  算錯 last_detected_by）
+- **ClickHouse 不可用**（未設定/連線失敗/逾時）時，`clickhouse_client.query()`
+  回 `None`，`cross_source_service` 據此回
+  `{'available': False, 'reason': 'clickhouse_unavailable'}`，
+  API 仍回 **HTTP 200**——前端因此隱藏「跨系統關聯」與各套件分頁，
+  不讓案件頁整頁失敗。2026-08-15 已實測停用 `secstack-clickhouse-1`
+  容器驗證此行為（見 `/opt/tmp/verify/20260815-pf106-crosssource.log`）
+- **PF-100 範例 IP `203.0.113.77` 查證結果**：該範例是從平台
+  `od_intake_events` 交叉查詢得出的，其中 `soc_splunk` 來源與部分
+  `suricata`（`rule_id` 如 `100002`/`9999999`/`VERIFY-*`）事件是**直接打
+  native intake API 灌入的測試資料**（PF-75 驗證探針），從未經過 `.20` 的
+  Vector/Suricata 真實管線，ClickHouse 端查不到。**驗證這支功能請改用
+  `198.51.100.201`**（PF-103 go-ftw 樣本，coraza+suricata 皆為真實流量，
+  見下方驗收記錄）
 
 ## 7. 防禦決策與執行端
 

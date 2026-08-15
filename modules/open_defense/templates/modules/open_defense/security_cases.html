@@ -136,6 +136,20 @@
                                  <div class="sc-field-value" x-text="sevNum(selected.severity_id)"></div></div>
                             <div><div class="sc-field-label">{{ _('偵測來源') }}</div>
                                  <div class="sc-field-value" x-html="val(selected.source_system)"></div></div>
+                            <!-- PF-106：first/last detected_by 並存，來自跨系統關聯查詢；
+                                 兩者相同來源時只顯示一列，ClickHouse 不可用或無關聯資料時整段不顯示 -->
+                            <template x-if="firstDetectedBy && detectedBySame">
+                                <div><div class="sc-field-label">{{ _('偵測來源（首次＝最近）') }}</div>
+                                     <div class="sc-field-value" x-text="sourceLabel(firstDetectedBy.source_system) + '　' + fmtTime(firstDetectedBy.event_time)"></div></div>
+                            </template>
+                            <template x-if="firstDetectedBy && !detectedBySame">
+                                <div><div class="sc-field-label">{{ _('首次偵測來源') }}</div>
+                                     <div class="sc-field-value" x-text="sourceLabel(firstDetectedBy.source_system) + '　' + fmtTime(firstDetectedBy.event_time)"></div></div>
+                            </template>
+                            <template x-if="lastDetectedBy && !detectedBySame">
+                                <div><div class="sc-field-label">{{ _('最近偵測來源') }}</div>
+                                     <div class="sc-field-value" x-text="sourceLabel(lastDetectedBy.source_system) + '　' + fmtTime(lastDetectedBy.event_time)"></div></div>
+                            </template>
                             <div><div class="sc-field-label">{{ _('規則 ID') }}</div>
                                  <div class="sc-field-value mono" x-html="val(selected.finding_rule_id)"></div></div>
                             <div><div class="sc-field-label">{{ _('聚合事件數') }}</div>
@@ -280,6 +294,75 @@
                             </table>
                         </div>
                     </div>
+
+                    <!-- PF-106：跨系統關聯（重點分頁）——同 actor_ip 在時間窗內，
+                         `.20` 各資安套件各自偵測到什麼。只在有關聯事件時才會出現
+                         在 tabs 清單裡，故本面板一定有資料可畫。 -->
+                    <div class="sc-tab-panel" x-show="activeTab === 'cross-source'">
+                        <div class="sc-subtitle">{{ _('跨系統關聯：同一攻擊者被幾個系統偵測到') }}</div>
+                        <template x-if="crossSource?.window_crosses_backfill_boundary">
+                            <p class="sc-field-label">{{ _('此時間窗涵蓋 2026-08-08 之前，該期間 ClickHouse 資料為歸檔回灌，筆數僅供參考，不代表當時真實全量。') }}</p>
+                        </template>
+                        <div class="sc-fields">
+                            <div><div class="sc-field-label">{{ _('相異來源數') }}</div>
+                                 <div class="sc-field-value" x-text="crossSourceSources.length"></div></div>
+                            <div><div class="sc-field-label">{{ _('關聯事件數') }}</div>
+                                 <div class="sc-field-value" x-text="crossSource?.events?.length ?? 0"></div></div>
+                            <div><div class="sc-field-label">{{ _('查詢時間窗') }}</div>
+                                 <div class="sc-field-value" x-text="(crossSource?.window ? (fmtTime(crossSource.window.start) + ' ~ ' + fmtTime(crossSource.window.end)) : '-')"></div></div>
+                        </div>
+                        <template x-if="crossSource?.truncated">
+                            <p class="sc-field-label">{{ _('事件數超過單次顯示上限，僅列出時間窗內最早的部分事件。') }}</p>
+                        </template>
+                        <div class="sc-table-scroll">
+                            <table class="od-table">
+                                <thead><tr>
+                                    <th>{{ _('時間') }}</th><th>{{ _('來源系統') }}</th>
+                                    <th>{{ _('規則') }}</th><th>{{ _('標題') }}</th><th>{{ _('目標') }}</th>
+                                </tr></thead>
+                                <tbody>
+                                    <template x-for="(ev, i) in crossSource?.events || []" :key="i">
+                                        <tr>
+                                            <td x-text="fmtTime(ev.event_time)"></td>
+                                            <td><span class="od-badge" x-text="sourceLabel(ev.source_system)"></span></td>
+                                            <td class="od-mono" x-text="ev.finding_rule_id || '-'"></td>
+                                            <td x-html="val(ev.finding_title)"></td>
+                                            <td x-html="val(ev.target_host)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PF-106：各套件原始資料分頁（開發量最小，直接列 ClickHouse 明細），
+                         依 crossSourceSources 動態產生，沒有該來源就不會有這個分頁 -->
+                    <template x-for="src in crossSourceSources" :key="src">
+                        <div class="sc-tab-panel" x-show="activeTab === ('src-' + src)">
+                            <div class="sc-subtitle" x-text="sourceLabel(src)"></div>
+                            <div class="sc-table-scroll">
+                                <table class="od-table">
+                                    <thead><tr>
+                                        <th>{{ _('時間') }}</th><th>{{ _('嚴重度') }}</th>
+                                        <th>{{ _('規則') }}</th><th>{{ _('標題') }}</th>
+                                        <th>{{ _('目標') }}</th><th>{{ _('User-Agent') }}</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <template x-for="(ev, i) in (crossSource?.events || []).filter((e) => e.source_system === src)" :key="i">
+                                            <tr>
+                                                <td x-text="fmtTime(ev.event_time)"></td>
+                                                <td x-text="ev.severity_id ?? '-'"></td>
+                                                <td class="od-mono" x-text="ev.finding_rule_id || '-'"></td>
+                                                <td x-html="val(ev.finding_title)"></td>
+                                                <td x-html="val(ev.target_host)"></td>
+                                                <td x-html="val(ev.actor_ua)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </template>
         </div>

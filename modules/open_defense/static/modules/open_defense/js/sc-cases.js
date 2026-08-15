@@ -16,6 +16,7 @@ function scCases() {
         selected: null,        // 清單項
         detail: null,          // pending-tasks 詳情（進行中案件才有）
         payload: null,         // native payload 明細與原始欄位
+        crossSource: null,     // PF-106：跨系統關聯（即時查 .20 ClickHouse）
         decisions: [],
         comment: '',
         acting: false,
@@ -65,6 +66,7 @@ function scCases() {
             this.selected = null;
             this.detail = null;
             this.payload = null;
+            this.crossSource = null;
             this.activeTab = 'summary';
         },
 
@@ -72,6 +74,7 @@ function scCases() {
             this.selected = c;
             this.detail = null;
             this.payload = null;
+            this.crossSource = null;
             this.decisions = [];
             this.comment = '';
             this.activeTab = 'summary';
@@ -81,6 +84,9 @@ function scCases() {
             const jobs = [
                 OD.fetchJSON(`${BP}/api/open_defense/cases/${wiSc}/decisions`),
                 OD.fetchJSON(`${BP}/api/open_defense/cases/${wiSc}/payload`),
+                // PF-106：即時查 ClickHouse，可能因 .20 不可用而回
+                // available=false——不是錯誤，selectCase 仍要能完成
+                OD.fetchJSON(`${BP}/api/open_defense/cases/${wiSc}/cross-source`),
             ];
             // 只有簽得動的人才請求簽核詳情：pending-tasks 對無權者一律 403，
             // 照發只會在 console 留一筆紅字，畫面拿不到任何東西
@@ -89,9 +95,10 @@ function scCases() {
                     `${BP}/api/form-center/pending-tasks/${c.waiting_node.queue_secure_code}`));
             }
             try {
-                const [d, payload, pending] = await Promise.all(jobs);
+                const [d, payload, crossSource, pending] = await Promise.all(jobs);
                 if (d.body?.success) this.decisions = d.body.data;
                 if (payload.body?.success) this.payload = payload.body.data;
+                if (crossSource.body?.success) this.crossSource = crossSource.body.data;
                 if (pending && pending.body?.success) this.detail = pending.body.data;
                 this.ensureActiveTab();
             } finally {
@@ -211,7 +218,46 @@ function scCases() {
             if (this.payload?.fields?.length) {
                 items.push({ id: 'fields', label: __('原始欄位') });
             }
+            // PF-106：跨系統關聯 + 各套件原始資料分頁，沒有關聯事件就整組不出現
+            // ——這既是「沒資料就隱藏」的 UX，也如實呈現此案件的證據力
+            if (this.crossSource?.available && this.crossSource.events?.length) {
+                items.push({ id: 'cross-source', label: __('跨系統關聯') });
+                for (const src of this.crossSourceSources) {
+                    items.push({ id: `src-${src}`, label: this.sourceLabel(src) });
+                }
+            }
             return items;
+        },
+        /** 依事件時間窗內出現順序列出的相異來源（跨系統關聯頁 + 各套件分頁共用） */
+        get crossSourceSources() {
+            const seen = [];
+            for (const ev of this.crossSource?.events || []) {
+                if (!seen.includes(ev.source_system)) seen.push(ev.source_system);
+            }
+            return seen;
+        },
+        sourceLabel(code) {
+            const labels = {
+                coraza: __('Coraza / WAF'),
+                suricata: __('Suricata'),
+                crowdsec: __('CrowdSec'),
+                falco: __('Falco'),
+                soc_splunk: __('Splunk'),
+                vector: __('Vector'),
+                sec_vm: __('sec_vm'),
+            };
+            return labels[code] || code;
+        },
+        /** 首次/最近偵測來源（PF-106，來自跨系統關聯查詢，非本案件建案時的單一 source_system） */
+        get firstDetectedBy() {
+            return this.crossSource?.first_detected_by || null;
+        },
+        get lastDetectedBy() {
+            return this.crossSource?.last_detected_by || null;
+        },
+        get detectedBySame() {
+            return !!(this.firstDetectedBy && this.lastDetectedBy &&
+                this.firstDetectedBy.source_system === this.lastDetectedBy.source_system);
         },
         get sortedCases() {
             const now = Date.now();

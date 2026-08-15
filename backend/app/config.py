@@ -34,6 +34,16 @@ class BaseConfig:
         if item.strip()
     )
 
+    # PF-106: `.20` ClickHouse（secstack）唯讀連線 -- 資安案件跨系統關聯串查。
+    # 認證一律走 header（X-ClickHouse-User / X-ClickHouse-Key），
+    # 禁止 URL query 帶密碼（會明文過 LAN 並觸發 Suricata 告警）。
+    # 三者任一未設值時 clickhouse_client 視為不可用（回 None），呼叫端據此隱藏
+    # 相關分頁，不讓案件頁整頁 500。
+    CLICKHOUSE_URL = os.getenv('CLICKHOUSE_URL', 'http://192.168.0.20:8123')
+    CLICKHOUSE_DB = os.getenv('CLICKHOUSE_DB', 'secstack')
+    CLICKHOUSE_USER = os.getenv('CLICKHOUSE_USER', '')
+    CLICKHOUSE_PASSWORD = os.getenv('CLICKHOUSE_PASSWORD', '')
+
     # Database
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False

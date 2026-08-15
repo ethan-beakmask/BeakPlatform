@@ -38,6 +38,8 @@ files:
     - modules/open_defense/services/intake_key_service.py    # HMAC key 管理
     - modules/open_defense/services/service_account_service.py
     - modules/open_defense/services/hmac_verifier.py         # 簽章驗證
+    - modules/open_defense/services/clickhouse_client.py     # PF-106：.20 ClickHouse 唯讀 HTTP 客戶端
+    - modules/open_defense/services/cross_source_service.py  # PF-106：跨系統關聯查詢（actor_ip+時間窗）
   model:
     - modules/open_defense/models/intake_key.py              # OdIntakeKey
     - modules/open_defense/models/intake_event.py            # OdIntakeEvent (冪等記錄)

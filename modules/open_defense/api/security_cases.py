@@ -5,6 +5,7 @@ OpenDefense Module - 資安案件處置中心 API（原子 4845）
 - GET /api/open_defense/cases                 案件清單（嚴重度排序、SLA、待簽核鍵）
 - GET /api/open_defense/cases/stats           頂部統計帶
 - GET /api/open_defense/cases/<wi_sc>/decisions  案件關聯防禦決策
+- GET /api/open_defense/cases/<wi_sc>/cross-source  PF-106：跨系統關聯（即時查 `.20` ClickHouse）
 
 簽核動作（1-click 處置）不在此實作——前端直接呼叫既有
 /api/form-center/pending-tasks 的 lock/approve（不 clone 引擎）。
@@ -27,6 +28,11 @@ from ..models import OdDefenseDecision, OdPayloadProfile
 # SLA（分鐘）：severity>=4 快速通道 15 分、=3 標準 60 分；低危自動歸檔無 SLA
 SLA_MINUTES_HIGH = 15
 SLA_MINUTES_MEDIUM = 60
+
+# PF-106：跨系統關聯查詢的時間窗，以案件的 submitted_at~completed_at 為基準
+# 前後各加這麼多緩衝——SOC 交叉驗證通常發生在案發前後一天內，且視窗越寬
+# ClickHouse 查詢成本越高（雖然有 PARTITION BY day 天然限制掃描範圍）。
+CROSS_SOURCE_WINDOW_PAD = timedelta(hours=24)
 
 # SOC 簽核節點型別（與 fc_pending 同一組）
 _APPROVAL_NODE_TYPES = ('Approve', 'FormAdapter', 'FORMADAPTER')
@@ -536,3 +542,73 @@ def case_decisions(wi_sc):
 
     return jsonify({'success': True,
                     'data': [d.to_dict() for d in decisions]})
+
+
+def _cross_source_window(form_instance):
+    """本案件的關聯查詢時間窗：submitted_at ~ completed_at（進行中案件無
+    completed_at，用現在時間頂替），前後各加 CROSS_SOURCE_WINDOW_PAD。"""
+    start = form_instance.submitted_at or datetime.utcnow()
+    end = form_instance.completed_at or datetime.utcnow()
+    if end < start:
+        end = start
+    return start - CROSS_SOURCE_WINDOW_PAD, end + CROSS_SOURCE_WINDOW_PAD
+
+
+@api_bp.route('/cases/<wi_sc>/cross-source')
+@module_access_required('open_defense', False)
+def case_cross_source(wi_sc):
+    """
+    PF-106：同 actor_ip 在時間窗內、`.20` 各資安套件（coraza/suricata/...）的
+    關聯事件。即時查詢 ClickHouse，唯讀，不寫任何資料。
+
+    租戶隔離：ClickHouse 沒有 org 概念，本端點先用既有的 org 過濾查詢
+    （_security_case_query）驗過案件屬於當前企業，才把驗證過的 actor_ip
+    交給 cross_source_service——不提供任何未經此驗證的 ClickHouse 查詢管道。
+
+    ClickHouse 不可用（未設定/連線失敗/逾時）時仍回 200，
+    data.available=false，前端據此隱藏「跨系統關聯」與各套件分頁，
+    不讓案件頁整頁失敗（VERIFY-01 驗收項 5）。
+    """
+    from ..services.cross_source_service import get_cross_source
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    row = _security_case_query(org.secure_code).filter(
+        db.text('fw_workflow_instances.secure_code = :wi_sc').bindparams(
+            wi_sc=wi_sc)
+    ).first()
+    if not row:
+        return jsonify({'success': False, 'error': 'Not found'}), 404
+
+    form_instance, _workflow_instance = row
+    form_data = form_instance.form_data or {}
+    actor_ip = form_data.get('actor_ip')
+
+    window_start, window_end = _cross_source_window(form_instance)
+    data = get_cross_source(actor_ip, window_start, window_end)
+
+    # EGRESS-01：target_host / actor_xff 沿用該案件表單的既有出口政策
+    # （resource=fw_form:<模板SC>，與 _apply_payload_egress 同一套資源代碼），
+    # 未設政策時 apply() 是 no-op，事件列表原樣通過。
+    if data.get('events'):
+        from app.services import egress_service
+
+        rows = [
+            {
+                'form_instance_secure_code': form_instance.secure_code,
+                'target_host': ev.get('target_host'),
+                'actor_xff': ev.get('actor_xff'),
+            }
+            for ev in data['events']
+        ]
+        filtered = egress_service.apply(
+            f'fw_form:{form_instance.form_template_secure_code}', 'detail',
+            rows, record_sc_key='form_instance_secure_code',
+        )
+        for ev, filt in zip(data['events'], filtered):
+            ev['target_host'] = filt.get('target_host')
+            ev['actor_xff'] = filt.get('actor_xff')
+
+    return jsonify({'success': True, 'data': data})
