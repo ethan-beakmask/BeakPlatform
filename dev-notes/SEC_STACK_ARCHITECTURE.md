@@ -257,7 +257,59 @@ WHERE q.workflow_instance_secure_code='<wi_secure_code>' ORDER BY q.id;"
 
 **自鎖風險**：`ssh_guard_input` 的 priority（-150）早於 `chain input`（-100）的
 `allowlist accept`，所以那道自鎖保險**救不了**被 ssh_guard drop 的來源。
-最後退路是 PVE Web UI → VM 110 → Console，不經過網路堆疊。
+最後退路是 PVE Web UI（`192.168.0.100`）→ VM 110 → Console，不經過網路堆疊；
+console 登入要 `ethan` 的 OS 密碼（只有 Ethan 知道，不在任何文件裡）。
+
+### 只想改一條 chain、不想清掉 blocklist 的做法
+
+`nftables-bootstrap.sh` 是 `delete table` + 重建整張表，會清空 `blocklist` /
+`blocklist6` 的動態元素（od-bridge 的封鎖決策就落在那兩個 set，
+`enforcers/` 只碰 `blocklist` / `blocklist6` / `input` 這三個名字）。
+改單一 chain 時用這個手法，其他 chain 與 set 完全不動：
+
+```bash
+# 1. 只重建目標 chain（delete + create 在同一個 nft transaction 裡，是原子的）
+sudo nft -f - <<'NFT'
+delete chain inet secstack ssh_guard_input
+table inet secstack {
+    chain ssh_guard_input {
+        type filter hook input priority -150; policy accept;
+        iifname != "ens18" accept
+        tcp dport 22 ip saddr { 192.168.0.10, 192.168.0.16, 192.168.0.100 } counter accept
+        tcp dport 22 limit rate 20/minute log prefix "SSHGUARD_DROP " level info
+        tcp dport 22 counter drop
+    }
+}
+NFT
+
+# 2. 【必做】同步回 /etc/nftables.conf，否則重開機退回舊規則、而且不會有任何徵兆
+#    做法是改 nftables-bootstrap.sh 的 heredoc，再從它重生 conf（不執行 nft -f）
+sudo python3 - <<'PYEOF'
+import re, pathlib
+src = pathlib.Path("/home/ethan/sec-vm-bootstrap/nftables-bootstrap.sh").read_text()
+m = re.search(r"cat > \"\$CONF\" <<.NFT.\n(.*?)\nNFT\n", src, re.S)
+assert m, "抓不到 heredoc"
+pathlib.Path("/etc/nftables.conf").write_text(m.group(1) + "\n")
+PYEOF
+sudo nft -c -f /etc/nftables.conf     # 語法檢查
+
+# 3. 驗證 conf 那一段真的套得起來（-c 只驗語法，驗不到 runtime 衝突）
+#    抽出該 chain 單獨套用，counter 歸零即證明重建過，blocklist 不受影響
+```
+
+**改規則前先掛自動還原**（PF-107 用的手法，nftables 與 sshd 同樣適用）：
+
+```bash
+sudo cp /etc/nftables.conf /root/nftables.conf.bak.$(date +%Y%m%d-%H%M%S)
+sudo systemd-run --on-active=120 --unit=nft-rollback \
+  /usr/sbin/nft -f /root/nftables.conf.bak.<剛才的時間戳>
+# ... 改規則、驗證 ...
+sudo systemctl stop nft-rollback.timer      # 通過才撤銷
+```
+
+`systemd-run --on-active` 是 transient timer，**不依賴你的 SSH session 存活**，
+比 `nohup sleep` 可靠。想驗證 drop 分支就得站到被拒絕的那一側，
+沒有這道保險就不敢做，而不敢做的結果是規則永遠只驗過 accept 那一半。
 
 為什麼要管：Suricata 的 xff 模組與（修正前的）vector modsec transform 都沒有
 「信任代理比對」，誰打得到 `.20` 誰就能把 `actor_ip` 填成任意第三方位址，
