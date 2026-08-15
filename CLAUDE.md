@@ -926,7 +926,8 @@ od-bridge / EDL enforcer / ClickHouse）的權威**已於 2026-08-15（PF-104）
 架構與運維看 `dev-notes/SEC_STACK_ARCHITECTURE.md`，設定檔副本在 `sec-vm-bootstrap/`
 （**已列入 `push_github.sh` 的 `EXCLUDE_DIRS`，不會外流**）。
 改 `.20` 的設定時**兩邊都要改**，repo 副本不是快照而是權威副本。
-舊路徑 `/opt/Ethan_Lab/ITHome-2026/` 是待刪除的來源，看到一律視為過時。
+舊路徑 `/opt/Ethan_Lab/ITHome-2026/` **已於 2026-08-15 刪除**
+（最終備份 `/opt/tmp/backup/ITHome-2026-final-20260815.tar.gz`），看到一律視為過時。
 
 留在本檔的是五個「唯一實作」，新增功能一律加在這裡，**不要各自重寫**：
 

@@ -7,10 +7,10 @@ od-bridge）。平台側（`.16`，`/opt/BeakPlatform-dev` 內）的程式架構
 `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md`，那份不含本檔內容，兩邊互補。
 
 **取代對象**：本檔取代 2026-08-15 前的外部文件
-`/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`（PF-104 收斂）。該外部檔案與其所在的
-`/opt/Ethan_Lab/ITHome-2026/` 目錄待 PF-104 三個前提（設定檔進本專案版控、
-od-bridge 程式碼進本專案、本檔完成）全部確認後由用戶決定刪除，刪除前兩邊會並存
-——**發現內容衝突以本檔為準**（較新）。
+`/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`（PF-104 收斂）。
+該外部檔案與其所在目錄**已於 2026-08-15 依用戶指示整個刪除**，
+最終備份 `/opt/tmp/backup/ITHome-2026-final-20260815.tar.gz`（8.4MB / 107 項，
+含不入庫的 `CREDENTIALS.md` 與 `.env`）。**本檔即唯一權威，沒有第二份可對照。**
 
 **為什麼要分兩份**：`.16` 與 `.20` 各自會改，混在一份必定漂移。
 

@@ -1,0 +1,157 @@
+# =====================================================================
+# 一次性回灌：ModSecurity audit.log 歸檔 → ClickHouse（2026-08-08）
+#
+# 這批才是真正有價值的歷史：2026-05-09 ~ 08-08 期間打到 WAF 的外部流量，
+# 2286 筆中 1362 筆是 HTTP 403（實際攔下的攻擊）。
+# 它之所以存在，正是因為那支 rotate 腳本壞了三個月沒輪替——壞掉的機制
+# 意外保住了素材。
+#
+# 【安全設計】只有 ClickHouse 一個 sink，刻意不接 od-bridge。
+#
+# 與即時管線的唯一差異：occurred_at 取 transaction.time_stamp（事件當時的時間），
+# 不是 now()。即時管線用 now() 對秒級延遲無所謂，回灌用 now() 會讓三個月的
+# 歷史全部變成今天，整批資料就廢了。
+# =====================================================================
+
+api:
+  enabled: true
+  address: 0.0.0.0:8686
+
+sources:
+  modsec_archive:
+    type: file
+    include:
+      - /backfill/modsec-archive.log
+    read_from: beginning
+    max_read_bytes: 2048000
+
+transforms:
+  modsec_parsed:
+    type: remap
+    inputs: [modsec_archive]
+    source: |
+      . = parse_json!(.message)
+
+  modsec_with_alerts_only:
+    type: filter
+    inputs: [modsec_parsed]
+    condition: |
+      msgs = array(.transaction.messages) ?? []
+      code = to_int(.transaction.response.http_code) ?? 0
+      length(msgs) > 0 || code >= 400
+
+  ocsf_from_modsec:
+    type: remap
+    inputs: [modsec_with_alerts_only]
+    source: |
+      msgs = array(.transaction.messages) ?? []
+      first_rule_id = ""
+      title = "ModSecurity rule trigger"
+      worst_sev = 7
+      if length(msgs) > 0 {
+        m0 = object(msgs[0]) ?? {}
+        det0 = object(m0.details) ?? {}
+        first_rule_id = to_string(det0.ruleId) ?? ""
+        t0 = to_string(m0.message) ?? ""
+        if t0 != "" {
+          title = if length(t0) > 200 { slice!(t0, 0, 200) } else { t0 }
+        }
+        for_each(msgs) -> |_i, msg| {
+          det = object(object(msg).details ?? {}) ?? {}
+          s = to_int(det.severity) ?? 7
+          if s < worst_sev { worst_sev = s }
+        }
+      }
+      sev = if worst_sev <= 2 { 4 } else if worst_sev == 3 { 3 } else if worst_sev == 4 { 2 } else { 1 }
+
+      # 回灌專用：取事件當時的時間戳。格式 "Sat May  9 05:52:51 2026"（容器內為 UTC）
+      ts_raw = to_string(.transaction.time_stamp) ?? ""
+      occurred = parse_timestamp(ts_raw, "%a %b %e %H:%M:%S %Y") ?? now()
+
+      hdrs = object(.transaction.request.headers) ?? {}
+      cf_ip = string(hdrs."Cf-Connecting-Ip") ?? string(hdrs."CF-Connecting-IP") ?? string(hdrs."cf-connecting-ip") ?? ""
+      xff_raw = string(hdrs."X-Forwarded-For") ?? string(hdrs."x-forwarded-for") ?? ""
+      xff_first = ""
+      if xff_raw != "" {
+        xff_parts = split(xff_raw, ",")
+        xff_first_raw = to_string(xff_parts[0])
+        xff_first = strip_whitespace(xff_first_raw)
+      }
+      tcp_src = to_string(.transaction.client_ip) ?? "0.0.0.0"
+      actor_ip = if cf_ip != "" { cf_ip } else if xff_first != "" { xff_first } else { tcp_src }
+      actor_country = string(hdrs."Cf-Ipcountry") ?? string(hdrs."CF-IPCountry") ?? string(hdrs."cf-ipcountry") ?? ""
+
+      out = {
+        "correlation_id": uuid_v4(),
+        "source_system": "coraza",
+        "event_class": "web_activity",
+        "occurred_at": format_timestamp!(occurred, "%+"),
+        "severity_id": sev,
+        "finding": {
+          "title": title,
+          "summary": to_string(length(msgs)),
+          "rule_id": first_rule_id,
+          "rule_set": "OWASP CRS"
+        },
+        "actor": {
+          "ip": actor_ip,
+          "country": actor_country,
+          "user_agent": to_string(.transaction.request.headers."User-Agent") ?? ""
+        },
+        "target": {
+          "host": to_string(.transaction.request.headers.Host) ?? "",
+          "url": to_string(.transaction.request.uri) ?? "",
+          "service": "waf-nginx"
+        },
+        "evidence": {
+          "raw_log_ref": { "type": "modsec-backfill", "locator": to_string(.transaction.unique_id) ?? "" },
+          "snippet": to_string(.transaction.request.method) ?? ""
+        }
+      }
+      . = out
+
+  ch_events_from_ocsf:
+    type: remap
+    inputs: [ocsf_from_modsec]
+    source: |
+      raw = encode_json(.)
+      ts_input = to_string(.occurred_at) ?? ""
+      ts_parsed = parse_timestamp(ts_input, "%+") ?? now()
+      ts_ch = format_timestamp!(ts_parsed, "%Y-%m-%d %H:%M:%S%.3f")
+      . = {
+        "event_time":     ts_ch,
+        "correlation_id": to_string(.correlation_id) ?? uuid_v4(),
+        "source_system":  to_string(.source_system) ?? "unknown",
+        "event_class":    to_string(.event_class) ?? "unknown",
+        "severity_id":    to_int(.severity_id) ?? 0,
+        "confidence":     to_int(.confidence) ?? 0,
+        "actor_ip":       to_string(.actor.ip) ?? "::",
+        "actor_asn":      to_int(.actor.asn) ?? 0,
+        "actor_country":  to_string(.actor.country) ?? "",
+        "actor_ua":       to_string(.actor.user_agent) ?? "",
+        "target_host":    to_string(.target.host) ?? "",
+        "target_url":     to_string(.target.url) ?? "",
+        "target_service": to_string(.target.service) ?? "",
+        "finding_title":  to_string(.finding.title) ?? "",
+        "finding_rule_id": to_string(.finding.rule_id) ?? "",
+        "finding_rule_set": to_string(.finding.rule_set) ?? "",
+        "raw":            raw
+      }
+
+sinks:
+  ch_events:
+    type: clickhouse
+    inputs: [ch_events_from_ocsf]
+    endpoint: http://clickhouse:8123
+    database: ${CLICKHOUSE_DB}
+    table: events
+    auth:
+      strategy: basic
+      user: ${CLICKHOUSE_USER}
+      password: ${CLICKHOUSE_PASSWORD}
+    skip_unknown_fields: true
+    batch:
+      max_events: 2000
+      timeout_secs: 3
+    healthcheck:
+      enabled: false

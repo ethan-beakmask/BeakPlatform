@@ -6,7 +6,7 @@
 EDL enforcer / ClickHouse）**不在本檔範圍**，那些的權威文件是
 `dev-notes/SEC_STACK_ARCHITECTURE.md`；跨主機拓樸與運維手法也在那邊
 （PF-104 起收斂，取代原本外部路徑 `/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`；
-該外部副本待 PF-104 三個前提全部確認後由用戶決定刪除）。
+該外部副本**已於 2026-08-15 刪除**，備份見 `SEC_STACK_ARCHITECTURE.md` 開頭）。
 
 **為什麼要分**：兩邊各自會改，複製一份必定漂移。
 2026-07-16 之後 open_defense 的程式碼一路改到 08-10，而 `dev-notes/` 停在 07-16，

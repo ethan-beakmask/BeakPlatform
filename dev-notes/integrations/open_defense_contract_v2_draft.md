@@ -26,7 +26,7 @@
 
 本草稿寫於 2026-05-13，此後平台側走了三個月的實作。**這一節只寫平台側可驗證的
 事實**；sec-vm（`.20`）側的現況一律標為待確認，權威在
-`/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`。
+`dev-notes/SEC_STACK_ARCHITECTURE.md`。
 
 ### 這份草稿仍然有效
 

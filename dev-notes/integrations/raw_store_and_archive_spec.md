@@ -12,7 +12,7 @@
 
 本規格寫於 2026-05-13。**平台側到目前為止一行都沒實作**，
 本節只寫平台側可驗證的事實；sec-vm（`.20`）側的 ClickHouse 現況一律待確認，
-權威在 `/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`。
+權威在 `dev-notes/SEC_STACK_ARCHITECTURE.md`。
 
 | 本規格假設 | 平台側現況（2026-08-10） |
 |---|---|
@@ -32,8 +32,8 @@ ssh -i ~/.ssh/company-wsl ethan@192.168.0.20      # hostname sec-vm，ethan 有 
 docker exec secstack-clickhouse-1 clickhouse-client -q 'SHOW TABLES FROM secstack'
 ```
 
-`.20` 的運維權威文件在 `/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`，
-**查得到的事實寫在那邊或本節，不要在本 repo 另存一份會漂移的副本。**
+`.20` 的運維權威文件在 `dev-notes/SEC_STACK_ARCHITECTURE.md`，
+**查得到的事實寫進那份或本節，不要在第三處另存會漂移的副本。**
 
 ### 一個新出現的相關事實
 
@@ -164,7 +164,7 @@ ALTER TABLE secstack.events ADD COLUMN incident_id String CODEC(ZSTD(3)) AFTER c
 ```
 
 寫入端（Vector 或 od-bridge 的 Layer 4 聚合層）在聚合時一併填入。
-**這是 `.20` 側工作**，權威文件 `/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`。
+**這是 `.20` 側工作**，權威文件 `dev-notes/SEC_STACK_ARCHITECTURE.md`。
 `ORDER BY` 不動（改排序鍵要重建表，代價遠大於收益；`incident_id` 用
 `WHERE` + 日分區裁剪已足夠，現量 2329 列更不成問題）。
 

@@ -1,0 +1,150 @@
+# =====================================================================
+# 一次性回灌：把 2026-05-09 ~ 08-08 的 eve.json 歸檔灌回 ClickHouse
+# （2026-08-08。ClickHouse 原 TTL 只有 6 小時，這三個月的事件全被刪光，
+#   只剩 eve.json 那份 554MB 歸檔。TTL 已改為分層保留，現在補灌回去。）
+#
+# 【安全設計】本設定**只有 ClickHouse 一個 sink，刻意不接 od-bridge**。
+# 若接上去，16.9 萬筆歷史 alert 會在 .16 開出 16.9 萬張案件 —— 那正是
+# 2026-05-13 雪崩事件的重演。改這個檔案時務必守住這條。
+#
+# 執行：
+#   docker run --rm --network secstack \
+#     -v /opt/tmp/backfill:/backfill \
+#     -v /opt/tmp/backfill/backfill.yaml:/etc/vector/vector.yaml:ro \
+#     -e CLICKHOUSE_* ... timberio/vector:0.41.1-alpine
+# =====================================================================
+
+api:
+  enabled: true
+  address: 0.0.0.0:8686
+
+sources:
+  eve_archive:
+    type: file
+    include:
+      - /backfill/eve-archive.json
+    read_from: beginning
+    # 歸檔檔案的 mtime 是舊的，不設這個會被 file source 直接忽略
+    ignore_older_secs: 0
+    max_read_bytes: 2048000
+
+transforms:
+  suricata_parsed:
+    type: remap
+    inputs: [eve_archive]
+    source: |
+      . = parse_json!(.message)
+      .timestamp = parse_timestamp!(.timestamp, "%+")
+
+  suricata_alerts_only:
+    type: filter
+    inputs: [suricata_parsed]
+    condition: '.event_type == "alert"'
+
+  # 套用 2026-08-08 的降噪基準（與 suricata.rules 停用的 63 條一致）。
+  # 不濾的話，報表會呈現「5~8 月每天上千筆、8 月後歸零」的假趨勢——
+  # 那是規則變更造成的，不是攻擊真的消失。
+  archive_denoise:
+    type: filter
+    inputs: [suricata_alerts_only]
+    condition:
+      type: vrl
+      source: |
+        sid = to_int(.alert.signature_id) ?? 0
+        decoder_truncated = includes([2200003, 2200013, 2200014, 2200026,
+                                      2200031, 2200122, 2227001, 2220020], sid)
+        explicit_noise = includes([2221050, 2013504], sid)
+        # stream-events 全族，但保留 evasion / injection 三條（真實攻擊技術）
+        stream_noise = sid >= 2210000 && sid <= 2210999 &&
+                       !includes([2210002, 2210057, 2210058], sid)
+        # 5/13 止血時停用的三條
+        burst_fp = includes([2210020, 2210029, 2210045], sid)
+        !(decoder_truncated || explicit_noise || stream_noise || burst_fp)
+
+  ocsf_from_suricata:
+    type: remap
+    inputs: [archive_denoise]
+    source: |
+      sev_id = to_int(.alert.severity) ?? 3
+      ocsf_sev = if sev_id == 1 { 4 } else if sev_id == 2 { 3 } else if sev_id == 3 { 2 } else { 1 }
+
+      xff_raw = string(.xff) ?? ""
+      xff_first = ""
+      if xff_raw != "" {
+        parts = split(xff_raw, ",")
+        first = to_string(parts[0])
+        xff_first = strip_whitespace(first)
+      }
+      tcp_src = to_string(.src_ip) ?? "0.0.0.0"
+      actor_ip = if xff_first != "" { xff_first } else { tcp_src }
+
+      out = {
+        "correlation_id": uuid_v4(),
+        "source_system": "suricata",
+        "event_class": "network_activity",
+        "occurred_at": format_timestamp!(.timestamp, "%+"),
+        "severity_id": ocsf_sev,
+        "finding": {
+          "title": to_string(.alert.signature) ?? "suricata alert",
+          "summary": to_string(.alert.category) ?? "",
+          "rule_id": to_string(.alert.signature_id) ?? "",
+          "rule_set": "Suricata-ET"
+        },
+        "actor": { "ip": actor_ip },
+        "target": {
+          "host": to_string(.dest_ip) ?? "",
+          "url": "",
+          "service": ""
+        },
+        "evidence": {
+          "raw_log_ref": { "type": "vector-backfill", "locator": to_string(.flow_id) ?? "" },
+          "snippet": ""
+        }
+      }
+      . = out
+
+  ch_events_from_ocsf:
+    type: remap
+    inputs: [ocsf_from_suricata]
+    source: |
+      raw = encode_json(.)
+      ts_input = to_string(.occurred_at) ?? ""
+      ts_parsed = parse_timestamp(ts_input, "%+") ?? now()
+      ts_ch = format_timestamp!(ts_parsed, "%Y-%m-%d %H:%M:%S%.3f")
+      . = {
+        "event_time":     ts_ch,
+        "correlation_id": to_string(.correlation_id) ?? uuid_v4(),
+        "source_system":  to_string(.source_system) ?? "unknown",
+        "event_class":    to_string(.event_class) ?? "unknown",
+        "severity_id":    to_int(.severity_id) ?? 0,
+        "confidence":     to_int(.confidence) ?? 0,
+        "actor_ip":       to_string(.actor.ip) ?? "::",
+        "actor_asn":      to_int(.actor.asn) ?? 0,
+        "actor_country":  to_string(.actor.country) ?? "",
+        "actor_ua":       to_string(.actor.user_agent) ?? "",
+        "target_host":    to_string(.target.host) ?? "",
+        "target_url":     to_string(.target.url) ?? "",
+        "target_service": to_string(.target.service) ?? "",
+        "finding_title":  to_string(.finding.title) ?? "",
+        "finding_rule_id": to_string(.finding.rule_id) ?? "",
+        "finding_rule_set": to_string(.finding.rule_set) ?? "",
+        "raw":            raw
+      }
+
+sinks:
+  ch_events:
+    type: clickhouse
+    inputs: [ch_events_from_ocsf]
+    endpoint: http://clickhouse:8123
+    database: ${CLICKHOUSE_DB}
+    table: events
+    auth:
+      strategy: basic
+      user: ${CLICKHOUSE_USER}
+      password: ${CLICKHOUSE_PASSWORD}
+    skip_unknown_fields: true
+    batch:
+      max_events: 5000
+      timeout_secs: 3
+    healthcheck:
+      enabled: false
