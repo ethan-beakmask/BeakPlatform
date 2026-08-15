@@ -1,5 +1,9 @@
 {% extends 'layouts/base.html' %}
 
+{# 同一個畫面服務兩種身分：系統管理員看平台層那頁，企業管理員看資安作業章那頁。
+   綁錯的症狀是 [?] 點下去 404（單頁手冊會依身分過濾）。 #}
+{% block help_doc %}{% if is_system_admin %}manual/02_platform_admin/login_failures_local{% else %}manual/05_security_ops/login_failures{% endif %}{% endblock %}
+
 {% block title %}{{ _('登入錯誤監看') }} - BeakPlatform{% endblock %}
 
 {% block head %}
