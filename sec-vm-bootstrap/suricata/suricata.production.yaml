@@ -1,0 +1,98 @@
+%YAML 1.1
+---
+# Minimal Suricata config — passive sniff on host iface, EVE JSON output.
+# Detail tuning later; goal here is just to get alerts flowing into Vector.
+
+vars:
+  address-groups:
+    HOME_NET: "[192.168.0.0/16,10.0.0.0/8,172.16.0.0/12]"
+    EXTERNAL_NET: "!$HOME_NET"
+
+default-rule-path: /var/lib/suricata/rules
+rule-files:
+  - suricata.rules
+
+af-packet:
+  - interface: ens18
+    cluster-id: 99
+    cluster-type: cluster_flow
+    defrag: yes
+    use-mmap: yes
+    tpacket-v3: yes
+
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: /var/log/suricata/eve.json
+      types:
+        - alert:
+            metadata: yes
+            tagged-packets: no
+            payload-printable: yes
+            xff:
+              enabled: yes
+              # PF-105 2026-08-15：header 從 X-Forwarded-For 改為 CF-Connecting-IP。
+              # 實測記錄（非猜測，見 dev-notes/SEC_STACK_ARCHITECTURE.md）：
+              # mode overwrite + deployment reverse 取的其實是 header 值以逗號切開後
+              # 的「最右側」一筆，不是舊註解寫的「最左側」——用兩組不同 XFF 直接送
+              # .20:8080 驗證過兩次，src_ip 與 alert.xff 都被覆寫成最後一段。
+              # 但「最右側」不等於「可信」：XFF 沒有比對來源 IP 是否為信任代理，
+              # 直接連上 .20:8080 的人可以自己把最後一段也填成任意值（本次測試就是
+              # 這樣做的）。CF-Connecting-IP 不同：Cloudflare edge 一律丟棄客戶端自帶
+              # 的同名 header 後換成自己觀測到的真實來源 IP 再送出，無法從客戶端偽造
+              # ——但前提是流量真的經過 Cloudflare；有 LAN 內網路徑可以繞過 Cloudflare
+              # 直接打 .20:8080 的人，一樣能偽造這個 header（Suricata xff 模組沒有
+              # nginx set_real_ip_from 那種「只信任特定來源 IP 送來的 header」機制），
+              # 這屬於網段存取控制的殘餘風險，不是本次 header 替換能單獨解決的。
+              # XFF 不存在的事件(內部 polling)src_ip 維持 TCP source
+              mode: overwrite
+              deployment: reverse
+              header: CF-Connecting-IP
+        - http:
+            extended: yes
+            # PF-105 2026-08-15 實測（Suricata 7.0.15）：這個 http log type 底下的
+            # .http.xff 欄位，不論 xff.header 設什麼，內容永遠是 X-Forwarded-For
+            # 的完整原文（逗號分隔、未經處理），跟下面 xff 區塊用來覆寫 src_ip 的
+            # 「取哪個 header、取哪一段」邏輯是兩件事——曾嘗試加
+            # `dump-all-headers: request` 想拿 request_headers 陣列自己抓 XFF 原文，
+            # 結果該欄位在 eve.json 裡完全沒出現（設定被吃掉但無效果），拿掉了。
+            # 直接用 .http.xff 當 actor_xff 證據欄位的來源即可，不需要額外設定。
+            xff:
+              enabled: yes
+              # 同上一個 xff 區塊：改抓 CF-Connecting-IP，理由見那邊的完整說明。
+              # 這裡的 header 設定只影響 alert.xff / src_ip 覆寫，不影響上面的
+              # .http.xff（那個固定顯示 X-Forwarded-For 原文，見本區塊開頭註解）。
+              mode: overwrite
+              deployment: reverse
+              header: CF-Connecting-IP
+        - dns
+        - tls
+        - flow
+        - anomaly
+
+logging:
+  default-log-level: notice
+  outputs:
+    - console: { enabled: yes }
+    - file:
+        enabled: yes
+        level: info
+        filename: /var/log/suricata/suricata.log
+
+app-layer:
+  protocols:
+    http: { enabled: yes }
+    tls:  { enabled: yes }
+    dns:  { tcp: { enabled: yes }, udp: { enabled: yes } }
+
+stream:
+  memcap: 256mb
+  checksum-validation: no
+  inline: no
+  reassembly:
+    memcap: 128mb
+    depth: 1mb
+
+host-mode: auto
+runmode: autofp

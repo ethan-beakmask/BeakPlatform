@@ -207,6 +207,15 @@ def build_native_form_data(payload: dict, profile) -> dict:
     form_data = dict(axis)
     form_data['od_payload_profile'] = profile.code
 
+    # PF-105：完整 XFF 鏈原文（證據欄位）。刻意不進 AXIS_FIELD_KEYS/field_map——
+    # 那是「SLA/聚合/風險分數會讀的判定欄位」的語意，XFF 只是證據，加進去會連帶
+    # 膨脹 RESERVED_FORM_KEYS 並可能與既有表單欄位撞名。這裡固定讀 payload 裡
+    # OCSF 慣例的 actor.xff 路徑，讀不到就不寫（不用空字串佔位，避免蓋掉
+    # flatten_payload 可能自然產生的其他鍵）。
+    actor_xff = _to_optional_str(get_path(payload, 'actor.xff'))
+    if actor_xff is not None:
+        form_data['actor_xff'] = actor_xff
+
     flat = flatten_payload(
         payload,
         kv_expansions=profile.kv_expansions,

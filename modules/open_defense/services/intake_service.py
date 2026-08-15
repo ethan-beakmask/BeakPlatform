@@ -71,6 +71,8 @@ def _build_form_data(event: Dict[str, Any]) -> Dict[str, Any]:
         'actor_asn': actor.get('asn'),
         'actor_country': actor.get('country'),
         'actor_user_agent': actor.get('user_agent'),
+        # PF-105：完整 XFF 鏈原文（證據欄位，不參與聚合/風險分數判定，判定一律看 actor_ip）
+        'actor_xff': actor.get('xff'),
 
         'target_host': target.get('host'),
         'target_url': target.get('url'),

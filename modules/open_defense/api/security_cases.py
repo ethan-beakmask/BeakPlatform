@@ -39,6 +39,7 @@ _PAYLOAD_EXCLUDED_FIELD_KEYS = {
     'severity_id', 'actor_ip', 'target_host', 'source_system',
     'finding_rule_id', 'occurred_at',
     'risk_score', 'recommended_action', 'correlation_id',
+    'actor_xff',  # PF-105：在表單「攻擊者」panel 單獨呈現，不重複列在通用明細區
 }
 
 
