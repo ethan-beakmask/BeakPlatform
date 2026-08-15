@@ -5,6 +5,8 @@ System Settings - 稽核 / 檔案儲存 / 速率限制 / 選單配色 子模組
 稽核設定:
 - GET    /api/system-settings/audit                   取得稽核設定
 - PUT    /api/system-settings/audit                   更新稽核設定
+- POST   /api/system-settings/audit/purge             依保留天數清除過期稽核紀錄
+                                                      （dry_run=true 只試算不刪除）
 
 檔案儲存:
 - GET    /api/system-settings/file-storage            取得檔案儲存設定
@@ -19,8 +21,12 @@ System Settings - 稽核 / 檔案儲存 / 速率限制 / 選單配色 子模組
 - PUT    /api/system-settings/menu-colors             更新選單配色
 - POST   /api/system-settings/menu-colors/reset       重置為預設值
 """
+import logging
 import re
-from flask import jsonify, request
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+from flask import jsonify, request, g
 from flask_babel import gettext as _
 from flask_login import current_user
 
@@ -28,9 +34,13 @@ from ..security.decorators import system_admin_required
 from ..models.system_setting import SystemSetting
 from .. import db
 
+logger = logging.getLogger(__name__)
 
 # 檔案儲存預設值
 DEFAULT_DIR_FILE_LIMIT = 100000
+
+# 稽核保留天數下限（與 PUT /audit 的驗證一致）
+MIN_AUDIT_RETENTION_DAYS = 7
 
 # 選單配色預設值
 MENU_COLOR_DEFAULTS = {
@@ -53,6 +63,16 @@ MENU_COLOR_DEFAULTS = {
     'menu-header-text': '#ffffff',
     'menubar-bg': '#333333',
 }
+
+
+def _format_user_tz(dt: datetime) -> str:
+    """naive UTC datetime → 使用者顯示時區的字串（TZ-01）"""
+    tz_name = getattr(g, 'timezone', 'Asia/Taipei')
+    try:
+        tz = ZoneInfo(tz_name)
+    except Exception:
+        tz = ZoneInfo('Asia/Taipei')
+    return dt.replace(tzinfo=ZoneInfo('UTC')).astimezone(tz).strftime('%Y-%m-%d %H:%M')
 
 
 def register(bp):
@@ -129,6 +149,57 @@ def register(bp):
         return jsonify({
             'success': True,
             'message': _('稽核設定已更新: %(items)s', items=', '.join(updated))
+        })
+
+    @bp.route('/audit/purge', methods=['POST'])
+    @system_admin_required
+    def purge_audit_logs():
+        """
+        依「保留天數」清除過期稽核紀錄（手動觸發，平台沒有自動排程）。
+
+        採用的天數一律取自 DB 的 audit_retention_days，不是畫面上尚未儲存的值。
+
+        Body: {"dry_run": true}   # true 只回傳試算筆數，不刪除
+        """
+        from ..models.audit_log import AuditLog
+
+        data = request.get_json(silent=True) or {}
+        dry_run = bool(data.get('dry_run'))
+
+        try:
+            days = int(SystemSetting.get('audit_retention_days', 90))
+        except (TypeError, ValueError):
+            days = 90
+        if days < MIN_AUDIT_RETENTION_DAYS:
+            days = MIN_AUDIT_RETENTION_DAYS
+
+        # TZ-01: DB 存 naive UTC，門檻直接以 UTC 計算；只有顯示才換算使用者時區
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        query = AuditLog.query.filter(AuditLog.created_at < cutoff)
+
+        payload = {
+            'retention_days': days,
+            'cutoff': _format_user_tz(cutoff),
+        }
+
+        if dry_run:
+            payload['count'] = query.count()
+            return jsonify({'success': True, 'data': payload})
+
+        deleted = query.delete(synchronize_session=False)
+        db.session.commit()
+
+        logger.info(
+            f"Audit logs purged: {deleted} rows older than {cutoff.isoformat()} "
+            f"(retention={days}d) by {current_user.email}"
+        )
+
+        payload['count'] = deleted
+        return jsonify({
+            'success': True,
+            'message': _('已清除 %(count)s 筆 %(cutoff)s 之前的稽核紀錄',
+                         count=deleted, cutoff=payload['cutoff']),
+            'data': payload,
         })
 
     # ==================== 檔案儲存 ====================

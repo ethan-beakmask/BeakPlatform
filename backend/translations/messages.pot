@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-15 11:14+0800\n"
+"POT-Creation-Date: 2026-08-15 13:08+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -34,87 +34,92 @@ msgstr ""
 msgid "未設定"
 msgstr ""
 
-#: app/api/_ss_audit.py:79
+#: app/api/_ss_audit.py:99
 msgid "最小 -- 僅登入/登出與失敗嘗試"
 msgstr ""
 
-#: app/api/_ss_audit.py:80
+#: app/api/_ss_audit.py:100
 msgid "標準 -- 登入/登出 + 所有寫入操作 (預設)"
 msgstr ""
 
-#: app/api/_ss_audit.py:81
+#: app/api/_ss_audit.py:101
 msgid "詳細 -- 記錄所有請求 (含讀取，資料量大)"
 msgstr ""
 
-#: app/api/_ss_audit.py:99 app/api/_ss_audit.py:170 app/api/_ss_audit.py:239
+#: app/api/_ss_audit.py:119 app/api/_ss_audit.py:241 app/api/_ss_audit.py:310
 #: app/api/_ss_login_security.py:84 app/api/_ss_login_security.py:114
 #: app/api/security_center.py:425
 msgid "缺少 request body"
 msgstr ""
 
-#: app/api/_ss_audit.py:110
+#: app/api/_ss_audit.py:130
 #, python-format
 msgid "無效的稽核等級，允許值: %(values)s"
 msgstr ""
 
-#: app/api/_ss_audit.py:119
+#: app/api/_ss_audit.py:139
 msgid "保留天數至少 7 天"
 msgstr ""
 
-#: app/api/_ss_audit.py:131
+#: app/api/_ss_audit.py:151
 #, python-format
 msgid "稽核設定已更新: %(items)s"
 msgstr ""
 
-#: app/api/_ss_audit.py:179
+#: app/api/_ss_audit.py:200
+#, python-format
+msgid "已清除 %(count)s 筆 %(cutoff)s 之前的稽核紀錄"
+msgstr ""
+
+#: app/api/_ss_audit.py:250
 msgid "目錄檔案上限至少 1,000"
 msgstr ""
 
-#: app/api/_ss_audit.py:184
+#: app/api/_ss_audit.py:255
 msgid "目錄檔案上限不可超過 1,000,000"
 msgstr ""
 
-#: app/api/_ss_audit.py:198
+#: app/api/_ss_audit.py:269
 #, python-format
 msgid "檔案儲存設定已更新: %(items)s"
 msgstr ""
 
-#: app/api/_ss_audit.py:249
+#: app/api/_ss_audit.py:320
 #, python-format
 msgid "%(category)s: 格式無效 \"%(value)s\" (正確格式如: 20 per 10 minutes, 5 per hour)"
 msgstr ""
 
-#: app/api/_ss_audit.py:264 app/api/security_center.py:465
+#: app/api/_ss_audit.py:335 app/api/security_center.py:465
 msgid "部分設定格式無效"
 msgstr ""
 
-#: app/api/_ss_audit.py:270
+#: app/api/_ss_audit.py:341
 msgid "未提供任何有效設定"
 msgstr ""
 
-#: app/api/_ss_audit.py:274
+#: app/api/_ss_audit.py:345
 #, python-format
 msgid "速率限制已更新: %(items)s"
 msgstr ""
 
-#: app/api/_ss_audit.py:301
+#: app/api/_ss_audit.py:372
 msgid "缺少 colors 欄位"
 msgstr ""
 
-#: app/api/_ss_audit.py:305
+#: app/api/_ss_audit.py:376
 msgid "colors 必須是物件"
 msgstr ""
 
-#: app/api/_ss_audit.py:315
+#: app/api/_ss_audit.py:386
 #, python-format
 msgid "%(key)s 的值 \"%(value)s\" 不是有效的 hex 色碼（格式: #RRGGBB）"
 msgstr ""
 
-#: app/api/_ss_audit.py:331
+#: app/api/_ss_audit.py:402
 msgid "選單配色已更新，重新整理頁面後生效"
 msgstr ""
 
-#: app/api/_ss_audit.py:345
+#: app/api/_ss_audit.py:416
 msgid "選單配色已重置為預設值，重新整理頁面後生效"
 msgstr ""
 
@@ -804,9 +809,9 @@ msgstr ""
 #: app/web/job_families.py:370 app/web/job_levels.py:318
 #: app/web/job_titles.py:395 app/web/job_titles.py:396 app/web/menu.py:537
 #: app/web/modules.py:208 app/web/org_admins.py:539
-#: app/web/organizations.py:396 app/web/organizations.py:539
-#: app/web/positions.py:267 app/web/sys_accounts.py:315
-#: app/web/sys_accounts.py:316 app/web/units.py:221 app/web/users.py:666
+#: app/web/organizations.py:396 app/web/positions.py:267
+#: app/web/sys_accounts.py:315 app/web/sys_accounts.py:316 app/web/units.py:221
+#: app/web/users.py:666
 #, python-format
 msgid "刪除失敗: %(error)s"
 msgstr ""
@@ -1597,7 +1602,7 @@ msgid "批量刪除失敗"
 msgstr ""
 
 #: app/api/security_center.py:147
-#: app/templates/pages/security/login_failures.html:93
+#: app/templates/pages/security/login_failures.html:97
 msgid "未知網域"
 msgstr ""
 
@@ -1904,11 +1909,11 @@ msgstr ""
 msgid "缺少權限：%(code)s"
 msgstr ""
 
-#: app/services/doc_catalog_service.py:496
+#: app/services/doc_catalog_service.py:498
 msgid "本章包含以下主題："
 msgstr ""
 
-#: app/services/doc_catalog_service.py:558
+#: app/services/doc_catalog_service.py:560
 msgid "本節包含以下主題："
 msgstr ""
 
@@ -2048,7 +2053,7 @@ msgstr ""
 #: app/templates/pages/profile/password.html:11
 #: app/templates/pages/profile/password.html:42
 #: app/templates/pages/sys_accounts/edit.html:61
-#: app/templates/pages/sys_accounts/list.html:133
+#: app/templates/pages/sys_accounts/list.html:135
 #: app/templates/pages/users/edit.html:163
 msgid "變更密碼"
 msgstr ""
@@ -2068,7 +2073,7 @@ msgstr ""
 #: app/templates/pages/external-users/edit.html:80
 #: app/templates/pages/organizations/admins.html:116
 #: app/templates/pages/sys_accounts/edit.html:64
-#: app/templates/pages/sys_accounts/list.html:136
+#: app/templates/pages/sys_accounts/list.html:138
 #: app/templates/pages/users/edit.html:132
 #: app/templates/pages/users/view.html:185
 msgid "新密碼"
@@ -2092,8 +2097,8 @@ msgstr ""
 #: app/templates/pages/organizations/admins.html:138
 #: app/templates/pages/sys_accounts/create.html:82
 #: app/templates/pages/sys_accounts/edit.html:91
-#: app/templates/pages/sys_accounts/list.html:167
-#: app/templates/pages/sys_accounts/list.html:278
+#: app/templates/pages/sys_accounts/list.html:169
+#: app/templates/pages/sys_accounts/list.html:280
 #: app/templates/pages/users/view.html:207
 msgid "密碼不一致"
 msgstr ""
@@ -2212,7 +2217,6 @@ msgstr ""
 #: app/templates/pages/modules/list.html:181
 #: app/templates/pages/org_databases/monitor.html:365
 #: app/templates/pages/organizations/admins.html:144
-#: app/templates/pages/organizations/contract_form.html:93
 #: app/templates/pages/organizations/create.html:111
 #: app/templates/pages/organizations/edit.html:149
 #: app/templates/pages/organizations/list.html:65
@@ -2225,7 +2229,7 @@ msgstr ""
 #: app/templates/pages/security/_api_keys_modals.html:136
 #: app/templates/pages/sys_accounts/create.html:90
 #: app/templates/pages/sys_accounts/edit.html:99
-#: app/templates/pages/sys_accounts/list.html:283
+#: app/templates/pages/sys_accounts/list.html:285
 #: app/templates/pages/units/create.html:68
 #: app/templates/pages/units/edit.html:66
 #: app/templates/pages/users/create.html:23
@@ -2241,7 +2245,7 @@ msgstr ""
 #: ../modules/nocode_builder/services/pageir_portal_menu.py:199
 #: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:43
 #: app/templates/auth/change_password.html:86
-#: app/templates/layouts/base.html:96
+#: app/templates/layouts/base.html:99
 #: app/templates/pages/admin/initial_setup.html:298
 msgid "登出"
 msgstr ""
@@ -2276,9 +2280,9 @@ msgstr ""
 #: app/templates/pages/personal_settings.html:37
 #: app/templates/pages/sys_accounts/create.html:32
 #: app/templates/pages/sys_accounts/edit.html:32
-#: app/templates/pages/sys_accounts/list.html:55
-#: app/templates/pages/sys_accounts/list.html:100
-#: app/templates/pages/sys_accounts/list.html:231
+#: app/templates/pages/sys_accounts/list.html:57
+#: app/templates/pages/sys_accounts/list.html:102
+#: app/templates/pages/sys_accounts/list.html:233
 #: app/templates/pages/users/create.html:73
 #: app/templates/pages/users/edit.html:49
 #: app/templates/pages/users/list.html:39
@@ -2424,11 +2428,11 @@ msgstr ""
 msgid "系統發生錯誤，請稍後再試。"
 msgstr ""
 
-#: app/templates/layouts/base.html:92
+#: app/templates/layouts/base.html:95
 msgid "本頁說明"
 msgstr ""
 
-#: app/templates/layouts/base.html:108
+#: app/templates/layouts/base.html:111
 msgid "首頁"
 msgstr ""
 
@@ -2801,7 +2805,7 @@ msgstr ""
 #: app/templates/pages/external-users/edit.html:42
 #: app/templates/pages/personal_settings.html:32
 #: app/templates/pages/sys_accounts/edit.html:116
-#: app/templates/pages/sys_accounts/list.html:182
+#: app/templates/pages/sys_accounts/list.html:184
 #: app/templates/pages/users/edit.html:46
 #: app/templates/pages/users/view.html:27
 msgid "帳號資訊"
@@ -2820,9 +2824,9 @@ msgstr ""
 #: app/templates/pages/personal_settings.html:47
 #: app/templates/pages/sys_accounts/create.html:48
 #: app/templates/pages/sys_accounts/edit.html:40
-#: app/templates/pages/sys_accounts/list.html:56
-#: app/templates/pages/sys_accounts/list.html:112
-#: app/templates/pages/sys_accounts/list.html:245
+#: app/templates/pages/sys_accounts/list.html:58
+#: app/templates/pages/sys_accounts/list.html:114
+#: app/templates/pages/sys_accounts/list.html:247
 msgid "顯示名稱"
 msgstr ""
 
@@ -2831,7 +2835,7 @@ msgstr ""
 #: app/templates/pages/admin/org-admins/create.html:81
 #: app/templates/pages/personal_settings.html:51
 #: app/templates/pages/sys_accounts/create.html:55
-#: app/templates/pages/sys_accounts/list.html:250
+#: app/templates/pages/sys_accounts/list.html:252
 #: app/templates/pages/users/create.html:89
 msgid "密碼"
 msgstr ""
@@ -3082,7 +3086,7 @@ msgstr ""
 #: app/templates/pages/positions/list.html:69
 #: app/templates/pages/positions/view.html:97
 #: app/templates/pages/sys_accounts/edit.html:55
-#: app/templates/pages/sys_accounts/list.html:125
+#: app/templates/pages/sys_accounts/list.html:127
 #: app/templates/pages/units/list.html:42
 #: app/templates/pages/units/view.html:49
 #: app/templates/pages/users/edit.html:119
@@ -3441,8 +3445,8 @@ msgstr ""
 #: app/templates/pages/positions/view.html:97
 #: app/templates/pages/sys_accounts/edit.html:50
 #: app/templates/pages/sys_accounts/edit.html:54
-#: app/templates/pages/sys_accounts/list.html:120
-#: app/templates/pages/sys_accounts/list.html:124
+#: app/templates/pages/sys_accounts/list.html:122
+#: app/templates/pages/sys_accounts/list.html:126
 #: app/templates/pages/units/list.html:42
 #: app/templates/pages/units/view.html:49
 #: app/templates/pages/users/edit.html:118
@@ -3634,8 +3638,8 @@ msgstr ""
 #: app/templates/pages/organizations/create.html:103
 #: app/templates/pages/sys_accounts/create.html:72
 #: app/templates/pages/sys_accounts/edit.html:81
-#: app/templates/pages/sys_accounts/list.html:154
-#: app/templates/pages/sys_accounts/list.html:267
+#: app/templates/pages/sys_accounts/list.html:156
+#: app/templates/pages/sys_accounts/list.html:269
 #: app/templates/pages/users/create.html:117
 #: app/templates/pages/users/edit.html:159
 #: app/templates/pages/users/view.html:201
@@ -3810,7 +3814,7 @@ msgstr ""
 #: app/templates/pages/org_databases/monitor.html:74
 #: app/templates/pages/org_databases/monitor.html:244
 #: app/templates/pages/security/alert_broadcasts.html:114
-#: app/templates/pages/security/login_failures.html:74
+#: app/templates/pages/security/login_failures.html:78
 #: app/templates/pages/security/org_rate_limits.html:95
 #: app/templates/pages/server_manage/redis_monitor.html:25
 #: app/templates/pages/server_manage/redis_monitor.html:205
@@ -3984,8 +3988,6 @@ msgstr ""
 #: app/templates/pages/menu/list.html:123
 #: app/templates/pages/modules/create.html:71
 #: app/templates/pages/organizations/admins.html:164
-#: app/templates/pages/organizations/contract_form.html:38
-#: app/templates/pages/organizations/contract_form.html:111
 #: app/templates/pages/platform_help/org_admin.html:42
 #: app/templates/pages/platform_help/org_admin.html:134
 #: app/templates/pages/platform_help/org_admin.html:327
@@ -4060,7 +4062,6 @@ msgstr ""
 #: app/templates/pages/modules/view.html:54
 #: app/templates/pages/modules/view.html:72
 #: app/templates/pages/organizations/admins.html:51
-#: app/templates/pages/organizations/contract_form.html:127
 #: app/templates/pages/organizations/edit.html:87
 #: app/templates/pages/organizations/list.html:187
 #: app/templates/pages/organizations/list.html:267
@@ -4069,8 +4070,8 @@ msgstr ""
 #: app/templates/pages/positions/view.html:96
 #: app/templates/pages/security/api_keys.html:33
 #: app/templates/pages/sys_accounts/edit.html:47
-#: app/templates/pages/sys_accounts/list.html:57
-#: app/templates/pages/sys_accounts/list.html:118
+#: app/templates/pages/sys_accounts/list.html:59
+#: app/templates/pages/sys_accounts/list.html:120
 #: app/templates/pages/units/edit.html:57
 #: app/templates/pages/units/list.html:28
 #: app/templates/pages/units/view.html:48
@@ -4749,8 +4750,8 @@ msgstr ""
 #: app/templates/pages/admin/org-admins/list.html:129
 #: app/templates/pages/organizations/admins.html:134
 #: app/templates/pages/sys_accounts/create.html:77
-#: app/templates/pages/sys_accounts/list.html:159
-#: app/templates/pages/sys_accounts/list.html:272
+#: app/templates/pages/sys_accounts/list.html:161
+#: app/templates/pages/sys_accounts/list.html:274
 #: app/templates/pages/users/view.html:203
 msgid "確認密碼"
 msgstr ""
@@ -4866,7 +4867,6 @@ msgid "企業名稱"
 msgstr ""
 
 #: app/templates/pages/admin/module_list.html:113
-#: app/templates/pages/organizations/contract_form.html:103
 #: app/templates/pages/organizations/list.html:259
 msgid "合約編號"
 msgstr ""
@@ -4900,7 +4900,6 @@ msgid "天"
 msgstr ""
 
 #: app/templates/pages/admin/module_list.html:134
-#: app/templates/pages/organizations/contract_form.html:130
 #: app/templates/pages/organizations/list.html:282
 msgid "有效"
 msgstr ""
@@ -4944,7 +4943,7 @@ msgid "無有效合約"
 msgstr ""
 
 #: app/templates/pages/admin/settings.html:14
-#: app/templates/pages/hostconfig/system_settings.html:14
+#: app/templates/pages/hostconfig/system_settings.html:16
 msgid "設定分類"
 msgstr ""
 
@@ -4969,17 +4968,17 @@ msgid "密碼政策"
 msgstr ""
 
 #: app/templates/pages/admin/settings.html:38
-#: app/templates/pages/hostconfig/system_settings.html:53
+#: app/templates/pages/hostconfig/system_settings.html:55
 msgid "登入安全欄位"
 msgstr ""
 
 #: app/templates/pages/admin/settings.html:43
-#: app/templates/pages/hostconfig/system_settings.html:33
+#: app/templates/pages/hostconfig/system_settings.html:35
 msgid "收件人群組"
 msgstr ""
 
 #: app/templates/pages/admin/settings.html:48
-#: app/templates/pages/hostconfig/system_settings.html:23
+#: app/templates/pages/hostconfig/system_settings.html:25
 msgid "SMTP 郵件"
 msgstr ""
 
@@ -5576,8 +5575,8 @@ msgstr ""
 #: app/templates/pages/organizations/create.html:94
 #: app/templates/pages/sys_accounts/create.html:63
 #: app/templates/pages/sys_accounts/edit.html:72
-#: app/templates/pages/sys_accounts/list.html:145
-#: app/templates/pages/sys_accounts/list.html:258
+#: app/templates/pages/sys_accounts/list.html:147
+#: app/templates/pages/sys_accounts/list.html:260
 #: app/templates/pages/users/edit.html:146
 #: app/templates/pages/users/view.html:192
 msgid "建議密碼"
@@ -5642,11 +5641,10 @@ msgstr ""
 #: app/templates/pages/job_levels/view.html:51
 #: app/templates/pages/modules/list.html:85
 #: app/templates/pages/organizations/admins.html:52
-#: app/templates/pages/organizations/contract_form.html:157
 #: app/templates/pages/organizations/list.html:216
 #: app/templates/pages/positions/view.html:104
 #: app/templates/pages/sys_accounts/edit.html:119
-#: app/templates/pages/sys_accounts/list.html:185
+#: app/templates/pages/sys_accounts/list.html:187
 #: app/templates/pages/units/view.html:60
 #: app/templates/pages/users/list.html:43
 #: app/templates/pages/users/view.html:52
@@ -5829,8 +5827,6 @@ msgid "開始日期 *"
 msgstr ""
 
 #: app/templates/pages/admin/time/holidays.html:142
-#: app/templates/pages/organizations/contract_form.html:50
-#: app/templates/pages/organizations/contract_form.html:119
 #: app/templates/pages/organizations/list.html:264
 #: app/templates/pages/organizations/list.html:342
 msgid "結束日期"
@@ -6872,8 +6868,6 @@ msgstr ""
 #: app/templates/pages/external-users/create.html:105
 #: app/templates/pages/external-users/edit.html:54
 #: app/templates/pages/external-users/view.html:81
-#: app/templates/pages/organizations/contract_form.html:84
-#: app/templates/pages/organizations/contract_form.html:153
 #: app/templates/pages/organizations/list.html:345
 #: app/templates/pages/organizations/list.html:400
 #: app/templates/pages/positions/create.html:115
@@ -6995,7 +6989,7 @@ msgstr ""
 #: app/templates/pages/external-users/view.html:89
 #: app/templates/pages/security/alert_broadcasts.html:172
 #: app/templates/pages/sys_accounts/edit.html:123
-#: app/templates/pages/sys_accounts/list.html:189
+#: app/templates/pages/sys_accounts/list.html:191
 #: app/templates/pages/users/view.html:56
 msgid "最後登入"
 msgstr ""
@@ -7078,7 +7072,7 @@ msgid "系統級群組以 Email 清單形式管理收件人"
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_audit.html:3
-#: app/templates/pages/hostconfig/system_settings.html:43
+#: app/templates/pages/hostconfig/system_settings.html:45
 msgid "稽核設定"
 msgstr ""
 
@@ -7095,56 +7089,91 @@ msgid "資料保留"
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_audit.html:30
-msgid "保留天數（超過自動清理）"
+msgid "保留天數"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:33
-msgid "最少 7 天，建議 90 天"
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:34
+msgid "最少 7 天，建議 90 天。"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:38
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:35
+msgid "平台不會自動清除，要按下方的 [清除過期紀錄] 才會刪除。"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:41
 msgid "儲存稽核設定"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:42
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:45
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:54
+msgid "清除過期紀錄"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:47
+msgid "刪除建立時間早於「今天減保留天數」的稽核紀錄，刪除後無法復原。"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:48
+msgid "採用的是已儲存的保留天數，改過欄位請先按 [儲存稽核設定]。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:163
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:125
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:136
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:91
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:437
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:127
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:182
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:111
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:64
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:191
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:228
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:391
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:326
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:493
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:55
+msgid "處理中..."
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:62
 msgid "等級說明"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:156
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:46
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:66
 #: app/templates/pages/platform_help/org_admin.html:40
 msgid "等級"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:47
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:67
 msgid "記錄內容"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:48
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:68
 msgid "資料量"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:54
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:74
 msgid "登入/登出 + 登入失敗嘗試"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:55
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:75
 msgid "極少"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:59
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:79
 msgid "MINIMAL + 所有寫入操作（新增/修改/刪除）"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:60
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:80
 msgid "適中"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:64
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:84
 msgid "STANDARD + 所有讀取操作（頁面瀏覽/API 查詢）"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_audit.html:65
+#: app/templates/pages/hostconfig/_system_settings_section_audit.html:85
 msgid "大量"
 msgstr ""
 
@@ -7229,7 +7258,7 @@ msgid "發送測試郵件"
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:3
-#: app/templates/pages/hostconfig/system_settings.html:58
+#: app/templates/pages/hostconfig/system_settings.html:60
 msgid "檔案儲存"
 msgstr ""
 
@@ -7366,7 +7395,7 @@ msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:3
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:14
-#: app/templates/pages/hostconfig/system_settings.html:38
+#: app/templates/pages/hostconfig/system_settings.html:40
 msgid "選單配色"
 msgstr ""
 
@@ -7433,7 +7462,7 @@ msgid "重置為預設"
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:3
-#: app/templates/pages/hostconfig/system_settings.html:63
+#: app/templates/pages/hostconfig/system_settings.html:65
 msgid "套件版本"
 msgstr ""
 
@@ -7754,7 +7783,7 @@ msgid "設定項目"
 msgstr ""
 
 #: app/templates/pages/hostconfig/index.html:18
-#: app/templates/pages/hostconfig/system_settings.html:3
+#: app/templates/pages/hostconfig/system_settings.html:5
 msgid "伺服器設定"
 msgstr ""
 
@@ -7762,7 +7791,7 @@ msgstr ""
 msgid "E-MailRelay、系統參數等"
 msgstr ""
 
-#: app/templates/pages/hostconfig/system_settings.html:48
+#: app/templates/pages/hostconfig/system_settings.html:50
 #: app/templates/pages/security/org_rate_limits.html:3
 msgid "速率限制"
 msgstr ""
@@ -8510,7 +8539,7 @@ msgstr ""
 #: app/templates/pages/modules/edit.html:29
 #: app/templates/pages/sys_accounts/edit.html:33
 #: app/templates/pages/sys_accounts/edit.html:37
-#: app/templates/pages/sys_accounts/list.html:101
+#: app/templates/pages/sys_accounts/list.html:103
 msgid "不可變更"
 msgstr ""
 
@@ -9136,8 +9165,6 @@ msgid "管理員管理 - %(name)s"
 msgstr ""
 
 #: app/templates/pages/organizations/admins.html:14
-#: app/templates/pages/organizations/contract_form.html:9
-#: app/templates/pages/organizations/contract_form.html:201
 #: app/templates/pages/organizations/edit.html:18
 msgid "返回企業管理"
 msgstr ""
@@ -9173,111 +9200,6 @@ msgstr ""
 
 #: app/templates/pages/organizations/admins.html:169
 msgid "適用於企業管理員全部離職或忘記密碼的救援情境"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:5
-#: app/templates/pages/organizations/contract_form.html:12
-#: app/templates/pages/organizations/contract_form.html:92
-msgid "新增合約"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:5
-#: app/templates/pages/organizations/contract_form.html:12
-msgid "合約詳情"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:13
-msgid "企業："
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:31
-#: app/templates/pages/organizations/contract_form.html:107
-#: app/templates/pages/organizations/list.html:260
-#: app/templates/pages/organizations/list.html:340
-#: app/templates/pages/organizations/list.html:374
-msgid "合約名稱"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:34
-msgid "例：2025年度服務合約"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:40
-msgid "合約的簡短說明"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:44
-#: app/templates/pages/organizations/contract_form.html:115
-#: app/templates/pages/organizations/list.html:262
-#: app/templates/pages/organizations/list.html:341
-#: app/templates/pages/users/view.html:86
-msgid "開始日期"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:56
-#: app/templates/pages/organizations/contract_form.html:123
-msgid "合約金額"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:59
-msgid "（選填）"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:64
-#: app/templates/pages/organizations/contract_form.html:138
-#: app/templates/pages/organizations/list.html:348
-#: app/templates/pages/organizations/list.html:405
-msgid "授權模組"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:79
-#: app/templates/pages/organizations/list.html:420
-msgid "選擇此合約授權使用的功能模組"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:86
-msgid "其他備註事項"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:132
-msgid "已停用"
-msgstr ""
-
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:44
-#: app/templates/pages/organizations/contract_form.html:162
-msgid "最後修改"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:167
-msgid "剩餘天數"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:171
-#, python-format
-msgid "%(days)s 天"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:173
-#, python-format
-msgid "已過期 %(days)s 天"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:184
-#: app/templates/pages/organizations/contract_form.html:193
-#: app/templates/pages/organizations/list.html:361
-msgid "停用此合約"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:186
-msgid "合約建立後不可修改內容（稽核要求）。"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:187
-msgid "如需停用，請按下方按鈕。停用後不可再啟用，如需變更請建立新合約。"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:197
-msgid "此合約已停用，不可再啟用。如需恢復服務，請建立新合約。"
 msgstr ""
 
 #: app/templates/pages/organizations/create.html:5
@@ -9542,6 +9464,18 @@ msgstr ""
 msgid "永久有效，無需合約"
 msgstr ""
 
+#: app/templates/pages/organizations/list.html:260
+#: app/templates/pages/organizations/list.html:340
+#: app/templates/pages/organizations/list.html:374
+msgid "合約名稱"
+msgstr ""
+
+#: app/templates/pages/organizations/list.html:262
+#: app/templates/pages/organizations/list.html:341
+#: app/templates/pages/users/view.html:86
+msgid "開始日期"
+msgstr ""
+
 #: app/templates/pages/organizations/list.html:266
 #: app/templates/pages/organizations/list.html:343
 #: app/templates/pages/organizations/list.html:390
@@ -9583,12 +9517,25 @@ msgstr ""
 msgid "合約建立後不可修改內容（稽核要求）。如需變更請建立新合約。"
 msgstr ""
 
+#: app/templates/pages/organizations/list.html:348
+#: app/templates/pages/organizations/list.html:405
+msgid "授權模組"
+msgstr ""
+
+#: app/templates/pages/organizations/list.html:361
+msgid "停用此合約"
+msgstr ""
+
 #: app/templates/pages/organizations/list.html:364
 msgid "此合約已停用，不可再啟用"
 msgstr ""
 
 #: app/templates/pages/organizations/list.html:384
 msgid "結束日期 *"
+msgstr ""
+
+#: app/templates/pages/organizations/list.html:420
+msgid "選擇此合約授權使用的功能模組"
 msgstr ""
 
 #: app/templates/pages/platform_help/_manual_nav.html:1
@@ -10770,69 +10717,69 @@ msgstr ""
 msgid "尚未建立任何 API Key"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:3
-#: app/templates/pages/security/login_failures.html:21
+#: app/templates/pages/security/login_failures.html:7
+#: app/templates/pages/security/login_failures.html:25
 msgid "登入錯誤監看"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:27
+#: app/templates/pages/security/login_failures.html:31
 msgid "指定企業"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:31
+#: app/templates/pages/security/login_failures.html:35
 msgid "-- 全部 (含未知網域) --"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:49
+#: app/templates/pages/security/login_failures.html:53
 msgid "來源 IP 過濾"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:52
+#: app/templates/pages/security/login_failures.html:56
 msgid "隱藏 Loopback (127.x)"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:56
+#: app/templates/pages/security/login_failures.html:60
 msgid "隱藏內網 IP (10.x / 172.16-31.x / 192.168.x)"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:67
+#: app/templates/pages/security/login_failures.html:71
 msgid "載入全部資料"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:68
+#: app/templates/pages/security/login_failures.html:72
 msgid "或先選擇企業篩選"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:88
+#: app/templates/pages/security/login_failures.html:92
 msgid "總失敗次數"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:98
+#: app/templates/pages/security/login_failures.html:102
 msgid "涉及帳號"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
-#: app/templates/pages/security/login_failures.html:102
+#: app/templates/pages/security/login_failures.html:106
 msgid "來源 IP"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:106
+#: app/templates/pages/security/login_failures.html:110
 msgid "目標企業"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:114
+#: app/templates/pages/security/login_failures.html:118
 msgid "24 小時熱力圖"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:117
+#: app/templates/pages/security/login_failures.html:121
 msgid "近 10 天"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:119
+#: app/templates/pages/security/login_failures.html:123
 msgid "近三個月"
 msgstr ""
 
-#: app/templates/pages/security/login_failures.html:269
+#: app/templates/pages/security/login_failures.html:273
 msgid "此期間內無登入失敗記錄。"
 msgstr ""
 
@@ -11003,8 +10950,8 @@ msgstr ""
 
 #: app/templates/pages/sys_accounts/create.html:3
 #: app/templates/pages/sys_accounts/create.html:15
-#: app/templates/pages/sys_accounts/list.html:45
-#: app/templates/pages/sys_accounts/list.html:219
+#: app/templates/pages/sys_accounts/list.html:47
+#: app/templates/pages/sys_accounts/list.html:221
 msgid "新增系統管理員"
 msgstr ""
 
@@ -11031,7 +10978,7 @@ msgid "編輯系統管理員"
 msgstr ""
 
 #: app/templates/pages/sys_accounts/edit.html:50
-#: app/templates/pages/sys_accounts/list.html:120
+#: app/templates/pages/sys_accounts/list.html:122
 msgid "不能停用自己"
 msgstr ""
 
@@ -11041,13 +10988,13 @@ msgstr ""
 
 #: app/templates/pages/sys_accounts/edit.html:107
 #: app/templates/pages/sys_accounts/edit.html:112
-#: app/templates/pages/sys_accounts/list.html:202
-#: app/templates/pages/sys_accounts/list.html:206
+#: app/templates/pages/sys_accounts/list.html:204
+#: app/templates/pages/sys_accounts/list.html:208
 msgid "刪除帳號"
 msgstr ""
 
 #: app/templates/pages/sys_accounts/edit.html:108
-#: app/templates/pages/sys_accounts/list.html:203
+#: app/templates/pages/sys_accounts/list.html:205
 msgid "刪除此系統管理員帳號將無法復原，請謹慎操作。"
 msgstr ""
 
@@ -11055,50 +11002,50 @@ msgstr ""
 msgid "密碼變更時間"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/list.html:3
-#: app/templates/pages/sys_accounts/list.html:28
+#: app/templates/pages/sys_accounts/list.html:5
+#: app/templates/pages/sys_accounts/list.html:30
 msgid "系統管理員帳號"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/list.html:30
+#: app/templates/pages/sys_accounts/list.html:32
 #, python-format
 msgid "管理 %(org_code)s 的系統管理員帳號"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/list.html:48
+#: app/templates/pages/sys_accounts/list.html:50
 msgid "尚無系統管理員帳號。"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/list.html:82
+#: app/templates/pages/sys_accounts/list.html:84
 msgid "請從左側選擇帳號進行編輯"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/list.html:133
+#: app/templates/pages/sys_accounts/list.html:135
 msgid "留空表示不變更"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/list.html:141
+#: app/templates/pages/sys_accounts/list.html:143
 msgid "留空不變更"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/list.html:162
+#: app/templates/pages/sys_accounts/list.html:164
 msgid "再次輸入新密碼"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/list.html:193
+#: app/templates/pages/sys_accounts/list.html:195
 msgid "密碼變更"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/list.html:233
+#: app/templates/pages/sys_accounts/list.html:235
 msgid "英數字和底線"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/list.html:234
+#: app/templates/pages/sys_accounts/list.html:236
 #, python-format
 msgid "登入時為: username@%(org_code)s"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/list.html:241
+#: app/templates/pages/sys_accounts/list.html:243
 msgid "可使用任何 Email (含 Gmail 等公共信箱)"
 msgstr ""
 
@@ -12335,35 +12282,6 @@ msgstr ""
 #: app/web/organizations.py:391
 #, python-format
 msgid "已刪除企業 %(name)s"
-msgstr ""
-
-#: app/web/organizations.py:435
-#, python-format
-msgid "已新增合約 %(number)s"
-msgstr ""
-
-#: app/web/organizations.py:439
-#, python-format
-msgid "新增失敗: %(error)s"
-msgstr ""
-
-#: app/web/organizations.py:488
-#, python-format
-msgid "已停用合約 %(number)s"
-msgstr ""
-
-#: ../modules/form_workflow/api/mappings.py:788 app/web/organizations.py:492
-#, python-format
-msgid "停用失敗: %(error)s"
-msgstr ""
-
-#: app/web/organizations.py:494
-msgid "合約建立後不可修改內容，如需變更請建立新合約"
-msgstr ""
-
-#: app/web/organizations.py:536
-#, python-format
-msgid "已刪除合約 %(number)s"
 msgstr ""
 
 #: app/web/platform_help.py:153 app/web/platform_help.py:161
@@ -14273,6 +14191,10 @@ msgstr ""
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:42
 msgid "已啟用格式"
+msgstr ""
+
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:44
+msgid "最後修改"
 msgstr ""
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:93
@@ -16286,23 +16208,6 @@ msgstr ""
 msgid "支援階層結構（樹狀下拉）"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:163
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:125
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:136
-#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:91
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:437
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:127
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:182
-#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:111
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:64
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:191
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:228
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:391
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:326
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:493
-msgid "處理中..."
-msgstr ""
-
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:494
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:344
 msgid "顯示文字"
@@ -17357,6 +17262,11 @@ msgstr ""
 
 #: ../modules/form_workflow/api/mappings.py:784
 msgid "已停用此發行版本"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:788
+#, python-format
+msgid "停用失敗: %(error)s"
 msgstr ""
 
 #: ../modules/form_workflow/api/mappings.py:812

@@ -27,15 +27,35 @@
     <div class="settings-card">
         <h4>{{ _('資料保留') }}</h4>
         <div class="form-group">
-            <label>{{ _('保留天數（超過自動清理）') }}</label>
+            <label>{{ _('保留天數') }}</label>
             <input type="number" x-model.number="audit.retentionDays"
                    min="7" max="3650" style="width: 120px;">
-            <div class="form-hint">{{ _('最少 7 天，建議 90 天') }}</div>
+            <div class="form-hint">
+                {{ _('最少 7 天，建議 90 天。') }}
+                {{ _('平台不會自動清除，要按下方的 [清除過期紀錄] 才會刪除。') }}
+            </div>
         </div>
     </div>
 
     <div class="btn-group">
         <button class="btn btn-primary" @click="saveAuditSettings()">{{ _('儲存稽核設定') }}</button>
+    </div>
+
+    <div class="settings-card" style="margin-top: 16px;">
+        <h4>{{ _('清除過期紀錄') }}</h4>
+        <p class="form-hint">
+            {{ _('刪除建立時間早於「今天減保留天數」的稽核紀錄，刪除後無法復原。') }}
+            {{ _('採用的是已儲存的保留天數，改過欄位請先按 [儲存稽核設定]。') }}
+        </p>
+        <div class="btn-group">
+            <button class="btn btn-danger"
+                    @click="purgeAuditLogs()"
+                    :disabled="audit.purging">
+                <span x-show="!audit.purging">{{ _('清除過期紀錄') }}</span>
+                <span x-show="audit.purging">{{ _('處理中...') }}</span>
+            </button>
+        </div>
+        <div class="form-hint" x-show="audit.purgeInfo" x-text="audit.purgeInfo"></div>
     </div>
 
     <div class="settings-card" style="background: #f0f9ff; border-color: #bae6fd; margin-top: 16px;">
