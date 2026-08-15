@@ -221,17 +221,39 @@ WHERE q.workflow_instance_secure_code='<wi_secure_code>' ORDER BY q.id;"
   開機由 `nftables.service` 還原）。**改埠或搬服務時，這裡與 compose 兩處都要改**
 - 判斷「連不上是被擋還是服務掛了」，看 counter 有沒有跳：
   `sudo nft list chain inet secstack mgmt_guard_forward | grep counter`
+- **22 埠的 drop 另外有 log**（`ssh_guard_input`，rate limit 20/分鐘）。
+  counter 只給數字、給不出來源，所以那條加了 log——規則上線半小時內 drop counter
+  就跳到 5（一次 TCP SYN 重傳序列的量），來源當時查不出來。查法：
+
+  ```bash
+  sudo journalctl -k --since '-1 day' | grep SSHGUARD_DROP
+  ```
+
+  管理面那條沒有 log（目前 drop 恆為 0），要加就照 `ssh_guard_input` 的樣子寫
 
 **管理面為什麼也要收（PF-107）**：這四個之中 **EveBox 與 Vector API 完全無認證**
 （EveBox 的 compose 明寫 `--no-auth`），Portainer 掛著 `/var/run/docker.sock`
 拿下就等同 `.20` 的 root，而 Grafana 的 admin 密碼在 PF-107 之前一直是清冊裡的樣板值。
 換密碼堵的是「用預設密碼登入」，堵不住無認證的那兩個，也堵不住暴力破解與未知 CVE。
 
-**SSH 為什麼是收 IP 而不是輪替密碼（Ethan 2026-08-16 定調）**：
+**SSH 為什麼是收 IP + 走金鑰，而不是輪替密碼（Ethan 2026-08-16 定調）**：
 密碼一定會流進對話記錄與交接文件，交談式 AI 遲早讓它再外洩一次；
 金鑰不會被寫進文件，IP 白名單也不會因為誰讀了某份文件而失效。
 所以 `.20` 的 `ethan` OS 密碼**刻意不輪替**（現值只有 Ethan 知道，
 清冊裡那個 `P@ssw0rd` 早在 2026-05-17 就失效了，2026-08-16 實測密碼登入被拒）。
+
+**2026-08-16 起 sshd 已停用密碼認證，只收公鑰**
+（設定副本 `sec-vm-bootstrap/ssh/00-pf107-hardening.conf`）。所以現在有兩層，
+症狀不同、處理方式也不同：連線逾時＝nftables 擋的；
+`Permission denied (publickey)`＝sshd 擋的。
+
+檔名的 `00-` 前綴是必要的：`sshd_config` 是 **first obtained value wins**，
+而 `.20` 的 `50-cloud-init.conf` 寫死 `PasswordAuthentication yes`。
+排在它後面的檔案會被靜默蓋過，**`sshd -t` 仍會通過、也不會有警告**——
+驗證一定要看 `sudo sshd -T | grep -i passwordauthentication` 的展開值，不是看檔案。
+
+副作用（預期，非待修）：`claude` 那個 OS 帳號沒有 `~/.ssh/authorized_keys`，
+本設定生效後它完全失去遠端入口，只剩主控台。
 
 **自鎖風險**：`ssh_guard_input` 的 priority（-150）早於 `chain input`（-100）的
 `allowlist accept`，所以那道自鎖保險**救不了**被 ssh_guard drop 的來源。

@@ -33,7 +33,27 @@
     `--no-auth`),Portainer 掛著 `/var/run/docker.sock` 拿下即等同 root。
     換密碼堵不住這些,兩件事不互斥——這同時把 PF-113 一起做掉了
   - 新增第三把 SSH 金鑰 `ethan-win10->sec-vm-20260816-pf107` 給 `.10` 工作站,
-    停用 sshd 密碼認證前先確保那台進得去
+    用戶當場在 Windows 測通(`ssh sec-vm`)後,**sshd 已停用密碼認證**
+    (`ssh/00-pf107-hardening.conf`,`PasswordAuthentication no` +
+    `KbdInteractiveAuthentication no` + `PermitEmptyPasswords no`)。
+    驗證:兩把金鑰皆 OK;`ethan` 與 `claude` 的密碼登入都回
+    `Permission denied (publickey).`(在此之前是 `(publickey,password)`)
+  - **檔名的 `00-` 前綴是必要的**:`sshd_config` 是 first obtained value wins,
+    `.20` 的 `50-cloud-init.conf` 寫死 `PasswordAuthentication yes`,
+    排在它後面的檔案會被靜默蓋過去,而且 `sshd -t` 仍會通過、不會有警告
+  - 改 sshd 前先掛了 `systemd-run --on-active=120` 的自動還原
+    (設定寫錯到 sshd 起不來時金鑰也進不去,那時只剩 PVE console),
+    驗證通過後才 `systemctl stop` 撤銷
+  - 副作用(預期,非待修):`claude` 那個 OS 帳號沒有 `~/.ssh/authorized_keys`,
+    自此完全失去遠端入口,只剩主控台
+
+### Added
+- **`ssh_guard_input` 的 drop 加了 log**(rate limit 20/分鐘,prefix `SSHGUARD_DROP`)。
+  起因是規則上線半小時內 drop counter 就跳到 5(一次 TCP SYN 重傳序列的量),
+  **counter 只給數字、給不出來源**,當下查不到是誰。查法:
+  `sudo journalctl -k --since '-1 day' | grep SSHGUARD_DROP`。
+  已用 `.16` 上臨時 alias IP `192.168.0.199` 驗過 log 會完整記下
+  來源 IP／MAC／來源埠。管理面那條沒加(drop 恆為 0),要加照這個樣子寫
   - `CREDENTIALS.md` 從 `_OBSOLETE_DOCS_權威版在.16/` 移回
     `~/sec-vm-bootstrap/CREDENTIALS.md`(舊檔頭指向的 `.16` 路徑已於 2026-08-15 刪除,
     而現在的 repo 會推 GitHub,所以本檔刻意不跟過去)。改採「值只放 `.env`,

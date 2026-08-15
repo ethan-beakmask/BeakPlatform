@@ -125,10 +125,18 @@ table inet secstack {
     # 所以 allowlist 救不了被本 chain drop 的來源。改動白名單前先確認自己在裡面，
     # 真的鎖死時的最後退路是 PVE Web UI 的 VM 110 console（不經過網路堆疊）。
 
+    # log 規則是 2026-08-16 當場加的：規則上線半小時內 drop counter 就跳到 5
+    # （一次 TCP SYN 重傳序列的量），但 counter 只給數字、給不出來源。
+    # rate limit 壓在 20/分鐘，被掃描時不會灌爆 kernel log。查法：
+    #     sudo journalctl -k --since '-1 day' | grep SSHGUARD_DROP
+    # 只有 ssh 這條有 log，管理面那條沒有——那邊目前 drop 恆為 0，
+    # 有需要時照這個樣子加。
+
     chain ssh_guard_input {
         type filter hook input priority -150; policy accept;
         iifname != "ens18" accept
         tcp dport 22 ip saddr { 192.168.0.10, 192.168.0.16, 192.168.0.100 } counter accept
+        tcp dport 22 limit rate 20/minute log prefix "SSHGUARD_DROP " level info
         tcp dport 22 counter drop
     }
 
