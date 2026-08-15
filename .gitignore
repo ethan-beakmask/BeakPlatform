@@ -118,3 +118,8 @@ temp_*
 # Brand assets (原始設計檔，不進版控)
 dev-notes/BeakMask*
 backend/encrypted_storage/
+
+# push_github.sh 的秘密值掃描清單（PF-107）。
+# 放本機才有的密碼（例如 .20 上 Grafana / ClickHouse 的現行值），一行一個。
+# 這個檔進版控就等於把密碼 commit 進歷史，正是它要防的事。
+scripts/.secrets-scan-extra

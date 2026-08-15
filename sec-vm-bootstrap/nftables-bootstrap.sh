@@ -101,6 +101,63 @@ table inet secstack {
         tcp dport 8500 ip saddr 192.168.0.16 accept
         tcp dport 8500 drop
     }
+
+    # ---------------- PF-107：SSH 來源管制（2026-08-16 新增）----------------
+    #
+    # 用戶 2026-08-16 的定調：與其輪替 OS 密碼（密碼一定會流進對話記錄與文件，
+    # 交談式 AI 遲早讓它再外洩一次），不如把「密碼強度」這個變數從攻擊面移除——
+    # 收 IP + 走金鑰，這是內部開發環境的合理停損點。
+    #
+    # sshd 綁 0.0.0.0:22，在此之前整個 LAN 都打得到，密碼認證也是開的
+    # （/etc/ssh/sshd_config.d/50-cloud-init.conf 寫死 PasswordAuthentication yes）。
+    # 本 chain 把來源收成三台，與 ingest_guard 同一個模式、同一個 priority。
+    #
+    # 三台的角色：.16 自動化與本專案所有 ssh 呼叫、.10 管理者 Windows 工作站、
+    # .100 PVE 母機（console 救援之外的第二條路）。
+    #
+    # counter 是刻意加的：日後要判斷「連不上是被這條擋掉還是服務掛了」，
+    # 看 drop 的 packets 有沒有跳就知道，不必再開 tcpdump。
+    #
+    # IPv6 沒有 accept 分支，一律落到 drop——與 ingest_guard 一致。
+    # 目前所有 SSH 來源都走 IPv4；若日後要用 IPv6 進來，這裡要加對應規則。
+    #
+    # 自鎖風險：本 chain priority -150 早於下方 input(-100) 的 allowlist accept，
+    # 所以 allowlist 救不了被本 chain drop 的來源。改動白名單前先確認自己在裡面，
+    # 真的鎖死時的最後退路是 PVE Web UI 的 VM 110 console（不經過網路堆疊）。
+
+    chain ssh_guard_input {
+        type filter hook input priority -150; policy accept;
+        iifname != "ens18" accept
+        tcp dport 22 ip saddr { 192.168.0.10, 192.168.0.16, 192.168.0.100 } counter accept
+        tcp dport 22 counter drop
+    }
+
+    # ---------------- PF-113：管理面來源管制（2026-08-16 新增）----------------
+    #
+    # PF-109 收完 ingest 面之後，.20 最寬的門就換成管理面。這四個埠在此之前
+    # 都是 0.0.0.0，整個 LAN 直接可達，而它們的認證強度差距很大：
+    #
+    #   3000 Grafana       有登入門；admin 密碼在 PF-107 之前一直是清冊裡的樣板值
+    #   9443 Portainer     有登入門；但它掛著 /var/run/docker.sock，拿下＝等同 .20 root
+    #   5636 EveBox        **完全無認證**（compose 明寫 --no-auth），可讀全量 Suricata 告警
+    #   8686 Vector API    **完全無認證**，可讀管線拓撲與指標
+    #
+    # 換密碼堵的是「用預設密碼登入」，堵不住無認證的那兩個、也堵不住暴力破解與
+    # 未知 CVE。兩者不互斥，所以 PF-107 收斂密碼的同時把來源也一起收。
+    #
+    # 走 forward hook 而非 input：這四個都是 docker 發布的埠，LAN 流量經 DNAT 後
+    # 進 forward——與 ingest_guard_forward 同理。掛錯 hook 的症狀是規則永遠不命中
+    # （counter 恆為 0），而不是報錯。
+    #
+    # 平台端（.16）不消費這四個埠：clickhouse_client 打的是 8123，該埠另有
+    # 帳號層網路白名單（clickhouse/users.d/），不在本 chain 管轄內。
+
+    chain mgmt_guard_forward {
+        type filter hook forward priority -150; policy accept;
+        iifname != "ens18" accept
+        tcp dport { 3000, 5636, 8686, 9443 } ip saddr { 192.168.0.10, 192.168.0.16, 192.168.0.100 } counter accept
+        tcp dport { 3000, 5636, 8686, 9443 } counter drop
+    }
 }
 NFT
 

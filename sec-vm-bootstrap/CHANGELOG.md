@@ -6,6 +6,47 @@
 ## [2026-08-16]
 
 ### Security
+- **PF-107:樣板密碼收斂 + SSH／管理面來源管制** — 清冊裡標著「生產環境請換」的
+  兩筆樣板密碼逐一實測後處理,並依用戶決策把 SSH 與管理面一併收進 nftables。
+
+  | 項目 | 工單前提 | 實測 | 處置 |
+  |---|---|---|---|
+  | `.20` `ethan` OS 密碼 | 仍是 `P@ssw0rd` | **不是**(`sshpass` 密碼登入被拒;`passwd -S` 顯示 2026-05-17 由用戶自行改過) | **刻意不輪替**,改走收 IP + 金鑰 |
+  | Grafana admin | 仍是樣板值 | 屬實(HTTP 200,`isGrafanaAdmin:true`) | 已輪替為 24 字元隨機值 |
+  | Portainer admin | 未定 | 已初始化,非常見樣板值 | 不動,只收來源 |
+  | CrowdSec LAPI machine | 未定 | `openssl rand -hex 24` 生成,非樣板 | 不動 |
+  | `.20` `claude` OS 帳號 | 工單未提 | 存在,`NOPASSWD:ALL`、無 SSH key、密碼非 `P@ssw0rd` | 用戶決定不動;停用密碼認證後它會自動失去遠端入口 |
+
+  - **不輪替 OS 密碼是用戶 2026-08-16 的決定**:密碼一定會流進對話記錄與交接文件,
+    交談式 AI 遲早讓它再外洩一次;金鑰不會被寫進文件,IP 白名單也不會因為
+    誰讀了某份文件而失效。所以那條路走的是「收 IP + 走金鑰」
+  - **nftables 新增兩條 chain**(`nftables-bootstrap.sh`,已寫入 `/etc/nftables.conf`):
+
+    | chain | hook | 管什麼 | 允許來源 |
+    |---|---|---|---|
+    | `ssh_guard_input` | input | 22 | `.10`/`.16`/`.100` |
+    | `mgmt_guard_forward` | forward | 3000 / 5636 / 8686 / 9443 | `.10`/`.16`/`.100` |
+
+    hook 不同不是筆誤:docker 發布的埠走 DNAT 後進 forward,host network 的
+    sshd 進 input。**掛錯 hook 的症狀是 counter 恆為 0,不會報錯**
+  - 管理面四個之中 **EveBox 與 Vector API 完全無認證**(EveBox 的 compose 明寫
+    `--no-auth`),Portainer 掛著 `/var/run/docker.sock` 拿下即等同 root。
+    換密碼堵不住這些,兩件事不互斥——這同時把 PF-113 一起做掉了
+  - 新增第三把 SSH 金鑰 `ethan-win10->sec-vm-20260816-pf107` 給 `.10` 工作站,
+    停用 sshd 密碼認證前先確保那台進得去
+  - `CREDENTIALS.md` 從 `_OBSOLETE_DOCS_權威版在.16/` 移回
+    `~/sec-vm-bootstrap/CREDENTIALS.md`(舊檔頭指向的 `.16` 路徑已於 2026-08-15 刪除,
+    而現在的 repo 會推 GitHub,所以本檔刻意不跟過去)。改採「值只放 `.env`,
+    清冊記在哪/怎麼輪替/誰依賴」,避免兩處明文不同步
+  - `.16` 的 `scripts/push_github.sh` 掃描清單改為**從 gitignore 的檔案自動抽取**
+    (`.env` + `scripts/.secrets-scan-extra`)。原設計要求「輪替後把新密碼加進清單」,
+    照做等於把現行密碼 commit 進 repo 歷史——那正是該函式要防的事
+  - 驗證(`/opt/tmp/verify/20260816-pf107-rotate.log`):Grafana 舊值 401 / 新值 200、
+    ClickHouse datasource health OK;兩條 nft chain 各做一次 mutation
+    (暫時把 `.16` 移出白名單,systemd-run 定時自動還原)——SSH 與四個管理埠
+    在 mutation 期間全部連線逾時,還原後全部恢復;`/etc/nftables.conf` 實際
+    `nft -f` 套用過(不只 `-c` 語法檢查),確認重開機後行為一致
+
 - **PF-109:ingest 面的來源歸因偽造收斂** — 在此之前,任何能連到 `.20` 的主機都能
   讓 CrowdSec 封鎖任意第三方 IP(實測讓真實 AWS 位址 `3.3.3.3` 被 ban)。
   這是可被利用的 DoS 面:偽造成 DNS / 更新來源 / 上游 API 就能讓自家系統斷線,

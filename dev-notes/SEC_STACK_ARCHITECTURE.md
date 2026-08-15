@@ -191,24 +191,51 @@ WHERE q.workflow_instance_secure_code='<wi_secure_code>' ORDER BY q.id;"
 | `.20:3000` | Grafana |
 | `.20:5636` | EveBox（自簽 TLS） |
 
-### ingest 三個埠有來源管制，測試前先確認你在白名單內（PF-109，2026-08-16）
+### `.20` 幾乎每個埠都有來源管制，測試前先確認你在白名單內
 
-**`8080` / `8500` / `8688` 對 LAN 不再全開。** 不知道這件事的症狀是
+**PF-109（ingest 面）與 PF-107（SSH + 管理面）之後，`.20` 對 LAN 只剩 ClickHouse
+走另一套機制，其餘全部收在 nftables 白名單裡。** 不知道這件事的症狀是
 **連線逾時而不是 403**——跟「服務掛了」長得一模一樣，會白花很多時間查錯地方。
 
 | 埠 | 誰打得到 | 手段 |
 |---|---|---|
-| `8080` WAF | `.16` / `.10` / `.100`，加 `.20` 本機的 `127.0.0.1` | nft `ingest_guard_forward` |
-| `8500` od-bridge | 只有 `.16`，加 docker bridge（vector 走這條） | nft `ingest_guard_input` |
+| `22` sshd | `.10` / `.16` / `.100` | nft `ssh_guard_input`（PF-107） |
+| `3000` Grafana | `.10` / `.16` / `.100` | nft `mgmt_guard_forward`（PF-107） |
+| `5636` EveBox | `.10` / `.16` / `.100` | 同上 |
+| `8080` WAF | `.16` / `.10` / `.100`，加 `.20` 本機的 `127.0.0.1` | nft `ingest_guard_forward`（PF-109） |
+| `8123` / `9000` ClickHouse | 綁 LAN IP + **帳號層**網路白名單 | `clickhouse/users.d/`，不在 nft chain 內 |
+| `8500` od-bridge | 只有 `.16`，加 docker bridge（vector 走這條） | nft `ingest_guard_input`（PF-109） |
+| `8686` Vector API | `.10` / `.16` / `.100` | nft `mgmt_guard_forward`（PF-107） |
 | `8688` vector 注入口 | **只有 `.20` 本機**（ports 綁 `127.0.0.1`） | docker-compose + nft 雙保險 |
+| `9443` Portainer | `.10` / `.16` / `.100` | nft `mgmt_guard_forward`（PF-107） |
 
 - 上表「Vector 的合成事件注入口」那條在 `.16` 上已經**打不進去**，
   要灌合成事件得先 `ssh .20` 再打 `127.0.0.1:8688`
 - **od-bridge 的 stats UI 從 `.10` 的瀏覽器連不到是刻意的**，不是壞了
-- 兩條 nft chain 都以 `iifname != "ens18" accept` 開頭，所以 canary（`127.0.0.1:8080`）
+- 四條 nft chain 都以 `iifname != "ens18" accept` 開頭，所以 canary（`127.0.0.1:8080`）
   與 vector→`host.docker.internal:8500` 這兩條內部路徑不受影響
+- **hook 選錯的症狀是 counter 恆為 0，不會報錯**：docker 發布的埠（3000/5636/8080/
+  8686/8688/9443）走 DNAT 後進 **forward**；host network 的服務（sshd 22、
+  od-bridge 8500）進 **input**。加新埠時先看它是不是 docker 發布的
 - 規則定義在 `sec-vm-bootstrap/nftables-bootstrap.sh`（同時寫 `/etc/nftables.conf`，
   開機由 `nftables.service` 還原）。**改埠或搬服務時，這裡與 compose 兩處都要改**
+- 判斷「連不上是被擋還是服務掛了」，看 counter 有沒有跳：
+  `sudo nft list chain inet secstack mgmt_guard_forward | grep counter`
+
+**管理面為什麼也要收（PF-107）**：這四個之中 **EveBox 與 Vector API 完全無認證**
+（EveBox 的 compose 明寫 `--no-auth`），Portainer 掛著 `/var/run/docker.sock`
+拿下就等同 `.20` 的 root，而 Grafana 的 admin 密碼在 PF-107 之前一直是清冊裡的樣板值。
+換密碼堵的是「用預設密碼登入」，堵不住無認證的那兩個，也堵不住暴力破解與未知 CVE。
+
+**SSH 為什麼是收 IP 而不是輪替密碼（Ethan 2026-08-16 定調）**：
+密碼一定會流進對話記錄與交接文件，交談式 AI 遲早讓它再外洩一次；
+金鑰不會被寫進文件，IP 白名單也不會因為誰讀了某份文件而失效。
+所以 `.20` 的 `ethan` OS 密碼**刻意不輪替**（現值只有 Ethan 知道，
+清冊裡那個 `P@ssw0rd` 早在 2026-05-17 就失效了，2026-08-16 實測密碼登入被拒）。
+
+**自鎖風險**：`ssh_guard_input` 的 priority（-150）早於 `chain input`（-100）的
+`allowlist accept`，所以那道自鎖保險**救不了**被 ssh_guard drop 的來源。
+最後退路是 PVE Web UI → VM 110 → Console，不經過網路堆疊。
 
 為什麼要管：Suricata 的 xff 模組與（修正前的）vector modsec transform 都沒有
 「信任代理比對」，誰打得到 `.20` 誰就能把 `actor_ip` 填成任意第三方位址，
@@ -275,7 +302,7 @@ sudo kill -STOP <PID> ; sudo kill -CONT <PID>
 | canary 怎麼檢查、告警 | `.16:/opt/BeakPlatform-dev/scripts/cron/od_canary_check.py` | `/etc/crontab` 每小時；手動加 `--dry-run` 測 |
 | 案件聚合窗、白名單、案件流程 | `.16:/opt/BeakPlatform-dev/modules/open_defense/services/intake_service.py` | **要手動重啟 dev 實例**（見上） |
 | EDL 內容／格式、封鎖落地行為 | `.20:~/sec-vm-bootstrap/od-bridge/od_bridge/enforcers/`（權威副本 `sec-vm-bootstrap/od-bridge/`） | `docker compose up -d --build od-bridge`，用 `curl -s http://192.168.0.20:8500/edl \| od -c` 驗實際位元組 |
-| nftables 封鎖表結構、自鎖 allowlist、**ingest 埠的來源管制**（`ingest_guard_forward` / `ingest_guard_input`） | `sec-vm-bootstrap/nftables-bootstrap.sh` → 產生 `.20:/etc/nftables.conf` | 推上 `.20` 後 `sudo bash ~/sec-vm-bootstrap/nftables-bootstrap.sh`（寫檔＋套用）。**副作用：它 `delete table` + `create table`，會清空 `blocklist` 現有元素**——執行前先 `nft -j list set inet secstack blocklist` 記下來，之後 `nft add element` 補回。**不可加 `flush ruleset`**（會清掉 docker 的 nat/filter） |
+| nftables 封鎖表結構、自鎖 allowlist、**ingest 埠**（`ingest_guard_forward` / `ingest_guard_input`）、**SSH 與管理面**（`ssh_guard_input` / `mgmt_guard_forward`）的來源管制 | `sec-vm-bootstrap/nftables-bootstrap.sh` → 產生 `.20:/etc/nftables.conf` | 推上 `.20` 後 `sudo bash ~/sec-vm-bootstrap/nftables-bootstrap.sh`（寫檔＋套用）。**副作用：它 `delete table` + `create table`，會清空 `blocklist` 現有元素**——執行前先 `nft -j list set inet secstack blocklist` 記下來，之後 `nft add element` 補回。**不可加 `flush ruleset`**（會清掉 docker 的 nat/filter）。只想改規則不想清 blocklist 時：用 heredoc 餵 `nft -f -` 單獨重建那一條 chain（PF-107 用的手法），改完再把新版 heredoc 同步進本檔的腳本，否則重開機會退回舊規則 |
 | 各服務對 LAN 的暴露面（ports 綁 `0.0.0.0` 還是 `127.0.0.1`） | `.20:~/sec-vm-bootstrap/docker-compose.yml` | `docker compose up -d <service>`（會 recreate 容器；vector 的 file source 有 checkpoint，重建不會漏事件） |
 | ClickHouse 保留期與報表維度 | `sec-vm-bootstrap/clickhouse/init.sql` | `docker exec secstack-clickhouse-1 clickhouse-client -d secstack --multiquery --queries-file <檔案>` |
 | Grafana datasource／dashboard | `sec-vm-bootstrap/grafana/provisioning/` | `docker compose up -d --force-recreate grafana` |

@@ -930,17 +930,30 @@ od-bridge / EDL enforcer / ClickHouse）的權威**已於 2026-08-15（PF-104）
 舊路徑 `/opt/Ethan_Lab/ITHome-2026/` **已於 2026-08-15 刪除**
 （最終備份 `/opt/tmp/backup/ITHome-2026-final-20260815.tar.gz`），看到一律視為過時。
 
-**`.20` 的三個 ingest 埠對 LAN 已收窄（PF-109，2026-08-16），症狀是逾時不是 403**：
+**`.20` 幾乎每個埠對 LAN 都已收窄（PF-109 收 ingest 面、PF-107 收 SSH 與管理面），
+症狀是逾時不是 403**：
 
 | 埠 | 從 `.16` 打得到嗎 |
 |---|---|
-| `8080` WAF | 可以（`.16`/`.10`/`.100` 在 nft 白名單內） |
-| `8500` od-bridge（stats UI / `/edl`） | 可以（只有 `.16`；從 `.10` 的瀏覽器連不到是刻意的） |
+| `22` sshd | 可以（`.16`/`.10`/`.100` 在 nft 白名單內） |
+| `3000` Grafana、`5636` EveBox、`8686` Vector API、`9443` Portainer | 可以（同上三台） |
+| `8080` WAF | 可以（同上三台） |
+| `8123`/`9000` ClickHouse | 可以（走帳號層網路白名單，不是 nft chain） |
+| `8500` od-bridge（stats UI / `/edl`） | 可以（**只有 `.16`**；從 `.10` 的瀏覽器連不到是刻意的） |
 | `8688` vector 合成事件注入口 | **不行**，已綁 `127.0.0.1`，要先 ssh 進 `.20` 再打 |
 
 「連線逾時」跟「服務掛了」長得一模一樣，不知道這件事會查錯方向。
+要分辨是不是被擋，看 counter 有沒有跳：
+`sudo nft list chain inet secstack mgmt_guard_forward | grep counter`。
 規則在 `sec-vm-bootstrap/nftables-bootstrap.sh`，完整說明見
 `dev-notes/SEC_STACK_ARCHITECTURE.md`。
+
+**`.20` 的 `ethan` OS 密碼刻意不輪替**（PF-107，Ethan 2026-08-16 定調）：
+密碼一定會流進對話記錄與交接文件，交談式 AI 遲早讓它再外洩一次；
+金鑰不會被寫進文件，IP 白名單也不會因為誰讀了某份文件而失效。所以那條路走的是
+「收 IP + 走金鑰」。順帶一提，舊文件裡的 `P@ssw0rd` **早在 2026-05-17 就失效**
+（2026-08-16 實測密碼登入被拒），看到那個值不要當成現況。
+`.16` 進 `.20` 一律 `ssh -i ~/.ssh/company-wsl ethan@192.168.0.20`。
 
 **「`.16` 內部主機的縱深不足」是已知且已接受的狀態（Ethan 2026-08-16 決定）**：
 

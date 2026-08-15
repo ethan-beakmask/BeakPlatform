@@ -96,18 +96,54 @@ scan_for_leaked_secrets() {
         esac
     done < <(git ls-files)
 
-    # 已知外洩字串：sec-vm-bootstrap 清冊裡的預設密碼與已發現的真實密鑰片段。
-    # 這份清單會過期（新密鑰不會自動加入），只是最後一道保險，不是完整方案。
+    # --- 第一組：已知的樣板／歷史密碼（明文寫死，因為它們已經不是有效憑證）---
+    # 這幾個都是曾經寫在 sec-vm-bootstrap 清冊裡的預設值。留著擋的是「文件又把它
+    # 抄回來」，不是保護現行帳號。
+    # 現行密碼絕不能寫進這裡：本檔雖在 EXCLUDE_FILES、不會推上 GitHub，但它是
+    # 版控檔案，明文寫進去就等於把密碼 commit 進 repo 歷史——那正是本函式要防的事。
+    # 現行值改由下方從 .env 自動抽取。
     local patterns=(
-        'P@ssw0rd'
-        'changeme_clickhouse'
-        'changeme_grafana'
+        'P@ssw0rd|樣板密碼'
+        'changeme_clickhouse|樣板密碼'
+        'changeme_grafana|樣板密碼'
     )
-    local p
+
+    # --- 第二組：現行秘密值，從 gitignore 的檔案自動抽取 ---
+    # 來源兩個，都不在版控內：
+    #   .env                        本機平台的實際設定
+    #   scripts/.secrets-scan-extra 手動補充（例如 .20 上的 Grafana / ClickHouse 密碼，
+    #                               那些不在 .16 的 .env 裡），一行一個值，# 開頭是註解
+    # 這樣密碼輪替後掃描清單自動跟上，不必記得回來改這支腳本。
+    local repo_root secret_file line k v
+    repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    for secret_file in "$repo_root/.env" "$repo_root/scripts/.secrets-scan-extra"; do
+        [ -f "$secret_file" ] || continue
+        while IFS= read -r line || [ -n "$line" ]; do
+            case "$line" in ''|'#'*) continue ;; esac
+            if [[ "$secret_file" == *.secrets-scan-extra ]]; then
+                k="secrets-scan-extra"; v="$line"
+            else
+                k="${line%%=*}"; v="${line#*=}"
+                [ "$k" != "$line" ] || continue
+                # 只看名字就像秘密的欄位，避免把 URL、路徑、旗標全掃一遍
+                case "$k" in *PASSWORD*|*SECRET*|*TOKEN*|*KEY*) ;; *) continue ;; esac
+            fi
+            v="${v%\"}"; v="${v#\"}"; v="${v%\'}"; v="${v#\'}"
+            # 含空白的不是密碼（RATELIMIT_FORGOT_PASSWORD='3 per hour' 這種），
+            # 掃了會誤擋 config.py 的同名預設值
+            case "$v" in *' '*|*'	'*|*'${'*) continue ;; esac
+            [ ${#v} -ge 16 ] || continue
+            patterns+=("$v|$k")
+        done < "$secret_file"
+    done
+
+    local p val label
     for p in "${patterns[@]}"; do
-        if git grep -qIl --fixed-strings -- "$p" 2>/dev/null; then
-            echo "  [BLOCK] 內容命中已知外洩字串樣式: $p"
-            git grep -nI --fixed-strings -- "$p"
+        val="${p%|*}"; label="${p##*|}"
+        if git grep -qIl --fixed-strings -- "$val" 2>/dev/null; then
+            # 只印命中的檔案與來源標籤，不印值本身——這裡命中的很可能是現行密碼
+            echo "  [BLOCK] 內容命中秘密值（來源: $label）於下列檔案："
+            git grep -lI --fixed-strings -- "$val" | sed 's/^/      /'
             hit=1
         fi
     done
