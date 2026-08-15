@@ -1,0 +1,282 @@
+# =============================================================
+# Vector — collect → normalize (OCSF) → fan-out
+# =============================================================
+# sources:  suricata EVE file, internal HTTP for testing
+# transforms: parse + map → OCSF
+# sinks:  clickhouse (raw + extracted),  od-bridge (HTTP)
+# =============================================================
+
+api:
+  enabled: true
+  address: 0.0.0.0:8686       # LAN-accessible playground; bind 127.0.0.1 in 多人/外網環境
+
+# ---------------- sources ----------------
+sources:
+
+  # Suricata EVE JSON (one event per line)
+  suricata_eve:
+    type: file
+    include:
+      - /var/log/suricata/eve.json
+    read_from: end
+    ignore_older_secs: 600
+
+  # ModSecurity audit log (JSON-per-line via MODSEC_AUDIT_LOG_FORMAT=JSON)
+  modsec_audit:
+    type: file
+    include:
+      - /var/log/modsec/audit.log
+    read_from: end
+    ignore_older_secs: 600
+
+  # Test source: HTTP server for synthetic events (e.g. curl test from PVE host)
+  http_test:
+    type: http_server
+    address: 0.0.0.0:8688
+    encoding: json
+    method: POST
+
+
+# ---------------- transforms ----------------
+transforms:
+
+  # Parse Suricata EVE then keep only alerts of interest
+  suricata_parsed:
+    type: remap
+    inputs: [suricata_eve]
+    source: |
+      . = parse_json!(.message)
+      .timestamp = parse_timestamp!(.timestamp, "%+")
+
+  # RESEARCH MODE: pass-through all Suricata event types (not just alerts).
+  # alert/http/dns/tls/flow/anomaly/fileinfo/ssh/smtp/stats → ClickHouse
+  suricata_alerts_only:
+    type: filter
+    inputs: [suricata_parsed]
+    condition: 'true'
+
+  # Map Suricata alert → OCSF (network_activity)
+  # actor.ip 優先取 .xff (Suricata XFF 模組從 X-Forwarded-For 解出的真實外部 IP),
+  # 否則 fallback .src_ip (TCP source, 在 LAN 內 hop 上只會是 .16/.20).
+  ocsf_from_suricata:
+    type: remap
+    inputs: [suricata_alerts_only]
+    source: |
+      sev_id = to_int(.alert.severity) ?? 3
+      # Suricata: 1=High, 2=Medium, 3=Low, 4=Info  → OCSF: 4,3,2,1
+      ocsf_sev = if sev_id == 1 { 4 } else if sev_id == 2 { 3 } else if sev_id == 3 { 2 } else { 1 }
+
+      xff_raw = string(.xff) ?? ""
+      xff_first = ""
+      if xff_raw != "" {
+        parts = split(xff_raw, ",")
+        first = to_string(parts[0])
+        xff_first = strip_whitespace(first)
+      }
+      tcp_src = to_string(.src_ip) ?? "0.0.0.0"
+      actor_ip = if xff_first != "" { xff_first } else { tcp_src }
+
+      out = {
+        "correlation_id": uuid_v4(),
+        "source_system": "suricata",
+        "event_class": "network_activity",
+        "occurred_at": format_timestamp!(.timestamp, "%+"),
+        "severity_id": ocsf_sev,
+        "finding": {
+          "title": to_string(.alert.signature) ?? "suricata alert",
+          "summary": to_string(.alert.category) ?? "",
+          "rule_id": to_string(.alert.signature_id) ?? "",
+          "rule_set": "Suricata-ET"
+        },
+        "actor": { "ip": actor_ip },
+        "target": {
+          "host": to_string(.dest_ip) ?? "",
+          "url": "",
+          "service": ""
+        },
+        "evidence": {
+          "raw_log_ref": { "type": "vector", "locator": to_string(.flow_id) ?? "" },
+          "snippet": ""
+        }
+      }
+      . = out
+
+  # ModSecurity JSON audit → OCSF (web_activity)
+  modsec_parsed:
+    type: remap
+    inputs: [modsec_audit]
+    source: |
+      . = parse_json!(.message)
+
+  # RESEARCH MODE: pass-through every ModSec audit entry (incl. 200 OK)
+  modsec_with_alerts_only:
+    type: filter
+    inputs: [modsec_parsed]
+    condition: 'true'
+
+  ocsf_from_modsec:
+    type: remap
+    inputs: [modsec_with_alerts_only]
+    source: |
+      msgs = array(.audit_data.messages) ?? []
+      first_rule_id = ""
+      title = "ModSecurity rule trigger"
+      if length(msgs) > 0 {
+        m0 = msgs[0]
+        m0_str = to_string(m0) ?? encode_json(m0)
+        cap, err = parse_regex(m0_str, r'\[id "(?P<id>[0-9]+)"\]')
+        if err == null {
+          first_rule_id = string(cap.id) ?? ""
+        }
+        title = if length(m0_str) > 200 { slice!(m0_str, 0, 200) } else { m0_str }
+      }
+
+      anom_in = to_int(.audit_data.anomaly_scores.inbound) ?? 0
+      sev = if anom_in >= 20 { 4 } else if anom_in >= 10 { 3 } else if anom_in >= 5 { 2 } else { 1 }
+
+      # actor.ip 優先取 Cloudflare 權威 header (Cf-Connecting-Ip), 退而求其次 X-Forwarded-For
+      # 最左側那一筆, 最後才 fallback transaction.client_ip (TCP source = cloudflared@.16).
+      # ModSec 保留 client 原始 header casing — production cloudflared 送 "Cf-Connecting-Ip",
+      # 手動 curl 可能送 "CF-Connecting-IP",所以多 case fallback。
+      hdrs = object(.transaction.request.headers) ?? {}
+      cf_ip = string(hdrs."Cf-Connecting-Ip") ?? string(hdrs."CF-Connecting-IP") ?? string(hdrs."cf-connecting-ip") ?? ""
+      xff_raw = string(hdrs."X-Forwarded-For") ?? string(hdrs."x-forwarded-for") ?? ""
+      xff_first = ""
+      if xff_raw != "" {
+        xff_parts = split(xff_raw, ",")
+        xff_first_raw = to_string(xff_parts[0])
+        xff_first = strip_whitespace(xff_first_raw)
+      }
+      tcp_src = to_string(.transaction.client_ip) ?? "0.0.0.0"
+      actor_ip = if cf_ip != "" {
+        cf_ip
+      } else if xff_first != "" {
+        xff_first
+      } else {
+        tcp_src
+      }
+      actor_country = string(hdrs."Cf-Ipcountry") ?? string(hdrs."CF-IPCountry") ?? string(hdrs."cf-ipcountry") ?? ""
+
+      out = {
+        "correlation_id": uuid_v4(),
+        "source_system": "coraza",
+        "event_class": "web_activity",
+        "occurred_at": format_timestamp!(now(), "%+"),
+        "severity_id": sev,
+        "finding": {
+          "title": title,
+          "summary": to_string(.audit_data.messages_count) ?? "",
+          "rule_id": first_rule_id,
+          "rule_set": "OWASP CRS"
+        },
+        "actor": {
+          "ip": actor_ip,
+          "country": actor_country,
+          "user_agent": to_string(.transaction.request.headers."User-Agent") ?? ""
+        },
+        "target": {
+          "host": to_string(.transaction.request.headers.Host) ?? "",
+          "url": to_string(.transaction.request.uri) ?? "",
+          "service": "waf-nginx"
+        },
+        "evidence": {
+          "raw_log_ref": { "type": "modsec", "locator": to_string(.transaction.id) ?? "" },
+          "snippet": to_string(.transaction.request.method) ?? ""
+        }
+      }
+      . = out
+
+  # ClickHouse-shaped row (column extraction from OCSF JSON)
+  ch_events_from_ocsf:
+    type: remap
+    inputs: [ocsf_from_suricata, ocsf_from_modsec, http_test]
+    source: |
+      raw = encode_json(.)
+      ts_input = to_string(.occurred_at) ?? ""
+      ts_parsed = parse_timestamp(ts_input, "%+") ?? now()
+      ts_ch = format_timestamp!(ts_parsed, "%Y-%m-%d %H:%M:%S%.3f")
+      . = {
+        "event_time":     ts_ch,
+        "correlation_id": to_string(.correlation_id) ?? uuid_v4(),
+        "source_system":  to_string(.source_system) ?? "unknown",
+        "event_class":    to_string(.event_class) ?? "unknown",
+        "severity_id":    to_int(.severity_id) ?? 0,
+        "confidence":     to_int(.confidence) ?? 0,
+        "actor_ip":       to_string(.actor.ip) ?? "::",
+        "actor_asn":      to_int(.actor.asn) ?? 0,
+        "actor_country":  to_string(.actor.country) ?? "",
+        "actor_ua":       to_string(.actor.user_agent) ?? "",
+        "target_host":    to_string(.target.host) ?? "",
+        "target_url":     to_string(.target.url) ?? "",
+        "target_service": to_string(.target.service) ?? "",
+        "finding_title":  to_string(.finding.title) ?? "",
+        "finding_rule_id": to_string(.finding.rule_id) ?? "",
+        "finding_rule_set": to_string(.finding.rule_set) ?? "",
+        "raw":            raw
+      }
+
+
+# ---------------- sinks ----------------
+sinks:
+
+  # DEBUG: dump all events arriving on http_test (raw, before transforms)
+  debug_http_raw:
+    type: console
+    inputs: [http_test]
+    encoding:
+      codec: json
+    target: stdout
+
+  # DEBUG: dump output of OCSF transform
+  debug_ocsf:
+    type: console
+    inputs: [ocsf_from_suricata]
+    encoding:
+      codec: json
+    target: stdout
+
+  # DEBUG: dump rows about to be written to ClickHouse
+  debug_chrows:
+    type: console
+    inputs: [ch_events_from_ocsf]
+    encoding:
+      codec: json
+    target: stdout
+
+
+  # Persist all OCSF events to ClickHouse
+  ch_events:
+    type: clickhouse
+    inputs: [ch_events_from_ocsf]
+    endpoint: http://clickhouse:8123
+    database: ${CLICKHOUSE_DB}
+    table: events
+    auth:
+      strategy: basic
+      user: ${CLICKHOUSE_USER}
+      password: ${CLICKHOUSE_PASSWORD}
+    skip_unknown_fields: true
+    batch:
+      max_events: 500
+      timeout_secs: 5
+    healthcheck:
+      enabled: false
+
+  # Forward to od-bridge for upstream BeakPlatform intake
+  bridge_intake:
+    type: http
+    inputs: [ocsf_from_suricata, ocsf_from_modsec, http_test]
+    uri: http://host.docker.internal:8500/events
+    method: post
+    encoding:
+      codec: json
+    framing:
+      method: newline_delimited
+    request:
+      headers:
+        Content-Type: application/json
+    batch:
+      max_events: 1
+      timeout_secs: 1
+    healthcheck:
+      enabled: false

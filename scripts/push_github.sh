@@ -29,6 +29,11 @@ EXCLUDE_DIRS=(
     # 排除清單、正式部署不存在）。推上公開 repo 只會得到一組必然跑不起來的測試，
     # 而且等於公開描述開發後門的用法。
     "tests/e2e"
+    # sec-vm-bootstrap（PF-104）：.20 上 Open Defense 安全棧（Vector/Suricata/
+    # Coraza WAF/CrowdSec/ClickHouse/Grafana/od-bridge）的設定檔權威副本，
+    # 含內部 IP、主機設定、埠號。已去機密化（.env 只留 .env.example、
+    # CREDENTIALS.md 不進版控），但目錄本身仍不對外，不會推上 GitHub。
+    "sec-vm-bootstrap"
 )
 
 # 個別檔案
@@ -67,6 +72,53 @@ EXCLUDE_FILES=(
     "reset_password.py"
     "app-info.sh"
 )
+
+# === 內容掃描防線（第二道，PF-104 新增）===
+# 目錄/檔名分界（EXCLUDE_DIRS/EXCLUDE_FILES）是第一道，也是主要防線；本函式在
+# 真正 push 前對「排除後即將實際推上 GitHub 的內容」再掃一次，命中已知外洩樣式
+# 就中止、不 push。範圍刻意窄：只抓檔名鐵律 + 已知外洩字串，不做廣義內網 IP
+# 掃描——本專案的程式碼與文件本來就大量合法出現 192.168.0.x（config.py、
+# client_ip.py、docs/manual、examples 等既有檔案都是既定行為），廣義掃描只會
+# 全面 false positive、逼人習慣性略過警告。這道防線抓的是「本該被排除卻漏網」
+# 的檔案，不是重新審查整個公開專案的內容政策。
+scan_for_leaked_secrets() {
+    local hit=0 f
+
+    # 檔名鐵律：不管出現在哪個路徑，這些檔名都不該進 GitHub
+    while IFS= read -r f; do
+        case "$f" in
+            .env|*/.env)
+                echo "  [BLOCK] 偵測到真實 .env 檔案（應只留 .env.example）: $f"
+                hit=1 ;;
+            CREDENTIALS.md|*/CREDENTIALS.md)
+                echo "  [BLOCK] 偵測到 CREDENTIALS.md: $f"
+                hit=1 ;;
+        esac
+    done < <(git ls-files)
+
+    # 已知外洩字串：sec-vm-bootstrap 清冊裡的預設密碼與已發現的真實密鑰片段。
+    # 這份清單會過期（新密鑰不會自動加入），只是最後一道保險，不是完整方案。
+    local patterns=(
+        'P@ssw0rd'
+        'changeme_clickhouse'
+        'changeme_grafana'
+    )
+    local p
+    for p in "${patterns[@]}"; do
+        if git grep -qIl --fixed-strings -- "$p" 2>/dev/null; then
+            echo "  [BLOCK] 內容命中已知外洩字串樣式: $p"
+            git grep -nI --fixed-strings -- "$p"
+            hit=1
+        fi
+    done
+
+    if [ "$hit" -eq 1 ]; then
+        echo "錯誤: 內容掃描命中，中止推送（不 push，temp branch 已清理）"
+        git checkout "$BRANCH" --force --quiet
+        git branch -D "$TEMP_BRANCH" 2>/dev/null || true
+        exit 1
+    fi
+}
 
 echo "=== 過濾推送到 GitHub ==="
 
@@ -110,6 +162,7 @@ done
 
 if [ "$excluded" -eq 0 ]; then
     echo "  無需排除的檔案"
+    scan_for_leaked_secrets
     git checkout "$BRANCH" --quiet
     git branch -D "$TEMP_BRANCH" 2>/dev/null || true
     # GitHub repo 的 history 與 origin 永遠不一致（過去過濾推送會產生不同 commit hash），
@@ -120,6 +173,8 @@ if [ "$excluded" -eq 0 ]; then
 else
     # 提交移除
     git commit -m "chore: exclude internal files from public repository" --quiet
+
+    scan_for_leaked_secrets
 
     # Force push 到 GitHub
     git push "$REMOTE" "$TEMP_BRANCH:$BRANCH" --force

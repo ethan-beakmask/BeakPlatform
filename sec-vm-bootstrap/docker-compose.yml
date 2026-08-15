@@ -1,0 +1,206 @@
+# ============================================================
+# Open Defense — Security Stack (sec-vm)
+# ============================================================
+# Layout:
+#   cloudflared → haproxy(coraza) → 192.168.0.16   (HTTP path, future)
+#   suricata sniffs ens18                          (network IDS)
+#   crowdsec ingests logs from suricata + haproxy  (behavioural blocking)
+#   vector tails sources → clickhouse + od-bridge  (storage + ship to BP)
+#   od-bridge: ingest server (Vector pushes here)  → BP intake API
+#              executor (polls BP /decisions)      → enforcers
+# ============================================================
+
+name: secstack
+
+networks:
+  default:
+    name: secstack
+    driver: bridge
+
+volumes:
+  clickhouse-data:
+  clickhouse-logs:
+  crowdsec-config:
+  crowdsec-data:
+  suricata-logs:
+  vector-data:
+  portainer-data:
+  evebox-data:
+  grafana-data:
+
+services:
+
+  # ---------------- ClickHouse (event/finding storage) ----------------
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+      - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./clickhouse/users.d/zz-network-allowlist.xml:/etc/clickhouse-server/users.d/zz-network-allowlist.xml:ro
+    ports:
+      - "192.168.0.20:8123:8123"   # HTTP (LAN allowlist via CH user networks)
+      - "192.168.0.20:9000:9000"   # native (LAN allowlist via CH user networks)
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  # ---------------- od-bridge (intake forwarder + executor) ----------------
+  od-bridge:
+    build: ./od-bridge
+    restart: unless-stopped
+    env_file: .env
+    cap_add:
+      - NET_ADMIN     # allow nftables enforcer to manage ipset
+    network_mode: host    # so nft commands hit host netns; reach others via 127.0.0.1
+    volumes:
+      - ./od-bridge/state:/state
+
+  # ---------------- Vector (collect + normalize + ship) ----------------
+  vector:
+    image: timberio/vector:0.41.1-alpine
+    restart: unless-stopped
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # so vector can reach od-bridge on host net
+    ports:
+      - "8688:8688"   # http_test source (POST events for testing)
+      - "8686:8686"   # GraphQL playground / metrics API
+    volumes:
+      - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - vector-data:/var/lib/vector
+      - suricata-logs:/var/log/suricata:ro
+      - ./waf/log:/var/log/modsec:ro
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+
+  # ---------------- Suricata (network IDS, passive) ----------------
+  suricata:
+    image: jasonish/suricata:7.0
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - SYS_NICE
+      - NET_RAW
+    command: ["-i", "ens18", "--set", "default-rule-path=/var/lib/suricata/rules"]
+    volumes:
+      - ./suricata/suricata.yaml:/etc/suricata/suricata.yaml
+      - suricata-logs:/var/log/suricata
+      - ./suricata/rules:/var/lib/suricata/rules
+
+  # ---------------- CrowdSec (LAPI + log ingestion) ----------------
+  crowdsec:
+    image: crowdsecurity/crowdsec:v1.6.4
+    restart: unless-stopped
+    environment:
+      COLLECTIONS: "crowdsecurity/linux crowdsecurity/sshd crowdsecurity/http-cve crowdsecurity/base-http-scenarios"
+      DISABLE_LOCAL_API: "false"
+    volumes:
+      - crowdsec-config:/etc/crowdsec
+      - crowdsec-data:/var/lib/crowdsec/data
+      - suricata-logs:/var/log/suricata:ro
+      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+    ports:
+      - "127.0.0.1:8081:8080"  # local API (bridge will reach via service name)
+
+  # ---------------- WAF: nginx + ModSecurity v3 + OWASP CRS ----------------
+  # Ingress chain: cloudflared@.16 → waf-nginx:8080 → nginx@.16:80 → Flask backends.
+  # No local cloudflared — the production tunnel runs on .16 (beakplatform-dev).
+  # ModSec audit log writes to a shared volume; Vector tails it → bridge → BP intake.
+  waf-nginx:
+    image: owasp/modsecurity-crs:nginx
+    restart: unless-stopped
+    environment:
+      # backend — single nginx upstream on .16 that does Host-based dispatch to
+      # the per-app gunicorn/flask processes (app→8000, dev→7000, kb→8875).
+      BACKEND: "http://192.168.0.16:80"
+      MODSEC_AUDIT_ENGINE: "RelevantOnly"
+      MODSEC_AUDIT_LOG: "/var/log/modsec/audit.log"
+      MODSEC_AUDIT_LOG_FORMAT: "JSON"
+      MODSEC_AUDIT_LOG_PARTS: "ABCFHJZ"
+      MODSEC_RULE_ENGINE: "On"           # set "DetectionOnly" first day to learn
+      PARANOIA: 1                         # 1=relaxed, 4=paranoid
+      ANOMALY_INBOUND: 5
+      ANOMALY_OUTBOUND: 4
+      BLOCKING_LOG_LEVEL: warn
+      ERRORLOG_LEVEL: warn
+      SERVER_NAME: "_"
+      # nginx listen on 8080 internally; published below
+      SSL_PORT: 8443
+      PORT: 8080
+      # real_ip: trust only cloudflared@.16 (the production tunnel host); use
+      # Cloudflare's authoritative header. Forward to backend as X-Real-IP.
+      SET_REAL_IP_FROM: "192.168.0.16"
+      REAL_IP_HEADER: "CF-Connecting-IP"
+      REAL_IP_RECURSIVE: "on"
+      REAL_IP_PROXY_HEADER: "X-Real-IP"
+    ports:
+      - "8080:8080"   # cloudflared@.16 / LAN targets this
+    volumes:
+      - ./waf/log:/var/log/modsec    # bind mount; pre-chowned by bootstrap.sh
+      - ./waf/nginx-templates/logging.conf.template:/etc/nginx/templates/conf.d/logging.conf.template:ro
+      - ./waf/modsec-overrides/modsecurity-override.conf:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template:ro
+
+  # ---------------- Portainer — Docker management web UI ----------------
+  portainer:
+    image: portainer/portainer-ce:2.21.4
+    restart: unless-stopped
+    ports:
+      - "9443:9443"   # HTTPS UI(self-signed,瀏覽器要忽略警告)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+
+  # ---------------- EveBox — Suricata alerts viewer ----------------
+  evebox:
+    image: jasonish/evebox:0.18.2
+    restart: unless-stopped
+    entrypoint: ["/usr/bin/evebox"]
+    command: ["server", "--no-auth", "--datastore=sqlite",
+              "--data-directory=/data", "--input=/var/log/suricata/eve.json",
+              "--host=0.0.0.0", "--port=5636"]
+    volumes:
+      - suricata-logs:/var/log/suricata:ro
+      - evebox-data:/data
+    ports:
+      - "5636:5636"
+
+  # ---------------- Grafana — dashboards (ClickHouse datasource auto-provisioned) ----------------
+  grafana:
+    image: grafana/grafana:11.3.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?請在 .env 設定 GRAFANA_ADMIN_PASSWORD}
+      GF_INSTALL_PLUGINS: "grafana-clickhouse-datasource"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+
+  # ---------------- Falco (host/container behaviour) ----------------
+  # disabled until kernel headers / ebpf are sorted; uncomment when ready
+  # falco:
+  #   image: falcosecurity/falco-no-driver:latest
+  #   restart: unless-stopped
+  #   privileged: true
+  #   pid: host
+  #   volumes:
+  #     - /var/run/docker.sock:/host/var/run/docker.sock
+  #     - /proc:/host/proc:ro
+  #     - ./falco/falco.yaml:/etc/falco/falco.yaml:ro

@@ -1,10 +1,12 @@
 # OpenDefense 模組架構（平台側）
 
-**最後更新：2026-08-10**
+**最後更新：2026-08-15**
 **權威範圍**：本檔只寫 `/opt/BeakPlatform-dev` 內的實作。
 平台外的組件（`.20` 上的 Vector / Suricata / Coraza / CrowdSec / od-bridge /
-EDL enforcer / ClickHouse）**不在本檔範圍**，那些的權威文件在
-`/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`；跨主機拓樸與運維手法也在那邊。
+EDL enforcer / ClickHouse）**不在本檔範圍**，那些的權威文件是
+`dev-notes/SEC_STACK_ARCHITECTURE.md`；跨主機拓樸與運維手法也在那邊
+（PF-104 起收斂，取代原本外部路徑 `/opt/Ethan_Lab/ITHome-2026/CLAUDE.md`；
+該外部副本待 PF-104 三個前提全部確認後由用戶決定刪除）。
 
 **為什麼要分**：兩邊各自會改，複製一份必定漂移。
 2026-07-16 之後 open_defense 的程式碼一路改到 08-10，而 `dev-notes/` 停在 07-16，
@@ -280,5 +282,6 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
 | 檔案清單（改哪些檔） | `dev-notes/manifests/mod-open-defense.yaml` |
 | OCSF 對外契約 v1.0 | `dev-notes/integrations/open_defense_contract.md` |
 | SOC 角色分工設計 | `docs/guides/SOC_ROLE_DESIGN_GUIDE.md` |
-| 平台外組件（.20 的 Vector/Suricata/CrowdSec/od-bridge/EDL） | `/opt/Ethan_Lab/ITHome-2026/CLAUDE.md` |
+| 平台外組件（.20 的 Vector/Suricata/CrowdSec/od-bridge/EDL） | `dev-notes/SEC_STACK_ARCHITECTURE.md` |
+| .20 上的設定檔權威副本（版控） | 頂層 `sec-vm-bootstrap/`（PF-104 起，不會推 GitHub） |
 | 跨 session 決策脈絡 | BeakBroodNest 知識庫（`note_search("open-defense")`） |

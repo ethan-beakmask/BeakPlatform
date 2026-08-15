@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# /etc/cron.hourly/secstack-rotate-logs
+# sec-vm 主機端 log 輪替。兩段互相獨立，任一段失敗不影響另一段。
+#
+# 2026-08-08 重寫緣由（重要，勿改回舊寫法）：
+#   舊版第一行呼叫 logrotate 處理 modsec audit.log，設定檔帶 `su messagebus lxd`，
+#   降權後穿不過 /home/ethan（drwxr-x---, 750）→ "stat ... Permission denied" → 非零退出。
+#   舊版又有 `set -e`，於是每小時第一行就死，**Suricata eve.json 從 2026-05-13 起
+#   從未輪替**，長到 554MB / 44.7 萬行（Vector 若 checkpoint 失效會整檔重讀）。
+#   修法：不再依賴 logrotate（避開降權穿越問題），改由本腳本以 root 直接
+#   copy + truncate（保持寫入端 fd 有效），且移除 set -e、兩段各自收斂錯誤。
+#
+# 失敗留痕：/opt/tmp/sec-vm-rotate-logs.log（依全域規範不寫 /var/log）
+# 非零退出會被 run-parts --report 捕捉。
+
+set -uo pipefail
+
+LOG=/opt/tmp/sec-vm-rotate-logs.log
+SURI_DIR=/var/lib/docker/volumes/secstack_suricata-logs/_data
+MODSEC=/home/ethan/sec-vm-bootstrap/waf/log/audit.log
+RETAIN_EVE_MIN=2880   # 48h：留給鐵人賽取材與事後追查
+RETAIN_MODSEC_MIN=360 # 6h：沿用 research mode 原設定
+
+mkdir -p "$(dirname "$LOG")" 2>/dev/null
+log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') $*" >> "$LOG"; }
+
+# rotate_one <檔案路徑> <保留分鐘>
+rotate_one() {
+  local f="$1" keep="$2" dir base ts
+  if [[ ! -f "$f" ]]; then log "SKIP missing $f"; return 0; fi
+  if [[ "$(stat -c%s "$f")" -eq 0 ]]; then log "SKIP empty $f"; return 0; fi
+
+  dir=$(dirname "$f"); base=$(basename "$f"); ts=$(date -u +%Y%m%d-%H)
+
+  if [[ ! -f "$dir/$base.$ts" ]]; then
+    if cp "$f" "$dir/$base.$ts" && : > "$f"; then
+      log "ROTATED $f -> $base.$ts ($(stat -c%s "$dir/$base.$ts") bytes)"
+    else
+      log "FAIL rotate $f"
+      return 1
+    fi
+  else
+    log "SKIP already rotated this hour: $base.$ts"
+  fi
+
+  # 壓縮 5 分鐘前的輪替檔（避開仍被寫入端追尾的檔案）
+  find "$dir" -maxdepth 1 -name "$base.*[0-9]" ! -name '*.gz' -mmin +5 \
+       -exec gzip -f {} \; 2>/dev/null
+  # 清掉超過保留期的輪替檔（只碰 <base>.* ，不碰本體）
+  find "$dir" -maxdepth 1 -name "$base.*" -mmin +"$keep" -delete 2>/dev/null
+  return 0
+}
+
+rc=0
+rotate_one "$SURI_DIR/eve.json" "$RETAIN_EVE_MIN" || rc=1
+rotate_one "$MODSEC" "$RETAIN_MODSEC_MIN" || rc=1
+
+if [[ $rc -eq 0 ]]; then
+  log "OK"
+  # 正常完成才寫 heartbeat（全域規範）。注意：.20 本機目前沒有消費者，
+  # 要真的做到「失敗會有人知道」，需在 .16 端加一個檢查這個檔案時間戳的排程。
+  mkdir -p /opt/tmp/heartbeat 2>/dev/null
+  date -u '+%Y-%m-%dT%H:%M:%SZ' > /opt/tmp/heartbeat/secstack-rotate-logs
+else
+  log "ERROR rc=$rc"
+fi
+exit $rc

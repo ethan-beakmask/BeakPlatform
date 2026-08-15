@@ -1,0 +1,14 @@
+<clickhouse>
+  <users>
+    <secstack>
+      <networks replace="replace">
+        <ip>127.0.0.1</ip>
+        <ip>::1</ip>
+        <ip>172.18.0.0/16</ip>
+        <ip>192.168.0.100</ip>
+        <ip>192.168.0.10</ip>
+        <ip>192.168.0.16</ip>
+      </networks>
+    </secstack>
+  </users>
+</clickhouse>
