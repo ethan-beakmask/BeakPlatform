@@ -153,12 +153,31 @@ transforms:
       # 最左側那一筆, 最後才 fallback transaction.client_ip (TCP source = cloudflared@.16).
       # ModSec 保留 client 原始 header casing — production cloudflared 送 "Cf-Connecting-Ip",
       # 手動 curl 可能送 "CF-Connecting-IP",所以多 case fallback。
-      # PF-105 2026-08-15 備忘（範圍外,留給下一張工單）：cf_ip 這條 fallback 鏈本身
-      # 對「直接打 .20:8080、繞過 Cloudflare」的來源沒有防偽——WAF nginx 的
-      # set_real_ip_from/real_ip_header 只影響 nginx 自己的 $$remote_addr，不會濾掉
-      # ModSecurity 直接讀到的原始 Cf-Connecting-Ip header 值。本工單只加 actor.xff
-      # 證據欄位，不動這條 fallback 順序。
       # xff_raw 除了原本的 fallback 用途，PF-105 起也整段原文寫進 actor.xff 當證據欄位。
+      #
+      # PF-109 2026-08-15：這條 fallback 鏈補上「信任代理比對」。
+      # 在此之前它無條件採信請求自帶的 Cf-Connecting-Ip / X-Forwarded-For——
+      # WAF nginx 的 set_real_ip_from/real_ip_header 只影響 nginx 自己的 $$remote_addr，
+      # 濾不掉 ModSecurity 直接讀到的原始 header 值，所以任何能打到 .20:8080 的來源
+      # 都能把 actor.ip 填成任意第三方 IP（實測讓 3.3.3.3 被 CrowdSec ban）。
+      # 這裡做的就是 BeakPlatform NET-01（client_ip.py 比對 TRUSTED_PROXY_IPS）的同一件事：
+      # 看「直連我方的對象是誰」，只有可信代理送來的來源歸因 header 才採信。
+      #
+      # trusted_ingress 兩個值都是實測出來的（PF-109 基準測試，非推測）：
+      #   192.168.0.16 = cloudflared@.16，唯一的正式入口（LAN 直連時 DNAT 保留真實 src IP）
+      #   172.18.0.1   = docker bridge gateway，.20 自己打 127.0.0.1:8080 時 ModSec 看到的值。
+      #                  hourly canary（host-cron/secstack-canary）走這條並偽造
+      #                  Cf-Connecting-Ip: 203.0.113.1 當識別，拿掉它 canary 會失去識別 IP。
+      # 其他來源（含其他 container 的 172.18.0.x、LAN 上的 .10/.100）一律以 TCP source
+      # 當 actor——不是丟棄事件，「誰打的就記誰」才是正確歸因。
+      # country 同理：Cf-Ipcountry 與 IP 出自同一份可偽造 header，不可信時一併不採用。
+      # actor.xff 不受此判定影響，它是證據原文不是判定依據。
+      #
+      # 【範圍限制】這道比對只救得了 Coraza 這條線。Suricata 那條的 src_ip 在
+      # Suricata 內部就被 xff 模組 overwrite 掉了，eve.json 裡不留原始 TCP source，
+      # vector 端無從還原（改 mode: extra-data 則會讓 CrowdSec 改封 cloudflared@.16 自己）。
+      # Suricata 線靠 .20 的 nftables ingest_guard 做網段管制，見 nftables-bootstrap.sh。
+      trusted_ingress = ["192.168.0.16", "172.18.0.1"]
       hdrs = object(.transaction.request.headers) ?? {}
       cf_ip = string(hdrs."Cf-Connecting-Ip") ?? string(hdrs."CF-Connecting-IP") ?? string(hdrs."cf-connecting-ip") ?? ""
       xff_raw = string(hdrs."X-Forwarded-For") ?? string(hdrs."x-forwarded-for") ?? ""
@@ -169,14 +188,16 @@ transforms:
         xff_first = strip_whitespace(xff_first_raw)
       }
       tcp_src = to_string(.transaction.client_ip) ?? "0.0.0.0"
-      actor_ip = if cf_ip != "" {
+      ingress_trusted = includes(trusted_ingress, tcp_src)
+      actor_ip = if ingress_trusted && cf_ip != "" {
         cf_ip
-      } else if xff_first != "" {
+      } else if ingress_trusted && xff_first != "" {
         xff_first
       } else {
         tcp_src
       }
-      actor_country = string(hdrs."Cf-Ipcountry") ?? string(hdrs."CF-IPCountry") ?? string(hdrs."cf-ipcountry") ?? ""
+      cf_country = string(hdrs."Cf-Ipcountry") ?? string(hdrs."CF-IPCountry") ?? string(hdrs."cf-ipcountry") ?? ""
+      actor_country = if ingress_trusted { cf_country } else { "" }
 
       out = {
         "correlation_id": uuid_v4(),

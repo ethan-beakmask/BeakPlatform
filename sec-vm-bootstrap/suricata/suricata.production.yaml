@@ -45,6 +45,16 @@ outputs:
               # 直接打 .20:8080 的人，一樣能偽造這個 header（Suricata xff 模組沒有
               # nginx set_real_ip_from 那種「只信任特定來源 IP 送來的 header」機制），
               # 這屬於網段存取控制的殘餘風險，不是本次 header 替換能單獨解決的。
+              #
+              # PF-109 2026-08-16 後續：上述殘餘風險已由 .20 的 nftables
+              # ingest_guard_forward 處理（nftables-bootstrap.sh），8080 只接受
+              # 192.168.0.16/.10/.100 三個來源。這條線只能這樣解——
+              # 改 mode: extra-data 讓 src_ip 保留真實 TCP source 看似更乾淨，
+              # 但 CrowdSec 的 crowdsecurity/suricata-major-severity 情境讀的就是
+              # src_ip，改完會變成把 cloudflared@.16 自己當攻擊者封鎖，
+              # 等於用「不能封任何真實攻擊者」換「不能被偽造」。
+              # Coraza 那條線不受此限，vector 端已補上信任代理比對
+              # （vector.production.yaml 的 ocsf_from_modsec / trusted_ingress）。
               # XFF 不存在的事件(內部 polling)src_ip 維持 TCP source
               mode: overwrite
               deployment: reverse

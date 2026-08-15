@@ -929,6 +929,18 @@ od-bridge / EDL enforcer / ClickHouse）的權威**已於 2026-08-15（PF-104）
 舊路徑 `/opt/Ethan_Lab/ITHome-2026/` **已於 2026-08-15 刪除**
 （最終備份 `/opt/tmp/backup/ITHome-2026-final-20260815.tar.gz`），看到一律視為過時。
 
+**`.20` 的三個 ingest 埠對 LAN 已收窄（PF-109，2026-08-16），症狀是逾時不是 403**：
+
+| 埠 | 從 `.16` 打得到嗎 |
+|---|---|
+| `8080` WAF | 可以（`.16`/`.10`/`.100` 在 nft 白名單內） |
+| `8500` od-bridge（stats UI / `/edl`） | 可以（只有 `.16`；從 `.10` 的瀏覽器連不到是刻意的） |
+| `8688` vector 合成事件注入口 | **不行**，已綁 `127.0.0.1`，要先 ssh 進 `.20` 再打 |
+
+「連線逾時」跟「服務掛了」長得一模一樣，不知道這件事會查錯方向。
+規則在 `sec-vm-bootstrap/nftables-bootstrap.sh`，完整說明見
+`dev-notes/SEC_STACK_ARCHITECTURE.md`。
+
 ### 事件的真實權威是 `.20` 的 ClickHouse，不是平台的案件表（2026-08-15 起）
 
 **平台 `od_intake_events` 只是被 throttle 過的子集，不能用來回答「有多少攻擊」。**

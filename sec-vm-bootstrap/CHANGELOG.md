@@ -3,6 +3,41 @@
 本檔記錄 secstack 整體部署變更,涵蓋 sec-vm(192.168.0.20)及其相依的 Proxmox host(192.168.0.100)上跟 stack 運維有關的設定。
 格式參考 [Keep a Changelog](https://keepachangelog.com/),日期 ISO 8601。
 
+## [2026-08-16]
+
+### Security
+- **PF-109:ingest 面的來源歸因偽造收斂** — 在此之前,任何能連到 `.20` 的主機都能
+  讓 CrowdSec 封鎖任意第三方 IP(實測讓真實 AWS 位址 `3.3.3.3` 被 ban)。
+  這是可被利用的 DoS 面:偽造成 DNS / 更新來源 / 上游 API 就能讓自家系統斷線,
+  `allowlist` 自鎖保險只擋得住「封掉自己」,擋不住「封掉外部關鍵服務」。
+  - 三個入口的偽造能力不同,盤點後一併處理:
+
+    | 埠 | 偽造方式 | 處置 |
+    |---|---|---|
+    | 8080 waf-nginx | 偽造 `Cf-Connecting-Ip` → Suricata `src_ip` 被 overwrite + Coraza `actor_ip` | nftables `ingest_guard_forward`,只放行 `.16`/`.10`/`.100` |
+    | 8688 vector | `http_test` source 直接 POST 任意 OCSF 事件(`actor_ip`/`source_system` 全自填,連 CRS 規則都不用觸發) | docker ports 從 `0.0.0.0` 收回 `127.0.0.1` |
+    | 8500 od-bridge | `/events` **完全無認證**,且它持有平台 API key 會自動 HMAC 簽名轉送,繞過 vector 全部 filter 與 throttle | nftables `ingest_guard_input`,只放行 `.16` |
+
+  - **vector 側補上信任代理比對**(`ocsf_from_modsec` 的 `trusted_ingress`):
+    只有 `192.168.0.16`(cloudflared)與 `172.18.0.1`(docker bridge gateway,
+    `.20` 本機經 docker-proxy)送來的 `Cf-Connecting-Ip` / `X-Forwarded-For`
+    才採信,其餘以 TCP source 當 actor。`Cf-Ipcountry` 同源同理。
+    這是 BeakPlatform `NET-01`(`client_ip.py` 比對 `TRUSTED_PROXY_IPS`)的同一個原則
+  - **Suricata 線只能靠網段管制**:`src_ip` 在 Suricata 內部就被 xff 模組
+    overwrite,eve.json 不留原始 TCP source;改 `mode: extra-data` 會讓 CrowdSec
+    改封 cloudflared@`.16` 自己,等於用「不能封任何真實攻擊者」換「不能被偽造」
+  - 兩條 nft chain 都以 `iifname != "ens18" accept` 開頭,hourly canary
+    (`127.0.0.1:8080`)與 vector→`host.docker.internal:8500` 不受影響
+  - 已知代價:od-bridge stats UI 從 `.10` 的瀏覽器連不到(要 SSH 進 `.20`)
+  - 驗證(`/opt/tmp/verify/20260815-pf109-ingress-hardening.log`):
+    修復前後同一條不可信路徑的 `actor_ip` 從偽造值 `198.51.100.88` 變成真實
+    `172.18.0.5`;`nc -s 192.168.0.199` 從非白名單來源測得 22/8123 OPEN、
+    8080/8500/8688 BLOCKED;canary `actor_ip` 仍為 `203.0.113.1`
+
+### Known issues
+- od-bridge `/events` 的**無認證**本質未變,只是網段收窄。真正的修法是在
+  `ingest.py` 加共享密鑰驗證(它已經會對上游簽 HMAC,下游卻不驗)
+
 ## [2026-08-09]
 
 ### Fixed

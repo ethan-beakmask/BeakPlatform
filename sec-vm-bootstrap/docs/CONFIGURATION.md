@@ -38,9 +38,9 @@
 ### 偵測 / 處置層
 | Port | 服務 | 用途 | 公開範圍 |
 |---|---|---|---|
-| 8080 | waf-nginx | WAF / 反代到 backend | 0.0.0.0(供 cloudflared / LAN) |
-| 8500 | od-bridge | ingest webhook + stats UI | host net,LAN 可達 |
-| 8688 | vector | http_test source(測試用) | 0.0.0.0(LAN 可達,生產建議關) |
+| 8080 | waf-nginx | WAF / 反代到 backend | 綁 0.0.0.0,但 nftables 只放行 `.16`/`.10`/`.100`(PF-109) |
+| 8500 | od-bridge | ingest webhook + stats UI | 綁 0.0.0.0(host net),但 nftables 只放行 `.16` + docker bridge(PF-109) |
+| 8688 | vector | http_test source(測試用) | **127.0.0.1 only**(PF-109 從 0.0.0.0 收回) |
 | 8123 | clickhouse | SQL HTTP / Play UI | 127.0.0.1 only |
 | 9000 | clickhouse | native protocol | 127.0.0.1 only |
 | 8081 | crowdsec | LAPI(host 映射) | 127.0.0.1 only |
@@ -57,6 +57,32 @@
 
 > 完整 UI 表 + 預設帳密 + 鎖定建議見 [`UI.md`](UI.md)。
 > 若 sec-vm 已有別人用某些 port,在 docker-compose.yml 改對應 service 的 ports 設定。
+
+### ingest 面的來源管制(PF-109,2026-08-16)
+
+8080 / 8500 / 8688 是三個「能影響案件內容」的入口,誰打得到誰就能偽造來源歸因、
+讓 CrowdSec 封鎖任意第三方 IP。管制實作在兩處,**改埠或搬服務時兩處都要跟著改**:
+
+| 埠 | 管制手段 | 位置 |
+|---|---|---|
+| 8080 | nftables `ingest_guard_forward`(允許 `.16`/`.10`/`.100`) | `nftables-bootstrap.sh` |
+| 8688 | docker ports 綁 `127.0.0.1` + 上述 chain 雙保險 | `docker-compose.yml` |
+| 8500 | nftables `ingest_guard_input`(只允許 `.16`) | `nftables-bootstrap.sh` |
+
+兩條 chain 都以 `iifname != "ens18" accept` 開頭,所以 hourly canary
+(`127.0.0.1:8080`,走 lo)與 vector→`host.docker.internal:8500`(走 docker bridge)
+不受影響。**`.10` 的瀏覽器連不到 od-bridge stats UI 是刻意的**,要看得先 SSH 進 `.20`。
+
+驗證務必從被拒的一側測(只測「該通的通」不算驗證):
+
+```bash
+# 從 .16 臨時借一個非白名單來源 IP
+sudo ip addr add 192.168.0.199/24 dev ens18 label ens18:pf109
+for p in 22 8123 8080 8500 8688; do
+  nc -s 192.168.0.199 -z -w 5 192.168.0.20 $p && echo "$p OPEN" || echo "$p BLOCKED"
+done   # 預期:22/8123 OPEN,8080/8500/8688 BLOCKED
+sudo ip addr del 192.168.0.199/24 dev ens18
+```
 
 ## Volume / 路徑
 

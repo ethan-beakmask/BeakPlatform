@@ -77,7 +77,9 @@ sudo -n -u postgres psql -d beakplatform_dev -c \
   "SELECT id,source_system,case_secure_code,received_at FROM od_intake_events ORDER BY id DESC LIMIT 5;"
 
 # 灌合成事件進管線（繞過 Suricata/Coraza，測 Vector→bridge→.16 那一段）
-curl -s -X POST -H 'Content-Type: application/json' --data @event.json http://192.168.0.20:8688/
+# PF-109 起 8688 只綁 127.0.0.1，必須在 .20 上打，從 .16 會連線逾時
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 \
+  "curl -s -X POST -H 'Content-Type: application/json' --data @event.json http://127.0.0.1:8688/"
 ```
 
 ### 資料庫欄位與查詢陷阱（每個 session 都會撞）
@@ -185,6 +187,35 @@ WHERE q.workflow_instance_secure_code='<wi_secure_code>' ORDER BY q.id;"
 | `.20:3000` | Grafana |
 | `.20:5636` | EveBox（自簽 TLS） |
 
+### ingest 三個埠有來源管制，測試前先確認你在白名單內（PF-109，2026-08-16）
+
+**`8080` / `8500` / `8688` 對 LAN 不再全開。** 不知道這件事的症狀是
+**連線逾時而不是 403**——跟「服務掛了」長得一模一樣，會白花很多時間查錯地方。
+
+| 埠 | 誰打得到 | 手段 |
+|---|---|---|
+| `8080` WAF | `.16` / `.10` / `.100`，加 `.20` 本機的 `127.0.0.1` | nft `ingest_guard_forward` |
+| `8500` od-bridge | 只有 `.16`，加 docker bridge（vector 走這條） | nft `ingest_guard_input` |
+| `8688` vector 注入口 | **只有 `.20` 本機**（ports 綁 `127.0.0.1`） | docker-compose + nft 雙保險 |
+
+- 上表「Vector 的合成事件注入口」那條在 `.16` 上已經**打不進去**，
+  要灌合成事件得先 `ssh .20` 再打 `127.0.0.1:8688`
+- **od-bridge 的 stats UI 從 `.10` 的瀏覽器連不到是刻意的**，不是壞了
+- 兩條 nft chain 都以 `iifname != "ens18" accept` 開頭，所以 canary（`127.0.0.1:8080`）
+  與 vector→`host.docker.internal:8500` 這兩條內部路徑不受影響
+- 規則定義在 `sec-vm-bootstrap/nftables-bootstrap.sh`（同時寫 `/etc/nftables.conf`，
+  開機由 `nftables.service` 還原）。**改埠或搬服務時，這裡與 compose 兩處都要改**
+
+為什麼要管：Suricata 的 xff 模組與（修正前的）vector modsec transform 都沒有
+「信任代理比對」，誰打得到 `.20` 誰就能把 `actor_ip` 填成任意第三方位址，
+讓 CrowdSec 去封它——實測讓真實 AWS 位址 `3.3.3.3` 被 ban。`allowlist` 自鎖保險
+只擋得住「封掉自己」，擋不住「封掉外部關鍵服務」（DNS、更新來源、上游 API）。
+
+Coraza 那條線另外在 vector 端補了信任代理比對（`ocsf_from_modsec` 的
+`trusted_ingress`，只認 `192.168.0.16` 與 `172.18.0.1`）。**Suricata 線補不了**：
+`src_ip` 在 Suricata 內部就被 overwrite，eve.json 不留原始 TCP source，
+改 `mode: extra-data` 又會讓 CrowdSec 改封 cloudflared@`.16` 自己。
+
 **TZ-01 陷阱**：`received_at` 存 UTC，psql `now()` 回本地時間。
 用 `received_at > now() - interval '30 minutes'` 會因 8 小時時差**查不到剛寫入的資料**，
 一律改用 `ORDER BY id DESC LIMIT n`。跨主機比對時間戳一律換算成 UTC。
@@ -240,7 +271,8 @@ sudo kill -STOP <PID> ; sudo kill -CONT <PID>
 | canary 怎麼檢查、告警 | `.16:/opt/BeakPlatform-dev/scripts/cron/od_canary_check.py` | `/etc/crontab` 每小時；手動加 `--dry-run` 測 |
 | 案件聚合窗、白名單、案件流程 | `.16:/opt/BeakPlatform-dev/modules/open_defense/services/intake_service.py` | **要手動重啟 dev 實例**（見上） |
 | EDL 內容／格式、封鎖落地行為 | `.20:~/sec-vm-bootstrap/od-bridge/od_bridge/enforcers/`（權威副本 `sec-vm-bootstrap/od-bridge/`） | `docker compose up -d --build od-bridge`，用 `curl -s http://192.168.0.20:8500/edl \| od -c` 驗實際位元組 |
-| nftables 封鎖表結構、自鎖 allowlist | `.20:/etc/nftables.conf`（產生器：`sec-vm-bootstrap/nftables-bootstrap.sh`，該腳本只複製不執行） | `sudo nft -f /etc/nftables.conf`；**不可加 `flush ruleset`**（會清掉 docker 的 nat/filter） |
+| nftables 封鎖表結構、自鎖 allowlist、**ingest 埠的來源管制**（`ingest_guard_forward` / `ingest_guard_input`） | `sec-vm-bootstrap/nftables-bootstrap.sh` → 產生 `.20:/etc/nftables.conf` | 推上 `.20` 後 `sudo bash ~/sec-vm-bootstrap/nftables-bootstrap.sh`（寫檔＋套用）。**副作用：它 `delete table` + `create table`，會清空 `blocklist` 現有元素**——執行前先 `nft -j list set inet secstack blocklist` 記下來，之後 `nft add element` 補回。**不可加 `flush ruleset`**（會清掉 docker 的 nat/filter） |
+| 各服務對 LAN 的暴露面（ports 綁 `0.0.0.0` 還是 `127.0.0.1`） | `.20:~/sec-vm-bootstrap/docker-compose.yml` | `docker compose up -d <service>`（會 recreate 容器；vector 的 file source 有 checkpoint，重建不會漏事件） |
 | ClickHouse 保留期與報表維度 | `sec-vm-bootstrap/clickhouse/init.sql` | `docker exec secstack-clickhouse-1 clickhouse-client -d secstack --multiquery --queries-file <檔案>` |
 | Grafana datasource／dashboard | `sec-vm-bootstrap/grafana/provisioning/` | `docker compose up -d --force-recreate grafana` |
 

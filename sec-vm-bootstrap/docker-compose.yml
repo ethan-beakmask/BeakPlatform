@@ -74,8 +74,13 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"   # so vector can reach od-bridge on host net
     ports:
-      - "8688:8688"   # http_test source (POST events for testing)
-      - "8686:8686"   # GraphQL playground / metrics API
+      # PF-109 2026-08-15：http_test 從 0.0.0.0 收回 127.0.0.1。
+      # 這個 source 同時是 ch_events_from_ocsf 與 intake_filter 的 input，也就是說
+      # 對 LAN 開放等於「任何一台內網主機可以直接注入任意 OCSF 事件」——actor_ip、
+      # source_system 全部自填，比偽造 8080 的 header 還直接（連 CRS 規則都不用觸發）。
+      # docs/CONFIGURATION.md 原本就寫「生產建議關」，這裡收成只有 .20 本機可用。
+      - "127.0.0.1:8688:8688"   # http_test source (POST events for testing) — local only
+      - "8686:8686"   # GraphQL playground / metrics API（唯讀，不是注入口）
     volumes:
       - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
       - vector-data:/var/lib/vector
