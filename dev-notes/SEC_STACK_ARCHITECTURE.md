@@ -51,6 +51,10 @@ BeakPlatform 的資料庫連線在 `/opt/BeakPlatform-dev/.env`。
 .16 (BeakPlatform)  管線接收端，dev 實例 :7000（systemd beakplatform-dev.service）
 .20 (sec-vm)        Suricata / Coraza WAF / Vector / ClickHouse / CrowdSec / od-bridge
                      ssh -i ~/.ssh/company-wsl ethan@192.168.0.20（ethan 有 sudo NOPASSWD）
+.100 (Proxmox 母機)  **無法用同一把金鑰登入**（2026-08-16 實測 root/ethan 皆
+                     Permission denied）。需要「非白名單來源」做驗證時不要指望它，
+                     改在 .16 臨時借一個 secondary IP（見 CONFIGURATION.md 的
+                     ingest 面來源管制段）
 ```
 
 **脫敏原則**：IP / port / 帳號 / 範例密碼**只要不 push 到 GitHub 都無妨**（教材
@@ -178,7 +182,7 @@ WHERE q.workflow_instance_secure_code='<wi_secure_code>' ORDER BY q.id;"
 
 | 埠 | 服務 |
 |---|---|
-| `.20:8500` | **od-bridge**（`/stats` `/forwards` `/decisions` `/edl` `/edl/allow` `/health`） |
+| `.20:8500` | **od-bridge**（`/stats` `/forwards` `/decisions` `/edl` `/edl/allow` `/state/nft` `/health`） |
 | `.20:8688` | Vector 的合成事件注入口 |
 | `.20:8686` | Vector GraphQL API |
 | `.20:8080` | WAF（反向代理到 `http://192.168.0.16:80`） |
@@ -267,7 +271,7 @@ sudo kill -STOP <PID> ; sudo kill -CONT <PID>
 | 事件過濾、throttle（含全域封頂）、canary 豁免、OCSF 映射 | `.20:~/sec-vm-bootstrap/vector/vector.production.yaml`（`vector.yaml` 是它的 symlink） | `docker exec secstack-vector-1 vector validate /etc/vector/vector.yaml` 通過後 `docker kill -s HUP secstack-vector-1`，不必重啟容器 |
 | Suricata 規則啟用/停用 | `.20:~/sec-vm-bootstrap/suricata/rules/suricata.rules`（停用是行首加 `# DISABLED <日期> <原因>: `，此檔不進版控） | `docker kill -s USR2 secstack-suricata-1`，用 `docker exec secstack-suricata-1 tail /var/log/suricata/suricata.log` 確認 `rules successfully loaded` 的數字有變 |
 | eve.json / modsec log 輪替 | `.20:/etc/cron.hourly/secstack-rotate-logs`（權威副本 `sec-vm-bootstrap/host-cron/`） | 每小時自動跑；手動 `sudo /etc/cron.hourly/secstack-rotate-logs`，看 `/opt/tmp/sec-vm-rotate-logs.log` |
-| canary 打什麼 | `.20:/etc/cron.hourly/secstack-canary`（權威副本 `sec-vm-bootstrap/host-cron/`） | 同上，log 在 `/opt/tmp/sec-vm-canary.log` |
+| canary 打什麼 | `.20:/etc/cron.hourly/secstack-canary`（權威副本 `sec-vm-bootstrap/host-cron/`；**`.20` 上沒有 `~/sec-vm-bootstrap/host-cron/` 這個目錄**，同步時只 cp 到 `/etc/cron.hourly/`） | 同上，log 在 `/opt/tmp/sec-vm-canary.log` |
 | canary 怎麼檢查、告警 | `.16:/opt/BeakPlatform-dev/scripts/cron/od_canary_check.py` | `/etc/crontab` 每小時；手動加 `--dry-run` 測 |
 | 案件聚合窗、白名單、案件流程 | `.16:/opt/BeakPlatform-dev/modules/open_defense/services/intake_service.py` | **要手動重啟 dev 實例**（見上） |
 | EDL 內容／格式、封鎖落地行為 | `.20:~/sec-vm-bootstrap/od-bridge/od_bridge/enforcers/`（權威副本 `sec-vm-bootstrap/od-bridge/`） | `docker compose up -d --build od-bridge`，用 `curl -s http://192.168.0.20:8500/edl \| od -c` 驗實際位元組 |
