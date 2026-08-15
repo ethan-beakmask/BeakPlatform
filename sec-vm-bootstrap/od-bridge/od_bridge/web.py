@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from aiohttp import web
 
-from .enforcers import edl
+from .enforcers import edl, nftables
 from .state import stats
 
 
@@ -167,6 +167,13 @@ async def page_edl_allow(request: web.Request) -> web.Response:
     return await _serve_edl(request, "allow")
 
 
+async def state_nft(request: web.Request) -> web.Response:
+    ok, payload = await nftables.list_sets()
+    if not ok:
+        return web.json_response(payload, status=503)
+    return web.json_response(payload)
+
+
 def register_routes(app: web.Application) -> None:
     app.router.add_get("/", page_stats)
     app.router.add_get("/stats", page_stats)
@@ -174,3 +181,4 @@ def register_routes(app: web.Application) -> None:
     app.router.add_get("/decisions", page_decisions)
     app.router.add_get("/edl", page_edl_block)
     app.router.add_get("/edl/allow", page_edl_allow)
+    app.router.add_get("/state/nft", state_nft)

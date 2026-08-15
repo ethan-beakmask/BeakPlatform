@@ -44,6 +44,10 @@ class BaseConfig:
     CLICKHOUSE_USER = os.getenv('CLICKHOUSE_USER', '')
     CLICKHOUSE_PASSWORD = os.getenv('CLICKHOUSE_PASSWORD', '')
 
+    # OpenDefense od-bridge（.20）唯讀查詢 -- 決策頁對帳 EDL / nftables 實際狀態。
+    # bridge_client 連不上時回 None，呼叫端 fail-soft 顯示平台端記錄。
+    OD_BRIDGE_URL = os.getenv('OD_BRIDGE_URL', 'http://192.168.0.20:8500')
+
     # Database
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False

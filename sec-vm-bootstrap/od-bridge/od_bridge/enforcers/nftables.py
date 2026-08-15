@@ -13,8 +13,10 @@ This enforcer just adds/removes elements with optional timeout.
 """
 import asyncio
 import ipaddress
+import json
 
 SUPPORTED_TARGETS = {"ip", "cidr"}
+STATE_SETS = ("blocklist", "blocklist6", "allowlist")
 
 
 def _set_for(value: str) -> str:
@@ -33,6 +35,70 @@ async def _nft(*args: str) -> tuple[int, str]:
     )
     out, _ = await proc.communicate()
     return proc.returncode, out.decode(errors="replace")
+
+
+def _elem_value(elem) -> str | None:
+    if isinstance(elem, str):
+        return elem
+    if not isinstance(elem, dict):
+        return None
+    if "elem" in elem:
+        return _elem_value(elem["elem"])
+    if "val" in elem:
+        return _elem_value(elem["val"])
+    if "prefix" in elem and isinstance(elem["prefix"], dict):
+        prefix = elem["prefix"]
+        addr = prefix.get("addr")
+        length = prefix.get("len")
+        if addr is not None and length is not None:
+            return f"{addr}/{length}"
+    if "addr" in elem:
+        return str(elem["addr"])
+    return None
+
+
+def _elem_expires(elem) -> int | None:
+    if not isinstance(elem, dict):
+        return None
+    if "expires" in elem:
+        try:
+            return int(elem["expires"])
+        except (TypeError, ValueError):
+            return None
+    if isinstance(elem.get("elem"), dict):
+        return _elem_expires(elem["elem"])
+    return None
+
+
+def _extract_set(payload: dict, set_name: str):
+    for item in payload.get("nftables") or []:
+        set_data = item.get("set") if isinstance(item, dict) else None
+        if isinstance(set_data, dict) and set_data.get("name") == set_name:
+            return set_data.get("elem") or []
+    return []
+
+
+async def list_sets() -> tuple[bool, dict]:
+    state = {"blocklist": {}, "blocklist6": {}, "allowlist": []}
+    for set_name in STATE_SETS:
+        rc, out = await _nft("-j", "list", "set", "inet", "secstack", set_name)
+        if rc != 0:
+            return False, {"error": out.strip()[:300] or f"nft_list_failed:{set_name}"}
+        try:
+            payload = json.loads(out)
+        except json.JSONDecodeError:
+            return False, {"error": f"nft_json_invalid:{set_name}"}
+        elems = _extract_set(payload, set_name)
+        for elem in elems:
+            value = _elem_value(elem)
+            if not value:
+                continue
+            if set_name == "allowlist":
+                state["allowlist"].append(value)
+            else:
+                state[set_name][value] = _elem_expires(elem)
+    state["allowlist"].sort()
+    return True, state
 
 
 async def apply(decision: dict, cfg) -> dict:

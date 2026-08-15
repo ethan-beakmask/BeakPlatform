@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-15 13:08+0800\n"
+"POT-Creation-Date: 2026-08-16 00:56+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3387,7 +3387,9 @@ msgid "互斥群組"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:59
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:50
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:106
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:194
 #: app/templates/pages/access_center/_tab_roles.html:56
 msgid "來源"
 msgstr ""
@@ -3780,7 +3782,9 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:241
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:8
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:8
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:46
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:37
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:97
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:182
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:22
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:25
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:21
@@ -4019,12 +4023,13 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:484
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:43
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:52
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:18
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:57
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:103
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:154
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:193
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:30
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:34
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:171
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:222
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:236
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:29
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:43
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:191
@@ -5629,10 +5634,10 @@ msgid "（必須至少保留一個啟用的管理員）"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:47
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:51
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:187
 #: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:33
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:36
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:143
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:157
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:32
 #: app/templates/pages/admin/org-admins/list.html:43
 #: app/templates/pages/cg_databases/overview.html:186
@@ -6421,7 +6426,9 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:54
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:222
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:236
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:320
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:346
 #: app/templates/pages/cg_databases/overview.html:250
 #: app/templates/pages/server_manage/redis_monitor.html:216
 msgid "時間"
@@ -6433,9 +6440,11 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:49
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:150
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:29
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:52
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:221
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:44
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:102
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:165
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:188
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:235
 #: app/templates/pages/cg_databases/overview.html:250
 msgid "動作"
 msgstr ""
@@ -7704,7 +7713,7 @@ msgstr ""
 msgid "資料表"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:40
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:176
 #: app/templates/pages/hostconfig/data_maintenance.html:45
 #: app/templates/pages/hostconfig/data_maintenance.html:100
 #: app/templates/pages/hostconfig/index.html:54
@@ -8676,6 +8685,8 @@ msgstr ""
 msgid "建立新選單，請輸入選單代碼(之後不可更改)(建議英文)(重覆會自動加尾號_01)"
 msgstr ""
 
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:321
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:347
 #: app/templates/pages/menu/list.html:83
 msgid "標題"
 msgstr ""
@@ -9351,8 +9362,8 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:524
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_access_matrix.html:21
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:20
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:31
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:156
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:167
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:46
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:20
 #: app/templates/pages/organizations/list.html:34
@@ -10707,7 +10718,7 @@ msgstr ""
 msgid "復原"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:100
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:231
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:61
 #: app/templates/pages/security/api_keys.html:66
 msgid "撤銷"
@@ -12540,16 +12551,20 @@ msgstr ""
 msgid "since 必須為 ISO-8601 字串"
 msgstr ""
 
-#: ../modules/open_defense/api/admin/decisions.py:86
+#: ../modules/open_defense/api/admin/decisions.py:253
+msgid "target 為必填"
+msgstr ""
+
+#: ../modules/open_defense/api/admin/decisions.py:290
 #, python-format
 msgid "只能撤銷 applied 狀態的決策(目前 %(status)s)"
 msgstr ""
 
-#: ../modules/open_defense/api/admin/decisions.py:91
+#: ../modules/open_defense/api/admin/decisions.py:295
 msgid "unblock 決策無需再撤銷"
 msgstr ""
 
-#: ../modules/open_defense/api/admin/decisions.py:95
+#: ../modules/open_defense/api/admin/decisions.py:299
 msgid "人工手動撤銷"
 msgstr ""
 
@@ -12805,101 +12820,101 @@ msgstr ""
 msgid "allowed_source_systems 必須為非空 list"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:309
+#: ../modules/open_defense/services/intake_service.py:311
 #, python-format
 msgid "form template %(form_template_sc)s 不存在或不屬於本企業"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:322
+#: ../modules/open_defense/services/intake_service.py:324
 #, python-format
 msgid "form template %(form_template_sc)s 尚無 Published 版本,請先在表單設計器發行"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:344
+#: ../modules/open_defense/services/intake_service.py:346
 msgid "工作流模板缺 Start 節點"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:425
+#: ../modules/open_defense/services/intake_service.py:427
 msgid "開始"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:471
-#: ../modules/open_defense/services/intake_service.py:621
+#: ../modules/open_defense/services/intake_service.py:473
+#: ../modules/open_defense/services/intake_service.py:623
 #, python-format
 msgid "source_system %(source_system)r 不在 key 允許清單"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:480
+#: ../modules/open_defense/services/intake_service.py:482
 #, python-format
 msgid ""
 "event_class %(event_class)r 在本企業無命中的 form_template 路由規則,請至 /open-defense"
 "/routing-rules 設定"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:555
-#: ../modules/open_defense/services/intake_service.py:698
+#: ../modules/open_defense/services/intake_service.py:557
+#: ../modules/open_defense/services/intake_service.py:700
 #, python-format
 msgid "啟動 workflow 失敗: %(error)s"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:605
+#: ../modules/open_defense/services/intake_service.py:607
 msgid "缺少 correlation_id"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:631
+#: ../modules/open_defense/services/intake_service.py:633
 msgid "原生 payload 在本企業無命中的 form_template 路由規則,請至 /open-defense/routing-rules 設定"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:257
+#: ../modules/open_defense/services/payload_profile_service.py:266
 #, python-format
 msgid "%(field)s 必填"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:261
+#: ../modules/open_defense/services/payload_profile_service.py:270
 msgid "field_map 必須為物件"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:264
+#: ../modules/open_defense/services/payload_profile_service.py:273
 #, python-format
 msgid "field_map 含有不支援的 key: %(key)s"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:266
+#: ../modules/open_defense/services/payload_profile_service.py:275
 msgid "field_map 的 value 必須為字串"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:271
+#: ../modules/open_defense/services/payload_profile_service.py:280
 msgid "severity_map 必須為物件"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:276
+#: ../modules/open_defense/services/payload_profile_service.py:285
 msgid "severity_map 的 value 必須可轉為整數"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:281
+#: ../modules/open_defense/services/payload_profile_service.py:290
 msgid "kv_expansions 必須為陣列"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:284
+#: ../modules/open_defense/services/payload_profile_service.py:293
 #, python-format
 msgid "kv_expansions[%(idx)s] 必須為物件"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:288
+#: ../modules/open_defense/services/payload_profile_service.py:297
 #, python-format
 msgid "kv_expansions[%(idx)s].%(field)s 必填"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:294
+#: ../modules/open_defense/services/payload_profile_service.py:303
 msgid "detail_columns 必須為陣列"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:297
+#: ../modules/open_defense/services/payload_profile_service.py:306
 #, python-format
 msgid "detail_columns[%(idx)s] 必須為物件"
 msgstr ""
 
-#: ../modules/open_defense/services/payload_profile_service.py:300
+#: ../modules/open_defense/services/payload_profile_service.py:309
 #, python-format
 msgid "detail_columns[%(idx)s].key 必填"
 msgstr ""
@@ -13034,13 +13049,15 @@ msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:10
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:10
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:47
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:38
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:183
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/kynd.html:112
 msgid "無資料"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:16
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:119
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:320
 msgid "來源系統"
 msgstr ""
 
@@ -13260,8 +13277,10 @@ msgid "國家"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:55
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:47
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:191
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:135
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:346
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:27
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:24
 msgid "嚴重度"
@@ -13276,10 +13295,13 @@ msgid "無待執行決策"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:53
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:45
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:189
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:32
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:163
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:221
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:235
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:321
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:348
 msgid "目標"
 msgstr ""
 
@@ -13291,19 +13313,56 @@ msgstr ""
 msgid "防禦決策"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:38
-msgid "目標包含"
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:18
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:25
+msgid "生效中名單"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:39
-msgid "如 203.0"
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:20
+msgid "決策歷史"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:58
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:35
+msgid "無法連線到 .20，以下只是平台端記錄"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:43
+msgid "對帳"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:48
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:101
+msgid "決策時間"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:49
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:105
+msgid "到期"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:51
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:107
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:196
 msgid "執行方"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:81
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:138
+msgid "殘留"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:145
+msgid "落地點有資料，但平台查不到對應的生效決策"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:174
+msgid "目標包含"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:175
+msgid "如 203.0"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:217
 msgid "永久"
 msgstr ""
 
@@ -13494,70 +13553,115 @@ msgstr ""
 msgid "偵測來源"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:139
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:142
+msgid "偵測來源（首次＝最近）"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:146
+msgid "首次偵測來源"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:150
+msgid "最近偵測來源"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:153
 msgid "規則 ID"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:141
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:155
 msgid "聚合事件數"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:145
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:159
 msgid "處置流程"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:156
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:170
 msgid "簽核歷程（前手判斷）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:176
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:190
 msgid "事件詳情（出口政策已套用）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:188
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:202
 msgid "處置（1-click，直接完成簽核）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:191
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:205
 msgid "處置意見（依流程設定可能必填）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:210
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:224
 msgid "目前卡在"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:211
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:225
 msgid "，您不是此節點的指定簽核人。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:215
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:229
 msgid "關聯防禦決策"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:217
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:231
 msgid "尚無決策"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:239
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:253
 msgid "事件明細"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:241
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:255
 msgid "明細超過 500 筆，已截斷顯示。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:266
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:280
 msgid "原始欄位"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:309
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:270
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:284
 msgid "欄位名"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:495
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:270
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:284
 msgid "值"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:302
+msgid "跨系統關聯：同一攻擊者被幾個系統偵測到"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:304
+msgid "此時間窗涵蓋 2026-08-08 之前，該期間 ClickHouse 資料為歸檔回灌，筆數僅供參考，不代表當時真實全量。"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:307
+msgid "相異來源數"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:309
+msgid "關聯事件數"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:311
+msgid "查詢時間窗"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:315
+msgid "事件數超過單次顯示上限，僅列出時間窗內最早的部分事件。"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:321
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:347
+msgid "規則"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:348
+msgid "User-Agent"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:2

@@ -14,39 +14,39 @@
     </div>
 
     <div class="od-stats">
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value warn" x-text="stats.decisions_pending ?? '-'"></div>
             <div class="od-stat-label">{{ _('待執行(pending)') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value" x-text="stats.decisions_picked_up ?? '-'"></div>
             <div class="od-stat-label">{{ _('處理中(picked_up)') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value ok" x-text="stats.decisions_applied ?? '-'"></div>
             <div class="od-stat-label">{{ _('已落地(applied)') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value danger" x-text="stats.decisions_failed ?? '-'"></div>
             <div class="od-stat-label">{{ _('失敗(failed)') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value" x-text="stats.decisions_expired ?? '-'"></div>
             <div class="od-stat-label">{{ _('過期(expired)') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value" x-text="stats.today_intake ?? '-'"></div>
             <div class="od-stat-label">{{ _('今日收到事件') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value" x-text="stats.today_decisions ?? '-'"></div>
             <div class="od-stat-label">{{ _('今日簽發決策') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value" x-text="stats.intake_keys_active ?? '-'"></div>
             <div class="od-stat-label">{{ _('啟用金鑰') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value" x-text="stats.service_accounts_active ?? '-'"></div>
             <div class="od-stat-label">{{ _('啟用執行端帳號') }}</div>
         </div>

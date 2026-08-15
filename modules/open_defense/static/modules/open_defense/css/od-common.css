@@ -55,7 +55,7 @@
 }
 /* 一張卡一行：row-reverse 讓 HTML 上先寫的數值落在右側，標籤在左，
  * 不動模板結構就能從「數字上、標籤下」的方塊變成單行。 */
-.od-stat-card {
+.od-stat-tile {
     background: #fff;
     border: 1px solid #ddd;
     padding: 5px 10px;
@@ -242,6 +242,12 @@
     color: var(--color-text-muted);
     font-size: 12px;
 }
+.od-err {
+    color: var(--color-danger);
+    font-size: 11px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
 .od-alert {
     padding: 10px 12px;
     margin: 12px 16px;
@@ -256,6 +262,11 @@
     background: #fee2e2;
     border-color: #fecaca;
     color: #991b1b;
+}
+.od-alert-warning {
+    background: #fef3c7;
+    border-color: #fde68a;
+    color: #92400e;
 }
 .od-alert-success {
     background: #d1fae5;
@@ -390,14 +401,64 @@
     max-width: 96vw;
 }
 
-/* 決策列表（/open-defense/decisions）的欄寬微調。
- * 表格是 auto layout，欄寬本來由內容決定（目標 106px / TTL 56px），
- * 這裡各留 +10px 餘裕避免長 IP 與 "86400s" 貼邊。
- *
- * width:auto 讓表格只佔內容需要的寬度（約 1050px）。維持 .od-table 的
- * width:100% 時，容器多出來的 400~700px 會被 auto layout 按 max-content
- * 比例分散到每一欄，下面的 min-width 就等於失效（實測目標欄被撐到 166px）。 */
-.od-decisions-table { width: auto; }
+/* 決策列表（/open-defense/decisions） */
+.od-page-tabs {
+    margin-bottom: 10px;
+}
+.od-active-summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+.od-ep-badge {
+    margin-right: 4px;
+    margin-bottom: 3px;
+}
+.od-link-btn {
+    border: none;
+    background: transparent;
+    color: var(--color-primary);
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+}
+.od-link-btn:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+}
+.od-history-cell {
+    background: var(--color-bg-light);
+    padding: 10px 14px;
+}
+.od-timeline-table {
+    background: var(--color-bg-white);
+}
+.od-active-table th,
+.od-active-table td,
+.od-timeline-table th,
+.od-timeline-table td {
+    white-space: nowrap;
+}
+.od-active-table th:nth-child(3),
+.od-active-table td:nth-child(3),
+.od-timeline-table th:nth-child(7),
+.od-timeline-table td:nth-child(7) {
+    white-space: normal;
+}
+.od-active-table .od-target-value {
+    display: block;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.od-decisions-table {
+    width: 100%;
+    table-layout: auto;
+}
 
 .od-decisions-table th:nth-child(3),
 .od-decisions-table td:nth-child(3),
@@ -408,20 +469,39 @@
 .od-decisions-table th:nth-child(6),
 .od-decisions-table td:nth-child(6) { min-width: 66px; }
 
-/* 建立時間固定單行（"2026-08-09 06:24" 需要約 120px） */
+/* 歷史表前九欄收縮，最右「執行方」不設寬度，承接剩餘空間與錯誤訊息。 */
 .od-decisions-table th:nth-child(1),
-.od-decisions-table td:nth-child(1) { white-space: nowrap; }
-
-/* 表格 width:100% 撐滿容器，多出來的寬度一定要有欄位承接。
- * 預設 auto layout 是照 max-content 比例分配，而 error_message 是 200+ 字元的
- * 單行 JSON —— 執行方欄因此實測吃掉 800~1080px，還把建立時間壓成兩行。
- * 這裡把剩餘空間指定給最後的操作欄（撤銷鈕，靠右對齊），
- * 前面幾欄才會各自收斂到自然寬 + 上面的 min-width。 */
-.od-decisions-table th:nth-child(10),
-.od-decisions-table td:nth-child(10) { text-align: right; }
+.od-decisions-table td:nth-child(1),
+.od-decisions-table th:nth-child(2),
+.od-decisions-table td:nth-child(2),
+.od-decisions-table th:nth-child(4),
+.od-decisions-table td:nth-child(4),
+.od-decisions-table th:nth-child(5),
+.od-decisions-table td:nth-child(5),
+.od-decisions-table th:nth-child(6),
+.od-decisions-table td:nth-child(6),
+.od-decisions-table th:nth-child(7),
+.od-decisions-table td:nth-child(7),
+.od-decisions-table th:nth-child(8),
+.od-decisions-table td:nth-child(8),
+.od-decisions-table th:nth-child(9),
+.od-decisions-table td:nth-child(9) {
+    width: 1%;
+    white-space: nowrap;
+}
+.od-decisions-table th:nth-child(9),
+.od-decisions-table td:nth-child(9) {
+    text-align: right;
+}
+.od-decisions-table .od-applied-cell {
+    min-width: 260px;
+    font-size: 12px;
+}
 .od-decisions-table .od-err {
-    max-width: 320px;
+    color: var(--color-danger);
+    font-size: 11px;
     overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 /* 目標值限寬截斷：target_type 合法值有 9 種，user_agent（100~150 字元）與

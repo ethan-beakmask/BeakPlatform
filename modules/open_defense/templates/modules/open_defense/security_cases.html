@@ -24,23 +24,23 @@
     </div>
 
     <div class="od-stats">
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value" x-text="stats.open_count ?? '-'"></div>
             <div class="od-stat-label">{{ _('進行中案件') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value warn" x-text="stats.waiting_count ?? '-'"></div>
             <div class="od-stat-label">{{ _('待簽核') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value danger" x-text="stats.overdue_count ?? '-'"></div>
             <div class="od-stat-label">{{ _('SLA 逾時') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value ok" x-text="stats.today_block_count ?? '-'"></div>
             <div class="od-stat-label">{{ _('今日封鎖') }}</div>
         </div>
-        <div class="od-stat-card">
+        <div class="od-stat-tile">
             <div class="od-stat-value" x-text="stats.today_case_count ?? '-'"></div>
             <div class="od-stat-label">{{ _('今日新案') }}</div>
         </div>

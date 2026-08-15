@@ -86,6 +86,7 @@ sudo bash bootstrap.sh
 ```
 http://192.168.0.20:8500/edl        <- action=block 的目標(接防火牆的 deny 規則)
 http://192.168.0.20:8500/edl/allow  <- action=allow 的目標(接 allow 規則,擺在 deny 之上)
+http://192.168.0.20:8500/state/nft  <- kernel nftables set 現況(JSON,供 BeakPlatform 對帳)
 ```
 
 **它是 reconciler 不是 appender**：權威狀態在 `od-bridge/state/edl/state.json`,
