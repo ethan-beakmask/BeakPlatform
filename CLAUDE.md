@@ -929,6 +929,30 @@ od-bridge / EDL enforcer / ClickHouse）的權威**已於 2026-08-15（PF-104）
 舊路徑 `/opt/Ethan_Lab/ITHome-2026/` **已於 2026-08-15 刪除**
 （最終備份 `/opt/tmp/backup/ITHome-2026-final-20260815.tar.gz`），看到一律視為過時。
 
+### 事件的真實權威是 `.20` 的 ClickHouse，不是平台的案件表（2026-08-15 起）
+
+**平台 `od_intake_events` 只是被 throttle 過的子集，不能用來回答「有多少攻擊」。**
+PF-103 實測：同一批 go-ftw 攻擊在 ClickHouse 是 **15 個 CRS 群 5610 筆**，
+打進平台只有 **5 群 17 筆**——`.20` vector 的 `intake_global_throttle`
+是全域 8 筆/60 秒、不分 key。**做任何攻擊面統計或關聯查詢一律查 ClickHouse。**
+
+```bash
+# 密碼在 .20:~/sec-vm-bootstrap/.env 的 CLICKHOUSE_PASSWORD
+# 【一律用 header 認證】用 ?user=&password= 或 curl -u 會讓密碼明文過 LAN，
+# 並觸發 Suricata ET INFO Outgoing Basic Auth 告警污染資料
+curl -s "http://192.168.0.20:8123/?database=secstack" \
+  -H "X-ClickHouse-User: secstack" -H "X-ClickHouse-Key: <pw>" \
+  --data-binary "SELECT ... FROM events ... FORMAT PrettyCompact"
+```
+
+`192.168.0.16` 已在 ClickHouse 帳號層網路白名單內（`clickhouse/users.d/`），
+平台端連線不需要改任何網路設定。平台側唯一的客戶端是
+`modules/open_defense/services/clickhouse_client.py`，**禁止繞過它另建連線**。
+
+**但「全量」有條件**：`events` 表原 TTL 只有 6 小時，2026-05-09~08-08 的事件
+曾被刪光、2026-08-08 才從 eve.json 歸檔回灌並改成 180 天分層保留。
+**跨越 2026-08-08 的時間窗不要宣稱「這段期間只有 N 筆」。**
+
 留在本檔的是五個「唯一實作」，新增功能一律加在這裡，**不要各自重寫**：
 
 | 檔案 | 管什麼 | 繞過的後果 |
