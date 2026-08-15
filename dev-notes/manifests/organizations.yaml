@@ -15,11 +15,9 @@ files:
     - backend/app/models/conglomerate.py
   template:
     - backend/app/templates/pages/organizations/list.html
-    - backend/app/templates/pages/organizations/view.html
     - backend/app/templates/pages/organizations/create.html
     - backend/app/templates/pages/organizations/edit.html
-    - backend/app/templates/pages/organizations/add_contract.html
-    - backend/app/templates/pages/organizations/edit_contract.html
+    - backend/app/templates/pages/organizations/admins.html
   js:
     - backend/app/static/js/organizations.js
     - backend/app/static/js/password-form.js

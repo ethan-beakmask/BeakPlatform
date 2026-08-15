@@ -191,6 +191,21 @@ NO_MKDOCS_2_WARNING=1 ./venv-docs/bin/mkdocs build --strict   # nav 漏加不會
 # 然後用對應身分登入 http://192.168.0.16:7000/beakplatform/help/ 確認標題出現
 ```
 
+**站內單頁的網址是 `/help/manual/<doc_id>`，而 doc_id 本身以 `manual/` 開頭**，
+所以正確網址長成雙層：`/beakplatform/help/manual/manual/03_org_setup/users`。
+這不是筆誤，curl 驗證時少一層會拿到 404。
+
+**頁面右上角 [?]（開對應手冊頁）由各頁模板自己宣告**，沒有自動反查：
+
+```jinja
+{% block help_doc %}manual/02_platform_admin/organizations{% endblock %}
+```
+
+doc_id 不存在時按鈕不顯示（`manual_doc_exists`）。語系變體檔 `<stem>.<lang>.md`
+（`en` / `ja` / `zh-cn`）只採用 `title` 與內文，可見性與排序一律看 zh-TW 主檔，
+缺該語系自動回退並提示。決策脈絡見知識庫 #5177，完整規格見
+`dev-notes/DOCS_AUTHORING_SPEC.md`。
+
 `/help/concepts` 是舊的平台概念說明（`org_admin.html`，限管理員），
 掛在左側目錄最下方，不屬於 `docs/manual/`。
 
@@ -1486,6 +1501,9 @@ Delay 與 ParallelFork 都可用：executor 會撿 `status=WAITING` 且 `node_ty
 ### 服務啟動
 - **正式管道是 systemd 服務**：`sudo systemctl restart beakplatform-dev.service`（重啟後 `systemctl is-active` 確認）
 - 開發服務以**非 debug 模式**跑，Python/模板變更**不會自動重載，必須重啟**
+- **重啟後所有登入 session 立即失效**（開發環境 `SESSION_TYPE='cachelib'` 存在進程記憶體）。
+  症狀是重啟後 curl 拿到的頁面沒有 navbar、或 `/help/` 回 401——不是功能壞了，
+  重跑一次 quick-login 即可。用瀏覽器驗收時同理，重啟後要重新切身分
 - **踩坑**：若曾手動 `flask run`，殘留進程會佔住 7000 埠導致 systemd 服務 crash loop（`is-active` 一直是 `activating`）。用 `ss -tlnp | grep :7000` 找出佔埠 PID kill 掉，服務即自動接手
 - **flask CLI 必須先載入 .env**（缺 SECRET_KEY 直接 ValueError）：
   ```bash
