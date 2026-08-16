@@ -156,6 +156,13 @@ Generated with Claude Code"
 `visible_user_types` / `visible_roles` / `order`）、可用語法、建置驗收指令，
 以及三處不可擅改的 `mkdocs.yml` 設定。
 
+**兩個出口支援的 markdown 語法不一樣，而且不會報錯**（2026-08-17 實測）：
+站內 `/help/` 只掛 `extra` + `sane_lists` + `admonition`
+（`doc_catalog_service.py`），所以 **content tabs（`=== "標題"`）與
+「縮排在 admonition 內的 fenced code」在站內完全不渲染**——`=== "標題"` 原樣印出、
+指令擠成一行無法複製，但 MkDocs 站一切正常、`--strict` 也不會抓到。
+**程式碼區塊一律寫在提示卡外面，不要用 tabs。**
+
 新增或修改程式後，用這個確認有沒有文件跟著過期：
 
 ```bash
@@ -569,6 +576,17 @@ SELECT code, link_type, link_target FROM menu_items WHERE parent_secure_code = '
   要用該企業自己的 role secure_code
 - 範例：`scripts/migrations/099_merge_platform_help_menu.py`（含 `--dry-run`，冪等）
 
+**模組選單「刪掉定義」不等於選單會消失**（2026-08-17 踩到）：
+`flask module sync` 只做 create / update / unchanged
+（`backend/app/services/module_menu_service.py` 沒有任何刪除路徑），
+所以從 `MODULE_INFO['menu_items']` 拿掉一項之後，既有 DB 記錄照樣留著、
+選單照樣顯示。**要另寫 migration 把該 `code` 的 `menu_items` 設 `is_deleted`**
+（範例：`scripts/migrations/104_retire_od_intake_keys_menu.py`）。
+
+**連帶要檢查 `docs/manual/**` 有沒有頁面 `nav_menu` 綁著那個 code**——
+站內 `/help/` 的可見性只看該 code 是否可見，綁到已刪除的 code 會讓整頁
+**對所有人消失且不報任何錯**。
+
 ### FILE-01: 檔案上傳/下載統一規範
 
 **所有檔案操作必須透過 `file_service`，禁止自行實作上傳/下載邏輯。**
@@ -968,6 +986,13 @@ nocode_builder / form_workflow）——少帶任何一個，該模組 msgid 會�
 
 `BkTime` 由 `timezone.js` 在 base.html 全域載入，style 可用 `full`/`short`/`date`/`time`。
 
+**存在性判斷一律寫 `typeof BkTime !== 'undefined'`，禁止寫 `window.BkTime`**
+（2026-08-17 踩到）：`timezone.js` 是 `const BkTime = (function () {...})()`，
+而全域 `const` **不會**成為 `window` 的屬性。寫成
+`(window.BkTime && BkTime.format) ? ... : iso` 的判斷恆為 false，
+一路 fallback 成原樣輸出 DB 的 naive UTC 字串——畫面看起來「有值、格式也像」，
+只是時間差 8 小時，沒有任何錯誤訊息。`api-keys.js` 因此壞了很久才被發現。
+
 **自行做時間運算時（SLA 倒數、時間差）**：DB 回的 ISO 字串是 naive UTC（無 `Z` 後綴），
 直接 `new Date(iso)` 會被當本地時間、差 8 小時（已踩過：SLA 顯示逾時 465 分）：
 
@@ -1271,6 +1296,33 @@ headers 用 `X-BP-Key-Id` / `X-BP-Timestamp` / `X-BP-Signature`
 （舊契約的 `X-OD-*` 仍相容）。body 必須與計算簽章時**同一份 bytes**，
 不要 `json.dumps` 兩次（key 順序或空白不同就 401）。
 跑腳本前要 `set -a && source .env && set +a`（缺 SECRET_KEY 會 ValueError）。
+
+**HMAC 金鑰是 raw bytes，不是使用者拿到的那串字**（2026-08-17 踩到，
+外部整合文件的 curl 範例錯了很久也沒人發現）：
+`create_api_key()` 回傳、UI 顯示一次的 secret 是
+`base64.urlsafe_b64encode(32 bytes)` 的**字串**，而驗簽用的是解碼後的 bytes
+（`decrypt_secret()` 回的就是 bytes，所以上面那段測試碼是對的）。
+外部整合者拿到的是字串，**必須先 `base64.urlsafe_b64decode` 再做 HMAC**：
+
+```bash
+KEY_HEX=$(printf '%s' "$SECRET" | python3 -c 'import base64, sys; s = sys.stdin.read().strip(); s += "=" * (-len(s) % 4); print(base64.urlsafe_b64decode(s.encode("ascii")).hex())')
+SIG=$(printf '%s\n%s' "$TS" "$BODY" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$KEY_HEX" -hex | awk '{print $NF}')
+```
+
+直接把 base64 字串當金鑰會**恆得 401**，而平台對所有認證失敗一律回同一個
+`auth_failed`（刻意不區分原因），從回應完全看不出是這個原因。
+
+**兩支對外範例腳本（會推上 GitHub，改 intake 契約時要同步維護）**：
+
+| 腳本 | 用途 |
+|---|---|
+| `scripts/examples/provision_od_intake_for_org.py` | 空白企業一次建起受理鏈路（分類／表單／流程／發行／catch-all 路由／API Key），冪等，`--org` 吃 secure_code 或 domain_name |
+| `scripts/examples/od_intake_send_event.py` | 送 OCSF 事件的單檔 CLI（只用標準函式庫），`--dry-run` 對帳、`--print-curl` 產生等價指令，九種退出碼區分可否重試 |
+
+**新企業的 OD 受理鏈路缺一不可有六件**：資安分類（secure_code 必須
+`CAT_SECURITY_` 開頭，否則案件不會進處置中心）→ 表單 → 流程 → 配對發行
+→ 路由規則 → API Key。缺任何一件事件都進不來，而 dashboard 與處置中心
+就是恆為 0。使用者手冊第 9 章 `docs/manual/09_from_zero/` 是這條鏈路的 SOP。
 
 ### NoCode 選單目前刻意隱藏中（2026-08-07 起，鐵人賽期間）
 
