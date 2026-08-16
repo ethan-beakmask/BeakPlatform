@@ -1070,9 +1070,23 @@ Suricata 架在 `.20` 這個流量出口上，外部訪客經反代進來時它�
   `create_decision()`**，別自己 new model
 - 只擋 `action='block'` 且 `target_type in (ip, ipv6, cidr)`；命中拋
   `ProtectedTargetError`（繼承 `DecisionValidationError`，既有 catch 接得住）
-- 保護來源三層：程式內建網段（RFC1918／回送／link-local／CGNAT／群播／保留＋IPv6
-  ULA、link-local）∪ 設定（`OD_PROTECTED_EXTRA_NETWORKS` env ＋ `TRUSTED_PROXY_IPS`）
-  ∪ 企業自訂（`od_protected_targets`，管理頁 `/open-defense/protected-targets`）
+- 保護來源三層，**內建那層 2026-08-16（PF-117）起已 per-org 化**：
+  該企業 `od_protected_targets` 裡 `origin='builtin'` 的 16 筆出廠條目
+  （RFC1918／回送／link-local／CGNAT／群播／保留＋IPv6 ULA、link-local，**企業可個別停用**）
+  ∪ 設定（`OD_PROTECTED_EXTRA_NETWORKS` env ＋ `TRUSTED_PROXY_IPS`）
+  ∪ 企業自訂（同表 `origin='custom'`，管理頁 `/open-defense/protected-targets`）
+- 出廠值在 `backend/app/defaults/od_protected_defaults.py`，建企業時自動 seed
+  （`create_organization()` 與 `init_system_organization()` **兩處**都接了，後者不走前者）。
+  `protected_target_service.BUILTIN_PROTECTED_NETWORKS` 只剩 fail-safe 用，
+  兩份清單由測試把關不得漂移
+- **fail-safe 的兩個查詢條件刻意不同，不要「順手統一」**：判斷要不要回退硬編碼常數看的是
+  「該企業有沒有 builtin 記錄」（**不帶 `is_active`**），實際判定才只取 `is_active=True`。
+  帶了 `is_active` 的話，企業合法地把 16 條全部停用會被誤判成 seed 漏掉而回退常數，
+  使用者的停用被靜默忽略且不報錯
+- **builtin 條目可停用、可改名稱備註，但不可刪除、不可改 `target_value`**（API 回 400）——
+  刪掉後 fail-safe 會把它救回來，行為看起來像「刪不掉」
+- `TRUSTED_PROXY_IPS` 那層**不 per-org**：企業把 `192.168.0.0/16` 停用後，
+  平台反代仍受保護且網段遮蔽（`source='platform'`、`network=None`，PF-117 第 5 點）
 - **保護比對用 `overlaps`、豁免比對用 `subnet_of`，兩者不對稱是刻意的**：
   前者用包含語意會漏掉封 `0.0.0.0/0`；後者用交集語意會讓「豁免一台內網主機」
   變成「整個 `/0` 都能封」。改動這兩個判定前先看
