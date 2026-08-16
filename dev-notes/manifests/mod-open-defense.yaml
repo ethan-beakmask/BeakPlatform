@@ -3,7 +3,7 @@
 page:
   - /open-defense/dashboard
   - /open-defense/decisions
-  - /open-defense/intake-keys
+  - /open-defense/intake-keys        # 302 轉向 /security/api-keys/（頁面已於 2026-08-17 移除）
   - /open-defense/service-accounts
   - /open-defense/security-cases
   - /open-defense/event-routing
@@ -23,7 +23,6 @@ files:
     - modules/open_defense/api/intake.py            # POST /api/open_defense/intake (HMAC webhook)
     - modules/open_defense/api/intake_native.py     # POST /api/open_defense/intake/native (HMAC webhook)
     - modules/open_defense/api/decisions.py         # GET/PATCH /api/open_defense/decisions
-    - modules/open_defense/api/intake_keys.py       # CRUD intake keys (內部用)
     - modules/open_defense/api/service_accounts.py  # CRUD SA + POST sa/login
     - modules/open_defense/api/security_cases.py    # 資安案件處置中心唯讀聚合 (清單/統計/決策關聯)
     - modules/open_defense/api/admin/routing_rules.py # CRUD routing rules + 試算
@@ -36,13 +35,11 @@ files:
     - modules/open_defense/services/payload_profile_service.py # 原生 payload 扁平化 + 軸線正規化
     - modules/open_defense/services/decision_service.py      # 決策 CRUD + 過期處理
     - modules/open_defense/services/protected_target_service.py # PF-83 封鎖保護清單判定
-    - modules/open_defense/services/intake_key_service.py    # HMAC key 管理
     - modules/open_defense/services/service_account_service.py
     - modules/open_defense/services/hmac_verifier.py         # 簽章驗證
     - modules/open_defense/services/clickhouse_client.py     # PF-106：.20 ClickHouse 唯讀 HTTP 客戶端
     - modules/open_defense/services/cross_source_service.py  # PF-106：跨系統關聯查詢（actor_ip+時間窗）
   model:
-    - modules/open_defense/models/intake_key.py              # OdIntakeKey
     - modules/open_defense/models/intake_event.py            # OdIntakeEvent (冪等記錄)
     - modules/open_defense/models/defense_decision.py        # OdDefenseDecision
     - modules/open_defense/models/service_account.py         # OdServiceAccount
@@ -84,6 +81,7 @@ files:
     - scripts/migrations/098_od_decision_writer_protected_config.sql
     - scripts/migrations/103_od_protected_targets_per_org_builtin.py # per-org builtin 保護清單欄位與 backfill
     - scripts/migrations/104_retire_od_intake_keys_menu.py # 軟刪遺留 intake key 選單
+    - scripts/migrations/105_drop_od_intake_keys.py # 備份後移除遺留 od_intake_keys 表
   test:
     - backend/tests/test_od_aggregation.py
     - backend/tests/test_od_protected_targets.py
@@ -115,10 +113,10 @@ workflow_integration:
 
 note: |
   - 對外契約凍結於 dev-notes/integrations/open_defense_contract.md v1.0,內部實作不得擅自偏離。
-  - P2(2026-07-08):OdIntakeKey 已由 migration 079 遷移至平台 ApiKey(api_keys 表,
+  - P2(2026-07-08):舊 OD intake key 已由 migration 079 遷移至平台 ApiKey(api_keys 表,
     scopes.od_intake)。intake 認證走 @webhook_hmac_required -> 平台 ApiKey,
-    雙軌收頭 X-BP-*(優先)/X-OD-*(deprecated)。od_intake_keys 表與
-    /open-defense/intake-keys 頁為唯讀遺留,保留一個版本週期後刪除。
+    雙軌收頭 X-BP-*(優先)/X-OD-*(deprecated)。遺留 intake key 表已於
+    2026-08-17 透過 migration 105 移除;/open-defense/intake-keys 頁已轉向。
     金鑰管理改在 /security/api-keys/(security-center.yaml)。
   - sa_secret 一律加密存 DB,沿用 crypto/key_manager 的 Org Key 架構,
     但金鑰用途為 HMAC/SA 驗證,**不得**與檔案加密金鑰共用同一 DEK。

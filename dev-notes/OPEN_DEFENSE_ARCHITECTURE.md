@@ -368,7 +368,7 @@ OCSF 案件沒有 profile 也沒有明細陣列，只會看到兩個分頁——
 | `od_payload_profiles` | 原生 payload 的來源格式設定檔 |
 | `od_defense_decisions` | 防禦決策（執行端拉取的對象） |
 | `od_service_accounts` | 執行端帳號 |
-| `od_intake_keys` | **唯讀遺留**，已遷移到平台 `api_keys`，保留一個版本週期 |
+| `od_intake_keys` | 已於 2026-08-17 移除（migration 105），金鑰一律在平台 `api_keys` |
 
 全部有 RLS（`org_secure_code = current_setting('app.current_org', true)`）。
 

@@ -53,7 +53,8 @@ unit 檔（`/etc/systemd/system/beakplatform-dev-executor.service`）無任何�
 
 ### 4. 下一版本週期的遺留清理（勿現在做，啟動條件：用戶明確宣布進入下一版本週期）
 
-刪 `od_intake_keys` 表 + `/open-defense/intake-keys` 頁 + `intake_key_service.py`（規格 §7 P2 節有記）。
+~~刪 `od_intake_keys` 表 + `/open-defense/intake-keys` 頁 + `intake_key_service.py`~~
+已完成（2026-08-17，migration 105；規格 §7 P2 節有記）。
 
 ## DevTools（chrome-devtools-mcp）啟動與測試 SOP
 

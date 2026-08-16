@@ -4,7 +4,6 @@ OpenDefense Module - Models
 所有模型使用 'od_' 前綴以避免表名衝突。
 """
 from .base import OdBaseModel
-from .intake_key import OdIntakeKey
 from .intake_event import OdIntakeEvent
 from .defense_decision import (
     OdDefenseDecision,
@@ -25,7 +24,6 @@ from .protected_target import (
 
 __all__ = [
     'OdBaseModel',
-    'OdIntakeKey',
     'OdIntakeEvent',
     'OdDefenseDecision',
     'OdServiceAccount',

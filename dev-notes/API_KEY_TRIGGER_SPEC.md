@@ -162,8 +162,9 @@ X-BP-Signature:  sha256=<hex(HMAC-SHA256(secret, canonical))>
     `X-OD-*`（deprecated），驗證核心與 `@api_key_hmac_required` 共用
     （`_verify_platform_api_key`，含 allowed_ips 檢查）
   - intake 端點加 `od_intake` scope 檢查（無 scope 403 `scope_denied`）
-  - OD 管理端 `/open-defense/intake-keys` 唯讀化（create/revoke 回 410），
-    `od_intake_keys` 表保留唯讀一個版本週期後刪除
+  - OD 管理端 `/open-defense/intake-keys` 唯讀化（create/revoke 回 410）後，
+    已於 2026-08-17 透過 migration `105_drop_od_intake_keys.py` 移除
+    `od_intake_keys` 表
   - 平台 `/security/api-keys/` UI 支援 od_intake scope（來源系統清單編輯、
     摘要顯示、未知 scope key 編輯時原樣保留）
   - E2E 10/10 PASS（舊頭/新頭/原生 key 收單、source 403、scope 403、

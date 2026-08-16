@@ -68,7 +68,7 @@ python3 scripts/examples/od_intake_send_event.py \
 - `correlation_id` 是冪等鍵；同一個 id 重送會回 `duplicate:true`，不會重複開案。
 - 同一攻擊在短時間內大量送入時，可能被聚合併入既有案件，不會每筆都開一張單。
 - 只有固定欄位會進入表單：`correlation_id`、`source_system`、`event_class`、`occurred_at`、`severity_id`、`confidence`、`actor_ip`、`actor_asn`、`actor_country`、`actor_user_agent`、`actor_xff`、`target_host`、`target_url`、`target_service`、`finding_title`、`finding_summary`、`finding_rule_id`、`finding_rule_set`、`detector_hint_action`、`detector_hint_ttl_sec`。整包原始事件不會進表單。
-- 舊的「開放防禦 ／ 事件接收金鑰」選單已移除，該網址會自動轉向；新舊金鑰統一在「系統安全 ／ API Key 管理」檢視與維護（遷移前的舊金鑰列在該頁下方的唯讀區塊）。
+- 舊的「開放防禦 ／ 事件接收金鑰」選單已移除，該網址會自動轉向，金鑰一律在「系統安全 ／ API Key 管理」建立與維護。
 
 ## 範例程式退出碼
 

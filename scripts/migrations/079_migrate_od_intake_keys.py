@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+【已淘汰，不要執行】
+本腳本依賴的 od_intake_keys 表與 OdIntakeKey model 已於 migration 105 移除
+（用戶 2026-08-17 裁決全面改用平台 api_keys）。
+保留本檔只為保存遷移歷史，執行必定 ImportError。
+全新安裝不需要也不應該執行本腳本。
+
 079 - OdIntakeKey 遷移至平台 ApiKey(P2,規格: dev-notes/API_KEY_TRIGGER_SPEC.md)
 
 將 od_intake_keys 中未刪除的金鑰複製到 api_keys:

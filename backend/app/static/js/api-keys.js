@@ -23,7 +23,6 @@
     window.apiKeysManager = function () {
         return {
             keys: [],
-            legacyKeys: [],
             loading: true,
             msg: '',
             msgErr: false,
@@ -63,7 +62,7 @@
 
             async init() {
                 this.form = this.emptyForm();
-                await Promise.all([this.load(), this.loadOptions(), this.loadLegacy()]);
+                await Promise.all([this.load(), this.loadOptions()]);
             },
 
             async load() {
@@ -104,31 +103,6 @@
                 } catch (e) { /* ignore */ }
             },
 
-            async loadLegacy() {
-                try {
-                    const res = await fetch(PREFIX + '/api/open_defense/admin/intake-keys', {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken,
-                        },
-                    });
-                    if (!res.ok) {
-                        this.legacyKeys = [];
-                        return;
-                    }
-                    let data;
-                    try {
-                        data = await res.json();
-                    } catch (e) {
-                        this.legacyKeys = [];
-                        return;
-                    }
-                    this.legacyKeys = Array.isArray(data.keys) ? data.keys : [];
-                } catch (e) {
-                    this.legacyKeys = [];
-                }
-            },
-
             flash(message, isErr) {
                 this.msg = message;
                 this.msgErr = !!isErr;
@@ -159,10 +133,6 @@
 
             statusLabel(status) {
                 return { active: __('啟用中'), suspended: __('已暫停'), revoked: __('已撤銷') }[status] || status;
-            },
-
-            legacyStatusLabel(key) {
-                return key.is_active ? __('啟用中') : __('已停用');
             },
 
             fmtTime(iso) {
