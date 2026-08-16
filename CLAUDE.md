@@ -973,8 +973,14 @@ IP 白名單也不會因為誰讀了某份文件而失效。所以那條路走�
 
 **「`.16` 內部主機的縱深不足」是已知且已接受的狀態（Ethan 2026-08-16 決定）**：
 
-PF-109 之後，`.20:8500`（od-bridge，無認證）只剩 `.16` 打得到，PF-112 記著要補
-協定層認證。在那之前，風險敘述**到「能在 `.16` 上發封包的人可以無憑證注入事件」為止**，
+PF-109 收窄網段、**PF-112（2026-08-16）已補上協定層認證**：`.20:8500` 的
+`POST /events` 現在要求 `Authorization: Bearer <BRIDGE_INGEST_TOKEN>`（token 只在
+`.20` 的 `.env`，fail-closed，`/health` 免驗），vector 的 `bridge_intake` sink 帶靜態
+header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做模板替換，
+且先 batch 再編碼，VRL 算不出最終 body 的簽章。od-bridge 其餘端點
+（`/stats`、`/forwards`、`/decisions`、`/edl` 等）**仍無認證，但都是 GET 讀取面**。
+
+風險敘述**到「能在 `.16` 上發封包的人可以拿到 token 後注入事件」為止**，
 不要再往上推導。理由是用戶明確定調的：
 
 - **內部主機本來就該有自己的防護**（OS 加固、帳號管理、EDR、網段隔離、備援），
