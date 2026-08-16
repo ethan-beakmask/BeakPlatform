@@ -45,6 +45,10 @@
   Agent 協作規範）
 - codex 常見瑕疵必查：死碼、拆字串規避檢查、manifest 只刪不補、裸中文未包 gettext、
   沒重啟服務就宣稱驗證通過
+- **同義重複的測試案例**（2026-08-16 PF-117 實例）：spec 列了 10 條測試要求，codex 交出
+  10 個函式，但其中兩個**主體一字不差**（只有函式名不同）。測試數字增加、全綠、
+  自我檢查表也勾得起來，實際上少驗了一種場景。驗收時把新增測試的**斷言內容**
+  掃一遍，不要只數函式個數
 - **「機制對、目標錯」是最難抓的一類**（2026-08-06 批次 3 實例）：spec 要求
   「編輯共用元件時隱藏 table 的『列動作』『列連結目標』」，codex 用了正確的
   `x-show="!sharedComponentEditor.open"`，卻加在隔壁的「每頁筆數」「預設排序欄位」上。
@@ -767,6 +771,11 @@ DOM 狀態類斷言（class 有沒有、按鈕文字、哪個卡片 active、欄
 ```
 evaluate_script(function="() => document.querySelector('.modal-overlay').innerText")
 ```
+
+**但可見性不要用 `offsetParent === null` 判 `position: fixed` 的元素**（2026-08-16 踩到）：
+CSS 規範下 fixed 元素的 `offsetParent` **恆為 `null`**，開著的 `.modal-overlay`
+會被判成「隱藏」。fixed 元素一律用 `getComputedStyle(el).display` ＋
+`getBoundingClientRect()` 的寬高；它的子元素不是 fixed，`offsetParent` 對子元素仍準確。
 
 **2026-08-04 起 `take_screenshot` 在本機一律逾時**（`Page.captureScreenshot timed out`，
 png / jpeg 皆然，各卡滿 120s 才失敗，試過三次）——**修好之前不要再浪費 120s 去試**。
