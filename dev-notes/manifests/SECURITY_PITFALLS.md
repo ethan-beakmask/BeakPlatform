@@ -31,9 +31,16 @@ users = ResourceGateway.filter(
 - 匯出報表時的資料查詢
 
 ### API vs Web
-- **API 層**：禁止 `Model.query`，必須用 `ResourceGateway`
+- **平台 API 層**（`backend/app/api/`）且 model 已註冊：禁止 `Model.query`，必須用 `ResourceGateway`
+- **模組 API 層**（`modules/*/api/`）：model 未註冊 gateway，沿用 `Model.query` ＋ 顯式
+  `org_secure_code` 過濾（詳見 CLAUDE.md TENANT-02，**不要改寫成 ResourceGateway**）
 - **Web 層**：允許 `Model.query` 但仍須加 `org_secure_code` 過濾
-- **Service 層**：視呼叫者而定，建議統一用 ResourceGateway
+- **Service 層**：視呼叫者而定
+
+### 比「有沒有走 gateway」更該查的
+**org 值的來源**。`org_secure_code` 只能來自 `current_user` / `g.api_key` /
+service account；**從 request body 或 query string 取 org 就是越權**，
+不論有沒有走 gateway 都擋不住。
 
 ---
 
@@ -95,13 +102,19 @@ members = db.session.query(UserUnitMembership).join(
 
 ---
 
-## 4. ResourceGateway -- API 層強制
+## 4. ResourceGateway -- 平台 API 強制、模組 API 不適用
 
 ### 規則
-API (`backend/app/api/`) 中禁止直接 `Model.query`。
+平台 API（`backend/app/api/`）中禁止直接 `Model.query`。
+
+**模組 API（`modules/*/api/`）不在此列**：`MODEL_RESOURCE_TYPE_MAP` 一個模組 model
+都沒註冊，經過 gateway 會被 fail-closed 拒絕。模組 API 的要求是
+「顯式 org 過濾 ＋ 身分閘門 ＋ RLS」，完整說明見 CLAUDE.md TENANT-02。
 
 ### Semgrep 會抓
-`.semgrep/beakplatform-security.yaml` 中有規則 `beakplatform-direct-model-query-in-api`。
+`.semgrep/beakplatform-security.yaml` 中有規則 `beakplatform-direct-model-query-in-api`
+（**paths 已於 2026-08-16 限縮到 `backend/app/api/`**；在此之前是 `**/api/*.py`，
+會對模組 API 噴出 300+ 條無人處理的 WARNING）。
 
 ### 正確用法
 ```python
@@ -265,8 +278,8 @@ API + `/users/<sc>` 檢視頁 Jinja `egress_value`/`egress_visibility`）
 每次修改程式前，逐項確認：
 
 - [ ] 新路由有認證 decorator
-- [ ] API 使用 ResourceGateway，不用 Model.query
-- [ ] 查詢包含 org_secure_code 過濾
+- [ ] 平台 API 使用 ResourceGateway（模組 API 沿用既有 Model.query 寫法）
+- [ ] 查詢包含 org_secure_code 過濾，且 org 值來自登入身分而非 request 輸入
 - [ ] 用戶查詢加 is_deleted=False, is_active=True
 - [ ] datetime 顯示用 tz_format / BkTime.format
 - [ ] API POST 端點有 @csrf.exempt

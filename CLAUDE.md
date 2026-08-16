@@ -295,7 +295,7 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 修改程式前必須查閱 `dev-notes/manifests/SECURITY_PITFALLS.md`，確認不踩以下坑：
 - 租戶隔離（org_secure_code 過濾）
 - 帳號狀態過濾（is_deleted + is_active）
-- ResourceGateway 使用（API 層禁止 Model.query）
+- ResourceGateway 使用（**平台** API 且 model 已註冊才強制；模組 API 見 TENANT-02）
 - 雙鑰匙選單安全（MenuPermission + MenuRoleRequirement）
 - 時區處理（TZ-01 規範）
 
@@ -376,9 +376,68 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 - 所有查詢包含 `org_secure_code` 過濾
 - PostgreSQL RLS 作為最後防線
 
-### TENANT-02: ResourceGateway 要求
-- API 層禁止直接使用 `Model.query`
-- 必須透過 `ResourceGateway` 存取
+### TENANT-02: ResourceGateway 要求（2026-08-16 依實況改為分層）
+
+**要求依「該 model 有沒有註冊進 gateway」而不同，不是一句「API 層禁止 `Model.query`」。**
+
+| 範圍 | 要求 |
+|---|---|
+| 平台 API（`backend/app/api/`）且 model 已註冊 | **必須**走 `ResourceGateway` |
+| 模組 API（`modules/*/api/`），model 未註冊 | 走「顯式 `org_secure_code` 過濾 ＋ 身分閘門 ＋ RLS」 |
+
+**為什麼模組 API 不是走 gateway**：`backend/app/security/resource_gateway.py` 的
+`MODEL_RESOURCE_TYPE_MAP` 只列平台 model（User / Organization / Role / MenuItem /
+Contract 等），**一個模組 model 都沒有**；該檔註解寫明「未列入本表且未列入
+`RBAC_EXEMPT_MODELS` 的 model 經過 gateway 會被 fail-closed 拒絕」。
+也就是說模組 model 現在**根本走不進 gateway**，把呼叫端改成 gateway 只會拿到 403/500。
+
+模組 API 要改走 gateway 的前置作業（缺一不可）：註冊 model 進
+`MODEL_RESOURCE_TYPE_MAP` → 建對應 permission code（`{resource_type}:read` 等，
+參考 `scripts/migrations/075_seed_resource_crud_permissions.py`）→
+決定要不要進 `LIST_RBAC_ENFORCED_MODELS`。
+
+**模組 API 的實質要求（這才是驗收時該查的）**：
+
+- 每個查詢都以 `org_secure_code` 作為**實際 filter 條件**（不是只出現在附近）
+- org 值只能來自 `current_user.org_secure_code` / `g.api_key.org_secure_code` /
+  service account，**禁止從 request body 或 query string 取**——那是越權，
+  是這條規範真正要防的東西
+- 每支端點有身分閘門（`@page_keys_required` / `@permission_required` /
+  `@admin_required` / `@service_account_required` / `@webhook_hmac_required` /
+  `@module_access_required`），公開端點另須 rate limit
+- 表有 RLS policy 當最後防線
+
+**2026-08-16 盤點**：
+
+| 位置 | `Model.query` | ResourceGateway |
+|---|---|---|
+| `backend/app/api` | 129 | 158 |
+| `nocode_builder/api` | 24 | 128 |
+| `form_workflow/api` | 237 | 2 |
+| `open_defense/api` | 38 | 0 |
+| `spec_formulate/api` | 37 | 0 |
+
+`open_defense/api` 那 38 處**逐處查過**：全部以 org 為 filter 條件、org 值全來自
+登入身分或 API key、每支端點都有閘門——**結構上沒走 gateway，實質隔離沒有破口**。
+（脈絡見待辦 **PF-123**。數字會腐爛，要判斷現況自己數：
+`grep -rn "\.query\b" --include=*.py modules/<模組>/api | wc -l`。）
+
+**semgrep 規則 `beakplatform-direct-model-query-in-api` 的 paths 已同步限縮到
+`backend/app/api/`**（2026-08-16，原本是 `**/api/*.py`）。限縮後實測：
+平台 API 命中 **91** 條、模組 API **0** 條：
+
+```bash
+semgrep --config .semgrep/beakplatform-security.yaml --metrics=off --quiet --json \
+  modules/open_defense/api backend/app/api
+```
+
+那 91 條是**平台 API 的既有技術債**（規則是 WARNING 級）——TENANT-02 對平台 API
+仍然是「必須走 gateway」，但別把這 91 條當成隨手可清的待辦，也不要在做別的任務時
+順手改；要清就當成一件獨立的事來排。
+
+**寫給未來 session**：看到模組 API 用 `Model.query` **不要當成缺陷回報、不要建工單、
+也不要順手改**。要確認的是上面那四項實質要求。真要把模組納入 gateway 是跨 5 個模組、
+300+ 處的獨立工程，不該由「發現某支 API 沒走 gateway」觸發。
 
 ### URL-01: 對外識別碼一律用 secure_code
 

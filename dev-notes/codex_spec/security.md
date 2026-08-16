@@ -3,7 +3,15 @@
 ### 租戶隔離
 
 - 所有查詢必須含 `org_secure_code` 過濾；PostgreSQL RLS 是最後防線
-- **API 層禁止直接用 `Model.query`**，必須透過 `ResourceGateway`
+- **org 值只能來自登入身分**（`current_user.org_secure_code`）、API key
+  （`g.api_key.org_secure_code`）或 service account。**禁止從 request body 或
+  query string 取 org**——那是越權，這是租戶隔離最重要的一條
+- ResourceGateway 依範圍而定，**不是一律強制**：
+  - 平台 API（`backend/app/api/`）且 model 已註冊 `MODEL_RESOURCE_TYPE_MAP`
+    → **必須**走 `ResourceGateway`
+  - 模組 API（`modules/*/api/`）→ **沿用該檔既有寫法**（目前是 `Model.query`
+    ＋顯式 org 過濾）。模組 model 沒有註冊進 gateway，改走 gateway 會被
+    fail-closed 拒絕而 403/500。**不要順手把模組 API 改成 ResourceGateway**
 - 看到非預期的 404，先查 `org_secure_code` 再懷疑邏輯（多半是租戶隔離擋掉）
 
 ### 帳號查詢（DATA-01）

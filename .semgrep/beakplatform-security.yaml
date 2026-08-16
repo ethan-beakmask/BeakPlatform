@@ -67,8 +67,13 @@ rules:
             ...
     paths:
       include:
-        - "**/api/*.py"
-    message: "API routes should use ResourceGateway instead of direct model queries"
+        - "backend/app/api/*.py"
+        - "backend/app/api/**/*.py"
+    message: >-
+      Platform API routes should use ResourceGateway instead of direct model queries.
+      Module APIs (modules/*/api/) are intentionally out of scope: their models are not
+      registered in MODEL_RESOURCE_TYPE_MAP and would be rejected fail-closed by the
+      gateway. See CLAUDE.md TENANT-02 for what module APIs must do instead.
     languages: [python]
     severity: WARNING
     metadata:
