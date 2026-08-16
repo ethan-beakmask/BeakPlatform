@@ -67,18 +67,22 @@ CrowdSec ─┘  (正規化)       │                                    │   
 | 欄位 | 說明 |
 |---|---|
 | `key_id` | 公開識別碼,放在 HTTP header,例:`ak_a3f9c2e1`(舊 key 為 `ik_` 開頭) |
-| `secret` | 32-byte 隨機密鑰,**僅在建立時顯示一次**,後續無法再取得。整合方需自行妥善保管。 |
+| `secret` | 32-byte 隨機密鑰,**畫面上以 base64 urlsafe 字串顯示,且僅顯示一次**,後續無法再取得。整合方需自行妥善保管。 |
 | `scopes.od_intake.source_systems` | 此 key 允許宣稱的 `source_system` 值清單 |
 
 **簽章演算法:**
 
 ```
+secret_bytes    = base64_urlsafe_decode(畫面上取得的 secret 字串)
 canonical_string = "{timestamp}\n{request_body_raw}"
-signature = HMAC-SHA256(secret, canonical_string)
+signature = HMAC-SHA256(secret_bytes, canonical_string)
 header_value = "sha256=" + hex(signature)
 ```
 
 注意:
+- **HMAC 的金鑰是 base64 解碼後的 32 bytes,不是畫面上那串 base64 字串。**
+  直接拿字串當金鑰會恆得 401 `auth_failed`,而平台對所有認證失敗一律回同一個
+  錯誤碼(刻意不區分原因,避免探測),從回應看不出是這個原因。
 - `timestamp` 必須**包含進簽章內容**,以防 replay 攻擊時重簽。
 - `request_body_raw` 是原始位元組,**簽章前不得做 JSON 重序列化**(避免空白/欄位順序差異導致驗章失敗)。
 
@@ -398,25 +402,36 @@ Content-Type: application/json
    - 事件來源系統清單(對應 `source_system` 值)
    - 預計事件量級
    - 執行端類型(對應 `enforcement_points` 值)
-2. BeakPlatform 管理員建立 Intake Key 與 Service Account,**密鑰透過安全管道一次性傳遞**。
+2. BeakPlatform 管理員於 `/security/api-keys/` 建立 API Key(勾 `od_intake` scope)
+   與 Service Account,**密鑰透過安全管道一次性傳遞**。
 3. 整合方在測試環境完成串接測試後再上線。
 
 ---
 
 ## 附錄 A:範例事件(SQLi 偵測)
 
+`$SECRET` 是建立 API Key 時畫面顯示的 base64 urlsafe 字串;
+**HMAC 金鑰必須是它解碼後的 32 bytes**,所以先轉成 hex 再餵給 openssl 的 `hexkey:`。
+
 ```bash
+SECRET="<建立 API Key 時顯示的 base64 secret>"
+KEY_HEX=$(printf '%s' "$SECRET" | python3 -c 'import base64, sys; s = sys.stdin.read().strip(); s += "=" * (-len(s) % 4); print(base64.urlsafe_b64decode(s.encode("ascii")).hex())')
+
 TIMESTAMP=$(date +%s)
 BODY='{"correlation_id":"01J9X8K2ABCD","source_system":"coraza","event_class":"web_activity","occurred_at":"2026-05-09T10:00:00Z","severity_id":4,"finding":{"title":"SQLi","rule_id":"942100","rule_set":"OWASP CRS 4.0"},"actor":{"ip":"203.0.113.42"},"target":{"host":"app.example.com","url":"/login"}}'
-SIG=$(printf '%s\n%s' "$TIMESTAMP" "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -hex | awk '{print $2}')
+SIG=$(printf '%s\n%s' "$TIMESTAMP" "$BODY" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$KEY_HEX" -hex | awk '{print $NF}')
 
-curl -X POST https://beakplatform.example.com/api/open_defense/intake \
+curl -X POST https://beakplatform.example.com/beakplatform/api/open_defense/intake \
   -H "Content-Type: application/json" \
-  -H "X-OD-Key-Id: ik_a3f9c2e1" \
-  -H "X-OD-Timestamp: $TIMESTAMP" \
-  -H "X-OD-Signature: sha256=$SIG" \
-  -d "$BODY"
+  -H "X-BP-Key-Id: ak_a3f9c2e1" \
+  -H "X-BP-Timestamp: $TIMESTAMP" \
+  -H "X-BP-Signature: sha256=$SIG" \
+  --data-binary "$BODY"
 ```
+
+不想自己實作簽章的整合方,可直接用 repo 內的
+`scripts/examples/od_intake_send_event.py`(單檔、只用 Python 標準函式庫),
+它的 `--print-curl` 會產生與上面等價、可直接執行的指令。
 
 ## 附錄 B:範例執行端輪詢
 

@@ -52,6 +52,11 @@ files:
   cron:
     - scripts/cron/od_canary_check.py       # 每小時 canary 事件到案檢查(來源 IP 203.0.113.1)
     - scripts/cron/od_expire_decisions.py   # 過期決策回收(TTL 到期改 expired)
+  example:                                  # 會推上 GitHub,對外整合者的參考實作
+    - scripts/examples/provision_od_intake_for_org.py  # 空白企業一次建起受理鏈路(分類/表單/流程/發行/路由/API Key)
+    - scripts/examples/od_intake_send_event.py         # 外部系統送 OCSF 事件的單檔 CLI(只用標準函式庫)
+    - scripts/examples/provision_od_workflow_variants.py # SOC 團隊版/小企業單人版兩個流程變體
+    - scripts/examples/od_workflow_graphs.py           # 上一支的 graph 產生器
   template:
     - modules/open_defense/templates/modules/open_defense/dashboard.html
     - modules/open_defense/templates/modules/open_defense/decisions.html

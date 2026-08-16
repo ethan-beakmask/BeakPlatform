@@ -1,16 +1,23 @@
 # 快速建立表單並進入流程 -- 程式化 API 指南
 
-**適用版本**: 2026-07-07
+**適用版本**: 2026-08-17（P2 API Key 遷移與 base64 secret 的簽章寫法已更新）
 **Base URL**: `http://192.168.0.16:7000/beakplatform`（`APP_PREFIX` 環境變數控制，預設 `/beakplatform`，由 `backend/app/__init__.py` 的 DispatcherMiddleware 掛載）
 
-本文件說明兩條「不經過瀏覽器 UI、用程式/指令直接建立表單實例並啟動 workflow」的路徑：
+本文件說明三條「不經過瀏覽器 UI、用程式/指令直接建立表單實例並啟動 workflow」的路徑：
 
 | 路徑 | 對應頁面 | 認證方式 | 適用情境 |
 |---|---|---|---|
 | A. 表單中心 Submit API | `/beakplatform/forms/center` | 平台帳號 session cookie | 內部自動化、測試腳本、批次開單 |
-| B. Open Defense Intake Webhook | `/beakplatform/open-defense/dashboard` | HMAC-SHA256 簽章（Intake Key） | 外部安全事件來源端（Suricata/Coraza/Falco 等） |
+| B. Open Defense Intake Webhook | `/beakplatform/open-defense/dashboard` | HMAC-SHA256 簽章（平台 API Key，scope `od_intake`） | 外部安全事件來源端（ELK/SIEM/Suricata/Coraza/Falco 等） |
+| C. 外部發動閘道 `/api/trigger/form` | `/beakplatform/forms/center` | HMAC-SHA256 簽章（平台 API Key，scope `form_category` / `form`） | 外部系統發動**一般**表單（人資、IT 服務等） |
 
-兩條路徑最終殊途同歸：建立 `FwFormInstance` + `FwWorkflowInstance`（status=RUNNING）+ Start 節點入 `FwNodeExecutionQueue`（status=PENDING），之後由 `workflow_executor` 背景執行緒（`modules/form_workflow/services/workflow_executor.py`，隨 Flask app 啟動，見 `modules/form_workflow/__init__.py:192`）輪詢消化佇列、推進流程。**送出成功後不需要任何額外動作，流程自動跑。**
+**B 與 C 的認證機制完全相同**（同一張 `api_keys` 表、同一個
+`_verify_platform_api_key()`、同一組 `X-BP-*` headers、同一個 canonical
+`"{ts}\n{body}"`），差別只在 scope 與 body 契約：C 由呼叫端指定表單
+（`published_secure_code`），B 只送事件、由平台的事件路由規則決定表單，
+另有冪等（`correlation_id`）與聚合降噪。決策脈絡見 BBN 待辦 **PF-127**。
+
+三條路徑最終殊途同歸：建立 `FwFormInstance` + `FwWorkflowInstance`（status=RUNNING）+ Start 節點入 `FwNodeExecutionQueue`（status=PENDING），之後由 `workflow_executor` 背景執行緒（`modules/form_workflow/services/workflow_executor.py`，隨 Flask app 啟動，見 `modules/form_workflow/__init__.py:192`）輪詢消化佇列、推進流程。**送出成功後不需要任何額外動作，流程自動跑。**
 
 ---
 
@@ -142,29 +149,61 @@ print(r.json())  # data.execution_code 即流程編號
 
 ### 前置條件（一次性設定，UI 操作）
 
-1. **建立 Intake Key**：`/beakplatform/open-defense/intake-keys` 建立，取得 `key_id`（如 `ik_a3f9c2e1`）與 `secret`（**僅顯示一次**），並設定 `allowed_source_systems` 白名單。
-2. **設定 event_class → form_template 對應**：同頁設定 `OdFormTemplateMapping`。無 mapping 的 event_class 會被 422 `no_mapping` 拒收。
-3. **表單必須已發行**：mapping 指向的 form_template 必須有 Published 版本（表單設計器發行），否則 422 `form_not_published`。Webhook 不支援測試模式。
+1. **建立 API Key**：`/beakplatform/security/api-keys/` 建立，勾 `od_intake` scope 並填
+   `source_systems` 白名單，取得 `key_id`（`ak_` 開頭）與 `secret`（**僅顯示一次**）。
+   舊的 `/beakplatform/open-defense/intake-keys` 頁**已於 P2 改為唯讀**（create/revoke 回 410），
+   既有 `ik_` 開頭的 key 原樣沿用。
+2. **設定事件路由規則**：`/beakplatform/open-defense/event-routing` 設定 `OdFormTemplateMapping`
+   （`priority` 由大到小評估、命中即停；`match_rules=[]` 且 `event_class=NULL` 即 catch-all）。
+   無命中規則會被 422 `no_mapping` 拒收。
+3. **表單必須已發行**：規則指向的 form_template 必須有 Published 版本（表單設計器發行），
+   否則 422 `form_not_published`。Webhook 不支援測試模式。
+   表單的 `category_secure_code` 必須是 `CAT_SECURITY_` 開頭的資安分類，
+   否則案件不會出現在資安案件處置中心。
+
+企業是空的（沒有資安表單、沒有路由規則、沒有 key）時，用
+`scripts/examples/provision_od_intake_for_org.py` 一次把上面三件事建起來。
 
 ### 呼叫方式（HMAC 簽章）
 
-簽章規則：`HMAC-SHA256(secret, "{timestamp}\n{原始 body bytes}")`，timestamp 為 Unix 秒、5 分鐘內有效。**簽章後不得重新序列化 body。**
+簽章規則：`HMAC-SHA256(base64_urlsafe_decode(secret), "{timestamp}\n{原始 body bytes}")`，
+timestamp 為 Unix 秒、5 分鐘內有效。**簽章後不得重新序列化 body。**
+
+**畫面上的 secret 是 base64 urlsafe 字串，HMAC 金鑰是它解碼後的 32 bytes。**
+直接把字串當金鑰會恆得 401 `auth_failed`，而平台對所有認證失敗一律回同一個錯誤碼，
+從回應看不出是這個原因。（2026-08-17 之前本節的範例就是這個錯，照抄必失敗。）
+
+最省事的做法是直接用範例程式，不必自己實作簽章：
+
+```bash
+export BP_BASE_URL=http://192.168.0.16:7000/beakplatform
+export BP_API_KEY_ID=ak_xxxxxxxx
+export BP_API_KEY_SECRET='<建立時顯示的 base64 secret>'
+
+python3 scripts/examples/od_intake_send_event.py \
+  --source-system elk --event-class web_activity --severity 4 \
+  --title "SQLi attempt on /login" --actor-ip 203.0.113.42 \
+  --target-host app.example.com
+```
+
+要自己實作時的等價 curl（`--print-curl` 也會印同一份）：
 
 ```bash
 BASE="http://192.168.0.16:7000/beakplatform"
-KEY_ID="ik_a3f9c2e1"
-SECRET="<建立時取得的 32-byte secret>"
+KEY_ID="ak_a3f9c2e1"
+SECRET="<建立時顯示的 base64 secret>"
+KEY_HEX=$(printf '%s' "$SECRET" | python3 -c 'import base64, sys; s = sys.stdin.read().strip(); s += "=" * (-len(s) % 4); print(base64.urlsafe_b64decode(s.encode("ascii")).hex())')
 
 TIMESTAMP=$(date +%s)
 BODY='{"correlation_id":"'$(uuidgen)'","source_system":"coraza","event_class":"web_activity","occurred_at":"2026-07-07T00:00:00Z","severity_id":4,"finding":{"title":"SQLi attempt on /login","rule_id":"942100","rule_set":"OWASP CRS 4.0"},"actor":{"ip":"203.0.113.42"},"target":{"host":"app.example.com","url":"/login"}}'
-SIG=$(printf '%s\n%s' "$TIMESTAMP" "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -hex | awk '{print $2}')
+SIG=$(printf '%s\n%s' "$TIMESTAMP" "$BODY" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$KEY_HEX" -hex | awk '{print $NF}')
 
 curl -s -X POST "$BASE/api/open_defense/intake" \
   -H "Content-Type: application/json" \
-  -H "X-OD-Key-Id: $KEY_ID" \
-  -H "X-OD-Timestamp: $TIMESTAMP" \
-  -H "X-OD-Signature: sha256=$SIG" \
-  -d "$BODY"
+  -H "X-BP-Key-Id: $KEY_ID" \
+  -H "X-BP-Timestamp: $TIMESTAMP" \
+  -H "X-BP-Signature: sha256=$SIG" \
+  --data-binary "$BODY"
 ```
 
 **必填欄位**：`correlation_id`（全域唯一冪等鍵，重送同 ID 回 `duplicate:true`）、`source_system`（須在 key 白名單）、`event_class`（`detection_finding` / `network_activity` / `web_activity` / `process_activity`）、`occurred_at`（ISO-8601 UTC）、`severity_id`（0-6）、`finding.title`；network/web 類另須 `actor.ip`。
@@ -192,10 +231,53 @@ curl -s -X POST "$BASE/api/open_defense/intake" \
 | 422 | `no_mapping` | 該 `event_class` 未設定 form_template mapping |
 | 422 | `form_not_published` | mapping 指向的表單無 Published 版本 |
 | 400 | `validation_error` | body 不符 OCSF schema，`details` 有逐欄說明 |
+| 403 | `scope_denied` | 該 key 沒有 `od_intake` scope |
+| 429 | （回應形狀不同：`{"success":false,"error":"請求頻率過高，請稍後再試"}`） | per key 100/min、5000/hour；另有 per IP 認證失敗 30/min |
 
 ---
 
-## 流程啟動後的機制（兩條路徑共通）
+## 路徑 C：外部發動閘道 `/api/trigger/form`
+
+**外部系統發動一般表單（非資安事件）的正解**，規格 `dev-notes/API_KEY_TRIGGER_SPEC.md` §3。
+認證與路徑 B 完全相同（同一組 `X-BP-*` headers、同一個簽章式），
+差別在 scope 與 body。
+
+### 程式碼位置
+
+| 元件 | 檔案 |
+|---|---|
+| 發動端點 | `modules/form_workflow/api/external_trigger.py` -- `POST /api/trigger/form` |
+| 可發動表單清單 | 同檔 -- `GET /api/trigger/forms`（含每張表單的 `field_keys`，供對接時查欄位） |
+| HMAC 驗證 | `backend/app/security/decorators.py::api_key_hmac_required` |
+
+### 前置條件
+
+建立 API Key 時勾 `form_category`（表單分類授權，父分類自動含子分類）或
+`form`（直綁 published SC，例外用法）scope。
+另可綁 `applicant_user_secure_code`，發動的表單以該帳號為申請人
+（未綁時申請人僅記 `consumer_label`）。
+
+### Body 與回應
+
+```json
+{"published_secure_code": "...", "subject": "人資系統 - 建立帳號申請",
+ "form_data": {"field_key": "value"}}
+```
+
+`form_data` 的 key 必須存在於 form schema 中 `input: true` 的欄位（遞迴展開容器元件），
+出現未知 key 回 400 `unknown_field`，`details` 會同時列出 `allowed_keys`。
+成功回 201，`data` 含 `form_instance_secure_code` / `serial_number` /
+`workflow_instance_secure_code` / `execution_code`。不支援測試模式。
+
+錯誤碼：401 `auth_failed`、403 `scope_denied`、404 `form_not_found`（含跨租戶）、
+422 `form_not_published`、422 `applicant_invalid`、400 `unknown_field`。
+
+簽章寫法與路徑 B 相同，把 endpoint 與 body 換掉即可
+（`scripts/examples/od_intake_send_event.py` 的 `sign()` 可直接沿用）。
+
+---
+
+## 流程啟動後的機制（三條路徑共通）
 
 1. 送出當下：`FwFormInstance`（status=INITIAL）+ `FwWorkflowInstance`（status=RUNNING）+ Start 節點 queue item（status=PENDING）同交易寫入。
 2. `workflow_executor` 背景執行緒撿起 PENDING 節點依 graph 推進；簽核節點會產生待辦，出現在 `/beakplatform/forms/pending`。
