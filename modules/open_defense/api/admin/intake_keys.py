@@ -2,6 +2,7 @@
 
 OdIntakeKey 已由 migration 079 遷移至平台 ApiKey(scopes.od_intake),
 金鑰的建立/暫停/撤銷改在 /security/api-keys/ 管理。
+GET 現在供 /security/api-keys/ 的遷移前遺留金鑰區塊讀取。
 本表保留唯讀一個版本週期後刪除(規格: dev-notes/API_KEY_TRIGGER_SPEC.md P2)。
 """
 from flask import jsonify
@@ -20,7 +21,7 @@ def _migrated_msg():
 @admin_bp.route('/intake-keys', methods=['GET'])
 @admin_required
 def list_intake_keys():
-    """唯讀遺留清單(僅供比對遷移前資料)"""
+    """唯讀遺留清單(供 /security/api-keys/ 遺留區塊顯示)"""
     org_sc = current_user.org_secure_code
     rows = OdIntakeKey.query.filter_by(
         org_secure_code=org_sc, is_deleted=False,

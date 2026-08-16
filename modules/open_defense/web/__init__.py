@@ -1,7 +1,7 @@
 """
 OpenDefense Module - Web Routes
 
-管理員介面:dashboard / decisions / intake-keys / service-accounts。
+管理員介面:dashboard / decisions / service-accounts。
 所有頁面以 @module_access_required 鎖在本模組合約 + admin_required 鎖管理員。
 """
 from flask import Blueprint, render_template, redirect, url_for
@@ -58,7 +58,7 @@ def protected_targets():
 @web_bp.route('/intake-keys')
 @module_access_required('open_defense', False)
 def intake_keys():
-    return render_template('modules/open_defense/intake_keys.html')
+    return redirect(url_for('security_center.api_keys'))
 
 
 @web_bp.route('/service-accounts')

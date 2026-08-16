@@ -75,6 +75,39 @@
         </tbody>
     </table>
 
+    <section class="ak-legacy" x-show="legacyKeys.length > 0">
+        <h3>{{ _('遷移前的遺留金鑰（唯讀）') }}</h3>
+        <p class="ak-sub">
+            {{ _('這些是 2026-07-08 併入 API Key 體系之前建立的金鑰，仍可正常使用，但只能在此檢視，暫停與撤銷請用上方清單') }}
+        </p>
+        <table class="ak-table">
+            <thead>
+                <tr>
+                    <th>{{ _('Key ID') }}</th>
+                    <th>{{ _('名稱') }}</th>
+                    <th>{{ _('來源系統白名單') }}</th>
+                    <th>{{ _('建立時間') }}</th>
+                    <th>{{ _('狀態') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="key in legacyKeys" :key="key.secure_code">
+                    <tr>
+                        <td><code x-text="key.key_id"></code></td>
+                        <td x-text="key.name"></td>
+                        <td x-text="(key.allowed_source_systems && key.allowed_source_systems.length) ? key.allowed_source_systems.join(', ') : '-'"></td>
+                        <td x-text="fmtTime(key.created_at)"></td>
+                        <td>
+                            <span class="ak-badge"
+                                  :class="key.is_active ? 'ak-badge-active' : 'ak-badge-suspended'"
+                                  x-text="legacyStatusLabel(key)"></span>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </section>
+
     {% include 'pages/security/_api_keys_modals.html' %}
 </div>
 {% endblock %}

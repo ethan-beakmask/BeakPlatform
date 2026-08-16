@@ -58,14 +58,6 @@ MODULE_INFO = {
                     'user_types': ['ORG_ADMIN', 'EMPLOYEE'],
                 },
                 {
-                    'code': 'open_defense.intake_keys',
-                    'name': '事件接收金鑰',
-                    'url': 'open_defense_web.intake_keys',
-                    'sort_order': 3,
-                    'user_types': ['ORG_ADMIN'],
-                    'required_permission': 'open_defense.admin',
-                },
-                {
                     'code': 'open_defense.service_accounts',
                     'name': '執行端帳號',
                     'url': 'open_defense_web.service_accounts',

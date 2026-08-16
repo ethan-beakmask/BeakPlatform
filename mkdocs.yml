@@ -138,6 +138,12 @@ nav:
           - manual/08_external/index.md
           - 可存取的範圍: manual/08_external/scope.md
           - 受邀的表單作業: manual/08_external/external_tasks.md
+      - 從零開始到發動流程表單:
+          - manual/09_from_zero/index.md
+          - 這條鏈路怎麼運作: manual/09_from_zero/01_how_it_works.md
+          - 逐步建置: manual/09_from_zero/02_build_it.md
+          - 送出第一筆事件: manual/09_from_zero/03_send_and_verify.md
+          - 卡住時對照這張表: manual/09_from_zero/04_when_it_fails.md
 
 plugins:
   - search:

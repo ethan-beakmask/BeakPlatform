@@ -23,6 +23,7 @@
     window.apiKeysManager = function () {
         return {
             keys: [],
+            legacyKeys: [],
             loading: true,
             msg: '',
             msgErr: false,
@@ -62,7 +63,7 @@
 
             async init() {
                 this.form = this.emptyForm();
-                await Promise.all([this.load(), this.loadOptions()]);
+                await Promise.all([this.load(), this.loadOptions(), this.loadLegacy()]);
             },
 
             async load() {
@@ -103,6 +104,31 @@
                 } catch (e) { /* ignore */ }
             },
 
+            async loadLegacy() {
+                try {
+                    const res = await fetch(PREFIX + '/api/open_defense/admin/intake-keys', {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken,
+                        },
+                    });
+                    if (!res.ok) {
+                        this.legacyKeys = [];
+                        return;
+                    }
+                    let data;
+                    try {
+                        data = await res.json();
+                    } catch (e) {
+                        this.legacyKeys = [];
+                        return;
+                    }
+                    this.legacyKeys = Array.isArray(data.keys) ? data.keys : [];
+                } catch (e) {
+                    this.legacyKeys = [];
+                }
+            },
+
             flash(message, isErr) {
                 this.msg = message;
                 this.msgErr = !!isErr;
@@ -135,9 +161,15 @@
                 return { active: __('啟用中'), suspended: __('已暫停'), revoked: __('已撤銷') }[status] || status;
             },
 
+            legacyStatusLabel(key) {
+                return key.is_active ? __('啟用中') : __('已停用');
+            },
+
             fmtTime(iso) {
                 if (!iso) return '-';
-                return (window.BkTime && BkTime.format) ? BkTime.format(iso, 'short') : iso;
+                // timezone.js 用 `const BkTime` 宣告，全域 const 不會成為 window 的屬性，
+                // 判斷寫成 window.BkTime 會恆為 false、時間永遠顯示未轉換的 UTC 原文（TZ-01）
+                return (typeof BkTime !== 'undefined' && BkTime.format) ? BkTime.format(iso, 'short') : iso;
             },
 
             fmtDate(iso) {

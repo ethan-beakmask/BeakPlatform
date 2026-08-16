@@ -2,7 +2,7 @@
 title: 事件接收金鑰
 audience: ORG_ADMIN
 order: 60
-nav_menu: open_defense.intake_keys
+nav_menu: api_key_manage
 requires:
   - manual/05_security_ops/event_routing
 produces:

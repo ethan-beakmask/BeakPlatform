@@ -117,23 +117,16 @@ test.describe.serial('PF-79 資安案件處置中心', () => {
 
   test('C. 四頁副標已移除', async ({ page }) => {
     // 驗證 OpenDefense 四個管理頁的頁首不再渲染副標 p 元素。
-    for (const pageName of ['decisions', 'event-routing', 'intake-keys', 'service-accounts']) {
+    for (const pageName of ['decisions', 'event-routing', 'service-accounts']) {
       await page.goto(`/beakplatform/open-defense/${pageName}`);
       await expect(page.locator('.od-header')).toBeVisible();
       await expect(page.locator('.od-header p')).toHaveCount(0);
     }
   });
 
-  test('D. intake-keys 的 API Key 管理入口保留 nginx 前綴', async ({ page }) => {
-    // 驗證實際可點擊的管理入口 href 與導向 URL 都包含 /beakplatform 前綴。
+  test('D. intake-keys 舊路由轉向 API Key 管理', async ({ page }) => {
+    // 驗證舊路由仍保留 nginx 前綴並轉向統一管理頁。
     await page.goto('/beakplatform/open-defense/intake-keys');
-    const apiKeyLink = page.locator('.od-header a', { hasText: 'API Key 管理' });
-
-    await expect(apiKeyLink).toBeVisible();
-    await expect(apiKeyLink).toHaveAttribute('href', '/beakplatform/security/api-keys/');
-    await Promise.all([
-      page.waitForURL('http://192.168.0.16:7000/beakplatform/security/api-keys/'),
-      apiKeyLink.click(),
-    ]);
+    await expect(page).toHaveURL('http://192.168.0.16:7000/beakplatform/security/api-keys/');
   });
 });
