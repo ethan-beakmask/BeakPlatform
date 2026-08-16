@@ -41,6 +41,33 @@ Stats/Forwards/Decisions 三頁 in-memory UI，重啟清零）。其餘六個 We
 `suricata/rules/*.rules`（上游 ET 規則集，42M×2，可重新下載）、
 `waf/log/`（執行期 log）、各種 `.bak.*`。這些留在 `.20` 本機，不進版控。
 
+**方向固定是「先改 `.16` repo，再同步到 `.20`」**（2026-08-16 冷讀指出本段
+原本沒講清楚，兩邊都像權威）。PF-112 的實際流程可照抄：
+
+```bash
+# 1. 改 /opt/BeakPlatform-dev/sec-vm-bootstrap/ 底下的檔案
+# 2. 送過去（docs/ 是 root-owned，要 sudo cp）
+scp -i ~/.ssh/company-wsl <files> ethan@192.168.0.20:/tmp/
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 \
+  'cp -a /tmp/<file> ~/sec-vm-bootstrap/<路徑>/ && cd ~/sec-vm-bootstrap && \
+   sudo docker compose up -d --build <service>'
+# 3. md5 兩邊比對（少了這步就會出現「改了但沒生效」）
+md5sum /opt/BeakPlatform-dev/sec-vm-bootstrap/<file>
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'md5sum ~/sec-vm-bootstrap/<file>'
+```
+
+反過來直接改 `.20` 再回填容易漏檔，不要那樣做。
+
+**改 `sec-vm-bootstrap/` 時會撞到的兩件事**（2026-08-16 PF-112 試誤）：
+
+- **`vector/vector.yaml` 在 `.16` 與 `.20` 都是指向 `vector.production.yaml` 的
+  symlink**，實際生效的是 production 那份。改設定只要改 production
+  （與 research），`vector.yaml` 不必也不該改成實體檔
+- **`.20` 的 `sec-vm-bootstrap/docs/` 是 root-owned**，`scp` 進 `/tmp` 後
+  要 `sudo cp -a` 才蓋得過去。直接 `cp` 會拿到 `Permission denied`，
+  而且若寫在一長串 `&&` 裡很容易被忽略過去（od-bridge 程式與 vector 設定
+  則是 ethan-owned，不需 sudo）
+
 `.20` 的服務密碼在 `.20:~/sec-vm-bootstrap/CREDENTIALS.md` 與 `.20:~/sec-vm-bootstrap/.env`；
 BeakPlatform 的資料庫連線在 `/opt/BeakPlatform-dev/.env`。
 **平台 UI 的登入帳密不在本專案文件內，需要時直接問用戶。**
@@ -113,6 +140,18 @@ FLASK_APP=app /opt/BeakPlatform-dev/venv/bin/python <script>
 
 `.16` 是 **UTC+8**（CST），`.20` 是 **UTC**。同一件事在兩邊的 log 差 8 小時。
 DB 的 `received_at` / `expires_at` 存 UTC。
+
+**因此 `WHERE received_at > now() - interval '15 minutes'` 會查不到剛進來的事件**
+（`now()` 回台北時間，欄位是 naive UTC，差 8 小時＝永遠不在窗內）。
+剛做完的動作要驗證時，直接取最新幾筆最省事：
+
+```sql
+SELECT received_at, source_system, event_class, case_secure_code IS NOT NULL AS has_case
+FROM od_intake_events ORDER BY received_at DESC LIMIT 5;
+```
+
+要真的用時間窗就寫 `now() at time zone 'Asia/Taipei'`（或 `at time zone 'UTC'`
+視 DB 時區設定而定，用前先 `SELECT now(), now() at time zone 'UTC';` 對一次）。
 
 ### `.20` 的絕對路徑與容器名（別用 `~` 猜）
 
@@ -341,7 +380,39 @@ Coraza 那條線另外在 vector 端補了信任代理比對（`ocsf_from_modsec
    （suricata 1 筆/3600 秒、coraza 5 筆/300 秒），另有**全域 8 筆/60 秒**封頂。
    要連續測就換不同來源 IP。
 4. **`203.0.113.1` 是 canary 專用來源 IP**：`host-cron/secstack-canary` 每小時
-   自動打一次，SOC 看板與報表要排除它。它有豁免全域 throttle。
+   自動打一次，有豁免全域 throttle。
+   **不要排除它**——2026-08-16 用戶定案「演習視同作戰」，canary 案件照常進處置中心，
+   由 SOC L1 簽「資安演練」結案，每天 24 張演習單是刻意的訓練負載。
+   本文件原本寫「SOC 看板與報表要排除它」，該指示**已作廢**
+   （權威說明在 `/etc/cron.hourly/secstack-canary` 的檔頭註解）。
+
+5. **`POST /events` 需要 bearer token**（PF-112，2026-08-16 起）：
+   手動灌事件進 od-bridge 少帶 header 一律 401，而 401 與「服務掛了」
+   在只看 curl 結果時長得很像。
+   ```bash
+   TOKEN=$(grep '^BRIDGE_INGEST_TOKEN=' ~/sec-vm-bootstrap/.env | cut -d= -f2-)
+   curl -X POST http://127.0.0.1:8500/events -H "Authorization: Bearer $TOKEN" ...
+   ```
+
+6. **自製合成事件很容易被 intake_filter 靜默丟掉**（測 vector→bridge 那段時）：
+   - `actor.ip` 要用**公網**位址（`203.0.113.42` 之類）。內網 actor + 內網 target
+     會被 `internal_actor && internal_target` 整批 drop
+   - `source_system` **不要寫 `suricata`**，除非 `severity_id >= 2`——
+     `low_sev_suricata` 會把 `sev <= 1` 的 suricata 事件 drop 掉
+   - throttle key 是 `source_system|finding.rule_id|actor.ip`，
+     重複測要換 `rule_id`，否則第二筆之後靜默消失
+   - 事件到得了 bridge 不代表平台會建案：欄位不合 intake 契約時
+     bridge log 會顯示 `forwarded ... status=400`（那是平台回的，不是 bridge 的錯）
+
+**驗真實路徑最快的一招是手動觸發 canary**（比自製合成事件可靠，
+因為它走的就是每小時在跑的那條）：
+
+```bash
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'sudo /etc/cron.hourly/secstack-canary'
+# 約 20 秒後看 bridge 有沒有把兩條路徑都送上去（期望 status=200）
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 \
+  'docker logs secstack-od-bridge-1 --since 3m 2>&1 | grep -E "forwarded|401"'
+```
 
 ### `.16` 服務的執行方式（會影響能不能重啟、改了程式碼何時生效）
 
