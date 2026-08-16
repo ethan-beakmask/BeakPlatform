@@ -48,14 +48,16 @@ function odProtectedTargets() {
         sortedTargets() {
             return [...this.protectedTargets].sort((a, b) => {
                 const t = String(a.entry_type || '').localeCompare(String(b.entry_type || ''));
+                const o = String(a.origin || '').localeCompare(String(b.origin || ''));
                 const v = String(a.target_value || '').localeCompare(String(b.target_value || ''));
-                return t || v || String(a.secure_code || '').localeCompare(String(b.secure_code || ''));
+                return t || o || v || String(a.secure_code || '').localeCompare(String(b.secure_code || ''));
             });
         },
 
         emptyTargetForm() {
             return {
                 entry_type: 'protect',
+                origin: 'custom',
                 target_value: '',
                 name: '',
                 note: '',
@@ -66,6 +68,7 @@ function odProtectedTargets() {
         normalizeTargetForm(target) {
             return {
                 entry_type: target.entry_type || 'protect',
+                origin: target.origin || 'custom',
                 target_value: target.target_value || '',
                 name: target.name || '',
                 note: target.note || '',
@@ -90,15 +93,18 @@ function odProtectedTargets() {
         },
 
         buildTargetPayload() {
-            const targetValue = String(this.targetForm.target_value || '').trim();
-            if (!targetValue) throw new Error(__('目標必填'));
-            return {
-                entry_type: this.targetForm.entry_type,
-                target_value: targetValue,
+            const payload = {
                 name: String(this.targetForm.name || '').trim(),
                 note: String(this.targetForm.note || '').trim(),
                 is_active: this.targetForm.is_active === true,
             };
+            if (this.targetForm.origin !== 'builtin') {
+                const targetValue = String(this.targetForm.target_value || '').trim();
+                if (!targetValue) throw new Error(__('目標必填'));
+                payload.entry_type = this.targetForm.entry_type;
+                payload.target_value = targetValue;
+            }
+            return payload;
         },
 
         async saveTarget() {
@@ -126,8 +132,22 @@ function odProtectedTargets() {
             await this.loadTargets();
         },
 
+        async toggleActive(target) {
+            if (!this.canAdmin() || target.origin !== 'builtin') return;
+            const r = await OD.fetchJSON(`${OD_PROTECTED_API}/protected-targets/${target.secure_code}`, {
+                method: 'PUT',
+                body: JSON.stringify({ is_active: !target.is_active }),
+            });
+            if (!r.ok) {
+                alert(__('儲存保護清單失敗: {message}', { message: this.apiMessage(r) }));
+                return;
+            }
+            await this.loadTargets();
+        },
+
         async deleteTarget(target) {
             if (!this.canAdmin()) return;
+            if (target.origin === 'builtin') return;
             const label = target.name || target.target_value || target.secure_code;
             if (!confirm(__('刪除保護清單項目「{name}」?', { name: label }))) return;
             const r = await OD.fetchJSON(`${OD_PROTECTED_API}/protected-targets/${target.secure_code}`, {
@@ -169,6 +189,11 @@ function odProtectedTargets() {
                 return __('即使命中內建保護網段，仍允許封鎖；只有當封鎖目標完全落在豁免網段內才生效。');
             }
             return __('這個位址／網段不得被寫成封鎖決策。');
+        },
+
+        originLabel(origin) {
+            if (origin === 'builtin') return __('內建');
+            return __('自訂');
         },
 
         sourceLabel(source) {

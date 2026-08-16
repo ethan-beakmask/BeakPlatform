@@ -9,6 +9,7 @@ from .base import OdBaseModel
 
 
 VALID_PROTECTED_ENTRY_TYPES = ('protect', 'exempt')
+VALID_PROTECTED_ORIGINS = ('builtin', 'custom')
 
 
 class OdProtectedTarget(OdBaseModel):
@@ -16,6 +17,7 @@ class OdProtectedTarget(OdBaseModel):
     __tablename__ = 'od_protected_targets'
 
     entry_type = Column(String(10), nullable=False, default='protect')
+    origin = Column(String(20), nullable=False, default='custom', server_default='custom')
     target_value = Column(String(64), nullable=False)
     name = Column(String(100), nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
@@ -30,6 +32,7 @@ class OdProtectedTarget(OdBaseModel):
         base = super().to_dict()
         base.update({
             'entry_type': self.entry_type,
+            'origin': self.origin,
             'target_value': self.target_value,
             'name': self.name,
             'is_active': self.is_active,

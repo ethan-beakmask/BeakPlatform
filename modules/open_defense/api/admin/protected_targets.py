@@ -66,7 +66,7 @@ def list_protected_targets():
         OdProtectedTarget.target_value.asc(),
         OdProtectedTarget.id.asc(),
     ).all()
-    builtin, config = list_effective_networks()
+    builtin, config = list_effective_networks(current_user.org_secure_code)
     return jsonify({
         'protected_targets': [_record_payload(r) for r in rows],
         'builtin_networks': builtin,
@@ -96,6 +96,7 @@ def create_protected_target():
     record = OdProtectedTarget(
         org_secure_code=org_sc,
         entry_type=entry_type,
+        origin='custom',
         target_value=target_value,
         name=_string_or_none(body.get('name')),
         is_active=bool(body.get('is_active', True)),
@@ -141,12 +142,30 @@ def update_protected_target(secure_code):
         except InvalidTargetValueError:
             return _error('invalid_target_value', _('target_value 不是合法的 IP 或 CIDR'), 400)
 
-    if _duplicate_target(org_sc, next_entry_type, next_target_value, exclude_secure_code=secure_code):
+    if record.origin == 'builtin':
+        changed_entry_type = (
+            'entry_type' in body and next_entry_type != record.entry_type
+        )
+        changed_target_value = (
+            'target_value' in body and next_target_value != record.target_value
+        )
+        if changed_entry_type or changed_target_value:
+            return _error(
+                'builtin_immutable',
+                _('內建保護項目不可修改類型或目標，只能停用'),
+                400,
+            )
+    elif _duplicate_target(
+        org_sc,
+        next_entry_type,
+        next_target_value,
+        exclude_secure_code=secure_code,
+    ):
         return _error('duplicate', _('同類型目標已存在'), 409)
 
-    if 'entry_type' in body:
+    if record.origin != 'builtin' and 'entry_type' in body:
         record.entry_type = next_entry_type
-    if 'target_value' in body:
+    if record.origin != 'builtin' and 'target_value' in body:
         record.target_value = next_target_value
     if 'name' in body:
         record.name = _string_or_none(body.get('name'))
@@ -176,6 +195,13 @@ def delete_protected_target(secure_code):
     ).first()
     if not record:
         return _error('not_found', _('保護清單項目不存在'), 404)
+
+    if record.origin == 'builtin':
+        return _error(
+            'builtin_not_deletable',
+            _('內建保護項目不可刪除，請改為停用'),
+            400,
+        )
 
     record.is_deleted = True
     record.deleted_at = datetime.utcnow()

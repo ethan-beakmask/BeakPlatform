@@ -1,5 +1,6 @@
 import sys
 import json
+import ipaddress
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,10 @@ from sqlalchemy import inspect
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app import db
+from app.defaults.od_protected_defaults import (
+    BUILTIN_PROTECTED_DEFAULTS,
+    seed_org_builtin_protected_targets,
+)
 from app.utils.security import generate_secure_code
 from modules.open_defense.models import OdDefenseDecision, OdProtectedTarget
 from modules.open_defense.services.decision_service import (
@@ -17,6 +22,7 @@ from modules.open_defense.services.decision_service import (
 )
 from modules.open_defense.services.protected_target_service import (
     InvalidTargetValueError,
+    BUILTIN_PROTECTED_NETWORKS,
     check_block_target,
     describe_protection,
     list_effective_networks,
@@ -58,11 +64,13 @@ def _protected_target(
     target_value='203.0.113.0/24',
     is_active=True,
     name='test protected target',
+    origin='custom',
 ):
     entry = OdProtectedTarget(
         secure_code=generate_secure_code(),
         org_secure_code=org_secure_code,
         entry_type=entry_type,
+        origin=origin,
         target_value=target_value,
         name=name,
         is_active=is_active,
@@ -157,6 +165,154 @@ def test_inactive_custom_protect_is_ignored(app, db_session):
     _protected_target(target_value='203.0.113.0/24', is_active=False)
 
     assert _check('203.0.113.77') is None
+
+
+def test_builtin_db_record_is_used(app, db_session):
+    _require_od_protected_tables()
+    entry = _protected_target(
+        target_value='10.0.0.0/8',
+        origin='builtin',
+        name='org builtin 10',
+    )
+
+    hit = _check('10.1.2.3')
+
+    assert hit is not None
+    assert hit.source == 'builtin'
+    assert hit.entry_secure_code == entry.secure_code
+
+
+def test_org_can_disable_builtin_protection(app, db_session):
+    _require_od_protected_tables()
+    _protected_target(
+        target_value='10.0.0.0/8',
+        origin='builtin',
+        is_active=False,
+    )
+
+    assert _check('10.1.2.3') is None
+
+
+def test_builtin_fallback_applies_when_org_has_no_builtin_records(app, db_session):
+    _require_od_protected_tables()
+
+    hit = _check('10.1.2.3')
+
+    assert hit is not None
+    assert hit.source == 'builtin'
+    assert hit.entry_secure_code is None
+
+
+@pytest.mark.parametrize('target_value', ['10.1.2.3', '127.0.0.1', '192.168.0.20'])
+def test_all_builtin_disabled_does_not_trigger_fallback(app, db_session, target_value):
+    """企業把出廠的 16 條全部停用是合法設定，不得被誤判成「seed 漏了」。
+
+    fail-safe 的判斷若誤帶 is_active 過濾，這裡會回退硬編碼常數而拿到 hit
+    ——使用者的停用被靜默忽略且沒有任何錯誤訊息。
+    """
+    _require_od_protected_tables()
+    app.config['TRUSTED_PROXY_IPS'] = ()
+    app.config['OD_PROTECTED_EXTRA_NETWORKS'] = ()
+    assert seed_org_builtin_protected_targets(ORG_SC) == 16
+    OdProtectedTarget.query.filter_by(
+        org_secure_code=ORG_SC,
+        origin='builtin',
+        is_deleted=False,
+    ).update({'is_active': False})
+    db.session.flush()
+
+    assert _check(target_value) is None
+
+
+def test_builtin_protection_is_per_org(app, db_session):
+    _require_od_protected_tables()
+    _protected_target(
+        org_secure_code=ORG_SC,
+        target_value='10.0.0.0/8',
+        origin='builtin',
+        is_active=False,
+    )
+    _protected_target(
+        org_secure_code=OTHER_ORG_SC,
+        target_value='10.0.0.0/8',
+        origin='builtin',
+        is_active=True,
+    )
+
+    assert _check('10.1.2.3', org_secure_code=ORG_SC) is None
+    hit = _check('10.1.2.3', org_secure_code=OTHER_ORG_SC)
+    assert hit is not None
+    assert hit.source == 'builtin'
+
+
+def test_builtin_record_is_not_reported_as_custom(app, db_session):
+    _require_od_protected_tables()
+    _protected_target(target_value='10.0.0.0/8', origin='builtin')
+
+    hit = _check('10.1.2.3')
+
+    assert hit is not None
+    assert hit.source == 'builtin'
+
+
+def test_list_effective_networks_only_returns_builtin_on_fallback(app, db_session):
+    _require_od_protected_tables()
+
+    fallback_builtin, _config = list_effective_networks(ORG_SC)
+    assert len(fallback_builtin) == 16
+
+    _protected_target(target_value='10.0.0.0/8', origin='builtin')
+    builtin, _config = list_effective_networks(ORG_SC)
+    assert builtin == []
+
+
+def test_builtin_defaults_match_service_constants():
+    defaults = {
+        str(ipaddress.ip_network(network))
+        for network, _label in BUILTIN_PROTECTED_DEFAULTS
+    }
+    constants = {
+        str(network)
+        for network, _label in BUILTIN_PROTECTED_NETWORKS
+    }
+
+    assert defaults == constants
+
+
+def test_seed_builtin_protected_targets_is_idempotent(app, db_session):
+    _require_od_protected_tables()
+
+    assert seed_org_builtin_protected_targets(ORG_SC) == 16
+    assert seed_org_builtin_protected_targets(ORG_SC) == 0
+
+    count = OdProtectedTarget.query.filter_by(
+        org_secure_code=ORG_SC,
+        origin='builtin',
+        entry_type='protect',
+        is_deleted=False,
+    ).count()
+    assert count == 16
+
+
+def test_seed_does_not_overwrite_existing_custom_same_network(app, db_session):
+    _require_od_protected_tables()
+    custom = _protected_target(
+        target_value='10.0.0.0/8',
+        origin='custom',
+        name='custom 10',
+    )
+
+    seed_org_builtin_protected_targets(ORG_SC)
+
+    db.session.refresh(custom)
+    assert custom.origin == 'custom'
+    assert OdProtectedTarget.query.filter_by(
+        org_secure_code=ORG_SC,
+        origin='builtin',
+        entry_type='protect',
+        target_value='10.0.0.0/8',
+        is_deleted=False,
+    ).count() == 0
 
 
 def test_custom_exempt_requires_target_to_be_subnet_of_exempt(app, db_session):

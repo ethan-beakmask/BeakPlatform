@@ -162,6 +162,9 @@ class OrganizationService:
             # 建立預設外部廠商群組
             OrganizationService._create_default_external_group(org)
 
+        from ..defaults.od_protected_defaults import seed_org_builtin_protected_targets
+        seed_org_builtin_protected_targets(org.secure_code)
+
         logger.info(f"Organization created: {org.code} ({org.domain_name}) by {created_by}")
 
         return org, admin_user
@@ -906,6 +909,9 @@ class OrganizationService:
 
         # 建立預設角色
         OrganizationService._create_default_roles(org)
+
+        from ..defaults.od_protected_defaults import seed_org_builtin_protected_targets
+        seed_org_builtin_protected_targets(org.secure_code)
 
         db.session.commit()
 

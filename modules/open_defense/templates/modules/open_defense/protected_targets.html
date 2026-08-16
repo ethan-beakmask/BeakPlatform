@@ -17,18 +17,22 @@
 
     <div class="od-section">
         <div class="od-section-header">
-            <h2>{{ _('自訂保護清單') }}</h2>
+            <div>
+                <h2>{{ _('保護清單') }}</h2>
+                <p class="od-muted">{{ _('內建項目由平台出廠提供，可停用但不可刪除；自訂項目可自由增刪。') }}</p>
+            </div>
             {% if can('open_defense.admin') %}
             <button class="btn btn-primary" @click="openTargetModal()">{{ _('新增項目') }}</button>
             {% endif %}
         </div>
         <div x-show="loading.targets" class="od-empty">{{ _('載入中...') }}</div>
         <div x-show="!loading.targets && error.targets" class="od-alert od-alert-error" x-text="error.targets"></div>
-        <div x-show="!loading.targets && !error.targets && sortedTargets().length === 0" class="od-empty">{{ _('尚無自訂項目') }}</div>
+        <div x-show="!loading.targets && !error.targets && sortedTargets().length === 0" class="od-empty">{{ _('尚無項目') }}</div>
         <table x-show="!loading.targets && !error.targets && sortedTargets().length > 0" class="od-table">
             <thead>
                 <tr>
                     <th>{{ _('類型') }}</th>
+                    <th>{{ _('來源') }}</th>
                     <th>{{ _('目標') }}</th>
                     <th>{{ _('名稱') }}</th>
                     <th>{{ _('狀態') }}</th>
@@ -45,6 +49,9 @@
                                   x-text="entryTypeLabel(target.entry_type)"></span>
                             <div class="od-muted" x-text="entryTypeHelp(target.entry_type)"></div>
                         </td>
+                        <td>
+                            <span class="od-badge" x-text="originLabel(target.origin)"></span>
+                        </td>
                         <td><span class="od-mono" x-text="target.target_value"></span></td>
                         <td x-text="target.name || '-'"></td>
                         <td>
@@ -55,8 +62,13 @@
                         <td x-text="OD.formatTime(target.created_at)"></td>
                         <td class="od-actions">
                             {% if can('open_defense.admin') %}
+                            <template x-if="target.origin === 'builtin'">
+                                <button class="btn btn-sm btn-secondary" @click="toggleActive(target)" x-text="target.is_active ? __('停用') : __('啟用')"></button>
+                            </template>
                             <button class="btn btn-sm btn-secondary" @click="openTargetModal(target)">{{ _('編輯') }}</button>
-                            <button class="btn btn-sm btn-danger" @click="deleteTarget(target)">{{ _('刪除') }}</button>
+                            <template x-if="target.origin !== 'builtin'">
+                                <button class="btn btn-sm btn-danger" @click="deleteTarget(target)">{{ _('刪除') }}</button>
+                            </template>
                             {% endif %}
                         </td>
                     </tr>
@@ -70,9 +82,10 @@
             <h2>{{ _('內建與設定來源（唯讀）') }}</h2>
         </div>
         <div class="od-section-body">
-            <p class="od-muted">{{ _('這些是程式內建與環境設定的保護網段，無法在此編輯；要允許封鎖其中某個位址，請新增「豁免」項目。') }} {{ _('平台自身的基礎設施位址一律受保護且不列於此。') }}</p>
+            <p class="od-muted">{{ _('設定來源保護網段由平台設定提供；內建項目通常列於上方保護清單。') }} {{ _('平台自身的基礎設施位址一律受保護且不列於此。') }}</p>
             <div class="od-network-grid">
-                <div>
+                <div x-show="builtinNetworks.length > 0">
+                    <div class="od-alert od-alert-error">{{ _('出廠保護清單缺漏，目前暫以程式內建值保護。請聯絡系統管理員補齊出廠值。') }}</div>
                     <h3 class="od-subtitle">{{ _('內建保護網段') }}</h3>
                     <table class="od-table">
                         <thead>
@@ -153,15 +166,17 @@
                 <div class="od-form-grid">
                     <div class="od-field">
                         <label>{{ _('類型') }}</label>
-                        <select x-model="targetForm.entry_type">
+                        <select x-model="targetForm.entry_type" :disabled="targetForm.origin === 'builtin'">
                             <option value="protect" :selected="'protect' === targetForm.entry_type">{{ _('保護（protect）') }}</option>
                             <option value="exempt" :selected="'exempt' === targetForm.entry_type">{{ _('豁免（exempt）') }}</option>
                         </select>
                         <div class="od-field-hint" x-text="entryTypeHelp(targetForm.entry_type)"></div>
+                        <div x-show="targetForm.origin === 'builtin'" class="od-field-hint">{{ _('內建項目的類型與目標不可修改') }}</div>
                     </div>
                     <div class="od-field">
                         <label>{{ _('目標') }}</label>
-                        <input type="text" x-model="targetForm.target_value" placeholder="203.0.113.0/24">
+                        <input type="text" x-model="targetForm.target_value" placeholder="203.0.113.0/24" :disabled="targetForm.origin === 'builtin'">
+                        <div x-show="targetForm.origin === 'builtin'" class="od-field-hint">{{ _('內建項目的類型與目標不可修改') }}</div>
                     </div>
                     <div class="od-field">
                         <label>{{ _('名稱') }}</label>

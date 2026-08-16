@@ -95,15 +95,72 @@ def _config_protected_networks():
     return networks
 
 
-def list_effective_networks() -> tuple:
-    """列出與判定共用的內建/設定來源保護網段,供管理頁唯讀展示。"""
-    builtin = [
-        {
-            'network': str(network),
-            'label': str(label),
-        }
+def _fallback_builtin_networks():
+    return [
+        (network, 'builtin', str(label), None)
         for network, label in BUILTIN_PROTECTED_NETWORKS
     ]
+
+
+def _org_builtin_networks(org_secure_code):
+    """回傳 (networks, fallback_used)。"""
+    if not has_app_context() or not org_secure_code:
+        return _fallback_builtin_networks(), True
+
+    try:
+        # 判斷要不要 fail-safe 看的是有沒有 builtin 記錄（不帶 is_active 過濾）；
+        # 實際判定才只取 is_active=True。兩個查詢條件刻意不同：
+        # 企業合法地把 16 條全部停用是正常設定，若 fail-safe 帶了 is_active
+        # 過濾，這種情況會被誤判成 seed 漏了而回退硬編碼常數，靜默忽略停用。
+        entries = OdProtectedTarget.query.filter_by(
+            org_secure_code=org_secure_code,
+            origin='builtin',
+            entry_type='protect',
+            is_deleted=False,
+        ).all()
+    except Exception:
+        logger.exception(
+            'OpenDefense protected target builtin query failed org=%s',
+            org_secure_code,
+        )
+        return _fallback_builtin_networks(), True
+
+    if not entries:
+        return _fallback_builtin_networks(), True
+
+    networks = []
+    for entry in entries:
+        if not entry.is_active:
+            continue
+        try:
+            net = parse_target_network(entry.target_value)
+        except InvalidTargetValueError:
+            logger.warning(
+                'OpenDefense protected target builtin entry ignored invalid network sc=%s org=%s value=%r',
+                entry.secure_code, org_secure_code, entry.target_value,
+            )
+            continue
+        networks.append((
+            net,
+            'builtin',
+            entry.name or entry.target_value,
+            entry.secure_code,
+        ))
+    return networks, False
+
+
+def list_effective_networks(org_secure_code=None) -> tuple:
+    """列出與判定共用的 fail-safe 內建/設定來源保護網段,供管理頁唯讀展示。"""
+    builtin_networks, fallback_used = _org_builtin_networks(org_secure_code)
+    builtin = []
+    if fallback_used:
+        builtin = [
+            {
+                'network': str(network),
+                'label': label,
+            }
+            for network, _source, label, _entry_secure_code in builtin_networks
+        ]
     config = [
         {
             'network': str(network),
@@ -121,6 +178,7 @@ def _custom_entries(org_secure_code: str, entry_type: str):
 
     return OdProtectedTarget.query.filter_by(
         org_secure_code=org_secure_code,
+        origin='custom',
         entry_type=entry_type,
         is_active=True,
         is_deleted=False,
@@ -156,7 +214,8 @@ def check_block_target(*, org_secure_code, action, target_type, target_value) ->
     net = parse_target_network(target_value)
 
     protected = []
-    protected.extend((network, 'builtin', str(label), None) for network, label in BUILTIN_PROTECTED_NETWORKS)
+    builtin_networks, _fallback_used = _org_builtin_networks(org_secure_code)
+    protected.extend(builtin_networks)
     protected.extend(_config_protected_networks())
     protected.extend(_custom_networks(org_secure_code, 'protect'))
 

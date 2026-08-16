@@ -30,6 +30,7 @@ files:
     - modules/open_defense/api/admin/payload_profiles.py # CRUD native payload profiles + 試算
     - modules/open_defense/api/admin/protected_targets.py # CRUD protected targets + 試算
   service:
+    - backend/app/defaults/od_protected_defaults.py          # OpenDefense per-org 內建保護清單出廠值與 seed
     - modules/open_defense/services/intake_service.py        # webhook 接收 + 啟流程
     - modules/open_defense/services/routing_service.py       # 事件規則式路由
     - modules/open_defense/services/payload_profile_service.py # 原生 payload 扁平化 + 軸線正規化
@@ -78,6 +79,7 @@ files:
     - scripts/migrations/096_od_payload_profiles.sql
     - scripts/migrations/097_od_protected_targets.sql
     - scripts/migrations/098_od_decision_writer_protected_config.sql
+    - scripts/migrations/103_od_protected_targets_per_org_builtin.py # per-org builtin 保護清單欄位與 backfill
   test:
     - backend/tests/test_od_aggregation.py
     - backend/tests/test_od_protected_targets.py
