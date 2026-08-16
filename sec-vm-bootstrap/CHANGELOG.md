@@ -6,6 +6,11 @@
 ## [2026-08-16]
 
 ### Security
+- **PF-112:od-bridge `/events` 協定層認證** — `/events` 現在要求
+  `Authorization: Bearer ${BRIDGE_INGEST_TOKEN}`,token 只放在 `.20` 的 `.env`。
+  `BRIDGE_INGEST_TOKEN` 未設定時 fail-closed 並回 401;`/health` 維持免驗。
+  vector 三份設定的 `bridge_intake` sink 已補上靜態 bearer header。
+
 - **PF-107:樣板密碼收斂 + SSH／管理面來源管制** — 清冊裡標著「生產環境請換」的
   兩筆樣板密碼逐一實測後處理,並依用戶決策把 SSH 與管理面一併收進 nftables。
 
@@ -96,8 +101,7 @@
     8080/8500/8688 BLOCKED;canary `actor_ip` 仍為 `203.0.113.1`
 
 ### Known issues
-- od-bridge `/events` 的**無認證**本質未變,只是網段收窄。真正的修法是在
-  `ingest.py` 加共享密鑰驗證(它已經會對上游簽 HMAC,下游卻不驗)
+- 已解決(PF-112):od-bridge `/events` 已加共享 bearer token 驗證;網段管制仍保留為外層防線。
 
 ## [2026-08-09]
 

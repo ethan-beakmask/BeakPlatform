@@ -16,6 +16,7 @@
 | `MY_ENFORCEMENT_POINTS` | optional | 自訂 | `crowdsec,nftables,cloudflare`(逗號分隔,bridge 只處理含這些 EP 的決策) |
 | `POLL_INTERVAL` | optional | 自訂 | `5`(秒,executor 輪詢間隔) |
 | `INGEST_LISTEN` | optional | 自訂 | `0.0.0.0:8500`(bridge ingest server) |
+| `BRIDGE_INGEST_TOKEN` | ✅ | `openssl rand -hex 32` | `<見 .20 的 .env>`(vector → od-bridge `/events` 的 bearer token) |
 | `CLICKHOUSE_DB` | optional | 自訂 | `secstack` |
 | `CLICKHOUSE_USER` | optional | 自訂 | `secstack` |
 | `CLICKHOUSE_PASSWORD` | ✅ | 自訂強密碼 | — |

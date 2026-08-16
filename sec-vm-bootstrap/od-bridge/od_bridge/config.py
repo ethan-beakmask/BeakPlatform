@@ -19,6 +19,7 @@ class Config:
     poll_interval: float
     ingest_listen_host: str
     ingest_listen_port: int
+    ingest_token: str
 
     crowdsec_lapi_url: str
 
@@ -54,6 +55,7 @@ def load_config() -> Config:
         poll_interval=float(os.environ.get("POLL_INTERVAL", "5")),
         ingest_listen_host=host,
         ingest_listen_port=port,
+        ingest_token=os.environ.get("BRIDGE_INGEST_TOKEN", "").strip(),
         crowdsec_lapi_url=os.environ.get("CROWDSEC_LAPI_URL", "http://crowdsec:8080"),
         edl_dir=os.environ.get("EDL_DIR", "/state/edl"),
         edl_prune_interval=float(os.environ.get("EDL_PRUNE_INTERVAL", "60")),

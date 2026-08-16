@@ -191,6 +191,8 @@ WHERE q.workflow_instance_secure_code='<wi_secure_code>' ORDER BY q.id;"
 | `.20:3000` | Grafana |
 | `.20:5636` | EveBox（自簽 TLS） |
 
+od-bridge `/events` 需 `Authorization: Bearer`；`/health` 免驗。
+
 ### `.20` 幾乎每個埠都有來源管制，測試前先確認你在白名單內
 
 **PF-109（ingest 面）與 PF-107（SSH + 管理面）之後，`.20` 對 LAN 只剩 ClickHouse

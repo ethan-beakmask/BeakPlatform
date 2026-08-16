@@ -154,7 +154,7 @@ sudo nft list set inet secstack blocklist
 
 | 端點 | 認證 | 用途 |
 |---|---|---|
-| `POST http://192.168.0.20:8500/events` | 無(LAN trust) | 推 OCSF JSON 進 bridge,bridge 簽 HMAC 後上送 BP |
+| `POST http://192.168.0.20:8500/events` | **`Authorization: Bearer <BRIDGE_INGEST_TOKEN>`**(PF-112) | 推 OCSF JSON 進 bridge,bridge 簽 HMAC 後上送 BP;少帶或錯誤一律 401 |
 | `POST http://192.168.0.20:8688/` | 無 | Vector http_test source(測試管線用,生產可關) |
 | `GET http://192.168.0.20:8500/health` | 無 | bridge 存活檢查,回 `{"ok":true}` |
 | `http://127.0.0.1:8123/?query=...` | BasicAuth secstack:* | ClickHouse SQL HTTP(僅本機可達) |

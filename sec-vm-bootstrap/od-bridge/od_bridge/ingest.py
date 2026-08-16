@@ -32,6 +32,18 @@ async def _forward(cfg, body: bytes) -> tuple[int, str]:
 
 async def handle_event(request: web.Request) -> web.Response:
     cfg = request.app["cfg"]
+    # 一律以 bytes 比對：compare_digest 的 str 形式只接受 ASCII，
+    # 送非 ASCII 的 Authorization 會拋 TypeError 變成 500 而不是 401。
+    auth = request.headers.get("Authorization", "").encode("utf-8", "surrogateescape")
+    expected = f"Bearer {cfg.ingest_token}".encode() if cfg.ingest_token else b""
+    if not cfg.ingest_token:
+        if not request.app.get("missing_ingest_token_logged", False):
+            log.error("BRIDGE_INGEST_TOKEN not set; /events is closed")
+            request.app["missing_ingest_token_logged"] = True
+    if not expected or not hmac.compare_digest(auth, expected):
+        log.warning("unauthorized /events request from %s", request.remote)
+        return web.json_response({"error": "unauthorized"}, status=401)
+
     body = await request.read()
     if not body:
         return web.json_response({"error": "empty_body"}, status=400)

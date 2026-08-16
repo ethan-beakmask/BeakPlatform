@@ -38,9 +38,15 @@ sudo docker compose logs --since 5m od-bridge | grep -E 'decision|error'
 ## 測試 / 驗證
 
 ### 端到端 intake(從 sec-vm 自己)
+
+PF-112 起 `/events` 需要 bearer token(值在 `.env` 的 `BRIDGE_INGEST_TOKEN`),
+少帶一律 401。
+
 ```bash
+TOKEN=$(grep '^BRIDGE_INGEST_TOKEN=' ~/sec-vm-bootstrap/.env | cut -d= -f2-)
 curl -X POST http://127.0.0.1:8500/events \
   -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
   -d "{
     \"correlation_id\": \"$(uuidgen)\",
     \"source_system\": \"coraza\",
