@@ -70,7 +70,7 @@
             <h2>{{ _('內建與設定來源（唯讀）') }}</h2>
         </div>
         <div class="od-section-body">
-            <p class="od-muted">{{ _('這些是程式內建與環境設定的保護網段，無法在此編輯；要允許封鎖其中某個位址，請新增「豁免」項目。') }}</p>
+            <p class="od-muted">{{ _('這些是程式內建與環境設定的保護網段，無法在此編輯；要允許封鎖其中某個位址，請新增「豁免」項目。') }} {{ _('平台自身的基礎設施位址一律受保護且不列於此。') }}</p>
             <div class="od-network-grid">
                 <div>
                     <h3 class="od-subtitle">{{ _('內建保護網段') }}</h3>
@@ -123,7 +123,7 @@
             <div class="od-test-inline">
                 <div class="od-field">
                     <label>{{ _('封鎖目標') }}</label>
-                    <input type="text" x-model="test.target_value" placeholder="192.168.0.20">
+                    <input type="text" x-model="test.target_value" placeholder="10.0.0.5">
                     <div class="od-field-hint">{{ _('輸入 IP 或 CIDR，試算寫成封鎖決策時是否會被保護。') }}</div>
                 </div>
                 <button class="btn btn-secondary" @click="runTest()">{{ _('試算') }}</button>

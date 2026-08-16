@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-16 00:56+0800\n"
+"POT-Creation-Date: 2026-08-16 16:41+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -12733,81 +12733,88 @@ msgstr ""
 msgid "若提供須為 object"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:48
+#: ../modules/open_defense/services/decision_service.py:50
 #, python-format
 msgid "action 不合法: %(action)r"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:50
+#: ../modules/open_defense/services/decision_service.py:52
 #, python-format
 msgid "target_type 不合法: %(target_type)r"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:52
+#: ../modules/open_defense/services/decision_service.py:54
 msgid "target_value 不可為空"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:54
-msgid "target_value 過長(>500)"
-msgstr ""
-
 #: ../modules/open_defense/services/decision_service.py:56
-#, python-format
-msgid "decided_via 不合法: %(decided_via)r"
+msgid "target_value 過長(>500)"
 msgstr ""
 
 #: ../modules/open_defense/services/decision_service.py:58
 #, python-format
+msgid "decided_via 不合法: %(decided_via)r"
+msgstr ""
+
+#: ../modules/open_defense/services/decision_service.py:60
+#, python-format
 msgid "severity 不合法: %(severity)r"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:89
+#: ../modules/open_defense/services/decision_service.py:91
 #: ../modules/open_defense/services/intake_key_service.py:52
 #: ../modules/open_defense/services/service_account_service.py:116
 msgid "org_secure_code 必填"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:104
+#: ../modules/open_defense/services/decision_service.py:106
 #, python-format
 msgid "target_value 不是合法的 IP 或 CIDR: %(v)s"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:116
+#: ../modules/open_defense/services/decision_service.py:120
 #, python-format
 msgid ""
 "目標 %(target)s "
 "命中封鎖保護清單（%(network)s），已拒絕寫入封鎖決策。若確認要封鎖此位址，請由管理員在保護清單設定豁免項目，或在流程節點明確允許覆寫。"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:137
+#: ../modules/open_defense/services/decision_service.py:127
+#, python-format
+msgid ""
+"目標 %(target)s "
+"命中封鎖保護清單（%(label)s），已拒絕寫入封鎖決策。若確認要封鎖此位址，請由管理員在保護清單設定豁免項目，或在流程節點明確允許覆寫。"
+msgstr ""
+
+#: ../modules/open_defense/services/decision_service.py:151
 msgid "ttl_seconds 必須 > 0,或不傳"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:293
+#: ../modules/open_defense/services/decision_service.py:307
 #, python-format
 msgid "禁止由執行端寫入 %(target_status)r"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:298
+#: ../modules/open_defense/services/decision_service.py:312
 #, python-format
 msgid "不合法的目標狀態 %(target_status)r"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:308
+#: ../modules/open_defense/services/decision_service.py:322
 msgid "決策不存在或不屬於本 SA 的 org"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:314
+#: ../modules/open_defense/services/decision_service.py:328
 #, python-format
 msgid "從 %(status)r 不可轉至任何狀態(已結案)"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:319
+#: ../modules/open_defense/services/decision_service.py:333
 #, python-format
 msgid "不可從 %(status)r 轉至 %(target_status)r"
 msgstr ""
 
-#: ../modules/open_defense/services/decision_service.py:343
+#: ../modules/open_defense/services/decision_service.py:357
 msgid "決策已被其他執行端搶先拾起"
 msgstr ""
 
@@ -12966,6 +12973,10 @@ msgstr ""
 
 #: ../modules/open_defense/services/protected_target_service.py:35
 msgid "唯一區域位址 (ULA)"
+msgstr ""
+
+#: ../modules/open_defense/services/protected_target_service.py:42
+msgid "平台基礎設施"
 msgstr ""
 
 #: ../modules/open_defense/services/routing_service.py:32
@@ -13424,6 +13435,10 @@ msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:73
 msgid "這些是程式內建與環境設定的保護網段，無法在此編輯；要允許封鎖其中某個位址，請新增「豁免」項目。"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:73
+msgid "平台自身的基礎設施位址一律受保護且不列於此。"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:76

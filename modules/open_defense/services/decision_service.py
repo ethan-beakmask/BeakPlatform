@@ -26,6 +26,7 @@ from .protected_target_service import (
     CHECKED_TARGET_TYPES,
     InvalidTargetValueError,
     check_block_target,
+    public_hit_view,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ class ProtectedTargetError(DecisionValidationError):
     def __init__(self, message, hit=None):
         super().__init__(message)
         self.hit = hit
+        self.public_hit = public_hit_view(hit)
 
 
 def _validate(action: str, target_type: str, target_value: str,
@@ -105,6 +107,7 @@ def create_decision(
             )
 
         if protected_hit is not None and not allow_protected_target:
+            public_hit = public_hit_view(protected_hit)
             logger.warning(
                 'OpenDefense blocked a protected target org=%s action=%s target=%s/%s '
                 'hit_source=%s hit_network=%s case=%s node=%s',
@@ -112,11 +115,22 @@ def create_decision(
                 protected_hit.source, protected_hit.network,
                 case_secure_code, workflow_node_id,
             )
+            if public_hit['network']:
+                message = _(
+                    '目標 %(target)s 命中封鎖保護清單（%(network)s），已拒絕寫入封鎖決策。'
+                    '若確認要封鎖此位址，請由管理員在保護清單設定豁免項目，'
+                    '或在流程節點明確允許覆寫。',
+                    target=target_value, network=public_hit['network'],
+                )
+            else:
+                message = _(
+                    '目標 %(target)s 命中封鎖保護清單（%(label)s），已拒絕寫入封鎖決策。'
+                    '若確認要封鎖此位址，請由管理員在保護清單設定豁免項目，'
+                    '或在流程節點明確允許覆寫。',
+                    target=target_value, label=public_hit['label'],
+                )
             raise ProtectedTargetError(
-                _('目標 %(target)s 命中封鎖保護清單（%(network)s），已拒絕寫入封鎖決策。'
-                  '若確認要封鎖此位址，請由管理員在保護清單設定豁免項目，'
-                  '或在流程節點明確允許覆寫。',
-                  target=target_value, network=protected_hit.network),
+                message,
                 hit=protected_hit,
             )
 

@@ -37,6 +37,10 @@ BUILTIN_PROTECTED_NETWORKS = (
     (ipaddress.ip_network('ff00::/8'), _l('群播位址')),
 )
 
+# TRUSTED_PROXY_IPS 是平台自身的反向代理位址：判定必須生效，但不得對租戶具名揭露。
+PLATFORM_SOURCE = 'platform'
+PLATFORM_PROTECTED_LABEL = _l('平台基礎設施')
+
 
 class InvalidTargetValueError(ValueError):
     """target_value 不是合法的 IP / CIDR"""
@@ -75,18 +79,19 @@ def _config_protected_networks():
     if not has_app_context():
         return []
 
-    values = []
-    values.extend(current_app.config.get('OD_PROTECTED_EXTRA_NETWORKS') or ())
-    values.extend(current_app.config.get('TRUSTED_PROXY_IPS') or ())
-
     networks = []
-    for value in values:
-        try:
-            net = parse_target_network(str(value))
-        except InvalidTargetValueError:
-            logger.warning('OpenDefense protected target config ignored invalid network: %r', value)
-            continue
-        networks.append((net, 'config', str(value), None))
+    sources = (
+        ('config', current_app.config.get('OD_PROTECTED_EXTRA_NETWORKS') or ()),
+        (PLATFORM_SOURCE, current_app.config.get('TRUSTED_PROXY_IPS') or ()),
+    )
+    for source, values in sources:
+        for value in values:
+            try:
+                net = parse_target_network(str(value))
+            except InvalidTargetValueError:
+                logger.warning('OpenDefense protected target config ignored invalid network: %r', value)
+                continue
+            networks.append((net, source, str(value), None))
     return networks
 
 
@@ -104,7 +109,8 @@ def list_effective_networks() -> tuple:
             'network': str(network),
             'label': str(label),
         }
-        for network, _source, label, _entry_secure_code in _config_protected_networks()
+        for network, source, label, _entry_secure_code in _config_protected_networks()
+        if source == 'config'
     ]
     return builtin, config
 
@@ -170,7 +176,7 @@ def check_block_target(*, org_secure_code, action, target_type, target_value) ->
             )
             return None
 
-    source_priority = {'builtin': 0, 'config': 1, 'custom': 2}
+    source_priority = {PLATFORM_SOURCE: -1, 'builtin': 0, 'config': 1, 'custom': 2}
     protected_net, source, label, entry_secure_code = max(
         hits,
         key=lambda item: (source_priority.get(item[1], -1), item[0].prefixlen),
@@ -181,6 +187,29 @@ def check_block_target(*, org_secure_code, action, target_type, target_value) ->
         label=label,
         entry_secure_code=entry_secure_code,
     )
+
+
+def public_hit_view(hit) -> Optional[dict]:
+    """把 ProtectedHit 轉成可對租戶揭露的形式。
+
+    platform 來源（平台自身的反向代理位址）不具名：network 一律回 None，
+    label 退為泛稱。其餘來源原樣回傳。
+    """
+    if hit is None:
+        return None
+    if hit.source == PLATFORM_SOURCE:
+        return {
+            'source': PLATFORM_SOURCE,
+            'network': None,
+            'label': str(PLATFORM_PROTECTED_LABEL),
+            'entry_secure_code': None,
+        }
+    return {
+        'source': hit.source,
+        'network': hit.network,
+        'label': hit.label,
+        'entry_secure_code': hit.entry_secure_code,
+    }
 
 
 def describe_protection(*, org_secure_code, target_value) -> dict:
@@ -202,11 +231,6 @@ def describe_protection(*, org_secure_code, target_value) -> dict:
     return {
         'target_value': target_value,
         'protected': hit is not None,
-        'hit': {
-            'source': hit.source,
-            'network': hit.network,
-            'label': hit.label,
-            'entry_secure_code': hit.entry_secure_code,
-        } if hit else None,
+        'hit': public_hit_view(hit),
         'error': None,
     }

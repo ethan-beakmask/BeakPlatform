@@ -1,4 +1,5 @@
 import sys
+import json
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,7 @@ from modules.open_defense.services.protected_target_service import (
     InvalidTargetValueError,
     check_block_target,
     describe_protection,
+    list_effective_networks,
     parse_target_network,
 )
 
@@ -250,7 +252,7 @@ def test_trusted_proxy_ips_are_protected(app):
     hit = _check('198.51.100.20')
 
     assert hit is not None
-    assert hit.source == 'config'
+    assert hit.source == 'platform'
 
 
 def test_invalid_config_network_is_skipped_not_fatal(app):
@@ -261,6 +263,69 @@ def test_invalid_config_network_is_skipped_not_fatal(app):
 
     assert hit is not None
     assert hit.source == 'config'
+
+
+# ---------------------------------------------------------------------------
+# 平台反向代理位址一律保護，但對租戶公開回應不得具名揭露 TRUSTED_PROXY_IPS。
+# ---------------------------------------------------------------------------
+def test_list_effective_networks_hides_trusted_proxy_ips(app):
+    app.config['TRUSTED_PROXY_IPS'] = ('198.51.100.20',)
+    app.config['OD_PROTECTED_EXTRA_NETWORKS'] = ('198.51.100.0/24',)
+
+    _builtin, config = list_effective_networks()
+    serialized = json.dumps(config, ensure_ascii=False, sort_keys=True)
+
+    assert '198.51.100.0/24' in serialized
+    assert '198.51.100.20' not in serialized
+
+
+def test_platform_trusted_proxy_public_address_remains_protected(app):
+    app.config['TRUSTED_PROXY_IPS'] = ('198.51.100.20',)
+    app.config['OD_PROTECTED_EXTRA_NETWORKS'] = ()
+
+    hit = _check('198.51.100.20')
+
+    assert hit is not None
+    assert hit.source == 'platform'
+
+
+def test_describe_protection_masks_platform_trusted_proxy_address(app):
+    """管理員拿網段試算時，不得從回應反推出平台反向代理的精確位址。
+
+    目標故意用涵蓋該位址的網段：使用者自己輸入的值照樣原樣回傳（那不是機密），
+    被遮蔽的只有命中的 TRUSTED_PROXY_IPS 網段本身。
+    """
+    app.config['TRUSTED_PROXY_IPS'] = ('198.51.100.20',)
+    app.config['OD_PROTECTED_EXTRA_NETWORKS'] = ()
+
+    result = describe_protection(org_secure_code=ORG_SC, target_value='198.51.100.0/24')
+    serialized = json.dumps(result, ensure_ascii=False, sort_keys=True)
+
+    assert result['protected'] is True
+    assert result['hit']['source'] == 'platform'
+    assert result['hit']['network'] is None
+    assert result['target_value'] == '198.51.100.0/24'
+    assert '198.51.100.20' not in serialized
+
+
+def test_create_decision_error_masks_platform_trusted_proxy_address(app, db_session):
+    _require_od_protected_tables()
+    app.config['TRUSTED_PROXY_IPS'] = ('198.51.100.20',)
+    app.config['OD_PROTECTED_EXTRA_NETWORKS'] = ()
+
+    with pytest.raises(ProtectedTargetError) as excinfo:
+        create_decision(
+            org_secure_code=ORG_SC,
+            action='block',
+            target_type='cidr',
+            target_value='198.51.100.0/24',
+            decided_via='auto',
+        )
+
+    message = str(excinfo.value)
+    assert '198.51.100.20' not in message
+    # 使用者自己要封的目標仍必須說出來，否則訊息無法辨識是哪一筆被擋
+    assert '198.51.100.0/24' in message
 
 
 # ---------------------------------------------------------------------------
@@ -349,10 +414,10 @@ def test_decision_writer_override_writes_decision(app, db_session, monkeypatch, 
     ).first()
     assert decision is not None
     override = decision.decision_metadata['protected_override']
-    # 命中的可能是內建 192.168.0.0/16，也可能是設定來源（TRUSTED_PROXY_IPS）的
-    # 192.168.0.20/32——後者優先序較高。兩者都算正確命中。
-    assert override['source'] in ('builtin', 'config')
-    assert override['network'] in ('192.168.0.0/16', '192.168.0.20/32')
+    # 同時命中內建 192.168.0.0/16 與平台反向代理 /32 時，對外回報優先使用
+    # 內建網段；覆寫稽核仍寫入判定回傳的真值。
+    assert override['source'] == 'builtin'
+    assert override['network'] == '192.168.0.0/16'
 
 
 def test_decision_writer_public_target_still_writes_decision(app, db_session, monkeypatch):

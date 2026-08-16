@@ -175,12 +175,16 @@ function odProtectedTargets() {
             if (source === 'builtin') return __('內建');
             if (source === 'config') return __('設定來源');
             if (source === 'custom') return __('自訂');
+            if (source === 'platform') return __('平台保護');
             return source || '-';
         },
 
         testHitText() {
             const hit = this.test.result?.hit;
             if (!hit) return '';
+            if (!hit.network) {
+                return __('（命中 {source} 網段）', { source: this.sourceLabel(hit.source) });
+            }
             return __('（命中 {network}，來源 {source}）', {
                 network: hit.network,
                 source: this.sourceLabel(hit.source),

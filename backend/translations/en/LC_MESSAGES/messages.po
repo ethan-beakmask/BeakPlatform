@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-16 00:56+0800\n"
+"POT-Creation-Date: 2026-08-16 16:41+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -13220,46 +13220,46 @@ msgstr "required when event_class=%(event_class)s"
 msgid "若提供須為 object"
 msgstr "if provided, must be an object"
 
-#: ../modules/open_defense/services/decision_service.py:48
+#: ../modules/open_defense/services/decision_service.py:50
 #, python-format
 msgid "action 不合法: %(action)r"
 msgstr "Invalid action: %(action)r"
 
-#: ../modules/open_defense/services/decision_service.py:50
+#: ../modules/open_defense/services/decision_service.py:52
 #, python-format
 msgid "target_type 不合法: %(target_type)r"
 msgstr "Invalid target_type: %(target_type)r"
 
-#: ../modules/open_defense/services/decision_service.py:52
+#: ../modules/open_defense/services/decision_service.py:54
 msgid "target_value 不可為空"
 msgstr "target_value cannot be empty"
 
-#: ../modules/open_defense/services/decision_service.py:54
+#: ../modules/open_defense/services/decision_service.py:56
 msgid "target_value 過長(>500)"
 msgstr "target_value is too long (>500)"
 
-#: ../modules/open_defense/services/decision_service.py:56
+#: ../modules/open_defense/services/decision_service.py:58
 #, python-format
 msgid "decided_via 不合法: %(decided_via)r"
 msgstr "Invalid decided_via: %(decided_via)r"
 
-#: ../modules/open_defense/services/decision_service.py:58
+#: ../modules/open_defense/services/decision_service.py:60
 #, python-format
 msgid "severity 不合法: %(severity)r"
 msgstr "Invalid severity: %(severity)r"
 
-#: ../modules/open_defense/services/decision_service.py:89
+#: ../modules/open_defense/services/decision_service.py:91
 #: ../modules/open_defense/services/intake_key_service.py:52
 #: ../modules/open_defense/services/service_account_service.py:116
 msgid "org_secure_code 必填"
 msgstr "org_secure_code is required"
 
-#: ../modules/open_defense/services/decision_service.py:104
+#: ../modules/open_defense/services/decision_service.py:106
 #, python-format
 msgid "target_value 不是合法的 IP 或 CIDR: %(v)s"
 msgstr "target_value is not a valid IP or CIDR: %(v)s"
 
-#: ../modules/open_defense/services/decision_service.py:116
+#: ../modules/open_defense/services/decision_service.py:120
 #, python-format
 msgid ""
 "目標 %(target)s "
@@ -13270,35 +13270,46 @@ msgstr ""
 "administrator to add an exemption in the protection list or explicitly "
 "allow override on the workflow node."
 
-#: ../modules/open_defense/services/decision_service.py:137
+#: ../modules/open_defense/services/decision_service.py:127
+#, python-format
+msgid ""
+"目標 %(target)s "
+"命中封鎖保護清單（%(label)s），已拒絕寫入封鎖決策。若確認要封鎖此位址，請由管理員在保護清單設定豁免項目，或在流程節點明確允許覆寫。"
+msgstr ""
+"Target %(target)s matched the block protection list (%(label)s), so "
+"writing the block decision was rejected. If you are sure this address "
+"should be blocked, ask an administrator to add an exemption in the "
+"protection list, or explicitly allow override in the workflow node."
+
+#: ../modules/open_defense/services/decision_service.py:151
 msgid "ttl_seconds 必須 > 0,或不傳"
 msgstr "ttl_seconds must be > 0 or omitted"
 
-#: ../modules/open_defense/services/decision_service.py:293
+#: ../modules/open_defense/services/decision_service.py:307
 #, python-format
 msgid "禁止由執行端寫入 %(target_status)r"
 msgstr "Executors are forbidden to write %(target_status)r"
 
-#: ../modules/open_defense/services/decision_service.py:298
+#: ../modules/open_defense/services/decision_service.py:312
 #, python-format
 msgid "不合法的目標狀態 %(target_status)r"
 msgstr "Invalid target status %(target_status)r"
 
-#: ../modules/open_defense/services/decision_service.py:308
+#: ../modules/open_defense/services/decision_service.py:322
 msgid "決策不存在或不屬於本 SA 的 org"
 msgstr "Decision does not exist or does not belong to this service account org"
 
-#: ../modules/open_defense/services/decision_service.py:314
+#: ../modules/open_defense/services/decision_service.py:328
 #, python-format
 msgid "從 %(status)r 不可轉至任何狀態(已結案)"
 msgstr "Cannot transition from %(status)r to any status (closed)"
 
-#: ../modules/open_defense/services/decision_service.py:319
+#: ../modules/open_defense/services/decision_service.py:333
 #, python-format
 msgid "不可從 %(status)r 轉至 %(target_status)r"
 msgstr "Cannot transition from %(status)r to %(target_status)r"
 
-#: ../modules/open_defense/services/decision_service.py:343
+#: ../modules/open_defense/services/decision_service.py:357
 msgid "決策已被其他執行端搶先拾起"
 msgstr "Decision was already picked up by another executor"
 
@@ -13466,6 +13477,10 @@ msgstr "Unspecified address"
 #: ../modules/open_defense/services/protected_target_service.py:35
 msgid "唯一區域位址 (ULA)"
 msgstr "Unique local address (ULA)"
+
+#: ../modules/open_defense/services/protected_target_service.py:42
+msgid "平台基礎設施"
+msgstr "Platform infrastructure"
 
 #: ../modules/open_defense/services/routing_service.py:32
 msgid "match_rules 必須為陣列"
@@ -13931,6 +13946,12 @@ msgstr ""
 "These protected networks come from built-in code and environment "
 "configuration and cannot be edited here. To allow blocking a specific "
 "address within them, add an exemption item."
+
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:73
+msgid "平台自身的基礎設施位址一律受保護且不列於此。"
+msgstr ""
+"The platform's own infrastructure addresses are always protected and are "
+"not listed here."
 
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:76
 msgid "內建保護網段"

@@ -109,13 +109,13 @@ class DecisionWriterHandler(BaseNodeHandler):
                 commit=True,
             )
         except ProtectedTargetError as exc:
-            hit = getattr(exc, 'hit', None)
+            public_hit = getattr(exc, 'public_hit', None)
             self.log_error(f'DecisionWriter 命中封鎖保護清單: {exc}', {
                 'action': action,
                 'target_type': target_type,
                 'target_value': target_value,
-                'hit_source': hit.source if hit else None,
-                'hit_network': hit.network if hit else None,
+                'hit_source': public_hit.get('source') if public_hit else None,
+                'hit_network': public_hit.get('network') if public_hit else None,
             })
             if on_protected == 'skip':
                 return {
@@ -126,8 +126,8 @@ class DecisionWriterHandler(BaseNodeHandler):
                         'action': action,
                         'target_type': target_type,
                         'target_value': target_value,
-                        'hit_source': hit.source if hit else None,
-                        'hit_network': hit.network if hit else None,
+                        'hit_source': public_hit.get('source') if public_hit else None,
+                        'hit_network': public_hit.get('network') if public_hit else None,
                     },
                 }
             return {'status': 'error', 'message': str(exc)}
