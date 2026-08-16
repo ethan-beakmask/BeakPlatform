@@ -19,6 +19,8 @@ from app.models import UserNumberingRule
 from app.services.numbering_service import NumberingService
 from flask_babel import gettext as _
 
+from .execution_code_service import next_execution_code
+
 logger = logging.getLogger(__name__)
 
 
@@ -173,17 +175,13 @@ def create_instance_and_start(
     db.session.add(form_instance)
     db.session.flush()
 
-    # 生成流程執行編號
-    result = db.session.execute(
-        text("""
-            SELECT COALESCE(MAX(CAST(SUBSTRING(execution_code FROM '\\d{4}$') AS INTEGER)), 0) + 1
-            FROM fw_workflow_instances
-            WHERE execution_code LIKE :pattern
-        """),
-        {'pattern': f'{proc_prefix}{date_str}-%'}
+    # 生成流程執行編號 -- 序號池與 advisory lock 都在 execution_code_service 內
+    # （唯一實作，見該檔 docstring）。
+    execution_code = next_execution_code(
+        org_secure_code=org_secure_code,
+        prefix=proc_prefix,
+        date_str=date_str,
     )
-    proc_seq = result.scalar() or 1
-    execution_code = f"{proc_prefix}{date_str}-{str(proc_seq).zfill(4)}"
     variables = {}
     if nocode_sub_system_sc or nocode_user_ref:
         variables = {'nocode': {'sub': nocode_sub_system_sc, 'user': nocode_user_ref}}

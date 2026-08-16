@@ -3,7 +3,7 @@ FormWorkflow Module - Workflow Instance Model
 工作流實例
 """
 from datetime import datetime
-from sqlalchemy import Column, BigInteger, String, Text, DateTime, Integer, Boolean
+from sqlalchemy import Column, BigInteger, String, Text, DateTime, Integer, Boolean, Index, text as sa_text
 from sqlalchemy.dialects.postgresql import JSON
 
 from .base import ModuleBaseModel
@@ -16,6 +16,14 @@ class FwWorkflowInstance(ModuleBaseModel):
     執行中的流程。
     """
     __tablename__ = 'fw_workflow_instances'
+    __table_args__ = (
+        Index(
+            'uq_fw_wi_org_execution_code',
+            'org_secure_code', 'execution_code',
+            unique=True,
+            postgresql_where=sa_text('is_deleted = false'),
+        ),
+    )
 
     # 關聯（保留 ID 方便快速查詢）
     form_instance_id = Column(BigInteger, nullable=True, index=True)
@@ -45,7 +53,7 @@ class FwWorkflowInstance(ModuleBaseModel):
     current_node_type = Column(String(50), nullable=True)
 
     # 執行紀錄
-    execution_code = Column(String(50), unique=True, nullable=False, index=True)
+    execution_code = Column(String(50), nullable=False, index=True)
     execution_log = Column(JSON, default=list)  # 執行日誌
 
     # 流程變數

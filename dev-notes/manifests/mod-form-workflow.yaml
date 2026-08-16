@@ -58,6 +58,10 @@ files:
     - modules/form_workflow/static/modules/form_workflow/css/form-designer.css
     - modules/form_workflow/static/modules/form_workflow/css/workflow-designer.css
     - modules/form_workflow/static/modules/form_workflow/css/workflow-list.css
+  migration:
+    - scripts/migrations/101_execution_code_per_org_unique.py  # PF-116 execution_code per-org unique index
+  tests:
+    - backend/tests/test_execution_code_per_org.py             # PF-116 per-org execution_code 約束與序號池
   vendor_deps:
     - backend/app/static/vendor/formio.full.min.js     # 表單設計器
     - backend/app/static/vendor/cytoscape.min.js       # 流程圖

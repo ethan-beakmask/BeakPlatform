@@ -300,6 +300,7 @@ def _create_form_instance_and_start_workflow(
         FwFormTemplate, FwPublishedFormWorkflow,
         FwFormInstance, FwWorkflowInstance, FwNodeExecutionQueue,
     )
+    from modules.form_workflow.services.execution_code_service import next_execution_code
 
     template = FwFormTemplate.query.filter_by(
         secure_code=form_template_sc,
@@ -373,25 +374,14 @@ def _create_form_instance_and_start_workflow(
     db.session.add(form_instance)
     db.session.flush()
 
-    # 流程編號 -- SELECT MAX+1 在並發時會撞 unique key,
-    # 用 PostgreSQL transaction-scoped advisory lock 強制序列化(per org+date 鍵)。
-    # 鎖在 commit/rollback 自動釋放,不會 leak。
+    # 流程編號 -- 序號池與 advisory lock 都在 execution_code_service 內（唯一實作，
+    # 見該檔 docstring；PF-116 之前這裡與 form_submit_service 各寫一份而行為分歧）。
     date_str = datetime.utcnow().strftime('%Y%m%d')
-    lock_key = f'od_exec_seq:{org_secure_code}:{date_str}'
-    db.session.execute(
-        text('SELECT pg_advisory_xact_lock(hashtext(:key))'),
-        {'key': lock_key},
+    execution_code = next_execution_code(
+        org_secure_code=org_secure_code,
+        prefix='OD-',
+        date_str=date_str,
     )
-    proc_seq = db.session.execute(
-        text("""
-            SELECT COALESCE(MAX(CAST(SUBSTRING(execution_code FROM '\\d{4}$')
-                AS INTEGER)), 0) + 1
-            FROM fw_workflow_instances
-            WHERE execution_code LIKE :pattern
-        """),
-        {'pattern': f'OD-{date_str}-%'},
-    ).scalar() or 1
-    execution_code = f'OD-{date_str}-{str(proc_seq).zfill(4)}'
 
     workflow_instance = FwWorkflowInstance(
         secure_code=generate_secure_code(),
