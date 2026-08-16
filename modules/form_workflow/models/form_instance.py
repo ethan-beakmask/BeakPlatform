@@ -3,7 +3,7 @@ FormWorkflow Module - Form Instance Model
 表單實例（用戶填寫的表單）
 """
 from datetime import datetime
-from sqlalchemy import Column, BigInteger, Integer, String, Text, Boolean, DateTime, Index
+from sqlalchemy import Column, BigInteger, Integer, String, Text, Boolean, DateTime, Index, text as sa_text
 from sqlalchemy.dialects.postgresql import JSON
 
 from .base import ModuleBaseModel
@@ -16,6 +16,20 @@ class FwFormInstance(ModuleBaseModel):
     用戶填寫並提交的表單。
     """
     __tablename__ = 'fw_form_instances'
+    __table_args__ = (
+        Index(
+            'uq_fw_fi_org_serial_number',
+            'org_secure_code', 'serial_number',
+            unique=True,
+            postgresql_where=sa_text('is_deleted = false'),
+        ),
+        Index(
+            'uq_form_org_seq',
+            'org_secure_code', 'org_form_seq',
+            unique=True,
+            postgresql_where=sa_text('org_form_seq IS NOT NULL'),
+        ),
+    )
 
     # 關聯的模板（保留 ID 方便快速查詢）
     form_template_id = Column(BigInteger, nullable=True, index=True)
@@ -63,7 +77,7 @@ class FwFormInstance(ModuleBaseModel):
 
     # 編號（三層架構：L1=secure_code, L2=org_form_seq, L3=serial_number）
     org_form_seq = Column(Integer, nullable=True, comment='企業內表單流水號（L2）')
-    serial_number = Column(String(100), unique=True, nullable=False, index=True)
+    serial_number = Column(String(100), nullable=False, index=True)
 
     # 時間
     submitted_at = Column(DateTime, nullable=True)

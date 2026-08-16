@@ -19,7 +19,7 @@ from app.models import UserNumberingRule
 from app.services.numbering_service import NumberingService
 from flask_babel import gettext as _
 
-from .execution_code_service import next_execution_code
+from .sequence_code_service import next_execution_code, next_form_serial_number
 
 logger = logging.getLogger(__name__)
 
@@ -45,16 +45,12 @@ def allocate_serial_number(
     date_str = datetime.now().strftime('%Y%m%d')
 
     if is_test:
-        result = db.session.execute(
-            text("""
-                SELECT COALESCE(MAX(CAST(SUBSTRING(serial_number FROM '\\d{4}$') AS INTEGER)), 0) + 1
-                FROM fw_form_instances
-                WHERE serial_number LIKE :pattern
-            """),
-            {'pattern': f'TEST-{date_str}-%'}
-        )
-        form_seq = result.scalar() or 1
-        return f"TEST-{date_str}-{str(form_seq).zfill(4)}", None
+        return next_form_serial_number(
+            org_secure_code=org_secure_code,
+            prefix='TEST-',
+            date_str=date_str,
+            digits=4,
+        ), None
 
     # 正式模式：透過萬用編號系統取得企業專屬格式
     # 從 mapping 讀取編號規則（即時生效，不需重新發行）
@@ -94,16 +90,12 @@ def allocate_serial_number(
         return serial_number, (result.scalar() or 1)
 
     # 無規則 fallback：FORM-YYYYMMDD-NNNNN
-    result = db.session.execute(
-        text("""
-            SELECT COALESCE(MAX(CAST(SUBSTRING(serial_number FROM '\\d+$') AS INTEGER)), 0) + 1
-            FROM fw_form_instances
-            WHERE serial_number LIKE :pattern
-        """),
-        {'pattern': f'FORM-{date_str}-%'}
-    )
-    form_seq = result.scalar() or 1
-    return f"FORM-{date_str}-{str(form_seq).zfill(5)}", None
+    return next_form_serial_number(
+        org_secure_code=org_secure_code,
+        prefix='FORM-',
+        date_str=date_str,
+        digits=5,
+    ), None
 
 
 def create_instance_and_start(
@@ -175,7 +167,7 @@ def create_instance_and_start(
     db.session.add(form_instance)
     db.session.flush()
 
-    # 生成流程執行編號 -- 序號池與 advisory lock 都在 execution_code_service 內
+    # 生成流程執行編號 -- 序號池與 advisory lock 都在 sequence_code_service 內
     # （唯一實作，見該檔 docstring）。
     execution_code = next_execution_code(
         org_secure_code=org_secure_code,

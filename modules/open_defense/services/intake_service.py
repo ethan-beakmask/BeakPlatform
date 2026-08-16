@@ -300,7 +300,7 @@ def _create_form_instance_and_start_workflow(
         FwFormTemplate, FwPublishedFormWorkflow,
         FwFormInstance, FwWorkflowInstance, FwNodeExecutionQueue,
     )
-    from modules.form_workflow.services.execution_code_service import next_execution_code
+    from modules.form_workflow.services.sequence_code_service import next_execution_code
 
     template = FwFormTemplate.query.filter_by(
         secure_code=form_template_sc,
@@ -374,7 +374,7 @@ def _create_form_instance_and_start_workflow(
     db.session.add(form_instance)
     db.session.flush()
 
-    # 流程編號 -- 序號池與 advisory lock 都在 execution_code_service 內（唯一實作，
+    # 流程編號 -- 序號池與 advisory lock 都在 sequence_code_service 內（唯一實作，
     # 見該檔 docstring；PF-116 之前這裡與 form_submit_service 各寫一份而行為分歧）。
     date_str = datetime.utcnow().strftime('%Y%m%d')
     execution_code = next_execution_code(

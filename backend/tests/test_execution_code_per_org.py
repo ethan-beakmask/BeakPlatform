@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app import db
 from modules.form_workflow.models import FwWorkflowInstance
-from modules.form_workflow.services.execution_code_service import next_execution_code
+from modules.form_workflow.services.sequence_code_service import next_execution_code
 
 
 ORG_A = 'test_org_exec_code_a'
