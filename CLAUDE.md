@@ -431,9 +431,42 @@ semgrep --config .semgrep/beakplatform-security.yaml --metrics=off --quiet --jso
   modules/open_defense/api backend/app/api
 ```
 
-那 91 條是**平台 API 的既有技術債**（規則是 WARNING 級）——TENANT-02 對平台 API
-仍然是「必須走 gateway」，但別把這 91 條當成隨手可清的待辦，也不要在做別的任務時
-順手改；要清就當成一件獨立的事來排。
+那 91 條是**平台 API 的既有技術債**（規則是 WARNING 級），基準與完整分類記在待辦
+**PF-124**（含重新盤點的可執行腳本——數字會腐爛，不要相信寫死的 91）。
+
+#### 新 API 與既有技術債怎麼處理（Ethan 2026-08-16 定調）
+
+- **新寫的平台 API 一律走 `ResourceGateway`**，不要製造新的技術債。
+  model 還沒註冊就先註冊（前置作業見上面），不是拿「既有的也沒走」當理由跳過
+- **日後修改功能時遇到未走 gateway 的，直接改走 gateway，不必先問**。
+  但這條授權**只涵蓋平台 API 且該 model 已註冊 `MODEL_RESOURCE_TYPE_MAP`** 的情況
+  （2026-08-16 是 71 條 / 11 種：User、Role、Organization、SmtpConfig、
+  RecipientGroup、TelegramConfig、UserRoleAssignment、UserNumberingRule、
+  OrganizationalUnit、MenuItem、Contract）
+- **未註冊的 model（當時 20 條 / 12 種）不在授權範圍**：註冊 model 會連動
+  permission code 與 `LIST_RBAC_ENFORCED_MODELS`，是要單獨評估的變更
+- **模組 API 一律不改**（會被 fail-closed 拒絕，見本節上半）
+
+#### 改的時候唯一會讓功能靜默壞掉的陷阱
+
+`ResourceGateway.list()` / `filter()` 對 `LIST_RBAC_ENFORCED_MODELS` 內的 model
+**會自動檢查 `{resource_type}:read`**，而上述 11 種**全部都在那份清單裡**。
+所以 `User.query.filter_by(...)` → `ResourceGateway.filter(User, ...)`
+**不是等價替換**：該端點的呼叫者從此需要持有 `user:read`，
+EMPLOYEE／EXTERNAL 可達的端點改完會 403。
+
+**單元測試抓不到這件事**——測試庫是 `db.create_all()` 建的空表、沒有 RBAC seed
+（既有 failed `test_admin_required_for_admin` 就是這個成因，PF-34）。
+**改完必須用該端點的實際使用者身分在瀏覽器或 curl 實測一次**：
+
+```bash
+BASE=http://192.168.0.16:7000/beakplatform
+curl -s -c cj.txt -X POST "$BASE/dev/quick-login" -H 'Content-Type: application/json' \
+  -d '{"user_id":"<該身分的 user secure_code>"}'
+curl -s -b cj.txt -o /dev/null -w '%{http_code}\n' "$BASE/api/<改過的端點>"
+```
+
+呼叫端身分本來就不該持有該權限時，用 `check_permission=False` 並在該行寫明理由。
 
 **寫給未來 session**：看到模組 API 用 `Model.query` **不要當成缺陷回報、不要建工單、
 也不要順手改**。要確認的是上面那四項實質要求。真要把模組納入 gateway 是跨 5 個模組、

@@ -7,11 +7,17 @@
   （`g.api_key.org_secure_code`）或 service account。**禁止從 request body 或
   query string 取 org**——那是越權，這是租戶隔離最重要的一條
 - ResourceGateway 依範圍而定，**不是一律強制**：
-  - 平台 API（`backend/app/api/`）且 model 已註冊 `MODEL_RESOURCE_TYPE_MAP`
-    → **必須**走 `ResourceGateway`
+  - **新寫的平台 API（`backend/app/api/`）一律走 `ResourceGateway`**，
+    不要因為「隔壁既有的也沒走」就跟著寫 `Model.query`
+  - 平台 API 且 model 已註冊 `MODEL_RESOURCE_TYPE_MAP` → **必須**走 `ResourceGateway`
   - 模組 API（`modules/*/api/`）→ **沿用該檔既有寫法**（目前是 `Model.query`
     ＋顯式 org 過濾）。模組 model 沒有註冊進 gateway，改走 gateway 會被
     fail-closed 拒絕而 403/500。**不要順手把模組 API 改成 ResourceGateway**
+- 改既有平台 API 為 gateway 時（**只在 spec 明確要求時做**）：
+  `ResourceGateway.list()` / `filter()` 會對 `LIST_RBAC_ENFORCED_MODELS` 內的 model
+  自動檢查 `{resource_type}:read`，**不是等價替換**——EMPLOYEE／EXTERNAL 可達的端點
+  改完會 403。呼叫端本來就不該持有該權限時用 `check_permission=False` 並寫明理由。
+  **這件事單元測試抓不到**（測試庫沒有 RBAC seed），要在回報中列為需人工實測項
 - 看到非預期的 404，先查 `org_secure_code` 再懷疑邏輯（多半是租戶隔離擋掉）
 
 ### 帳號查詢（DATA-01）
