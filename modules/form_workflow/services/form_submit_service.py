@@ -12,14 +12,14 @@ import logging
 from datetime import datetime
 from typing import Optional, Tuple
 
-from sqlalchemy import text
-
 from app import db
 from app.models import UserNumberingRule
 from app.services.numbering_service import NumberingService
 from flask_babel import gettext as _
 
-from .sequence_code_service import next_execution_code, next_form_serial_number
+from .sequence_code_service import (
+    next_execution_code, next_form_serial_number, next_org_form_seq,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -79,15 +79,8 @@ def allocate_serial_number(
         )
         serial_number = detail['number']
         # org_form_seq 獨立於編號規則，取企業層級最大值 +1
-        result = db.session.execute(
-            text("""
-                SELECT COALESCE(MAX(org_form_seq), 0) + 1
-                FROM fw_form_instances
-                WHERE org_secure_code = :osc
-            """),
-            {'osc': org_secure_code}
-        )
-        return serial_number, (result.scalar() or 1)
+        # （序號池與 advisory lock 都在 sequence_code_service 內，見該檔 docstring）
+        return serial_number, next_org_form_seq(org_secure_code=org_secure_code)
 
     # 無規則 fallback：FORM-YYYYMMDD-NNNNN
     return next_form_serial_number(

@@ -103,6 +103,31 @@ def next_execution_code(*, org_secure_code: str, prefix: str, date_str: str) -> 
     )
 
 
+def next_org_form_seq(*, org_secure_code: str) -> int:
+    """配發企業內表單流水號（L2，`fw_form_instances.org_form_seq`）。
+
+    與編號字串不同，這是純整數、不分日期與前綴，唯一性由
+    `uq_form_org_seq (org_secure_code, org_form_seq) WHERE org_form_seq IS NOT NULL`
+    保護。同樣需要 advisory lock：`MAX+1` 在並發下會算出同一個值，
+    同企業兩人同時送件就撞該約束。
+    """
+    if not org_secure_code:
+        raise ValueError('org_secure_code 必填：org_form_seq 以企業為界')
+
+    db.session.execute(
+        text('SELECT pg_advisory_xact_lock(hashtext(:key))'),
+        {'key': f'fw_org_form_seq:{org_secure_code}'},
+    )
+    return db.session.execute(
+        text("""
+            SELECT COALESCE(MAX(org_form_seq), 0) + 1
+            FROM fw_form_instances
+            WHERE org_secure_code = :osc
+        """),
+        {'osc': org_secure_code},
+    ).scalar() or 1
+
+
 def next_form_serial_number(
     *,
     org_secure_code: str,

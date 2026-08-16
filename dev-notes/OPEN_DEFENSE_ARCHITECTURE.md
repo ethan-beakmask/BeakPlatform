@@ -58,6 +58,88 @@ EDL enforcer / ClickHouse）**不在本檔範圍**，那些的權威文件是
 - 限流：`100 per minute; 5000 per hour`，key_func 以 key_id 計數，
   另疊認證失敗限流
 
+### 端對端送一筆測試事件（本機實測可用，2026-08-16 驗過）
+
+三個一定會撞的點，先看這裡可省一輪試誤：
+
+1. **端點是 `/api/open_defense/intake`**，沒有 `/events` 這一層
+2. **契約必填五個頂層欄位**：`correlation_id` / `source_system` / `event_class`
+   （限 `detection_finding` / `network_activity` / `web_activity` / `process_activity`）
+   / `occurred_at`（ISO-8601 UTC 字串）/ `severity_id`（int 0~6）。
+   缺任一個回 400 `validation_error` 並列出欄位
+3. **`source_system` 要在該 key 的白名單內**，否則 403 `source_not_allowed`。
+   查法：`SELECT key_id, scopes FROM api_keys WHERE key_id LIKE 'ik_%';`
+   （開發庫的 `ik_5ad9de314382ac38` 含 coraza/suricata/falco/crowdsec/vector）
+
+執行前提（三項都要成立，否則錯誤會指向不相干的地方）：
+
+```bash
+systemctl is-active beakplatform-dev.service          # 必須是 active
+cd /opt/BeakPlatform-dev && set -a && source .env && set +a   # 缺 SECRET_KEY 會 ValueError
+./venv/bin/python -c "import requests, psycopg2; print('ok')" # 兩個套件 venv 內已有
+# 確認要用的 key 還在、scopes 沒被改
+PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -t -A \
+  -c "SELECT key_id, status, scopes FROM api_keys WHERE key_id LIKE 'ik_%';"
+```
+
+腳本存檔後用 `./venv/bin/python <檔案>` 跑（不要用系統 python3，套件不在那裡）。
+
+```python
+# 本 session 實跑成功
+import hashlib, hmac, json, time, uuid, requests
+from datetime import datetime
+from app import create_app
+from app.models.api_key import ApiKey
+from app.services import api_key_service
+
+KEY_ID, NONCE = 'ik_5ad9de314382ac38', uuid.uuid4().hex[:8]
+app = create_app('development')
+with app.app_context():
+    secret = api_key_service.decrypt_secret(ApiKey.query.filter_by(key_id=KEY_ID).first())
+
+payload = {
+    'correlation_id': f'probe-{NONCE}', 'source_system': 'falco',
+    'event_class': 'network_activity',
+    'occurred_at': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+    'severity_id': 3,
+    'actor': {'ip': '10.99.88.77'},                       # 私有網段：會被保護清單擋，不會真的封鎖
+    'target': {'host': f'probe-{NONCE}.example.test'},
+    'finding': {'rule_id': f'PROBE-{NONCE}', 'title': f'probe {NONCE}'},
+}
+body = json.dumps(payload, separators=(',', ':')).encode()   # 簽章與送出必須是同一份 bytes
+ts = str(int(time.time()))
+sig = hmac.new(secret, f'{ts}\n'.encode() + body, hashlib.sha256).hexdigest()
+r = requests.post('http://192.168.0.16:7000/beakplatform/api/open_defense/intake',
+                  data=body, headers={'Content-Type': 'application/json',
+                  'X-BP-Key-Id': KEY_ID, 'X-BP-Timestamp': ts,
+                  'X-BP-Signature': f'sha256={sig}'}, timeout=30)
+print(r.status_code, r.text)
+```
+
+成功時的回應（頂層四個鍵，`duplicate=true` 代表 `correlation_id` 撞冪等表、沒有建新案）：
+
+```json
+{"case_secure_code":"2R6iw_yX60pyz6wZMc3OuQ","duplicate":false,"success":true,"workflow_started":true}
+```
+
+**HTTP 200 只代表事件收下了，要確認案件真的建起來就查 DB**（用回應的
+`case_secure_code`，或用自己送的 `correlation_id` 反查）：
+
+```bash
+PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -t -A -F'|' -c "
+SELECT e.correlation_id, wi.execution_code, wi.status, fi.serial_number
+FROM od_intake_events e
+JOIN fw_workflow_instances wi ON wi.secure_code = e.case_secure_code
+JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
+WHERE e.correlation_id = 'probe-<你的 NONCE>';"
+```
+
+查無資料而 HTTP 是 200 → 多半是被聚合降噪併進既有案件（見下段），
+不是建案失敗；`case_secure_code` 會指向那張既有案件。
+
+聚合降噪會把「同 `finding.rule_id` + 同 `actor.ip` + 同 `target.host`」併進既有案件，
+所以三個鍵都要帶 nonce，否則拿到的是上一輪的案件與節點軌跡。
+
 ### 原生路徑的解析流程
 
 ```

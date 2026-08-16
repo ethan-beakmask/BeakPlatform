@@ -14,7 +14,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app import db
 from modules.form_workflow.models import FwFormInstance
-from modules.form_workflow.services.sequence_code_service import next_form_serial_number
+from modules.form_workflow.services.sequence_code_service import (
+    next_form_serial_number, next_org_form_seq,
+)
 
 
 ORG_A = 'test_org_form_serial_a'
@@ -168,3 +170,25 @@ def test_org_form_seq_unique_per_org_and_allows_nulls(app, db_session):
     with pytest.raises(IntegrityError):
         db.session.commit()
     db.session.rollback()
+
+
+def test_next_org_form_seq_is_per_org(app, db_session):
+    """L2 流水號也以企業為界：A 已用到 7 時 B 仍從 1 開始。
+
+    直接呼叫實作 next_org_form_seq()，不要複製它的 SQL 到測試裡。
+    """
+    _require_form_instance_table()
+
+    db.session.add(_form_instance(ORG_A, 'SEQ2-A-1', org_form_seq=7))
+    db.session.commit()
+
+    assert next_org_form_seq(org_secure_code=ORG_B) == 1
+    assert next_org_form_seq(org_secure_code=ORG_A) == 8
+
+
+def test_next_org_form_seq_requires_org_fail_closed(app, db_session):
+    """org 為空時拒絕配號，不可靜默落回全域最大值。"""
+    _require_form_instance_table()
+
+    with pytest.raises(ValueError):
+        next_org_form_seq(org_secure_code='')
