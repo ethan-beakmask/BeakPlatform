@@ -13,6 +13,13 @@
   - 模組 API（`modules/*/api/`）→ **沿用該檔既有寫法**（目前是 `Model.query`
     ＋顯式 org 過濾）。模組 model 沒有註冊進 gateway，改走 gateway 會被
     fail-closed 拒絕而 403/500。**不要順手把模組 API 改成 ResourceGateway**
+- **禁止修改 `MODEL_RESOURCE_TYPE_MAP`、`LIST_RBAC_ENFORCED_MODELS`、
+  `RBAC_EXEMPT_MODELS`**（`backend/app/security/resource_gateway.py`）。
+  這三張表全平台生效，改它們不是改一支 API。**model 沒註冊就維持 `Model.query`
+  現狀**，不要為了「讓它能走 gateway」而去註冊——註冊了卻沒建 permission code 時，
+  `PermissionService.check()` 會在查不到定義那一步直接 return False，
+  **連 ORG_ADMIN 與 SYSTEM_ADMIN 都被擋**（bypass 在下一步、輪不到），
+  症狀是整個端點對每種身分都 403
 - 改既有平台 API 為 gateway 時（**只在 spec 明確要求時做**）：
   `ResourceGateway.list()` / `filter()` 會對 `LIST_RBAC_ENFORCED_MODELS` 內的 model
   自動檢查 `{resource_type}:read`，**不是等價替換**——EMPLOYEE／EXTERNAL 可達的端點

@@ -447,17 +447,54 @@ semgrep --config .semgrep/beakplatform-security.yaml --metrics=off --quiet --jso
   permission code 與 `LIST_RBAC_ENFORCED_MODELS`，是要單獨評估的變更
 - **模組 API 一律不改**（會被 fail-closed 拒絕，見本節上半）
 
-#### 改的時候唯一會讓功能靜默壞掉的陷阱
+#### 【硬禁止】不要為了改一支 API 而去動註冊表
 
-`ResourceGateway.list()` / `filter()` 對 `LIST_RBAC_ENFORCED_MODELS` 內的 model
-**會自動檢查 `{resource_type}:read`**，而上述 11 種**全部都在那份清單裡**。
-所以 `User.query.filter_by(...)` → `ResourceGateway.filter(User, ...)`
-**不是等價替換**：該端點的呼叫者從此需要持有 `user:read`，
-EMPLOYEE／EXTERNAL 可達的端點改完會 403。
+**禁止**在「順手改成 gateway」的過程中修改
+`MODEL_RESOURCE_TYPE_MAP`、`LIST_RBAC_ENFORCED_MODELS`、`RBAC_EXEMPT_MODELS`。
+這三張表是**全平台生效**的，改它們不是改一支 API，是改所有走 gateway 的路徑。
+要動就當成獨立任務、單獨評估、單獨驗收。
 
-**單元測試抓不到這件事**——測試庫是 `db.create_all()` 建的空表、沒有 RBAC seed
-（既有 failed `test_admin_required_for_admin` 就是這個成因，PF-34）。
-**改完必須用該端點的實際使用者身分在瀏覽器或 curl 實測一次**：
+未註冊的 model（2026-08-16 是 12 種：LookupItem、EgressFieldPolicy、
+BroadcastAcknowledgment、EgressTierThreshold、StoreItem、StoreInstallation、
+AuditLog、SystemSetting、PasswordResetToken、Conglomerate、MenuRoleRequirement、NRule）
+**維持現狀就是正確的**，不是待辦。
+
+#### 三層雷（前兩層會讓所有身分都進不去，含管理員）
+
+**雷一：未註冊的 model 走 gateway 會直接被拒。**
+`_check_collection_permission()` 第 5 條：有用戶上下文即 fail-closed 拒絕
+（`Unregistered model for ResourceGateway list RBAC`）；`get()` 路徑則在
+`_check_view_permission()` 因 `resource_type is None` 拋 `PermissionDeniedError`。
+所以把未註冊 model 的查詢「順手改成 gateway」，**當場就壞**。
+
+**雷二：註冊了 model 卻沒建 permission code，連 ORG_ADMIN 與 SYSTEM_ADMIN 都被擋。**
+這是雷一的直覺解法（「那我把它註冊起來就好了」）踩下去的地方。
+`PermissionService.check()` 的順序是**先查 permission 定義、查不到就 return False**
+（`permission_service.py:121-125`），**ORG_ADMIN 的 bypass 在下一步、根本輪不到**；
+SYSTEM_ADMIN 依 SEC-02 早已不享特權。2026-08-16 實測
+（`/opt/tmp/verify/20260816-tenant02-permission-chain.log`）：
+
+```
+check("lookup_item:read")  ORG_ADMIN -> allowed=False (Unknown permission)
+                           SYSTEM_ADMIN -> allowed=False (Unknown permission)
+check("user:read")         ORG_ADMIN -> allowed=True   SYSTEM_ADMIN -> allowed=True
+```
+
+症狀是**整個端點對每一種身分都 403**，而錯誤訊息只說「沒有權限」，
+看起來像權限設定錯誤而不像程式改壞。
+
+**雷三：已註冊 model 改走 gateway 也不是等價替換。**
+`list()` / `filter()` 對 `LIST_RBAC_ENFORCED_MODELS` 內的 model 自動檢查
+`{resource_type}:read`，而可直接改的那 11 種**全部都在那份清單裡**。
+`User.query.filter_by(...)` → `ResourceGateway.filter(User, ...)` 之後，
+該端點的呼叫者需要持有 `user:read`——EMPLOYEE／EXTERNAL 可達的端點會 403。
+呼叫端本來就不該持有該權限時，用 `check_permission=False` 並在該行寫明理由。
+
+#### 改完必須實測（單元測試抓不到）
+
+測試庫是 `db.create_all()` 建的空表、**沒有 RBAC seed**，權限鏈上的問題在測試裡
+一律表現為既有的那個 failed（`test_admin_required_for_admin`，PF-34），
+不會因為你改壞而多紅一條。**一定要用該端點的實際使用者身分實測**：
 
 ```bash
 BASE=http://192.168.0.16:7000/beakplatform
@@ -466,7 +503,7 @@ curl -s -c cj.txt -X POST "$BASE/dev/quick-login" -H 'Content-Type: application/
 curl -s -b cj.txt -o /dev/null -w '%{http_code}\n' "$BASE/api/<改過的端點>"
 ```
 
-呼叫端身分本來就不該持有該權限時，用 `check_permission=False` 並在該行寫明理由。
+端點若有多種身分可達（例如 ORG_ADMIN 與 EMPLOYEE 都看得到的清單），**每種都要測**。
 
 **寫給未來 session**：看到模組 API 用 `Model.query` **不要當成缺陷回報、不要建工單、
 也不要順手改**。要確認的是上面那四項實質要求。真要把模組納入 gateway 是跨 5 個模組、
