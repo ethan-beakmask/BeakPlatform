@@ -36,10 +36,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 
-# 節點座標刻意都落在 x 340~1020 / y 70~330。
+# 節點座標刻意都落在 x 340~1020 / y 70~330，橫向間距 140、縱向 130。
 # 設計器載入既有流程時的 pan 不是固定值（實測同一個流程連續載入會得到
-# -143.75 / -193.75 / -275），所以座標只能求「大多數情況下剛好」；
+# -143.75 / -193.75 / -275 / -350），所以座標只能求「大多數情況下剛好」；
 # 真正的保險是 `wf-render.js` 的「有節點在視野外就自動 fit」。
+#
+# 注意：設計器有拖放時的防重疊機制，但那只作用在人工拖放；
+# 腳本是直接寫座標值，不經過那套判斷，**兩個 graph 都要自己排好**。
+# （2026-08-20 就因為批次取代只改到第一個 graph，AI 範例的 Start
+# 留在 (-600, 0) 沒被發現。改座標時務必兩個 builder 都確認。）
 
 _EDGE_STYLE = {
     'width': 2,
@@ -60,8 +65,9 @@ def log(msg):
 # ---------------------------------------------------------------------------
 
 # node_type -> icon 路徑，由 workflow_node_definitions 決定（見 load_node_icons）。
-# 不要用 f'{ICON_BASE}/{node_type.lower()}.svg' 硬推：AiAgent 沒有 aiagent.svg，
-# 它在節點定義裡借用 sqlexecutor.svg，硬推會得到一個 404 的圖示。
+# 不要用 f'{ICON_BASE}/{node_type.lower()}.svg' 硬推：檔名與型別名不是一對一
+# （AiAgent 一度借用 sqlexecutor.svg，2026-08-20 才補上 aiagent.svg），
+# 硬推遲早會指到不存在的檔案。
 _NODE_ICONS: dict = {}
 
 
@@ -345,7 +351,7 @@ FORM_B_SCHEMA = {
 
 def build_ai_demo_graph():
     nodes = [
-        _node('node-Start', 'Start', 'Start', {}, -600, 0),
+        _node('node-Start', 'Start', 'Start', {}, 340, 200),
         _node(
             'node-Ai-analyze', 'AiAgent', 'AI 分析',
             {
