@@ -13,9 +13,11 @@ prompt 內含的是**攻擊者可控的資料**（HTTP request、payload），�
    所有寫入（流程變數、簽核註記）都由本 handler 在拿到輸出之後自己做。
    絕對不要為了方便而讓 AI 去呼叫工具或 SP 寫資料 —— 那等於把
    prompt injection 直接接到寫入權上。
-2. **CLI 以隔離配置執行**（見 `_build_cli_argv` 與 `_build_env`）：
-   專用 HOME（不含 CLAUDE.md）、空 MCP 設定、空目錄當 cwd、工具全黑名單、
-   最小化環境變數。2026-08-20 實測結論見 dev-notes/ithome_2026/README.md。
+2. **`claude -p` 不是 API wrapper，是完整 agent**（回應 envelope 有 `num_turns`）。
+   預設會用工具、讀 `$HOME/.claude/CLAUDE.md`、繼承呼叫者全部 MCP server。
+   靠原廠的 `--safe-mode`（停用全部自訂）＋ `--tools ""`（停用全部工具）隔離，
+   見 `_build_cli_argv`。**不要改成 `--allowedTools ""`**，那是另一個參數，
+   空字串會被當「未指定」而放行 Bash/Edit/Write。
 3. **canary 驗證**：每次帶一組隨機字串要求 AI 原樣回傳，不符即視為
    prompt 遭劫持，整份輸出作廢、走 error 邊。不重試到通過為止。
 4. **規則層平行偵測**：handler 自己掃 injection 特徵，結果不經過 AI 直接生效。
@@ -34,6 +36,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import urllib.parse
 import uuid
 from datetime import datetime
@@ -41,30 +44,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from .base import BaseNodeHandler
 
-# --- 執行環境（隔離用，可由節點 config 或環境變數覆寫）---
-# CLI 路徑不寫死：各機器的安裝位置不同（npm 全域、~/.local/bin、/usr/local/bin…），
-# 寫死等於只有開發機能跑，也會把開發者的家目錄名稱帶進版控。
+# --- 執行環境 ---
+# CLI 路徑不寫死：各機器安裝位置不同（npm 全域、~/.local/bin、/usr/local/bin…）
 DEFAULT_CLI_PATH = (os.environ.get('AI_NODE_CLI_PATH')
                     or shutil.which('claude') or 'claude')
-# 專用 HOME，刻意不含 CLAUDE.md —— claude CLI 會讀 $HOME/.claude/CLAUDE.md，
-# 用呼叫者的 HOME 會把專案規範餵進 prompt（2026-08-20 實測）
-DEFAULT_AI_HOME = os.environ.get('AI_NODE_HOME', '/opt/ainode/home')
-# 空目錄當 cwd（目錄內不得有 CLAUDE.md、.claude/、任何專案檔案）
-DEFAULT_SANDBOX = os.environ.get('AI_NODE_SANDBOX', '/opt/ainode/sandbox')
 DEFAULT_MODEL = 'claude-sonnet-5'
 DEFAULT_TIMEOUT = 60
-
-# 工具黑名單。`--allowedTools ""` 會被當成「未指定」而放行 Bash/Edit/Write
-# （2026-08-20 實測），所以只能用黑名單。新版 CLI 增加工具時要補這裡。
-DISALLOWED_TOOLS = (
-    'Bash BashOutput KillShell Edit Write Read Glob Grep NotebookEdit '
-    'WebFetch WebSearch Task Agent TodoWrite Skill SlashCommand ToolSearch '
-    'ListAgents SendMessage SendUserMessage ReportFindings ScheduleWakeup '
-    'Artifact AskUserQuestion CronCreate CronDelete CronList DesignSync '
-    'EnterWorktree ExitWorktree EnterPlanMode ExitPlanMode Monitor '
-    'PushNotification RemoteTrigger TaskOutput TaskStop EndConversation '
-    'ListMcpResourcesTool ReadMcpResourceTool ReadMcpResourceDirTool'
-)
 
 SYSTEM_PROMPT = 'You are a text analyzer. Output only the requested JSON.'
 
@@ -256,29 +241,35 @@ class AiAgentHandler(BaseNodeHandler):
     # ---- CLI 執行 -------------------------------------------------------
 
     def _build_env(self) -> Dict[str, str]:
-        """最小化環境變數，不繼承完整 shell env"""
-        ai_home = self.get_config_value('ai_home') or DEFAULT_AI_HOME
+        """
+        最小化環境變數，不繼承完整 shell env。
+
+        `--tools ""` 之後 CLI 已經沒有工具可以讀環境變數，這層是深度防禦：
+        萬一哪天參數失效，至少 DATABASE_URL / SECRET_KEY 這類秘密不在 subprocess 裡。
+        HOME 要保留 —— claude 的訂閱認證存在 $HOME/.claude/。
+        """
         return {
-            'HOME': ai_home,
-            'PATH': '/usr/bin:/bin:/usr/local/bin:' + os.path.dirname(
-                self.get_config_value('cli_path') or DEFAULT_CLI_PATH),
+            'HOME': os.environ.get('HOME') or os.path.expanduser('~'),
+            'PATH': os.environ.get('PATH', '/usr/bin:/bin'),
             'LANG': 'en_US.UTF-8',
         }
 
     def _build_cli_argv(self) -> List[str]:
         """
-        隔離配置。每個參數的理由（2026-08-20 實測）：
+        隔離配置。`claude -p` **不是 API wrapper 而是完整 agent**
+        （回應的 envelope 有 num_turns），預設會用工具、讀 CLAUDE.md、繼承 MCP。
+        prompt 裡放的是攻擊者可控的資料，所以這兩個參數是必要的：
 
-        --strict-mcp-config + 空 mcpServers
-            不加的話會繼承使用者全部 MCP server（beak_broodnest、
-            chrome-devtools、Google Drive、SendMessage…），被注入就能動它們。
-            順帶把單次成本從 $0.26 降到 $0.013。
-        --system-prompt
-            覆寫預設 agent 人格，避免它照專案規範行事。
-        --permission-mode plan
-            plan 模式不能寫入，當第二道。
-        --disallowedTools
-            主要防線。不能用 --allowedTools ""，空字串會被當未指定而放行。
+        --safe-mode
+            原廠的「停用全部自訂」：CLAUDE.md、skills、plugins、hooks、
+            MCP servers、custom commands/agents 一次全關。
+        --tools ""
+            原廠的「停用全部內建工具」。
+            **注意不是 `--allowedTools ""`** —— 那是另一個參數，空字串會被當成
+            「未指定」而放行 Bash/Edit/Write（2026-08-20 實測踩過）。
+
+        2026-08-20 最嚴苛條件實測（真實 HOME、cwd 在專案根目錄）：
+        NO_CLAUDEMD / NO_MCP / NO_TOOLS，且要它建檔案時檔案不會出現。
         """
         cli = self.get_config_value('cli_path') or DEFAULT_CLI_PATH
         model = self.get_config_value('model') or DEFAULT_MODEL
@@ -286,10 +277,9 @@ class AiAgentHandler(BaseNodeHandler):
             cli, '-p',
             '--output-format', 'json',
             '--model', model,
-            '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}',
-            '--permission-mode', 'plan',
+            '--safe-mode',
+            '--tools', '',
             '--system-prompt', SYSTEM_PROMPT,
-            '--disallowedTools', DISALLOWED_TOOLS,
         ]
 
     def _run_cli(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
@@ -300,19 +290,19 @@ class AiAgentHandler(BaseNodeHandler):
         也不會出現在 process 清單裡。
         """
         timeout = int(self.get_config_value('timeout_seconds') or DEFAULT_TIMEOUT)
-        sandbox = self.get_config_value('sandbox_dir') or DEFAULT_SANDBOX
-        if not os.path.isdir(sandbox):
-            return None, f'sandbox 目錄不存在: {sandbox}'
         try:
-            proc = subprocess.run(
-                self._build_cli_argv(),
-                input=prompt,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                cwd=sandbox,
-                env=self._build_env(),
-            )
+            # 每次都給一個全新的空目錄當 cwd。--safe-mode 已經擋掉 CLAUDE.md，
+            # 這層是為了讓 cwd 不含任何專案檔案、也不留殘留。
+            with tempfile.TemporaryDirectory(prefix='ainode-') as sandbox:
+                proc = subprocess.run(
+                    self._build_cli_argv(),
+                    input=prompt,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                    cwd=sandbox,
+                    env=self._build_env(),
+                )
         except subprocess.TimeoutExpired:
             # 逾時的部分輸出一律丟棄
             return None, f'AI CLI 逾時（{timeout}s）'

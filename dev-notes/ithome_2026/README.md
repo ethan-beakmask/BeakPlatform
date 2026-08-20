@@ -75,9 +75,15 @@
 | `backend/tests/test_ai_agent_node.py` | 30 個測試，全部做過 mutation 驗證 |
 
 **一手實測結論在 `ai_node_findings.md`**，那是第 18 篇的主要素材：
-`claude -p` 預設繼承全部 MCP 工具與全域 CLAUDE.md、`--allowedTools ""` 反而放行
-Bash/Edit/Write、隔離後成本降 20 倍、模型自己拒答時 fallback 如何生效、
+`claude -p` 是 agent 不是 API（預設繼承全部 MCP 工具與全域 CLAUDE.md）、
+`--tools ""` 與 `--allowedTools ""` 差一個字卻是全關 vs 全開、
+驗證只能看副作用不能問它自己有什麼工具、模型自己拒答時 fallback 如何生效、
 mutation 抓到一個假測試、外部顧問建議裡的一條錯誤。
+
+**隔離用原廠的 `--safe-mode` + `--tools ""` 兩個參數就夠**，
+不需要專用 HOME、不需要 MCP 空設定、不需要工具黑名單、
+**沒有任何要預先建立的目錄**。第一輪手工搭的那整套已於 2026-08-20 移除——
+那段「花六輪試誤搭出來的東西原廠一個參數就解決」本身就是文章素材。
 
 ## 已排除
 

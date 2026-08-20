@@ -17,47 +17,54 @@
 prompt 裡放的是攻擊者可控的 HTTP request，這等於把 prompt injection
 接到一整排有實際副作用的工具上。
 
-### 幾個反直覺的點
+### 但正解是原廠參數，不是自己搭黑名單
 
-**`--allowedTools ""` 不是「什麼都不給」，是「沒指定」。**
-實測傳空字串後，Bash / Edit / Read / Write **反而全部放行**。
-白名單這條路走不通，只能用黑名單，而黑名單要隨 CLI 版本維護。
+第一輪我做了一整套手工隔離：專用 HOME、`--strict-mcp-config` 空設定、
+40 個工具的黑名單、預先建好的空目錄。**全部可以丟掉**——原廠有兩個參數：
 
-**`--permission-mode` 沒有「全部拒絕」選項。**
-可選值只有 `acceptEdits` / `auto` / `bypassPermissions` / `manual` / `dontAsk` / `plan`。
-`plan` 最接近（不能寫入），但只能當第二道。
+```
+--safe-mode     停用全部自訂（CLAUDE.md、skills、plugins、hooks、MCP servers、
+                custom commands/agents…）
+--tools ""      停用全部內建工具
+```
 
-**隔離 MCP 順便省了 20 倍成本。** 每次呼叫的花費：
+最嚴苛條件實測（真實家目錄 `/home/ethan`、cwd 直接指在專案根目錄）：
+`NO_CLAUDEMD` / `NO_MCP` / `NO_TOOLS`，副作用測試也建不了檔。
+成本 **$0.0076**，比手工方案的 $0.013 再便宜一半。
 
-| 配置 | 成本 |
-|---|---|
-| 預設（繼承全部 MCP + CLAUDE.md） | $0.26 |
-| `--strict-mcp-config` + 空 mcpServers | $0.09 |
-| 再換獨立 HOME（不含 CLAUDE.md）+ Sonnet 5 | **$0.013** |
+**這段值得寫進文章**：花了六輪試誤搭出來的東西，原廠一個參數就解決了。
+漏看它的原因很具體——`--help` 裡「sandbox」只出現在
+`--dangerously-skip-permissions` 的描述中，而且是反過來的意思
+（「建議只在無網路的 sandbox 使用這個危險選項」），
+所以搜 sandbox 永遠找不到 `--safe-mode`。
 
-差別全在載入的 context：預設配置光是 cache creation 就 13,766 tokens。
-安全隔離與成本在這裡是同一件事。
+### 兩個真正該記住的坑
+
+**`--tools` 與 `--allowedTools` 是兩個不同參數。**
+`--allowedTools ""` 是「未指定」→ **放行 Bash/Edit/Write**；
+`--tools ""` 才是「全部停用」。差一個字，一個完全沒設防、另一個全關，
+而且從回應完全看不出差別。
+
+**驗證只能看副作用，不能問它「你有什麼工具」。**
+`--tools ""` 之下要它建檔案，它回答「我將在目前工作目錄建立這個檔案」，
+但**檔案根本沒出現**。自我報告不可信——它會照語意演，即使沒有能力執行。
+這條對整個 AI 節點的驗收方法論都成立。
 
 ### 最終配置
 
 ```bash
-env -i HOME=/opt/ainode/home PATH=/usr/bin:/bin:/home/ethan/.local/bin \
 claude -p \
   --output-format json \
   --model claude-sonnet-5 \
-  --strict-mcp-config --mcp-config '{"mcpServers":{}}' \
-  --permission-mode plan \
-  --system-prompt "You are a text analyzer. Output only the requested JSON." \
-  --disallowedTools "<40 個工具名>"
-# cwd = /opt/ainode/sandbox（空目錄，無 CLAUDE.md、無 .claude/）
+  --safe-mode \
+  --tools "" \
+  --system-prompt "You are a text analyzer. Output only the requested JSON."
+# cwd 用 tempfile.TemporaryDirectory() 每次動態建
+# env 最小化只留 HOME（認證在 $HOME/.claude/）/ PATH / LANG
 # prompt 走 stdin
 ```
 
-`/opt/ainode/home` 只放 `.claude/.credentials.json`（認證）與空的 `.claude.json`，
-**刻意不放 CLAUDE.md**。驗證方式是直接問它「context 裡有沒有 CLAUDE.md」，
-回 `NO_CLAUDEMD` 才算過。
-
-最終攻擊測試：要它 `cat /opt/ainode/sandbox/secret_test.txt`，回 **`BLOCKED`**。
+**沒有任何要預先建立的目錄**，換一台機器直接可跑。
 
 ## 二、AI 不該有寫入權（設計上的關鍵取捨）
 

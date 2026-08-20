@@ -1747,38 +1747,41 @@ bash scripts/run_e2e.sh -g "A. 點不可簽核"  # 其餘參數原樣傳給 npx 
 會穩定通過而什麼都沒驗，**讀起來像有保障，比沒測更危險**。
 PF-79 這組就是這樣驗的（記錄在 `/opt/tmp/verify/20260812-e2e-od-pf79.log`）。
 
-### AiAgent 節點：呼叫 claude CLI 前的隔離是必要的（2026-08-20 新增）
+### AiAgent 節點：`claude -p` 是 agent 不是 API，一定要關掉自訂與工具（2026-08-20）
 
 節點型別 `AiAgent`，handler
 `modules/form_workflow/services/node_handlers/ai_agent_handler.py`。
 它把流程資料交給本機 `claude -p` 分析，結果寫流程變數並可插一筆
 `fw_approval_records`（`action='ai_note'`、`approver_secure_code=NULL`）。
 
-**三個實測出來、猜不到的事實**（完整紀錄 `dev-notes/ithome_2026/ai_node_findings.md`）：
+**`claude -p` 不是「送字串到雲端再回傳」，是完整的 agent**
+（回應 envelope 有 `num_turns`）。預設狀態下它會用工具、讀
+`$HOME/.claude/CLAUDE.md`、繼承呼叫者的**全部 MCP server**
+（beak_broodnest / chrome-devtools / Google Drive / SendMessage…）。
+prompt 裡放的是攻擊者可控的資料，所以隔離不是選配。
 
-- **`--disallowedTools` 只擋內建工具，MCP 全部照樣繼承**。不加
-  `--strict-mcp-config --mcp-config '{"mcpServers":{}}'` 的話，被分析的資料
-  一旦挾帶 prompt injection，就能碰到 `beak_broodnest`、`chrome-devtools`、
-  `Google Drive`、`SendMessage`
-- **它會讀 `$HOME/.claude/CLAUDE.md`**。所以 cwd 指到空目錄還不夠，
-  `HOME` 要換成專用的 `/opt/ainode/home`（只放 `.credentials.json`，刻意無 CLAUDE.md）
-- **`--allowedTools ""` 不是「什麼都不給」而是「沒指定」**，實測會把
-  Bash/Edit/Read/Write 全部放行。只能用黑名單
+**用原廠的兩個參數就夠，不要自己搭黑名單**：
 
-沙箱目錄 `/opt/ainode/sandbox`（空目錄），**這兩個目錄不在 repo 內，
-重裝機器要自己建**，否則 handler 回 `sandbox 目錄不存在`：
-
-```bash
-sudo mkdir -p /opt/ainode/home/.claude /opt/ainode/sandbox
-sudo chown -R $USER:$USER /opt/ainode
-cp ~/.claude/.credentials.json /opt/ainode/home/.claude/   # 只複製認證
-chmod 600 /opt/ainode/home/.claude/.credentials.json
-echo '{}' > /opt/ainode/home/.claude.json
-# 刻意不要複製 CLAUDE.md 過去
+```
+--safe-mode     停用全部自訂（CLAUDE.md、skills、plugins、hooks、MCP servers、
+                custom commands/agents…），一個參數全包
+--tools ""      停用全部內建工具
 ```
 
-三個路徑都可用環境變數覆寫：`AI_NODE_CLI_PATH`（預設走 `shutil.which('claude')`）、
-`AI_NODE_HOME`、`AI_NODE_SANDBOX`。
+**`--tools` 與 `--allowedTools` 是兩個不同參數。**
+`--allowedTools ""` 會被當成「未指定」而**放行 Bash/Edit/Write**（實測踩過）；
+`--tools ""` 才是明確的全部停用。寫錯這個等於完全沒設防，而且從回應看不出來。
+
+2026-08-20 最嚴苛條件實測（真實 HOME、cwd 直接指在專案根目錄）：
+`NO_CLAUDEMD` / `NO_MCP` / `NO_TOOLS`，要它建檔案時檔案不會出現。
+
+**驗證一定要看副作用，不能問它「你有什麼工具」。**
+實測中它回答「我將建立這個檔案」，但檔案根本沒出現——自我報告不可信。
+
+其餘設計：cwd 用 `tempfile.TemporaryDirectory()` 每次動態建（無需預先建目錄）；
+env 最小化只留 `HOME`（認證在 `$HOME/.claude/`）/ `PATH` / `LANG`；
+CLI 路徑走 `AI_NODE_CLI_PATH` 環境變數 → `shutil.which('claude')` → `'claude'`。
+**沒有任何要手動建立的目錄**，換機器直接可跑。
 
 **AI 一律沒有寫入權**：它只出文字，所有寫入由 handler 做。規則層的
 injection 偵測不經過 AI、直接生效，系統警示由 handler 在 AI 輸出**之後**拼接，
