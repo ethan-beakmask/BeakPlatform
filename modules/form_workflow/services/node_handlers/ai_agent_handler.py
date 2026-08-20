@@ -32,6 +32,7 @@ import base64
 import json
 import os
 import re
+import shutil
 import subprocess
 import urllib.parse
 import uuid
@@ -40,10 +41,16 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from .base import BaseNodeHandler
 
-# --- 執行環境（隔離用，路徑由 config 覆寫）---
-DEFAULT_CLI_PATH = '/home/ethan/.local/bin/claude'
-DEFAULT_AI_HOME = '/opt/ainode/home'      # 專用 HOME，刻意不含 CLAUDE.md
-DEFAULT_SANDBOX = '/opt/ainode/sandbox'   # 空目錄當 cwd
+# --- 執行環境（隔離用，可由節點 config 或環境變數覆寫）---
+# CLI 路徑不寫死：各機器的安裝位置不同（npm 全域、~/.local/bin、/usr/local/bin…），
+# 寫死等於只有開發機能跑，也會把開發者的家目錄名稱帶進版控。
+DEFAULT_CLI_PATH = (os.environ.get('AI_NODE_CLI_PATH')
+                    or shutil.which('claude') or 'claude')
+# 專用 HOME，刻意不含 CLAUDE.md —— claude CLI 會讀 $HOME/.claude/CLAUDE.md，
+# 用呼叫者的 HOME 會把專案規範餵進 prompt（2026-08-20 實測）
+DEFAULT_AI_HOME = os.environ.get('AI_NODE_HOME', '/opt/ainode/home')
+# 空目錄當 cwd（目錄內不得有 CLAUDE.md、.claude/、任何專案檔案）
+DEFAULT_SANDBOX = os.environ.get('AI_NODE_SANDBOX', '/opt/ainode/sandbox')
 DEFAULT_MODEL = 'claude-sonnet-5'
 DEFAULT_TIMEOUT = 60
 

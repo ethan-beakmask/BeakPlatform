@@ -1766,7 +1766,19 @@ PF-79 這組就是這樣驗的（記錄在 `/opt/tmp/verify/20260812-e2e-od-pf79
   Bash/Edit/Read/Write 全部放行。只能用黑名單
 
 沙箱目錄 `/opt/ainode/sandbox`（空目錄），**這兩個目錄不在 repo 內，
-重裝機器要自己建**，否則 handler 回 `sandbox 目錄不存在`。
+重裝機器要自己建**，否則 handler 回 `sandbox 目錄不存在`：
+
+```bash
+sudo mkdir -p /opt/ainode/home/.claude /opt/ainode/sandbox
+sudo chown -R $USER:$USER /opt/ainode
+cp ~/.claude/.credentials.json /opt/ainode/home/.claude/   # 只複製認證
+chmod 600 /opt/ainode/home/.claude/.credentials.json
+echo '{}' > /opt/ainode/home/.claude.json
+# 刻意不要複製 CLAUDE.md 過去
+```
+
+三個路徑都可用環境變數覆寫：`AI_NODE_CLI_PATH`（預設走 `shutil.which('claude')`）、
+`AI_NODE_HOME`、`AI_NODE_SANDBOX`。
 
 **AI 一律沒有寫入權**：它只出文字，所有寫入由 handler 做。規則層的
 injection 偵測不經過 AI、直接生效，系統警示由 handler 在 AI 輸出**之後**拼接，
