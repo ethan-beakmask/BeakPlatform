@@ -1,7 +1,7 @@
 /**
  * wf-accordion-operations.js -- 操作類節點面板
  * 從 wf-accordion.js 拆分
- * 包含: OpSet, OpFieldWrite, SqlExecutor, FormAdapter, SubSystemProvision
+ * 包含: OpSet, OpFieldWrite, FormAdapter, SubSystemProvision
  */
 
         // ==================== OpSet 面板 ====================
@@ -148,59 +148,6 @@
                     <div style="padding: 8px; font-size: 10px;">
                         ${_renderVarSyntaxTable()}
                     </div>
-                </div>
-            `;
-        }
-
-        // ==================== SqlExecutor 面板 ====================
-
-        function renderSqlExecutorPanel(node, nodeId) {
-            const currentConfig = node.data('config') || {};
-            const queryType = currentConfig.query_type || '';
-            const resultVar = currentConfig.result_var || '';
-
-            return `
-                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
-                    <h4 style="margin: 0 0 10px 0; color: #4a90a4;">
-                        <i class="fas fa-database"></i> SQL 查詢說明
-                    </h4>
-                    <div style="font-size: 13px; line-height: 1.6; color: #666;">
-                        <p style="margin: 10px 0;">此節點執行預定義的安全 SQL 查詢，自動依據表單發動者的企業進行資料隔離。</p>
-                        <p style="margin: 10px 0; padding: 8px; background: #e8f5e9; border-radius: 4px;">
-                            <i class="fas fa-shield-alt" style="color: #4caf50;"></i>
-                            <strong>安全機制：</strong>org_secure_code 會自動注入，確保只能查詢同企業的資料。
-                        </p>
-                    </div>
-                </div>
-
-                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
-                    <h4 style="margin: 0 0 15px 0; color: #4a90a4;">
-                        <i class="fas fa-cog"></i> 查詢設定
-                    </h4>
-                    <div style="margin-bottom: 15px;">
-                        <strong>查詢類型：</strong><br>
-                        <select id="sqlQueryType" onchange="updateSQLQueryDescription()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px;">
-                            <option value="">請選擇查詢類型...</option>
-                            <option value="get_org_users" ${queryType === 'get_org_users' ? 'selected' : ''}>取得企業用戶清單</option>
-                            <option value="get_org_user_count" ${queryType === 'get_org_user_count' ? 'selected' : ''}>取得企業用戶數量</option>
-                            <option value="get_org_active_users" ${queryType === 'get_org_active_users' ? 'selected' : ''}>取得企業活躍用戶</option>
-                        </select>
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <strong>結果變數：</strong><br>
-                        <input type="text" id="sqlResultVar" value="${resultVar}" placeholder="例：user_list"
-                               style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px; box-sizing: border-box;">
-                        <p style="font-size: 11px; color: #999; margin-top: 5px;">
-                            <i class="fas fa-info-circle"></i> 查詢結果將存入此變數，可在後續節點使用 \${變數名} 引用
-                        </p>
-                    </div>
-                    <div id="sqlPreviewArea" style="background: #f5f5f5; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 12px;">
-                        <strong>查詢說明：</strong>
-                        <div id="sqlQueryDescription" style="color: #666; margin-top: 5px;">請選擇查詢類型</div>
-                    </div>
-                    <button class="btn-primary" onclick="applySQLExecutorConfig('${nodeId}')" style="width: 100%;">
-                        <i class="fas fa-check"></i> 套用
-                    </button>
                 </div>
             `;
         }

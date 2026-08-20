@@ -1,84 +1,262 @@
 /**
- * wf-node-sql-executor.js -- SQLExecutor SQL 查詢節點配置
- * 從 wf-node-configs.js 拆分
+ * wf-node-sql-executor.js -- SqlExecutor（SQL 執行器）節點屬性面板
+ *
+ * 面板只允許選擇後端白名單內的 stored procedure，不能自由輸入 SQL。
  */
 
-        // SQL 查詢類型描述
-        const sqlQueryDescriptions = {
-            'get_org_users': __('查詢同企業的所有用戶，回傳 id、display_name、email 欄位，結果為陣列。'),
-            'get_org_user_count': __('統計同企業的用戶總數，回傳單一數值 user_count。'),
-            'get_org_active_users': __('查詢同企業最近 30 天有登入的活躍用戶，回傳 id、display_name、email、last_login_at 欄位。')
-        };
+let _sqlProcedures = [];
+let _sqlExecutorConfig = {};
+let _sqlParamValues = {};
 
-        // 更新 SQL 查詢描述
-        function updateSQLQueryDescription() {
-            const select = document.getElementById('sqlQueryType');
-            const descDiv = document.getElementById('sqlQueryDescription');
-            if (!select || !descDiv) return;
+function _sqlEscapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
-            const queryType = select.value;
-            if (queryType && sqlQueryDescriptions[queryType]) {
-                descDiv.textContent = sqlQueryDescriptions[queryType];
-                descDiv.style.color = '#333';
-            } else {
-                descDiv.textContent = __('請選擇查詢類型');
-                descDiv.style.color = '#666';
-            }
+function _rememberSqlParamValues() {
+    const container = document.getElementById('sqlParamFields');
+    if (!container) return;
+    container.querySelectorAll('[id^="sqlParam_"]').forEach((el) => {
+        const name = el.id.replace('sqlParam_', '');
+        if (name) _sqlParamValues[name] = el.value || '';
+    });
+}
+
+function _getSelectedSqlProcedure() {
+    const code = document.getElementById('sqlProcedureCode')?.value || '';
+    return _sqlProcedures.find((proc) => proc.code === code) || null;
+}
+
+function _renderSqlProcedureDescription(proc) {
+    const desc = document.getElementById('sqlProcedureDesc');
+    if (!desc) return;
+
+    if (!proc) {
+        desc.textContent = __('請選擇預存程序');
+        desc.style.color = '#888';
+        return;
+    }
+
+    const parts = [];
+    if (proc.description) parts.push(proc.description);
+    if (proc.result_mode) parts.push(`${__('結果模式')}：${proc.result_mode}`);
+    if (Array.isArray(proc.result_columns) && proc.result_columns.length > 0) {
+        const columns = proc.result_columns
+            .map((col) => col.label || col.name)
+            .filter(Boolean)
+            .join(', ');
+        if (columns) parts.push(`${__('回傳欄位')}：${columns}`);
+    }
+    if (proc.max_rows !== undefined && proc.max_rows !== null) {
+        parts.push(`${__('最多筆數')}：${proc.max_rows}`);
+    }
+
+    desc.textContent = parts.join('；') || __('此預存程序沒有說明');
+    desc.style.color = '#555';
+}
+
+// eslint-disable-next-line no-unused-vars
+function renderSqlExecutorPanel(node, nodeId) {
+    const cfg = node.data('config') || {};
+    _sqlExecutorConfig = cfg;
+    _sqlParamValues = { ...(cfg.params || {}) };
+
+    const resultVar = cfg.result_var || '';
+    const timeout = cfg.timeout_seconds || 10;
+    const writeNote = cfg.write_approval_note === true;
+    const noteTemplate = cfg.note_template || '';
+    const onError = cfg.on_error || 'error';
+
+    return `
+    <div class="node-config-section">
+        <h4 style="margin:10px 0 6px;font-size:13px;">${__('SQL 執行器設定')}</h4>
+
+        <div style="font-size:10px;color:#888;line-height:1.5;margin-bottom:8px;">
+            ${__('只能執行平台預先登錄的 stored procedure，不能自由輸入 SQL。企業識別碼由系統強制帶入，查不到其他企業的資料。查詢一律唯讀。')}
+        </div>
+
+        <label style="font-size:11px;color:#555;">${__('預存程序')} *</label>
+        <select id="sqlProcedureCode" style="width:100%;font-size:11px;margin-bottom:4px;">
+            <option value="">${__('載入中...')}</option>
+        </select>
+        <div id="sqlProcedureDesc" style="font-size:10px;color:#888;line-height:1.5;margin-bottom:8px;">
+            ${__('載入預存程序清單中')}
+        </div>
+
+        <div id="sqlParamFields" style="margin-bottom:8px;"></div>
+
+        <div style="font-size:10px;color:#888;line-height:1.5;margin-bottom:8px;padding:6px;background:#f8f8f8;border:1px solid #eee;border-radius:4px;">
+            ${__('企業識別碼 p_org_secure_code：由系統自動帶入，不可指定')}
+        </div>
+
+        <label style="font-size:11px;color:#555;">${__('結果寫入變數')} *</label>
+        <input type="text" id="sqlResultVar" value="${_sqlEscapeHtml(resultVar)}"
+            style="width:100%;font-size:11px;margin-bottom:2px;" placeholder="stock">
+        <div style="font-size:10px;color:#888;margin-bottom:6px;">
+            ${__('後續節點用 ${v.變數名} 取用')}
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+            <div>
+                <label style="font-size:11px;color:#555;">${__('逾時（秒）')}</label>
+                <input type="number" id="sqlTimeout" value="${_sqlEscapeHtml(timeout)}" min="1" max="60"
+                    style="width:100%;font-size:11px;">
+            </div>
+            <div>
+                <label style="font-size:11px;color:#555;">${__('失敗時')}</label>
+                <select id="sqlOnError" style="width:100%;font-size:11px;">
+                    <option value="error" ${onError === 'error' ? 'selected' : ''}>${__('視為節點錯誤，走 error 邊')}</option>
+                    <option value="continue" ${onError === 'continue' ? 'selected' : ''}>${__('繼續流程')}</option>
+                </select>
+            </div>
+        </div>
+
+        <label style="display:block;font-size:11px;margin-bottom:6px;">
+            <input type="checkbox" id="sqlWriteNote" ${writeNote ? 'checked' : ''}>
+            ${__('把查詢結果寫成簽核註記供人員參考')}
+        </label>
+
+        <label style="font-size:11px;color:#555;">${__('註記內容樣板')}</label>
+        <textarea id="sqlNoteTemplate" rows="3"
+            style="width:100%;font-size:11px;font-family:monospace;margin-bottom:2px;"
+            placeholder="${__('庫存查詢結果：')}\${v.stock_qty_on_hand}">${_sqlEscapeHtml(noteTemplate)}</textarea>
+        <div style="font-size:10px;color:#888;">
+            ${__('可用 ${v.xxx} 引用流程變數，勾選寫成簽核註記時才會使用。')}
+        </div>
+    </div>`;
+}
+
+// eslint-disable-next-line no-unused-vars
+async function initSqlExecutorPanel(nodeId) {
+    const select = document.getElementById('sqlProcedureCode');
+    const desc = document.getElementById('sqlProcedureDesc');
+    if (!select || !desc) return;
+
+    const selectedCode = _sqlExecutorConfig.procedure_code || '';
+
+    try {
+        const response = await fetch(`${window.__BP}/api/workflows/data/sql-procedures`, {
+            credentials: 'same-origin'
+        });
+        const payload = await response.json();
+        if (!response.ok || payload.success !== true || !Array.isArray(payload.data)) {
+            throw new Error(payload.message || 'Failed to load SQL procedures');
         }
-        window.updateSQLQueryDescription = updateSQLQueryDescription;
 
-        // SQLExecutor 配置套用
-        function applySQLExecutorConfig(nodeId) {
-            // 先儲存基本資訊（名稱與描述）
-            const node = applyNodeBasicInfo(nodeId, true);
-            if (!node) return;
-
-            // 取得設定值
-            const queryType = document.getElementById('sqlQueryType')?.value;
-            const resultVar = document.getElementById('sqlResultVar')?.value?.trim();
-
-            // 驗證
-            if (!queryType) {
-                updateStatus(__('❌ 請選擇查詢類型'), 'error');
-                return;
-            }
-
-            if (!resultVar) {
-                updateStatus(__('❌ 請輸入結果變數名稱'), 'error');
-                return;
-            }
-
-            // 驗證變數名稱格式（只允許英文、數字、底線，不能以數字開頭）
-            if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(resultVar)) {
-                updateStatus(__('❌ 變數名稱格式不正確（只能使用英文、數字、底線，且不能以數字開頭）'), 'error');
-                return;
-            }
-
-            // 更新節點 config
-            const currentConfig = node.data('config') || {};
-            const updatedConfig = {
-                ...currentConfig,
-                query_type: queryType,
-                result_var: resultVar
-            };
-
-            node.data('config', updatedConfig);
-
-            const queryName = sqlQueryDescriptions[queryType] ? queryType : __('未知查詢');
-            updateStatus(`✅ SQL 查詢設定已套用：${queryName} → $\{${resultVar}}`, 'success');
-
-            console.log('SQLExecutor 節點配置已更新:', {
-                nodeId: nodeId,
-                query_type: queryType,
-                result_var: resultVar,
-                config: updatedConfig
-            });
-
-            // 自動儲存當前流程
-            saveWorkflow().then(() => {
-                console.log('✅ 流程已自動儲存');
-            }).catch(err => {
-                console.error('⚠️ 自動儲存失敗:', err);
-            });
+        _sqlProcedures = payload.data;
+        if (_sqlProcedures.length === 0) {
+            select.innerHTML = `<option value="">${__('（沒有可用的預存程序）')}</option>`;
+            desc.textContent = __('沒有可用的預存程序');
+            desc.style.color = '#888';
+            renderSqlParamFields();
+            return;
         }
-        window.applySQLExecutorConfig = applySQLExecutorConfig;
+
+        select.innerHTML = [
+            `<option value="">${__('請選擇預存程序...')}</option>`,
+            ..._sqlProcedures.map((proc) => {
+                const code = proc.code || '';
+                const label = proc.display_name || code;
+                return `<option value="${_sqlEscapeHtml(code)}" ${code === selectedCode ? 'selected' : ''}>${_sqlEscapeHtml(label)}</option>`;
+            })
+        ].join('');
+        select.value = selectedCode;
+        select.onchange = () => renderSqlParamFields();
+        renderSqlParamFields();
+    } catch (err) {
+        console.error('Failed to load SQL procedures:', err);
+        _sqlProcedures = [];
+        select.innerHTML = `<option value="">${__('（沒有可用的預存程序）')}</option>`;
+        desc.textContent = __('載入預存程序清單失敗，請稍後再試。');
+        desc.style.color = '#c53030';
+        renderSqlParamFields();
+    }
+}
+
+// eslint-disable-next-line no-unused-vars
+function renderSqlParamFields() {
+    _rememberSqlParamValues();
+
+    const container = document.getElementById('sqlParamFields');
+    if (!container) return;
+
+    const proc = _getSelectedSqlProcedure();
+    _renderSqlProcedureDescription(proc);
+
+    if (!proc) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const params = (proc.parameters || []).filter((param) => param.name !== 'p_org_secure_code');
+    if (params.length === 0) {
+        container.innerHTML = `<div style="font-size:10px;color:#888;margin-bottom:6px;">${__('此預存程序不需要參數')}</div>`;
+        return;
+    }
+
+    container.innerHTML = params.map((param) => {
+        const name = param.name || '';
+        const fieldId = `sqlParam_${name}`;
+        const label = param.label || name;
+        const required = param.required ? ' *' : '';
+        const value = _sqlParamValues[name] || '';
+        const description = param.description || '';
+
+        if (param.type === 'boolean') {
+            return `
+                <div style="margin-bottom:6px;">
+                    <label style="font-size:11px;color:#555;">${_sqlEscapeHtml(label)}${required}</label>
+                    <select id="${_sqlEscapeHtml(fieldId)}" style="width:100%;font-size:11px;margin-bottom:2px;">
+                        <option value="true" ${value === 'true' ? 'selected' : ''}>true</option>
+                        <option value="false" ${value === 'false' ? 'selected' : ''}>false</option>
+                    </select>
+                    ${description ? `<div style="font-size:10px;color:#888;">${_sqlEscapeHtml(description)}</div>` : ''}
+                </div>`;
+        }
+
+        return `
+            <div style="margin-bottom:6px;">
+                <label style="font-size:11px;color:#555;">${_sqlEscapeHtml(label)}${required}</label>
+                <input type="text" id="${_sqlEscapeHtml(fieldId)}" value="${_sqlEscapeHtml(value)}"
+                    style="width:100%;font-size:11px;margin-bottom:2px;" placeholder="\${f.${_sqlEscapeHtml(name)}}">
+                ${description ? `<div style="font-size:10px;color:#888;">${_sqlEscapeHtml(description)}</div>` : ''}
+            </div>`;
+    }).join('');
+}
+
+/** 收集面板設定，回傳要合併進 node config 的物件；面板不存在時回傳 null */
+// eslint-disable-next-line no-unused-vars
+function collectSqlExecutorConfig() {
+    const resultVar = document.getElementById('sqlResultVar');
+    const procedureCode = document.getElementById('sqlProcedureCode');
+    if (!resultVar || !procedureCode) return null;
+
+    const params = {};
+    const container = document.getElementById('sqlParamFields');
+    if (container) {
+        container.querySelectorAll('[id^="sqlParam_"]').forEach((el) => {
+            const name = el.id.replace('sqlParam_', '');
+            if (name) params[name] = el.value || '';
+        });
+    }
+    delete params['p_org_secure_code'];
+
+    let timeout = parseInt(document.getElementById('sqlTimeout')?.value, 10);
+    if (Number.isNaN(timeout) || timeout < 1 || timeout > 60) timeout = 10;
+
+    const onError = document.getElementById('sqlOnError')?.value === 'continue' ? 'continue' : 'error';
+
+    return {
+        procedure_code: procedureCode.value || '',
+        params: params,
+        result_var: resultVar.value.trim(),
+        timeout_seconds: timeout,
+        write_approval_note: !!document.getElementById('sqlWriteNote')?.checked,
+        note_template: document.getElementById('sqlNoteTemplate')?.value || '',
+        on_error: onError,
+    };
+}

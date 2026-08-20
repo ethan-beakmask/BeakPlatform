@@ -127,6 +127,7 @@ def register_builtin_handlers():
     from .decision_writer_handler import DecisionWriterHandler
     from .api_key_action_handler import ApiKeyActionHandler
     from .ai_agent_handler import AiAgentHandler
+    from .sqlexecutor_handler import SqlExecutorHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
@@ -178,6 +179,9 @@ def register_builtin_handlers():
 
     # AI 分析
     NodeHandlerFactory.register('AiAgent', AiAgentHandler)
+
+    # 預存程序（白名單、唯讀）
+    NodeHandlerFactory.register('SqlExecutor', SqlExecutorHandler)
 
 
 # 自動執行註冊

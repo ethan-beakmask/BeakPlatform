@@ -14,7 +14,7 @@ from app.platform.auth import (
     has_permission,
     require_permission,
 )
-from app.platform.data import get_current_org
+from app.platform.data import get_current_org, get_current_org_code
 from app import db, csrf
 from flask_babel import gettext as _
 
@@ -684,6 +684,37 @@ def get_node_definitions():
     return jsonify({
         'success': True,
         'data': grouped
+    })
+
+
+@workflows_bp.route('/data/sql-procedures')
+@module_access_required('form_workflow')
+def get_sql_procedures():
+    """
+    取得 SqlExecutor 節點可用的預存程序白名單（設計器下拉用）
+
+    只回傳全平台共用（org_secure_code 為 NULL）與本企業專屬的登錄項目。
+    回應刻意不含 function_name —— 那是內部細節，設計器用穩定識別碼 code 就夠；
+    handler 執行時也是拿 code 重查白名單，不吃前端送來的函式名。
+
+    參數清單已在 model 端濾掉 p_org_secure_code：企業識別碼由 handler 從流程
+    所屬企業強制帶入，設計者不該看到也不該能填。
+    """
+    from sqlalchemy import or_
+    from ..models import FwSqlProcedure
+
+    org_code = get_current_org_code()
+
+    procedures = FwSqlProcedure.query.filter(
+        FwSqlProcedure.is_active.is_(True),
+        FwSqlProcedure.is_deleted.is_(False),
+        or_(FwSqlProcedure.org_secure_code.is_(None),
+            FwSqlProcedure.org_secure_code == org_code),
+    ).order_by(FwSqlProcedure.display_name).all()
+
+    return jsonify({
+        'success': True,
+        'data': [p.to_designer_dict() for p in procedures]
     })
 
 

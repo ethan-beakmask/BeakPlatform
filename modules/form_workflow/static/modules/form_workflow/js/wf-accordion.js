@@ -5,7 +5,7 @@
  *   wf-accordion-messaging.js   -- Telegram, SysTelegram, EmailRelay, EmailAdapter
  *   wf-accordion-broadcast.js   -- NavbarBroadcast, AlertBroadcast
  *   wf-accordion-flow.js        -- Converge, Delay, End, Abandon, Branch, ParallelFork, ParallelJoin
- *   wf-accordion-operations.js  -- OpSet, OpFieldWrite, SqlExecutor, FormAdapter, SubSystemProvision
+ *   wf-accordion-operations.js  -- OpSet, OpFieldWrite, FormAdapter, SubSystemProvision
  */
 
         // ==================== Accordion 通用函式 ====================
@@ -155,7 +155,7 @@
 
             // ---- Post-render hooks（需要 DOM 已存在才能執行） ----
             if (type === 'Subflow')         loadAvailableSubflows(nodeId);
-            if (type === 'SqlExecutor')     setTimeout(() => updateSQLQueryDescription(), 100);
+            if (type === 'SqlExecutor')     setTimeout(() => initSqlExecutorPanel(nodeId), 50);
             if (type === 'OpSet') {
                 const operations = (node.data('config') || {}).operations || [];
                 setTimeout(() => renderOpsetOperations(operations), 50);

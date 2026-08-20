@@ -1789,6 +1789,35 @@ AI 移除不掉。改這個檔案前先讀檔頭那段安全設計說明。
 
 **改 handler 後 executor 要重啟才認得**（`beakplatform-dev-executor` 是獨立進程）。
 
+### SqlExecutor 節點：白名單是 DB 表，且必須在**執行時**重查（2026-08-20）
+
+節點型別 `SqlExecutor`，handler
+`modules/form_workflow/services/node_handlers/sqlexecutor_handler.py`。
+**完整規格與「怎麼加一支新 SP」看 `dev-notes/SQL_EXECUTOR_SPEC.md`，動這個模組前整份讀完。**
+
+留在本檔的是三件猜不到、猜錯就是漏洞的：
+
+- **節點設定存在 `fw_workflow_templates.graph`，而 graph 可以用 API 直接 PUT 改寫。**
+  所以設計器的下拉選單不是防線 —— handler 拿 config 的 `procedure_code`
+  去 `fw_sql_procedures` **重查一次**（含企業歸屬、`is_active`），查不到就拒絕。
+  同理參數也依白名單登記的型別重新驗證。這道漏了等於白名單不存在
+- **只能呼叫 schema `fw_sp` 內的函式，schema 名是 handler 的字面常數**。
+  不要為了方便改成可指定 schema —— 那等於開放 `pg_catalog`
+- **org 過濾靠的是 SP 自己的 `WHERE`，不是 RLS**。平台主庫只有 10 張表有 RLS
+  且都不是 FORCE，`beakplatform` 又是 owner（owner 不受自己的 policy 限制）。
+  每支 SP 的第一個參數固定 `p_org_secure_code`，由 handler 從流程所屬企業帶入；
+  config 裡出現這個參數名一律**整次拒絕**（不是忽略）
+
+**v1 刻意只支援唯讀**：`_execute()` 一律 `SET TRANSACTION READ ONLY`，
+由資料庫層保證這個節點寫不了東西。要支援寫入型 SP 必須先回答交易語意問題
+（同交易則 SP 內不能 COMMIT；獨立交易則流程失敗時副作用留著），
+**不是把那一行拿掉**。
+
+白名單維護走 migration（`scripts/migrations/106_sqlexecutor_whitelist.sql`），
+**刻意不做 Web UI** —— 登錄一筆等同授權。
+
+**改 handler 後 executor 要重啟才認得**（`beakplatform-dev-executor` 是獨立進程）。
+
 ### SQL Sync：worker 是獨立服務，且啟用後不可關閉（2026-08-20 補）
 
 - 服務 `beakplatform-dev-sync-worker`（unit 在 `scripts/systemd/`，2026-08-20 建立）。

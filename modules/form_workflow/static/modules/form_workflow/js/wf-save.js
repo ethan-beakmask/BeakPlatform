@@ -160,11 +160,9 @@
                     break;
                 }
                 case 'SqlExecutor': {
-                    const queryType = document.getElementById('sqlQueryType');
-                    const resultVar = document.getElementById('sqlResultVar');
-                    if (queryType && queryType.value && resultVar && resultVar.value.trim()) {
-                        config.query_type = queryType.value;
-                        config.result_var = resultVar.value.trim();
+                    const sqlCfg = collectSqlExecutorConfig();
+                    if (sqlCfg) {
+                        Object.assign(config, sqlCfg);
                         changed = true;
                     }
                     break;
@@ -623,4 +621,3 @@
                 // 縮圖失敗不影響主流程，只記錄錯誤
             }
         }
-
