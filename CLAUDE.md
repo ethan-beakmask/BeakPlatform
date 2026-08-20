@@ -1779,9 +1779,31 @@ prompt 裡放的是攻擊者可控的資料，所以隔離不是選配。
 實測中它回答「我將建立這個檔案」，但檔案根本沒出現——自我報告不可信。
 
 其餘設計：cwd 用 `tempfile.TemporaryDirectory()` 每次動態建（無需預先建目錄）；
-env 最小化只留 `HOME`（認證在 `$HOME/.claude/`）/ `PATH` / `LANG`；
-CLI 路徑走 `AI_NODE_CLI_PATH` 環境變數 → `shutil.which('claude')` → `'claude'`。
-**沒有任何要手動建立的目錄**，換機器直接可跑。
+CLI 路徑走 `AI_NODE_CLI_PATH` 環境變數 → `shutil.which('claude')` → `'claude'`，
+**每次執行時解析**（`resolve_cli_path()`，不在 import 時定死，否則長駐的 executor
+事後換路徑永遠不生效）。**沒有任何要手動建立的目錄**，換機器直接可跑。
+
+**2026-08-21 起這四件是硬規則（移植性修正，commit `84b381ee`）**：
+
+- **CLI 路徑不從節點 config 取。** 節點設定存在 `fw_workflow_templates.graph`，
+  而 graph 可用 PUT API 改寫——允許 `cli_path` 等同讓能編流程的人以 executor
+  的 OS 帳號執行任意程式。原本的 `get_config_value('cli_path')` 已移除，
+  **不要為了「方便測試」加回來**
+- **env 是白名單不是全剝**（`build_subprocess_env()`）。只剝平台秘密，
+  放行 `ANTHROPIC_*` / `CLAUDE_CODE_USE_*` / proxy / CA；`AWS_*` 與 GCP 憑證
+  只在對應的 `CLAUDE_CODE_USE_BEDROCK` / `_VERTEX` 啟用時才放行。
+  全剝的舊寫法會讓「使用者自己已備妥的 API key、企業 proxy、內部 CA」
+  一律靜默失效——那是本專案擋住他，不是他的環境問題
+- **執行前偵測 CLI 是否支援 `--safe-mode` 與 `--tools`**
+  （`_ensure_cli_supports_isolation()`）。看 `--help` 輸出而**不是比版本號**
+  （不知道確切哪一版引入，比版本會誤判）。fail-closed；**成功才快取**，
+  失敗不快取，讓部署者升級 CLI 後不必重啟 executor
+- **錯誤訊息要帶 envelope 的 `result`**。未登入時 CLI 回
+  `stop_reason=stop_sequence`、真正原因 `Not logged in · Please run /login`
+  在 `result` 裡。只取 stop_reason 的舊寫法讓部署者完全看不出該做什麼
+
+對外部署需求（其他人裝這套時要準備什麼）寫在 **`docs/install/ai_node.md`**
+（會推上 GitHub），`.env.example` 有對應的註解段。改 handler 的行為時記得同步。
 
 **但 `AI_NODE_CLI_PATH` 在本機是非設不可的**（2026-08-20 第一次真的經由 executor
 跑流程才發現）：`beakplatform-dev-executor.service` 的 unit 寫死

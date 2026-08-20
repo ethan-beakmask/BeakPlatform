@@ -9,6 +9,10 @@ Multi-tenant RBAC platform with dynamic menu system, organization isolation, and
 
 The install script automatically installs all dependencies: PostgreSQL, Redis, Nginx, Python 3.
 
+Optional: the workflow designer's *AI analysis* node calls a locally installed
+Claude Code CLI. It is not required for any other feature. See
+`docs/install/ai_node.md` for its prerequisites (CLI path, credentials, proxy/CA).
+
 ## Quick Install
 
 ```bash
