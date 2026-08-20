@@ -1052,6 +1052,7 @@ blueprint 的 `url_prefix` 與模組名不一致，照模組名猜必 404：
 | 表單中心 | `/form-workflow/center` | **`/forms/center`**（`form_workflow/web/__init__.py:17` 的 prefix 是 `/forms`） |
 | 流程**設計器** | `/forms/workflows` | **`/forms/workflows/<workflow_template_secure_code>`**；不帶 sc 的是**列表頁**，兩者都回 200，很容易誤判成「設計器沒壞」 |
 | 配對 API | `/api/form-workflow/...` | **`/api/mappings/...`** |
+| **提交表單觸發流程** | `/api/form-workflow/submit` | **`/api/form-center/submit`**（POST JSON，`@csrf.exempt`，body 要 `published_secure_code` + `subject` + `form_data`；少了 `subject` 回 400） |
 
 **`od_intake_events.case_secure_code` 指向 `fw_workflow_instances`，不是 form_instance。**
 要拿到表單得再 join 一層，直接 join `fw_form_instances` 會全部 NULL：
