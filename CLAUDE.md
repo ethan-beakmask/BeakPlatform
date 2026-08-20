@@ -1783,6 +1783,28 @@ env 最小化只留 `HOME`（認證在 `$HOME/.claude/`）/ `PATH` / `LANG`；
 CLI 路徑走 `AI_NODE_CLI_PATH` 環境變數 → `shutil.which('claude')` → `'claude'`。
 **沒有任何要手動建立的目錄**，換機器直接可跑。
 
+**但 `AI_NODE_CLI_PATH` 在本機是非設不可的**（2026-08-20 第一次真的經由 executor
+跑流程才發現）：`beakplatform-dev-executor.service` 的 unit 寫死
+
+```
+Environment=PATH=/opt/BeakPlatform-dev/venv/bin:/usr/local/bin:/usr/bin:/bin
+```
+
+不含 `~/.local/bin`，所以 `shutil.which('claude')` 找到的是 root 裝的舊版
+`/usr/local/bin/claude`（2.0.27，**沒有 `--safe-mode`**），節點每次都失敗，
+log 是 `AI CLI 退出碼 1: error: unknown option '--safe-mode'`。
+`.env` 已加 `AI_NODE_CLI_PATH=/home/ethan/.local/bin/claude`（2.1.237）。
+
+這件事的通用教訓：**在互動 shell 裡驗證過的外部指令，不等於 executor 跑得動**——
+systemd unit 的 PATH 與你的 shell 不同。凡是節點會呼叫外部程式，
+驗收一定要真的經由 executor 跑一次流程，不能只在 `venv/bin/python -c` 裡驗。
+（舊版 CLI 的行為是 fail-closed：參數不認得就整個退出，不會退化成沒有隔離的執行。）
+
+**流程變數是扁平的，`${v.ai.verdict}` 取不到值**。AiAgent 除了 `result_var`
+本身（物件）之外，另外攤平寫出 `<result_var>_verdict` / `_score` / `_ok` /
+`_rule_hits` / `_note`，Branch 條件要判 verdict 只能用這些
+（與 SqlExecutor 的 `<result_var>_<欄位>` 同一套命名）。
+
 **AI 一律沒有寫入權**：它只出文字，所有寫入由 handler 做。規則層的
 injection 偵測不經過 AI、直接生效，系統警示由 handler 在 AI 輸出**之後**拼接，
 AI 移除不掉。改這個檔案前先讀檔頭那段安全設計說明。

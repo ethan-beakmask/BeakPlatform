@@ -135,14 +135,48 @@ beluga 1200 / lion 5。用它驗跨企業隔離最直接。
 | `low_stock_items` | rows | 列出低於安全存量的料號 |
 | `stock_qty` | scalar | 單一料號的庫存量（給 Branch 比大小） |
 
+## 開發機上的兩個可操作範例（2026-08-20 建置）
+
+`scripts/examples/provision_node_demo_flows.py --apply` 會把 beluga 的兩個空流程
+改造成可以在 `/forms/center` 走完全程的示範（冪等，重跑會重新發行）：
+
+| 流程 code | 表單 | 示範內容 |
+|---|---|---|
+| `WF2610385E` | 請料單（SqlExecutor 範例） | 送單 → 查庫存 SP → 依「足夠／不足／查無料號」三分流 → 主管核可 |
+| `WF052334D2` | 可疑內容送審（AI 分析範例） | 送單 → AI 分析 → 依 verdict 分流 → 人工確認 |
+
+兩者的簽核者都是 `assignee_type='INITIATOR'`（發起人自己），
+一個帳號就能走完全程，不必先安排角色。
+
+**三件不做就會卡住、而且錯誤訊息看起來像壞掉的事**：
+
+1. **填寫權限**：表單中心的填寫權限預設只放行 SYSTEM_ADMIN 與
+   FLOW_DESIGNER / FORM_DESIGNER 角色（`fill_permission_service`），
+   **ORG_ADMIN 不在內**。沒有 `fw_mapping_permissions` 記錄時，
+   連企業管理員送單都會拿到「您沒有填寫此表單的權限」。
+   腳本會逐一授權給企業內非 EXTERNAL 的在職帳號
+2. **改 graph 要 bump revision**：publish 靠 version+revision 判斷有無變更，
+   直接改 `graph` 不會自動 bump，不 bump 就會沿用舊快照
+3. **變數樣板沒有條件語法**：把庫存數字放進 SqlExecutor 的 `note_template`，
+   查無料號那條會印出「現有庫存  ，安全存量 」。條件性的措辭要交給
+   分流之後的 OpFieldWrite 節點，註記只放三條路都成立的事實
+
+### 端對端實測（經由真正的 executor，不是直接叫 handler）
+
+| 送單 | 分流 | 表單欄位 | 簽核註記 |
+|---|---|---|---|
+| A-1002 × 500（庫存 80） | 庫存不足 | `[庫存不足，請確認是否仍要核可] …` | `查得 1 筆` |
+| A-1001 × 10（庫存 1200） | 庫存足夠 | `[庫存充足] …` | `查得 1 筆` |
+| ZZ-9999 × 1 | 查無此料號 | `[查無此料號] …` | `查得 0 筆` |
+| 含 SQLi + prompt injection 的 HTTP request | 有風險 | `[AI 判定：malicious，風險分數 95，規則層命中 2 項]` | 系統警示 + AI 說明 |
+
 ## 已知限制與後續
 
 - **只支援唯讀**（見上）
 - **白名單沒有管理 UI**，新增走 migration
 - `fw_sp` 內的函式若有同名多載，handler 會拒絕執行（無法判定要呼叫哪一個）
-- 尚未在真實流程中跑過完整一輪（拖節點 → 發行 → 送單）；
-  已驗到 `handle()` 全流程（含變數寫入與簽核註記），見
-  `/opt/tmp/verify/20260820-sqlexecutor.log`
+- 設計器的拖放與存檔仍只做過 DOM 層驗證（面板渲染、設定回收），
+  沒有真的用滑鼠拖一個節點出來存檔
 
 ## 驗收紀錄
 

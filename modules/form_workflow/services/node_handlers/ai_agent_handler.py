@@ -431,6 +431,16 @@ class AiAgentHandler(BaseNodeHandler):
         }
         self.set_flow_var(result_var, payload_out)
 
+        # 攤平成扁平變數：流程引擎的 ${v.x} 不支援巢狀取值
+        # （base.get_all_vars() 回的是扁平 dict，`${v.ai.verdict}` 一律解析成空字串），
+        # 所以 Branch 條件要判 verdict 只能靠這幾個。命名與 SqlExecutor 的
+        # `<result_var>_<欄位>` 一致。
+        self.set_flow_var(f'{result_var}_verdict', verdict)
+        self.set_flow_var(f'{result_var}_score', payload_out['score'])
+        self.set_flow_var(f'{result_var}_ok', payload_out['ai_ok'])
+        self.set_flow_var(f'{result_var}_rule_hits', len(rule_hits))
+        self.set_flow_var(f'{result_var}_note', note)
+
         wrote_note = False
         if self.get_config_value('write_approval_note') is not False:
             wrote_note = self._write_approval_note(note)
