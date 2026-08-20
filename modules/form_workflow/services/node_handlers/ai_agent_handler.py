@@ -45,9 +45,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from .base import BaseNodeHandler
 
 # --- 執行環境 ---
-# CLI 路徑不寫死：各機器安裝位置不同（npm 全域、~/.local/bin、/usr/local/bin…）
-DEFAULT_CLI_PATH = (os.environ.get('AI_NODE_CLI_PATH')
-                    or shutil.which('claude') or 'claude')
 DEFAULT_MODEL = 'claude-sonnet-5'
 DEFAULT_TIMEOUT = 60
 
@@ -57,6 +54,14 @@ MAX_INPUT_BYTES = 32 * 1024
 MAX_DECODE_DEPTH = 3
 MAX_COMMENT_LEN = 2000
 ALLOWED_VERDICTS = {'malicious', 'suspicious', 'benign'}
+
+ENV_PASSTHROUGH_PREFIXES = ('ANTHROPIC_', 'CLAUDE_CODE_USE_')
+ENV_PASSTHROUGH_NAMES = (
+    'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY',
+    'http_proxy', 'https_proxy', 'no_proxy',
+    'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'SSL_CERT_DIR',
+)
+_CLI_ISOLATION_SUPPORT_CACHE: Dict[str, bool] = {}
 
 INJECTION_PATTERNS = [
     r'ignore\s+(all\s+)?(previous|above|prior)\s+instructions',
@@ -73,6 +78,65 @@ INJECTION_PATTERNS = [
 # --------------------------------------------------------------------------
 # 純函式區（不依賴 handler 狀態，方便單獨測試）
 # --------------------------------------------------------------------------
+
+def resolve_cli_path() -> str:
+    """
+    每次執行時解析 CLI 路徑，不在 import 時定死。
+
+    優先序：AI_NODE_CLI_PATH 環境變數 > PATH 上的 claude > 'claude'。
+    executor 是長駐服務，import 時求值會讓「事後安裝或換路徑」永遠不生效。
+    """
+    return os.environ.get('AI_NODE_CLI_PATH') or shutil.which('claude') or 'claude'
+
+
+def _env_flag_enabled(value: Optional[str]) -> bool:
+    """環境旗標真值判定：非空字串且不是 0 / false。"""
+    return value is not None and value.strip().lower() not in ('', '0', 'false')
+
+
+def build_subprocess_env(environ: Dict[str, str]) -> Dict[str, str]:
+    """
+    用白名單建立交給 AI CLI 的環境變數。
+
+    這保留「秘密不進 subprocess」的初衷，避免 DATABASE_URL / SECRET_KEY 等
+    平台秘密外流，同時讓使用者已備妥的 Anthropic 認證、proxy 與 CA 設定能生效。
+    AWS / GCP 憑證只在明確啟用 Bedrock / Vertex 時條件式放行；沒開那個供應商，
+    就沒有理由把雲端憑證交給 subprocess。
+    """
+    env = {
+        'HOME': environ.get('HOME') or os.path.expanduser('~'),
+        'PATH': environ.get('PATH') or '/usr/bin:/bin',
+        'LANG': 'en_US.UTF-8',
+    }
+
+    for name, value in environ.items():
+        if value is None:
+            continue
+        if name.startswith(ENV_PASSTHROUGH_PREFIXES):
+            env[name] = value
+
+    for name in ENV_PASSTHROUGH_NAMES:
+        value = environ.get(name)
+        if value is not None:
+            env[name] = value
+
+    if _env_flag_enabled(environ.get('CLAUDE_CODE_USE_BEDROCK')):
+        for name, value in environ.items():
+            if value is not None and name.startswith('AWS_'):
+                env[name] = value
+
+    if _env_flag_enabled(environ.get('CLAUDE_CODE_USE_VERTEX')):
+        for name in (
+            'GOOGLE_APPLICATION_CREDENTIALS',
+            'GOOGLE_CLOUD_PROJECT',
+            'CLOUD_ML_REGION',
+        ):
+            value = environ.get(name)
+            if value is not None:
+                env[name] = value
+
+    return env
+
 
 def truncate_input(raw: str) -> Tuple[str, bool]:
     """超過上限就截斷，回傳 (文字, 是否截斷)"""
@@ -242,19 +306,15 @@ class AiAgentHandler(BaseNodeHandler):
 
     def _build_env(self) -> Dict[str, str]:
         """
-        最小化環境變數，不繼承完整 shell env。
+        白名單環境變數，不繼承完整 shell env。
 
         `--tools ""` 之後 CLI 已經沒有工具可以讀環境變數，這層是深度防禦：
         萬一哪天參數失效，至少 DATABASE_URL / SECRET_KEY 這類秘密不在 subprocess 裡。
         HOME 要保留 —— claude 的訂閱認證存在 $HOME/.claude/。
         """
-        return {
-            'HOME': os.environ.get('HOME') or os.path.expanduser('~'),
-            'PATH': os.environ.get('PATH', '/usr/bin:/bin'),
-            'LANG': 'en_US.UTF-8',
-        }
+        return build_subprocess_env(os.environ)
 
-    def _build_cli_argv(self) -> List[str]:
+    def _build_cli_argv(self, cli: str) -> List[str]:
         """
         隔離配置。`claude -p` **不是 API wrapper 而是完整 agent**
         （回應的 envelope 有 num_turns），預設會用工具、讀 CLAUDE.md、繼承 MCP。
@@ -270,8 +330,9 @@ class AiAgentHandler(BaseNodeHandler):
 
         2026-08-20 最嚴苛條件實測（真實 HOME、cwd 在專案根目錄）：
         NO_CLAUDEMD / NO_MCP / NO_TOOLS，且要它建檔案時檔案不會出現。
+
+        路徑刻意不從節點設定取，因為 graph 可被 PUT API 改寫，等同任意程式執行。
         """
-        cli = self.get_config_value('cli_path') or DEFAULT_CLI_PATH
         model = self.get_config_value('model') or DEFAULT_MODEL
         return [
             cli, '-p',
@@ -282,6 +343,54 @@ class AiAgentHandler(BaseNodeHandler):
             '--system-prompt', SYSTEM_PROMPT,
         ]
 
+    def _ensure_cli_supports_isolation(self, cli: str) -> Optional[str]:
+        """
+        確認 CLI 支援隔離必要參數。
+
+        成功才快取；失敗不快取，讓部署者升級 CLI 後不用重啟 executor。
+        """
+        if _CLI_ISOLATION_SUPPORT_CACHE.get(cli):
+            return None
+
+        try:
+            proc = subprocess.run(
+                [cli, '--help'],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                env=self._build_env(),
+            )
+        except FileNotFoundError:
+            return (
+                f'AI CLI 找不到執行檔: {cli}。executor 的 systemd unit PATH 通常不含 '
+                '~/.local/bin；請安裝 claude，或用 AI_NODE_CLI_PATH 指定絕對路徑。'
+            )
+        except PermissionError:
+            return (
+                f'AI CLI 無法執行: {cli}。請確認檔案權限，或用 AI_NODE_CLI_PATH '
+                '指定可執行的絕對路徑。'
+            )
+        except subprocess.TimeoutExpired:
+            return (
+                f'AI CLI 能力檢查逾時: {cli}。請確認該路徑可正常執行，或用 '
+                'AI_NODE_CLI_PATH 指定絕對路徑。'
+            )
+        except Exception as e:
+            return (
+                f'AI CLI 能力檢查失敗: {cli}: {e}。請確認 claude CLI 可執行，'
+                '或用 AI_NODE_CLI_PATH 指定絕對路徑。'
+            )
+
+        help_text = (proc.stdout or '') + '\n' + (proc.stderr or '')
+        if '--safe-mode' not in help_text or '--tools' not in help_text:
+            return (
+                f'AI CLI 版本過舊或不支援隔離參數 --safe-mode / --tools: {cli}。'
+                '請升級 claude CLI；本節點不會在缺少隔離參數時執行。'
+            )
+
+        _CLI_ISOLATION_SUPPORT_CACHE[cli] = True
+        return None
+
     def _run_cli(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
         """
         執行 CLI，回傳 (AI 的回答文字, 錯誤訊息)。
@@ -290,12 +399,17 @@ class AiAgentHandler(BaseNodeHandler):
         也不會出現在 process 清單裡。
         """
         timeout = int(self.get_config_value('timeout_seconds') or DEFAULT_TIMEOUT)
+        cli = resolve_cli_path()
+        isolation_error = self._ensure_cli_supports_isolation(cli)
+        if isolation_error:
+            return None, isolation_error
+
         try:
             # 每次都給一個全新的空目錄當 cwd。--safe-mode 已經擋掉 CLAUDE.md，
             # 這層是為了讓 cwd 不含任何專案檔案、也不留殘留。
             with tempfile.TemporaryDirectory(prefix='ainode-') as sandbox:
                 proc = subprocess.run(
-                    self._build_cli_argv(),
+                    self._build_cli_argv(cli),
                     input=prompt,
                     capture_output=True,
                     text=True,
@@ -319,6 +433,9 @@ class AiAgentHandler(BaseNodeHandler):
         if proc.returncode != 0:
             if isinstance(envelope, dict):
                 reason = envelope.get('stop_reason') or envelope.get('subtype') or '未知'
+                result = sanitize_for_comment(envelope.get('result') or '', 200)
+                if result:
+                    return None, f'AI CLI 退出碼 {proc.returncode}，原因 {reason}: {result}'
                 return None, f'AI CLI 退出碼 {proc.returncode}，原因 {reason}'
             return None, f'AI CLI 退出碼 {proc.returncode}: {(proc.stderr or "")[:300]}'
 
@@ -326,8 +443,11 @@ class AiAgentHandler(BaseNodeHandler):
             return None, 'AI CLI 輸出不是合法 JSON envelope'
 
         if envelope.get('is_error'):
-            return None, ('AI CLI 回報錯誤: '
-                          f'{envelope.get("stop_reason") or envelope.get("subtype")}')
+            reason = envelope.get('stop_reason') or envelope.get('subtype')
+            result = sanitize_for_comment(envelope.get('result') or '', 200)
+            if result:
+                return None, f'AI CLI 回報錯誤: {reason}: {result}'
+            return None, f'AI CLI 回報錯誤: {reason}'
 
         return envelope.get('result'), None
 

@@ -11,7 +11,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from modules.form_workflow.services.node_handlers.ai_agent_handler import (  # noqa: E402
-    build_prompt, compose_final_note, extract_b64_fragments, recursive_decode,
+    AiAgentHandler, build_prompt, build_subprocess_env, compose_final_note,
+    extract_b64_fragments, recursive_decode, resolve_cli_path,
     sanitize_for_comment, scan_injection, truncate_input, validate_llm_output,
     MAX_INPUT_BYTES, MAX_DECODE_DEPTH,
 )
@@ -226,3 +227,101 @@ def test_payload_with_variable_syntax_stays_literal():
 def test_ai_note_action_fits_column():
     """action 欄位是 varchar(50)，'ai_note' 塞得進去"""
     assert len('ai_note') <= 50
+
+
+# --- CLI 執行環境與隔離參數（移植性 / 診斷性）------------------------------
+
+def test_build_subprocess_env_includes_base_environment():
+    env = build_subprocess_env({'HOME': '/home/tester', 'PATH': '/custom/bin'})
+
+    assert env['HOME'] == '/home/tester'
+    assert env['PATH'] == '/custom/bin'
+    assert env['LANG'] == 'en_US.UTF-8'
+
+
+def test_build_subprocess_env_excludes_platform_secrets_and_cli_path():
+    env = build_subprocess_env({
+        'HOME': '/h',
+        'PATH': '/b',
+        'DATABASE_URL': 'postgresql://secret',
+        'SECRET_KEY': 'secret',
+        'ENCRYPTION_MASTER_KEY': 'master',
+        'AI_NODE_CLI_PATH': '/tmp/evil',
+    })
+
+    assert 'DATABASE_URL' not in env
+    assert 'SECRET_KEY' not in env
+    assert 'ENCRYPTION_MASTER_KEY' not in env
+    assert 'AI_NODE_CLI_PATH' not in env
+
+
+def test_build_subprocess_env_passes_anthropic_proxy_and_ca_settings():
+    env = build_subprocess_env({
+        'HOME': '/h',
+        'PATH': '/b',
+        'ANTHROPIC_API_KEY': 'key',
+        'ANTHROPIC_BASE_URL': 'https://anthropic.internal',
+        'HTTPS_PROXY': 'http://proxy.internal:8080',
+        'NODE_EXTRA_CA_CERTS': '/etc/company-ca.pem',
+    })
+
+    assert env['ANTHROPIC_API_KEY'] == 'key'
+    assert env['ANTHROPIC_BASE_URL'] == 'https://anthropic.internal'
+    assert env['HTTPS_PROXY'] == 'http://proxy.internal:8080'
+    assert env['NODE_EXTRA_CA_CERTS'] == '/etc/company-ca.pem'
+
+
+def test_build_subprocess_env_passes_aws_credentials_only_when_bedrock_enabled():
+    base = {
+        'HOME': '/h',
+        'PATH': '/b',
+        'AWS_SECRET_ACCESS_KEY': 'aws-secret',
+    }
+
+    assert 'AWS_SECRET_ACCESS_KEY' not in build_subprocess_env(base)
+
+    enabled = dict(base, CLAUDE_CODE_USE_BEDROCK='1')
+    env = build_subprocess_env(enabled)
+
+    assert env['CLAUDE_CODE_USE_BEDROCK'] == '1'
+    assert env['AWS_SECRET_ACCESS_KEY'] == 'aws-secret'
+
+
+def test_build_subprocess_env_passes_gcp_credentials_only_when_vertex_enabled():
+    base = {
+        'HOME': '/h',
+        'PATH': '/b',
+        'CLAUDE_CODE_USE_VERTEX': 'false',
+        'GOOGLE_APPLICATION_CREDENTIALS': '/secrets/gcp.json',
+    }
+
+    assert 'GOOGLE_APPLICATION_CREDENTIALS' not in build_subprocess_env(base)
+
+    enabled = dict(base, CLAUDE_CODE_USE_VERTEX='1')
+    env = build_subprocess_env(enabled)
+
+    assert env['CLAUDE_CODE_USE_VERTEX'] == '1'
+    assert env['GOOGLE_APPLICATION_CREDENTIALS'] == '/secrets/gcp.json'
+
+
+def test_resolve_cli_path_prefers_ai_node_cli_path(monkeypatch):
+    monkeypatch.setenv('AI_NODE_CLI_PATH', '/opt/claude/bin/claude')
+
+    assert resolve_cli_path() == '/opt/claude/bin/claude'
+
+
+def test_build_cli_argv_keeps_isolation_flags_and_ignores_configured_cli_path():
+    class QueueItem:
+        node_config = {
+            'cli_path': '/tmp/should-not-be-used',
+            'model': 'test-model',
+        }
+
+    argv = AiAgentHandler(QueueItem())._build_cli_argv('/usr/local/bin/claude')
+
+    assert argv[0] == '/usr/local/bin/claude'
+    assert '--safe-mode' in argv
+    tools_index = argv.index('--tools')
+    assert argv[tools_index + 1] == ''
+    assert '--allowedTools' not in argv
+    assert '/tmp/should-not-be-used' not in argv
