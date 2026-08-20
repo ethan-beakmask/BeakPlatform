@@ -279,6 +279,14 @@
                     }
                     break;
                 }
+                case 'AiAgent': {
+                    const aiCfg = collectAiAgentConfig();
+                    if (aiCfg) {
+                        Object.assign(config, aiCfg);
+                        changed = true;
+                    }
+                    break;
+                }
                 // Converge: 即時寫入 config，不需要在此處理
             }
 

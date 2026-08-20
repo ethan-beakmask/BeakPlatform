@@ -123,3 +123,8 @@ backend/encrypted_storage/
 # 放本機才有的密碼（例如 .20 上 Grafana / ClickHouse 的現行值），一行一個。
 # 這個檔進版控就等於把密碼 commit 進歷史，正是它要防的事。
 scripts/.secrets-scan-extra
+
+# curl 測試用的 cookie jar（VERIFY-01 驗收時大量產生）
+cj*.txt
+q.txt
+p4_cj.txt

@@ -1038,6 +1038,20 @@ today_start = local_day_start_utc(getattr(g, 'timezone', 'Asia/Taipei'), datetim
 | intake 事件的處理狀態 | `od_intake_events.status` | **沒有這個欄位**；有沒有建成案件看 `case_secure_code IS NOT NULL` |
 | intake 事件的來源 IP | `od_intake_events.actor_ip` | **沒有這個欄位**。全部欄位只有 `correlation_id / intake_key_secure_code / source_system / event_class / severity_id / raw_body / signature_verified / case_secure_code / received_at`——IP 埋在 `raw_body` 的 OCSF JSON 裡，要查 IP 一律去 `.20` ClickHouse 的 `events.actor_ip` |
 | 資安案件的分類前綴 | `SECCAT%` | **`CAT_SECURITY_%`**（`security_center.py::SECURITY_CATEGORY_PREFIX`） |
+| 選單項目的顯示名稱 | `menu_items.name` / `display_name` | **`menu_items.title`**（另有 `title_en` / `title_zh_cn` / `title_i18n`） |
+| 發行快照指向的表單 | `fw_published_form_workflows.form_template_secure_code` | **`source_form_template_secure_code`**（流程那邊同理是 `source_workflow_template_secure_code`） |
+| 節點執行紀錄指向的流程 | `fw_node_execution_logs.workflow_instance_secure_code` | **`workflow_instance_id`（bigint，指向 `fw_workflow_instances.id`）**；同專案的 `fw_node_execution_queue` 卻是 `workflow_instance_secure_code`，兩張表不一致 |
+| 表單同步佇列的目標表 | `fw_sync_queue.table_name` | **沒有這個欄位**；表名在 `fw_sql_form_registries.table_name`，queue 只存 `form_instance_secure_code` + `published_secure_code` |
+
+### 每個 session 也會猜錯一次的 URL（2026-08-20 補）
+
+blueprint 的 `url_prefix` 與模組名不一致，照模組名猜必 404：
+
+| 想開的頁 | 錯的猜法 | 實際路徑（都要加 nginx 的 `/beakplatform` 前綴） |
+|---|---|---|
+| 表單中心 | `/form-workflow/center` | **`/forms/center`**（`form_workflow/web/__init__.py:17` 的 prefix 是 `/forms`） |
+| 流程**設計器** | `/forms/workflows` | **`/forms/workflows/<workflow_template_secure_code>`**；不帶 sc 的是**列表頁**，兩者都回 200，很容易誤判成「設計器沒壞」 |
+| 配對 API | `/api/form-workflow/...` | **`/api/mappings/...`** |
 
 **`od_intake_events.case_secure_code` 指向 `fw_workflow_instances`，不是 form_instance。**
 要拿到表單得再 join 一層，直接 join `fw_form_instances` 會全部 NULL：
@@ -1690,6 +1704,7 @@ sudo -u postgres createdb -O beakplatform beakplatform_test
 | 項目 | 狀態 | 成因 |
 |---|---|---|
 | `test_auth_interceptor.py::TestAuthDecorators::test_admin_required_for_admin` | failed | 測試庫是 `db.create_all()` 建的空表、**沒有 RBAC seed**（log 印 `Unknown permission code: user:read`），拿到 403 而非 200。要修就補 permission → role → `user_role_assignments` 整條鏈，權威清單在 `scripts/migrations/075_seed_resource_crud_permissions.py`（待辦 **PF-34**） |
+| `test_od_protected_targets.py`（2 個 error） | error | **只在完整跑時出現，單獨跑該檔 56 passed** —— 是測試間污染，不是功能回歸。2026-08-20 實測確認（`/opt/tmp/verify/20260820-full-tests.log`）。看到它不要追功能，照上面歸因順序第 1 條處理即可 |
 | `test_e2e_portal_cancel.py` | skipped | **永久 skip，重啟服務也救不回來**。它寫死 `PAGE_SC = "FORMTEST00000000000001"`，該驗收頁 2026-08-03 隨全面清除消失，測試在 line 87 就 skip。它另外掛 `pytest.mark.e2e`、服務沒起來也會 skip（line 238），但目前**先卡在找不到頁面**。要恢復必須重建驗收頁並改寫死的常數 |
 
 寫「已知問題不要修」時務必連**成因與判別方式**一起寫，否則它會保護錯的東西——
@@ -1731,6 +1746,45 @@ bash scripts/run_e2e.sh -g "A. 點不可簽核"  # 其餘參數原樣傳給 npx 
 確認測試會紅。恆真斷言（locator 打錯 → count 恆 0、監聽器沒掛上 → 陣列恆空）
 會穩定通過而什麼都沒驗，**讀起來像有保障，比沒測更危險**。
 PF-79 這組就是這樣驗的（記錄在 `/opt/tmp/verify/20260812-e2e-od-pf79.log`）。
+
+### AiAgent 節點：呼叫 claude CLI 前的隔離是必要的（2026-08-20 新增）
+
+節點型別 `AiAgent`，handler
+`modules/form_workflow/services/node_handlers/ai_agent_handler.py`。
+它把流程資料交給本機 `claude -p` 分析，結果寫流程變數並可插一筆
+`fw_approval_records`（`action='ai_note'`、`approver_secure_code=NULL`）。
+
+**三個實測出來、猜不到的事實**（完整紀錄 `dev-notes/ithome_2026/ai_node_findings.md`）：
+
+- **`--disallowedTools` 只擋內建工具，MCP 全部照樣繼承**。不加
+  `--strict-mcp-config --mcp-config '{"mcpServers":{}}'` 的話，被分析的資料
+  一旦挾帶 prompt injection，就能碰到 `beak_broodnest`、`chrome-devtools`、
+  `Google Drive`、`SendMessage`
+- **它會讀 `$HOME/.claude/CLAUDE.md`**。所以 cwd 指到空目錄還不夠，
+  `HOME` 要換成專用的 `/opt/ainode/home`（只放 `.credentials.json`，刻意無 CLAUDE.md）
+- **`--allowedTools ""` 不是「什麼都不給」而是「沒指定」**，實測會把
+  Bash/Edit/Read/Write 全部放行。只能用黑名單
+
+沙箱目錄 `/opt/ainode/sandbox`（空目錄），**這兩個目錄不在 repo 內，
+重裝機器要自己建**，否則 handler 回 `sandbox 目錄不存在`。
+
+**AI 一律沒有寫入權**：它只出文字，所有寫入由 handler 做。規則層的
+injection 偵測不經過 AI、直接生效，系統警示由 handler 在 AI 輸出**之後**拼接，
+AI 移除不掉。改這個檔案前先讀檔頭那段安全設計說明。
+
+**改 handler 後 executor 要重啟才認得**（`beakplatform-dev-executor` 是獨立進程）。
+
+### SQL Sync：worker 是獨立服務，且啟用後不可關閉（2026-08-20 補）
+
+- 服務 `beakplatform-dev-sync-worker`（unit 在 `scripts/systemd/`，2026-08-20 建立）。
+  沒跑的話 `fw_sync_queue` 只會累積不會消化
+- 配對的 `fw_form_workflow_mappings.sql_sync_enabled` **預設 false**，
+  所以 worker 起來後完全沒事做是預期狀態、不是故障
+- **啟用後無法關閉**（`api/mappings.py:439` 硬擋）。啟用時會自動在企業獨立資料庫
+  （`org_<org_id>`）建 `<table>` 與 `<table>_approvals` 兩張表
+- enqueue 掛在 `workflow_engine.py:477`，**流程結束時**才寫（終態資料，含簽核者修改）
+- 企業獨立資料庫用 `beakplatform` 帳號**連不進去**（權限不足），
+  要查得 `sudo -u postgres psql -d org_<id>`
 
 ### form_workflow 發行（publish）陷阱
 - `POST /api/mappings/<sc>/publish` 以表單/流程模板的 **version+revision** 判斷有無變更；

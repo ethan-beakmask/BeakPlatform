@@ -146,6 +146,7 @@
             if (type === 'Abandon')              info += renderAbandonPanel(node, nodeId);
             if (type === 'SubSystemProvision')   info += renderSubSystemProvisionPanel(node, nodeId);
             if (type === 'ApiKeyAction')         info += renderApiKeyActionPanel(node, nodeId);
+            if (type === 'AiAgent')              info += renderAiAgentPanel(node, nodeId);
             if (type === 'ParallelFork')         info += renderParallelForkPanel(node, nodeId);
             if (type === 'ParallelJoin')         info += renderParallelJoinPanel(node, nodeId);
 

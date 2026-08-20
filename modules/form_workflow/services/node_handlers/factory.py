@@ -126,6 +126,7 @@ def register_builtin_handlers():
     from .alert_broadcast_handler import AlertBroadcastHandler
     from .decision_writer_handler import DecisionWriterHandler
     from .api_key_action_handler import ApiKeyActionHandler
+    from .ai_agent_handler import AiAgentHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
@@ -174,6 +175,9 @@ def register_builtin_handlers():
 
     # 安全（API Key 機器處置）
     NodeHandlerFactory.register('ApiKeyAction', ApiKeyActionHandler)
+
+    # AI 分析
+    NodeHandlerFactory.register('AiAgent', AiAgentHandler)
 
 
 # 自動執行註冊
