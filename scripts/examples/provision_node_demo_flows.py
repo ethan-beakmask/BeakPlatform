@@ -36,6 +36,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 
+# 節點座標刻意都落在 x 340~1020 / y 70~330。
+# 設計器載入既有流程時的 pan 不是固定值（實測同一個流程連續載入會得到
+# -143.75 / -193.75 / -275），所以座標只能求「大多數情況下剛好」；
+# 真正的保險是 `wf-render.js` 的「有節點在視野外就自動 fit」。
+
 _EDGE_STYLE = {
     'width': 2,
     'line-color': 'rgb(149,165,166)',
@@ -54,13 +59,27 @@ def log(msg):
 # graph / schema 組裝小工具
 # ---------------------------------------------------------------------------
 
+# node_type -> icon 路徑，由 workflow_node_definitions 決定（見 load_node_icons）。
+# 不要用 f'{ICON_BASE}/{node_type.lower()}.svg' 硬推：AiAgent 沒有 aiagent.svg，
+# 它在節點定義裡借用 sqlexecutor.svg，硬推會得到一個 404 的圖示。
+_NODE_ICONS: dict = {}
+
+
+def load_node_icons(models):
+    """從 workflow_node_definitions 讀每個節點型別登記的圖示"""
+    WorkflowNodeDefinition = models['WorkflowNodeDefinition']
+    for d in WorkflowNodeDefinition.query.filter_by(is_deleted=False).all():
+        if d.icon:
+            _NODE_ICONS[d.node_type] = d.icon
+
+
 def _node(node_id, node_type, label, config=None, x=0, y=0, description=''):
     """icon 一律存無 nginx 前綴的路徑，渲染時才補（CLAUDE.md 的既有規定）"""
     return {
         'id': node_id,
         'type': node_type,
         'label': label,
-        'icon': f'{ICON_BASE}/{node_type.lower()}.svg',
+        'icon': _NODE_ICONS.get(node_type) or f'{ICON_BASE}/{node_type.lower()}.svg',
         'config': config or {},
         'position': {'x': x, 'y': y},
         'description': description,
@@ -190,7 +209,7 @@ _STOCK_FACTS = ('料號 ${f.item_code}：現有庫存 ${v.stock_qty_on_hand} '
 
 def build_sql_demo_graph():
     nodes = [
-        _node('node-Start', 'Start', 'Start', {}, -600, 0),
+        _node('node-Start', 'Start', 'Start', {}, 340, 200),
         _node(
             'node-Sql-stock', 'SqlExecutor', '查庫存',
             {
@@ -209,7 +228,7 @@ def build_sql_demo_graph():
                                   '（本則由 SqlExecutor 節點自動寫入）'),
                 'on_error': 'continue',
             },
-            -420, 0,
+            480, 200,
             '呼叫白名單內的 check_stock。企業識別碼由系統帶入，查不到別家企業的料號。\n'
             'on_error=continue：查詢失敗仍讓流程走到人工，不要卡住。',
         ),
@@ -245,7 +264,7 @@ def build_sql_demo_graph():
                     'log_message': '庫存資料缺值或無法比較，走「庫存不足」交人工判斷',
                 },
             },
-            -240, 0,
+            620, 200,
             'Branch 會展開所有命中的規則，所以三條規則刻意互斥（都先判 stock_found）。\n'
             '比較失敗一律回 False，缺值的案件由 fallback 送人工，這是刻意的 fail-safe。',
         ),
@@ -253,22 +272,22 @@ def build_sql_demo_graph():
             'node-Write-enough', 'OpFieldWrite', '庫存充足提醒',
             {'target_field': 'stock_result',
              'content': '[庫存充足] ' + _STOCK_FACTS + '。'},
-            -40, -170, '把查詢結果寫回表單，簽核者不必自己去查庫存系統。'),
+            760, 70, '把查詢結果寫回表單，簽核者不必自己去查庫存系統。'),
         _node(
             'node-Write-short', 'OpFieldWrite', '缺料提醒',
             {'target_field': 'stock_result',
              'content': '[庫存不足，請確認是否仍要核可] ' + _STOCK_FACTS + '。'},
-            -40, 0),
+            760, 200),
         _node(
             'node-Write-notfound', 'OpFieldWrite', '查無料號提醒',
             {'target_field': 'stock_result',
              'content': '[查無此料號] ${f.item_code} 不在本企業的庫存主檔內，請確認料號是否正確。'},
-            -40, 170),
+            760, 330),
         _approve_node(
-            'node-Form-approve', '主管核可', 200, 0,
+            'node-Form-approve', '主管核可', 900, 200,
             'stock_decision', '核可', 'edge-approved', '退回', 'edge-rejected',
             'assignee_type=INITIATOR：示範用，送單的人自己就會在待辦看到這張單。'),
-        _node('node-End', 'End', 'End', {'finish_mode': 'detach'}, 420, 0),
+        _node('node-End', 'End', 'End', {'finish_mode': 'detach'}, 1020, 200),
     ]
     edges = [
         _edge('edge-start-sql', 'node-Start', 'node-Sql-stock'),
@@ -339,7 +358,7 @@ def build_ai_demo_graph():
                 'write_approval_note': True,
                 'on_error': 'continue',
             },
-            -420, 0,
+            480, 200,
             'AI 沒有任何寫入權，只出文字；寫變數與簽核註記都是 handler 做的。\n'
             'on_error=continue：AI 不可用時仍走人工，不要卡住流程。',
         ),
@@ -364,7 +383,7 @@ def build_ai_demo_graph():
                     'log_message': 'AI 判定不可用（unknown），一律當成有風險交人工',
                 },
             },
-            -240, 0,
+            620, 200,
             '判定不出來時走「有風險」是刻意的：AI 失效不該變成自動放行。\n'
             '`${v.ai}` 是物件，流程變數不支援巢狀取值，所以這裡用攤平的 ${v.ai_verdict}。',
         ),
@@ -373,17 +392,17 @@ def build_ai_demo_graph():
             {'target_field': 'ai_result',
              'content': '[AI 判定：${v.ai_verdict}，風險分數 ${v.ai_score}，'
                         '規則層命中 ${v.ai_rule_hits} 項]\n${v.ai_note}'},
-            -40, -110),
+            760, 110),
         _node(
             'node-Write-benign', 'OpFieldWrite', 'AI 結果提醒（無明顯風險）',
             {'target_field': 'ai_result',
              'content': '[AI 判定：${v.ai_verdict}，風險分數 ${v.ai_score}]\n${v.ai_note}'},
-            -40, 110),
+            760, 290),
         _approve_node(
-            'node-Form-review', '人工確認', 200, 0,
+            'node-Form-review', '人工確認', 900, 200,
             'ai_decision', '放行', 'edge-pass', '判定為攻擊', 'edge-block',
             'AI 只給建議，最後由人決定。'),
-        _node('node-End', 'End', 'End', {'finish_mode': 'detach'}, 420, 0),
+        _node('node-End', 'End', 'End', {'finish_mode': 'detach'}, 1020, 200),
     ]
     edges = [
         _edge('edge-start-ai', 'node-Start', 'node-Ai-analyze'),
@@ -514,7 +533,13 @@ def apply_demo(db, models, demo, publisher, apply):
 
     wf.name = demo['workflow_name']
     wf.description = demo['description']
-    wf.graph = demo['graph']()
+    graph = demo['graph']()
+    # **兩個欄位都要寫**。設計器讀的是 `cytoscape_config`（`wf-render.js` 的
+    # `workflow.cytoscape_config || workflow.graph`，前者優先），流程引擎讀的是
+    # `graph`。只寫 graph 的話：流程跑的是新版，設計器畫的是舊版，而且不報錯。
+    # 設計器自己存檔時也是同一份物件寫進兩個欄位（wf-save.js:488-489）。
+    wf.graph = graph
+    wf.cytoscape_config = graph
     # 直接改 graph 不會自動 bump revision，而 publish 是靠 version+revision
     # 判斷有無變更 —— 不 bump 的話會回「版本未變更」並沿用舊快照
     wf.revision = (wf.revision or 0) + 1
@@ -558,7 +583,7 @@ def main():
     from app.models import Organization, User
     from modules.form_workflow.models import (
         FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
-        FwPublishedFormWorkflow, FwWorkflowTemplate,
+        FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
     )
 
     models = {
@@ -567,6 +592,7 @@ def main():
         'FwMappingPermission': FwMappingPermission,
         'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
         'FwWorkflowTemplate': FwWorkflowTemplate,
+        'WorkflowNodeDefinition': WorkflowNodeDefinition,
     }
 
     app = create_app('development')
@@ -579,6 +605,7 @@ def main():
             log(f'找不到企業：{args.org}')
             return 1
         log(f'企業：{org.name}（{org.secure_code}）')
+        load_node_icons(models)
 
         publisher = User.query.filter_by(
             org_secure_code=org.secure_code, user_type='ORG_ADMIN',

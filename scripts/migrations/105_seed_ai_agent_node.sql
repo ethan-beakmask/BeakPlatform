@@ -9,7 +9,7 @@ SELECT
     substr(md5(random()::text || clock_timestamp()::text), 1, 22),
     'AiAgent', 'AI 分析',
     '把流程資料交給本機 CLI 型 LLM 分析，結果寫入流程變數並可插入簽核註記',
-    '整合', '/static/modules/form_workflow/icons/workflow/sqlexecutor.svg',
+    '整合', '/static/modules/form_workflow/icons/workflow/aiagent.svg',
     '{"instruction":"string","payload_template":"string","result_var":"string","decode_payload":"boolean","write_approval_note":"boolean","timeout_seconds":"integer","model":"string","on_error":"string"}'::json,
     'modules.form_workflow.services.node_handlers.ai_agent_handler.AiAgentHandler',
     true, false,

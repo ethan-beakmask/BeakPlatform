@@ -1852,6 +1852,31 @@ AI 移除不掉。改這個檔案前先讀檔頭那段安全設計說明。
 - 企業獨立資料庫用 `beakplatform` 帳號**連不進去**（權限不足），
   要查得 `sudo -u postgres psql -d org_<id>`
 
+### 用腳本產生流程 graph 時的三個坑（2026-08-20，全部實際踩到）
+
+**一、`graph` 與 `cytoscape_config` 兩個欄位都要寫。**
+`fw_workflow_templates` 有兩個欄位存同一份圖：流程引擎讀 `graph`，
+**設計器讀 `cytoscape_config`**（`wf-render.js`：
+`workflow.cytoscape_config || workflow.graph`，前者優先）。
+設計器自己存檔時是同一份物件寫進兩欄（`wf-save.js:488-489`）。
+只寫 `graph` 的症狀是**流程跑的是新版、設計器畫的是舊版，而且不報錯**——
+看起來就像「我的流程沒存到」或「節點裡沒有值」。
+（腳本產生、從未經設計器存過的流程 `cytoscape_config` 是 NULL，會 fallback 到
+`graph`，所以不會有這個症狀；**被設計器存過一次之後才會開始不同步**。）
+
+**二、載入既有流程時 pan 不是固定值，座標排在哪都不保證看得到。**
+實測同一個流程連續重新載入，pan 得到 -143.75 / -193.75 / -275 / -350。
+原本只有「版本 AA 且 revision 0」的新流程才 `cy.fit()`，其餘一律沿用當下視野，
+所以座標離 pan 較遠的節點就直接在畫面外。2026-08-20 已在 `wf-render.js` 補
+「載入後若有節點不在視野內就自動 fit」（本來就完整可見的流程不動視野，
+避免大流程被 fit 到看不清字）。
+
+**三、節點 icon 不要用 `f'{ICON_BASE}/{node_type.lower()}.svg'` 硬推。**
+檔名與型別名不是一對一（AiAgent 原本借用 `sqlexecutor.svg`，2026-08-20 才補
+`aiagent.svg`）。一律從 `workflow_node_definitions.icon` 讀該型別登記的圖示。
+
+範例腳本：`scripts/examples/provision_node_demo_flows.py`（兩個節點示範流程）。
+
 ### form_workflow 發行（publish）陷阱
 - `POST /api/mappings/<sc>/publish` 以表單/流程模板的 **version+revision** 判斷有無變更；
   直接改 `fw_workflow_templates.graph`（SQL 或 PUT API）**不會** bump revision，

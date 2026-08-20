@@ -99,6 +99,16 @@
                 const rev = workflow.revision || 0;
                 if (ver === 'AA' && !rev) {
                     cy.fit(cy.elements(), 80);
+                } else if (cy.nodes().length > 0 && !allNodesInViewport()) {
+                    // 有節點沒落在視野內 -> 使用者會看到殘缺甚至整片空白的畫布，
+                    // 以為流程壞掉或沒存到（2026-08-20 實際回報）。
+                    //
+                    // 為什麼不能靠「把座標排在安全範圍內」解決：載入時的 pan
+                    // **不是固定值**，實測連續重新載入同一個流程會得到
+                    // -143.75 / -193.75 / -275，所以沒有任何一組座標保證看得到。
+                    // 唯一可靠的做法是載入後確認視野，不對就 fit。
+                    console.warn('⚠️ 有節點落在視野外，自動 fit');
+                    cy.fit(cy.elements(), 80);
                 }
 
                 updateStatus(`已載入流程：${workflow.name}`);
@@ -645,6 +655,16 @@
             refreshAllEmptyGroups();
 
             console.log(`✅ 渲染完成 (nodeCounter=${nodeCounter}, edgeCounter=${edgeCounter}, groupCounter=${groupCounter})`);
+        }
+
+        // 所有節點是否都完整落在目前視野內（含節點自身的寬高）
+        function allNodesInViewport() {
+            const ext = cy.extent();
+            return cy.nodes().every(function (n) {
+                const bb = n.boundingBox();
+                return bb.x1 >= ext.x1 && bb.x2 <= ext.x2
+                    && bb.y1 >= ext.y1 && bb.y2 <= ext.y2;
+            });
         }
 
         // 節點類型標準化（支援舊的大寫名稱和新的 PascalCase）

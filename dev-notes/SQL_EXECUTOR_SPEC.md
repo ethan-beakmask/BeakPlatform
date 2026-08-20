@@ -148,7 +148,7 @@ beluga 1200 / lion 5。用它驗跨企業隔離最直接。
 兩者的簽核者都是 `assignee_type='INITIATOR'`（發起人自己），
 一個帳號就能走完全程，不必先安排角色。
 
-**三件不做就會卡住、而且錯誤訊息看起來像壞掉的事**：
+**四件不做就會卡住、而且症狀看起來像壞掉的事**：
 
 1. **填寫權限**：表單中心的填寫權限預設只放行 SYSTEM_ADMIN 與
    FLOW_DESIGNER / FORM_DESIGNER 角色（`fill_permission_service`），
@@ -160,6 +160,9 @@ beluga 1200 / lion 5。用它驗跨企業隔離最直接。
 3. **變數樣板沒有條件語法**：把庫存數字放進 SqlExecutor 的 `note_template`，
    查無料號那條會印出「現有庫存  ，安全存量 」。條件性的措辭要交給
    分流之後的 OpFieldWrite 節點，註記只放三條路都成立的事實
+4. **`graph` 與 `cytoscape_config` 兩個欄位都要寫**：引擎讀前者、設計器讀後者
+   （後者優先）。只寫 `graph` 的話流程跑新版、設計器畫舊版，**不會有任何錯誤訊息**。
+   詳見 CLAUDE.md「用腳本產生流程 graph 時的三個坑」
 
 ### 端對端實測（經由真正的 executor，不是直接叫 handler）
 
