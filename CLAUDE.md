@@ -1834,6 +1834,26 @@ AI 移除不掉。改這個檔案前先讀檔頭那段安全設計說明。
 
 **改 handler 後 executor 要重啟才認得**（`beakplatform-dev-executor` 是獨立進程）。
 
+**用量記錄與配額已上線（PF-139，2026-08-21）**，定版文件
+`dev-notes/AI_NODE_USAGE_QUOTA_SPEC.md`，動這塊之前整份讀完。四件猜不到的：
+
+- **`total_cost_usd` 是全部模型的總和，但 top-level `usage` 的 token 只算主模型。**
+  即使只指定一個 `--model`，envelope 仍可能出現第二個模型（CLI 用 haiku 做輔助作業）。
+  實測樣本：sonnet-5 $0.0108（2/270 tokens）＋ haiku-4-5 $0.001421（1331/18 tokens）
+  ＝ `total_cost_usd` 0.012221。**寫 parser 不要假設 `modelUsage` 只有一個 key**
+- **成本是 API 牌價的等值估算，不是實際扣款**（訂閱制下仍以牌價估算）。
+  對外文案一律寫「估算成本」，不要寫成費用或帳單
+- **配額超限一律走 error 邊，不看節點的 `on_error`** —— 那代表節點根本沒被允許執行，
+  靜默略過會讓簽核者誤以為 AI 已經看過
+- **流程引擎對回 error 的節點重試到 `max_retries=3`**（`FwNodeExecutionQueue.fail()`
+  沒有不可重試的分支），所以 blocked 記錄依 `node_queue_secure_code` 去重，
+  一個節點被擋只記一次。**不要為了「讓計數變準」而拿掉去重**
+
+配額與用量的**唯一實作**是 `modules/form_workflow/services/ai_usage_service.py`
+（含 `pg_advisory_xact_lock` 防併發穿透、日界月界依企業時區換算）。
+**禁止**在 API、前端或其他 handler 自行組配額 SQL 或讀寫 `ai_node_*` 設定 key。
+管理頁在 `/forms/ai-usage`（`form_workflow.admin`）。
+
 ### SqlExecutor 節點：白名單是 DB 表，且必須在**執行時**重查（2026-08-20）
 
 節點型別 `SqlExecutor`，handler

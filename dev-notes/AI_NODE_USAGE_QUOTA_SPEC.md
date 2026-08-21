@@ -150,9 +150,12 @@ WHERE u.status = 'running'
 `systemctl show beakplatform-dev-executor -p ExecMainStartTimestamp`，
 表示那是重啟前的執行、PID 被重用了。
 
-**限制**：`fw_node_execution_queue.worker_id` 欄位存在但**全專案沒有任何地方寫入它**
-（實測全為 NULL）。所以第二層只在單一 executor 主機上成立；
-executor 若日後跨主機水平擴展，要先補 `worker_id` 才能沿用，第一層則不受影響。
+**`worker_id` 欄位全為 NULL 是預期狀態，不是缺陷、也不是待辦**
+（Ethan 2026-08-21 定調：**本專案沒有跨主機 executor 的構想**）。
+`fw_node_execution_queue.worker_id` 存在但全專案沒有任何地方寫入它，
+而單一 executor 下 `process_id` 已足以判定存活。
+未來 session 看到這個空欄位不要主動補寫入、也不要建卡——
+真的哪天要水平擴展再一起評估，第一層判定則完全不受影響。
 
 時間閾值只該當作前兩層都判不出來時的兜底，**不是主要手段**。
 
