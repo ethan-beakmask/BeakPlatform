@@ -85,6 +85,21 @@ mutation 抓到一個假測試、外部顧問建議裡的一條錯誤。
 **沒有任何要預先建立的目錄**。第一輪手工搭的那整套已於 2026-08-20 移除——
 那段「花六輪試誤搭出來的東西原廠一個參數就解決」本身就是文章素材。
 
+## 手冊已補（2026-08-21）
+
+「不用再改程式」的四項功能已寫進使用者手冊第 4 章（`docs/manual/04_form_workflow/`）：
+
+| 頁 | 對應篇 |
+|---|---|
+| `workflows.md`（補寫） | 7, 8, 10 的共同底稿 |
+| `ai_agent_node.md`（新） | 18, 19 |
+| `sql_executor_node.md`（新） | 8 |
+| `ai_usage.md`（新，PF-141 結案） | 18, 19 |
+| `mappings.md`（補寫，含 SQL 同步啟用） | 7 |
+
+驗收留證 `/opt/tmp/verify/20260821-manual-ch04.log`。第 23、28 篇是純敘事，
+用現成功能即可，沒有對應的手冊頁。
+
 ## 已排除
 
 **Condition / Switch 不在參賽範圍**，已在 `workflow_node_definitions` 設

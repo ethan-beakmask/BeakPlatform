@@ -100,10 +100,13 @@ nav:
           - 分類管理: manual/04_form_workflow/categories.md
           - 表單範本: manual/04_form_workflow/templates.md
           - 流程設計: manual/04_form_workflow/workflows.md
+          - AI 分析節點: manual/04_form_workflow/ai_agent_node.md
+          - SQL 執行節點: manual/04_form_workflow/sql_executor_node.md
           - 配對管理與發行: manual/04_form_workflow/mappings.md
           - 表單風格管理: manual/04_form_workflow/form_themes.md
           - 表單中心: manual/04_form_workflow/center.md
           - 規格制定: manual/04_form_workflow/spec_formulate.md
+          - AI 用量與配額: manual/04_form_workflow/ai_usage.md
       - 資安作業:
           - manual/05_security_ops/index.md
           - 資安監控團隊規劃:
