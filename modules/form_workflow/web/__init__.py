@@ -244,6 +244,22 @@ def form_themes():
 
 
 # =============================================================================
+# AI 用量與配額（需要管理權限）
+# =============================================================================
+
+@web_bp.route('/ai-usage')
+@module_access_required('form_workflow', False)
+@require_permission('form_workflow.admin')
+def ai_usage():
+    """AiAgent 用量與配額管理頁面"""
+    from app.services.capability_service import build_caps
+    return render_template(
+        'modules/form_workflow/ai_usage.html',
+        page_caps=build_caps(['form_workflow.admin'])
+    )
+
+
+# =============================================================================
 # 分類管理（需要管理權限）
 # =============================================================================
 

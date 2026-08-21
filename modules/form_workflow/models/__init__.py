@@ -27,6 +27,7 @@ from .form_theme import FwFormTheme
 from .column_display_config import FwColumnDisplayConfig
 from .mapping_permission import FwMappingPermission
 from .sql_procedure import FwSqlProcedure
+from .ai_usage_record import FwAiUsageRecord
 
 __all__ = [
     'ModuleBaseModel',
@@ -52,4 +53,5 @@ __all__ = [
     'FwColumnDisplayConfig',
     'FwMappingPermission',
     'FwSqlProcedure',
+    'FwAiUsageRecord',
 ]

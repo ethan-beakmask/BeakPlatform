@@ -1,0 +1,234 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('AI 用量與配額 - BeakPlatform') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='modules/form_workflow/css/ai-usage.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="fw-container fw-ai-usage" x-data='aiUsageManager()' x-cloak>
+    <div class="fw-header">
+        <div>
+            <h1>{{ _('AI 用量與配額') }}</h1>
+            <p class="fw-page-subtitle">{{ _('檢視 AiAgent 節點當期用量並管理企業層配額覆寫') }}</p>
+        </div>
+        <div class="fw-toolbar">
+            <button class="fw-btn" type="button" @click="refreshAll()">{{ _('重新載入') }}</button>
+        </div>
+    </div>
+
+    <section class="fw-card fw-usage-panel">
+        <div class="fw-section-head">
+            <div>
+                <h2>{{ _('當期用量') }}</h2>
+                <p>{{ _('估算成本依 Anthropic 標準 API 牌價換算，僅供相對比較與配額用途，並非實際扣款金額。') }}</p>
+            </div>
+            <span class="fw-badge" :class="summary.enabled ? 'success' : 'danger'"
+                  x-text="summary.enabled ? __('已啟用') : __('已停用')"></span>
+        </div>
+
+        <div x-show="summaryLoading" class="fw-loading">{{ _('載入中...') }}</div>
+        <div x-show="!summaryLoading" class="fw-usage-grid">
+            <div class="fw-usage-block">
+                <h3>{{ _('今日') }}</h3>
+                <div class="fw-meter-row">
+                    <span>{{ _('執行次數') }}</span>
+                    <strong x-text="usageText(summary.daily.runs, summary.daily.runs_limit)"></strong>
+                </div>
+                <div class="fw-meter">
+                    <div :class="meterClass(summary.daily.runs, summary.daily.runs_limit)"
+                         :style="{ width: meterWidth(summary.daily.runs, summary.daily.runs_limit) }"></div>
+                </div>
+                <div class="fw-meter-row">
+                    <span>{{ _('估算成本') }}</span>
+                    <strong x-text="costUsageText(summary.daily.cost, summary.daily.cost_limit)"></strong>
+                </div>
+                <div class="fw-meter">
+                    <div :class="meterClass(summary.daily.cost, summary.daily.cost_limit)"
+                         :style="{ width: meterWidth(summary.daily.cost, summary.daily.cost_limit) }"></div>
+                </div>
+                <p class="fw-period" x-text="periodText(summary.daily.period_start)"></p>
+            </div>
+            <div class="fw-usage-block">
+                <h3>{{ _('本月') }}</h3>
+                <div class="fw-meter-row">
+                    <span>{{ _('執行次數') }}</span>
+                    <strong x-text="usageText(summary.monthly.runs, summary.monthly.runs_limit)"></strong>
+                </div>
+                <div class="fw-meter">
+                    <div :class="meterClass(summary.monthly.runs, summary.monthly.runs_limit)"
+                         :style="{ width: meterWidth(summary.monthly.runs, summary.monthly.runs_limit) }"></div>
+                </div>
+                <div class="fw-meter-row">
+                    <span>{{ _('估算成本') }}</span>
+                    <strong x-text="costUsageText(summary.monthly.cost, summary.monthly.cost_limit)"></strong>
+                </div>
+                <div class="fw-meter">
+                    <div :class="meterClass(summary.monthly.cost, summary.monthly.cost_limit)"
+                         :style="{ width: meterWidth(summary.monthly.cost, summary.monthly.cost_limit) }"></div>
+                </div>
+                <p class="fw-period" x-text="periodText(summary.monthly.period_start)"></p>
+            </div>
+        </div>
+        <div x-show="!summaryLoading && summary.recent_blocked > 0" class="fw-blocked-alert">
+            <strong>{{ _('本月被配額擋下') }}</strong>
+            <span x-text="__('{n} 次', {n: summary.recent_blocked})"></span>
+        </div>
+    </section>
+
+    <section class="fw-card fw-config-panel">
+        <div class="fw-section-head">
+            <div>
+                <h2>{{ _('配額設定') }}</h2>
+                <p>{{ _('0 表示不限；只儲存企業覆寫，未覆寫的項目沿用系統預設。') }}</p>
+            </div>
+            {% if can('form_workflow.admin') %}
+            <button class="fw-btn primary" type="button" @click="saveConfig()" :disabled="configSaving || !canManage()">
+                <span x-show="!configSaving">{{ _('儲存') }}</span>
+                <span x-show="configSaving">{{ _('處理中...') }}</span>
+            </button>
+            {% endif %}
+        </div>
+
+        <div x-show="configLoading" class="fw-loading">{{ _('載入中...') }}</div>
+        <div x-show="!configLoading" class="fw-config-grid">
+            <div class="fw-form-group fw-toggle-row">
+                <label>
+                    <input type="checkbox" x-model="form.enabled">
+                    <span>{{ _('允許使用 AiAgent 節點') }}</span>
+                </label>
+                <div class="fw-source-row">
+                    <span class="fw-source" x-text="sourceLabel('enabled')"></span>
+                    {% if can('form_workflow.admin') %}
+                    <button x-show="sourceOf('enabled') === 'org'" class="fw-btn sm" type="button"
+                            @click="restoreDefault('enabled')" :disabled="configSaving || !canManage()">
+                        {{ _('回復系統預設') }}
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <template x-for="field in numericFields" :key="field.key">
+                <div class="fw-form-group">
+                    <label :for="'ai-' + field.key" x-text="field.label"></label>
+                    <input :id="'ai-' + field.key" type="number" min="0" :step="field.step" x-model.number="form[field.key]">
+                    <div class="fw-source-row">
+                        <span class="fw-source" x-text="sourceLabel(field.key)"></span>
+                        <span class="fw-default" x-text="systemDefaultText(field.key)"></span>
+                        {% if can('form_workflow.admin') %}
+                        <button x-show="sourceOf(field.key) === 'org'" class="fw-btn sm" type="button"
+                                @click="restoreDefault(field.key)" :disabled="configSaving || !canManage()">
+                            {{ _('回復系統預設') }}
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </template>
+        </div>
+        <p x-show="configMessage" class="fw-message" x-text="configMessage"></p>
+    </section>
+
+    <section class="fw-card fw-record-panel">
+        <div class="fw-section-head">
+            <div>
+                <h2>{{ _('執行明細') }}</h2>
+                <p>{{ _('tokens 欄位為主模型用量；展開列可查看 CLI 回報的各模型明細。') }}</p>
+            </div>
+        </div>
+
+        <div class="fw-filter-bar">
+            <label>
+                <span>{{ _('狀態') }}</span>
+                <select x-model="filters.status">
+                    <option value="">{{ _('全部') }}</option>
+                    <option value="running">{{ _('執行中') }}</option>
+                    <option value="success">{{ _('成功') }}</option>
+                    <option value="failed">{{ _('失敗') }}</option>
+                    <option value="blocked">{{ _('已擋下') }}</option>
+                </select>
+            </label>
+            <label>
+                <span>{{ _('開始日期') }}</span>
+                <input type="date" x-model="filters.start">
+            </label>
+            <label>
+                <span>{{ _('結束日期') }}</span>
+                <input type="date" x-model="filters.end">
+            </label>
+            <button class="fw-btn" type="button" @click="applyFilters()">{{ _('篩選') }}</button>
+            <button class="fw-btn" type="button" @click="resetFilters()">{{ _('清除') }}</button>
+        </div>
+
+        <div x-show="recordsLoading" class="fw-loading">{{ _('載入中...') }}</div>
+        <div x-show="!recordsLoading && records.length === 0" class="fw-empty">{{ _('尚無用量記錄') }}</div>
+        <div x-show="!recordsLoading && records.length > 0" class="fw-table-wrap">
+            <table class="fw-table">
+                <thead>
+                    <tr>
+                        <th>{{ _('時間') }}</th>
+                        <th>{{ _('流程實例') }}</th>
+                        <th>{{ _('節點名稱') }}</th>
+                        <th>{{ _('模型') }}</th>
+                        <th>{{ _('狀態') }}</th>
+                        <th>{{ _('主模型 tokens') }}</th>
+                        <th>{{ _('估算成本') }}</th>
+                        <th>{{ _('耗時') }}</th>
+                        <th>{{ _('錯誤訊息') }}</th>
+                    </tr>
+                </thead>
+                <template x-for="record in records" :key="record.secure_code">
+                    <tbody>
+                        <tr>
+                            <td x-text="formatTime(record.started_at)"></td>
+                            <td x-text="record.workflow_instance_secure_code || '-'"></td>
+                            <td>
+                                <button class="fw-expand-btn" type="button" @click="toggleRecord(record.secure_code)"
+                                        :aria-label="__('展開模型明細')"
+                                        x-text="expandedRecords[record.secure_code] ? '▼' : '▶'"></button>
+                                <span x-text="record.node_name || record.node_id || '-'"></span>
+                            </td>
+                            <td x-text="record.model || '-'"></td>
+                            <td><span class="fw-badge" :class="statusClass(record.status)" x-text="statusLabel(record.status)"></span></td>
+                            <td x-text="tokenText(record)"></td>
+                            <td x-text="money(record.cost_usd)"></td>
+                            <td x-text="durationText(record.duration_ms)"></td>
+                            <td><span class="fw-error-text" :title="record.error_message || ''" x-text="truncate(record.error_message)"></span></td>
+                        </tr>
+                        <tr x-show="expandedRecords[record.secure_code]">
+                            <td colspan="9" class="fw-model-cell">
+                                <template x-if="modelRows(record).length === 0">
+                                    <div class="fw-model-empty">{{ _('沒有各模型明細') }}</div>
+                                </template>
+                                <template x-if="modelRows(record).length > 0">
+                                    <div class="fw-model-grid">
+                                        <template x-for="model in modelRows(record)" :key="model.name">
+                                            <div class="fw-model-row">
+                                                <strong x-text="model.name"></strong>
+                                                <span x-text="__('輸入 {n}', {n: model.input})"></span>
+                                                <span x-text="__('輸出 {n}', {n: model.output})"></span>
+                                                <span x-text="__('估算成本 {amount}', {amount: money(model.cost)})"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </td>
+                        </tr>
+                    </tbody>
+                </template>
+            </table>
+        </div>
+
+        <div class="fw-pagination" x-show="!recordsLoading && total > 0">
+            <button class="fw-btn sm" type="button" @click="prevPage()" :disabled="pagination.page <= 1">{{ _('上一頁') }}</button>
+            <span x-text="pageText()"></span>
+            <button class="fw-btn sm" type="button" @click="nextPage()" :disabled="pagination.page >= totalPages()">{{ _('下一頁') }}</button>
+        </div>
+    </section>
+</div>
+
+<script>
+window.__PAGE_CAPS = {{ page_caps | default({}) | tojson }};
+</script>
+<script src="{{ url_for('static', filename='modules/form_workflow/js/ai-usage.js') }}"></script>
+{% endblock %}

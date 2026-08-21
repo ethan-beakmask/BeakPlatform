@@ -104,6 +104,7 @@ def get_stats():
 from . import template_routes   # noqa: E402, F401
 from . import workflow_routes   # noqa: E402, F401
 from . import instance_routes   # noqa: E402, F401
+from . import ai_usage          # noqa: E402, F401
 
 
 # =============================================================================

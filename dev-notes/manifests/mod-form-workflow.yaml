@@ -8,6 +8,7 @@ page:
   - /form-workflow/workflow-list
   - /form-workflow/templates
   - /form-workflow/form-themes
+  - /forms/ai-usage
 description: 表單工作流模組（表單設計器、工作流設計器、表單中心、審核流程）
 
 files:
@@ -35,13 +36,20 @@ files:
     - modules/form_workflow/api/categories.py               # 表單分類
     - modules/form_workflow/api/backgrounds.py              # 工作流設計器底圖
     - modules/form_workflow/api/form_themes.py              # 表單主題
-  service:     modules/form_workflow/services/              # workflow_engine/executor/node_runner + node_handlers/
-               # form_submit_service.py 送單核心（fc_fill 與外部發動閘道共用）
-               # fill_permission_service.py 填寫權限解析（fc_available 與 fc_fill submit 共用）
-               # egress_adapter.py EGRESS-01 form_node 語境（fc_pending 簽核詳情過濾 + 揭示通道）
-               # task_authorizer.py 簽核佇列授權判定（快照 + ROLE 當前角色即時比對）
-  model:       modules/form_workflow/models/
-  template:    modules/form_workflow/templates/modules/form_workflow/
+    - modules/form_workflow/api/ai_usage.py                 # AiAgent 用量與配額管理
+  service:
+    - modules/form_workflow/services/                       # workflow_engine/executor/node_runner + node_handlers/
+    # form_submit_service.py 送單核心（fc_fill 與外部發動閘道共用）
+    # fill_permission_service.py 填寫權限解析（fc_available 與 fc_fill submit 共用）
+    # egress_adapter.py EGRESS-01 form_node 語境（fc_pending 簽核詳情過濾 + 揭示通道）
+    # task_authorizer.py 簽核佇列授權判定（快照 + ROLE 當前角色即時比對）
+    - modules/form_workflow/services/ai_usage_service.py    # AiAgent 用量記錄與配額服務
+  model:
+    - modules/form_workflow/models/
+    - modules/form_workflow/models/ai_usage_record.py       # AiAgent 用量記錄
+  template:
+    - modules/form_workflow/templates/modules/form_workflow/
+    - modules/form_workflow/templates/modules/form_workflow/ai_usage.html
   js:
     - modules/form_workflow/static/modules/form_workflow/js/fw-dashboard.js
     - modules/form_workflow/static/modules/form_workflow/js/form-center.js
@@ -52,18 +60,23 @@ files:
     - modules/form_workflow/static/modules/form_workflow/js/var-picker.js
     - modules/form_workflow/static/modules/form_workflow/js/formadapter-decisions.js
     - modules/form_workflow/static/modules/form_workflow/js/formio-bkfile-provider.js
+    - modules/form_workflow/static/modules/form_workflow/js/ai-usage.js
   css:
     - modules/form_workflow/static/modules/form_workflow/css/fw-dashboard.css
     - modules/form_workflow/static/modules/form_workflow/css/form-center.css
     - modules/form_workflow/static/modules/form_workflow/css/form-designer.css
     - modules/form_workflow/static/modules/form_workflow/css/workflow-designer.css
     - modules/form_workflow/static/modules/form_workflow/css/workflow-list.css
+    - modules/form_workflow/static/modules/form_workflow/css/ai-usage.css
   migration:
     - scripts/migrations/101_execution_code_per_org_unique.py  # PF-116 execution_code per-org unique index
     - scripts/migrations/102_form_serial_per_org_unique.py     # serial_number per-org unique index
+    - scripts/migrations/107_ai_agent_usage_quota.sql          # AiAgent 用量記錄與預設配額
   tests:
     - backend/tests/test_execution_code_per_org.py             # PF-116 per-org execution_code 約束與序號池
     - backend/tests/test_form_serial_per_org.py                # per-org serial_number 約束與序號池
+    - backend/tests/test_ai_usage_quota.py                     # AiAgent 用量記錄與配額
+    - backend/tests/test_ai_usage_api.py                       # AiAgent 用量與配額管理 API
   vendor_deps:
     - backend/app/static/vendor/formio.full.min.js     # 表單設計器
     - backend/app/static/vendor/cytoscape.min.js       # 流程圖

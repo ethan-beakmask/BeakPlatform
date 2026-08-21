@@ -67,6 +67,13 @@ MODULE_INFO = {
                     'sort_order': 4,
                     'required_permission': 'form_workflow.admin'
                 },
+                {
+                    'code': 'form_workflow.ai_usage',
+                    'name': 'AI 用量與配額',
+                    'url': 'form_workflow_web.ai_usage',
+                    'sort_order': 5,
+                    'required_permission': 'form_workflow.admin'
+                },
             ]
         }
     ],

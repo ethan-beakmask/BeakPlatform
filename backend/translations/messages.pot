@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-16 16:41+0800\n"
+"POT-Creation-Date: 2026-08-21 08:25+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -473,15 +473,15 @@ msgstr ""
 msgid "找不到目標企業"
 msgstr ""
 
-#: app/api/auth.py:1231 app/api/enterprise_settings.py:54
-#: app/api/enterprise_settings.py:68 app/api/enterprise_settings.py:95
-#: app/api/enterprise_settings.py:113 app/api/enterprise_settings.py:192
-#: app/api/enterprise_settings.py:214 app/api/enterprise_settings.py:242
-#: app/api/enterprise_settings.py:262 app/api/enterprise_settings.py:301
-#: app/api/enterprise_settings.py:326 app/api/enterprise_settings.py:369
-#: app/api/files.py:150 app/api/files.py:251 app/api/files.py:419
-#: app/api/files.py:455 app/api/files.py:489 app/api/files.py:522
-#: app/api/files.py:557
+#: ../modules/form_workflow/api/ai_usage.py:37 app/api/auth.py:1231
+#: app/api/enterprise_settings.py:54 app/api/enterprise_settings.py:68
+#: app/api/enterprise_settings.py:95 app/api/enterprise_settings.py:113
+#: app/api/enterprise_settings.py:192 app/api/enterprise_settings.py:214
+#: app/api/enterprise_settings.py:242 app/api/enterprise_settings.py:262
+#: app/api/enterprise_settings.py:301 app/api/enterprise_settings.py:326
+#: app/api/enterprise_settings.py:369 app/api/files.py:150 app/api/files.py:251
+#: app/api/files.py:419 app/api/files.py:455 app/api/files.py:489
+#: app/api/files.py:522 app/api/files.py:557
 msgid "找不到企業"
 msgstr ""
 
@@ -2157,7 +2157,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:331
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:207
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:171
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:184
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:199
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:118
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:140
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:232
@@ -2502,7 +2502,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:54
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:20
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:21
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:37
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:41
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
 #: app/templates/pageir/_page_ir.html:62 app/templates/pageir/_page_ir.html:175
 #: app/templates/pages/access_center/_tab_roles.html:59
@@ -2545,7 +2545,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:218
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:40
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:42
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:58
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:68
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:73
 #: app/templates/pageir/_page_ir.html:90
 #: app/templates/pages/access_center/_tab_roles.html:101
@@ -2597,7 +2597,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:202
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:43
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:166
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:59
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:70
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:74
 #: app/templates/pageir/_page_ir.html:91
 #: app/templates/pages/access_center/_tab_roles.html:102
@@ -2637,6 +2637,7 @@ msgstr ""
 msgid "總數"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:223
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:85
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:119
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:312
@@ -2648,6 +2649,7 @@ msgid "上一頁"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:344
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:225
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
@@ -3266,6 +3268,7 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:27
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:198
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:160
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:89
 #: app/templates/pages/access_center/_tab_health.html:63
 #: app/templates/pages/users/create.html:161
@@ -3323,9 +3326,8 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:15
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:115
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:14
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:27
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:33
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:167
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:37
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:182
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:26
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
 #: app/templates/pages/access_center/_tab_roles.html:51
@@ -3359,8 +3361,8 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:145
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:250
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:31
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:155
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:34
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:168
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:20
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:89
@@ -3390,6 +3392,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:50
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:106
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:194
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:35
 #: app/templates/pages/access_center/_tab_roles.html:56
 msgid "來源"
 msgstr ""
@@ -3404,7 +3407,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:485
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:132
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:146
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:174
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:189
 #: app/templates/pages/access_center/_tab_roles.html:58
 #: app/templates/pages/access_center/_tab_roles.html:169
 #: app/templates/pages/admin/_settings_recipients_section.html:44
@@ -3735,6 +3738,9 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:184
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:233
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:282
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:31
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:94
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:163
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:26
 #: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:61
 #: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:82
@@ -3785,8 +3791,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:37
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:97
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:182
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:22
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:25
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:28
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:21
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:25
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:210
@@ -4011,6 +4016,8 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:242
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:292
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:135
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:142
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:173
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:300
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:347
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:42
@@ -4026,9 +4033,8 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:103
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:154
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:193
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:30
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:34
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:171
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:38
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:186
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:236
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:29
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:43
@@ -5635,8 +5641,7 @@ msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:47
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:187
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:33
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:36
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:40
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:157
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:32
 #: app/templates/pages/admin/org-admins/list.html:43
@@ -5831,6 +5836,7 @@ msgstr ""
 msgid "開始日期 *"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:156
 #: app/templates/pages/admin/time/holidays.html:142
 #: app/templates/pages/organizations/list.html:264
 #: app/templates/pages/organizations/list.html:342
@@ -6422,6 +6428,7 @@ msgid "異動歷程"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:136
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:169
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:400
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
@@ -6872,8 +6879,8 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:386
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:127
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:141
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:35
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:178
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:39
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:193
 #: app/templates/pages/external-users/create.html:105
 #: app/templates/pages/external-users/edit.html:54
 #: app/templates/pages/external-users/view.html:81
@@ -7128,6 +7135,7 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:163
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:125
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:89
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:136
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:91
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:437
@@ -9360,6 +9368,7 @@ msgstr ""
 msgid "搜尋企業名稱/網域"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:144
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:524
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_access_matrix.html:21
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:156
@@ -9481,6 +9490,7 @@ msgstr ""
 msgid "合約名稱"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:152
 #: app/templates/pages/organizations/list.html:262
 #: app/templates/pages/organizations/list.html:341
 #: app/templates/pages/users/view.html:86
@@ -10674,7 +10684,6 @@ msgstr ""
 msgid "尚無緊急廣播記錄"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:14
 #: app/templates/pages/security/api_keys.html:3
 #: app/templates/pages/security/api_keys.html:13
 msgid "API Key 管理"
@@ -10704,7 +10713,6 @@ msgstr ""
 msgid "期限"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:32
 #: app/templates/pages/security/api_keys.html:32
 msgid "最後使用"
 msgstr ""
@@ -10823,12 +10831,13 @@ msgid "系統預設:"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:421
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:88
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:62
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:101
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:8
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:208
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:172
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:186
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:201
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:64
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:76
 #: app/templates/pages/security/org_rate_limits.html:89
@@ -10910,6 +10919,7 @@ msgstr ""
 msgid "沒有慢查詢紀錄"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:176
 #: app/templates/pages/server_manage/redis_monitor.html:217
 msgid "耗時"
 msgstr ""
@@ -12568,10 +12578,6 @@ msgstr ""
 msgid "人工手動撤銷"
 msgstr ""
 
-#: ../modules/open_defense/api/admin/intake_keys.py:17
-msgid "Intake key 已遷移至平台 API Key,請至 /security/api-keys/ 管理(scope: od_intake)"
-msgstr ""
-
 #: ../modules/open_defense/api/admin/payload_profiles.py:71
 #: ../modules/open_defense/api/admin/payload_profiles.py:136
 msgid "code 在本企業內已存在"
@@ -12602,31 +12608,39 @@ msgid "payload 必須為物件"
 msgstr ""
 
 #: ../modules/open_defense/api/admin/protected_targets.py:86
-#: ../modules/open_defense/api/admin/protected_targets.py:135
+#: ../modules/open_defense/api/admin/protected_targets.py:136
 msgid "entry_type 不合法"
 msgstr ""
 
 #: ../modules/open_defense/api/admin/protected_targets.py:91
-#: ../modules/open_defense/api/admin/protected_targets.py:142
+#: ../modules/open_defense/api/admin/protected_targets.py:143
 msgid "target_value 不是合法的 IP 或 CIDR"
 msgstr ""
 
 #: ../modules/open_defense/api/admin/protected_targets.py:94
-#: ../modules/open_defense/api/admin/protected_targets.py:145
+#: ../modules/open_defense/api/admin/protected_targets.py:164
 msgid "同類型目標已存在"
 msgstr ""
 
-#: ../modules/open_defense/api/admin/protected_targets.py:111
-#: ../modules/open_defense/api/admin/protected_targets.py:163
+#: ../modules/open_defense/api/admin/protected_targets.py:112
+#: ../modules/open_defense/api/admin/protected_targets.py:182
 msgid "儲存保護清單失敗"
 msgstr ""
 
-#: ../modules/open_defense/api/admin/protected_targets.py:127
-#: ../modules/open_defense/api/admin/protected_targets.py:178
+#: ../modules/open_defense/api/admin/protected_targets.py:128
+#: ../modules/open_defense/api/admin/protected_targets.py:197
 msgid "保護清單項目不存在"
 msgstr ""
 
-#: ../modules/open_defense/api/admin/protected_targets.py:187
+#: ../modules/open_defense/api/admin/protected_targets.py:155
+msgid "內建保護項目不可修改類型或目標，只能停用"
+msgstr ""
+
+#: ../modules/open_defense/api/admin/protected_targets.py:202
+msgid "內建保護項目不可刪除，請改為停用"
+msgstr ""
+
+#: ../modules/open_defense/api/admin/protected_targets.py:213
 msgid "刪除保護清單失敗"
 msgstr ""
 
@@ -12762,7 +12776,6 @@ msgid "severity 不合法: %(severity)r"
 msgstr ""
 
 #: ../modules/open_defense/services/decision_service.py:91
-#: ../modules/open_defense/services/intake_key_service.py:52
 #: ../modules/open_defense/services/service_account_service.py:116
 msgid "org_secure_code 必填"
 msgstr ""
@@ -12818,57 +12831,48 @@ msgstr ""
 msgid "決策已被其他執行端搶先拾起"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_key_service.py:54
-#: ../modules/open_defense/services/service_account_service.py:118
-msgid "name 必填"
-msgstr ""
-
-#: ../modules/open_defense/services/intake_key_service.py:56
-msgid "allowed_source_systems 必須為非空 list"
-msgstr ""
-
-#: ../modules/open_defense/services/intake_service.py:311
+#: ../modules/open_defense/services/intake_service.py:312
 #, python-format
 msgid "form template %(form_template_sc)s 不存在或不屬於本企業"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:324
+#: ../modules/open_defense/services/intake_service.py:325
 #, python-format
 msgid "form template %(form_template_sc)s 尚無 Published 版本,請先在表單設計器發行"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:346
+#: ../modules/open_defense/services/intake_service.py:347
 msgid "工作流模板缺 Start 節點"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:427
+#: ../modules/open_defense/services/intake_service.py:417
 msgid "開始"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:473
-#: ../modules/open_defense/services/intake_service.py:623
+#: ../modules/open_defense/services/intake_service.py:463
+#: ../modules/open_defense/services/intake_service.py:613
 #, python-format
 msgid "source_system %(source_system)r 不在 key 允許清單"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:482
+#: ../modules/open_defense/services/intake_service.py:472
 #, python-format
 msgid ""
 "event_class %(event_class)r 在本企業無命中的 form_template 路由規則,請至 /open-defense"
 "/routing-rules 設定"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:557
-#: ../modules/open_defense/services/intake_service.py:700
+#: ../modules/open_defense/services/intake_service.py:547
+#: ../modules/open_defense/services/intake_service.py:690
 #, python-format
 msgid "啟動 workflow 失敗: %(error)s"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:607
+#: ../modules/open_defense/services/intake_service.py:597
 msgid "缺少 correlation_id"
 msgstr ""
 
-#: ../modules/open_defense/services/intake_service.py:633
+#: ../modules/open_defense/services/intake_service.py:623
 msgid "原生 payload 在本企業無命中的 form_template 路由規則,請至 /open-defense/routing-rules 設定"
 msgstr ""
 
@@ -13018,6 +13022,10 @@ msgstr ""
 msgid "%(prefix)s.value 必填"
 msgstr ""
 
+#: ../modules/open_defense/services/service_account_service.py:118
+msgid "name 必填"
+msgstr ""
+
 #: ../modules/open_defense/services/service_account_service.py:121
 msgid "allowed_enforcement_points 必須為 list"
 msgstr ""
@@ -13087,7 +13095,7 @@ msgid "啟用狀態"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:41
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:129
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:142
 msgid "試算"
 msgstr ""
 
@@ -13308,8 +13316,8 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:45
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:189
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:32
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:163
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:36
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:177
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:235
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:321
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:348
@@ -13385,26 +13393,6 @@ msgstr ""
 msgid "事件路由設定"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:2
-msgid "事件接收金鑰 - OpenDefense"
-msgstr ""
-
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:12
-msgid "事件接收金鑰(唯讀遺留)"
-msgstr ""
-
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:19
-msgid "金鑰列表"
-msgstr ""
-
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:23
-msgid "無遷移前的遺留金鑰"
-msgstr ""
-
-#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:31
-msgid "過期"
-msgstr ""
-
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:2
 msgid "封鎖保護清單 - OpenDefense"
 msgstr ""
@@ -13417,82 +13405,95 @@ msgstr ""
 msgid "管理不得被寫成封鎖決策的位址與豁免項目"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:20
-msgid "自訂保護清單"
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:21
+msgid "保護清單"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:22
+msgid "內建項目由平台出廠提供，可停用但不可刪除；自訂項目可自由增刪。"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:25
 msgid "新增項目"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:27
-msgid "尚無自訂項目"
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:30
+msgid "尚無項目"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:70
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:82
 msgid "內建與設定來源（唯讀）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:73
-msgid "這些是程式內建與環境設定的保護網段，無法在此編輯；要允許封鎖其中某個位址，請新增「豁免」項目。"
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:85
+msgid "設定來源保護網段由平台設定提供；內建項目通常列於上方保護清單。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:73
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:85
 msgid "平台自身的基礎設施位址一律受保護且不列於此。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:76
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:88
+msgid "出廠保護清單缺漏，目前暫以程式內建值保護。請聯絡系統管理員補齊出廠值。"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:89
 msgid "內建保護網段"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:80
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:100
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:93
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:113
 msgid "網段"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:81
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:101
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:94
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:114
 msgid "來源說明"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:95
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:108
 msgid "設定來源保護網段"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:96
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:109
 msgid "目前沒有設定來源網段"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:120
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:133
 msgid "保護試算"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:125
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:138
 msgid "封鎖目標"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:127
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:140
 msgid "輸入 IP 或 CIDR，試算寫成封鎖決策時是否會被保護。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:133
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:146
 msgid "會被保護"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:137
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:150
 msgid "不受保護，可正常封鎖"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:140
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:153
 msgid "目標不是合法的 IP 或 CIDR"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:157
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:170
 msgid "保護（protect）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:158
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:171
 msgid "豁免（exempt）"
+msgstr ""
+
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:174
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:179
+msgid "內建項目的類型與目標不可修改"
 msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:2
@@ -14257,6 +14258,7 @@ msgstr ""
 msgid "規格管理"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:17
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:19
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:25
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:19
@@ -16827,6 +16829,31 @@ msgstr ""
 msgid "表名"
 msgstr ""
 
+#: ../modules/form_workflow/api/ai_usage.py:117
+msgid "請提供 JSON 物件"
+msgstr ""
+
+#: ../modules/form_workflow/api/ai_usage.py:127
+msgid "回復系統預設欄位格式不正確"
+msgstr ""
+
+#: ../modules/form_workflow/api/ai_usage.py:136
+msgid "配額設定值格式不正確或超出範圍"
+msgstr ""
+
+#: ../modules/form_workflow/api/ai_usage.py:205
+#: ../modules/form_workflow/api/ai_usage.py:211
+msgid "分頁參數格式不正確"
+msgstr ""
+
+#: ../modules/form_workflow/api/ai_usage.py:227
+msgid "日期格式不正確"
+msgstr ""
+
+#: ../modules/form_workflow/api/ai_usage.py:233
+msgid "結束日期必須晚於開始日期"
+msgstr ""
+
 #: ../modules/form_workflow/api/backgrounds.py:133
 #: ../modules/form_workflow/api/backgrounds.py:171
 msgid "底圖不存在"
@@ -17524,52 +17551,52 @@ msgstr ""
 msgid "流程模板已刪除"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:938
+#: ../modules/form_workflow/api/workflows.py:969
 msgid "子流程已建立"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:965
+#: ../modules/form_workflow/api/workflows.py:996
 msgid "找不到子流程"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:969
+#: ../modules/form_workflow/api/workflows.py:1000
 msgid "無法刪除通用子流程"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1021
+#: ../modules/form_workflow/api/workflows.py:1052
 #, python-format
 msgid "此子流程正被「%(name)s」引用，無法刪除"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1051
+#: ../modules/form_workflow/api/workflows.py:1082
 #, python-format
 msgid "已刪除 %(count)s 個子流程"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1176
+#: ../modules/form_workflow/api/workflows.py:1207
 #, python-format
 msgid "建立變數映射失敗: %(error)s"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1342
+#: ../modules/form_workflow/api/workflows.py:1373
 msgid "流程不存在"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1418
+#: ../modules/form_workflow/api/workflows.py:1449
 #, python-format
 msgid "取得配對表單失敗: %(error)s"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1478
+#: ../modules/form_workflow/api/workflows.py:1509
 msgid "表單不存在"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1532
+#: ../modules/form_workflow/api/workflows.py:1563
 #, python-format
 msgid "分析表單欄位失敗: %(error)s"
 msgstr ""
 
-#: ../modules/form_workflow/services/form_submit_service.py:227
+#: ../modules/form_workflow/services/form_submit_service.py:210
 msgid "流程中找不到起始節點"
 msgstr ""
 
@@ -18272,12 +18299,14 @@ msgid "子流程"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:356
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:145
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:54
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:481
 msgid "執行中"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:358
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:147
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:56
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:483
 msgid "失敗"
@@ -18293,6 +18322,114 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:23
 msgid "狀態："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:3
+msgid "AI 用量與配額 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:13
+msgid "AI 用量與配額"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:14
+msgid "檢視 AiAgent 節點當期用量並管理企業層配額覆寫"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:24
+msgid "當期用量"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:25
+msgid "估算成本依 Anthropic 標準 API 牌價換算，僅供相對比較與配額用途，並非實際扣款金額。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:34
+msgid "今日"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:36
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:56
+msgid "執行次數"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:44
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:64
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:175
+msgid "估算成本"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:54
+msgid "本月"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:75
+msgid "本月被配額擋下"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:83
+msgid "配額設定"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:84
+msgid "0 表示不限；只儲存企業覆寫，未覆寫的項目沿用系統預設。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:99
+msgid "允許使用 AiAgent 節點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:106
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:122
+msgid "回復系統預設"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:135
+msgid "執行明細"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:136
+msgid "tokens 欄位為主模型用量；展開列可查看 CLI 回報的各模型明細。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:146
+msgid "成功"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:148
+msgid "已擋下"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:159
+msgid "篩選"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:164
+msgid "尚無用量記錄"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:170
+msgid "流程實例"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:171
+msgid "節點名稱"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:172
+msgid "模型"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:174
+msgid "主模型 tokens"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:177
+msgid "錯誤訊息"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:201
+msgid "沒有各模型明細"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:3

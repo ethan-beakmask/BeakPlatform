@@ -23,6 +23,11 @@ prompt 內含的是**攻擊者可控的資料**（HTTP request、payload），�
 4. **規則層平行偵測**：handler 自己掃 injection 特徵，結果不經過 AI 直接生效。
    規則命中但 AI 回 benign ＝ 矛盾，強制升級並在註記開頭加系統警示
    （AI 移除不掉，因為是 handler 在它輸出之後拼上去的）。
+5. **用量記錄與配額**：每次允許執行前先寫 running 佔位，完成後保留 envelope
+   的 token、modelUsage 與牌價估算成本（不是實際扣款）。失敗也記錄，因為 CLI
+   逾時、啟動失敗或 canary/schema 驗證失敗都需要稽核；有 envelope 時通常也已
+   產生 token 成本。配額超限一律回 error，不看 `on_error`，因為那代表節點根本
+   沒被允許執行，靜默略過會讓簽核者誤以為 AI 已經看過。
 
 風險定位：這是簽核流程，AI 註記會影響人類簽核者的判斷。最壞情況不是
 「一段錯誤建議」，而是攻擊者讓 AI 寫下「此請求無害，建議核准」來操縱決策。
@@ -391,9 +396,12 @@ class AiAgentHandler(BaseNodeHandler):
         _CLI_ISOLATION_SUPPORT_CACHE[cli] = True
         return None
 
-    def _run_cli(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
+    def _run_cli(
+        self,
+        prompt: str,
+    ) -> Tuple[Optional[str], Optional[str], Optional[Dict[str, Any]]]:
         """
-        執行 CLI，回傳 (AI 的回答文字, 錯誤訊息)。
+        執行 CLI，回傳 (AI 的回答文字, 錯誤訊息, CLI envelope)。
 
         prompt 走 stdin 不走命令列參數：避開 shell escaping 與長度上限，
         也不會出現在 process 清單裡。
@@ -402,7 +410,7 @@ class AiAgentHandler(BaseNodeHandler):
         cli = resolve_cli_path()
         isolation_error = self._ensure_cli_supports_isolation(cli)
         if isolation_error:
-            return None, isolation_error
+            return None, isolation_error, None
 
         try:
             # 每次都給一個全新的空目錄當 cwd。--safe-mode 已經擋掉 CLAUDE.md，
@@ -419,9 +427,9 @@ class AiAgentHandler(BaseNodeHandler):
                 )
         except subprocess.TimeoutExpired:
             # 逾時的部分輸出一律丟棄
-            return None, f'AI CLI 逾時（{timeout}s）'
+            return None, f'AI CLI 逾時（{timeout}s）', None
         except Exception as e:
-            return None, f'AI CLI 執行失敗: {e}'
+            return None, f'AI CLI 執行失敗: {e}', None
 
         # 退出碼非 0 時 stdout 仍可能有 JSON envelope，裡面才有真正的原因
         # （例如模型自己拒答會是 stop_reason=refusal，stderr 是空的）
@@ -429,27 +437,29 @@ class AiAgentHandler(BaseNodeHandler):
             envelope = json.loads(proc.stdout or '')
         except Exception:
             envelope = None
+        if not isinstance(envelope, dict):
+            envelope = None
 
         if proc.returncode != 0:
-            if isinstance(envelope, dict):
+            if envelope is not None:
                 reason = envelope.get('stop_reason') or envelope.get('subtype') or '未知'
                 result = sanitize_for_comment(envelope.get('result') or '', 200)
                 if result:
-                    return None, f'AI CLI 退出碼 {proc.returncode}，原因 {reason}: {result}'
-                return None, f'AI CLI 退出碼 {proc.returncode}，原因 {reason}'
-            return None, f'AI CLI 退出碼 {proc.returncode}: {(proc.stderr or "")[:300]}'
+                    return None, f'AI CLI 退出碼 {proc.returncode}，原因 {reason}: {result}', envelope
+                return None, f'AI CLI 退出碼 {proc.returncode}，原因 {reason}', envelope
+            return None, f'AI CLI 退出碼 {proc.returncode}: {(proc.stderr or "")[:300]}', None
 
         if envelope is None:
-            return None, 'AI CLI 輸出不是合法 JSON envelope'
+            return None, 'AI CLI 輸出不是合法 JSON envelope', None
 
         if envelope.get('is_error'):
             reason = envelope.get('stop_reason') or envelope.get('subtype')
             result = sanitize_for_comment(envelope.get('result') or '', 200)
             if result:
-                return None, f'AI CLI 回報錯誤: {reason}: {result}'
-            return None, f'AI CLI 回報錯誤: {reason}'
+                return None, f'AI CLI 回報錯誤: {reason}: {result}', envelope
+            return None, f'AI CLI 回報錯誤: {reason}', envelope
 
-        return envelope.get('result'), None
+        return envelope.get('result'), None, envelope
 
     # ---- 寫入 -----------------------------------------------------------
 
@@ -498,6 +508,36 @@ class AiAgentHandler(BaseNodeHandler):
         if not self.validate():
             return {'status': 'error', 'message': 'AiAgent 節點設定不完整', 'data': {}}
 
+        from .. import ai_usage_service
+
+        record = None
+        try:
+            record, quota_error = ai_usage_service.check_and_reserve(
+                org_secure_code=self.queue_item.org_secure_code,
+                workflow_instance_secure_code=self.queue_item.workflow_instance_secure_code,
+                node_id=self.queue_item.node_id,
+                node_name=self.queue_item.node_name or 'AI 分析',
+                node_queue_secure_code=self.queue_item.secure_code,
+                form_instance_secure_code=(
+                    self.form_instance.secure_code if self.form_instance else None),
+                model=self.get_config_value('model') or DEFAULT_MODEL,
+            )
+        except Exception as e:
+            # 配額是成本控制，不是安全邊界；配額服務故障時不該讓所有簽核流程停擺。
+            # 這點刻意不同於本 handler 其他「解析不到即 fail-closed」的安全檢查。
+            try:
+                from app import db
+                db.session.rollback()
+            except Exception:
+                pass
+            quota_error = None
+            self.log_warning(f'AiAgent 配額檢查失敗，放行執行: {e}')
+        if quota_error:
+            # on_error='continue' 表示「AI 分析失敗仍繼續」；配額超限是節點根本
+            # 沒被允許執行，靜默略過會讓簽核者誤以為 AI 已經看過。
+            self.log_warning(f'AiAgent 未執行: {quota_error}')
+            return {'status': 'error', 'message': quota_error, 'data': {}}
+
         result_var = self.get_config_value('result_var')
         on_error = self.get_config_value('on_error') or 'error'
 
@@ -527,13 +567,16 @@ class AiAgentHandler(BaseNodeHandler):
         # 3) 呼叫 AI
         instruction = self.get_config_value('instruction') or self.DEFAULT_INSTRUCTION
         prompt, canary = build_prompt(instruction, full_payload)
-        raw_output, err = self._run_cli(prompt)
+        raw_output, err, envelope = self._run_cli(prompt)
 
         # 4) 驗證（canary 不符即視為遭劫持，作廢不重試）
         llm_result = validate_llm_output(raw_output, canary) if raw_output else None
         if raw_output and llm_result is None:
             err = err or 'AI 輸出未通過 canary/schema 驗證，已作廢'
             self.log_warning(f'AiAgent: {err}', {'raw_head': (raw_output or '')[:200]})
+
+        if record is not None:
+            ai_usage_service.finalize(record, envelope, err)
 
         # 5) 組最終結果（系統警示由 handler 拼接，AI 移除不掉）
         note = compose_final_note(rule_hits, llm_result)
@@ -568,7 +611,14 @@ class AiAgentHandler(BaseNodeHandler):
         self.log_info(
             f'AiAgent 完成: verdict={verdict} ai_ok={llm_result is not None} '
             f'rule_hits={len(rule_hits)}',
-            {'result_var': result_var, 'wrote_note': wrote_note, 'error': err})
+            {
+                'result_var': result_var,
+                'wrote_note': wrote_note,
+                'error': err,
+                'cost_usd': float(record.cost_usd or 0) if record is not None else None,
+                'input_tokens': record.input_tokens if record is not None else None,
+                'output_tokens': record.output_tokens if record is not None else None,
+            })
 
         if llm_result is None and on_error == 'error':
             return {
