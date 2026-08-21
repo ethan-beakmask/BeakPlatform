@@ -122,8 +122,46 @@ DB 時間是 naive UTC。日界與月界依企業設定時區計算：
 該列不會被 `finalize()` 補完，會**永久佔用一次配額額度**。
 
 這是刻意選擇的保守方向（寧可多算，不要讓崩潰成為繞過配額的手段），
-但沒有回收機制。若日後發現殘留列造成困擾，正解是加一支排程把
-「`running` 且 `started_at` 超過節點 timeout 上限數倍」的列標成 `failed`，
+但目前沒有回收機制。
+
+**要做回收時不要用時間閾值猜**——本節點的執行時間有硬上界
+（`_run_cli` 的 `subprocess.run(..., timeout=...)`，預設 60 秒＋CLI 能力檢查 10 秒），
+所以「還在跑只是比較久」不存在，但更重要的是有兩層**確定性**判定可用：
+
+**第一層：看對應佇列項目的狀態（零誤殺，涵蓋絕大多數情況）**
+
+`fw_ai_usage_records.node_queue_secure_code` → `fw_node_execution_queue.secure_code`。
+佇列已是 `SUCCESS` / `FAILED` / `CANCELLED` 時，handler 必然已結束，
+usage 列還停在 `running` 就一定是殘留：
+
+```sql
+SELECT u.secure_code, u.started_at, q.status AS queue_status, q.process_id
+FROM fw_ai_usage_records u
+LEFT JOIN fw_node_execution_queue q ON q.secure_code = u.node_queue_secure_code
+WHERE u.status = 'running'
+  AND (q.secure_code IS NULL OR q.status IN ('SUCCESS','FAILED','CANCELLED'));
+```
+
+**第二層：佇列也還是 RUNNING 時，比對 PID 與 executor 啟動時間**
+
+`report_running()`（`node_handlers/base.py`）在 `handle()` 開頭就寫入
+`process_id = os.getpid()`，而 usage 列在那之後才建立，所以每筆 running usage
+都對得到一個 PID。PID 不存在即已死；PID 存在但 `started_at` 早於
+`systemctl show beakplatform-dev-executor -p ExecMainStartTimestamp`，
+表示那是重啟前的執行、PID 被重用了。
+
+**限制**：`fw_node_execution_queue.worker_id` 欄位存在但**全專案沒有任何地方寫入它**
+（實測全為 NULL）。所以第二層只在單一 executor 主機上成立；
+executor 若日後跨主機水平擴展，要先補 `worker_id` 才能沿用，第一層則不受影響。
+
+時間閾值只該當作前兩層都判不出來時的兜底，**不是主要手段**。
+
+另外，`running` 殘留除了 executor 崩潰，還有一個更常見的來源：
+**End 節點的 `finish_mode='cancel'`** 會取消所有未完成節點，此時 AiAgent 可能
+正在執行、handler 被中斷、usage 列留在 `running`。這種情況第一層判定抓得到
+（佇列會是 `CANCELLED`）。
+
+無論用哪一層，回收動作都是把該列標成 `failed`（保留已知的 tokens/cost），
 **不是**把 `running` 從計入配額的狀態裡拿掉。
 
 ## 刻意沒做
