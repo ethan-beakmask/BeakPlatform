@@ -241,7 +241,7 @@ def pending():
 
 @web_bp.route('/form-themes')
 @module_access_required('form_workflow', False)
-@require_permission('form_workflow.admin')
+@require_any_permission('form_workflow.admin', 'form_workflow.template.manage', 'form_workflow.workflow.manage')
 def form_themes():
     """表單風格主題管理頁面"""
     return render_template('modules/form_workflow/form_theme_list.html')
@@ -269,7 +269,7 @@ def ai_usage():
 
 @web_bp.route('/categories')
 @module_access_required('form_workflow', False)
-@require_permission('form_workflow.admin')
+@require_any_permission('form_workflow.admin', 'form_workflow.template.manage', 'form_workflow.workflow.manage')
 def categories():
     """分類管理頁面"""
     return render_template('modules/form_workflow/category_list.html')

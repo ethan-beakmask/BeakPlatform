@@ -47,11 +47,102 @@ def list_assignable_roles():
 
 
 # =============================================================================
+# GET -- 取得可授權部門/社群樹
+# =============================================================================
+
+@mapping_permissions_bp.route('/units', methods=['GET'])
+@module_access_required('form_workflow')
+@require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
+def list_assignable_units():
+    """取得本企業可用於填寫權限規則的部門或社群樹"""
+    from app.models.organizational_unit import OrganizationalUnit, UnitType
+    from app.security.resource_gateway import ResourceGateway
+
+    unit_kind = request.args.get('type', '')
+    unit_type_map = {
+        'department': UnitType.DEPARTMENT,
+        'group': UnitType.GROUP,
+    }
+    unit_type = unit_type_map.get(unit_kind)
+    if not unit_type:
+        return jsonify({'success': False, 'message': _('type 必須為 department 或 group')}), 400
+
+    # 設計者不持有 department:read；此端點的授權由上方 require_any_permission
+    # （form_workflow.workflow.manage / template.manage）負責，資料範圍仍受 gateway 的
+    # org 隔離限制，且只回名稱層級欄位。
+    units = ResourceGateway.filter(
+        OrganizationalUnit,
+        is_deleted=False,
+        unit_type=unit_type,
+        order_by='sort_order',
+        check_permission=False,
+    )
+
+    nodes_by_sc = {
+        unit.secure_code: {
+            'secure_code': unit.secure_code,
+            'code': unit.code,
+            'name': unit.name,
+            'full_path': unit.full_path,
+            'children': [],
+        }
+        for unit in units
+    }
+
+    roots = []
+    for unit in units:
+        node = nodes_by_sc[unit.secure_code]
+        parent = nodes_by_sc.get(unit.parent_secure_code)
+        if parent:
+            parent['children'].append(node)
+        else:
+            roots.append(node)
+
+    return jsonify({'success': True, 'data': roots})
+
+
+# =============================================================================
+# GET -- 取得可授權使用者列表
+# =============================================================================
+
+@mapping_permissions_bp.route('/users', methods=['GET'])
+@module_access_required('form_workflow')
+@require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
+def list_assignable_users():
+    """取得本企業可用於填寫權限規則的使用者列表"""
+    from app.models.user import User
+    from app.security.resource_gateway import ResourceGateway
+
+    # 設計者不持有 user:read；此端點的授權由上方 require_any_permission
+    # （form_workflow.workflow.manage / template.manage）負責，資料範圍仍受 gateway 的
+    # org 隔離限制，且只回名稱層級欄位。
+    users = ResourceGateway.filter(
+        User,
+        is_deleted=False,
+        is_active=True,
+        order_by='display_name',
+        check_permission=False,
+    )
+
+    return jsonify({
+        'success': True,
+        'data': [
+            {
+                'secure_code': user.secure_code,
+                'name': user.display_name or user.native_name or user.username,
+            }
+            for user in users
+        ],
+    })
+
+
+# =============================================================================
 # GET -- 取得配對的權限列表
 # =============================================================================
 
 @mapping_permissions_bp.route('/<mapping_secure_code>', methods=['GET'])
 @module_access_required('form_workflow')
+@require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
 def list_permissions(mapping_secure_code):
     """取得指定配對的填寫權限列表"""
     from ..models import FwMappingPermission, FwFormWorkflowMapping
@@ -88,6 +179,7 @@ def list_permissions(mapping_secure_code):
 @mapping_permissions_bp.route('/<mapping_secure_code>', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
 def create_permission(mapping_secure_code):
     """
     新增填寫權限規則
@@ -180,6 +272,7 @@ def create_permission(mapping_secure_code):
 @mapping_permissions_bp.route('/rule/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
 def delete_permission(secure_code):
     """刪除填寫權限規則"""
     from ..models import FwMappingPermission

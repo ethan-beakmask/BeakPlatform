@@ -5,6 +5,7 @@ FormWorkflow Module - Form Themes API
 from flask import Blueprint, jsonify, request, Response
 
 from app.security.decorators import module_access_required, public_route
+from app.platform.auth import require_any_permission
 from app.platform.data import get_current_org
 from app import db, csrf
 from flask_babel import gettext as _
@@ -94,6 +95,7 @@ def get_theme(secure_code):
 @form_themes_bp.route('', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@require_any_permission('form_workflow.admin', 'form_workflow.template.manage', 'form_workflow.workflow.manage')
 def create_theme():
     """
     建立新主題
@@ -168,6 +170,7 @@ def create_theme():
 @form_themes_bp.route('/<secure_code>', methods=['PUT'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@require_any_permission('form_workflow.admin', 'form_workflow.template.manage', 'form_workflow.workflow.manage')
 def update_theme(secure_code):
     """更新主題"""
     from ..models import FwFormTheme
@@ -221,6 +224,7 @@ def update_theme(secure_code):
 @form_themes_bp.route('/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@require_any_permission('form_workflow.admin', 'form_workflow.template.manage', 'form_workflow.workflow.manage')
 def delete_theme(secure_code):
     """刪除主題（軟刪除）"""
     from ..models import FwFormTheme
@@ -296,6 +300,7 @@ def css_bundle():
 @form_themes_bp.route('/upload', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@require_any_permission('form_workflow.admin', 'form_workflow.template.manage', 'form_workflow.workflow.manage')
 def upload_theme():
     """
     上傳 CSS 檔案建立或更新主題

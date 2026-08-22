@@ -475,9 +475,9 @@ function mappingsManager() {
                     let treeRoots = [];
                     if (grantType === 'department') {
                         if (!this._permCache.departments) {
-                            const res = await fetch(window.__BP + '/api/units/departments?tree=true');
+                            const res = await fetch(window.__BP + '/api/mapping-permissions/units?type=department');
                             const data = await res.json();
-                            this._permCache.departments = data.units || [];
+                            this._permCache.departments = data.success ? (data.data || []) : [];
                         }
                         // 虛擬企業根 — 選擇此節點 + 包含所有子部門 = 全企業
                         treeRoots = [{
@@ -489,9 +489,9 @@ function mappingsManager() {
                         }];
                     } else {
                         if (!this._permCache.groups) {
-                            const res = await fetch(window.__BP + '/api/units/groups?tree=true');
+                            const res = await fetch(window.__BP + '/api/mapping-permissions/units?type=group');
                             const data = await res.json();
-                            this._permCache.groups = data.units || [];
+                            this._permCache.groups = data.success ? (data.data || []) : [];
                         }
                         // 分離外部廠商群組
                         var intGroups = [];
@@ -539,15 +539,15 @@ function mappingsManager() {
                 }));
             } else if (grantType === 'user') {
                 if (!this._permCache.users) {
-                    const res = await fetch(window.__BP + '/api/users?per_page=100');
+                    const res = await fetch(window.__BP + '/api/mapping-permissions/users');
                     const data = await res.json();
-                    if (data.users) {
-                        this._permCache.users = data.users;
+                    if (data.success) {
+                        this._permCache.users = data.data || [];
                     }
                 }
                 this.permTargetOptions = (this._permCache.users || []).map(u => ({
-                    value: u.secure_code || u.id,
-                    label: (u.display_name || u.native_name || u.employee_id || u.id),
+                    value: u.secure_code,
+                    label: u.name,
                 }));
             }
         },

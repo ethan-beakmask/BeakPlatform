@@ -30,7 +30,7 @@ MODULE_INFO = {
             'icon': 'ri-flow-chart',
             'parent': None,
             'sort_order': 3,
-            'user_types': ['ORG_ADMIN'],
+            'user_types': ['ORG_ADMIN', 'EMPLOYEE'],
             'children': [
                 {
                     'code': 'form_workflow.workflows',
@@ -72,6 +72,8 @@ MODULE_INFO = {
                     'name': 'AI 用量與配額',
                     'url': 'form_workflow_web.ai_usage',
                     'sort_order': 5,
+                    # AI 用量與配額屬成本管理面，刻意不開放 EMPLOYEE。
+                    'user_types': ['ORG_ADMIN'],
                     'required_permission': 'form_workflow.admin'
                 },
             ]
