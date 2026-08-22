@@ -5,7 +5,7 @@ FormWorkflow Module - Mapping Permissions API
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.auth import require_any_permission
 from app.platform.data import get_current_org
 from app import db, csrf
@@ -24,6 +24,7 @@ mapping_permissions_bp = Blueprint(
 
 @mapping_permissions_bp.route('/roles', methods=['GET'])
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 @require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
 def list_assignable_roles():
     """取得本企業可用於填寫權限規則的角色列表"""
@@ -52,6 +53,7 @@ def list_assignable_roles():
 
 @mapping_permissions_bp.route('/units', methods=['GET'])
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 @require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
 def list_assignable_units():
     """取得本企業可用於填寫權限規則的部門或社群樹"""
@@ -107,6 +109,7 @@ def list_assignable_units():
 
 @mapping_permissions_bp.route('/users', methods=['GET'])
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 @require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
 def list_assignable_users():
     """取得本企業可用於填寫權限規則的使用者列表"""
@@ -142,6 +145,7 @@ def list_assignable_users():
 
 @mapping_permissions_bp.route('/<mapping_secure_code>', methods=['GET'])
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 @require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
 def list_permissions(mapping_secure_code):
     """取得指定配對的填寫權限列表"""
@@ -179,6 +183,7 @@ def list_permissions(mapping_secure_code):
 @mapping_permissions_bp.route('/<mapping_secure_code>', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 @require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
 def create_permission(mapping_secure_code):
     """
@@ -272,6 +277,7 @@ def create_permission(mapping_secure_code):
 @mapping_permissions_bp.route('/rule/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 @require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
 def delete_permission(secure_code):
     """刪除填寫權限規則"""
