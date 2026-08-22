@@ -127,6 +127,27 @@ permission code（permissions / role_permissions）已退出選單/頁面授權�
 - **admin 帳號持員工角色無效果**：ORG_ADMIN bypass 角色檢查，指派角色給管理員帳號不會有作用
   （兩帳號制下應指派給其 EMPLOYEE 帳號）。
 
+### 5.1 兩帳號制：一個自然人 = 管理員帳號 + 企業成員帳號（Ethan 2026-08-22 定調）
+
+**同一個活人若擔任企業級管理員，會同時擁有「企業級管理員」與「企業成員」兩個帳號各一，
+這是規範不是巧合。** 新企業的原始管理員初次登入時，`auth_interceptor.py:129-150` 會強制
+導向 `/admin/initial-setup`（判定條件：該企業沒有任何 `bound_employee_secure_code`
+非空的啟用 ORG_ADMIN），在該頁一次完成「強制改密碼 + 建立自己的企業成員帳號 +
+產生綁定管理員」。那一頁**每個企業只會出現一次**。
+
+設計理由有二：
+
+1. `/menu/` 的功能量已經大到單排排不下（現為兩排），管理職能與日常職能混在一個帳號裡，
+   選單視覺上難以使用
+2. 「預設管理員必綁企業成員帳號」這條規範，在新企業初次登入時還沒有成員帳號可綁，
+   所以需要那個一次性的初始設定頁補上這一環
+
+**推論（不要當成待辦回報）**：凡是「以企業成員身分做的事」，管理員都是用他的
+EMPLOYEE 帳號做，所以那些功能的預設可見對象只寫「企業成員」是**正確的**，
+不需要為 ORG_ADMIN 另開後門。最直接的例子是表單流程的填寫權限
+（`modules/form_workflow/services/fill_permission_service.py`）：無自訂規則時預設由
+`EMPLOYEE` 角色可填，ORG_ADMIN 帳號本身不在預設內——這是設計，不是遺漏。
+
 ## 6. 相關檔案
 
 - 攔截鏈：`auth_interceptor.py` → `PageRoleGuard.enforce`（鑰匙 1+2，強制登出）→ decorator → ResourceGateway
