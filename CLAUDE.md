@@ -379,6 +379,35 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 **修訂緣由**：原規定是「動工前先問用戶是否依 D2 進行」。D2 已是定版標準，
 每次停下來問與「規格明確就直接執行」相衝突，且新程式碼沒有理由用舊模式。
 
+### PERM-03: 角色制 API 不含 Key1，改守門前先讀這段（2026-08-23 起）
+
+**`roles` 表沒有 `user_type` 欄位**——角色可以被指派給任何身分，含 EXTERNAL，
+UI 與服務層都不阻擋（實測把 `FLOW_DESIGNER` 指派給 EXTERNAL 帳號成功、無警告）。
+
+而 `/api/` 在 `PageRoleGuard.SKIP_PREFIXES` 內，**API 完全不吃雙鑰匙**，
+只吃 decorator。兩者相加的後果：
+
+| decorator | 有沒有 user_type 硬檢查 |
+|---|---|
+| `@admin_required` / `@system_admin_required` | **有**（`is_org_admin or is_system_admin`） |
+| `@require_permission` / `@require_any_permission` | **沒有**，只查 permission code |
+| `@page_keys_required('<menu_code>')` | **有**，Key1 + Key2 與所屬選單頁一致 |
+
+**所以「把 `@admin_required` 的端點改成角色制」不是等價替換，是擴大攻擊面。**
+EXTERNAL 帳號一旦拿到內部角色，頁面被 Key1 擋下（302 強制登出），
+API 卻整組打得進去。2026-08-23 PF-142 第一版就踩到（`/api/units/departments`、
+`/api/users` 換成模組端點），同 session 修掉。
+
+**單一頁面專屬的資料／動作 API 一律掛 `@page_keys_required('<menu_code>')`**，
+不要自己寫 user_type 判斷。跨頁共用的 GET 掛了會誤擋（例：表單中心的
+`fc-data-loader.js` 也在用 `GET /api/form-workflow/categories`），要另外判斷。
+
+已知未修的同類破口與系統性盤點在待辦 **PF-145**，架構分析見知識庫 atom 5246。
+另有一個顯示層不一致：`_menu_tree.py::get_user_menu_tree` 的
+`allowed = perm_governed_codes | module_injected_codes`，第二個來源
+**不經 MenuPermission**，所以有模組 ACL 的 EXTERNAL 帳號**看得到**模組選單、
+點進去才被擋（症狀是「看得到點不了」）。
+
 ### TENANT-01: 強制企業隔離
 - 所有查詢包含 `org_secure_code` 過濾
 - PostgreSQL RLS 作為最後防線
@@ -1064,6 +1093,7 @@ today_start = local_day_start_utc(getattr(g, 'timezone', 'Asia/Taipei'), datetim
 | 表單模板是否發行 | `fw_form_templates.status` | **`is_published`**（發行快照在 `fw_published_form_workflows.status='Published'`） |
 | API Key 是否可用 | `api_keys.is_active` | **`api_keys.status`**（`active` / `suspended`） |
 | 角色是否唯一 | `roles.code` 唯一 | **只有 `secure_code` 唯一**，`ix_roles_code` 是非唯一索引 —— 不同企業的 `SECURITY_STAFF` 是兩筆不同 secure_code |
+| 角色綁哪種身分 | `roles.user_type` | **沒有這個欄位**；角色與 user_type 無關聯，任何角色都能指派給任何身分（見 PERM-03） |
 | OD 路由規則的條件 | `od_form_template_mappings.conditions` | **`match_rules`**（jsonb） |
 | intake 事件的處理狀態 | `od_intake_events.status` | **沒有這個欄位**；有沒有建成案件看 `case_secure_code IS NOT NULL` |
 | intake 事件的來源 IP | `od_intake_events.actor_ip` | **沒有這個欄位**。全部欄位只有 `correlation_id / intake_key_secure_code / source_system / event_class / severity_id / raw_body / signature_verified / case_secure_code / received_at`——IP 埋在 `raw_body` 的 OCSF JSON 裡，要查 IP 一律去 `.20` ClickHouse 的 `events.actor_ip` |
