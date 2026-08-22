@@ -18,7 +18,7 @@ from flask import current_app, g, jsonify, request
 from flask_login import current_user
 
 from app import db
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.data import get_current_org
 from app.utils.timezone import local_day_start_utc
 
@@ -279,6 +279,7 @@ def _attach_flow_labels(items, rows, org_secure_code):
 
 @api_bp.route('/cases')
 @module_access_required('open_defense', False)
+@page_keys_required('open_defense.security_cases')  # PF-145：API 不吃雙鑰匙，須自掛 Key1+Key2
 def list_cases():
     """
     案件清單。
@@ -397,6 +398,7 @@ def list_cases():
 
 @api_bp.route('/cases/stats')
 @module_access_required('open_defense', False)
+@page_keys_required('open_defense.security_cases')  # PF-145：API 不吃雙鑰匙，須自掛 Key1+Key2
 def case_stats():
     """頂部統計帶：進行中 / 待簽核 / SLA 逾時 / 今日封鎖 / 今日新案。"""
     from modules.form_workflow.models import FwNodeExecutionQueue
@@ -455,6 +457,7 @@ def case_stats():
 
 @api_bp.route('/cases/<wi_sc>/payload')
 @module_access_required('open_defense', False)
+@page_keys_required('open_defense.security_cases')  # PF-145：API 不吃雙鑰匙，須自掛 Key1+Key2
 def case_payload(wi_sc):
     """案件原生 payload 明細與扁平欄位（detail 語境出口政策）。"""
     org = get_current_org()
@@ -528,6 +531,7 @@ def case_payload(wi_sc):
 
 @api_bp.route('/cases/<wi_sc>/decisions')
 @module_access_required('open_defense', False)
+@page_keys_required('open_defense.security_cases')  # PF-145：API 不吃雙鑰匙，須自掛 Key1+Key2
 def case_decisions(wi_sc):
     """案件關聯的防禦決策（DecisionWriter 以 case_secure_code 回鏈）。"""
     org = get_current_org()
@@ -556,6 +560,7 @@ def _cross_source_window(form_instance):
 
 @api_bp.route('/cases/<wi_sc>/cross-source')
 @module_access_required('open_defense', False)
+@page_keys_required('open_defense.security_cases')  # PF-145：API 不吃雙鑰匙，須自掛 Key1+Key2
 def case_cross_source(wi_sc):
     """
     PF-106：同 actor_ip 在時間窗內、`.20` 各資安套件（coraza/suricata/...）的
