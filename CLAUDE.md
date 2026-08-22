@@ -408,6 +408,38 @@ API 卻整組打得進去。2026-08-23 PF-142 第一版就踩到（`/api/units/d
 **不經 MenuPermission**，所以有模組 ACL 的 EXTERNAL 帳號**看得到**模組選單、
 點進去才被擋（症狀是「看得到點不了」）。
 
+### PERM-04: 模組 ACL 是 fail-open，新企業預設全開（2026-08-23 實測）
+
+`ModuleAccessService.check_user_access()` 第 96~97 行：
+
+```python
+if count == 0:
+    return True  # 無 ACL = 不限制
+```
+
+所以 **`@module_access_required(mod)`（`check_acl=True`）在該企業沒有任何
+`module_access_control` 記錄時，效力等同 `check_acl=False`**——只驗合約。
+建立企業時**不會**自動 seed ACL，所以新企業就是這個狀態。
+
+實測（TEST00：有 form_workflow 有效合約、零 ACL 記錄）的純員工、無任何角色：
+
+```
+/api/workflows/data/org-tree        -> 200  全企業組織樹
+/api/workflows/data/org-roles       -> 200  全企業角色清單
+/api/workflows/data/org-api-keys    -> 200  企業 API Key 清單
+/api/workflows/data/sql-procedures  -> 200  SqlExecutor 白名單 SP 定義
+```
+
+對照組 BELUGA（有設 ACL）同批端點對 EXTERNAL 與純員工全部 403。
+
+**判讀既有程式時的意義**：看到 `@module_access_required('x')` 不要當成「已經有人在守」，
+它只在該企業設過 ACL 時才是防線。完整分級與 334 支清單見
+`dev-notes/PF145_MODULE_API_KEY1_AUDIT.md`，重跑用
+`venv/bin/python scripts/audit_module_api_gates.py`。
+
+要不要改成 fail-closed 是**全平台變更**（會擋掉所有沒設 ACL 的企業），
+屬待辦 PF-145 階段三，不要在改某支 API 時順手做。
+
 ### TENANT-01: 強制企業隔離
 - 所有查詢包含 `org_secure_code` 過濾
 - PostgreSQL RLS 作為最後防線
@@ -549,6 +581,33 @@ curl -s -b cj.txt -o /dev/null -w '%{http_code}\n' "$BASE/api/<改過的端點>"
 
 - **禁止**在 URL、API 路徑與回應中出現自增 ID（`users/12` 這種）
 - 動態組 SQL 一律走參數化；NoCode 側動態表名／欄名必須先過白名單比對
+
+### URL-02: 給使用者看的對外網址一律走 `external_url()`（2026-08-23 起）
+
+**禁止**用 `url_for(..., _external=True)` 或 `request.host_url` 組「要給使用者點、
+複製或寄出去」的網址。唯一實作是 `backend/app/utils/external_url.py`：
+
+```python
+from app.utils.external_url import build_external_url   # Python
+{{ external_url(url_for('auth.org_login', domain_name=x)) }}   {# Jinja2 global #}
+```
+
+值來自系統設定 `system_base_url`（完整 base URL，例 `http://192.168.0.16:7000`，
+不含尾斜線與 `/beakplatform` 前綴），在 `/hostconfig/server-settings` 的
+「系統對外網址」設定。**未設定一律回 `None`，呼叫端要顯示「尚未設定」而不是
+退回猜一個網址**——錯網址比沒網址更難查（PF-143 的誤判就是這樣來的）。
+
+**為什麼不能用 request 推導**：nginx 的 `proxy_set_header Host $host` 不帶埠號，
+所以 `_external=True` 產出的是 `http://192.168.0.16/...`（缺 `:7000`，點了連不上）；
+正式環境走 Cloudflare 時 `request.host` 又是內部反代位址。兩條路都拿不到對外網址。
+
+`url_for()` 不加 `_external=True` 時**已含 `script_root`**，`build_external_url()`
+內部會判斷避免疊成 `/beakplatform/beakplatform/...`，呼叫端不必自己處理。
+
+**順帶一提平台跑在 http，`navigator.clipboard` 是 `undefined`**（非安全上下文）。
+複製功能一律用 `Utils.copyToClipboard()`（`app.js`，已含 textarea + `execCommand`
+fallback），**不要自己呼叫 `navigator.clipboard.writeText`**——那在本機一律失敗。
+`api-keys.js::copySecret()` 就是這樣壞的，尚未修。
 
 ### DATA-01: 帳號查詢必須過濾刪除與停用
 - **所有查詢用戶/帳號的地方**，必須同時過濾 `is_deleted=False` 和 `is_active=True`
