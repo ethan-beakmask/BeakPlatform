@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-22 20:54+0800\n"
+"POT-Creation-Date: 2026-08-23 00:00+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2090,7 +2090,7 @@ msgid "確認新密碼"
 msgstr ""
 
 #: app/templates/auth/change_password.html:61
-#: app/templates/pages/admin/initial_setup.html:240
+#: app/templates/pages/admin/initial_setup.html:247
 #: app/templates/pages/admin/org-admins/list.html:133
 #: app/templates/pages/change_password.html:45
 #: app/templates/pages/organizations/admins.html:138
@@ -2103,7 +2103,7 @@ msgid "密碼不一致"
 msgstr ""
 
 #: app/templates/auth/change_password.html:64
-#: app/templates/pages/admin/initial_setup.html:244
+#: app/templates/pages/admin/initial_setup.html:251
 #: app/templates/pages/admin/org-admins/list.html:136
 #: app/templates/pages/change_password.html:48
 #: app/templates/pages/organizations/admins.html:141
@@ -2245,7 +2245,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/portal_page_v3.html:43
 #: app/templates/auth/change_password.html:86
 #: app/templates/layouts/base.html:99
-#: app/templates/pages/admin/initial_setup.html:298
+#: app/templates/pages/admin/initial_setup.html:305
 msgid "登出"
 msgstr ""
 
@@ -2268,7 +2268,7 @@ msgstr ""
 #: app/templates/auth/forgot_password.html:59 app/templates/auth/login.html:161
 #: app/templates/auth/login.html:217
 #: app/templates/pages/admin/_employee_create_form.html:42
-#: app/templates/pages/admin/initial_setup.html:174
+#: app/templates/pages/admin/initial_setup.html:181
 #: app/templates/pages/admin/org-admins/list.html:39
 #: app/templates/pages/admin/settings.html:222
 #: app/templates/pages/dev/portal_quick_login.html:180
@@ -2832,7 +2832,7 @@ msgid "顯示名稱"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:57
-#: app/templates/pages/admin/initial_setup.html:206
+#: app/templates/pages/admin/initial_setup.html:213
 #: app/templates/pages/admin/org-admins/create.html:81
 #: app/templates/pages/personal_settings.html:51
 #: app/templates/pages/sys_accounts/create.html:55
@@ -2852,7 +2852,7 @@ msgid "個人資料"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:23
-#: app/templates/pages/admin/initial_setup.html:157
+#: app/templates/pages/admin/initial_setup.html:164
 #: app/templates/pages/admin/settings.html:220
 #: app/templates/pages/personal_settings.html:68
 #: app/templates/pages/users/create.html:51
@@ -2863,7 +2863,7 @@ msgid "英文姓名"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:16
-#: app/templates/pages/admin/initial_setup.html:150
+#: app/templates/pages/admin/initial_setup.html:157
 #: app/templates/pages/admin/settings.html:219
 #: app/templates/pages/personal_settings.html:73
 #: app/templates/pages/users/create.html:42
@@ -2878,7 +2878,7 @@ msgid "本國語言姓名"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:108
-#: app/templates/pages/admin/initial_setup.html:253
+#: app/templates/pages/admin/initial_setup.html:260
 #: app/templates/pages/admin/settings.html:221
 #: app/templates/pages/personal_settings.html:80
 #: app/templates/pages/personal_settings.html:139
@@ -2939,7 +2939,7 @@ msgstr ""
 
 #: app/templates/pages/access_center/_tab_accounts.html:46
 #: app/templates/pages/admin/_employee_create_form.html:81
-#: app/templates/pages/admin/initial_setup.html:193
+#: app/templates/pages/admin/initial_setup.html:200
 #: app/templates/pages/admin/settings.html:223
 #: app/templates/pages/personal_settings.html:140
 #: app/templates/pages/users/create.html:122
@@ -3582,14 +3582,14 @@ msgid "必填欄位"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:32
-#: app/templates/pages/admin/initial_setup.html:166
+#: app/templates/pages/admin/initial_setup.html:173
 #: app/templates/pages/users/create.html:62
 #: app/templates/pages/users/edit.html:74
 msgid "自動翻譯"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:33
-#: app/templates/pages/admin/initial_setup.html:167
+#: app/templates/pages/admin/initial_setup.html:174
 #: app/templates/pages/users/create.html:63
 #: app/templates/pages/users/edit.html:75
 msgid "翻譯中..."
@@ -3602,31 +3602,31 @@ msgid "偵測語言:"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:47
-#: app/templates/pages/admin/initial_setup.html:183
+#: app/templates/pages/admin/initial_setup.html:190
 #: app/templates/pages/users/create.html:79
 msgid "儲存時將轉換為:"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:50
-#: app/templates/pages/admin/initial_setup.html:186
+#: app/templates/pages/admin/initial_setup.html:193
 #: app/templates/pages/users/create.html:82
 msgid "檢查帳號中..."
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:51
-#: app/templates/pages/admin/initial_setup.html:187
+#: app/templates/pages/admin/initial_setup.html:194
 #: app/templates/pages/users/create.html:83
 msgid "帳號可用"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:52
-#: app/templates/pages/admin/initial_setup.html:188
+#: app/templates/pages/admin/initial_setup.html:195
 #: app/templates/pages/users/create.html:84
 msgid "帳號已存在"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:67
-#: app/templates/pages/admin/initial_setup.html:218
+#: app/templates/pages/admin/initial_setup.html:225
 #: app/templates/pages/users/create.html:103
 msgid "使用建議密碼"
 msgstr ""
@@ -3636,7 +3636,7 @@ msgid "留空將自動產生強化密碼"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:77
-#: app/templates/pages/admin/initial_setup.html:229
+#: app/templates/pages/admin/initial_setup.html:236
 #: app/templates/pages/admin/org-admins/create.html:102
 #: app/templates/pages/admin/org-admins/list.html:127
 #: app/templates/pages/organizations/admins.html:132
@@ -3673,7 +3673,7 @@ msgid "尚未設定編號規則，請手動輸入"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:103
-#: app/templates/pages/admin/initial_setup.html:250
+#: app/templates/pages/admin/initial_setup.html:257
 #: app/templates/pages/users/create.html:147
 msgid "選填欄位"
 msgstr ""
@@ -3701,7 +3701,7 @@ msgid "-- 跟隨企業設定 --"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:130
-#: app/templates/pages/admin/initial_setup.html:260
+#: app/templates/pages/admin/initial_setup.html:267
 #: app/templates/pages/admin/org-admins/create.html:73
 #: app/templates/pages/users/create.html:225
 #: app/templates/pages/users/edit.html:294
@@ -3709,7 +3709,7 @@ msgid "通知 Email"
 msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:131
-#: app/templates/pages/admin/initial_setup.html:263
+#: app/templates/pages/admin/initial_setup.html:270
 msgid "留空使用帳號 Email"
 msgstr ""
 
@@ -4707,57 +4707,57 @@ msgid "管理選單"
 msgstr ""
 
 #: app/templates/pages/admin/initial_setup.html:7
-#: app/templates/pages/admin/initial_setup.html:122
-msgid "企業初始設定"
+#: app/templates/pages/admin/initial_setup.html:129
+msgid "企業初始設定-預設管理員綁定成員帳號"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:126
+#: app/templates/pages/admin/initial_setup.html:133
 msgid "安全設定步驟"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:127
+#: app/templates/pages/admin/initial_setup.html:134
 #, python-format
 msgid "預設管理員帳號 (%(account)s) 名稱易被猜測，必須完成以下設定後才能使用系統："
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:128
+#: app/templates/pages/admin/initial_setup.html:135
 msgid "1. 建立您的企業成員帳號"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:129
+#: app/templates/pages/admin/initial_setup.html:136
 msgid "2. 系統自動產生對應的管理員帳號 (admin-帳號名稱) 並綁定"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:130
+#: app/templates/pages/admin/initial_setup.html:137
 msgid "3. 預設管理員帳號自動停用"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:131
+#: app/templates/pages/admin/initial_setup.html:138
 msgid "4. 請使用新的管理員帳號重新登入"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:147
+#: app/templates/pages/admin/initial_setup.html:154
 msgid "企業成員帳號資料"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:170
+#: app/templates/pages/admin/initial_setup.html:177
 msgid "帳號與 Email 名稱來源"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:199
+#: app/templates/pages/admin/initial_setup.html:206
 #, python-format
 msgid "留空將自動使用 %(employee_id)s"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:201
+#: app/templates/pages/admin/initial_setup.html:208
 msgid "手動輸入編號"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:221
+#: app/templates/pages/admin/initial_setup.html:228
 msgid "此密碼同時用於企業成員帳號和管理員帳號"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:234
+#: app/templates/pages/admin/initial_setup.html:241
 #: app/templates/pages/admin/org-admins/list.html:129
 #: app/templates/pages/organizations/admins.html:134
 #: app/templates/pages/sys_accounts/create.html:77
@@ -4767,52 +4767,52 @@ msgstr ""
 msgid "確認密碼"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:237
+#: app/templates/pages/admin/initial_setup.html:244
 msgid "請再次輸入密碼"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:256
+#: app/templates/pages/admin/initial_setup.html:263
 msgid "留空自動遮罩處理"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:267
+#: app/templates/pages/admin/initial_setup.html:274
 msgid "手機號碼"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:277
+#: app/templates/pages/admin/initial_setup.html:284
 msgid "建立預覽"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:278
+#: app/templates/pages/admin/initial_setup.html:285
 msgid "企業成員帳號:"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:280
+#: app/templates/pages/admin/initial_setup.html:287
 msgid "管理員帳號:"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:282
+#: app/templates/pages/admin/initial_setup.html:289
 msgid "用戶編號:"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:283
+#: app/templates/pages/admin/initial_setup.html:290
 msgid "(未設定)"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:284
+#: app/templates/pages/admin/initial_setup.html:291
 msgid "(自動產生)"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:289
+#: app/templates/pages/admin/initial_setup.html:296
 msgid "建立帳號並完成設定"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:294
+#: app/templates/pages/admin/initial_setup.html:301
 #, python-format
 msgid "此頁面為企業初始化精靈，完成後預設管理員帳號 (%(username)s) 將自動停用。"
 msgstr ""
 
-#: app/templates/pages/admin/initial_setup.html:295
+#: app/templates/pages/admin/initial_setup.html:302
 msgid "如需協助，請聯繫系統管理員。"
 msgstr ""
 

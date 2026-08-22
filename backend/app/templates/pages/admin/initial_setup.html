@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ _('企業初始設定') }} - {{ org.name }}</title>
+    <title>{{ _('企業初始設定-預設管理員綁定成員帳號') }} - {{ org.name }}</title>
     <script>window.__BP = '{{ app_prefix }}';</script>
+    <!-- 前端 i18n (BkI18n + __())：本頁不繼承 layouts/base.html，必須自行載入，
+         否則 x-text 裡的 __() 會噴 "__ is not defined" 且該元素永遠空白 -->
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    {% set _locale = current_locale|default('zh-TW') %}
+    {% if _locale != 'zh-TW' %}
+    <script src="{{ url_for('main.i18n_dict_js', locale=_locale) }}"></script>
+    {% endif %}
     <!-- Alpine.js -->
     <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
     <style>
@@ -119,7 +126,7 @@
     </style>
 </head>
 <body>
-    <h1>{{ _('企業初始設定') }}</h1>
+    <h1>{{ _('企業初始設定-預設管理員綁定成員帳號') }}</h1>
     <p style="color: #6b7280; margin-bottom: 16px;">{{ org.name }} ({{ org.domain_name }})</p>
 
     <div class="setup-banner">
