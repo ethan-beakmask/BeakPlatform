@@ -866,6 +866,36 @@ return render_template('...', page_caps=build_caps(['module.permission_code']))
 （`layouts/base.html` 已載入 capability.js，不必重複引入。）
 
 
+### FRONT-11: 不繼承 `layouts/base.html` 的獨立整頁必須自己載 i18n.js
+
+`__()` 定義在 `backend/app/static/js/i18n.js`，**由 `layouts/base.html` 載入**。
+自己寫 `<!DOCTYPE html>` 的獨立整頁（例：`pages/admin/initial_setup.html`）
+若用了 `__()`，`__` 根本不存在，症狀是 **Alpine 噴 `__ is not defined`、
+該元素永遠空白**，其餘部分正常，不開 F12 看不出來。
+
+照抄 base.html 的寫法，位置在 `alpine.min.js` **之前**：
+
+```html
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+{% set _locale = current_locale|default('zh-TW') %}
+{% if _locale != 'zh-TW' %}
+<script src="{{ url_for('main.i18n_dict_js', locale=_locale) }}"></script>
+{% endif %}
+```
+
+語系字典路由 `/i18n/<locale>.js` 掛 `@public_route`，
+不會被 auth_interceptor 的初始設定攔截擋掉。
+
+全專案掃描指令（2026-08-23 執行結果只有 `initial_setup.html` 一個，已修；
+其餘 `__()` 命中項全是被 include 進 base 衍生頁的 `_` 前綴 partial，那些是好的）：
+
+```bash
+for f in $(grep -rLn "extends" --include=*.html backend/app/templates modules/*/templates); do
+  if grep -qi "<!DOCTYPE" "$f" && grep -q "__(" "$f" && ! grep -q "js/i18n.js" "$f"; then echo "$f"; fi
+done
+```
+
+
 ### FRONT-10: 後端組「指向本頁」的網址必須帶 `request.script_root`
 
 app 掛在 nginx 的 `/beakplatform` 前綴下，而 **Flask 的 `request.path` 不含該前綴**。
