@@ -18,9 +18,9 @@ def list_available_forms():
     取得可填寫的表單列表
 
     權限控制：
-    - 硬編碼預設：SYSTEM_ADMIN / FLOW_DESIGNER 角色 / FORM_DESIGNER 角色 -> 全部可見
-    - 已發行表單：依 fw_mapping_permissions 過濾（無記錄 = 僅預設角色可見）
-    - 測試表單：管理員 or design.tryout 權限可見
+    - FLOW_DESIGNER / FORM_DESIGNER 角色永遠可見，供試行設計稿
+    - 已發行表單：依 fw_mapping_permissions 過濾（無記錄 = EMPLOYEE 預設可見）
+    - 測試表單：具 form_workflow.design.tryout 權限者可見
 
     回傳格式：
     - _status: 'published' (已發行) 或 'test' (測試中)
@@ -35,12 +35,9 @@ def list_available_forms():
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
-    # 判斷是否可見測試表單（管理員 or 有 design.tryout 權限）
+    # 判斷是否可見測試表單（有 design.tryout 權限）
     from app.platform.auth import has_permission
-    is_admin = (
-        getattr(current_user, 'is_org_admin', False) or
-        has_permission('form_workflow.design.tryout')
-    )
+    can_tryout = has_permission('form_workflow.design.tryout')
 
     # =========================================================================
     # 填寫權限：共用 fill_permission_service（與 fc_fill submit 同一套判斷）
@@ -168,8 +165,8 @@ def list_available_forms():
                 result[idx]['category'] = ft.category
                 _enrich_category(result[idx], ft.category_secure_code)
 
-    # 2. 管理員額外顯示未發行的配對（用於測試）
-    if is_admin:
+    # 2. 試行者額外顯示未發行的配對（用於測試）
+    if can_tryout:
         mappings = FwFormWorkflowMapping.query.filter_by(
             org_secure_code=org.secure_code,
             is_active=True,
@@ -219,5 +216,5 @@ def list_available_forms():
     return jsonify({
         'success': True,
         'data': result,
-        'is_admin': is_admin
+        'can_tryout': can_tryout
     })

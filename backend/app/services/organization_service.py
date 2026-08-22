@@ -504,7 +504,8 @@ class OrganizationService:
 
         權限分配原則：
         - EMPLOYEE: 基本表單使用權限（填寫、檢視、簽核）
-        - FORM_DESIGNER: 表單/流程管理 + 試行設計稿
+        - FORM_DESIGNER: 表單範本檢視/管理/發行 + 試行設計稿
+        - FLOW_DESIGNER: 流程檢視/管理 + 試行設計稿
         - ORG_ADMIN: 透過 module_access_required 直接放行，不需配 role_permissions
         """
         from ..models.permission import Permission
@@ -518,10 +519,13 @@ class OrganizationService:
                 'form_workflow.approval.approve',
                 'form_workflow.approval.transfer',
             ],
-            'form_editor': [
+            'form_designer': [
                 'form_workflow.template.view',
                 'form_workflow.template.manage',
                 'form_workflow.template.publish',
+                'form_workflow.design.tryout',
+            ],
+            'flow_designer': [
                 'form_workflow.workflow.view',
                 'form_workflow.workflow.manage',
                 'form_workflow.design.tryout',

@@ -14,13 +14,15 @@ class FwMappingPermission(ModuleBaseModel):
     """
     配對填寫權限
 
-    控制哪些部門/群組/個人可以在表單中心填寫特定已發行表單。
-    若某配對無任何記錄，則套用硬編碼預設（SYSTEM_ADMIN + FLOW_DESIGNER + FORM_DESIGNER）。
+    控制哪些部門/群組/個人/角色可以在表單中心填寫特定已發行表單。
+    若某配對無任何記錄，預設由 EMPLOYEE（企業成員）角色可填；
+    FLOW_DESIGNER / FORM_DESIGNER 角色不受規則限制，永遠可填（供試行）。
 
     grant_type:
         department - 部門（include_children 控制是否含子部門）
         group      - 群組（唯一授權外部廠商的管道）
         user       - 個人（排除 EXTERNAL 用戶）
+        role       - 角色（比對 roles.code，排除 EXTERNAL 用戶）
     """
     __tablename__ = 'fw_mapping_permissions'
 
@@ -38,7 +40,7 @@ class FwMappingPermission(ModuleBaseModel):
 
     __table_args__ = (
         CheckConstraint(
-            "grant_type IN ('department', 'group', 'user')",
+            "grant_type IN ('department', 'group', 'user', 'role')",
             name='fw_mp_valid_grant_type'
         ),
     )

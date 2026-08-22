@@ -6,6 +6,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
 from app.security.decorators import module_access_required
+from app.platform.auth import require_any_permission
 from app.platform.data import get_current_org
 from app import db, csrf
 from flask_babel import gettext as _
@@ -15,6 +16,34 @@ mapping_permissions_bp = Blueprint(
     __name__,
     url_prefix='/api/mapping-permissions'
 )
+
+
+# =============================================================================
+# GET -- 取得可授權角色列表
+# =============================================================================
+
+@mapping_permissions_bp.route('/roles', methods=['GET'])
+@module_access_required('form_workflow')
+@require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
+def list_assignable_roles():
+    """取得本企業可用於填寫權限規則的角色列表"""
+    from app.models.role import Role
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'message': 'Organization not found'}), 400
+
+    roles = Role.query.filter(
+        Role.org_secure_code == org.secure_code,
+        Role.is_deleted == False,
+        Role.is_active == True,
+        Role.code != 'EXTERNAL_USERS',
+    ).order_by(Role.sort_order, Role.code).all()
+
+    return jsonify({
+        'success': True,
+        'data': [{'code': r.code, 'name': r.name} for r in roles]
+    })
 
 
 # =============================================================================
@@ -64,12 +93,13 @@ def create_permission(mapping_secure_code):
     新增填寫權限規則
 
     Body:
-        grant_type: department / group / user
+        grant_type: department / group / user / role
         grant_target: 目標 secure_code
         grant_target_name: 顯示名稱
         include_children: boolean (僅 department 有效)
     """
     from ..models import FwMappingPermission, FwFormWorkflowMapping
+    from app.models.role import Role
 
     org = get_current_org()
     if not org:
@@ -88,11 +118,26 @@ def create_permission(mapping_secure_code):
     grant_target = data.get('grant_target', '')
     grant_target_name = data.get('grant_target_name', '')
 
-    if grant_type not in ('department', 'group', 'user'):
-        return jsonify({'success': False, 'message': _('grant_type 必須為 department / group / user')}), 400
+    if grant_type not in ('department', 'group', 'user', 'role'):
+        return jsonify({'success': False, 'message': _('grant_type 必須為 department / group / user / role')}), 400
 
     if not grant_target:
         return jsonify({'success': False, 'message': _('grant_target 為必填')}), 400
+
+    if grant_type == 'role':
+        if grant_target == 'EXTERNAL_USERS':
+            return jsonify({'success': False, 'message': _('外部廠商請改用「社群」類型授權')}), 400
+
+        role = Role.query.filter_by(
+            org_secure_code=org.secure_code,
+            code=grant_target,
+            is_deleted=False,
+            is_active=True
+        ).first()
+        if not role:
+            return jsonify({'success': False, 'message': _('指定的角色不存在或已停用')}), 400
+        if not grant_target_name:
+            grant_target_name = role.name
 
     # 檢查重複
     existing = FwMappingPermission.query.filter_by(

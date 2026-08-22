@@ -294,9 +294,9 @@
                 <div class="fw-perm-defaults">
                     <div class="fw-perm-title">{{ _('預設規則（不可修改）') }}</div>
                     <ul>
-                        <li>{{ _('系統管理員') }}</li>
-                        <li>{{ _('流程設計師 (FLOW_DESIGNER) 角色') }}</li>
-                        <li>{{ _('表單設計師 (FORM_DESIGNER) 角色') }}</li>
+                        <li>{{ _('流程設計師 (FLOW_DESIGNER) 角色 -- 永遠可填，供試行設計稿') }}</li>
+                        <li>{{ _('表單設計師 (FORM_DESIGNER) 角色 -- 永遠可填，供試行設計稿') }}</li>
+                        <li>{{ _('未設任何自訂規則時：企業成員 (EMPLOYEE) 角色可填；外部廠商不可填') }}</li>
                     </ul>
                 </div>
 
@@ -304,13 +304,13 @@
                 <div style="font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #555;">{{ _('自訂規則') }}</div>
                 <div class="fw-perm-list">
                     <template x-if="permRules.length === 0">
-                        <div class="fw-perm-empty">{{ _('尚無自訂規則，僅預設角色可填寫此表單') }}</div>
+                        <div class="fw-perm-empty">{{ _('尚無自訂規則，目前由企業成員 (EMPLOYEE) 角色可填寫此表單') }}</div>
                     </template>
                     <template x-for="rule in permRules" :key="rule.secure_code">
                         <div class="fw-perm-row">
                             <span class="fw-perm-type-tag"
-                                  :class="rule.grant_type === 'department' ? 'dept' : (rule.grant_type === 'group' ? 'group' : 'user')"
-                                  x-text="rule.grant_type === 'department' ? __('部門') : (rule.grant_type === 'group' ? __('社群') : __('個人'))"></span>
+                                  :class="rule.grant_type === 'department' ? 'dept' : (rule.grant_type === 'role' ? 'role' : (rule.grant_type === 'group' ? 'group' : 'user'))"
+                                  x-text="rule.grant_type === 'department' ? __('部門') : (rule.grant_type === 'role' ? __('角色') : (rule.grant_type === 'group' ? __('社群') : __('個人')))"></span>
                             <span class="fw-perm-name" x-text="rule.grant_target_name"></span>
                             <span class="fw-perm-note" x-show="rule.grant_type === 'department' && rule.include_children">{{ _('（含子部門）') }}</span>
                             <span class="fw-perm-note" x-show="rule.grant_type === 'group' && rule.include_children">{{ _('（含下層群組）') }}</span>
@@ -327,6 +327,7 @@
                             <label>{{ _('類型') }}</label>
                             <select x-model="newPerm.grant_type" @change="onPermTypeChange()" style="width: 100px;">
                                 <option value="department">{{ _('部門') }}</option>
+                                <option value="role">{{ _('角色') }}</option>
                                 <option value="group">{{ _('社群') }}</option>
                                 <option value="user">{{ _('個人') }}</option>
                             </select>
@@ -353,10 +354,21 @@
                     <!-- 下拉選單（個人） -->
                     <div x-show="newPerm.grant_type === 'user'" class="fw-perm-field" style="width: 100%;">
                         <label>{{ _('選擇成員') }}</label>
-                        <select x-model="newPerm.grant_target" style="width: 100%;">
+                        <select x-model="newPerm.grant_target" @change="newPerm._selectedName = ($event.target.selectedOptions[0] ? $event.target.selectedOptions[0].text : '')" style="width: 100%;">
                             <option value="">{{ _('-- 請選擇 --') }}</option>
                             <template x-for="opt in permTargetOptions" :key="opt.value">
                                 <option :value="opt.value" x-text="opt.label"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <!-- 下拉選單（角色） -->
+                    <div x-show="newPerm.grant_type === 'role'" class="fw-perm-field" style="width: 100%;">
+                        <label>{{ _('選擇角色') }}</label>
+                        <select x-model="newPerm.grant_target" @change="newPerm._selectedName = ($event.target.selectedOptions[0] ? $event.target.selectedOptions[0].text : '')" style="width: 100%;">
+                            <option value="">{{ _('-- 請選擇 --') }}</option>
+                            <template x-for="opt in permTargetOptions" :key="opt.value">
+                                <option :value="opt.value" x-text="opt.label" :selected="opt.value === newPerm.grant_target"></option>
                             </template>
                         </select>
                     </div>

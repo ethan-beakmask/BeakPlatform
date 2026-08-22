@@ -32,6 +32,7 @@ function mappingsManager() {
         newPerm: { grant_type: 'department', grant_target: '', include_children: false, _selectedName: '' },
         _permCache: {
             departments: null,
+            roles: null,
             groups: null,
             users: null,
         },
@@ -524,6 +525,18 @@ function mappingsManager() {
                 } finally {
                     this.permTreeLoading = false;
                 }
+            } else if (grantType === 'role') {
+                if (!this._permCache.roles) {
+                    const res = await fetch(window.__BP + '/api/mapping-permissions/roles');
+                    const data = await res.json();
+                    if (data.success) {
+                        this._permCache.roles = data.data || [];
+                    }
+                }
+                this.permTargetOptions = (this._permCache.roles || []).map(r => ({
+                    value: r.code,
+                    label: r.name + ' (' + r.code + ')',
+                }));
             } else if (grantType === 'user') {
                 if (!this._permCache.users) {
                     const res = await fetch(window.__BP + '/api/users?per_page=100');

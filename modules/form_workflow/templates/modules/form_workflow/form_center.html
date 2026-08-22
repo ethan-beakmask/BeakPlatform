@@ -8,6 +8,7 @@
 window.__USER_TIMEZONE = '{{ user_timezone }}';
 window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
 window.__IS_SYSTEM_ADMIN = {{ 'true' if is_system_admin else 'false' }};
+window.__CAN_TRYOUT = {{ 'true' if can_tryout else 'false' }};
 window.__USER_ROLE_CODES = {{ user_role_codes|tojson }};
 window.__USER_LOCALE = '{{ user_locale }}';
 window.__USER_SC = '{{ user_secure_code }}';
@@ -280,7 +281,7 @@ window.__USER_SC = '{{ user_secure_code }}';
                         </div>
                     </div>
                 </div>
-                <button x-show="isAdmin && testFormCount > 0" class="fc-btn fc-btn-sm"
+                <button x-show="canTryout && testFormCount > 0" class="fc-btn fc-btn-sm"
                         style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;"
                         @click="deleteTestForms()"
                         x-text="__('刪除測試表單') + ' (' + testFormCount + ')'"></button>

@@ -7,7 +7,7 @@ FormWorkflow Module - Web Routes
 from flask import Blueprint, render_template, redirect, url_for, request
 
 from app.security.decorators import module_access_required
-from app.platform.auth import current_user, require_permission
+from app.platform.auth import current_user, has_permission, require_any_permission, require_permission
 from app.platform.data import get_current_org
 
 # 建立 Web Blueprint
@@ -157,7 +157,7 @@ def instance_detail(secure_code):
 
 @web_bp.route('/mappings')
 @module_access_required('form_workflow', False)
-@require_permission('form_workflow.workflow.manage')
+@require_any_permission('form_workflow.workflow.manage', 'form_workflow.template.manage')
 def mappings():
     """配對管理頁面"""
     org = get_current_org()
@@ -185,6 +185,9 @@ def center():
     # 判斷是否為系統管理員
     is_system_admin = str(getattr(current_user, 'user_type', '')) == 'SYSTEM_ADMIN'
 
+    # 判斷是否可試行設計稿
+    can_tryout = has_permission('form_workflow.design.tryout')
+
     # 取得用戶角色碼列表（用於前端按鈕權限控制）
     from app.platform.auth import get_user_roles
     user_role_codes = [r['code'] for r in get_user_roles(current_user)]
@@ -198,6 +201,7 @@ def center():
         user_timezone=user_tz,
         is_admin=is_admin,
         is_system_admin=is_system_admin,
+        can_tryout=can_tryout,
         user_role_codes=user_role_codes,
         user_locale=user_locale,
         user_secure_code=current_user.secure_code,

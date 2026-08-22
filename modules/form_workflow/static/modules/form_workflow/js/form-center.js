@@ -50,6 +50,7 @@ function formCenterManager() {
         // 管理員旗標
         isAdmin: window.__IS_ADMIN || false,
         isSystemAdmin: window.__IS_SYSTEM_ADMIN || false,
+        canTryout: window.__CAN_TRYOUT || false,
         userRoleCodes: window.__USER_ROLE_CODES || [],
         currentUserSc: window.__USER_SC || '',
 

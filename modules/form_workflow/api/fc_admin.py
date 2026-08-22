@@ -113,7 +113,7 @@ def delete_my_test_forms():
     """
     批量 soft delete 當前用戶的測試表單（歷史終態）
 
-    權限：管理員（system_admin 或 org_admin）
+    權限：具 form_workflow.design.tryout（試行設計稿）
     條件：is_test=True, 終態, 本人發起, 未刪除
     """
     from ..models import FwFormInstance, FwWorkflowInstance
@@ -122,12 +122,10 @@ def delete_my_test_forms():
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
-    # 權限：僅管理員可操作
-    is_admin = (
-        getattr(current_user, 'is_system_admin', False) or
-        getattr(current_user, 'is_org_admin', False)
-    )
-    if not is_admin:
+    # 權限：具 design.tryout 才可操作
+    from app.platform.auth import has_permission
+    can_tryout = has_permission('form_workflow.design.tryout')
+    if not can_tryout:
         return jsonify({'success': False, 'error': _('無權限執行此操作')}), 403
 
     # FwWorkflowInstance 終態：COMPLETED/ERROR/CANCELLED/REJECTED

@@ -5,23 +5,23 @@
 確保「看得到」與「送得出」使用同一套授權判斷。
 
 規則：
-- 硬編碼預設：SYSTEM_ADMIN 用戶 / FLOW_DESIGNER 角色 / FORM_DESIGNER 角色 -> 全部可填
-- 其餘依 fw_mapping_permissions 判斷（無記錄 = 僅硬編碼角色可填）
+- FLOW_DESIGNER / FORM_DESIGNER 角色永遠可填，供試行設計稿
+- 已發行表單依 fw_mapping_permissions 判斷
+- 無自訂規則時，預設 EMPLOYEE（企業成員）角色可填
 - EXTERNAL 用戶只能透過 group 類型授權
 """
 
+DEFAULT_FILL_ROLE_CODE = 'EMPLOYEE'
+# 企業成員出廠角色，是已發行表單未設定自訂規則時的預設可見對象。
+
 
 def is_hardcoded_fill_allowed(user):
-    """硬編碼預設角色：SYSTEM_ADMIN / FLOW_DESIGNER / FORM_DESIGNER"""
+    """FLOW_DESIGNER / FORM_DESIGNER 永遠可填，供設計者試行自己設計的表單。"""
     from app.platform.auth import get_user_roles
 
     hardcoded_role_codes = {'FLOW_DESIGNER', 'FORM_DESIGNER'}
-    user_type = str(getattr(user, 'user_type', ''))
     user_role_codes = {r['code'] for r in get_user_roles(user)}
-    return (
-        user_type == 'SYSTEM_ADMIN' or
-        bool(user_role_codes & hardcoded_role_codes)
-    )
+    return bool(user_role_codes & hardcoded_role_codes)
 
 
 def build_fill_permission_context(user, org_sc):
@@ -30,14 +30,19 @@ def build_fill_permission_context(user, org_sc):
 
     Returns:
         dict: {
-            is_hardcoded, is_external, user_sc,
+            is_hardcoded, is_external, user_sc, role_codes,
             user_dept_sc, dept_ancestors, group_scs, group_ancestors
         }
     """
+    from app.platform.auth import get_user_roles
+
+    role_codes = {r['code'] for r in get_user_roles(user)}
+    hardcoded_role_codes = {'FLOW_DESIGNER', 'FORM_DESIGNER'}
     ctx = {
-        'is_hardcoded': is_hardcoded_fill_allowed(user),
+        'is_hardcoded': bool(role_codes & hardcoded_role_codes),
         'is_external': str(getattr(user, 'user_type', '')) == 'EXTERNAL',
         'user_sc': user.secure_code,
+        'role_codes': role_codes,
         'user_dept_sc': None,
         'dept_ancestors': set(),
         'group_scs': set(),
@@ -87,13 +92,26 @@ def check_mapping_permission(ctx, perms):
         return True
 
     if not perms:
-        return False  # 無自訂規則，僅硬編碼角色可用
+        # 無自訂規則時預設「企業成員」可填；is_external 是雙保險，
+        # 確保外部廠商在任何情況下都不會經由預設規則被放行。
+        return (
+            (not ctx['is_external']) and
+            (DEFAULT_FILL_ROLE_CODE in ctx['role_codes'])
+        )
 
     for p in perms:
         if p.grant_type == 'user':
             if ctx['is_external']:
                 continue  # EXTERNAL 不能透過 user 類型授權
             if p.grant_target == ctx['user_sc']:
+                return True
+
+        elif p.grant_type == 'role':
+            if ctx['is_external']:
+                continue  # EXTERNAL 不能透過 role 類型授權
+            # role grant_target 存 roles.code（如 EMPLOYEE），非 secure_code；
+            # 規則已有 org_secure_code，可讀性高且可直接與 role_codes 比對。
+            if p.grant_target in ctx['role_codes']:
                 return True
 
         elif p.grant_type == 'department':

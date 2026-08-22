@@ -39,12 +39,9 @@ def get_form_for_filling(secure_code):
     source = request.args.get('source', 'published')
 
     if source == 'mapping':
-        # 測試模式：需管理員或 design.tryout 權限（與 submit 測試模式一致）
+        # 測試模式：需 design.tryout 權限（與 submit 測試模式一致）
         from app.platform.auth import has_permission
-        can_tryout = (
-            getattr(current_user, 'is_org_admin', False) or
-            has_permission('form_workflow.design.tryout')
-        )
+        can_tryout = has_permission('form_workflow.design.tryout')
         if not can_tryout:
             return jsonify({'success': False, 'error': _('需要試行設計稿權限')}), 403
 
@@ -131,7 +128,7 @@ def submit_form():
 
     支援兩種模式：
     1. 正式模式：使用 published_secure_code（已發行快照）
-    2. 測試模式：使用 mapping_secure_code（設計稿，需管理員權限）
+    2. 測試模式：使用 mapping_secure_code（設計稿，需 design.tryout 權限）
 
     Request JSON:
     {
@@ -179,13 +176,10 @@ def submit_form():
     try:
         if is_test_mode:
             # ============================================
-            # 測試模式：使用設計稿（需管理員或 design.tryout 權限）
+            # 測試模式：使用設計稿（需 design.tryout 權限）
             # ============================================
             from app.platform.auth import has_permission
-            can_tryout = (
-                getattr(current_user, 'is_org_admin', False) or
-                has_permission('form_workflow.design.tryout')
-            )
+            can_tryout = has_permission('form_workflow.design.tryout')
             if not can_tryout:
                 return jsonify({'success': False, 'error': _('需要試行設計稿權限')}), 403
 
