@@ -39,6 +39,11 @@
             <span class="settings-menu-icon">[C]</span>
             <span>{{ _('選單配色') }}</span>
         </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'baseurl' }"
+             @click="activeSection = 'baseurl'; loadBaseUrl()">
+            <span class="settings-menu-icon">[U]</span>
+            <span>{{ _('系統對外網址') }}</span>
+        </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'audit' }"
              @click="activeSection = 'audit'; loadAuditSettings()">
             <span class="settings-menu-icon">[A]</span>
@@ -73,6 +78,7 @@
         {% include "pages/hostconfig/_system_settings_section_telegram.html" %}
         {% include "pages/hostconfig/_system_settings_section_recipients.html" %}
         {% include "pages/hostconfig/_system_settings_section_menucolors.html" %}
+        {% include "pages/hostconfig/_system_settings_section_baseurl.html" %}
         {% include "pages/hostconfig/_system_settings_section_audit.html" %}
         {% include "pages/hostconfig/_system_settings_section_ratelimit.html" %}
         {% include "pages/hostconfig/_system_settings_section_loginsecurity.html" %}
@@ -105,6 +111,8 @@ function serverSettings() {
             recipientsError: false,
             packages: '',
             packagesError: false,
+            baseUrl: '',
+            baseUrlError: false,
             audit: '',
             auditError: false,
             menuColors: '',
@@ -195,6 +203,12 @@ function serverSettings() {
             saved: '{}'
         },
 
+        // 系統對外網址
+        baseUrl: {
+            value: '',
+            saving: false
+        },
+
         // 稽核設定
         audit: {
             level: 'STANDARD',
@@ -253,6 +267,7 @@ function serverSettings() {
 {% include "pages/hostconfig/_system_settings_notification_methods.html" %}
 {% include "pages/hostconfig/_system_settings_packages_methods.html" %}
 {% include "pages/hostconfig/_system_settings_menucolors_methods.html" %}
+{% include "pages/hostconfig/_system_settings_general_methods.html" %}
 {% include "pages/hostconfig/_system_settings_misc_methods.html" %}
 {% include "pages/hostconfig/_system_settings_loginsecurity_methods.html" %}
 

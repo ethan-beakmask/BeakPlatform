@@ -20,6 +20,7 @@ function orgManager() {
         contracts: config.contracts || [],
         contractSort: { field: 'start_date', dir: 'desc' },
         contractStatusFilter: 'all',
+        copiedLoginUrl: '',
 
         // 合約 Modal
         contractModal: {
@@ -65,6 +66,20 @@ function orgManager() {
                 url.searchParams.delete('conglomerate');
             }
             window.location.href = url.toString();
+        },
+
+        async copyLoginUrl(kind, url) {
+            const ok = await Utils.copyToClipboard(url);
+            if (!ok) {
+                alert(__('複製失敗，請手動選取'));
+                return;
+            }
+            this.copiedLoginUrl = kind;
+            setTimeout(() => {
+                if (this.copiedLoginUrl === kind) {
+                    this.copiedLoginUrl = '';
+                }
+            }, 1600);
         },
 
         // === 集團功能 ===

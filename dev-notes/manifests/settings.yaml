@@ -14,11 +14,14 @@ files:
     - backend/app/api/enterprise_settings.py      # 企業級設定
     - backend/app/api/enterprise_data.py          # 企業資料查詢
     - backend/app/api/system_settings.py          # 系統級設定
+    - backend/app/api/_ss_base_url.py             # 系統對外網址
   service:
     - backend/app/services/email_service.py
     - backend/app/services/rate_limit_service.py
     - backend/app/services/password_policy_service.py
     - backend/app/services/login_security_service.py
+  utility:
+    - backend/app/utils/external_url.py           # 對外 URL 產生
   model:
     - backend/app/models/smtp_config.py
     - backend/app/models/telegram_config.py
@@ -29,6 +32,8 @@ files:
     - backend/app/templates/pages/admin/settings.html
     - backend/app/templates/pages/admin/settings_general.html
     - backend/app/templates/pages/hostconfig/system_settings.html
+    - backend/app/templates/pages/hostconfig/_system_settings_section_baseurl.html
+    - backend/app/templates/pages/hostconfig/_system_settings_general_methods.html
   js:
     - backend/app/static/js/settings.js
     - backend/app/static/js/settings-login-security.js

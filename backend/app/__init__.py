@@ -209,6 +209,12 @@ def register_template_filters(app: Flask) -> None:
         from app.services.capability_service import user_can
         return user_can(permission_code)
 
+    @app.template_global('external_url')
+    def external_url(path):
+        """對外可用的完整網址（含系統對外網址設定與 nginx 前綴）；未設定回 None。"""
+        from .utils.external_url import build_external_url
+        return build_external_url(path)
+
     @app.template_filter('tz_format')
     def tz_format_filter(dt, fmt='%Y-%m-%d %H:%M:%S'):
         """

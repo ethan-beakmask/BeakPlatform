@@ -255,7 +255,7 @@ def create_org():
                 admin_info = f'{admin_username}@{domain_name}'
                 flash(_('已建立企業 %(name)s（含 10 天試用合約），管理員帳號: %(admin_info)s',
                         name=name, admin_info=admin_info), 'success')
-                return redirect(url_for('organizations.list_orgs'))
+                return redirect(url_for('organizations.list_orgs', org=org.secure_code))
             except ValueError as e:
                 db.session.rollback()
                 flash(str(e), 'error')

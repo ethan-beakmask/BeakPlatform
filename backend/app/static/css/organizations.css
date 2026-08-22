@@ -278,6 +278,21 @@
     font-weight: 500;
 }
 
+.external-url-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.external-url-row a {
+    overflow-wrap: anywhere;
+}
+.external-url-warning {
+    display: inline-block;
+    color: var(--color-warning);
+    margin-right: 8px;
+}
+
 /* 合約表格 */
 .contract-table {
     width: 100%;

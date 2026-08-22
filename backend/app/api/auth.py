@@ -967,11 +967,24 @@ def _process_forgot_password(username: str, domain_name: str, login_type: str, o
 
         # 只有用戶存在時才真的寄信
         if user:
-            verification_url = url_for(
-                'auth.verify_reset',
-                token=token.verification_url_token,
-                _external=True
+            # PF-143：對外連結一律以系統對外網址（system_base_url）組成。
+            # nginx 送來的 Host 不含埠號、Cloudflare 路徑上又是內部反代位址，
+            # 靠 request 推導出來的網址收信人點不開。
+            from app.utils.external_url import build_external_url
+            verification_url = build_external_url(
+                url_for('auth.verify_reset', token=token.verification_url_token)
             )
+            if not verification_url:
+                logger.warning(
+                    'system_base_url not configured; password reset link falls back '
+                    'to request-derived URL and may be unreachable for the recipient. '
+                    'Set it at /hostconfig/server-settings.'
+                )
+                verification_url = url_for(
+                    'auth.verify_reset',
+                    token=token.verification_url_token,
+                    _external=True
+                )
             notification_emails = _get_notification_emails(user)
             for to_addr in notification_emails:
                 EmailService.send_password_reset_verification(

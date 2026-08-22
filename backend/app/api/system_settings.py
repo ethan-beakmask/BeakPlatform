@@ -47,6 +47,10 @@ Telegram 設定 (系統級):
 套件版本:
 - GET    /api/system-settings/package-versions        查詢套件版本
 
+系統對外網址:
+- GET    /api/system-settings/base-url                取得系統對外網址
+- PUT    /api/system-settings/base-url                更新系統對外網址
+
 稽核設定:
 - GET    /api/system-settings/audit                   取得稽核設定
 - PUT    /api/system-settings/audit                   更新稽核設定
@@ -63,6 +67,7 @@ from . import _ss_telegram
 from . import _ss_recipient_groups
 from . import _ss_packages
 from . import _ss_audit
+from . import _ss_base_url
 from . import _ss_login_security
 
 api_system_settings = Blueprint('api_system_settings', __name__, url_prefix='/api/system-settings')
@@ -73,5 +78,6 @@ _ss_smtp.register(api_system_settings)
 _ss_telegram.register(api_system_settings)
 _ss_recipient_groups.register(api_system_settings)
 _ss_packages.register(api_system_settings)
+_ss_base_url.register(api_system_settings)
 _ss_audit.register(api_system_settings)
 _ss_login_security.register(api_system_settings)

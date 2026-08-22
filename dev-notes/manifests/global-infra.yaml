@@ -9,6 +9,7 @@ files:
     - backend/app/templates/components/menu.html     # Alpine 動態選單元件（navbar/sidebar 兩種 layout）
     - backend/app/templates/partials/_code_input.html # code 建議元件
   global_js:
+    - backend/app/static/js/app.js                   # 全域 API/Utils helper
     - backend/app/static/js/timezone.js              # BkTime 時區處理
     - backend/app/static/js/sortable-table.js        # 表格排序
     - backend/app/static/js/broadcast-poller.js      # 廣播輪詢

@@ -153,6 +153,18 @@
     margin-top: 16px;
 }
 
+.baseurl-preview {
+    padding: 8px 10px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+.baseurl-preview-empty {
+    color: var(--color-text-muted);
+}
+
 /* 列表表格 */
 .config-table {
     width: 100%;
