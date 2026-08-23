@@ -631,7 +631,7 @@ MENU_ROLE_DEFAULTS = {
     # 共用選單（ALL user types）
     'dashboard': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
     'personal_settings': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
-    'form_workflow.center': ['ORG_ADMIN', 'EMPLOYEE'],
+    'form_workflow.center': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
 
     # 說明子選單（共用使用者手冊）
     'platform_help.manual': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],

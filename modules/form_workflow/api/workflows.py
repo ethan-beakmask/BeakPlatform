@@ -9,7 +9,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, jsonify, request
 from flask_login import current_user
 
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.auth import (
     has_permission,
     require_permission,
@@ -973,6 +973,7 @@ def create_subflow():
 @workflows_bp.route('/data/subflows/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def delete_subflow(secure_code):
     """刪除專屬子流程
 

@@ -9,7 +9,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.data import get_current_org
 from app import db, csrf
 from flask_babel import gettext as _
@@ -202,6 +202,7 @@ def list_mappings():
 
 @mappings_bp.route('/<secure_code>')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def get_mapping(secure_code):
     """取得單一配對"""
     from ..models import FwFormWorkflowMapping
@@ -229,6 +230,7 @@ def get_mapping(secure_code):
 @mappings_bp.route('/', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def create_mapping():
     """建立配對"""
     from ..models import FwFormWorkflowMapping, FwFormTemplate, FwWorkflowTemplate
@@ -310,6 +312,7 @@ def create_mapping():
 @mappings_bp.route('/<secure_code>', methods=['PUT'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def update_mapping(secure_code):
     """更新配對"""
     from ..models import FwFormWorkflowMapping
@@ -364,6 +367,7 @@ def update_mapping(secure_code):
 @mappings_bp.route('/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def delete_mapping(secure_code):
     """刪除配對"""
     from ..models import FwFormWorkflowMapping
@@ -411,6 +415,7 @@ def delete_mapping(secure_code):
 @mappings_bp.route('/published/<secure_code>/sql-sync', methods=['PATCH'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def toggle_sql_sync(secure_code):
     """啟用發行版本的 SQL 同步（單向，啟用後不可關閉）"""
     from ..models import FwPublishedFormWorkflow, FwFormWorkflowMapping, FwFormTemplate
@@ -501,6 +506,7 @@ def toggle_sql_sync(secure_code):
 
 @mappings_bp.route('/published/<secure_code>/sql-sync/status')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def get_sql_sync_status(secure_code):
     """取得發行版本的 SQL 同步狀態"""
     from ..models import FwPublishedFormWorkflow, FwSqlFormRegistry
@@ -544,6 +550,7 @@ def get_sql_sync_status(secure_code):
 @mappings_bp.route('/<secure_code>/publish', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def publish_mapping(secure_code):
     """
     發行配對
@@ -691,6 +698,7 @@ def publish_mapping(secure_code):
 
 @mappings_bp.route('/published')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def list_published():
     """取得已發行版本列表"""
     from ..models import FwPublishedFormWorkflow
@@ -723,6 +731,7 @@ def list_published():
 
 @mappings_bp.route('/published/<secure_code>')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def get_published(secure_code):
     """取得已發行版本詳情"""
     from ..models import FwPublishedFormWorkflow
@@ -751,6 +760,7 @@ def get_published(secure_code):
 @mappings_bp.route('/published/<secure_code>/suspend', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def suspend_published(secure_code):
     """停用發行版本"""
     from ..models import FwPublishedFormWorkflow
@@ -791,6 +801,7 @@ def suspend_published(secure_code):
 @mappings_bp.route('/published/<secure_code>/reopen', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def reopen_published(secure_code):
     """重新開放發行版本"""
     from ..models import FwPublishedFormWorkflow
@@ -838,6 +849,7 @@ def reopen_published(secure_code):
 @mappings_bp.route('/published/<secure_code>/archive', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def archive_published(secure_code):
     """封存發行版本"""
     from ..models import FwPublishedFormWorkflow
@@ -879,6 +891,7 @@ def archive_published(secure_code):
 @mappings_bp.route('/<secure_code>/archive', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def archive_mapping(secure_code):
     """封存配對（所有發行版本都已封存時才可執行）"""
     from ..models import FwFormWorkflowMapping, FwPublishedFormWorkflow
@@ -941,6 +954,7 @@ def archive_mapping(secure_code):
 @mappings_bp.route('/<secure_code>/unarchive', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def unarchive_mapping(secure_code):
     """解除配對封存"""
     from ..models import FwFormWorkflowMapping
@@ -980,6 +994,7 @@ def unarchive_mapping(secure_code):
 @mappings_bp.route('/published/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def delete_published(secure_code):
     """刪除發行版本（僅限未使用過的版本）"""
     from ..models import FwPublishedFormWorkflow
@@ -1021,6 +1036,7 @@ def delete_published(secure_code):
 
 @mappings_bp.route('/numbering-rules')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def list_numbering_rules():
     """取得可用於表單的編號規則列表（FORM 預設 + 無預設用途的規則）"""
     from app.models import UserNumberingRule
@@ -1066,6 +1082,7 @@ def list_numbering_rules():
 
 @mappings_bp.route('/unmapped-forms')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def list_unmapped_forms():
     """取得未配對的表單列表"""
     from ..models import FwFormTemplate, FwFormWorkflowMapping
@@ -1102,6 +1119,7 @@ def list_unmapped_forms():
 
 @mappings_bp.route('/workflows-for-mapping')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.mappings')
 def list_workflows_for_mapping():
     """取得可用於配對的主流程列表"""
     from ..models import FwWorkflowTemplate

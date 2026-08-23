@@ -8,7 +8,7 @@ from datetime import datetime
 from flask import jsonify, request, g
 from flask_login import current_user
 
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, admin_required
 from app.platform.data import get_current_org
 from app import db, csrf
 
@@ -318,6 +318,7 @@ def get_column_config():
 
 @form_center_bp.route('/column-config/all')
 @module_access_required('form_workflow')
+@admin_required
 def list_column_configs():
     """取得企業所有語系的欄位設定（管理員用）"""
     from ..models import FwColumnDisplayConfig
@@ -343,6 +344,7 @@ def list_column_configs():
 @form_center_bp.route('/column-config', methods=['PUT'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@admin_required
 def save_column_config():
     """儲存欄位顯示設定（管理員用）"""
     from ..models import FwColumnDisplayConfig
