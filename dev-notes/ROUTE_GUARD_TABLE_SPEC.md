@@ -68,7 +68,7 @@
 否則 `none`。**`login_required` 刻意不算入任何一邊**——它只要求登入，
 不收斂到某一階身分，所以只掛它的路由是 `none`。
 
-**建立當時的分布（2026-08-23）**：`code` 404（47%）／`db` 301（35%）／`none` 138（16%）。
+**建立當時的分布（2026-08-23）**：`code` 392（47%）／`db` 301（36%）／`none` 138（16%）。
 `none` 那 138 條 ＝ 84 條完全沒有白名單 decorator ＋ 54 條只掛 `login_required`。
 
 ### 這個欄位的已知限制
@@ -86,7 +86,7 @@
 後續 session 需要把 `review: unreviewed` 的條目逐條判斷，填入 `max_audience`，再改成
 `confirmed` 或 `intentional_open`。若是 `intentional_open`，`note` 必須寫明理由。
 
-**建立當時的現況（2026-08-23，數字會腐爛，要現況跑 `--stats`）**：843 筆全部
+**建立當時的現況（2026-08-23，數字會腐爛，要現況跑 `--stats`）**：831 筆全部
 `unreviewed`，其中 109 筆 `has_internal_check: true`、53 筆 `internal_identity_check: true`。
 
 複審一條時實際要回答的問題，按順序：
@@ -142,8 +142,19 @@
 所以不存在「產表用一種 config、比對用另一種」的分歧。
 **不要為了讓測試快一點而改成在測試進程內直接建 app**，那會同時踩回上面兩個坑。
 
-表中含 `/dev/*` 那 12 條（`backend/app/web/dev.py`，正式部署會整個移除）。
-未來若把 dev blueprint 改成只在 development 註冊，記得同步決定它們在表中的去留。
+### 刻意排除的來源
+
+| 排除對象 | 理由 |
+|---|---|
+| `venv/` 底下（Flask 內建的 5 條） | 不是本專案的程式碼 |
+| `backend/app/web/dev.py`（12 條 `/dev/*`） | 開發專用工具，正式部署不存在 |
+
+`dev.py` 在 `scripts/push_github.sh` 的排除清單內，開源版沒有這個檔，
+blueprint 註冊處是 `try/except ImportError`（`backend/app/web/__init__.py:50`）。
+**若把那 12 條收進表，開源版一跑測試就會拿到 12 條「表中已不存在的 endpoint」。**
+清單在工具的 `DEV_ONLY_SOURCES`，新增同性質的開發專用檔時要一併加進去。
+
+已實測：把 `dev.py` 暫時移走後 `--check` 與兩項測試都通過，放回去也通過。
 
 ## 與執行期實測分開
 

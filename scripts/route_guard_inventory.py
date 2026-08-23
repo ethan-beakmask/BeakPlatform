@@ -108,6 +108,18 @@ def _is_venv_path(path):
     return 'venv' in rel.parts
 
 
+# 開發專用、正式部署不存在的來源檔。它們的路由不是產品的一部分，不列入宣告表。
+# `backend/app/web/dev.py` 在 scripts/push_github.sh 的排除清單內，開源版沒有這個檔，
+# blueprint 註冊處是 try/except ImportError（backend/app/web/__init__.py:50）。
+# 若把那 12 條 /dev/* 收進表，開源版跑測試會拿到 12 條「表中已不存在的 endpoint」。
+DEV_ONLY_SOURCES = {'backend/app/web/dev.py'}
+
+
+def _is_dev_only_source(path):
+    rel = _repo_relative(path)
+    return rel in DEV_ONLY_SOURCES
+
+
 def _function_node(fn):
     real = inspect.unwrap(fn)
     src_file = inspect.getsourcefile(real)
@@ -289,7 +301,7 @@ def collect_route_inventory(app=None, config_name='development'):
             continue
         view = app.view_functions[rule.endpoint]
         guards, guard_args, has_internal_check, internal_identity_check, src_file = _guard_data(view)
-        if src_file and _is_venv_path(src_file):
+        if src_file and (_is_venv_path(src_file) or _is_dev_only_source(src_file)):
             continue
 
         entry = routes.setdefault(

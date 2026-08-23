@@ -458,7 +458,7 @@ if count == 0:
 ### PERM-05: 新增路由必須在守門宣告表登記（2026-08-23 起）
 
 全平台每個 Flask endpoint 的守門責任記在
-`backend/app/security/route_guard_table.yaml`（2026-08-23 建立時 843 筆，**數字會腐爛，
+`backend/app/security/route_guard_table.yaml`（2026-08-23 建立時 831 筆，**數字會腐爛，
 要現況跑 `--stats`**），由 `scripts/route_guard_inventory.py --update` 維護。
 
 **新增或修改任何路由後必須跑一次 `--update`**，否則

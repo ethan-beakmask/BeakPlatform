@@ -16,7 +16,8 @@
 | 本次 | `CLAUDE.md` PERM-01 的 Phase B 敘述修正（見下方第五節） |
 
 新增檔案：`scripts/route_guard_inventory.py`、
-`backend/app/security/route_guard_table.yaml`（843 個 endpoint）、
+`backend/app/security/route_guard_table.yaml`（831 個 endpoint，
+已排除 Flask 內建 5 條與 `dev.py` 的 12 條）、
 `backend/tests/test_route_guard_table.py`、`dev-notes/ROUTE_GUARD_TABLE_SPEC.md`。
 
 驗收留證：`/opt/tmp/verify/20260823-route-guard-accept.log`、
@@ -95,13 +96,13 @@ NoCode API 回自己企業資料且 `can_manage: false`。
 
 ### 支撐決策的數據（2026-08-23，用宣告表算的；數字會腐爛，重跑 `--stats`）
 
-843 個 endpoint 的歸屬：
+831 個 endpoint 的歸屬（已排除 Flask 內建與 `dev.py`）：
 
 | 歸屬 | endpoint | 佔比 |
 |---|---:|---:|
-| 平台核心 | 447 | 53% |
-| form_workflow | 158 | 18% |
-| nocode_builder | 143 | 16% |
+| 平台核心 | 435 | 52% |
+| form_workflow | 158 | 19% |
+| nocode_builder | 143 | 17% |
 | open_defense | 43 | 5% |
 | spec_formulate | 34 | 4% |
 | **vuln_lifecycle** | **18** | **2%** |
@@ -124,7 +125,7 @@ NoCode API 回自己企業資料且 `can_manage: false`。
    （它確實是唯一真正符合「可獨立販售」語意的東西），不是簡化權限。
 
 重寫規模：權限核心 `security/` 2351 行 ＋ 10 支權限 service 4896 行 ≈ **7250 行**，
-消費端 **105 個檔案**、843 個 endpoint 全部要跟著遷移。
+消費端 **105 個檔案**、831 個 endpoint 全部要跟著遷移。
 
 ### 為什麼「現在不是重寫的時機」
 
@@ -132,7 +133,7 @@ NoCode API 回自己企業資料且 `can_manage: false`。
 差別在於：**前六版都是憑印象重新設計的，因為當時沒有任何文件能說清楚
 「現在到底有幾條路由、各自由誰守」。2026-08-23 第一次有了。**
 
-所以第 8 版要不要做，取決於有沒有規格書；而那份規格書就是 843 條的複審結果。
+所以第 8 版要不要做，取決於有沒有規格書；而那份規格書就是 831 條的複審結果。
 **兩種結局都需要先複審**：複審完要重寫 → 第 8 版可以真的一次成型；
 複審完發現不用 → 第 7 版就夠用。
 
@@ -153,7 +154,7 @@ NoCode API 回自己企業資料且 `can_manage: false`。
 | 順序 | 做什麼 | 理由 |
 |---|---|---|
 | 0 | **補測試庫 RBAC seed（PF-34）** | 否則之後每次驗證還是空的。測試庫沒有權限資料＝所有測試都跑在 fail-open 狀態 |
-| 1 | 複審 843 條（按 `answer_source` 分堆，模組優先） | 兩條路的共同前置，也是第 8 版的規格書 |
+| 1 | 複審 831 條（按 `answer_source` 分堆，模組優先） | 兩條路的共同前置，也是第 8 版的規格書 |
 | 2 | 模組→內建（構想的階段 3、4、5） | 收益最大且原地可做，直接消滅 167 條 fail-open 的成因 |
 | 3 | vuln 切出（構想的階段 6） | 產品邊界清理，規模小、風險低 |
 | 4 | **這時才判斷「權限總表一次成型」要不要重寫** | 屆時架構已簡化、規格已在手，判斷會容易得多 |
