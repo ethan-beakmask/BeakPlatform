@@ -45,6 +45,7 @@ class NumberingDefaultFor:
     EMPLOYEE = 'EMPLOYEE'    # 企業成員編號預設
     EXTERNAL = 'EXTERNAL'    # 外部廠商預設
     FORM = 'FORM'            # 表單編號預設
+    ORG_ADMIN = 'ORG_ADMIN'  # 企業管理員帳號預設（兩帳號制的管理員那一半）
 
 
 class UserNumberingRule(TenantBaseModel):
@@ -75,7 +76,8 @@ class UserNumberingRule(TenantBaseModel):
     default_for = Column(
         String(20),
         nullable=True,
-        comment='預設用途: EMPLOYEE=企業成員預設, EXTERNAL=外部廠商預設, FORM=表單編號預設, NULL=非預設'
+        comment='預設用途: EMPLOYEE=企業成員預設, EXTERNAL=外部廠商預設, '
+                'FORM=表單編號預設, ORG_ADMIN=企業管理員預設, NULL=非預設'
     )
     is_active = Column(Boolean, default=True, nullable=False, comment='是否啟用')
 

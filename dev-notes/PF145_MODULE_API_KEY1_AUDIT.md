@@ -165,7 +165,7 @@ BELUGA 的 EXTERNAL 帳號 `gg@gmail.com`（只有 `EXTERNAL_USERS` 角色）實
 | 順序 | 內容 | 規模 | 風險 |
 |---|---|---|---|
 | ~~1~~ | ~~`/api/form-center/org-tree` 依身分裁剪~~ **已完成 2026-08-23**（見本節下方） | 小 | 低 |
-| 2 | C 級中選單唯一的 15 支加掛 `page_keys_required` | 小 | 低 |
+| ~~2~~ | ~~C 級中選單唯一的 15 支加掛 `page_keys_required`~~ **已完成 2026-08-23，實際是 29 支**（見本節下方） | 小 | 低 |
 | 3 | B 級「選單候選唯一」47 支，一模組一 commit | 中 | 中（要逐支實測） |
 | 4 | 四支掛在 `/api/` 下的頁面路由：確認去留 | 小 | 低 |
 | 5 | B 級反查不到呼叫者的 104 支：先確認存活再處理 | 大 | — |
@@ -209,6 +209,60 @@ EXTERNAL 拿到 26 bytes 空樹；內部身分的樹無任何 `username` 欄位�
 （`fc_utils.py:103` 的 `/current-user`、`site_map_api.py:560` 的 `$CURRENT_USER_NAME`），
 兩處都是呼叫者自己的資料；平台 API 側輸出 `username` 的端點閘門逐一查過，
 沒有第二條把他人帳號名交給 EXTERNAL 的路徑。
+
+### 第 2 項已完成（2026-08-23），數字更正為 29 支
+
+**先前寫的「15 支」是錯的**：那是憑印象估的（vuln_lifecycle 11 + ai_usage 4），
+沒有實際跑篩選。而且 `scripts/audit_module_api_gates.py` 當時的反查只從 `.js` caller
+往回推 template，漏掉「template 內嵌 script 直接打 API」的寫法（vuln_lifecycle 五個
+頁面全是這樣），所以那 11 支在 CSV 裡是「無選單候選」。腳本已修，重跑後 C 級的
+分布是：**選單唯一 29、多候選 7、無候選 9**。
+
+掛上的 29 支：
+
+| 選單 code | 支數 | 檔案 |
+|---|---:|---|
+| `form_workflow.workflows` | 13 | `workflow_routes.py` |
+| `form_workflow.ai_usage` | 4 | `ai_usage.py` |
+| `form_workflow.templates` | 4 | `template_routes.py`（只有 batch/*） |
+| `vuln_lifecycle.kynd` | 4 | `vuln_lifecycle/api/__init__.py` |
+| `vuln_lifecycle.assets` | 2 | 同上 |
+| `vuln_lifecycle.risk` | 2 | 同上 |
+
+**沒掛的 7 支多候選**：`/api/form-workflow/templates` 五支同時被
+`open_defense.event_routing` 頁使用，`/api/vuln-lifecycle/dashboard/summary` 與
+`/health` 同時對到 dashboard 與 open_defense.dashboard。掛了會誤擋（PF-142 實測過）。
+
+#### vuln_lifecycle 那 8 支要先修選單，不然會擋掉正牌使用者
+
+`vuln_lifecycle.assets/.kynd/.risk` 的 Key1 只開 ORG_ADMIN、Key2 是空的，
+但 `RISK_CONTROLLER` 角色（EMPLOYEE 型）握有全部 `vuln_lifecycle.*` permission，
+API 實測全部 200 —— 症狀是「API 打得到、選單看不到」，與 form_workflow 那邊相反。
+
+處置（Ethan 2026-08-23 拍板）：先讓選單與 API 一致，再掛 page_keys。
+
+- `scripts/migrations/111_open_vuln_lifecycle_menu_to_risk_controller.py`
+  （冪等，`--dry-run` / `--run`）：Key1 補 EMPLOYEE 5 筆、Key2 補 RISK_CONTROLLER 28 筆
+- 出廠預設同步改兩處（MENU-01：只改 DB 的話新建企業會長回舊樣子）：
+  `modules/vuln_lifecycle/__init__.py` 的 `user_types`、
+  `backend/app/defaults/menu_defaults.py` 的 `MENU_ROLE_DEFAULTS`
+- 父選單 `vuln_lifecycle` 是 header 型，依規範只補 Key1、不列入 Key2
+
+#### 驗收
+
+六種身分 × 七支代表性端點，**修改前後狀態碼完全相同**（留證
+`/opt/tmp/verify/20260823-pf145-clevel.log`）—— 這 29 支是加防線，不改變現有行為。
+
+正因為全綠，兩批都做了 **mutation 驗證**（把 `page_keys_required` 暫時 stash 掉再測）：
+
+| 情境 | 移除修復 | 裝回修復 |
+|---|---|---|
+| EXTERNAL 持 `FLOW_DESIGNER` 打 workflows 三支 | 200 200 200 | 403 403 403 |
+| EXTERNAL 持 `RISK_CONTROLLER` 打 vuln 三支 | 200 200 200 | 403 403 403 |
+
+瀏覽器實測：`RISK_CONTROLLER` 的 shen.qing.zhe 現在 navbar 出現「弱點管理」，
+`/vuln/assets` 正常載入 544 筆資產，console 無錯誤。
+完整測試 1 failed（PF-34 已知）/ 623 passed / 2 skipped。
 
 **每一支改完都要用該端點的實際使用者身分實測**（CLAUDE.md TENANT-02 末段），
 測試庫沒有 RBAC seed，單元測試抓不到權限鏈的問題。

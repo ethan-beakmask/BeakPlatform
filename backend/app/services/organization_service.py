@@ -159,6 +159,10 @@ class OrganizationService:
             # 建立預設編號規則
             OrganizationService._create_default_numbering_rules(org)
 
+            # 原始管理員取編號（ADM001 起）。順序不可提前——編號規則要先存在
+            db.session.flush()
+            OrganizationService._assign_admin_employee_id(org, admin_user)
+
             # 建立預設外部廠商群組
             OrganizationService._create_default_external_group(org)
 
@@ -597,7 +601,7 @@ class OrganizationService:
     @staticmethod
     def _create_default_numbering_rules(org: Organization) -> UserNumberingRule:
         """
-        建立預設編號規則（5 個）
+        建立預設編號規則（6 個）
 
         新企業建立時自動產生。格式刻意不完美，
         半強迫管理員進入 /admin/numbering 認真規劃自家編號系統。
@@ -704,9 +708,64 @@ class OrganizationService:
         )
         db.session.add(asset_rule)
 
-        logger.info(f"Default numbering rules (5) created for org {org.code}")
+        # 6. 企業管理員編號 — ADM + 3 位序號（ADM001 起）
+        # 兩帳號制（PERMISSION_MODEL.md §5.1）下管理員帳號原本不發編號，
+        # 於是選人清單遇到同名的成員／管理員帳號時沒有可用的區隔依據（PF-145）。
+        # 管理員帳號數量遠少於員工，3 位序號夠用；企業要改格式自己去 /admin/numbering 調。
+        admin_rule = UserNumberingRule(
+            org_secure_code=org.secure_code,
+            name='預設企業管理員編號',
+            description='ADM + 3 位序號',
+            elements={
+                'components': [
+                    {'type': NumberingElementType.PREFIX, 'order': 1,
+                     'values': ['ADM']},
+                    {'type': NumberingElementType.SEQUENCE, 'order': 2,
+                     'start': 1, 'digits': 3, 'reset_period': 'never'},
+                ],
+                'total_length': 0,
+            },
+            usage_scope=NumberingUsageScope.INTERNAL_ONLY,
+            default_for=NumberingDefaultFor.ORG_ADMIN,
+            is_active=True,
+        )
+        db.session.add(admin_rule)
+
+        logger.info(f"Default numbering rules (6) created for org {org.code}")
 
         return employee_rule
+
+    @staticmethod
+    def _assign_admin_employee_id(org: Organization, admin_user) -> None:
+        """給原始管理員帳號一組管理員編號（ADM001 起）。
+
+        必須排在 _create_default_numbering_rules() 之後——規則不存在時取不到號。
+
+        **刻意不回填既有企業**：每家企業對員工編號的定義都不同，
+        平台無法替他們決定管理員帳號該用哪一段號碼；既有企業要補就自己去
+        /admin/numbering 建規則、再到帳號管理填號。
+        """
+        if not admin_user:
+            return
+
+        from .numbering_service import NumberingService
+
+        rule = NumberingService.get_default_rule(
+            org.secure_code, NumberingDefaultFor.ORG_ADMIN)
+        if not rule:
+            logger.warning(
+                f"No ORG_ADMIN numbering rule for org {org.code}; "
+                f"admin account left without employee_id"
+            )
+            return
+
+        try:
+            admin_user.employee_id = NumberingService.get_next_number(
+                rule, consume=True)
+        except ValueError as exc:
+            # 號碼用完不該讓整個建立企業失敗——沒有編號只是少了顯示上的區隔依據
+            logger.warning(
+                f"Cannot allocate admin employee_id for org {org.code}: {exc}")
 
     @staticmethod
     def _create_default_external_group(org: Organization) -> OrganizationalUnit:

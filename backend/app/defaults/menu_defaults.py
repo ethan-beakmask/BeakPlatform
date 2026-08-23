@@ -681,6 +681,13 @@ MENU_ROLE_DEFAULTS = {
     # 無程式碼建構模組（ORG_ADMIN + SUBSYS_DESIGNER）
     'nocode_builder.sub_systems': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
     'nocode_builder.lookup': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
+
+    # 弱點管理模組（ORG_ADMIN + RISK_CONTROLLER）
+    # 父選單 vuln_lifecycle 是 header 型，依規範不列入 Key2。
+    'vuln_lifecycle.dashboard': ['ORG_ADMIN', 'RISK_CONTROLLER'],
+    'vuln_lifecycle.assets': ['ORG_ADMIN', 'RISK_CONTROLLER'],
+    'vuln_lifecycle.risk': ['ORG_ADMIN', 'RISK_CONTROLLER'],
+    'vuln_lifecycle.kynd': ['ORG_ADMIN', 'RISK_CONTROLLER'],
 }
 
 

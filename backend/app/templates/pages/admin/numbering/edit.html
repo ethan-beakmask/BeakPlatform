@@ -86,9 +86,10 @@
                     <option value="EMPLOYEE" {% if rule and rule.default_for == 'EMPLOYEE' %}selected{% endif %}>{{ _('企業成員編號預設') }}</option>
                     <option value="EXTERNAL" {% if rule and rule.default_for == 'EXTERNAL' %}selected{% endif %}>{{ _('外部廠商預設') }}</option>
                     <option value="FORM" {% if rule and rule.default_for == 'FORM' %}selected{% endif %}>{{ _('表單編號預設') }}</option>
+                    <option value="ORG_ADMIN" {% if rule and rule.default_for == 'ORG_ADMIN' %}selected{% endif %}>{{ _('企業管理員預設') }}</option>
                 </select>
                 <div class="help-text">
-                    {{ _('企業成員預設：新增企業成員帳號時自動使用 ／ 外部預設：新增外部廠商時自動使用 ／ 表單預設：表單送出時自動產生單號') }}
+                    {{ _('企業成員預設：新增企業成員帳號時自動使用 ／ 外部預設：新增外部廠商時自動使用 ／ 表單預設：表單送出時自動產生單號 ／ 企業管理員預設：建立企業時給原始管理員帳號使用') }}
                 </div>
             </div>
         </div>

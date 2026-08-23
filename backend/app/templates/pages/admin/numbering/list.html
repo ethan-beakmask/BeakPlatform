@@ -133,6 +133,8 @@
                 <span class="badge" style="background: #f97316; color: white;">{{ _('外部預設') }}</span>
                 {% elif rule.default_for == 'FORM' %}
                 <span class="badge" style="background: #8b5cf6; color: white;">{{ _('表單預設') }}</span>
+                {% elif rule.default_for == 'ORG_ADMIN' %}
+                <span class="badge" style="background: #b91c1c; color: white;">{{ _('管理員預設') }}</span>
                 {% endif %}
             </td>
             <td>

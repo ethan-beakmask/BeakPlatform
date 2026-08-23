@@ -29,7 +29,11 @@ MODULE_INFO = {
             'icon': 'ri-shield-check-line',
             'parent': None,
             'sort_order': 8,
-            'user_types': ['ORG_ADMIN'],
+            # PF-145：RISK_CONTROLLER 角色（EMPLOYEE 型）握有全部 vuln_lifecycle
+            # permission，卻因為 Key1 只開 ORG_ADMIN 而看不到選單——API 打得到、
+            # 選單看不到。開放 EMPLOYEE 讓兩者一致；實際守門交給 Key2
+            # （MENU_ROLE_DEFAULTS 的 vuln_lifecycle.* -> RISK_CONTROLLER）。
+            'user_types': ['ORG_ADMIN', 'EMPLOYEE'],
             'children': [
                 {
                     'code': 'vuln_lifecycle.dashboard',

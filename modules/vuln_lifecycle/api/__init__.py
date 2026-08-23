@@ -8,7 +8,7 @@ VulnLifecycle Module - API Routes
 from flask import Blueprint, jsonify, request
 from flask_babel import gettext as _
 
-from app.security.decorators import public_route, module_access_required
+from app.security.decorators import public_route, module_access_required, page_keys_required
 from app.platform.auth import require_permission, current_user
 
 # 建立 API Blueprint
@@ -139,6 +139,7 @@ def dashboard_summary():
 
 @api_bp.route('/assets')
 @module_access_required('vuln_lifecycle')
+@page_keys_required('vuln_lifecycle.assets')
 @require_permission('vuln_lifecycle.asset.view')
 @catch_db_unavailable
 def asset_list():
@@ -182,6 +183,7 @@ def asset_list():
 
 @api_bp.route('/assets/<int:asset_id>/findings')
 @module_access_required('vuln_lifecycle')
+@page_keys_required('vuln_lifecycle.assets')
 @require_permission('vuln_lifecycle.finding.view')
 @catch_db_unavailable
 def asset_findings(asset_id):
@@ -297,6 +299,7 @@ def asset_findings(asset_id):
 
 @api_bp.route('/risk/adjustments')
 @module_access_required('vuln_lifecycle')
+@page_keys_required('vuln_lifecycle.risk')
 @require_permission('vuln_lifecycle.risk.view')
 @catch_db_unavailable
 def risk_list():
@@ -317,6 +320,7 @@ def risk_list():
 
 @api_bp.route('/risk/adjust', methods=['POST'])
 @module_access_required('vuln_lifecycle')
+@page_keys_required('vuln_lifecycle.risk')
 @require_permission('vuln_lifecycle.risk.adjust')
 @catch_db_unavailable
 def risk_adjust():
@@ -367,6 +371,7 @@ def risk_adjust():
 
 @api_bp.route('/kynd/summary')
 @module_access_required('vuln_lifecycle')
+@page_keys_required('vuln_lifecycle.kynd')
 @require_permission('vuln_lifecycle.kynd.view')
 @catch_db_unavailable
 def kynd_summary():
@@ -451,6 +456,7 @@ def kynd_summary():
 
 @api_bp.route('/kynd/findings')
 @module_access_required('vuln_lifecycle')
+@page_keys_required('vuln_lifecycle.kynd')
 @require_permission('vuln_lifecycle.kynd.view')
 @catch_db_unavailable
 def kynd_findings():
@@ -502,6 +508,7 @@ def kynd_findings():
 
 @api_bp.route('/kynd/sessions')
 @module_access_required('vuln_lifecycle')
+@page_keys_required('vuln_lifecycle.kynd')
 @require_permission('vuln_lifecycle.kynd.view')
 @catch_db_unavailable
 def kynd_sessions():
@@ -537,6 +544,7 @@ def kynd_risk_list():
 
 @api_bp.route('/kynd/risk/adjust', methods=['POST'])
 @module_access_required('vuln_lifecycle')
+@page_keys_required('vuln_lifecycle.kynd')
 @require_permission('vuln_lifecycle.risk.adjust')
 @catch_db_unavailable
 def kynd_risk_adjust():
