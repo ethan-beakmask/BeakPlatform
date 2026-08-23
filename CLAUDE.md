@@ -350,6 +350,11 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
   規格 `dev-notes/ACCESS_CENTER_SPEC.md`
 - Phase B 起頁面路由**不掛身分 decorator**：url 型選單路徑前綴即 PageRoleGuard 領地；
   單頁專屬資料 API 掛 `@page_keys_required('<menu_code>')`
+- **「路徑前綴即領地」只對 url 型選單成立**（2026-08-23 實測）。`link_type='route'`
+  且 `link_target` 是 Flask **endpoint 名**時，`PageRoleGuard._find_matching_menu_items()`
+  走的是精確比對，領地就只有那一個 endpoint —— 同 blueprint 的詳細頁／編輯頁
+  （例 `/spec-formulate/<sc>/edit`）**完全不進雙鑰匙判定，直接放行**。
+  這類子頁只能靠自己的 decorator。盤點與處置見待辦 **PF-148**
 - Phase D 元件級：動作按鈕一律包 `{% if can('<permission_code>') %}`（JS 用 `BkCaps.can()`），
   對應動作 API 掛 `@permission_required('<permission_code>')`（capability_service）；
   指引 `dev-notes/COMPONENT_VISIBILITY_GUIDE.md`（四層防線總表 + NoCode_Builder 消費規則）
@@ -648,6 +653,19 @@ SELECT code, link_type, link_target FROM menu_items WHERE parent_secure_code = '
 **禁止事項**：
 - **禁止** 為了「選單無法點擊」而修改 `menu_service.py` 的 `_resolve_link()` -- 問題一定出在 DB 的 link_type 設定
 - **禁止** 為了選單顯示問題而修改權限控制邏輯（`auth_interceptor`、`page_permission_service`、`page_role_guard`）-- 這些是安全核心，選單顯示異常的根因是 DB 資料設定錯誤
+
+**`menu_items` 與 Key1 是全域單一筆，只有 Key2 是 per-org**（2026-08-23 踩到）：
+
+| 東西 | 是否 per-org |
+|---|---|
+| `menu_items`（含模組選單） | **否**，全平台一筆，`org_secure_code` 指向系統企業 |
+| Key1 `menu_permissions` | **否**，掛在 menu 的 secure_code 上 |
+| Key2 `menu_role_requirements` | **是**，帶 `org_secure_code`，各企業獨立 |
+
+所以查 Key2 現況**一定要 `GROUP BY` 企業**，不分組會把各企業的角色 `string_agg`
+成一串，看不出「只有某一家缺一筆」。`form_workflow.center` 的出廠預設漏了
+`EXTERNAL_USERS`（新企業的廠商進不了表單中心、被 302 強制登出且不報錯）
+就是這樣才被發現的，修法見 `scripts/migrations/113_form_center_menu_external_users.py`。
 
 **改選單一定是「DB + 出廠預設」兩件事**（2026-08-13 踩到）：
 `backend/app/defaults/menu_defaults.py` 的 `CORE_MENUS` 與 `MENU_ROLE_DEFAULTS`
@@ -1141,6 +1159,22 @@ today_start = local_day_start_utc(getattr(g, 'timezone', 'Asia/Taipei'), datetim
 - **User**: beakplatform
 - **Password**: postgres123（開發環境）
 - **本機資料皆為測試資料**：變更後可忽略舊資料，不用修正舊資料，除非用戶要求
+
+### 造／清測試帳號（2026-08-23 試誤才弄對）
+
+- `POST /api/users/` 必填四項：`native_name` / `english_name` / `username` /
+  `employee_id`（少了只回「本國姓名、英文姓名、帳號為必填」，不會列出 employee_id）。
+  **它會忽略 `user_type`，一律建成 EMPLOYEE 並順帶指派 `EMPLOYEE` 角色** ——
+  要 EXTERNAL 測試帳號得建完再用 SQL 改 `user_type`、補 `EXTERNAL_USERS`、
+  拿掉那筆 `EMPLOYEE` 指派（不拿掉會讓 Key2 測試多一個變因）。是不是缺陷見待辦 **PF-150**
+- 硬刪一個測試帳號要**按 FK 順序清四張表**，少一張就被擋，
+  而錯誤訊息只說 "still referenced" 不會一次列出全部：
+
+```
+user_role_assignments -> audit_logs -> used_user_numbers -> users
+```
+
+（試建**企業**則不能用 SQL 硬刪，走 `/hostconfig/hard-delete`，見 PF-145 交接檔。）
 
 ### 每個 session 都會撞一次的欄位名（2026-08-09 逐一試誤才弄對）
 

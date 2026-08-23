@@ -4,6 +4,13 @@
 與 **`dev-notes/PF145_MODULE_API_KEY1_AUDIT.md`**。兩者都是自足的，本檔只寫
 「下一步要做什麼」與「已經踩過不要再踩的坑」。
 
+**本檔引用的東西全部在本機、直接讀就有**，不需要另外要權限：
+`dev-notes/PF145_MODULE_API_KEY1_AUDIT.md`（盤點全文）、
+`dev-notes/pf145_module_api_audit.csv`（334 筆機器可讀）、
+`/opt/tmp/verify/20260823-pf145-stage3.log`（施工3 的原始輸出）。
+BBN 待辦走 MCP（`note_search` / `note_update`），全域 CLAUDE.md 的 Auto Memory 段有說明；
+**MCP 不可用時本檔與 audit 文件已足夠動工**，只是收尾少一步回寫。
+
 ---
 
 ## 一、目前進度
@@ -37,16 +44,113 @@ venv/bin/python scripts/audit_module_api_gates.py --summary  # 只看統計
 
 ### 施工4：四支掛在 `/api/` 前綴下的頁面路由
 
-`/api/workflows/list`、`/api/workflows/designer`、`/api/forms/list`、`/api/forms/designer`
-回的是 HTML 整頁。`/api/` 在 `PageRoleGuard.SKIP_PREFIXES` 內，
-所以這四頁**結構上不可能被雙鑰匙保護**。要決定的是搬到正常前綴、還是各自掛 decorator。
-規模小，但會動到既有連結，要先查誰在連它們。
+回的是 HTML 整頁，而 `/api/` 在 `PageRoleGuard.SKIP_PREFIXES` 內，
+所以這四頁**結構上不可能被雙鑰匙保護**。定義位置與現況（2026-08-23 查證）：
 
-### 施工5：B 級反查不到呼叫者的那批
+| 路由 | 檔案:行 | endpoint | decorator | 渲染的模板 |
+|---|---|---|---|---|
+| `/api/forms/list` | `modules/form_workflow/api/forms.py:115` | `form_workflow_api_forms.list_page` | `module_access_required('form_workflow')` | `template_list.html` |
+| `/api/forms/designer[/<sc>]` | `forms.py:125` | `...forms.designer` | 同上 | `form_designer.html` |
+| `/api/workflows/list` | `modules/form_workflow/api/workflows.py:69` | `...workflows.list_page` | 同上 | `workflow_list.html` |
+| `/api/workflows/designer[/<sc>]` | `workflows.py:79` | `...workflows.designer` | 同上 | `workflow_designer.html` |
 
-**動工前先重跑腳本拿當下數字**，施工3 之後 B 級已從 153 降到 101。
-這批的重點不是「掛上去」而是「先確認它還活著」：多半是設計器內部 API
-或已無人使用的舊端點。逐支確認前不要動。
+**兩件已經查過、會直接決定做法的事實**：
+
+1. **沒有任何地方連它們。** 全專案零命中：
+
+```bash
+grep -rn "api/workflows/list\|api/workflows/designer\|api/forms/list\|api/forms/designer" \
+  --include=*.html --include=*.js --include=*.py backend modules \
+  | grep -v "api/forms.py\|api/workflows.py"
+```
+
+2. **它們與 `web/__init__.py` 的正牌頁面渲染同一批模板**，是重複實作：
+
+| `/api/` 這份 | 正牌頁面 |
+|---|---|
+| `/api/forms/list` | `/forms/templates`（`web/__init__.py:37`） |
+| `/api/forms/designer/<sc>` | `/forms/templates/<sc>`（`web/__init__.py:54`） |
+| `/api/workflows/list` | `/forms/workflows`（`web/__init__.py:84`） |
+| `/api/workflows/designer/<sc>` | `/forms/workflows/<sc>`（`web/__init__.py:101`） |
+
+**所以最可能的正解是刪掉這四支**（連同 `render_template` 的 import 殘留），
+不是搬路徑也不是補 decorator。動工前只要再確認一次上面那條 grep 仍是零命中、
+以及沒有外部書籤依賴（問用戶），就可以刪。
+若決定保留，才需要選「搬到 `web_bp` 前綴」或「補 `@admin_required`」。
+
+驗收：刪除後 `/forms/templates`、`/forms/workflows` 及兩個設計器頁以 ORG_ADMIN
+與 FLOW_DESIGNER 各開一次（VERIFY-01 要實際點，不能只 curl），
+完整測試無新增失敗。
+
+### 施工5：B 級剩下的那批
+
+**「反查不到呼叫者的 104 支」這個講法已經過時**，施工3 之後 B 級是 101 支，
+而且組成與原本的描述不一樣。當下分組（2026-08-23，重跑腳本後）：
+
+| 分組 | 支數 | 模組分佈 |
+|---|---:|---|
+| 完全反查不到 caller | 10 | form_workflow 6、nocode_builder 4 |
+| 有 caller 但反查不到選單 | 86 | **nocode_builder 51**、form_workflow 34、spec_formulate 1 |
+| 選單候選多於一個 | 4 | 刻意不掛 |
+| 選單唯一 | 1 | `GET /api/mappings`，刻意不掛（PF-149 是另一支） |
+
+重跑分組（**不要相信上表的數字，自己跑**）：
+
+```bash
+cd /opt/BeakPlatform-dev
+venv/bin/python scripts/audit_module_api_gates.py     # 先更新 CSV
+venv/bin/python - <<'EOF'
+import csv, collections
+rows = list(csv.DictReader(open('dev-notes/pf145_module_api_audit.csv')))
+b = [r for r in rows if r['level'] == 'B']
+groups = {
+    '無 caller':            [r for r in b if not r['callers']],
+    '有 caller 但無選單':   [r for r in b if r['callers'] and not r['menu_candidates']],
+    '多候選':               [r for r in b if ';' in r['menu_candidates']],
+    '選單唯一':             [r for r in b if r['menu_candidates'] and ';' not in r['menu_candidates']],
+}
+for name, g in groups.items():
+    print(f'{name:22} {len(g):4}  ', dict(collections.Counter(r['module'] for r in g)))
+    for r in g if name == '無 caller' else []:
+        print('     ', r['func'], r['url'])
+EOF
+```
+
+CSV 欄位是 `level,module,url,file,line,func,gates,callers,menu_candidates`。
+
+#### nocode_builder 那 51 支現在做不了，不要硬做
+
+**NoCode 目前一筆 `menu_items` 都沒有**（鐵人賽期間刻意隱藏，見 CLAUDE.md
+「NoCode 選單目前刻意隱藏中」）。`page_keys_required` 對不存在的選單是
+**fail-closed 直接 403**，所以現在掛任何一支都會把 ORG_ADMIN 以外的人全部擋死。
+
+反查不到選單也不是「沒有歸屬」，只是**沒有選單可反查**。NoCode 的元件級控制走
+D2（`can()` + `@permission_required('nocode_builder.manage')`）與 portal 的
+access_matrix，見 CLAUDE.md PERM-02。**這 51 支要等選單復原後再談，
+或改用 D2 判準單獨處理，都不屬於「補 Key1」這條線。**
+
+實務上施工5 可動的是 **form_workflow 的 40 支**（6 + 34）與 spec_formulate 1 支。
+
+#### 「還活著嗎」與死碼怎麼處置（先訂判準再逐支看）
+
+判準（由強到弱，任一成立即視為活著）：
+
+1. 前端有呼叫（grep 全專案 `.js` / `.html`，**含 template 內嵌 script**）
+2. 後端有呼叫（另一支 API 或 service 打它）
+3. 是對外契約的一部分（webhook、service account、`scripts/examples/` 的範例腳本）
+4. UI 上有觸發路徑（設計器內部 API 屬這類，要實際點過才算數）
+
+四種結論的處置：
+
+| 結論 | 處置 |
+|---|---|
+| 活著、只被單一選單頁用 | 掛該頁 `@page_keys_required` |
+| 活著、跨頁 | 不掛，在 audit 文件記明理由（PF-142 的教訓） |
+| 活著，但該頁的鑰匙比端點受眾寬很多 | 改掛符合實際受眾的 decorator（施工3 的 colcfg 就是這樣） |
+| 確認沒人用 | **刪掉**（不要留著加 decorator）。刪完重跑腳本更新 CSV，完整測試比對基準 |
+
+**「刪」要有依據**：上面四條判準逐條查過、且 `git log -S` 看得出它何時失去呼叫者。
+拿不準就開單另議，不要留在原地。
 
 ### 施工3 的三個發現已開單，不在 PF-145 底下
 
@@ -123,11 +227,28 @@ sudo systemctl restart beakplatform-dev.service && sleep 5
 page_keys 之前，看起來像修復生效、其實什麼都沒證明。查法：
 
 ```sql
-SELECT o.code, m.module_code, r.code FROM module_access_control m
-JOIN organizations o ON o.secure_code=m.org_secure_code
-LEFT JOIN roles r ON r.secure_code=m.target_secure_code WHERE m.is_deleted=false;
--- BELUGA: form_workflow -> FORM_DESIGNER/FLOW_DESIGNER；spec_formulate -> SPEC_DESIGNER
+SELECT o.code, m.module_code, m.target_type, coalesce(r.code, u.username) AS target
+FROM module_access_control m
+JOIN organizations o ON o.secure_code = m.org_secure_code
+LEFT JOIN roles r ON r.secure_code = m.target_secure_code
+LEFT JOIN users u ON u.secure_code = m.target_secure_code
+WHERE m.is_deleted = false ORDER BY o.code, m.module_code;
 ```
+
+2026-08-23 的全部內容就這 6 筆（**其餘企業零 ACL ＝ fail-open 全開**）：
+
+```
+BELUGA  form_workflow   ROLE  FORM_DESIGNER
+BELUGA  form_workflow   ROLE  FLOW_DESIGNER
+BELUGA  spec_formulate  ROLE  SPEC_DESIGNER
+SYSTEM  form_workflow   ROLE  FLOW_DESIGNER
+SYSTEM  form_workflow   ROLE  FORM_DESIGNER
+SYSTEM  spec_formulate  ROLE  SPEC_DESIGNER
+```
+
+所以 mutation 的身分組合是：**EXTERNAL `gg`（`WhFFX8FPLciXl9_aAudBtn`，BELUGA）
+＋ 上表 BELUGA 那一列的角色**。open_defense / vuln_lifecycle 在 BELUGA 沒有 ACL，
+用任何內部角色都通得過模組閘門。
 
 **不要用「對照組也 403」來推論擋在哪一層**——施工2 第一次就這樣誤判，
 實際上對照組是被 permission 擋的，不是 Key1。只有 stash 這招問得出來。
@@ -183,7 +304,37 @@ done
 **判準是「與基準逐格相同」，不是某個絕對值。** 這批修改是加防線、不改變現有行為，
 所以任何一格變動都要能解釋（施工2 唯一預期的變動是 vuln 那組，而那組先跑了
 migration 111 所以最後也沒變）。SYSTEM_ADMIN 打別家企業的資源得 404 是租戶隔離，
-不是壞掉。
+不是壞掉。**先寫下預期再比對**，不要事後替意外的變動編理由。
+
+#### 非 GET 端點也要進矩陣（施工3 用的寫法，不會改到任何資料）
+
+上面那個迴圈只打 GET。**用 GET 去打 POST 端點量不到東西**——Flask 在進 decorator
+之前就回 405。要把 POST/PUT/PATCH/DELETE 納入矩陣：
+
+- **路徑參數一律填一個不存在的識別碼**（施工3 用 `PF145NOSUCH0000000001`）
+- body 給 `{}`，帶 `Content-Type: application/json`
+- 需要 CSRF token（非 `@csrf.exempt` 的端點），從登入後任一頁的 meta 取
+
+授權通過就落到 **404 或 400**（查無資料／驗證失敗），被擋就是 **403** ——
+403 與 404/400 的差別就是訊號，而且一筆資料都不會寫進去。
+
+```bash
+rm -f /tmp/cj.txt
+curl -s -c /tmp/cj.txt -X POST "$BASE/dev/quick-login" -H 'Content-Type: application/json' \
+  -d "{\"user_id\":\"$id\"}" -o /dev/null
+TOKEN=$(curl -s -b /tmp/cj.txt -c /tmp/cj.txt "$BASE/dashboard" \
+  | grep -o 'csrf-token" content="[^"]*' | cut -d'"' -f3)
+curl -s -b /tmp/cj.txt -o /dev/null -w '%{http_code}' -X DELETE \
+  "$BASE/api/mappings/PF145NOSUCH0000000001" \
+  -H 'Content-Type: application/json' -H "X-CSRFToken: $TOKEN" -d '{}'
+```
+
+施工3 完整的 45 端點矩陣腳本（含每支的 method）留在
+`/opt/tmp/verify/20260823-pf145-stage3.log` 的輸出裡，端點清單可照抄改。
+
+**建立型端點（`POST /api/mappings`、`POST .../specs`）用空 body 是安全的**——
+兩支都在取 `org` 之後就檢查必填欄位並回 400，不會建出東西。**新增別的建立型端點
+到矩陣前要自己確認這一點**，不要假設。
 
 ### 查 permission 的實際持有者
 
@@ -253,15 +404,37 @@ EOF
 **只 stash「加了 decorator 的那幾個 api 檔」**，migration、`menu_defaults.py`、
 模組 `__init__.py` 都不要 stash——那些是選單設定，stash 掉會讓驗證的變因不只一個。
 
-測試身分用「EXTERNAL 帳號 + 該功能的內部角色」。beluga 的 gg
-（`WhFFX8FPLciXl9_aAudBtn`）已經有兩筆 soft-deleted 的測試指派，復活即可用完再關：
+測試身分用「EXTERNAL 帳號 + **該企業模組 ACL 實際放行的**那個角色」
+（挑錯角色會被 ACL 擋在 page_keys 之前，見上一節的對照表）。
+beluga 的 gg（`WhFFX8FPLciXl9_aAudBtn`）已經有幾筆 soft-deleted 的測試指派，
+復活即可、用完再關。**不要記 id，每次自己查**（id 會隨著別人建/刪指派而變）：
 
 ```bash
-# FLOW_DESIGNER（id=443）／SECURITY_STAFF（id=444）
-$PG -q -c "UPDATE user_role_assignments SET is_deleted=false WHERE id=443;"
+# 看 gg 現在有哪些指派（含已撤銷的）
+$PG -c "
+SELECT ura.id, r.code, o.code AS org, ura.is_deleted, ura.assigned_by
+FROM user_role_assignments ura
+JOIN roles r ON r.secure_code=ura.role_secure_code
+JOIN organizations o ON o.secure_code=ura.org_secure_code
+WHERE ura.user_secure_code='WhFFX8FPLciXl9_aAudBtn' ORDER BY ura.id;"
+
+# 復活其中一筆（把 <角色> 換成上面查到的 code）
+$PG -q -c "
+UPDATE user_role_assignments SET is_deleted=false
+WHERE user_secure_code='WhFFX8FPLciXl9_aAudBtn'
+  AND role_secure_code=(SELECT secure_code FROM roles
+      WHERE code='<角色>' AND org_secure_code='_9c8TewkRkCBEf3XsUdqeF' AND is_deleted=false);"
 # ...測試...
-$PG -q -c "UPDATE user_role_assignments SET is_deleted=true, assigned_by='pf142-boundary-test' WHERE id=443;"
+$PG -q -c "
+UPDATE user_role_assignments SET is_deleted=true, assigned_by='<本次任務代號>-mutation'
+WHERE user_secure_code='WhFFX8FPLciXl9_aAudBtn'
+  AND role_secure_code=(SELECT secure_code FROM roles
+      WHERE code='<角色>' AND org_secure_code='_9c8TewkRkCBEf3XsUdqeF' AND is_deleted=false);"
 ```
+
+（`_9c8TewkRkCBEf3XsUdqeF` 是 BELUGA 的 `org_secure_code`。
+2026-08-23 收工時 gg 的狀態：`EXTERNAL_USERS` 生效中，
+`SECURITY_STAFF`、`FLOW_DESIGNER` 都是 `is_deleted=true`。）
 
 需要其他角色時自己 INSERT 一筆、測完 DELETE（用可辨識的 secure_code 方便清）：
 
