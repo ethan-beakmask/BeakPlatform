@@ -232,14 +232,19 @@ def main():
     for r in rows:
         cands = set()
         for c in r['callers']:
-            if not c.endswith('.js'):
+            # caller 是 template 就直接用它；是 JS 才要再找哪些 template include 它。
+            # 只處理 .js 會漏掉「template 內嵌 script 直接打 API」的情況
+            # （vuln_lifecycle 五個頁面全是這樣寫的）。
+            if c.endswith('.html'):
+                tpls = [c]
+            elif c.endswith('.js'):
+                tpls = subprocess.run(
+                    ['grep', '-rl', '--include=*.html', os.path.basename(c),
+                     'modules', 'backend/app/templates'],
+                    cwd=ROOT, capture_output=True, text=True).stdout.strip().split('\n')
+            else:
                 continue
-            base = os.path.basename(c)
-            hosts = subprocess.run(
-                ['grep', '-rl', '--include=*.html', base, 'modules',
-                 'backend/app/templates'],
-                cwd=ROOT, capture_output=True, text=True).stdout.strip().split('\n')
-            for tpl in hosts:
+            for tpl in tpls:
                 for key, funcs in render_map.items():
                     if not tpl or key not in tpl:
                         continue

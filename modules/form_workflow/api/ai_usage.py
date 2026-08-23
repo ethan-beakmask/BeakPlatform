@@ -10,7 +10,7 @@ from flask_babel import gettext as _
 from app import db
 from app.platform.auth import require_permission
 from app.platform.data import get_current_org
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 
 from ..models.ai_usage_record import FwAiUsageRecord
 from ..services import ai_usage_service
@@ -93,6 +93,7 @@ def _parse_local_date(value, tz_name, *, end=False):
 
 @api_bp.route('/ai-usage/config', methods=['GET'])
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.ai_usage')
 @require_permission('form_workflow.admin')
 def get_ai_usage_config():
     org, error = _org_or_error()
@@ -103,6 +104,7 @@ def get_ai_usage_config():
 
 @api_bp.route('/ai-usage/config', methods=['PUT'])
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.ai_usage')
 @require_permission('form_workflow.admin')
 def update_ai_usage_config():
     org, error = _org_or_error()
@@ -149,6 +151,7 @@ def update_ai_usage_config():
 
 @api_bp.route('/ai-usage/summary', methods=['GET'])
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.ai_usage')
 @require_permission('form_workflow.admin')
 def get_ai_usage_summary():
     org, error = _org_or_error()
@@ -189,6 +192,7 @@ def get_ai_usage_summary():
 
 @api_bp.route('/ai-usage/records', methods=['GET'])
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.ai_usage')
 @require_permission('form_workflow.admin')
 def get_ai_usage_records():
     org, error = _org_or_error()

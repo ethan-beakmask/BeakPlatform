@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from flask import jsonify, request
 
 from app import csrf, db
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.auth import current_user, require_permission
 from app.platform.data import get_current_org
 
@@ -211,6 +211,7 @@ def update_template(secure_code):
 @api_bp.route('/templates/batch/delete', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.templates')
 @require_permission('form_workflow.template.delete')
 def batch_delete_templates():
     """批次刪除表單模板（軟刪除）"""
@@ -249,6 +250,7 @@ def batch_delete_templates():
 @api_bp.route('/templates/batch/export', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.templates')
 @require_permission('form_workflow.template.view')
 def batch_export_templates():
     """批次匯出表單模板（JSON）"""
@@ -295,6 +297,7 @@ def batch_export_templates():
 @api_bp.route('/templates/batch/import', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.templates')
 @require_permission('form_workflow.template.create')
 def batch_import_templates():
     """批次匯入表單模板（JSON）
@@ -395,6 +398,7 @@ def batch_import_templates():
 @api_bp.route('/templates/batch/save-new-version', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.templates')
 @require_permission('form_workflow.template.edit')
 def batch_save_new_version_templates():
     """批次另存新版表單模板（複製出新記錄，版本號遞增）"""

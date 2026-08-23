@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from flask import jsonify, request
 
 from app import csrf, db
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.auth import current_user, require_permission
 from app.platform.data import get_current_org
 
@@ -19,6 +19,7 @@ from flask_babel import gettext as _
 
 @api_bp.route('/workflows')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.view')
 def list_workflows():
     """取得工作流模板列表"""
@@ -194,6 +195,7 @@ def list_workflows():
 
 @api_bp.route('/workflows/<secure_code>')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.view')
 def get_workflow(secure_code):
     """取得單一工作流模板"""
@@ -221,6 +223,7 @@ def get_workflow(secure_code):
 @api_bp.route('/workflows', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.create')
 def create_workflow():
     """建立工作流模板"""
@@ -282,6 +285,7 @@ def create_workflow():
 @api_bp.route('/workflows/<secure_code>', methods=['PUT'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.edit')
 def update_workflow(secure_code):
     """更新工作流模板"""
@@ -330,6 +334,7 @@ def update_workflow(secure_code):
 
 @api_bp.route('/workflows/flow-trees')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.view')
 def list_flow_trees():
     """取得流程樹系（主流程及其引用的子流程樹）"""
@@ -427,6 +432,7 @@ def list_flow_trees():
 
 @api_bp.route('/workflows/<secure_code>/unused-subflows')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.view')
 def get_unused_subflows(secure_code):
     """取得指定主流程的未使用專屬子流程清單（含縮圖）"""
@@ -505,6 +511,7 @@ def get_unused_subflows(secure_code):
 
 @api_bp.route('/workflows/<secure_code>/flow-overview')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.view')
 def get_workflow_flow_overview(secure_code):
     """取得工作流模板的流程總圖資料（主流程 graph + 所有子流程 graph，供 Cytoscape 渲染）"""
@@ -583,6 +590,7 @@ def get_workflow_flow_overview(secure_code):
 
 @api_bp.route('/workflows/flow-trees/<secure_code>')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.view')
 def get_flow_tree(secure_code):
     """取得單一主流程的樹系（主流程及其引用的子流程）"""
@@ -697,6 +705,7 @@ def get_flow_tree(secure_code):
 @api_bp.route('/workflows/batch/delete', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.delete')
 def batch_delete_workflows():
     """批次刪除工作流模板（軟刪除）"""
@@ -735,6 +744,7 @@ def batch_delete_workflows():
 @api_bp.route('/workflows/batch/export', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.view')
 def batch_export_workflows():
     """批次匯出工作流模板（含子流程樹系收集）"""
@@ -796,6 +806,7 @@ def batch_export_workflows():
 @api_bp.route('/workflows/batch/import', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.create')
 def batch_import_workflows():
     """批次匯入工作流模板（JSON）
@@ -924,6 +935,7 @@ def batch_import_workflows():
 @api_bp.route('/workflows/batch/save-new-version', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.edit')
 def batch_save_new_version_workflows():
     """批次另存新版工作流模板（複製出新記錄，版本號遞增）"""
@@ -985,6 +997,7 @@ def batch_save_new_version_workflows():
 @api_bp.route('/workflows/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 @require_permission('form_workflow.workflow.delete')
 def delete_workflow(secure_code):
     """
