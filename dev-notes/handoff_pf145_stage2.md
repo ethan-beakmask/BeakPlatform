@@ -79,6 +79,169 @@ sudo systemctl restart beakplatform-dev.service && sleep 5
 
 ---
 
+## 二之二、可直接照抄的指令（本 session 全部實際跑過）
+
+冷讀審核（codex，2026-08-23）指出交接檔缺可執行內容，以下原樣補上。
+
+### 環境
+
+```bash
+cd /opt/BeakPlatform-dev
+BASE=http://192.168.0.16:7000/beakplatform
+PG="PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev"
+# 重啟服務（Python/模板不會自動重載，不重啟等於在測舊程式碼）
+sudo systemctl restart beakplatform-dev.service && sleep 5 && systemctl is-active beakplatform-dev.service
+# 起不來時看這裡（常見成因：殘留的 flask run 佔住 7000 埠）
+sudo journalctl -u beakplatform-dev.service --since "-5 min" | tail -30
+ss -tlnp | grep :7000
+```
+
+### 六種測試身分（beluga 為主，`/dev/quick-login` 免密碼）
+
+| 身分 | user secure_code |
+|---|---|
+| ORG_ADMIN | `jIYEQ-_lZMZNBkVy-hijal` |
+| EMPLOYEE + FLOW_DESIGNER（ethanyu） | `FhsmtyPjsnXYotN-iz_Q-X` |
+| EMPLOYEE + RISK_CONTROLLER（shen.qing.zhe） | `unSuAD3AonAoTQ8TDa7ipd` |
+| 純 EMPLOYEE（aaaa） | `9De0TEngQTU35rbJn7q2Uk` |
+| EXTERNAL（gg） | `WhFFX8FPLciXl9_aAudBtn` |
+| SYSTEM_ADMIN | `nH5liUKQikH1NM2osVVXuF` |
+
+### 基準／驗收矩陣（改之前跑一次，改之後跑一次比對）
+
+```bash
+for who in "ORG_ADMIN:jIYEQ-_lZMZNBkVy-hijal" "FLOW_DESIGNER:FhsmtyPjsnXYotN-iz_Q-X" \
+           "RISK_CONTROLLER:unSuAD3AonAoTQ8TDa7ipd" "純EMPLOYEE:9De0TEngQTU35rbJn7q2Uk" \
+           "EXTERNAL:WhFFX8FPLciXl9_aAudBtn" "SYSTEM_ADMIN:nH5liUKQikH1NM2osVVXuF"; do
+  id=${who#*:}; label=${who%%:*}
+  rm -f /tmp/cj.txt
+  curl -s -c /tmp/cj.txt -X POST "$BASE/dev/quick-login" -H 'Content-Type: application/json' \
+    -d "{\"user_id\":\"$id\"}" -o /dev/null
+  printf '%-22s' "$label"
+  for u in <這批要測的端點路徑>; do
+    printf ' %s' "$(curl -s -b /tmp/cj.txt -o /dev/null -w '%{http_code}' "$BASE$u")"
+  done
+  echo ""
+done
+```
+
+**判準是「與基準逐格相同」，不是某個絕對值。** 這批修改是加防線、不改變現有行為，
+所以任何一格變動都要能解釋（施工2 唯一預期的變動是 vuln 那組，而那組先跑了
+migration 111 所以最後也沒變）。SYSTEM_ADMIN 打別家企業的資源得 404 是租戶隔離，
+不是壞掉。
+
+### 查 permission 的實際持有者
+
+```bash
+$PG -c "
+SELECT p.code AS permission, o.code AS org, r.code AS role, u.username, u.user_type
+FROM permissions p
+JOIN role_permissions rp ON rp.permission_secure_code=p.secure_code AND rp.is_deleted=false
+JOIN roles r ON r.secure_code=rp.role_secure_code AND r.is_deleted=false
+JOIN organizations o ON o.secure_code=r.org_secure_code
+LEFT JOIN user_role_assignments ura ON ura.role_secure_code=r.secure_code AND ura.is_deleted=false
+LEFT JOIN users u ON u.secure_code=ura.user_secure_code AND u.is_deleted=false AND u.is_active=true
+WHERE p.code LIKE '<permission 前綴>%' AND u.username IS NOT NULL
+ORDER BY p.code, o.code;"
+```
+
+**判準**：持有者的 user_type 要在該選單的 Key1 內、角色要在 Key2 內。
+對不上時**以 permission 持有者為準去擴 Key1／Key2**（施工2 的 vuln_lifecycle 就是
+這樣處理的）——因為 permission 是該功能設計時就定好的授權，選單設定才是後來漏配的。
+反過來縮 permission 會把正在用的人擋掉。
+
+### 修改模式（decorator 位置與順序）
+
+插在 `@module_access_required(...)` **之後**、其餘 decorator 之前：
+
+```python
+@bp.route('/xxx', methods=['GET'])
+@module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')   # PF-145：API 不吃雙鑰匙，須自掛 Key1+Key2
+@require_permission('form_workflow.workflow.view')
+def xxx():
+```
+
+import 一律加在既有那行後面，不要另開一行：
+
+```python
+from app.security.decorators import module_access_required, page_keys_required
+```
+
+**既有的 decorator 全部保留**，`page_keys_required` 是加上去的第三道，不是替換。
+
+改完用 AST 逐一驗證掛對目標（`grep` 只能證明字串存在，證明不了掛在哪個函式上）：
+
+```bash
+venv/bin/python - <<'EOF'
+import ast
+TARGETS = {'函式名': 'menu_code', ...}
+tree = ast.parse(open('<檔案路徑>').read())
+seen = {}
+for node in ast.walk(tree):
+    if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        continue
+    for d in node.decorator_list:
+        if isinstance(d, ast.Call):
+            f = d.func
+            name = getattr(f, 'attr', None) or getattr(f, 'id', '')
+            if name == 'page_keys_required' and d.args and isinstance(d.args[0], ast.Constant):
+                seen[node.name] = d.args[0].value
+for fn, code in TARGETS.items():
+    print(('OK ' if seen.get(fn) == code else '!! '), fn, seen.get(fn))
+print('多掛在:', sorted(set(seen) - set(TARGETS)))
+EOF
+```
+
+### mutation 驗證：要 stash 哪些、測試身分怎麼生
+
+**只 stash「加了 decorator 的那幾個 api 檔」**，migration、`menu_defaults.py`、
+模組 `__init__.py` 都不要 stash——那些是選單設定，stash 掉會讓驗證的變因不只一個。
+
+測試身分用「EXTERNAL 帳號 + 該功能的內部角色」。beluga 的 gg
+（`WhFFX8FPLciXl9_aAudBtn`）已經有兩筆 soft-deleted 的測試指派，復活即可用完再關：
+
+```bash
+# FLOW_DESIGNER（id=443）／SECURITY_STAFF（id=444）
+$PG -q -c "UPDATE user_role_assignments SET is_deleted=false WHERE id=443;"
+# ...測試...
+$PG -q -c "UPDATE user_role_assignments SET is_deleted=true, assigned_by='pf142-boundary-test' WHERE id=443;"
+```
+
+需要其他角色時自己 INSERT 一筆、測完 DELETE（用可辨識的 secure_code 方便清）：
+
+```bash
+$PG -q -c "
+INSERT INTO user_role_assignments
+  (user_secure_code, role_secure_code, org_secure_code, assigned_at, assigned_by,
+   created_at, updated_at, is_deleted, secure_code)
+VALUES ('WhFFX8FPLciXl9_aAudBtn','<role secure_code>','_9c8TewkRkCBEf3XsUdqeF',
+        now(),'pf145-mutation', now(), now(), false, 'pf145mutationtest0001');"
+# ...測試...
+$PG -q -c "DELETE FROM user_role_assignments WHERE secure_code='pf145mutationtest0001';"
+```
+
+**驗完務必撤銷**，並用這條確認乾淨：
+
+```bash
+$PG -t -A -F'|' -c "
+SELECT r.code, ura.is_deleted FROM user_role_assignments ura
+JOIN roles r ON r.secure_code=ura.role_secure_code
+WHERE ura.user_secure_code='WhFFX8FPLciXl9_aAudBtn';"
+```
+
+### 分組與收尾
+
+- **「一模組一 commit」的分組依據是 CSV 的 `module` 欄**（`modules/<name>`），
+  不是 menu_code。同一模組內若跨多個 menu_code 仍是一個 commit
+- 完成後三件事：更新 `dev-notes/PF145_MODULE_API_KEY1_AUDIT.md` 第四節的施工順序表
+  （劃掉已完成項並在下方補一段做法與驗收）、`note_update` 回寫 PF-145（atom 5247）
+  照既有那幾段的粒度、重跑 `scripts/audit_module_api_gates.py` 更新 CSV
+- 完整測試基準：`bash scripts/run_tests.sh -q`，約 8 分鐘，
+  **1 failed（PF-34 已知）/ 623 passed / 2 skipped**
+
+---
+
 ## 三、已經踩過的坑（別再踩一次）
 
 - **盤點腳本的反查曾漏掉 `.html` caller**（template 內嵌 script 直接打 API），

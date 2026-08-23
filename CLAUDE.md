@@ -1161,6 +1161,11 @@ today_start = local_day_start_utc(getattr(g, 'timezone', 'Asia/Taipei'), datetim
 | 發行快照指向的表單 | `fw_published_form_workflows.form_template_secure_code` | **`source_form_template_secure_code`**（流程那邊同理是 `source_workflow_template_secure_code`） |
 | 節點執行紀錄指向的流程 | `fw_node_execution_logs.workflow_instance_secure_code` | **`workflow_instance_id`（bigint，指向 `fw_workflow_instances.id`）**；同專案的 `fw_node_execution_queue` 卻是 `workflow_instance_secure_code`，兩張表不一致 |
 | 表單同步佇列的目標表 | `fw_sync_queue.table_name` | **沒有這個欄位**；表名在 `fw_sql_form_registries.table_name`，queue 只存 `form_instance_secure_code` + `published_secure_code` |
+| 選單 Key1 是否可見 | `menu_permissions.is_visible` | **沒有這個欄位**；有記錄＝該 user_type 可見，只有 `menu_secure_code` + `user_type` + `conditions` |
+| 角色指派是否生效 | `user_role_assignments.is_active` | **沒有這個欄位**；用 `is_deleted` ＋ `valid_from` / `valid_until`（date） |
+| 模組 ACL 的表 | `module_access_controls`（複數） | **`module_access_control`**（單數）；`target_type` 是 `ROLE` / `ACCOUNT`，值放 `target_secure_code` |
+| 表單模板的欄位定義 | `fw_form_templates.form_schema` | **`schema`**（jsonb）；另有 `builder_config` / `allowed_editors` |
+| 使用者的員工編號 | `users.employee_number` / `emp_no` | **`users.employee_id`**（varchar 50，組織內唯一）；**兩帳號制的管理員帳號 2026-08-23 起才有號**——新企業由 `_create_default_numbering_rules()` 的第 6 條規則自動發 `ADM001`，既有企業已由 `scripts/migrations/112_backfill_org_admin_employee_id.py` 回填；SYSTEM_ADMIN 型帳號刻意不發（平台級身分不屬企業人事編制） |
 
 ### 每個 session 也會猜錯一次的 URL（2026-08-20 補）
 
@@ -1172,6 +1177,8 @@ blueprint 的 `url_prefix` 與模組名不一致，照模組名猜必 404：
 | 流程**設計器** | `/forms/workflows` | **`/forms/workflows/<workflow_template_secure_code>`**；不帶 sc 的是**列表頁**，兩者都回 200，很容易誤判成「設計器沒壞」 |
 | 配對 API | `/api/form-workflow/...` | **`/api/mappings/...`** |
 | **提交表單觸發流程** | `/api/form-workflow/submit` | **`/api/form-center/submit`**（POST JSON，`@csrf.exempt`，body 要 `published_secure_code` + `subject` + `form_data`；少了 `subject` 回 400） |
+| 弱點管理各頁 | `/vuln-lifecycle/assets` | **`/vuln/assets`**（`vuln_lifecycle/web/__init__.py` 的 prefix 是 `/vuln`；API 那邊反而是 `/api/vuln-lifecycle/...`，兩者不一致） |
+| 規格制定的 API | `/api/spec-formulate/specs` | **`/api/spec-formulate/schema/specs`**（路由全寫在 `schema.py` 的 `register(bp)` 內，bp 是 `schema_bp`） |
 
 **`od_intake_events.case_secure_code` 指向 `fw_workflow_instances`，不是 form_instance。**
 要拿到表單得再 join 一層，直接 join `fw_form_instances` 會全部 NULL：
