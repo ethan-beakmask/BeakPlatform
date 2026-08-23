@@ -27,8 +27,9 @@ TOOL_PATH = REPO_ROOT / 'scripts' / 'route_guard_inventory.py'
 VALID_REVIEW = {'unreviewed', 'confirmed', 'intentional_open'}
 VALID_AUDIENCE = {'SYSTEM_ADMIN', 'ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL',
                   'ANONYMOUS', 'NON_HUMAN'}
+VALID_ANSWER_SOURCE = {'code', 'db', 'none'}
 AUTO_FIELDS = ('rules', 'methods', 'source', 'guards', 'guard_args',
-               'has_internal_check', 'internal_identity_check')
+               'answer_source', 'has_internal_check', 'internal_identity_check')
 
 
 @pytest.fixture(scope='module')
@@ -45,6 +46,11 @@ def test_table_schema_valid(table):
         for field in AUTO_FIELDS:
             if field not in entry:
                 problems.append(f'  - {endpoint}: 缺少自動欄位 {field}')
+        answer_source = entry.get('answer_source')
+        if answer_source not in VALID_ANSWER_SOURCE:
+            problems.append(
+                f'  - {endpoint}: answer_source={answer_source!r} 不是合法值 '
+                f'{sorted(VALID_ANSWER_SOURCE)}')
         review = entry.get('review')
         if review not in VALID_REVIEW:
             problems.append(

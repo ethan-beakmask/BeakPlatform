@@ -48,8 +48,38 @@
 
 | 欄位 | 允許值 |
 |---|---|
+| `answer_source` | `code` / `db` / `none`（自動欄位，見下節） |
 | `max_audience` | `null`（未判定），或 `SYSTEM_ADMIN` / `ORG_ADMIN` / `EMPLOYEE` / `EXTERNAL` / `ANONYMOUS` / `NON_HUMAN` 的清單 |
 | `review` | `unreviewed`（尚未人工判斷）／ `confirmed`（守門正確）／ `intentional_open`（刻意對所有登入者開放，`note` 必須寫理由） |
+
+## `answer_source`：「誰進得來」這個問題由誰回答
+
+複審一條路由時第一個要問的就是這件事，所以它是自動欄位、每條都有。
+
+| 值 | 意思 | 複審時怎麼做 |
+|---|---|---|
+| `code` | decorator 直接鎖死身分上限 | 讀 decorator 就能確認，最快 |
+| `db` | 要查資料庫（選單 Key1/Key2、模組合約與 ACL、permission 指派）才有答案 | **答案隨企業而異**，`note` 要寫明「在什麼資料狀態下成立」 |
+| `none` | 沒有任何收斂身分的守門 | 這就是要優先處理的那批 |
+
+分類規則（`classify_answer_source()`）：有任何一個 `system_admin_required` /
+`admin_required` / `public_route` / 三個非人身分 decorator → `code`；
+否則有 `page_keys_required` / `module_access_required` / permission 系列 → `db`；
+否則 `none`。**`login_required` 刻意不算入任何一邊**——它只要求登入，
+不收斂到某一階身分，所以只掛它的路由是 `none`。
+
+**建立當時的分布（2026-08-23）**：`code` 404（47%）／`db` 301（35%）／`none` 138（16%）。
+`none` 那 138 條 ＝ 84 條完全沒有白名單 decorator ＋ 54 條只掛 `login_required`。
+
+### 這個欄位的已知限制
+
+**只從 decorator 推導，不含 PageRoleGuard 的選單前綴涵蓋**——那需要查 `menu_items`，
+而工具刻意不連資料庫（測試才能在無 DB 環境跑）。
+
+所以**標成 `none` 的路由，仍可能被某個 url 型選單的領地涵蓋**（雙鑰匙會擋）。
+複審 `none` 的條目時要另外確認這件事，不能直接判定成破口。
+反過來說，`link_type='route'` 的選單只守單一 endpoint、不涵蓋子路由（PF-148），
+所以「同 blueprint 的隔壁那條有守」不能當成這條也有守的理由。
 
 ## 複審流程
 
@@ -96,6 +126,7 @@
 | 刪除路由沒清表 | **會** |
 | 加上或拿掉一個守門 decorator | **會** |
 | 改 decorator 的參數（換 menu_code、`check_acl` 由 True 改 False） | **會** |
+| 手改表裡的 `answer_source` | **會**（它由 `guards` 推導，比對時一併驗） |
 | **在函式內部加上或拿掉權限判斷**（`has_internal_check` 變動） | **不會** |
 | **改動 URL 路徑但 endpoint 名不變** | **不會** |
 

@@ -33,15 +33,51 @@ GUARD_NAMES = {
     'api_key_hmac_required',
     'public_route',
 }
+# answer_source：這條路由的「誰進得來」由誰決定。
+# 這是程式碼事實（由哪個機制回答），不是答案本身，所以不隨企業資料變動。
+#   code -- decorator 直接鎖死身分上限，讀程式碼即可確認
+#   db   -- 要查資料庫（選單 Key1/Key2、模組合約與 ACL、permission 指派）才有答案
+#   none -- 沒有任何收斂身分的守門，任何登入帳號都到得了
+# 注意：本欄只從 decorator 推導，**不含 PageRoleGuard 的選單前綴涵蓋**
+# （那需要查 menu_items）。所以標成 none 的路由仍可能被某個 url 型選單的領地涵蓋，
+# 複審時要另外查。詳見 dev-notes/ROUTE_GUARD_TABLE_SPEC.md。
+CODE_ANSWER_GUARDS = {
+    'system_admin_required',
+    'admin_required',
+    'public_route',
+    'service_account_required',
+    'webhook_hmac_required',
+    'api_key_hmac_required',
+}
+DB_ANSWER_GUARDS = {
+    'page_keys_required',
+    'module_access_required',
+    'permission_required',
+    'require_permission',
+    'require_any_permission',
+}
+# login_required 刻意不列入任何一邊：它只要求登入，不收斂到某一階身分。
+
 AUTO_FIELDS = (
     'rules',
     'methods',
     'source',
     'guards',
     'guard_args',
+    'answer_source',
     'has_internal_check',
     'internal_identity_check',
 )
+
+
+def classify_answer_source(guards):
+    """依守門 decorator 判斷「誰進得來」這個問題由誰回答。"""
+    names = set(guards or ())
+    if names & CODE_ANSWER_GUARDS:
+        return 'code'
+    if names & DB_ANSWER_GUARDS:
+        return 'db'
+    return 'none'
 
 _ast_cache = {}
 
@@ -264,6 +300,7 @@ def collect_route_inventory(app=None, config_name='development'):
                 'source': _repo_relative(src_file),
                 'guards': guards,
                 'guard_args': guard_args,
+                'answer_source': classify_answer_source(guards),
                 'has_internal_check': has_internal_check,
                 'internal_identity_check': internal_identity_check,
             },
@@ -279,6 +316,7 @@ def collect_route_inventory(app=None, config_name='development'):
             'source': entry['source'],
             'guards': entry['guards'],
             'guard_args': entry['guard_args'],
+            'answer_source': entry['answer_source'],
             'has_internal_check': entry['has_internal_check'],
             'internal_identity_check': entry['internal_identity_check'],
         }
@@ -333,8 +371,14 @@ def diff_table(current, table):
     for endpoint in sorted(current_endpoints & declared_endpoints):
         expected = declared[endpoint]
         actual = current[endpoint]
-        if expected.get('guards', []) != actual.get('guards', []) or expected.get('guard_args', {}) != actual.get('guard_args', {}):
-            changed.append((endpoint, expected.get('guards', []), expected.get('guard_args', {}), actual.get('guards', []), actual.get('guard_args', {})))
+        if (expected.get('guards', []) != actual.get('guards', [])
+                or expected.get('guard_args', {}) != actual.get('guard_args', {})
+                or expected.get('answer_source') != actual.get('answer_source')):
+            changed.append((
+                endpoint,
+                expected.get('guards', []), expected.get('guard_args', {}), expected.get('answer_source'),
+                actual.get('guards', []), actual.get('guard_args', {}), actual.get('answer_source'),
+            ))
     return missing, stale, changed
 
 
@@ -349,10 +393,11 @@ def print_diff(missing, stale, changed):
             print(f'  - {endpoint}')
     if changed:
         print('守門與程式碼不一致的 endpoint：')
-        for endpoint, old_guards, old_args, new_guards, new_args in changed:
+        for (endpoint, old_guards, old_args, old_src,
+             new_guards, new_args, new_src) in changed:
             print(f'  - {endpoint}')
-            print(f'    表裡 guards={old_guards} guard_args={old_args}')
-            print(f'    程式碼 guards={new_guards} guard_args={new_args}')
+            print(f'    表裡 guards={old_guards} guard_args={old_args} answer_source={old_src}')
+            print(f'    程式碼 guards={new_guards} guard_args={new_args} answer_source={new_src}')
 
 
 def print_stats(current, table):
@@ -361,6 +406,19 @@ def print_stats(current, table):
     print(f"目前 url_map endpoint 數：{len(current)}")
     print(f"宣告表 endpoint 數：{len(declared)}")
     print(f"review: unreviewed 條數：{sum(1 for e in declared.values() if e.get('review') == 'unreviewed')}")
+    print()
+    print('answer_source 分布（「誰進得來」由誰決定）：')
+    src_label = {
+        'code': 'code  程式碼直接鎖死，讀 decorator 即可確認',
+        'db': 'db    要查資料庫（選單/合約/ACL/permission）才有答案',
+        'none': 'none  沒有收斂身分的守門，任何登入帳號都到得了',
+    }
+    src_counter = Counter(entry['answer_source'] for entry in current.values())
+    total = max(len(current), 1)
+    for key in ('code', 'db', 'none'):
+        count = src_counter.get(key, 0)
+        print(f'  {count:4d}  {count * 100 // total:3d}%  {src_label[key]}')
+    print()
     print('守門組合分布：')
     for guards, count in sorted(combos.items(), key=lambda item: (-item[1], item[0])):
         label = ', '.join(guards) if guards else '(無白名單 decorator)'
