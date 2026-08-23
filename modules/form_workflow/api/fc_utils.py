@@ -162,15 +162,15 @@ def get_org_tree():
         else:
             unassigned_users.append(u)
 
-    # PF-145：label 與 data 都不再帶 username（登入帳號名）。
-    # 原本一律顯示「顯示名 (username)」，現在只有真的重名時才加區隔資訊，
-    # 依序試三種：部門名 -> 帳號類型 -> username。
-    #
-    # 為什麼保留 username 當最後一層：兩帳號制（同一個活人有企業成員與
-    # 企業管理員兩個帳號，見 PERMISSION_MODEL.md §5.1）下，兩個帳號的
-    # display_name 常常一模一樣、又都沒有部門，這時前兩層都區隔不了。
-    # 讓兩個選項在畫面上長得完全一樣會讓使用者選錯簽核人，實害大於
-    # 「內部員工看到內部同事的帳號名」——而外部廠商在上面已經整棵樹都拿不到了。
+    # PF-145：label 與 data 都不再帶 username（登入帳號名，外洩即帳號列舉素材）。
+    # 原本一律顯示「顯示名 (username)」，現在只有真的重名時才加區隔資訊：
+    #   第一順位 部門名     —— 最直覺，同部門又同名的機率極低
+    #   第二順位 員工編號   —— 組織內唯一（見 users.employee_id 欄位註解）
+    # 兩者都取不到就不加後綴。**不要拿暱稱（native_name）或 username 來墊**：
+    # 前者可免填、後者正是這次要停止外流的東西。
+    # 已知落差：兩帳號制（PERMISSION_MODEL.md §5.1）的管理員帳號沒有 employee_id，
+    # 所以同名的成員帳號會拿到「(編號)」而管理員帳號沒有後綴——仍分得出來，
+    # 但要靠推理。要更明確就得幫管理員帳號補編號。
     # display_name 是 nullable=False，fallback 鏈的 native_name/username 實務上不會走到。
     _name_counts = Counter(
         (u.display_name or u.native_name or u.username) for u in users)
@@ -180,12 +180,8 @@ def get_org_tree():
         dept_name = u.primary_unit.name if u.primary_unit else ''
         label = dn
         if _name_counts[dn] > 1:
-            hint = dept_name
-            if not hint and u.user_type == UserType.ORG_ADMIN:
-                hint = _('管理員')
-            if not hint:
-                hint = u.username
-            # hint 與顯示名相同時（display_name 就等於 username）加了也沒有資訊量
+            hint = dept_name or (u.employee_id or '')
+            # hint 與顯示名相同時加了也沒有資訊量
             if hint and hint != dn:
                 label = f'{dn} ({hint})'
         return {

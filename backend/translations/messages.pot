@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-23 09:44+0800\n"
+"POT-Creation-Date: 2026-08-23 10:18+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17216,11 +17216,7 @@ msgstr ""
 msgid "找不到此片語"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_utils.py:185
-msgid "管理員"
-msgstr ""
-
-#: ../modules/form_workflow/api/fc_utils.py:400
+#: ../modules/form_workflow/api/fc_utils.py:396
 #, python-format
 msgid "語系 %(locale)s 的欄位設定已儲存"
 msgstr ""
