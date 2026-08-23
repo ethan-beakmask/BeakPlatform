@@ -8,7 +8,7 @@ import tempfile
 from flask import jsonify, request, send_file
 from flask_babel import gettext as _
 
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.data import get_current_org
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,7 @@ def register(bp):
 
     @bp.route('/export/docx', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def export_docx():
         """
         匯出多面向規格書為 Word 文件。
@@ -152,6 +153,7 @@ def register(bp):
 
     @bp.route('/export/pdf', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def export_pdf():
         """
         匯出多面向規格書為 PDF 文件。

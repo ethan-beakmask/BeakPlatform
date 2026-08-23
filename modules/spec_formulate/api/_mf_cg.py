@@ -9,7 +9,7 @@ from flask import jsonify, request
 from flask_babel import gettext as _
 
 from app import db
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.data import get_current_org
 
 logger = logging.getLogger(__name__)
@@ -51,6 +51,7 @@ def register(bp):
 
     @bp.route('/cg/info', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def cg_info():
         """
         取得當前企業的集團共享 DB 資訊
@@ -81,6 +82,7 @@ def register(bp):
 
     @bp.route('/cg/tables', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def cg_list_tables():
         """列出集團共享 DB 中的所有資料表"""
         from modules.spec_formulate.services.schema.pg_table_manager import (
@@ -130,6 +132,7 @@ def register(bp):
 
     @bp.route('/cg/tables/<table_name>/introspect', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def cg_introspect_table(table_name):
         """讀取集團共享 DB 中指定表的結構"""
         from modules.spec_formulate.services.schema.pg_table_manager import (
@@ -154,6 +157,7 @@ def register(bp):
         '/specs/<spec_sc>/cg/compare/<table_name>', methods=['GET']
     )
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def cg_compare(spec_sc, table_name):
         """比對 SPEC 與集團共享 DB 中的表結構"""
         from modules.spec_formulate.models import FwSpecSchema
@@ -189,6 +193,7 @@ def register(bp):
         '/specs/<spec_sc>/cg/create-table', methods=['POST']
     )
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def cg_create_table(spec_sc):
         """
         從 SPEC 在集團共享 DB 建立資料表
@@ -264,6 +269,7 @@ def register(bp):
         '/specs/<spec_sc>/cg/apply-to-table', methods=['POST']
     )
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def cg_apply_to_table(spec_sc):
         """
         SPEC 覆蓋集團共享 DB 中的既有資料表

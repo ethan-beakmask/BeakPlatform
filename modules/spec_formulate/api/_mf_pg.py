@@ -9,7 +9,7 @@ from flask import jsonify, request
 from flask_babel import gettext as _
 
 from app import db
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.data import get_current_org
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ def register(bp):
 
     @bp.route('/pg/ensure-db', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def pg_ensure_db():
         """確保企業專屬 DB 存在，回傳 DB 資訊"""
         from modules.spec_formulate.services.schema.pg_table_manager import (
@@ -45,6 +46,7 @@ def register(bp):
 
     @bp.route('/pg/tables', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def pg_list_tables():
         """列出企業 DB 中的所有資料表"""
         from modules.spec_formulate.services.schema.pg_table_manager import (
@@ -66,6 +68,7 @@ def register(bp):
 
     @bp.route('/pg/tables/<table_name>/introspect', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def pg_introspect_table(table_name):
         """讀取資料表結構"""
         from modules.spec_formulate.services.schema.pg_table_manager import (
@@ -84,6 +87,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>/pg/compare/<table_name>', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def pg_compare(spec_sc, table_name):
         """比對 SPEC 與資料表結構"""
         from modules.spec_formulate.models import FwSpecSchema
@@ -113,6 +117,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>/pg/create-table', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def pg_create_table(spec_sc):
         """
         從 SPEC 建立資料表
@@ -179,6 +184,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>/pg/apply-to-table', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def pg_apply_to_table(spec_sc):
         """
         SPEC 覆蓋既有資料表（新增/修改欄位）
@@ -229,6 +235,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>/pg/unlink-table', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def pg_unlink_table(spec_sc):
         """解除資料表關聯"""
         from modules.spec_formulate.models import FwSpecSchema

@@ -9,7 +9,7 @@ from flask import jsonify, request
 from flask_babel import gettext as _
 
 from app import db
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.data import get_current_org
 
 from ._mf_helpers import _get_user_info, _fields_identical
@@ -24,6 +24,7 @@ def register(bp):
 
     @bp.route('/translate', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def translate_name():
         """
         將中文名稱翻譯為英文識別碼（小寫 snake_case）
@@ -61,6 +62,7 @@ def register(bp):
 
     @bp.route('/data-classes', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def list_data_classes():
         """取得所有 data_class 清單（含格式支援資訊）"""
         from modules.spec_formulate.services.schema.data_class_registry import (
@@ -71,6 +73,7 @@ def register(bp):
     @bp.route('/data-classes/<data_class>/facet-defaults/<facet_name>',
               methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def get_data_class_facet_defaults(data_class, facet_name):
         """取得指定 data_class 在特定格式下的預設 facet 值"""
         from modules.spec_formulate.services.schema.data_class_registry import (
@@ -103,6 +106,7 @@ def register(bp):
 
     @bp.route('/specs', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def list_specs():
         """列出所有多面向規格"""
         from modules.spec_formulate.models import FwSpecSchema
@@ -128,6 +132,7 @@ def register(bp):
 
     @bp.route('/specs', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def create_spec():
         """建立多面向規格"""
         from modules.spec_formulate.models import FwSpecSchema
@@ -186,6 +191,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def get_spec(spec_sc):
         """取得單一多面向規格"""
         from modules.spec_formulate.models import FwSpecSchema
@@ -219,6 +225,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def update_spec(spec_sc):
         """更新多面向規格（自動版本遞增 + 歷史記錄）"""
         from modules.spec_formulate.models import (
@@ -312,6 +319,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>', methods=['DELETE'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def delete_spec(spec_sc):
         """軟刪除多面向規格"""
         from modules.spec_formulate.models import FwSpecSchema
@@ -340,6 +348,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>/history', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def get_history(spec_sc):
         """取得規格版本歷史"""
         from modules.spec_formulate.models import (
@@ -376,6 +385,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>/populate-facet', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def populate_facet(spec_sc):
         """
         為規格的所有欄位填入指定格式的預設 facet 值

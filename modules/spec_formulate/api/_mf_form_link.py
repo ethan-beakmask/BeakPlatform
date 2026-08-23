@@ -9,7 +9,7 @@ from flask import jsonify, request
 from flask_babel import gettext as _
 
 from app import db
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.data import get_current_org
 
 from ._mf_helpers import (
@@ -26,6 +26,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>/versions', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def list_versions(spec_sc):
         """取得規格的所有版本號清單（供匯出選擇版本用）"""
         from modules.spec_formulate.models import (
@@ -153,6 +154,7 @@ def register(bp):
 
     @bp.route('/available-templates', methods=['GET'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def available_templates():
         """列出可關聯的表單模板（未被任何 spec 佔用的）"""
         from modules.spec_formulate.models import FwSpecSchema
@@ -193,6 +195,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>/link-form', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def link_form(spec_sc):
         """
         關聯現有表單模板到 spec
@@ -256,6 +259,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>/unlink-form', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def unlink_form(spec_sc):
         """解除表單關聯"""
         from modules.spec_formulate.models import FwSpecSchema
@@ -279,6 +283,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>/sync-to-form', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def sync_to_form(spec_sc):
         """
         將 spec 的 formio facet 同步回關聯的表單模板
@@ -339,6 +344,7 @@ def register(bp):
 
     @bp.route('/specs/<spec_sc>/create-form', methods=['POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('spec_formulate.spec_schema')
     def create_form(spec_sc):
         """
         從 spec 建立新的 FormIO 表單模板
