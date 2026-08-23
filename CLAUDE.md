@@ -445,6 +445,18 @@ if count == 0:
 要不要改成 fail-closed 是**全平台變更**（會擋掉所有沒設 ACL 的企業），
 屬待辦 PF-145 階段三，不要在改某支 API 時順手做。
 
+### PERM-05: 新增路由必須在守門宣告表登記（2026-08-23 起）
+
+全平台每個 Flask endpoint 的守門責任記在
+`backend/app/security/route_guard_table.yaml`（2026-08-23 建立時 843 筆，**數字會腐爛，
+要現況跑 `--stats`**），由 `scripts/route_guard_inventory.py --update` 維護。
+
+**新增或修改任何路由後必須跑一次 `--update`**，否則
+`backend/tests/test_route_guard_table.py` 會紅（它同時驗「有沒有登記」與
+「登記的守門與程式碼是否一致」）。表記的是**守門責任歸屬**，不是「誰進得來」——
+後者隨企業合約與 ACL 資料而變，禁止寫進表。維護方式與複審流程見
+`dev-notes/ROUTE_GUARD_TABLE_SPEC.md`。
+
 ### TENANT-01: 強制企業隔離
 - 所有查詢包含 `org_secure_code` 過濾
 - PostgreSQL RLS 作為最後防線
