@@ -285,6 +285,13 @@
                     }
                     break;
                 }
+                case 'DecisionWriter': {
+                    if (typeof applyDecisionWriterToConfig === 'function'
+                        && applyDecisionWriterToConfig(config)) {
+                        changed = true;
+                    }
+                    break;
+                }
                 // Converge: 即時寫入 config，不需要在此處理
             }
 

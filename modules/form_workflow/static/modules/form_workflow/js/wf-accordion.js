@@ -100,7 +100,8 @@
                 'FormAdapter', 'End', 'Converge', 'SqlExecutor',
                 'ParallelFork', 'ParallelJoin',
                 'NavbarBroadcast', 'AlertBroadcast',
-                'Abandon', 'SubSystemProvision', 'ApiKeyAction'
+                'Abandon', 'SubSystemProvision', 'ApiKeyAction',
+                'DecisionWriter'
             ];
             const hasAdditionalSettings = nodesWithSettings.includes(type);
 
@@ -147,6 +148,7 @@
             if (type === 'SubSystemProvision')   info += renderSubSystemProvisionPanel(node, nodeId);
             if (type === 'ApiKeyAction')         info += renderApiKeyActionPanel(node, nodeId);
             if (type === 'AiAgent')              info += renderAiAgentPanel(node, nodeId);
+            if (type === 'DecisionWriter')       info += renderDecisionWriterPanel(node, nodeId);
             if (type === 'ParallelFork')         info += renderParallelForkPanel(node, nodeId);
             if (type === 'ParallelJoin')         info += renderParallelJoinPanel(node, nodeId);
 
@@ -191,6 +193,7 @@
                 const cfg = node.data('config') || {};
                 setTimeout(() => loadApiKeyActionKeys(cfg.key_source === 'static' ? (cfg.key_id || '') : ''), 100);
             }
+            if (type === 'DecisionWriter') setTimeout(() => toggleDwFields(), 50);
             if (type === 'Branch') {
                 const cfg = node.data('config') || {};
                 const rules = cfg.rules || [];
