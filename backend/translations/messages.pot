@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-23 03:50+0800\n"
+"POT-Creation-Date: 2026-08-23 09:44+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -457,43 +457,43 @@ msgstr ""
 msgid "密碼變更成功"
 msgstr ""
 
-#: app/api/auth.py:989 app/api/auth.py:1087
+#: app/api/auth.py:1002 app/api/auth.py:1100
 msgid "已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證"
 msgstr ""
 
-#: app/api/auth.py:1039 app/api/auth.py:1076
+#: app/api/auth.py:1052 app/api/auth.py:1089
 msgid "請輸入帳號"
 msgstr ""
 
-#: app/api/auth.py:1119
+#: app/api/auth.py:1132
 msgid "無效的驗證連結"
 msgstr ""
 
-#: app/api/auth.py:1123
+#: app/api/auth.py:1136
 msgid "驗證連結已過期，請重新申請"
 msgstr ""
 
-#: app/api/auth.py:1127
+#: app/api/auth.py:1140
 msgid "此驗證連結已使用過"
 msgstr ""
 
-#: app/api/auth.py:1148
+#: app/api/auth.py:1161
 msgid "請輸入驗證碼"
 msgstr ""
 
-#: app/api/auth.py:1157
+#: app/api/auth.py:1170
 msgid "驗證碼錯誤或已過期"
 msgstr ""
 
-#: app/api/auth.py:1200
+#: app/api/auth.py:1213
 msgid "已寄送暫時密碼到您的信箱，請使用暫時密碼登入後變更密碼"
 msgstr ""
 
-#: app/api/auth.py:1226
+#: app/api/auth.py:1239
 msgid "找不到目標企業"
 msgstr ""
 
-#: ../modules/form_workflow/api/ai_usage.py:37 app/api/auth.py:1231
+#: ../modules/form_workflow/api/ai_usage.py:37 app/api/auth.py:1244
 #: app/api/enterprise_settings.py:54 app/api/enterprise_settings.py:68
 #: app/api/enterprise_settings.py:95 app/api/enterprise_settings.py:113
 #: app/api/enterprise_settings.py:192 app/api/enterprise_settings.py:214
@@ -505,7 +505,7 @@ msgstr ""
 msgid "找不到企業"
 msgstr ""
 
-#: app/api/auth.py:1307 app/api/enterprise_settings.py:266
+#: app/api/auth.py:1320 app/api/enterprise_settings.py:266
 msgid "請提供密碼"
 msgstr ""
 
@@ -17216,7 +17216,11 @@ msgstr ""
 msgid "找不到此片語"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_utils.py:367
+#: ../modules/form_workflow/api/fc_utils.py:185
+msgid "管理員"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_utils.py:400
 #, python-format
 msgid "語系 %(locale)s 的欄位設定已儲存"
 msgstr ""

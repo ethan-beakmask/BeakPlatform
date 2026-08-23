@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-23 03:50+0800\n"
+"POT-Creation-Date: 2026-08-23 09:44+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -460,47 +460,47 @@ msgstr "New password cannot be the same as the current password"
 msgid "密碼變更成功"
 msgstr "Password changed successfully"
 
-#: app/api/auth.py:989 app/api/auth.py:1087
+#: app/api/auth.py:1002 app/api/auth.py:1100
 msgid "已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證"
 msgstr ""
 "A password reset verification email has been sent. Please complete "
 "verification within 10 minutes"
 
-#: app/api/auth.py:1039 app/api/auth.py:1076
+#: app/api/auth.py:1052 app/api/auth.py:1089
 msgid "請輸入帳號"
 msgstr "Please enter an account"
 
-#: app/api/auth.py:1119
+#: app/api/auth.py:1132
 msgid "無效的驗證連結"
 msgstr "Invalid verification link"
 
-#: app/api/auth.py:1123
+#: app/api/auth.py:1136
 msgid "驗證連結已過期，請重新申請"
 msgstr "Verification link has expired. Please request a new one"
 
-#: app/api/auth.py:1127
+#: app/api/auth.py:1140
 msgid "此驗證連結已使用過"
 msgstr "This verification link has already been used"
 
-#: app/api/auth.py:1148
+#: app/api/auth.py:1161
 msgid "請輸入驗證碼"
 msgstr "Please enter the verification code"
 
-#: app/api/auth.py:1157
+#: app/api/auth.py:1170
 msgid "驗證碼錯誤或已過期"
 msgstr "Verification code is incorrect or expired"
 
-#: app/api/auth.py:1200
+#: app/api/auth.py:1213
 msgid "已寄送暫時密碼到您的信箱，請使用暫時密碼登入後變更密碼"
 msgstr ""
 "A temporary password has been sent to your email. Please log in with it "
 "and change your password"
 
-#: app/api/auth.py:1226
+#: app/api/auth.py:1239
 msgid "找不到目標企業"
 msgstr "Target organization not found"
 
-#: ../modules/form_workflow/api/ai_usage.py:37 app/api/auth.py:1231
+#: ../modules/form_workflow/api/ai_usage.py:37 app/api/auth.py:1244
 #: app/api/enterprise_settings.py:54 app/api/enterprise_settings.py:68
 #: app/api/enterprise_settings.py:95 app/api/enterprise_settings.py:113
 #: app/api/enterprise_settings.py:192 app/api/enterprise_settings.py:214
@@ -512,7 +512,7 @@ msgstr "Target organization not found"
 msgid "找不到企業"
 msgstr "Organization not found"
 
-#: app/api/auth.py:1307 app/api/enterprise_settings.py:266
+#: app/api/auth.py:1320 app/api/enterprise_settings.py:266
 msgid "請提供密碼"
 msgstr "Please provide a password"
 
@@ -17847,7 +17847,11 @@ msgstr "The company has not yet established a dedicated database"
 msgid "找不到此片語"
 msgstr "This phrase cannot be found"
 
-#: ../modules/form_workflow/api/fc_utils.py:367
+#: ../modules/form_workflow/api/fc_utils.py:185
+msgid "管理員"
+msgstr "Administrator"
+
+#: ../modules/form_workflow/api/fc_utils.py:400
 #, python-format
 msgid "語系 %(locale)s 的欄位設定已儲存"
 msgstr "Field settings for language %(locale)s saved"

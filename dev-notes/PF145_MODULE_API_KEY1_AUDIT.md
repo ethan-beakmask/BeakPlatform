@@ -164,13 +164,44 @@ BELUGA 的 EXTERNAL 帳號 `gg@gmail.com`（只有 `EXTERNAL_USERS` 角色）實
 
 | 順序 | 內容 | 規模 | 風險 |
 |---|---|---|---|
-| 1 | `/api/form-center/org-tree` 依身分裁剪（已確認的洩漏） | 小 | 低 |
+| ~~1~~ | ~~`/api/form-center/org-tree` 依身分裁剪~~ **已完成 2026-08-23**（見本節下方） | 小 | 低 |
 | 2 | C 級中選單唯一的 15 支加掛 `page_keys_required` | 小 | 低 |
 | 3 | B 級「選單候選唯一」47 支，一模組一 commit | 中 | 中（要逐支實測） |
 | 4 | 四支掛在 `/api/` 下的頁面路由：確認去留 | 小 | 低 |
 | 5 | B 級反查不到呼叫者的 104 支：先確認存活再處理 | 大 | — |
 | 6 | （階段三）模組 ACL fail-open → fail-closed + 建企業時 seed | 大 | **高，全平台** |
 | 7 | （階段三）`roles` 加 user_type 約束 | 大 | **高，全平台** |
+
+### 第 1 項已完成（2026-08-23）
+
+做法是 A + C 併行，**沒有**加掛 `page_keys_required`（表單中心對 EXTERNAL 是刻意開放的，
+掛了會擋掉正常的廠商填單）：
+
+- **A**：`current_user.is_external` 時直接回空樹。UserPicker 的可選對象本來就只有
+  EMPLOYEE/ORG_ADMIN，廠商拿這棵樹沒有用途
+- **C**：`data` 不再帶 `username`，`label` 也不再是「顯示名 (username)」
+
+**C 案原本設計的「重名改用部門名區隔」在真實資料下不夠用**——兩帳號制
+（同一個活人的企業成員帳號與管理員帳號，`PERMISSION_MODEL.md` §5.1）下，
+兩個帳號 `display_name` 相同、又都沒有部門，拿掉 username 後畫面上會出現
+兩個一模一樣的選項，使用者選簽核人時無從分辨。改成三層 fallback：
+
+```
+部門名 -> 帳號類型（管理員）-> username
+```
+
+最後一層實務上只在「同名 + 同部門 + 同類型」時觸發，而此時對象已限定為內部員工
+（外部廠商整棵樹都拿不到），看到同事的帳號名不構成洩漏。
+實測結果是 `ethanyu` 與 `ethanyu (管理員)`，正好對應兩帳號制的場景。
+
+驗收留證 `/opt/tmp/verify/20260823-pf145-orgtree.log`：
+EXTERNAL 拿到 26 bytes 空樹；內部身分的樹無任何 `username` 欄位；
+瀏覽器實測選人 modal 渲染正常、點選後 `secure_code` 正確寫進 `submission.data`。
+
+反向檢查：全專案模組 API 只剩兩處輸出 `username`
+（`fc_utils.py:103` 的 `/current-user`、`site_map_api.py:560` 的 `$CURRENT_USER_NAME`），
+兩處都是呼叫者自己的資料；平台 API 側輸出 `username` 的端點閘門逐一查過，
+沒有第二條把他人帳號名交給 EXTERNAL 的路徑。
 
 **每一支改完都要用該端點的實際使用者身分實測**（CLAUDE.md TENANT-02 末段），
 測試庫沒有 RBAC seed，單元測試抓不到權限鏈的問題。

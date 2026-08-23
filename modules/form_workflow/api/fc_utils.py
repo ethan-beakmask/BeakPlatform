@@ -2,6 +2,7 @@
 表單中心 - 輔助功能（當前用戶、組織樹、欄位設定、欄位權限處理）
 """
 import copy
+from collections import Counter
 from datetime import datetime
 
 from flask import jsonify, request, g
@@ -123,6 +124,15 @@ def get_org_tree():
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
+    # PF-145：外部廠商一律拿空樹。
+    # UserPicker 的可選對象只有企業成員（下面的 users 查詢就只取 EMPLOYEE/ORG_ADMIN），
+    # 廠商拿到這棵樹沒有用途，卻會外洩完整部門結構與全部內部帳號——
+    # 過去連 username 都給，那是帳號列舉與「觸發登入鎖定把人鎖出系統」的現成素材。
+    # 這支端點的閘門是模組合約（表單中心對廠商刻意開放），所以擋不能靠 decorator，
+    # 只能在這裡依身分裁剪回傳範圍。
+    if current_user.is_external:
+        return jsonify({'success': True, 'data': []})
+
     org_sc = current_user.org_secure_code
 
     # 取得所有啟用部門
@@ -152,17 +162,40 @@ def get_org_tree():
         else:
             unassigned_users.append(u)
 
+    # PF-145：label 與 data 都不再帶 username（登入帳號名）。
+    # 原本一律顯示「顯示名 (username)」，現在只有真的重名時才加區隔資訊，
+    # 依序試三種：部門名 -> 帳號類型 -> username。
+    #
+    # 為什麼保留 username 當最後一層：兩帳號制（同一個活人有企業成員與
+    # 企業管理員兩個帳號，見 PERMISSION_MODEL.md §5.1）下，兩個帳號的
+    # display_name 常常一模一樣、又都沒有部門，這時前兩層都區隔不了。
+    # 讓兩個選項在畫面上長得完全一樣會讓使用者選錯簽核人，實害大於
+    # 「內部員工看到內部同事的帳號名」——而外部廠商在上面已經整棵樹都拿不到了。
+    # display_name 是 nullable=False，fallback 鏈的 native_name/username 實務上不會走到。
+    _name_counts = Counter(
+        (u.display_name or u.native_name or u.username) for u in users)
+
     def _user_node(u):
         dn = u.display_name or u.native_name or u.username
+        dept_name = u.primary_unit.name if u.primary_unit else ''
+        label = dn
+        if _name_counts[dn] > 1:
+            hint = dept_name
+            if not hint and u.user_type == UserType.ORG_ADMIN:
+                hint = _('管理員')
+            if not hint:
+                hint = u.username
+            # hint 與顯示名相同時（display_name 就等於 username）加了也沒有資訊量
+            if hint and hint != dn:
+                label = f'{dn} ({hint})'
         return {
             'id': u.secure_code,
-            'label': dn + ' (' + u.username + ')' if u.username != dn else dn,
+            'label': label,
             'data': {
                 'type': 'person',
                 'secure_code': u.secure_code,
-                'username': u.username,
                 'display_name': dn,
-                'dept_name': u.primary_unit.name if u.primary_unit else '',
+                'dept_name': dept_name,
             },
         }
 
