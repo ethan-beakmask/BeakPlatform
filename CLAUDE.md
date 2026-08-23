@@ -348,13 +348,23 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 - 權限管理 UI 統一入口：`/access/` 權限管理中心（功能授權/角色/帳號配角色/健檢；
   舊 `/permissions/`、`/roles/`、`/admin/account-roles/` 已退役，`/menu/` 只管選單結構）；
   規格 `dev-notes/ACCESS_CENTER_SPEC.md`
-- Phase B 起頁面路由**不掛身分 decorator**：url 型選單路徑前綴即 PageRoleGuard 領地；
+- **頁面路由一律自己掛身分 decorator；雙鑰匙是額外一層，不是唯一一層。**
   單頁專屬資料 API 掛 `@page_keys_required('<menu_code>')`
-- **「路徑前綴即領地」只對 url 型選單成立**（2026-08-23 實測）。`link_type='route'`
-  且 `link_target` 是 Flask **endpoint 名**時，`PageRoleGuard._find_matching_menu_items()`
-  走的是精確比對，領地就只有那一個 endpoint —— 同 blueprint 的詳細頁／編輯頁
-  （例 `/spec-formulate/<sc>/edit`）**完全不進雙鑰匙判定，直接放行**。
-  這類子頁只能靠自己的 decorator。盤點與處置見待辦 **PF-148**
+
+  > 2026-08-23 修訂。原文是「Phase B 起頁面路由**不掛**身分 decorator：
+  > url 型選單路徑前綴即 PageRoleGuard 領地」。前半是無條件的祈使句、
+  > 後半才有條件，於是被當成通則沿用——**這就是 PF-148 那批破口的來源**。
+  > 實際上專案裡絕大多數頁面本來就有掛 decorator，只有新寫的模組頁照著這句話沒掛。
+- **雙鑰匙領地的實際範圍，取決於選單的 `link_type`**（2026-08-23 實測，
+  現況 route 型 30 個 / url 型 26 個）：
+  - `link_type='url'` → 守整個**路徑前綴**，子頁一起守
+  - `link_type='route'` 且 `link_target` 是 Flask **endpoint 名** →
+    `PageRoleGuard._find_matching_menu_items()` 走**精確比對**，領地只有那一個 endpoint。
+    同 blueprint 的詳細頁／編輯頁（例 `/spec-formulate/<sc>/edit`）
+    **完全不進雙鑰匙判定，直接放行**
+
+  所以「隔壁那條有守」不能當成這條也有守的理由。盤點與處置見待辦 **PF-148**
+- 新增或改動路由後必須更新守門宣告表（見 **PERM-05**），漏掛守門會被測試抓到
 - Phase D 元件級：動作按鈕一律包 `{% if can('<permission_code>') %}`（JS 用 `BkCaps.can()`），
   對應動作 API 掛 `@permission_required('<permission_code>')`（capability_service）；
   指引 `dev-notes/COMPONENT_VISIBILITY_GUIDE.md`（四層防線總表 + NoCode_Builder 消費規則）
