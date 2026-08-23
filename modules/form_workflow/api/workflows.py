@@ -651,6 +651,7 @@ def get_node_definitions():
         '操作': 'operation',
         '整合': 'integration',
         '安全': 'security',
+        '資安處置': 'security_ops',
         '系統': 'system_admin',
     }
 

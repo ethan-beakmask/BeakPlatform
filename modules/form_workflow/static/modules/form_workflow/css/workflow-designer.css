@@ -301,6 +301,8 @@
         .palette-node.operation .node-icon { background: #efebe9; color: #795548; }
         .palette-node.integration { border-left-color: #607D8B; }
         .palette-node.integration .node-icon { background: #eceff1; color: #607D8B; }
+        .palette-node.security_ops { border-left-color: #DC2626; }
+        .palette-node.security_ops .node-icon { background: #fee2e2; color: #DC2626; }
 
         /* ==================== 流程清單 ==================== */
         .workflow-list-item {
