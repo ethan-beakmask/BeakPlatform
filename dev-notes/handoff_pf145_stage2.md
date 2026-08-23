@@ -48,6 +48,16 @@ venv/bin/python scripts/audit_module_api_gates.py --summary  # 只看統計
 這批的重點不是「掛上去」而是「先確認它還活著」：多半是設計器內部 API
 或已無人使用的舊端點。逐支確認前不要動。
 
+### 施工3 的三個發現已開單，不在 PF-145 底下
+
+| 單號 | 內容 |
+|---|---|
+| **PF-148** | route 型選單只守單一 endpoint，同 blueprint 的子路由不受雙鑰匙管。實測 49 條不受涵蓋的頁面路由逐條判過，真正的缺口只有 `/spec-formulate/<sc>/edit` 一條 |
+| **PF-149** | `GET /api/mappings/available` 反查不到呼叫者，先確認存活再決定去留（本來屬施工5，單獨追蹤） |
+| **PF-150** | `POST /api/users/` 忽略 `user_type`、一律建成 EMPLOYEE 並順帶指派 `EMPLOYEE` 角色 |
+
+`note_search("PF-148")` 取全文。**施工5 動工時 PF-149 可以一起收掉。**
+
 ### 施工3 留下來的三條判讀教訓（施工5 會再遇到）
 
 **一、CSV 的 `callers` 欄是按 URL 前綴聚合的，不是該端點的呼叫者清單。**

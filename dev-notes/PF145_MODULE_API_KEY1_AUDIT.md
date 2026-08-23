@@ -368,6 +368,14 @@ FLOW_DESIGNER 的欄位設定鈕 `offsetParent === null`、規格管理 2 筆、
 重跑盤點後分級：**A35 / B101 / C16 / D170 / E12**（B 減 52、D 增 52）。
 **B 級選單唯一只剩 1 支**，就是刻意不掛的 `list_mappings`。
 
+#### 施工3 發現、已另外開單的三件
+
+| 單號 | 內容 |
+|---|---|
+| **PF-148** | route 型選單（`link_target` 是 endpoint 名）只守那一個 endpoint，同 blueprint 的子路由不進雙鑰匙判定。實測 49 條不受涵蓋的頁面路由逐條判過，真正的缺口只有 `/spec-formulate/<sc>/edit` |
+| **PF-149** | `GET /api/mappings/available` 反查不到呼叫者（`mappings.py` 裡唯一沒處理的一支） |
+| **PF-150** | `POST /api/users/` 忽略 `user_type`、一律建成 EMPLOYEE 並順帶指派 `EMPLOYEE` 角色 |
+
 ---
 
 ## 五、逐支清單
