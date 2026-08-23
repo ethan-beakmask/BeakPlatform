@@ -1172,6 +1172,15 @@ today_start = local_day_start_utc(getattr(g, 'timezone', 'Asia/Taipei'), datetim
 **時間差運算（SLA 倒數、逾時判定、滾動 24h 視窗）不受此條影響**，維持 UTC——
 那是兩個時間點相減，與時區無關。只有「切在某個日曆日邊界」才要換算。
 
+**手打 SQL 查「最近 N 分鐘」時 `now()` 是台北時間，而欄位存 naive UTC**
+（2026-08-24 踩到）：`created_at > now() - interval '15 minutes'` 會被 8 小時偏移吃掉，
+**回 0 筆**，看起來像「功能沒動作」。查近 7 天沒事是因為 7 天遠大於 8 小時，
+所以這個坑只在短時窗出現。正確寫法：
+
+```sql
+WHERE created_at > (now() AT TIME ZONE 'UTC') - interval '15 minutes'
+```
+
 
 ## 資料庫資訊
 
@@ -1351,6 +1360,39 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 不要提議在平台內實作主機加固。要動 PF-112 就照工單做那一件事。
 真的發現新的獨立風險，先問用戶，不要自己接著往下修。
 
+### 平台端 EDL 黑名單（2026-08-24 起，PF-154 commit `552d3ad5`）
+
+**封鎖決策現在有兩份 EDL，內容本來就不同，不要當成同步失敗**：
+
+| | 平台端（`.16`） | od-bridge（`.20`） |
+|---|---|---|
+| 收哪些決策 | 該企業**所有**有效 block，不看 `enforcement_points` | 只收標了 `edl` 的決策 |
+| 唯一實作 | `modules/open_defense/services/edl_service.py` | `.20` 的 `od_bridge/enforcers/edl.py` |
+| 位置 | `/srv/beakshare/edl/<org_sc>/blocklist.txt`（`.env` 的 `OD_EDL_OUTPUT_DIR`） | `http://192.168.0.20:8500/edl` |
+
+三件猜不到的：
+
+- **過期依 `expires_at` 判斷，不看 `status`**。只接 EDL、沒有其他執行端的部署裡，
+  決策會一直停在 `pending`，依 status 判斷的話過期項目永遠不會從清單掉出去
+- **fail-closed ＝「不寫檔」而不是「寫空檔」**。空 EDL 在防火牆語意上等於解除全部封鎖，
+  一次 DB 故障就清空防線。任何例外一律保留既有檔案
+- **`observe` 動作不可加 `edl` 執行點**：od-bridge 的 EDL enforcer 只認
+  block/allow/unblock，收到 observe 回 `unsupported_action`，整筆決策會從
+  `applied` 掉成 `partial`。改 DecisionWriter 的 `enforcement_points` 時要照 action 分
+
+存取面：SMB `\\192.168.0.16\beakshare`（免帳密，`hosts allow` 只有 `.10`/`.16`/`.100`/`127.0.0.1`），
+HTTP `/edl/<org_sc>/blocklist.txt`（`@public_route` ＋ `OD_EDL_ALLOWED_IPS` 白名單 ＋ 60/min，
+**所有拒絕情形一律 404**）。cron 每分鐘 `scripts/cron/od_render_edl.py`。
+對外部署說明 `docs/install/edl.md`。
+
+**`.20` 的 8500 自 2026-08-24 起也放行 `.10`**（Windows 工作站要用瀏覽器讀 EDL）。
+要改 `.20` 的 nft 規則**不要跑 `nftables-bootstrap.sh`**——那支是 `delete table` + 重建，
+會清空現有 blocklist elements；用 `nft replace rule` 就地換，再同步
+`/etc/nftables.conf` 與 repo 副本。
+
+**Samba 密碼與 Linux 系統密碼是兩套獨立密碼庫**，SSH 密碼在 SMB 這邊不算數，
+改系統密碼也不會同步。設定要用 `sudo smbpasswd -a <帳號>`（需 tty 互動）。
+
 ### 事件的真實權威是 `.20` 的 ClickHouse，不是平台的案件表（2026-08-15 起）
 
 **平台 `od_intake_events` 只是被 throttle 過的子集，不能用來回答「有多少攻擊」。**
@@ -1375,7 +1417,7 @@ curl -s "http://192.168.0.20:8123/?database=secstack" \
 曾被刪光、2026-08-08 才從 eve.json 歸檔回灌並改成 180 天分層保留。
 **跨越 2026-08-08 的時間窗不要宣稱「這段期間只有 N 筆」。**
 
-留在本檔的是五個「唯一實作」，新增功能一律加在這裡，**不要各自重寫**：
+留在本檔的是六個「唯一實作」，新增功能一律加在這裡，**不要各自重寫**：
 
 | 檔案 | 管什麼 | 繞過的後果 |
 |---|---|---|
@@ -1383,6 +1425,7 @@ curl -s "http://192.168.0.20:8123/?database=secstack" \
 | `modules/open_defense/services/routing_service.py` | intake 事件 → form_template 的規則式路由 | intake 是對外 webhook，各自查表會讓路由行為分歧 |
 | `modules/open_defense/services/payload_profile_service.py` | 原生 payload 的路徑取值、扁平化、共同軸線正規化 | 各自攤平會讓 form_data 的 key 命名分歧，表單欄位對不上就整片空白 |
 | `modules/open_defense/services/protected_target_service.py` | 封鎖目標的保護清單判定（PF-83） | 各自比對網段會讓「不得封鎖」的邊界分歧，而錯誤方向是封掉自家設備 |
+| `modules/open_defense/services/edl_service.py` | 平台端 EDL 黑名單渲染（PF-154 起） | 各自組清單會讓「哪些 IP 該封」出現兩種答案，而錯的那份會直接進防火牆 |
 | `wf-dnd-nodes.js::resolveNodeIconUrl()` | 流程設計器節點圖示 URL | 6 處曾各寫一份，導致所有從 DB 載入的 graph 節點全變空方框 |
 
 - **共同軸線 6 個 key 是相容性契約**：`severity_id` / `actor_ip` / `target_host` /
