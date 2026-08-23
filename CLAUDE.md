@@ -1218,6 +1218,7 @@ user_role_assignments -> audit_logs -> used_user_numbers -> users
 | API Key 是否可用 | `api_keys.is_active` | **`api_keys.status`**（`active` / `suspended`） |
 | 角色是否唯一 | `roles.code` 唯一 | **只有 `secure_code` 唯一**，`ix_roles_code` 是非唯一索引 —— 不同企業的 `SECURITY_STAFF` 是兩筆不同 secure_code |
 | 角色綁哪種身分 | `roles.user_type` | **沒有這個欄位**；角色與 user_type 無關聯，任何角色都能指派給任何身分（見 PERM-03） |
+| 一個帳號「是不是 ORG_ADMIN」 | 看它有沒有 `ORG_ADMIN` 角色 | **`user_type` 與角色 code 是兩回事，但四個名字完全相同**：`SYSTEM_ADMIN` / `ORG_ADMIN` / `EMPLOYEE` / `EXTERNAL_USERS` 出廠時每家企業都會建同名角色。身分硬界線一律看 `users.user_type`，角色看 `user_role_assignments`→`roles.code`（2026-08-24 用戶與 AI 都在此混淆過） |
 | OD 路由規則的條件 | `od_form_template_mappings.conditions` | **`match_rules`**（jsonb） |
 | intake 事件的處理狀態 | `od_intake_events.status` | **沒有這個欄位**；有沒有建成案件看 `case_secure_code IS NOT NULL` |
 | intake 事件的來源 IP | `od_intake_events.actor_ip` | **沒有這個欄位**。全部欄位只有 `correlation_id / intake_key_secure_code / source_system / event_class / severity_id / raw_body / signature_verified / case_secure_code / received_at`——IP 埋在 `raw_body` 的 OCSF JSON 裡，要查 IP 一律去 `.20` ClickHouse 的 `events.actor_ip` |
@@ -1279,6 +1280,8 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   curl -s -c cj.txt -X POST "$BASE/dev/quick-login" \
     -H 'Content-Type: application/json' -d "{\"user_id\":\"$USC\"}"
   # ORG_ADMIN admin-ethanyu@beluga.com 的 user_id 是 jIYEQ-_lZMZNBkVy-hijal
+  # EMPLOYEE ethanyu@beluga.com（持 FLOW_DESIGNER + SECURITY_STAFF，測 Key2 場景用）
+  #          的 user_id 是 FhsmtyPjsnXYotN-iz_Q-X
   ```
 - 常用 API 回應格式備忘：`GET /api/menu` 回 `{menu:[...]}`（樹狀，key 是 `menu` 不是 items）；
   權限中央 API（/api/permissions/*）的企業參數名是 `org_code`（不是 org）
@@ -1501,10 +1504,15 @@ Suricata 架在 `.20` 這個流量出口上，外部訪客經反代進來時它�
   項目，或流程節點設 `allow_protected_target: true`（後者會在
   `decision_metadata.protected_override` 留稽核痕跡）。節點另有
   `on_protected: 'error'|'skip'`，預設 `error`（流程停住等人處理）
-- **節點的這兩個設定目前只能改 graph JSON**：DecisionWriter 沒有設計器屬性面板，
-  而 `config_schema` 沒有任何前端消費者（面板是 `wf-node-*.js` 的硬編碼 switch，
-  現有分支只涵蓋 15 種節點型別）。migration 098 是為了讓 DB 定義完整，
-  **不會讓設計器多出可設定的欄位**。補面板見待辦 PF-84
+- **這兩個設定 2026-08-24 起在設計器上點得到**（PF-84，`wf-node-decision-writer.js`）：
+  點防禦決策節點 → 右側面板最下方的「封鎖保護清單」區塊。該區塊只在
+  `action='block'` 且 `target_type` 屬 ip／ipv6／cidr 時顯示（其餘組合本來就不檢查），
+  **但兩個 input 一律留在 DOM 且照樣被收集**——隱藏是「用不到」不是「清掉設定」，
+  直接不渲染的話使用者切個動作再存檔就會靜默弄丟覆寫設定
+- **`workflow_node_definitions.config_schema` 仍然沒有任何前端消費者**（這條沒變）：
+  屬性面板是 `wf-node-*.js` 的硬編碼分派（`wf-accordion.js::showNodeInfo`），
+  **往 DB 補 schema 不會讓設計器多出欄位**，一定要寫對應的 render／collect 函式。
+  migration 098 當初只是讓 DB 定義完整
 
 **`od_form_template_mappings` 是 `priority` 由大到小評估、命中即停**
 （`routing_service.py::evaluate_routing_rules`，`order_by(priority.desc(), id.asc())`）。
@@ -2153,6 +2161,47 @@ AI 移除不掉。改這個檔案前先讀檔頭那段安全設計說明。
 - enqueue 掛在 `workflow_engine.py:477`，**流程結束時**才寫（終態資料，含簽核者修改）
 - 企業獨立資料庫用 `beakplatform` 帳號**連不進去**（權限不足），
   要查得 `sudo -u postgres psql -d org_<id>`
+
+### 流程設計器的節點清單與分類（2026-08-24 PF-84 期間釐清）
+
+**`require_system_admin=true` 在本平台的實際效果是「沒有任何帳號看得到」**，
+不是「限系統管理員」：`/api/workflows/data/node-definitions` 掛
+`@module_access_required('form_workflow')`，而唯一的 SYSTEM_ADMIN
+（`admin@system.local`，屬系統企業）沒有這個模組的合約，打該端點回 **403**。
+所以 `DecisionWriter` 從 2026-05-09 上線到 2026-08-24 之間，**左側工具列對任何人都不存在**。
+（已於 migration 114 改成 false，暴露面是流程設計頁雙鑰匙放行的 ORG_ADMIN 與
+`FLOW_DESIGNER`。判斷理由寫在該 migration 的註解裡。）
+
+**新增一個節點分類要改四個地方，漏任一處的症狀都是「類別不出現」且不報錯**：
+
+| 位置 | 內容 |
+|---|---|
+| DB `workflow_node_definitions.category` | 中文分類名（例 `資安處置`） |
+| `api/workflows.py::get_node_definitions` 的 `category_map` | 中文 → key（`security_ops`） |
+| `workflow-designer-init.js` | `CATEGORY_NAMES`、`CATEGORY_ICONS`、**`categoryOrder`** 三個都要；沒列進 `categoryOrder` 的分類會被**靜默略過** |
+| `workflow-designer.css` | `.palette-node.<key>`（沒加只是沒顏色，不影響功能） |
+
+**畫布上的節點 id 有兩種來源，格式不同是正常的**：
+
+| 來源 | id 長相 |
+|---|---|
+| 建置腳本直接寫 graph JSON（如 `od_workflow_graphs.py`） | 作者自取的語意化字串 `node-Decision-confirm` |
+| 設計器拖拉（`wf-dnd-nodes.js::addNode`） | `` `node-${型別}-${流水號}` `` |
+
+流水號 `nodeCounter` 是**全域共用不分型別**，載入既有流程時由
+`wf-render.js` 掃描所有節點 id 的數字尾碼取最大值續編（所以會跳號，那是防撞號）。
+**id 建立後固定不變**——連線靠它錨定，改節點名稱不會改 id。
+
+**要驗防禦決策面板時開這個**（beluga，五顆 DecisionWriter 節點涵蓋
+block／unblock／observe 三種 action）：
+
+```
+http://192.168.0.16:7000/beakplatform/forms/workflows/7LJRvpSPUYcmK1M1wcOTzY
+```
+
+另外兩個含該節點的流程：`8bhmC3N-TDYYT7W5s0bYC3`（SOC 團隊版，2 顆）、
+`1bBpvNh6bWi5lVZwBz2NHQ`（標準版，1 顆）。**畫布是 canvas，DOM 點不到節點**，
+自動化驗收一律 `cy.$('#<node-id>').emit('tap')` 觸發面板，面板本身才是 DOM。
 
 ### 用腳本產生流程 graph 時的三個坑（2026-08-20，全部實際踩到）
 
