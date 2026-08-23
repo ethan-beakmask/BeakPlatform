@@ -166,7 +166,7 @@ BELUGA 的 EXTERNAL 帳號 `gg@gmail.com`（只有 `EXTERNAL_USERS` 角色）實
 |---|---|---|---|
 | ~~1~~ | ~~`/api/form-center/org-tree` 依身分裁剪~~ **已完成 2026-08-23**（見本節下方） | 小 | 低 |
 | ~~2~~ | ~~C 級中選單唯一的 15 支加掛 `page_keys_required`~~ **已完成 2026-08-23，實際是 29 支**（見本節下方） | 小 | 低 |
-| 3 | B 級「選單候選唯一」47 支，一模組一 commit | 中 | 中（要逐支實測） |
+| ~~3~~ | ~~B 級「選單候選唯一」47 支，一模組一 commit~~ **已完成 2026-08-23，實際掛 52 支**（見本節下方） | 中 | 中（要逐支實測） |
 | 4 | 四支掛在 `/api/` 下的頁面路由：確認去留 | 小 | 低 |
 | 5 | B 級反查不到呼叫者的 104 支：先確認存活再處理 | 大 | — |
 | 6 | （階段三）模組 ACL fail-open → fail-closed + 建企業時 seed | 大 | **高，全平台** |
@@ -267,9 +267,113 @@ API 實測全部 200 —— 症狀是「API 打得到、選單看不到」，與
 **每一支改完都要用該端點的實際使用者身分實測**（CLAUDE.md TENANT-02 末段），
 測試庫沒有 RBAC seed，單元測試抓不到權限鏈的問題。
 
+### 第 3 項已完成（2026-08-23），實際掛 52 支
+
+commit `bc21a720`（form_workflow）+ `97b6b892`（spec_formulate），一模組一 commit。
+留證 `/opt/tmp/verify/20260823-pf145-stage3.log`。
+
+CSV 篩出來的「B 級 + 選單唯一」是 **45 支**（不是先前寫的 47，腳本修過反查後數字變了），
+最後掛了 52 支，差額都有明確理由：
+
+| 處置 | 支數 | 說明 |
+|---|---:|---|
+| `@page_keys_required('form_workflow.mappings')` | 18 | `mappings.py`；19 支中扣掉 `list_mappings` |
+| `@page_keys_required('form_workflow.workflows')` | 1 | `workflows.py::delete_subflow` |
+| `@admin_required`（**不是** page_keys） | 2 | `fc_utils.py` 的 column-config 兩支 |
+| `@page_keys_required('spec_formulate.spec_schema')` | 31 | 5 個 `_mf_*.py`；CSV 列 23 支，另 8 支見下 |
+| 刻意不掛 | 1 | `list_mappings` |
+
+#### 三個「不能照 CSV 機械執行」的判斷
+
+**一、`GET /api/mappings`（`list_mappings`）不掛。**
+CSV 的 `callers` 欄是按 URL 前綴聚合的，看起來 19 支都被三個檔案呼叫，
+實際逐行查是：`api-keys.js:96` 只打 `/api/mappings/published?status=Published`、
+`ir-designer.js:379` 只打 `/api/mappings?is_published=true&is_archived=false`。
+後者是 NoCode IR 設計器的「已發行表單」下拉，掛了會擋掉沒有
+FLOW/FORM_DESIGNER 的 NoCode 設計者。
+`GET /api/mappings/published` 的第二個消費者 `api_keys.html` 則沒問題——
+該頁選單 `api_key_manage` 的 Key1 只開 ORG_ADMIN，而 ORG_ADMIN 一律 bypass page_keys。
+
+**判讀 CSV 時的通則：`callers` 欄只能當「要去看哪幾個檔案」的線索，
+不能當成「這支端點的呼叫者清單」。** 逐支確認要 grep 完整路徑。
+
+**二、`form_workflow.center` 的 column-config 兩支改掛 `@admin_required`。**
+（`GET /column-config/all`、`PUT /column-config`，docstring 都寫「管理員用」，
+前端按鈕是 `x-show="isAdmin"`，`isAdmin` 來自 `web/__init__.py:183` 的 `is_org_admin`。）
+
+掛該頁的 page_keys **等於沒掛**：表單中心的 Key1 含 EXTERNAL、
+Key2 是人人都有的 `EMPLOYEE`/`EXTERNAL_USERS`，所有能開表單中心的人都通得過。
+這兩支真正缺的是 D2 的後端那半（前端隱藏不是防線）。Ethan 2026-08-23 拍板改掛
+`admin_required`；代價是 BELUGA 的 FLOW_DESIGNER 由 200 轉 403，
+但該按鈕對他本來就是隱藏的，沒有正常用途。
+
+**「B 級選單唯一 → 掛該頁 page_keys」不是萬用規則。**
+遇到「該頁的鑰匙比這支端點的實際受眾寬很多」時，page_keys 只是裝飾，
+要回頭看端點自己的受眾是誰。
+
+**三、spec_formulate 掛 31 支而非 CSV 的 23 支。**
+另外 8 支（`cg/info`、`cg/tables`、`cg/tables/<t>/introspect`、`export/pdf`、
+`available-templates`、`pg/ensure-db`、`pg/tables`、`pg/tables/<t>/introspect`）
+被腳本歸為「無選單候選」，**成因是編輯器頁 `/spec-formulate/<spec_sc>/edit`
+不是選單項目**——`spec_formulate.spec_schema` 是 `route` 型、`link_target` 指向
+`spec_formulate_web.spec_schema` 這個 endpoint，PageRoleGuard 的
+endpoint 精確匹配因此只涵蓋列表頁。它們與那 23 支同屬一個功能、同一批 JS 呼叫。
+Ethan 2026-08-23 拍板一起掛。
+
+唯一沒掛的 `get_or_create_spec_by_form_template`（`/by-form-template/<ft_sc>`）
+呼叫者是 `form_designer.html`，屬 `form_workflow.templates` 頁，掛了會誤擋。
+
+#### 順帶修掉的選單設定缺陷：表單中心對新企業的廠商是關著的
+
+`MENU_ROLE_DEFAULTS['form_workflow.center']` 是 `['ORG_ADMIN', 'EMPLOYEE']`，
+**漏了 `EXTERNAL_USERS`**。BELUGA/LION/SYSTEM 的 DB 有人補過所以正常，
+依出廠值新建的企業（TEST00 起）沒有 —— 廠商帳號開 `/forms/center` 會被
+PageRoleGuard Key2 擋成 302 強制登出，與 CLAUDE.md「表單中心對 EXTERNAL 刻意開放」矛盾，
+而且不報任何錯。
+
+處置（MENU-01 兩件事都做）：`menu_defaults.py` 補 `EXTERNAL_USERS`；
+`scripts/migrations/113_form_center_menu_external_users.py`（冪等）對既有企業補同一筆，
+實際只有 TEST00 缺。
+
+#### 驗收
+
+修改前後各跑一次「六身分 × 45 端點」矩陣，另補跑無 ACL 企業的純員工
+（TEST00，PERM-04 fail-open 的實際曝露面）。**唯一預期外的變動要能解釋**：
+
+| 身分 | 變動 | 解釋 |
+|---|---|---|
+| FLOW_DESIGNER / RISK_CONTROLLER | colcfg 兩支 200 → 403 | `admin_required` 的預期收緊 |
+| TEST00 純員工 | mappings 全組 200/404 → 403、colcfg 200 → 403 | 收緊；該企業的 `/forms/mappings` 頁本來就 302 |
+| TEST00 純員工 | `list_mappings` 維持 200 | 刻意不掛 |
+| 其餘 | 逐格相同 | 加防線不改行為 |
+
+全綠的部分照規矩做 mutation（`git stash` 掉 api 檔，重啟後再測）：
+
+| 情境 | 移除修復 | 裝回修復 |
+|---|---|---|
+| EXTERNAL `gg` 持 `FLOW_DESIGNER` 打 mappings/subflow/colcfg 六支 | 404 200 200 200 500 200 | 全 403 |
+| EXTERNAL `gg` 持 `SPEC_DESIGNER` 打 spec 十支 | 與 ORG_ADMIN 完全相同（含 `pg/tables` 這類 DB introspection） | 全 403 |
+| migration 113：TEST00 臨時 EXTERNAL 帳號開 `/forms/center` | 移除該 Key2 → 302 | 有該 Key2 → 200 |
+
+測試用的角色指派與臨時帳號都已撤銷／硬刪除（`users`／`user_role_assignments`／
+`audit_logs`／`used_user_numbers` 殘留皆為 0）。
+
+瀏覽器實測（ORG_ADMIN 與 FLOW_DESIGNER，chrome-devtools）：配對頁 11 列、
+API Key 頁 `publishedForms` 7 筆、表單中心欄位設定 modal 開啟 13 欄並儲存成功、
+FLOW_DESIGNER 的欄位設定鈕 `offsetParent === null`、規格管理 2 筆、
+規格編輯器實際點擊 [讀入資料表]（走新掛的 `pg/tables`）回 5 張表，全程 console error = 0。
+
+完整測試 1 failed（PF-34 已知）/ 623 passed / 2 skipped，與基準相同。
+
+重跑盤點後分級：**A35 / B101 / C16 / D170 / E12**（B 減 52、D 增 52）。
+**B 級選單唯一只剩 1 支**，就是刻意不掛的 `list_mappings`。
+
 ---
 
 ## 五、逐支清單
+
+**這一節是 2026-08-23 第一次交付當下的快照，施工1~3 之後已經腐爛**（B 級由 153 降到 101）。要看現況一律重跑
+`venv/bin/python scripts/audit_module_api_gates.py` 並讀 CSV，不要引用下面的數字。
 
 ### A 級明細（35 支）
 

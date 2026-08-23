@@ -15,9 +15,10 @@
 | 施工1：`/api/form-center/org-tree` 依身分裁剪 | 完成 | `95f85cd8` `cb7927e3` |
 | 施工2：C 級選單唯一 29 支補 Key1 | 完成 | `f1461564` `3eabb1b2` |
 | 附帶：管理員帳號發 ADM 編號（新企業＋回填） | 完成 | `3eabb1b2` `147f6f0e` |
-| **施工3：B 級選單唯一 45 支** | **未開始** | — |
-| 施工4：4 支掛在 `/api/` 下的頁面路由，確認去留 | 未開始 | — |
-| 施工5：B 級反查不到呼叫者的 104 支 | 未開始 | — |
+| 施工3：B 級選單唯一（CSV 45 支，實際處理 52 支） | 完成 | `bc21a720` `97b6b892` |
+| 附帶：表單中心選單 Key2 補 EXTERNAL_USERS（出廠預設＋migration 113） | 完成 | `bc21a720` |
+| **施工4：4 支掛在 `/api/` 下的頁面路由，確認去留** | **未開始** | — |
+| **施工5：B 級反查不到呼叫者的 104 支** | **未開始** | — |
 | 階段三：模組 ACL fail-open→fail-closed、`roles` 加 user_type 約束 | 未開始（全平台變更，要單獨評估） | — |
 
 盤點現況（**數字會腐爛，動工前自己重跑**）：
@@ -27,16 +28,45 @@ venv/bin/python scripts/audit_module_api_gates.py            # 產 CSV
 venv/bin/python scripts/audit_module_api_gates.py --summary  # 只看統計
 ```
 
-2026-08-23 收工時：**A35 / B153 / C16 / D118 / E12**，共 334 支。
+2026-08-23 施工3 收工時：**A35 / B101 / C16 / D170 / E12**，共 334 支。
+**B 級選單唯一只剩 1 支**（`GET /api/mappings`，刻意不掛，理由見下）。
 
 ---
 
-## 二、下一步（施工3）的具體做法
+## 二、下一步（施工4 與施工5）
 
-從 `dev-notes/pf145_module_api_audit.csv` 篩 `level=B` 且 `menu_candidates`
-只有一個值的，2026-08-23 是 45 支。**一模組一 commit。**
+### 施工4：四支掛在 `/api/` 前綴下的頁面路由
 
-每一支動手前的三個檢查（前兩個沒做會擋掉正牌使用者）：
+`/api/workflows/list`、`/api/workflows/designer`、`/api/forms/list`、`/api/forms/designer`
+回的是 HTML 整頁。`/api/` 在 `PageRoleGuard.SKIP_PREFIXES` 內，
+所以這四頁**結構上不可能被雙鑰匙保護**。要決定的是搬到正常前綴、還是各自掛 decorator。
+規模小，但會動到既有連結，要先查誰在連它們。
+
+### 施工5：B 級反查不到呼叫者的那批
+
+**動工前先重跑腳本拿當下數字**，施工3 之後 B 級已從 153 降到 101。
+這批的重點不是「掛上去」而是「先確認它還活著」：多半是設計器內部 API
+或已無人使用的舊端點。逐支確認前不要動。
+
+### 施工3 留下來的三條判讀教訓（施工5 會再遇到）
+
+**一、CSV 的 `callers` 欄是按 URL 前綴聚合的，不是該端點的呼叫者清單。**
+`/api/mappings` 那 19 支在 CSV 上看起來都被三個檔案呼叫，逐行 grep 才發現
+`api-keys.js` 只打 `/published`、`ir-designer.js` 只打根路徑。
+把它當成「要去看哪幾個檔案」的線索，不要當結論。
+
+**二、「選單唯一 → 掛該頁 page_keys」不是萬用規則。**
+遇到「該頁的鑰匙比這支端點的實際受眾寬很多」時，掛了等於沒掛。
+施工3 的 `form-center/column-config` 兩支就是這樣——表單中心的 Key1 含 EXTERNAL、
+Key2 是人人都有的預設角色，而那兩支是管理員專用（前端 `x-show="isAdmin"`、
+後端零檢查）。判準改成先看**端點自己的受眾**，再決定掛什麼。
+
+**三、「無選單候選」不一定代表沒有歸屬。**
+spec_formulate 有 8 支被歸為無候選，成因只是它們的唯一呼叫者（規格編輯器頁）
+不是選單項目。反查斷在「這個 template 由哪個 web route render」那一步時，
+要再往上問一句「這個 route 是不是某個選單頁的子頁」。
+
+### 每一批動手前仍然要做的三件事
 
 1. **查該 menu_code 的 Key1／Key2 現況**：
 
@@ -52,13 +82,18 @@ LEFT JOIN organizations o ON o.secure_code=mrr.org_secure_code
 WHERE m.is_deleted=false AND m.code='<menu_code>' GROUP BY m.code;
 ```
 
+**Key2 是 per-org 的，一定要 group by 企業**——不分組會把四家企業的角色混成一串，
+看不出「只有 TEST00 缺一筆」這種缺陷（施工3 就是這樣才發現表單中心的出廠預設漏了
+`EXTERNAL_USERS`）。
+
 2. **查誰實際持有對應的 permission**，確認他們都通得過上面那組 Key1／Key2。
-   對不上就**先修選單再掛**（施工2 的 vuln_lifecycle 就是這樣處理的，
-   範例 migration `scripts/migrations/111_open_vuln_lifecycle_menu_to_risk_controller.py`）。
+   對不上就**先修選單再掛**（範例 migration `111`、`113`，兩支都是冪等的）。
    改選單一定是 **DB + 出廠預設兩件事**（MENU-01）。
 
 3. **修改前先跑一次基準**（六種身分 × 該批端點的狀態碼），改完再跑一次比對。
-   身分清單見 audit 文件；`/dev/quick-login` 的 user secure_code 也在那裡。
+   **另外一定要補跑「無 ACL 企業的純員工」**（TEST00 的 `ethan`，
+   `XeJUHw_SeDB7iern_QNEz4`）——BELUGA/SYSTEM 有模組 ACL，六身分矩陣會整片 403，
+   看不出這批修改真正擋掉了什麼；PERM-04 的 fail-open 曝露面只在無 ACL 企業看得到。
 
 ### 掛上去之後如果狀態碼完全沒變，必須做 mutation 驗證
 
@@ -72,6 +107,16 @@ sudo systemctl restart beakplatform-dev.service && sleep 5
 git stash pop -q
 sudo systemctl restart beakplatform-dev.service && sleep 5
 # 同一組再打一次，應該 403
+```
+
+**mutation 用的角色要選「該企業模組 ACL 實際放行的那個角色」**，否則會被 ACL 擋在
+page_keys 之前，看起來像修復生效、其實什麼都沒證明。查法：
+
+```sql
+SELECT o.code, m.module_code, r.code FROM module_access_control m
+JOIN organizations o ON o.secure_code=m.org_secure_code
+LEFT JOIN roles r ON r.secure_code=m.target_secure_code WHERE m.is_deleted=false;
+-- BELUGA: form_workflow -> FORM_DESIGNER/FLOW_DESIGNER；spec_formulate -> SPEC_DESIGNER
 ```
 
 **不要用「對照組也 403」來推論擋在哪一層**——施工2 第一次就這樣誤判，
@@ -257,6 +302,13 @@ WHERE ura.user_secure_code='WhFFX8FPLciXl9_aAudBtn';"
 - **改編號規則的 `default_for` 要同步兩個模板**：`numbering/list.html` 的 badge、
   `numbering/edit.html` 的 select 選項。少了 select 選項的話，編輯該規則時會落回
   「非預設」，一存檔就把 `default_for` 清掉，而且不會報錯
+- **`POST /api/users/` 忽略 `user_type`，一律建成 EMPLOYEE**，而且會順帶指派
+  `EMPLOYEE` 角色。要造 EXTERNAL 測試帳號得建完再用 SQL 改 `user_type`
+  並補 `EXTERNAL_USERS`、拿掉 `EMPLOYEE` 指派（不拿掉會讓 Key2 測試多一個變因）。
+  必填欄位是 `native_name` / `english_name` / `username` / `employee_id`
+- **硬刪一個測試帳號要按 FK 順序清四張表**：`user_role_assignments` →
+  `audit_logs` → `used_user_numbers` → `users`。少一張就會被 FK 擋住，
+  而錯誤訊息只說「still referenced」不會列出全部
 
 ---
 
