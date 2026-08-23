@@ -1838,6 +1838,40 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
 可執行範例：`scripts/examples/provision_relief_donation_demo.py`（建置）
 與 `verify_relief_donation_demo.py`（端對端驗收）。
 
+### 用 Flask `test_client` 寫測試時的三個坑（2026-08-23 逐一試誤才弄對）
+
+**一、URL 必須自己帶 `/beakplatform` 前綴。**
+`create_app()` 用 `DispatcherMiddleware` 把 app 掛在 `APP_PREFIX`（預設
+`/beakplatform`）底下，但 `app.url_map` 內的 rule **不含**這個前綴。
+所以 `client.get('/api/users/')` 一律 404，要寫 `client.get('/beakplatform/api/users/')`。
+症狀是「整批測試全 404、耗時 0 秒」，看起來像路由沒註冊。
+
+```python
+resp = client.get('/beakplatform' + rule)      # 對
+resp = client.get(rule)                        # 錯，恆 404
+```
+
+**二、`app.module_loader.module_loader` 是進程層級單例，
+第二個以後建立的 app 不會再註冊模組 blueprint。**
+`load_modules()` 看 `self._loaded` 旗標，第二次直接
+`logger.warning("Modules already loaded, skipping")` 就回傳。實測：
+
+| 情況 | url_map 路由數 |
+|---|---|
+| 進程內第一個 app | 859 |
+| 第二個以後 | **449**（少了 410 條模組路由） |
+| 手動把 `_loaded` 重設為 False 再建 | 732（**救不回來**，部分模組載入會失敗） |
+
+後果是**同一個測試單獨跑會綠、跟其他測試一起跑就紅**，而症狀看起來像
+「資料沒同步」而不是「app 不完整」。要在測試裡拿到完整 url_map，
+唯一可靠的做法是**開獨立進程**（`subprocess`），
+範例見 `backend/tests/test_route_guard_table.py`。
+
+**三、`test_client` 打 `/dev/quick-login` 會 404**（原因未查明，2026-08-23 實測）。
+需要真實登入的測試改用 `requests` 打執行中的服務
+（`http://192.168.0.16:7000/beakplatform`），單次請求約 28ms，
+816 次請求 23 秒——全矩陣測試的成本完全可接受。
+
 ### 跑測試一律用 `scripts/run_tests.sh`（2026-08-05 起，強制）
 
 ```bash

@@ -168,6 +168,68 @@ NoCode API 回自己企業資料且 `can_manage: false`。
 
 ---
 
+## 四之二、動工前的已知缺口（2026-08-23 codex 冷讀補洞）
+
+把本文件與 `CLAUDE.md` 交給不帶本對話記憶的 codex 冷讀，請它列出
+「照此文件動工時哪裡需要猜測」。以下是它列出的 11 點與逐條回答。
+
+### 關於步驟 0（測試庫 RBAC seed）
+
+| 冷讀提出的疑問 | 回答 |
+|---|---|
+| PF-34 的完整內容不在文件裡 | BBN **PF-34**（atom **5031**，status=planning、urgency=L）「測試庫缺 RBAC seed，test_admin_required_for_admin 過不了」。`note_get(5031)` 取全文 |
+| 缺「測試庫該 seed 哪些角色／使用者／指派」的權威對照 | **沒有現成的權威對照，這正是要做的事**。permission code 的權威清單是 `scripts/migrations/075_seed_resource_crud_permissions.py`；角色與指派要照 `backend/app/defaults/` 的出廠值推導 |
+| 缺實作位置 | **建議放 `backend/tests/conftest.py` 的 session-scoped fixture**，理由：`scripts/run_tests.sh` 前置 seed 會在每次跑單一測試檔時也付出成本；而 `test_smoke.py` / `test_page_template_*.py` 各自定義的 app fixture 會覆蓋 conftest 的 app fixture，所以 seed 不能掛在 app fixture 上 |
+| 缺「最小修補」與「完整 RBAC seed」的邊界 | **做最小修補即可**。目的是「讓測試不要跑在 fail-open 狀態」，不是重建整個 RBAC。驗收標準：`test_admin_required_for_admin` 轉綠，且完整測試沒有新增失敗 |
+| 完成後怎麼回寫 BBN | `note_task_status(ref='PF-34', status='completed', reason='...')` |
+
+### 關於步驟 1（複審 831 條）
+
+| 冷讀提出的疑問 | 回答 |
+|---|---|
+| 「按 answer_source 分堆」缺精確順序 | **`none` 138 條先**（84 條完全沒守門風險最高、54 條只掛 `login_required`），再來是模組的 `db`（167 條 fail-open），最後才是 `code` 那 392 條（讀 decorator 就結案，最快） |
+| `max_audience`「設計意圖」從哪來 | 多數情況從**該功能的選單 Key1** 反推（`menu_permissions` 記的就是設計意圖）。反推不出來的**不要猜**，`review` 留 `unreviewed`、`note` 寫「需產品決策」，收集完一批再一次問使用者 |
+| `db` 類的基準資料狀態要看哪家企業 | **一律以「新建企業的出廠狀態」為基準**——那是最寬鬆、fail-open 會生效的狀態。現成的代表是 **TEST00**（新企業、零 `module_access_control` 記錄）。BELUGA 設過 ACL，拿它當基準會低估風險 |
+| `none` 類要確認有沒有被 url 型選單前綴涵蓋，缺標準查詢 | 見下方指令 |
+| 發現守門不足時怎麼開卡 | `note_task_create(title, content, project='/opt/BeakPlatform-dev')`，PF 編號自動配。**同一類問題合併成一張卡**（例如「form_workflow 的 X 支 API 缺 Key1」），不要一條路由一張，否則 831 條複審會產生無法管理的卡海 |
+| `confirmed` 與 `intentional_open` 的判定門檻 | `confirmed` ＝ 守門符合設計意圖（不論寬嚴）；`intentional_open` ＝ **刻意**讓所有登入者可達，`note` 必須寫理由。判別問句：**「這條路由如果被 EXTERNAL 廠商帳號打到，會不會有問題？」** 不會＝`intentional_open`（例：個人設定、改密碼、表單中心系列）；會＝守門不足，記 `note` 並開卡 |
+
+### 複審 `none` 類時用的查詢
+
+`answer_source: none` 不等於沒有防線——它可能被某個 url 型選單的路徑前綴涵蓋
+（那時 PageRoleGuard 會擋）。**要逐條對照這份清單**（26 筆，數字會腐爛，動工時重跑）：
+
+```bash
+PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -t -A -F'|' -c "
+SELECT code, link_target FROM menu_items
+WHERE is_deleted=false AND is_active=true
+  AND link_type IN ('url','route') AND link_target LIKE '/%'
+ORDER BY length(link_target) DESC;"
+```
+
+判定方式與 `PageRoleGuard._find_matching_menu_items()` 策略 2 相同：
+路由路徑 `== link_target.rstrip('/')` 或以 `link_target.rstrip('/') + '/'` 開頭即被涵蓋，
+**多筆命中時取最長匹配**。`link_type='route'` 且 `link_target` 不以 `/` 開頭的
+（30 筆）只守那一個 endpoint，不涵蓋子路由——那正是 PF-148。
+
+### 複審時實測某條路由的最短路徑
+
+```bash
+BASE=http://192.168.0.16:7000/beakplatform
+# TEST00 的純員工（只有 EMPLOYEE 角色，代表新企業最寬鬆狀態）
+curl -s -c cj.txt -X POST "$BASE/dev/quick-login" -H 'Content-Type: application/json' \
+  -d '{"user_id":"XeJUHw_SeDB7iern_QNEz4"}'
+curl -s -b cj.txt -o /dev/null -w '%{http_code}\n' "$BASE/<要測的路徑>"
+```
+
+**注意 302 會觸發 PageRoleGuard 的強制登出**，所以測到 302 之後要重新 quick-login
+再測下一條，否則後續全部拿到 401（本次對話踩過，第一輪數據因此作廢）。
+
+其他測試身分：TEST00 ORG_ADMIN `Lc-OeE0E23nlw02PdQUFsW`（`admin-ethan`）、
+BELUGA EXTERNAL `gg`（secure_code 自行查，見 CLAUDE.md 的 quick-login 段）。
+
+---
+
 ## 五、順帶處理與待處理
 
 ### 已處理
