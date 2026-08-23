@@ -76,3 +76,8 @@ def security_cases():
     案件與簽核權限由 form_workflow 既有機制把關。
     """
     return render_template('modules/open_defense/security_cases.html')
+
+
+from .edl_public import edl_bp
+
+additional_blueprints = [edl_bp]

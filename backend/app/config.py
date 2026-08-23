@@ -47,6 +47,8 @@ class BaseConfig:
     # OpenDefense od-bridge（.20）唯讀查詢 -- 決策頁對帳 EDL / nftables 實際狀態。
     # bridge_client 連不上時回 None，呼叫端 fail-soft 顯示平台端記錄。
     OD_BRIDGE_URL = os.getenv('OD_BRIDGE_URL', 'http://192.168.0.20:8500')
+    OD_EDL_OUTPUT_DIR = os.getenv('OD_EDL_OUTPUT_DIR', '')
+    OD_EDL_ALLOWED_IPS = os.getenv('OD_EDL_ALLOWED_IPS', '')
 
     # Database
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')

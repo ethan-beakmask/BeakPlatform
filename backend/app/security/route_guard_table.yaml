@@ -11779,6 +11779,22 @@ routes:
     rules:
     - /api/open_defense/sa/login
     source: modules/open_defense/api/service_accounts.py
+  open_defense_edl.blocklist:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - public_route
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - NON_HUMAN
+    methods:
+    - GET
+    note: 公開給防火牆抓取 EDL；端點內部以 OD_EDL_ALLOWED_IPS 來源 IP/CIDR 白名單 fail-closed，拒絕一律 404。
+    review: intentional_open
+    rules:
+    - /edl/<org_secure_code>/blocklist.txt
+    source: modules/open_defense/web/edl_public.py
   open_defense_web.dashboard:
     answer_source: db
     guard_args:

@@ -85,8 +85,14 @@ table inet secstack {
     #
     # 8080 放行 .10/.100 是用戶 2026-08-16 的決定：保留從 Windows 工作站與 PVE 母機
     # 手動驗證 WAF 的能力。殘餘風險限縮成「那兩台被入侵才可偽造」。
-    # 8500 不放行它們——無認證 + 持有平台憑證，代價是 od-bridge 的 stats UI
-    # （http://192.168.0.20:8500/）從 .10 的瀏覽器連不到，要看得先 SSH 進 .20。
+    # 8500 原本只放行 .16，理由是「無認證 + 持有平台憑證」。2026-08-24 起加放 .10：
+    #   - PF-112（2026-08-16）之後 POST /events 已要求 Authorization: Bearer
+    #     BRIDGE_INGEST_TOKEN 且 fail-closed，上面那段「完全無認證」只剩歷史脈絡
+    #   - 用戶要從 Windows 工作站的瀏覽器直接讀 EDL（http://192.168.0.20:8500/edl）
+    #     與 stats UI，而 .10 本來就在 SSH 與 8080/8688 白名單內
+    # 殘餘風險：/stats /forwards /decisions /edl /state/nft 這些 GET 端點仍無認證
+    # （待辦 PF-115），所以 .10 一旦被入侵即可讀取封鎖清單與轉送統計。
+    # .100 維持不放行。
 
     chain ingest_guard_forward {
         type filter hook forward priority -150; policy accept;
@@ -98,7 +104,7 @@ table inet secstack {
     chain ingest_guard_input {
         type filter hook input priority -150; policy accept;
         iifname != "ens18" accept
-        tcp dport 8500 ip saddr 192.168.0.16 accept
+        tcp dport 8500 ip saddr { 192.168.0.16, 192.168.0.10 } accept
         tcp dport 8500 drop
     }
 

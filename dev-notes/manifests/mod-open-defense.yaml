@@ -39,6 +39,7 @@ files:
     - modules/open_defense/services/hmac_verifier.py         # 簽章驗證
     - modules/open_defense/services/clickhouse_client.py     # PF-106：.20 ClickHouse 唯讀 HTTP 客戶端
     - modules/open_defense/services/cross_source_service.py  # PF-106：跨系統關聯查詢（actor_ip+時間窗）
+    - modules/open_defense/services/edl_service.py           # 平台端 EDL 黑名單渲染（唯一實作，fail-closed + 原子寫檔）
   model:
     - modules/open_defense/models/intake_event.py            # OdIntakeEvent (冪等記錄)
     - modules/open_defense/models/defense_decision.py        # OdDefenseDecision
@@ -49,6 +50,7 @@ files:
   cron:
     - scripts/cron/od_canary_check.py       # 每小時 canary 事件到案檢查(來源 IP 203.0.113.1)
     - scripts/cron/od_expire_decisions.py   # 過期決策回收(TTL 到期改 expired)
+    - scripts/cron/od_render_edl.py         # 每分鐘渲染各企業 EDL 黑名單檔（輸出目錄 OD_EDL_OUTPUT_DIR）
   example:                                  # 會推上 GitHub,對外整合者的參考實作
     - scripts/examples/provision_od_intake_for_org.py  # 空白企業一次建起受理鏈路(分類/表單/流程/發行/路由/API Key)
     - scripts/examples/od_intake_send_event.py         # 外部系統送 OCSF 事件的單檔 CLI(只用標準函式庫)
@@ -90,6 +92,7 @@ files:
     - tests/e2e/playwright.config.js
     - tests/e2e/README.md
     - scripts/run_e2e.sh
+    - backend/tests/test_od_edl.py            # 平台端 EDL 渲染與來源白名單
 
 # 此模組會延伸的安全核心檔案(需小幅修改,但不改變既有行為)
 security_core_touch:
