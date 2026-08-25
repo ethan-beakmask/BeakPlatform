@@ -1242,9 +1242,45 @@ blueprint 的 `url_prefix` 與模組名不一致，照模組名猜必 404：
 | 表單中心 | `/form-workflow/center` | **`/forms/center`**（`form_workflow/web/__init__.py:17` 的 prefix 是 `/forms`） |
 | 流程**設計器** | `/forms/workflows` | **`/forms/workflows/<workflow_template_secure_code>`**；不帶 sc 的是**列表頁**，兩者都回 200，很容易誤判成「設計器沒壞」 |
 | 配對 API | `/api/form-workflow/...` | **`/api/mappings/...`** |
-| **提交表單觸發流程** | `/api/form-workflow/submit` | **`/api/form-center/submit`**（POST JSON，`@csrf.exempt`，body 要 `published_secure_code` + `subject` + `form_data`；少了 `subject` 回 400） |
+| **提交表單觸發流程（已登入）** | `/api/form-workflow/submit` | **`/api/form-center/submit`**（POST JSON，`@csrf.exempt`，body 要 `published_secure_code` + `subject` + `form_data`；少了 `subject` 回 400）。**需要登入 session** |
+| **外部系統觸發流程（無 session）** | `/api/form-center/submit` | **`/api/trigger/form`**（見下方專段）——前者掛 `@module_access_required`，第一行就檢查 `current_user.is_authenticated`，外部拿 API Key 打**恆 401** |
 | 弱點管理各頁 | `/vuln-lifecycle/assets` | **`/vuln/assets`**（`vuln_lifecycle/web/__init__.py` 的 prefix 是 `/vuln`；API 那邊反而是 `/api/vuln-lifecycle/...`，兩者不一致） |
 | 規格制定的 API | `/api/spec-formulate/specs` | **`/api/spec-formulate/schema/specs`**（路由全寫在 `schema.py` 的 `register(bp)` 內，bp 是 `schema_bp`） |
+
+### 外部系統用 API Key 發動表單流程：`/api/trigger/form`（2026-08-13 起）
+
+**這支端點不在任何 manifest、也沒出現在本檔其他地方，是 2026-08-25 誤判過一次才補的。**
+當時只查 `/api/form-center/submit`（需登入）就下結論「平台不支援外部觸發」，
+實際上通用閘道早就做完了。
+
+| | |
+|---|---|
+| 實作 | `modules/form_workflow/api/external_trigger.py`（`url_prefix='/api/trigger'`） |
+| 規格 | `dev-notes/API_KEY_TRIGGER_SPEC.md`（P1/P2/P3 全部完成） |
+| 端點 | `POST /api/trigger/form` 發動；`GET /api/trigger/forms` 列出該 key 可發動的表單 |
+| 認證 | `@api_key_hmac_required`（平台 `api_keys` 表，UI 在 `/security/api-keys`） |
+| 授權 | `scopes.form_category`（父分類自動含子分類）或 `scopes.form` 直綁 published SC |
+
+**簽章金鑰是 base64 解碼後的 raw bytes**，不是 UI 顯示的那串字（與 od intake 同一個坑，
+見上方「HMAC 金鑰是 raw bytes」）。直接拿字串當金鑰恆得 401，而平台對所有認證失敗
+一律回同一個 `auth_failed`，從回應完全看不出原因。
+
+可執行的驗證腳本（2026-08-25 實測成功，直接改 `KEY_ID` 就能跑）：
+`/opt/BeakVulnRT/tools/trigger_form_probe.py`。實測行為：
+
+```
+正常觸發          201 + form_instance_secure_code / serial_number / execution_code
+scope 外的表單    404 form_not_found（不洩漏存在與否）
+錯誤簽章          401 auth_failed
+未知欄位          400 unknown_field + 回傳 allowed_keys 供對接
+```
+
+**`extract_schema_field_keys` 曾對 textarea 的整數 `rows` 屬性崩潰**
+（form.io 的 table 元件 rows 是二維陣列、textarea 的 rows 是整數），
+含 textarea 的表單一律 500。2026-08-25 修（commit `14e97f7b`）。
+同一個函式也被 `nocode_builder/web/portal_public.py` 兩處使用（portal 公開表單提交，
+對 Internet 開放），而表單中心 `fc_fill.py` **不使用**它——
+所以瀏覽器提交一直正常，這個 bug 才存在半個月沒被發現。
 
 **`od_intake_events.case_secure_code` 指向 `fw_workflow_instances`，不是 form_instance。**
 要拿到表單得再 join 一層，直接 join `fw_form_instances` 會全部 NULL：
