@@ -271,11 +271,15 @@ def extract_schema_field_keys(form_schema) -> set:
             for col in comp.get('columns') or []:
                 if isinstance(col, dict):
                     walk(col.get('components'))
-            for row in comp.get('rows') or []:
-                if isinstance(row, list):
-                    for cell in row:
-                        if isinstance(cell, dict):
-                            walk(cell.get('components'))
+            # 注意:rows 在 table 元件是二維陣列,但 textarea 的 rows 是整數
+            # (form.io 的顯示列數),不加型別檢查會 TypeError
+            rows = comp.get('rows')
+            if isinstance(rows, list):
+                for row in rows:
+                    if isinstance(row, list):
+                        for cell in row:
+                            if isinstance(cell, dict):
+                                walk(cell.get('components'))
 
     if isinstance(form_schema, dict):
         walk(form_schema.get('components'))
