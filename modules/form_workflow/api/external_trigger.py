@@ -7,10 +7,13 @@ FormWorkflow Module - External Trigger API(外部發動閘道)
 
 規格: dev-notes/API_KEY_TRIGGER_SPEC.md §3
 scope 解釋(本模組負責):
-  scopes.form_category : FwCategory SC 清單,父分類自動含子分類
-  scopes.form          : published SC 直綁(例外用法)
+  scopes.form_template : FwFormTemplate SC 清單,推薦,穩定且精確,自助申請用
+  scopes.form_category : FwCategory SC 清單,穩定但涵蓋日後新增表單,父分類自動含子分類
+  scopes.form          : published SC 直綁,重新發行後失效,僅一次性測試用
 """
 import logging
+
+from dataclasses import dataclass
 
 from flask import Blueprint, jsonify, request, g
 from flask_babel import gettext as _
@@ -32,19 +35,34 @@ external_trigger_bp = Blueprint(
 SOURCE_TYPE = 'API_KEY'
 
 
+@dataclass(frozen=True)
+class ScopeFilter:
+    category_scs: set
+    form_scs: set
+    template_scs: set
+
+
 def _resolve_scope_filter(api_key):
-    """取出 key 的表單授權範圍,回傳 (category_scs: set, form_scs: set)"""
+    """取出 key 的表單授權範圍。"""
     scopes = api_key.scopes or {}
     category_scs = set(scopes.get('form_category') or [])
     form_scs = set(scopes.get('form') or [])
-    return category_scs, form_scs
+    template_scs = set(scopes.get('form_template') or [])
+    return ScopeFilter(
+        category_scs=category_scs,
+        form_scs=form_scs,
+        template_scs=template_scs,
+    )
 
 
-def _published_in_scope(published, category_scs, form_scs):
+def _published_in_scope(published, scope_filter):
     """判斷 published 表單是否在 key 的授權範圍內(父分類含子分類)"""
-    if published.secure_code in form_scs:
+    if published.secure_code in scope_filter.form_scs:
         return True
-    if not category_scs:
+    if (published.source_form_template_secure_code
+            in scope_filter.template_scs):
+        return True
+    if not scope_filter.category_scs:
         return False
 
     from ..models import FwFormTemplate, FwCategory
@@ -56,7 +74,7 @@ def _published_in_scope(published, category_scs, form_scs):
         return False
 
     cat_sc = form_template.category_secure_code
-    if cat_sc in category_scs:
+    if cat_sc in scope_filter.category_scs:
         return True
 
     # 父分類授權涵蓋子分類
@@ -64,7 +82,7 @@ def _published_in_scope(published, category_scs, form_scs):
         secure_code=cat_sc, is_deleted=False
     ).first()
     if category and category.parent_secure_code:
-        return category.parent_secure_code in category_scs
+        return category.parent_secure_code in scope_filter.category_scs
     return False
 
 
@@ -106,23 +124,26 @@ def _resolve_applicant(api_key):
     }
 
 
-def _template_category_in_scope(template, category_scs):
-    """未發行時只能靠 template 的分類判 scope(父分類含子分類)。"""
+def _template_in_scope(template, scope_filter):
+    """未發行時靠 template 或分類判 scope(父分類含子分類)。"""
+    if template.secure_code in scope_filter.template_scs:
+        return True
+
     from ..models import FwCategory
 
     cat_sc = template.category_secure_code
-    if not cat_sc or not category_scs:
+    if not cat_sc or not scope_filter.category_scs:
         return False
-    if cat_sc in category_scs:
+    if cat_sc in scope_filter.category_scs:
         return True
     category = FwCategory.query.filter_by(
         secure_code=cat_sc, is_deleted=False
     ).first()
     return bool(category and category.parent_secure_code
-                and category.parent_secure_code in category_scs)
+                and category.parent_secure_code in scope_filter.category_scs)
 
 
-def _resolve_published_by_form_code(form_code, org_secure_code, category_scs):
+def _resolve_published_by_form_code(form_code, org_secure_code, scope_filter):
     """以穩定 form template code 解析最新 Published 快照。"""
     from ..models import FwFormTemplate, FwPublishedFormWorkflow
 
@@ -152,9 +173,9 @@ def _resolve_published_by_form_code(form_code, org_secure_code, category_scs):
         FwPublishedFormWorkflow.is_deleted == False,  # noqa: E712
     ).first() is not None
 
-    # 未發行時無法用 published 判 scope,改判 template 分類;
+    # 未發行時無法用 published 判 scope,改判 template 或分類;
     # 不在 scope 的一律 404,避免洩漏「這個 code 在本企業存在但沒發行」
-    if not any(_template_category_in_scope(t, category_scs) for t in templates):
+    if not any(_template_in_scope(t, scope_filter) for t in templates):
         return None, not_found
 
     if has_any_version:
@@ -201,7 +222,7 @@ def trigger_form():
     if not isinstance(form_data, dict):
         return jsonify({'success': False, 'error': 'form_data_must_be_object'}), 400
 
-    category_scs, form_scs = _resolve_scope_filter(api_key)
+    scope_filter = _resolve_scope_filter(api_key)
 
     if published_secure_code:
         # 租戶隔離:published 必須屬 key 的企業
@@ -216,14 +237,14 @@ def trigger_form():
             return jsonify({'success': False, 'error': 'form_not_published'}), 422
     else:
         published, error_response = _resolve_published_by_form_code(
-            form_code, org_sc, category_scs
+            form_code, org_sc, scope_filter
         )
         if error_response:
             body, status = error_response
             return jsonify(body), status
 
     # scope 授權
-    if not _published_in_scope(published, category_scs, form_scs):
+    if not _published_in_scope(published, scope_filter):
         logger.warning(
             'external_trigger: scope denied key_id=%s published=%s',
             api_key.key_id, published.secure_code,
@@ -325,7 +346,7 @@ def list_triggerable_forms():
     from ..services.form_submit_service import extract_schema_field_keys
 
     api_key = g.api_key
-    category_scs, form_scs = _resolve_scope_filter(api_key)
+    scope_filter = _resolve_scope_filter(api_key)
 
     published_list = FwPublishedFormWorkflow.query.filter_by(
         org_secure_code=g.api_key_org,
@@ -335,7 +356,7 @@ def list_triggerable_forms():
 
     items = []
     for pub in published_list:
-        if not _published_in_scope(pub, category_scs, form_scs):
+        if not _published_in_scope(pub, scope_filter):
             continue
         form_snapshot = pub.form_snapshot or {}
         items.append({

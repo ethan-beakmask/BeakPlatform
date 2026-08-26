@@ -53,13 +53,21 @@
 
 ```json
 {
+  "form_template": ["<FwFormTemplate SC>", "..."], // 推薦：穩定且精確，自助申請使用
   "form_category": ["<FwCategory SC>", "..."],   // 表單分類授權（父分類自動含子分類）
   "form": ["<published SC>", "..."]              // 例外：直綁個別表單（選用）
 }
 ```
 
-採分類授權為主（用戶決策：東方企業表單浮濫，一對一綁定難管理），
-個別表單直綁保留為例外用法。未來 P2 的 OD scope 如 `{"od_intake": {...}}` 同構擴充。
+表單發動 scope 由 form_workflow 模組解釋：
+
+| scope key | 綁定目標 | 取捨 |
+|---|---|---|
+| `scopes.form_template` | `fw_form_templates.secure_code` | 推薦；穩定且精確，自助申請使用 |
+| `scopes.form_category` | `fw_categories.secure_code` | 穩定，但會涵蓋該分類日後新增的表單；父分類自動含子分類 |
+| `scopes.form` | `fw_published_form_workflows.secure_code` | published SC 直綁，重新發行後失效；僅一次性測試用 |
+
+未來 P2 的 OD scope 如 `{"od_intake": {...}}` 同構擴充。
 
 ## 二、認證：HMAC 簽章（統一，不做 bearer）
 
@@ -110,9 +118,9 @@ X-BP-Signature:  sha256=<hex(HMAC-SHA256(secret, canonical))>
 | 在 scope 內、從未發行 | 422 `form_not_published` + 「表單尚未發行」 |
 | 在 scope 內、有發行記錄但已下架 | 422 `form_not_published` + 「目前沒有 Published 版本」 |
 
-**未發行時無法用 published 判 scope，改判 template 的 `category_secure_code`**
-（`_template_category_in_scope()`）。少了這一道，任何持有本企業 key 的人都能用
-422 與 404 的差異列舉出企業內所有表單 code——驗收時實測確認過這條路徑存在並已修補。
+**未發行時無法用 published 判 scope，改判 template SC 或 template 的
+`category_secure_code`**（`_template_in_scope()`）。少了這一道，任何持有本企業 key
+的人都能用 422 與 404 的差異列舉出企業內所有表單 code——驗收時實測確認過這條路徑存在並已修補。
 
 **`fw_form_templates.code` 不是唯一鍵**（`idx_fw_form_templates_code` 是非唯一索引，
 實測 `SEC_INCIDENT_RESPONSE` 在兩個企業各一筆），所有以 code 查詢的地方
@@ -121,8 +129,9 @@ X-BP-Signature:  sha256=<hex(HMAC-SHA256(secret, canonical))>
 處理順序：
 
 1. `@api_key_hmac_required`（含限流，見第五節）
-2. **scope 授權**：published 表單的來源 form_template 分類 ∈ `scopes.form_category`
-   （含父分類展開）或 published SC ∈ `scopes.form`。既有 `published_secure_code`
+2. **scope 授權**：published 表單的來源 form_template SC ∈ `scopes.form_template`、
+   來源 form_template 分類 ∈ `scopes.form_category`（含父分類展開），或
+   published SC ∈ `scopes.form`。既有 `published_secure_code`
    路徑失敗時維持 403 `scope_denied`；`form_code` 路徑失敗時回 404
    `form_not_found`，避免洩漏同企業中不在 scope 內的表單存在性。
 3. 租戶隔離：published 必須屬 key 的 `org_secure_code`
