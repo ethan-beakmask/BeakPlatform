@@ -106,6 +106,69 @@ def _resolve_applicant(api_key):
     }
 
 
+def _template_category_in_scope(template, category_scs):
+    """未發行時只能靠 template 的分類判 scope(父分類含子分類)。"""
+    from ..models import FwCategory
+
+    cat_sc = template.category_secure_code
+    if not cat_sc or not category_scs:
+        return False
+    if cat_sc in category_scs:
+        return True
+    category = FwCategory.query.filter_by(
+        secure_code=cat_sc, is_deleted=False
+    ).first()
+    return bool(category and category.parent_secure_code
+                and category.parent_secure_code in category_scs)
+
+
+def _resolve_published_by_form_code(form_code, org_secure_code, category_scs):
+    """以穩定 form template code 解析最新 Published 快照。"""
+    from ..models import FwFormTemplate, FwPublishedFormWorkflow
+
+    not_found = ({'success': False, 'error': 'form_not_found'}, 404)
+
+    templates = FwFormTemplate.query.filter_by(
+        code=form_code,
+        org_secure_code=org_secure_code,
+        is_deleted=False,
+    ).all()
+    if not templates:
+        return None, not_found
+
+    template_scs = [template.secure_code for template in templates]
+    published = FwPublishedFormWorkflow.query.filter(
+        FwPublishedFormWorkflow.source_form_template_secure_code.in_(template_scs),
+        FwPublishedFormWorkflow.org_secure_code == org_secure_code,
+        FwPublishedFormWorkflow.status == 'Published',
+        FwPublishedFormWorkflow.is_deleted == False,  # noqa: E712
+    ).order_by(FwPublishedFormWorkflow.created_at.desc()).first()
+    if published:
+        return published, None
+
+    has_any_version = FwPublishedFormWorkflow.query.filter(
+        FwPublishedFormWorkflow.source_form_template_secure_code.in_(template_scs),
+        FwPublishedFormWorkflow.org_secure_code == org_secure_code,
+        FwPublishedFormWorkflow.is_deleted == False,  # noqa: E712
+    ).first() is not None
+
+    # 未發行時無法用 published 判 scope,改判 template 分類;
+    # 不在 scope 的一律 404,避免洩漏「這個 code 在本企業存在但沒發行」
+    if not any(_template_category_in_scope(t, category_scs) for t in templates):
+        return None, not_found
+
+    if has_any_version:
+        message = _('表單已有發行記錄，但目前沒有 Published 版本')
+    else:
+        message = _('表單尚未發行')
+
+    return None, ({
+        'success': False,
+        'error': 'form_not_published',
+        'message': message,
+    }, 422)
+
+
 @external_trigger_bp.route('/form', methods=['POST'])
 @limiter.limit('100 per minute; 5000 per hour', key_func=key_func_from_api_key)
 @limiter.limit(**auth_failure_limit_kwargs())
@@ -126,35 +189,47 @@ def trigger_form():
     except Exception:
         return jsonify({'success': False, 'error': 'invalid_json'}), 400
 
-    published_secure_code = data.get('published_secure_code')
+    published_secure_code = (data.get('published_secure_code') or '').strip()
+    form_code = (data.get('form_code') or '').strip()
     subject = (data.get('subject') or '').strip()
     form_data = data.get('form_data') or {}
 
-    if not published_secure_code:
-        return jsonify({'success': False, 'error': 'missing_published_secure_code'}), 400
+    if not published_secure_code and not form_code:
+        return jsonify({'success': False, 'error': 'missing_form_identifier'}), 400
     if not subject:
         return jsonify({'success': False, 'error': 'missing_subject'}), 400
     if not isinstance(form_data, dict):
         return jsonify({'success': False, 'error': 'form_data_must_be_object'}), 400
 
-    # 租戶隔離:published 必須屬 key 的企業
-    published = FwPublishedFormWorkflow.query.filter_by(
-        secure_code=published_secure_code,
-        org_secure_code=org_sc,
-        is_deleted=False
-    ).first()
-    if not published:
-        return jsonify({'success': False, 'error': 'form_not_found'}), 404
-    if published.status != 'Published':
-        return jsonify({'success': False, 'error': 'form_not_published'}), 422
+    category_scs, form_scs = _resolve_scope_filter(api_key)
+
+    if published_secure_code:
+        # 租戶隔離:published 必須屬 key 的企業
+        published = FwPublishedFormWorkflow.query.filter_by(
+            secure_code=published_secure_code,
+            org_secure_code=org_sc,
+            is_deleted=False
+        ).first()
+        if not published:
+            return jsonify({'success': False, 'error': 'form_not_found'}), 404
+        if published.status != 'Published':
+            return jsonify({'success': False, 'error': 'form_not_published'}), 422
+    else:
+        published, error_response = _resolve_published_by_form_code(
+            form_code, org_sc, category_scs
+        )
+        if error_response:
+            body, status = error_response
+            return jsonify(body), status
 
     # scope 授權
-    category_scs, form_scs = _resolve_scope_filter(api_key)
     if not _published_in_scope(published, category_scs, form_scs):
         logger.warning(
             'external_trigger: scope denied key_id=%s published=%s',
-            api_key.key_id, published_secure_code,
+            api_key.key_id, published.secure_code,
         )
+        if not published_secure_code and form_code:
+            return jsonify({'success': False, 'error': 'form_not_found'}), 404
         return jsonify({'success': False, 'error': 'scope_denied'}), 403
 
     # 從快照取得表單和流程定義
@@ -267,6 +342,7 @@ def list_triggerable_forms():
             'published_secure_code': pub.secure_code,
             'name': form_snapshot.get('name'),
             'code': form_snapshot.get('code'),
+            'form_code': form_snapshot.get('code'),
             'version': pub.source_form_version,
             'field_keys': sorted(extract_schema_field_keys(
                 form_snapshot.get('schema'))),

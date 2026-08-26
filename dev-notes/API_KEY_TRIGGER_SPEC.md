@@ -87,17 +87,44 @@ X-BP-Signature:  sha256=<hex(HMAC-SHA256(secret, canonical))>
 
 ```json
 {
+  "form_code": "HR_ACCOUNT_CREATE",
   "published_secure_code": "...",
   "subject": "人資系統 - 建立帳號申請",
   "form_data": {"field_key": "value"}
 }
 ```
 
+表單識別方式：
+
+- 推薦使用 `form_code`（`fw_form_templates.code`）：同一企業內跨重新發行版本穩定，平台會解析成該表單最新的 `Published` 快照。
+- `published_secure_code` 保留相容既有整合，但它會隨表單重新發行而失效，只適合一次性測試；長期對接請用 `form_code`。
+- `published_secure_code` 與 `form_code` 擇一必填；兩者都給時以 `published_secure_code` 為準。
+- 兩者都未提供或皆為空值時回 400 `missing_form_identifier`。
+
+`form_code` 路徑的錯誤語意（2026-08-27 PF-159 驗收後定版）：
+
+| 情況 | 回應 |
+|---|---|
+| 該企業沒有這個 code | 404 `form_not_found` |
+| code 存在但不在這把 key 的 scope 內 | 404 `form_not_found`（**不洩漏存在與否**） |
+| 在 scope 內、從未發行 | 422 `form_not_published` + 「表單尚未發行」 |
+| 在 scope 內、有發行記錄但已下架 | 422 `form_not_published` + 「目前沒有 Published 版本」 |
+
+**未發行時無法用 published 判 scope，改判 template 的 `category_secure_code`**
+（`_template_category_in_scope()`）。少了這一道，任何持有本企業 key 的人都能用
+422 與 404 的差異列舉出企業內所有表單 code——驗收時實測確認過這條路徑存在並已修補。
+
+**`fw_form_templates.code` 不是唯一鍵**（`idx_fw_form_templates_code` 是非唯一索引，
+實測 `SEC_INCIDENT_RESPONSE` 在兩個企業各一筆），所有以 code 查詢的地方
+一律同時帶 `org_secure_code`，且 org 只能取自 `g.api_key_org`。
+
 處理順序：
 
 1. `@api_key_hmac_required`（含限流，見第五節）
 2. **scope 授權**：published 表單的來源 form_template 分類 ∈ `scopes.form_category`
-   （含父分類展開）或 published SC ∈ `scopes.form`，否則 403 `scope_denied`
+   （含父分類展開）或 published SC ∈ `scopes.form`。既有 `published_secure_code`
+   路徑失敗時維持 403 `scope_denied`；`form_code` 路徑失敗時回 404
+   `form_not_found`，避免洩漏同企業中不在 scope 內的表單存在性。
 3. 租戶隔離：published 必須屬 key 的 `org_secure_code`
 4. **form_data schema 白名單驗證**：key 必須存在於 form schema `components[]`
    中 `input: true` 的欄位（遞迴展開容器元件），出現未知 key → 400 `unknown_field`
