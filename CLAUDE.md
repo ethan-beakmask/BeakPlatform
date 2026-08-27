@@ -1040,6 +1040,27 @@ f"{request.script_root}{request.path}?{urlencode(args)}"
 Page IR 的排序連結**從第一版起就是壞的**，直到 2026-07-29 才發現
 （`renderer._self_url()` 已修）。原因見下條。
 
+### FRONT-12: form.io 自訂元件要在兩個模板都掛 script（2026-08-27 起）
+
+平台層的 form.io 自訂元件放在 `backend/app/static/js/formio-*.js`，
+一律用 `Formio.use({components: {...}})` 外掛註冊（升級 form.io 不受影響），
+**禁止改 form.io 本體**。現有三支：
+
+| 檔案 | 元件 type | 值 |
+|---|---|---|
+| `formio-user-picker.js` | `userPicker` | `users.secure_code`（字串） |
+| `formio-form-picker.js` | `formPicker` | `fw_form_templates.secure_code` **陣列**（PF-160 授權表單） |
+| `formio-form-title.js` | — | 表單名稱 |
+
+**新增元件時 `form_designer.html` 與 `form_center.html` 兩處都要加 `<script>`**——
+兩邊的 script 清單各自維護（與 `_ir_designer_body.html` 的雙宿主同一個坑）。
+只掛設計器的話，**表單中心的填寫頁該欄位不會渲染，而且不報錯**。
+
+其餘三件：`builderInfo.group` 用 `'custom'`（面板顯示為「平台元件」）；
+元件內的 `__()` 字串要補進 `backend/app/static/i18n/en.json`（否則英文介面顯示中文）；
+多值元件把 `emptyValue` 定義成 `[]` 就能吃 form.io 內建的 required 檢查
+（lodash `isEmpty([])` 為 true），不必自己寫驗證。
+
 ### VERIFY-01: 驗收規範（瀏覽器實測 + 留證，主 Claude 專屬職責）
 
 > 2026-08-06 起，原 VERIFY-01（瀏覽器實測）／VERIFY-02（留證）／VERIFY-03（AI 自檢不算數）
@@ -1246,6 +1267,7 @@ blueprint 的 `url_prefix` 與模組名不一致，照模組名猜必 404：
 | **外部系統觸發流程（無 session）** | `/api/form-center/submit` | **`/api/trigger/form`**（見下方專段）——前者掛 `@module_access_required`，第一行就檢查 `current_user.is_authenticated`，外部拿 API Key 打**恆 401** |
 | 弱點管理各頁 | `/vuln-lifecycle/assets` | **`/vuln/assets`**（`vuln_lifecycle/web/__init__.py` 的 prefix 是 `/vuln`；API 那邊反而是 `/api/vuln-lifecycle/...`，兩者不一致） |
 | 規格制定的 API | `/api/spec-formulate/specs` | **`/api/spec-formulate/schema/specs`**（路由全寫在 `schema.py` 的 `register(bp)` 內，bp 是 `schema_bp`） |
+| **表單**設計器 | `/forms/form-designer` | **`/forms/templates/<form_template_secure_code>`**（`/forms/templates/new` 是新建，兩者都要設計權限——純 EMPLOYEE 開會 **403**，用 ORG_ADMIN 或持 FORM_DESIGNER 的帳號） |
 
 ### 外部系統用 API Key 發動表單流程：`/api/trigger/form`（2026-08-13 起）
 
