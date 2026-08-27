@@ -217,13 +217,19 @@ def build_graph(org_admin_role_sc, api_key_issue_icon):
                 'decision_options': [
                     {'id': 'opt-approve', 'label': '核准並核發', 'value': 'approved',
                      'style': 'primary', 'target_edges': ['edge-approve']},
-                    # 駁回刻意不接任何邊：表單中心只有在「target_edges 為空且
-                    # style=danger」時才會送 decision='rejected'
-                    # （fc-approval.js:336-343），平台據此把 fw_approval_records
-                    # 記成 rejected 並把流程收成 REJECTED。接了邊的話簽核記錄會
-                    # 留下 action='approved'，API Key 的核准稽核就與事實相反。
+                    # 駁回接回同一個 End：本平台的流程一律要走到 End 節點收尾
+                    # （Ethan 2026-08-27 定調），那是「進行中／異常中斷／長時間
+                    # 卡住」這類統計的排除條件。設計器面板印的「未配對 =
+                    # REJECTED 終態」雖然也是既有機制，但會讓流程不經 End 結束。
+                    #
+                    # 已知代價：表單中心只在「target_edges 為空且 style=danger」
+                    # 時才送 decision='rejected'（fc-approval.js:336-343），所以
+                    # 接了邊之後 fw_approval_records.action 會記成 'approved'，
+                    # 決策真相只留在流程變數 approval 與簽核意見裡。這是全平台
+                    # 通例（OD 的「人工確認」、WF2610385E 的「退回」都一樣），
+                    # 不在本流程特案處理。
                     {'id': 'opt-reject', 'label': '駁回', 'value': 'rejected',
-                     'style': 'danger', 'target_edges': []},
+                     'style': 'danger', 'target_edges': ['edge-reject']},
                 ],
             }, -300, 0, '核發前唯一的把關點：管理員在此看得到 Key 歸屬人與授權表單範圍。'),
             _node('node-ApiKeyIssue', 'ApiKeyIssue', '核發 API Key', {}, -40, -80,
@@ -242,6 +248,8 @@ def build_graph(org_admin_role_sc, api_key_issue_icon):
             _edge('edge-approve', 'node-FormAdapter-approve', 'node-ApiKeyIssue', label='核准'),
             _edge('edge-issued', 'node-ApiKeyIssue', 'node-FieldWrite-issued'),
             _edge('edge-issued-end', 'node-FieldWrite-issued', 'node-End'),
+            # 駁回不做任何後續動作，只留表單與簽核記錄，直接收到 End
+            _edge('edge-reject', 'node-FormAdapter-approve', 'node-End', label='駁回'),
         ],
     }
     for node in graph['nodes']:
@@ -292,8 +300,22 @@ def validate_graph(graph):
     end_count = sum(1 for node in nodes if node.get('type') == 'End')
     if start_count != 1:
         problems.append(f'Start 節點數量必須剛好為 1，目前為 {start_count}')
-    if end_count != 1:
-        problems.append(f'End 節點數量必須剛好為 1，目前為 {end_count}')
+    # End 只要求至少一個：多個 End 是合法設計（End 是流程級結束，任一到達即結束），
+    # 寫死「剛好一個」會擋掉「每條分支各自收尾」這種也合理的畫法。
+    if end_count < 1:
+        problems.append('流程必須至少有一個 End 節點')
+
+    # 每個決策選項都必須有去向：本平台的流程一律要走到 End 收尾，
+    # 未配對的選項在畫布上是懸空的按鈕，看圖的人無從判斷它會怎麼結束。
+    for node in nodes:
+        if node.get('type') != 'FormAdapter':
+            continue
+        for option in (node.get('config') or {}).get('decision_options') or []:
+            if not (option.get('target_edges') or []):
+                problems.append(
+                    f"FormAdapter {node.get('id')} 的決策選項 "
+                    f"{option.get('label') or option.get('id')} 沒有配對任何出線"
+                )
     return problems
 
 
