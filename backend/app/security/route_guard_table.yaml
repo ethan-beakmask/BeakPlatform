@@ -1726,6 +1726,51 @@ routes:
     rules:
     - /api/modules/<secure_code>
     source: backend/app/api/modules.py
+  api_my_api_keys.claim_my_api_key:
+    answer_source: none
+    guard_args: {}
+    guards:
+    - login_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/my-api-keys/<key_secure_code>/claim
+    source: backend/app/api/my_api_keys.py
+  api_my_api_keys.list_my_api_keys:
+    answer_source: none
+    guard_args: {}
+    guards:
+    - login_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/my-api-keys
+    source: backend/app/api/my_api_keys.py
+  api_my_api_keys.regenerate_my_api_key:
+    answer_source: none
+    guard_args: {}
+    guards:
+    - login_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/my-api-keys/<key_secure_code>/regenerate
+    source: backend/app/api/my_api_keys.py
   api_numbering.check_number_available:
     answer_source: code
     guard_args: {}
@@ -5925,10 +5970,9 @@ routes:
     - EXTERNAL
     methods:
     - GET
-    note: 'API Key 申請單的授權表單選項。與同檔 list_available_forms 同一個閘門（該企業有
-      form_workflow 合約的登入帳號，含 EXTERNAL 自行申請）。函式內另有代申請檢查：?user
-      指向他人時要求呼叫者非 EXTERNAL 且對象為同企業有效帳號；回傳內容一律由
-      fill_permission_service 依「被代申請人」計算，不會超出該對象自己填得到的範圍。'
+    note: API Key 申請單的授權表單選項。與同檔 list_available_forms 同一個閘門（該企業有 form_workflow 合約的登入帳號，含
+      EXTERNAL 自行申請）。函式內另有代申請檢查：?user 指向他人時要求呼叫者非 EXTERNAL 且對象為同企業有效帳號；回傳內容一律由 fill_permission_service
+      依「被代申請人」計算，不會超出該對象自己填得到的範圍。
     review: confirmed
     rules:
     - /api/form-center/fillable-form-templates

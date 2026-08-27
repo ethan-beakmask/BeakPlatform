@@ -110,6 +110,10 @@ def register_blueprints(app: Flask) -> None:
     from .api_keys import api_keys_bp
     app.register_blueprint(api_keys_bp)
 
+    # Personal API Key management (本人 API Key 領取/重產)
+    from .my_api_keys import my_api_keys_bp
+    app.register_blueprint(my_api_keys_bp)
+
     # Broadcasts (廣播系統)
     from .broadcasts import broadcasts_bp
     app.register_blueprint(broadcasts_bp)

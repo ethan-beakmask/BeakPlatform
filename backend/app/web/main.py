@@ -194,10 +194,16 @@ def personal_settings():
             db.session.rollback()
             flash(_('儲存失敗: %(error)s', error=str(e)), 'error')
 
+    from app.utils.external_url import build_external_url
+
     return render_template(
         'pages/personal_settings.html',
         languages=SUPPORTED_LANGUAGES,
-        timezone_choices=get_timezone_choices()
+        timezone_choices=get_timezone_choices(),
+        # 尾斜線要去掉：範例裡是 "$BASE/api/trigger/form"，帶著尾斜線會組出
+        # .../beakplatform//api/... 的雙斜線。本機 nginx 容忍（實測 201），
+        # 但使用者複製出去的指令不該長這樣，經過嚴格的反代或 WAF 也可能被擋。
+        api_trigger_base_url=(build_external_url('/') or '').rstrip('/') or None,
     )
 
 

@@ -118,6 +118,26 @@ def create_api_key(
     return record, plaintext_b64
 
 
+def regenerate_secret(record: ApiKey, *, actor_secure_code: str) -> Tuple[ApiKey, str]:
+    """重新產生 secret：舊 secret 立即失效，回傳 (record, plaintext_secret_b64)。"""
+    secret = secrets.token_bytes(SECRET_BYTES)
+    encrypted = KeyManager.encrypt_file(record.org_secure_code, secret)
+
+    record.secret_ciphertext = encrypted['ciphertext']
+    record.secret_file_nonce = encrypted['file_nonce']
+    record.secret_wrapped_dek = encrypted['wrapped_dek']
+    record.secret_dek_nonce = encrypted['dek_nonce']
+    record.secret_encryption_key_sc = encrypted['encryption_key_sc']
+    db.session.commit()
+
+    plaintext_b64 = base64.urlsafe_b64encode(secret).decode('ascii')
+
+    logger.info('api_key secret regenerated sc=%s key_id=%s org=%s actor=%s',
+                record.secure_code, record.key_id, record.org_secure_code,
+                actor_secure_code)
+    return record, plaintext_b64
+
+
 def lookup_active_key(key_id: str) -> Optional[ApiKey]:
     """
     依 key_id 查詢 active 且未過期的 API Key。

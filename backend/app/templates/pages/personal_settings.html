@@ -5,7 +5,7 @@
 {% block title %}{{ _('個人設定') }} - BeakMask{% endblock %}
 
 {% block content %}
-<div style="max-width: 800px; margin: 0 auto;">
+<div class="mak-page">
 
 <!-- 頁面標題列 -->
 <div class="page-header">
@@ -178,5 +178,146 @@
     </div>
 
 </form>
+
+<div class="detail-card" x-data="myApiKeysManager()" x-init="init()">
+    <div class="detail-card-header">
+        <h3>{{ _('我的 API Key') }}</h3>
+    </div>
+    <div class="detail-card-body">
+        <div x-show="message" class="alert" :class="messageIsError ? 'alert-error' : 'alert-success'" x-text="message"></div>
+
+        <div x-show="!loading && keys.length === 0" class="mak-empty">
+            {{ _('目前沒有屬於你的 API Key。可到表單中心提出「API Key 申請單」。') }}
+        </div>
+
+        <div x-show="loading" class="mak-empty">{{ _('載入中...') }}</div>
+
+        <div x-show="!loading && keys.length > 0" class="mak-table-wrap">
+            <table class="data-table mak-table">
+                <thead>
+                    <tr>
+                        <th>{{ _('名稱') }}</th>
+                        <th>Key ID</th>
+                        <th>{{ _('授權表單') }}</th>
+                        <th>{{ _('狀態') }}</th>
+                        <th>{{ _('最後使用') }}</th>
+                        <th>{{ _('申請單') }}</th>
+                        <th>{{ _('金鑰') }}</th>
+                        <th>{{ _('操作') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="key in keys" :key="key.secure_code">
+                        <tr>
+                            <td>
+                                <div class="mak-name" x-text="key.name || '-'"></div>
+                                <div class="mak-sub mak-desc" x-text="key.description || ''"></div>
+                            </td>
+                            <td><code class="mak-code" x-text="key.key_id"></code></td>
+                            <td>
+                                <template x-if="key.triggerable_forms && key.triggerable_forms.length">
+                                    <div>
+                                        <template x-for="form in key.triggerable_forms" :key="form.form_code || form.published_secure_code">
+                                            <div x-text="form.name || form.form_code || '-'"></div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <span x-show="!key.triggerable_forms || key.triggerable_forms.length === 0">{{ _('（無）') }}</span>
+                            </td>
+                            <td>
+                                <div x-text="statusLabel(key.status)"></div>
+                                <div class="mak-sub" :class="isExpired(key.expires_at) ? 'mak-danger-text' : ''"
+                                     x-text="expiryLabel(key.expires_at)"></div>
+                            </td>
+                            <td x-text="key.last_used_at ? fmtTime(key.last_used_at) : __('尚未使用')"></td>
+                            <td x-text="key.form_instance ? key.form_instance.serial_number : '—'"></td>
+                            <td>
+                                <div x-text="claimLabel(key)"></div>
+                                <div class="mak-sub" x-show="key.claim && key.claim.state === 'pending'"
+                                     x-text="__('領取期限: ') + fmtTime(key.claim.expires_at)"></div>
+                            </td>
+                            <td>
+                                <div class="mak-actions">
+                                    <template x-if="key.claim && key.claim.state === 'pending'">
+                                        <button type="button" class="btn btn-primary btn-sm" @click="claim(key)">{{ _('領取金鑰') }}</button>
+                                    </template>
+                                    <template x-if="key.claim && key.claim.state === 'claimed'">
+                                        <button type="button" class="btn btn-secondary btn-sm" @click="openExample(key)">{{ _('查看串接範例') }}</button>
+                                    </template>
+                                    <template x-if="key.claim && key.claim.state !== 'pending'">
+                                        <button type="button" class="btn btn-danger btn-sm" @click="regenerate(key)">{{ _('重新產生金鑰') }}</button>
+                                    </template>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="modal-overlay" x-show="showModal" x-cloak @click.self="closeModal()">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>{{ _('API Key 串接範例') }}</h3>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="closeModal()">{{ _('關閉') }}</button>
+                </div>
+
+                <div class="alert alert-warning" x-text="modalWarning()"></div>
+
+                <div class="form-group">
+                    <label class="form-label">{{ _('金鑰') }}</label>
+                    <div class="mak-copy-row">
+                        <input type="text" class="form-control" readonly :value="secret || '$BP_API_KEY_SECRET'">
+                        <button type="button" class="btn btn-secondary" @click="copySecret()" x-text="secretCopied ? __('已複製') : __('複製')"></button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">{{ _('表單') }}</label>
+                        <select class="form-control" x-model="selectedFormCode" @change="resetExampleFields()">
+                            <template x-for="form in modalForms()" :key="form.form_code || form.published_secure_code">
+                                <option :value="form.form_code" x-text="form.name || form.form_code"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ _('主旨') }}</label>
+                        <input type="text" class="form-control" x-model="subject">
+                    </div>
+                </div>
+
+                <div class="alert alert-warning" x-show="!baseUrl">
+                    {{ _('（尚未設定系統對外網址，請聯絡管理員）') }}
+                </div>
+
+                <div class="mak-fields" x-show="selectedFieldKeys().length > 0">
+                    <template x-for="field in selectedFieldKeys()" :key="field">
+                        <div class="form-group">
+                            <label class="form-label" x-text="field"></label>
+                            <input type="text" class="form-control" x-model="exampleFields[field]">
+                        </div>
+                    </template>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">curl</label>
+                    <div class="mak-copy-row mak-copy-row-top">
+                        <textarea class="form-control mak-curl" readonly x-text="curlCommand()"></textarea>
+                        <button type="button" class="btn btn-secondary" @click="copyCurl()" x-text="curlCopied ? __('已複製') : __('複製')"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.__PAGE_CONFIG = {apiTriggerBaseUrl: {{ api_trigger_base_url|tojson }}};
+</script>
+<script src="{{ app_prefix }}/static/js/app.js"></script>
+<script src="{{ app_prefix }}/static/js/my-api-keys.js"></script>
 {% endblock %}

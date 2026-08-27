@@ -10,6 +10,8 @@ files:
   route:
     - backend/app/web/profile.py
     - backend/app/web/main.py              # personal_settings, change_password
+  api:
+    - backend/app/api/my_api_keys.py       # 本人 API Key 清單/領取/重產
   model:
     - backend/app/models/user.py
     - backend/app/models/password_history.py
@@ -19,6 +21,8 @@ files:
     - backend/app/templates/pages/profile/password.html
     - backend/app/templates/pages/personal_settings.html
     - backend/app/templates/pages/change_password.html
+  js:
+    - backend/app/static/js/my-api-keys.js
 
 tables:
   primary: users

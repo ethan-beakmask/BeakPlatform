@@ -649,6 +649,105 @@ textarea.form-control {
 
 .hidden { display: none; }
 
+/* ------------------------------------------
+   My API Keys (personal settings)
+   ------------------------------------------ */
+.mak-page {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.mak-empty {
+    color: var(--color-text-secondary);
+    padding: 8px 0;
+}
+
+.mak-table-wrap {
+    overflow-x: auto;
+}
+
+.mak-table td {
+    vertical-align: top;
+}
+
+.mak-name {
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.mak-sub {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    margin-top: 3px;
+}
+
+.mak-desc {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mak-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: var(--font-size-xs);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius);
+    padding: 2px 5px;
+    white-space: nowrap;
+}
+
+.mak-danger-text {
+    color: var(--color-danger);
+}
+
+.mak-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.mak-copy-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.mak-copy-row .form-control {
+    flex: 1;
+}
+
+.mak-copy-row-top {
+    align-items: flex-start;
+}
+
+.mak-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.mak-curl {
+    min-height: 230px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: var(--font-size-xs);
+    line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+    .mak-copy-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .mak-page .form-row {
+        flex-direction: column;
+    }
+}
+
 /* ===== 資料出口遮罩 (egress-mask.js) ===== */
 .bk-egress-mask {
     cursor: pointer;
