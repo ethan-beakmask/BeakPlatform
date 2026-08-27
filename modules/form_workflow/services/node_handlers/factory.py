@@ -126,6 +126,7 @@ def register_builtin_handlers():
     from .alert_broadcast_handler import AlertBroadcastHandler
     from .decision_writer_handler import DecisionWriterHandler
     from .api_key_action_handler import ApiKeyActionHandler
+    from .api_key_issue_handler import ApiKeyIssueHandler
     from .ai_agent_handler import AiAgentHandler
     from .sqlexecutor_handler import SqlExecutorHandler
 
@@ -176,6 +177,7 @@ def register_builtin_handlers():
 
     # 安全（API Key 機器處置）
     NodeHandlerFactory.register('ApiKeyAction', ApiKeyActionHandler)
+    NodeHandlerFactory.register('ApiKeyIssue', ApiKeyIssueHandler)
 
     # AI 分析
     NodeHandlerFactory.register('AiAgent', AiAgentHandler)

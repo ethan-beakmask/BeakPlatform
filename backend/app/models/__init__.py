@@ -106,6 +106,7 @@ from .store_installation import StoreInstallation
 
 # 平台級 API Key（外部系統 HMAC 認證）
 from .api_key import ApiKey
+from .api_key_claim import ApiKeyClaim
 
 # 時間管理（班表、排班）
 from .work_schedule import WorkSchedule, DEFAULT_WORK_SCHEDULES
@@ -117,6 +118,7 @@ from .schedule_adjustment import ScheduleAdjustment
 __all__ = [
     # 平台級 API Key
     'ApiKey',
+    'ApiKeyClaim',
     # 基礎
     'BaseModel',
     'TenantBaseModel',
