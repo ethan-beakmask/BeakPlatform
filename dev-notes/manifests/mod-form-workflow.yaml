@@ -61,6 +61,11 @@ files:
     - modules/form_workflow/static/modules/form_workflow/js/formadapter-decisions.js
     - modules/form_workflow/static/modules/form_workflow/js/formio-bkfile-provider.js
     - modules/form_workflow/static/modules/form_workflow/js/ai-usage.js
+    # 平台層的 form.io 自訂元件（Formio.use 外掛）--
+    # 新增時 form_designer.html 與 form_center.html 兩處都要掛 <script>
+    - backend/app/static/js/formio-user-picker.js                     # 人員選擇（值=user secure_code）
+    - backend/app/static/js/formio-form-picker.js                     # 表單選擇（值=form_template SC 陣列，PF-160 授權表單）
+    - backend/app/static/js/formio-form-title.js                      # 表單名稱
   css:
     - modules/form_workflow/static/modules/form_workflow/css/fw-dashboard.css
     - modules/form_workflow/static/modules/form_workflow/css/form-center.css

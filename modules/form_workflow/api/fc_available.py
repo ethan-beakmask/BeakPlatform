@@ -1,7 +1,8 @@
 """
 表單中心 - 可用表單列表
 """
-from flask import jsonify
+from flask import jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from app.security.decorators import module_access_required
@@ -217,4 +218,65 @@ def list_available_forms():
         'success': True,
         'data': result,
         'can_tryout': can_tryout
+    })
+
+
+@form_center_bp.route('/fillable-form-templates')
+@module_access_required('form_workflow', False)
+def list_fillable_form_templates():
+    """
+    取得指定使用者「可填寫且已發行」的表單模板清單
+
+    用途：API Key 申請單（PF-160）的「授權表單」選擇器選項來源。
+    規則是「你能手動填的表單，才能申請 key 去自動填」，判定一律走
+    fill_permission_service.list_fillable_published_templates()（唯一實作，
+    ApiKeyIssue 核發前的重驗用的是同一支），禁止在此另寫過濾。
+
+    Query:
+        user: 被代申請人的 user secure_code；省略時為登入者本人。
+
+    代申請時判定對象必須是「被代申請人」而不是送單人 --
+    依送單人算的話，A 可以幫 B 申請一把「B 手動填不到的表單」的 key，
+    B 藉此取得原本沒有的能力（提權）。
+    """
+    from app.models import User
+    from ..services.fill_permission_service import (
+        list_fillable_published_templates,
+    )
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    target_sc = (request.args.get('user') or '').strip() or current_user.secure_code
+    if target_sc == current_user.secure_code:
+        target_user = current_user
+    else:
+        # 代申請：限企業成員，避免外部廠商互相代申請繞過管理員對歸屬的認知
+        if getattr(current_user, 'is_external', False):
+            return jsonify({
+                'success': False,
+                'error': 'proxy_not_allowed',
+                'message': _('外部帳號不可代他人申請'),
+            }), 403
+        target_user = User.query.filter_by(
+            secure_code=target_sc,
+            org_secure_code=org.secure_code,
+            is_deleted=False,
+            is_active=True,
+        ).first()
+        if not target_user:
+            return jsonify({
+                'success': False,
+                'error': 'user_not_found',
+                'message': _('指定的使用者不存在或已停用'),
+            }), 404
+
+    return jsonify({
+        'success': True,
+        'data': list_fillable_published_templates(target_user, org.secure_code),
+        'beneficiary': {
+            'secure_code': target_user.secure_code,
+            'display_name': target_user.display_name,
+        },
     })

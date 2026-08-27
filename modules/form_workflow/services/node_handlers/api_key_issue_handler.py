@@ -64,11 +64,31 @@ class ApiKeyIssueHandler(BaseNodeHandler):
             org_code = self.queue_item.org_secure_code
             self._set_rls_context(org_code)
 
-            if not self._is_active_org_user(beneficiary, org_code):
+            beneficiary_user = self._get_active_org_user(beneficiary, org_code)
+            if not beneficiary_user:
                 msg = _('API Key 核發失敗：領取人不是本企業有效帳號')
                 self.log_error(
                     'ApiKeyIssue beneficiary not active in org',
                     {'beneficiary': beneficiary, 'org': org_code},
+                )
+                return {'status': 'error', 'message': msg}
+
+            requested_forms = []
+            for item in forms:
+                sc = str(item).strip()
+                if sc and sc not in requested_forms:
+                    requested_forms.append(sc)
+
+            # 授權表單必須落在「領取人自己填得到」的範圍內。前端選擇器的過濾
+            # 不是防線 -- form_data 由送單人控制，F12 就能塞進任意 template SC，
+            # 核發前不重驗等於任何人都能替他人取得原本沒有的能力（提權）。
+            out_of_scope = self._forms_out_of_scope(
+                requested_forms, beneficiary_user, org_code)
+            if out_of_scope:
+                msg = _('API Key 核發失敗：授權表單超出領取人可填寫的範圍')
+                self.log_error(
+                    'ApiKeyIssue forms out of beneficiary scope',
+                    {'beneficiary': beneficiary, 'out_of_scope': out_of_scope},
                 )
                 return {'status': 'error', 'message': msg}
 
@@ -83,7 +103,7 @@ class ApiKeyIssueHandler(BaseNodeHandler):
                 org_secure_code=org_code,
                 name=name,
                 description=description,
-                scopes={'form_template': [str(f).strip() for f in forms if f]},
+                scopes={'form_template': requested_forms},
                 applicant_user_secure_code=beneficiary,
                 allowed_ips=allowed_ips,
                 expires_at=expires_at,
@@ -124,7 +144,7 @@ class ApiKeyIssueHandler(BaseNodeHandler):
             {'org': org_code},
         )
 
-    def _is_active_org_user(self, user_secure_code: str, org_code: str) -> bool:
+    def _get_active_org_user(self, user_secure_code: str, org_code: str):
         from app.models import User
 
         return User.query.filter_by(
@@ -132,7 +152,19 @@ class ApiKeyIssueHandler(BaseNodeHandler):
             org_secure_code=org_code,
             is_deleted=False,
             is_active=True,
-        ).first() is not None
+        ).first()
+
+    def _forms_out_of_scope(self, requested_forms: List[str], beneficiary_user,
+                            org_code: str) -> List[str]:
+        """回傳領取人填不到的表單模板 SC（唯一判定：fill_permission_service）。"""
+        from ..fill_permission_service import list_fillable_published_templates
+
+        allowed = {
+            item['secure_code']
+            for item in list_fillable_published_templates(
+                beneficiary_user, org_code)
+        }
+        return [sc for sc in requested_forms if sc not in allowed]
 
     def _parse_expires_at(self, value: str,
                           org_code: str) -> Optional[datetime]:

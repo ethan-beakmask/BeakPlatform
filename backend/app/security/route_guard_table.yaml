@@ -5909,6 +5909,30 @@ routes:
     rules:
     - /api/form-center/column-config/all
     source: modules/form_workflow/api/fc_utils.py
+  form_workflow_form_center.list_fillable_form_templates:
+    answer_source: db
+    guard_args:
+      module_access_required:
+        check_acl: false
+        module: form_workflow
+    guards:
+    - module_access_required
+    has_internal_check: true
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - EMPLOYEE
+    - EXTERNAL
+    methods:
+    - GET
+    note: 'API Key 申請單的授權表單選項。與同檔 list_available_forms 同一個閘門（該企業有
+      form_workflow 合約的登入帳號，含 EXTERNAL 自行申請）。函式內另有代申請檢查：?user
+      指向他人時要求呼叫者非 EXTERNAL 且對象為同企業有效帳號；回傳內容一律由
+      fill_permission_service 依「被代申請人」計算，不會超出該對象自己填得到的範圍。'
+    review: confirmed
+    rules:
+    - /api/form-center/fillable-form-templates
+    source: modules/form_workflow/api/fc_available.py
   form_workflow_form_center.list_my_forms:
     answer_source: db
     guard_args:
