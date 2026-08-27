@@ -80,6 +80,8 @@ files:
     - scripts/migrations/108_fw_mapping_permission_role_grant.sql # fw_mapping_permissions role grant_type
     - scripts/migrations/109_seed_designer_role_permissions.py # 回填設計者角色權限
     - scripts/migrations/110_open_form_workflow_menu_to_employee.py # 開放表單流程設計選單給 EMPLOYEE 設計者
+  provisioning: # 建置表單工作流範例與標準配對
+    - scripts/examples/provision_api_key_request_flow.py       # PF-160 API Key 申請單/流程/填寫權限
   tests:
     - backend/tests/test_execution_code_per_org.py             # PF-116 per-org execution_code 約束與序號池
     - backend/tests/test_form_serial_per_org.py                # per-org serial_number 約束與序號池

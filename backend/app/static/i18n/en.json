@@ -30,6 +30,7 @@
  "(未設定資料來源)": "(No data source set)",
  "(未選擇)": "(Not selected)",
  "(無)": "(None)",
+ "(無法解析：可能已停用)": "(Cannot resolve: may be disabled)",
  "(無法解析：可能已停用或超出對象權限)": "(Cannot resolve: may be disabled or outside the recipient's permissions)",
  "(無規則)": "(No rules)",
  "(獨立規格)": "(independent specifications)",

@@ -380,6 +380,7 @@
                 this._pickerDisplayName = '';
                 this._pickerUsername = '';
                 this._pickerDeptName = '';
+                this._resolvedFor = '';
                 this._defaultLoaded = false;
                 this._resolving = false;
             }
@@ -434,12 +435,10 @@
             }
 
             // 延遲一個 tick，讓 Form.io 的 submission = { data } 先設定完成
-            // 延遲一個 tick，讓 Form.io 的 submission = { data } 先設定完成
             setTimeout(function () {
                 var curVal = self.dataValue || '';
-                if (curVal && !self._pickerDisplayName && !self._resolving) {
-                    self._resolving = true;
-                    self._resolveDisplay(curVal);
+                if (curVal) {
+                    self._ensureDisplayResolved();
                 } else if (!self._defaultLoaded && !curVal && !self.options.readOnly) {
                     self._defaultLoaded = true;
                     fetchCurrentUser().then(function (user) {
@@ -466,6 +465,12 @@
             this.dataValue = value;
         }
 
+        setValue(value, flags) {
+            var changed = super.setValue(value, flags);
+            this._ensureDisplayResolved();
+            return changed;
+        }
+
         getValueAsString(value) {
             if (this._pickerDisplayName) {
                 var text = this._pickerDisplayName;
@@ -478,10 +483,28 @@
             return value ? __('載入中...') : __('(未選擇)');
         }
 
+        _ensureDisplayResolved() {
+            var value = this.dataValue || '';
+            if (!value) {
+                this._pickerDisplayName = '';
+                this._pickerUsername = '';
+                this._pickerDeptName = '';
+                this._resolvedFor = '';
+                this._updateDisplay();
+                return;
+            }
+            if (this._resolvedFor === value || this._resolving) {
+                return;
+            }
+            this._resolving = true;
+            this._resolveDisplay(value);
+        }
+
         _setSelectedUser(person) {
             this._pickerDisplayName = person.display_name;
             this._pickerUsername = person.username || '';
             this._pickerDeptName = person.dept_name || '';
+            this._resolvedFor = person.secure_code;
             this.setValue(person.secure_code);
             this._updateDisplay();
         }
@@ -504,10 +527,24 @@
             fetchOrgTree().then(function (data) {
                 var person = findPersonInTree(data, secureCode);
                 self._resolving = false;
+                if ((self.dataValue || '') !== secureCode) {
+                    self._ensureDisplayResolved();
+                    return;
+                }
                 if (person) {
                     self._pickerDisplayName = person.display_name;
                     self._pickerUsername = person.username || '';
                     self._pickerDeptName = person.dept_name || '';
+                    self._resolvedFor = secureCode;
+                    self._updateDisplay();
+                    if (self.options.readOnly) {
+                        self.redraw();
+                    }
+                } else {
+                    self._pickerDisplayName = __('(無法解析：可能已停用)');
+                    self._pickerUsername = '';
+                    self._pickerDeptName = '';
+                    self._resolvedFor = secureCode;
                     self._updateDisplay();
                     if (self.options.readOnly) {
                         self.redraw();
