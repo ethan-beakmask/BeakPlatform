@@ -45,6 +45,7 @@ files:
     # task_authorizer.py 簽核佇列授權判定（快照 + ROLE 當前角色即時比對）
     - modules/form_workflow/services/ai_usage_service.py    # AiAgent 用量記錄與配額服務
     - modules/form_workflow/services/trigger_scope_service.py # API Key 表單 scope 解析共用服務
+    - backend/app/defaults/api_key_request_defaults.py      # API Key 申請單出廠預設（表單/流程/發行/填寫權限 seed）
   model:
     - modules/form_workflow/models/
     - modules/form_workflow/models/ai_usage_record.py       # AiAgent 用量記錄

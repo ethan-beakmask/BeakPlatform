@@ -168,6 +168,8 @@ class OrganizationService:
 
         from ..defaults.od_protected_defaults import seed_org_builtin_protected_targets
         seed_org_builtin_protected_targets(org.secure_code)
+        from ..defaults.api_key_request_defaults import seed_org_api_key_request_flow
+        seed_org_api_key_request_flow(org.secure_code)
 
         logger.info(f"Organization created: {org.code} ({org.domain_name}) by {created_by}")
 
@@ -975,6 +977,8 @@ class OrganizationService:
 
         from ..defaults.od_protected_defaults import seed_org_builtin_protected_targets
         seed_org_builtin_protected_targets(org.secure_code)
+        from ..defaults.api_key_request_defaults import seed_org_api_key_request_flow
+        seed_org_api_key_request_flow(org.secure_code)
 
         db.session.commit()
 
