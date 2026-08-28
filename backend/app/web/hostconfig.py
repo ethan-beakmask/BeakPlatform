@@ -9,71 +9,148 @@ BeakMask Host Config
 """
 from flask import Blueprint, render_template, jsonify, request, redirect, url_for
 from flask_babel import gettext as _
+from sqlalchemy import bindparam
 
 from app.security.decorators import system_admin_required
 from app import db
 
 hostconfig_bp = Blueprint('hostconfig', __name__)
 
-# 硬刪除涉及的資料表（按刪除順序排列，子表在前）
-# 注意：順序非常重要，必須先刪除有外鍵依賴的子表
-# 完整 FK 關聯清單由 pg_constraint 查詢產生 (2026-03-08)
-HARD_DELETE_TABLES = [
-    # Phase 1: 純葉節點（無其他表引用）
-    ('role_permissions', 'role_secure_code', '角色權限', 'roles'),
-    ('user_role_assignments', 'org_secure_code', '用戶角色指派'),
-    ('user_unit_assignments', 'org_secure_code', '用戶單位指派'),
-    ('user_unit_memberships', 'org_secure_code', '用戶單位成員'),
-    ('password_reset_tokens', 'org_secure_code', '密碼重設 Token'),
-    ('password_history', 'user_secure_code', '密碼歷程', 'users'),
-    ('delegations', 'org_secure_code', '代理設定'),
-    ('employee_positions', 'org_secure_code', '企業成員職位'),
-    ('contracts', 'org_secure_code', '合約'),
-    ('personal_schedules', 'org_secure_code', '個人班表'),
-    ('schedule_adjustments', 'org_secure_code', '班表調整'),
-    ('schedule_holidays', 'schedule_secure_code', '班表假日', 'work_schedules'),
-    ('audit_logs', 'org_secure_code', '稽核日誌'),
-    ('timeout_trackers', 'org_secure_code', '逾時追蹤'),
-    ('conglomerate_logs', 'org_secure_code', '集團日誌'),
-    ('used_user_numbers', 'org_secure_code', '已用企業成員編號'),
-    ('user_numbering_counters', 'org_secure_code', '企業成員編號計數器'),
-    ('job_level_approval_limits', 'org_secure_code', '職等簽核額度'),
-    ('menu_permissions', 'menu_secure_code', '選單權限', 'menu_items'),
-    ('menu_role_requirements', 'org_secure_code', '選單角色需求'),
-    ('broadcast_acknowledgments', 'org_secure_code', '公告確認'),
-    ('module_access_control', 'org_secure_code', '模組使用權'),
-    ('lookup_items', 'org_secure_code', '查找項目'),
-    ('workflow_node_definitions', 'org_secure_code', '流程節點定義'),
-    ('workflow_node_categories', 'org_secure_code', '流程節點分類'),
-
-    # Phase 2: 中層表（被 Phase 1 引用的父表）
-    ('duties', 'org_secure_code', '職責'),
-    ('duty_categories', 'org_secure_code', '職責分類'),
-    ('approval_categories', 'org_secure_code', '簽核類別'),
-    ('lookup_categories', 'org_secure_code', '查找分類'),
-    ('job_titles', 'org_secure_code', '職稱'),
-    ('user_numbering_rules', 'org_secure_code', '企業成員編號規則'),
-    ('users', 'org_secure_code', '用戶'),
-
-    # Phase 3: 上層表（被 Phase 2 引用的父表）
-    ('roles', 'org_secure_code', '角色'),
-    ('organizational_units', 'org_secure_code', '組織單位'),
-    ('job_levels', 'org_secure_code', '職等'),
-    ('job_families', 'org_secure_code', '職系'),
-    ('menu_items', 'org_secure_code', '選單項目'),
-    ('shift_types', 'org_secure_code', '班別'),
-    ('work_schedules', 'org_secure_code', '班表'),
-    ('pages', 'org_secure_code', '頁面'),
-    ('modules', 'org_secure_code', '模組'),
-
-    # Phase 4: 企業設定 + 企業本身
-    ('smtp_configs', 'org_secure_code', 'SMTP 設定'),
-    ('telegram_configs', 'org_secure_code', 'Telegram 設定'),
-    ('recipient_groups', 'org_secure_code', '收件人群組'),
-
-    # 企業本身 (最後刪除)
-    ('organizations', 'secure_code', '企業'),
+# 需要固定先後順序的表（其餘由 _get_org_scoped_tables() 動態帶入，排在本清單之前）
+# 只列真正有 FK 依賴的，不再手工維護完整清單
+HARD_DELETE_ORDER = [
+    'store_installations',      # -> store_items（模組表之間唯一一條 FK）
+    'store_items',
+    # 以下是平台表的既有刪除順序（Phase 1 葉節點 → Phase 4 企業設定）
+    'role_permissions', 'user_role_assignments', 'user_unit_assignments',
+    'user_unit_memberships', 'password_reset_tokens', 'password_history',
+    'delegations', 'employee_positions', 'contracts', 'personal_schedules',
+    'schedule_adjustments', 'schedule_holidays', 'audit_logs',
+    'timeout_trackers', 'conglomerate_logs', 'used_user_numbers',
+    'user_numbering_counters', 'job_level_approval_limits',
+    'menu_permissions', 'menu_role_requirements', 'broadcast_acknowledgments',
+    'module_access_control', 'lookup_items', 'workflow_node_definitions',
+    'workflow_node_categories', 'duties', 'duty_categories',
+    'approval_categories', 'lookup_categories', 'job_titles',
+    'user_numbering_rules', 'users', 'roles', 'organizational_units',
+    'job_levels', 'job_families', 'menu_items', 'shift_types',
+    'work_schedules', 'pages', 'modules', 'smtp_configs', 'telegram_configs',
+    'recipient_groups',
 ]
+
+# 無 org_secure_code 的表：透過父表間接過濾
+# {table: (local_fk_column, parent_table)}
+HARD_DELETE_INDIRECT = {
+    'role_permissions': ('role_secure_code', 'roles'),
+    'password_history': ('user_secure_code', 'users'),
+    'menu_permissions': ('menu_secure_code', 'menu_items'),
+    'schedule_holidays': ('schedule_secure_code', 'work_schedules'),
+}
+
+# 表名 → 中文顯示名（缺的直接顯示表名）
+HARD_DELETE_DISPLAY_NAMES = {
+    'role_permissions': '角色權限',
+    'user_role_assignments': '用戶角色指派',
+    'user_unit_assignments': '用戶單位指派',
+    'user_unit_memberships': '用戶單位成員',
+    'password_reset_tokens': '密碼重設 Token',
+    'password_history': '密碼歷程',
+    'delegations': '代理設定',
+    'employee_positions': '企業成員職位',
+    'contracts': '合約',
+    'personal_schedules': '個人班表',
+    'schedule_adjustments': '班表調整',
+    'schedule_holidays': '班表假日',
+    'audit_logs': '稽核日誌',
+    'timeout_trackers': '逾時追蹤',
+    'conglomerate_logs': '集團日誌',
+    'used_user_numbers': '已用企業成員編號',
+    'user_numbering_counters': '企業成員編號計數器',
+    'job_level_approval_limits': '職等簽核額度',
+    'menu_permissions': '選單權限',
+    'menu_role_requirements': '選單角色需求',
+    'broadcast_acknowledgments': '公告確認',
+    'module_access_control': '模組使用權',
+    'lookup_items': '查找項目',
+    'workflow_node_definitions': '流程節點定義',
+    'workflow_node_categories': '流程節點分類',
+    'duties': '職責',
+    'duty_categories': '職責分類',
+    'approval_categories': '簽核類別',
+    'lookup_categories': '查找分類',
+    'job_titles': '職稱',
+    'user_numbering_rules': '企業成員編號規則',
+    'users': '用戶',
+    'roles': '角色',
+    'organizational_units': '組織單位',
+    'job_levels': '職等',
+    'job_families': '職系',
+    'menu_items': '選單項目',
+    'shift_types': '班別',
+    'work_schedules': '班表',
+    'pages': '頁面',
+    'modules': '模組',
+    'smtp_configs': 'SMTP 設定',
+    'telegram_configs': 'Telegram 設定',
+    'recipient_groups': '收件人群組',
+    'organizations': '企業',
+    'api_key_claims': 'API Key 領取記錄',
+    'api_keys': 'API Key',
+    'dc_backgrounds': '底圖 (NoCode)',
+    'dc_bridge_logs': '資料橋接日誌 (NoCode)',
+    'dc_crud_views': 'CRUD 視圖 (NoCode)',
+    'dc_page_layouts': '頁面版面 (NoCode)',
+    'dc_page_templates': '頁面樣板 (NoCode)',
+    'dc_permission_policy_groups': '權限政策群組 (NoCode)',
+    'dc_permission_policy_rules': '權限政策規則 (NoCode)',
+    'dc_shared_components': '共用元件 (NoCode)',
+    'dc_shared_menus': '共用選單 (NoCode)',
+    'dc_site_map_nodes': 'Site Map 節點 (NoCode)',
+    'dc_site_map_permissions': 'Site Map 權限 (NoCode)',
+    'dc_sub_system_pages': '子系統頁面掛載 (NoCode)',
+    'dc_sub_system_template_hides': '子系統樣板隱藏 (NoCode)',
+    'dc_sub_systems': '子系統 (NoCode)',
+    'egress_audit_logs': '出口稽核日誌',
+    'egress_field_policies': '出口欄位政策',
+    'egress_tier_thresholds': '出口層級門檻',
+    'file_access_logs': '檔案存取日誌',
+    'fw_ai_usage_records': 'AI 用量記錄 (FormFlow)',
+    'fw_approval_records': '簽核記錄 (FormFlow)',
+    'fw_categories': '分類 (FormFlow)',
+    'fw_column_display_config': '欄位顯示設定 (FormFlow)',
+    'fw_demo_inventory': '示範庫存 (FormFlow)',
+    'fw_form_field_changes': '欄位變更記錄 (FormFlow)',
+    'fw_form_instances': '表單實例 (FormFlow)',
+    'fw_form_templates': '表單範本 (FormFlow)',
+    'fw_form_themes': '表單主題 (FormFlow)',
+    'fw_form_workflow_mappings': '表單流程對應 (FormFlow)',
+    'fw_mapping_permissions': '配對權限 (FormFlow)',
+    'fw_node_execution_logs': '節點執行日誌 (FormFlow)',
+    'fw_node_execution_queue': '節點執行佇列 (FormFlow)',
+    'fw_org_databases': '企業資料庫 (FormFlow)',
+    'fw_published_form_workflows': '已發行表單流程 (FormFlow)',
+    'fw_spec_schema': '規格 Schema (SpecFormulate)',
+    'fw_spec_schema_histories': '規格 Schema 歷程 (SpecFormulate)',
+    'fw_sql_form_registries': 'SQL 同步登錄 (FormFlow)',
+    'fw_sql_procedures': 'SQL 白名單程序 (FormFlow)',
+    'fw_sync_queue': '同步佇列 (FormFlow)',
+    'fw_workflow_backgrounds': '流程背景圖 (FormFlow)',
+    'fw_workflow_instances': '流程實例 (FormFlow)',
+    'fw_workflow_templates': '流程範本 (FormFlow)',
+    'fw_workflow_variables': '流程變數 (FormFlow)',
+    'od_defense_decisions': '防禦決策 (OpenDefense)',
+    'od_form_template_mappings': '表單路由規則 (OpenDefense)',
+    'od_intake_events': '受理事件 (OpenDefense)',
+    'od_payload_profiles': 'Payload 設定檔 (OpenDefense)',
+    'od_protected_targets': '封鎖保護清單 (OpenDefense)',
+    'od_service_accounts': '服務帳號 (OpenDefense)',
+    'org_encryption_keys': '企業加密金鑰',
+    'platform_files': '平台檔案',
+    'store_installations': '模組安裝記錄',
+    'store_items': '模組商店項目',
+}
+
+_ORG_DISPLAY_NAME = HARD_DELETE_DISPLAY_NAMES['organizations']
 
 
 @hostconfig_bp.route('/')
@@ -109,31 +186,147 @@ def server_settings():
     return render_template('pages/hostconfig/system_settings.html')
 
 
-def _get_delete_sql(table_name, key_column, org_placeholders, parent_table=None):
-    """
-    產生刪除 SQL 語句
+def _get_org_scoped_tables():
+    """動態取得所有帶 org_secure_code 欄位的表名（set）。
 
-    Args:
-        table_name: 要刪除的表
-        key_column: 該表的關聯欄位
-        org_placeholders: 企業 secure_code 佔位符
-        parent_table: 間接關聯的父表 (如 role_permissions 透過 roles)
+    取代手工維護的表清單 —— 新模組加表後不必再改這裡。
     """
-    if table_name == 'organizations':
-        return f"SELECT COUNT(*) FROM {table_name} WHERE is_deleted = true", \
-               f"DELETE FROM {table_name} WHERE is_deleted = true"
+    result = db.session.execute(db.text(
+        "SELECT table_name FROM information_schema.columns "
+        "WHERE table_schema = 'public' AND column_name = 'org_secure_code'"
+    ))
+    return {row[0] for row in result}
 
-    if parent_table:
-        # 間接關聯：先找父表中屬於這些企業的記錄，再刪除子表
-        subquery = f"SELECT secure_code FROM {parent_table} WHERE org_secure_code IN ({org_placeholders})"
-        count_sql = f"SELECT COUNT(*) FROM {table_name} WHERE {key_column} IN ({subquery})"
-        delete_sql = f"DELETE FROM {table_name} WHERE {key_column} IN ({subquery})"
+
+def _table_exists(table_name):
+    """檢查 public schema 內是否存在指定表。"""
+    result = db.session.execute(db.text(
+        "SELECT 1 FROM information_schema.tables "
+        "WHERE table_schema = 'public' AND table_name = :table"
+    ), {'table': table_name})
+    return result.scalar() is not None
+
+
+def _build_hard_delete_sequence():
+    """回傳 (ordered_tables, all_tables)。
+
+    ordered_tables: 實際要刪的表名清單，不含 organizations。
+      順序 = [動態掃到但不在 HARD_DELETE_ORDER 內的表（sorted）]
+             + [HARD_DELETE_ORDER 內且實際存在的表]
+    動態表排前面的理由：模組表沒有 FK 指向平台表（已查證），
+    未知的新表當成子表先刪最安全。
+    """
+    org_scoped_tables = _get_org_scoped_tables()
+    indirect_tables = {table for table in HARD_DELETE_INDIRECT if _table_exists(table)}
+    all_tables = (org_scoped_tables | indirect_tables) - {'organizations'}
+    ordered_set = set(HARD_DELETE_ORDER)
+    ordered_tables = sorted(all_tables - ordered_set)
+    ordered_tables.extend(table for table in HARD_DELETE_ORDER if table in all_tables)
+    return ordered_tables, all_tables
+
+
+def _hard_delete_stmts(table_name, all_tables):
+    """回傳 (count_stmt, delete_stmt)，兩者都用 expanding bindparam :orgs。"""
+    if table_name not in all_tables:
+        raise ValueError('table not allowed')
+
+    if table_name in HARD_DELETE_INDIRECT:
+        fk_col, parent = HARD_DELETE_INDIRECT[table_name]
+        sub = f"SELECT secure_code FROM {parent} WHERE org_secure_code IN :orgs"
+        count_sql = f"SELECT COUNT(*) FROM {table_name} WHERE {fk_col} IN ({sub})"
+        delete_sql = f"DELETE FROM {table_name} WHERE {fk_col} IN ({sub})"
     else:
-        # 直接關聯
-        count_sql = f"SELECT COUNT(*) FROM {table_name} WHERE {key_column} IN ({org_placeholders})"
-        delete_sql = f"DELETE FROM {table_name} WHERE {key_column} IN ({org_placeholders})"
+        count_sql = f"SELECT COUNT(*) FROM {table_name} WHERE org_secure_code IN :orgs"
+        delete_sql = f"DELETE FROM {table_name} WHERE org_secure_code IN :orgs"
+    param = bindparam('orgs', expanding=True)
+    return (
+        db.text(count_sql).bindparams(param),
+        db.text(delete_sql).bindparams(param),
+    )
 
-    return count_sql, delete_sql
+
+def _orphan_count_stmt(table_name, org_scoped_tables):
+    """回傳指定 org-scoped 表的孤兒計數 statement。"""
+    if table_name not in org_scoped_tables:
+        raise ValueError('table not allowed')
+
+    sql = (
+        f"SELECT COUNT(*) FROM {table_name} x "
+        "WHERE x.org_secure_code IS NOT NULL "
+        "AND NOT EXISTS ("
+        "SELECT 1 FROM organizations o WHERE o.secure_code = x.org_secure_code"
+        ")"
+    )
+    return db.text(sql)
+
+
+def _orphan_group_stmt(table_name, org_scoped_tables):
+    """回傳指定 org-scoped 表依 org_secure_code 彙總孤兒數的 statement。"""
+    if table_name not in org_scoped_tables:
+        raise ValueError('table not allowed')
+
+    sql = (
+        f"SELECT x.org_secure_code, COUNT(*) FROM {table_name} x "
+        "WHERE x.org_secure_code IS NOT NULL "
+        "AND NOT EXISTS ("
+        "SELECT 1 FROM organizations o WHERE o.secure_code = x.org_secure_code"
+        ") "
+        "GROUP BY x.org_secure_code"
+    )
+    return db.text(sql)
+
+
+def _orphan_delete_stmt(table_name, org_scoped_tables):
+    """回傳指定 org-scoped 表的孤兒刪除 statement。"""
+    if table_name not in org_scoped_tables:
+        raise ValueError('table not allowed')
+
+    sql = (
+        f"DELETE FROM {table_name} x "
+        "WHERE x.org_secure_code IS NOT NULL "
+        "AND NOT EXISTS ("
+        "SELECT 1 FROM organizations o WHERE o.secure_code = x.org_secure_code"
+        ")"
+    )
+    return db.text(sql)
+
+
+def _run_delete_with_retries(ordered_tables, stmt_builder):
+    """以 SAVEPOINT + 最多三趟重試刪除，回傳 (counts, errors)。"""
+    deleted_counts = {}
+    pending = list(ordered_tables)
+    last_errors = {}
+
+    for _pass in range(3):
+        failed = []
+        for table_name in pending:
+            try:
+                with db.session.begin_nested():
+                    built = stmt_builder(table_name)
+                    if isinstance(built, tuple):
+                        delete_stmt, params = built
+                    else:
+                        delete_stmt, params = built, {}
+                    res = db.session.execute(delete_stmt, params)
+                    if res.rowcount > 0:
+                        deleted_counts[table_name] = deleted_counts.get(table_name, 0) + res.rowcount
+            except Exception as e:
+                failed.append(table_name)
+                last_errors[table_name] = str(e)
+        if not failed or len(failed) == len(pending):
+            pending = failed
+            break
+        pending = failed
+
+    errors = [
+        {
+            'table': table_name,
+            'display_name': HARD_DELETE_DISPLAY_NAMES.get(table_name, table_name),
+            'error': last_errors[table_name],
+        }
+        for table_name in pending
+    ]
+    return deleted_counts, errors
 
 
 @hostconfig_bp.route('/hard-delete/preview', methods=['GET'])
@@ -170,28 +363,29 @@ def hard_delete_preview():
 
         # 取得各表預計刪除的筆數
         org_codes = [org['secure_code'] for org in deleted_orgs]
-        placeholders = ','.join([f"'{code}'" for code in org_codes])
+        ordered_tables, all_tables = _build_hard_delete_sequence()
 
         table_counts = []
-        for table_def in HARD_DELETE_TABLES:
-            table_name = table_def[0]
-            key_column = table_def[1]
-            display_name = table_def[2]
-            parent_table = table_def[3] if len(table_def) > 3 else None
-
+        for table_name in ordered_tables:
             try:
                 with db.session.begin_nested():
-                    count_sql, _unused = _get_delete_sql(table_name, key_column, placeholders, parent_table)
-                    count = db.session.execute(db.text(count_sql)).scalar()
+                    count_stmt, _unused = _hard_delete_stmts(table_name, all_tables)
+                    count = db.session.execute(count_stmt, {'orgs': org_codes}).scalar()
                     if count > 0:
                         table_counts.append({
                             'table': table_name,
-                            'display_name': display_name,
+                            'display_name': HARD_DELETE_DISPLAY_NAMES.get(table_name, table_name),
                             'count': count
                         })
             except Exception:
                 # savepoint 自動 rollback，表可能不存在，跳過
                 pass
+
+        table_counts.append({
+            'table': 'organizations',
+            'display_name': HARD_DELETE_DISPLAY_NAMES.get('organizations', 'organizations'),
+            'count': len(deleted_orgs),
+        })
 
         return jsonify({
             'success': True,
@@ -224,35 +418,160 @@ def hard_delete_execute():
             return jsonify({
                 'success': True,
                 'message': _('沒有需要刪除的資料'),
-                'deleted_counts': {}
+                'deleted_counts': {},
+                'has_errors': False,
+                'errors': [],
             })
 
-        placeholders = ','.join([f"'{code}'" for code in org_codes])
         deleted_counts = {}
+        errors = []
+        ordered_tables, all_tables = _build_hard_delete_sequence()
 
         # 按順序刪除各表（用 SAVEPOINT 隔離個別表的錯誤）
-        for table_def in HARD_DELETE_TABLES:
-            table_name = table_def[0]
-            key_column = table_def[1]
-            display_name = table_def[2]
-            parent_table = table_def[3] if len(table_def) > 3 else None
+        table_counts, table_errors = _run_delete_with_retries(
+            ordered_tables,
+            lambda table_name: (
+                _hard_delete_stmts(table_name, all_tables)[1],
+                {'orgs': org_codes},
+            ),
+        )
+        for table_name, count in table_counts.items():
+            display_name = HARD_DELETE_DISPLAY_NAMES.get(table_name, table_name)
+            deleted_counts[display_name] = deleted_counts.get(display_name, 0) + count
+        errors.extend(table_errors)
 
-            try:
-                with db.session.begin_nested():
-                    _unused, delete_sql = _get_delete_sql(table_name, key_column, placeholders, parent_table)
-                    result = db.session.execute(db.text(delete_sql))
-                    if result.rowcount > 0:
-                        deleted_counts[display_name] = result.rowcount
-            except Exception as e:
-                # savepoint 自動 rollback，不影響外部交易
-                deleted_counts[f'{display_name} (錯誤)'] = str(e)
+        try:
+            with db.session.begin_nested():
+                result = db.session.execute(db.text(
+                    "DELETE FROM organizations WHERE is_deleted = true"
+                ))
+                if result.rowcount > 0:
+                    deleted_counts[_ORG_DISPLAY_NAME] = result.rowcount
+        except Exception as e:
+            errors.append({
+                'table': 'organizations',
+                'display_name': _ORG_DISPLAY_NAME,
+                'error': str(e),
+            })
 
         db.session.commit()
+        for error in errors:
+            deleted_counts[f"{error['display_name']} (錯誤)"] = error['error']
 
         return jsonify({
             'success': True,
-            'message': _('已刪除 %(count)s 個企業及其相關資料', count=len(org_codes)),
-            'deleted_counts': deleted_counts
+            'message': (
+                _('刪除過程有 %(n)s 張表失敗，企業可能未完全刪除', n=len(errors))
+                if errors else _('已刪除 %(count)s 個企業及其相關資料', count=len(org_codes))
+            ),
+            'deleted_counts': deleted_counts,
+            'has_errors': bool(errors),
+            'errors': errors,
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@hostconfig_bp.route('/orphan-cleanup/preview', methods=['GET'])
+@system_admin_required
+def orphan_cleanup_preview():
+    """預覽指向已不存在企業的孤兒資料。"""
+    try:
+        # 繞過 RLS，確保能看到所有企業隔離的資料
+        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+
+        ordered_tables, _all_tables = _build_hard_delete_sequence()
+        org_scoped_tables = _get_org_scoped_tables() - {'organizations'}
+        ordered_tables = [table for table in ordered_tables if table in org_scoped_tables]
+        tables_with_counts = []
+        orphan_org_totals = {}
+        total = 0
+
+        for table_name in ordered_tables:
+            try:
+                with db.session.begin_nested():
+                    count = db.session.execute(
+                        _orphan_count_stmt(table_name, org_scoped_tables)
+                    ).scalar()
+                    if count and count > 0:
+                        display_name = HARD_DELETE_DISPLAY_NAMES.get(table_name, table_name)
+                        tables_with_counts.append({
+                            'table': table_name,
+                            'display_name': display_name,
+                            'count': count,
+                        })
+                        total += count
+
+                        rows = db.session.execute(
+                            _orphan_group_stmt(table_name, org_scoped_tables)
+                        )
+                        for row in rows:
+                            org_secure_code = row[0]
+                            orphan_org_totals[org_secure_code] = (
+                                orphan_org_totals.get(org_secure_code, 0) + row[1]
+                            )
+            except Exception:
+                pass
+
+        orphan_orgs = [
+            {'org_secure_code': org, 'count': count}
+            for org, count in sorted(
+                orphan_org_totals.items(),
+                key=lambda item: (-item[1], item[0]),
+            )
+        ]
+
+        return jsonify({
+            'success': True,
+            'tables': tables_with_counts,
+            'orphan_orgs': orphan_orgs,
+            'total': total,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@hostconfig_bp.route('/orphan-cleanup/execute', methods=['POST'])
+@system_admin_required
+def orphan_cleanup_execute():
+    """刪除所有孤兒記錄（永久，無法復原）。"""
+    try:
+        # 繞過 RLS，確保能刪除所有企業隔離的資料
+        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+
+        ordered_tables, _all_tables = _build_hard_delete_sequence()
+        org_scoped_tables = _get_org_scoped_tables() - {'organizations'}
+        ordered_tables = [table for table in ordered_tables if table in org_scoped_tables]
+
+        deleted_counts, errors = _run_delete_with_retries(
+            ordered_tables,
+            lambda table_name: _orphan_delete_stmt(table_name, org_scoped_tables),
+        )
+
+        db.session.commit()
+
+        results = [
+            {
+                'table': table_name,
+                'display_name': HARD_DELETE_DISPLAY_NAMES.get(table_name, table_name),
+                'deleted': deleted_counts[table_name],
+            }
+            for table_name in ordered_tables
+            if table_name in deleted_counts
+        ]
+        total_deleted = sum(deleted_counts.values())
+
+        return jsonify({
+            'success': True,
+            'message': (
+                _('孤兒資料清理有 %(n)s 張表失敗', n=len(errors))
+                if errors else _('已清理 %(count)s 筆企業孤兒資料', count=total_deleted)
+            ),
+            'results': results,
+            'total_deleted': total_deleted,
+            'has_errors': bool(errors),
+            'errors': errors,
         })
     except Exception as e:
         db.session.rollback()

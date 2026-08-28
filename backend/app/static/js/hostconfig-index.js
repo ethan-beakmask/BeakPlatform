@@ -117,6 +117,7 @@ function hardDeleteManager() {
         executing: false,
         deletedOrgs: [],
         tableCounts: [],
+        errors: [],
         resultMessage: '',
         resultSuccess: false,
 
@@ -146,6 +147,7 @@ function hardDeleteManager() {
 
             this.executing = true;
             this.resultMessage = '';
+            this.errors = [];
 
             try {
                 var res = await fetch(__HOSTCONFIG.executeUrl, {
@@ -157,7 +159,8 @@ function hardDeleteManager() {
                 });
                 var data = await res.json();
                 if (data.success) {
-                    this.resultSuccess = true;
+                    this.resultSuccess = !data.has_errors;
+                    this.errors = data.errors || [];
                     var msg = data.message;
                     if (data.deleted_counts && Object.keys(data.deleted_counts).length > 0) {
                         msg += __('\n\n刪除明細:\n');
@@ -174,6 +177,94 @@ function hardDeleteManager() {
             } catch (err) {
                 this.resultSuccess = false;
                 this.resultMessage = __('刪除失敗: ') + err.message;
+            }
+            this.executing = false;
+        }
+    };
+}
+
+function orphanCleanupManager() {
+    return {
+        tables: [],
+        orphanOrgs: [],
+        total: 0,
+        scanning: false,
+        scanned: false,
+        executing: false,
+        errors: [],
+        resultMessage: '',
+        resultSuccess: false,
+
+        async scan() {
+            this.scanning = true;
+            this.resultMessage = '';
+            this.errors = [];
+            this.tables = [];
+            this.orphanOrgs = [];
+            this.total = 0;
+            this.scanned = false;
+
+            try {
+                var res = await fetch(__HOSTCONFIG.orphanPreviewUrl);
+                var data = await res.json();
+                if (data.success) {
+                    this.tables = data.tables || [];
+                    this.orphanOrgs = data.orphan_orgs || [];
+                    this.total = data.total || 0;
+                } else {
+                    this.resultMessage = __('掃描失敗: ') + data.message;
+                    this.resultSuccess = false;
+                }
+            } catch (err) {
+                this.resultMessage = __('掃描失敗: ') + err.message;
+                this.resultSuccess = false;
+            }
+            this.scanning = false;
+            this.scanned = true;
+        },
+
+        async executeCleanup() {
+            if (!confirm(
+                __('確定要永久清理企業孤兒資料嗎？\n\n') +
+                __('共 ') + this.total + __(' 筆記錄將被永久刪除。\n') +
+                __('此操作無法復原！')
+            )) {
+                return;
+            }
+
+            this.executing = true;
+            this.resultMessage = '';
+            this.errors = [];
+
+            try {
+                var res = await fetch(__HOSTCONFIG.orphanExecuteUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                var data = await res.json();
+                if (data.success) {
+                    var msg = data.message;
+                    if (data.results && data.results.length > 0) {
+                        msg += __('\n\n清理明細:\n');
+                        for (var i = 0; i < data.results.length; i++) {
+                            var row = data.results[i];
+                            msg += '- ' + row.display_name + ' (' + row.table + '): ' + row.deleted + __(' 筆\n');
+                        }
+                    }
+                    await this.scan();
+                    this.resultSuccess = !data.has_errors;
+                    this.errors = data.errors || [];
+                    this.resultMessage = msg;
+                } else {
+                    this.resultSuccess = false;
+                    this.resultMessage = __('清理失敗: ') + data.message;
+                }
+            } catch (err) {
+                this.resultSuccess = false;
+                this.resultMessage = __('清理失敗: ') + err.message;
             }
             this.executing = false;
         }

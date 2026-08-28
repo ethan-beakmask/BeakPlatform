@@ -5,6 +5,7 @@ page:
   - /hostconfig/server-settings
   - /hostconfig/data-maintenance
   - /hostconfig/hard-delete/
+  - /hostconfig/orphan-cleanup/
   - /hostconfig/purge-deleted/
 description: 系統主機設定（伺服器設定、檔案儲存、資料維護）
 
@@ -13,8 +14,6 @@ files:
   template:
     - backend/app/templates/pages/hostconfig/index.html
     - backend/app/templates/pages/hostconfig/data_maintenance.html
-    - backend/app/templates/pages/hostconfig/hard_delete_preview.html
-    - backend/app/templates/pages/hostconfig/purge_deleted_preview.html
   js:
     - backend/app/static/js/hostconfig-index.js
   css:

@@ -1248,6 +1248,34 @@ user_role_assignments -> audit_logs -> used_user_numbers -> users
 
 （試建**企業**則不能用 SQL 硬刪，走 `/hostconfig/hard-delete`，見 PF-145 交接檔。）
 
+### 硬刪企業／孤兒清理：表清單已改動態掃表（2026-08-28 PF-165 起）
+
+`/hostconfig/data-maintenance` 有**三張**卡片，職責不同不要混用：
+
+| 卡片 | 清什麼 |
+|---|---|
+| 硬刪除已軟刪除的企業 | 該企業在**所有**帶 `org_secure_code` 的表裡的資料 ＋ 企業本身 |
+| 清除標記刪除的資料 | 各表中 `is_deleted=true` 的個別記錄（與企業存不存在無關） |
+| 清理企業孤兒資料 | `org_secure_code` 指向**已不存在企業**的殘留（歷史漏刪造成） |
+
+**表清單不再手工維護**：`_get_org_scoped_tables()` 從 `information_schema` 動態掃出
+所有帶 `org_secure_code` 的表（2026-08-28 是 94 張），只有真正有 FK 依賴的順序寫在
+`HARD_DELETE_ORDER`，其餘動態帶入，再用**三趟重試**自我修復順序問題
+（實測把順序整個反過來仍全刪乾淨）。**新增模組表不必再改 `hostconfig.py`。**
+沒有 `org_secure_code` 的 4 張表走 `HARD_DELETE_INDIRECT` 的父表過濾。
+
+三件猜不到的：
+
+- **判定成功不能只看 `success`，它恆為 true**。要看 `has_errors` / `errors`
+  （2026-08-28 新增的欄位）。改版前錯誤只藏在 `deleted_counts` 的 `(錯誤)` 鍵裡：
+  實測有 logo 的企業會撞 `platform_files` 的 FK，**企業根本沒刪掉卻回成功**
+  （`/opt/tmp/verify/20260828-pf165-harddelete.log`）
+- 改版前漏列 54 張模組表，所以 **2026-08-28 之前刪掉的企業一定留了孤兒**。
+  本機那 1099 筆已用第三張卡片清掉
+- **系統企業的 `code` 是 `SYSTEM`、`secure_code` 是 `system.local`**——
+  看到 `org_secure_code='SYSTEM'` 的記錄一律是把 code 誤當 secure_code 寫入的孤兒，
+  不是刻意的系統級資料（本機 `fw_node_execution_logs` 有過 9 筆）
+
 ### 每個 session 都會撞一次的欄位名（2026-08-09 逐一試誤才弄對）
 
 寫 SQL 前先看這張表，可省掉一輪 `column ... does not exist`：
