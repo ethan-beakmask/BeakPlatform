@@ -1301,6 +1301,7 @@ user_role_assignments -> audit_logs -> used_user_numbers -> users
 | 模組 ACL 的表 | `module_access_controls`（複數） | **`module_access_control`**（單數）；`target_type` 是 `ROLE` / `ACCOUNT`，值放 `target_secure_code` |
 | 表單模板的欄位定義 | `fw_form_templates.form_schema` | **`schema`**（jsonb）；另有 `builder_config` / `allowed_editors` |
 | 使用者的員工編號 | `users.employee_number` / `emp_no` | **`users.employee_id`**（varchar 50，組織內唯一）；**兩帳號制的管理員帳號 2026-08-23 起才有號**——新企業由 `_create_default_numbering_rules()` 的第 6 條規則自動發 `ADM001`，既有企業已由 `scripts/migrations/112_backfill_org_admin_employee_id.py` 回填；SYSTEM_ADMIN 型帳號刻意不發（平台級身分不屬企業人事編制） |
+| 企業獨立資料庫的庫名 | `fw_org_databases.database_name` | **`db_name`**（另有 `org_id` / `db_host` / `db_port` / `is_ready`）；注意「記錄在、實體庫不在」是既有狀態（本機 `org_14`），反向不一致兩個方向都要查 |
 | migration 登記表的欄位 | `schema_migrations.version` | **`schema_migrations.filename`**（含副檔名，例 `116_xxx.py`）；PF-162 卡片裡那句 `INSERT INTO schema_migrations (version)` 是錯的，照抄會拿到 `column "version" does not exist` |
 
 ### 每個 session 也會猜錯一次的 URL（2026-08-20 補）
