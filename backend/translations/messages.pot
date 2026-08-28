@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-28 17:37+0800\n"
+"POT-Creation-Date: 2026-08-28 21:16+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1964,6 +1964,25 @@ msgstr ""
 msgid "本節包含以下主題："
 msgstr ""
 
+#: app/services/org_physical_cleanup_service.py:114
+#: app/services/org_physical_cleanup_service.py:367
+#: app/services/org_physical_cleanup_service.py:394
+msgid "拒絕不安全的清理路徑"
+msgstr ""
+
+#: app/services/org_physical_cleanup_service.py:213
+msgid "企業獨立資料庫需由系統管理員在 CLI 手動刪除"
+msgstr ""
+
+#: app/services/org_physical_cleanup_service.py:214
+#: app/services/org_physical_cleanup_service.py:324
+msgid "企業資料庫登記存在，但 PostgreSQL 實體資料庫不存在，請人工確認資料一致性"
+msgstr ""
+
+#: app/services/org_physical_cleanup_service.py:315
+msgid "企業資料庫不屬於任何現存企業，需由系統管理員在 CLI 手動刪除"
+msgstr ""
+
 #: app/services/role_assignment_service.py:26
 #: app/templates/pages/admin/groups.html:277
 msgid "團長"
@@ -3171,6 +3190,9 @@ msgstr ""
 #: app/templates/pages/approval_categories/list.html:246
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:32
 #: app/templates/pages/hostconfig/_system_settings_section_telegram.html:32
+#: app/templates/pages/hostconfig/data_maintenance.html:78
+#: app/templates/pages/hostconfig/data_maintenance.html:136
+#: app/templates/pages/hostconfig/data_maintenance.html:393
 #: app/templates/pages/job_levels/create.html:99
 #: app/templates/pages/job_levels/list.html:80
 #: app/templates/pages/modules/list.html:84
@@ -7896,7 +7918,7 @@ msgid "個"
 msgstr ""
 
 #: app/templates/pages/hostconfig/data_maintenance.html:40
-#: app/templates/pages/hostconfig/data_maintenance.html:174
+#: app/templates/pages/hostconfig/data_maintenance.html:268
 #: app/templates/pages/hostconfig/index.html:49
 msgid "涉及資料表:"
 msgstr ""
@@ -7905,8 +7927,8 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:207
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:39
 #: app/templates/pages/hostconfig/data_maintenance.html:44
-#: app/templates/pages/hostconfig/data_maintenance.html:108
-#: app/templates/pages/hostconfig/data_maintenance.html:178
+#: app/templates/pages/hostconfig/data_maintenance.html:202
+#: app/templates/pages/hostconfig/data_maintenance.html:272
 #: app/templates/pages/hostconfig/index.html:53
 #: app/templates/pages/hostconfig/index.html:108
 #: app/templates/pages/org_databases/monitor.html:27
@@ -7915,110 +7937,217 @@ msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:176
 #: app/templates/pages/hostconfig/data_maintenance.html:45
-#: app/templates/pages/hostconfig/data_maintenance.html:109
-#: app/templates/pages/hostconfig/data_maintenance.html:159
-#: app/templates/pages/hostconfig/data_maintenance.html:179
+#: app/templates/pages/hostconfig/data_maintenance.html:203
+#: app/templates/pages/hostconfig/data_maintenance.html:253
+#: app/templates/pages/hostconfig/data_maintenance.html:273
 #: app/templates/pages/hostconfig/index.html:54
 #: app/templates/pages/hostconfig/index.html:109
 msgid "筆數"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:60
+#: app/templates/pages/hostconfig/data_maintenance.html:61
+#: app/templates/pages/hostconfig/data_maintenance.html:314
+msgid "實體資源"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:61
+msgid "檔案"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:65
+msgid "目錄"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:74
+#: app/templates/pages/hostconfig/data_maintenance.html:132
+#: app/templates/pages/hostconfig/data_maintenance.html:389
+msgid "需自行以 CLI 處理"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:79
+#: app/templates/pages/hostconfig/data_maintenance.html:137
+#: app/templates/pages/hostconfig/data_maintenance.html:394
+msgid "原因"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:80
+#: app/templates/pages/hostconfig/data_maintenance.html:138
+#: app/templates/pages/hostconfig/data_maintenance.html:395
+#: app/templates/pages/server_manage/redis_monitor.html:218
+msgid "指令"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:92
+#: app/templates/pages/hostconfig/data_maintenance.html:150
+#: app/templates/pages/hostconfig/data_maintenance.html:407
+msgid "複製"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:107
 #: app/templates/pages/hostconfig/index.html:69
 msgid "執行硬刪除"
 msgstr ""
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:143
-#: app/templates/pages/hostconfig/data_maintenance.html:61
+#: app/templates/pages/hostconfig/data_maintenance.html:108
 #: app/templates/pages/hostconfig/index.html:70
 msgid "刪除中..."
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:71
-#: app/templates/pages/hostconfig/data_maintenance.html:209
+#: app/templates/pages/hostconfig/data_maintenance.html:118
+msgid "實體資源清理結果"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:120
+msgid "已刪除檔案"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:121
+msgid "缺漏檔案"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:124
+msgid "已移除目錄"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:165
+#: app/templates/pages/hostconfig/data_maintenance.html:303
 msgid "失敗資料表:"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:81
+#: app/templates/pages/hostconfig/data_maintenance.html:175
 #: app/templates/pages/hostconfig/index.html:81
 msgid "清除標記刪除的資料"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:82
+#: app/templates/pages/hostconfig/data_maintenance.html:176
 #: app/templates/pages/hostconfig/index.html:82
 msgid "永久刪除各表中 is_deleted=true 的記錄（無法復原）"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:86
+#: app/templates/pages/hostconfig/data_maintenance.html:180
 #: app/templates/pages/hostconfig/index.html:86
 msgid "範圍:"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:88
+#: app/templates/pages/hostconfig/data_maintenance.html:182
 #: app/templates/pages/hostconfig/index.html:88
 msgid "全系統"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:94
-#: app/templates/pages/hostconfig/data_maintenance.html:145
+#: app/templates/pages/hostconfig/data_maintenance.html:188
+#: app/templates/pages/hostconfig/data_maintenance.html:239
 #: app/templates/pages/hostconfig/index.html:94
 msgid "掃描"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:95
-#: app/templates/pages/hostconfig/data_maintenance.html:146
+#: app/templates/pages/hostconfig/data_maintenance.html:189
+#: app/templates/pages/hostconfig/data_maintenance.html:240
+#: app/templates/pages/hostconfig/data_maintenance.html:319
 #: app/templates/pages/hostconfig/index.html:95
 #: app/templates/pages/server_manage/redis_monitor.html:139
 msgid "掃描中..."
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:101
+#: app/templates/pages/hostconfig/data_maintenance.html:195
 #: app/templates/pages/hostconfig/index.html:101
 msgid "沒有標記刪除的記錄"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:122
-#: app/templates/pages/hostconfig/data_maintenance.html:192
+#: app/templates/pages/hostconfig/data_maintenance.html:216
+#: app/templates/pages/hostconfig/data_maintenance.html:286
 #: app/templates/pages/hostconfig/index.html:122
 msgid "合計"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:129
+#: app/templates/pages/hostconfig/data_maintenance.html:223
 #: app/templates/pages/hostconfig/index.html:129
 msgid "執行清除"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:130
+#: app/templates/pages/hostconfig/data_maintenance.html:224
 #: app/templates/pages/hostconfig/index.html:130
 msgid "清除中..."
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:141
+#: app/templates/pages/hostconfig/data_maintenance.html:235
 msgid "清理企業孤兒資料"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:142
+#: app/templates/pages/hostconfig/data_maintenance.html:236
 msgid "刪除指向已不存在企業的殘留記錄（無法復原）"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:150
+#: app/templates/pages/hostconfig/data_maintenance.html:244
 msgid "沒有企業孤兒資料"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:154
+#: app/templates/pages/hostconfig/data_maintenance.html:248
 msgid "孤兒企業識別碼"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:158
+#: app/templates/pages/hostconfig/data_maintenance.html:252
+#: app/templates/pages/hostconfig/data_maintenance.html:353
+#: app/templates/pages/hostconfig/data_maintenance.html:375
 msgid "企業識別碼"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:199
+#: app/templates/pages/hostconfig/data_maintenance.html:293
 msgid "執行清理"
 msgstr ""
 
-#: app/templates/pages/hostconfig/data_maintenance.html:200
+#: app/templates/pages/hostconfig/data_maintenance.html:294
+#: app/templates/pages/hostconfig/data_maintenance.html:422
 msgid "清理中..."
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:315
+msgid "掃描並刪除沒有對應企業的檔案與目錄（無法復原）"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:318
+msgid "掃描實體資源"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:323
+msgid "沒有實體孤兒資源"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:327
+msgid "無主上傳檔案"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:331
+msgid "檔名"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:332
+#: app/templates/pages/hostconfig/data_maintenance.html:355
+msgid "大小"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:333
+msgid "修改時間"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:349
+msgid "孤兒加密檔案目錄"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:354
+msgid "檔案數"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:371
+msgid "孤兒 EDL 目錄"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:421
+msgid "執行實體清理"
+msgstr ""
+
+#: app/templates/pages/hostconfig/data_maintenance.html:430
+msgid "失敗資源"
 msgstr ""
 
 #: app/templates/pages/hostconfig/index.html:12
@@ -11148,10 +11277,6 @@ msgstr ""
 msgid "耗時"
 msgstr ""
 
-#: app/templates/pages/server_manage/redis_monitor.html:218
-msgid "指令"
-msgstr ""
-
 #: app/templates/pages/server_manage/redis_monitor.html:240
 msgid "Redis INFO 完整輸出（結構化顯示）"
 msgstr ""
@@ -12022,40 +12147,44 @@ msgstr ""
 msgid "無權限存取社群管理"
 msgstr ""
 
-#: app/web/hostconfig.py:361
+#: app/web/hostconfig.py:385
 msgid "沒有已軟刪除的企業"
 msgstr ""
 
-#: app/web/hostconfig.py:420
+#: app/web/hostconfig.py:450
 msgid "沒有需要刪除的資料"
 msgstr ""
 
-#: app/web/hostconfig.py:464
+#: app/web/hostconfig.py:505
 #, python-format
-msgid "刪除過程有 %(n)s 張表失敗，企業可能未完全刪除"
+msgid "刪除過程有 %(n)s 項失敗，企業可能未完全刪除"
 msgstr ""
 
-#: app/web/hostconfig.py:465
+#: app/web/hostconfig.py:506
 #, python-format
 msgid "已刪除 %(count)s 個企業及其相關資料"
 msgstr ""
 
-#: app/web/hostconfig.py:568
+#: app/web/hostconfig.py:615
 #, python-format
 msgid "孤兒資料清理有 %(n)s 張表失敗"
 msgstr ""
 
-#: app/web/hostconfig.py:569
+#: app/web/hostconfig.py:616
 #, python-format
 msgid "已清理 %(count)s 筆企業孤兒資料"
 msgstr ""
 
-#: app/web/hostconfig.py:1117
+#: app/web/hostconfig.py:654
+msgid "已清理實體層企業孤兒資源"
+msgstr ""
+
+#: app/web/hostconfig.py:1197
 #, python-format
 msgid "已清除 %(count)s 筆標記刪除的記錄"
 msgstr ""
 
-#: app/web/hostconfig.py:1118
+#: app/web/hostconfig.py:1198
 #, python-format
 msgid "，另清理 %(count)s 筆孤兒記錄"
 msgstr ""

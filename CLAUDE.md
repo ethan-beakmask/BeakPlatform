@@ -632,9 +632,18 @@ from app.utils.external_url import build_external_url   # Python
 內部會判斷避免疊成 `/beakplatform/beakplatform/...`，呼叫端不必自己處理。
 
 **順帶一提平台跑在 http，`navigator.clipboard` 是 `undefined`**（非安全上下文）。
-複製功能一律用 `Utils.copyToClipboard()`（`app.js`，已含 textarea + `execCommand`
-fallback），**不要自己呼叫 `navigator.clipboard.writeText`**——那在本機一律失敗。
+複製功能一律用 `Utils.copyToClipboard()`（`backend/app/static/js/app.js`，
+已含 textarea + `execCommand` fallback），**不要自己呼叫
+`navigator.clipboard.writeText`**——那在本機一律失敗。
 `api-keys.js::copySecret()` 就是這樣壞的，尚未修。
+
+**但 `app.js` 不在 `layouts/base.html`**（2026-08-28 踩到，本檔原本寫「已全域載入」
+是錯的）。它由需要的頁面各自 `<script>` 引入，2026-08-28 的實況是三頁：
+`personal_settings.html`、`organizations/list.html`、`hostconfig/data_maintenance.html`。
+**在別的頁面用 `Utils` 會噴 `Utils is not defined`**，而且症狀藏在 Alpine 裡——
+畫面正常、按鈕點下去沒反應，只有 console 有一行
+`Alpine Expression Error: Utils is not defined`。用到就記得在該頁的
+`{% block scripts %}` 補一行載入。
 
 ### DATA-01: 帳號查詢必須過濾刪除與停用
 - **所有查詢用戶/帳號的地方**，必須同時過濾 `is_deleted=False` 和 `is_active=True`
@@ -1254,9 +1263,9 @@ user_role_assignments -> audit_logs -> used_user_numbers -> users
 
 | 卡片 | 清什麼 |
 |---|---|
-| 硬刪除已軟刪除的企業 | 該企業在**所有**帶 `org_secure_code` 的表裡的資料 ＋ 企業本身 |
+| 硬刪除已軟刪除的企業 | 該企業在**所有**帶 `org_secure_code` 的表裡的資料 ＋ 企業本身 ＋ 它的檔案與目錄 |
 | 清除標記刪除的資料 | 各表中 `is_deleted=true` 的個別記錄（與企業存不存在無關） |
-| 清理企業孤兒資料 | `org_secure_code` 指向**已不存在企業**的殘留（歷史漏刪造成） |
+| 清理企業孤兒資料 | `org_secure_code` 指向**已不存在企業**的殘留（歷史漏刪造成）＋ 無主檔案與孤兒目錄 |
 
 **表清單不再手工維護**：`_get_org_scoped_tables()` 從 `information_schema` 動態掃出
 所有帶 `org_secure_code` 的表（2026-08-28 是 94 張），只有真正有 FK 依賴的順序寫在
@@ -1275,6 +1284,33 @@ user_role_assignments -> audit_logs -> used_user_numbers -> users
 - **系統企業的 `code` 是 `SYSTEM`、`secure_code` 是 `system.local`**——
   看到 `org_secure_code='SYSTEM'` 的記錄一律是把 code 誤當 secure_code 寫入的孤兒，
   不是刻意的系統級資料（本機 `fw_node_execution_logs` 有過 9 筆）
+
+### 實體層清理：檔案與目錄會跟著刪，資料庫刻意不刪（2026-08-28 PF-166 起）
+
+唯一實作是 `backend/app/services/org_physical_cleanup_service.py`，
+**路由層不自己組路徑、不自己刪檔**。第三張卡片下半多了「實體資源」區塊
+（端點 `/hostconfig/physical-orphans/preview|execute`）。
+
+五件猜不到的：
+
+- **順序不能改**：實體檔案與 `db_name` 必須在**刪表之前**收集
+  （`platform_files.storage_ref` 一旦硬刪就查不到該刪哪些檔），
+  而 `encrypted_storage/<sc>` 與 EDL 目錄必須在 **commit 之後**才刪——
+  企業還在 DB 時，每分鐘一次的 `scripts/cron/od_render_edl.py` 會把 EDL 目錄寫回來
+- **企業獨立資料庫（`org_<數字>`）一律不由 web 端刪**（Ethan 2026-08-28 定調），
+  只回 `manual_required` 附一行 `sudo -u postgres dropdb <name>` 讓管理員自己執行。
+  不要「順手」給它加執行按鈕
+- **孤兒目錄的判定是「目錄名不在 `organizations.secure_code` 全集內」，
+  刻意不加 `is_deleted` 條件**——軟刪除的企業還沒硬刪，它的檔案不是孤兒。
+  也因為判定依賴這個查詢，**新增的端點必須跟既有四個一樣先下
+  `SET LOCAL app.is_system_admin = 'true'`**，否則哪天那兩張表加了 RLS
+  就會把使用中的企業目錄判成孤兒刪掉（`organizations` 與 `platform_files`
+  現在沒有 RLS，所以這是防未來的，不是現在的破口）
+- **`backend/uploads/` 的無主檔案是全域概念、不屬於任何企業**（扁平目錄、
+  隨機檔名，DB 記錄沒了就認不出原主），所以它只出現在孤兒清理那張卡片，
+  不會出現在「刪某企業」的流程裡
+- 有 `platform_files` 記錄的檔案一律走 `file_service.delete_file()`（FILE-01），
+  只有無主檔案才能 `os.remove`；路徑一律先過 `safe_child_dir()`
 
 ### 每個 session 都會撞一次的欄位名（2026-08-09 逐一試誤才弄對）
 

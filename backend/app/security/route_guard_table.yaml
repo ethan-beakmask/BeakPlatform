@@ -7968,6 +7968,36 @@ routes:
     rules:
     - /hostconfig/orphan-cleanup/preview
     source: backend/app/web/hostconfig.py
+  hostconfig.physical_orphans_execute:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /hostconfig/physical-orphans/execute
+    source: backend/app/web/hostconfig.py
+  hostconfig.physical_orphans_preview:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /hostconfig/physical-orphans/preview
+    source: backend/app/web/hostconfig.py
   hostconfig.purge_deleted_execute:
     answer_source: code
     guard_args: {}

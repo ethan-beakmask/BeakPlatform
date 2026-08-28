@@ -6,11 +6,14 @@ page:
   - /hostconfig/data-maintenance
   - /hostconfig/hard-delete/
   - /hostconfig/orphan-cleanup/
+  - /hostconfig/physical-orphans/
   - /hostconfig/purge-deleted/
 description: 系統主機設定（伺服器設定、檔案儲存、資料維護）
 
 files:
   route:    backend/app/web/hostconfig.py
+  service:
+    - backend/app/services/org_physical_cleanup_service.py
   template:
     - backend/app/templates/pages/hostconfig/index.html
     - backend/app/templates/pages/hostconfig/data_maintenance.html
@@ -18,6 +21,8 @@ files:
     - backend/app/static/js/hostconfig-index.js
   css:
     - backend/app/static/css/hostconfig-index.css
+  test:
+    - backend/tests/test_org_physical_cleanup.py
 
 tables:
   note: 操作多個表的維護功能，依操作對象而定

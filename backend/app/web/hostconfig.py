@@ -13,6 +13,15 @@ from sqlalchemy import bindparam
 
 from app.security.decorators import system_admin_required
 from app import db
+from app.services.org_physical_cleanup_service import (
+    collect_org_file_records,
+    delete_org_files,
+    delete_physical_orphans,
+    list_org_existing_directories,
+    list_org_database_manual_items,
+    remove_org_directories,
+    scan_physical_orphans,
+)
 
 hostconfig_bp = Blueprint('hostconfig', __name__)
 
@@ -151,6 +160,16 @@ HARD_DELETE_DISPLAY_NAMES = {
 }
 
 _ORG_DISPLAY_NAME = HARD_DELETE_DISPLAY_NAMES['organizations']
+
+
+def _physical_error_for_hostconfig(error):
+    resource = error.get('resource', '')
+    return {
+        'table': '',
+        'display_name': resource,
+        'error': error.get('error', ''),
+        'resource': resource,
+    }
 
 
 @hostconfig_bp.route('/')
@@ -358,6 +377,11 @@ def hard_delete_preview():
                 'success': True,
                 'deleted_orgs': [],
                 'table_counts': [],
+                'physical': {
+                    'file_count': 0,
+                    'directories': [],
+                    'manual_required': [],
+                },
                 'message': _('沒有已軟刪除的企業')
             })
 
@@ -386,11 +410,17 @@ def hard_delete_preview():
             'display_name': HARD_DELETE_DISPLAY_NAMES.get('organizations', 'organizations'),
             'count': len(deleted_orgs),
         })
+        physical = {
+            'file_count': len(collect_org_file_records(org_codes)),
+            'directories': list_org_existing_directories(org_codes),
+            'manual_required': list_org_database_manual_items(org_codes),
+        }
 
         return jsonify({
             'success': True,
             'deleted_orgs': deleted_orgs,
-            'table_counts': table_counts
+            'table_counts': table_counts,
+            'physical': physical,
         })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -421,10 +451,18 @@ def hard_delete_execute():
                 'deleted_counts': {},
                 'has_errors': False,
                 'errors': [],
+                'physical': {
+                    'files_deleted': 0,
+                    'files_missing': 0,
+                    'dirs_removed': [],
+                    'manual_required': [],
+                },
             })
 
         deleted_counts = {}
         errors = []
+        manual_items = list_org_database_manual_items(org_codes)
+        file_result = delete_org_files(org_codes)
         ordered_tables, all_tables = _build_hard_delete_sequence()
 
         # 按順序刪除各表（用 SAVEPOINT 隔離個別表的錯誤）
@@ -455,18 +493,27 @@ def hard_delete_execute():
             })
 
         db.session.commit()
+        dir_result = remove_org_directories(org_codes)
+        errors.extend(_physical_error_for_hostconfig(error) for error in file_result['errors'])
+        errors.extend(_physical_error_for_hostconfig(error) for error in dir_result['errors'])
         for error in errors:
             deleted_counts[f"{error['display_name']} (錯誤)"] = error['error']
 
         return jsonify({
             'success': True,
             'message': (
-                _('刪除過程有 %(n)s 張表失敗，企業可能未完全刪除', n=len(errors))
+                _('刪除過程有 %(n)s 項失敗，企業可能未完全刪除', n=len(errors))
                 if errors else _('已刪除 %(count)s 個企業及其相關資料', count=len(org_codes))
             ),
             'deleted_counts': deleted_counts,
             'has_errors': bool(errors),
             'errors': errors,
+            'physical': {
+                'files_deleted': file_result['files_deleted'],
+                'files_missing': file_result['files_missing'],
+                'dirs_removed': dir_result['dirs_removed'],
+                'manual_required': manual_items,
+            },
         })
     except Exception as e:
         db.session.rollback()
@@ -575,6 +622,39 @@ def orphan_cleanup_execute():
         })
     except Exception as e:
         db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@hostconfig_bp.route('/physical-orphans/preview', methods=['GET'])
+@system_admin_required
+def physical_orphans_preview():
+    """預覽實體層企業孤兒資源。"""
+    try:
+        # 繞過 RLS，確保能看到所有企業隔離的資料
+        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+
+        return jsonify({
+            'success': True,
+            **scan_physical_orphans(),
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@hostconfig_bp.route('/physical-orphans/execute', methods=['POST'])
+@system_admin_required
+def physical_orphans_execute():
+    """刪除實體層企業孤兒資源；企業獨立資料庫只列人工處理清單。"""
+    try:
+        # 繞過 RLS，確保能看到所有企業隔離的資料
+        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+
+        return jsonify({
+            'success': True,
+            'message': _('已清理實體層企業孤兒資源'),
+            **delete_physical_orphans(),
+        })
+    except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
