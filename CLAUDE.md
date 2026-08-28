@@ -1273,6 +1273,7 @@ user_role_assignments -> audit_logs -> used_user_numbers -> users
 | 模組 ACL 的表 | `module_access_controls`（複數） | **`module_access_control`**（單數）；`target_type` 是 `ROLE` / `ACCOUNT`，值放 `target_secure_code` |
 | 表單模板的欄位定義 | `fw_form_templates.form_schema` | **`schema`**（jsonb）；另有 `builder_config` / `allowed_editors` |
 | 使用者的員工編號 | `users.employee_number` / `emp_no` | **`users.employee_id`**（varchar 50，組織內唯一）；**兩帳號制的管理員帳號 2026-08-23 起才有號**——新企業由 `_create_default_numbering_rules()` 的第 6 條規則自動發 `ADM001`，既有企業已由 `scripts/migrations/112_backfill_org_admin_employee_id.py` 回填；SYSTEM_ADMIN 型帳號刻意不發（平台級身分不屬企業人事編制） |
+| migration 登記表的欄位 | `schema_migrations.version` | **`schema_migrations.filename`**（含副檔名，例 `116_xxx.py`）；PF-162 卡片裡那句 `INSERT INTO schema_migrations (version)` 是錯的，照抄會拿到 `column "version" does not exist` |
 
 ### 每個 session 也會猜錯一次的 URL（2026-08-20 補）
 
@@ -2037,6 +2038,27 @@ sudo -u postgres createdb -O beakplatform beakplatform_test
 **測試庫可以一直重複使用、不必每次重建**——每個 app fixture 都是
 `create_all()` 開場、`drop_all()` 收尾。反過來說**不要拿它存任何想留的東西**。
 
+**但測試庫一次只能有一個使用者**（2026-08-28 踩到）。`run_tests.sh` 跑到一半時，
+另外對 `beakplatform_test` 跑任何 `create_all()` / `drop_all()` 的腳本，兩邊會互相
+等鎖；把那支腳本 timeout kill 掉之後，測試庫留下**半成品 schema**，
+接下來的測試在 `db.create_all()` 撞
+
+```
+psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint
+"pg_type_typname_nsp_index"  DETAIL: Key (typname, typnamespace)=(conglomerates, 2200)
+```
+
+症狀是**多出一條基準以外的 error，看起來像自己改壞了**。處置：
+
+```bash
+sudo -u postgres dropdb --if-exists --force beakplatform_test
+sudo -u postgres createdb -O beakplatform beakplatform_test
+```
+
+要在測試庫上跑自己的驗證腳本，等 `run_tests.sh` 結束再跑；跑完記得重建測試庫，
+不要留 schema 給下一輪測試。（`drop_all()` 在有資料的庫上會卡很久，
+用 dropdb 比等它快。）
+
 **跑出基準以外的失敗時，歸因順序**（照這個順序查，不要跳）：
 1. 先看是不是**測試資料殘留**——`bash scripts/run_tests.sh -q` 重跑一次，
    結果不同就是殘留或測試間互相污染，不是功能回歸
@@ -2315,6 +2337,21 @@ http://192.168.0.16:7000/beakplatform/forms/workflows/7LJRvpSPUYcmK1M1wcOTzY
 - intake / 表單中心都只讀 `fw_published_form_workflows` 最新 Published 快照，改模板不重發行等於沒改
 - 流程變數：流程編號（OD-YYYYMMDD-NNNN）是 `${wi.exec_code}`；`${wi.code}` 是 workflow instance 的 secure_code，
   沒有 `${wi.execution_code}` 這個變數（替換結果為空字串）
+
+**`FwPublishedFormWorkflow.suspend()` / `reopen()` 內部有 `db.session.commit()`**
+（`modules/form_workflow/models/published_form_workflow.py:168`，2026-08-28 踩到）。
+在「呼叫端負責 commit」的服務或 seed 函式裡呼叫它，會把上游尚未完成的交易
+**從中間切開**——例如建立企業的流程呼叫出廠 seed、seed 又呼叫 suspend()，
+企業只建了一半就先被 commit。這類地方要自己展開那三行（含 `status == 'Archived'`
+的檢查），範例見 `backend/app/defaults/api_key_request_defaults.py` 的
+「刻意不呼叫 existing.suspend()」註解。**看到那段不要當成重複的死碼改回去。**
+
+**出廠預設的表單／流程在 `backend/app/defaults/api_key_request_defaults.py`**，
+建企業時由 `organization_service.create_organization()` 與
+`init_system_organization()` **兩處**呼叫（後者不走前者）。
+`scripts/examples/provision_api_key_request_flow.py` 是它的 CLI 外殼、
+反過來 import defaults——**要改表單欄位或流程 graph 一律改 defaults 那一份**，
+改腳本不會生效。既有企業由 `scripts/migrations/116_seed_api_key_request_flow_existing_orgs.py` 補。
 
 ### 流程設計原則：一律走到 End 節點收尾（Ethan 2026-08-27 定調）
 
