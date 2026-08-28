@@ -1061,6 +1061,13 @@ Page IR 的排序連結**從第一版起就是壞的**，直到 2026-07-29 才�
 多值元件把 `emptyValue` 定義成 `[]` 就能吃 form.io 內建的 required 檢查
 （lodash `isEmpty([])` 為 true），不必自己寫驗證。
 
+**要讓 form.io 內建 `datetime` 元件輸出純日期字串（`"2026-12-31"`），
+必須設 `widget.saveAs: 'text'` ＋ `enableTime: false` ＋ `format: 'yyyy-MM-dd'`**
+（2026-08-27 實測，PF-160 申請單）。缺 `saveAs: 'text'` 時它輸出的是 ISO 8601
+（含時間與時區偏移），後端凡是拿 `strptime('%Y-%m-%d')` 解的都會失敗。
+**送出後查一次 `fw_form_instances.form_data` 的實際值再接流程**，
+畫面上顯示的日期看不出這個差別。
+
 ### VERIFY-01: 驗收規範（瀏覽器實測 + 留證，主 Claude 專屬職責）
 
 > 2026-08-06 起，原 VERIFY-01（瀏覽器實測）／VERIFY-02（留證）／VERIFY-03（AI 自檢不算數）
@@ -1102,6 +1109,19 @@ evaluate_script(function="() => document.querySelector('.modal-overlay').innerTe
 CSS 規範下 fixed 元素的 `offsetParent` **恆為 `null`**，開著的 `.modal-overlay`
 會被判成「隱藏」。fixed 元素一律用 `getComputedStyle(el).display` ＋
 `getBoundingClientRect()` 的寬高；它的子元素不是 fixed，`offsetParent` 對子元素仍準確。
+
+**驗「複製」按鈕不要看 UI 的『已複製』回饋文字**（2026-08-27 踩到）：
+那類回饋多半只維持 1~2 秒（`setTimeout` 還原），而 chrome-devtools 的
+click → evaluate 往返常常超過，於是看到的永遠是原本的「複製」，
+會誤判成按鈕壞掉。可靠做法是掛探針再點：
+
+```
+addEventListener('click', ...) 計數  +  包一層 document.execCommand 記錄回傳值
+→ 實測得到 clicked=1, copyResult=true 才算真的複製成功
+```
+
+（平台跑在 http，`navigator.clipboard` 是 undefined，複製一律走
+`Utils.copyToClipboard()`；它內部 fallback 到 `execCommand`。）
 
 **2026-08-04 起 `take_screenshot` 在本機一律逾時**（`Page.captureScreenshot timed out`，
 png / jpeg 皆然，各卡滿 120s 才失敗，試過三次）——**修好之前不要再浪費 120s 去試**。
@@ -1268,6 +1288,7 @@ blueprint 的 `url_prefix` 與模組名不一致，照模組名猜必 404：
 | 弱點管理各頁 | `/vuln-lifecycle/assets` | **`/vuln/assets`**（`vuln_lifecycle/web/__init__.py` 的 prefix 是 `/vuln`；API 那邊反而是 `/api/vuln-lifecycle/...`，兩者不一致） |
 | 規格制定的 API | `/api/spec-formulate/specs` | **`/api/spec-formulate/schema/specs`**（路由全寫在 `schema.py` 的 `register(bp)` 內，bp 是 `schema_bp`） |
 | **表單**設計器 | `/forms/form-designer` | **`/forms/templates/<form_template_secure_code>`**（`/forms/templates/new` 是新建，兩者都要設計權限——純 EMPLOYEE 開會 **403**，用 ORG_ADMIN 或持 FORM_DESIGNER 的帳號） |
+| 本人領取自己的 API Key | `/security/api-keys`（那是管理員面） | **`/personal-settings`** 最下方「我的 API Key」區塊；API 是 `/api/my-api-keys`（清單／`<key_sc>/claim`／`<key_sc>/regenerate`），授權條件是**本人**（`applicant_user_secure_code` ＋ `org_secure_code` 雙條件）而不是 permission code |
 
 ### 外部系統用 API Key 發動表單流程：`/api/trigger/form`（2026-08-13 起）
 
@@ -2025,7 +2046,7 @@ sudo -u postgres createdb -O beakplatform beakplatform_test
 
 **基準不寫死數字**（測試會持續新增，寫死的通過數必然腐爛而誤導）。
 判斷有無退步的做法：**動工前先跑一次完整 `tests/` 記下當時的數字**，改完再跑一次比對。
-完整跑約 4 分鐘。以下兩個非綠是**長期已知、成因明確**，不列入退步：
+完整跑約 9 分鐘（2026-08-28 實測 530 秒；舊文寫 4 分鐘已過時）。以下兩個非綠是**長期已知、成因明確**，不列入退步：
 
 | 項目 | 狀態 | 成因 |
 |---|---|---|
@@ -2294,6 +2315,32 @@ http://192.168.0.16:7000/beakplatform/forms/workflows/7LJRvpSPUYcmK1M1wcOTzY
 - intake / 表單中心都只讀 `fw_published_form_workflows` 最新 Published 快照，改模板不重發行等於沒改
 - 流程變數：流程編號（OD-YYYYMMDD-NNNN）是 `${wi.exec_code}`；`${wi.code}` 是 workflow instance 的 secure_code，
   沒有 `${wi.execution_code}` 這個變數（替換結果為空字串）
+
+### 流程設計原則：一律走到 End 節點收尾（Ethan 2026-08-27 定調）
+
+**每條路徑最後都要抵達 End 節點，包含駁回。**
+理由是統計面的：判斷哪些表單「進行中／異常中斷／長時間卡住」時，
+「有沒有到達 End」是排除條件，不經 End 結束的流程會污染這類統計。
+
+這條與設計器決策配對區印的既有提示**直接衝突**，看到那句不要照做：
+
+```
+formadapter-decisions.js:321   ... | 未配對 = REJECTED 終態
+formadapter_handler.py:148     # 驗證 target_edges 合法性（空 target_edges 表示終態）
+```
+
+**已知代價（Ethan 明確接受）**：`fc-approval.js:336-343` 只在
+「`target_edges` 為空且 `style=danger`」時才送 `decision='rejected'`，
+所以接了邊之後 `fw_approval_records.action` 會記成 `approved`，
+決策真相只留在流程變數與簽核意見裡。**這是全平台通例**——
+OD 的「人工確認」、`WF2610385E` 的「退回」歷史記錄都是這樣。
+要不要改成兩者兼得，見待辦 **PF-164**（先讀完再動，不要自己開工）。
+
+順帶兩個相關事實：
+- 表單中心的狀態欄**只表示表單的運行狀態、不含決策狀態**，准駁要點進去看簽核意見
+- `REJECTED` 在表單中心顯示「已退回」（`fc-utils.js:93`），
+  流程管理頁顯示「已駁回」（`fw-instance-list.js` / `fw-dashboard.js`），
+  兩處文字不一致是既有小瑕疵
 
 ### 流程 graph 的引擎行為（2026-08-13 實測，設計流程前必讀）
 
