@@ -1325,6 +1325,53 @@ endpoint 本身仍被 `portal_base.html` 與 `dev/index.html` 引用，所以**�
 - 有 `platform_files` 記錄的檔案一律走 `file_service.delete_file()`（FILE-01），
   只有無主檔案才能 `os.remove`；路徑一律先過 `safe_child_dir()`
 
+### 比對「乾淨安裝」與 dev 的 schema（2026-08-29 起，PF-168 用得到）
+
+`scripts/init_database.sh` 走的是 **`db.create_all()`（從 ORM model 建表）**，
+不是跑 migration。所以 dev（121 個 migration 疊出來）與外部使用者的全新安裝
+**schema 不一樣，而且沒有任何機制會發現**。要判斷現況差多少就跑這段，
+全程約 2 分鐘（本 session 實際跑過三次）：
+
+```bash
+cd /opt/BeakPlatform-dev
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS beakplatform_freshcheck;" \
+  -c "CREATE DATABASE beakplatform_freshcheck OWNER beakplatform;"
+set -a && source .env && set +a
+export DATABASE_URL="postgresql://beakplatform:postgres123@localhost:5432/beakplatform_freshcheck"
+export SKIP_MODULE_SYNC=1
+cd backend && ../venv/bin/python -c "
+from app import create_app, db
+app = create_app()
+with app.app_context(): db.create_all()"
+# 比對（表清單；欄位把 tables 換成 columns、選 table_name||'.'||column_name||':'||data_type）
+cd /opt/BeakPlatform-dev
+for d in beakplatform_dev beakplatform_freshcheck; do
+  PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d $d -t -A -c \
+    "SELECT table_name FROM information_schema.tables
+     WHERE table_schema='public' AND table_type='BASE TABLE';" > /tmp/t_$d.txt
+done
+python3 -c "
+d=set(x.strip() for x in open('/tmp/t_beakplatform_dev.txt') if x.strip())
+f=set(x.strip() for x in open('/tmp/t_beakplatform_freshcheck.txt') if x.strip())
+print('dev 有 fresh 沒有:', sorted(d-f)); print('fresh 有 dev 沒有:', sorted(f-d))"
+sudo -u postgres psql -c "DROP DATABASE beakplatform_freshcheck;"
+```
+
+**比對一律用 python 的 set 差集，不要用 `comm`**——psql 的 `ORDER BY` 走
+collation，與 `sort` 的順序不一致，`comm` 會噴 "not in sorted order"
+並給出錯誤結果（2026-08-29 踩過）。
+
+**`freshcheck` 是拋棄式的獨立庫，與 `beakplatform_test` 無關**，
+跑測試時同時建它不會互相卡鎖。
+
+2026-08-29 現況：dev 105 表 / 乾淨安裝 101 表，差 4 張
+（3 張 spec_formulate 模組 model 因 `SKIP_MODULE_SYNC=1` 不載入、
+`schema_migrations` 是登記表本身）。**數字會腐爛，自己跑。**
+
+**`schema_migrations` 不能用來判斷「這個庫跑到哪一版」**：
+檔案系統 118 個 / DB 登記 121 筆，084 以後的 SQL migration 全數未登記，
+DB 卻登記著檔案系統早已不存在的檔名。修它是 PF-168 的一部分。
+
 ### 每個 session 都會撞一次的欄位名（2026-08-09 逐一試誤才弄對）
 
 寫 SQL 前先看這張表，可省掉一輪 `column ... does not exist`：
