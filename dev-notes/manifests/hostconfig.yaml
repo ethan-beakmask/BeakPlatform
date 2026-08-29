@@ -1,31 +1,39 @@
-# 系統主機設定 + 資料維護
-# 主機設定首頁、資料維護、硬刪除、清除已刪除
+# 主機設定 + 主機資料清理
+# PF-170 起：企業硬刪除已搬到 organizations（見 files.related），
+# 這裡只剩「沒有歸屬的殘留」清理。兩者共用 org_data_purge_service。
 page:
-  - /hostconfig/
+  - /hostconfig/          # 302 -> /hostconfig/server-settings（沒有實體首頁模板）
   - /hostconfig/server-settings
   - /hostconfig/data-maintenance
-  - /hostconfig/hard-delete/
   - /hostconfig/orphan-cleanup/
   - /hostconfig/physical-orphans/
   - /hostconfig/purge-deleted/
-description: 系統主機設定（伺服器設定、檔案儲存、資料維護）
+description: 系統主機設定（伺服器設定、檔案儲存、主機資料清理）
 
 files:
   route:    backend/app/web/hostconfig.py
   service:
+    - backend/app/services/org_data_purge_service.py      # 與企業硬刪除共用
     - backend/app/services/org_physical_cleanup_service.py
   template:
-    - backend/app/templates/pages/hostconfig/index.html
     - backend/app/templates/pages/hostconfig/data_maintenance.html
+    - backend/app/templates/pages/hostconfig/system_settings.html
   js:
     - backend/app/static/js/hostconfig-index.js
   css:
     - backend/app/static/css/hostconfig-index.css
   test:
     - backend/tests/test_org_physical_cleanup.py
+  doc:
+    - docs/manual/02_platform_admin/data_maintenance.md
+  related:
+    # 企業硬刪除（對象是還存在的軟刪除企業）
+    - backend/app/web/organizations.py
+    - backend/app/templates/pages/organizations/_org_hard_delete.html
+    - backend/app/static/js/organizations-hard-delete.js
 
 tables:
-  note: 操作多個表的維護功能，依操作對象而定
+  note: 操作多個表的維護功能，依操作對象而定；表清單由 org_data_purge_service 動態掃描
 
 security:
   decorator: "@system_admin_required"

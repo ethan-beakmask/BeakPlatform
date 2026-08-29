@@ -1255,23 +1255,36 @@ WHERE created_at > (now() AT TIME ZONE 'UTC') - interval '15 minutes'
 user_role_assignments -> audit_logs -> used_user_numbers -> users
 ```
 
-（試建**企業**則不能用 SQL 硬刪，走 `/hostconfig/hard-delete`，見 PF-145 交接檔。）
+（試建**企業**則不能用 SQL 硬刪，走 `/organizations/` 列表頁最下方的「永久刪除已軟刪除的企業」，見 PF-145 交接檔。）
 
-### 硬刪企業／孤兒清理：表清單已改動態掃表（2026-08-28 PF-165 起）
+### 企業清理與主機清理是兩頁，判準是操作對象（2026-08-29 PF-170 起）
 
-`/hostconfig/data-maintenance` 有**三張**卡片，職責不同不要混用：
+**分界線：操作對象是不是一家「還存在於 `organizations` 表」的企業。**
+是 -> 企業管理；不是（殘留、無主、跨企業）-> 主機資料清理。
+**不要把兩者搬回同一頁**，2026-08-29 之前它們就是混在一起的。
 
-| 卡片 | 清什麼 |
-|---|---|
-| 硬刪除已軟刪除的企業 | 該企業在**所有**帶 `org_secure_code` 的表裡的資料 ＋ 企業本身 ＋ 它的檔案與目錄 |
-| 清除標記刪除的資料 | 各表中 `is_deleted=true` 的個別記錄（與企業存不存在無關） |
-| 清理企業孤兒資料 | `org_secure_code` 指向**已不存在企業**的殘留（歷史漏刪造成）＋ 無主檔案與孤兒目錄 |
+| 頁面 | 卡片 | 清什麼 |
+|---|---|---|
+| `/organizations/`（列表頁最下方，預設收合） | 永久刪除已軟刪除的企業 | 該企業在**所有**帶 `org_secure_code` 的表裡的資料 ＋ 企業本身 ＋ 它的檔案與目錄 |
+| `/hostconfig/data-maintenance`（**主機資料清理**） | 清除標記刪除的資料 | 各表中 `is_deleted=true` 的個別記錄（與企業存不存在無關） |
+| 同上 | 清理企業孤兒資料 | `org_secure_code` 指向**已不存在企業**的殘留（歷史漏刪造成）＋ 無主檔案與孤兒目錄 |
 
-**表清單不再手工維護**：`_get_org_scoped_tables()` 從 `information_schema` 動態掃出
+端點也跟著搬了：硬刪除是 **`/organizations/hard-delete/preview|execute`**，
+`/hostconfig/hard-delete/*` 已 404。舊文件與舊卡片指的都是搬遷前的位置。
+
+**刪除核心是共用的**：`backend/app/services/org_data_purge_service.py`
+（表清單掃描、刪除順序、三趟重試、statement builder），企業硬刪除與孤兒清理
+兩邊都 import 它，**禁止各自複製**。
+
+**表清單不再手工維護**：`get_org_scoped_tables()` 從 `information_schema` 動態掃出
 所有帶 `org_secure_code` 的表（2026-08-28 是 94 張），只有真正有 FK 依賴的順序寫在
 `HARD_DELETE_ORDER`，其餘動態帶入，再用**三趟重試**自我修復順序問題
-（實測把順序整個反過來仍全刪乾淨）。**新增模組表不必再改 `hostconfig.py`。**
+（實測把順序整個反過來仍全刪乾淨）。**新增模組表不必再改任何檔案。**
 沒有 `org_secure_code` 的 4 張表走 `HARD_DELETE_INDIRECT` 的父表過濾。
+
+**`pages/hostconfig/index.html` 已刪除**（PF-170）：`hostconfig.index` 只做
+`redirect` 到 server-settings、從未 render 過那個模板，但裡面有兩張卡片的完整複本。
+endpoint 本身仍被 `portal_base.html` 與 `dev/index.html` 引用，所以**端點還在**。
 
 三件猜不到的：
 
@@ -1280,7 +1293,7 @@ user_role_assignments -> audit_logs -> used_user_numbers -> users
   實測有 logo 的企業會撞 `platform_files` 的 FK，**企業根本沒刪掉卻回成功**
   （`/opt/tmp/verify/20260828-pf165-harddelete.log`）
 - 改版前漏列 54 張模組表，所以 **2026-08-28 之前刪掉的企業一定留了孤兒**。
-  本機那 1099 筆已用第三張卡片清掉
+  本機那 1099 筆已用「清理企業孤兒資料」清掉
 - **系統企業的 `code` 是 `SYSTEM`、`secure_code` 是 `system.local`**——
   看到 `org_secure_code='SYSTEM'` 的記錄一律是把 code 誤當 secure_code 寫入的孤兒，
   不是刻意的系統級資料（本機 `fw_node_execution_logs` 有過 9 筆）
@@ -1288,7 +1301,7 @@ user_role_assignments -> audit_logs -> used_user_numbers -> users
 ### 實體層清理：檔案與目錄會跟著刪，資料庫刻意不刪（2026-08-28 PF-166 起）
 
 唯一實作是 `backend/app/services/org_physical_cleanup_service.py`，
-**路由層不自己組路徑、不自己刪檔**。第三張卡片下半多了「實體資源」區塊
+**路由層不自己組路徑、不自己刪檔**。「清理企業孤兒資料」卡片下半有「實體資源」區塊
 （端點 `/hostconfig/physical-orphans/preview|execute`）。
 
 五件猜不到的：

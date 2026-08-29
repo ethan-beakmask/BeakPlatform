@@ -84,6 +84,11 @@ from .audit_log import AuditLog
 from .platform_file import PlatformFile
 from .file_access_log import FileAccessLog
 
+# 檔案加密金鑰（crypto/key_manager.py 內是 lazy import，
+# 必須在此註冊進 SQLAlchemy metadata，否則 db.create_all() 不會建表，
+# 全新安裝要到第一次上傳加密附件才會炸 relation does not exist）
+from .org_encryption_key import OrgEncryptionKey
+
 # 資料出口政策
 from .egress_policy import EgressFieldPolicy, EgressTierThreshold, EgressAuditLog
 
@@ -201,6 +206,7 @@ __all__ = [
     # 檔案管理
     'PlatformFile',
     'FileAccessLog',
+    'OrgEncryptionKey',
     # 資料出口政策
     'EgressFieldPolicy',
     'EgressTierThreshold',

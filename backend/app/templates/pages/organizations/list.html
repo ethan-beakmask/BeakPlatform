@@ -457,6 +457,8 @@
     </div>
 </div>
 
+{% include "pages/organizations/_org_hard_delete.html" %}
+
 <script>
 window.__ORG_PAGE_CONFIG = {
     search: '{{ search }}',
@@ -465,7 +467,12 @@ window.__ORG_PAGE_CONFIG = {
     availableModules: {{ available_modules | default([]) | tojson }},
     contracts: {{ contracts_json | default('[]') | safe }}
 };
+window.__ORG_HARD_DELETE = {
+    previewUrl: '{{ url_for("organizations.hard_delete_preview") }}',
+    executeUrl: '{{ url_for("organizations.hard_delete_execute") }}'
+};
 </script>
 <script src="{{ app_prefix }}/static/js/app.js"></script>
 <script src="{{ app_prefix }}/static/js/organizations.js"></script>
+<script src="{{ app_prefix }}/static/js/organizations-hard-delete.js"></script>
 {% endblock %}

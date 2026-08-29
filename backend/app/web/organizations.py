@@ -7,7 +7,7 @@ BeakMask Organization Management Web Routes
 """
 import json
 from datetime import datetime, date
-from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask import Blueprint, render_template, abort, jsonify, request, flash, redirect, url_for
 from flask_babel import gettext as _
 from flask_login import current_user
 from sqlalchemy import or_
@@ -22,6 +22,21 @@ from ..services.organization_service import OrganizationService
 from ..services.conglomerate_service import ConglomerateService
 from ..services.code_generator import get_code_generator
 from ..services.lookup_service import LookupService
+from ..services.org_data_purge_service import (
+    HARD_DELETE_DISPLAY_NAMES,
+    ORG_DISPLAY_NAME,
+    build_hard_delete_sequence,
+    hard_delete_stmts,
+    physical_error_entry,
+    run_delete_with_retries,
+)
+from ..services.org_physical_cleanup_service import (
+    collect_org_file_records,
+    delete_org_files,
+    list_org_database_manual_items,
+    list_org_existing_directories,
+    remove_org_directories,
+)
 from .. import db
 
 organizations_bp = Blueprint('organizations', __name__)
@@ -395,3 +410,185 @@ def delete_org(secure_code: str):
         db.session.rollback()
         flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('organizations.edit_org', secure_code=secure_code))
+
+
+# ---------------------------------------------------------------------------
+# 硬刪除已軟刪除的企業（PF-170：由 /hostconfig/data-maintenance 搬來）
+#
+# 這是唯一以「還存在的企業」為對象的清理動作，所以放在企業管理底下。
+# 對象是「已不存在企業」的殘留（孤兒資料、無主檔案、孤兒目錄）屬主機層面，
+# 留在 /hostconfig/data-maintenance「主機資料清理」，兩者不要互相搬。
+#
+# 刪除核心與孤兒清理共用 services/org_data_purge_service.py，禁止各自複製。
+# ---------------------------------------------------------------------------
+
+@organizations_bp.route('/hard-delete/preview', methods=['GET'])
+@system_admin_required
+def hard_delete_preview():
+    """
+    預覽硬刪除將刪除的資料
+
+    Returns:
+        - deleted_orgs: 已軟刪除的企業列表
+        - table_counts: 各表預計刪除的筆數
+    """
+    try:
+        # 繞過 RLS，確保能看到所有企業隔離的資料
+        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+
+        # 取得已軟刪除的企業
+        result = db.session.execute(db.text(
+            "SELECT secure_code, code, name, domain_name "
+            "FROM organizations WHERE is_deleted = true"
+        ))
+        deleted_orgs = [
+            {'secure_code': row[0], 'code': row[1], 'name': row[2], 'domain_name': row[3]}
+            for row in result
+        ]
+
+        if not deleted_orgs:
+            return jsonify({
+                'success': True,
+                'deleted_orgs': [],
+                'table_counts': [],
+                'physical': {
+                    'file_count': 0,
+                    'directories': [],
+                    'manual_required': [],
+                },
+                'message': _('沒有已軟刪除的企業')
+            })
+
+        # 取得各表預計刪除的筆數
+        org_codes = [org['secure_code'] for org in deleted_orgs]
+        ordered_tables, all_tables = build_hard_delete_sequence()
+
+        table_counts = []
+        for table_name in ordered_tables:
+            try:
+                with db.session.begin_nested():
+                    count_stmt, _unused = hard_delete_stmts(table_name, all_tables)
+                    count = db.session.execute(count_stmt, {'orgs': org_codes}).scalar()
+                    if count > 0:
+                        table_counts.append({
+                            'table': table_name,
+                            'display_name': HARD_DELETE_DISPLAY_NAMES.get(table_name, table_name),
+                            'count': count
+                        })
+            except Exception:
+                # savepoint 自動 rollback，表可能不存在，跳過
+                pass
+
+        table_counts.append({
+            'table': 'organizations',
+            'display_name': HARD_DELETE_DISPLAY_NAMES.get('organizations', 'organizations'),
+            'count': len(deleted_orgs),
+        })
+        physical = {
+            'file_count': len(collect_org_file_records(org_codes)),
+            'directories': list_org_existing_directories(org_codes),
+            'manual_required': list_org_database_manual_items(org_codes),
+        }
+
+        return jsonify({
+            'success': True,
+            'deleted_orgs': deleted_orgs,
+            'table_counts': table_counts,
+            'physical': physical,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@organizations_bp.route('/hard-delete/execute', methods=['POST'])
+@system_admin_required
+def hard_delete_execute():
+    """
+    執行硬刪除
+
+    刪除所有已軟刪除企業的相關資料（永久刪除，無法復原）
+    """
+    try:
+        # 繞過 RLS，確保能刪除所有企業隔離的資料
+        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+
+        # 取得已軟刪除的企業
+        result = db.session.execute(db.text(
+            "SELECT secure_code FROM organizations WHERE is_deleted = true"
+        ))
+        org_codes = [row[0] for row in result]
+
+        if not org_codes:
+            return jsonify({
+                'success': True,
+                'message': _('沒有需要刪除的資料'),
+                'deleted_counts': {},
+                'has_errors': False,
+                'errors': [],
+                'physical': {
+                    'files_deleted': 0,
+                    'files_missing': 0,
+                    'dirs_removed': [],
+                    'manual_required': [],
+                },
+            })
+
+        deleted_counts = {}
+        errors = []
+        manual_items = list_org_database_manual_items(org_codes)
+        file_result = delete_org_files(org_codes)
+        ordered_tables, all_tables = build_hard_delete_sequence()
+
+        # 按順序刪除各表（用 SAVEPOINT 隔離個別表的錯誤）
+        table_counts, table_errors = run_delete_with_retries(
+            ordered_tables,
+            lambda table_name: (
+                hard_delete_stmts(table_name, all_tables)[1],
+                {'orgs': org_codes},
+            ),
+        )
+        for table_name, count in table_counts.items():
+            display_name = HARD_DELETE_DISPLAY_NAMES.get(table_name, table_name)
+            deleted_counts[display_name] = deleted_counts.get(display_name, 0) + count
+        errors.extend(table_errors)
+
+        try:
+            with db.session.begin_nested():
+                result = db.session.execute(db.text(
+                    "DELETE FROM organizations WHERE is_deleted = true"
+                ))
+                if result.rowcount > 0:
+                    deleted_counts[ORG_DISPLAY_NAME] = result.rowcount
+        except Exception as e:
+            errors.append({
+                'table': 'organizations',
+                'display_name': ORG_DISPLAY_NAME,
+                'error': str(e),
+            })
+
+        db.session.commit()
+        dir_result = remove_org_directories(org_codes)
+        errors.extend(physical_error_entry(error) for error in file_result['errors'])
+        errors.extend(physical_error_entry(error) for error in dir_result['errors'])
+        for error in errors:
+            deleted_counts[f"{error['display_name']} (錯誤)"] = error['error']
+
+        return jsonify({
+            'success': True,
+            'message': (
+                _('刪除過程有 %(n)s 項失敗，企業可能未完全刪除', n=len(errors))
+                if errors else _('已刪除 %(count)s 個企業及其相關資料', count=len(org_codes))
+            ),
+            'deleted_counts': deleted_counts,
+            'has_errors': bool(errors),
+            'errors': errors,
+            'physical': {
+                'files_deleted': file_result['files_deleted'],
+                'files_missing': file_result['files_missing'],
+                'dirs_removed': dir_result['dirs_removed'],
+                'manual_required': manual_items,
+            },
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500

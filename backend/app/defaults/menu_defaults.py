@@ -312,8 +312,9 @@ CORE_MENUS = [
     },
     {
         'code': 'data_maintenance',
-        'title': '資料維護',
-        'title_i18n': {'en': 'Data Maintenance'},
+        # PF-170：企業硬刪除已搬到 /organizations/，這頁只剩「沒有歸屬的殘留」
+        'title': '主機資料清理',
+        'title_i18n': {'en': 'Host Data Cleanup'},
         'parent_code': 'servsr_manage',
         'link_type': 'route',
         'link_target': 'hostconfig.data_maintenance',

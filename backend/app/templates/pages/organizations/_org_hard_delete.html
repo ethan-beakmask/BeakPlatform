@@ -1,0 +1,169 @@
+{#
+  企業硬刪除區塊（PF-170：由 /hostconfig/data-maintenance 搬來）
+
+  這裡的對象是「還存在於 organizations 表、已軟刪除」的企業 —— 企業層面。
+  對象是「已不存在企業」的殘留（孤兒資料、無主檔案、孤兒目錄）屬主機層面，
+  在 /hostconfig/data-maintenance「主機資料清理」，不要把兩者搬到一起。
+
+  預設收合：這是不可復原的操作，不應該在企業列表一載入就展開並自動掃描。
+#}
+<details class="org-hard-delete" x-data="hardDeleteManager()"
+         @toggle="if ($el.open && loading) loadPreview()">
+    <summary>{{ _('永久刪除已軟刪除的企業') }}</summary>
+    <div class="org-hard-delete-body">
+        <p style="margin-bottom: 12px;">{{ _('永久刪除所有已軟刪除的企業及其相關資料（無法復原）') }}</p>
+
+        <!-- 載入中 -->
+        <div x-show="loading" style="color: #666;">{{ _('載入中...') }}</div>
+
+        <!-- 無資料 -->
+        <div x-show="!loading && deletedOrgs.length === 0" style="color: #666;">
+            {{ _('目前沒有已軟刪除的企業') }}
+        </div>
+
+        <!-- 有待刪除的資料 -->
+        <div x-show="!loading && deletedOrgs.length > 0">
+            <div style="margin-bottom: 12px;">
+                <strong>{{ _('待刪除企業') }} (<span x-text="deletedOrgs.length"></span> {{ _('個') }}):</strong>
+                <ul style="margin: 4px 0 0 20px; padding: 0;">
+                    <template x-for="org in deletedOrgs" :key="org.secure_code">
+                        <li x-text="org.name + ' (' + org.domain_name + ')'"></li>
+                    </template>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <strong>{{ _('涉及資料表:') }}</strong>
+                <table border="1" cellpadding="6" cellspacing="0" style="margin-top: 4px; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f5f5f5;">
+                            <th>{{ _('資料表') }}</th>
+                            <th>{{ _('筆數') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="t in tableCounts" :key="t.table">
+                            <tr>
+                                <td x-text="t.display_name + ' (' + t.table + ')'"></td>
+                                <td style="text-align: right;" x-text="t.count"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div x-show="physical.file_count > 0 || physical.directories.length > 0 || physical.manual_required.length > 0" style="margin-bottom: 12px;">
+                <div style="margin-bottom: 8px;">
+                    <strong>{{ _('實體資源') }}</strong> — {{ _('檔案') }}: <span x-text="physical.file_count"></span>
+                </div>
+
+                <div x-show="physical.directories.length > 0" style="margin-bottom: 8px;">
+                    <strong>{{ _('目錄') }}:</strong>
+                    <ul style="margin: 4px 0 0 20px; padding: 0;">
+                        <template x-for="dir in physical.directories" :key="dir">
+                            <li x-text="dir"></li>
+                        </template>
+                    </ul>
+                </div>
+
+                <div x-show="physical.manual_required.length > 0">
+                    <strong>{{ _('需自行以 CLI 處理') }}</strong>
+                    <table border="1" cellpadding="6" cellspacing="0" style="margin-top: 4px; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f5f5f5;">
+                                <th>{{ _('名稱') }}</th>
+                                <th>{{ _('原因') }}</th>
+                                <th>{{ _('指令') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in physical.manual_required" :key="item.type + ':' + item.name">
+                                <tr>
+                                    <td x-text="item.name"></td>
+                                    <td x-text="item.reason"></td>
+                                    <td>
+                                        <template x-if="item.command">
+                                            <span>
+                                                <code x-text="item.command"></code>
+                                                <button type="button" class="btn btn-secondary btn-sm" @click="copyCommand(item.command)">{{ _('複製') }}</button>
+                                            </span>
+                                        </template>
+                                        <template x-if="!item.command">
+                                            <span>—</span>
+                                        </template>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <button class="btn btn-danger" @click="executeHardDelete()" :disabled="executing">
+                <span x-show="!executing">{{ _('執行硬刪除') }}</span>
+                <span x-show="executing">{{ _('刪除中...') }}</span>
+            </button>
+        </div>
+
+        <!-- 結果訊息 -->
+        <div x-show="resultMessage" x-text="resultMessage"
+             :style="resultSuccess ? 'color: #2f855a; margin-top: 10px;' : 'color: #c53030; margin-top: 10px;'">
+        </div>
+
+        <div x-show="lastPhysical" style="margin-top: 10px;">
+            <strong>{{ _('實體資源清理結果') }}:</strong>
+            <div style="margin-top: 4px;">
+                {{ _('已刪除檔案') }}: <span x-text="lastPhysical ? lastPhysical.files_deleted : 0"></span> /
+                {{ _('缺漏檔案') }}: <span x-text="lastPhysical ? lastPhysical.files_missing : 0"></span>
+            </div>
+            <div x-show="lastPhysical && lastPhysical.dirs_removed && lastPhysical.dirs_removed.length > 0" style="margin-top: 4px;">
+                <strong>{{ _('已移除目錄') }}:</strong>
+                <ul style="margin: 4px 0 0 20px; padding: 0;">
+                    <template x-for="dir in lastPhysical ? lastPhysical.dirs_removed : []" :key="dir">
+                        <li x-text="dir"></li>
+                    </template>
+                </ul>
+            </div>
+            <div x-show="lastPhysical && lastPhysical.manual_required && lastPhysical.manual_required.length > 0" style="margin-top: 8px;">
+                <strong>{{ _('需自行以 CLI 處理') }}</strong>
+                <table border="1" cellpadding="6" cellspacing="0" style="margin-top: 4px; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f5f5f5;">
+                            <th>{{ _('名稱') }}</th>
+                            <th>{{ _('原因') }}</th>
+                            <th>{{ _('指令') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="item in lastPhysical ? lastPhysical.manual_required : []" :key="item.type + ':' + item.name">
+                            <tr>
+                                <td x-text="item.name"></td>
+                                <td x-text="item.reason"></td>
+                                <td>
+                                    <template x-if="item.command">
+                                        <span>
+                                            <code x-text="item.command"></code>
+                                            <button type="button" class="btn btn-secondary btn-sm" @click="copyCommand(item.command)">{{ _('複製') }}</button>
+                                        </span>
+                                    </template>
+                                    <template x-if="!item.command">
+                                        <span>—</span>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div x-show="errors.length > 0" style="color: #c53030; margin-top: 10px;">
+            <strong>{{ _('失敗資料表:') }}</strong>
+            <ul style="margin: 4px 0 0 20px; padding: 0;">
+                <template x-for="err in errors" :key="err.table">
+                    <li x-text="err.display_name + ' (' + err.table + '): ' + err.error"></li>
+                </template>
+            </ul>
+        </div>
+    </div>
+</details>

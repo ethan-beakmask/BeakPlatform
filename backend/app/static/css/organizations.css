@@ -338,3 +338,30 @@
 .contract-summary.expired {
     background: var(--color-danger-light);
 }
+
+/* 企業硬刪除區塊（PF-170：由 /hostconfig/data-maintenance 搬來）
+   預設收合的危險操作區，不使用 hostconfig-index.css 的 .tool-card，
+   避免企業管理頁相依主機設定頁的樣式表 */
+.org-hard-delete {
+    margin: 16px 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    background: var(--color-bg-white);
+}
+
+.org-hard-delete > summary {
+    cursor: pointer;
+    padding: 10px 14px;
+    font-weight: 600;
+    color: var(--color-danger);
+}
+
+.org-hard-delete-body {
+    padding: 0 14px 14px;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.org-hard-delete-body table {
+    width: 100%;
+    border-collapse: collapse;
+}

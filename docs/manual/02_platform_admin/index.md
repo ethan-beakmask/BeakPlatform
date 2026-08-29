@@ -16,6 +16,6 @@ chapter_index: true
 - [模組管理](modules.md)
 - [內部商場](store.md)
 - [主機設定](server_settings.md)
-- [資料維護](data_maintenance.md)
+- [主機資料清理](data_maintenance.md)
 - [Redis 監看](redis_monitor.md)
 - [本機登入錯誤監看](login_failures_local.md)

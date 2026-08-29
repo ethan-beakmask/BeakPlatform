@@ -7893,36 +7893,6 @@ routes:
     rules:
     - /hostconfig/data-maintenance
     source: backend/app/web/hostconfig.py
-  hostconfig.hard_delete_execute:
-    answer_source: code
-    guard_args: {}
-    guards:
-    - system_admin_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - POST
-    note: ''
-    review: unreviewed
-    rules:
-    - /hostconfig/hard-delete/execute
-    source: backend/app/web/hostconfig.py
-  hostconfig.hard_delete_preview:
-    answer_source: code
-    guard_args: {}
-    guards:
-    - system_admin_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /hostconfig/hard-delete/preview
-    source: backend/app/web/hostconfig.py
   hostconfig.index:
     answer_source: code
     guard_args: {}
@@ -12331,6 +12301,36 @@ routes:
     review: unreviewed
     rules:
     - /organizations/<secure_code>/edit
+    source: backend/app/web/organizations.py
+  organizations.hard_delete_execute:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /organizations/hard-delete/execute
+    source: backend/app/web/organizations.py
+  organizations.hard_delete_preview:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /organizations/hard-delete/preview
     source: backend/app/web/organizations.py
   organizations.list_orgs:
     answer_source: code

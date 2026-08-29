@@ -70,7 +70,7 @@ nav:
           - 模組管理: manual/02_platform_admin/modules.md
           - 內部商場: manual/02_platform_admin/store.md
           - 主機設定: manual/02_platform_admin/server_settings.md
-          - 資料維護: manual/02_platform_admin/data_maintenance.md
+          - 主機資料清理: manual/02_platform_admin/data_maintenance.md
           - Redis 監看: manual/02_platform_admin/redis_monitor.md
           - 本機登入錯誤監看: manual/02_platform_admin/login_failures_local.md
       - 企業建置:
