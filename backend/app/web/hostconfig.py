@@ -336,7 +336,6 @@ PURGE_ORPHAN_CLEANUP = {
         ('schedule_adjustments', 'user_secure_code', 'delete'),
         ('broadcast_acknowledgments', 'user_secure_code', 'delete'),
         ('password_history', 'user_secure_code', 'delete'),
-        ('timeout_trackers', 'assignee_secure_code', 'delete'),
         # NULLABLE FK -- 保留子記錄，置 NULL
         ('audit_logs', 'user_secure_code', 'set_null'),
         ('used_user_numbers', 'user_secure_code', 'set_null'),
