@@ -1399,6 +1399,25 @@ DB 卻登記著檔案系統早已不存在的檔名。修它是 PF-168 的一部
 | 使用者的員工編號 | `users.employee_number` / `emp_no` | **`users.employee_id`**（varchar 50，組織內唯一）；**兩帳號制的管理員帳號 2026-08-23 起才有號**——新企業由 `_create_default_numbering_rules()` 的第 6 條規則自動發 `ADM001`，既有企業已由 `scripts/migrations/112_backfill_org_admin_employee_id.py` 回填；SYSTEM_ADMIN 型帳號刻意不發（平台級身分不屬企業人事編制） |
 | 企業獨立資料庫的庫名 | `fw_org_databases.database_name` | **`db_name`**（另有 `org_id` / `db_host` / `db_port` / `is_ready`）；注意「記錄在、實體庫不在」是既有狀態（本機 `org_14`），反向不一致兩個方向都要查 |
 | migration 登記表的欄位 | `schema_migrations.version` | **`schema_migrations.filename`**（含副檔名，例 `116_xxx.py`）；PF-162 卡片裡那句 `INSERT INTO schema_migrations (version)` 是錯的，照抄會拿到 `column "version" does not exist` |
+| 企業獨立資料庫登記表的必填欄位 | 只填 `org_secure_code` / `org_id` / `db_name` | 還要 **`secure_code`**、**`admin_user`**、**`admin_password_enc`**、**`sync_user`**、**`sync_password_enc`** 五個 NOT NULL（2026-08-29 造測試資料時逐一撞出來，錯誤訊息一次只報一個）。查全部必填：`SELECT column_name FROM information_schema.columns WHERE table_name='fw_org_databases' AND is_nullable='NO';` |
+
+### 驗英文介面：沒有切換語系的 API，要改 DB 欄位（2026-08-29 試誤）
+
+`/api/personal-settings/language` **不存在**（回 `{"error":"Not found"}`）。
+語系來源是 `auth_interceptor.py:115` 的 `current_user.interface_language`
+（欄位在 `users.interface_language`，null 時回退企業設定）。
+自動化驗收英文介面的做法是直接改 DB 再重登，**驗完記得改回 NULL**：
+
+```bash
+PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -q -c \
+  "UPDATE users SET interface_language='en' WHERE email='admin@system.local';"
+# 重跑 quick-login 取得新 session 後抓頁面，檢查 body 內殘留的中文
+# （HTML 註解要先用 re.sub(r'<!--.*?-->', '', ...) 去掉，否則註解裡的中文會誤報）
+PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -q -c \
+  "UPDATE users SET interface_language=NULL WHERE email='admin@system.local';"
+```
+
+判讀基準：body 內只剩**資料值**（使用者 display_name 之類）是中文才算通過。
 
 ### 每個 session 也會猜錯一次的 URL（2026-08-20 補）
 
