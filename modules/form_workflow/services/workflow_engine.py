@@ -6,7 +6,10 @@ FormWorkflow Module - Workflow Engine
 適配 BeakPlatform 模組化架構。
 """
 import logging
+import os
 import secrets
+import signal
+import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 from sqlalchemy import and_, or_
@@ -27,6 +30,65 @@ from ..models import (
     FwApprovalRecord,
     FwNodeExecutionQueue,
 )
+
+
+def _pid_matches_queue_item(pid: int, queue_item_secure_code: str) -> bool:
+    """Verify a PID still belongs to this node_runner before terminating it.
+
+    The stored process_id may be stale because operating systems reuse PIDs.
+    Failing closed prevents cancel mode from killing an unrelated process.
+    """
+    try:
+        with open(f'/proc/{pid}/cmdline', 'rb') as cmdline_file:
+            args = cmdline_file.read().split(b'\0')
+    except OSError:
+        return False
+
+    expected_arg = f'--queue-item-code={queue_item_secure_code}'.encode()
+    return expected_arg in args
+
+
+def _terminate_node_process(pid: int, queue_item_secure_code: str) -> str:
+    """Terminate a node process without risking unrelated process groups.
+
+    node_runner is launched with start_new_session=True, so the expected safe
+    case is pgid == pid and its child processes share that process group. If
+    pgid differs, fall back to killing only pid because killpg could otherwise
+    terminate the executor or service process group.
+    """
+    try:
+        if not _pid_matches_queue_item(pid, queue_item_secure_code):
+            return 'skipped_pid_mismatch'
+
+        pgid = os.getpgid(pid)
+        use_process_group = pgid == pid
+
+        if use_process_group:
+            os.killpg(pgid, signal.SIGTERM)
+        else:
+            os.kill(pid, signal.SIGTERM)
+
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                return 'sigterm'
+            time.sleep(0.2)
+
+        if use_process_group:
+            os.killpg(pgid, signal.SIGKILL)
+        else:
+            os.kill(pid, signal.SIGKILL)
+        return 'sigkill'
+    except ProcessLookupError:
+        return 'already_gone'
+    except PermissionError:
+        logger.warning(f'Permission denied while terminating node process pid={pid}')
+        return 'permission_denied'
+    except Exception as e:
+        logger.warning(f'Failed to terminate node process pid={pid}: {e}')
+        return 'error'
 
 
 class WorkflowEngine:
@@ -497,8 +559,28 @@ class WorkflowEngine:
             workflow_instance_secure_code: 工作流實例 secure_code
             exclude_queue_item_id: 排除的佇列項目 ID（End 節點自己）
         """
+        workflow_instance = FwWorkflowInstance.query.filter_by(
+            secure_code=workflow_instance_secure_code,
+            is_deleted=False
+        ).first()
+
+        if workflow_instance:
+            root_instance_code = workflow_instance.root_instance_code or workflow_instance.secure_code
+            tree_instances = FwWorkflowInstance.query.filter(
+                or_(
+                    FwWorkflowInstance.secure_code == root_instance_code,
+                    FwWorkflowInstance.root_instance_code == root_instance_code
+                ),
+                FwWorkflowInstance.is_deleted.is_(False)
+            ).all()
+            tree_codes = [instance.secure_code for instance in tree_instances]
+        else:
+            logger.warning(f'cancel_pending_nodes: workflow instance not found, fallback to single scope '
+                           f'(workflow={workflow_instance_secure_code})')
+            tree_codes = [workflow_instance_secure_code]
+
         query = FwNodeExecutionQueue.query.filter(
-            FwNodeExecutionQueue.workflow_instance_secure_code == workflow_instance_secure_code,
+            FwNodeExecutionQueue.workflow_instance_secure_code.in_(tree_codes),
             FwNodeExecutionQueue.status.in_(['PENDING', 'RUNNING', 'WAITING'])
         )
 
@@ -506,13 +588,42 @@ class WorkflowEngine:
             query = query.filter(FwNodeExecutionQueue.id != exclude_queue_item_id)
 
         pending_nodes = query.all()
+        process_targets = [
+            (node.process_id, node.secure_code)
+            for node in pending_nodes
+            if node.status == 'RUNNING' and node.process_id and node.process_id > 0
+        ]
 
         for node in pending_nodes:
             node.cancel()
 
-        if pending_nodes:
+        cancelled_instances = FwWorkflowInstance.query.filter(
+            FwWorkflowInstance.secure_code.in_(tree_codes),
+            FwWorkflowInstance.secure_code != workflow_instance_secure_code,
+            FwWorkflowInstance.status.in_(['PENDING', 'RUNNING']),
+            FwWorkflowInstance.is_deleted.is_(False)
+        ).all()
+
+        for instance in cancelled_instances:
+            instance.status = 'CANCELLED'
+            instance.completed_at = datetime.utcnow()
+
+        if pending_nodes or cancelled_instances:
             db.session.commit()
             logger.info(f'cancel 模式：已取消 {len(pending_nodes)} 個未完成節點 '
+                        f'與 {len(cancelled_instances)} 個子流程 '
+                        f'(workflow={workflow_instance_secure_code}, scope={len(tree_codes)})')
+
+        if process_targets:
+            terminate_counts = {}
+            for pid, queue_item_secure_code in process_targets:
+                result = _terminate_node_process(pid, queue_item_secure_code)
+                terminate_counts[result] = terminate_counts.get(result, 0) + 1
+            summary = ' '.join(
+                f'{result}={count}'
+                for result, count in sorted(terminate_counts.items())
+            )
+            logger.info(f'cancel 模式：OS process termination results {summary} '
                         f'(workflow={workflow_instance_secure_code})')
 
     @staticmethod

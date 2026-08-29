@@ -2528,6 +2528,41 @@ Delay 與 ParallelFork 都可用：executor 會撿 `status=WAITING` 且 `node_ty
 `ParallelJoin` 另有 `enable_timeout` / `timeout_minutes` / `timeout_edge_id`，
 但它要靠 Fork 的另一條分支推進才會開始計時。
 
+### 節點執行與 End 三模式（2026-08-30 實測，盤點表 `dev-notes/NODE_TEST_INVENTORY.md`）
+
+**每個節點 = 一個獨立 OS subprocess**（`node_runner`，`start_new_session=True` 所以 pgid == pid），
+PID 記在 `fw_node_execution_queue.process_id`。動這塊之前先看盤點表，
+它記著每種節點的驗證狀態與編號 `NT-xx`（可被其他文件引用）。
+
+四件猜不到的：
+
+- **node_runner 的 stdout/stderr 全進 `DEVNULL`**，節點執行細節**不在 journal 裡**，
+  只能靠 DB 狀態反推。這是 End cancel 缺口長期沒被發現的直接原因
+- **父子流程的關聯在 `fw_workflow_instances`，不在 queue 表**：
+  `root_instance_code`（主流程自己是 NULL，子孫鏈式繼承同一個根）。
+  queue 表的 `calling_instance_code` / `parent_node_id` **只有子流程的 Start 節點有值**，
+  拿它找子流程的中間節點一律漏掉。整棵樹的正確查法是
+  `WHERE wi.secure_code = :root OR wi.root_instance_code = :root`（root 用 `root_instance_code or secure_code`）
+- **`FwWorkflowInstance` 與 `FwNodeExecutionQueue` 都沒有 `created_by` 欄位**，
+  傳了直接 `TypeError`。`subflow_handler` 就因此讓子流程從上線起 100% 失敗到 2026-08-30
+- **殺 node_runner 不會中斷它已發動的外部作業**：SIGTERM 之後 `pg_sleep` 的
+  PostgreSQL backend 仍活到查詢自然結束（要一起斷得發 `pg_cancel_backend()`，目前不做）。
+  子進程（AiAgent 的 claude CLI）因為在同一個 process group 內，會被一起收掉
+
+End 三模式的語意（`finish_mode`，預設 `detach`）：
+
+| 模式 | 行為 |
+|---|---|
+| `detach` | 直接結束，其他節點不管，未啟動的由 executor 下輪撿到時取消 |
+| `cancel` | **整棵樹**（含多層子流程）的節點與 instance 標 CANCELLED ＋ 對 RUNNING 節點送 SIGTERM/SIGKILL |
+| `strict` | 等同 instance 內所有節點完成才結束；子流程靠 SubFlow 節點的 WAITING 間接等到 |
+
+`cancel` 的唯一實作是 `WorkflowEngine.cancel_pending_nodes()`（另兩個呼叫端是管理員強制結案與
+portal 撤單，行為一致）。**送訊號前一律先 `/proc/<pid>/cmdline` 比對 `--queue-item-code`**
+（PID 會被重用，fail-closed 寧可不殺）、**且只在 pgid == pid 時才 killpg**
+（否則會連帶殺掉 executor 整個 process group）。被取消的節點跑完不得把自己寫回 SUCCESS，
+防護在 `node_runner.update_result()` / `handle_error()` / `advance_to_next_nodes()` 三處。
+
 ### form_workflow 流程變數的儲存位置（寫錯地方＝流程引用不到）
 
 **流程變數的權威儲存是 `fw_workflow_variables` 表，不是

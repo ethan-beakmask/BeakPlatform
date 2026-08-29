@@ -106,6 +106,10 @@ def update_result(queue_item, result):
     from modules.form_workflow.services.workflow_engine import WorkflowEngine
 
     status = result.get('status')
+    db.session.refresh(queue_item)
+    if queue_item.status == 'CANCELLED':
+        logger.warning(f'節點已取消，忽略執行結果寫回: node_id={queue_item.node_id}, result_status={status}')
+        return
 
     if status == 'waiting':
         # 保持 WAITING 狀態
@@ -213,6 +217,15 @@ def advance_to_next_nodes(queue_item):
         queue_item: 當前完成的佇列項目
     """
     from modules.form_workflow.services.workflow_engine import WorkflowEngine
+    from modules.form_workflow.models import FwWorkflowInstance
+
+    workflow_instance = FwWorkflowInstance.query.filter_by(
+        secure_code=queue_item.workflow_instance_secure_code
+    ).first()
+    if workflow_instance and workflow_instance.status in ('COMPLETED', 'CANCELLED', 'ERROR', 'FAILED'):
+        logger.info(f'工作流已是終態，跳過推進: workflow={workflow_instance.secure_code}, '
+                    f'status={workflow_instance.status}, node_id={queue_item.node_id}')
+        return
 
     result = queue_item.result or {}
     result_data = result.get('data', {})
@@ -264,6 +277,10 @@ def handle_error(queue_item_code, error_message):
         ).first()
 
         if not queue_item:
+            return
+        db.session.refresh(queue_item)
+        if queue_item.status == 'CANCELLED':
+            logger.warning(f'節點已取消，忽略執行錯誤: node_id={queue_item.node_id}, error={error_message}')
             return
 
         queue_item.fail(error_message)

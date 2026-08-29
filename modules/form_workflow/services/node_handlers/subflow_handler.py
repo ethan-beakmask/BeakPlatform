@@ -150,8 +150,7 @@ class SubFlowHandler(BaseNodeHandler):
                 parent_instance_code=parent_instance.secure_code,
                 root_instance_code=root_code,
                 workflow_depth=child_depth,
-                graph_snapshot=child_graph,
-                created_by='system'
+                graph_snapshot=child_graph
             )
             db.session.add(child_instance)
             db.session.flush()

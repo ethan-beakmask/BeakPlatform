@@ -89,6 +89,7 @@ files:
     - backend/tests/test_form_serial_per_org.py                # per-org serial_number 約束與序號池
     - backend/tests/test_ai_usage_quota.py                     # AiAgent 用量記錄與配額
     - backend/tests/test_ai_usage_api.py                       # AiAgent 用量與配額管理 API
+    - backend/tests/test_workflow_cancel_mode.py               # End cancel 模式流程樹取消與 process 終止
   vendor_deps:
     - backend/app/static/vendor/formio.full.min.js     # 表單設計器
     - backend/app/static/vendor/cytoscape.min.js       # 流程圖
