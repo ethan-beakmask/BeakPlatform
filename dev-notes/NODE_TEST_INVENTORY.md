@@ -1,10 +1,17 @@
 # 流程節點測試盤點表
 
 **目的**：公開本專案之前，每一種流程節點都要有被實際驗證過的紀錄。
-本表是唯一的進度來源，**編號 `NT-xx` 是穩定識別碼**，可被其他文件、BBN 卡片、
-commit message、待辦引用（例：「NT-13 已完成，見 `/opt/tmp/verify/20260830-end-cancel-mode.log`」）。
+本表是唯一的進度來源。
 
-編號一經指派**不得重排、不得回收**。新增節點型別時往後接續編號。
+## 編號規則
+
+**`NT` = Node Test，一種流程節點型別配一個編號**，格式 `NT-<兩位數>`。
+它是本表自訂的穩定識別碼，可被其他文件、BBN 卡片、commit message、待辦引用
+（例：「NT-13 已完成，見 `/opt/tmp/verify/20260830-end-cancel-mode.log`」）。
+
+- 編號一經指派**不得重排、不得回收**，新增節點型別時往後接續（下一個是 NT-28）
+- 編號綁的是 **`node_type` 字串**，不是顯示名稱——改中文顯示名不換編號
+- 與其他編號體系無關：`PF-xx` 是 BBN 待辦，`AUTH-01`／`TZ-01` 這類是 CLAUDE.md 的規範條號
 
 ## 狀態定義（不要自行擴充）
 
@@ -93,8 +100,11 @@ commit message、待辦引用（例：「NT-13 已完成，見 `/opt/tmp/verify/
 **殺掉 node_runner 不會中斷它已經發動的外部作業。** 實測 SIGTERM 後
 `pg_sleep(45)` 的 PostgreSQL backend 仍活到查詢自然結束——PostgreSQL 只有在
 要寫回 socket 時才發現 client 斷線。同理適用於已送出的 HTTP 請求。
-要連 DB 查詢一起斷，需在殺 process 前對該連線發 `pg_cancel_backend()`，
-代價是 SqlExecutor 執行時要把 backend PID 記進 queue 記錄。**目前不做。**
+要連 DB 查詢一起斷，需在殺 process 前對該連線發 `pg_cancel_backend()`。
+**Ethan 2026-08-30 定案不做**（BBN `PF-173` 已結案）：SqlExecutor 有
+`statement_timeout`（上限 60 秒）兜底，多佔用連線幾秒到幾分鐘沒有實質影響，
+且 PostgreSQL 本身另有連線與資源的維護機制，不需要由本專案補這一層。
+**這不是延後，是決定不做——未來 session 不要重新把它當成待辦。**
 （AiAgent 的 claude CLI 是子進程、在同一個 process group 內，會被一起收掉。）
 
 ## 端到端達標的最低要求（不滿足就只能記「未驗證」）
