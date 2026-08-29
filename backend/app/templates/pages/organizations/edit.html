@@ -76,7 +76,10 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="user_limit">{{ _('帳號上限') }}</label>
-                    <input type="text" id="user_limit" name="user_limit" class="form-control"
+                    {# 刻意不給 name：readonly 欄位照樣會隨表單送出，後端 int('∞') 會拋
+                       ValueError 讓整筆更新（含狀態停用）全部 rollback。人數授權功能
+                       完成前，這裡只是展示，不參與提交。後端仍保留 user_limit 的處理。 #}
+                    <input type="text" id="user_limit" class="form-control"
                            value="&infin;" readonly>
                     <div class="form-hint">{{ _('目前已使用 %(count)s 個帳號 -- 開源的沒打算商業化，大家盡量用吧^_^', count=active_user_count) }}</div>
                 </div>
