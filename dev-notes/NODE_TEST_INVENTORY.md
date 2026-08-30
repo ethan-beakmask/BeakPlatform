@@ -245,7 +245,40 @@ node_runner 是每次執行都重新 spawn 的獨立進程。改了模板或 web
 
 ## 怎麼補測（可直接複製使用）
 
-本次的測試環境建置腳本與監控腳本已刪除（測試資料為拋棄式），但手法可重用：
+**現成工具：`dev-notes/tools/node_probe.py`**（2026-08-30 PF-181/182 驗收時寫的，
+NT-28 / NT-29 的整份實測矩陣都是用它跑出來的）。它建 template + instance +
+一筆 Start 的 PENDING queue 記錄，executor 自己會撿起來跑完整流程：
+
+```bash
+set -a && source .env && set +a
+# 線性圖 Start -> <節點> -> End(cancel)
+PROBE_NODE_TYPE=OsExecutor venv/bin/python dev-notes/tools/node_probe.py \
+    create ok '{"command":"/bin/echo hi","result_var":"r","timeout_seconds":30}'
+# 並行圖 Start ->〔受測節點〕/〔End(cancel)〕，驗 cancel 協同用
+PROBE_NODE_TYPE=OsExecutor venv/bin/python dev-notes/tools/node_probe.py \
+    create cancel-test '<config json>' parallel
+# 建立時順便寫流程變數（驗變數插值用）
+... create quote '<config json>' 'var:payload=; touch /tmp/PWNED ; #'
+
+venv/bin/python dev-notes/tools/node_probe.py wait <instance_sc> 120
+venv/bin/python dev-notes/tools/node_probe.py show <instance_sc>   # queue／變數／log 三者
+```
+
+清理（測完一定要做，否則測試模板會出現在流程列表上）：
+
+```sql
+BEGIN;
+CREATE TEMP TABLE probe_inst AS
+  SELECT id, secure_code FROM fw_workflow_instances WHERE execution_code LIKE 'OSPROBE-%';
+DELETE FROM fw_node_execution_logs  WHERE workflow_instance_id IN (SELECT id FROM probe_inst);
+DELETE FROM fw_node_execution_queue WHERE workflow_instance_secure_code IN (SELECT secure_code FROM probe_inst);
+DELETE FROM fw_workflow_variables   WHERE workflow_instance_secure_code IN (SELECT secure_code FROM probe_inst);
+DELETE FROM fw_workflow_instances   WHERE id IN (SELECT id FROM probe_inst);
+DELETE FROM fw_workflow_templates   WHERE code LIKE 'OSPROBE\_%';
+COMMIT;
+```
+
+以下是更早期（End cancel 那批）的手法，涉及 SqlExecutor 的臨時 SP，仍可參考：
 
 ```bash
 # 1. 造一個會佔住 subprocess 的節點：註冊臨時 SP 給 SqlExecutor 用

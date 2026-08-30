@@ -1112,6 +1112,23 @@ f"{request.script_root}{request.path}?{urlencode(args)}"
 Page IR 的排序連結**從第一版起就是壞的**，直到 2026-07-29 才發現
 （`renderer._self_url()` 已修）。原因見下條。
 
+**這條同樣適用於 model 的 `to_dict()` 與 URL property**（2026-08-30 又踩一次）：
+`fw_workflow_backgrounds` / `DcBackground` 的 `to_dict()['url']` 與
+`PlatformFile.serve_url` / `download_token_url` 從 2026-04-04 起就寫死
+`/api/files/<sc>/serve`，症狀是**流程設計器底圖與企業 logo 全部破圖、
+畫面沒有任何錯誤訊息，只有 F12 看得到一串 404**。四處已修，寫法是：
+
+```python
+from flask import has_request_context, request
+prefix = request.script_root if has_request_context() else ''
+```
+
+`has_request_context()` 不可省——model 也會被背景任務（executor、cron）呼叫，
+直接讀 `request` 會拋 `RuntimeError`。
+
+**新增任何「回給前端的 URL 欄位」時套用同一個寫法。** 判別方式：
+`grep -rnE "f?['\"]/api/" --include=*.py backend/app modules | grep -v script_root`。
+
 ### FRONT-12: form.io 自訂元件要在兩個模板都掛 script（2026-08-27 起）
 
 平台層的 form.io 自訂元件放在 `backend/app/static/js/formio-*.js`，
@@ -1497,6 +1514,8 @@ blueprint 的 `url_prefix` 與模組名不一致，照模組名猜必 404：
 | 弱點管理各頁 | `/vuln-lifecycle/assets` | **`/vuln/assets`**（`vuln_lifecycle/web/__init__.py` 的 prefix 是 `/vuln`；API 那邊反而是 `/api/vuln-lifecycle/...`，兩者不一致） |
 | 規格制定的 API | `/api/spec-formulate/specs` | **`/api/spec-formulate/schema/specs`**（路由全寫在 `schema.py` 的 `register(bp)` 內，bp 是 `schema_bp`） |
 | **表單**設計器 | `/forms/form-designer` | **`/forms/templates/<form_template_secure_code>`**（`/forms/templates/new` 是新建，兩者都要設計權限——純 EMPLOYEE 開會 **403**，用 ORG_ADMIN 或持 FORM_DESIGNER 的帳號） |
+| 流程設計器**底圖**清單 | `/api/form-workflow/backgrounds` | **`/api/workflows/backgrounds`**（上傳是同一前綴的 `/upload`；`backgrounds.py` 的 blueprint prefix 就是 `/api/workflows/backgrounds`） |
+| 企業 logo 的資訊與上傳 | `/api/enterprise-settings/logo` | **`/api/admin/settings/logo`**（`enterprise_settings.py` 的 blueprint prefix 是 `/api/admin/settings`，與檔名不一致） |
 | 本人領取自己的 API Key | `/security/api-keys`（那是管理員面） | **`/personal-settings`** 最下方「我的 API Key」區塊；API 是 `/api/my-api-keys`（清單／`<key_sc>/claim`／`<key_sc>/regenerate`），授權條件是**本人**（`applicant_user_secure_code` ＋ `org_secure_code` 雙條件）而不是 permission code |
 
 ### 外部系統用 API Key 發動表單流程：`/api/trigger/form`（2026-08-13 起）

@@ -2,6 +2,7 @@
 NoCode Builder - Background Model
 底圖圖庫
 """
+from flask import has_request_context, request
 from sqlalchemy import Column, String, Integer
 
 from .base import ModuleBaseModel
@@ -23,10 +24,14 @@ class DcBackground(ModuleBaseModel):
 
     def to_dict(self):
         data = super().to_dict()
+        # 前綴一律用 request.script_root（FRONT-10），少了它瀏覽器會 404。
+        # 設計器目前是自己用 menuBackgroundUrl(sc) 組網址（有帶前綴），
+        # 這個欄位仍要正確，避免其他消費端踩到同一個坑。
+        prefix = request.script_root if has_request_context() else ''
         if self.platform_file_sc:
-            url = f'/api/files/{self.platform_file_sc}/serve'
+            url = f'{prefix}/api/files/{self.platform_file_sc}/serve'
         else:
-            url = f'/bp/static/uploads/backgrounds/{self.filename}'
+            url = f'{prefix}/static/uploads/backgrounds/{self.filename}'
         data.update({
             'filename': self.filename,
             'original_filename': self.original_filename,

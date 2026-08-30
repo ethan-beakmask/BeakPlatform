@@ -3,6 +3,7 @@ FormWorkflow Module - Workflow Background Model
 流程設計器底圖
 """
 import secrets
+from flask import has_request_context, request
 from sqlalchemy import Column, String, Integer, event
 
 from app.models.base import BaseModel
@@ -43,10 +44,16 @@ class FwWorkflowBackground(BaseModel):
         """轉換為字典"""
         data = super().to_dict()
         # URL 優先走 FileService proxy，向下相容舊資料走 static
+        #
+        # 前綴一律用 request.script_root（FRONT-10）：app 掛在 nginx 的 /beakplatform
+        # 底下，而 Flask 的 request.path 不含該前綴。少了它瀏覽器會拿絕對路徑去打
+        # /api/files/<sc>/serve 而 404，症狀是設計器底圖全部載不出來、只有 F12 看得到
+        # （2026-04-04 起就是這樣，2026-08-30 才修）。
+        prefix = request.script_root if has_request_context() else ''
         if self.platform_file_sc:
-            url = f'/api/files/{self.platform_file_sc}/serve'
+            url = f'{prefix}/api/files/{self.platform_file_sc}/serve'
         else:
-            url = f'/bp/static/uploads/backgrounds/{self.filename}'
+            url = f'{prefix}/static/uploads/backgrounds/{self.filename}'
         data.update({
             'filename': self.filename,
             'original_filename': self.original_filename,

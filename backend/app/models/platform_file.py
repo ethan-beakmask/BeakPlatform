@@ -2,9 +2,15 @@
 PlatformFile Model
 統一管理平台所有檔案的 metadata
 """
+from flask import has_request_context, request
 from sqlalchemy import Column, String, BigInteger, Text
 
 from .base import TenantBaseModel
+
+
+def _url_prefix() -> str:
+    """nginx 掛載前綴（/beakplatform）。無 request context 時回空字串。"""
+    return request.script_root if has_request_context() else ''
 
 
 class PlatformFile(TenantBaseModel):
@@ -71,10 +77,16 @@ class PlatformFile(TenantBaseModel):
 
     @property
     def serve_url(self):
-        """產生前端可用的 serve URL"""
-        return f'/api/files/{self.secure_code}/serve'
+        """產生前端可用的 serve URL
+
+        前綴一律用 request.script_root（FRONT-10）：app 掛在 nginx 的 /beakplatform
+        底下，而 Flask 的 request.path 不含該前綴。少了它，瀏覽器會拿絕對路徑去打
+        /api/files/<sc>/serve 而 404（症狀是圖片破圖、只有 F12 看得到）。
+        無 request context（背景任務、CLI）時回相對路徑，呼叫端自行處理。
+        """
+        return f'{_url_prefix()}/api/files/{self.secure_code}/serve'
 
     @property
     def download_token_url(self):
-        """產生前端取得一次性下載 token 的 API URL (POST)"""
-        return f'/api/files/{self.secure_code}/download-token'
+        """產生前端取得一次性下載 token 的 API URL (POST)；前綴理由同 serve_url"""
+        return f'{_url_prefix()}/api/files/{self.secure_code}/download-token'
