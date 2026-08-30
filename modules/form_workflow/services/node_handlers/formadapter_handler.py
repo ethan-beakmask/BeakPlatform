@@ -509,6 +509,10 @@ def complete_form_action(queue_item_secure_code: str, selected_edges: List[str],
     WorkflowLogService.log(
         workflow_instance_id=workflow_instance.id if workflow_instance else None,
         node_queue_id=queue_item.id,
+        node_type=queue_item.node_type,
+        node_instance_id=queue_item.secure_code,
+        org_secure_code=queue_item.org_secure_code,
+        status=queue_item.status,
         level='INFO',
         message='FormAdapter 簽核完成',
         data=action_result
@@ -609,6 +613,11 @@ def _create_next_nodes(queue_item, selected_edges: List[str], available_paths: L
         WorkflowLogService.log(
             workflow_instance_id=workflow_instance.id,
             node_queue_id=None,
+            node_id=queue_item.node_id,
+            node_type=queue_item.node_type,
+            node_instance_id=queue_item.secure_code,
+            org_secure_code=queue_item.org_secure_code,
+            status=queue_item.status,
             level='INFO',
             message=f'FormAdapter 建立後續節點: {target_node_type}',
             data={

@@ -70,7 +70,7 @@
             const nodesWithSettings = [
                 'Subflow', 'Delay', 'OpFieldWrite', 'OpSet', 'Telegram',
                 'SysTelegram', 'EmailRelay', 'EmailAdapter', 'Branch',
-                'FormAdapter', 'End', 'SqlExecutor',
+                'FormAdapter', 'End', 'SqlExecutor', 'OsExecutor', 'FileRead',
                 'ParallelJoin',
                 'NavbarBroadcast', 'AlertBroadcast',
                 'Abandon', 'SubSystemProvision', 'ApiKeyAction',
@@ -105,6 +105,8 @@
             if (type === 'Subflow')              info += renderSubflowPanel(node, nodeId);
             if (type === 'Delay')                info += renderDelayPanel(node, nodeId);
             if (type === 'SqlExecutor')          info += renderSqlExecutorPanel(node, nodeId);
+            if (type === 'OsExecutor')           info += renderOsExecutorPanel(node, nodeId);
+            if (type === 'FileRead')             info += renderFileReadPanel(node, nodeId);
             if (type === 'OpSet')                info += renderOpSetPanel(node, nodeId);
             if (type === 'OpFieldWrite')         info += renderOpFieldWritePanel(node, nodeId);
             if (type === 'FormAdapter')          info += renderFormAdapterPanel(node, nodeId);

@@ -9,7 +9,7 @@
 它是本表自訂的穩定識別碼，可被其他文件、BBN 卡片、commit message、待辦引用
 （例：「NT-13 已完成，見 `/opt/tmp/verify/20260830-end-cancel-mode.log`」）。
 
-- 編號一經指派**不得重排、不得回收**，新增節點型別時往後接續（下一個是 NT-28）
+- 編號一經指派**不得重排、不得回收**，新增節點型別時往後接續（下一個是 NT-30）
 - 編號綁的是 **`node_type` 字串**，不是顯示名稱——改中文顯示名不換編號
 - 與其他編號體系無關：`PF-xx` 是 BBN 待辦，`AUTH-01`／`TZ-01` 這類是 CLAUDE.md 的規範條號
 
@@ -29,7 +29,7 @@
 ## 盤點表
 
 節點型別取自 `workflow_node_definitions` 與 `node_handlers/factory.py` 的註冊清單，
-2026-08-30 現況共 27 種（其中 4 種已刪除或退役）。
+2026-08-30 現況共 29 種（其中 4 種已刪除或退役）。
 
 | 編號 | node_type | 顯示名 | 分類 | 狀態 | 憑證 / 測試檔 |
 |---|---|---|---|---|---|
@@ -60,12 +60,90 @@
 | NT-25 | `EmailAdapter` | Email 通知 | 通知 | 未驗證 | — |
 | NT-26 | `NavbarBroadcast` | 跑馬燈廣播 | 通知 | 未驗證 | — |
 | NT-27 | `Telegram` | Telegram 通知 | 通知 | 未驗證 | — |
+| NT-28 | `OsExecutor` | OS 命令 | 系統 | 端到端 | `20260830-osnode.log`（四分法四條路徑、兩道授權閘門、cancel 協同兩種、併發上限、引號化對照） |
+| NT-29 | `FileRead` | 檔案讀取 | 系統 | 端到端 | `20260830-osnode.log`（四種模式、兩道授權閘門、symlink 與 `../` 逃逸各一次、regex／line_start／occurrence 三軸） |
 
-進度：端到端 7 / 單元 0 / 部分 1 / 未驗證 15 / 已退役 1 / 已刪除 3。
+進度：端到端 9 / 單元 0 / 部分 1 / 未驗證 15 / 已退役 1 / 已刪除 3。
 
 **剩餘項目的待辦是 BBN `PF-172`**（`note_search("PF-172")` 取全文，含依風險排序的優先順序）。
 `NT-06 Condition`、`NT-07 Converge`、`NT-12 Switch` 已刪除；`NT-09 ParallelFork`
 已退役但保留 handler 與 factory 註冊供既有快照執行。
+
+## 2026-08-30 第三批：主機側節點 NT-28 / NT-29（憑證 `/opt/tmp/verify/20260830-osnode.log`）
+
+PF-181（OsExecutor）與 PF-182（FileRead）一併上線，規格見 `dev-notes/OS_EXECUTOR_SPEC.md`。
+兩者的授權閘門刻意各自獨立（`OS_NODE_ENABLED` / `FILE_READ_NODE_ENABLED` ＋
+兩份企業白名單），驗收時分別關掉各自的開關實測過。
+
+### NT-28 OsExecutor 實測矩陣
+
+| 場景 | 結果 |
+|---|---|
+| `/bin/echo` | `_result=ok`、exit 0、stdout 進變數與落檔 |
+| `/bin/false` | `_result=exception` / `_error_kind=exit_code`，queue **SUCCESS 不重試** |
+| `sleep 3117 & sleep 3117`，timeout 3s | `_result=timeout` / `_killed=group_sigterm`，**背景子孫全數收乾淨**（`pgrep -x sleep` 對照） |
+| `wait_for_result=false` | `_result=dispatched` + `_unit=bp-<queue_sc>`，journal 有 Started |
+| `expect_pattern` 命中／不命中 | `ok` ／ `exception`+`expect_pattern` |
+| `expect_json` 合法／不合法 | `ok` ／ `exception`+`expect_json` |
+| 企業不在 `os_node_allowed_orgs` | `exception`+`not_authorized`（reason 明確） |
+| `OS_NODE_ENABLED` 註解掉後重啟 executor | `exception`+`not_authorized` |
+| 併發 4 個（上限 3） | 3 RUNNING + 1 WAITING，排隊者稍後自行完成 |
+| 例外通知無收件人 | 只記 WARNING，不影響節點結果 |
+
+**cancel 協同兩種都驗過**：
+
+1. 等待型：`Start →〔OsExecutor(sleep 2911 & sleep 2911)〕／〔End(cancel)〕` 並行圖，
+   End 觸發後兩個 sleep 全數消失、OsExecutor queue 標 CANCELLED
+   → node_runner 的 SIGTERM handler 有效
+2. dispatched：`cancel_scope=unit` 時 journal 顯示 unit 在 8 秒後被 `Stopping/Stopped`；
+   `cancel_scope=detach` 時 unit 不受流程取消影響，10 秒後自己 `exit 3`，
+   事後 `systemctl show` 仍查得到 `Result=exit-code / ExecMainStatus=3`
+
+**引號化的對照組**（等價於規格要求的 mutation 驗證，且不必改程式碼）：
+同一筆測資 `; touch /opt/tmp/verify/PWNED_20260830 ; #`
+
+| 寫法 | 展開後的命令 | 檔案有沒有被建立 |
+|---|---|---|
+| `${v.payload}` | `/bin/echo '; touch ... ; #'` | **沒有**（注入被中和） |
+| `${v.payload!raw}` | `/bin/echo ; touch ... ; #` | **有**（證明測資本身真的可執行） |
+
+### NT-29 FileRead 實測矩陣
+
+檔案 `/opt/tmp/frtest/sample.log`（2000 行、含中文、3 行 ERROR）。
+
+| 場景 | 結果 |
+|---|---|
+| `mode=tail` lines=3 | 正確取到最後三行，中文未破碼（反向 block 讀 + 最後才 decode） |
+| `mode=head` lines=2 | 正確 |
+| `mode=around` keyword=ERROR occurrence=all | 3 個窗口以 `--` 分隔、`_match_count=3` |
+| `match_mode=regex` `payload-(37\|1200)$` | 2 個窗口、`_match_count=2` |
+| `occurrence=last` | 只留最後一個窗口，但 `_match_count=3`（全檔計數） |
+| `occurrence=first` / `max_windows` 達標 | 提早停止並標 `_scan_truncated=true` |
+| 壞掉的 regex `([unclosed` | `exception` + `_error_kind=bad_pattern` |
+| symlink 逃逸（`evil.link -> /etc/passwd`） | `exception` + `path_denied` |
+| `../../etc/passwd` | `exception` + `path_denied` |
+| 企業不在 `file_read_allowed_orgs` | `exception` + `not_authorized` |
+| `FILE_READ_NODE_ENABLED` 註解掉後重啟 | `exception` + `not_authorized` |
+
+### 本批修掉的三個缺陷（都是實測才發現的）
+
+1. **executor 的 WAITING 喚醒清單漏了 OsExecutor**（`workflow_executor.py` 兩處）。
+   併發上限回 `waiting` 的節點永遠不會被撿回來，實測第 4 個節點的 `scheduled_at`
+   過期數分鐘仍停在 WAITING。加進清單後立刻被喚醒並完成
+2. **FileRead `occurrence=first` / `max_windows` 達標時窗口重複輸出一次**：
+   `break` 之前沒有清掉 `current`，迴圈後的收尾又 append 了同一個窗口
+   （症狀是輸出重複同一段並多出一條 `--`）
+3. **FileRead `tail` 的 `_truncated` 恆為 true**：原本用 `position > 0` 判定，
+   而 tail 本來就只讀檔尾，於是這個旗標對 tail 失去鑑別力。
+   改為「撞到 `MAX_READ_BYTES` 才算截斷」
+
+### 設計器面板
+
+`wf-node-os-executor.js` / `wf-node-file-read.js`，接線在 `wf-accordion.js`（清單 +
+dispatch）、`wf-save.js`（case）、`wf-render.js`（node type 正規化）、
+`workflow_designer.html`（script）。瀏覽器實測記錄在同一份憑證檔尾段：
+顯示/隱藏切換、select 初次渲染值、collect 的型別轉換（exit codes / extra_env /
+notify_to）全部逐項檢查過，console 無 error。
 
 ## 2026-08-30 第二批：節點整併（憑證 `/opt/tmp/verify/20260830-paralleljoin-any-e2e.log`）
 

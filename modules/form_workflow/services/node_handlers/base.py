@@ -156,6 +156,10 @@ class BaseNodeHandler(ABC):
             workflow_instance_id=self._get_workflow_instance_id(),
             node_queue_id=self.queue_item.id,
             node_id=self.queue_item.node_id,
+            node_type=self.queue_item.node_type,
+            status=self.queue_item.status,
+            node_instance_id=self.queue_item.secure_code,
+            org_secure_code=self.queue_item.org_secure_code,
             level='INFO',
             message=message,
             data=details
@@ -168,6 +172,10 @@ class BaseNodeHandler(ABC):
             workflow_instance_id=self._get_workflow_instance_id(),
             node_queue_id=self.queue_item.id,
             node_id=self.queue_item.node_id,
+            node_type=self.queue_item.node_type,
+            status=self.queue_item.status,
+            node_instance_id=self.queue_item.secure_code,
+            org_secure_code=self.queue_item.org_secure_code,
             level='WARNING',
             message=message,
             data=details
@@ -180,6 +188,10 @@ class BaseNodeHandler(ABC):
             workflow_instance_id=self._get_workflow_instance_id(),
             node_queue_id=self.queue_item.id,
             node_id=self.queue_item.node_id,
+            node_type=self.queue_item.node_type,
+            status=self.queue_item.status,
+            node_instance_id=self.queue_item.secure_code,
+            org_secure_code=self.queue_item.org_secure_code,
             level='ERROR',
             message=message,
             data=details

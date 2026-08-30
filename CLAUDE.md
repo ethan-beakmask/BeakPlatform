@@ -1678,12 +1678,15 @@ formadapter_handler.py:148     # 驗證 target_edges 合法性（空 target_edge
 | `DecisionWriter.decided_via` 自動推斷 | 看 `last_completed_node_type`，並行分支下不可靠 | 一律在節點 config 明確標 `human` / `auto` |
 | `DecisionWriter.target_value` 替換後為空 | 節點回 error、流程卡住 | 自動封鎖前必須先用 Branch 擋掉 `actor_ip` 為空的案件 |
 
-executor 會撿 `status=WAITING` 且 `node_type in (Delay, End, ParallelJoin)`
+executor 會撿 `status=WAITING` 且 `node_type in (Delay, End, ParallelJoin, OsExecutor)`
 且 `scheduled_at` 到期的節點（`workflow_executor.py` 內**兩處**都有這份清單）。
 **不在這份清單內的節點一旦進 WAITING 就再也不會被喚醒**——已刪除的 `Converge`
 就是這樣死的（它回 `pending`，`node_runner` 設成 WAITING 卻不設 `scheduled_at`，
 而第二條入線到達時 `advance_workflow` 看到已有 WAITING 就跳過不重建）。
 **新增會回 `waiting`／`pending` 的節點型別時，這兩處清單一定要一起加。**
+2026-08-30 OsExecutor 上線時又踩一次：併發上限回 `waiting` + `retry_after_seconds`，
+規格寫「`node_runner.py:119` 已支援，不必改引擎」是對的，但漏了 executor 這兩處清單，
+被擋下的節點就永遠停在 WAITING（實測憑證 `/opt/tmp/verify/20260830-osnode.log`）。
 
 ### 節點「成功但不推進」的唯一機制：`skip_advance`（2026-08-30 起）
 
@@ -1800,7 +1803,19 @@ Playwright E2E 的三條硬規則與 mutation 驗證。
 | AiAgent 的隔離設計（`--safe-mode` / `--tools ""`）與移植性 | `dev-notes/AI_NODE_SECURITY.md` |
 | AiAgent 用量與配額 | `dev-notes/AI_NODE_USAGE_QUOTA_SPEC.md` |
 | SqlExecutor 白名單（執行時重查、唯讀交易、schema 常數） | `dev-notes/SQL_EXECUTOR_SPEC.md` |
-| OsExecutor / FileRead | `dev-notes/OS_EXECUTOR_SPEC.md` |
+| OsExecutor / FileRead | `dev-notes/OS_EXECUTOR_SPEC.md`（第十四節是實作後記，與規格本文有六處差異，以後記為準） |
+
+**OsExecutor（NT-28）與 FileRead（NT-29）2026-08-30 上線，出廠三道全關**：
+`.env` 開關（`OS_NODE_ENABLED` / `FILE_READ_NODE_ENABLED`，**兩者刻意獨立**）、
+系統設定的企業白名單、`workflow_node_definitions.is_active=false`。
+部署說明在 `docs/install/os_node.md`（會推 GitHub）。
+
+**這兩個節點的失敗不會讓 queue 變成 FAILED**：四分法
+（`ok` / `exception` / `timeout` / `dispatched`）全部回 `status: 'success'`，
+因為 `fail()` 會無條件重試 3 次，而有副作用的命令不能被平台自動重跑。
+**症狀是流程管理頁一片綠、實際命令失敗過**——真相在流程變數
+`<result_var>_result` 與 `fw_node_execution_logs`（level=ERROR）。
+判斷節點成敗一律看那兩處，不要看 queue 的 status。
 
 **改 handler 後 executor 要重啟才認得**，而重啟有代價——見下方「服務啟動」。
 

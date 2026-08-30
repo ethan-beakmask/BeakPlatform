@@ -7,8 +7,10 @@ FormWorkflow Module - Workflow Engine
 """
 import logging
 import os
+import re
 import secrets
 import signal
+import subprocess
 import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
@@ -16,6 +18,9 @@ from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
+
+OS_EXECUTOR_UNIT_RE = re.compile(r'^[A-Za-z0-9_.-]+$')
+OS_EXECUTOR_UNIT_PREFIX = 'bp-'
 
 from app import db
 from app.platform.auth import current_user
@@ -89,6 +94,77 @@ def _terminate_node_process(pid: int, queue_item_secure_code: str) -> str:
     except Exception as e:
         logger.warning(f'Failed to terminate node process pid={pid}: {e}')
         return 'error'
+
+
+def _stop_os_dispatched_units(tree_codes: List[str]) -> None:
+    """Stop dispatched OsExecutor systemd units for a cancelled workflow tree.
+
+    Dispatched nodes become SUCCESS immediately, so they are invisible to the
+    existing RUNNING process cancellation path. This helper deliberately runs
+    after the normal cancel flow and never raises; canceling workflow state must
+    not depend on systemctl availability.
+    """
+    if not tree_codes:
+        return
+
+    try:
+        nodes = FwNodeExecutionQueue.query.filter(
+            FwNodeExecutionQueue.workflow_instance_secure_code.in_(tree_codes),
+            FwNodeExecutionQueue.node_type == 'OsExecutor',
+            FwNodeExecutionQueue.result.isnot(None),
+        ).all()
+
+        counts = {
+            'stopped': 0,
+            'detach': 0,
+            'invalid_unit': 0,
+            'failed': 0,
+        }
+        for node in nodes:
+            result = node.result if isinstance(node.result, dict) else {}
+            os_dispatch = result.get('os_dispatch') or {}
+            if not isinstance(os_dispatch, dict):
+                continue
+
+            unit = os_dispatch.get('unit')
+            if not unit:
+                continue
+            if (os_dispatch.get('cancel_scope') or 'unit') == 'detach':
+                counts['detach'] += 1
+                continue
+            if (
+                not isinstance(unit, str)
+                or not unit.startswith(OS_EXECUTOR_UNIT_PREFIX)
+                or not OS_EXECUTOR_UNIT_RE.fullmatch(unit)
+            ):
+                counts['invalid_unit'] += 1
+                logger.warning(f'cancel 模式：略過不合法 OsExecutor unit: {unit}')
+                continue
+
+            try:
+                proc = subprocess.run(
+                    ['sudo', '-n', 'systemctl', 'stop', unit],
+                    capture_output=True,
+                    text=True,
+                    timeout=20,
+                )
+                if proc.returncode == 0:
+                    counts['stopped'] += 1
+                else:
+                    counts['failed'] += 1
+                    logger.warning(
+                        f'cancel 模式：停止 OsExecutor unit 失敗 unit={unit} '
+                        f'code={proc.returncode} stderr={(proc.stderr or "")[:300]}')
+            except Exception as e:
+                counts['failed'] += 1
+                logger.warning(f'cancel 模式：停止 OsExecutor unit 例外 unit={unit}: {e}')
+
+        logger.info(
+            'cancel 模式：OsExecutor dispatched unit cleanup '
+            f"stopped={counts['stopped']} detach={counts['detach']} "
+            f"invalid_unit={counts['invalid_unit']} failed={counts['failed']}")
+    except Exception as e:
+        logger.warning(f'cancel 模式：OsExecutor dispatched unit cleanup 失敗: {e}')
 
 
 class WorkflowEngine:
@@ -625,6 +701,8 @@ class WorkflowEngine:
             )
             logger.info(f'cancel 模式：OS process termination results {summary} '
                         f'(workflow={workflow_instance_secure_code})')
+
+        _stop_os_dispatched_units(tree_codes)
 
     @staticmethod
     def process_approval(

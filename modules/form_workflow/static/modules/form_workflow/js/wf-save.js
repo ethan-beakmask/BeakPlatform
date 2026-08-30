@@ -202,6 +202,22 @@
                     }
                     break;
                 }
+                case 'OsExecutor': {
+                    const osCfg = collectOsExecutorConfig();
+                    if (osCfg) {
+                        Object.assign(config, osCfg);
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'FileRead': {
+                    const frCfg = collectFileReadConfig();
+                    if (frCfg) {
+                        Object.assign(config, frCfg);
+                        changed = true;
+                    }
+                    break;
+                }
                 case 'Telegram': {
                     const cfgId = document.getElementById('telegramConfigId');
                     const channel = document.getElementById('telegramChannelName');

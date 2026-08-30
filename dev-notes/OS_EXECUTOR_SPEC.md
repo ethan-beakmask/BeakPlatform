@@ -1,6 +1,10 @@
 # OsExecutor / FileRead 節點規格（2026-08-30 第三版，規劃階段）
 
-**狀態：規劃定案，尚未實作。** 本檔是實作與派工的權威來源。
+**狀態：2026-08-30 已實作並通過端到端驗收**（PF-181 / PF-182，憑證
+`/opt/tmp/verify/20260830-osnode.log`，盤點編號 NT-28 / NT-29）。
+本檔仍是規格權威，但**實作與本文有六處差異，全部記在第十四節「實作後記」**——
+以第十四節為準。
+
 動工前整份讀完；派工給 codex 時整份貼進 prompt（codex 不讀 CLAUDE.md）。
 
 決策脈絡：Ethan 2026-08-28～30 三輪討論定調。與既有的 `SqlExecutor`
@@ -721,3 +725,68 @@ sudo systemctl restart beakplatform-dev-executor
 **本任務不必修**，前置單是 PF-183。未修之前 OsExecutor 的 log 一樣寫得進去
 （只是 `node_type` 欄位是 `'SYSTEM'`），用 `node_id` 仍查得到單一節點的紀錄。
 兩張單的先後不強制，但 PF-181 驗收「從 log 找線索」那項要等 PF-183 完成才算數。
+
+
+---
+
+## 十四、實作後記（2026-08-30，實作與驗收後補）
+
+實際落地的檔案：
+
+| 檔案 | 內容 |
+|---|---|
+| `modules/form_workflow/services/node_handlers/os_executor_handler.py` | OsExecutor handler |
+| `modules/form_workflow/services/node_handlers/file_read_handler.py` | FileRead handler |
+| `modules/form_workflow/services/workflow_engine.py` | `_stop_os_dispatched_units()`，cancel 時停 unit |
+| `modules/form_workflow/services/workflow_executor.py` | **WAITING 喚醒清單加 `OsExecutor`**（見下方差異 2） |
+| `scripts/migrations/120_seed_os_executor_node.sql` / `121_seed_file_read_node.sql` | 節點定義與 system_settings，`is_active=FALSE` 出廠 |
+| `scripts/cron/os_node_cleanup.py` | 輸出檔清理 + `systemctl reset-failed 'bp-*'` |
+| `wf-node-os-executor.js` / `wf-node-file-read.js` | 設計器面板 |
+| `docs/install/os_node.md` | 部署與授權說明（會推 GitHub） |
+
+### 與本規格的六處差異
+
+1. **輸出進 log 的上限採 2KB。** 第七節「輸出處理（三層上限）」寫 2KB、
+   第九節的表格寫「log_data 存前 8KB」，兩處互相矛盾。實作取較保守的 2KB
+   （`OUTPUT_LOG_LIMIT`）。全文一律在落檔裡，log 只留摘要與路徑。
+
+2. **第十節「不必改引擎」是錯的。** 併發上限回 `status: 'waiting'` 之後，
+   `workflow_executor.py` 有**兩處** WAITING 撿取清單
+   （`node_type.in_(['Delay','End','ParallelJoin'])`），OsExecutor 不在裡面，
+   被擋下的節點就**永遠停在 WAITING**。實測第 4 個節點的 `scheduled_at` 過期數分鐘
+   仍未被喚醒。已把 `'OsExecutor'` 加進那兩處。
+   **日後任何會回 `waiting` / `pending` 的新節點都要同步加。**
+
+3. **dispatched 的「事後查得到結果」只對失敗的 unit 成立。** 第七節說不加
+   `--collect` 就查得到，實測 `Result=exit-code / ExecMainStatus=3` 確實查得到；
+   但**成功結束的 transient unit 會被 systemd 自動回收**，`systemctl show` 之後
+   `LoadState=not-found`（回的 `Result=success` 是預設值不是真實結果）。
+   成功與否要看 `journalctl -u bp-<sc>`。這件事已寫進 `docs/install/os_node.md`。
+
+4. **FileRead 的「企業層 base_dir」定案存在系統設定 `file_read_org_base_dirs`**
+   （json 物件，key 是 org secure_code）。第十三節第 3 點只說「企業設定」沒指定位置；
+   實作沒有為它新增資料表或欄位。**該企業沒有鍵時視為「不再收窄」，直接用平台清單。**
+
+5. **併發上限的參數是 `OS_NODE_MAX_CONCURRENT_PER_ORG`（預設 3）**，
+   排隊重試間隔 15 秒。第十節只寫「超過上限」沒有給參數名與預設值。
+
+6. **`shlex.quote()` 的 mutation 驗證改用 `!raw` 對照組**，沒有真的去改程式碼。
+   同一筆注入測資 `; touch <檔案> ; #`：走 `${v.x}` 時展開成
+   `/bin/echo '; touch ... ; #'` 且檔案不存在；走 `${v.x!raw}` 時展開成
+   `/bin/echo ; touch ... ; #` 且檔案真的被建立。
+   這比暫時改程式碼更嚴謹：測的是同一支程式的兩個分支，可重複、不留殘骸。
+
+### 實作時另外修掉的兩個 FileRead 缺陷
+
+- `occurrence='first'` 與 `max_windows` 達標時 `break` 之前沒清掉 `current`，
+  迴圈後的收尾又 append 一次 → **同一個窗口輸出兩次並多一條 `--`**
+- `tail` 的 `_truncated` 用 `position > 0` 判定 → 任何大檔的 tail 恆為 true，
+  旗標失去鑑別力。改為「撞到 `MAX_READ_BYTES` 才算截斷」
+
+### 尚未做（v2 候選，不是缺陷）
+
+- 白名單與允許目錄**沒有 Web UI**，一律走 SQL 或 migration（登記一筆等同授權，
+  屬部署期決定，與 SqlExecutor 白名單的處理方式一致）
+- `docs/manual/` 沒有對應的使用者手冊頁（目前只有 `docs/install/os_node.md`
+  這份給維運人員的文件）
+- OsExecutor 例外／逾時記錄的管理頁（第十二節已列為 v2）
