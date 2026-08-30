@@ -12,9 +12,10 @@ cd backend && ../venv/bin/python -c "import app; print('import ok')"
 python3 -c "import json; json.load(open('<path>'))"
 # 相關測試：一律經由 run_tests.sh（會把 DATABASE_URL 指向拋棄式 beakplatform_test）
 bash scripts/run_tests.sh tests/test_pageir_*.py tests/test_portal_*.py -q   # 依任務挑相關檔
-# 全量基準（2026-08-05）：382 passed / 1 failed / 1 skipped
-#   1 failed = test_admin_required_for_admin（測試庫缺 RBAC seed，已知，非你造成）
-#   1 skipped = test_e2e_portal_cancel.py（需實跑服務，掛 pytest.mark.e2e，不在基準內）
+# 全量基準：不寫死數字（測試會持續新增，寫死的通過數必然腐爛而誤導）。
+#   動工前自己先跑一次完整 tests/ 記下當時的 passed / failed / skipped，改完再跑一次比對。
+#   已知長期非綠、不列入退步：test_admin_required_for_admin（測試庫缺 RBAC seed）、
+#   test_e2e_portal_cancel.py（依賴的驗收頁已不存在，永久 skip）。
 ```
 
 **禁止自己 `source .env` 之後直接叫 pytest**——`.env` 的 DATABASE_URL 指向開發庫，
