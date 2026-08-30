@@ -36,30 +36,13 @@
         {{ _('載入中...') }}
     </div>
 
-    <div class="ng-table-wrap" x-show="!loading && nodes.length > 0">
+    <div class="ng-table-wrap" x-show="!loading && nodes.length > 0" x-ref="tableWrap">
         <table class="ng-matrix" :aria-busy="busy ? 'true' : 'false'">
             <thead>
-                <tr>
-                    <th class="ng-node-col">{{ _('節點型別') }}</th>
-                    <template x-for="org in orgs" :key="org.secure_code">
-                        <th class="ng-org-col">
-                            <div class="ng-org-head">
-                                <strong x-text="orgLabel(org)"></strong>
-                                <span x-text="org.code"></span>
-                                <div class="ng-badges">
-                                    <span class="ng-badge ng-badge-muted" x-show="!org.is_active">{{ _('停用') }}</span>
-                                    <span class="ng-badge ng-badge-info" x-show="org.is_system_org">{{ _('系統') }}</span>
-                                </div>
-                            </div>
-                        </th>
-                    </template>
-                    <th class="ng-bulk-col">{{ _('批次') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <template x-for="node in nodes" :key="node.node_type">
-                    <tr :class="{'ng-row-disabled': !node.is_active}">
-                        <td class="ng-node-cell">
+                <tr x-ref="headRow">
+                    <th class="ng-org-col">{{ _('企業') }}</th>
+                    <template x-for="node in nodes" :key="node.node_type">
+                        <th class="ng-node-col" :class="{'ng-col-disabled': !node.is_active}">
                             <div class="ng-node-title">
                                 <strong x-text="node.display_name"></strong>
                                 <span class="ng-badge ng-badge-warning"
@@ -72,8 +55,37 @@
                             <div class="ng-node-note" x-show="!node.is_active">
                                 {{ _('此節點型別已在平台層停用，授權設定會保留但設計器不會顯示') }}
                             </div>
+                        </th>
+                    </template>
+                </tr>
+                <tr class="ng-bulk-row" x-ref="bulkRow">
+                    <th class="ng-org-col">{{ _('批次') }}</th>
+                    <template x-for="node in nodes" :key="'bulk:' + node.node_type">
+                        <th class="ng-bulk-cell">
+                            <button type="button" class="ng-button ng-button-primary"
+                                    @click="bulk(node, 'grant')" :disabled="busy">
+                                {{ _('全部授權') }}
+                            </button>
+                            <button type="button" class="ng-button ng-button-danger"
+                                    @click="bulk(node, 'revoke')" :disabled="busy">
+                                {{ _('全部撤銷') }}
+                            </button>
+                        </th>
+                    </template>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="org in orderedOrgs()" :key="org.secure_code">
+                    <tr :class="{'ng-system-row': org.is_system_org, 'ng-row-disabled': !org.is_active}">
+                        <td class="ng-org-cell">
+                            <div class="ng-org-title">
+                                <strong x-text="orgLabel(org)"></strong>
+                                <span class="ng-badge ng-badge-info" x-show="org.is_system_org">{{ _('系統預設企業') }}</span>
+                                <span class="ng-badge ng-badge-muted" x-show="!org.is_active">{{ _('停用') }}</span>
+                            </div>
+                            <div class="ng-org-code" x-text="org.code"></div>
                         </td>
-                        <template x-for="org in orgs" :key="node.node_type + ':' + org.secure_code">
+                        <template x-for="node in nodes" :key="org.secure_code + ':' + node.node_type">
                             <td class="ng-grant-cell">
                                 <label class="ng-check">
                                     <input type="checkbox"
@@ -88,16 +100,6 @@
                                 </div>
                             </td>
                         </template>
-                        <td class="ng-bulk-cell">
-                            <button type="button" class="ng-button ng-button-primary"
-                                    @click="bulk(node, 'grant')" :disabled="busy">
-                                {{ _('全部授權') }}
-                            </button>
-                            <button type="button" class="ng-button ng-button-danger"
-                                    @click="bulk(node, 'revoke')" :disabled="busy">
-                                {{ _('全部撤銷') }}
-                            </button>
-                        </td>
                     </tr>
                 </template>
             </tbody>

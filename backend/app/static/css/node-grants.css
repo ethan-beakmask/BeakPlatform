@@ -50,24 +50,39 @@
     text-align: center;
 }
 
+/* 企業會一直增加、受限節點不會，所以列＝企業、欄＝節點型別。
+   節點表頭與批次列固定在最上方，系統預設企業列緊接其下也固定，
+   往下捲動時這三列一直看得見（--ng-bulk-top / --ng-system-top 由 JS 量出來設定）。 */
 .ng-table-wrap {
+    max-height: calc(100vh - 330px);
     max-width: 100%;
-    overflow-x: auto;
+    min-height: 240px;
+    overflow: auto;
 }
 
 .ng-matrix {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     color: var(--color-text);
     font-size: var(--font-size-sm);
-    min-width: 760px;
     width: 100%;
 }
 
 .ng-matrix th,
 .ng-matrix td {
-    border: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border-light);
+    border-right: 1px solid var(--color-border-light);
     padding: 10px;
     vertical-align: top;
+}
+
+.ng-matrix thead tr:first-child th {
+    border-top: 1px solid var(--color-border-light);
+}
+
+.ng-matrix th:first-child,
+.ng-matrix td:first-child {
+    border-left: 1px solid var(--color-border-light);
 }
 
 .ng-matrix th {
@@ -76,33 +91,55 @@
     text-align: left;
 }
 
+.ng-matrix thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+}
+
+.ng-matrix thead tr.ng-bulk-row th {
+    top: var(--ng-bulk-top, 0px);
+    z-index: 3;
+}
+
+.ng-matrix tbody tr.ng-system-row td {
+    background: var(--color-bg-light);
+    position: sticky;
+    top: var(--ng-system-top, 0px);
+    z-index: 2;
+}
+
 .ng-node-col {
-    min-width: 210px;
+    min-width: 190px;
 }
 
 .ng-org-col {
-    min-width: 140px;
+    min-width: 200px;
 }
 
-.ng-bulk-col {
-    min-width: 180px;
+.ng-col-disabled {
+    background: var(--color-bg-light);
 }
 
-.ng-org-head {
-    display: grid;
-    gap: 3px;
+.ng-org-cell {
+    min-width: 200px;
 }
 
-.ng-org-head span {
-    color: var(--color-text-muted);
-    font-size: var(--font-size-xs);
-    font-weight: 400;
-}
-
-.ng-badges {
+.ng-org-title {
+    align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 6px;
+}
+
+.ng-org-title strong {
+    font-size: var(--font-size-base);
+}
+
+.ng-org-code {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    margin-top: 4px;
 }
 
 .ng-badge {
@@ -204,9 +241,15 @@
     margin-top: 6px;
 }
 
-.ng-bulk-cell {
-    display: grid;
-    gap: 8px;
+/* 批次列現在是 <th>，不能把它自己變成 grid container（會脫離 table-cell 佈局、
+   欄寬跟著跑掉），改讓內部按鈕各佔一行。 */
+.ng-bulk-cell .ng-button {
+    display: block;
+    width: 100%;
+}
+
+.ng-bulk-cell .ng-button + .ng-button {
+    margin-top: 6px;
 }
 
 .ng-button {

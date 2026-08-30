@@ -38,6 +38,33 @@ function nodeGrantsManager() {
             return org.display_name || org.name || org.secure_code;
         },
 
+        // 系統預設企業永遠排在第一列。判定一律用 organizations.is_system_org
+        // 旗標（每套部署只有一筆 true），不可比對名稱或 secure_code ——
+        // 開發環境是 system.local，正式部署是隨機字串。
+        orderedOrgs: function () {
+            var system = [];
+            var others = [];
+            this.orgs.forEach(function (org) {
+                (org.is_system_org ? system : others).push(org);
+            });
+            return system.concat(others);
+        },
+
+        // 節點型別欄與批次列固定在上方，企業列往下捲動時仍看得到。
+        // 兩列高度由內容決定（節點名長度、總開關標示），只能渲染後量。
+        updateStickyOffsets: function () {
+            var wrap = this.$refs.tableWrap;
+            var head = this.$refs.headRow;
+            var bulk = this.$refs.bulkRow;
+            if (!wrap || !head || !bulk) {
+                return;
+            }
+            var headHeight = head.getBoundingClientRect().height;
+            var bulkHeight = bulk.getBoundingClientRect().height;
+            wrap.style.setProperty('--ng-bulk-top', headHeight + 'px');
+            wrap.style.setProperty('--ng-system-top', (headHeight + bulkHeight) + 'px');
+        },
+
         isGranted: function (node, org) {
             return Boolean(
                 this.grants[node.node_type] &&
@@ -90,6 +117,9 @@ function nodeGrantsManager() {
                 this.nodes = data.data.nodes || [];
                 this.orgs = data.data.orgs || [];
                 this.grants = data.data.grants || {};
+                this.$nextTick(function () {
+                    this.updateStickyOffsets();
+                }.bind(this));
             } catch (err) {
                 this.showMessage('error', err.message || ngText('讀取節點授權矩陣失敗'));
             }

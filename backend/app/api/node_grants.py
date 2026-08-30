@@ -91,7 +91,10 @@ def matrix():
             Organization,
             check_permission=False,
             is_deleted=False,
-            order_by='name',
+            # 系統預設企業排最前，判定用 is_system_org 旗標（每套部署只有一筆
+            # true），不可比對名稱或 secure_code —— 開發環境是 system.local，
+            # 正式部署是隨機字串。前端另有一層相同排序，不倚賴這裡。
+            order_by='-is_system_org,name',
         )
 
         grants = WorkflowNodeOrgGrant.query.filter(
@@ -222,7 +225,10 @@ def bulk():
             Organization,
             check_permission=False,
             is_deleted=False,
-            order_by='name',
+            # 系統預設企業排最前，判定用 is_system_org 旗標（每套部署只有一筆
+            # true），不可比對名稱或 secure_code —— 開發環境是 system.local，
+            # 正式部署是隨機字串。前端另有一層相同排序，不倚賴這裡。
+            order_by='-is_system_org,name',
         )
         changed_count = 0
         for org in orgs:

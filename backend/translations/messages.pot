@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-31 02:04+0800\n"
+"POT-Creation-Date: 2026-08-31 02:23+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1176,23 +1176,23 @@ msgstr ""
 msgid "請提供有效的 node_type 與 org_secure_code"
 msgstr ""
 
-#: app/api/node_grants.py:146
+#: app/api/node_grants.py:149
 msgid "讀取節點授權矩陣失敗"
 msgstr ""
 
-#: app/api/node_grants.py:176
+#: app/api/node_grants.py:179
 msgid "授權失敗"
 msgstr ""
 
-#: app/api/node_grants.py:199
+#: app/api/node_grants.py:202
 msgid "撤銷授權失敗"
 msgstr ""
 
-#: app/api/node_grants.py:211
+#: app/api/node_grants.py:214
 msgid "請提供有效的 node_type 與 action"
 msgstr ""
 
-#: app/api/node_grants.py:247
+#: app/api/node_grants.py:253
 msgid "批次操作失敗"
 msgstr ""
 
@@ -3511,7 +3511,7 @@ msgstr ""
 #: app/templates/pages/job_titles/view.html:73
 #: app/templates/pages/modules/view.html:55
 #: app/templates/pages/modules/view.html:82
-#: app/templates/pages/node_grants/index.html:50
+#: app/templates/pages/node_grants/index.html:84
 #: app/templates/pages/org_databases/monitor.html:43
 #: app/templates/pages/org_databases/monitor.html:68
 #: app/templates/pages/organizations/admins.html:82
@@ -3589,6 +3589,7 @@ msgstr ""
 #: app/templates/pages/access_center/_tab_roles.html:10
 #: app/templates/pages/access_center/_tab_roles.html:21
 #: app/templates/pages/cg_databases/overview.html:250
+#: app/templates/pages/node_grants/index.html:43
 msgid "企業"
 msgstr ""
 
@@ -9389,34 +9390,29 @@ msgstr ""
 msgid "目前沒有受限節點型別"
 msgstr ""
 
-#: app/templates/pages/node_grants/index.html:43
-msgid "節點型別"
+#: app/templates/pages/node_grants/index.html:50
+#: app/templates/pages/node_grants/index.html:56
+msgid "此節點型別已在平台層停用，授權設定會保留但設計器不會顯示"
 msgstr ""
 
 #: app/templates/pages/node_grants/index.html:51
-#: app/templates/pages/organizations/list.html:117
-msgid "系統"
+msgid "總開關關閉"
 msgstr ""
 
-#: app/templates/pages/node_grants/index.html:56
+#: app/templates/pages/node_grants/index.html:62
 msgid "批次"
 msgstr ""
 
 #: app/templates/pages/node_grants/index.html:67
-#: app/templates/pages/node_grants/index.html:73
-msgid "此節點型別已在平台層停用，授權設定會保留但設計器不會顯示"
-msgstr ""
-
-#: app/templates/pages/node_grants/index.html:68
-msgid "總開關關閉"
-msgstr ""
-
-#: app/templates/pages/node_grants/index.html:94
 msgid "全部授權"
 msgstr ""
 
-#: app/templates/pages/node_grants/index.html:98
+#: app/templates/pages/node_grants/index.html:71
 msgid "全部撤銷"
+msgstr ""
+
+#: app/templates/pages/node_grants/index.html:83
+msgid "系統預設企業"
 msgstr ""
 
 #: app/templates/pages/org_databases/monitor.html:4
@@ -9857,6 +9853,10 @@ msgstr ""
 #: app/templates/pages/organizations/list.html:91
 #: app/templates/pages/platform_help/org_admin.html:449
 msgid "合約"
+msgstr ""
+
+#: app/templates/pages/organizations/list.html:117
+msgid "系統"
 msgstr ""
 
 #: app/templates/pages/organizations/list.html:124
