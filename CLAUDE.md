@@ -17,9 +17,19 @@
 | 用 API 操作 NoCode 子系統的實測陷阱 | `dev-notes/codex_spec/portal.md` 尾段 |
 | 名詞對照 | `dev-notes/GLOSSARY.md` |
 | 跨 session 待辦與決策脈絡 | BeakBroodNest 知識庫（`note_search` / `note_get`） |
+| NoCode Builder / portal 的開發備忘 | `dev-notes/NOCODE_PORTAL_NOTES.md`、`dev-notes/PORTAL_ACCOUNT_SPEC.md` |
+| open_defense 平台側 / `.20` 資安堆疊 | `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md`、`dev-notes/SEC_STACK_ARCHITECTURE.md` |
+| 測試（pytest 環境、`test_client` 坑、Playwright） | `dev-notes/TESTING_NOTES.md` |
+| 流程設計器、graph 操作、publish | `dev-notes/WORKFLOW_DESIGNER_NOTES.md` |
+| 節點型別規格（AiAgent / SqlExecutor / OsExecutor / 盤點） | `dev-notes/AI_NODE_SECURITY.md`、`dev-notes/SQL_EXECUTOR_SPEC.md`、`dev-notes/OS_EXECUTOR_SPEC.md`、`dev-notes/NODE_TEST_INVENTORY.md` |
 
 **維護原則**：新的踩坑先問「這是 codex 猜不到的專案特有事實，還是通用工程常識？」
 前者才寫進來；屬於「派工時要貼給 codex」的，寫進 `dev-notes/codex_spec/` 並在本檔留指針。
+
+**寫進本檔的門檻（2026-08-30 起）**：本檔每個 session 全文載入，所以判準不是
+「這段重不重要」，而是**「不讀到會不會做錯，而做錯時症狀認不認得出來」**。
+症狀靜默的留在本檔；認得出症狀的寫進 `dev-notes/`，本檔只留一行
+「症狀 → 去哪查」的指針。模組專屬的深度細節一律走後者。
 
 ## 開發模式（Codex-first，2026-08-05 定版）
 
@@ -146,7 +156,8 @@ Generated with Claude Code"
 反向則是已經外流了。
 
 2026-08-13 之前寫在 `docs/` 的 54 項全數移入 `dev-notes/`，
-只有 `docs/help/` 與 `docs/guides/` 留下——那兩者本來就是使用者文件。
+只有使用者文件留下（當時是 `docs/help/` 與 `docs/guides/`，
+後者已於 2026-08-14 併入 `docs/manual/`，見下方「使用者手冊有兩個出口」）。
 其他 session 若記得舊路徑，一律以現況為準，不要搬回去。
 
 ### 要寫使用者文件時
@@ -241,9 +252,20 @@ doc_id 不存在時按鈕不顯示（`manual_doc_exists`）。語系變體檔 `<
 完整規則（frontmatter、排序、頁間相對連結改寫、mermaid 兩個出口）
 見 `dev-notes/DOCS_AUTHORING_SPEC.md` 第八節。
 
-`docs/guides/` 已於 2026-08-14 併入 `docs/manual/`，**現在 `docs/` 底下
-只剩 `manual/`（MkDocs 制度）與 `help/`（舊的頁內說明 YAML，另案處理）**。
-看到舊路徑 `docs/guides/OD_WORKFLOW_VARIANTS.md` 一律視為過時。
+`docs/guides/` 已於 2026-08-14 併入 `docs/manual/`（commit `5a5da751`），
+**現在 `docs/` 底下只剩 `manual/`（MkDocs 制度）與 `help/`（舊的頁內說明，另案處理）**。
+原本那兩篇的現址：
+
+| 舊路徑 | 現路徑 |
+|---|---|
+| `docs/guides/OD_WORKFLOW_VARIANTS.md` | `docs/manual/05_security_ops/soc_planning/workflow_variants.md` |
+| `docs/guides/SOC_ROLE_DESIGN_GUIDE.md` | `docs/manual/05_security_ops/soc_planning/role_design.md` |
+
+**`docs/help/` 的三個檔副檔名是 `.md`，但整份檔案就是一塊 YAML**
+（frontmatter 結束在最後一行，Markdown 正文全塞在 `sections[].body`，
+由 `help_service.py` 依 `audience` 過濾後組出畫面）。
+它與 `docs/manual/` 的「YAML frontmatter + Markdown 正文」是兩種格式，
+不要拿手冊的寫法去改它。
 
 ## BBN 白板已人機分離（2026-08-07，由 BeakBroodNest 端變更）
 
@@ -266,7 +288,7 @@ BeakBroodNest 把人類白板與 AI 白板拆成兩套，本專案的白板換�
 - 要查使用者白板內容：`note_search(..., include_human_boards=True)`
 - **`shared` 只解除讀取隔離，不解除人機分離**：AI 讀得到，但使用者的卡仍不得改內容、不得搬位置、不得改白板名稱
 - 判定**不掛 `owner`**。`atom.owner` 是建立者兼寫入權限閘門，不是受眾；而且 `source='ai'` 也不代表內容是 AI 產出 —— 使用者常把 Claude 的回答貼進自己白板當筆記
-- 詳細規範在 `/opt/BeakBroodNest/CLAUDE.md` 與 `dev-notes/PROJECT_FACTS.md`，設計理由見 BBN 知識庫 atom 5082
+- 詳細規範在 `/opt/BeakBroodNest/CLAUDE.md` 與 `/opt/BeakBroodNest/docs/PROJECT_FACTS.md`，設計理由見 BBN 知識庫 atom 5082
 
 ---
 
@@ -1557,885 +1579,48 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   curl -s -b cj.txt -X POST "$BASE/api/xxx" -H 'Content-Type: application/json' -H "X-CSRFToken: $TOKEN" -d '{...}'
   ```
 
-### open_defense 開發備忘
+### open_defense / 資安堆疊（備忘已移出，2026-08-30）
 
-**平台側架構的權威文件是 `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md`（2026-08-10 建立），
-動這個模組前整份讀完。** 平台外組件（`.20` 的 Vector / Suricata / CrowdSec /
-od-bridge / EDL enforcer / ClickHouse）的權威**已於 2026-08-15（PF-104）收進本 repo**：
-架構與運維看 `dev-notes/SEC_STACK_ARCHITECTURE.md`，設定檔副本在 `sec-vm-bootstrap/`
-（**已列入 `push_github.sh` 的 `EXCLUDE_DIRS`，不會外流**）。
-改 `.20` 的設定時**兩邊都要改**，repo 副本不是快照而是權威副本。
-舊路徑 `/opt/Ethan_Lab/ITHome-2026/` **已於 2026-08-15 刪除**
-（最終備份 `/opt/tmp/backup/ITHome-2026-final-20260815.tar.gz`），看到一律視為過時。
+動 `modules/open_defense/`、查事件、或改 `.20` 的設定之前先讀：
 
-**`.20` 幾乎每個埠對 LAN 都已收窄（PF-109 收 ingest 面、PF-107 收 SSH 與管理面），
-症狀是逾時不是 403**：
-
-| 埠 | 從 `.16` 打得到嗎 |
+| 要做什麼 | 讀哪份 |
 |---|---|
-| `22` sshd | 可以（`.16`/`.10`/`.100` 在 nft 白名單內） |
-| `3000` Grafana、`5636` EveBox、`8686` Vector API、`9443` Portainer | 可以（同上三台） |
-| `8080` WAF | 可以（同上三台） |
-| `8123`/`9000` ClickHouse | 可以（走帳號層網路白名單，不是 nft chain） |
-| `8500` od-bridge（stats UI / `/edl`） | 可以（**只有 `.16`**；從 `.10` 的瀏覽器連不到是刻意的） |
-| `8688` vector 合成事件注入口 | **不行**，已綁 `127.0.0.1`，要先 ssh 進 `.20` 再打 |
-
-「連線逾時」跟「服務掛了」長得一模一樣，不知道這件事會查錯方向。
-要分辨是不是被擋，看 counter 有沒有跳：
-`sudo nft list chain inet secstack mgmt_guard_forward | grep counter`。
-規則在 `sec-vm-bootstrap/nftables-bootstrap.sh`，完整說明見
-`dev-notes/SEC_STACK_ARCHITECTURE.md`。
-
-**`.20` 的 sshd 只收公鑰，密碼認證已停用**（PF-107，2026-08-16）：
-
-`.16` 進 `.20` 一律 `ssh -i ~/.ssh/company-wsl ethan@192.168.0.20`，
-**任何形式的密碼登入都不會成功**，不要試、也不要為了「試出密碼」去猜。
-舊文件裡的 `P@ssw0rd` 在 2026-05-17 就已失效（用戶自行改過），
-現在連密碼這個認證方法本身都不再提供。
-
-排查時先用症狀分辨是哪一層擋的，兩者處理方式完全不同：
-
-| 症狀 | 哪一層 |
-|---|---|
-| 連線逾時 | nftables（來源不在 `.10`/`.16`/`.100` 白名單） |
-| `Permission denied (publickey)` | sshd（沒有可用金鑰） |
-
-**`ethan` 的 OS 密碼刻意不輪替**（Ethan 2026-08-16 定調）：密碼一定會流進
-對話記錄與交接文件，交談式 AI 遲早讓它再外洩一次；金鑰不會被寫進文件，
-IP 白名單也不會因為誰讀了某份文件而失效。所以那條路走的是「收 IP + 走金鑰」，
-而不是「換一個更長的密碼」。**未來 session 不要把「OS 密碼未輪替」重新當成待辦。**
-
-設定片段的權威副本在 `sec-vm-bootstrap/ssh/`（含部署與自動還原手法），
-**檔名的 `00-` 前綴是必要的**——`50-cloud-init.conf` 寫死
-`PasswordAuthentication yes`，排在它後面的檔案會被靜默蓋過去，`sshd -t` 還是會過。
-
-**「`.16` 內部主機的縱深不足」是已知且已接受的狀態（Ethan 2026-08-16 決定）**：
-
-PF-109 收窄網段、**PF-112（2026-08-16）已補上協定層認證**：`.20:8500` 的
-`POST /events` 現在要求 `Authorization: Bearer <BRIDGE_INGEST_TOKEN>`（token 只在
-`.20` 的 `.env`，fail-closed，`/health` 免驗），vector 的 `bridge_intake` sink 帶靜態
-header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做模板替換，
-且先 batch 再編碼，VRL 算不出最終 body 的簽章。od-bridge 其餘端點
-（`/stats`、`/forwards`、`/decisions`、`/edl` 等）**仍無認證，但都是 GET 讀取面**。
-
-風險敘述**到「能在 `.16` 上發封包的人可以拿到 token 後注入事件」為止**，
-不要再往上推導。理由是用戶明確定調的：
-
-- **內部主機本來就該有自己的防護**（OS 加固、帳號管理、EDR、網段隔離、備援），
-  那是基礎設施的職責，**不能也不該由本專案自行開發來補**
-- 本專案的主要目的不是把 `.16` 做成堡壘，這件事**已非主要目的**
-
-**寫給未來 session**：看到「縱深不足」四個字不要自動升級成高風險、不要主動擴大範圍、
-不要提議在平台內實作主機加固。要動 PF-112 就照工單做那一件事。
-真的發現新的獨立風險，先問用戶，不要自己接著往下修。
-
-### 平台端 EDL 黑名單（2026-08-24 起，PF-154 commit `552d3ad5`）
-
-**封鎖決策現在有兩份 EDL，內容本來就不同，不要當成同步失敗**：
-
-| | 平台端（`.16`） | od-bridge（`.20`） |
-|---|---|---|
-| 收哪些決策 | 該企業**所有**有效 block，不看 `enforcement_points` | 只收標了 `edl` 的決策 |
-| 唯一實作 | `modules/open_defense/services/edl_service.py` | `.20` 的 `od_bridge/enforcers/edl.py` |
-| 位置 | `/srv/beakshare/edl/<org_sc>/blocklist.txt`（`.env` 的 `OD_EDL_OUTPUT_DIR`） | `http://192.168.0.20:8500/edl` |
-
-三件猜不到的：
-
-- **過期依 `expires_at` 判斷，不看 `status`**。只接 EDL、沒有其他執行端的部署裡，
-  決策會一直停在 `pending`，依 status 判斷的話過期項目永遠不會從清單掉出去
-- **fail-closed ＝「不寫檔」而不是「寫空檔」**。空 EDL 在防火牆語意上等於解除全部封鎖，
-  一次 DB 故障就清空防線。任何例外一律保留既有檔案
-- **`observe` 動作不可加 `edl` 執行點**：od-bridge 的 EDL enforcer 只認
-  block/allow/unblock，收到 observe 回 `unsupported_action`，整筆決策會從
-  `applied` 掉成 `partial`。改 DecisionWriter 的 `enforcement_points` 時要照 action 分
-
-存取面：SMB `\\192.168.0.16\beakshare`（免帳密，`hosts allow` 只有 `.10`/`.16`/`.100`/`127.0.0.1`），
-HTTP `/edl/<org_sc>/blocklist.txt`（`@public_route` ＋ `OD_EDL_ALLOWED_IPS` 白名單 ＋ 60/min，
-**所有拒絕情形一律 404**）。cron 每分鐘 `scripts/cron/od_render_edl.py`。
-對外部署說明 `docs/install/edl.md`。
-
-**`.20` 的 8500 自 2026-08-24 起也放行 `.10`**（Windows 工作站要用瀏覽器讀 EDL）。
-要改 `.20` 的 nft 規則**不要跑 `nftables-bootstrap.sh`**——那支是 `delete table` + 重建，
-會清空現有 blocklist elements；用 `nft replace rule` 就地換，再同步
-`/etc/nftables.conf` 與 repo 副本。
-
-**Samba 密碼與 Linux 系統密碼是兩套獨立密碼庫**，SSH 密碼在 SMB 這邊不算數，
-改系統密碼也不會同步。設定要用 `sudo smbpasswd -a <帳號>`（需 tty 互動）。
-
-### 事件的真實權威是 `.20` 的 ClickHouse，不是平台的案件表（2026-08-15 起）
-
-**平台 `od_intake_events` 只是被 throttle 過的子集，不能用來回答「有多少攻擊」。**
-PF-103 實測：同一批 go-ftw 攻擊在 ClickHouse 是 **15 個 CRS 群 5610 筆**，
-打進平台只有 **5 群 17 筆**——`.20` vector 的 `intake_global_throttle`
-是全域 8 筆/60 秒、不分 key。**做任何攻擊面統計或關聯查詢一律查 ClickHouse。**
-
-```bash
-# 密碼在 .20:~/sec-vm-bootstrap/.env 的 CLICKHOUSE_PASSWORD
-# 【一律用 header 認證】用 ?user=&password= 或 curl -u 會讓密碼明文過 LAN，
-# 並觸發 Suricata ET INFO Outgoing Basic Auth 告警污染資料
-curl -s "http://192.168.0.20:8123/?database=secstack" \
-  -H "X-ClickHouse-User: secstack" -H "X-ClickHouse-Key: <pw>" \
-  --data-binary "SELECT ... FROM events ... FORMAT PrettyCompact"
-```
-
-`192.168.0.16` 已在 ClickHouse 帳號層網路白名單內（`clickhouse/users.d/`），
-平台端連線不需要改任何網路設定。平台側唯一的客戶端是
-`modules/open_defense/services/clickhouse_client.py`，**禁止繞過它另建連線**。
-
-**但「全量」有條件**：`events` 表原 TTL 只有 6 小時，2026-05-09~08-08 的事件
-曾被刪光、2026-08-08 才從 eve.json 歸檔回灌並改成 180 天分層保留。
-**跨越 2026-08-08 的時間窗不要宣稱「這段期間只有 N 筆」。**
-
-留在本檔的是六個「唯一實作」，新增功能一律加在這裡，**不要各自重寫**：
-
-| 檔案 | 管什麼 | 繞過的後果 |
-|---|---|---|
-| `modules/form_workflow/services/task_authorizer.py` | 簽核授權（快照 ∪ 當前角色 ∪ 生效中代理） | 判定點共 **12 處**，漏一處就出現「清單看得到但點不了」 |
-| `modules/open_defense/services/routing_service.py` | intake 事件 → form_template 的規則式路由 | intake 是對外 webhook，各自查表會讓路由行為分歧 |
-| `modules/open_defense/services/payload_profile_service.py` | 原生 payload 的路徑取值、扁平化、共同軸線正規化 | 各自攤平會讓 form_data 的 key 命名分歧，表單欄位對不上就整片空白 |
-| `modules/open_defense/services/protected_target_service.py` | 封鎖目標的保護清單判定（PF-83） | 各自比對網段會讓「不得封鎖」的邊界分歧，而錯誤方向是封掉自家設備 |
-| `modules/open_defense/services/edl_service.py` | 平台端 EDL 黑名單渲染（PF-154 起） | 各自組清單會讓「哪些 IP 該封」出現兩種答案，而錯的那份會直接進防火牆 |
-| `wf-dnd-nodes.js::resolveNodeIconUrl()` | 流程設計器節點圖示 URL | 6 處曾各寫一份，導致所有從 DB 載入的 graph 節點全變空方框 |
-
-- **共同軸線 6 個 key 是相容性契約**：`severity_id` / `actor_ip` / `target_host` /
-  `source_system` / `finding_rule_id` / `occurred_at`。不論 OCSF 或原生 payload，
-  intake 都會把它們正規化後寫進 `form_data`；SLA、聚合降噪、風險分數、
-  處置中心清單全部讀這組。**改名等於同時弄壞四個機制**
-- **nginx 前綴一律渲染時補、不寫進 DB**（`workflow_node_definitions` 與所有
-  既有 graph 的 icon 都是 `/static/...` 無前綴，這是正確的存法）
-- 資安案件處置中心的清單 API 是 `/api/open_defense/cases`（不在 `/admin` 底下）
-
-**現有三個處置流程，各綁一張表單**（2026-08-13 建置，指南
-`docs/guides/OD_WORKFLOW_VARIANTS.md`，建置腳本
-`scripts/examples/provision_od_workflow_variants.py` + `od_workflow_graphs.py`）：
-
-| 流程 | 表單 code | 適用編制 |
-|---|---|---|
-| `SEC_INCIDENT_FLOW`（原有） | `SEC_INCIDENT_RESPONSE` | 假設 15 分鐘內有人看，適合輪班 SOC |
-| `SEC_IR_FLOW_SOC_TEAM` | `SEC_IR_SOC_TEAM` | 3~8 人輪班，簽核＋SLA 計時雙軌，逾時只催辦 |
-| `SEC_IR_FLOW_SOLO` | `SEC_IR_SOLO` | 單人 8 小時班，夜間自動封鎖 TTL 24h 後人工複核 |
-
-**一張 form_template 同時只有一個生效流程**——intake 是「依 form_template 取
-**最新 Published** 的 `fw_published_form_workflows`」（`intake_service.py:314-319`）。
-所以「切換流程」＝同一張表單重新發行綁不同 workflow；
-「不同案件走不同流程」＝**必須不同的 form_template**，靠 `od_form_template_mappings`
-的 `match_rules` + `priority` 分派。新表單的 `category_secure_code` 必須沿用資安分類
-（`CAT_SECURITY_%`），否則案件不會出現在處置中心。
-
-二線簽核角色是 `SOC_SUPERVISOR`（命名沿用 `docs/guides/SOC_ROLE_DESIGN_GUIDE.md`）。
-**新增資安角色後必須把它加進 `menu_role_requirements`**（雙鑰匙 Key2），
-否則只持有該角色的人看不到處置中心選單，簽核任務變成「清單看得到、點不進去」。
-
-**真實 suricata 告警的 `actor_ip` 大量是 `192.168.0.20`**（近 200 筆裡佔 25 筆）——
-那是本平台 Cloudflare 路徑上的 nginx，不是攻擊者。成因與 NET-01 同源：
-Suricata 架在 `.20` 這個流量出口上，外部訪客經反代進來時它看到的來源就是代理自己。
-**任何會自動處置 `actor_ip` 的流程都必須排除私有網段**，否則會反覆封鎖自家基礎設施，
-而且無人時段的自動處置沒有人會發現（2026-08-13 差 12 分鐘就真的發生）。
-小企業單人版的分流節點已內建這道排除（`od_workflow_graphs.py::PUBLIC_IP_REGEX`／
-`PRIVATE_IP_REGEX`），這類案件改走人工路徑而非忽略。
-
-**服務層保護已於 2026-08-13 完成（PF-83），流程怎麼寫都繞不過去**：
-
-- `create_decision()` 是**唯一的 block 寫入點**——另外兩處直接 `OdDefenseDecision(...)`
-  （`api/admin/decisions.py` 人工撤銷、`expiry_service.py` TTL 到期）都硬編碼
-  `action='unblock'`，不必也不該加保護。**新增任何會寫 block 的路徑一律走
-  `create_decision()`**，別自己 new model
-- 只擋 `action='block'` 且 `target_type in (ip, ipv6, cidr)`；命中拋
-  `ProtectedTargetError`（繼承 `DecisionValidationError`，既有 catch 接得住）
-- 保護來源三層，**內建那層 2026-08-16（PF-117）起已 per-org 化**：
-  該企業 `od_protected_targets` 裡 `origin='builtin'` 的 16 筆出廠條目
-  （RFC1918／回送／link-local／CGNAT／群播／保留＋IPv6 ULA、link-local，**企業可個別停用**）
-  ∪ 設定（`OD_PROTECTED_EXTRA_NETWORKS` env ＋ `TRUSTED_PROXY_IPS`）
-  ∪ 企業自訂（同表 `origin='custom'`，管理頁 `/open-defense/protected-targets`）
-- 出廠值在 `backend/app/defaults/od_protected_defaults.py`，建企業時自動 seed
-  （`create_organization()` 與 `init_system_organization()` **兩處**都接了，後者不走前者）。
-  `protected_target_service.BUILTIN_PROTECTED_NETWORKS` 只剩 fail-safe 用，
-  兩份清單由測試把關不得漂移
-- **fail-safe 的兩個查詢條件刻意不同，不要「順手統一」**：判斷要不要回退硬編碼常數看的是
-  「該企業有沒有 builtin 記錄」（**不帶 `is_active`**），實際判定才只取 `is_active=True`。
-  帶了 `is_active` 的話，企業合法地把 16 條全部停用會被誤判成 seed 漏掉而回退常數，
-  使用者的停用被靜默忽略且不報錯
-- **builtin 條目可停用、可改名稱備註，但不可刪除、不可改 `target_value`**（API 回 400）——
-  刪掉後 fail-safe 會把它救回來，行為看起來像「刪不掉」
-- `TRUSTED_PROXY_IPS` 那層**不 per-org**：企業把 `192.168.0.0/16` 停用後，
-  平台反代仍受保護且網段遮蔽（`source='platform'`、`network=None`，PF-117 第 5 點）
-- **保護比對用 `overlaps`、豁免比對用 `subnet_of`，兩者不對稱是刻意的**：
-  前者用包含語意會漏掉封 `0.0.0.0/0`；後者用交集語意會讓「豁免一台內網主機」
-  變成「整個 `/0` 都能封」。改動這兩個判定前先看
-  `backend/tests/test_od_protected_targets.py`（含 mutation 驗證過的案例）
-- `::ffff:192.168.0.20` 會正規化成 IPv4 再比對，否則那是一條繞過路徑
-- **TEST-NET（`203.0.113.0/24` 等）刻意不納入內建清單**——端對端驗證拿它當
-  「公網攻擊者」，保護了會讓驗證失真
-- 正當的內網封鎖（例：內部被入侵主機要隔離）有兩條路：管理頁加一筆 `exempt`
-  項目，或流程節點設 `allow_protected_target: true`（後者會在
-  `decision_metadata.protected_override` 留稽核痕跡）。節點另有
-  `on_protected: 'error'|'skip'`，預設 `error`（流程停住等人處理）
-- **這兩個設定 2026-08-24 起在設計器上點得到**（PF-84，`wf-node-decision-writer.js`）：
-  點防禦決策節點 → 右側面板最下方的「封鎖保護清單」區塊。該區塊只在
-  `action='block'` 且 `target_type` 屬 ip／ipv6／cidr 時顯示（其餘組合本來就不檢查），
-  **但兩個 input 一律留在 DOM 且照樣被收集**——隱藏是「用不到」不是「清掉設定」，
-  直接不渲染的話使用者切個動作再存檔就會靜默弄丟覆寫設定
-- **`workflow_node_definitions.config_schema` 仍然沒有任何前端消費者**（這條沒變）：
-  屬性面板是 `wf-node-*.js` 的硬編碼分派（`wf-accordion.js::showNodeInfo`），
-  **往 DB 補 schema 不會讓設計器多出欄位**，一定要寫對應的 render／collect 函式。
-  migration 098 當初只是讓 DB 定義完整
-
-**`od_form_template_mappings` 是 `priority` 由大到小評估、命中即停**
-（`routing_service.py::evaluate_routing_rules`，`order_by(priority.desc(), id.asc())`）。
-`match_rules=[]` 且 `event_class=NULL` 即 catch-all。所以切換全站流程最省事又可逆的
-做法是加一條 priority 極高的 catch-all，要切回去只要停用它，不必逐條改回原本
-依 event_class 分派的四條 priority 0 規則。**切換後一定要試算確認命中**
-（`evaluate_routing_rules(org, body, payload_kind)`），不要等真實事件進來才發現沒切成功。
-
-**重複送測試事件時，聚合降噪會把「同 `finding.rule_id` + 同 `actor.ip` + 同
-`target.host`」的事件併進既有案件**，不會開新案、不會重跑流程——拿到的是上一輪的
-節點軌跡。驗證流程改動時三個鍵都要換（例：`rule_id` 加隨機後綴、`target.host` 帶
-nonce），否則會誤判成「改了沒用」。
-
-**打 intake webhook 做端對端測試時，API key 的 secret 用 `decrypt_secret()` 取回**
-（secret 是加密存的，不是 hash——**不必為了測試另建一把 key**）：
-
-```python
-from app import create_app
-from app.models.api_key import ApiKey
-from app.services import api_key_service
-app = create_app('development')
-with app.app_context():
-    rec = ApiKey.query.filter_by(key_id='ak_a9bf7cf8a60f7d97').first()
-    secret = api_key_service.decrypt_secret(rec)      # bytes
-```
-
-簽章是 `sha256=<hex(HMAC-SHA256(secret, f"{ts}\n{body}"))>`，
-headers 用 `X-BP-Key-Id` / `X-BP-Timestamp` / `X-BP-Signature`
-（舊契約的 `X-OD-*` 仍相容）。body 必須與計算簽章時**同一份 bytes**，
-不要 `json.dumps` 兩次（key 順序或空白不同就 401）。
-跑腳本前要 `set -a && source .env && set +a`（缺 SECRET_KEY 會 ValueError）。
-
-**HMAC 金鑰是 raw bytes，不是使用者拿到的那串字**（2026-08-17 踩到，
-外部整合文件的 curl 範例錯了很久也沒人發現）：
-`create_api_key()` 回傳、UI 顯示一次的 secret 是
-`base64.urlsafe_b64encode(32 bytes)` 的**字串**，而驗簽用的是解碼後的 bytes
-（`decrypt_secret()` 回的就是 bytes，所以上面那段測試碼是對的）。
-外部整合者拿到的是字串，**必須先 `base64.urlsafe_b64decode` 再做 HMAC**：
-
-```bash
-KEY_HEX=$(printf '%s' "$SECRET" | python3 -c 'import base64, sys; s = sys.stdin.read().strip(); s += "=" * (-len(s) % 4); print(base64.urlsafe_b64decode(s.encode("ascii")).hex())')
-SIG=$(printf '%s\n%s' "$TS" "$BODY" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$KEY_HEX" -hex | awk '{print $NF}')
-```
-
-直接把 base64 字串當金鑰會**恆得 401**，而平台對所有認證失敗一律回同一個
-`auth_failed`（刻意不區分原因），從回應完全看不出是這個原因。
-
-**兩支對外範例腳本（會推上 GitHub，改 intake 契約時要同步維護）**：
-
-| 腳本 | 用途 |
-|---|---|
-| `scripts/examples/provision_od_intake_for_org.py` | 空白企業一次建起受理鏈路（分類／表單／流程／發行／catch-all 路由／API Key），冪等，`--org` 吃 secure_code 或 domain_name |
-| `scripts/examples/od_intake_send_event.py` | 送 OCSF 事件的單檔 CLI（只用標準函式庫），`--dry-run` 對帳、`--print-curl` 產生等價指令，九種退出碼區分可否重試 |
-
-**新企業的 OD 受理鏈路缺一不可有六件**：資安分類（secure_code 必須
-`CAT_SECURITY_` 開頭，否則案件不會進處置中心）→ 表單 → 流程 → 配對發行
-→ 路由規則 → API Key。缺任何一件事件都進不來，而 dashboard 與處置中心
-就是恆為 0。使用者手冊第 9 章 `docs/manual/09_from_zero/` 是這條鏈路的 SOP。
-
-### NoCode 選單目前刻意隱藏中（2026-08-07 起，鐵人賽期間）
-
-**看不到「子系統開發模組」選單是預期狀態，不是壞了，不要去修。**
-`MODULE_INFO['menu_items']` 由環境變數 `NOCODE_BUILDER_MENU` 控制（不等於 `on` 即為空），
-既有三筆 `menu_items` 已設 `is_deleted=true`。模組本身照常載入——路由、API、portal
-全部可用，直接輸入網址進得去。復原步驟與「為什麼用 is_deleted 而非 is_active」
-見 `dev-notes/NOCODE_MENU_HIDE.md`。
-
-### NoCode Builder / Portal 開發備忘（2026-07-28 起）
-
-**環境事實：開發機上目前有一個可用的 NoCode 子系統**，由
-`scripts/examples/provision_relief_donation_demo.py --force` 建置：
-
-| 項目 | 值 |
-|---|---|
-| 子系統（published） | `HJGEoAh6PBv5IXNHhMTu5P`（急難救助物資捐贈） |
-| portal_path_id | `HdjFFvF-` |
-| welcome 頁（2026-08-04 起已 published，內含雙 menu 示範） | `QlqVasK5fsLFMfUpPEvvFz` |
-| 我的捐贈登記（要 `donation.manage`） | `Gqm4tuQEsBgituXVaDrCrr` |
-| 物資公佈欄（要 `bulletin.read`） | `Ogi303_5kwPZdEE2IildYG` |
-
-另有一個 `DzSQ8oTRKCnMVbuxS-431u`（`Ethan的test`，draft，用戶自建，**不要動**）。
-重建腳本會**產生全新識別碼**，跑過就要回頭更新本表。
-
-**portal 測試帳號**（username 是完整 e-mail，密碼一律 `relief123456`）：
-
-| username | 階級 | 管理角色 |
-|---|---|---|
-| `guest_demo@example.com` | GUEST (0) | — |
-| `member_demo@example.com` | MEMBER (10) | — |
-| `staff_demo@example.com` | STAFF (50) | — |
-| `admin_demo@example.com` | ADMIN (90) | SYSTEM_ADMIN |
-| `bulletin_mgr@example.com` | MEMBER (10) | BULLETIN_MANAGER |
-| `auditor_demo@example.com` | MEMBER (10) | AUDITOR |
-| `donor_a_pf13@example.com` / `donor_b_pf13@example.com` | MEMBER (10) | — |
-
-`bulletin_mgr` / `auditor` 的管理角色刻意留在 MEMBER 階級，
-才驗得出「管理角色是聯集、不隨階級繼承」；`donor_a` / `donor_b` **有捐贈資料**，
-可驗列級隔離（兩人互相看不到對方）。
-
-**識別碼被重建後怎麼重查**（provision 只印子系統 sc 與 path_id）：
-
-```bash
-PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -t -A -F'|' -c "
-SELECT s.secure_code, s.name, s.status, n.secure_code AS node_sc, n.name, n.node_type,
-       n.parent_secure_code, n.page_layout_secure_code
-FROM dc_sub_systems s LEFT JOIN dc_site_map_nodes n
-  ON n.sub_system_secure_code = s.secure_code AND n.is_deleted = false
-WHERE s.is_deleted = false ORDER BY s.created_at DESC, n.display_order;"
-# portal_path_id
-PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -t -A -F'|' -c \
-  "SELECT code, value_str FROM lookup_items WHERE value_str LIKE '%' ORDER BY id DESC LIMIT 20;"
-# portal 帳號
-sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<SS>/portal.db \
-  "SELECT username, group_code, level_code, is_active FROM portal_users;"
-```
-
-**portal 帳號快速切換（開發工具，2026-08-03 起）**：
-`/dev/portal-quick-login` 選子系統 + 帳號即免密碼切換，
-之後走**正式**公開路由，列級擁有權／管理角色／個人覆寫全部真實生效
-——這是 IR 設計器「預覽階級」做不到的（那是合成身分，`user_id=None`、`roles=[]`，
-只驗得了階級/群組層的准入）。curl 版：
-
-```bash
-BASE=http://192.168.0.16:7000/beakplatform; SS=HJGEoAh6PBv5IXNHhMTu5P
-USC=$(curl -s "$BASE/dev/portal-quick-login/users/$SS" | python3 -c \
-  "import sys,json;d=json.load(sys.stdin);print([x['secure_code'] for x in d['data'] if x['username']=='member_demo@example.com'][0])")
-curl -s -c q.txt -b q.txt -X POST "$BASE/dev/portal-quick-login" \
-  -H 'Content-Type: application/json' \
-  -d "{\"sub_system_sc\":\"$SS\",\"user_secure_code\":\"$USC\"}"
-curl -s -b q.txt -o /dev/null -w '%{http_code}\n' "$BASE/public/portal/HdjFFvF-/p/$PAGE_SC"
-```
-
-**免密碼登入的邏輯一律留在 `backend/app/web/dev.py`**（該檔在 `push_github.sh`
-排除清單、正式部署整個移除）。`portal_auth_service` 只提供
-`build_session_data()` / `store_session()` 兩個**不含身分驗證語意**的介面。
-**禁止**在正式服務層新增任何可免密碼登入的函式——那會被推上公開 repo，
-等於在正式程式碼裡預留後門。
-
-**架構原則（2026-08-03 用戶定案，違反者不是 bug 是架構錯誤）**：
-
-- NoCode 子系統的資料**自給自足**。要與平台交換一律是**平台寫入、平台去讀**，
-  不從 SQLite / NoCode 側取用平台資料（流程元件取資料算平台本身的功能，不在此限）。
-  目的有二：把 NoCode 側的 SQL injection 受害範圍鎖在 SQLite 內攻不進平台；
-  以及保持 **NoCode 本來就能獨立成單一專案**的可分離性（整合進 BeakPlatform 是產品策略）
-- 因此 `registry.get_resource()` 在 portal 語境對無 prefix 的平台資源一律回 None
-  （`backend/app/pageir/registry.py:46-47`）**是這條原則的實作，不要放寬**。
-  症狀會是 `PageIrRenderError: Unregistered resource: user` → 422，
-  正解是把頁面改綁 `portal:` / `formflow:` 資源，不是去改 registry
-- **所有 nocode 子系統頁面一律以 portal 方式渲染**（員工也一樣，只是身分來源不同），
-  平台端不存在「nocode 頁面」。故 `_ACTIONS`（平台側動作白名單）永遠是 0 筆，
-  那是預期狀態不是待補項
-
-**兩個帳號世界完全分離**，測試時 cookie jar 要分開（同一個 jar 也能並存，但別混淆）：
-
-| | 平台世界 | Portal 世界 |
-|---|---|---|
-| 入口 | `/nocode/workspace/<sub_system_sc>`（統一工作區） | `/public/portal/<path_id>/...` |
-| 帳號 | PostgreSQL `users` | 子系統 SQLite `portal.db` 的 `portal_users` |
-| session | Flask-Login | `session['portal_sessions'][sub_sc]`（per 子系統並存） |
-| 渲染語境 | `platform` | `portal`（互斥，跨界解析一律 fail-closed） |
-
-```bash
-# portal 帳號登入（表單 POST，非 JSON；用獨立 cookie jar）
-curl -s -c p4_cj.txt -X POST "$BASE/public/portal/<path_id>/login" \
-  -d 'username=<帳號>&password=<密碼>'
-
-# portal 頁的 CSRF token 在頁面 meta（平台的 /dashboard 取不到 portal 用的）
-TOKEN=$(curl -s -b p4_cj.txt "$BASE/public/portal/<path_id>/p/<page_sc>" \
-  | grep -o 'csrf-token" content="[^"]*' | cut -d'"' -f3)
-
-# 子系統 SQLite 直查（portal.db=帳號/群組/階級，portal_data.db=業務資料）
-sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
-  "SELECT username, group_code, level_code FROM portal_users;"
-```
-
-- `path_id` 不等於 `sub_system_sc`，對照在 `lookup_items.value_str`：
-  `SELECT code, value_str FROM lookup_items WHERE value_str='<sub_system_sc>';`
-- **Page IR 設計器網址是 `/nocode/ir-designer/<page_layout_secure_code>`**
-  （預覽是同路徑 `+ /preview`）。它吃的是**頁面** secure_code，不是子系統 sc，
-  路由定義在 `modules/nocode_builder/web/__init__.py:42`
-- **設計器模板已於 2026-08-04 拆分**（`_ir_designer_body.html` 只剩 4.5KB 外殼，
-  舊文件與舊卡片都還指著它，照著找會找不到東西）：
-
-  ```
-  ir_designer.html
-  └── _ir_designer_body.html          外殼 + 頂部工具列（預覽身分區塊）
-      ├── _ir_designer_issue_modal.html
-      ├── _ir_designer_save_template.html
-      ├── _ir_designer_layout.html     版面編輯區
-      └── _ir_designer_props.html      全部 widget 屬性面板（42KB，改屬性面板來這裡）
-          ├── (import) _ir_designer_access_matrix.html   元件准入 macro render()
-          └── (include) _ir_designer_menu.html           menu widget 面板
-  ```
-
-  元件准入是 `access_matrix.render(actions_expr, write_hint)` macro，
-  在 props 內被呼叫四次（一般 widget／master_detail／actions／form），
-  **改准入 UI 只要改 macro 一處**，不要在四個地方各改一份
-- **`_ir_designer_body.html` 有兩個宿主頁，`<script>` 清單各自維護**
-  （2026-08-06 踩到，commit `86a75b75`）：
-
-  | 宿主 | 網址 | 特徵 |
-  |---|---|---|
-  | `ir_designer.html` | `/nocode/ir-designer/<頁sc>` | 單頁設計器，**沒有 Site Map** |
-  | `workspace.html` | `/nocode/workspace/<子系統sc>` | 工作區「頁面設計」分頁，**內嵌整套設計器** |
-
-  兩邊共用同一份 partial 與同一個 Alpine 元件 `irDesigner()`，
-  但 `{% block scripts %}` 是各寫各的。**新增設計器要用的 JS 時兩邊都要加**——
-  PF-29 加當時的 `shared-menu.js` 時只加了 `ir_designer.html`，
-  導致工作區內該檔掛的全域恆 `undefined`，
-  按[另存為共用選單]噴 `Cannot read properties of undefined (reading 'create')`。
-  （該檔 2026-08-06 已更名 `shared-component.js`、全域改為 `BkSharedComponent`。）
-  **日常用的是工作區那邊，冷門的單頁設計器反而是好的**，所以測試時要測工作區。
-  現行依賴：`window.BkCaps`（base.html 的 capability.js）／`BkPageTemplate`
-  （`page-template.js`）／`BkSharedComponent`（`shared-component.js`）
-- **portal 頁是獨立模板 `portal_page_v3.html`，不繼承 `layouts/base.html`**。
-  平台頁自動有的東西（`timezone.js`／`BkTime`、i18n、capability.js）在這裡
-  **都要自己載入**。portal 又是公開路由，`auth_interceptor` 在設定
-  `g.locale` / `g.timezone` 之前就 return 了，所以時區一律吃 fallback `Asia/Taipei`
-- **這條對 portal 的錯誤頁與任何新增 portal 模板一律適用**，不只主頁。
-  錯誤路徑最容易漏：`pageir/page_error.html` 繼承了 `layouts/base.html`，
-  被 portal 端共用了很久，導致 portal 渲染失敗時**外部訪客拿到帶平台
-  navbar／選單／`capability.js` 的頁面**（2026-08-03 commit `853b5aaf` 修，
-  改用 `modules/nocode_builder/portal_page_error.html`）。
-  **新增任何 portal 端要用的模板前，先確認它沒有 `{% extends "layouts/base.html" %}`。**
-  平台世界的 `/p/` 與純平台預覽仍用原本的平台版錯誤頁，那是正確的
-- **在 Page IR 頁面放 form.io 送出按鈕時必須寫 `"input": false`**，
-  否則 payload 會多一個 `submit: true` 欄位，被後端欄位白名單擋成
-  400 `unknown_field`
-- **portal.db schema 現行版本 v4**。v3（PF-7，2026-08-03 起）新增六張權限碼制表
-  `portal_permissions` / `portal_admin_roles` / `portal_role_permissions` /
-  `portal_user_roles` / `portal_user_permissions` / `portal_level_permissions`；
-  v4（PF-44 階段 A，2026-08-05 起）新增 `portal_files` / `portal_file_acl`
-  （portal 檔案元件的歸屬與個別檔案 ACL，實體與加密仍在平台 `platform_files`）。
-  升級由 `ensure_portal_schema()` 階梯式自動執行（0→2→3→4，冪等，**lazy**
-  ——子系統被存取到才升，所以看到某個子系統還是舊版本不代表壞掉），
-  **改 portal.db schema 一律加在該函式，不要另寫 migration 腳本**。
-- **Page IR widget 的設定值一律直接掛在 widget 物件上**
-  （`{"type": "file_box", "upload_by": "designer", ...}`），**沒有 `settings` 子物件**。
-  這條對所有 widget 皆然，但 `file_box` 上已經有人猜錯過一次——
-  讀成 `widget["settings"]` 時每個欄位都回退預設值，症狀是**設定看起來存了、
-  行為卻永遠是預設值**（設計者上傳被判成 `upload_by=portal_user` 而全數 400）。
-  有效權限計算的唯一實作是 `services/portal_permission_service.py`
-  （階級 rank 向下繼承、管理角色聯集不繼承、個人 deny 最優先、停用帳號回空集合、
-  匿名只吃階級權限），**禁止各處自行組 SQL 算權限**。
-  access_matrix 規則**只認**權限碼制 `{"required_permissions": [...], "match_mode": "any"|"all"}`
-  （PF-13，2026-08-03 起）。舊的 `{groups, min_level}` 形式已完全移除，寫入會被 400 擋下，
-  runtime 判定回 `bad_matrix`（`group_denied` / `level_missing` / `level_denied` 三個 reason
-  已不存在）。`portal_groups` / `portal_levels` 兩張表**仍在**——階級 rank 是
-  `portal_level_permissions` 的權限來源，群組則降為單純的帳號屬性、不再參與准入判定。
-  寫入端驗證有兩處，改格式要同時改：`api/site_map_api.py::_validate_access_matrix`
-  與 `backend/app/pageir/schema_v3.json` 的 `$defs.portal_access_rule`。
-  權限碼格式固定 `resource.action`（小寫 snake_case），與平台的 permission code 不共用。
-  管理面（PF-8a/8b）在 `services/portal_permission_admin_service.py` +
-  `api/portal_permission_api.py`（前綴 `/api/nocode-builder/sub-systems/<ss>/portal/...`）與
-  工作區第四個分頁「權限矩陣」（`_workspace_perms.html` + `workspace-perms.js`）。
-  角色／階級權限與帳號角色一律**整組覆寫**（PUT 全量 codes），不是增量。
-  建立子系統會自動 seed 六個 `is_system` 管理角色；既有子系統在首次讀 permission-model 時補 seed。
-  權限碼被角色／階級／個人覆寫／site map access_matrix 引用時**拒絕刪除（409）**。
-- **Page IR v3 menu widget**：完整欄位規格見 `dev-notes/PAGE_IR_SPEC.md` §3.7
-  （自動模式在 `dev-notes/SHARED_COMPONENTS_SPEC.md` §5）。三件最容易靜默失效的：
-  - **items 是完全自訂的樹**，不跟著 site map 的結構與順序走（早期版本相反）。
-    名稱與圖示仍即時取自 site map；節點被刪或停用時該項連同 children 整枝消失
-  - **底圖存 `platform_files.secure_code`，不是 `DcBackground.secure_code`**
-    （用 `/api/nocode-builder/backgrounds` 回應的 `platform_file_sc`）——
-    存錯的症狀是「選了底圖完全沒反應、也不報錯」
-  - 顏色一律 `^#[0-9a-fA-F]{6}$`，schema 與 renderer `_menu_style()` **兩道都要擋**
-    （值最後會進 inline style）
-- **Page IR v3 有三個版面引擎**（2026-08-05 起，定版 `dev-notes/PAGE_IR_LAYOUT_ENGINES.md`）：
-  `page.engine` = `flow`（預設，即原本的縱向流 + layout widget 等分）／
-  `grid`（矩陣切格合併，欄寬 fr、列高 px）／`free`（12 欄 × `row_unit` 自由放置）。
-  **沒有 `engine` 欄位＝flow，既有 IR 一行都不用改。**
-  核心約束：**三個引擎只差外殼，zone／frame 內部一律是既有 flow widget 序列**，
-  `render_widget` macro 不因引擎而異，禁止跨引擎巢狀。
-  `grid`／`free` 的窄螢幕行為是**水平捲動 + `min_width`，不塌不縮放**（設計者自己決定場景）。
-  `pageir.css` 那條 720px 塌一欄的規則只作用於 flow 才輸出的 `--responsive` 變體，
-  **新增任何會受該規則影響的 widget 時要記得跟著輸出這個 class**
-  （master_detail 的 master 區塊就漏過一次）。
-  **menu widget 的 provider 要求 render context 同時有 `sub_system_sc`、`portal_user`、
-  `path_id`**（連結必須指向 `/public/portal/<path_id>/...`），少任何一個一律回空陣列，
-  畫面上就是「沒有可顯示的項目」。IR 設計器預覽從 menu widget 上線起就漏傳 `path_id`，
-  導致**預覽的選單永遠是空的**（2026-08-05 修，`web/__init__.py::ir_designer_preview`）。
-  新增任何會呼叫 `set_render_context('portal', ...)` 的路徑時，
-  對照 `portal_public.py` 的參數清單，不要只傳前兩個。
-  設計器在 `/nocode/ir-designer/<page_sc>`：grid 用 `grid-layout-editor.js` 的
-  `layoutOnly` 模式，free 用 GridStack。**zone／frame 消失時（合併、重建矩陣、刪除框）
-  裡面的元件必須有去處**（併入接手的 zone 或回未放置清單），
-  否則會靜默遺失且使用者無從察覺——這個坑 grid 與 free 各踩過一次。
-- **portal 業務表有列級擁有權**（2026-07-30 起）：表固定有系統欄位 `portal_user_ref`
-  （值 `u:<portal user_id>` / `g:<guest_token>`），視圖 `DcCrudView.row_owner_scope`
-  預設 **`own`**（只能存取自己建的列），要共享的表必須明確設 `all`。
-  `portal_user_ref IS NULL` 的舊列在 own 模式下誰都看不到——
-  **「portal 頁表格突然空了」第一個要查的就是這個**，不是權限判定壞了。
-  既有表補欄位用 `scripts/add_portal_user_ref.py --apply`（冪等）。
-  細節與 `owner_ref` 傳參規則見 `dev-notes/codex_spec/portal.md`
-- **判斷一個 NoCode 頁面「還活著」必須走雙路徑 OR**，只看 site map 會誤判：
-  ```
-  存活 = (有存活 dc_site_map_nodes 指向 且 該節點的子系統存活)
-      OR (有存活 dc_sub_system_pages 掛載 且 該子系統存活)
-  ```
-  portal 頁**不一定掛在 site map 節點下**，可能只透過 `dc_sub_system_pages` 關聯。
-  **反向也成立**：只掛在 site map 節點、沒有 `dc_sub_system_pages` 的頁（每個子系統的
-  welcome 就是），只查 `DcSubSystemPage` 一樣會誤判。`/api/nocode-builder/pages/<sc>`
-  的 `sub_system_secure_code` 就犯過這個錯，害設計器的 menu 面板選不到任何節點
-  （2026-08-03 commit `d61b79fb` 改走 `get_owner_sub_system_codes()` 修正）。
-  **同一個坑犯過第二次**：`ir_designer_preview()` 帶 `?sub=` 時也只查
-  `dc_sub_system_pages`，導致**每個子系統的 welcome 頁 portal 預覽必然 404**
-  （commit `93c648fa` 修）。
-  **第三次、而且是在公開路由上**：`portal_public.py` 三處掛載判定
-  （`portal_page` / `portal_widget_rows` / `_resolve_portal_widget_common`）
-  同樣只查 `dc_sub_system_pages`，導致**每個子系統的 welcome 頁在正式 portal 上
-  必定 404**，即使已 published。現收斂成單一 `_portal_page_mounted()`：雙路徑 OR，
-  有掛載記錄但全部停用一律拒絕，走 site map 節點時可見性交給 `check_page_access`。
-  凡是要判斷「這頁屬不屬於這個子系統」，
-  一律用 `get_owner_sub_system_codes()`，不要自己查單一張表。
-  2026-07-31 清孤兒時只看 site map，就這樣誤刪了兩個 published 驗收頁，
-  其中一個是 `test_e2e_portal_cancel.py` 寫死依賴的
-  `FORMTEST00000000000001`，**刪掉會讓 E2E 靜默 skip 而不是報錯**（至今未恢復）。
-  此判定的**唯一實作**是
-  `modules/nocode_builder/services/page_ownership_service.py`
-  （`is_page_reachable()` / `get_owner_sub_system_codes()`），
-  存取層、刪除級聯、清理腳本共用，**禁止各自重寫**。
-  注意 `is_page_reachable()` 對「零關聯」回 `True`（純平台 IR 頁要放行），
-  所以判斷「該不該刪這個頁」時條件要寫成
-  `not is_page_reachable(sc) or not get_owner_sub_system_codes(sc)`。
-  既有孤兒用 `scripts/cleanup_orphan_nocode_pages.py --dry-run/--apply`（冪等）清。
-- **建立子系統會自動附贈一個 welcome 節點 + welcome 頁面**，
-  且 **site map 只允許一個根頁面**（再建根節點會回 400
-  「Site Map 只能有一個根頁面 (welcome)」，新節點要指定 `parent_secure_code`）。
-  測級聯或建測試資料時會撞到。
-- 權限判定失敗**一律回 404**（不洩漏存在與否）；查原因看
-  `sudo journalctl -u beakplatform-dev.service --since "-5 min" | grep reason=`
-- 權限模型與判定鏈：`dev-notes/PORTAL_ACCOUNT_SPEC.md`；
-  完整交接與踩坑清單：`dev-notes/handoff_nocode_n1_n5.md`
-- v2 `layout_json` 已退役，`/p/` 遇到會回 410；設計器只認 `ir_version: 3`
-- **頁面版面樣板庫（PF-24~28、PF-32）＝複製語意**，規格 `dev-notes/PAGE_TEMPLATE_SPEC.md`。
-  只有三件事在動工前非知道不可：
-  - **同子系統套用完全不淨化**（menu 的 `items[].node`、`shared_ref`、access_matrix
-    原封不動保留）。「另存為樣板」存的是**當下那頁的完整 IR**，內建樣板的「零綁定」
-    是那六筆種子資料的內容、**不是會傳染的屬性**。跨子系統才淨化，唯一實作是
-    `page_template_service.sanitize_template_ir()`，**禁止各處自行清理引用**
-  - `instantiate` **只建 `DcPageLayout`**，site map 節點與子系統掛載是前端
-    `workspace.js::finishPageCreation()` 接手做的
-  - `scope='system'` 只能由 `scripts/seed_system_page_templates.py` 建立，API 一律 403
-
-- **子系統層級共用元件＝引用語意**（2026-08-06 起，取代 PF-29 的「共用選單」）——
-  改一次，所有引用它的頁面同步生效。**定版規格 `dev-notes/SHARED_COMPONENTS_SPEC.md`
-  （資料模型、API、schema、設計器 UI、menu 自動模式全在裡面，動工前整份讀完）**。
-  頁面端只寫 `{"type":"menu","id":"menu-1","shared_ref":"<sc>"}`。
-  留在本檔的是四條「猜不到且錯了會靜默失效」：
-  - **完全共用**：引用時一律取共用元件的值，**頁面端不覆寫任何欄位**。
-    同一份選單要 A 頁橫式、B 頁縱式 → 建兩個共用元件
-  - **唯一例外 `access_matrix` 是交集**：共用元件與頁面 widget 兩份都要通過才渲染。
-    它是授權邊界不是外觀，取其一會讓某邊設定靜默失效
-  - **展開只在 `renderer._prepare_widget` 開頭一處做**（dispatch 之前，所有型別共用），
-    三個渲染入口都吃得到，**不要在入口各判一次**——這專案已因「三處各自查」
-    在正式 portal 上全數 404 過。resolver 驗 ctx 的 `sub_system_sc` **與
-    `org_secure_code`**，所以**每個 `set_render_context('portal', ...)` 呼叫點
-    都必須傳 `org_secure_code`**，漏傳的路徑上共用元件會整批消失
-  - 解析不到一律 **fail-closed：整個 widget 不渲染**（不是空選單），並記 warning
-  - （舊的 `dc_shared_menus` 表與 `/shared-menus` 端點已停用、程式無殘留，
-    看到舊名一律視為過時）
-
-- **grid／free 引擎下，widget 只加進 `page.widgets` 不會顯示**，
-  必須同時放進某個 `canvas.zones[].widget_ids`（free 是 `frames[]`）。
-  `_canvas_widgets` 對未放置者靜默略過（只記 info log），
-  症狀是「存了、DB 裡也有、畫面就是沒有」。用 API 直接改 IR 時最容易踩到。
-
-### 用 API 操作 NoCode 子系統
-
-前綴是 `/api/nocode-builder`（不是 `/api/nocode`）。**11 條實測陷阱
-（CSRF 未豁免、發布狀態、回應 key、保留欄名、聚合能力缺口等）在
-`dev-notes/codex_spec/portal.md` 尾段「以 API 操作子系統時的實測陷阱」**，
-動手前整段讀完可省一輪除錯。
-可執行範例：`scripts/examples/provision_relief_donation_demo.py`（建置）
-與 `verify_relief_donation_demo.py`（端對端驗收）。
-
-### 用 Flask `test_client` 寫測試時的三個坑（2026-08-23 逐一試誤才弄對）
-
-**一、URL 必須自己帶 `/beakplatform` 前綴。**
-`create_app()` 用 `DispatcherMiddleware` 把 app 掛在 `APP_PREFIX`（預設
-`/beakplatform`）底下，但 `app.url_map` 內的 rule **不含**這個前綴。
-所以 `client.get('/api/users/')` 一律 404，要寫 `client.get('/beakplatform/api/users/')`。
-症狀是「整批測試全 404、耗時 0 秒」，看起來像路由沒註冊。
-
-```python
-resp = client.get('/beakplatform' + rule)      # 對
-resp = client.get(rule)                        # 錯，恆 404
-```
-
-**二、`app.module_loader.module_loader` 是進程層級單例，
-第二個以後建立的 app 不會再註冊模組 blueprint。**
-`load_modules()` 看 `self._loaded` 旗標，第二次直接
-`logger.warning("Modules already loaded, skipping")` 就回傳。實測：
-
-| 情況 | url_map 路由數 |
-|---|---|
-| 進程內第一個 app | 859 |
-| 第二個以後 | **449**（少了 410 條模組路由） |
-| 手動把 `_loaded` 重設為 False 再建 | 732（**救不回來**，部分模組載入會失敗） |
-
-後果是**同一個測試單獨跑會綠、跟其他測試一起跑就紅**，而症狀看起來像
-「資料沒同步」而不是「app 不完整」。要在測試裡拿到完整 url_map，
-唯一可靠的做法是**開獨立進程**（`subprocess`），
-範例見 `backend/tests/test_route_guard_table.py`。
-
-**三、`test_client` 打 `/dev/quick-login` 會 404**（原因未查明，2026-08-23 實測）。
-需要真實登入的測試改用 `requests` 打執行中的服務
-（`http://192.168.0.16:7000/beakplatform`），單次請求約 28ms，
-816 次請求 23 秒——全矩陣測試的成本完全可接受。
-
-### 跑測試一律用 `scripts/run_tests.sh`（2026-08-05 起，強制）
-
-```bash
-cd /opt/BeakPlatform-dev
-bash scripts/run_tests.sh                                  # 全部
-bash scripts/run_tests.sh tests/test_pageir_shared_menu.py -q
-bash scripts/run_tests.sh -k menu -q
-```
-
-**不要自己 `source .env` 之後直接叫 pytest。**
-`TestingConfig` 的資料庫是 `os.getenv('DATABASE_URL', 'sqlite:///:memory:')`，
-而 `.env` 的 `DATABASE_URL` 指向**開發庫 `beakplatform_dev`**；
-`conftest.py` 與另外三個測試檔的 `app` fixture 收尾都會呼叫 **`db.drop_all()`**。
-也就是說照舊寫法跑測試 ＝ 對開發資料庫 create_all + drop_all。
-在 2026-08-05 之前一直沒毀掉資料，**只是因為 `drop_all()` 被 FK 相依擋下來而拋例外**
-（那批 `ERROR at teardown` 就是它），不是有防護。
-
-`scripts/run_tests.sh` 會在 source .env **之後**把 `DATABASE_URL` 覆寫成
-拋棄式的 `beakplatform_test`。另有一道防呆在
-`backend/tests/conftest.py::pytest_configure`：庫名不是 `_test` 結尾且非 sqlite
-就直接 `pytest.exit`（放在 `pytest_configure` 而不是 app fixture，因為
-`test_smoke.py` / `test_page_template_instantiate.py` / `test_page_template_scope.py`
-各自定義的 app fixture 會覆蓋 conftest 的版本）。
-
-測試庫不存在時（`beakplatform` 帳號沒有 CREATEDB 權限）：
-```bash
-sudo -u postgres createdb -O beakplatform beakplatform_test
-```
-本機 `ethan` 可直接 sudo、不需密碼。連線參數就是上面「資料庫資訊」那組
-（`localhost:5432 / beakplatform / postgres123`）；`run_tests.sh` 可用
-`TEST_DB_NAME` / `DB_USER` / `DB_PASS` / `DB_HOST` 環境變數覆寫。
-
-**測試庫可以一直重複使用、不必每次重建**——每個 app fixture 都是
-`create_all()` 開場、`drop_all()` 收尾。反過來說**不要拿它存任何想留的東西**。
-
-**但測試庫一次只能有一個使用者**（2026-08-28 踩到）。`run_tests.sh` 跑到一半時，
-另外對 `beakplatform_test` 跑任何 `create_all()` / `drop_all()` 的腳本，兩邊會互相
-等鎖；把那支腳本 timeout kill 掉之後，測試庫留下**半成品 schema**，
-接下來的測試在 `db.create_all()` 撞
+| 平台側架構、intake、路由、案件、處置中心 | `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md`（第 13 節是從本檔移入的操作備忘：ClickHouse 查詢、三種處置流程、protected targets、intake HMAC 金鑰、EDL 黑名單） |
+| `.20` 主機（Vector / Suricata / CrowdSec / od-bridge / ClickHouse）與埠、SSH、風險定調 | `dev-notes/SEC_STACK_ARCHITECTURE.md`（第 11 節同上） |
+| `.20` 設定檔權威副本 | `sec-vm-bootstrap/`（**兩邊都要改**，repo 副本不是快照） |
+
+**留在本檔的只有這條**：以下六個檔案是各自領域的**唯一實作**，
+新增功能一律加在這裡，**不要各自重寫**（繞過的後果寫在上面兩份文件裡）：
 
 ```
-psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint
-"pg_type_typname_nsp_index"  DETAIL: Key (typname, typnamespace)=(conglomerates, 2200)
+modules/form_workflow/services/task_authorizer.py       簽核授權（判定點 12 處）
+modules/open_defense/services/routing_service.py        intake 事件 -> form_template 路由
+modules/open_defense/services/payload_profile_service.py 原生 payload 正規化
+modules/open_defense/services/protected_target_service.py 封鎖目標保護清單（PF-83）
+modules/open_defense/services/edl_service.py            平台端 EDL 黑名單（PF-154）
+wf-dnd-nodes.js::resolveNodeIconUrl()                   流程設計器節點圖示 URL
 ```
 
-症狀是**多出一條基準以外的 error，看起來像自己改壞了**。處置：
+**共同軸線 6 個 key 是相容性契約**：`severity_id` / `actor_ip` / `target_host` /
+`source_system` / `finding_rule_id` / `occurred_at`。SLA、聚合降噪、風險分數、
+處置中心清單全部讀這組，**改名等於同時弄壞四個機制**。
 
-```bash
-sudo -u postgres dropdb --if-exists --force beakplatform_test
-sudo -u postgres createdb -O beakplatform beakplatform_test
-```
+**事件的真實權威是 `.20` 的 ClickHouse，不是平台的 `od_intake_events`**——
+後者是被 vector 全域 throttle（8 筆/60 秒）過的子集，
+做任何攻擊面統計一律查 ClickHouse。
 
-要在測試庫上跑自己的驗證腳本，等 `run_tests.sh` 結束再跑；跑完記得重建測試庫，
-不要留 schema 給下一輪測試。（`drop_all()` 在有資料的庫上會卡很久，
-用 dropdb 比等它快。）
+### NoCode Builder / Portal（備忘已移出，2026-08-30）
 
-**跑出基準以外的失敗時，歸因順序**（照這個順序查，不要跳）：
-1. 先看是不是**測試資料殘留**——`bash scripts/run_tests.sh -q` 重跑一次，
-   結果不同就是殘留或測試間互相污染，不是功能回歸
-2. 再看 log 有沒有 `Unknown permission code` / `Modules already loaded`
-   這類**環境訊息**（前者是測試庫缺 seed，見 PF-34）
-3. 都不是才當作功能回歸，用 `git stash` 比對改動前後
+**動 `modules/nocode_builder/`、`/public/portal/` 或 Page IR 之前，
+先讀 `dev-notes/NOCODE_PORTAL_NOTES.md`**（317 行，原本在本檔）。
+裡面是「不讀就會做錯而且不報錯」那類：2026-08-03 定案的架構原則
+（子系統資料自給自足、跨界解析一律 fail-closed）、兩個帳號世界的分離、
+現有示範子系統與 portal 測試帳號、`portal.db` schema 版本、
+頁面存活的雙路徑 OR 判定、三個版面引擎、共用元件的展開點，
+以及「NoCode 選單刻意隱藏中」的現況（看不到選單不是壞了）。
 
-**基準不寫死數字**（測試會持續新增，寫死的通過數必然腐爛而誤導）。
-判斷有無退步的做法：**動工前先跑一次完整 `tests/` 記下當時的數字**，改完再跑一次比對。
-完整跑約 9 分鐘（2026-08-28 實測 530 秒；舊文寫 4 分鐘已過時）。以下兩個非綠是**長期已知、成因明確**，不列入退步：
-
-| 項目 | 狀態 | 成因 |
-|---|---|---|
-| `test_auth_interceptor.py::TestAuthDecorators::test_admin_required_for_admin` | failed | 測試庫是 `db.create_all()` 建的空表、**沒有 RBAC seed**（log 印 `Unknown permission code: user:read`），拿到 403 而非 200。要修就補 permission → role → `user_role_assignments` 整條鏈，權威清單在 `scripts/migrations/075_seed_resource_crud_permissions.py`（待辦 **PF-34**） |
-| `test_od_protected_targets.py`（2 個 error） | error | **只在完整跑時出現，單獨跑該檔 56 passed** —— 是測試間污染，不是功能回歸。2026-08-20 實測確認（`/opt/tmp/verify/20260820-full-tests.log`）。看到它不要追功能，照上面歸因順序第 1 條處理即可 |
-| `test_e2e_portal_cancel.py` | skipped | **永久 skip，重啟服務也救不回來**。它寫死 `PAGE_SC = "FORMTEST00000000000001"`，該驗收頁 2026-08-03 隨全面清除消失，測試在 line 87 就 skip。它另外掛 `pytest.mark.e2e`、服務沒起來也會 skip（line 238），但目前**先卡在找不到頁面**。要恢復必須重建驗收頁並改寫死的常數 |
-
-寫「已知問題不要修」時務必連**成因與判別方式**一起寫，否則它會保護錯的東西——
-先前那句「13 個 error 是 SQLite JSONB 問題，不要修」只在無 `DATABASE_URL` 時成立，
-卻長期覆蓋掉「撞開發庫殘留」這組完全不同的錯誤，改用測試庫後其中
-`tests/test_page_template_instantiate.py` 直接變成 14 passed。
-
-### 瀏覽器互動的 E2E：Playwright（2026-08-12 起）
-
-pytest 之外另有一組 **Playwright E2E**，測的是 curl 與 pytest 都測不到的東西
-（連結前綴、按鈕可見性、點擊後有沒有發某支 API、console 有沒有紅字）。
-
-```bash
-cd /opt/BeakPlatform-dev
-bash scripts/run_e2e.sh                    # 跑全部，輸出自動 tee 到 /opt/tmp/verify/
-bash scripts/run_e2e.sh --headed           # 讓人看得到瀏覽器
-bash scripts/run_e2e.sh -g "A. 點不可簽核"  # 其餘參數原樣傳給 npx playwright test
-```
-
-- 測試在 `tests/e2e/`（**不是** `backend/tests/`，那是 pytest 的領地）
-- **需要服務在跑**（走 nginx `http://192.168.0.16:7000/beakplatform`），
-  但不需要測試資料庫——它打的是開發庫，且**只讀不寫**
-- Playwright 1.62.1 裝在 repo 根（`package.json` + `node_modules/`，均已 gitignore）
-- 登入走 `/dev/quick-login`（`tests/e2e/helpers/login.js`），免密碼免 CSRF
-- 現有覆蓋：`od-pf79.spec.js`（資安案件處置中心的可簽核／不可簽核兩條路徑、
-  OD 四頁副標、intake-keys 的 nginx 前綴）
-
-**寫新 E2E 時的三條硬規則**（AI 派工時要逐條貼進 spec，否則必漏）：
-
-1. **禁止 `page.evaluate(() => el.click())`**，一律 `locator.click()`。
-   後者會先跑 actionability checks（visible / stable 連兩幀 box 相同 / enabled /
-   receives events 的 hit-test），DOM click 把這層整個拿掉，
-   被 overlay 蓋住的按鈕照樣觸發＝測不出使用者點不點得到
-2. **禁止 `waitForTimeout` 或任何固定 sleep**，用 web-first assertion 與 `waitForResponse`
-3. **禁止寫死 secure_code / 案件編號 / 密碼**，識別碼一律從 API 動態挑；
-   資料前提不成立時 `test.skip()` 並印中文說明，不要讓它變紅、也不要靜默 pass
-
-**新測試第一次就全綠時，必須做一次 mutation 驗證**：把被測的修復暫時改回壞掉的樣子，
-確認測試會紅。恆真斷言（locator 打錯 → count 恆 0、監聽器沒掛上 → 陣列恆空）
-會穩定通過而什麼都沒驗，**讀起來像有保障，比沒測更危險**。
-PF-79 這組就是這樣驗的（記錄在 `/opt/tmp/verify/20260812-e2e-od-pf79.log`）。
-
-### AiAgent 節點：`claude -p` 是 agent 不是 API，一定要關掉自訂與工具（2026-08-20）
-
-節點型別 `AiAgent`，handler
-`modules/form_workflow/services/node_handlers/ai_agent_handler.py`。
-它把流程資料交給本機 `claude -p` 分析，結果寫流程變數並可插一筆
-`fw_approval_records`（`action='ai_note'`、`approver_secure_code=NULL`）。
-
-**`claude -p` 不是「送字串到雲端再回傳」，是完整的 agent**
-（回應 envelope 有 `num_turns`）。預設狀態下它會用工具、讀
-`$HOME/.claude/CLAUDE.md`、繼承呼叫者的**全部 MCP server**
-（beak_broodnest / chrome-devtools / Google Drive / SendMessage…）。
-prompt 裡放的是攻擊者可控的資料，所以隔離不是選配。
-
-**用原廠的兩個參數就夠，不要自己搭黑名單**：
-
-```
---safe-mode     停用全部自訂（CLAUDE.md、skills、plugins、hooks、MCP servers、
-                custom commands/agents…），一個參數全包
---tools ""      停用全部內建工具
-```
-
-**`--tools` 與 `--allowedTools` 是兩個不同參數。**
-`--allowedTools ""` 會被當成「未指定」而**放行 Bash/Edit/Write**（實測踩過）；
-`--tools ""` 才是明確的全部停用。寫錯這個等於完全沒設防，而且從回應看不出來。
-
-2026-08-20 最嚴苛條件實測（真實 HOME、cwd 直接指在專案根目錄）：
-`NO_CLAUDEMD` / `NO_MCP` / `NO_TOOLS`，要它建檔案時檔案不會出現。
-
-**驗證一定要看副作用，不能問它「你有什麼工具」。**
-實測中它回答「我將建立這個檔案」，但檔案根本沒出現——自我報告不可信。
-
-其餘設計：cwd 用 `tempfile.TemporaryDirectory()` 每次動態建（無需預先建目錄）；
-CLI 路徑走 `AI_NODE_CLI_PATH` 環境變數 → `shutil.which('claude')` → `'claude'`，
-**每次執行時解析**（`resolve_cli_path()`，不在 import 時定死，否則長駐的 executor
-事後換路徑永遠不生效）。**沒有任何要手動建立的目錄**，換機器直接可跑。
-
-**2026-08-21 起這四件是硬規則（移植性修正，commit `84b381ee`）**：
-
-- **CLI 路徑不從節點 config 取。** 節點設定存在 `fw_workflow_templates.graph`，
-  而 graph 可用 PUT API 改寫——允許 `cli_path` 等同讓能編流程的人以 executor
-  的 OS 帳號執行任意程式。原本的 `get_config_value('cli_path')` 已移除，
-  **不要為了「方便測試」加回來**
-- **env 是白名單不是全剝**（`build_subprocess_env()`）。只剝平台秘密，
-  放行 `ANTHROPIC_*` / `CLAUDE_CODE_USE_*` / proxy / CA；`AWS_*` 與 GCP 憑證
-  只在對應的 `CLAUDE_CODE_USE_BEDROCK` / `_VERTEX` 啟用時才放行。
-  全剝的舊寫法會讓「使用者自己已備妥的 API key、企業 proxy、內部 CA」
-  一律靜默失效——那是本專案擋住他，不是他的環境問題
-- **執行前偵測 CLI 是否支援 `--safe-mode` 與 `--tools`**
-  （`_ensure_cli_supports_isolation()`）。看 `--help` 輸出而**不是比版本號**
-  （不知道確切哪一版引入，比版本會誤判）。fail-closed；**成功才快取**，
-  失敗不快取，讓部署者升級 CLI 後不必重啟 executor
-- **錯誤訊息要帶 envelope 的 `result`**。未登入時 CLI 回
-  `stop_reason=stop_sequence`、真正原因 `Not logged in · Please run /login`
-  在 `result` 裡。只取 stop_reason 的舊寫法讓部署者完全看不出該做什麼
-
-對外部署需求（其他人裝這套時要準備什麼）寫在 **`docs/install/ai_node.md`**
-（會推上 GitHub），`.env.example` 有對應的註解段。改 handler 的行為時記得同步。
-
-**但 `AI_NODE_CLI_PATH` 在本機是非設不可的**（2026-08-20 第一次真的經由 executor
-跑流程才發現）：`beakplatform-dev-executor.service` 的 unit 寫死
-
-```
-Environment=PATH=/opt/BeakPlatform-dev/venv/bin:/usr/local/bin:/usr/bin:/bin
-```
-
-不含 `~/.local/bin`，所以 `shutil.which('claude')` 找到的是 root 裝的舊版
-`/usr/local/bin/claude`（2.0.27，**沒有 `--safe-mode`**），節點每次都失敗，
-log 是 `AI CLI 退出碼 1: error: unknown option '--safe-mode'`。
-`.env` 已加 `AI_NODE_CLI_PATH=/home/ethan/.local/bin/claude`（2.1.237）。
-
-這件事的通用教訓：**在互動 shell 裡驗證過的外部指令，不等於 executor 跑得動**——
-systemd unit 的 PATH 與你的 shell 不同。凡是節點會呼叫外部程式，
-驗收一定要真的經由 executor 跑一次流程，不能只在 `venv/bin/python -c` 裡驗。
-（舊版 CLI 的行為是 fail-closed：參數不認得就整個退出，不會退化成沒有隔離的執行。）
-
-**流程變數是扁平的，`${v.ai.verdict}` 取不到值**。AiAgent 除了 `result_var`
-本身（物件）之外，另外攤平寫出 `<result_var>_verdict` / `_score` / `_ok` /
-`_rule_hits` / `_note`，Branch 條件要判 verdict 只能用這些
-（與 SqlExecutor 的 `<result_var>_<欄位>` 同一套命名）。
-
-**AI 一律沒有寫入權**：它只出文字，所有寫入由 handler 做。規則層的
-injection 偵測不經過 AI、直接生效，系統警示由 handler 在 AI 輸出**之後**拼接，
-AI 移除不掉。改這個檔案前先讀檔頭那段安全設計說明。
-
-**改 handler 後 executor 要重啟才認得**（`beakplatform-dev-executor` 是獨立進程）。
-
-**用量記錄與配額已上線（PF-139，2026-08-21）**，定版文件
-`dev-notes/AI_NODE_USAGE_QUOTA_SPEC.md`，動這塊之前整份讀完。四件猜不到的：
-
-- **`total_cost_usd` 是全部模型的總和，但 top-level `usage` 的 token 只算主模型。**
-  即使只指定一個 `--model`，envelope 仍可能出現第二個模型（CLI 用 haiku 做輔助作業）。
-  實測樣本：sonnet-5 $0.0108（2/270 tokens）＋ haiku-4-5 $0.001421（1331/18 tokens）
-  ＝ `total_cost_usd` 0.012221。**寫 parser 不要假設 `modelUsage` 只有一個 key**
-- **成本是 API 牌價的等值估算，不是實際扣款**（訂閱制下仍以牌價估算）。
-  對外文案一律寫「估算成本」，不要寫成費用或帳單
-- **配額超限一律走 error 邊，不看節點的 `on_error`** —— 那代表節點根本沒被允許執行，
-  靜默略過會讓簽核者誤以為 AI 已經看過
-- **流程引擎對回 error 的節點重試到 `max_retries=3`**（`FwNodeExecutionQueue.fail()`
-  沒有不可重試的分支），所以 blocked 記錄依 `node_queue_secure_code` 去重，
-  一個節點被擋只記一次。**不要為了「讓計數變準」而拿掉去重**
-
-配額與用量的**唯一實作**是 `modules/form_workflow/services/ai_usage_service.py`
-（含 `pg_advisory_xact_lock` 防併發穿透、日界月界依企業時區換算）。
-**禁止**在 API、前端或其他 handler 自行組配額 SQL 或讀寫 `ai_node_*` 設定 key。
-管理頁在 `/forms/ai-usage`（`form_workflow.admin`）。
-
-### SqlExecutor 節點：白名單是 DB 表，且必須在**執行時**重查（2026-08-20）
-
-節點型別 `SqlExecutor`，handler
-`modules/form_workflow/services/node_handlers/sqlexecutor_handler.py`。
-**完整規格與「怎麼加一支新 SP」看 `dev-notes/SQL_EXECUTOR_SPEC.md`，動這個模組前整份讀完。**
-
-留在本檔的是三件猜不到、猜錯就是漏洞的：
-
-- **節點設定存在 `fw_workflow_templates.graph`，而 graph 可以用 API 直接 PUT 改寫。**
-  所以設計器的下拉選單不是防線 —— handler 拿 config 的 `procedure_code`
-  去 `fw_sql_procedures` **重查一次**（含企業歸屬、`is_active`），查不到就拒絕。
-  同理參數也依白名單登記的型別重新驗證。這道漏了等於白名單不存在
-- **只能呼叫 schema `fw_sp` 內的函式，schema 名是 handler 的字面常數**。
-  不要為了方便改成可指定 schema —— 那等於開放 `pg_catalog`
-- **org 過濾靠的是 SP 自己的 `WHERE`，不是 RLS**。平台主庫只有 10 張表有 RLS
-  且都不是 FORCE，`beakplatform` 又是 owner（owner 不受自己的 policy 限制）。
-  每支 SP 的第一個參數固定 `p_org_secure_code`，由 handler 從流程所屬企業帶入；
-  config 裡出現這個參數名一律**整次拒絕**（不是忽略）
-
-**v1 刻意只支援唯讀**：`_execute()` 一律 `SET TRANSACTION READ ONLY`，
-由資料庫層保證這個節點寫不了東西。要支援寫入型 SP 必須先回答交易語意問題
-（同交易則 SP 內不能 COMMIT；獨立交易則流程失敗時副作用留著），
-**不是把那一行拿掉**。
-
-白名單維護走 migration（`scripts/migrations/106_sqlexecutor_whitelist.sql`），
-**刻意不做 Web UI** —— 登錄一筆等同授權。
-
-**改 handler 後 executor 要重啟才認得**（`beakplatform-dev-executor` 是獨立進程）。
+規格另見 `dev-notes/PORTAL_ACCOUNT_SPEC.md`、`dev-notes/PAGE_IR_SPEC.md`、
+`dev-notes/SHARED_COMPONENTS_SPEC.md`、`dev-notes/codex_spec/portal.md`。
 
 ### SQL Sync：worker 是獨立服務，且啟用後不可關閉（2026-08-20 補）
 
@@ -2449,115 +1634,24 @@ AI 移除不掉。改這個檔案前先讀檔頭那段安全設計說明。
 - 企業獨立資料庫用 `beakplatform` 帳號**連不進去**（權限不足），
   要查得 `sudo -u postgres psql -d org_<id>`
 
-### 流程設計器的節點清單與分類（2026-08-24 PF-84 期間釐清）
+### 駁回按鈕接了出線就不會記成駁回（設計流程時會踩到）
 
-**`require_system_admin=true` 在本平台的實際效果是「沒有任何帳號看得到」**，
-不是「限系統管理員」：`/api/workflows/data/node-definitions` 掛
-`@module_access_required('form_workflow')`，而唯一的 SYSTEM_ADMIN
-（`admin@system.local`，屬系統企業）沒有這個模組的合約，打該端點回 **403**。
-所以 `DecisionWriter` 從 2026-05-09 上線到 2026-08-24 之間，**左側工具列對任何人都不存在**。
-（已於 migration 114 改成 false，暴露面是流程設計頁雙鑰匙放行的 ORG_ADMIN 與
-`FLOW_DESIGNER`。判斷理由寫在該 migration 的註解裡。）
+> 2026-08-30 刪除原本的「一律走到 End 節點收尾（2026-08-27 定調）」原則，
+> Ethan 判定已不符實。並行分支的收尾方式以下方「流程 graph 的引擎行為」
+> 那張表為準（無出邊節點安全終止該分支，**不要指向 End**）。
 
-**新增一個節點分類要改四個地方，漏任一處的症狀都是「類別不出現」且不報錯**：
-
-| 位置 | 內容 |
-|---|---|
-| DB `workflow_node_definitions.category` | 中文分類名（例 `資安處置`） |
-| `api/workflows.py::get_node_definitions` 的 `category_map` | 中文 → key（`security_ops`） |
-| `workflow-designer-init.js` | `CATEGORY_NAMES`、`CATEGORY_ICONS`、**`categoryOrder`** 三個都要；沒列進 `categoryOrder` 的分類會被**靜默略過** |
-| `workflow-designer.css` | `.palette-node.<key>`（沒加只是沒顏色，不影響功能） |
-
-**畫布上的節點 id 有兩種來源，格式不同是正常的**：
-
-| 來源 | id 長相 |
-|---|---|
-| 建置腳本直接寫 graph JSON（如 `od_workflow_graphs.py`） | 作者自取的語意化字串 `node-Decision-confirm` |
-| 設計器拖拉（`wf-dnd-nodes.js::addNode`） | `` `node-${型別}-${流水號}` `` |
-
-流水號 `nodeCounter` 是**全域共用不分型別**，載入既有流程時由
-`wf-render.js` 掃描所有節點 id 的數字尾碼取最大值續編（所以會跳號，那是防撞號）。
-**id 建立後固定不變**——連線靠它錨定，改節點名稱不會改 id。
-
-**要驗防禦決策面板時開這個**（beluga，五顆 DecisionWriter 節點涵蓋
-block／unblock／observe 三種 action）：
-
-```
-http://192.168.0.16:7000/beakplatform/forms/workflows/7LJRvpSPUYcmK1M1wcOTzY
-```
-
-另外兩個含該節點的流程：`8bhmC3N-TDYYT7W5s0bYC3`（SOC 團隊版，2 顆）、
-`1bBpvNh6bWi5lVZwBz2NHQ`（標準版，1 顆）。**畫布是 canvas，DOM 點不到節點**，
-自動化驗收一律 `cy.$('#<node-id>').emit('tap')` 觸發面板，面板本身才是 DOM。
-
-### 用腳本產生流程 graph 時的三個坑（2026-08-20，全部實際踩到）
-
-**一、`graph` 與 `cytoscape_config` 兩個欄位都要寫。**
-`fw_workflow_templates` 有兩個欄位存同一份圖：流程引擎讀 `graph`，
-**設計器讀 `cytoscape_config`**（`wf-render.js`：
-`workflow.cytoscape_config || workflow.graph`，前者優先）。
-設計器自己存檔時是同一份物件寫進兩欄（`wf-save.js:488-489`）。
-只寫 `graph` 的症狀是**流程跑的是新版、設計器畫的是舊版，而且不報錯**——
-看起來就像「我的流程沒存到」或「節點裡沒有值」。
-（腳本產生、從未經設計器存過的流程 `cytoscape_config` 是 NULL，會 fallback 到
-`graph`，所以不會有這個症狀；**被設計器存過一次之後才會開始不同步**。）
-
-**二、載入既有流程時 pan 不是固定值，座標排在哪都不保證看得到。**
-實測同一個流程連續重新載入，pan 得到 -143.75 / -193.75 / -275 / -350。
-原本只有「版本 AA 且 revision 0」的新流程才 `cy.fit()`，其餘一律沿用當下視野，
-所以座標離 pan 較遠的節點就直接在畫面外。2026-08-20 已在 `wf-render.js` 補
-「載入後若有節點不在視野內就自動 fit」（本來就完整可見的流程不動視野，
-避免大流程被 fit 到看不清字）。
-
-**三、節點 icon 不要用 `f'{ICON_BASE}/{node_type.lower()}.svg'` 硬推。**
-檔名與型別名不是一對一（AiAgent 原本借用 `sqlexecutor.svg`，2026-08-20 才補
-`aiagent.svg`）。一律從 `workflow_node_definitions.icon` 讀該型別登記的圖示。
-
-範例腳本：`scripts/examples/provision_node_demo_flows.py`（兩個節點示範流程）。
-
-### form_workflow 發行（publish）陷阱
-- `POST /api/mappings/<sc>/publish` 以表單/流程模板的 **version+revision** 判斷有無變更；
-  直接改 `fw_workflow_templates.graph`（SQL 或 PUT API）**不會** bump revision，
-  publish 會回「版本未變更」並沿用舊快照
-- 解法：改完 graph 先 `UPDATE fw_workflow_templates SET revision = revision+1 WHERE ...` 再 publish
-- intake / 表單中心都只讀 `fw_published_form_workflows` 最新 Published 快照，改模板不重發行等於沒改
-- 流程變數：流程編號（OD-YYYYMMDD-NNNN）是 `${wi.exec_code}`；`${wi.code}` 是 workflow instance 的 secure_code，
-  沒有 `${wi.execution_code}` 這個變數（替換結果為空字串）
-
-**`FwPublishedFormWorkflow.suspend()` / `reopen()` 內部有 `db.session.commit()`**
-（`modules/form_workflow/models/published_form_workflow.py:168`，2026-08-28 踩到）。
-在「呼叫端負責 commit」的服務或 seed 函式裡呼叫它，會把上游尚未完成的交易
-**從中間切開**——例如建立企業的流程呼叫出廠 seed、seed 又呼叫 suspend()，
-企業只建了一半就先被 commit。這類地方要自己展開那三行（含 `status == 'Archived'`
-的檢查），範例見 `backend/app/defaults/api_key_request_defaults.py` 的
-「刻意不呼叫 existing.suspend()」註解。**看到那段不要當成重複的死碼改回去。**
-
-**出廠預設的表單／流程在 `backend/app/defaults/api_key_request_defaults.py`**，
-建企業時由 `organization_service.create_organization()` 與
-`init_system_organization()` **兩處**呼叫（後者不走前者）。
-`scripts/examples/provision_api_key_request_flow.py` 是它的 CLI 外殼、
-反過來 import defaults——**要改表單欄位或流程 graph 一律改 defaults 那一份**，
-改腳本不會生效。既有企業由 `scripts/migrations/116_seed_api_key_request_flow_existing_orgs.py` 補。
-
-### 流程設計原則：一律走到 End 節點收尾（Ethan 2026-08-27 定調）
-
-**每條路徑最後都要抵達 End 節點，包含駁回。**
-理由是統計面的：判斷哪些表單「進行中／異常中斷／長時間卡住」時，
-「有沒有到達 End」是排除條件，不經 End 結束的流程會污染這類統計。
-
-這條與設計器決策配對區印的既有提示**直接衝突**，看到那句不要照做：
+`fc-approval.js:336-343` 只在「`target_edges` 為空且 `style=danger`」時才送
+`decision='rejected'`，所以**駁回按鈕一旦接了出線，`fw_approval_records.action`
+會記成 `approved`**，決策真相只留在流程變數與簽核意見裡。
+這是全平台通例——OD 的「人工確認」、`WF2610385E` 的「退回」歷史記錄都是這樣。
+設計器決策配對區的提示與 `formadapter_handler.py:148` 的註解描述的就是這個機制：
 
 ```
 formadapter-decisions.js:321   ... | 未配對 = REJECTED 終態
 formadapter_handler.py:148     # 驗證 target_edges 合法性（空 target_edges 表示終態）
 ```
 
-**已知代價（Ethan 明確接受）**：`fc-approval.js:336-343` 只在
-「`target_edges` 為空且 `style=danger`」時才送 `decision='rejected'`，
-所以接了邊之後 `fw_approval_records.action` 會記成 `approved`，
-決策真相只留在流程變數與簽核意見裡。**這是全平台通例**——
-OD 的「人工確認」、`WF2610385E` 的「退回」歷史記錄都是這樣。
-要不要改成兩者兼得，見待辦 **PF-164**（先讀完再動，不要自己開工）。
+要不要改成「接了邊也記得住駁回」，見待辦 **PF-164**（先讀完再動，不要自己開工）。
 
 順帶兩個相關事實：
 - 表單中心的狀態欄**只表示表單的運行狀態、不含決策狀態**，准駁要點進去看簽核意見
@@ -2628,54 +1722,6 @@ executor 會撿 `status=WAITING` 且 `node_type in (Delay, End, ParallelJoin)`
 **測 ANY 模式時流程尾端不要接 `End`**：End 是流程級結束，
 executor 隨後會把未完成節點一律 cancel，就觀察不到第二條入線抵達時的行為。
 
-### 節點執行與 End 三模式（2026-08-30 實測，盤點表 `dev-notes/NODE_TEST_INVENTORY.md`）
-
-**每個節點 = 一個獨立 OS subprocess**（`node_runner`，`start_new_session=True` 所以 pgid == pid），
-PID 記在 `fw_node_execution_queue.process_id`。動這塊之前先看盤點表，
-它記著每種節點的驗證狀態與編號 `NT-xx`（可被其他文件引用）。
-
-四件猜不到的：
-
-- **node_runner 的 stdout/stderr 全進 `DEVNULL`**，節點執行細節**不在 journal 裡**，
-  只能靠 DB 狀態反推。這是 End cancel 缺口長期沒被發現的直接原因
-- **父子流程的關聯在 `fw_workflow_instances`，不在 queue 表**：
-  `root_instance_code`（主流程自己是 NULL，子孫鏈式繼承同一個根）。
-  queue 表的 `calling_instance_code` / `parent_node_id` **只有子流程的 Start 節點有值**，
-  拿它找子流程的中間節點一律漏掉。整棵樹的正確查法是
-  `WHERE wi.secure_code = :root OR wi.root_instance_code = :root`（root 用 `root_instance_code or secure_code`）
-- **`FwWorkflowInstance` 與 `FwNodeExecutionQueue` 都沒有 `created_by` 欄位**，
-  傳了直接 `TypeError`。`subflow_handler` 就因此讓子流程從上線起 100% 失敗到 2026-08-30
-- **殺 node_runner 不會中斷它已發動的外部作業**：SIGTERM 之後 `pg_sleep` 的
-  PostgreSQL backend 仍活到查詢自然結束（要一起斷得發 `pg_cancel_backend()`，目前不做）。
-  子進程（AiAgent 的 claude CLI）因為在同一個 process group 內，會被一起收掉
-
-End 三模式的語意（`finish_mode`，預設 `detach`）：
-
-| 模式 | 行為 |
-|---|---|
-| `detach` | 直接結束，其他節點不管，未啟動的由 executor 下輪撿到時取消 |
-| `cancel` | **整棵樹**（含多層子流程）的節點與 instance 標 CANCELLED ＋ 對 RUNNING 節點送 SIGTERM/SIGKILL |
-| `strict` | 等同 instance 內所有節點完成才結束；子流程靠 SubFlow 節點的 WAITING 間接等到 |
-
-`cancel` 的唯一實作是 `WorkflowEngine.cancel_pending_nodes()`（另兩個呼叫端是管理員強制結案與
-portal 撤單，行為一致）。**送訊號前一律先 `/proc/<pid>/cmdline` 比對 `--queue-item-code`**
-（PID 會被重用，fail-closed 寧可不殺）、**且只在 pgid == pid 時才 killpg**
-（否則會連帶殺掉 executor 整個 process group）。被取消的節點跑完不得把自己寫回 SUCCESS，
-防護在 `node_runner.update_result()` / `handle_error()` / `advance_to_next_nodes()` 三處。
-
-**`systemctl restart beakplatform-dev-executor` 會殺掉當下所有正在跑的節點進程**
-（2026-08-30 實測）：unit 是 `KillMode=control-group` / `Delegate=no`，而
-`start_new_session=True` **只脫離 process group 與 session，不脫離 cgroup**，
-所以 node_runner 與它的子孫都在 executor 的 cgroup 內、一起被收掉。
-而全 repo **沒有 stale RUNNING 的回收機制**，被這樣殺掉的節點會**永遠卡在 RUNNING**
-（`_poll_and_execute` 只撿 PENDING 與少數 WAITING），流程就此靜止且不報錯。
-
-所以「改 handler 後要重啟 executor」有代價：**重啟前先確認沒有流程在跑**
-（`SELECT node_type, node_id, started_at FROM fw_node_execution_queue WHERE status='RUNNING';`），
-事後發現卡住的只能手動改回 PENDING 或標 FAILED。要讓外部作業活過重啟，
-唯一辦法是另建 systemd unit（`systemd-run`）把它移出 executor 的 cgroup ——
-脈絡見 `dev-notes/OS_EXECUTOR_SPEC.md` 第七節與知識庫 #5316。
-
 ### form_workflow 流程變數的儲存位置（寫錯地方＝流程引用不到）
 
 **流程變數的權威儲存是 `fw_workflow_variables` 表，不是
@@ -2695,6 +1741,68 @@ portal 撤單，行為一致）。**送訊號前一律先 `/proc/<pid>/cmdline` 
 **用過期值做顯示只是難看，用過期值做授權判定就是漏洞** ——
 授權判定一律繞過快取直接查 `FwWorkflowVariable`
 （範例：`pageir_formflow_resources.is_submission_editable()`）。
+
+### 跑測試（細節已移出，2026-08-30）
+
+**一律用 `bash scripts/run_tests.sh`，不要自己 `source .env` 之後直接叫 pytest。**
+後者的 `DATABASE_URL` 指向**開發庫**，而多個 app fixture 收尾會 `db.drop_all()`。
+run_tests.sh 會把庫覆寫成拋棄式的 `beakplatform_test`。
+
+```bash
+bash scripts/run_tests.sh                     # 全部，約 9 分鐘
+bash scripts/run_tests.sh -k menu -q
+bash scripts/run_e2e.sh                       # Playwright，需服務在跑
+```
+
+**基準不寫死數字**（會腐爛）：動工前先跑一次記下當時數字，改完再比對。
+以下三個非綠是長期已知、不列入退步：
+
+| 項目 | 狀態 | 成因 |
+|---|---|---|
+| `test_auth_interceptor.py::...::test_admin_required_for_admin` | failed | 測試庫沒有 RBAC seed（PF-34） |
+| `test_od_protected_targets.py`（2 error） | error | 只在完整跑時出現，單獨跑該檔 56 passed＝測試間污染 |
+| `test_e2e_portal_cancel.py` | skipped | 寫死的驗收頁 2026-08-03 已消失，永久 skip |
+
+跑出基準外的失敗，歸因順序固定：**先重跑一次**（不同就是殘留/污染）→
+**再看 log 有沒有 `Unknown permission code` / `Modules already loaded`**（環境訊息）→
+都不是才當功能回歸。
+
+細節在 **`dev-notes/TESTING_NOTES.md`**：測試庫重建、與其他腳本搶鎖的
+`UniqueViolation` 處置、`test_client` 三個坑（URL 要自帶 `/beakplatform` 前綴、
+模組 blueprint 只註冊在進程內第一個 app、quick-login 打不進去）、
+Playwright E2E 的三條硬規則與 mutation 驗證。
+
+### 流程設計器 / graph 操作 / publish（細節已移出，2026-08-30）
+
+用腳本或 API 改 `fw_workflow_templates.graph`、新增節點型別或分類、
+或要發行配對之前，先讀 **`dev-notes/WORKFLOW_DESIGNER_NOTES.md`**。
+三個最常踩的（完整說明在該檔）：
+
+- **`graph` 與 `cytoscape_config` 兩欄都要寫**——引擎讀前者、設計器讀後者，
+  只寫一邊的症狀是「流程跑新版、設計器畫舊版」且不報錯
+- **直接改 graph 不會 bump revision**，publish 會回「版本未變更」沿用舊快照；
+  要先 `UPDATE ... SET revision = revision + 1`
+- **新增節點分類要改四個地方**，漏 `categoryOrder` 那處會被靜默略過
+
+節點型別本身的規格：`dev-notes/NODE_TEST_INVENTORY.md`（盤點與 NT-xx 編號）、
+`dev-notes/SQL_EXECUTOR_SPEC.md`、`dev-notes/AI_NODE_SECURITY.md`、
+`dev-notes/OS_EXECUTOR_SPEC.md`。
+
+### 節點型別的規格文件（2026-08-30 移出）
+
+**每個節點 = 一個獨立 OS subprocess**（`node_runner`），PID 記在
+`fw_node_execution_queue.process_id`，stdout/stderr 全進 `DEVNULL`——
+**節點執行細節不在 journal 裡**，只能靠 DB 狀態反推。
+
+| 主題 | 文件 |
+|---|---|
+| 各節點驗證狀態、NT-xx 編號、End 三模式與取消語意 | `dev-notes/NODE_TEST_INVENTORY.md` |
+| AiAgent 的隔離設計（`--safe-mode` / `--tools ""`）與移植性 | `dev-notes/AI_NODE_SECURITY.md` |
+| AiAgent 用量與配額 | `dev-notes/AI_NODE_USAGE_QUOTA_SPEC.md` |
+| SqlExecutor 白名單（執行時重查、唯讀交易、schema 常數） | `dev-notes/SQL_EXECUTOR_SPEC.md` |
+| OsExecutor / FileRead | `dev-notes/OS_EXECUTOR_SPEC.md` |
+
+**改 handler 後 executor 要重啟才認得**，而重啟有代價——見下方「服務啟動」。
 
 ### 正式環境已退役（2026-08-05 起，看到 :8000 回 502 先讀這段）
 
@@ -2718,6 +1826,21 @@ portal 撤單，行為一致）。**送訊號前一律先 `/proc/<pid>/cmdline` 
 一份腳本 dev 與正式環境通用。**禁止再往裡面寫死 `/opt/BeakPlatform` 或 `-dev`。**
 
 ### 服務啟動
+
+**`systemctl restart beakplatform-dev-executor` 會殺掉當下所有正在跑的節點進程**
+（2026-08-30 實測）：unit 是 `KillMode=control-group`，而 node_runner 的
+`start_new_session=True` **只脫離 process group，不脫離 cgroup**。
+而全 repo **沒有 stale RUNNING 的回收機制**，被這樣殺掉的節點會**永遠卡在 RUNNING**、
+流程就此靜止且不報錯。所以改 handler 要重啟 executor 之前，先確認沒有流程在跑：
+
+```sql
+SELECT node_type, node_id, started_at FROM fw_node_execution_queue WHERE status='RUNNING';
+```
+
+事後發現卡住的只能手動改回 PENDING 或標 FAILED。
+要讓外部作業活過重啟只能另建 systemd unit 移出 executor 的 cgroup，
+脈絡見 `dev-notes/OS_EXECUTOR_SPEC.md` 第七節。
+
 - **正式管道是 systemd 服務**：`sudo systemctl restart beakplatform-dev.service`（重啟後 `systemctl is-active` 確認）
 - 開發服務以**非 debug 模式**跑，Python/模板變更**不會自動重載，必須重啟**
 - **重啟後所有登入 session 立即失效**（開發環境 `SESSION_TYPE='cachelib'` 存在進程記憶體）。
@@ -2741,10 +1864,28 @@ cd backend && flask run --host=127.0.0.1 --port=7000
 
 ---
 
-*最後更新: 2026-08-06（A：清除已失效/自我矛盾條目——失效密碼、e2e skip 成因、
-會腐爛的計數與測試基準、與全域 CLAUDE.md 重複的段落；
-B：樣板庫→`dev-notes/PAGE_TEMPLATE_SPEC.md`、menu widget→`dev-notes/PAGE_IR_SPEC.md` §3.7、
-API 陷阱→`dev-notes/codex_spec/portal.md`、iptables→全域 network_architecture.md，
-共用元件段收斂為指針，VERIFY 三條合併；
-C：取消工單格式、manifest 由「禁止自行 grep」放寬為「不足時可搜尋但要說明並回補」、
-PERM-02 取消事前詢問改為預設套用 D2）*
+*最後更新: 2026-08-30（二階段整理）*
+
+*一、修三處自相矛盾*：`docs/guides/` 兩篇指向已刪目錄→改指
+`docs/manual/05_security_ops/soc_planning/`；刪除「一律走到 End 節點收尾」原則
+（與並行分支「不要指向 End」對撞，Ethan 判定不符實），保留仍成立的駁回記錄行為；
+`docs/help/` 的「YAML」補上說明——那三個 `.md` 整份是 YAML，不是格式寫錯。
+
+*二、備忘章瘦身 2760→1861 行*（token 約 5.1 萬→3.3 萬）。
+搬出的內容一律在本檔留「症狀 → 去哪查」的指針，去處：
+
+| 移出的內容 | 現在在哪 |
+|---|---|
+| NoCode Builder / Portal（317 行） | `dev-notes/NOCODE_PORTAL_NOTES.md`（新建） |
+| ClickHouse 事件權威、三處置流程、protected targets、intake HMAC、EDL（210 行） | `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md` 第 13 節 |
+| `.20` 埠表、SSH 金鑰政策、風險定調（72 行） | `dev-notes/SEC_STACK_ARCHITECTURE.md` 第 11 節 |
+| 測試細節、`test_client` 三坑、Playwright（147 行） | `dev-notes/TESTING_NOTES.md`（新建） |
+| AiAgent 隔離設計與移植性（106 行） | `dev-notes/AI_NODE_SECURITY.md`（新建） |
+| 設計器節點分類、腳本產 graph、publish 陷阱（90 行） | `dev-notes/WORKFLOW_DESIGNER_NOTES.md`（新建） |
+| SqlExecutor 三條硬規則、節點執行與 End 三模式（77 行） | `SQL_EXECUTOR_SPEC.md`、`NODE_TEST_INVENTORY.md` 附錄 |
+
+**留下的判準是「不讀到會不會做錯，而做錯時症狀認不認得出來」**——
+症狀靜默的（流程變數寫錯地方、重啟 executor 卡死節點、撞開發庫跑測試）留在本檔；
+認得出症狀的搬走，靠指針命中。日後新增備忘沿用這條判準。
+
+*前次 2026-08-06：分流細節至 `dev-notes/`、取消工單格式、PERM-02 改為預設套用 D2*

@@ -653,3 +653,83 @@ UI 手動改），PF-104 未執行，留待用戶決定是否列入下一張工�
 - PF-105（Suricata xff 設定，同批設定檔內）
 - PF-106（平台案件頁串查 ClickHouse，承接「方便看 `.20` 資料的 UI」需求）
 - PF-104（本檔的建立工單，BBN atom #5188）
+
+---
+
+## 11. 從 CLAUDE.md 移入：`.20` 存取與風險定調（2026-08-30）
+
+> 原本在 `CLAUDE.md` 的「open_defense 開發備忘」小節（72 行）。
+> 平台側架構見 `OPEN_DEFENSE_ARCHITECTURE.md`。
+
+### open_defense 開發備忘
+
+**平台側架構的權威文件是 `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md`（2026-08-10 建立），
+動這個模組前整份讀完。** 平台外組件（`.20` 的 Vector / Suricata / CrowdSec /
+od-bridge / EDL enforcer / ClickHouse）的權威**已於 2026-08-15（PF-104）收進本 repo**：
+架構與運維看 `dev-notes/SEC_STACK_ARCHITECTURE.md`，設定檔副本在 `sec-vm-bootstrap/`
+（**已列入 `push_github.sh` 的 `EXCLUDE_DIRS`，不會外流**）。
+改 `.20` 的設定時**兩邊都要改**，repo 副本不是快照而是權威副本。
+舊路徑 `/opt/Ethan_Lab/ITHome-2026/` **已於 2026-08-15 刪除**
+（最終備份 `/opt/tmp/backup/ITHome-2026-final-20260815.tar.gz`），看到一律視為過時。
+
+**`.20` 幾乎每個埠對 LAN 都已收窄（PF-109 收 ingest 面、PF-107 收 SSH 與管理面），
+症狀是逾時不是 403**：
+
+| 埠 | 從 `.16` 打得到嗎 |
+|---|---|
+| `22` sshd | 可以（`.16`/`.10`/`.100` 在 nft 白名單內） |
+| `3000` Grafana、`5636` EveBox、`8686` Vector API、`9443` Portainer | 可以（同上三台） |
+| `8080` WAF | 可以（同上三台） |
+| `8123`/`9000` ClickHouse | 可以（走帳號層網路白名單，不是 nft chain） |
+| `8500` od-bridge（stats UI / `/edl`） | 可以（**只有 `.16`**；從 `.10` 的瀏覽器連不到是刻意的） |
+| `8688` vector 合成事件注入口 | **不行**，已綁 `127.0.0.1`，要先 ssh 進 `.20` 再打 |
+
+「連線逾時」跟「服務掛了」長得一模一樣，不知道這件事會查錯方向。
+要分辨是不是被擋，看 counter 有沒有跳：
+`sudo nft list chain inet secstack mgmt_guard_forward | grep counter`。
+規則在 `sec-vm-bootstrap/nftables-bootstrap.sh`，完整說明見
+`dev-notes/SEC_STACK_ARCHITECTURE.md`。
+
+**`.20` 的 sshd 只收公鑰，密碼認證已停用**（PF-107，2026-08-16）：
+
+`.16` 進 `.20` 一律 `ssh -i ~/.ssh/company-wsl ethan@192.168.0.20`，
+**任何形式的密碼登入都不會成功**，不要試、也不要為了「試出密碼」去猜。
+舊文件裡的 `P@ssw0rd` 在 2026-05-17 就已失效（用戶自行改過），
+現在連密碼這個認證方法本身都不再提供。
+
+排查時先用症狀分辨是哪一層擋的，兩者處理方式完全不同：
+
+| 症狀 | 哪一層 |
+|---|---|
+| 連線逾時 | nftables（來源不在 `.10`/`.16`/`.100` 白名單） |
+| `Permission denied (publickey)` | sshd（沒有可用金鑰） |
+
+**`ethan` 的 OS 密碼刻意不輪替**（Ethan 2026-08-16 定調）：密碼一定會流進
+對話記錄與交接文件，交談式 AI 遲早讓它再外洩一次；金鑰不會被寫進文件，
+IP 白名單也不會因為誰讀了某份文件而失效。所以那條路走的是「收 IP + 走金鑰」，
+而不是「換一個更長的密碼」。**未來 session 不要把「OS 密碼未輪替」重新當成待辦。**
+
+設定片段的權威副本在 `sec-vm-bootstrap/ssh/`（含部署與自動還原手法），
+**檔名的 `00-` 前綴是必要的**——`50-cloud-init.conf` 寫死
+`PasswordAuthentication yes`，排在它後面的檔案會被靜默蓋過去，`sshd -t` 還是會過。
+
+**「`.16` 內部主機的縱深不足」是已知且已接受的狀態（Ethan 2026-08-16 決定）**：
+
+PF-109 收窄網段、**PF-112（2026-08-16）已補上協定層認證**：`.20:8500` 的
+`POST /events` 現在要求 `Authorization: Bearer <BRIDGE_INGEST_TOKEN>`（token 只在
+`.20` 的 `.env`，fail-closed，`/health` 免驗），vector 的 `bridge_intake` sink 帶靜態
+header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做模板替換，
+且先 batch 再編碼，VRL 算不出最終 body 的簽章。od-bridge 其餘端點
+（`/stats`、`/forwards`、`/decisions`、`/edl` 等）**仍無認證，但都是 GET 讀取面**。
+
+風險敘述**到「能在 `.16` 上發封包的人可以拿到 token 後注入事件」為止**，
+不要再往上推導。理由是用戶明確定調的：
+
+- **內部主機本來就該有自己的防護**（OS 加固、帳號管理、EDR、網段隔離、備援），
+  那是基礎設施的職責，**不能也不該由本專案自行開發來補**
+- 本專案的主要目的不是把 `.16` 做成堡壘，這件事**已非主要目的**
+
+**寫給未來 session**：看到「縱深不足」四個字不要自動升級成高風險、不要主動擴大範圍、
+不要提議在平台內實作主機加固。要動 PF-112 就照工單做那一件事。
+真的發現新的獨立風險，先問用戶，不要自己接著往下修。
+
