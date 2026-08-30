@@ -61,7 +61,13 @@ UPDATE workflow_node_definitions SET is_active = true WHERE node_type = 'OsExecu
 企業授權統一存在 `workflow_node_org_grants`。安裝後預設只有系統企業獲得授權；
 客戶企業即使有流程設計權限，也看不到、存不了、發行不了未授權節點。
 
-建議用維運工具授權：
+**首選：用管理頁授權。** 以系統管理員登入後，左側選單「權限管理 → 節點授權」
+（網址 `/node-grants/`）是一張「受限節點 × 企業」矩陣，勾選即授權、取消勾選即撤銷
+（撤銷會要求二次確認），每列另有「全部授權」「全部撤銷」批次按鈕。
+已授權的格子會顯示授權者與授權時間。此頁只有系統管理員進得去，
+企業管理員無法替自己企業授權。
+
+沒有圖形介面時，也可以用維運工具授權：
 
 ```bash
 venv/bin/python scripts/node_grant.py list

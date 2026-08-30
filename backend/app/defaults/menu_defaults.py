@@ -372,6 +372,18 @@ CORE_MENUS = [
         'required_level': 0,
         'is_shared': False,
     },
+    {
+        'code': 'node_grants',
+        'title': '節點授權',
+        'title_i18n': {'en': 'Node Authorization'},
+        'parent_code': 'perm_mgmt',
+        'link_type': 'route',
+        'link_target': 'node_grants.index',
+        'display_order': 5,
+        'depth': 1,
+        'required_level': 0,
+        'is_shared': False,
+    },
 
     # -- 系統管理 (org_config_mgr) --
     {

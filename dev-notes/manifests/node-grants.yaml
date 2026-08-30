@@ -1,0 +1,30 @@
+# 流程節點企業授權管理
+page:
+  - /node-grants/
+description: SYSTEM_ADMIN 管理受限流程節點型別對各企業的授權矩陣
+
+files:
+  route:    backend/app/web/node_grants.py
+  api:      backend/app/api/node_grants.py
+  service:  modules/form_workflow/services/node_grant_service.py
+  model:
+    - modules/form_workflow/models/node_definition.py
+    - modules/form_workflow/models/node_org_grant.py
+    - backend/app/models/organization.py
+  template: backend/app/templates/pages/node_grants/index.html
+  js:       backend/app/static/js/node-grants.js
+  css:      backend/app/static/css/node-grants.css
+
+tables:
+  primary: workflow_node_org_grants
+  related:
+    - workflow_node_definitions
+    - organizations
+    - menu_items
+    - menu_permissions
+
+security:
+  decorator: "@system_admin_required"
+  note: |
+    平台層跨企業授權管理頁，不新增 permission code。
+    模組 model 使用 Model.query；Organization 透過 ResourceGateway.filter(check_permission=False) 列舉。

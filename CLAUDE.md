@@ -1846,8 +1846,9 @@ Playwright E2E 的三條硬規則與 mutation 驗證。
 `workflow_node_definitions.org_restricted = true` 的節點型別，必須在
 `workflow_node_org_grants` 有該企業的記錄才可用。**出廠只有系統企業
 （`organizations.is_system_org`）有 grant**，客戶企業連在設計器都看不到。
-授權走 `venv/bin/python scripts/node_grant.py grant <node_type> <org>`（維運工具，
-Web UI 是待辦 **PF-185**）。
+授權走 `/node-grants/`（選單「權限管理 → 節點授權」，`@system_admin_required`，
+PF-185 於 2026-08-31 完成）或維運工具
+`venv/bin/python scripts/node_grant.py grant <node_type> <org>`。
 
 **唯一判定實作是 `modules/form_workflow/services/node_grant_service.py`**，
 三個消費點都吃它，新增受限節點時三處都已自動涵蓋，不必各自加判斷：
@@ -1857,6 +1858,17 @@ Web UI 是待辦 **PF-185**）。
 | 設計器面板可見性 | `api/workflows.py::get_node_definitions()` |
 | graph 寫入（7 個入口，含 publish） | `api/workflows.py` ×4、`api/workflow_routes.py` ×2、`api/mappings.py::publish_mapping` |
 | handler 執行期（唯一防線） | `os_executor_handler` / `file_read_handler` |
+
+**寫入路徑（grant / revoke）也收斂在同一支服務**：`grant_node_to_org()` /
+`revoke_node_from_org()`，Web API 與 CLI 都呼叫它，錯誤用 `NodeGrantError.code`
+（`node_not_found` / `node_not_restricted` / `org_not_found`）辨識。
+**撤銷是軟刪除、再授權會新增一列**（partial unique index 只管
+`is_deleted = false`），所以那張表本身就是授權歷史。
+
+管理頁刻意**不新增 permission code**：`@system_admin_required` 已是身分硬界線，
+而註冊了沒建 code 會讓端點對所有身分 403（TENANT-02 雷二）。
+API 也**必須放平台層**（`backend/app/api/node_grants.py`）——SYSTEM_ADMIN 打
+`modules/form_workflow/api/` 恆 403，成因見上方 PERM-04。
 
 三件猜不到的：
 

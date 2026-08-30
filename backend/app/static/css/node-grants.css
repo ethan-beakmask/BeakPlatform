@@ -1,0 +1,268 @@
+.ng-card {
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    padding: 20px;
+}
+
+.ng-toolbar {
+    align-items: flex-start;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.ng-toolbar h2 {
+    color: var(--color-text);
+    font-size: 20px;
+    margin: 0 0 4px;
+}
+
+.ng-toolbar p {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    margin: 0;
+}
+
+.ng-alert {
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    margin-bottom: 12px;
+    padding: 10px 12px;
+}
+
+.ng-alert-success {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.ng-alert-error {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+.ng-empty,
+.ng-loading {
+    color: var(--color-text-secondary);
+    padding: 24px 0;
+    text-align: center;
+}
+
+.ng-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.ng-matrix {
+    border-collapse: collapse;
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    min-width: 760px;
+    width: 100%;
+}
+
+.ng-matrix th,
+.ng-matrix td {
+    border: 1px solid var(--color-border-light);
+    padding: 10px;
+    vertical-align: top;
+}
+
+.ng-matrix th {
+    background: var(--color-bg-header);
+    font-weight: 600;
+    text-align: left;
+}
+
+.ng-node-col {
+    min-width: 210px;
+}
+
+.ng-org-col {
+    min-width: 140px;
+}
+
+.ng-bulk-col {
+    min-width: 180px;
+}
+
+.ng-org-head {
+    display: grid;
+    gap: 3px;
+}
+
+.ng-org-head span {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    font-weight: 400;
+}
+
+.ng-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.ng-badge {
+    border-radius: var(--border-radius);
+    display: inline-flex;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    line-height: 1.4;
+    padding: 1px 6px;
+    white-space: nowrap;
+}
+
+.ng-badge-info {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+.ng-badge-muted {
+    background: var(--color-bg-light);
+    color: var(--color-text-muted);
+}
+
+.ng-badge-warning {
+    background: var(--color-warning-light);
+    color: var(--color-warning);
+}
+
+.ng-row-disabled {
+    background: var(--color-bg-light);
+}
+
+.ng-node-title {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ng-node-title strong {
+    font-size: var(--font-size-base);
+}
+
+.ng-node-type,
+.ng-node-note {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    margin-top: 4px;
+}
+
+.ng-grant-cell {
+    min-width: 120px;
+    text-align: center;
+}
+
+.ng-check {
+    align-items: center;
+    cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    position: relative;
+}
+
+.ng-check input[type="checkbox"] {
+    height: 22px;
+    margin: 0;
+    opacity: 0;
+    position: absolute;
+    width: 22px;
+}
+
+.ng-check-mark {
+    align-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    color: var(--color-success);
+    display: inline-flex;
+    font-weight: 700;
+    height: 22px;
+    justify-content: center;
+    line-height: 1;
+    width: 22px;
+}
+
+.ng-check input[type="checkbox"]:checked + .ng-check-mark {
+    background: var(--color-success-light);
+    border-color: var(--color-success);
+}
+
+.ng-check input[type="checkbox"]:disabled + .ng-check-mark {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.ng-grant-meta {
+    color: var(--color-text-muted);
+    display: grid;
+    font-size: var(--font-size-xs);
+    gap: 2px;
+    margin-top: 6px;
+}
+
+.ng-bulk-cell {
+    display: grid;
+    gap: 8px;
+}
+
+.ng-button {
+    border: 1px solid transparent;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+    padding: 7px 10px;
+    white-space: nowrap;
+}
+
+.ng-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.ng-button-primary {
+    background: var(--color-primary);
+    color: var(--color-bg-white);
+}
+
+.ng-button-primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+}
+
+.ng-button-secondary {
+    background: var(--color-bg-white);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+.ng-button-secondary:hover:not(:disabled) {
+    background: var(--color-bg-light);
+}
+
+.ng-button-danger {
+    background: var(--color-danger);
+    color: var(--color-bg-white);
+}
+
+.ng-button-danger:hover:not(:disabled) {
+    background: var(--color-danger-hover);
+}
+
+@media (max-width: 720px) {
+    .ng-card {
+        padding: 14px;
+    }
+
+    .ng-toolbar {
+        align-items: stretch;
+        display: grid;
+    }
+
+    .ng-button {
+        width: 100%;
+    }
+}

@@ -4,12 +4,45 @@
 所有設計器可見性、graph 寫入驗證與 handler 執行期授權判定都應呼叫本服務。
 """
 import logging
+from datetime import datetime
 from typing import Set
 
+from app import db
+from app.models import Organization
 from modules.form_workflow.models import WorkflowNodeDefinition, WorkflowNodeOrgGrant
 
 
 logger = logging.getLogger(__name__)
+
+
+class NodeGrantError(ValueError):
+    """授權操作的可辨識錯誤。code 是機器可讀字串，不要包翻譯函式。"""
+
+    def __init__(self, code: str, message: str):
+        self.code = code
+        super().__init__(message)
+
+
+def _restricted_node_or_error(node_type):
+    node_def = WorkflowNodeDefinition.query.filter(
+        WorkflowNodeDefinition.node_type == node_type,
+        WorkflowNodeDefinition.is_deleted.is_(False),
+    ).first()
+    if not node_def:
+        raise NodeGrantError('node_not_found', f'找不到節點型別：{node_type}')
+    if not node_def.org_restricted:
+        raise NodeGrantError('node_not_restricted', f'節點型別不是 restricted：{node_type}')
+    return node_def
+
+
+def _org_or_error(org_secure_code):
+    org = Organization.query.filter(
+        Organization.secure_code == org_secure_code,
+        Organization.is_deleted.is_(False),
+    ).first()
+    if not org:
+        raise NodeGrantError('org_not_found', f'找不到企業：{org_secure_code}')
+    return org
 
 
 def restricted_node_types() -> set:
@@ -121,3 +154,76 @@ def find_unauthorized_node_types(graph, org_secure_code: str) -> list:
     except Exception:
         logger.exception('unauthorized node type scan failed')
         return sorted(graph_types)
+
+
+def grant_node_to_org(
+    node_type,
+    org_secure_code,
+    granted_by_secure_code=None,
+    granted_by_name=None,
+    note=None,
+) -> bool:
+    """授權企業使用 restricted 節點型別。已授權時不重複建立，回傳 changed(bool)。"""
+    try:
+        _restricted_node_or_error(node_type)
+        _org_or_error(org_secure_code)
+
+        existing = WorkflowNodeOrgGrant.query.filter(
+            WorkflowNodeOrgGrant.node_type == node_type,
+            WorkflowNodeOrgGrant.org_secure_code == org_secure_code,
+            WorkflowNodeOrgGrant.is_deleted.is_(False),
+        ).first()
+        if existing:
+            return False
+
+        grant = WorkflowNodeOrgGrant(
+            node_type=node_type,
+            org_secure_code=org_secure_code,
+            granted_by_secure_code=granted_by_secure_code,
+            granted_by_name=granted_by_name,
+            note=note,
+        )
+        db.session.add(grant)
+        db.session.commit()
+        return True
+    except NodeGrantError:
+        raise
+    except Exception:
+        db.session.rollback()
+        logger.exception(
+            'grant node to org failed node_type=%s org_secure_code=%s',
+            node_type,
+            org_secure_code,
+        )
+        raise
+
+
+def revoke_node_from_org(node_type, org_secure_code) -> bool:
+    """軟刪除授權。沒有可撤銷的授權時回傳 False。"""
+    try:
+        _restricted_node_or_error(node_type)
+        _org_or_error(org_secure_code)
+
+        grant = WorkflowNodeOrgGrant.query.filter(
+            WorkflowNodeOrgGrant.node_type == node_type,
+            WorkflowNodeOrgGrant.org_secure_code == org_secure_code,
+            WorkflowNodeOrgGrant.is_deleted.is_(False),
+        ).first()
+        if not grant:
+            return False
+
+        grant.is_deleted = True
+        grant.deleted_at = datetime.utcnow()
+        grant.updated_at = datetime.utcnow()
+        db.session.commit()
+        return True
+    except NodeGrantError:
+        raise
+    except Exception:
+        db.session.rollback()
+        logger.exception(
+            'revoke node from org failed node_type=%s org_secure_code=%s',
+            node_type,
+            org_secure_code,
+        )
+        raise

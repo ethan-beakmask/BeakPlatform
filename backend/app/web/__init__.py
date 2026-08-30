@@ -137,6 +137,10 @@ def register_web_blueprints(app: Flask) -> None:
     # Access Center (權限管理中心)
     app.register_blueprint(access_center_bp, url_prefix='/access')
 
+    # Node Grants (流程節點企業授權)
+    from .node_grants import node_grants_bp
+    app.register_blueprint(node_grants_bp, url_prefix='/node-grants')
+
     # Security Center (本機安全)
     from .security_center import security_center_bp
     app.register_blueprint(security_center_bp, url_prefix='/security')

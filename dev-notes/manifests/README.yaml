@@ -37,6 +37,7 @@ url_index:
   /roles/:                       roles.yaml
   /permissions/:                 permissions.yaml
   /admin/account-roles/:         permissions.yaml
+  /node-grants/:                 node-grants.yaml
 
   # === 選單 ===
   /menu/:                        menu.yaml
@@ -114,6 +115,7 @@ manifest_files:
   - roles.yaml                   # 角色管理
   - menu.yaml                    # 選單管理
   - permissions.yaml             # 權限中央+帳號角色
+  - node-grants.yaml             # 流程節點企業授權
   - platform-help.yaml           # 平台說明與使用者手冊
   - admin-accounts.yaml          # 管理員與特殊帳號
   - hr-structure.yaml            # 人資架構

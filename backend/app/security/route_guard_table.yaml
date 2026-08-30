@@ -3683,7 +3683,7 @@ routes:
     guards:
     - admin_required
     has_internal_check: false
-    internal_identity_check: false
+    internal_identity_check: true
     max_audience: null
     methods:
     - PUT
@@ -11189,6 +11189,81 @@ routes:
     rules:
     - /public/portal/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/submissions/<record_sc>
     source: modules/nocode_builder/web/portal_public.py
+  node_grants.index:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /node-grants/
+    source: backend/app/web/node_grants.py
+  node_grants_api.bulk:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/node-grants/bulk
+    source: backend/app/api/node_grants.py
+  node_grants_api.grant:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/node-grants/grant
+    source: backend/app/api/node_grants.py
+  node_grants_api.matrix:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/node-grants/matrix
+    source: backend/app/api/node_grants.py
+  node_grants_api.revoke:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/node-grants/revoke
+    source: backend/app/api/node_grants.py
   numbering.create_rule:
     answer_source: none
     guard_args: {}
@@ -13706,7 +13781,7 @@ routes:
     guard_args: {}
     guards: []
     has_internal_check: false
-    internal_identity_check: false
+    internal_identity_check: true
     max_audience: null
     methods:
     - GET
@@ -13749,7 +13824,7 @@ routes:
     guard_args: {}
     guards: []
     has_internal_check: false
-    internal_identity_check: false
+    internal_identity_check: true
     max_audience: null
     methods:
     - POST

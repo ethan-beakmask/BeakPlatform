@@ -102,6 +102,10 @@ def register_blueprints(app: Flask) -> None:
     from .access_center import access_center_api_bp
     app.register_blueprint(access_center_api_bp)
 
+    # Node Grants API (流程節點企業授權)
+    from .node_grants import node_grants_api_bp
+    app.register_blueprint(node_grants_api_bp)  # already has url_prefix
+
     # Security center (本機安全)
     from .security_center import security_center_bp
     app.register_blueprint(security_center_bp)

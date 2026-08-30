@@ -5,7 +5,6 @@
 import argparse
 import os
 import sys
-from datetime import datetime
 from pathlib import Path
 
 
@@ -131,53 +130,34 @@ def _list_grants():
 
 
 def _grant(node_type, org_identifier, granted_by_name=None, note=None):
-    from app import db
-    from modules.form_workflow.models import WorkflowNodeOrgGrant
+    from modules.form_workflow.services.node_grant_service import grant_node_to_org
 
-    _restricted_node_or_error(node_type)
     org = _org_or_error(org_identifier)
 
-    existing = WorkflowNodeOrgGrant.query.filter(
-        WorkflowNodeOrgGrant.node_type == node_type,
-        WorkflowNodeOrgGrant.org_secure_code == org.secure_code,
-        WorkflowNodeOrgGrant.is_deleted.is_(False),
-    ).first()
-    if existing:
-        print(f'已授權：{node_type} -> {org.code} ({org.secure_code})')
-        return 0
-
-    grant = WorkflowNodeOrgGrant(
-        node_type=node_type,
-        org_secure_code=org.secure_code,
+    changed = grant_node_to_org(
+        node_type,
+        org.secure_code,
         granted_by_name=granted_by_name,
         note=note,
     )
-    db.session.add(grant)
-    db.session.commit()
+    if not changed:
+        print(f'已授權：{node_type} -> {org.code} ({org.secure_code})')
+        return 0
+
     print(f'授權完成：{node_type} -> {org.code} ({org.secure_code})')
     return 0
 
 
 def _revoke(node_type, org_identifier):
-    from app import db
-    from modules.form_workflow.models import WorkflowNodeOrgGrant
+    from modules.form_workflow.services.node_grant_service import revoke_node_from_org
 
-    _restricted_node_or_error(node_type)
     org = _org_or_error(org_identifier)
 
-    grant = WorkflowNodeOrgGrant.query.filter(
-        WorkflowNodeOrgGrant.node_type == node_type,
-        WorkflowNodeOrgGrant.org_secure_code == org.secure_code,
-        WorkflowNodeOrgGrant.is_deleted.is_(False),
-    ).first()
-    if not grant:
+    changed = revoke_node_from_org(node_type, org.secure_code)
+    if not changed:
         print(f'沒有可撤銷的授權：{node_type} -> {org.code} ({org.secure_code})')
         return 0
 
-    grant.is_deleted = True
-    grant.deleted_at = datetime.utcnow()
-    grant.updated_at = datetime.utcnow()
-    db.session.commit()
     print(f'已撤銷：{node_type} -> {org.code} ({org.secure_code})')
     return 0
 
