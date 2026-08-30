@@ -36,6 +36,8 @@ class BranchHandler(BaseNodeHandler):
             "log_message": "無匹配規則"
         }
     }
+
+    fallback.action 非 route 時，一律不推進任何出邊。
     """
 
     # 支援的比較運算符
@@ -277,7 +279,8 @@ class BranchHandler(BaseNodeHandler):
             'data': {
                 'matched_rules': [],
                 'fallback_used': True,
-                'use_default_path': True,
+                'skip_advance': True,
+                'skip_advance_reason': 'branch_no_match',
                 'evaluations': evaluations
             }
         }

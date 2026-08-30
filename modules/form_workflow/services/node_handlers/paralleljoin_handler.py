@@ -21,6 +21,14 @@ POLL_INTERVAL_SECONDS = 10
 class ParallelJoinHandler(BaseNodeHandler):
     """並行匯合節點處理器"""
 
+    def validate(self) -> bool:
+        """驗證節點配置"""
+        join_mode = self.get_config_value('join_mode', 'ALL')
+        join_mode = str(join_mode or 'ALL').upper()
+        if join_mode not in ('ALL', 'ANY'):
+            raise ValueError('join_mode 必須是 ALL 或 ANY')
+        return True
+
     def handle(self) -> Dict[str, Any]:
         """
         處理並行匯合節點
@@ -38,8 +46,23 @@ class ParallelJoinHandler(BaseNodeHandler):
             from app import db
             db.session.commit()
 
+        release_once = self.get_config_value('release_once', True)
+        if release_once and self._already_released():
+            self.log_info('本節點已放行過，release_once=True，不再推進')
+            return {
+                'status': 'success',
+                'message': '並行匯合已放行過（只放行一次）',
+                'data': {
+                    'skip_advance': True,
+                    'skip_advance_reason': 'release_once',
+                }
+            }
+
+        join_mode = str(self.get_config_value('join_mode', 'ALL') or 'ALL').upper()
+
         self.log_info('並行匯合節點檢查', {
-            'node_id': self.queue_item.node_id
+            'node_id': self.queue_item.node_id,
+            'join_mode': join_mode
         })
 
         # 取得所有入線的 source node IDs
@@ -53,23 +76,25 @@ class ParallelJoinHandler(BaseNodeHandler):
 
         # 檢查到齊狀態
         arrived_count, total_count = self._check_arrivals(incoming_source_ids)
-        all_arrived = (arrived_count >= total_count)
+        should_release = self._should_release(join_mode, arrived_count, total_count)
 
         self.log_info(f'入線到達狀態: {arrived_count}/{total_count}', {
             'arrived': arrived_count,
             'total': total_count,
-            'all_arrived': all_arrived
+            'join_mode': join_mode,
+            'should_release': should_release
         })
 
         # 到齊：走正常出線
-        if all_arrived:
-            self.log_info('所有入線已到齊，繼續執行')
+        if should_release:
+            self.log_info(f'並行匯合達成放行條件（{join_mode} 模式），繼續執行')
             return {
                 'status': 'success',
-                'message': f'並行匯合完成（{arrived_count}/{total_count} 到齊）',
+                'message': f'並行匯合完成（{join_mode} 模式，{arrived_count}/{total_count} 到達）',
                 'data': {
                     'arrived_count': arrived_count,
                     'total_count': total_count,
+                    'join_mode': join_mode,
                     'timed_out': False
                 }
             }
@@ -86,14 +111,15 @@ class ParallelJoinHandler(BaseNodeHandler):
             if now >= deadline:
                 # 逾時：最終確認一次（避免時間差）
                 arrived_count, total_count = self._check_arrivals(incoming_source_ids)
-                if arrived_count >= total_count:
-                    self.log_info('逾時檢查時發現已到齊，走正常出線')
+                if self._should_release(join_mode, arrived_count, total_count):
+                    self.log_info(f'逾時檢查時發現已達成放行條件（{join_mode} 模式），走正常出線')
                     return {
                         'status': 'success',
-                        'message': f'並行匯合完成（{arrived_count}/{total_count} 到齊）',
+                        'message': f'並行匯合完成（{join_mode} 模式，{arrived_count}/{total_count} 到達）',
                         'data': {
                             'arrived_count': arrived_count,
                             'total_count': total_count,
+                            'join_mode': join_mode,
                             'timed_out': False
                         }
                     }
@@ -120,6 +146,7 @@ class ParallelJoinHandler(BaseNodeHandler):
                     'data': {
                         'arrived_count': arrived_count,
                         'total_count': total_count,
+                        'join_mode': join_mode,
                         'timed_out': True,
                         'selected_edge': timeout_edge_id
                     }
@@ -149,9 +176,27 @@ class ParallelJoinHandler(BaseNodeHandler):
             'data': {
                 'arrived_count': arrived_count,
                 'total_count': total_count,
+                'join_mode': join_mode,
                 'next_check': next_check.isoformat()
             }
         }
+
+    def _should_release(self, join_mode: str, arrived_count: int, total_count: int) -> bool:
+        """依匯合模式判斷是否放行"""
+        if join_mode == 'ANY':
+            return arrived_count >= 1
+        return arrived_count >= total_count
+
+    def _already_released(self) -> bool:
+        """同一流程實例內，此節點是否已有其他 SUCCESS queue item"""
+        from ...models import FwNodeExecutionQueue
+
+        return FwNodeExecutionQueue.query.filter(
+            FwNodeExecutionQueue.workflow_instance_secure_code == self.queue_item.workflow_instance_secure_code,
+            FwNodeExecutionQueue.node_id == self.queue_item.node_id,
+            FwNodeExecutionQueue.status == 'SUCCESS',
+            FwNodeExecutionQueue.id != self.queue_item.id
+        ).first() is not None
 
     def _get_incoming_source_node_ids(self) -> List[str]:
         """

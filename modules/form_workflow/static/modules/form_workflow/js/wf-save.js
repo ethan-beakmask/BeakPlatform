@@ -150,11 +150,46 @@
                         changed = true;
                     }
                     if (fallbackAction) {
-                        config.fallback = {
-                            action: fallbackAction.value,
-                            message: fallbackMsg ? fallbackMsg.value : '',
-                            target: fallbackTarget ? fallbackTarget.value : ''
-                        };
+                        const fallback = { action: fallbackAction.value };
+                        if (fallbackAction.value === 'log' && fallbackMsg) {
+                            fallback.log_message = fallbackMsg.value;
+                        }
+                        if (fallbackAction.value === 'route' && fallbackTarget && fallbackTarget.value) {
+                            fallback.target_edge = fallbackTarget.value;
+                        }
+                        config.fallback = fallback;
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'ParallelJoin': {
+                    const enableTimeoutEl = document.getElementById('pjEnableTimeout');
+                    const timeoutMinutesEl = document.getElementById('pjTimeoutMinutes');
+                    const timeoutEdgeEl = document.getElementById('pjTimeoutEdgeId');
+                    const joinModeEl = document.querySelector('input[name="pjJoinMode"]:checked');
+                    const releaseOnceEl = document.getElementById('pjReleaseOnce');
+                    if (enableTimeoutEl) {
+                        const enableTimeout = enableTimeoutEl.checked;
+                        config.enable_timeout = enableTimeout;
+                        if (enableTimeout) {
+                            if (timeoutMinutesEl && timeoutMinutesEl.value) {
+                                config.timeout_minutes = parseInt(timeoutMinutesEl.value, 10) || 0;
+                            }
+                            if (timeoutEdgeEl && timeoutEdgeEl.value) {
+                                config.timeout_edge_id = timeoutEdgeEl.value;
+                            }
+                        } else {
+                            config.timeout_minutes = 0;
+                            config.timeout_edge_id = '';
+                        }
+                        changed = true;
+                    }
+                    if (joinModeEl) {
+                        config.join_mode = joinModeEl.value;
+                        changed = true;
+                    }
+                    if (releaseOnceEl) {
+                        config.release_once = releaseOnceEl.checked;
                         changed = true;
                     }
                     break;
@@ -259,6 +294,98 @@
                     }
                     break;
                 }
+                case 'NavbarBroadcast': {
+                    const modeEl = document.getElementById('nbMode');
+                    const broadcastCodeEl = document.getElementById('nbBroadcastCode');
+                    const messageEl = document.getElementById('nbMessage');
+                    const textColorEl = document.getElementById('nbTextColor');
+                    const bgColorEl = document.getElementById('nbBgColor');
+                    const displaySecondsEl = document.getElementById('nbDisplaySeconds');
+                    const durationMinutesEl = document.getElementById('nbDurationMinutes');
+                    if (modeEl && modeEl.value) {
+                        config.mode = modeEl.value;
+                        changed = true;
+                    }
+                    if (broadcastCodeEl && broadcastCodeEl.value.trim()) {
+                        config.broadcast_code = broadcastCodeEl.value.trim();
+                        changed = true;
+                    }
+                    // 與 applyNavbarBroadcastConfig 一致：只有 start 模式才有訊息與外觀欄位。
+                    // stop 模式照樣寫入會在 config 留下用不到的殘值。
+                    const nbMode = modeEl ? modeEl.value : (config.mode || 'start');
+                    if (nbMode === 'start') {
+                        if (messageEl && messageEl.value.trim()) {
+                            config.message = messageEl.value.trim();
+                            changed = true;
+                        }
+                        if (textColorEl && textColorEl.value) {
+                            config.text_color = textColorEl.value;
+                            changed = true;
+                        }
+                        if (bgColorEl && bgColorEl.value) {
+                            config.bg_color = bgColorEl.value;
+                            changed = true;
+                        }
+                        if (displaySecondsEl && displaySecondsEl.value) {
+                            config.display_seconds = parseInt(displaySecondsEl.value, 10) || 5;
+                            changed = true;
+                        }
+                        if (durationMinutesEl && durationMinutesEl.value) {
+                            config.duration_minutes = parseInt(durationMinutesEl.value, 10) || 0;
+                            changed = true;
+                        }
+                    }
+                    break;
+                }
+                case 'AlertBroadcast': {
+                    const broadcastCodeEl = document.getElementById('abBroadcastCode');
+                    const titleEl = document.getElementById('abTitle');
+                    const messageEl = document.getElementById('abMessage');
+                    const targetTypeEl = document.getElementById('abTargetType');
+                    const requireAckEl = document.getElementById('abRequireAck');
+                    const includeChildrenEl = document.getElementById('abIncludeChildren');
+                    const rolesEl = document.getElementById('abTargetRoles');
+                    const deptsEl = document.getElementById('abTargetDepartments');
+                    if (broadcastCodeEl && broadcastCodeEl.value.trim()) {
+                        config.broadcast_code = broadcastCodeEl.value.trim();
+                        changed = true;
+                    }
+                    if (titleEl && titleEl.value.trim()) {
+                        config.title = titleEl.value.trim();
+                        changed = true;
+                    }
+                    if (messageEl && messageEl.value.trim()) {
+                        config.message = messageEl.value.trim();
+                        changed = true;
+                    }
+                    if (targetTypeEl && targetTypeEl.value) {
+                        config.target_type = targetTypeEl.value;
+                        changed = true;
+                    }
+                    if (requireAckEl) {
+                        config.require_ack = requireAckEl.checked;
+                        changed = true;
+                    }
+                    // 與 applyAlertBroadcastConfig 一致：只有 specific 模式才寫這三個欄位。
+                    // 另外 abTargetRoles / abTargetDepartments 的 options 是非同步 fetch 載入的，
+                    // 尚未載完時 selectedOptions 為空，無條件寫入會把既有設定清成空陣列。
+                    const abTargetType = targetTypeEl ? targetTypeEl.value : (config.target_type || 'all');
+                    if (abTargetType === 'specific') {
+                        if (includeChildrenEl) {
+                            config.include_children = includeChildrenEl.checked;
+                            changed = true;
+                        }
+                        if (rolesEl && rolesEl.options.length > 0) {
+                            config.target_roles = Array.from(rolesEl.selectedOptions).map(o => o.value);
+                            changed = true;
+                        }
+                        if (deptsEl && deptsEl.options.length > 0) {
+                            config.target_departments = Array.from(deptsEl.selectedOptions).map(o => o.value);
+                            changed = true;
+                        }
+                    }
+                    break;
+                }
                 case 'ApiKeyAction': {
                     const akaAction = document.getElementById('akaAction');
                     const akaSource = document.getElementById('akaKeySource');
@@ -292,7 +419,6 @@
                     }
                     break;
                 }
-                // Converge: 即時寫入 config，不需要在此處理
             }
 
             if (changed) {

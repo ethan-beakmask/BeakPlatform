@@ -112,7 +112,8 @@ class TestBranchHandler:
 
         assert result['status'] == 'success'
         assert result['data']['fallback_used'] == True
-        assert result['data']['use_default_path'] == True
+        assert result['data']['skip_advance'] == True
+        assert result['data']['skip_advance_reason'] == 'branch_no_match'
 
 
 class TestOpSetHandler:

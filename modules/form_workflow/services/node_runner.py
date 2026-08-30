@@ -209,6 +209,7 @@ def advance_to_next_nodes(queue_item):
     推進到下一個節點
 
     解析路徑選擇：
+    - skip_advance (bool): 節點成功但不推進任何出邊
     - selected_edges (list): Branch 節點產出，逐條 edge 推進
     - selected_edge (str): ParallelJoin 逾時等單一 edge 選擇
     - 皆無: fallback 取所有出邊
@@ -229,6 +230,11 @@ def advance_to_next_nodes(queue_item):
 
     result = queue_item.result or {}
     result_data = result.get('data', {})
+    if result_data.get('skip_advance'):
+        logger.info(f'節點要求不推進任何出邊: node_id={queue_item.node_id}, '
+                    f'reason={result_data.get("skip_advance_reason", "")}')
+        return
+
     selected_edges = result_data.get('selected_edges', [])
     selected_edge = result_data.get('selected_edge', '')
 

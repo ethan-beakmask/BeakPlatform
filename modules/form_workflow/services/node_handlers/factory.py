@@ -92,25 +92,12 @@ def register_builtin_handlers():
 
     節點類型名稱與 API 定義 (_get_node_definitions) 一致，不使用別名。
     Factory 已支援大小寫不敏感查找，無需重複註冊。
-
-    標準節點類型（共 19 種）：
-    - Start, End, Abandon: 流程控制
-    - FormAdapter: 簽核
-    - Delay: 延遲
-    - Branch, Converge: 分支/匯合
-    - ParallelFork, ParallelJoin: 並行分支/匯合
-    - Telegram, EmailAdapter: 企業級通知
-    - SysTelegram, EmailRelay: 系統級通知
-    - NavbarBroadcast, AlertBroadcast: 企業級廣播
-    - SubFlow: 子流程
-    - OpSet, OpFieldRead, OpFieldWrite: 變數操作
     """
     from .start_handler import StartHandler
     from .end_handler import EndHandler
     from .delay_handler import DelayHandler
     from .formadapter_handler import FormAdapterHandler
     from .branch_handler import BranchHandler
-    from .converge_handler import ConvergeHandler
     from .parallelfork_handler import ParallelForkHandler
     from .paralleljoin_handler import ParallelJoinHandler
     from .opset_handler import OpSetHandler
@@ -141,12 +128,13 @@ def register_builtin_handlers():
     # 時間控制
     NodeHandlerFactory.register('Delay', DelayHandler)
 
-    # 分支/匯合
+    # 分支
     NodeHandlerFactory.register('Branch', BranchHandler)
-    NodeHandlerFactory.register('Converge', ConvergeHandler)
 
     # 並行分支/匯合
     NodeHandlerFactory.register('ParallelFork', ParallelForkHandler)
+    # ParallelFork 已於 2026-08-30 移出設計器工具列（無實際功能，見 CLAUDE.md），
+    # 但既有發行快照仍含此節點，註冊必須保留，否則舊流程執行時會拋 ValueError
     NodeHandlerFactory.register('ParallelJoin', ParallelJoinHandler)
 
     # 企業級通知

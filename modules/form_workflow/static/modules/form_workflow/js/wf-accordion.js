@@ -4,7 +4,7 @@
  *   wf-accordion-subflow.js     -- 子流程節點
  *   wf-accordion-messaging.js   -- Telegram, SysTelegram, EmailRelay, EmailAdapter
  *   wf-accordion-broadcast.js   -- NavbarBroadcast, AlertBroadcast
- *   wf-accordion-flow.js        -- Converge, Delay, End, Abandon, Branch, ParallelFork, ParallelJoin
+ *   wf-accordion-flow.js        -- Delay, End, Abandon, Branch, ParallelJoin
  *   wf-accordion-operations.js  -- OpSet, OpFieldWrite, FormAdapter, SubSystemProvision
  */
 
@@ -64,41 +64,14 @@
                 setTimeout(() => reloadAllVars(), 100);
             }
 
-            // 節點類型顯示名稱（對應 DB workflow_node_definitions）
-            const typeNames = {
-                'Start': __('開始節點'),
-                'End': __('結束節點'),
-                'Switch': __('條件分支'),
-                'Subflow': __('子流程'),
-                'Converge': __('匯聚節點'),
-                'Delay': __('暫停'),
-                'OpSet': __('設定變數'),
-                'OpFieldRead': __('讀取欄位'),
-                'OpFieldWrite': __('寫入欄位'),
-                'FormAdapter': __('簽核'),
-                'EmailAdapter': __('郵件通知'),
-                'SqlExecutor': __('SQL 執行器'),
-                'Abandon': __('放棄流程'),
-                'Telegram': __('Telegram 通知'),
-                'SysTelegram': __('系統 Telegram'),
-                'EmailRelay': __('系統郵件'),
-                'NavbarBroadcast': __('跑馬燈廣播'),
-                'AlertBroadcast': __('緊急廣播'),
-                'Branch': __('條件路由'),
-                'ParallelFork': __('並行分支'),
-                'ParallelJoin': __('並行匯合'),
-                'SubSystemProvision': __('子系統配置'),
-                'ApiKeyAction': __('API Key 處置')
-            };
-
             const description = node.data('description') || '';
 
             // 有額外設定的節點類型（這些節點有自己的「套用」按鈕）
             const nodesWithSettings = [
                 'Subflow', 'Delay', 'OpFieldWrite', 'OpSet', 'Telegram',
                 'SysTelegram', 'EmailRelay', 'EmailAdapter', 'Branch',
-                'FormAdapter', 'End', 'Converge', 'SqlExecutor',
-                'ParallelFork', 'ParallelJoin',
+                'FormAdapter', 'End', 'SqlExecutor',
+                'ParallelJoin',
                 'NavbarBroadcast', 'AlertBroadcast',
                 'Abandon', 'SubSystemProvision', 'ApiKeyAction',
                 'DecisionWriter'
@@ -130,7 +103,6 @@
 
             // ---- 分派到子模組 render 函式 ----
             if (type === 'Subflow')              info += renderSubflowPanel(node, nodeId);
-            if (type === 'Converge')             info += renderConvergePanel(node, nodeId);
             if (type === 'Delay')                info += renderDelayPanel(node, nodeId);
             if (type === 'SqlExecutor')          info += renderSqlExecutorPanel(node, nodeId);
             if (type === 'OpSet')                info += renderOpSetPanel(node, nodeId);
@@ -149,7 +121,6 @@
             if (type === 'ApiKeyAction')         info += renderApiKeyActionPanel(node, nodeId);
             if (type === 'AiAgent')              info += renderAiAgentPanel(node, nodeId);
             if (type === 'DecisionWriter')       info += renderDecisionWriterPanel(node, nodeId);
-            if (type === 'ParallelFork')         info += renderParallelForkPanel(node, nodeId);
             if (type === 'ParallelJoin')         info += renderParallelJoinPanel(node, nodeId);
 
             // ---- 寫入 DOM ----

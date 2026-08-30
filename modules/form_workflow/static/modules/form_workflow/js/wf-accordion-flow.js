@@ -1,64 +1,8 @@
 /**
  * wf-accordion-flow.js -- 流程控制類節點面板
  * 從 wf-accordion.js 拆分
- * 包含: Converge, Delay, End, Abandon, Branch, ParallelFork, ParallelJoin, applyDelayConfig
+ * 包含: Delay, End, Abandon, Branch, ParallelJoin, applyDelayConfig
  */
-
-        // ==================== Converge 面板 ====================
-
-        function renderConvergePanel(node, nodeId) {
-            const currentConfig = node.data('config') || {};
-            const currentMode = currentConfig.mode || 'ALL';
-            const isAnyMode = currentMode === 'ANY';
-
-            return `
-                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
-                    <h4 style="margin: 0 0 10px 0; color: #667eea;">
-                        <i class="fas fa-compress-arrows-alt"></i> 匯聚節點說明
-                    </h4>
-                    <div style="font-size: 13px; line-height: 1.6; color: #666;">
-                        <p style="margin: 10px 0;">等待多條前驅路徑完成後匯聚，可選擇等待全部或任一完成。</p>
-                    </div>
-                </div>
-
-                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
-                    <h4 style="margin: 0 0 15px 0; color: #667eea;">
-                        <i class="fas fa-cog"></i> 匯聚模式
-                    </h4>
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <label style="display: flex; align-items: center; padding: 12px; border: 2px solid ${!isAnyMode ? '#9C27B0' : '#e0e0e0'}; border-radius: 8px; cursor: pointer; background: ${!isAnyMode ? '#F3E5F5' : 'white'};">
-                            <input type="radio" name="convergeMode" value="ALL" ${!isAnyMode ? 'checked' : ''}
-                                   onchange="updateConvergeMode('${nodeId}', 'ALL')"
-                                   style="margin-right: 12px; transform: scale(1.2);">
-                            <div>
-                                <div style="font-weight: bold; color: #7B1FA2;">
-                                    <i class="fas fa-users"></i> 等待全部 (ALL)
-                                </div>
-                                <div style="font-size: 12px; color: #666; margin-top: 4px;">
-                                    等待所有前驅節點完成後才繼續下一步
-                                </div>
-                            </div>
-                        </label>
-                        <label style="display: flex; align-items: center; padding: 12px; border: 2px solid ${isAnyMode ? '#FF9800' : '#e0e0e0'}; border-radius: 8px; cursor: pointer; background: ${isAnyMode ? '#FFF3E0' : 'white'};">
-                            <input type="radio" name="convergeMode" value="ANY" ${isAnyMode ? 'checked' : ''}
-                                   onchange="updateConvergeMode('${nodeId}', 'ANY')"
-                                   style="margin-right: 12px; transform: scale(1.2);">
-                            <div>
-                                <div style="font-weight: bold; color: #F57C00;">
-                                    <i class="fas fa-user"></i> 任一完成 (ANY)
-                                </div>
-                                <div style="font-size: 12px; color: #666; margin-top: 4px;">
-                                    任一前驅節點完成就繼續下一步
-                                </div>
-                            </div>
-                        </label>
-                    </div>
-                    <p style="font-size: 11px; color: #999; margin-top: 15px;">
-                        <i class="fas fa-info-circle"></i> 節點顏色會根據模式自動變更：紫色=等待全部，橘色=任一完成
-                    </p>
-                </div>
-            `;
-        }
 
         // ==================== Delay 面板 ====================
 
@@ -200,6 +144,7 @@
             const currentConfig = node.data('config') || {};
             const rules = currentConfig.rules || [];
             const fallback = currentConfig.fallback || { action: 'log', log_message: '無匹配規則' };
+            const fbAction = (fallback.action === 'route') ? 'route' : 'log';
 
             return `
                 <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e0e0e0;">
@@ -214,20 +159,34 @@
                     </div>
                 </div>
 
+                <div style="background: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e0e0e0;">
+                    <h4 style="margin: 0 0 8px 0; color: #16A34A; font-size: 12px;">
+                        <i class="fas fa-info-circle"></i> ${__('規則怎麼比對')}
+                    </h4>
+                    <div style="font-size: 12px; line-height: 1.7; color: #666;">
+                        <div>${__('・每條規則各自獨立評估，不是由上而下命中即停。')}</div>
+                        <div>${__('　凡是條件成立的規則，它的出線全部都會執行（多條同時成立就同時並行）。')}</div>
+                        <div>${__('・單條規則內的多個條件：標「AND」的與下一條併為同一組，')}</div>
+                        <div>${__('　標「OR」的在該處斷開分組。組內全部成立才算該組成立，任一組成立即整條規則成立。')}</div>
+                        <div>${__('　例：A(AND) B(OR) C → (A 且 B) 或 C')}</div>
+                        <div>${__('・所有規則都不成立時，才走下面的「無匹配時 (Fallback)」。')}</div>
+                        <div>${__('　選「不走任何出線」則此分支到此為止，不會繼續往下。')}</div>
+                    </div>
+                </div>
+
                 <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e0e0e0;">
                     <div style="font-weight: bold; color: #DC2626; font-size: 11px; margin-bottom: 6px;">
                         <i class="fas fa-exclamation-triangle"></i> 無匹配時 (Fallback)
                     </div>
                     <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
                         <select id="branchFallbackAction" onchange="toggleBranchFallbackOptions()" style="padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
-                            <option value="log" ${fallback.action === 'log' ? 'selected' : ''}>只記錄 Log</option>
-                            <option value="route" ${fallback.action === 'route' ? 'selected' : ''}>路由至節點</option>
-                            <option value="default" ${fallback.action === 'default' ? 'selected' : ''}>走第一條出線</option>
+                            <option value="log" ${fbAction === 'log' ? 'selected' : ''}>${__('不走任何出線（終止此分支）')}</option>
+                            <option value="route" ${fbAction === 'route' ? 'selected' : ''}>路由至節點</option>
                         </select>
                         <input type="text" id="branchFallbackMessage" placeholder="Log 訊息"
                                value="${fallback.log_message || __('無匹配規則')}"
-                               style="padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; ${fallback.action === 'route' ? 'display:none;' : ''}">
-                        <select id="branchFallbackTarget" style="padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; grid-column: span 2; ${fallback.action !== 'route' ? 'display:none;' : ''}">
+                               style="padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; ${fbAction === 'route' ? 'display:none;' : ''}">
+                        <select id="branchFallbackTarget" style="padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; grid-column: span 2; ${fbAction !== 'route' ? 'display:none;' : ''}">
                             <option value="">選擇目標出線...</option>
                         </select>
                     </div>
@@ -292,58 +251,16 @@
             `;
         }
 
-        // ==================== ParallelFork 面板 ====================
-
-        function renderParallelForkPanel(node, nodeId) {
-            // 取得出線資訊
-            const outEdges = cy.edges().filter(e => e.source().id() === nodeId);
-            const outCount = outEdges.length;
-
-            let outList = '';
-            if (outCount > 0) {
-                outEdges.forEach(e => {
-                    const targetNode = e.target();
-                    const targetLabel = targetNode.data('label') || targetNode.id();
-                    const targetType = targetNode.data('type') || '?';
-                    outList += `<li>${targetLabel} <span style="color:#999;">(${targetType})</span></li>`;
-                });
-            } else {
-                outList = '<li style="color:#dc3545;">尚無出線，請連接目標節點</li>';
-            }
-
-            return `
-                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
-                    <h4 style="margin: 0 0 10px 0; color: #2196F3;">
-                        <i class="fas fa-code-branch"></i> 並行分支說明
-                    </h4>
-                    <div style="font-size: 13px; line-height: 1.6; color: #666;">
-                        <p style="margin: 10px 0;">流程到達此節點後，會同時往所有出線推進，啟動並行執行。</p>
-                        <p style="margin: 10px 0;">通常搭配<strong>並行匯合 (ParallelJoin)</strong> 節點收攏分支。</p>
-                    </div>
-                </div>
-
-                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
-                    <h4 style="margin: 0 0 15px 0; color: #2196F3;">
-                        <i class="fas fa-arrow-right"></i> 出線 (${outCount} 條)
-                    </h4>
-                    <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.8; color: #333;">
-                        ${outList}
-                    </ul>
-                </div>
-
-                <button class="btn-primary" onclick="applyNodeBasicInfo('${nodeId}')" style="width: 100%;">
-                    <i class="fas fa-check"></i> 套用
-                </button>
-            `;
-        }
-
         // ==================== ParallelJoin 面板 ====================
 
         function renderParallelJoinPanel(node, nodeId) {
             const currentConfig = node.data('config') || {};
             const enableTimeout = currentConfig.enable_timeout || false;
-            const timeoutMinutes = currentConfig.timeout_minutes || 5;
+            const timeoutMinutes = currentConfig.timeout_minutes || 1;
             const timeoutEdgeId = currentConfig.timeout_edge_id || '';
+            const joinMode = (currentConfig.join_mode || 'ALL').toUpperCase();
+            const isAnyMode = joinMode === 'ANY';
+            const releaseOnceChecked = currentConfig.release_once !== false ? 'checked' : '';
 
             // 取得入線資訊
             const inEdges = cy.edges().filter(e => e.target().id() === nodeId);
@@ -378,8 +295,10 @@
                         <i class="fas fa-compress-arrows-alt"></i> 並行匯合說明
                     </h4>
                     <div style="font-size: 13px; line-height: 1.6; color: #666;">
-                        <p style="margin: 10px 0;">等待所有入線的來源節點完成後才往下推進。</p>
-                        <p style="margin: 10px 0;">可設定逾時機制：超過指定時間未到齊，走逾時專用出線。</p>
+                        <p style="margin: 10px 0;">${__('等待入線的來源節點完成後才往下推進。')}</p>
+                        <p style="margin: 10px 0;">${__('全部到齊 (ALL)：所有入線都完成才放行，適合「兩件事都做完才能繼續」。')}</p>
+                        <p style="margin: 10px 0;">${__('任一到達 (ANY)：第一條入線完成就放行，其餘分支不受影響、繼續各自執行。')}</p>
+                        <p style="margin: 10px 0;">${__('可另外設定逾時：超過指定時間仍未達成放行條件，改走逾時專用出線。')}</p>
                     </div>
                 </div>
 
@@ -391,8 +310,48 @@
                         ${inList}
                     </ul>
                     <p style="font-size: 11px; color: #999; margin-top: 10px;">
-                        <i class="fas fa-info-circle"></i> 流程執行時，需等待以上所有來源節點都完成才繼續
+                        <i class="fas fa-info-circle"></i> ${__('流程執行時，依下方「匯合模式」決定要等以上全部來源節點，還是任一個。')}
                     </p>
+                </div>
+
+                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                    <h4 style="margin: 0 0 15px 0; color: #9C27B0;">
+                        <i class="fas fa-cog"></i> ${__('匯合模式')}
+                    </h4>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <label style="display: flex; align-items: center; padding: 12px; border: 2px solid ${!isAnyMode ? '#9C27B0' : '#e0e0e0'}; border-radius: 8px; cursor: pointer; background: ${!isAnyMode ? '#F3E5F5' : 'white'};">
+                            <input type="radio" id="pjJoinModeAll" name="pjJoinMode" value="ALL" ${!isAnyMode ? 'checked' : ''}
+                                   style="margin-right: 12px; transform: scale(1.2);">
+                            <div>
+                                <div style="font-weight: bold; color: #7B1FA2;">
+                                    <i class="fas fa-users"></i> ${__('全部到齊 (ALL)')}
+                                </div>
+                                <div style="font-size: 12px; color: #666; margin-top: 4px;">
+                                    ${__('所有入線的來源節點都完成才繼續')}
+                                </div>
+                            </div>
+                        </label>
+                        <label style="display: flex; align-items: center; padding: 12px; border: 2px solid ${isAnyMode ? '#FF9800' : '#e0e0e0'}; border-radius: 8px; cursor: pointer; background: ${isAnyMode ? '#FFF3E0' : 'white'};">
+                            <input type="radio" id="pjJoinModeAny" name="pjJoinMode" value="ANY" ${isAnyMode ? 'checked' : ''}
+                                   style="margin-right: 12px; transform: scale(1.2);">
+                            <div>
+                                <div style="font-weight: bold; color: #F57C00;">
+                                    <i class="fas fa-user"></i> ${__('任一到達 (ANY)')}
+                                </div>
+                                <div style="font-size: 12px; color: #666; margin-top: 4px;">
+                                    ${__('第一條入線完成就繼續，不等其他分支')}
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; margin-top: 15px;">
+                        <input type="checkbox" id="pjReleaseOnce" ${releaseOnceChecked}
+                               style="margin-top: 2px; transform: scale(1.2);">
+                        <span style="font-size: 12px; line-height: 1.6; color: #666;">
+                            <strong>${__('只放行一次')}</strong>${__('：本節點在同一流程中只會往下推進一次。取消勾選的話，')}<br>
+                            ${__('每條入線到達都會再推進一次下游（下游被執行多次時的處理由你自己的流程設計負責）。')}
+                        </span>
+                    </label>
                 </div>
 
                 <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">

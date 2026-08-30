@@ -357,26 +357,6 @@
                             'border-color': '#5D4037'
                         }
                     },
-                    // 匯聚節點 - ALL 模式（預設，紫色）
-                    {
-                        selector: 'node[type="Converge"], node[type="CONVERGE"]',
-                        style: {
-                            'background-color': '#9C27B0',
-                            'shape': 'round-rectangle',
-                            'border-width': 3,
-                            'border-color': '#7B1FA2'
-                        }
-                    },
-                    // 匯聚節點 - ANY 模式（橘色）
-                    {
-                        selector: 'node[type="Converge"][?anyMode], node[type="CONVERGE"][?anyMode]',
-                        style: {
-                            'background-color': '#FF9800',
-                            'shape': 'round-rectangle',
-                            'border-width': 3,
-                            'border-color': '#F57C00'
-                        }
-                    },
                     // Delay 暫停節點（青色）
                     {
                         selector: 'node[type="Delay"], node[type="DELAY"]',

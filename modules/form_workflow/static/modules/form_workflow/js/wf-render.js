@@ -679,9 +679,6 @@
                 'approve': 'FormAdapter',       // DB: APPROVE → 對應 FormAdapter
                 'delay': 'Delay',
                 'branch': 'Branch',
-                'condition': 'Condition',
-                'switch': 'Switch',
-                'converge': 'Converge',
                 'parallelfork': 'ParallelFork',
                 'parallel_fork': 'ParallelFork',
                 'paralleljoin': 'ParallelJoin',

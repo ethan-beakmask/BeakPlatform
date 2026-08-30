@@ -615,36 +615,3 @@
             });
         }
         window.applySSPConfig = applySSPConfig;
-
-        // 更新匯聚節點的模式
-        function updateConvergeMode(nodeId, mode) {
-            const node = cy.getElementById(nodeId);
-            if (!node) {
-                updateStatus(__('找不到節點'), 'warning');
-                return;
-            }
-
-            // 更新節點配置
-            const currentConfig = node.data('config') || {};
-            currentConfig.mode = mode;
-            node.data('config', currentConfig);
-
-            // 更新節點的 anyMode 標記（用於樣式切換）
-            if (mode === 'ANY') {
-                node.data('anyMode', true);
-            } else {
-                node.removeData('anyMode');
-            }
-
-            // 重新渲染面板以更新選中狀態
-            showNodeSettings(node);
-
-            const modeText = mode === 'ANY' ? __('任一完成') : __('等待全部');
-            updateStatus(`✅ 匯聚模式已設為：${modeText}`);
-
-            console.log('匯聚節點配置已更新:', {
-                nodeId: nodeId,
-                mode: mode
-            });
-        }
-

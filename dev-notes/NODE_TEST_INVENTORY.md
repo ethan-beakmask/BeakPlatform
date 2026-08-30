@@ -20,6 +20,8 @@
 | **端到端** | 真的經由 `beakplatform-dev-executor` spawn `node_runner` 執行過，且留有落地憑證 |
 | **單元** | 有 pytest 覆蓋，但沒有經由 executor 實跑 |
 | **未驗證** | 以上皆無。**「平常在用、看起來正常」不算驗證** |
+| **已退役** | 定義已從工具列移除，但 handler 與 factory 註冊保留，既有流程／快照仍可執行 |
+| **已刪除** | 定義、handler、前端面板全數移除，且模板與發行快照中皆無使用 |
 
 **憑證缺席就是未驗證。** 「我測過了」若沒有落地輸出，事後與「我以為我測過了」無法區分
 （見專案 CLAUDE.md 的 VERIFY-01）。憑證一律放 `/opt/tmp/verify/<日期>-<主題>.log`。
@@ -27,7 +29,7 @@
 ## 盤點表
 
 節點型別取自 `workflow_node_definitions` 與 `node_handlers/factory.py` 的註冊清單，
-2026-08-30 現況共 27 種（其中 2 種 `is_active=false`）。
+2026-08-30 現況共 27 種（其中 4 種已刪除或退役）。
 
 | 編號 | node_type | 顯示名 | 分類 | 狀態 | 憑證 / 測試檔 |
 |---|---|---|---|---|---|
@@ -36,13 +38,13 @@
 | NT-03 | `ApiKeyAction` | API Key 處置 | 安全 | 未驗證 | — |
 | NT-04 | `ApiKeyIssue` | API Key 核發 | 安全 | 未驗證 | — |
 | NT-05 | `Branch` | 分支 | 控制 | 未驗證 | 行為已文件化（CLAUDE.md「流程 graph 的引擎行為」），但無落地憑證 |
-| NT-06 | `Condition` | 條件判斷 | 控制 | 停用中 | `is_active=false`，未註冊 handler |
-| NT-07 | `Converge` | 匯合 | 控制 | 未驗證 | — |
+| NT-06 | `Condition` | 條件判斷 | 控制 | 已刪除 | 2026-08-30 刪除定義（migration 119），無 handler 檔 |
+| NT-07 | `Converge` | 匯合 | 控制 | 已刪除 | 2026-08-30 刪除，功能與 NT-10 ParallelJoin 重疊且回 pending 後永不被喚醒 |
 | NT-08 | `Delay` | 暫停 | 控制 | 端到端 | `20260830-end-cancel-mode.log`（30 秒等待、WAITING→PENDING 喚醒） |
-| NT-09 | `ParallelFork` | 並行分支 | 控制 | 端到端 | `20260830-end-cancel-mode.log`（兩支同時推進） |
-| NT-10 | `ParallelJoin` | 並行匯合 | 控制 | 未驗證 | 逾時出線（`timeout_edge_id`）尤其未驗 |
+| NT-09 | `ParallelFork` | 並行分支 | 控制 | 已退役 | 2026-08-30 移出工具列（無實際功能：不放此節點也會走所有出邊）。handler 與 factory 註冊保留，既有快照照跑 |
+| NT-10 | `ParallelJoin` | 並行匯合 | 控制 | 端到端 | `20260830-paralleljoin-any-e2e.log`（ALL／ANY／`release_once` 三組，含 mutation 對照）。**逾時出線 `timeout_edge_id` 仍未驗** |
 | NT-11 | `SubFlow` | 子流程 | 控制 | 端到端 | `20260830-end-cancel-mode.log`；**修復後才首次成功**，見 §缺陷 |
-| NT-12 | `Switch` | 條件分支 | 控制 | 停用中 | `is_active=false`，未註冊 handler |
+| NT-12 | `Switch` | 條件分支 | 控制 | 已刪除 | 2026-08-30 刪除，行為與 ParallelFork 一字不差 |
 | NT-13 | `AiAgent` | AI 分析 | 整合 | 端到端 | 2026-08-20 經 executor 實跑（發現 `AI_NODE_CLI_PATH` 問題）；單元測試 `test_ai_agent_node.py` |
 | NT-14 | `EmailRelay` | Email 轉發 | 整合 | 未驗證 | `require_system_admin=true` |
 | NT-15 | `SqlExecutor` | SQL 執行 | 整合 | 端到端 | `20260830-end-cancel-mode.log`；單元測試 `test_sqlexecutor_node.py`（47 項） |
@@ -59,11 +61,29 @@
 | NT-26 | `NavbarBroadcast` | 跑馬燈廣播 | 通知 | 未驗證 | — |
 | NT-27 | `Telegram` | Telegram 通知 | 通知 | 未驗證 | — |
 
-進度：端到端 7 / 單元 0 / 部分 1 / 未驗證 17 / 停用 2。
+進度：端到端 7 / 單元 0 / 部分 1 / 未驗證 15 / 已退役 1 / 已刪除 3。
 
 **剩餘項目的待辦是 BBN `PF-172`**（`note_search("PF-172")` 取全文，含依風險排序的優先順序）。
-`NT-06 Condition` 與 `NT-12 Switch` 是 `is_active=false` 且未註冊 handler，
-**要先決定修好還是刪掉**，不要直接排進測試。
+`NT-06 Condition`、`NT-07 Converge`、`NT-12 Switch` 已刪除；`NT-09 ParallelFork`
+已退役但保留 handler 與 factory 註冊供既有快照執行。
+
+## 2026-08-30 第二批：節點整併（憑證 `/opt/tmp/verify/20260830-paralleljoin-any-e2e.log`）
+
+**NT-10 ParallelJoin 的成功判準**（第 4 項要求，供後續覆核）：
+
+| 設定 | 預期狀態轉移 | 預期 queue 筆數 |
+|---|---|---|
+| `join_mode=ALL` | 未到齊回 `waiting` + `scheduled_at` +10s，到齊才 SUCCESS 並推進 | PJ 1 筆、下游 1 筆 |
+| `join_mode=ANY` | 第一條入線 SUCCESS 即放行 | PJ 2 筆、下游依 `release_once` 而定 |
+| `release_once=true`（預設） | 第 2 筆 PJ 回 `skip_advance=true` / `skip_advance_reason=release_once` | 下游 **1 筆** |
+| `release_once=false` | 第 2 筆 PJ 照常放行 | 下游 **2 筆** |
+
+測試 graph 刻意不接 `End`：接了流程會 COMPLETED，executor 隨即取消未完成節點，
+就觀察不到第二條入線抵達時的行為。這是測 ANY 模式時的必要條件。
+
+**本批同時完成的整併**：Converge / Switch / Condition 刪除、ParallelFork 退役、
+Branch fallback 修正（非 route 一律不推進出邊）、新增 `skip_advance` 旗標。
+瀏覽器實測憑證 `/opt/tmp/verify/20260830-node-cleanup-after.log`。
 
 ## 本次完成（2026-08-30，憑證 `/opt/tmp/verify/20260830-end-cancel-mode.log`）
 

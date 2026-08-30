@@ -17,6 +17,8 @@
             if (!node) return;
 
             const enableTimeout = document.getElementById('pjEnableTimeout')?.checked || false;
+            const joinMode = document.querySelector('input[name="pjJoinMode"]:checked')?.value || 'ALL';
+            const releaseOnce = document.getElementById('pjReleaseOnce')?.checked !== false;
             let timeoutMinutes = 0;
             let timeoutEdgeId = '';
 
@@ -47,7 +49,9 @@
                 ...currentConfig,
                 enable_timeout: enableTimeout,
                 timeout_minutes: enableTimeout ? timeoutMinutes : 0,
-                timeout_edge_id: enableTimeout ? timeoutEdgeId : ''
+                timeout_edge_id: enableTimeout ? timeoutEdgeId : '',
+                join_mode: joinMode,
+                release_once: releaseOnce
             };
 
             node.data('config', updatedConfig);

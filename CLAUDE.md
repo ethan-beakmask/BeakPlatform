@@ -2533,7 +2533,7 @@ OD 的「人工確認」、`WF2610385E` 的「退回」歷史記錄都是這樣�
 | Branch 條件的 `logic` | 是 **group 切分符**：遇 `OR` 或掃到最後一條就收尾。group 內 AND、group 間 OR | 想寫「A 且 B」要兩條都標 AND |
 | Branch 比較失敗 | 欄位缺值／型別不符一律回 False（`branch_handler.py:204-208`） | 可以刻意用來做 fail-safe，讓缺值案件落到 fallback |
 | Branch 條件裡的變數前綴 | `_resolve_value()` 的快路徑原本只認 `f. / fi. / v. / form.`，`wi. / n. / t.` 全部落到流程變數查詢而**必定回空字串**（2026-08-13 修，改為委派 `replace_variables`） | 這類錯誤不報錯：條件恆 False、案件全部走 fallback，行為看起來還「正常」。用非 `f./v.` 前綴寫條件時務必做一次 mutation 驗證 |
-| Branch 的 fallback `action='log'` | **不回 selected_edges → `advance_to_next_nodes` 取所有出邊**（`node_runner.py:237-243`） | 想「什麼都不做」不能靠 log fallback，會全部走一遍 |
+| Branch 的 fallback（**2026-08-30 起**） | `action='route'` 走指定那條；**其餘一律不推進任何出邊**（回 `skip_advance`） | 改版前 `log` 與 `default` 都會走**所有**出邊（選項寫「走第一條出線」但實際走全部）。舊 graph 若還存著 `action='default'`，會自動落到「不推進」那條路 |
 | 無出邊的節點 | 安全終止該分支，不報錯也不結束流程（`workflow_engine.py:360`） | 並行分支要靜靜收尾就指向這種節點，**不要指向 End** |
 | End 的 `finish_mode` | `detach`（預設，直接結束）／`cancel`（結束並取消所有未完成節點）／`strict`（等全部完成） | 有並行分支一律用 `cancel`，否則計時分支殘留 |
 | 並行分支各自走 End | End 是**流程級**結束，任一分支走到就整個流程 COMPLETED | 另一條的簽核任務會被 executor 視為流程已結束 |
@@ -2542,10 +2542,49 @@ OD 的「人工確認」、`WF2610385E` 的「退回」歷史記錄都是這樣�
 | `DecisionWriter.decided_via` 自動推斷 | 看 `last_completed_node_type`，並行分支下不可靠 | 一律在節點 config 明確標 `human` / `auto` |
 | `DecisionWriter.target_value` 替換後為空 | 節點回 error、流程卡住 | 自動封鎖前必須先用 Branch 擋掉 `actor_ip` 為空的案件 |
 
-Delay 與 ParallelFork 都可用：executor 會撿 `status=WAITING` 且 `node_type in (Delay, End, ParallelJoin)`
-且 `scheduled_at` 到期的節點（`workflow_executor.py:117-133`）。
-`ParallelJoin` 另有 `enable_timeout` / `timeout_minutes` / `timeout_edge_id`，
-但它要靠 Fork 的另一條分支推進才會開始計時。
+executor 會撿 `status=WAITING` 且 `node_type in (Delay, End, ParallelJoin)`
+且 `scheduled_at` 到期的節點（`workflow_executor.py` 內**兩處**都有這份清單）。
+**不在這份清單內的節點一旦進 WAITING 就再也不會被喚醒**——已刪除的 `Converge`
+就是這樣死的（它回 `pending`，`node_runner` 設成 WAITING 卻不設 `scheduled_at`，
+而第二條入線到達時 `advance_workflow` 看到已有 WAITING 就跳過不重建）。
+**新增會回 `waiting`／`pending` 的節點型別時，這兩處清單一定要一起加。**
+
+### 節點「成功但不推進」的唯一機制：`skip_advance`（2026-08-30 起）
+
+回 `selected_edges: []` 沒有用——空 list 是 falsy，會落到「取所有出邊」。
+要讓節點執行成功但不走任何出線，在 result 的 `data` 帶：
+
+```python
+'data': {'skip_advance': True, 'skip_advance_reason': '<原因>'}
+```
+
+`node_runner.advance_to_next_nodes()` 在解析 `selected_edges` 之前就攔下來。
+目前兩個使用者：Branch 的 fallback（非 route）、ParallelJoin 的 `release_once`。
+
+### 流程控制節點的現況（2026-08-30 整併後）
+
+工具列只剩 **ParallelJoin / Delay / SubFlow / Branch** 四個。
+
+| node_type | 狀態 | 要知道的事 |
+|---|---|---|
+| `Converge` / `Switch` / `Condition` | **已刪除** | 定義、handler、前端面板全數移除（migration 119）。模板與發行快照中皆無使用 |
+| `ParallelFork` | **已退役** | 定義軟刪除、面板移除，但 **handler 與 factory 註冊刻意保留**——3 個模板與 16 筆發行快照仍含此節點，拿掉註冊會讓它們執行時拋 `ValueError`。**它本來就沒有任何功能**：`advance_to_next_nodes` 沒有 `selected_edges` 時本來就取所有出邊，任何節點接兩條出線都會並行 |
+
+`ParallelJoin` 的 config：
+
+| key | 預設 | 語意 |
+|---|---|---|
+| `join_mode` | `'ALL'` | `ALL`＝所有入線到齊才放行；`ANY`＝任一入線完成即放行 |
+| `release_once` | `True` | 同一流程實例內只放行一次。**關掉的話每條入線到達都會再推進一次下游**，下游會被執行多次 |
+| `enable_timeout` | `False` | 開啟後 `timeout_minutes`（預設 1）內未達成放行條件就走 `timeout_edge_id` |
+
+**沒有 `join_mode` 欄位＝`ALL`**，既有 graph 行為完全不變。
+`enable_timeout` 刻意維持預設關閉：開著而沒設 `timeout_edge_id` 時 handler 直接回 error。
+**ANY 模式不會取消、也不干涉其他分支**（元件只負責元件自己），
+其餘分支繼續各自執行到自己的終點。
+
+**測 ANY 模式時流程尾端不要接 `End`**：End 是流程級結束，
+executor 隨後會把未完成節點一律 cancel，就觀察不到第二條入線抵達時的行為。
 
 ### 節點執行與 End 三模式（2026-08-30 實測，盤點表 `dev-notes/NODE_TEST_INVENTORY.md`）
 

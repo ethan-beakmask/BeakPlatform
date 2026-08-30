@@ -308,7 +308,7 @@
             const fallback = {
                 action: fallbackAction
             };
-            if (fallbackAction === 'log' || fallbackAction === 'default') {
+            if (fallbackAction === 'log') {
                 fallback.log_message = fallbackMessage;
             }
             if (fallbackAction === 'route' && fallbackTarget) {
