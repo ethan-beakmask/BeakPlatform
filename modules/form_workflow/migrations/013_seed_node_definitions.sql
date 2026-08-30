@@ -444,7 +444,10 @@ INSERT INTO workflow_node_definitions (
     require_system_admin, is_deleted, created_at, updated_at
 ) VALUES (
     encode(gen_random_bytes(16), 'hex'),
-    'Abandon', TRUE, 'SYSTEM', '系統', '中止', '強制中止流程',
+    'Abandon', TRUE, 'SYSTEM', '系統', '中止',
+    '強制中止流程並取消所有未完成節點，等同 End 節點的「取消」模式。'
+    '子流程走此節點時，父流程會收到異常終止的內部標記'
+    '（目前僅寫入紀錄，流程變數尚未支援讀取此標記）。',
     '/bp/static/modules/form_workflow/icons/workflow/abandon.svg',
     'modules.form_workflow.services.node_handlers.abandon_handler.AbandonHandler',
     '{}',

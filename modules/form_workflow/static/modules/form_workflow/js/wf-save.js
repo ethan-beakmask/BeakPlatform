@@ -218,6 +218,14 @@
                     }
                     break;
                 }
+                case 'FileWrite': {
+                    const fwCfg = collectFileWriteConfig();
+                    if (fwCfg) {
+                        Object.assign(config, fwCfg);
+                        changed = true;
+                    }
+                    break;
+                }
                 case 'Telegram': {
                     const cfgId = document.getElementById('telegramConfigId');
                     const channel = document.getElementById('telegramChannelName');

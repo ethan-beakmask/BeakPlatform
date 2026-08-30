@@ -14,9 +14,27 @@ from .base import BaseNodeHandler
 
 logger = logging.getLogger(__name__)
 
+# wait_seconds 上限保護（秒）。node_config 是自由 JSON，可被 API 直接 PUT 改，
+# 沒有後端驗證時 time.sleep() 會無上限阻塞該節點的 OS 子行程。
+# 300 秒與設計器面板 input[max] 一致（wf-accordion-flow.js::renderAbandonPanel）。
+MAX_WAIT_SECONDS = 300
+
 
 class AbandonHandler(BaseNodeHandler):
     """中止節點處理器（固定 cancel 模式的簡化 End）"""
+
+    def _clamp_wait_seconds(self, raw) -> float:
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            return 1
+        if value < 0:
+            return 0
+        if value > MAX_WAIT_SECONDS:
+            self.log_warning(
+                f'wait_seconds={value} 超過上限 {MAX_WAIT_SECONDS}，已夾限')
+            return MAX_WAIT_SECONDS
+        return value
 
     def handle(self) -> Dict[str, Any]:
         self.report_running()
@@ -35,7 +53,7 @@ class AbandonHandler(BaseNodeHandler):
 
     def _handle_main_flow_abandon(self) -> Dict[str, Any]:
         """主流程中止"""
-        wait_seconds = self.node_config.get('wait_seconds', 1)
+        wait_seconds = self._clamp_wait_seconds(self.node_config.get('wait_seconds', 1))
 
         self.log_info('中止節點啟動', {
             'workflow_instance': self.queue_item.workflow_instance_secure_code,
@@ -70,7 +88,7 @@ class AbandonHandler(BaseNodeHandler):
             'depth': workflow_instance.workflow_depth
         })
 
-        wait_seconds = self.node_config.get('wait_seconds', 1)
+        wait_seconds = self._clamp_wait_seconds(self.node_config.get('wait_seconds', 1))
         if wait_seconds > 0:
             time.sleep(wait_seconds)
 

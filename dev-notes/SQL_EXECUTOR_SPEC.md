@@ -224,3 +224,96 @@ beluga 1200 / lion 5。用它驗跨企業隔離最直接。
 **刻意不做 Web UI** —— 登錄一筆等同授權。
 
 **改 handler 後 executor 要重啟才認得**（`beakplatform-dev-executor` 是獨立進程）。
+
+---
+
+## 已驗證的隔離邊界（2026-08-31 紅隊測試）
+
+Session B 對「企業只能讀自己的資料庫、讀不到別企業與其他系統的庫」做了紅隊測試。
+**結論：無 P1（無可跨企業/跨系統讀資料的路徑），租戶隔離結構性成立。**
+完整輸出 `/opt/tmp/verify/20260831-sqlexecutor-isolation.log`，
+自動化測試 `backend/tests/test_sqlexecutor_isolation.py`（34 條，與 `test_sqlexecutor_node.py` 互補）。
+
+### 為什麼 SqlExecutor 碰不到別的資料庫（結構性，非靠自律）
+
+四件疊在一起，缺任何一件都不會有跨庫路徑：
+
+1. handler 寫死 `db.engine`（= 主庫），沒有第二個 engine
+2. PostgreSQL **不支援 cross-database references**（`dbname.schema.table` 直接被拒）
+3. 主庫沒有 `dblink` / `postgres_fdw` / `file_fdw`，且 `beakplatform` **不是 superuser、
+   不能 `CREATE EXTENSION`**、`pg_read_file` / `COPY FROM PROGRAM` 皆 permission denied、
+   不屬任何 `pg_*` 特權角色（含 `pg_read_all_data`）
+4. 企業獨立庫 `org_<id>` 對 `beakplatform` **直接拒絕 CONNECT**
+
+### org 邊界的傳遞鏈（config / graph / 快照都改不動它）
+
+`SP 的 p_org_secure_code ← queue_item.org_secure_code ← workflow_instance.org_secure_code
+← form_instance.org_secure_code ← get_current_org()（登入 session，非 request body）`
+
+- workflow template 與 subflow 都以「表單/父流程的 org」過濾，跨企業引用 → `ValueError`
+- **org 不在 graph 裡**：即使 graph 或發行快照被別家企業共用，SP 收到的仍是提交者
+  自己企業的 org，回自己企業的資料。這是設計最強的一點
+- handler 所有檢查（`_load_procedure` / `_verify_function` / `_build_params`）都在**執行期**跑，
+  快照路徑與 live graph 走同一個 `handle()`，沒有「可信快照」旁路
+
+### 重測指令（數字與清單會腐爛，跑指令不要信結論數字）
+
+```bash
+PS="PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev"
+
+# 1) DB role 邊界：全部應為 f（非特權），且無 dblink/fdw
+$PS -c "SELECT rolsuper,rolbypassrls,rolcreatedb,rolcreaterole FROM pg_roles WHERE rolname='beakplatform';"
+$PS -c "SELECT extname FROM pg_extension;"   # 不應出現 dblink / postgres_fdw / file_fdw
+$PS -c "SELECT pg_read_file('/etc/passwd',0,10);"          # 應 permission denied
+$PS -c "SELECT * FROM postgres.public.x LIMIT 1;"          # 應 cross-database references not implemented
+
+# 2) fw_sp 每支函式必須以 p_org_secure_code 為唯一租戶邊界（逐支看 WHERE）
+$PS -c "SELECT p.proname,p.prosecdef FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='fw_sp';"
+$PS -t -c "SELECT pg_get_functiondef(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='fw_sp' ORDER BY p.proname;"
+# prosecdef 必須全 f（非 SECURITY DEFINER）；每支 WHERE 必須有 org_secure_code = p_org_secure_code
+
+# 3) 白名單每筆第一參數必須是 p_org_secure_code，function_name 必須存在
+$PS -c "SELECT code,org_secure_code,parameters->0->>'name' first_param,
+  EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='fw_sp' AND p.proname=s.function_name) fn_exists
+  FROM fw_sql_procedures s WHERE is_deleted=false;"
+
+# 4) 自動化測試（互補於 test_sqlexecutor_node.py）
+bash scripts/run_tests.sh tests/test_sqlexecutor_isolation.py -q
+
+# 5) 叢集內其他庫的實際暴露面（P2 用；不要只看 CONNECT，要看有幾張表真的讀得到）
+for d in $(PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -t -A \
+    -c "SELECT datname FROM pg_database WHERE datistemplate=false AND datname<>'beakplatform_dev';"); do
+  echo -n "$d -> "
+  PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d "$d" -t -A -c \
+    "SELECT count(*) FROM information_schema.tables t
+     WHERE t.table_schema NOT IN ('pg_catalog','information_schema')
+       AND has_table_privilege(quote_ident(t.table_schema)||'.'||quote_ident(t.table_name),'SELECT');" 2>&1 | tr '\n' ' '
+  echo
+done
+```
+
+### 待決策（非 SqlExecutor 本身，但直接關乎「讀到別的系統的庫」）
+
+- **P2**：`beakplatform` role 對同一個 PostgreSQL 叢集上的其他資料庫有 CONNECT 權限
+  （PUBLIC 預設）。SqlExecutor **用不到**（跨庫不支援，見上方四點），但這是主機層的
+  資料暴露面，而且**不是空的**——2026-08-31 主 Claude 用 `has_table_privilege` 實測：
+
+  | 庫 | 以 `beakplatform` 身分實際可 SELECT 的表數 |
+  |---|---|
+  | `beakplatform`（**退役的正式環境庫**） | **97**（活體讀出 `users` 4 筆） |
+  | `vulnmgmt` | **19**（`assets` / `vuln_definitions` / `audit_log` 等） |
+  | `test_temp` | 12 |
+  | `forgejo` / `google_gmail_db` / `beak_broodnest` / `xff_intel` | 0（有 CONNECT，無可讀表） |
+  | `org_106`（企業獨立庫） | **拒絕 CONNECT** —— 這條做對了 |
+
+  **Session B 原本回報「那些庫 public schema 0 張可讀表」是錯的**，只對後面那四個成立。
+  任何能控制 DSN 的程式碼路徑（例如 `modules/form_workflow/services/sql_sync/` 那一整組
+  `psycopg2.connect()`）都到得了這些表。建議叢集層
+  `REVOKE CONNECT ON DATABASE <db> FROM PUBLIC`，並優先處理退役的 `beakplatform` 庫
+  （PF-39 重裝前它不該是可讀狀態）。**全主機決策，不在此改。**
+  重測：見上方重測指令第 5 條。
+- **P3-1**：`beakplatform` 是 `fw_sp` schema owner（ACL=`UC`），可 `CREATE FUNCTION`。
+  SqlExecutor 觸發不了，但平台他處若有 SQL 寫入漏洞可種後門 SP。
+  縱深建議：`fw_sp` 函式改由獨立 role 擁有，app role 只給 `USAGE`+`EXECUTE`。
+- **P3-2**：`_execute` 未固定 `search_path`。目前安全（函式呼叫與 SP 內表引用皆 schema 限定），
+  屬 belt-and-suspenders，可在唯讀交易內加 `SET LOCAL search_path = pg_catalog`。

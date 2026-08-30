@@ -1713,6 +1713,7 @@ formadapter_handler.py:148     # 驗證 target_edges 合法性（空 target_edge
 | 無出邊的節點 | 安全終止該分支，不報錯也不結束流程（`workflow_engine.py:360`） | 並行分支要靜靜收尾就指向這種節點，**不要指向 End** |
 | End 的 `finish_mode` | `detach`（預設，直接結束）／`cancel`（結束並取消所有未完成節點）／`strict`（等全部完成） | 有並行分支一律用 `cancel`，否則計時分支殘留 |
 | 並行分支各自走 End | End 是**流程級**結束，任一分支走到就整個流程 COMPLETED | 另一條的簽核任務會被 executor 視為流程已結束 |
+| **cancel 模式結束（Abandon 與 `End(cancel)`）** | `node_runner.py:174` 只有 `strict and has_failures` 才給 FAILED，**cancel 一律 COMPLETED**，`complete_workflow()` 再把它對應成 `form_instance.status='APPROVED'` | **被中止的申請單在表單中心顯示「已核准」**，而且 `complete_workflow()` 接著無條件 `enqueue_sync_safe()`（不看狀態、一律 upsert），**錯誤終態會流進企業獨立資料庫且無回收路徑**。平台另有一條把中止表達正確的路徑：`fc_admin.py` 的管理員強制結束傳 `status='CANCELLED'`。完整分析與三個修法見 `dev-notes/ABANDON_SPEC.md` |
 | `AlertBroadcast.broadcast_code` | **不做變數替換**（只有 title/message 有），同 code 覆蓋前一則並清掉已讀記錄 | 它是「最新一則橫幅」不是每案通知，別拿來當逐案稽核 |
 | `fw_workflow_templates.timeout_minutes` | 只被寫入 `timeout_at`（`workflow_engine.py:124-139`），**全專案沒有任何地方讀它** | 填了不會有任何效果，逾時要用流程內 Delay 節點 |
 | `DecisionWriter.decided_via` 自動推斷 | 看 `last_completed_node_type`，並行分支下不可靠 | 一律在節點 config 明確標 `human` / `auto` |
@@ -1891,7 +1892,20 @@ API 也**必須放平台層**（`backend/app/api/node_grants.py`）——SYSTEM_
   `dev-notes/OS_EXECUTOR_SPEC.md` 第二節（該節 2026-08-31 更正過一次
   ——「SYSTEM_ADMIN 沒有 form_workflow 合約」是錯的，實際卡在模組 ACL）
 
-**這兩個節點的失敗不會讓 queue 變成 FAILED**：四分法
+**FileWrite（NT-30）2026-08-31 上線，第三個受限節點**，同樣三道全關
+（`FILE_WRITE_NODE_ENABLED`、企業授權、`is_active=false`），
+base_dir 用**獨立**的 `file_write_base_dirs` / `file_write_org_base_dirs`
+（**不與 `file_read_*` 共用**——可讀不等於可寫）。規格
+`dev-notes/FILE_WRITE_SPEC.md`，部署 `docs/install/file_write_node.md`。
+
+**它每次寫入前會把檔尾連續的所有換行位元組（`\r` `\n` 任意組合）truncate 掉**，
+再依 `newline_before` / `newline_after` 兩個勾選補換行。這是規格要求，
+但有一個必然後果：**出廠預設（before=false / after=true）連續寫入會全部黏成一行**，
+因為下一次寫入會先清掉上一次留的那個換行。**要一筆一行的 log，兩個都要勾。**
+症狀是「log 檔看起來像壞了」而程式完全沒報錯（實測見
+`/opt/tmp/verify/20260831-filewrite.log`）。
+
+**這三個節點的失敗不會讓 queue 變成 FAILED**：四分法
 （`ok` / `exception` / `timeout` / `dispatched`）全部回 `status: 'success'`，
 因為 `fail()` 會無條件重試 3 次，而有副作用的命令不能被平台自動重跑。
 **症狀是流程管理頁一片綠、實際命令失敗過**——真相在流程變數

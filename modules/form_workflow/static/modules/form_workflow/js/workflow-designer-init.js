@@ -134,6 +134,9 @@ async function loadNodeDefinitions() {
                 nodeDiv.setAttribute('data-node-type', node.type);
                 nodeDiv.setAttribute('data-node-label', node.label);
                 nodeDiv.setAttribute('data-node-icon', node.icon || '');
+                // .node-description 是單行 ellipsis，較長的說明在工具列上看不到，
+                // 用原生 tooltip 讓完整說明仍然讀得到（Abandon 與 End 的差異就寫在那裡）。
+                nodeDiv.title = node.description ? node.label + '\n' + node.description : node.label;
 
                 nodeDiv.innerHTML =
                     '<div class="node-icon">' +

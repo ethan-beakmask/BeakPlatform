@@ -118,6 +118,7 @@ def register_builtin_handlers():
     from .sqlexecutor_handler import SqlExecutorHandler
     from .os_executor_handler import OsExecutorHandler
     from .file_read_handler import FileReadHandler
+    from .file_write_handler import FileWriteHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
@@ -180,6 +181,8 @@ def register_builtin_handlers():
 
     # 系統（唯讀檔案讀取，授權低 OsExecutor 一階，見 dev-notes/OS_EXECUTOR_SPEC.md 第六節）
     NodeHandlerFactory.register('FileRead', FileReadHandler)
+    # 系統（檔案追加寫入，與 FileRead 分開授權，見 dev-notes/FILE_WRITE_SPEC.md）
+    NodeHandlerFactory.register('FileWrite', FileWriteHandler)
 
 
 # 自動執行註冊

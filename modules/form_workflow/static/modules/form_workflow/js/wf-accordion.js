@@ -107,6 +107,7 @@
             if (type === 'SqlExecutor')          info += renderSqlExecutorPanel(node, nodeId);
             if (type === 'OsExecutor')           info += renderOsExecutorPanel(node, nodeId);
             if (type === 'FileRead')             info += renderFileReadPanel(node, nodeId);
+            if (type === 'FileWrite')            info += renderFileWritePanel(node, nodeId);
             if (type === 'OpSet')                info += renderOpSetPanel(node, nodeId);
             if (type === 'OpFieldWrite')         info += renderOpFieldWritePanel(node, nodeId);
             if (type === 'FormAdapter')          info += renderFormAdapterPanel(node, nodeId);
