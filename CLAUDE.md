@@ -1598,10 +1598,15 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
     -c "SELECT secure_code FROM users WHERE email='ethan@lion.com' AND is_deleted=false;")
   curl -s -c cj.txt -X POST "$BASE/dev/quick-login" \
     -H 'Content-Type: application/json' -d "{\"user_id\":\"$USC\"}"
+  # SYSTEM_ADMIN admin@system.local     的 user_id 是 nH5liUKQikH1NM2osVVXuF
   # ORG_ADMIN admin-ethanyu@beluga.com 的 user_id 是 jIYEQ-_lZMZNBkVy-hijal
+  # ORG_ADMIN（LION）                   的 user_id 是 1W0Fkn7IK1RW1qwE8HkYQu
   # EMPLOYEE ethanyu@beluga.com（持 FLOW_DESIGNER + SECURITY_STAFF，測 Key2 場景用）
   #          的 user_id 是 FhsmtyPjsnXYotN-iz_Q-X
   ```
+  **LION 的管理員不要自己用 SQL 撈**：`SELECT ... WHERE user_type='ORG_ADMIN'`
+  在該企業會撈到不能登入的那一筆，quick-login 回 401（2026-08-31 踩過）。
+  用上面寫死的 user_id。
 - 常用 API 回應格式備忘：`GET /api/menu` 回 `{menu:[...]}`（樹狀，key 是 `menu` 不是 items）；
   權限中央 API（/api/permissions/*）的企業參數名是 `org_code`（不是 org）
 - curl 打非 exempt 的 POST API 需要 CSRF token，從任一登入後頁面的 meta 取（登入回應不含 token）：
@@ -1609,6 +1614,10 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   TOKEN=$(curl -s -b cj.txt -c cj.txt "$BASE/dashboard" | grep -o 'csrf-token" content="[^"]*' | cut -d'"' -f3)
   curl -s -b cj.txt -X POST "$BASE/api/xxx" -H 'Content-Type: application/json' -H "X-CSRFToken: $TOKEN" -d '{...}'
   ```
+  **沒帶 token 時回的是 400，不是 403 —— 這會蓋掉授權判定**（CSRF 檢查在
+  `before_request`，比 decorator 早）。跑「哪種身分打得進去」的矩陣時若忘了帶
+  token，會看到每一種身分都回 400，看起來像守門完全沒生效，實際上根本還沒走到
+  守門那一步（2026-08-31 驗 PF-185 時踩過）。**測授權一律先取 token。**
 
 ### open_defense / 資安堆疊（備忘已移出，2026-08-30）
 
