@@ -1826,8 +1826,37 @@ Playwright E2E 的三條硬規則與 mutation 驗證。
 
 **OsExecutor（NT-28）與 FileRead（NT-29）2026-08-30 上線，出廠三道全關**：
 `.env` 開關（`OS_NODE_ENABLED` / `FILE_READ_NODE_ENABLED`，**兩者刻意獨立**）、
-系統設定的企業白名單、`workflow_node_definitions.is_active=false`。
+企業授權（見下條）、`workflow_node_definitions.is_active=false`。
 部署說明在 `docs/install/os_node.md`（會推 GitHub）。
+
+### 節點型別的企業授權：受限節點只有被 grant 的企業看得到（2026-08-31 起）
+
+`workflow_node_definitions.org_restricted = true` 的節點型別，必須在
+`workflow_node_org_grants` 有該企業的記錄才可用。**出廠只有系統企業
+（`organizations.is_system_org`）有 grant**，客戶企業連在設計器都看不到。
+授權走 `venv/bin/python scripts/node_grant.py grant <node_type> <org>`（維運工具，
+Web UI 是待辦 **PF-185**）。
+
+**唯一判定實作是 `modules/form_workflow/services/node_grant_service.py`**，
+三個消費點都吃它，新增受限節點時三處都已自動涵蓋，不必各自加判斷：
+
+| 消費點 | 位置 |
+|---|---|
+| 設計器面板可見性 | `api/workflows.py::get_node_definitions()` |
+| graph 寫入（7 個入口，含 publish） | `api/workflows.py` ×4、`api/workflow_routes.py` ×2、`api/mappings.py::publish_mapping` |
+| handler 執行期（唯一防線） | `os_executor_handler` / `file_read_handler` |
+
+三件猜不到的：
+
+- **`is_node_allowed()` 對「節點定義不存在或已軟刪除」回 False**（fail-closed）。
+  否則把 `workflow_node_definitions` 那筆軟刪除就等於關掉授權閘門
+- **舊的 `system_settings.os_node_allowed_orgs` / `file_read_allowed_orgs`
+  已於 migration 122 刪除**，改動它們不會有任何效果（鍵根本不存在）。
+  `file_read_base_dirs` / `file_read_org_base_dirs` 不受影響，那是目錄限制
+- **`require_system_admin` 不是替代方案**：它的判準是帳號 user_type 而非企業，
+  且只擋設計器可見性、不擋 graph 寫入與 publish。理由詳見
+  `dev-notes/OS_EXECUTOR_SPEC.md` 第二節（該節 2026-08-31 更正過一次
+  ——「SYSTEM_ADMIN 沒有 form_workflow 合約」是錯的，實際卡在模組 ACL）
 
 **這兩個節點的失敗不會讓 queue 變成 FAILED**：四分法
 （`ok` / `exception` / `timeout` / `dispatched`）全部回 `status: 'success'`，

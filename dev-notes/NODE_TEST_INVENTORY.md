@@ -85,7 +85,7 @@ PF-181（OsExecutor）與 PF-182（FileRead）一併上線，規格見 `dev-note
 | `wait_for_result=false` | `_result=dispatched` + `_unit=bp-<queue_sc>`，journal 有 Started |
 | `expect_pattern` 命中／不命中 | `ok` ／ `exception`+`expect_pattern` |
 | `expect_json` 合法／不合法 | `ok` ／ `exception`+`expect_json` |
-| 企業不在 `os_node_allowed_orgs` | `exception`+`not_authorized`（reason 明確） |
+| 企業未取得 `OsExecutor` grant（`workflow_node_org_grants`） | `exception`+`not_authorized`（reason 明確） |
 | `OS_NODE_ENABLED` 註解掉後重啟 executor | `exception`+`not_authorized` |
 | 併發 4 個（上限 3） | 3 RUNNING + 1 WAITING，排隊者稍後自行完成 |
 | 例外通知無收件人 | 只記 WARNING，不影響節點結果 |
@@ -122,7 +122,7 @@ PF-181（OsExecutor）與 PF-182（FileRead）一併上線，規格見 `dev-note
 | 壞掉的 regex `([unclosed` | `exception` + `_error_kind=bad_pattern` |
 | symlink 逃逸（`evil.link -> /etc/passwd`） | `exception` + `path_denied` |
 | `../../etc/passwd` | `exception` + `path_denied` |
-| 企業不在 `file_read_allowed_orgs` | `exception` + `not_authorized` |
+| 企業未取得 `FileRead` grant（`workflow_node_org_grants`） | `exception` + `not_authorized` |
 | `FILE_READ_NODE_ENABLED` 註解掉後重啟 | `exception` + `not_authorized` |
 
 ### 本批修掉的三個缺陷（都是實測才發現的）

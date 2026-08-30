@@ -15,6 +15,21 @@ from app.platform.data import get_current_org
 
 from . import api_bp
 from flask_babel import gettext as _
+from ..services.node_grant_service import find_unauthorized_node_types
+
+
+def _reject_unauthorized_graph_nodes(graph, org):
+    unauthorized = find_unauthorized_node_types(
+        graph,
+        org.secure_code if org else None,
+    )
+    if unauthorized:
+        return jsonify({
+            'success': False,
+            'error': _('流程中含有本企業未獲授權的節點型別：%(types)s',
+                       types=', '.join(unauthorized))
+        }), 403
+    return None
 
 
 @api_bp.route('/workflows')
@@ -259,6 +274,11 @@ def create_workflow():
     if is_subprocess and not data.get('code', '').strip():
         code = f'SF{secrets.token_hex(4).upper()}'
 
+    graph = data.get('graph', {'nodes': [], 'edges': []})
+    unauthorized_response = _reject_unauthorized_graph_nodes(graph, org)
+    if unauthorized_response:
+        return unauthorized_response
+
     workflow = FwWorkflowTemplate(
         secure_code=secrets.token_urlsafe(16),
         org_secure_code=org.secure_code,
@@ -267,7 +287,7 @@ def create_workflow():
         description=data.get('description', ''),
         category=data.get('category', '其他'),
         category_secure_code=data.get('category_secure_code') or 'SYS_CAT_WORKFLOW_REC',
-        graph=data.get('graph', {'nodes': [], 'edges': []}),
+        graph=graph,
         is_active=data.get('is_active', True),
         is_subprocess=is_subprocess
     )
@@ -305,6 +325,11 @@ def update_workflow(secure_code):
         return jsonify({'success': False, 'error': 'Workflow not found'}), 404
 
     data = request.get_json() or {}
+
+    if 'graph' in data:
+        unauthorized_response = _reject_unauthorized_graph_nodes(data['graph'], org)
+        if unauthorized_response:
+            return unauthorized_response
 
     if 'name' in data:
         workflow.name = data['name'].strip()

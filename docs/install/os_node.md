@@ -14,7 +14,7 @@
 
 ## 一、先讀這段：這兩個節點的授權是各自獨立的
 
-**它們的開關與白名單刻意分開，不要當成一組一起開放。**
+**它們的開關與企業授權刻意分開，不要當成一組一起開放。**
 
 大部分「只想讀 log 判斷狀態」的需求用「檔案讀取」就夠了，不必開「OS 命令」。
 把兩個一起開等於白白放大授權面。
@@ -56,18 +56,45 @@ OS_NODE_MAX_CONCURRENT_PER_ORG=3
 UPDATE workflow_node_definitions SET is_active = true WHERE node_type = 'OsExecutor';
 ```
 
-### 3. 指定允許的企業（預設空 = 全部拒絕）
+### 3. 指定允許的企業
 
-系統設定 `os_node_allowed_orgs` 是一份企業識別碼清單：
+企業授權統一存在 `workflow_node_org_grants`。安裝後預設只有系統企業獲得授權；
+客戶企業即使有流程設計權限，也看不到、存不了、發行不了未授權節點。
 
-```sql
-UPDATE system_settings
-   SET value = '["<企業識別碼1>", "<企業識別碼2>"]'
- WHERE key = 'os_node_allowed_orgs';
+建議用維運工具授權：
+
+```bash
+venv/bin/python scripts/node_grant.py list
+venv/bin/python scripts/node_grant.py grant OsExecutor <企業識別碼或企業代碼>
+venv/bin/python scripts/node_grant.py revoke OsExecutor <企業識別碼或企業代碼>
 ```
 
-**這兩道閘門在每次執行時都會重新檢查。** 把開關關掉或把企業移出清單之後，
-流程圖裡已經存在的節點會立刻停止執行——不需要去改流程圖。
+也可以用 SQL 授權：
+
+```sql
+INSERT INTO workflow_node_org_grants (
+    secure_code, node_type, org_secure_code, granted_by_name,
+    created_at, updated_at, is_deleted
+)
+SELECT
+    substr(md5(random()::text || clock_timestamp()::text), 1, 32),
+    'OsExecutor',
+    '<企業識別碼>',
+    'manual_sql',
+    NOW(),
+    NOW(),
+    FALSE
+WHERE NOT EXISTS (
+    SELECT 1
+      FROM workflow_node_org_grants
+     WHERE node_type = 'OsExecutor'
+       AND org_secure_code = '<企業識別碼>'
+       AND is_deleted = FALSE
+);
+```
+
+**這兩道閘門在每次執行時都會重新檢查。** 把開關關掉或撤銷企業授權之後，
+流程圖裡已經存在的節點會立刻停止執行；同時設計器可見性、graph 儲存與發行也會拒絕未授權企業。
 
 ### 4. sudoers（只有「交給 OS 執行」模式需要）
 
@@ -102,7 +129,7 @@ UPDATE system_settings
 
 ## 三、啟用「檔案讀取」節點
 
-同樣是四步，但**開關與白名單與「OS 命令」完全分開**。
+同樣是四步，但**開關與企業授權與「OS 命令」完全分開**。
 
 ```bash
 # <安裝目錄>/.env
@@ -112,8 +139,26 @@ FILE_READ_NODE_ENABLED=1
 ```sql
 UPDATE workflow_node_definitions SET is_active = true WHERE node_type = 'FileRead';
 
--- 允許使用此節點的企業（預設空 = 全部拒絕）
-UPDATE system_settings SET value = '["<企業識別碼>"]' WHERE key = 'file_read_allowed_orgs';
+-- 允許使用此節點的企業；安裝後預設只有系統企業獲得授權
+INSERT INTO workflow_node_org_grants (
+    secure_code, node_type, org_secure_code, granted_by_name,
+    created_at, updated_at, is_deleted
+)
+SELECT
+    substr(md5(random()::text || clock_timestamp()::text), 1, 32),
+    'FileRead',
+    '<企業識別碼>',
+    'manual_sql',
+    NOW(),
+    NOW(),
+    FALSE
+WHERE NOT EXISTS (
+    SELECT 1
+      FROM workflow_node_org_grants
+     WHERE node_type = 'FileRead'
+       AND org_secure_code = '<企業識別碼>'
+       AND is_deleted = FALSE
+);
 
 -- 全平台允許讀取的根目錄（預設空 = 讀不到任何檔案）
 UPDATE system_settings SET value = '["/var/log/myapp", "/srv/exports"]'
@@ -122,6 +167,13 @@ UPDATE system_settings SET value = '["/var/log/myapp", "/srv/exports"]'
 -- 選填：再針對個別企業收窄成子集合（沒設定該企業就沿用上面的全平台清單）
 UPDATE system_settings SET value = '{"<企業識別碼>": ["/var/log/myapp"]}'
  WHERE key = 'file_read_org_base_dirs';
+```
+
+等效的維運工具命令：
+
+```bash
+venv/bin/python scripts/node_grant.py grant FileRead <企業識別碼或企業代碼>
+venv/bin/python scripts/node_grant.py revoke FileRead <企業識別碼或企業代碼>
 ```
 
 ### 允許目錄是三層取交集
@@ -237,7 +289,7 @@ systemctl show bp-<節點執行識別碼> -p Result -p ExecMainStatus -p ActiveS
 | 症狀 | 原因 |
 |---|---|
 | 設計器左側工具列找不到這兩個節點 | 節點定義還是停用狀態（第二節第 2 步） |
-| 節點執行完是「成功」，但結果變數寫著 `exception` / `not_authorized` | 開關未啟用，或該企業不在白名單。這是刻意的：授權拒絕不重試 |
+| 節點執行完是「成功」，但結果變數寫著 `exception` / `not_authorized` | 開關未啟用，或該企業沒有節點授權。這是刻意的：授權拒絕不重試 |
 | 結果變數寫著 `exception` / `path_denied` | 檔案不在允許目錄內，或路徑解開符號連結後跑到允許範圍外 |
 | 節點卡在等待很久才執行 | 同企業同時執行的數量到達上限，正在排隊（見第二節的併發設定） |
 | 改了 `.env` 沒有效果 | 流程執行服務沒有重新啟動 |

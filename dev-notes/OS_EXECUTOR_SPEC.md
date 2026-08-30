@@ -66,19 +66,32 @@ graph 由 `PUT /api/workflows/data/templates/<sc>` 改寫，門檻是
 1. **`OS_NODE_ENABLED` 環境變數**。未啟用時：
    - `workflow_node_definitions.is_active = false`（設計器面板看不到）
    - **且 handler 執行期直接拒絕** —— graph 裡已寫死的節點不得靠關開關繞過
-2. **企業白名單**：系統設定 `os_node_allowed_orgs`（org secure_code 清單）。
-   **預設空 ＝ 沒有任何企業能執行。**
+2. **企業授權**：`workflow_node_org_grants` 表（2026-08-31 起；原本是系統設定
+   `os_node_allowed_orgs`，已刪除）。受限節點由
+   `workflow_node_definitions.org_restricted = true` 標示，安裝後只有系統企業
+   （`organizations.is_system_org`）取得授權，**沒有 grant ＝ 不能用**。
 
-`FileRead` 的兩道閘門**各自獨立**（`FILE_READ_NODE_ENABLED` + 自己的企業清單），
+`FileRead` 的兩道閘門**各自獨立**（`FILE_READ_NODE_ENABLED` + 自己的 grant），
 理由見第六節開頭。
 
 **兩道都必須在 handler 執行期重查**，理由同 SqlExecutor 檔頭那條：
 設計器的可見性從來不是防線，graph 可被 PUT 改寫。
+2026-08-31 起可見性與 graph 寫入也吃同一份判定（`node_grant_service.py`），
+但那是降噪與早期攔截，**執行期重查仍是唯一的防線**。
 
-`require_system_admin` **不要用**：本平台唯一的 SYSTEM_ADMIN（`admin@system.local`）
-沒有 form_workflow 合約，`/api/workflows/data/node-definitions` 對它回 403，
-所以該旗標的實際效果是「沒有任何帳號看得到」（既有的 EmailRelay、SysTelegram
-就是這個狀態，只能靠腳本寫 graph）。
+`require_system_admin` **不要用**，但原因與本檔第一版寫的不同（2026-08-31 實測更正）：
+
+> 原文寫「SYSTEM_ADMIN 沒有 form_workflow 合約所以 403」——**這是錯的**。
+> 系統企業本來就免合約（`module_access_service.py:225-232` 明寫
+> `if org_sc == SYSTEM_ORG_CODE: return True`）。`admin@system.local` 打
+> `/api/workflows/data/node-definitions` 拿到 403 是卡在**模組 ACL**：
+> 系統企業有 2 筆 `form_workflow` 的 ROLE 型 ACL 記錄，而該帳號沒有那兩個角色，
+> `ModuleAccessService.check_user_access()` 判 False。
+
+不用它的真正理由有三個：判準是**帳號 user_type** 而不是企業；只擋設計器可見性
+（graph 寫入與 publish 完全不看它）；對「某個客製節點只開放給某一家客戶企業」
+這種需求無解。既有的 EmailRelay、SysTelegram 仍維持 `require_system_admin=true`，
+現況就是沒有任何帳號看得到，只能靠腳本寫 graph。
 
 ---
 
@@ -790,3 +803,14 @@ sudo systemctl restart beakplatform-dev-executor
 - `docs/manual/` 沒有對應的使用者手冊頁（目前只有 `docs/install/os_node.md`
   這份給維運人員的文件）
 - OsExecutor 例外／逾時記錄的管理頁（第十二節已列為 v2）
+
+### 2026-08-31 授權機制通用化
+
+- 企業授權來源已從 `system_settings.os_node_allowed_orgs` /
+  `system_settings.file_read_allowed_orgs` 改為 `workflow_node_org_grants` 表，
+  受限節點由 `workflow_node_definitions.org_restricted` 標示。
+- 三個消費點都改吃同一個 service：設計器節點可見性、graph 寫入驗證、handler 執行期。
+- `.env` 的 `OS_NODE_ENABLED` / `FILE_READ_NODE_ENABLED` 仍是主機層總開關，
+  與企業授權維持 AND 關係。
+- 舊的兩個 system_settings 白名單鍵已在 migration 122 轉入 grants 後刪除；
+  `file_read_base_dirs` 與 `file_read_org_base_dirs` 維持不變。

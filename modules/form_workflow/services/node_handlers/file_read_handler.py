@@ -6,9 +6,9 @@ FileRead 不是 OsExecutor 的配套節點，而是刻意獨立的低一階授�
 只做唯讀檔案讀取，且讀取路徑必須鎖在允許的 base_dir 之下。因此企業可以只取得
 讀 log 或狀態檔的能力，而不必同時取得平台主機命令執行權限。
 
-本節點有三道護欄：`FILE_READ_NODE_ENABLED` 執行期開關、企業白名單，以及
-平台設定、企業設定、節點設定三層 base_dir 交集。所有路徑都用 realpath 後再以
-commonpath 驗證，避免 `../` 與 symlink 逃逸。
+本節點有三道護欄：`FILE_READ_NODE_ENABLED` 執行期開關、通用節點企業授權，
+以及平台設定、企業設定、節點設定三層 base_dir 交集。所有路徑都用 realpath
+後再以 commonpath 驗證，避免 `../` 與 symlink 逃逸。
 
 結果語彙沿用外部世界節點的四分法精神：ok / exception / timeout 都回
 `status='success'`。這是為了避開 `FwNodeExecutionQueue.fail()` 的自動重試；
@@ -27,6 +27,7 @@ from typing import Any, Deque, Dict, Iterable, List, Optional, Pattern, Tuple
 
 from app import db
 from app.models import SystemSetting
+from modules.form_workflow.services.node_grant_service import is_node_allowed
 
 from .base import BaseNodeHandler
 
@@ -180,11 +181,8 @@ class FileReadHandler(BaseNodeHandler):
         if not _env_flag_enabled(os.environ.get('FILE_READ_NODE_ENABLED')):
             raise FileReadRejected('FILE_READ_NODE_ENABLED 未啟用', 'not_authorized')
 
-        allowed_orgs = SystemSetting.get('file_read_allowed_orgs', [])
-        if not isinstance(allowed_orgs, list):
-            allowed_orgs = []
-        if self.queue_item.org_secure_code not in allowed_orgs:
-            raise FileReadRejected('企業未列入 file_read_allowed_orgs 白名單', 'not_authorized')
+        if not is_node_allowed(NODE_TYPE, self.queue_item.org_secure_code):
+            raise FileReadRejected('企業未取得 FileRead 節點授權', 'not_authorized')
 
     def _load_config(self) -> Dict[str, Any]:
         result_var = self.get_config_value('result_var')

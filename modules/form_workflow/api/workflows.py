@@ -18,6 +18,11 @@ from app.platform.data import get_current_org, get_current_org_code
 from app import db, csrf
 from flask_babel import gettext as _
 
+from ..services.node_grant_service import (
+    allowed_restricted_types,
+    find_unauthorized_node_types,
+)
+
 # 建立 API Blueprint - 使用與 A6 相同的路徑
 workflows_bp = Blueprint(
     'form_workflow_workflows',
@@ -58,6 +63,20 @@ def _get_default_graph():
         "edges": [],
         "relayPoints": []
     }
+
+
+def _reject_unauthorized_graph_nodes(graph, org):
+    unauthorized = find_unauthorized_node_types(
+        graph,
+        org.secure_code if org else None,
+    )
+    if unauthorized:
+        return jsonify({
+            'success': False,
+            'error': _('流程中含有本企業未獲授權的節點型別：%(types)s',
+                       types=', '.join(unauthorized))
+        }), 403
+    return None
 
 
 
@@ -217,6 +236,11 @@ def create_template():
     if existing:
         return jsonify({'success': False, 'error': f'Code {code} already exists'}), 400
 
+    graph = data.get('graph') or _get_default_graph()
+    unauthorized_response = _reject_unauthorized_graph_nodes(graph, org)
+    if unauthorized_response:
+        return unauthorized_response
+
     user_name = getattr(current_user, 'display_name', '') or getattr(current_user, 'native_name', '') or ''
 
     template = FwWorkflowTemplate(
@@ -225,7 +249,7 @@ def create_template():
         name=name,
         code=code,
         description=data.get('description', ''),
-        graph=data.get('graph') or _get_default_graph(),
+        graph=graph,
         cytoscape_config=data.get('cytoscape_config') or _get_default_graph(),
         is_active=data.get('is_active', True),
         is_subprocess=data.get('is_subprocess', False),
@@ -268,6 +292,11 @@ def update_template(secure_code):
         return jsonify({'success': False, 'error': 'Template not found'}), 404
 
     data = request.get_json() or {}
+
+    if 'graph' in data:
+        unauthorized_response = _reject_unauthorized_graph_nodes(data['graph'], org)
+        if unauthorized_response:
+            return unauthorized_response
 
     # 記錄舊的 revision（用於判斷是否首次儲存）
     old_revision = template.revision or 0
@@ -548,6 +577,10 @@ def save_new_version(secure_code):
         return jsonify({'success': False, 'error': 'Template not found'}), 404
 
     data = request.get_json() or {}
+    graph = data.get('graph') or template.graph
+    unauthorized_response = _reject_unauthorized_graph_nodes(graph, org)
+    if unauthorized_response:
+        return unauthorized_response
 
     # 遞增版本號
     current_version = template.version or 'AA'
@@ -569,7 +602,7 @@ def save_new_version(secure_code):
         description=data.get('description') or template.description,
         category=template.category,
         category_secure_code=template.category_secure_code,
-        graph=data.get('graph') or template.graph,
+        graph=graph,
         cytoscape_config=data.get('cytoscape_config') or template.cytoscape_config,
         version=new_version,
         revision=1,
@@ -640,6 +673,10 @@ def get_node_definitions():
     ).all()
 
     is_sys_admin = getattr(current_user, 'is_system_admin', False)
+    org = get_current_org()
+    allowed_org_restricted = allowed_restricted_types(
+        org.secure_code if org else None,
+    )
 
     # 將節點按分類分組
     category_map = {
@@ -663,6 +700,9 @@ def get_node_definitions():
 
         # 權限過濾：非系統管理員看不到 require_system_admin 的節點
         if node_def.require_system_admin and not is_sys_admin:
+            continue
+
+        if node_def.org_restricted and node_def.node_type not in allowed_org_restricted:
             continue
 
         category_key = category_map.get(node_def.category, 'basic')
@@ -928,6 +968,11 @@ def create_subflow():
     if not name:
         return jsonify({'success': False, 'error': 'Name is required'}), 400
 
+    graph = data.get('graph') or _get_default_graph()
+    unauthorized_response = _reject_unauthorized_graph_nodes(graph, org)
+    if unauthorized_response:
+        return unauthorized_response
+
     code = f'SF{secrets.token_hex(4).upper()}'
 
     # 如果有 parent_id（secure_code），查詢實際的數值 ID
@@ -947,7 +992,7 @@ def create_subflow():
         name=name,
         code=code,
         description=data.get('description', ''),
-        graph=data.get('graph') or _get_default_graph(),
+        graph=graph,
         cytoscape_config=data.get('cytoscape_config') or _get_default_graph(),
         is_active=True,
         is_subprocess=True,

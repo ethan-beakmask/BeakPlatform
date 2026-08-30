@@ -23,6 +23,7 @@ from .org_database import FwOrgDatabase
 from .conglomerate_database import FwConglomerateDatabase
 from .sync_queue import FwSyncQueue
 from .node_definition import WorkflowNodeDefinition
+from .node_org_grant import WorkflowNodeOrgGrant
 from .form_theme import FwFormTheme
 from .column_display_config import FwColumnDisplayConfig
 from .mapping_permission import FwMappingPermission
@@ -49,6 +50,7 @@ __all__ = [
     'FwConglomerateDatabase',
     'FwSyncQueue',
     'WorkflowNodeDefinition',
+    'WorkflowNodeOrgGrant',
     'FwFormTheme',
     'FwColumnDisplayConfig',
     'FwMappingPermission',

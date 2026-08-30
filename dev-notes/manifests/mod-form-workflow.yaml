@@ -44,10 +44,12 @@ files:
     # egress_adapter.py EGRESS-01 form_node 語境（fc_pending 簽核詳情過濾 + 揭示通道）
     # task_authorizer.py 簽核佇列授權判定（快照 + ROLE 當前角色即時比對）
     - modules/form_workflow/services/ai_usage_service.py    # AiAgent 用量記錄與配額服務
+    - modules/form_workflow/services/node_grant_service.py  # 流程節點型別企業授權判定
     - modules/form_workflow/services/trigger_scope_service.py # API Key 表單 scope 解析共用服務
     - backend/app/defaults/api_key_request_defaults.py      # API Key 申請單出廠預設（表單/流程/發行/填寫權限 seed）
   model:
     - modules/form_workflow/models/
+    - modules/form_workflow/models/node_org_grant.py        # 流程節點型別企業授權
     - modules/form_workflow/models/ai_usage_record.py       # AiAgent 用量記錄
   template:
     - modules/form_workflow/templates/modules/form_workflow/
@@ -82,14 +84,18 @@ files:
     - scripts/migrations/108_fw_mapping_permission_role_grant.sql # fw_mapping_permissions role grant_type
     - scripts/migrations/109_seed_designer_role_permissions.py # 回填設計者角色權限
     - scripts/migrations/110_open_form_workflow_menu_to_employee.py # 開放表單流程設計選單給 EMPLOYEE 設計者
+    - scripts/migrations/122_node_org_grants.sql           # 流程節點型別企業授權通用化
   provisioning: # 建置表單工作流範例與標準配對
     - scripts/examples/provision_api_key_request_flow.py       # PF-160 API Key 申請單/流程/填寫權限
+  scripts:
+    - scripts/node_grant.py                                # restricted 節點企業授權維運工具
   tests:
     - backend/tests/test_execution_code_per_org.py             # PF-116 per-org execution_code 約束與序號池
     - backend/tests/test_form_serial_per_org.py                # per-org serial_number 約束與序號池
     - backend/tests/test_ai_usage_quota.py                     # AiAgent 用量記錄與配額
     - backend/tests/test_ai_usage_api.py                       # AiAgent 用量與配額管理 API
     - backend/tests/test_workflow_cancel_mode.py               # End cancel 模式流程樹取消與 process 終止
+    - backend/tests/test_node_org_grants.py                    # 流程節點企業授權 service
   vendor_deps:
     - backend/app/static/vendor/formio.full.min.js     # 表單設計器
     - backend/app/static/vendor/cytoscape.min.js       # 流程圖

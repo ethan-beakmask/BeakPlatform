@@ -4,8 +4,8 @@ OS 命令執行節點處理器
 
 OsExecutor 讓流程在平台主機上執行設計者指定的 shell 命令，權限等同
 executor 服務的 OS 帳號。因此它只做「誰能用」的兩道授權閘門：
-`OS_NODE_ENABLED` 必須啟用，且企業 secure_code 必須列在系統設定
-`os_node_allowed_orgs`。handler 執行期每次重查，設計器可見性不是防線。
+`OS_NODE_ENABLED` 必須啟用，且企業 secure_code 必須在通用節點企業授權表
+`workflow_node_org_grants` 取得 OsExecutor 授權。handler 執行期每次重查。
 
 本節點採四分法：ok / exception / timeout / dispatched，四種都回
 `status='success'`。這是為了避開 `FwNodeExecutionQueue.fail()` 的自動重試；
@@ -35,7 +35,8 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 from app import db
-from app.models import SystemSetting, User
+from app.models import User
+from modules.form_workflow.services.node_grant_service import is_node_allowed
 
 from .base import BaseNodeHandler
 
@@ -244,12 +245,8 @@ class OsExecutorHandler(BaseNodeHandler):
     def _authorization_error(self) -> Optional[str]:
         if not _env_flag_enabled(os.environ.get('OS_NODE_ENABLED')):
             return 'OS_NODE_ENABLED 未啟用'
-
-        allowed_orgs = SystemSetting.get('os_node_allowed_orgs', [])
-        if not isinstance(allowed_orgs, list):
-            allowed_orgs = []
-        if self.queue_item.org_secure_code not in allowed_orgs:
-            return '企業未列入 os_node_allowed_orgs 白名單'
+        if not is_node_allowed(NODE_TYPE, self.queue_item.org_secure_code):
+            return '企業未取得 OsExecutor 節點授權'
         return None
 
     def _check_concurrency(self) -> None:
