@@ -619,3 +619,105 @@ CSS），**不必改前端分類**。
 - `result_edges`：不做，理由見第五節
 - v2 候選：`match_scope: field_n`、CSV 結構化查詢、regex 的硬性 timeout、
   OsExecutor 例外記錄的管理頁
+
+---
+
+## 十三、實作決策補遺（2026-08-30 冷讀審核後補）
+
+規格交給一個不帶脈絡的讀者（codex，read-only）冷讀後，補上會造成**設計分歧或錯誤實作**
+的九項。其餘缺口（icon、display_name、面板欄位排列、cron 腳本細節）照既有節點的
+慣例做即可，不列。
+
+### 1. dispatched 與 End cancel 的語意矛盾（冷讀抓到的實質漏洞）
+
+dispatched 節點啟動 unit 後立刻回 `SUCCESS`，而 `cancel_pending_nodes` 只掃
+`status='RUNNING' AND process_id IS NOT NULL` —— **它永遠找不到已 dispatched 的 unit**。
+第七節「cancel 收得到」的敘述在這個路徑上不成立。
+
+處置：新增 config **`cancel_scope`**：
+
+| 值 | 行為 |
+|---|---|
+| `unit`（預設） | 流程被 cancel 時連同 unit 一起 `systemctl stop`。cancel 要**額外**掃該樹上 `node_type='OsExecutor'` 且 `result->'os_dispatch'->>'unit'` 非空的節點（**不論 status**），對仍 active 的 unit 執行 stop |
+| `detach` | 流程取消也不停 unit。適合「這件事一旦送出就該做完」的作業 |
+
+`detach` 要在設計器面板上明確標示「流程取消後仍會繼續執行」。
+
+### 2. 授權拒絕的結果語意
+
+`OS_NODE_ENABLED` 未開、企業不在白名單、`base_dir` 驗證失敗——
+一律 `status: 'success'` ＋ `_result='exception'` ＋ `_error_kind='not_authorized'`，
+**不是** `error`。理由同第三節：回 `error` 會被重試 3 次，而授權拒絕重試永遠不會成功。
+
+### 3. FileRead 的 base_dir 設定來源
+
+**三者疊加，取交集**：系統設定 `file_read_base_dirs`（全平台上限）
+∩ 企業設定（該企業可讀的子集）∩ 節點 config 的 `base_dir`（本次要讀哪一個）。
+**系統設定預設為空 ＝ 全部拒絕**（fail-closed）。
+`/opt/tmp/osnode/` 不自動加入——要讓 FileRead 讀得到 OsExecutor 的輸出，
+部署時明確加進系統設定。
+
+### 4. `max_scan_ms` 對 Python `re` 無效（冷讀抓到的第二個實質問題）
+
+wall-clock 檢查只在**行與行之間**執行；單次 `re.search()` 在一行內卡住時，
+那個檢查根本輪不到。所以 v1 的保護是**限制單次 re 的輸入規模**：
+
+- 逐行比對，**單行長度上限 64KB**（超過的行截斷後再比對並標 `_line_truncated`）
+- 樣式長度上限 **200 字元**
+- `max_scan_ms` 在行間檢查，負責整體上限
+
+這讓 ReDoS 的最壞情況有界。要真正的 timeout 得換 `regex` 套件（v2）。
+
+### 5. `extra_env` 的格式與禁區
+
+`{名稱: 值}` dict；名稱須合 `^[A-Za-z_][A-Za-z0-9_]{0,127}$`；值走變數插值但**不經
+`shlex.quote()`**（它不進命令字串，是 execve 的參數，沒有 shell 解析問題）。
+
+**禁止覆蓋**：`BP_EXEC` / `BP_ORG` / `BP_WF`（追蹤標記，覆蓋等於湮滅稽核線索）、
+`PATH` / `HOME` / `LANG`（白名單基底）。命中禁區一律拒絕整次執行，不是忽略。
+
+### 6. executor uid 的取得
+
+`os.getuid()`，**不從 config 讀**（同「CLI 路徑不從節點 config 取」那條的理由：
+graph 可被 PUT 改寫）。sudoers 的 `--uid=*` 萬用字元因此只會收到 executor 自己的 uid。
+
+### 7. unit 名稱
+
+`bp-<queue_secure_code>`。`secure_code` 是 `secrets.token_urlsafe(16)` 產出的 22 字元
+（字元集 `[A-Za-z0-9_-]`），**全部落在 systemd unit 名稱的合法字元內**，
+總長 25 字元遠低於上限，不需要轉換。實作時仍要有 assert，
+避免日後 secure_code 產生方式改變而靜默壞掉。
+
+### 8. `notify_to` 的格式與 fallback
+
+`user_secure_code` 的陣列。預設值取流程模板的 `updated_by_secure_code`（單值陣列）。
+**取不到、帳號已停用或已刪除時不發、只記 WARNING log** ——
+不要退回「發給企業所有管理員」，那會在無人維護的舊流程上變成定期騷擾。
+
+### 9. 驗收用的環境資料
+
+CLAUDE.md 的「開發測試登入」段有 quick-login 的完整 curl 寫法與現成 user_id；
+本節點另外需要：
+
+```bash
+# 有 form_workflow 合約的企業與其 ORG_ADMIN
+PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -t -A -F'|' -c "
+SELECT o.secure_code, o.code, u.secure_code, u.email
+FROM organizations o JOIN users u ON u.org_secure_code = o.secure_code
+WHERE u.user_type='ORG_ADMIN' AND u.is_deleted=false AND o.is_deleted=false ORDER BY o.id;"
+
+# 含 DecisionWriter 的既有流程（beluga，可直接加節點測試）
+# http://192.168.0.16:7000/beakplatform/forms/workflows/7LJRvpSPUYcmK1M1wcOTzY
+
+# 重啟 executor（改 handler 後必做，但先確認沒有流程在跑，見 CLAUDE.md 該段）
+sudo systemctl restart beakplatform-dev-executor
+```
+
+安全的測試命令：`/bin/echo`、`/bin/true`、`/bin/false`（測 exit code 分類）、
+`/bin/sleep`（測逾時與 cancel）。**不要用會改變系統狀態的命令做驗收。**
+
+### 10. `WorkflowLogService` 的修正是獨立待辦
+
+**本任務不必修**，前置單是 PF-183。未修之前 OsExecutor 的 log 一樣寫得進去
+（只是 `node_type` 欄位是 `'SYSTEM'`），用 `node_id` 仍查得到單一節點的紀錄。
+兩張單的先後不強制，但 PF-181 驗收「從 log 找線索」那項要等 PF-183 完成才算數。

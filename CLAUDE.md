@@ -2663,6 +2663,19 @@ portal 撤單，行為一致）。**送訊號前一律先 `/proc/<pid>/cmdline` 
 （否則會連帶殺掉 executor 整個 process group）。被取消的節點跑完不得把自己寫回 SUCCESS，
 防護在 `node_runner.update_result()` / `handle_error()` / `advance_to_next_nodes()` 三處。
 
+**`systemctl restart beakplatform-dev-executor` 會殺掉當下所有正在跑的節點進程**
+（2026-08-30 實測）：unit 是 `KillMode=control-group` / `Delegate=no`，而
+`start_new_session=True` **只脫離 process group 與 session，不脫離 cgroup**，
+所以 node_runner 與它的子孫都在 executor 的 cgroup 內、一起被收掉。
+而全 repo **沒有 stale RUNNING 的回收機制**，被這樣殺掉的節點會**永遠卡在 RUNNING**
+（`_poll_and_execute` 只撿 PENDING 與少數 WAITING），流程就此靜止且不報錯。
+
+所以「改 handler 後要重啟 executor」有代價：**重啟前先確認沒有流程在跑**
+（`SELECT node_type, node_id, started_at FROM fw_node_execution_queue WHERE status='RUNNING';`），
+事後發現卡住的只能手動改回 PENDING 或標 FAILED。要讓外部作業活過重啟，
+唯一辦法是另建 systemd unit（`systemd-run`）把它移出 executor 的 cgroup ——
+脈絡見 `dev-notes/OS_EXECUTOR_SPEC.md` 第七節與知識庫 #5316。
+
 ### form_workflow 流程變數的儲存位置（寫錯地方＝流程引用不到）
 
 **流程變數的權威儲存是 `fw_workflow_variables` 表，不是
