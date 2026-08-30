@@ -13,12 +13,24 @@ from flask_login import current_user
 from ..security.decorators import login_required, admin_required, system_admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models import Organization, CustomerType, Contract
+from ..models.organization import DEFAULT_ORG_USER_LIMIT
 from ..services.organization_service import OrganizationService
 from .. import db
 
 logger = logging.getLogger(__name__)
 
 organizations_bp = Blueprint('api_organizations', __name__)
+
+
+def _parse_user_limit(raw):
+    """解析 API 傳入的 user_limit，非法或省略時退回平台預設值"""
+    if raw is None or raw == '':
+        return DEFAULT_ORG_USER_LIMIT
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_ORG_USER_LIMIT
+    return value if value >= 1 else DEFAULT_ORG_USER_LIMIT
 
 
 @organizations_bp.route('/', methods=['GET'])
@@ -138,7 +150,7 @@ def create_organization():
             name=data['name'],
             domain_name=data['domain_name'],
             customer_type=data.get('customer_type', CustomerType.TRIAL),
-            user_limit=data.get('user_limit', 5),
+            user_limit=_parse_user_limit(data.get('user_limit')),
             description=data.get('description'),
             contact_person=data.get('contact_person'),
             contact_email=data.get('contact_email'),
@@ -227,7 +239,10 @@ def update_organization(secure_code: str):
 
         for field in allowed_fields:
             if field in data:
-                setattr(org, field, data[field])
+                if field == 'user_limit':
+                    setattr(org, field, _parse_user_limit(data[field]))
+                else:
+                    setattr(org, field, data[field])
 
         db.session.commit()
 

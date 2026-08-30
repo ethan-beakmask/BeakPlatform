@@ -227,7 +227,7 @@
                             {% else %}{{ selected_org.customer_type }}{% endif %}
                         </td>
                     </tr>
-                    <tr><td>{{ _('帳號上限') }}</td><td>{{ _('&infin; -- 開源的沒打算商業化，大家盡量用吧^_^') }}</td></tr>
+                    <tr><td>{{ _('帳號上限') }}</td><td>{{ _('%(used)s / %(limit)s 個（僅計企業成員與外部廠商，不含管理員）', used=selected_org.get_active_user_count(), limit=selected_org.user_limit) }}</td></tr>
                     {% if selected_org.conglomerate %}
                     <tr><td>{{ _('所屬集團') }}</td><td><span class="badge badge-conglomerate">{{ selected_org.conglomerate.name }}</span></td></tr>
                     {% endif %}

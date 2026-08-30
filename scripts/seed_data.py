@@ -28,6 +28,7 @@ from app.models import (
     Role, RoleType, ScopeType, RoleLevel, ExclusiveGroup,
     Permission, RolePermission, PermissionCondition,
 )
+from app.models.organization import DEFAULT_ORG_USER_LIMIT
 from app.models.permission import (
     DEFAULT_PERMISSIONS, ResourceType, ActionType, PermissionLevel
 )
@@ -93,7 +94,7 @@ def seed_system_org():
         name='系統管理',
         domain_name=SYSTEM_ORG_CODE,
         customer_type='SYSTEM',
-        user_limit=10,
+        user_limit=DEFAULT_ORG_USER_LIMIT,
         description='系統級虛擬企業，用於承載跨企業共用功能',
         is_active=True,
         is_system_org=True
@@ -116,7 +117,7 @@ def seed_organization():
         name='預設企業',
         domain_name='beakmask.local',
         customer_type='TRIAL',
-        user_limit=100,
+        user_limit=DEFAULT_ORG_USER_LIMIT,
         description='系統預設測試企業',
         is_active=True
     )

@@ -15,6 +15,7 @@ from ..models import (
     BlockedEmailDomain,
     UserNumberingRule,
 )
+from ..models.organization import DEFAULT_ORG_USER_LIMIT
 from ..models.organizational_unit import OrganizationalUnit, UnitType
 from ..models.user_numbering_rule import (
     NumberingUsageScope, NumberingDefaultFor, NumberingElementType
@@ -39,7 +40,7 @@ class OrganizationService:
         domain_name: str,
         display_name: str = None,
         customer_type: str = CustomerType.TRIAL,
-        user_limit: int = 5,
+        user_limit: int = DEFAULT_ORG_USER_LIMIT,
         description: str = None,
         contact_person: str = None,
         contact_email: str = None,
@@ -881,7 +882,7 @@ class OrganizationService:
         contract_end_date: date,
         display_name: str = None,
         customer_type: str = CustomerType.FORMAL,
-        user_limit: int = 50,
+        user_limit: int = DEFAULT_ORG_USER_LIMIT,
         contract_amount: float = None,
         admin_username: str = 'admin',
         admin_password: str = None,
@@ -953,7 +954,7 @@ class OrganizationService:
             name='BeakMask System',
             domain_name=SYSTEM_ORG_CODE,
             customer_type=CustomerType.FORMAL,
-            user_limit=100,
+            user_limit=DEFAULT_ORG_USER_LIMIT,
             description='系統管理企業',
             is_active=True
         )

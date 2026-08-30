@@ -169,6 +169,10 @@ def create_user():
     from ..web.users import _get_user_type_from_role
     user_type = _get_user_type_from_role(role, current_user.is_system_admin)
 
+    if not org.can_create_user(user_type):
+        return jsonify({'error': _('已達帳號上限（%(limit)s），目前已使用 %(used)s 個',
+                                   limit=org.user_limit, used=org.get_active_user_count())}), 400
+
     try:
         backup_email_1 = (data.get('backup_email_1') or '').strip() or email
         user = User(
@@ -246,6 +250,14 @@ def update_user(secure_code: str):
     # Allowed update fields
     allowed_fields = ['display_name', 'is_active']
     update_data = {k: v for k, v in data.items() if k in allowed_fields}
+
+    # 帳號上限：重新啟用會增加使用中人數
+    if update_data.get('is_active') and not user.is_active:
+        limit_org = user.organization
+        if limit_org and not limit_org.can_create_user(user.user_type):
+            return jsonify({'error': _('已達帳號上限（%(limit)s），目前已使用 %(used)s 個',
+                                       limit=limit_org.user_limit,
+                                       used=limit_org.get_active_user_count())}), 400
 
     ResourceGateway.update(user, **update_data)
     ResourceGateway.commit()

@@ -13,6 +13,21 @@ from .base import BaseModel
 from .. import db
 
 
+# 企業帳號上限的平台預設值。
+# 這是全平台唯一來源：model default 與所有建立企業的路徑一律引用它，
+# 不要在別處另寫數字（2026-08-30 之前有六個互相打架的預設值）。
+DEFAULT_ORG_USER_LIMIT = 50
+
+# 計入企業帳號上限的 user_type。
+# ORG_ADMIN 綁定一個企業成員帳號、SYSTEM_ADMIN 是平台級身分，兩者都不是獨立人頭。
+USER_LIMIT_COUNTED_USER_TYPES = ('EMPLOYEE', 'EXTERNAL')
+
+
+def counts_toward_user_limit(user_type: str) -> bool:
+    """該 user_type 是否計入企業帳號上限"""
+    return user_type in USER_LIMIT_COUNTED_USER_TYPES
+
+
 class CustomerType:
     """企業客戶類型"""
     TRIAL = 'TRIAL'          # 試用
@@ -55,7 +70,7 @@ class Organization(BaseModel):
     )
 
     # 帳號數量上限
-    user_limit = Column(Integer, default=50, nullable=False)
+    user_limit = Column(Integer, default=DEFAULT_ORG_USER_LIMIT, nullable=False)
 
     # 是否啟用
     is_active = Column(Boolean, default=True, nullable=False)
@@ -185,16 +200,31 @@ class Organization(BaseModel):
         return start <= today <= end
 
     def get_active_user_count(self) -> int:
-        """取得目前啟用的帳號數量"""
+        """
+        取得計入帳號上限的啟用帳號數（僅 EMPLOYEE 與 EXTERNAL，且排除服務帳號）。
+
+        服務帳號（`is_service_account`，例如 NoCode portal 的公用送件帳號）
+        由系統自動建立、無法登入，而且 /external-users 列表刻意不顯示它們，
+        計入的話會佔掉一個使用者管理不到的名額。
+        """
         from .user import User
         return User.query.filter(
             User.org_secure_code == self.secure_code,
             User.is_active == True,
-            User.is_deleted == False
+            User.is_deleted == False,
+            User.is_service_account == False,
+            User.user_type.in_(USER_LIMIT_COUNTED_USER_TYPES)
         ).count()
 
-    def can_create_user(self) -> bool:
-        """檢查是否還可以建立新帳號"""
+    def can_create_user(self, user_type: str = None) -> bool:
+        """
+        檢查是否還能再增加一個「計入上限」的啟用帳號。
+
+        user_type 省略時視為要新增計入上限的帳號（沿用舊語意，顯示用途照舊）。
+        傳入不計入上限的 user_type（ORG_ADMIN / SYSTEM_ADMIN）時一律回 True。
+        """
+        if user_type is not None and not counts_toward_user_limit(user_type):
+            return True
         return self.get_active_user_count() < self.user_limit
 
     def to_dict(self, include_contracts: bool = False) -> Dict[str, Any]:

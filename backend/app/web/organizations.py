@@ -15,7 +15,7 @@ from sqlalchemy import or_
 from sqlalchemy import func
 from ..security.decorators import system_admin_required
 from ..security.resource_gateway import ResourceGateway
-from ..models.organization import Organization
+from ..models.organization import DEFAULT_ORG_USER_LIMIT, Organization
 from ..models.contract import Contract
 from ..models.conglomerate import Conglomerate
 from ..services.organization_service import OrganizationService
@@ -216,6 +216,7 @@ def create_org():
         display_name = request.form.get('display_name', '').strip() or None
         domain_name = request.form.get('domain_name', '').strip().lower()
         description = request.form.get('description', '').strip() or None
+        user_limit_str = request.form.get('user_limit', '').strip()
         admin_username = request.form.get('admin_username', 'admin').strip() or 'admin'
         admin_password = request.form.get('admin_password', '').strip()
 
@@ -240,6 +241,8 @@ def create_org():
             flash(_('管理員密碼為必填'), 'error')
         elif len(admin_password) < 12:
             flash(_('管理員密碼長度至少 12 碼'), 'error')
+        elif user_limit_str and (not user_limit_str.isdigit() or int(user_limit_str) < 1):
+            flash(_('帳號上限必須為正整數'), 'error')
         else:
             try:
                 from datetime import timedelta
@@ -249,6 +252,7 @@ def create_org():
                     display_name=display_name,
                     domain_name=domain_name,
                     description=description,
+                    user_limit=int(user_limit_str) if user_limit_str else DEFAULT_ORG_USER_LIMIT,
                     admin_username=admin_username,
                     admin_password=admin_password,
                     created_by=current_user.email
@@ -278,7 +282,10 @@ def create_org():
                 db.session.rollback()
                 flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
-    return render_template('pages/organizations/create.html')
+    return render_template(
+        'pages/organizations/create.html',
+        default_user_limit=DEFAULT_ORG_USER_LIMIT
+    )
 
 
 @organizations_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])

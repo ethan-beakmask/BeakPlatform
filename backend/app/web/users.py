@@ -16,6 +16,7 @@ from flask_login import current_user
 
 from ..security.decorators import login_required
 from ..security.resource_gateway import ResourceGateway
+from ..models.organization import counts_toward_user_limit
 from ..models.user import User, UserType
 from ..models.organizational_unit import OrganizationalUnit
 from ..models.user_numbering_rule import UsedUserNumber
@@ -338,6 +339,10 @@ def create_user():
                 # 檢查用戶編號唯一性
                 elif not _check_employee_id_unique(org.secure_code, employee_id):
                     flash(_('用戶編號 %(employee_id)s 已存在', employee_id=employee_id), 'error')
+                elif not org.can_create_user(
+                        _get_user_type_from_role(role, current_user.is_system_admin)):
+                    flash(_('已達帳號上限（%(limit)s），目前已使用 %(used)s 個',
+                            limit=org.user_limit, used=org.get_active_user_count()), 'error')
                 else:
                     # 查找部門
                     primary_unit = None
@@ -534,6 +539,17 @@ def edit_user(secure_code: str):
                 new_password, user.org_secure_code,
                 user_secure_code=user.secure_code)
 
+        # 帳號上限：重新啟用會增加使用中人數
+        target_user_type = user.user_type
+        if ctx['can_edit_role']:
+            target_user_type = _get_user_type_from_role(role, current_user.is_system_admin)
+        limit_org = user.organization
+        user_limit_blocked = bool(
+            ctx['can_edit_status'] and is_active and not user.is_active
+            and limit_org is not None
+            and not limit_org.can_create_user(target_user_type)
+        )
+
         # 驗證
         if not native_name or not english_name:
             flash(_('本國姓名、英文姓名為必填'), 'error')
@@ -542,6 +558,9 @@ def edit_user(secure_code: str):
                 flash(err, 'error')
         elif ctx['can_edit_org_info'] and not _check_employee_id_unique(user.org_secure_code, employee_id, exclude_user_id=user.id):
             flash(_('企業成員編號 %(employee_id)s 已存在', employee_id=employee_id), 'error')
+        elif user_limit_blocked:
+            flash(_('已達帳號上限（%(limit)s），目前已使用 %(used)s 個',
+                    limit=limit_org.user_limit, used=limit_org.get_active_user_count()), 'error')
         else:
             # 查找部門（只有管理員可改）
             primary_unit = None
@@ -684,6 +703,14 @@ def toggle_status(secure_code: str):
     if current_user.bound_employee_secure_code == user.secure_code and user.is_active:
         flash(_('不能停用自己綁定的企業成員帳號'), 'error')
         return redirect(url_for('users.list_users'))
+
+    # 帳號上限：重新啟用會增加使用中人數
+    if not user.is_active:
+        limit_org = user.organization
+        if limit_org and not limit_org.can_create_user(user.user_type):
+            flash(_('已達帳號上限（%(limit)s），目前已使用 %(used)s 個',
+                    limit=limit_org.user_limit, used=limit_org.get_active_user_count()), 'error')
+            return redirect(url_for('users.list_users'))
 
     try:
         user.is_active = not user.is_active
@@ -840,17 +867,34 @@ def import_users():
             reader = csv.DictReader(io.StringIO(content))
 
             success_count = 0
+            counted_new = 0
             error_messages = []
+            existing_count = org.get_active_user_count()
 
             for row_num, row in enumerate(reader, start=2):  # 從第2列開始 (第1列是標題)
                 try:
                     result = _import_single_user(row, org, row_num)
                     if result is True:
                         success_count += 1
+                        row_user_type = _get_user_type_from_role(
+                            row.get('role', '').strip() or 'user',
+                            current_user.is_system_admin)
+                        if counts_toward_user_limit(row_user_type):
+                            counted_new += 1
                     else:
                         error_messages.append(result)
                 except Exception as e:
                     error_messages.append(_('第 %(row)s 列: %(error)s', row=row_num, error=str(e)))
+
+            # 帳號上限：整批拒絕，一筆都不建立
+            if counted_new and existing_count + counted_new > org.user_limit:
+                db.session.rollback()
+                remain = max(0, org.user_limit - existing_count)
+                flash(_('已達帳號上限（%(limit)s）：本次將新增 %(need)s 筆，剩餘名額 %(remain)s，未匯入任何資料',
+                        limit=org.user_limit, need=counted_new, remain=remain), 'error')
+                for msg in error_messages[:10]:
+                    flash(msg, 'error')
+                return render_template('pages/users/import.html')
 
             db.session.commit()
 

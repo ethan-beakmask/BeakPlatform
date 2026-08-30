@@ -236,6 +236,32 @@ def create_external_user():
             if existing:
                 flash(_('Email %(email)s 已存在', email=email), 'error')
             else:
+                # 查找群組
+                group = OrganizationalUnit.query.filter_by(
+                    org_secure_code=org.secure_code,
+                    code=group_code,
+                    unit_type='GROUP',
+                    is_deleted=False
+                ).first()
+                if not group:
+                    flash(_('找不到群組 %(code)s', code=group_code), 'error')
+                    return render_template(
+                        'pages/external-users/create.html',
+                        form_data=form_data,
+                        default_rule=default_rule,
+                        groups=groups
+                    )
+
+                if not org.can_create_user(UserType.EXTERNAL):
+                    flash(_('已達帳號上限（%(limit)s），目前已使用 %(used)s 個',
+                            limit=org.user_limit, used=org.get_active_user_count()), 'error')
+                    return render_template(
+                        'pages/external-users/create.html',
+                        form_data=form_data,
+                        default_rule=default_rule,
+                        groups=groups
+                    )
+
                 # 處理編號：自動使用預設規則
                 default_rule = _get_default_external_rule(org.secure_code)
                 if not default_rule:
@@ -255,22 +281,6 @@ def create_external_user():
                         'pages/external-users/create.html',
                         form_data=form_data,
                         default_rule=default_rule,
-                        groups=groups
-                    )
-
-                # 查找群組
-                group = OrganizationalUnit.query.filter_by(
-                    org_secure_code=org.secure_code,
-                    code=group_code,
-                    unit_type='GROUP',
-                    is_deleted=False
-                ).first()
-                if not group:
-                    flash(_('找不到群組 %(code)s', code=group_code), 'error')
-                    return render_template(
-                        'pages/external-users/create.html',
-                        form_data=form_data,
-                        numbering_rules=numbering_rules,
                         groups=groups
                     )
 
@@ -585,6 +595,14 @@ def toggle_status(secure_code: str):
     if user.user_type != UserType.EXTERNAL:
         flash(_('此帳號不是外部廠商'), 'error')
         return redirect(url_for('external_users.list_external_users'))
+
+    # 帳號上限：重新啟用會增加使用中人數
+    if not user.is_active:
+        limit_org = user.organization
+        if limit_org and not limit_org.can_create_user(user.user_type):
+            flash(_('已達帳號上限（%(limit)s），目前已使用 %(used)s 個',
+                    limit=limit_org.user_limit, used=limit_org.get_active_user_count()), 'error')
+            return redirect(url_for('external_users.list_external_users'))
 
     try:
         old_status = user.is_active

@@ -72,6 +72,15 @@
             <td><textarea id="description" name="description" rows="3" cols="40" placeholder="{{ _('選填') }}"></textarea></td>
         </tr>
         <tr>
+            <td><label for="user_limit">{{ _('帳號上限') }}</label></td>
+            <td>
+                <input type="number" id="user_limit" name="user_limit" size="10"
+                       min="1" step="1"
+                       value="{{ request.form.get('user_limit', default_user_limit) }}">
+                <br><small>{{ _('選填，留空使用平台預設值 %(default)s。只計企業成員與外部廠商，不含管理員帳號', default=default_user_limit) }}</small>
+            </td>
+        </tr>
+        <tr>
             <td colspan="2"><div class="section-title" style="margin-top:32px;">{{ _('管理員帳號') }}</div></td>
         </tr>
         <tr>
