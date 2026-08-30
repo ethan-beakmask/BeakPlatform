@@ -650,6 +650,47 @@ from app.utils.external_url import build_external_url   # Python
 - 包含但不限於：用戶列表、組織樹、簽核人選擇、角色成員解析、部門成員解析
 - 關聯查詢（如透過角色/部門取用戶）需 JOIN User 表確認帳號狀態
 
+### DATA-02: 新增「建立帳號」或「重新啟用帳號」的路徑必須掛人數上限（2026-08-30 PF-174 起）
+
+`Organization.user_limit` 從 2026-08-30 起**真的會擋**（此前寫好但沒人呼叫）。
+唯一實作是 `backend/app/models/organization.py`：
+
+```python
+DEFAULT_ORG_USER_LIMIT = 50                              # 全平台唯一預設值來源
+USER_LIMIT_COUNTED_USER_TYPES = ('EMPLOYEE', 'EXTERNAL')  # 只算這兩種
+counts_toward_user_limit(user_type) -> bool
+org.can_create_user(user_type=None) -> bool               # 不計入的身分一律回 True
+org.get_active_user_count()                               # is_active ＋未刪除＋非服務帳號
+```
+
+**計數刻意排除三種帳號，三個理由各不相同**：
+
+| 排除 | 理由 |
+|---|---|
+| `ORG_ADMIN` | 綁定一個企業成員帳號，計入等於同一個人算兩次 |
+| `SYSTEM_ADMIN` | 平台級身分，不屬企業人事編制 |
+| `is_service_account=True` | NoCode portal 公用送件帳號無法登入（`password_hash='!nologin'`），且 `/external-users` 列表刻意過濾它（`web/external_users.py:158`）——計入會佔掉一個**使用者看不到也管不到**的名額 |
+
+**新增任何會建立或重新啟用帳號的路徑時，一律掛檢查**（現有八處：
+`web/users.py` 的 create／import／toggle_status／edit_user、
+`web/external_users.py` 的 create／toggle_status、`api/users.py` 的 create／update）。
+漏掛不會報錯，症狀是那條路徑成為繞過上限的後門。
+**`web/org_admins.py` 與 `web/sys_accounts.py` 刻意不掛**——它們建的身分不計入，
+擋了會變成「不計入卻擋得住」，而且 `initial_setup()` 是企業沒有管理員時的救援路徑。
+
+三件猜不到的：
+
+- **檢查要放在「消耗掉不可逆資源」之前**。外部廠商那支若放在
+  `NumberingService.get_next_number(consume=True)` 之後，被擋的請求會白白吃掉一個編號
+- **批次匯入是整批拒絕**（Ethan 定案）：跑完整份 CSV 算出實際會建立的筆數，
+  超限就 `rollback()` 一筆不建。**不要提早 break**——`_import_single_user()` 內的
+  `flush()` 讓後續列的重複帳號檢查仍然正確，提早跳出會算錯筆數
+- **既有企業沒有 backfill**，所以本機 BELUGA 是 `6 / 5` 的超限狀態（刻意保留，
+  現成的「既有企業撞牆」測試案例）。降低上限時也不檢查目前使用量——
+  既有帳號照常使用，只有會增加人數的動作被擋
+
+決策脈絡與完整驗收記錄見 BBN 待辦 **PF-174**（`note_search("PF-174")`）。
+
 ### EGRESS-01: 資料出口政策
 
 設有出口政策的資源，欄位依 (角色, 語境) 呈現 clear / masked / hidden。
@@ -1399,6 +1440,7 @@ DB 卻登記著檔案系統早已不存在的檔名。修它是 PF-168 的一部
 | 使用者的員工編號 | `users.employee_number` / `emp_no` | **`users.employee_id`**（varchar 50，組織內唯一）；**兩帳號制的管理員帳號 2026-08-23 起才有號**——新企業由 `_create_default_numbering_rules()` 的第 6 條規則自動發 `ADM001`，既有企業已由 `scripts/migrations/112_backfill_org_admin_employee_id.py` 回填；SYSTEM_ADMIN 型帳號刻意不發（平台級身分不屬企業人事編制） |
 | 企業獨立資料庫的庫名 | `fw_org_databases.database_name` | **`db_name`**（另有 `org_id` / `db_host` / `db_port` / `is_ready`）；注意「記錄在、實體庫不在」是既有狀態（本機 `org_14`），反向不一致兩個方向都要查 |
 | migration 登記表的欄位 | `schema_migrations.version` | **`schema_migrations.filename`**（含副檔名，例 `116_xxx.py`）；PF-162 卡片裡那句 `INSERT INTO schema_migrations (version)` 是錯的，照抄會拿到 `column "version" does not exist` |
+| 編號規則的流水號 counter | `user_numbering_rules.current_counter` / `.code` | **兩個都不存在**；該表只有 `id / secure_code / org_secure_code / name / description / elements / is_active / usage_scope / default_for` 等，**流水號設定與計數藏在 `elements` 這個 jsonb 內**（`components` 陣列裡 `type='sequence'` 的項目）。要看「號碼有沒有被消耗」一律查 `used_user_numbers`，不要找 counter 欄位 |
 | 企業獨立資料庫登記表的必填欄位 | 只填 `org_secure_code` / `org_id` / `db_name` | 還要 **`secure_code`**、**`admin_user`**、**`admin_password_enc`**、**`sync_user`**、**`sync_password_enc`** 五個 NOT NULL（2026-08-29 造測試資料時逐一撞出來，錯誤訊息一次只報一個）。查全部必填：`SELECT column_name FROM information_schema.columns WHERE table_name='fw_org_databases' AND is_nullable='NO';` |
 
 ### 驗英文介面：沒有切換語系的 API，要改 DB 欄位（2026-08-29 試誤）
