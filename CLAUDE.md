@@ -477,6 +477,18 @@ if count == 0:
 要不要改成 fail-closed 是**全平台變更**（會擋掉所有沒設 ACL 的企業），
 屬待辦 PF-145 階段三，不要在改某支 API 時順手做。
 
+**反過來的症狀：`SYSTEM_ADMIN` 帳號打模組 API 常常 403，而原因是 ACL 不是合約**
+（2026-08-31 實測）。系統企業**免合約**（`module_access_service.py:225-232` 的
+`if org_sc == SYSTEM_ORG_CODE: return True`），但系統企業自己**有** ACL 記錄時，
+`admin@system.local` 沒有那些角色就會被 `check_user_access()` 擋下。
+本機實測 `GET /api/workflows/data/node-definitions` 對 SYSTEM_ADMIN 回 403，
+同企業的 ORG_ADMIN 回 200，成因就是系統企業有 2 筆 `form_workflow` 的 ROLE 型 ACL。
+
+**影響設計決策**：需要 SYSTEM_ADMIN 操作的管理頁與其 API **不能放在
+`modules/*/api/` 底下**（`@module_access_required` 會擋），要放平台層。
+平台層 import 模組 model 是既有做法（前例
+`backend/app/defaults/api_key_request_defaults.py`）。
+
 ### PERM-05: 新增路由必須在守門宣告表登記（2026-08-23 起）
 
 全平台每個 Flask endpoint 的守門責任記在
