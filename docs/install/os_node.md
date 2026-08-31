@@ -6,7 +6,7 @@
 | 節點 | 做什麼 | 風險等級 |
 |---|---|---|
 | **OS 命令**（`OsExecutor`） | 在平台主機上執行流程設計者指定的命令 | **等同把主機 shell 開給流程設計者** |
-| **檔案讀取**（`FileRead`） | 唯讀讀取指定目錄底下的檔案（整份 / 檔頭 / 檔尾 / 關鍵字前後） | 低一階：不經 shell、唯讀、鎖在允許目錄內 |
+| **檔案讀取**（`OsFileRead`） | 唯讀讀取指定目錄底下的檔案（整份 / 檔頭 / 檔尾 / 關鍵字前後） | 低一階：不經 shell、唯讀、鎖在允許目錄內 |
 
 這份文件寫給**安裝與維運人員**。
 
@@ -142,11 +142,11 @@ WHERE NOT EXISTS (
 
 ```bash
 # <安裝目錄>/.env
-FILE_READ_NODE_ENABLED=1
+OS_FILE_READ_NODE_ENABLED=1
 ```
 
 ```sql
-UPDATE workflow_node_definitions SET is_active = true WHERE node_type = 'FileRead';
+UPDATE workflow_node_definitions SET is_active = true WHERE node_type = 'OsFileRead';
 
 -- 允許使用此節點的企業；安裝後預設只有系統企業獲得授權
 INSERT INTO workflow_node_org_grants (
@@ -155,7 +155,7 @@ INSERT INTO workflow_node_org_grants (
 )
 SELECT
     substr(md5(random()::text || clock_timestamp()::text), 1, 32),
-    'FileRead',
+    'OsFileRead',
     '<企業識別碼>',
     'manual_sql',
     NOW(),
@@ -164,25 +164,25 @@ SELECT
 WHERE NOT EXISTS (
     SELECT 1
       FROM workflow_node_org_grants
-     WHERE node_type = 'FileRead'
+     WHERE node_type = 'OsFileRead'
        AND org_secure_code = '<企業識別碼>'
        AND is_deleted = FALSE
 );
 
 -- 全平台允許讀取的根目錄（預設空 = 讀不到任何檔案）
 UPDATE system_settings SET value = '["/var/log/myapp", "/srv/exports"]'
- WHERE key = 'file_read_base_dirs';
+ WHERE key = 'os_file_read_base_dirs';
 
 -- 選填：再針對個別企業收窄成子集合（沒設定該企業就沿用上面的全平台清單）
 UPDATE system_settings SET value = '{"<企業識別碼>": ["/var/log/myapp"]}'
- WHERE key = 'file_read_org_base_dirs';
+ WHERE key = 'os_file_read_org_base_dirs';
 ```
 
 等效的維運工具命令：
 
 ```bash
-venv/bin/python scripts/node_grant.py grant FileRead <企業識別碼或企業代碼>
-venv/bin/python scripts/node_grant.py revoke FileRead <企業識別碼或企業代碼>
+venv/bin/python scripts/node_grant.py grant OsFileRead <企業識別碼或企業代碼>
+venv/bin/python scripts/node_grant.py revoke OsFileRead <企業識別碼或企業代碼>
 ```
 
 ### 允許目錄是三層取交集
@@ -196,7 +196,7 @@ venv/bin/python scripts/node_grant.py revoke FileRead <企業識別碼或企業�
 
 **平台不會自動把 OS 命令節點的輸出目錄加進允許清單。** 想讓流程用「檔案讀取」
 把 OS 命令的完整輸出讀回來（見第五節），要自己把 `/opt/tmp/osnode` 加進
-`file_read_base_dirs`。
+`os_file_read_base_dirs`。
 
 ---
 

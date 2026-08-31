@@ -1,12 +1,12 @@
 """
-FormWorkflow Module - FileRead Handler
+FormWorkflow Module - OsFileRead Handler
 檔案讀取節點處理器
 
-FileRead 不是 OsExecutor 的配套節點，而是刻意獨立的低一階授權能力：它不經 shell、
+OsFileRead 不是 OsExecutor 的配套節點，而是刻意獨立的低一階授權能力：它不經 shell、
 只做唯讀檔案讀取，且讀取路徑必須鎖在允許的 base_dir 之下。因此企業可以只取得
 讀 log 或狀態檔的能力，而不必同時取得平台主機命令執行權限。
 
-本節點有三道護欄：`FILE_READ_NODE_ENABLED` 執行期開關、通用節點企業授權，
+本節點有三道護欄：`OS_FILE_READ_NODE_ENABLED` 執行期開關、通用節點企業授權，
 以及平台設定、企業設定、節點設定三層 base_dir 交集。所有路徑都用 realpath
 後再以 commonpath 驗證，避免 `../` 與 symlink 逃逸。
 
@@ -31,7 +31,7 @@ from modules.form_workflow.services.node_grant_service import is_node_allowed
 
 from .base import BaseNodeHandler
 
-NODE_TYPE = 'FileRead'
+NODE_TYPE = 'OsFileRead'
 VAR_NAME_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]{0,63}$')
 ANSI_RE = re.compile(r'\x1b\[[0-9;?]*[a-zA-Z]')
 CTRL_RE = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
@@ -61,7 +61,7 @@ TAIL_BLOCK_SIZE = 64 * 1024
 OUTPUT_LOG_LIMIT = 2048
 
 
-class FileReadRejected(Exception):
+class OsFileReadRejected(Exception):
     """設定、授權或讀取階段拒絕。會轉成 success/exception，不外拋。"""
 
     def __init__(self, message: str, error_kind: str = 'bad_config'):
@@ -106,7 +106,7 @@ def _is_under_path(path: str, base_dir: str) -> bool:
         return False
 
 
-class FileReadHandler(BaseNodeHandler):
+class OsFileReadHandler(BaseNodeHandler):
     """唯讀檔案讀取節點。"""
 
     def validate(self) -> bool:
@@ -138,10 +138,10 @@ class FileReadHandler(BaseNodeHandler):
             result.update(read_result)
             result['_result'] = result.get('_result') or 'ok'
 
-        except FileReadRejected as e:
+        except OsFileReadRejected as e:
             result['_result'] = 'exception'
             result['_error_kind'] = e.error_kind
-            self.log_error('FileRead 拒絕讀取', {
+            self.log_error('OsFileRead 拒絕讀取', {
                 'error_kind': e.error_kind,
                 'reason': str(e),
             })
@@ -149,7 +149,7 @@ class FileReadHandler(BaseNodeHandler):
         except (FileNotFoundError, PermissionError, OSError) as e:
             result['_result'] = 'exception'
             result['_error_kind'] = self._io_error_kind(e)
-            self.log_error('FileRead 讀取例外', {
+            self.log_error('OsFileRead 讀取例外', {
                 'error_kind': result['_error_kind'],
                 'error': str(e),
             })
@@ -158,7 +158,7 @@ class FileReadHandler(BaseNodeHandler):
             db.session.rollback()
             result['_result'] = 'exception'
             result['_error_kind'] = 'runtime_error'
-            self.log_error('FileRead 執行例外', {
+            self.log_error('OsFileRead 執行例外', {
                 'error_kind': 'runtime_error',
                 'error': str(e),
             })
@@ -173,54 +173,54 @@ class FileReadHandler(BaseNodeHandler):
             result['skip_advance_reason'] = 'fileread_stop_after'
         elif not self._has_outgoing_edges():
             result['skip_advance'] = True
-            result['skip_advance_reason'] = 'fileread_no_outgoing'
+            result['skip_advance_reason'] = 'os_file_read_no_outgoing'
 
         return self._success_response(result)
 
     def _check_authorized(self) -> None:
-        if not _env_flag_enabled(os.environ.get('FILE_READ_NODE_ENABLED')):
-            raise FileReadRejected('FILE_READ_NODE_ENABLED 未啟用', 'not_authorized')
+        if not _env_flag_enabled(os.environ.get('OS_FILE_READ_NODE_ENABLED')):
+            raise OsFileReadRejected('OS_FILE_READ_NODE_ENABLED 未啟用', 'not_authorized')
 
         if not is_node_allowed(NODE_TYPE, self.queue_item.org_secure_code):
-            raise FileReadRejected('企業未取得 FileRead 節點授權', 'not_authorized')
+            raise OsFileReadRejected('企業未取得 OsFileRead 節點授權', 'not_authorized')
 
     def _load_config(self) -> Dict[str, Any]:
         result_var = self.get_config_value('result_var')
         if not isinstance(result_var, str) or not VAR_NAME_RE.match(result_var):
-            raise FileReadRejected('result_var 格式不合法')
+            raise OsFileReadRejected('result_var 格式不合法')
 
         base_dir = self.get_config_value('base_dir')
         if not isinstance(base_dir, str) or not base_dir.strip():
-            raise FileReadRejected('base_dir 為必填')
+            raise OsFileReadRejected('base_dir 為必填')
 
         file_path = self.get_config_value('file_path')
         if not isinstance(file_path, str) or not file_path.strip():
-            raise FileReadRejected('file_path 為必填')
+            raise OsFileReadRejected('file_path 為必填')
 
         mode = self.get_config_value('mode') or 'whole'
         if mode not in MODES:
-            raise FileReadRejected('mode 必須是 whole/head/tail/around')
+            raise OsFileReadRejected('mode 必須是 whole/head/tail/around')
 
         occurrence = self.get_config_value('occurrence') or 'first'
         if occurrence not in OCCURRENCES:
-            raise FileReadRejected('occurrence 必須是 first/last/all')
+            raise OsFileReadRejected('occurrence 必須是 first/last/all')
 
         match_scope = self.get_config_value('match_scope') or 'anywhere'
         if match_scope not in MATCH_SCOPES:
-            raise FileReadRejected('match_scope 必須是 anywhere/line_start')
+            raise OsFileReadRejected('match_scope 必須是 anywhere/line_start')
 
         match_mode = self.get_config_value('match_mode') or 'literal'
         if match_mode not in MATCH_MODES:
-            raise FileReadRejected('match_mode 必須是 literal/regex')
+            raise OsFileReadRejected('match_mode 必須是 literal/regex')
 
         keyword = ''
         if mode == 'around':
             raw_keyword = self.get_config_value('keyword')
             if not isinstance(raw_keyword, str) or raw_keyword == '':
-                raise FileReadRejected('around 模式 keyword 為必填')
+                raise OsFileReadRejected('around 模式 keyword 為必填')
             keyword = self.replace_variables(raw_keyword)
             if match_mode == 'regex' and len(keyword) > MAX_PATTERN_CHARS:
-                raise FileReadRejected('regex 樣式超過 200 字元', 'bad_pattern')
+                raise OsFileReadRejected('regex 樣式超過 200 字元', 'bad_pattern')
 
         return {
             'base_dir': base_dir.strip(),
@@ -253,13 +253,13 @@ class FileReadHandler(BaseNodeHandler):
     def _resolve_allowed_paths(self, config: Dict[str, Any]) -> Tuple[str, str]:
         node_base = os.path.realpath(config['base_dir'])
         if not os.path.isdir(node_base):
-            raise FileReadRejected('base_dir 不存在或不是目錄', 'path_denied')
+            raise OsFileReadRejected('base_dir 不存在或不是目錄', 'path_denied')
 
-        platform_dirs = self._real_existing_dirs(SystemSetting.get('file_read_base_dirs', []))
+        platform_dirs = self._real_existing_dirs(SystemSetting.get('os_file_read_base_dirs', []))
         if not platform_dirs:
-            raise FileReadRejected('file_read_base_dirs 未設定允許目錄', 'path_denied')
+            raise OsFileReadRejected('os_file_read_base_dirs 未設定允許目錄', 'path_denied')
 
-        org_map = SystemSetting.get('file_read_org_base_dirs', {})
+        org_map = SystemSetting.get('os_file_read_org_base_dirs', {})
         if not isinstance(org_map, dict):
             org_map = {}
         if self.queue_item.org_secure_code in org_map:
@@ -267,10 +267,10 @@ class FileReadHandler(BaseNodeHandler):
         else:
             org_dirs = platform_dirs
         if not org_dirs:
-            raise FileReadRejected('企業沒有可用的 file_read_org_base_dirs', 'path_denied')
+            raise OsFileReadRejected('企業沒有可用的 os_file_read_org_base_dirs', 'path_denied')
 
         if not self._under_any(node_base, platform_dirs) or not self._under_any(node_base, org_dirs):
-            raise FileReadRejected('base_dir 不在平台與企業允許目錄交集內', 'path_denied')
+            raise OsFileReadRejected('base_dir 不在平台與企業允許目錄交集內', 'path_denied')
 
         requested_path = config['file_path']
         if os.path.isabs(requested_path):
@@ -279,9 +279,9 @@ class FileReadHandler(BaseNodeHandler):
             file_path = os.path.realpath(os.path.join(node_base, requested_path))
 
         if not _is_under_path(file_path, node_base):
-            raise FileReadRejected('file_path 不在 base_dir 之下', 'path_denied')
+            raise OsFileReadRejected('file_path 不在 base_dir 之下', 'path_denied')
         if not os.path.isfile(file_path):
-            raise FileReadRejected('file_path 不存在或不是一般檔案', 'path_denied')
+            raise OsFileReadRejected('file_path 不存在或不是一般檔案', 'path_denied')
         return node_base, file_path
 
     def _real_existing_dirs(self, value: Any) -> List[str]:
@@ -502,7 +502,7 @@ class FileReadHandler(BaseNodeHandler):
         try:
             return re.compile(config['keyword'])
         except re.error as e:
-            raise FileReadRejected(f'regex 樣式不合法: {e}', 'bad_pattern')
+            raise OsFileReadRejected(f'regex 樣式不合法: {e}', 'bad_pattern')
 
     def _match_line(
         self,
@@ -602,12 +602,12 @@ class FileReadHandler(BaseNodeHandler):
         }
         return {
             'status': 'success',
-            'message': f"FileRead: {result.get('_result')}",
+            'message': f"OsFileRead: {result.get('_result')}",
             'data': data,
         }
 
     def _log_before_read(self, config: Dict[str, Any]) -> None:
-        self.log_info('FileRead 即將讀取', {
+        self.log_info('OsFileRead 即將讀取', {
             'mode': config['mode'],
             'base_dir': config.get('base_dir_real'),
             'file_path': config.get('file_path_real'),
@@ -635,9 +635,9 @@ class FileReadHandler(BaseNodeHandler):
             'error_kind': result.get('_error_kind'),
         }
         if result.get('_result') == 'ok':
-            self.log_info('FileRead 讀取完成', details)
+            self.log_info('OsFileRead 讀取完成', details)
         else:
-            self.log_error('FileRead 讀取異常', details)
+            self.log_error('OsFileRead 讀取異常', details)
 
     def _io_error_kind(self, error: Exception) -> str:
         if isinstance(error, FileNotFoundError):

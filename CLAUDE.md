@@ -1844,10 +1844,10 @@ Playwright E2E 的三條硬規則與 mutation 驗證。
 | AiAgent 的隔離設計（`--safe-mode` / `--tools ""`）與移植性 | `dev-notes/AI_NODE_SECURITY.md` |
 | AiAgent 用量與配額 | `dev-notes/AI_NODE_USAGE_QUOTA_SPEC.md` |
 | SqlExecutor 白名單（執行時重查、唯讀交易、schema 常數） | `dev-notes/SQL_EXECUTOR_SPEC.md` |
-| OsExecutor / FileRead | `dev-notes/OS_EXECUTOR_SPEC.md`（第十四節是實作後記，與規格本文有六處差異，以後記為準） |
+| OsExecutor / OsFileRead | `dev-notes/OS_EXECUTOR_SPEC.md`（第十四節是實作後記，與規格本文有六處差異，以後記為準） |
 
-**OsExecutor（NT-28）與 FileRead（NT-29）2026-08-30 上線，出廠三道全關**：
-`.env` 開關（`OS_NODE_ENABLED` / `FILE_READ_NODE_ENABLED`，**兩者刻意獨立**）、
+**OsExecutor（NT-28）與 OsFileRead（NT-29）2026-08-30 上線，出廠三道全關**：
+`.env` 開關（`OS_NODE_ENABLED` / `OS_FILE_READ_NODE_ENABLED`，**兩者刻意獨立**）、
 企業授權（見下條）、`workflow_node_definitions.is_active=false`。
 部署說明在 `docs/install/os_node.md`（會推 GitHub）。
 
@@ -1867,7 +1867,7 @@ PF-185 於 2026-08-31 完成）或維運工具
 |---|---|
 | 設計器面板可見性 | `api/workflows.py::get_node_definitions()` |
 | graph 寫入（7 個入口，含 publish） | `api/workflows.py` ×4、`api/workflow_routes.py` ×2、`api/mappings.py::publish_mapping` |
-| handler 執行期（唯一防線） | `os_executor_handler` / `file_read_handler` |
+| handler 執行期（唯一防線） | `os_executor_handler` / `os_file_read_handler` |
 
 **寫入路徑（grant / revoke）也收斂在同一支服務**：`grant_node_to_org()` /
 `revoke_node_from_org()`，Web API 與 CLI 都呼叫它，錯誤用 `NodeGrantError.code`
@@ -1886,17 +1886,29 @@ API 也**必須放平台層**（`backend/app/api/node_grants.py`）——SYSTEM_
   否則把 `workflow_node_definitions` 那筆軟刪除就等於關掉授權閘門
 - **舊的 `system_settings.os_node_allowed_orgs` / `file_read_allowed_orgs`
   已於 migration 122 刪除**，改動它們不會有任何效果（鍵根本不存在）。
-  `file_read_base_dirs` / `file_read_org_base_dirs` 不受影響，那是目錄限制
+  `os_file_read_base_dirs` / `os_file_read_org_base_dirs` 不受影響，那是目錄限制
 - **`require_system_admin` 不是替代方案**：它的判準是帳號 user_type 而非企業，
   且只擋設計器可見性、不擋 graph 寫入與 publish。理由詳見
   `dev-notes/OS_EXECUTOR_SPEC.md` 第二節（該節 2026-08-31 更正過一次
   ——「SYSTEM_ADMIN 沒有 form_workflow 合約」是錯的，實際卡在模組 ACL）
 
-**FileWrite（NT-30）2026-08-31 上線，第三個受限節點**，同樣三道全關
-（`FILE_WRITE_NODE_ENABLED`、企業授權、`is_active=false`），
-base_dir 用**獨立**的 `file_write_base_dirs` / `file_write_org_base_dirs`
-（**不與 `file_read_*` 共用**——可讀不等於可寫）。規格
-`dev-notes/FILE_WRITE_SPEC.md`，部署 `docs/install/file_write_node.md`。
+**系統級節點一律用 `Os` 前綴（Ethan 2026-08-31 定調的命名規範）**：
+`OsExecutor` / `OsFileRead` / `OsFileWrite`，`display_name` 對應
+「OS 命令」/「OS 檔案讀取」/「OS 檔案寫入」，`.env` 開關與 `system_settings`
+的目錄白名單鍵也同步帶前綴（`OS_FILE_READ_NODE_ENABLED`、
+`os_file_read_base_dirs` 等）。**新增碰觸作業系統的節點時沿用這個前綴。**
+判準是「碰不碰作業系統」而不是「是不是管理員專用」——所以 `SysTelegram`
+不在此列（它已有 `Sys` 前綴，且不碰 OS）。
+2026-08-31 之前叫 `FileRead` / `FileWrite`，改名走
+`scripts/migrations/129_os_prefix_for_system_nodes.sql`（連 graph、發行快照、
+執行紀錄、system_settings 鍵一起換——**node_type 是 factory 查 handler 的鍵，
+graph 裡的舊字串沒換掉的話該流程執行時會拋 `ValueError`**）。
+
+**OsFileWrite（NT-30）2026-08-31 上線，第三個受限節點**，同樣三道全關
+（`OS_FILE_WRITE_NODE_ENABLED`、企業授權、`is_active=false`），
+base_dir 用**獨立**的 `os_file_write_base_dirs` / `os_file_write_org_base_dirs`
+（**不與 `os_file_read_*` 共用**——可讀不等於可寫）。規格
+`dev-notes/OS_FILE_WRITE_SPEC.md`，部署 `docs/install/os_file_write_node.md`。
 
 **它每次寫入前會把檔尾連續的所有換行位元組（`\r` `\n` 任意組合）truncate 掉**，
 再依 `newline_before` / `newline_after` 兩個勾選補換行。這是規格要求，

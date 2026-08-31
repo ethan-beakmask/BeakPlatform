@@ -5,7 +5,7 @@
 流程設計者不需要讀這一篇，但**第四節必須轉達給他們**——那三件事平台修不了，
 只能靠設計流程的人自己處理。
 
-「檔案寫入」（`FileWrite`）讓流程把一段字串**追加**到主機上某個檔案的結尾。
+「檔案寫入」（`OsFileWrite`）讓流程把一段字串**追加**到主機上某個檔案的結尾。
 典型用途是寫文字型的 log，或把流程各步驟的結果組合成一份輸出檔。
 
 ---
@@ -16,12 +16,12 @@
 
 | 節點 | 能做什麼 |
 |---|---|
-| 檔案讀取（`FileRead`） | 只讀，不經 shell，鎖在允許目錄內 |
-| **檔案寫入（`FileWrite`）** | **只能在允許目錄內的一般檔案結尾追加字串** |
+| 檔案讀取（`OsFileRead`） | 只讀，不經 shell，鎖在允許目錄內 |
+| **檔案寫入（`OsFileWrite`）** | **只能在允許目錄內的一般檔案結尾追加字串** |
 | OS 命令（`OsExecutor`） | 在平台主機執行命令 |
 
 **三者的開關與企業授權完全分開，不會互相帶動。**
-可讀不等於可寫：`file_read_base_dirs` 與 `file_write_base_dirs` 是兩份清單，
+可讀不等於可寫：`os_file_read_base_dirs` 與 `os_file_write_base_dirs` 是兩份清單，
 必須各自設定。企業可以只取得「把結果寫進一個 log 檔」的能力，
 而不必同時取得讀取主機檔案或執行命令的權限。
 
@@ -43,7 +43,7 @@
 
 ```bash
 # <安裝目錄>/.env
-FILE_WRITE_NODE_ENABLED=1
+OS_FILE_WRITE_NODE_ENABLED=1
 ```
 
 改完要重新啟動節點執行器服務。**重新啟動前請先確認沒有流程正在執行中**，
@@ -52,14 +52,14 @@ FILE_WRITE_NODE_ENABLED=1
 ### 2. 讓節點在設計器裡出現
 
 ```sql
-UPDATE workflow_node_definitions SET is_active = true WHERE node_type = 'FileWrite';
+UPDATE workflow_node_definitions SET is_active = true WHERE node_type = 'OsFileWrite';
 ```
 
 ### 3. 指定允許的企業
 
 ```bash
-venv/bin/python scripts/node_grant.py grant FileWrite <企業識別碼或企業代碼>
-venv/bin/python scripts/node_grant.py revoke FileWrite <企業識別碼或企業代碼>
+venv/bin/python scripts/node_grant.py grant OsFileWrite <企業識別碼或企業代碼>
+venv/bin/python scripts/node_grant.py revoke OsFileWrite <企業識別碼或企業代碼>
 ```
 
 也可以用平台介面的「權限管理 → 節點授權」頁面（限系統管理員）。
@@ -73,7 +73,7 @@ INSERT INTO workflow_node_org_grants (
 )
 SELECT
     substr(md5(random()::text || clock_timestamp()::text), 1, 32),
-    'FileWrite',
+    'OsFileWrite',
     '<企業識別碼>',
     'manual_sql',
     NOW(),
@@ -82,7 +82,7 @@ SELECT
 WHERE NOT EXISTS (
     SELECT 1
       FROM workflow_node_org_grants
-     WHERE node_type = 'FileWrite'
+     WHERE node_type = 'OsFileWrite'
        AND org_secure_code = '<企業識別碼>'
        AND is_deleted = FALSE
 );
@@ -95,11 +95,11 @@ WHERE NOT EXISTS (
 ```sql
 -- 全平台允許寫入的根目錄（預設空清單 = 寫不到任何檔案）
 UPDATE system_settings SET value = '["/var/log/myapp"]'
- WHERE key = 'file_write_base_dirs';
+ WHERE key = 'os_file_write_base_dirs';
 
 -- 選填：再針對個別企業收窄成子集合（沒設定該企業就沿用上面的全平台清單）
 UPDATE system_settings SET value = '{"<企業識別碼>": ["/var/log/myapp"]}'
- WHERE key = 'file_write_org_base_dirs';
+ WHERE key = 'os_file_write_org_base_dirs';
 ```
 
 #### 允許目錄是三層取交集

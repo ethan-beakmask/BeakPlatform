@@ -48,7 +48,7 @@ class WorkflowNodeDefinition(BaseModel):
     # 權限
     require_system_admin = Column(Boolean, nullable=False, default=False)
     # 企業授權：True 表示此節點型別必須在 workflow_node_org_grants 有該企業的
-    # 授權記錄才可見／可用（OsExecutor、FileRead 這類主機側節點）
+    # 授權記錄才可見／可用（OsExecutor、OsFileRead 這類主機側節點）
     org_restricted = Column(Boolean, nullable=False, default=False)
 
     # is_active, is_deleted 已由 BaseModel 提供

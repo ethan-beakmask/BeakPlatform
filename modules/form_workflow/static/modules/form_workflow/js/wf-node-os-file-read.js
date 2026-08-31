@@ -1,5 +1,5 @@
 /**
- * wf-node-file-read.js -- FileRead（檔案讀取）節點屬性面板
+ * wf-node-os-file-read.js -- OsFileRead（檔案讀取）節點屬性面板
  */
 
 let _fileReadConfig = {};
@@ -38,7 +38,7 @@ function _frToggleModeFields() {
 }
 
 // eslint-disable-next-line no-unused-vars
-function renderFileReadPanel(node, nodeId) {
+function renderOsFileReadPanel(node, nodeId) {
     const cfg = node.data('config') || {};
     _fileReadConfig = cfg;
 
@@ -177,7 +177,7 @@ function renderFileReadPanel(node, nodeId) {
 
 /** 收集面板設定，回傳要合併進 node config 的物件；面板不存在時回傳 null */
 // eslint-disable-next-line no-unused-vars
-function collectFileReadConfig() {
+function collectOsFileReadConfig() {
     const baseDir = document.getElementById('frBaseDir');
     if (!baseDir) return null;
 

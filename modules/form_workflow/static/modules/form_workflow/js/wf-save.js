@@ -210,16 +210,16 @@
                     }
                     break;
                 }
-                case 'FileRead': {
-                    const frCfg = collectFileReadConfig();
+                case 'OsFileRead': {
+                    const frCfg = collectOsFileReadConfig();
                     if (frCfg) {
                         Object.assign(config, frCfg);
                         changed = true;
                     }
                     break;
                 }
-                case 'FileWrite': {
-                    const fwCfg = collectFileWriteConfig();
+                case 'OsFileWrite': {
+                    const fwCfg = collectOsFileWriteConfig();
                     if (fwCfg) {
                         Object.assign(config, fwCfg);
                         changed = true;

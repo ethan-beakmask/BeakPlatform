@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-FileWrite 節點的安全與位元組行為測試
+OsFileWrite 節點的安全與位元組行為測試
 
 這個節點的風險是「重複副作用」與「越界寫檔」：一旦 queue 被標成失敗，
 平台重試可能把同一段內容寫入多次；一旦路徑防護有缺口，流程設定就能改寫
@@ -28,8 +28,8 @@ from modules.form_workflow.models import (  # noqa: E402
     WorkflowNodeDefinition,
     WorkflowNodeOrgGrant,
 )
-from modules.form_workflow.services.node_handlers.file_write_handler import (  # noqa: E402
-    FileWriteHandler,
+from modules.form_workflow.services.node_handlers.os_file_write_handler import (  # noqa: E402
+    OsFileWriteHandler,
     _coerce_bool,
     _coerce_int,
     _env_flag_enabled,
@@ -42,25 +42,25 @@ ORG_B = 'ORG_BBBBBBBBBBBBBBBBBBBB'
 
 @pytest.fixture
 def filewrite_env(app, tmp_path, monkeypatch):
-    monkeypatch.setenv('FILE_WRITE_NODE_ENABLED', '1')
+    monkeypatch.setenv('OS_FILE_WRITE_NODE_ENABLED', '1')
     db.session.add(WorkflowNodeDefinition(
         secure_code='node_filewrite_0000000001',
-        node_type='FileWrite',
+        node_type='OsFileWrite',
         category='系統',
         display_name='檔案寫入',
-        execution_handler='tests.FileWrite',
+        execution_handler='tests.OsFileWrite',
         org_restricted=True,
         is_active=True,
         is_deleted=False,
     ))
     db.session.add(WorkflowNodeOrgGrant(
-        node_type='FileWrite',
+        node_type='OsFileWrite',
         org_secure_code=ORG_A,
         granted_by_name='test',
         is_deleted=False,
     ))
     db.session.add(SystemSetting(
-        key='file_write_base_dirs',
+        key='os_file_write_base_dirs',
         value=json.dumps([str(tmp_path)]),
         value_type='json',
         category='file_write',
@@ -73,7 +73,7 @@ def make_handler(config, org=ORG_A, has_edges=True, replace=None):
     queue_item = SimpleNamespace(
         org_secure_code=org,
         node_id='n_fw_1',
-        node_type='FileWrite',
+        node_type='OsFileWrite',
         node_config=config,
         secure_code='QUEUE_TEST',
         status='PENDING',
@@ -83,7 +83,7 @@ def make_handler(config, org=ORG_A, has_edges=True, replace=None):
         process_id=None,
         workflow_instance_secure_code=None,
     )
-    handler = FileWriteHandler(queue_item)
+    handler = OsFileWriteHandler(queue_item)
     flow_vars = {}
     handler.report_running = lambda: None
     handler.log_info = lambda msg, details=None: None
@@ -395,7 +395,7 @@ def test_ungranted_org_is_not_authorized_and_file_is_unchanged(filewrite_env):
 
 
 def test_missing_env_flag_is_not_authorized(filewrite_env, monkeypatch):
-    monkeypatch.delenv('FILE_WRITE_NODE_ENABLED')
+    monkeypatch.delenv('OS_FILE_WRITE_NODE_ENABLED')
 
     resp, _ = run_filewrite(filewrite_env)
 
@@ -404,7 +404,7 @@ def test_missing_env_flag_is_not_authorized(filewrite_env, monkeypatch):
 
 
 def test_disabled_env_flag_is_not_authorized(filewrite_env, monkeypatch):
-    monkeypatch.setenv('FILE_WRITE_NODE_ENABLED', '0')
+    monkeypatch.setenv('OS_FILE_WRITE_NODE_ENABLED', '0')
 
     resp, _ = run_filewrite(filewrite_env)
 
@@ -480,7 +480,7 @@ def test_skip_advance_when_no_outgoing_edges(filewrite_env):
 
     assert_success_response(resp)
     assert resp['data']['skip_advance'] is True
-    assert resp['data']['skip_advance_reason'] == 'filewrite_no_outgoing'
+    assert resp['data']['skip_advance_reason'] == 'os_file_write_no_outgoing'
 
 
 def test_skip_advance_when_stop_after_is_enabled(filewrite_env):

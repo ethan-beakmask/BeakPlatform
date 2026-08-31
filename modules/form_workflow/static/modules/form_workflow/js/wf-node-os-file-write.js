@@ -1,5 +1,5 @@
 /**
- * wf-node-file-write.js -- FileWrite（檔案寫入）節點屬性面板
+ * wf-node-os-file-write.js -- OsFileWrite（檔案寫入）節點屬性面板
  */
 
 function _fwEscapeHtml(value) {
@@ -18,7 +18,7 @@ function _fwPositiveInt(value, fallback) {
 }
 
 // eslint-disable-next-line no-unused-vars
-function renderFileWritePanel(node, nodeId) {
+function renderOsFileWritePanel(node, nodeId) {
     const cfg = node.data('config') || {};
 
     const baseDir = cfg.base_dir || '';
@@ -103,7 +103,7 @@ function renderFileWritePanel(node, nodeId) {
 
 /** 收集面板設定，回傳要合併進 node config 的物件；面板不存在時回傳 null */
 // eslint-disable-next-line no-unused-vars
-function collectFileWriteConfig() {
+function collectOsFileWriteConfig() {
     const baseDir = document.getElementById('fwBaseDir');
     if (!baseDir) return null;
 

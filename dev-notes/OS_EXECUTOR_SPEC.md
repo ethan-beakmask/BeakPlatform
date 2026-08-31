@@ -1,4 +1,4 @@
-# OsExecutor / FileRead 節點規格（2026-08-30 第三版，規劃階段）
+# OsExecutor / OsFileRead 節點規格（2026-08-30 第三版，規劃階段）
 
 **狀態：2026-08-30 已實作並通過端到端驗收**（PF-181 / PF-182，憑證
 `/opt/tmp/verify/20260830-osnode.log`，盤點編號 NT-28 / NT-29）。
@@ -71,7 +71,7 @@ graph 由 `PUT /api/workflows/data/templates/<sc>` 改寫，門檻是
    `workflow_node_definitions.org_restricted = true` 標示，安裝後只有系統企業
    （`organizations.is_system_org`）取得授權，**沒有 grant ＝ 不能用**。
 
-`FileRead` 的兩道閘門**各自獨立**（`FILE_READ_NODE_ENABLED` + 自己的 grant），
+`OsFileRead` 的兩道閘門**各自獨立**（`OS_FILE_READ_NODE_ENABLED` + 自己的 grant），
 理由見第六節開頭。
 
 **兩道都必須在 handler 執行期重查**，理由同 SqlExecutor 檔頭那條：
@@ -206,12 +206,12 @@ OsExecutor 有兩處要用它：
 
 ---
 
-## 六、FileRead 節點
+## 六、OsFileRead 節點
 
 ### 定位：授權低一階，這才是它真正的價值
 
 `head` / `tail` / `grep -A -B` / `grep -c` 設計師在 OsExecutor 裡就做得到。
-FileRead 存在的理由**不是**「OsExecutor 的配套」，而是：
+OsFileRead 存在的理由**不是**「OsExecutor 的配套」，而是：
 
 **它不經 shell、唯讀、可鎖在 base_dir 內，所以可以獨立授權給沒有 OsExecutor
 權限的企業與設計師。** 大部分「只想讀 log 判斷狀態」的需求，因此根本不必開
@@ -252,7 +252,7 @@ v1 只支援**單一 keyword**。多關鍵字用多次呼叫（積木哲學）�
 
 1. **`base_dir` 白名單 + `realpath` 驗證。** 解析真實路徑後必須落在允許目錄之下，
    擋 `../` 與 **symlink 逃逸**（`/opt/tmp/x -> /etc/shadow`）。
-   這是 FileRead 能「安全等級低一階」的前提，漏了就等於任意檔案讀取。
+   這是 OsFileRead 能「安全等級低一階」的前提，漏了就等於任意檔案讀取。
 2. **`max_scan_bytes` / `max_scan_ms`。** 關鍵字定位在一般情況下**只能線性掃描**
    ——但**掃描不等於載入**：逐行讀、只保留命中窗口，記憶體是 O(列數) 不是 O(檔案)。
    仍需上限，避免掃 10GB 卡住 executor；超過即停並標 `_scan_truncated`。
@@ -552,7 +552,7 @@ WHERE (wi.secure_code = :root OR wi.root_instance_code = :root)
 | `journalctl -u bp-<sc>` | dispatched 模式的輸出 | 依 journald 設定，**且有 rate limit，不保證完整** |
 
 分層之後「例外時從 log 找線索」完全成立：log 有摘要 + 路徑，要細節就去讀那個檔
-——而且**可以直接用 FileRead 節點讀回來**，兩個新節點互相咬合。
+——而且**可以直接用 OsFileRead 節點讀回來**，兩個新節點互相咬合。
 
 ### 例外通知
 
@@ -581,7 +581,7 @@ OsExecutor 數量」，超過上限就回 `status: 'waiting'` 並帶 `retry_afte
 ### 部署需求（實作時寫進 `docs/install/os_node.md`，比照 `docs/install/ai_node.md`）
 
 - **sudoers 三條**（第七節）＋ **executor 應使用專用 OS 帳號**的說明與風險告知
-- `.env.example` 加 `OS_NODE_ENABLED` / `FILE_READ_NODE_ENABLED` 與註解
+- `.env.example` 加 `OS_NODE_ENABLED` / `OS_FILE_READ_NODE_ENABLED` 與註解
 - cron：定期 `systemctl reset-failed bp-*` 與清理 `/opt/tmp/osnode/`
 - **不需要 `at`**（第七節已說明放棄理由）
 
@@ -598,12 +598,12 @@ CSS），**不必改前端分類**。
 
 `require_system_admin` 一律 `false`（理由見第二節），可見性靠 env 開關控制 `is_active`。
 
-屬性面板要新寫 `wf-node-os-executor.js` / `wf-node-file-read.js`
+屬性面板要新寫 `wf-node-os-executor.js` / `wf-node-os-file-read.js`
 ——`workflow_node_definitions.config_schema` **沒有任何前端消費者**，
 往 DB 補 schema 不會讓設計器多出欄位。
 
 **新增節點要同步登記 `dev-notes/NODE_TEST_INVENTORY.md`**：
-編號往後接續，**下一個是 NT-28**（OsExecutor）、NT-29（FileRead）。
+編號往後接續，**下一個是 NT-28**（OsExecutor）、NT-29（OsFileRead）。
 編號一經指派不得重排、不得回收。
 
 ### 驗收
@@ -666,12 +666,12 @@ dispatched 節點啟動 unit 後立刻回 `SUCCESS`，而 `cancel_pending_nodes`
 一律 `status: 'success'` ＋ `_result='exception'` ＋ `_error_kind='not_authorized'`，
 **不是** `error`。理由同第三節：回 `error` 會被重試 3 次，而授權拒絕重試永遠不會成功。
 
-### 3. FileRead 的 base_dir 設定來源
+### 3. OsFileRead 的 base_dir 設定來源
 
-**三者疊加，取交集**：系統設定 `file_read_base_dirs`（全平台上限）
+**三者疊加，取交集**：系統設定 `os_file_read_base_dirs`（全平台上限）
 ∩ 企業設定（該企業可讀的子集）∩ 節點 config 的 `base_dir`（本次要讀哪一個）。
 **系統設定預設為空 ＝ 全部拒絕**（fail-closed）。
-`/opt/tmp/osnode/` 不自動加入——要讓 FileRead 讀得到 OsExecutor 的輸出，
+`/opt/tmp/osnode/` 不自動加入——要讓 OsFileRead 讀得到 OsExecutor 的輸出，
 部署時明確加進系統設定。
 
 ### 4. `max_scan_ms` 對 Python `re` 無效（冷讀抓到的第二個實質問題）
@@ -749,12 +749,12 @@ sudo systemctl restart beakplatform-dev-executor
 | 檔案 | 內容 |
 |---|---|
 | `modules/form_workflow/services/node_handlers/os_executor_handler.py` | OsExecutor handler |
-| `modules/form_workflow/services/node_handlers/file_read_handler.py` | FileRead handler |
+| `modules/form_workflow/services/node_handlers/os_file_read_handler.py` | OsFileRead handler |
 | `modules/form_workflow/services/workflow_engine.py` | `_stop_os_dispatched_units()`，cancel 時停 unit |
 | `modules/form_workflow/services/workflow_executor.py` | **WAITING 喚醒清單加 `OsExecutor`**（見下方差異 2） |
 | `scripts/migrations/120_seed_os_executor_node.sql` / `121_seed_file_read_node.sql` | 節點定義與 system_settings，`is_active=FALSE` 出廠 |
 | `scripts/cron/os_node_cleanup.py` | 輸出檔清理 + `systemctl reset-failed 'bp-*'` |
-| `wf-node-os-executor.js` / `wf-node-file-read.js` | 設計器面板 |
+| `wf-node-os-executor.js` / `wf-node-os-file-read.js` | 設計器面板 |
 | `docs/install/os_node.md` | 部署與授權說明（會推 GitHub） |
 
 ### 與本規格的六處差異
@@ -776,7 +776,7 @@ sudo systemctl restart beakplatform-dev-executor
    `LoadState=not-found`（回的 `Result=success` 是預設值不是真實結果）。
    成功與否要看 `journalctl -u bp-<sc>`。這件事已寫進 `docs/install/os_node.md`。
 
-4. **FileRead 的「企業層 base_dir」定案存在系統設定 `file_read_org_base_dirs`**
+4. **OsFileRead 的「企業層 base_dir」定案存在系統設定 `os_file_read_org_base_dirs`**
    （json 物件，key 是 org secure_code）。第十三節第 3 點只說「企業設定」沒指定位置；
    實作沒有為它新增資料表或欄位。**該企業沒有鍵時視為「不再收窄」，直接用平台清單。**
 
@@ -789,7 +789,7 @@ sudo systemctl restart beakplatform-dev-executor
    `/bin/echo ; touch ... ; #` 且檔案真的被建立。
    這比暫時改程式碼更嚴謹：測的是同一支程式的兩個分支，可重複、不留殘骸。
 
-### 實作時另外修掉的兩個 FileRead 缺陷
+### 實作時另外修掉的兩個 OsFileRead 缺陷
 
 - `occurrence='first'` 與 `max_windows` 達標時 `break` 之前沒清掉 `current`，
   迴圈後的收尾又 append 一次 → **同一個窗口輸出兩次並多一條 `--`**
@@ -810,7 +810,7 @@ sudo systemctl restart beakplatform-dev-executor
   `system_settings.file_read_allowed_orgs` 改為 `workflow_node_org_grants` 表，
   受限節點由 `workflow_node_definitions.org_restricted` 標示。
 - 三個消費點都改吃同一個 service：設計器節點可見性、graph 寫入驗證、handler 執行期。
-- `.env` 的 `OS_NODE_ENABLED` / `FILE_READ_NODE_ENABLED` 仍是主機層總開關，
+- `.env` 的 `OS_NODE_ENABLED` / `OS_FILE_READ_NODE_ENABLED` 仍是主機層總開關，
   與企業授權維持 AND 關係。
 - 舊的兩個 system_settings 白名單鍵已在 migration 122 轉入 grants 後刪除；
-  `file_read_base_dirs` 與 `file_read_org_base_dirs` 維持不變。
+  `os_file_read_base_dirs` 與 `os_file_read_org_base_dirs` 維持不變。

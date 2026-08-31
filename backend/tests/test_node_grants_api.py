@@ -62,10 +62,10 @@ def node_grants_data(app, test_org):
         ),
         WorkflowNodeDefinition(
             secure_code='node_file_api_000001',
-            node_type='FileRead',
+            node_type='OsFileRead',
             category='系統',
             display_name='檔案讀取',
-            execution_handler='tests.FileRead',
+            execution_handler='tests.OsFileRead',
             org_restricted=True,
             is_active=False,
             is_deleted=False,
@@ -109,8 +109,8 @@ def test_system_admin_matrix_lists_restricted_nodes_including_inactive(
     assert res.status_code == 200
     data = res.get_json()['data']
     node_types = {node['node_type']: node for node in data['nodes']}
-    assert set(node_types) == {'FileRead', 'OsExecutor'}
-    assert node_types['FileRead']['is_active'] is False
+    assert set(node_types) == {'OsFileRead', 'OsExecutor'}
+    assert node_types['OsFileRead']['is_active'] is False
     assert node_types['OsExecutor']['is_active'] is True
 
 
@@ -196,18 +196,18 @@ def test_bulk_grant_all_active_orgs_and_rejects_unknown_action(
     test_org,
 ):
     res = _post(system_client, '/api/node-grants/bulk', {
-        'node_type': 'FileRead',
+        'node_type': 'OsFileRead',
         'action': 'grant',
     })
 
     assert res.status_code == 200
     assert res.get_json()['changed_count'] == 2
-    assert len(_active_grants('FileRead', test_org.secure_code)) == 1
-    assert len(_active_grants('FileRead', node_grants_data['org2'].secure_code)) == 1
-    assert len(_active_grants('FileRead', node_grants_data['deleted_org'].secure_code)) == 0
+    assert len(_active_grants('OsFileRead', test_org.secure_code)) == 1
+    assert len(_active_grants('OsFileRead', node_grants_data['org2'].secure_code)) == 1
+    assert len(_active_grants('OsFileRead', node_grants_data['deleted_org'].secure_code)) == 0
 
     bad = _post(system_client, '/api/node-grants/bulk', {
-        'node_type': 'FileRead',
+        'node_type': 'OsFileRead',
         'action': 'delete',
     })
     assert bad.status_code == 400

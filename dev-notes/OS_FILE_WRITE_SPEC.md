@@ -1,12 +1,12 @@
-# FileWrite 節點規格（NT-30，2026-08-31 實作完成）
+# OsFileWrite 節點規格（NT-30，2026-08-31 實作完成）
 
-對應 handler：`modules/form_workflow/services/node_handlers/file_write_handler.py`
-設計器面板：`modules/form_workflow/static/modules/form_workflow/js/wf-node-file-write.js`
+對應 handler：`modules/form_workflow/services/node_handlers/os_file_write_handler.py`
+設計器面板：`modules/form_workflow/static/modules/form_workflow/js/wf-node-os-file-write.js`
 migration：`scripts/migrations/124_seed_file_write_node.sql`
-測試：`backend/tests/test_file_write_node.py`
-部署說明（會推 GitHub）：`docs/install/file_write_node.md`
+測試：`backend/tests/test_os_file_write_node.py`
+部署說明（會推 GitHub）：`docs/install/os_file_write_node.md`
 
-姊妹節點：`FileRead`（NT-29）與 `OsExecutor`（NT-28），規格見 `dev-notes/OS_EXECUTOR_SPEC.md`。
+姊妹節點：`OsFileRead`（NT-29）與 `OsExecutor`（NT-28），規格見 `dev-notes/OS_EXECUTOR_SPEC.md`。
 
 ---
 
@@ -14,14 +14,14 @@ migration：`scripts/migrations/124_seed_file_write_node.sql`
 
 | 節點 | 能力 | 相對風險 |
 |---|---|---|
-| `FileRead` | 唯讀，不經 shell，鎖在允許目錄內 | 最低 |
-| **`FileWrite`** | **只能對允許目錄內的一般檔案「追加」字串**，不經 shell、不能覆寫既有內容、不能刪檔、不能建目錄 | 中 |
+| `OsFileRead` | 唯讀，不經 shell，鎖在允許目錄內 | 最低 |
+| **`OsFileWrite`** | **只能對允許目錄內的一般檔案「追加」字串**，不經 shell、不能覆寫既有內容、不能刪檔、不能建目錄 | 中 |
 | `OsExecutor` | 在平台主機執行命令 | 最高 |
 
 **三者的 `.env` 開關與企業授權刻意各自獨立。**
-`FILE_READ_NODE_ENABLED` 與 `FILE_WRITE_NODE_ENABLED` 是兩個變數，
+`OS_FILE_READ_NODE_ENABLED` 與 `OS_FILE_WRITE_NODE_ENABLED` 是兩個變數，
 `workflow_node_org_grants` 也是兩筆記錄——**可讀不等於可寫**，
-`file_read_base_dirs` 與 `file_write_base_dirs` 同樣不共用。
+`os_file_read_base_dirs` 與 `os_file_write_base_dirs` 同樣不共用。
 
 企業可以只取得「把處理結果寫進一個 log 檔」的能力，而不必同時取得讀取
 主機任意允許檔案或執行命令的權限。
@@ -80,7 +80,7 @@ handler 是 `fieldwrite_handler.py`。把 OS 檔案寫入塞進去會同時破�
 'L1\n'       → 寫 L2 → 清掉 \n 得 'L1' → 'L1\nL2\n'   ← 正確
 ```
 
-面板的提示小字與 `docs/install/file_write_node.md` 都寫了這件事。
+面板的提示小字與 `docs/install/os_file_write_node.md` 都寫了這件事。
 **出廠預設目前是 `before=False` / `after=True`**，也就是「組合字串」語意
 而不是「一行一筆」語意——這是**待 Ethan 裁決**的項目，見第八節。
 
@@ -101,7 +101,7 @@ handler 是 `fieldwrite_handler.py`。把 OS 檔案寫入塞進去會同時破�
 
 | # | 護欄 | 失效時的行為 |
 |---|---|---|
-| 1 | `.env` 的 `FILE_WRITE_NODE_ENABLED` | `not_authorized` |
+| 1 | `.env` 的 `OS_FILE_WRITE_NODE_ENABLED` | `not_authorized` |
 | 2 | 企業授權 `workflow_node_org_grants`（經 `node_grant_service.is_node_allowed`） | `not_authorized` |
 | 3 | `workflow_node_definitions.is_active`（出廠 **FALSE**） | 節點不出現在設計器 |
 
@@ -111,20 +111,20 @@ handler 是 `fieldwrite_handler.py`。把 OS 檔案寫入塞進去會同時破�
 | 消費點 | 位置 | 本次實測結果 |
 |---|---|---|
 | 設計器面板可見性 | `api/workflows.py::get_node_definitions()` | 未授權企業看不到（BELUGA / LION 皆 0 命中） |
-| graph 寫入（含 publish，7 個入口） | `api/workflows.py` ×4、`api/workflow_routes.py` ×2、`api/mappings.py` | 未授權企業 POST 含 FileWrite 的 graph → **403** |
-| handler 執行期 | `file_write_handler.py::_check_authorized()` | 直接改 DB 繞過前兩層仍被擋 → `not_authorized` |
+| graph 寫入（含 publish，7 個入口） | `api/workflows.py` ×4、`api/workflow_routes.py` ×2、`api/mappings.py` | 未授權企業 POST 含 OsFileWrite 的 graph → **403** |
+| handler 執行期 | `os_file_write_handler.py::_check_authorized()` | 直接改 DB 繞過前兩層仍被擋 → `not_authorized` |
 
 出廠授權只有系統企業（migration 124 的最後一段 `WHERE organizations.is_system_org = TRUE`）。
 
 ### base_dir 三層交集
 
-平台層 `system_settings.file_write_base_dirs`（list，**預設 `[]` 表示全部拒絕**）
-∩ 企業層 `file_write_org_base_dirs`（dict，key 為 org secure_code，
+平台層 `system_settings.os_file_write_base_dirs`（list，**預設 `[]` 表示全部拒絕**）
+∩ 企業層 `os_file_write_org_base_dirs`（dict，key 為 org secure_code，
 **企業無設定時不收窄平台清單**）∩ 節點 config 的 `base_dir`。
 
 所有路徑先 `os.path.realpath()` 再用 `os.path.commonpath()` 比對。
 
-### 目標檔的路徑解析比 FileRead 更嚴（因為要寫）
+### 目標檔的路徑解析比 OsFileRead 更嚴（因為要寫）
 
 ```
 abs_path = requested if isabs else join(node_base, requested)
@@ -161,11 +161,11 @@ queue 38a18c26... status=SUCCESS retry_count=0  → 流程變數 e2e_result="exc
                                                    e2e_error_kind="path_denied"
 ```
 
-`FileRead` 與 `OsExecutor` 的四分法（多一個 `dispatched`）在此只用得到三個，
-因為 FileWrite **v1 同步完成、不派工到 OS**。
+`OsFileRead` 與 `OsExecutor` 的四分法（多一個 `dispatched`）在此只用得到三個，
+因為 OsFileWrite **v1 同步完成、不派工到 OS**。
 
 > **警告**：若日後改成非同步而回 `waiting` / `pending`，
-> `workflow_executor.py` 內**兩處**節點型別清單都必須加上 `FileWrite`。
+> `workflow_executor.py` 內**兩處**節點型別清單都必須加上 `OsFileWrite`。
 > 漏掉的話節點會永遠卡在 WAITING 而且不報錯（`Converge` 就是這樣死的，
 > 2026-08-30 OsExecutor 上線時又踩過一次）。
 
@@ -193,7 +193,7 @@ queue 38a18c26... status=SUCCESS retry_count=0  → 流程變數 e2e_result="exc
 | `max_file_bytes` | int | 64MB | 硬上限 512MB。判定用 `size_before + len(payload)`（保守） |
 | `lock_timeout_ms` | int | 5000 | 硬上限 60000 |
 | `result_var` | string 必填 | — | `^[a-zA-Z_][a-zA-Z0-9_]{0,63}$` |
-| `stop_after` | bool | `false` | 語意同 FileRead |
+| `stop_after` | bool | `false` | 語意同 OsFileRead |
 
 ### 寫出的流程變數
 
@@ -245,7 +245,7 @@ base_dir 一律設在本機檔案系統。
 
 ## 八、待 Ethan 裁決 / 已知限制
 
-1. **命名**：`FileWrite`（與 `FileRead` 對稱）。要改名的話 node_type 字串出現在
+1. **命名**：`OsFileWrite`（與 `OsFileRead` 對稱）。要改名的話 node_type 字串出現在
    handler / factory / migration 124 / 前端面板 / 本文件 / 部署文件，約 6 處
 2. **兩個換行勾選的出廠預設**：目前 `before=False` / `after=True`，
    連續寫入會黏成一行（第二節）。若主要情境是 log，應改成兩個都 `True`

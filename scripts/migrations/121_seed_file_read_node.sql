@@ -1,16 +1,16 @@
--- 121: 註冊 FileRead 節點到 workflow_node_definitions
+-- 121: 註冊 OsFileRead 節點到 workflow_node_definitions
 -- 建立日期: 2026-08-30
--- 對應 handler: modules/form_workflow/services/node_handlers/file_read_handler.py
+-- 對應 handler: modules/form_workflow/services/node_handlers/os_file_read_handler.py
 --
--- is_active=FALSE 是刻意的：FileRead 雖然唯讀且不經 shell，仍可讀平台主機檔案，
+-- is_active=FALSE 是刻意的：OsFileRead 雖然唯讀且不經 shell，仍可讀平台主機檔案，
 -- 預設必須 fail-closed。
 -- 啟用步驟：
---   1. .env 設 FILE_READ_NODE_ENABLED=1 並重啟 executor
---   2. UPDATE workflow_node_definitions SET is_active=true WHERE node_type='FileRead';
+--   1. .env 設 OS_FILE_READ_NODE_ENABLED=1 並重啟 executor
+--   2. UPDATE workflow_node_definitions SET is_active=true WHERE node_type='OsFileRead';
 --   3. 將允許企業 secure_code 寫入 system_settings.file_read_allowed_orgs
---   4. 設定 system_settings.file_read_base_dirs 與 file_read_org_base_dirs
+--   4. 設定 system_settings.os_file_read_base_dirs 與 os_file_read_org_base_dirs
 --
--- /opt/tmp/osnode/ 不會自動加入 file_read_base_dirs；若要讓 FileRead 讀取
+-- /opt/tmp/osnode/ 不會自動加入 os_file_read_base_dirs；若要讓 OsFileRead 讀取
 -- OsExecutor 的輸出全文，部署時必須明確把該目錄加入允許清單。
 
 INSERT INTO workflow_node_definitions (
@@ -40,14 +40,14 @@ INSERT INTO workflow_node_definitions (
 )
 SELECT
     substr(md5(random()::text || clock_timestamp()::text), 1, 32),
-    'FileRead',
+    'OsFileRead',
     'SYSTEM',
     NULL,
     '系統',
-    '檔案讀取',
+    'OS 檔案讀取',
     '唯讀、不經 shell、鎖在允許目錄內；需在 .env 啟用並設定企業白名單與允許目錄。',
-    '/static/modules/form_workflow/icons/workflow/fileread.svg',
-    'modules.form_workflow.services.node_handlers.file_read_handler.FileReadHandler',
+    '/static/modules/form_workflow/icons/workflow/osfileread.svg',
+    'modules.form_workflow.services.node_handlers.os_file_read_handler.OsFileReadHandler',
     '{
         "base_dir": "string",
         "file_path": "string",
@@ -80,7 +80,7 @@ SELECT
     NOW(),
     NOW()
 WHERE NOT EXISTS (
-    SELECT 1 FROM workflow_node_definitions WHERE node_type = 'FileRead'
+    SELECT 1 FROM workflow_node_definitions WHERE node_type = 'OsFileRead'
 );
 
 INSERT INTO system_settings (
@@ -100,8 +100,8 @@ SELECT
     'file_read_allowed_orgs',
     '[]',
     'json',
-    '允許執行 FileRead 節點的企業 secure_code 清單；預設空清單表示全部拒絕。',
-    'file_read',
+    '允許執行 OsFileRead 節點的企業 secure_code 清單；預設空清單表示全部拒絕。',
+    'os_file_read',
     'SYSTEM',
     NOW(),
     NOW(),
@@ -124,17 +124,17 @@ INSERT INTO system_settings (
 )
 SELECT
     substr(md5(random()::text || clock_timestamp()::text), 1, 32),
-    'file_read_base_dirs',
+    'os_file_read_base_dirs',
     '[]',
     'json',
-    'FileRead 全平台可讀 base_dir 上限；預設空清單表示全部拒絕。',
-    'file_read',
+    'OsFileRead 全平台可讀 base_dir 上限；預設空清單表示全部拒絕。',
+    'os_file_read',
     'SYSTEM',
     NOW(),
     NOW(),
     FALSE
 WHERE NOT EXISTS (
-    SELECT 1 FROM system_settings WHERE key = 'file_read_base_dirs'
+    SELECT 1 FROM system_settings WHERE key = 'os_file_read_base_dirs'
 );
 
 INSERT INTO system_settings (
@@ -151,15 +151,15 @@ INSERT INTO system_settings (
 )
 SELECT
     substr(md5(random()::text || clock_timestamp()::text), 1, 32),
-    'file_read_org_base_dirs',
+    'os_file_read_org_base_dirs',
     '{}',
     'json',
-    '各企業 FileRead 可讀 base_dir 子集，key 為 org secure_code；企業無設定時不再收窄平台清單。',
-    'file_read',
+    '各企業 OsFileRead 可讀 base_dir 子集，key 為 org secure_code；企業無設定時不再收窄平台清單。',
+    'os_file_read',
     'SYSTEM',
     NOW(),
     NOW(),
     FALSE
 WHERE NOT EXISTS (
-    SELECT 1 FROM system_settings WHERE key = 'file_read_org_base_dirs'
+    SELECT 1 FROM system_settings WHERE key = 'os_file_read_org_base_dirs'
 );

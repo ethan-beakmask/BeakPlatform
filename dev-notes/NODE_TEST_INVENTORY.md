@@ -61,7 +61,7 @@
 | NT-26 | `NavbarBroadcast` | 跑馬燈廣播 | 通知 | 未驗證 | — |
 | NT-27 | `Telegram` | Telegram 通知 | 通知 | 未驗證 | — |
 | NT-28 | `OsExecutor` | OS 命令 | 系統 | 端到端 | `20260830-osnode.log`（四分法四條路徑、兩道授權閘門、cancel 協同兩種、併發上限、引號化對照） |
-| NT-29 | `FileRead` | 檔案讀取 | 系統 | 端到端 | `20260830-osnode.log`（四種模式、兩道授權閘門、symlink 與 `../` 逃逸各一次、regex／line_start／occurrence 三軸） |
+| NT-29 | `OsFileRead` | 檔案讀取 | 系統 | 端到端 | `20260830-osnode.log`（四種模式、兩道授權閘門、symlink 與 `../` 逃逸各一次、regex／line_start／occurrence 三軸） |
 
 進度：端到端 9 / 單元 0 / 部分 1 / 未驗證 15 / 已退役 1 / 已刪除 3。
 
@@ -71,8 +71,8 @@
 
 ## 2026-08-30 第三批：主機側節點 NT-28 / NT-29（憑證 `/opt/tmp/verify/20260830-osnode.log`）
 
-PF-181（OsExecutor）與 PF-182（FileRead）一併上線，規格見 `dev-notes/OS_EXECUTOR_SPEC.md`。
-兩者的授權閘門刻意各自獨立（`OS_NODE_ENABLED` / `FILE_READ_NODE_ENABLED` ＋
+PF-181（OsExecutor）與 PF-182（OsFileRead）一併上線，規格見 `dev-notes/OS_EXECUTOR_SPEC.md`。
+兩者的授權閘門刻意各自獨立（`OS_NODE_ENABLED` / `OS_FILE_READ_NODE_ENABLED` ＋
 兩份企業白名單），驗收時分別關掉各自的開關實測過。
 
 ### NT-28 OsExecutor 實測矩陣
@@ -107,7 +107,7 @@ PF-181（OsExecutor）與 PF-182（FileRead）一併上線，規格見 `dev-note
 | `${v.payload}` | `/bin/echo '; touch ... ; #'` | **沒有**（注入被中和） |
 | `${v.payload!raw}` | `/bin/echo ; touch ... ; #` | **有**（證明測資本身真的可執行） |
 
-### NT-29 FileRead 實測矩陣
+### NT-29 OsFileRead 實測矩陣
 
 檔案 `/opt/tmp/frtest/sample.log`（2000 行、含中文、3 行 ERROR）。
 
@@ -122,24 +122,24 @@ PF-181（OsExecutor）與 PF-182（FileRead）一併上線，規格見 `dev-note
 | 壞掉的 regex `([unclosed` | `exception` + `_error_kind=bad_pattern` |
 | symlink 逃逸（`evil.link -> /etc/passwd`） | `exception` + `path_denied` |
 | `../../etc/passwd` | `exception` + `path_denied` |
-| 企業未取得 `FileRead` grant（`workflow_node_org_grants`） | `exception` + `not_authorized` |
-| `FILE_READ_NODE_ENABLED` 註解掉後重啟 | `exception` + `not_authorized` |
+| 企業未取得 `OsFileRead` grant（`workflow_node_org_grants`） | `exception` + `not_authorized` |
+| `OS_FILE_READ_NODE_ENABLED` 註解掉後重啟 | `exception` + `not_authorized` |
 
 ### 本批修掉的三個缺陷（都是實測才發現的）
 
 1. **executor 的 WAITING 喚醒清單漏了 OsExecutor**（`workflow_executor.py` 兩處）。
    併發上限回 `waiting` 的節點永遠不會被撿回來，實測第 4 個節點的 `scheduled_at`
    過期數分鐘仍停在 WAITING。加進清單後立刻被喚醒並完成
-2. **FileRead `occurrence=first` / `max_windows` 達標時窗口重複輸出一次**：
+2. **OsFileRead `occurrence=first` / `max_windows` 達標時窗口重複輸出一次**：
    `break` 之前沒有清掉 `current`，迴圈後的收尾又 append 了同一個窗口
    （症狀是輸出重複同一段並多出一條 `--`）
-3. **FileRead `tail` 的 `_truncated` 恆為 true**：原本用 `position > 0` 判定，
+3. **OsFileRead `tail` 的 `_truncated` 恆為 true**：原本用 `position > 0` 判定，
    而 tail 本來就只讀檔尾，於是這個旗標對 tail 失去鑑別力。
    改為「撞到 `MAX_READ_BYTES` 才算截斷」
 
 ### 設計器面板
 
-`wf-node-os-executor.js` / `wf-node-file-read.js`，接線在 `wf-accordion.js`（清單 +
+`wf-node-os-executor.js` / `wf-node-os-file-read.js`，接線在 `wf-accordion.js`（清單 +
 dispatch）、`wf-save.js`（case）、`wf-render.js`（node type 正規化）、
 `workflow_designer.html`（script）。瀏覽器實測記錄在同一份憑證檔尾段：
 顯示/隱藏切換、select 初次渲染值、collect 的型別轉換（exit codes / extra_env /

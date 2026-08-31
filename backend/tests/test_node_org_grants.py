@@ -47,10 +47,10 @@ def node_grant_data(app):
         ),
         WorkflowNodeDefinition(
             secure_code='node_file_000000000000001',
-            node_type='FileRead',
+            node_type='OsFileRead',
             category='系統',
             display_name='檔案讀取',
-            execution_handler='tests.FileRead',
+            execution_handler='tests.OsFileRead',
             org_restricted=True,
             is_active=True,
             is_deleted=False,

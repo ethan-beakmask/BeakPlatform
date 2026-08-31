@@ -1,11 +1,11 @@
 """
-FormWorkflow Module - FileWrite Handler
+FormWorkflow Module - OsFileWrite Handler
 檔案寫入節點處理器
 
-FileWrite 是系統級、低階檔案追加能力：它不經 shell，只對允許 base_dir 下的一般檔案
-追加字串。它與 FileRead 分開授權，因為可讀不等於可寫。
+OsFileWrite 是系統級、低階檔案追加能力：它不經 shell，只對允許 base_dir 下的一般檔案
+追加字串。它與 OsFileRead 分開授權，因為可讀不等於可寫。
 
-本節點有三道護欄：`FILE_WRITE_NODE_ENABLED` 執行期開關、通用節點企業授權，
+本節點有三道護欄：`OS_FILE_WRITE_NODE_ENABLED` 執行期開關、通用節點企業授權，
 以及平台設定、企業設定、節點設定三層 base_dir 交集。目標檔最後一段 symlink
 一律拒絕，開檔時也使用 `O_NOFOLLOW` 作為 TOCTOU 防線。
 
@@ -15,7 +15,7 @@ FileWrite 是系統級、低階檔案追加能力：它不經 shell，只對允�
 fw_node_execution_logs（level=ERROR），判斷本節點成敗不能看 queue 的 status。
 
 v1 刻意同步完成、不回 waiting / pending。若日後改成非同步，
-`workflow_executor.py` 內兩處節點型別清單都必須加上 FileWrite，漏了節點會永遠卡在
+`workflow_executor.py` 內兩處節點型別清單都必須加上 OsFileWrite，漏了節點會永遠卡在
 WAITING 而且不報錯。
 """
 import codecs
@@ -33,7 +33,7 @@ from modules.form_workflow.services.node_grant_service import is_node_allowed
 
 from .base import BaseNodeHandler
 
-NODE_TYPE = 'FileWrite'
+NODE_TYPE = 'OsFileWrite'
 VAR_NAME_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]{0,63}$')
 
 DEFAULT_MAX_FILE_BYTES = 64 * 1024 * 1024
@@ -44,7 +44,7 @@ TAIL_SCAN_BLOCK_SIZE = 8192
 OUTPUT_LOG_LIMIT = 2048
 
 
-class FileWriteRejected(Exception):
+class OsFileWriteRejected(Exception):
     """設定、授權或寫入階段拒絕。會轉成 success/exception，不外拋。"""
 
     def __init__(
@@ -87,7 +87,7 @@ def _is_under_path(path: str, base_dir: str) -> bool:
         return False
 
 
-class FileWriteHandler(BaseNodeHandler):
+class OsFileWriteHandler(BaseNodeHandler):
     """檔案追加寫入節點。"""
 
     def validate(self) -> bool:
@@ -115,11 +115,11 @@ class FileWriteHandler(BaseNodeHandler):
             result.update(write_result)
             result['_result'] = result.get('_result') or 'ok'
 
-        except FileWriteRejected as e:
+        except OsFileWriteRejected as e:
             result.update(e.details)
             result['_result'] = 'timeout' if e.error_kind == 'lock_timeout' else 'exception'
             result['_error_kind'] = e.error_kind
-            self.log_error('FileWrite 拒絕寫入', {
+            self.log_error('OsFileWrite 拒絕寫入', {
                 'error_kind': e.error_kind,
                 'reason': str(e),
             })
@@ -127,7 +127,7 @@ class FileWriteHandler(BaseNodeHandler):
         except (FileNotFoundError, PermissionError, OSError) as e:
             result['_result'] = 'exception'
             result['_error_kind'] = self._io_error_kind(e)
-            self.log_error('FileWrite 寫入例外', {
+            self.log_error('OsFileWrite 寫入例外', {
                 'error_kind': result['_error_kind'],
                 'error': str(e),
             })
@@ -136,7 +136,7 @@ class FileWriteHandler(BaseNodeHandler):
             db.session.rollback()
             result['_result'] = 'exception'
             result['_error_kind'] = 'runtime_error'
-            self.log_error('FileWrite 執行例外', {
+            self.log_error('OsFileWrite 執行例外', {
                 'error_kind': 'runtime_error',
                 'error': str(e),
             })
@@ -153,32 +153,32 @@ class FileWriteHandler(BaseNodeHandler):
             result['skip_advance_reason'] = 'filewrite_stop_after'
         elif not self._has_outgoing_edges():
             result['skip_advance'] = True
-            result['skip_advance_reason'] = 'filewrite_no_outgoing'
+            result['skip_advance_reason'] = 'os_file_write_no_outgoing'
 
         return self._success_response(result)
 
     def _check_authorized(self) -> None:
-        if not _env_flag_enabled(os.environ.get('FILE_WRITE_NODE_ENABLED')):
-            raise FileWriteRejected('FILE_WRITE_NODE_ENABLED 未啟用', 'not_authorized')
+        if not _env_flag_enabled(os.environ.get('OS_FILE_WRITE_NODE_ENABLED')):
+            raise OsFileWriteRejected('OS_FILE_WRITE_NODE_ENABLED 未啟用', 'not_authorized')
 
         if not is_node_allowed(NODE_TYPE, self.queue_item.org_secure_code):
-            raise FileWriteRejected('企業未取得 FileWrite 節點授權', 'not_authorized')
+            raise OsFileWriteRejected('企業未取得 OsFileWrite 節點授權', 'not_authorized')
 
     def _load_config(self) -> Dict[str, Any]:
         result_var = self.get_config_value('result_var')
         if not isinstance(result_var, str) or not VAR_NAME_RE.match(result_var):
-            raise FileWriteRejected('result_var 格式不合法')
+            raise OsFileWriteRejected('result_var 格式不合法')
 
         base_dir = self.get_config_value('base_dir')
         if not isinstance(base_dir, str) or not base_dir.strip():
-            raise FileWriteRejected('base_dir 為必填')
+            raise OsFileWriteRejected('base_dir 為必填')
 
         file_path = self.get_config_value('file_path')
         if not isinstance(file_path, str) or not file_path.strip():
-            raise FileWriteRejected('file_path 為必填')
+            raise OsFileWriteRejected('file_path 為必填')
 
         if 'content' not in self.node_config or not isinstance(self.node_config.get('content'), str):
-            raise FileWriteRejected('content 為必填')
+            raise OsFileWriteRejected('content 為必填')
 
         encoding = str(self.get_config_value('encoding') or 'utf-8')
         self._validate_encoding(encoding)
@@ -187,7 +187,7 @@ class FileWriteHandler(BaseNodeHandler):
             body = content.encode(encoding, errors='strict')
             newline = '\n'.encode(encoding, errors='strict')
         except UnicodeEncodeError as e:
-            raise FileWriteRejected(f'content 編碼失敗: {e}', 'encode_error')
+            raise OsFileWriteRejected(f'content 編碼失敗: {e}', 'encode_error')
 
         return {
             'base_dir': base_dir.strip(),
@@ -218,25 +218,25 @@ class FileWriteHandler(BaseNodeHandler):
     def _validate_encoding(self, encoding: str) -> None:
         normalized = encoding.lower().replace('-', '').replace('_', '')
         if normalized.startswith('utf16') or normalized.startswith('utf32'):
-            raise FileWriteRejected('encoding 不支援 UTF-16/UTF-32 家族', 'bad_config')
+            raise OsFileWriteRejected('encoding 不支援 UTF-16/UTF-32 家族', 'bad_config')
         try:
             codecs.lookup(encoding)
             # rot13 / base64 這類 codec 查得到卻不是文字編碼，str.encode() 會拋
             # LookupError。在這裡先試一次，錯誤才會歸到 bad_config 而不是 runtime_error。
             ''.encode(encoding)
         except LookupError:
-            raise FileWriteRejected('encoding 不存在或不是文字編碼', 'bad_config')
+            raise OsFileWriteRejected('encoding 不存在或不是文字編碼', 'bad_config')
 
     def _resolve_allowed_paths(self, config: Dict[str, Any]) -> Tuple[str, str]:
         node_base = os.path.realpath(config['base_dir'])
         if not os.path.isdir(node_base):
-            raise FileWriteRejected('base_dir 不存在或不是目錄', 'path_denied')
+            raise OsFileWriteRejected('base_dir 不存在或不是目錄', 'path_denied')
 
-        platform_dirs = self._real_existing_dirs(SystemSetting.get('file_write_base_dirs', []))
+        platform_dirs = self._real_existing_dirs(SystemSetting.get('os_file_write_base_dirs', []))
         if not platform_dirs:
-            raise FileWriteRejected('file_write_base_dirs 未設定允許目錄', 'path_denied')
+            raise OsFileWriteRejected('os_file_write_base_dirs 未設定允許目錄', 'path_denied')
 
-        org_map = SystemSetting.get('file_write_org_base_dirs', {})
+        org_map = SystemSetting.get('os_file_write_org_base_dirs', {})
         if not isinstance(org_map, dict):
             org_map = {}
         if self.queue_item.org_secure_code in org_map:
@@ -244,10 +244,10 @@ class FileWriteHandler(BaseNodeHandler):
         else:
             org_dirs = platform_dirs
         if not org_dirs:
-            raise FileWriteRejected('企業沒有可用的 file_write_org_base_dirs', 'path_denied')
+            raise OsFileWriteRejected('企業沒有可用的 os_file_write_org_base_dirs', 'path_denied')
 
         if not self._under_any(node_base, platform_dirs) or not self._under_any(node_base, org_dirs):
-            raise FileWriteRejected('base_dir 不在平台與企業允許目錄交集內', 'path_denied')
+            raise OsFileWriteRejected('base_dir 不在平台與企業允許目錄交集內', 'path_denied')
 
         requested_path = config['file_path']
         if os.path.isabs(requested_path):
@@ -257,19 +257,19 @@ class FileWriteHandler(BaseNodeHandler):
         parent = os.path.realpath(os.path.dirname(abs_path))
         name = os.path.basename(abs_path)
         if not name or name in ('.', '..') or '/' in name:
-            raise FileWriteRejected('file_path 檔名不合法', 'path_denied')
+            raise OsFileWriteRejected('file_path 檔名不合法', 'path_denied')
 
         final_path = os.path.join(parent, name)
         if not os.path.isdir(parent):
-            raise FileWriteRejected('file_path 父目錄不存在或不是目錄', 'path_denied')
+            raise OsFileWriteRejected('file_path 父目錄不存在或不是目錄', 'path_denied')
         if not _is_under_path(final_path, node_base):
-            raise FileWriteRejected('file_path 不在 base_dir 之下', 'path_denied')
+            raise OsFileWriteRejected('file_path 不在 base_dir 之下', 'path_denied')
         if os.path.islink(final_path):
-            raise FileWriteRejected('file_path 是 symlink，拒絕寫入', 'path_denied')
+            raise OsFileWriteRejected('file_path 是 symlink，拒絕寫入', 'path_denied')
         if os.path.lexists(final_path):
             file_stat = os.lstat(final_path)
             if not stat.S_ISREG(file_stat.st_mode):
-                raise FileWriteRejected('file_path 不是一般檔案', 'path_denied')
+                raise OsFileWriteRejected('file_path 不是一般檔案', 'path_denied')
         return node_base, final_path
 
     def _real_existing_dirs(self, value: Any) -> List[str]:
@@ -300,11 +300,11 @@ class FileWriteHandler(BaseNodeHandler):
                 fd = os.open(file_path, flags, 0o640)
             except OSError as e:
                 if e.errno == errno.ELOOP:
-                    raise FileWriteRejected('file_path 是 symlink，拒絕寫入', 'path_denied')
+                    raise OsFileWriteRejected('file_path 是 symlink，拒絕寫入', 'path_denied')
                 raise
             try:
                 self._lock_fd(fd, config['lock_timeout_ms'])
-            except FileWriteRejected as e:
+            except OsFileWriteRejected as e:
                 if e.error_kind == 'lock_timeout':
                     e.details['_created'] = created
                 raise
@@ -312,7 +312,7 @@ class FileWriteHandler(BaseNodeHandler):
 
             file_stat = os.fstat(fd)
             if not stat.S_ISREG(file_stat.st_mode):
-                raise FileWriteRejected('file_path 不是一般檔案', 'path_denied', {
+                raise OsFileWriteRejected('file_path 不是一般檔案', 'path_denied', {
                     '_created': created,
                 })
 
@@ -321,7 +321,7 @@ class FileWriteHandler(BaseNodeHandler):
             new_size = size_before - trimmed_bytes
             payload = self._build_payload(config, new_size)
             if size_before + len(payload) > config['max_file_bytes']:
-                raise FileWriteRejected('寫入後會超過 max_file_bytes', 'file_too_large', {
+                raise OsFileWriteRejected('寫入後會超過 max_file_bytes', 'file_too_large', {
                     '_trimmed_bytes': trimmed_bytes,
                     '_size_before': size_before,
                     '_size_after': size_before,
@@ -361,7 +361,7 @@ class FileWriteHandler(BaseNodeHandler):
                 return
             except (BlockingIOError, OSError):
                 if time.monotonic() >= deadline:
-                    raise FileWriteRejected('取得檔案鎖逾時', 'lock_timeout')
+                    raise OsFileWriteRejected('取得檔案鎖逾時', 'lock_timeout')
                 time.sleep(0.05)
 
     def _pread_exact(self, fd: int, count: int, offset: int) -> bytes:
@@ -461,12 +461,12 @@ class FileWriteHandler(BaseNodeHandler):
         }
         return {
             'status': 'success',
-            'message': f"FileWrite: {result.get('_result')}",
+            'message': f"OsFileWrite: {result.get('_result')}",
             'data': data,
         }
 
     def _log_before_write(self, config: Dict[str, Any]) -> None:
-        self.log_info('FileWrite 即將寫入', {
+        self.log_info('OsFileWrite 即將寫入', {
             'base_dir': config.get('base_dir_real'),
             'file_path': config.get('file_path_real'),
             'content_len': len(config.get('content') or ''),
@@ -489,9 +489,9 @@ class FileWriteHandler(BaseNodeHandler):
             'content_head': result.get('_content_head') or '',
         }
         if result.get('_result') == 'ok':
-            self.log_info('FileWrite 寫入完成', details)
+            self.log_info('OsFileWrite 寫入完成', details)
         else:
-            self.log_error('FileWrite 寫入異常', details)
+            self.log_error('OsFileWrite 寫入異常', details)
 
     def _io_error_kind(self, error: Exception) -> str:
         if isinstance(error, FileNotFoundError):
