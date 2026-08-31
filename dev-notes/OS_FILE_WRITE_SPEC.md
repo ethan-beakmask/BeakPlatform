@@ -291,3 +291,17 @@ base_dir 一律設在本機檔案系統。
 | 10 | 設計器面板（chrome-devtools 實測） | 勾選存檔 → 重載讀回 | 11 欄位往返一致，checkbox 未被撐成全寬（FRONT-05） |
 
 harness 檢查項共 99 條全過（尾端換行、編碼、路徑、授權、語彙、skip_advance、變數替換）。
+
+### PF-191 `newline_smart` 驗收（2026-08-31 深夜，commit `bb68eb1f`）
+
+原始輸出：`/opt/tmp/verify/20260831-pf191-smart.log`
+
+| # | 項目 | 方法 | 結果 |
+|---|---|---|---|
+| 1 | `smart` × `before` × `after` 八組合 × 空/非空檔（16 案例） | 獨立 harness，逐位元組比對 | 全過 |
+| 2 | config 缺 `newline_smart` key → 視為啟用 | 同上 | `b'abc\nXYZ\n'` |
+| 3 | 出廠預設（只帶必填項）連寫 A、B、C | 同上 | `b'A\nB\nC\n'` |
+| 4 | content 尾端自帶換行原樣寫入（保留空行能力） | 同上 | `b'abc\nL1\n\n'` |
+| 5 | 面板互斥（初始反灰、切換雙向、disabled 的 before 照舊收集） | chrome-devtools | 全過 |
+| 6 | `saveWorkflow()` → DB graph → reload 往返 | chrome-devtools + psql | `newline_smart:true` 一致 |
+| 7 | pytest | `run_tests.sh tests/test_os_file_write_node.py` | 68 → 87 passed |
