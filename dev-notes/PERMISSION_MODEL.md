@@ -32,6 +32,13 @@
 核心原則（明文化，取代散落 12 處的隱性特例）：
 
 1. **user_type 是唯一的身分硬界線**。角色永不跨層——不存在「一個角色讓 EMPLOYEE 取得 ORG_ADMIN 能力」。
+   「角色永不跨層」自 2026-09-01（PF-145 階段三之二）起在**指派時強制執行**：
+   層界維度用既有的 `roles.scope_type`——EXTERNAL 帳號只能被指派
+   `scope_type='EXTERNAL'` 的角色，內部帳號不得被指派外部範圍角色，雙向都擋。
+   唯一實作 `role_assignment_service.ensure_role_layer_compatible()`；
+   部門成員／主管／管理職三支 POST 端點另掛 EMPLOYEE-only 守門
+   （部門是雇傭結構，候選清單 API 本來就只列 EMPLOYEE）。
+   新增任何寫 `user_role_assignments` 的路徑都必須呼叫該檢查。
 2. **角色只做層內細分，且僅對 EMPLOYEE / EXTERNAL 生效**。
    SYSTEM_ADMIN / ORG_ADMIN 在選單樹與 PageRoleGuard 一律 bypass 角色檢查
    （`_menu_tree.py`、`page_role_guard.py`）——這是規則，不是妥協。

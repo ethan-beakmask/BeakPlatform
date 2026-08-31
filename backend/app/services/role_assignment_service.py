@@ -60,6 +60,32 @@ def _user_type_labels():
     }
 
 
+def ensure_role_layer_compatible(user, role):
+    """
+    PERM-01 層界檢查（PF-145 階段三之二，2026-09-01 起）。
+
+    EXTERNAL 帳號只能持有 scope_type=EXTERNAL 的角色；
+    內部帳號（EMPLOYEE / ORG_ADMIN / SYSTEM_ADMIN）不得持有 EXTERNAL 範圍角色。
+    層界維度沿用既有的 roles.scope_type，不另建 user_type 欄位——
+    ScopeType.EXTERNAL 的語意本來就是「外部人員（非雇傭關係，受限存取）」。
+
+    在此之前任何角色都能指派給任何身分：EXTERNAL 帳號拿到內部角色後，
+    角色制的模組 API（/api/ 不吃雙鑰匙 Key1）整組打得進去（PERM-03）。
+    """
+    is_external_user = str(user.user_type) == UserType.EXTERNAL
+    is_external_role = role.scope_type == ScopeType.EXTERNAL
+    if is_external_user and not is_external_role:
+        raise ValueError(_(
+            '無法指派「%(role)s」：外部廠商帳號只能指派外部範圍的角色',
+            role=role.name,
+        ))
+    if is_external_role and not is_external_user:
+        raise ValueError(_(
+            '無法指派「%(role)s」：外部範圍角色只能指派給外部廠商帳號',
+            role=role.name,
+        ))
+
+
 def list_account_roles(org_sc, account_type=None, keyword=None, page=1, per_page=50):
     """Return account role overview data for one organization."""
     page = max(int(page or 1), 1)
@@ -147,6 +173,8 @@ def assign_role(org_sc, user_sc, role_sc, unit_sc=None):
     ).first()
     if not role:
         raise ValueError(_('角色不存在'))
+
+    ensure_role_layer_compatible(user, role)
 
     unit_sc = (unit_sc or '').strip() or None
     _validate_unit_scope(org_sc, role, unit_sc)

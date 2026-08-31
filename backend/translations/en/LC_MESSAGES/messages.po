@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-31 02:23+0800\n"
+"POT-Creation-Date: 2026-09-01 01:25+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -590,7 +590,7 @@ msgstr "Conglomerate not found"
 msgid "集團至少需要兩家企業"
 msgstr "A conglomerate requires at least two organizations"
 
-#: ../modules/form_workflow/api/backgrounds.py:150
+#: ../modules/form_workflow/api/backgrounds.py:151
 #: ../modules/form_workflow/api/categories.py:314
 #: ../modules/form_workflow/api/form_themes.py:219 app/api/conglomerates.py:214
 #: app/web/approval_categories.py:269 app/web/delegations.py:237
@@ -690,7 +690,7 @@ msgid "建立職務分類失敗"
 msgstr "Failed to create duty category"
 
 #: app/api/duties.py:153 app/api/duties.py:383
-#: app/api/organizational_units.py:405 app/api/organizational_units.py:1580
+#: app/api/organizational_units.py:405 app/api/organizational_units.py:1593
 #: app/api/organizations.py:223 app/api/roles.py:388
 msgid "請提供更新資料"
 msgstr "Please provide update data"
@@ -836,7 +836,7 @@ msgstr "No logo has been uploaded"
 msgid "Logo 已刪除"
 msgstr "Logo deleted"
 
-#: ../modules/form_workflow/api/backgrounds.py:192
+#: ../modules/form_workflow/api/backgrounds.py:194
 #: ../modules/form_workflow/api/categories.py:360
 #: ../modules/form_workflow/api/form_themes.py:264
 #: app/api/enterprise_settings.py:381 app/api/files.py:474
@@ -988,7 +988,7 @@ msgid "系統級類別不可修改"
 msgstr "System-level categories cannot be modified"
 
 #: ../modules/form_workflow/api/fc_phrases.py:148 app/api/lookup.py:201
-#: app/api/lookup.py:381 app/api/organizational_units.py:1606
+#: app/api/lookup.py:381 app/api/organizational_units.py:1619
 msgid "更新失敗"
 msgstr "Update failed"
 
@@ -1215,12 +1215,12 @@ msgstr "Bulk operation failed"
 
 #: app/api/organizational_units.py:274 app/api/organizational_units.py:401
 #: app/api/organizational_units.py:490 app/api/organizational_units.py:672
-#: app/api/organizational_units.py:755 app/api/organizational_units.py:810
-#: app/api/organizational_units.py:864 app/api/organizational_units.py:973
-#: app/api/organizational_units.py:1051 app/api/organizational_units.py:1112
-#: app/api/organizational_units.py:1186 app/api/organizational_units.py:1294
-#: app/api/organizational_units.py:1368 app/api/organizational_units.py:1431
-#: app/api/organizational_units.py:1566 app/api/organizational_units.py:1630
+#: app/api/organizational_units.py:755 app/api/organizational_units.py:815
+#: app/api/organizational_units.py:869 app/api/organizational_units.py:982
+#: app/api/organizational_units.py:1060 app/api/organizational_units.py:1121
+#: app/api/organizational_units.py:1195 app/api/organizational_units.py:1307
+#: app/api/organizational_units.py:1381 app/api/organizational_units.py:1444
+#: app/api/organizational_units.py:1579 app/api/organizational_units.py:1643
 msgid "組織單位不存在"
 msgstr "Organizational unit not found"
 
@@ -1328,90 +1328,102 @@ msgstr ", %(count)s members moved to Unassigned"
 msgid "刪除組織單位失敗"
 msgstr "Failed to delete organizational unit"
 
-#: app/api/organizational_units.py:759 app/api/organizational_units.py:868
-#: app/api/organizational_units.py:1190 app/api/organizational_units.py:1435
+#: app/api/organizational_units.py:759 app/api/organizational_units.py:873
+#: app/api/organizational_units.py:1199 app/api/organizational_units.py:1448
 msgid "請提供用戶 ID"
 msgstr "Please provide a user ID"
 
 #: ../modules/nocode_builder/services/project_service.py:362
-#: app/api/organizational_units.py:769 app/api/organizational_units.py:877
-#: app/api/organizational_units.py:982 app/api/organizational_units.py:1199
-#: app/api/organizational_units.py:1445 app/api/organizational_units.py:1679
-#: app/services/role_assignment_service.py:141
+#: app/api/organizational_units.py:769 app/api/organizational_units.py:882
+#: app/api/organizational_units.py:991 app/api/organizational_units.py:1208
+#: app/api/organizational_units.py:1458 app/api/organizational_units.py:1692
+#: app/services/role_assignment_service.py:167
 msgid "用戶不存在"
 msgstr "User not found"
 
-#: app/api/organizational_units.py:779 app/api/organizational_units.py:1491
-#: app/api/organizational_units.py:1527
+#: app/api/organizational_units.py:774
+msgid "只有企業成員帳號可加入部門"
+msgstr "Only employee accounts can be added to a department"
+
+#: app/api/organizational_units.py:784 app/api/organizational_units.py:1504
+#: app/api/organizational_units.py:1540
 #, python-format
 msgid "已將 %(user)s 加入 %(unit)s"
 msgstr "%(user)s added to %(unit)s"
 
-#: app/api/organizational_units.py:790
+#: app/api/organizational_units.py:795
 msgid "加入部門失敗"
 msgstr "Failed to add to department"
 
-#: app/api/organizational_units.py:821
+#: app/api/organizational_units.py:826
 msgid "用戶不存在或不屬於此部門"
 msgstr "User does not exist or does not belong to this department"
 
-#: app/api/organizational_units.py:831
+#: app/api/organizational_units.py:836
 #, python-format
 msgid "已將 %(user)s 從 %(unit)s 移除"
 msgstr "%(user)s removed from %(unit)s"
 
-#: app/api/organizational_units.py:837
+#: app/api/organizational_units.py:842
 msgid "移除成員失敗"
 msgstr "Failed to remove member"
 
-#: app/api/organizational_units.py:887
+#: app/api/organizational_units.py:886
+msgid "只有企業成員帳號可設為部門主管"
+msgstr "Only employee accounts can be set as department manager"
+
+#: app/api/organizational_units.py:896
 msgid "部門主管角色不存在，請聯繫系統管理員"
 msgstr "Department manager role not found. Please contact the system administrator"
 
-#: app/api/organizational_units.py:936
+#: app/api/organizational_units.py:945
 #, python-format
 msgid "已設定 %(user)s 為 %(unit)s 主管"
 msgstr "%(user)s set as manager of %(unit)s"
 
-#: app/api/organizational_units.py:950
+#: app/api/organizational_units.py:959
 msgid "設定主管失敗"
 msgstr "Failed to set manager"
 
-#: app/api/organizational_units.py:992
+#: app/api/organizational_units.py:1001
 msgid "部門主管角色不存在"
 msgstr "Department manager role not found"
 
-#: app/api/organizational_units.py:1024
+#: app/api/organizational_units.py:1033
 #, python-format
 msgid "已移除 %(user)s 的 %(unit)s 主管角色"
 msgstr "Manager role of %(unit)s removed from %(user)s"
 
-#: app/api/organizational_units.py:1030
+#: app/api/organizational_units.py:1039
 msgid "移除主管角色失敗"
 msgstr "Failed to remove manager role"
 
-#: app/api/organizational_units.py:1177 app/api/organizational_units.py:1285
+#: app/api/organizational_units.py:1186 app/api/organizational_units.py:1298
 msgid "無效的職位類型"
 msgstr "Invalid position type"
 
-#: app/api/organizational_units.py:1209
+#: app/api/organizational_units.py:1212
+msgid "只有企業成員帳號可擔任部門管理職"
+msgstr "Only employee accounts can hold department leadership positions"
+
+#: app/api/organizational_units.py:1222
 #, python-format
 msgid "%(position)s 角色不存在，請聯繫系統管理員"
 msgstr "%(position)s role not found. Please contact the system administrator"
 
-#: app/api/organizational_units.py:1240 app/api/organizational_units.py:1322
+#: app/api/organizational_units.py:1253 app/api/organizational_units.py:1335
 #: app/services/role_assignment_service.py:37
 #: app/templates/pages/admin/departments.html:363
 msgid "主管"
 msgstr "Manager"
 
-#: app/api/organizational_units.py:1241 app/api/organizational_units.py:1323
+#: app/api/organizational_units.py:1254 app/api/organizational_units.py:1336
 #: app/services/role_assignment_service.py:38
 #: app/templates/pages/admin/departments.html:399
 msgid "副主管"
 msgstr "Deputy Manager"
 
-#: app/api/organizational_units.py:1242 app/api/organizational_units.py:1324
+#: app/api/organizational_units.py:1255 app/api/organizational_units.py:1337
 #: app/services/role_assignment_service.py:28
 #: app/services/role_assignment_service.py:39
 #: app/templates/pages/admin/departments.html:380
@@ -1419,7 +1431,7 @@ msgstr "Deputy Manager"
 msgid "代理人(一)"
 msgstr "Deputy (1)"
 
-#: app/api/organizational_units.py:1243 app/api/organizational_units.py:1325
+#: app/api/organizational_units.py:1256 app/api/organizational_units.py:1338
 #: app/services/role_assignment_service.py:29
 #: app/services/role_assignment_service.py:40
 #: app/templates/pages/admin/departments.html:416
@@ -1427,63 +1439,63 @@ msgstr "Deputy (1)"
 msgid "代理人(二)"
 msgstr "Deputy (2)"
 
-#: app/api/organizational_units.py:1249
+#: app/api/organizational_units.py:1262
 #, python-format
 msgid "已設定 %(user)s 為 %(unit)s %(position)s"
 msgstr "%(user)s set as %(position)s of %(unit)s"
 
-#: app/api/organizational_units.py:1263
+#: app/api/organizational_units.py:1276
 msgid "設定失敗"
 msgstr "Operation failed"
 
-#: app/api/organizational_units.py:1304
+#: app/api/organizational_units.py:1317
 #, python-format
 msgid "%(position)s 角色不存在"
 msgstr "%(position)s role not found"
 
-#: app/api/organizational_units.py:1331
+#: app/api/organizational_units.py:1344
 #, python-format
 msgid "已移除 %(unit)s %(position)s"
 msgstr "%(position)s of %(unit)s removed"
 
-#: app/api/organizational_units.py:1337 app/api/organizational_units.py:1658
+#: app/api/organizational_units.py:1350 app/api/organizational_units.py:1671
 msgid "移除失敗"
 msgstr "Removal failed"
 
-#: app/api/organizational_units.py:1357
+#: app/api/organizational_units.py:1370
 msgid "無權限存取此社群"
 msgstr "No permission to access this group"
 
-#: app/api/organizational_units.py:1419 app/api/organizational_units.py:1554
-#: app/api/organizational_units.py:1620
+#: app/api/organizational_units.py:1432 app/api/organizational_units.py:1567
+#: app/api/organizational_units.py:1633
 msgid "無權限管理此社群成員"
 msgstr "No permission to manage members of this group"
 
-#: app/api/organizational_units.py:1451
+#: app/api/organizational_units.py:1464
 msgid "外部人員不可加入企業群組"
 msgstr "External users cannot join company groups"
 
-#: app/api/organizational_units.py:1461
+#: app/api/organizational_units.py:1474
 msgid "無效的成員類型"
 msgstr "Invalid member type"
 
-#: app/api/organizational_units.py:1473
+#: app/api/organizational_units.py:1486
 msgid "該用戶已是此單位的成員"
 msgstr "This user is already a member of this unit"
 
-#: app/api/organizational_units.py:1497 app/api/organizational_units.py:1534
+#: app/api/organizational_units.py:1510 app/api/organizational_units.py:1547
 msgid "新增失敗"
 msgstr "Creation failed"
 
-#: app/api/organizational_units.py:1576 app/api/organizational_units.py:1640
+#: app/api/organizational_units.py:1589 app/api/organizational_units.py:1653
 msgid "成員關係不存在"
 msgstr "Membership not found"
 
-#: app/api/organizational_units.py:1599
+#: app/api/organizational_units.py:1612
 msgid "更新成功"
 msgstr "Updated successfully"
 
-#: app/api/organizational_units.py:1652
+#: app/api/organizational_units.py:1665
 msgid "已移除成員關係"
 msgstr "Membership removed"
 
@@ -1504,7 +1516,7 @@ msgstr "Membership removed"
 #: ../modules/nocode_builder/api/project_api.py:132
 #: ../modules/nocode_builder/api/project_api.py:149
 #: ../modules/nocode_builder/api/project_api.py:171
-#: app/api/organizational_units.py:1714 app/api/organizations.py:218
+#: app/api/organizational_units.py:1727 app/api/organizations.py:218
 #: app/api/security_center.py:291 app/templates/pages/job_titles/view.html:41
 msgid "無權限"
 msgstr "No permission"
@@ -1594,7 +1606,7 @@ msgid "無法確定企業"
 msgstr "Unable to determine organization"
 
 #: app/api/roles.py:166 app/api/roles.py:378 app/api/roles.py:471
-#: app/api/roles.py:526 app/services/role_assignment_service.py:149
+#: app/api/roles.py:526 app/services/role_assignment_service.py:175
 msgid "角色不存在"
 msgstr "Role not found"
 
@@ -2069,7 +2081,7 @@ msgstr "Deputy Head"
 
 #: app/services/role_assignment_service.py:30
 #: app/services/role_assignment_service.py:31
-#: app/services/role_assignment_service.py:305
+#: app/services/role_assignment_service.py:333
 #: app/templates/pages/admin/groups.html:351
 msgid "團員"
 msgstr "member"
@@ -2084,8 +2096,8 @@ msgid "代理"
 msgstr "Delegated"
 
 #: app/services/role_assignment_service.py:50
-#: app/services/role_assignment_service.py:269
-#: app/services/role_assignment_service.py:271
+#: app/services/role_assignment_service.py:297
+#: app/services/role_assignment_service.py:299
 msgid "員工"
 msgstr "Employee"
 
@@ -2143,38 +2155,48 @@ msgstr "External Member"
 msgid "系統管理員"
 msgstr "System Admin"
 
-#: app/services/role_assignment_service.py:166
+#: app/services/role_assignment_service.py:79
+#, python-format
+msgid "無法指派「%(role)s」：外部廠商帳號只能指派外部範圍的角色"
+msgstr "Cannot assign \"%(role)s\": external vendor accounts can only be assigned external-scope roles"
+
+#: app/services/role_assignment_service.py:84
+#, python-format
+msgid "無法指派「%(role)s」：外部範圍角色只能指派給外部廠商帳號"
+msgstr "Cannot assign \"%(role)s\": external-scope roles can only be assigned to external vendor accounts"
+
+#: app/services/role_assignment_service.py:194
 #, python-format
 msgid "用戶已擁有「%(role)s」角色"
 msgstr "The user already has the \"%(role)s\" role"
 
-#: app/services/role_assignment_service.py:187
+#: app/services/role_assignment_service.py:215
 #, python-format
 msgid "已將「%(role)s」指派給 %(user)s"
 msgstr "\"%(role)s\" assigned to %(user)s"
 
-#: app/services/role_assignment_service.py:201
+#: app/services/role_assignment_service.py:229
 msgid "找不到此角色指派"
 msgstr "Role assignment not found"
 
-#: app/services/role_assignment_service.py:220
+#: app/services/role_assignment_service.py:248
 #, python-format
 msgid "已移除 %(user)s 的「%(role)s」角色"
 msgstr "\"%(role)s\" role removed from %(user)s"
 
-#: app/services/role_assignment_service.py:406
+#: app/services/role_assignment_service.py:434
 msgid "此角色必須選擇單位"
 msgstr "This role requires a unit"
 
-#: app/services/role_assignment_service.py:415
+#: app/services/role_assignment_service.py:443
 msgid "單位不存在或類型不符"
 msgstr "Unit does not exist or its type does not match"
 
-#: app/services/role_assignment_service.py:419
+#: app/services/role_assignment_service.py:447
 msgid "此角色不可指定單位"
 msgstr "This role cannot be bound to a unit"
 
-#: app/services/role_assignment_service.py:447
+#: app/services/role_assignment_service.py:475
 #, python-format
 msgid "無法指派「%(role)s」：與現有角色「%(conflict)s」互斥，請先移除後再指派"
 msgstr ""
@@ -6380,7 +6402,6 @@ msgid "新增核決權限類別"
 msgstr "Added Approval Authority category"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:17
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:13
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:148
 #: app/templates/pages/approval_categories/create.html:7
 #: app/templates/pages/approval_categories/edit.html:20
@@ -12492,7 +12513,7 @@ msgstr "Category %(name)s deleted"
 msgid "已儲存核決上限"
 msgstr "Approval limits saved"
 
-#: app/web/cg_databases.py:145
+#: app/web/cg_databases.py:148
 msgid "(集團已刪除)"
 msgstr "(conglomerate deleted)"
 
@@ -14954,11 +14975,11 @@ msgstr "This conglomerate has no shared database yet"
 #: ../modules/spec_formulate/api/_mf_export.py:51
 #: ../modules/spec_formulate/api/_mf_export.py:183
 #: ../modules/spec_formulate/api/_mf_form_link.py:39
-#: ../modules/spec_formulate/api/_mf_form_link.py:165
-#: ../modules/spec_formulate/api/_mf_form_link.py:210
-#: ../modules/spec_formulate/api/_mf_form_link.py:269
-#: ../modules/spec_formulate/api/_mf_form_link.py:302
-#: ../modules/spec_formulate/api/_mf_form_link.py:366
+#: ../modules/spec_formulate/api/_mf_form_link.py:166
+#: ../modules/spec_formulate/api/_mf_form_link.py:211
+#: ../modules/spec_formulate/api/_mf_form_link.py:270
+#: ../modules/spec_formulate/api/_mf_form_link.py:303
+#: ../modules/spec_formulate/api/_mf_form_link.py:367
 #: ../modules/spec_formulate/api/_mf_pg.py:32
 #: ../modules/spec_formulate/api/_mf_pg.py:59
 #: ../modules/spec_formulate/api/_mf_pg.py:80
@@ -14980,10 +15001,10 @@ msgstr "Unable to get organization info"
 #: ../modules/spec_formulate/api/_mf_cg.py:225
 #: ../modules/spec_formulate/api/_mf_cg.py:301
 #: ../modules/spec_formulate/api/_mf_form_link.py:48
-#: ../modules/spec_formulate/api/_mf_form_link.py:218
-#: ../modules/spec_formulate/api/_mf_form_link.py:277
-#: ../modules/spec_formulate/api/_mf_form_link.py:310
-#: ../modules/spec_formulate/api/_mf_form_link.py:374
+#: ../modules/spec_formulate/api/_mf_form_link.py:219
+#: ../modules/spec_formulate/api/_mf_form_link.py:278
+#: ../modules/spec_formulate/api/_mf_form_link.py:311
+#: ../modules/spec_formulate/api/_mf_form_link.py:375
 #: ../modules/spec_formulate/api/_mf_pg.py:109
 #: ../modules/spec_formulate/api/_mf_pg.py:143
 #: ../modules/spec_formulate/api/_mf_pg.py:210
@@ -15055,63 +15076,63 @@ msgstr "%(name)s v%(version)s has inactive facets: %(facets)s"
 msgid "匯出失敗: %(error)s"
 msgstr "Export failed: %(error)s"
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:117
+#: ../modules/spec_formulate/api/_mf_form_link.py:118
 msgid "此表單尚未關聯規格"
 msgstr "This form has no linked spec yet"
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:125
-#: ../modules/spec_formulate/api/_mf_form_link.py:232
+#: ../modules/spec_formulate/api/_mf_form_link.py:126
+#: ../modules/spec_formulate/api/_mf_form_link.py:233
 msgid "表單模板不存在"
 msgstr "Form template not found"
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:152
+#: ../modules/spec_formulate/api/_mf_form_link.py:153
 #, python-format
 msgid "已自動建立規格「%(name)s」"
 msgstr "Spec \"%(name)s\" created automatically"
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:223
+#: ../modules/spec_formulate/api/_mf_form_link.py:224
 msgid "缺少 form_template_secure_code"
 msgstr "Missing form_template_secure_code"
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:244
+#: ../modules/spec_formulate/api/_mf_form_link.py:245
 #, python-format
 msgid "此表單模板已被「%(name)s」關聯"
 msgstr "This form template is already linked by \"%(name)s\""
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:257
+#: ../modules/spec_formulate/api/_mf_form_link.py:258
 #, python-format
 msgid "已關聯表單模板「%(name)s」"
 msgstr "Form template \"%(name)s\" linked"
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:282
+#: ../modules/spec_formulate/api/_mf_form_link.py:283
 msgid "已解除表單關聯"
 msgstr "Form link removed"
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:313
+#: ../modules/spec_formulate/api/_mf_form_link.py:314
 msgid "此規格尚未關聯表單"
 msgstr "This spec has no linked form yet"
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:320
+#: ../modules/spec_formulate/api/_mf_form_link.py:321
 msgid "關聯的表單模板不存在"
 msgstr "Linked form template not found"
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:337
+#: ../modules/spec_formulate/api/_mf_form_link.py:338
 #, python-format
 msgid "已同步 %(n)s 個欄位回表單「%(name)s」"
 msgstr "Synced %(n)s fields back to form \"%(name)s\""
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:394
+#: ../modules/spec_formulate/api/_mf_form_link.py:395
 #, python-format
 msgid "表單代碼 %(code)s 已存在"
 msgstr "Form code %(code)s already exists"
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:401
+#: ../modules/spec_formulate/api/_mf_form_link.py:402
 msgid "此規格尚未啟用 FormIO 格式，請先填充 FormIO facet"
 msgstr ""
 "This spec has not enabled the FormIO facet. Populate the FormIO facet "
 "first"
 
-#: ../modules/spec_formulate/api/_mf_form_link.py:435
+#: ../modules/spec_formulate/api/_mf_form_link.py:436
 #, python-format
 msgid "已建立並關聯表單「%(name)s」(%(code)s)"
 msgstr "Form \"%(name)s\" (%(code)s) created and linked"
@@ -15734,7 +15755,7 @@ msgstr "Applied to %(count)s pages"
 msgid "底圖上傳成功"
 msgstr "Background image uploaded"
 
-#: ../modules/form_workflow/api/backgrounds.py:187
+#: ../modules/form_workflow/api/backgrounds.py:189
 #: ../modules/nocode_builder/api/__init__.py:1625
 msgid "底圖已刪除"
 msgstr "Background image deleted"
@@ -16546,6 +16567,7 @@ msgstr ""
 "The preview identity only affects the [Preview] result; it is not saved "
 "with the page."
 
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:13
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:37
 msgid "返回"
 msgstr "Back"
@@ -17950,12 +17972,12 @@ msgstr "Date format is invalid"
 msgid "結束日期必須晚於開始日期"
 msgstr "End date must be later than start date"
 
-#: ../modules/form_workflow/api/backgrounds.py:133
-#: ../modules/form_workflow/api/backgrounds.py:171
+#: ../modules/form_workflow/api/backgrounds.py:134
+#: ../modules/form_workflow/api/backgrounds.py:173
 msgid "底圖不存在"
 msgstr "Basemap does not exist"
 
-#: ../modules/form_workflow/api/backgrounds.py:144
+#: ../modules/form_workflow/api/backgrounds.py:145
 msgid "底圖描述已更新"
 msgstr "Basemap description updated"
 
@@ -18356,35 +18378,23 @@ msgstr "Topic uploaded successfully"
 msgid "處理失敗: %(error)s"
 msgstr "Workflowing failed: %(error)s"
 
-#: ../modules/form_workflow/api/forms.py:390
+#: ../modules/form_workflow/api/forms.py:319
 #: ../modules/form_workflow/api/template_routes.py:158
 msgid "表單模板已建立"
 msgstr "Form template has been created"
 
-#: ../modules/form_workflow/api/forms.py:483
+#: ../modules/form_workflow/api/forms.py:413
 #: ../modules/form_workflow/api/template_routes.py:207
 msgid "表單模板已更新"
 msgstr "Form template has been updated"
 
-#: ../modules/form_workflow/api/forms.py:513
+#: ../modules/form_workflow/api/forms.py:444
 #: ../modules/form_workflow/api/template_routes.py:516
 msgid "表單模板已刪除"
 msgstr "Form template deleted"
 
-#: ../modules/form_workflow/api/forms.py:539
-msgid "表單沒有任何欄位，無法發布"
-msgstr "The form has no fields and cannot be published."
-
-#: ../modules/form_workflow/api/forms.py:549
-msgid "表單模板已發布"
-msgstr "Form template has been published"
-
-#: ../modules/form_workflow/api/forms.py:580
-msgid "表單模板已取消發布"
-msgstr "Form template has been unpublished"
-
-#: ../modules/form_workflow/api/forms.py:934
-#: ../modules/form_workflow/api/workflows.py:651
+#: ../modules/form_workflow/api/forms.py:770
+#: ../modules/form_workflow/api/workflows.py:666
 #, python-format
 msgid "已另存新版本 %(version)s"
 msgstr "New version %(version)s saved"
@@ -18428,7 +18438,7 @@ msgstr "Permissions rule deleted"
 
 #: ../modules/form_workflow/api/mappings.py:68
 #: ../modules/form_workflow/api/workflow_routes.py:29
-#: ../modules/form_workflow/api/workflows.py:76
+#: ../modules/form_workflow/api/workflows.py:116
 #, python-format
 msgid "流程中含有本企業未獲授權的節點型別：%(types)s"
 msgstr ""
@@ -18648,7 +18658,7 @@ msgid "檔案類型不符：期望 forms，實際為 %(export_type)s"
 msgstr "File type mismatch: expected forms, actual %(export_type)s"
 
 #: ../modules/form_workflow/api/template_routes.py:448
-#: ../modules/form_workflow/api/workflow_routes.py:1011
+#: ../modules/form_workflow/api/workflow_routes.py:1014
 #, python-format
 msgid "已另存為版本 %(version)s"
 msgstr "Saved as version %(version)s"
@@ -18668,7 +18678,7 @@ msgid "找不到此工作流"
 msgstr "This workflow cannot be found"
 
 #: ../modules/form_workflow/api/workflow_routes.py:755
-#: ../modules/form_workflow/api/workflow_routes.py:985
+#: ../modules/form_workflow/api/workflow_routes.py:988
 msgid "找不到流程"
 msgstr "Workflow not found"
 
@@ -18677,78 +18687,92 @@ msgstr "Workflow not found"
 msgid "檔案類型不符：期望 workflows，實際為 %(export_type)s"
 msgstr "File type mismatch: expected workflows, actual %(export_type)s"
 
-#: ../modules/form_workflow/api/workflow_routes.py:1130
-#: ../modules/form_workflow/api/workflows.py:520
+#: ../modules/form_workflow/api/workflow_routes.py:1133
+#: ../modules/form_workflow/api/workflows.py:533
 #, python-format
 msgid "無法刪除：尚有 %(count)s 個運行中的流程實例"
 msgstr "Unable to delete: %(count)s remaining running workflow instances"
 
-#: ../modules/form_workflow/api/workflow_routes.py:1155
+#: ../modules/form_workflow/api/workflow_routes.py:1158
 msgid "工作流模板已刪除"
 msgstr "Workflow template deleted"
+
+#: ../modules/form_workflow/api/workflows.py:102
+#, python-format
+msgid "同一主流程下已有名為「%(name)s」的子流程，請換一個名稱"
+msgstr ""
+"A subworkflow named \"%(name)s\" already exists under the same main "
+"workflow. Please use a different name."
+
+#: ../modules/form_workflow/api/workflows.py:104
+#, python-format
+msgid "已有名為「%(name)s」的通用子流程，請換一個名稱"
+msgstr ""
+"A general subworkflow named \"%(name)s\" already exists. Please use a "
+"different name."
 
 #: ../modules/form_workflow/api/workflows.py:270
 msgid "流程模板已建立"
 msgstr "Workflow template has been created"
 
-#: ../modules/form_workflow/api/workflows.py:439
+#: ../modules/form_workflow/api/workflows.py:451
 msgid "流程模板已更新"
 msgstr "Workflow template updated"
 
-#: ../modules/form_workflow/api/workflows.py:454
+#: ../modules/form_workflow/api/workflows.py:466
 #, python-format
 msgid "流程模板已更新，並自動建立表單「%(name)s」及配對"
 msgstr ""
 "The workflow template has been updated and the form \"%(name)s\" and "
 "matching are automatically created"
 
-#: ../modules/form_workflow/api/workflows.py:551
+#: ../modules/form_workflow/api/workflows.py:564
 msgid "流程模板已刪除"
 msgstr "Workflow template deleted"
 
-#: ../modules/form_workflow/api/workflows.py:1015
+#: ../modules/form_workflow/api/workflows.py:1008
 msgid "子流程已建立"
 msgstr "Subworkflow has been created"
 
-#: ../modules/form_workflow/api/workflows.py:1043
+#: ../modules/form_workflow/api/workflows.py:1036
 msgid "找不到子流程"
 msgstr "Subworkflow not found"
 
-#: ../modules/form_workflow/api/workflows.py:1047
+#: ../modules/form_workflow/api/workflows.py:1040
 msgid "無法刪除通用子流程"
 msgstr "Unable to delete generic subworkflow"
 
-#: ../modules/form_workflow/api/workflows.py:1099
+#: ../modules/form_workflow/api/workflows.py:1092
 #, python-format
 msgid "此子流程正被「%(name)s」引用，無法刪除"
 msgstr ""
 "This sub-workflow is being referenced by \"%(name)s\" and cannot be "
 "deleted"
 
-#: ../modules/form_workflow/api/workflows.py:1129
+#: ../modules/form_workflow/api/workflows.py:1122
 #, python-format
 msgid "已刪除 %(count)s 個子流程"
 msgstr "%(count)s subworkflow deleted"
 
-#: ../modules/form_workflow/api/workflows.py:1254
+#: ../modules/form_workflow/api/workflows.py:1248
 #, python-format
 msgid "建立變數映射失敗: %(error)s"
 msgstr "Failed to create variable mapping: %(error)s"
 
-#: ../modules/form_workflow/api/workflows.py:1420
+#: ../modules/form_workflow/api/workflows.py:1417
 msgid "流程不存在"
 msgstr "Workflow does not exist"
 
-#: ../modules/form_workflow/api/workflows.py:1496
+#: ../modules/form_workflow/api/workflows.py:1493
 #, python-format
 msgid "取得配對表單失敗: %(error)s"
 msgstr "Failed to obtain pairing form: %(error)s"
 
-#: ../modules/form_workflow/api/workflows.py:1556
+#: ../modules/form_workflow/api/workflows.py:1554
 msgid "表單不存在"
 msgstr "form does not exist"
 
-#: ../modules/form_workflow/api/workflows.py:1610
+#: ../modules/form_workflow/api/workflows.py:1608
 #, python-format
 msgid "分析表單欄位失敗: %(error)s"
 msgstr "Failed to parse form fields: %(error)s"
@@ -21931,22 +21955,6 @@ msgstr "- Form:"
 msgid "流程樹系圖 - BeakPlatform"
 msgstr "Workflow tree diagram - BeakPlatform"
 
-#: ../modules/form_workflow/api/workflows.py:107
-msgid "同一主流程下已有名為「%(name)s」的子流程，請換一個名稱"
-msgstr ""
-"A subworkflow named \"%(name)s\" already exists under the same main "
-"workflow. Please use a different name."
-
-#: ../modules/form_workflow/api/workflows.py:109
-msgid "已有名為「%(name)s」的通用子流程，請換一個名稱"
-msgstr ""
-"A general subworkflow named \"%(name)s\" already exists. Please use a "
-"different name."
-
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:13
-msgid "返回"
-msgstr "Back"
-
 #~ msgid "前往「%(link_start)s新增企業管理員%(link_end)s」，建立正式管理員並綁定該企業成員帳號"
 #~ msgstr ""
 #~ "Go to \"%(link_start)sAdd Organization "
@@ -23426,4 +23434,13 @@ msgstr "Back"
 
 #~ msgid "節點型別"
 #~ msgstr "Node type"
+
+#~ msgid "表單沒有任何欄位，無法發布"
+#~ msgstr "The form has no fields and cannot be published."
+
+#~ msgid "表單模板已發布"
+#~ msgstr "Form template has been published"
+
+#~ msgid "表單模板已取消發布"
+#~ msgstr "Form template has been unpublished"
 

@@ -418,8 +418,15 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 
 ### PERM-03: 角色制 API 不含 Key1，改守門前先讀這段（2026-08-23 起）
 
-**`roles` 表沒有 `user_type` 欄位**——角色可以被指派給任何身分，含 EXTERNAL，
-UI 與服務層都不阻擋（實測把 `FLOW_DESIGNER` 指派給 EXTERNAL 帳號成功、無警告）。
+**`roles` 表沒有 `user_type` 欄位**，但 2026-09-01（PF-145 階段三之二）起
+**指派時擋跨層**：層界維度用既有的 `roles.scope_type`——EXTERNAL 帳號只能拿
+`scope_type='EXTERNAL'` 的角色，內部帳號不得拿外部範圍角色，雙向都擋。
+唯一實作 `role_assignment_service.ensure_role_layer_compatible()`（access center
+指派走它；部門三支 POST 端點另有 EMPLOYEE-only 守門）。**新增任何會寫
+`user_role_assignments` 的路徑都要呼叫它**——直接 `UserRoleAssignment(...)` 建構
+不會過這道檢查（既有的 org_admins／external_users／`_assign_default_role` 是
+按 user_type 固定配對，安全來自結構不是檢查）。2026-09-01 之前任何角色都能
+指派給任何身分（實測把 `FLOW_DESIGNER` 指派給 EXTERNAL 帳號成功、無警告）。
 
 而 `/api/` 在 `PageRoleGuard.SKIP_PREFIXES` 內，**API 完全不吃雙鑰匙**，
 只吃 decorator。兩者相加的後果：
@@ -1337,9 +1344,12 @@ WHERE created_at > (now() AT TIME ZONE 'UTC') - interval '15 minutes'
 
 - `POST /api/users/` 必填四項：`native_name` / `english_name` / `username` /
   `employee_id`（少了只回「本國姓名、英文姓名、帳號為必填」，不會列出 employee_id）。
-  **它會忽略 `user_type`，一律建成 EMPLOYEE 並順帶指派 `EMPLOYEE` 角色** ——
-  要 EXTERNAL 測試帳號得建完再用 SQL 改 `user_type`、補 `EXTERNAL_USERS`、
-  拿掉那筆 `EMPLOYEE` 指派（不拿掉會讓 Key2 測試多一個變因）。是不是缺陷見待辦 **PF-150**
+  **身分參數名是 `role` 不是 `user_type`**（`user_type` 會被靜默忽略——刻意設計，
+  PF-150 已於 2026-09-01 依 2026-08-23 重評結論關單）：`role: "external"` 建
+  EXTERNAL 並自動配 `EXTERNAL_USERS` 角色、`org_admin` 建 ORG_ADMIN、
+  預設 `user`＝EMPLOYEE 配 `EMPLOYEE` 角色（`_get_user_type_from_role` /
+  `_assign_default_role`）。要 EXTERNAL 測試帳號直接傳 `role: "external"` 即可，
+  不必再用 SQL 改
 - 硬刪一個測試帳號要**按 FK 順序清四張表**，少一張就被擋，
   而錯誤訊息只說 "still referenced" 不會一次列出全部：
 
@@ -1474,7 +1484,7 @@ DB 卻登記著檔案系統早已不存在的檔名。修它是 PF-168 的一部
 | 表單模板是否發行 | `fw_form_templates.status` | **`is_published`**（發行快照在 `fw_published_form_workflows.status='Published'`） |
 | API Key 是否可用 | `api_keys.is_active` | **`api_keys.status`**（`active` / `suspended`） |
 | 角色是否唯一 | `roles.code` 唯一 | **只有 `secure_code` 唯一**，`ix_roles_code` 是非唯一索引 —— 不同企業的 `SECURITY_STAFF` 是兩筆不同 secure_code |
-| 角色綁哪種身分 | `roles.user_type` | **沒有這個欄位**；角色與 user_type 無關聯，任何角色都能指派給任何身分（見 PERM-03） |
+| 角色綁哪種身分 | `roles.user_type` | **沒有這個欄位**；層界看 `roles.scope_type`——2026-09-01（PF-145 階段三之二）起指派時擋跨層：EXTERNAL 帳號只能拿 `scope_type='EXTERNAL'` 的角色，雙向都擋（見 PERM-03）。用 SQL 直寫指派仍繞得過，造測試資料時自己對齊 |
 | 一個帳號「是不是 ORG_ADMIN」 | 看它有沒有 `ORG_ADMIN` 角色 | **`user_type` 與角色 code 是兩回事，但四個名字完全相同**：`SYSTEM_ADMIN` / `ORG_ADMIN` / `EMPLOYEE` / `EXTERNAL_USERS` 出廠時每家企業都會建同名角色。身分硬界線一律看 `users.user_type`，角色看 `user_role_assignments`→`roles.code`（2026-08-24 用戶與 AI 都在此混淆過） |
 | OD 路由規則的條件 | `od_form_template_mappings.conditions` | **`match_rules`**（jsonb） |
 | intake 事件的處理狀態 | `od_intake_events.status` | **沒有這個欄位**；有沒有建成案件看 `case_secure_code IS NOT NULL` |

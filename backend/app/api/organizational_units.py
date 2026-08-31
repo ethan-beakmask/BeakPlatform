@@ -14,7 +14,7 @@ from ..security.decorators import admin_required, login_required
 from ..security.resource_gateway import ResourceGateway
 from ..models import OrganizationalUnit, UnitType, Role
 from ..services.code_generator import get_code_generator
-from ..models.user import User
+from ..models.user import User, UserType
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
 from .. import db
 
@@ -768,6 +768,11 @@ def add_member_to_unit(secure_code: str):
     if not user:
         return jsonify({'error': _('用戶不存在')}), 404
 
+    # PERM-01 層界（PF-145 階段三之二）：部門是雇傭結構，成員僅限 EMPLOYEE。
+    # 候選清單 API 本來就只列 EMPLOYEE，這裡把 POST 端也補齊，擋直接打 API 的跨層寫入
+    if user.user_type != UserType.EMPLOYEE:
+        return jsonify({'error': _('只有企業成員帳號可加入部門')}), 400
+
     try:
         user.primary_unit_secure_code = secure_code
         _ensure_dept_membership(user, unit, current_user.email)
@@ -875,6 +880,10 @@ def set_unit_manager(secure_code: str):
 
     if not user:
         return jsonify({'error': _('用戶不存在')}), 404
+
+    # PERM-01 層界（PF-145 階段三之二）：部門主管僅限 EMPLOYEE
+    if user.user_type != UserType.EMPLOYEE:
+        return jsonify({'error': _('只有企業成員帳號可設為部門主管')}), 400
 
     # 取得 DEPT_MANAGER 角色
     dept_manager_role = Role.query.filter(
@@ -1197,6 +1206,10 @@ def set_unit_leadership(secure_code: str, position: str):
 
     if not user:
         return jsonify({'error': _('用戶不存在')}), 404
+
+    # PERM-01 層界（PF-145 階段三之二）：部門管理職僅限 EMPLOYEE
+    if user.user_type != UserType.EMPLOYEE:
+        return jsonify({'error': _('只有企業成員帳號可擔任部門管理職')}), 400
 
     role_code = role_map[position]
     role = Role.query.filter(

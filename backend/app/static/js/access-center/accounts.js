@@ -44,6 +44,14 @@ function acAccountsTab() {
             return this.assignableRoles.find(role => role.secure_code === this.form.roleSecureCode) || null;
         },
 
+        // PERM-01 層界：EXTERNAL 帳號只列外部範圍角色，內部帳號不列外部範圍角色
+        // （後端 ensure_role_layer_compatible 才是防線，這裡只是不讓人選到必被退回的選項）
+        get roleOptions() {
+            if (!this.selectedUser) return this.assignableRoles;
+            const isExternal = this.selectedUser.account_type === 'EXTERNAL';
+            return this.assignableRoles.filter(role => (role.scope_type === 'EXTERNAL') === isExternal);
+        },
+
         get selectedRoleNeedsUnit() {
             return !!(this.selectedRole && ['DEPARTMENT', 'GROUP'].indexOf(this.selectedRole.scope_type) !== -1);
         },

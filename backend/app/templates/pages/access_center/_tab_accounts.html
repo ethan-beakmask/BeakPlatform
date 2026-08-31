@@ -144,7 +144,7 @@
                     <span>{{ _('角色') }}</span>
                     <select class="form-control" x-model="form.roleSecureCode" @change="onRoleChange()">
                         <option value="">{{ _('請選擇角色') }}</option>
-                        <template x-for="role in assignableRoles" :key="role.secure_code">
+                        <template x-for="role in roleOptions" :key="role.secure_code">
                             <option :value="role.secure_code" x-text="roleOptionLabel(role)"></option>
                         </template>
                     </select>
