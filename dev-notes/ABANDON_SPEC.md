@@ -76,7 +76,7 @@ End 即可，不會產生長線。所以 2026-08-31 上午的評估結論是：A
 | RUNNING，命令由 `node_runner` 子行程自己執行（例：`OsExecutor` 的 `wait_for_result=true` 模式，子命令與 `node_runner` 同一個 process group） | **真的會被終止**：SIGTERM，等 3 秒未結束再 SIGKILL | 實測見上；機制見 `workflow_engine.py::_terminate_node_process()`，2026-08-30 commit `f2e0ecf7` 修復（此前只改 DB 欄位不碰 process） |
 | RUNNING，已 dispatch 給 systemd 的 `OsExecutor`（`wait_for_result=false`，`os_dispatch.unit` 記在 result） | 額外機制 `_stop_os_dispatched_units()` 主動 `systemctl stop <unit>`。**讀碼確認、本次未端到端實測**（`sudo -n systemctl` 需要 sudoers 配合），建議主 Claude 補驗 | `workflow_engine.py:99-165` |
 | RUNNING，命令交給外部系統執行且該系統只認連線斷開（例：`SqlExecutor` 發動的 PostgreSQL 查詢） | **不會被中斷**，會跑到自然結束或 `statement_timeout`（上限 60 秒）為止。PostgreSQL 只有在要寫回 socket 時才會發現 client 已斷線，殺掉 node_runner 對已送出的查詢無效 | BBN atom 5300（2026-08-30 End cancel 修復時的實測結論，`pg_sleep(45)` 在 client 死後仍活 75 秒） |
-| 已送出的外部 HTTP 請求（EmailAdapter / EmailRelay / Telegram） | **不會被收回** | 同上，性質相同（無法用 process signal 中止已送出的請求） |
+| 已送出的外部 HTTP 請求（EmailAdapter / SysEmailRelay / Telegram） | **不會被收回** | 同上，性質相同（無法用 process signal 中止已送出的請求） |
 | 子進程且與 node_runner 同 process group（例：`AiAgent` 呼叫的 `claude` CLI） | 會被一起收掉 | BBN atom 5300 |
 
 **結論（回答 briefing「它可能只改 DB 狀態，外部副作用照跑」的疑慮）**：

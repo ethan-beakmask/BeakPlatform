@@ -105,7 +105,7 @@ def register_builtin_handlers():
     from .fieldwrite_handler import FieldWriteHandler
     from .telegram_handler import TelegramHandler
     from .email_handler import EmailHandler
-    from .emailrelay_handler import EmailRelayHandler
+    from .sys_emailrelay_handler import SysEmailRelayHandler
     from .subflow_handler import SubFlowHandler
     from .abandon_handler import AbandonHandler
     from .sub_system_provision_handler import SubSystemProvisionHandler
@@ -146,7 +146,7 @@ def register_builtin_handlers():
 
     # 系統級通知（SysTelegram 複用 TelegramHandler）
     NodeHandlerFactory.register('SysTelegram', TelegramHandler)
-    NodeHandlerFactory.register('EmailRelay', EmailRelayHandler)
+    NodeHandlerFactory.register('SysEmailRelay', SysEmailRelayHandler)
 
     # 子流程
     NodeHandlerFactory.register('SubFlow', SubFlowHandler)

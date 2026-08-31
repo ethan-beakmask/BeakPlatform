@@ -8,6 +8,9 @@ import logging
 import requests
 from typing import Dict, Any
 
+from backend.app.constants import SYSTEM_ORG_CODE
+from modules.form_workflow.services.node_grant_service import is_node_allowed
+
 from .base import BaseNodeHandler
 
 logger = logging.getLogger(__name__)
@@ -40,11 +43,15 @@ class TelegramHandler(BaseNodeHandler):
         if not channel_name:
             raise ValueError('未設定 Telegram 頻道')
 
+        org_code = self.queue_item.org_secure_code
+        allowed_orgs = [o for o in {org_code, SYSTEM_ORG_CODE} if o]
+
         # 查詢 TelegramConfig（企業級或系統級）
-        telegram_config = TelegramConfig.query.filter_by(
-            secure_code=config_id,
-            is_deleted=False,
-            is_active=True,
+        telegram_config = TelegramConfig.query.filter(
+            TelegramConfig.secure_code == config_id,
+            TelegramConfig.org_secure_code.in_(allowed_orgs),
+            TelegramConfig.is_deleted.is_(False),
+            TelegramConfig.is_active.is_(True),
         ).first()
 
         if not telegram_config:
@@ -79,6 +86,14 @@ class TelegramHandler(BaseNodeHandler):
     def handle(self) -> Dict[str, Any]:
         """處理節點 - 發送 Telegram 訊息"""
         self.report_running()
+
+        node_type = self.queue_item.node_type
+        if not is_node_allowed(node_type, self.queue_item.org_secure_code):
+            self.log_error('企業未取得節點授權', {
+                'node_type': node_type,
+                'org_secure_code': self.queue_item.org_secure_code,
+            })
+            return {'status': 'error', 'message': f'企業未取得 {node_type} 節點授權'}
 
         try:
             # 從 TelegramConfig 解析 bot_token 和 chat_id

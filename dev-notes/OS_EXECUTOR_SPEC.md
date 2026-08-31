@@ -90,8 +90,12 @@ graph 由 `PUT /api/workflows/data/templates/<sc>` 改寫，門檻是
 
 不用它的真正理由有三個：判準是**帳號 user_type** 而不是企業；只擋設計器可見性
 （graph 寫入與 publish 完全不看它）；對「某個客製節點只開放給某一家客戶企業」
-這種需求無解。既有的 EmailRelay、SysTelegram 仍維持 `require_system_admin=true`，
-現況就是沒有任何帳號看得到，只能靠腳本寫 graph。
+這種需求無解。
+
+**2026-08-31（PF-188）起，`require_system_admin` 已無任何使用者**：原本唯二用它的
+`EmailRelay`（已改名 `SysEmailRelay`）與 `SysTelegram` 都改成 `org_restricted`＋grants，
+`get_node_definitions()` 內的過濾邏輯也一併移除。欄位保留在 DB 與 model（Ethan 裁示），
+但目前全平台 0 筆為 true，**設成 true 不會有任何效果**。
 
 ---
 

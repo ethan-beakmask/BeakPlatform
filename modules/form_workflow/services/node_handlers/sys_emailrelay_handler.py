@@ -1,6 +1,6 @@
 """
-FormWorkflow Module - EmailRelay Handler
-系統郵件中繼節點處理器
+FormWorkflow Module - SysEmailRelay Handler
+系統 SysEmailRelay 郵件中繼節點處理器
 
 透過本機 emailrelay-submit 將郵件寫入 spool，
 由 emailrelay daemon 自動轉發至外部 SMTP（如 Gmail）。
@@ -16,7 +16,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate, make_msgid
 
+from backend.app.constants import SYSTEM_ORG_CODE
 from app.services.emailrelay_config import get_paths as _get_emailrelay_paths
+from modules.form_workflow.services.node_grant_service import is_node_allowed
+
 from .base import BaseNodeHandler
 
 logger = logging.getLogger(__name__)
@@ -31,7 +34,7 @@ PRIORITY_MAP = {
 }
 
 
-class EmailRelayHandler(BaseNodeHandler):
+class SysEmailRelayHandler(BaseNodeHandler):
     """系統郵件中繼節點處理器"""
 
     def validate(self) -> bool:
@@ -66,6 +69,14 @@ class EmailRelayHandler(BaseNodeHandler):
         """處理節點 - 透過 emailrelay-submit 發送郵件"""
         self.report_running()
 
+        node_type = self.queue_item.node_type
+        if not is_node_allowed(node_type, self.queue_item.org_secure_code):
+            self.log_error('企業未取得節點授權', {
+                'node_type': node_type,
+                'org_secure_code': self.queue_item.org_secure_code,
+            })
+            return {'status': 'error', 'message': f'企業未取得 {node_type} 節點授權'}
+
         try:
             # 收集收件者
             to_emails, cc_emails = self._collect_recipients()
@@ -98,7 +109,7 @@ class EmailRelayHandler(BaseNodeHandler):
             result = self._submit_to_spool(msg, all_recipients)
 
             if result['success']:
-                self.log_info('郵件已提交至 EmailRelay spool', {
+                self.log_info('郵件已提交至 SysEmailRelay spool', {
                     'to': to_emails,
                     'cc': cc_emails,
                     'subject': (
@@ -110,23 +121,23 @@ class EmailRelayHandler(BaseNodeHandler):
 
                 return {
                     'status': 'success',
-                    'message': '郵件已提交至 EmailRelay',
+                    'message': '郵件已提交至 SysEmailRelay',
                     'data': {
                         'to_count': len(to_emails),
                         'cc_count': len(cc_emails),
                     },
                 }
             else:
-                self.log_error('EmailRelay 提交失敗', {
+                self.log_error('SysEmailRelay 提交失敗', {
                     'error': result.get('error')
                 })
                 return {
                     'status': 'error',
-                    'message': f"EmailRelay 提交失敗: {result.get('error')}",
+                    'message': f"SysEmailRelay 提交失敗: {result.get('error')}",
                 }
 
         except Exception as e:
-            self.log_error(f'EmailRelay 節點執行失敗: {str(e)}')
+            self.log_error(f'SysEmailRelay 節點執行失敗: {str(e)}')
             return {
                 'status': 'error',
                 'message': str(e),
@@ -181,25 +192,16 @@ class EmailRelayHandler(BaseNodeHandler):
 
         from app.models import RecipientGroup
         emails = set()
+        org_code = self.queue_item.org_secure_code
+        allowed_orgs = [o for o in {org_code, SYSTEM_ORG_CODE} if o]
 
         for gid in group_ids:
-            group = RecipientGroup.query.filter_by(
-                secure_code=str(gid),
-                is_deleted=False,
-                is_active=True,
+            group = RecipientGroup.query.filter(
+                RecipientGroup.secure_code == str(gid),
+                RecipientGroup.org_secure_code.in_(allowed_orgs),
+                RecipientGroup.is_deleted.is_(False),
+                RecipientGroup.is_active.is_(True),
             ).first()
-
-            # 向下相容整數 ID
-            if not group:
-                try:
-                    int_id = int(gid)
-                    group = RecipientGroup.query.filter_by(
-                        id=int_id,
-                        is_deleted=False,
-                        is_active=True,
-                    ).first()
-                except (ValueError, TypeError):
-                    pass
 
             if group:
                 for r in group.resolve_recipients():
@@ -290,8 +292,9 @@ class EmailRelayHandler(BaseNodeHandler):
         emailrelay-submit 從 stdin 讀取郵件內容，
         將其寫入 spool 目錄等待 daemon 轉發。
         """
+        paths = _get_emailrelay_paths()
+
         try:
-            paths = _get_emailrelay_paths()
             cmd = [
                 paths['submit_bin'],
                 '--from', DEFAULT_FROM,
@@ -323,7 +326,7 @@ class EmailRelayHandler(BaseNodeHandler):
         except FileNotFoundError:
             return {
                 'success': False,
-                'error': f'找不到 emailrelay-submit: {EMAILRELAY_SUBMIT}',
+                'error': f'找不到 emailrelay-submit: {paths["submit_bin"]}',
             }
         except Exception as e:
             return {

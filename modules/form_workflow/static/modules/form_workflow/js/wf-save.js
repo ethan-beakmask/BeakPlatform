@@ -262,13 +262,13 @@
                     }
                     break;
                 }
-                case 'EmailRelay': {
-                    const recipType = document.getElementById('emailRelayRecipientType');
-                    const subject = document.getElementById('emailRelaySubject');
-                    const body = document.getElementById('emailRelayBody');
-                    const bodyType = document.getElementById('emailRelayBodyType');
-                    const priority = document.getElementById('emailRelayPriority');
-                    const ccManual = document.getElementById('emailRelayCcManual');
+                case 'SysEmailRelay': {
+                    const recipType = document.getElementById('sysEmailRelayRecipientType');
+                    const subject = document.getElementById('sysEmailRelaySubject');
+                    const body = document.getElementById('sysEmailRelayBody');
+                    const bodyType = document.getElementById('sysEmailRelayBodyType');
+                    const priority = document.getElementById('sysEmailRelayPriority');
+                    const ccManual = document.getElementById('sysEmailRelayCcManual');
                     if (recipType && subject && body) {
                         config.recipient_type = recipType.value;
                         config.subject = subject.value;
@@ -276,13 +276,13 @@
                         if (bodyType) config.body_type = bodyType.value;
                         if (priority) config.priority = priority.value;
                         if (ccManual) config.cc_manual = ccManual.value.trim();
-                        if (recipType.value === 'GROUP') {
-                            const groupSelect = document.getElementById('emailRelayGroups');
+                        if (recipType.value === 'group') {
+                            const groupSelect = document.getElementById('sysEmailRelayGroups');
                             if (groupSelect) {
                                 config.recipient_groups = Array.from(groupSelect.selectedOptions).map(o => o.value);
                             }
-                        } else if (recipType.value === 'MANUAL') {
-                            const manualInput = document.getElementById('emailRelayRecipientManual');
+                        } else if (recipType.value === 'manual') {
+                            const manualInput = document.getElementById('sysEmailRelayRecipientManual');
                             if (manualInput) config.recipient_manual = manualInput.value.trim();
                         }
                         changed = true;

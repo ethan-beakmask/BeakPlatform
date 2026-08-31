@@ -691,7 +691,7 @@
                 'op_fieldread': 'OpFieldRead',
                 'opfieldwrite': 'OpFieldWrite',
                 'op_fieldwrite': 'OpFieldWrite',
-                'emailrelay': 'EmailRelay',
+                'sysemailrelay': 'SysEmailRelay',
                 'sqlexecutor': 'SqlExecutor',
                 'osexecutor': 'OsExecutor',
                 'os_executor': 'OsExecutor',

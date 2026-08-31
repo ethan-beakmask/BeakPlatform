@@ -45,26 +45,15 @@ class EmailHandler(BaseNodeHandler):
         config_id = self.get_config_value('smtp_config_id')
         smtp_config = None
         org_code = self.workflow_instance.org_secure_code if self.workflow_instance else None
+        allowed_orgs = [o for o in {org_code, SYSTEM_ORG_CODE} if o]
 
         if config_id:
-            # 先以 secure_code 查
-            smtp_config = SmtpConfig.query.filter_by(
-                secure_code=str(config_id),
-                is_deleted=False,
-                is_active=True,
+            smtp_config = SmtpConfig.query.filter(
+                SmtpConfig.secure_code == str(config_id),
+                SmtpConfig.org_secure_code.in_(allowed_orgs),
+                SmtpConfig.is_deleted.is_(False),
+                SmtpConfig.is_active.is_(True),
             ).first()
-
-            # 若找不到，嘗試以整數 ID 查（向下相容舊資料）
-            if not smtp_config:
-                try:
-                    int_id = int(config_id)
-                    smtp_config = SmtpConfig.query.filter_by(
-                        id=int_id,
-                        is_deleted=False,
-                        is_active=True,
-                    ).first()
-                except (ValueError, TypeError):
-                    pass
 
             # 仍找不到時，降級為自動選擇（可能是 parseInt 造成的壞資料）
             if not smtp_config:
@@ -153,24 +142,16 @@ class EmailHandler(BaseNodeHandler):
         from app.models import RecipientGroup
         emails = set()
 
-        for gid in group_ids:
-            group = RecipientGroup.query.filter_by(
-                secure_code=str(gid),
-                is_deleted=False,
-                is_active=True,
-            ).first()
+        org_code = self.workflow_instance.org_secure_code if self.workflow_instance else None
+        allowed_orgs = [o for o in {org_code, SYSTEM_ORG_CODE} if o]
 
-            # 向下相容整數 ID
-            if not group:
-                try:
-                    int_id = int(gid)
-                    group = RecipientGroup.query.filter_by(
-                        id=int_id,
-                        is_deleted=False,
-                        is_active=True,
-                    ).first()
-                except (ValueError, TypeError):
-                    pass
+        for gid in group_ids:
+            group = RecipientGroup.query.filter(
+                RecipientGroup.secure_code == str(gid),
+                RecipientGroup.org_secure_code.in_(allowed_orgs),
+                RecipientGroup.is_deleted.is_(False),
+                RecipientGroup.is_active.is_(True),
+            ).first()
 
             if group:
                 for r in group.resolve_recipients():

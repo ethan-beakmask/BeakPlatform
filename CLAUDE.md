@@ -1865,7 +1865,10 @@ Playwright E2E 的三條硬規則與 mutation 驗證。
   **且必須與一般企業分開各測一次**
 - `org_restricted` + grants（判準＝企業）是正確實作；`require_system_admin`
   （判準＝帳號 user_type）選錯維度，擋不住 API 且會與模組 ACL 疊成死鎖
-  → 現況見待辦 **PF-188**、`dev-notes/handoff_sys_level_nodes_20260831.md`
+  → **PF-188 於 2026-08-31 收斂完畢**：`require_system_admin` 的過濾邏輯已從
+  `get_node_definitions()` 移除、全平台 0 筆為 true，**設成 true 不再有任何效果**。
+  脈絡 `dev-notes/handoff_sys_level_nodes_20260831.md`，驗收
+  `/opt/tmp/verify/20260831-pf188.log`
 - **新增任何一道授權前先讀知識庫 atom #5326**（`note_get(5326)`）：
   多道授權的判準維度不一致時，交集可能是空集合而且不報錯
 
@@ -1885,7 +1888,7 @@ PF-185 於 2026-08-31 完成）或維運工具
 |---|---|
 | 設計器面板可見性 | `api/workflows.py::get_node_definitions()` |
 | graph 寫入（7 個入口，含 publish） | `api/workflows.py` ×4、`api/workflow_routes.py` ×2、`api/mappings.py::publish_mapping` |
-| handler 執行期（唯一防線） | `os_executor_handler` / `os_file_read_handler` |
+| handler 執行期（唯一防線） | `os_executor_handler` / `os_file_read_handler` / `os_file_write_handler` / `telegram_handler`（服務 `SysTelegram`）/ `sys_emailrelay_handler` |
 
 **寫入路徑（grant / revoke）也收斂在同一支服務**：`grant_node_to_org()` /
 `revoke_node_from_org()`，Web API 與 CLI 都呼叫它，錯誤用 `NodeGrantError.code`
@@ -1905,9 +1908,12 @@ API 也**必須放平台層**（`backend/app/api/node_grants.py`）——SYSTEM_
 - **舊的 `system_settings.os_node_allowed_orgs` / `file_read_allowed_orgs`
   已於 migration 122 刪除**，改動它們不會有任何效果（鍵根本不存在）。
   `os_file_read_base_dirs` / `os_file_read_org_base_dirs` 不受影響，那是目錄限制
-- **`require_system_admin` 不是替代方案**：它的判準是帳號 user_type 而非企業，
-  且只擋設計器可見性、不擋 graph 寫入與 publish。理由詳見
-  `dev-notes/OS_EXECUTOR_SPEC.md` 第二節（該節 2026-08-31 更正過一次
+- **`require_system_admin` 已退場，不要再拿它當替代方案**：它的判準是帳號 user_type
+  而非企業，且只擋設計器可見性、不擋 graph 寫入與 publish。2026-08-31（PF-188）
+  唯二使用它的 `SysTelegram` 與 `EmailRelay` 都改成 `org_restricted`，
+  `get_node_definitions()` 的過濾邏輯也一併刪除。**欄位保留在 DB 與 model
+  （Ethan 裁示），但已無任何程式讀它——設成 true 什麼都不會發生。**
+  理由詳見 `dev-notes/OS_EXECUTOR_SPEC.md` 第二節（該節 2026-08-31 更正過一次
   ——「SYSTEM_ADMIN 沒有 form_workflow 合約」是錯的，實際卡在模組 ACL）
 
 **系統級節點一律用 `Os` 前綴（Ethan 2026-08-31 定調的命名規範）**：
@@ -1915,8 +1921,13 @@ API 也**必須放平台層**（`backend/app/api/node_grants.py`）——SYSTEM_
 「OS 命令」/「OS 檔案讀取」/「OS 檔案寫入」，`.env` 開關與 `system_settings`
 的目錄白名單鍵也同步帶前綴（`OS_FILE_READ_NODE_ENABLED`、
 `os_file_read_base_dirs` 等）。**新增碰觸作業系統的節點時沿用這個前綴。**
-判準是「碰不碰作業系統」而不是「是不是管理員專用」——所以 `SysTelegram`
-不在此列（它已有 `Sys` 前綴，且不碰 OS）。
+判準是「碰不碰作業系統」而不是「是不是管理員專用」——所以 `SysTelegram` 與
+`SysEmailRelay` 不在此列（碰的是外部服務不是 OS，用 `Sys` 前綴）。
+`EmailRelay` 於 2026-08-31（PF-188）改名為 `SysEmailRelay`，
+走 `scripts/migrations/130_sys_nodes_org_restricted.sql`。
+**小寫的 `emailrelay` 一律不動**——那是外部服務 E-MailRelay 本身
+（`emailrelay-submit`、`app.services.emailrelay_config`、spool 目錄、
+`/api/system-settings/emailrelay`），與節點型別無關。
 2026-08-31 之前叫 `FileRead` / `FileWrite`，改名走
 `scripts/migrations/129_os_prefix_for_system_nodes.sql`（連 graph、發行快照、
 執行紀錄、system_settings 鍵一起換——**node_type 是 factory 查 handler 的鍵，
@@ -1927,6 +1938,19 @@ graph 裡的舊字串沒換掉的話該流程執行時會拋 `ValueError`**）�
 base_dir 用**獨立**的 `os_file_write_base_dirs` / `os_file_write_org_base_dirs`
 （**不與 `os_file_read_*` 共用**——可讀不等於可寫）。規格
 `dev-notes/OS_FILE_WRITE_SPEC.md`，部署 `docs/install/os_file_write_node.md`。
+
+**受限節點現況共 5 個**（2026-08-31 PF-188 後）：`OsExecutor` / `OsFileRead` /
+`OsFileWrite` / `SysTelegram` / `SysEmailRelay`。後兩者**沒有 `.env` 開關**
+（不碰 OS，只有企業授權這一道），出廠 `is_active=true`，
+所以「未獲授權的企業看不到」是它們唯一的閘門。
+
+**`SysTelegram` 的設定組下拉曾經恆為「無法載入設定」**：前端寫死
+`/api/system/data/settings/telegram`，那支端點**從來不存在**（實測 404）。
+2026-08-31 改成與一般 Telegram 共用 `/api/enterprise/data/settings/telegram/available`
+（回「自己企業＋系統企業」的設定組）。handler 端的解析同樣限縮成這兩者——
+**跨到別家一般企業的設定組會被擋**（實測 `找不到 Telegram 設定`），
+同批一併修的還有 `email_handler` 的 `smtp_config_id` 與兩處 `RecipientGroup`
+（原本都無 org 條件，且有可枚舉的整數 ID 向下相容，已移除）。
 
 **它每次寫入前會把檔尾連續的所有換行位元組（`\r` `\n` 任意組合）truncate 掉**，
 再依 `newline_before` / `newline_after` 兩個勾選補換行。這是規格要求，

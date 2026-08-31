@@ -162,8 +162,12 @@
             if (!configSelect) return;
 
             try {
-                // 呼叫系統級 API（只回傳 org_secure_code 為 NULL 的設定）
-                const response = await fetch(window.__BP + '/api/system/data/settings/telegram');
+                // 與企業級共用同一支：回傳「自己企業 + 系統企業」的設定組。
+                // SysTelegram 是 org_restricted 節點，只有獲授權的企業（出廠是系統
+                // 預設企業）看得到這個面板，所以這裡拿到的就是系統級設定組。
+                // 舊的 /api/system/data/settings/telegram 從來不存在（恆 404），
+                // 症狀是下拉永遠顯示「無法載入設定」。
+                const response = await fetch(window.__BP + '/api/enterprise/data/settings/telegram/available');
                 if (!response.ok) {
                     configSelect.innerHTML = '<option value="">無法載入設定</option>';
                     return;

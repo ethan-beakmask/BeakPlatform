@@ -2,7 +2,7 @@
  * wf-accordion.js -- Accordion 節點設定面板（主分派器）
  * 原 2182 行拆分為主檔 + 5 個子模組：
  *   wf-accordion-subflow.js     -- 子流程節點
- *   wf-accordion-messaging.js   -- Telegram, SysTelegram, EmailRelay, EmailAdapter
+ *   wf-accordion-messaging.js   -- Telegram, SysTelegram, SysEmailRelay, EmailAdapter
  *   wf-accordion-broadcast.js   -- NavbarBroadcast, AlertBroadcast
  *   wf-accordion-flow.js        -- Delay, End, Abandon, Branch, ParallelJoin
  *   wf-accordion-operations.js  -- OpSet, OpFieldWrite, FormAdapter, SubSystemProvision
@@ -69,7 +69,7 @@
             // 有額外設定的節點類型（這些節點有自己的「套用」按鈕）
             const nodesWithSettings = [
                 'Subflow', 'Delay', 'OpFieldWrite', 'OpSet', 'Telegram',
-                'SysTelegram', 'EmailRelay', 'EmailAdapter', 'Branch',
+                'SysTelegram', 'SysEmailRelay', 'EmailAdapter', 'Branch',
                 'FormAdapter', 'End', 'SqlExecutor', 'OsExecutor', 'OsFileRead',
                 'ParallelJoin',
                 'NavbarBroadcast', 'AlertBroadcast',
@@ -113,7 +113,7 @@
             if (type === 'FormAdapter')          info += renderFormAdapterPanel(node, nodeId);
             if (type === 'Telegram')             info += renderTelegramPanel(node, nodeId);
             if (type === 'SysTelegram')          info += renderSysTelegramPanel(node, nodeId);
-            if (type === 'EmailRelay')           info += renderEmailRelayPanel(node, nodeId);
+            if (type === 'SysEmailRelay')        info += renderSysEmailRelayPanel(node, nodeId);
             if (type === 'EmailAdapter')         info += renderEmailAdapterPanel(node, nodeId);
             if (type === 'NavbarBroadcast')      info += renderNavbarBroadcastPanel(node, nodeId);
             if (type === 'AlertBroadcast')       info += renderAlertBroadcastPanel(node, nodeId);
@@ -148,9 +148,9 @@
                 const cfg = node.data('config') || {};
                 setTimeout(() => loadSysTelegramConfigs(cfg.config_id || null, cfg.channel_name), 100);
             }
-            if (type === 'EmailRelay') {
+            if (type === 'SysEmailRelay') {
                 const groups = (node.data('config') || {}).recipient_groups || [];
-                setTimeout(() => loadEmailRelayGroups(groups), 100);
+                setTimeout(() => loadSysEmailRelayGroups(groups), 100);
             }
             if (type === 'EmailAdapter') {
                 const cfg = node.data('config') || {};

@@ -7,7 +7,7 @@
  *   wf-node-opset.js           - OPSET 變數設定
  *   wf-node-sql-executor.js    - SQLExecutor SQL 查詢
  *   wf-node-telegram.js        - Telegram + SYS_Telegram
- *   wf-node-email-relay.js     - EmailRelay 系統郵件
+ *   wf-node-sys-email-relay.js - SysEmailRelay 系統郵件
  *   wf-node-navbar-broadcast.js - NavbarBroadcast 跑馬燈廣播
  *   wf-node-alert-broadcast.js - AlertBroadcast 緊急廣播
  *   wf-node-email-adapter.js   - EmailAdapter 企業郵件

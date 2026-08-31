@@ -1,5 +1,50 @@
 # 交接：SysTelegram 與 EmailRelay 在系統預設企業也看不見（2026-08-31）
 
+> ## 【已結案 2026-08-31】PF-188 全部處置完成
+>
+> 本檔以下內容是**動工前的調查記錄**，保留作為脈絡。實際處置與現況：
+>
+> | 項目 | 結果 |
+> |---|---|
+> | `EmailRelay` -> `SysEmailRelay` | 已改名（node_type / handler 檔與 class / svg / 面板 JS / DOM id） |
+> | 兩節點的授權機制 | 改用 `org_restricted` ＋ `workflow_node_org_grants`，出廠只 grant 系統預設企業 |
+> | `require_system_admin` | **過濾邏輯已從 `get_node_definitions()` 移除**，欄位保留但全平台 0 筆為 true（Ethan 裁示） |
+> | `EmailRelay` 的 category | 「整合」-> 「系統」 |
+> | handler 執行期授權 | `telegram_handler`（服務 `SysTelegram`）與 `sys_emailrelay_handler` 都補上 `is_node_allowed()` |
+> | 第二節的破口 | 一般企業 PUT graph / publish 皆已回 403（實測） |
+> | 第 6.5 節的「最大未知」 | **答案是「handler 完全沒有企業檢查」**，見下方「調查補記」 |
+>
+> **migration**：`scripts/migrations/130_sys_nodes_org_restricted.sql`（已執行、已登記、冪等重跑 0 筆）
+> **驗收留證**：`/opt/tmp/verify/20260831-pf188.log`（含兩組企業矩陣、publish、瀏覽器實測、執行期）
+>
+> ### 調查補記（原本不在本檔，是動工時才查出來的）
+>
+> 1. **`SysEmailRelayHandler` 直接 `subprocess` 呼叫本機 `emailrelay-submit`**，
+>    收件者全由節點 config 決定，**沒有任何企業檢查**——未授權企業一旦讓該節點執行，
+>    就是拿平台當郵件跳板。這是本次判定嚴重性的關鍵，已修。
+> 2. **`TelegramHandler` 的 `TelegramConfig` 查詢原本沒有任何 `org_secure_code` 條件**，
+>    所以節點填別家企業的 `config_id` 就拿得到別人的 Bot Token。
+>    同型態問題還有 `email_handler` 的 `smtp_config_id` 與**兩處** `RecipientGroup`
+>    （其中一處在 `email_handler`，codex 第一版只移除了整數 ID 相容卻漏加 org 條件，驗收時補上）。
+>    已全部限縮為「自己企業 or 系統企業」並移除可枚舉的整數 ID 向下相容。
+> 3. **「用系統企業的設定組」是刻意設計，不是破口**：
+>    `backend/app/api/enterprise_data.py::available_telegram_configs()` 明確把系統企業的
+>    設定列給所有企業並標 `is_system: true`。所以限縮的邊界是「自己＋系統」而非「只有自己」。
+> 4. **`SysTelegram` 的設定組下拉從以前就壞著**：前端寫死
+>    `/api/system/data/settings/telegram`，該端點**從來不存在**（實測 404），
+>    症狀是下拉永遠顯示「無法載入設定」。已改用
+>    `/api/enterprise/data/settings/telegram/available`。
+>    **這件事讓「節點看得見」本身沒有意義**——沒修的話 PF-188 只做完一半。
+> 5. `sys_emailrelay_handler` 的 `FileNotFoundError` 分支原本引用不存在的
+>    `EMAILRELAY_SUBMIT`，走到會拋 `NameError` 蓋掉真正的錯誤，已修。
+>
+> ### 仍未做的（不屬 PF-188，別誤以為漏了）
+>
+> - **實際寄信／實際發 Telegram 未驗**（NT-14 / NT-18 仍記為「授權面已驗」）。
+>   授權四層與租戶隔離都用真實 dev 資料實測過，但沒有真的送出訊息。
+> - `email_handler` 的「企業級 -> 系統級」SMTP 自動 fallback **刻意保留**（Ethan 裁示）。
+
+
 Ethan 的原話：
 
 > 系統級 SysTelegram、EmailRelay 兩個 node 沒出現在系統級專用區，也沒出現在 /node-grants/

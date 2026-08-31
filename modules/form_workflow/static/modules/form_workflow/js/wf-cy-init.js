@@ -318,7 +318,7 @@
                         }
                     },
                     {
-                        selector: 'node[type="EmailRelay"], node[type="EMAILRELAY"]',
+                        selector: 'node[type="SysEmailRelay"], node[type="SYSEMAILRELAY"]',
                         style: {
                             'background-color': '#E8F5E9',
                             'shape': 'round-rectangle',

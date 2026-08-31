@@ -1,7 +1,7 @@
 /**
  * wf-accordion-messaging.js -- 訊息通知類節點面板
  * 從 wf-accordion.js 拆分
- * 包含: Telegram, SysTelegram, EmailRelay, EmailAdapter
+ * 包含: Telegram, SysTelegram, SysEmailRelay, EmailAdapter
  */
 
         // ==================== Telegram 面板 ====================
@@ -210,9 +210,9 @@
             `;
         }
 
-        // ==================== EmailRelay 面板 ====================
+        // ==================== SysEmailRelay 面板 ====================
 
-        function renderEmailRelayPanel(node, nodeId) {
+        function renderSysEmailRelayPanel(node, nodeId) {
             const currentConfig = node.data('config') || {};
             const recipientType = currentConfig.recipient_type || 'group';
             const recipientGroups = currentConfig.recipient_groups || [];
@@ -232,60 +232,60 @@
                     <!-- 收件者類型 -->
                     <div style="margin-bottom: 8px;">
                         <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">收件者來源</label>
-                        <select id="emailRelayRecipientType" onchange="toggleEmailRelayRecipientFields()" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                        <select id="sysEmailRelayRecipientType" onchange="toggleSysEmailRelayRecipientFields()" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
                             <option value="group" ${recipientType === 'group' ? 'selected' : ''}>收件人群組</option>
                             <option value="manual" ${recipientType === 'manual' ? 'selected' : ''}>手動輸入</option>
                         </select>
                     </div>
 
                     <!-- 群組選擇 -->
-                    <div id="emailRelayGroupField" style="margin-bottom: 8px; ${recipientType !== 'group' ? 'display: none;' : ''}">
+                    <div id="sysEmailRelayGroupField" style="margin-bottom: 8px; ${recipientType !== 'group' ? 'display: none;' : ''}">
                         <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">選擇群組（可多選）</label>
-                        <select id="emailRelayGroups" multiple style="width: 100%; height: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
+                        <select id="sysEmailRelayGroups" multiple style="width: 100%; height: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
                             <option value="">載入中...</option>
                         </select>
                     </div>
 
                     <!-- 手動輸入收件者 -->
-                    <div id="emailRelayManualField" style="margin-bottom: 8px; ${recipientType !== 'manual' ? 'display: none;' : ''}">
+                    <div id="sysEmailRelayManualField" style="margin-bottom: 8px; ${recipientType !== 'manual' ? 'display: none;' : ''}">
                         <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">收件者 Email（逗號或換行分隔，支援變數 <code>\${var}</code>）</label>
-                        <textarea id="emailRelayRecipientManual" rows="2" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; font-family: monospace;">${recipientManual}</textarea>
+                        <textarea id="sysEmailRelayRecipientManual" rows="2" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; font-family: monospace;">${recipientManual}</textarea>
                     </div>
 
                     <!-- 副本 -->
                     <div style="margin-bottom: 8px;">
                         <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">CC 副本（選填）</label>
-                        <input type="text" id="emailRelayCcManual" placeholder="逗號分隔，支援變數" value="${ccManual}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
+                        <input type="text" id="sysEmailRelayCcManual" placeholder="逗號分隔，支援變數" value="${ccManual}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
                     </div>
 
                     <!-- 主旨 -->
                     <div style="margin-bottom: 8px;">
                         <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">主旨 <span style="color: #DC2626;">*</span>
-                            <button type="button" onclick="VarPicker.open(this, document.getElementById('emailRelaySubject'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                            <button type="button" onclick="VarPicker.open(this, document.getElementById('sysEmailRelaySubject'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
                         </label>
-                        <input type="text" id="emailRelaySubject" placeholder="支援變數 \${v.name}, \${f.key}" value="${subject}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                        <input type="text" id="sysEmailRelaySubject" placeholder="支援變數 \${v.name}, \${f.key}" value="${subject}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
                     </div>
 
                     <!-- 內容 -->
                     <div style="margin-bottom: 8px;">
                         <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">內容 <span style="color: #DC2626;">*</span>
-                            <button type="button" onclick="VarPicker.open(this, document.getElementById('emailRelayBody'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                            <button type="button" onclick="VarPicker.open(this, document.getElementById('sysEmailRelayBody'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
                         </label>
-                        <textarea id="emailRelayBody" rows="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;" placeholder="輸入郵件內容...">${body}</textarea>
+                        <textarea id="sysEmailRelayBody" rows="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;" placeholder="輸入郵件內容...">${body}</textarea>
                     </div>
 
                     <!-- 格式與優先級 -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
                         <div>
                             <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">格式</label>
-                            <select id="emailRelayBodyType" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
+                            <select id="sysEmailRelayBodyType" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
                                 <option value="plain" ${bodyType === 'plain' ? 'selected' : ''}>純文字</option>
                                 <option value="html" ${bodyType === 'html' ? 'selected' : ''}>HTML</option>
                             </select>
                         </div>
                         <div>
                             <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">優先級</label>
-                            <select id="emailRelayPriority" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
+                            <select id="sysEmailRelayPriority" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
                                 <option value="high" ${priority === 'high' ? 'selected' : ''}>高</option>
                                 <option value="normal" ${priority === 'normal' ? 'selected' : ''}>一般</option>
                                 <option value="low" ${priority === 'low' ? 'selected' : ''}>低</option>
@@ -293,7 +293,7 @@
                         </div>
                     </div>
 
-                    <button class="btn-primary" onclick="applyEmailRelayConfig('${nodeId}')" style="width: 100%; padding: 6px; font-size: 12px;">
+                    <button class="btn-primary" onclick="applySysEmailRelayConfig('${nodeId}')" style="width: 100%; padding: 6px; font-size: 12px;">
                         <i class="fas fa-check"></i> 套用
                     </button>
                 </div>
@@ -464,7 +464,7 @@
             `;
         }
 
-        // 短變數語法表（用於 EmailRelay/EmailAdapter）
+        // 短變數語法表（用於 SysEmailRelay/EmailAdapter）
         function _renderVarSyntaxTableShort() {
             return `
                 <table style="width: 100%; border-collapse: collapse; font-size: 10px;">

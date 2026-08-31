@@ -883,12 +883,12 @@
                         break;
                     }
                     case 'EmailAdapter':
-                    case 'EmailRelay': {
+                    case 'SysEmailRelay': {
                         const fields = [config.subject, config.body, config.recipient_manual].filter(Boolean).join(' ');
                         const refs2 = _extractVarRefs(fields);
                         refs2.forEach(v => {
                             allVars.push({
-                                category: 'READ', nodeId, displayName, type: 'EmailAdapter',
+                                category: 'READ', nodeId, displayName, type,
                                 varName: v, detail: __('郵件引用')
                             });
                         });
@@ -1914,4 +1914,3 @@
             updateStatus(`✅ 欄位權限已儲存 (簽核者: ${editableCount} 可修改, ${hiddenCount} 隱藏 / 閱讀者: ${readerHiddenCount} 隱藏)`, 'success');
         }
         window.saveFieldPermissions = saveFieldPermissions;
-

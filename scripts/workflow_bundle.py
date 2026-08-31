@@ -738,7 +738,7 @@ class BundleImporter:
                             f'在匯入包中找不到對應，保留原值'
                         )
 
-            elif node_type in ('EmailRelay', 'Telegram', 'Email'):
+            elif node_type in ('SysEmailRelay', 'Telegram', 'Email'):
                 warnings.append(
                     f'節點「{node_label}」({node_type}): '
                     f'通知設定為環境相依，需在目標環境檢查'

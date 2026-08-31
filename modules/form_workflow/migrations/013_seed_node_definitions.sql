@@ -364,16 +364,16 @@ INSERT INTO workflow_node_definitions (
     canvas_shape, canvas_color, canvas_width, canvas_height,
     max_input_connections, max_output_connections,
     default_timeout_seconds, max_timeout_seconds,
-    require_system_admin, is_deleted, created_at, updated_at
+    require_system_admin, org_restricted, is_deleted, created_at, updated_at
 ) VALUES (
     encode(gen_random_bytes(16), 'hex'),
-    'EmailRelay', TRUE, 'SYSTEM', '整合', 'Email 轉發', '透過外部系統發送 Email',
-    '/static/modules/form_workflow/icons/workflow/emailrelay.svg',
-    'modules.form_workflow.services.node_handlers.emailrelay_handler.EmailRelayHandler',
+    'SysEmailRelay', TRUE, 'SYSTEM', '系統', '系統 Email 轉發', '透過外部系統發送 Email',
+    '/static/modules/form_workflow/icons/workflow/sysemailrelay.svg',
+    'modules.form_workflow.services.node_handlers.sys_emailrelay_handler.SysEmailRelayHandler',
     '{"to": "string", "body": "string", "subject": "string"}',
     'roundrectangle', '#EA580C', 120, 60,
     1, 1, 300, 3600,
-    TRUE, FALSE, NOW(), NOW()
+    FALSE, TRUE, FALSE, NOW(), NOW()
 ) ON CONFLICT (node_type) DO NOTHING;
 
 INSERT INTO workflow_node_definitions (
@@ -423,16 +423,16 @@ INSERT INTO workflow_node_definitions (
     canvas_shape, canvas_color, canvas_width, canvas_height,
     max_input_connections, max_output_connections,
     default_timeout_seconds, max_timeout_seconds,
-    require_system_admin, is_deleted, created_at, updated_at
+    require_system_admin, org_restricted, is_deleted, created_at, updated_at
 ) VALUES (
     encode(gen_random_bytes(16), 'hex'),
     'SysTelegram', TRUE, 'SYSTEM', '系統', '系統 Telegram', '系統級 Telegram 通知',
     '/static/modules/form_workflow/icons/workflow/systelegram.svg',
-    'modules.form_workflow.services.node_handlers.systelegram_handler.SysTelegramHandler',
+    'modules.form_workflow.services.node_handlers.telegram_handler.TelegramHandler',
     '{"message": "string"}',
     'roundrectangle', '#7C3AED', 120, 60,
     1, 1, 120, 3600,
-    TRUE, FALSE, NOW(), NOW()
+    FALSE, TRUE, FALSE, NOW(), NOW()
 ) ON CONFLICT (node_type) DO NOTHING;
 
 INSERT INTO workflow_node_definitions (

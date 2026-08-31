@@ -664,7 +664,7 @@ def get_node_definitions():
 
     過濾邏輯：
     - Start 節點不出現在面板（由系統自動建立，一個流程只能有一個起點）
-    - require_system_admin=True 的節點僅系統管理員可見
+    - org_restricted=True 的節點只有獲授權的企業可見
     """
     from ..models import WorkflowNodeDefinition
 
@@ -672,7 +672,6 @@ def get_node_definitions():
         is_active=True, is_deleted=False
     ).all()
 
-    is_sys_admin = getattr(current_user, 'is_system_admin', False)
     org = get_current_org()
     allowed_org_restricted = allowed_restricted_types(
         org.secure_code if org else None,
@@ -696,10 +695,6 @@ def get_node_definitions():
     for node_def in definitions:
         # 隱藏 Start 節點（由系統自動建立，避免用戶重複拖放）
         if node_def.node_type == 'Start':
-            continue
-
-        # 權限過濾：非系統管理員看不到 require_system_admin 的節點
-        if node_def.require_system_admin and not is_sys_admin:
             continue
 
         if node_def.org_restricted and node_def.node_type not in allowed_org_restricted:

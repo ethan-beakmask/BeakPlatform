@@ -46,11 +46,11 @@
 | NT-11 | `SubFlow` | 子流程 | 控制 | 端到端 | `20260830-end-cancel-mode.log`；**修復後才首次成功**，見 §缺陷 |
 | NT-12 | `Switch` | 條件分支 | 控制 | 已刪除 | 2026-08-30 刪除，行為與 ParallelFork 一字不差 |
 | NT-13 | `AiAgent` | AI 分析 | 整合 | 端到端 | 2026-08-20 經 executor 實跑（發現 `AI_NODE_CLI_PATH` 問題）；單元測試 `test_ai_agent_node.py` |
-| NT-14 | `EmailRelay` | Email 轉發 | 整合 | 未驗證 | `require_system_admin=true` |
+| NT-14 | `SysEmailRelay` | 系統 Email 轉發 | 系統 | 授權面已驗 | 2026-08-31 PF-188 改名並改用 `org_restricted`＋grants；面板／PUT graph／publish／handler 執行期四層皆實測（`20260831-pf188.log`）。**實際寄信仍未驗** |
 | NT-15 | `SqlExecutor` | SQL 執行 | 整合 | 端到端 | `20260830-end-cancel-mode.log`；單元測試 `test_sqlexecutor_node.py`（47 項） |
 | NT-16 | `SubSystemProvision` | 子系統配置 | 整合 | 未驗證 | — |
 | NT-17 | `Abandon` | 中止 | 系統 | 未驗證 | 與 NT-11 共用父流程喚醒邏輯，**同一個 `created_by` bug 的鄰居，要一併檢查** |
-| NT-18 | `SysTelegram` | 系統 Telegram | 系統 | 未驗證 | `require_system_admin=true` |
+| NT-18 | `SysTelegram` | 系統 Telegram | 系統 | 授權面已驗 | 2026-08-31 PF-188 改用 `org_restricted`＋grants，同 NT-14；面板設定組下拉的 404 來源一併修掉。**實際發送 Telegram 仍未驗** |
 | NT-19 | `FormAdapter` | 簽核 | 表單 | 未驗證 | 日常在用，但無落地憑證；授權判定點共 12 處（`task_authorizer.py`） |
 | NT-20 | `OpFieldRead` | 讀取欄位 | 變數 | 未驗證 | — |
 | NT-21 | `OpFieldWrite` | 寫入欄位 | 變數 | 未驗證 | — |

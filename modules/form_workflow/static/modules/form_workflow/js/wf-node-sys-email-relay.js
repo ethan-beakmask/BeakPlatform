@@ -1,14 +1,14 @@
 /**
- * wf-node-email-relay.js -- EmailRelay 系統郵件節點配置
+ * wf-node-sys-email-relay.js -- SysEmailRelay 系統郵件節點配置
  * 從 wf-node-configs.js 拆分
  */
 
         // 收件人群組快取
-        let emailRelayGroupsCache = null;
+        let sysEmailRelayGroupsCache = null;
 
         // 載入可用的收件人群組
-        async function loadEmailRelayGroups(selectedIds) {
-            const groupSelect = document.getElementById('emailRelayGroups');
+        async function loadSysEmailRelayGroups(selectedIds) {
+            const groupSelect = document.getElementById('sysEmailRelayGroups');
             if (!groupSelect) return;
 
             try {
@@ -24,7 +24,7 @@
                     return;
                 }
 
-                emailRelayGroupsCache = data.data.groups;
+                sysEmailRelayGroupsCache = data.data.groups;
 
                 // 建構選項
                 let options = '';
@@ -44,31 +44,31 @@
                 groupSelect.innerHTML = '<option value="">載入失敗</option>';
             }
         }
-        window.loadEmailRelayGroups = loadEmailRelayGroups;
+        window.loadSysEmailRelayGroups = loadSysEmailRelayGroups;
 
         // 切換收件者類型欄位顯示
-        function toggleEmailRelayRecipientFields() {
-            const type = document.getElementById('emailRelayRecipientType')?.value;
-            const groupField = document.getElementById('emailRelayGroupField');
-            const manualField = document.getElementById('emailRelayManualField');
+        function toggleSysEmailRelayRecipientFields() {
+            const type = document.getElementById('sysEmailRelayRecipientType')?.value;
+            const groupField = document.getElementById('sysEmailRelayGroupField');
+            const manualField = document.getElementById('sysEmailRelayManualField');
 
             if (groupField) groupField.style.display = type === 'group' ? 'block' : 'none';
             if (manualField) manualField.style.display = type === 'manual' ? 'block' : 'none';
         }
-        window.toggleEmailRelayRecipientFields = toggleEmailRelayRecipientFields;
+        window.toggleSysEmailRelayRecipientFields = toggleSysEmailRelayRecipientFields;
 
-        // 套用 EmailRelay 節點配置
-        function applyEmailRelayConfig(nodeId) {
+        // 套用 SysEmailRelay 節點配置
+        function applySysEmailRelayConfig(nodeId) {
             // 先儲存基本資訊（名稱與描述）
             const node = applyNodeBasicInfo(nodeId, true);
             if (!node) return;
 
-            const recipientType = document.getElementById('emailRelayRecipientType')?.value || 'group';
-            const subject = document.getElementById('emailRelaySubject')?.value;
-            const body = document.getElementById('emailRelayBody')?.value;
-            const bodyType = document.getElementById('emailRelayBodyType')?.value || 'plain';
-            const priority = document.getElementById('emailRelayPriority')?.value || 'normal';
-            const ccManual = document.getElementById('emailRelayCcManual')?.value || '';
+            const recipientType = document.getElementById('sysEmailRelayRecipientType')?.value || 'group';
+            const subject = document.getElementById('sysEmailRelaySubject')?.value;
+            const body = document.getElementById('sysEmailRelayBody')?.value;
+            const bodyType = document.getElementById('sysEmailRelayBodyType')?.value || 'plain';
+            const priority = document.getElementById('sysEmailRelayPriority')?.value || 'normal';
+            const ccManual = document.getElementById('sysEmailRelayCcManual')?.value || '';
 
             // 驗證必填項
             if (!subject || !subject.trim()) {
@@ -85,7 +85,7 @@
             let recipientManual = '';
 
             if (recipientType === 'group') {
-                const groupSelect = document.getElementById('emailRelayGroups');
+                const groupSelect = document.getElementById('sysEmailRelayGroups');
                 if (groupSelect) {
                     recipientGroups = Array.from(groupSelect.selectedOptions).map(opt => opt.value);
                 }
@@ -94,7 +94,7 @@
                     return;
                 }
             } else if (recipientType === 'manual') {
-                recipientManual = document.getElementById('emailRelayRecipientManual')?.value || '';
+                recipientManual = document.getElementById('sysEmailRelayRecipientManual')?.value || '';
                 if (!recipientManual.trim()) {
                     updateStatus(__('請輸入收件者 Email'), 'warning');
                     return;
@@ -119,9 +119,9 @@
 
             updateStatus(`✅ 系統郵件設定已套用`, 'success');
 
-            console.log('EmailRelay 節點配置已更新:', {
+            console.log('SysEmailRelay 節點配置已更新:', {
                 nodeId: nodeId,
                 config: updatedConfig
             });
         }
-        window.applyEmailRelayConfig = applyEmailRelayConfig;
+        window.applySysEmailRelayConfig = applySysEmailRelayConfig;
