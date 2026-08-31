@@ -46,6 +46,8 @@ class ModuleInfo:
         self.default_roles = info.get('default_roles', [])
         # 模組預設選單角色需求（雙鑰匙 Key2）：menu code → [role codes]
         self.default_menu_role_requirements = info.get('default_menu_role_requirements', {})
+        # 模組預設 ACL 角色（fail-closed 配套）：合約種入 ROLE 型 module_access_control
+        self.default_acl_roles = info.get('default_acl_roles', [])
         self.enabled = info.get('enabled', True)
         self.scope = info.get('scope', 'tenant')  # tenant | platform
 

@@ -74,7 +74,7 @@
                             <button class="mp-add-btn" @click="openAddModal('{{ mod.code }}')">{{ _('新增指派') }}</button>
                         </div>
                         <p class="mp-acl-hint">
-                            {{ _('未設定任何指派時，所有人皆可使用此模組。設定後僅指派對象可使用。') }}
+                            {{ _('僅指派對象與企業管理員可使用此模組；未設定任何指派時僅企業管理員可使用。合約建立時系統已自動帶入模組預設指派。') }}
                         </p>
                         <div x-show="aclLoading" style="padding: 8px; color: #666;">{{ _('載入中...') }}</div>
                         <table x-show="!aclLoading && aclList.length > 0" class="mp-acl-table">
@@ -100,7 +100,7 @@
                             </tbody>
                         </table>
                         <div x-show="!aclLoading && aclList.length === 0" class="mp-acl-empty">
-                            {{ _('尚未設定使用權指派（所有人皆可使用）') }}
+                            {{ _('尚未設定使用權指派（僅企業管理員可使用）') }}
                         </div>
                     </div>
                 </td>

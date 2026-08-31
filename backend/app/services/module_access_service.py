@@ -5,7 +5,11 @@ BeakMask Module Access Service
 控制企業內「誰能使用哪個模組」。
 支援指派到角色 (ROLE)、部門 (DEPARTMENT)、群組 (GROUP)、帳號 (ACCOUNT)。
 
-向下相容: 某模組在某企業沒有任何 ACL 記錄 = 不限制（所有人可用）
+fail-closed（2026-09-01 PF-145 階段三之一起）:
+某模組在某企業沒有任何 ACL 記錄 = 拒絕（僅 ORG_ADMIN 經 decorator 層放行）。
+配套：模組於 MODULE_INFO 宣告 default_acl_roles，合約建立與
+`flask module sync` 時由 ModuleRoleService 觸發 seed_org_module_acl 種入。
+此前為 fail-open（無記錄 = 不限制），舊行為勿再引用。
 """
 import json
 import logging
@@ -80,28 +84,22 @@ class ModuleAccessService:
         """
         檢查使用者是否有權存取指定模組
 
-        向下相容: 無 ACL 記錄 = 不限制
+        fail-closed: 無 ACL 記錄 = 拒絕（PF-145 階段三之一）。
+        正常情況合約建立時已種入 default_acl_roles，走到無記錄代表
+        該企業 ACL 被清空，此時僅 ORG_ADMIN（decorator 層放行）可用。
         """
         org_sc = getattr(user, 'org_secure_code', None)
         if not org_sc:
             return False
 
-        # 檢查此模組在此企業是否有 ACL 記錄
-        count = ModuleAccessControl.query.filter(
-            ModuleAccessControl.org_secure_code == org_sc,
-            ModuleAccessControl.module_code == module_code,
-            ModuleAccessControl.is_deleted == False
-        ).count()
-
-        if count == 0:
-            return True  # 無 ACL = 不限制
-
-        # 有 ACL，檢查使用者是否匹配
         records = ModuleAccessControl.query.filter(
             ModuleAccessControl.org_secure_code == org_sc,
             ModuleAccessControl.module_code == module_code,
             ModuleAccessControl.is_deleted == False
         ).all()
+
+        if not records:
+            return False  # fail-closed：無 ACL 記錄 = 拒絕
 
         user_identifiers = cls._get_user_identifiers(user)
         for r in records:
@@ -202,6 +200,69 @@ class ModuleAccessService:
         record.is_deleted = True
         record.deleted_at = datetime.utcnow()
         return True
+
+    # ========================================
+    # 預設 ACL 種入（fail-closed 配套）
+    # ========================================
+
+    @classmethod
+    def seed_org_module_acl(cls, org_secure_code: str, module) -> Dict[str, int]:
+        """
+        依模組宣告的 default_acl_roles 為單一企業種入 ROLE 型 ACL
+
+        僅在該 (企業, 模組) 目前沒有任何未刪除 ACL 記錄時種入——
+        已有記錄代表企業已自行設定，不覆蓋也不補充。
+        角色以 code 在該企業內解析（出廠角色由 _create_default_roles 保證存在），
+        解析不到記 warning 跳過。不 commit，交由呼叫端統一處理。
+
+        Args:
+            org_secure_code: 目標企業 secure_code
+            module: ModuleInfo（需有 name / default_acl_roles 屬性）
+
+        Returns:
+            {'acl_created': n, 'acl_skipped': n（已設定或角色缺失）}
+        """
+        result = {'acl_created': 0, 'acl_skipped': 0}
+
+        acl_roles: List[str] = getattr(module, 'default_acl_roles', []) or []
+        if not acl_roles:
+            return result
+
+        existing = ModuleAccessControl.query.filter(
+            ModuleAccessControl.org_secure_code == org_secure_code,
+            ModuleAccessControl.module_code == module.name,
+            ModuleAccessControl.is_deleted == False,
+        ).count()
+        if existing:
+            result['acl_skipped'] = len(acl_roles)
+            return result
+
+        org_roles = Role.query.filter(
+            Role.org_secure_code == org_secure_code,
+            Role.code.in_(acl_roles),
+            Role.is_deleted == False,
+        ).all()
+        role_code_to_sc = {r.code: r.secure_code for r in org_roles}
+
+        for role_code in acl_roles:
+            role_sc = role_code_to_sc.get(role_code)
+            if not role_sc:
+                logger.warning(
+                    'seed_org_module_acl: role %s not found in org %s '
+                    '(module %s), skipping', role_code, org_secure_code,
+                    module.name)
+                result['acl_skipped'] += 1
+                continue
+            db.session.add(ModuleAccessControl(
+                org_secure_code=org_secure_code,
+                module_code=module.name,
+                target_type=TargetType.ROLE,
+                target_secure_code=role_sc,
+            ))
+            result['acl_created'] += 1
+
+        db.session.flush()
+        return result
 
     # ========================================
     # 合約驗證

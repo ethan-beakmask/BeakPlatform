@@ -49,6 +49,9 @@ MODULE_INFO = {
 
     'menu_items': _MENU_ITEMS if _MENU_ENABLED else [],
 
+    # 模組預設 ACL（fail-closed 配套）：合約建立時種入
+    'default_acl_roles': ['SUBSYS_DESIGNER'],
+
     'permissions': [
         {
             'code': 'nocode_builder.view',

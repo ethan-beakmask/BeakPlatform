@@ -9539,14 +9539,15 @@ msgid "新增指派"
 msgstr "Add new assignment"
 
 #: app/templates/pages/modules/list.html:77
-msgid "未設定任何指派時，所有人皆可使用此模組。設定後僅指派對象可使用。"
+msgid "僅指派對象與企業管理員可使用此模組；未設定任何指派時僅企業管理員可使用。合約建立時系統已自動帶入模組預設指派。"
 msgstr ""
-"This mod is available to everyone when no assignments are set. After "
-"setting, only the assigned object can use it."
+"Only assigned targets and organization admins can use this module; when no "
+"assignments are set, only organization admins can use it. Default "
+"assignments are seeded automatically when a contract is created."
 
 #: app/templates/pages/modules/list.html:103
-msgid "尚未設定使用權指派（所有人皆可使用）"
-msgstr "No usage assignments have been set (available to everyone)"
+msgid "尚未設定使用權指派（僅企業管理員可使用）"
+msgstr "No usage assignments have been set (organization admins only)"
 
 #: app/templates/pages/modules/list.html:115
 msgid "相關合約"

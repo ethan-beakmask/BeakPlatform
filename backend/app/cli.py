@@ -154,7 +154,8 @@ def sync_modules(force):
             f"{result.get('roles_created', 0)} roles created, "
             f"{result.get('roles_skipped', 0)} skipped (collision), "
             f"{result.get('mrr_created', 0)} menu role requirements, "
-            f"{result.get('perms_assigned', 0)} role permissions"
+            f"{result.get('perms_assigned', 0)} role permissions, "
+            f"{result.get('acl_created', 0)} acl created"
         )
 
     click.echo("\n" + click.style("Sync complete!", fg="green"))

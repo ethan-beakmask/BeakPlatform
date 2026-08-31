@@ -67,6 +67,9 @@ MODULE_INFO = {
         }
     ],
 
+    # 模組預設 ACL（fail-closed 配套）：與各頁 Key2（RISK_CONTROLLER）一致
+    'default_acl_roles': ['RISK_CONTROLLER'],
+
     # 模組權限定義
     'permissions': [
         # 檢視權限

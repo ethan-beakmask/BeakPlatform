@@ -80,6 +80,11 @@ MODULE_INFO = {
         }
     ],
 
+    # 模組預設 ACL（fail-closed 配套）：合約建立時種入，僅設計者可用
+    # 設計類 API（check_acl=True）。表單中心等終端用戶面走 check_acl=False，
+    # 不受 ACL 影響
+    'default_acl_roles': ['FLOW_DESIGNER', 'FORM_DESIGNER'],
+
     # 模組權限定義
     'permissions': [
         # 表單填寫權限

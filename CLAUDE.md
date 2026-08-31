@@ -452,37 +452,40 @@ API 卻整組打得進去。2026-08-23 PF-142 第一版就踩到（`/api/units/d
 **不經 MenuPermission**，所以有模組 ACL 的 EXTERNAL 帳號**看得到**模組選單、
 點進去才被擋（症狀是「看得到點不了」）。
 
-### PERM-04: 模組 ACL 是 fail-open，新企業預設全開（2026-08-23 實測）
+### PERM-04: 模組 ACL 是 fail-closed，預設 ACL 由合約種入（2026-09-01 PF-145 階段三之一起）
 
-`ModuleAccessService.check_user_access()` 第 96~97 行：
+`ModuleAccessService.check_user_access()` **零筆 ACL 記錄＝拒絕**
+（此前是 fail-open「無 ACL＝不限制」，2026-09-01 前的文件與 atom 描述已過時）。
+`@module_access_required(mod)`（`check_acl=True`）從此在任何企業都是實際防線；
+ORG_ADMIN 仍由 decorator 層放行（在 ACL 檢查之前），所以清空 ACL 的效果是
+「僅管理員可用」而不是鎖死。
 
-```python
-if count == 0:
-    return True  # 無 ACL = 不限制
-```
+配套的預設 ACL 種入，唯一實作 `ModuleAccessService.seed_org_module_acl()`：
 
-所以 **`@module_access_required(mod)`（`check_acl=True`）在該企業沒有任何
-`module_access_control` 記錄時，效力等同 `check_acl=False`**——只驗合約。
-建立企業時**不會**自動 seed ACL，所以新企業就是這個狀態。
+- 各模組在 MODULE_INFO 宣告 `default_acl_roles`（皆為出廠角色）：
+  `form_workflow=['FLOW_DESIGNER','FORM_DESIGNER']`、`nocode_builder=['SUBSYS_DESIGNER']`、
+  `spec_formulate=['SPEC_DESIGNER']`、`vuln_lifecycle=['RISK_CONTROLLER']`、
+  `open_defense=['SECURITY_STAFF']`
+- 觸發點與模組預設角色相同：**合約建立**（`create_contract` →
+  `ModuleRoleService.seed_contract_module_roles`）與 **`flask module sync`**。
+  啟動時的自動同步**不含**這一步（與角色補種一樣只在 CLI sync 做）
+- **該 (企業, 模組) 已有任何未刪除 ACL 記錄就整組跳過**——已設定的企業不覆蓋。
+  推論：企業把某模組 ACL 全數刪除後，下次 `flask module sync` 會重新種回預設；
+  要做到「僅管理員可用」得留至少一筆無人持有的目標，或改用角色成員管理
+- 系統企業（SYSTEM）刻意不種（沿用 ModuleRoleService 的既有排除），
+  其 ACL 現況是刻意配置
+- 既有企業已由 `scripts/migrations/135_seed_module_acl_fail_closed.py` 補種
+  （zero-record 規則，BELUGA 已設定的模組未動）
 
-實測（TEST00：有 form_workflow 有效合約、零 ACL 記錄）的純員工、無任何角色：
+**終端用戶面不受影響**：表單中心等走 `check_acl=False`（僅驗合約），
+fail-closed 只影響 `check_acl=True` 的設計類 API。已知的既有不一致
+`GET /api/form-workflow/categories`（check_acl=True 但被表單中心的
+fc-data-loader.js 使用，純員工 403、畫面靜默少了分類篩選）**維持原樣**，
+現在所有企業行為一致（原本只有 BELUGA 如此），詳見知識庫 #5248。
 
-```
-/api/workflows/data/org-tree        -> 200  全企業組織樹
-/api/workflows/data/org-roles       -> 200  全企業角色清單
-/api/workflows/data/org-api-keys    -> 200  企業 API Key 清單
-/api/workflows/data/sql-procedures  -> 200  SqlExecutor 白名單 SP 定義
-```
-
-對照組 BELUGA（有設 ACL）同批端點對 EXTERNAL 與純員工全部 403。
-
-**判讀既有程式時的意義**：看到 `@module_access_required('x')` 不要當成「已經有人在守」，
-它只在該企業設過 ACL 時才是防線。完整分級與 334 支清單見
-`dev-notes/PF145_MODULE_API_KEY1_AUDIT.md`，重跑用
+完整分級與盤點清單見 `dev-notes/PF145_MODULE_API_KEY1_AUDIT.md`（其中
+「ACL 是 fail-open」的描述是 2026-08-23 的歷史現況），重跑用
 `venv/bin/python scripts/audit_module_api_gates.py`。
-
-要不要改成 fail-closed 是**全平台變更**（會擋掉所有沒設 ACL 的企業），
-屬待辦 PF-145 階段三，不要在改某支 API 時順手做。
 
 **反過來的症狀：`SYSTEM_ADMIN` 帳號打模組 API 常常 403，而原因是 ACL 不是合約**
 （2026-08-31 實測）。系統企業**免合約**（`module_access_service.py:225-232` 的

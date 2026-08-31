@@ -17,6 +17,8 @@ MODULE_INFO 宣告格式:
     'default_menu_role_requirements': {        # 雙鑰匙 Key2（選填）
         'open_defense.security_cases': ['SECURITY_STAFF'],
     },
+    'default_acl_roles': ['SECURITY_STAFF'],   # 模組預設 ACL（選填，
+        # fail-closed 配套：僅在該企業該模組零筆 ACL 時種入 ROLE 型記錄）
 
 Seeding 時機:
 1. 企業新增合約時（OrganizationService.create_contract 依 modules_config 觸發）
@@ -68,13 +70,15 @@ class ModuleRoleService:
         result = {
             'roles_created': 0, 'roles_skipped': 0,
             'perms_assigned': 0, 'mrr_created': 0,
+            'acl_created': 0, 'acl_skipped': 0,
         }
 
         role_defs: List[Dict] = getattr(module, 'default_roles', []) or []
         menu_reqs: Dict[str, List[str]] = getattr(
             module, 'default_menu_role_requirements', {}) or {}
+        acl_roles: List[str] = getattr(module, 'default_acl_roles', []) or []
 
-        if not role_defs and not menu_reqs:
+        if not role_defs and not menu_reqs and not acl_roles:
             return result
 
         # 系統企業不受合約限制，也不需要模組角色
@@ -194,6 +198,14 @@ class ModuleRoleService:
                     existing_keys.add(key)
                     result['mrr_created'] += 1
 
+        # ---- 3. 種模組預設 ACL（fail-closed 配套，PF-145 階段三之一）----
+        if acl_roles:
+            from .module_access_service import ModuleAccessService
+            acl_result = ModuleAccessService.seed_org_module_acl(
+                org_secure_code, module)
+            result['acl_created'] = acl_result['acl_created']
+            result['acl_skipped'] = acl_result['acl_skipped']
+
         if result['roles_created'] or result['mrr_created']:
             logger.info(
                 f"Module {module.name}: seeded default roles for org "
@@ -275,12 +287,14 @@ class ModuleRoleService:
             role_defs = getattr(module, 'default_roles', []) or []
             menu_reqs = getattr(
                 module, 'default_menu_role_requirements', {}) or {}
-            if not role_defs and not menu_reqs:
+            acl_roles = getattr(module, 'default_acl_roles', []) or []
+            if not role_defs and not menu_reqs and not acl_roles:
                 continue
 
             total = {
                 'roles_created': 0, 'roles_skipped': 0,
                 'perms_assigned': 0, 'mrr_created': 0,
+                'acl_created': 0, 'acl_skipped': 0,
             }
             for org_sc, modules in org_modules.items():
                 if module.name not in modules:

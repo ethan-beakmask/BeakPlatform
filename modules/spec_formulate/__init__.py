@@ -35,6 +35,9 @@ MODULE_INFO = {
         }
     ],
 
+    # 模組預設 ACL（fail-closed 配套）：合約建立時種入
+    'default_acl_roles': ['SPEC_DESIGNER'],
+
     'permissions': [
         {
             'code': 'spec_formulate.view',

@@ -101,6 +101,11 @@ MODULE_INFO = {
         'open_defense.security_cases': ['SECURITY_STAFF'],
     },
 
+    # 模組預設 ACL（fail-closed 配套）：合約建立時種入。本模組目前沒有
+    # check_acl=True 的端點（守門走 page_keys_required），種入是為了讓
+    # ACL 現況維持「每個合約模組都有明確設定」，避免零筆 ACL 的曖昧狀態
+    'default_acl_roles': ['SECURITY_STAFF'],
+
     'permissions': [
         {
             'code': 'open_defense.view',

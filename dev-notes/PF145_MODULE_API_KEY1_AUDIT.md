@@ -13,6 +13,10 @@
 
 ### 1. 模組 ACL 是 fail-open，而新企業預設就是全開狀態（實測確認）
 
+> **2026-09-01 已修（PF-145 階段三之一）**：`check_user_access()` 改為
+> fail-closed（零筆 ACL＝拒絕），配套 `default_acl_roles` 種入機制與
+> migration 135。本節以下是 2026-08-23 的歷史現況，現行規範見 CLAUDE.md PERM-04。
+
 `ModuleAccessService.check_user_access()` 第 96~97 行：
 
 ```python

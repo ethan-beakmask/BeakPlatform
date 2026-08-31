@@ -26,7 +26,8 @@ BBN 待辦走 MCP（`note_search` / `note_update`），全域 CLAUDE.md 的 Auto
 | 附帶：表單中心選單 Key2 補 EXTERNAL_USERS（出廠預設＋migration 113） | 完成 | `bc21a720` |
 | 施工4：4 支掛在 `/api/` 下的頁面路由（確認零引用後刪除） | 完成 | `640ddc2b` |
 | 施工5：B 級無選單反查那批（實際 form_workflow 36＋spec 1：掛 28、刪 6、跨頁不掛 3；nocode 55 支另案） | 完成 | 2026-09-01，含 PF-149 收掉 |
-| 階段三：模組 ACL fail-open→fail-closed、`roles` 加 user_type 約束 | 未開始（全平台變更，要單獨評估） | — |
+| 階段三之二：指派時擋跨層（roles.scope_type 為層界，取代「roles 加 user_type」原構想） | 完成 | `b682e644` |
+| 階段三之一：模組 ACL fail-open→fail-closed ＋ default_acl_roles 種入（migration 135） | 完成 | 2026-09-01 |
 
 盤點現況（**數字會腐爛，動工前自己重跑**）：
 
