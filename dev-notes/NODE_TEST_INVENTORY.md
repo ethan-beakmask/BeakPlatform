@@ -375,3 +375,78 @@ portal 撤單，行為一致）。**送訊號前一律先 `/proc/<pid>/cmdline` 
 事後發現卡住的只能手動改回 PENDING 或標 FAILED。要讓外部作業活過重啟，
 唯一辦法是另建 systemd unit（`systemd-run`）把它移出 executor 的 cgroup ——
 脈絡見 `dev-notes/OS_EXECUTOR_SPEC.md` 第七節與知識庫 #5316。
+
+---
+
+## 附錄：系統級通知節點（NT-14 / NT-18）的端對端驗證 runbook
+
+2026-08-31 PF-188 只驗到授權面，端對端待辦是 **PF-193**。
+本節是那張單的執行前提，寫在這裡是因為「節點 config 欄位名」「成功判準」
+每次驗都會用到，不該只存在一次性的待辦裡。
+（冷讀審核指出的缺口，2026-08-31 補。）
+
+### 現成材料（系統預設企業，PF-188 建立）
+
+| 用途 | 識別碼 |
+|---|---|
+| 流程模板「系統級節點驗收流程」 | `nAOBJWuKBa969StsPwv5OA` |
+| 它的配對（publish 用） | `oCQwRov2rMIS1jbSFeg9Yg` |
+| Telegram 設定組 | `c9WeYKveCBWxbn0t8kl6yn`「系統TG」／頻道名 `測試頻道`／chat_id `-4645997172` |
+| quick-login 系統預設企業 ORG_ADMIN | `UC1oK01uDeKbG2MDwBflGD` |
+
+**該模板目前只有 2 個節點（等同空白），要自己把節點接進去。**
+`SysTelegram` / `SysEmailRelay` 是 `org_restricted`，只有系統預設企業看得到。
+
+### 節點 config 欄位（2026-08-31 由設計器面板實測取得，不必再猜）
+
+`SysTelegram`（handler 是 `telegram_handler.TelegramHandler`，與一般 `Telegram` 共用）：
+
+```json
+{"config_id": "<TelegramConfig secure_code>", "channel_name": "測試頻道",
+ "message": "內容，支援 ${f.} ${v.} 變數", "parse_mode": "HTML",
+ "disable_notification": false, "disable_web_page_preview": false}
+```
+
+`SysEmailRelay`（handler 是 `sys_emailrelay_handler.SysEmailRelayHandler`）：
+
+```json
+{"recipient_type": "manual",            // 或 "group"（小寫，大寫無效）
+ "recipient_manual": "a@b.c, d@e.f",    // recipient_type=manual 時用
+ "recipient_groups": ["<RecipientGroup secure_code>"],  // =group 時用
+ "cc_manual": "", "subject": "主旨", "body": "內文",
+ "body_type": "plain",                  // 或 "html"
+ "priority": "normal"}                  // high / normal / low -> X-Priority 1/3/5
+```
+
+設定組與收件人群組的解析都限縮在**自己企業 or 系統企業**（PF-188），
+填別家企業的 secure_code 會得到「找不到 Telegram 設定」而不是「無權使用」（刻意不洩漏存在與否）。
+
+### 外部服務現況（本機環境事實）
+
+```
+systemctl is-active emailrelay              -> active
+systemctl is-active beakplatform-dev-executor -> active   # 沒跑的話節點不會被執行
+```
+
+E-MailRelay 路徑由 `app.services.emailrelay_config.get_paths()` 決定，本機是：
+`install_dir=/opt/E-MailRelay`、`submit_bin=/opt/E-MailRelay/sbin/emailrelay-submit`、
+`spool_dir=/opt/E-MailRelay/spool`、`log_dir=/opt/E-MailRelay/logs`。
+
+### 成功判準（三層都要看，只看一層會誤判）
+
+| 層 | 怎麼看 | 注意 |
+|---|---|---|
+| 節點執行 | `fw_node_execution_logs`（level / message / node_type） | **不要只看 `fw_node_execution_queue.status`**，通知節點失敗時 queue 未必是 FAILED |
+| 送出動作 | Telegram：log 內 `message_id`；SysEmailRelay：`ls -lt /opt/E-MailRelay/spool` 出現新檔 | spool 檔被 daemon 取走後會消失，要即時看 |
+| 真的抵達 | Telegram 測試頻道實際出現訊息；收件匣實際收到信 | 訊息內容帶執行時間與 `execution_code`，才分得出不是舊訊息 |
+
+**先確認沒有 RUNNING 節點再重啟 executor**（重啟會殺掉正在跑的節點且永遠卡在 RUNNING）：
+
+```sql
+SELECT node_type, node_id, started_at FROM fw_node_execution_queue WHERE status='RUNNING';
+```
+
+### 還缺的一項
+
+**SysEmailRelay 的測試收件信箱要 Ethan 指定**——寄出去是真的會送到外部 SMTP。
+在拿到指定信箱之前，可以只驗到「spool 出現新檔」那一層（不需要收件人真的存在）。

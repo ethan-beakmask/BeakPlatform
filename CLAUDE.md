@@ -1872,6 +1872,22 @@ Playwright E2E 的三條硬規則與 mutation 驗證。
 - **新增任何一道授權前先讀知識庫 atom #5326**（`note_get(5326)`）：
   多道授權的判準維度不一致時，交集可能是空集合而且不報錯
 
+**系統預設企業的現成測試材料**（2026-08-31 PF-188 建立，省下每次重建的功夫）：
+
+| 用途 | 識別碼 |
+|---|---|
+| 流程模板「系統級節點驗收流程」 | `nAOBJWuKBa969StsPwv5OA`（設計器 `/forms/workflows/<sc>`） |
+| 它的配對（publish 用） | `oCQwRov2rMIS1jbSFeg9Yg` |
+| 系統級 Telegram 設定組 | `c9WeYKveCBWxbn0t8kl6yn`「系統TG」，頻道「測試頻道」 |
+
+**系統預設企業原本一個流程模板都沒有**，所以在此之前想測系統級節點得先自己建一個。
+
+查目前有哪些受限節點與授權狀態，不必開頁面：
+
+```bash
+set -a && source .env && set +a && venv/bin/python scripts/node_grant.py list
+```
+
 ### 節點型別的企業授權：受限節點只有被 grant 的企業看得到（2026-08-31 起）
 
 `workflow_node_definitions.org_restricted = true` 的節點型別，必須在
