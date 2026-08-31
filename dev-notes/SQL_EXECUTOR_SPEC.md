@@ -328,7 +328,14 @@ done
   2. `vulnmgmt` / `test_temp` → 那是別的專案的庫，**共用同一個 DB 帳號才是根因**。
      要隔離就得讓各專案各自持有獨立的 DB role。屬主機層架構決定，不是本專案單方面能改。
 
-  兩者都是**作業系統層級變更，需 Ethan 當場同意後執行**，不在此改。
+  **處置結果（2026-08-31 當天）**：
+
+  - 第 1 項**已執行**——`beakplatform` 庫已 `DROP DATABASE`（備份與還原演練記錄見
+    `/opt/tmp/verify/20260831-drop-retired-db.log`，dump 在
+    `/opt/tmp/backup/beakplatform-retired-db-20260831/`）。
+    暴露面從 3 個庫 128 張表降到 2 個庫 31 張表，含 `users` 的那 97 張已消失
+  - 第 2 項 Ethan 決定**保持現況**（歷史債、無緊急性）。
+    **不要再把 `vulnmgmt` / `test_temp` 的共用 owner 提報為缺陷。**
   重測：見上方重測指令第 5 條（那條只看得到「讀得到幾張表」，
   要看根因要另外查 `pg_get_userbyid(datdba)` 與 `pg_tables.tableowner`）。
 - **P3-1**：`beakplatform` 是 `fw_sp` schema owner（ACL=`UC`），可 `CREATE FUNCTION`。

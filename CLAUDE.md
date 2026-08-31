@@ -1925,6 +1925,26 @@ base_dir 用**獨立**的 `file_write_base_dirs` / `file_write_org_base_dirs`
 | `192.168.0.16:8000` 回 502 | **預期**。nginx 設定與 iptables 白名單刻意保留（重裝後沿用），後端沒了 |
 | 外網 Cloudflare `/beakplatform/` 不通 | **預期**，同上 |
 | `systemctl status beakplatform.service` 查無此 unit | **預期**，已刪檔 |
+| `psql -d beakplatform` 回 does not exist | **預期**，資料庫已於 2026-08-31 `DROP DATABASE`（見下段） |
+
+**退役正式庫已刪除（2026-08-31，Ethan 核可）**：`beakplatform` 這個資料庫
+（21MB / 97 張表 / 4 個帳號 / 2 家企業，最後一筆資料 2026-04-20）已 DROP。
+起因是它成為實質的資料暴露面——**`beakplatform` 這個 DB role 同時是它、`vulnmgmt`、
+`test_temp` 三個庫的 owner**，所以平台任何能控制 DSN 的路徑都讀得到那 97 張表
+（含 `users`，實測讀出 4 筆）。因為是 owner，`REVOKE ... FROM PUBLIC` 對它無效，
+只能刪。備份（含還原演練驗證）在
+`/opt/tmp/backup/beakplatform-retired-db-20260831/`：
+
+```bash
+sudo -u postgres psql -c "CREATE DATABASE <新庫名> OWNER beakplatform;"
+PGPASSWORD=postgres123 pg_restore -h localhost -U beakplatform -d <新庫名> \
+  --no-owner --no-privileges /opt/tmp/backup/beakplatform-retired-db-20260831/beakplatform_full.dump
+```
+
+**PF-39 重裝不需要這個備份**——重裝走 `scripts/init_database.sh` 建新庫。
+它只是萬一要回查舊正式環境資料時的退路。
+`vulnmgmt` / `test_temp` 的共用 owner 是歷史債，Ethan 2026-08-31 決定**保持現況**，
+不要再提報為缺陷。
 
 不要為了「修好 502」去改 nginx、重啟 gunicorn 或復活 unit。
 重裝步驟與必須沿用的 `ENCRYPTION_MASTER_KEY` 見 BBN 待辦 **PF-39**
