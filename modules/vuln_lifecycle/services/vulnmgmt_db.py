@@ -11,7 +11,9 @@ from psycopg2.extras import RealDictCursor
 from flask import current_app
 from datetime import datetime, date
 from decimal import Decimal
+from urllib.parse import urlsplit
 import logging
+import os
 import time
 import urllib.request
 import json
@@ -92,29 +94,42 @@ def _do_health_check():
             'detail': {},
         }
 
-# 預設連線參數（可透過 Flask config 覆蓋）
+# 預設連線參數（可透過 Flask config 或環境變數 VULNMGMT_DB_* 覆蓋）。
+# 密碼不硬編碼（PF-199）：未覆寫時沿用平台 DATABASE_URL 的密碼
+# —— vulnmgmt 與平台庫共用同一個 DB role（beakplatform）。
 DEFAULT_CONFIG = {
     'host': 'localhost',
     'port': 5432,
     'user': 'beakplatform',
-    'password': 'postgres123',
     'database': 'vulnmgmt',
 }
 
 
+def _default_password():
+    """從 DATABASE_URL 取密碼；取不到回 None，連線會直接失敗（fail-closed）"""
+    return urlsplit(os.environ.get('DATABASE_URL', '')).password
+
+
 def _get_config():
-    """取得 vulnmgmt DB 連線參數"""
+    """取得 vulnmgmt DB 連線參數（Flask config > 環境變數 > 預設值）"""
     try:
         app_config = current_app.config
-        return {
-            'host': app_config.get('VULNMGMT_DB_HOST', DEFAULT_CONFIG['host']),
-            'port': app_config.get('VULNMGMT_DB_PORT', DEFAULT_CONFIG['port']),
-            'user': app_config.get('VULNMGMT_DB_USER', DEFAULT_CONFIG['user']),
-            'password': app_config.get('VULNMGMT_DB_PASSWORD', DEFAULT_CONFIG['password']),
-            'database': app_config.get('VULNMGMT_DB_NAME', DEFAULT_CONFIG['database']),
-        }
     except RuntimeError:
-        return DEFAULT_CONFIG
+        app_config = {}
+
+    def pick(key, default):
+        val = app_config.get(key)
+        if val is None:
+            val = os.environ.get(key)
+        return val if val is not None else default
+
+    return {
+        'host': pick('VULNMGMT_DB_HOST', DEFAULT_CONFIG['host']),
+        'port': int(pick('VULNMGMT_DB_PORT', DEFAULT_CONFIG['port'])),
+        'user': pick('VULNMGMT_DB_USER', DEFAULT_CONFIG['user']),
+        'password': pick('VULNMGMT_DB_PASSWORD', _default_password()),
+        'database': pick('VULNMGMT_DB_NAME', DEFAULT_CONFIG['database']),
+    }
 
 
 def get_conn():

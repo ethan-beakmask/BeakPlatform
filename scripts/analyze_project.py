@@ -539,12 +539,13 @@ class DatabaseAnalyzer:
     def _load_db_config(self) -> dict:
         """載入資料庫設定"""
         env_file = self.root_path / '.env'
+        # 密碼一律從 .env 的 DATABASE_URL 取（PF-199），這裡只放非機敏預設值
         config = {
             'host': 'localhost',
             'port': '5432',
             'database': 'beakplatform_dev',
             'user': 'beakplatform',
-            'password': 'postgres123',
+            'password': os.environ.get('PGPASSWORD', ''),
         }
 
         if env_file.exists():
@@ -560,15 +561,18 @@ class DatabaseAnalyzer:
                         if key == 'DATABASE_URL' and value:
                             # postgresql://user:pass@host:port/dbname
                             import re
+                            # port 為可選——本專案 .env 的 DATABASE_URL 沒寫 port，
+                            # 舊正則強制 :port 導致從未 match、一直用 fallback
                             match = re.match(
-                                r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)',
+                                r'postgresql://([^:]+):([^@]+)@([^:/]+)(?::(\d+))?/(.+)',
                                 value
                             )
                             if match:
                                 config['user'] = match.group(1)
                                 config['password'] = match.group(2)
                                 config['host'] = match.group(3)
-                                config['port'] = match.group(4)
+                                if match.group(4):
+                                    config['port'] = match.group(4)
                                 config['database'] = match.group(5)
                                 break  # DATABASE_URL 優先，不再讀取其他設定
 

@@ -11,6 +11,7 @@ import os
 import secrets
 import string
 import logging
+from urllib.parse import urlsplit, urlunsplit
 
 import psycopg2
 from psycopg2 import sql as psql
@@ -33,6 +34,19 @@ def _get_admin_conn():
     conn = psycopg2.connect(url)
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     return conn
+
+
+def _get_su_dsn(db_name):
+    """組出以 superuser 連入指定資料庫的 DSN
+
+    憑證與主機一律沿用 SYNC_PG_ADMIN_URL，只替換路徑上的資料庫名。
+    未設定即 raise，不 fallback 到任何寫死的憑證（PF-199）。
+    """
+    url = os.environ.get('SYNC_PG_ADMIN_URL')
+    if not url:
+        raise RuntimeError('SYNC_PG_ADMIN_URL 環境變數未設定')
+    parts = urlsplit(url)
+    return urlunsplit((parts.scheme, parts.netloc, f'/{db_name}', parts.query, ''))
 
 
 def _role_exists(cur, role_name):
@@ -147,14 +161,7 @@ def provision_org_database(org_id, org_secure_code, db_host='localhost', db_port
         conn.close()
 
     # 3. 用 superuser 連入 org DB 安裝 pgcrypto（需要 superuser 權限）
-    su_url = os.environ.get('SYNC_PG_ADMIN_URL', '')
-    # 替換連線 URL 中的資料庫名稱為 org DB
-    if '/' in su_url:
-        su_base = su_url.rsplit('/', 1)[0]
-        su_dsn = f'{su_base}/{db_name}'
-    else:
-        su_dsn = f'postgresql://postgres:postgres123@{db_host}:{db_port}/{db_name}'
-    su_conn = psycopg2.connect(su_dsn)
+    su_conn = psycopg2.connect(_get_su_dsn(db_name))
     su_conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     try:
         with su_conn.cursor() as cur:
@@ -248,14 +255,7 @@ def ensure_pgcrypto(org_secure_code):
     if not org_db:
         raise RuntimeError(f'找不到企業 {org_secure_code} 的 DB 記錄')
 
-    su_url = os.environ.get('SYNC_PG_ADMIN_URL', '')
-    if '/' in su_url:
-        su_base = su_url.rsplit('/', 1)[0]
-        su_dsn = f'{su_base}/{org_db.db_name}'
-    else:
-        su_dsn = f'postgresql://postgres:postgres123@{org_db.db_host}:{org_db.db_port}/{org_db.db_name}'
-
-    conn = psycopg2.connect(su_dsn)
+    conn = psycopg2.connect(_get_su_dsn(org_db.db_name))
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     try:
         with conn.cursor() as cur:

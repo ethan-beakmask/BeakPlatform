@@ -38,10 +38,10 @@ BeakPlatform - 工作流設計稿匯出匯入工具
 
 範例:
     # 家用開發環境，匯出 beluga 企業全量
-    python workflow_bundle.py export --db postgresql://beakplatform:postgres123@localhost/beakplatform_dev --org-sc _9c8TewkRkCBEf3XsUdqeF --all -o /mnt/smb/bundle.json
+    python workflow_bundle.py export --db postgresql://beakplatform:<密碼>@localhost/beakplatform_dev --org-sc _9c8TewkRkCBEf3XsUdqeF --all -o /mnt/smb/bundle.json
 
     # 家用正式環境，匯入到指定企業（先預覽）
-    python workflow_bundle.py import --db postgresql://beakplatform:postgres123@localhost/beakplatform --org-sc <目標企業SC> -i /mnt/smb/bundle.json --dry-run
+    python workflow_bundle.py import --db postgresql://beakplatform:<密碼>@localhost/beakplatform --org-sc <目標企業SC> -i /mnt/smb/bundle.json --dry-run
 
     # 公司環境，匯出
     python workflow_bundle.py export --db postgresql://beakplatform:<密碼>@localhost/beakplatform --org-sc <公司企業SC> --all -o bundle.json

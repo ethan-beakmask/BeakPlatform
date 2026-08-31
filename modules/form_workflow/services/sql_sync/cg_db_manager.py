@@ -23,6 +23,8 @@ import psycopg2
 from psycopg2 import sql as psql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
+from .org_db_manager import _get_su_dsn
+
 logger = logging.getLogger(__name__)
 
 
@@ -166,16 +168,7 @@ def provision_conglomerate_database(
         conn.close()
 
     # 3. 用 superuser 連入集團 DB 安裝 pgcrypto
-    su_url = os.environ.get('SYNC_PG_ADMIN_URL', '')
-    if '/' in su_url:
-        su_base = su_url.rsplit('/', 1)[0]
-        su_dsn = f'{su_base}/{db_name}'
-    else:
-        su_dsn = (
-            f'postgresql://postgres:postgres123'
-            f'@{db_host}:{db_port}/{db_name}'
-        )
-    su_conn = psycopg2.connect(su_dsn)
+    su_conn = psycopg2.connect(_get_su_dsn(db_name))
     su_conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     try:
         with su_conn.cursor() as cur:

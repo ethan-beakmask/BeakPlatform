@@ -215,9 +215,23 @@ def main():
     ap.add_argument('--db', default='beakplatform_dev', help='資料庫名稱')
     ap.add_argument('--db-host', default='localhost', help='資料庫主機')
     ap.add_argument('--db-user', default='beakplatform', help='資料庫帳號')
-    ap.add_argument('--db-password', default=os.getenv('PGPASSWORD', 'postgres123'),
-                    help='資料庫密碼（預設取環境變數 PGPASSWORD）')
+    ap.add_argument('--db-password', default=os.getenv('PGPASSWORD', ''),
+                    help='資料庫密碼（預設依序取 PGPASSWORD、repo .env 的 DATABASE_URL）')
     args = ap.parse_args()
+
+    if not args.db_password:
+        # 不硬編碼密碼（PF-199）：從 repo .env 的 DATABASE_URL 撈
+        env_path = os.path.join(ROOT, '.env')
+        if os.path.exists(env_path):
+            with open(env_path) as f:
+                for line in f:
+                    m = re.match(r'DATABASE_URL=postgresql://[^:]+:([^@]+)@', line.strip())
+                    if m:
+                        args.db_password = m.group(1)
+                        break
+    if not args.db_password:
+        ap.error('未提供資料庫密碼：請設定 PGPASSWORD 或 --db-password，'
+                 '或確認 repo .env 的 DATABASE_URL')
 
     prefixes = collect_blueprint_prefixes()
     rows = collect_routes(prefixes)

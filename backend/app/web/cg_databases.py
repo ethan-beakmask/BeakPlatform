@@ -13,6 +13,7 @@ BeakPlatform Conglomerate Database Overview
 - 表數量需連入個別 DB，此頁不做（避免憑證相依）
 """
 import logging
+import os
 
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
@@ -27,10 +28,6 @@ from ..models.organization import Organization
 logger = logging.getLogger(__name__)
 
 cg_databases_bp = Blueprint('cg_databases', __name__)
-
-# postgres superuser 連線（本機開發環境）
-_PG_SUPERUSER_DSN = 'postgresql://postgres:postgres123@localhost:5432/postgres'
-
 
 def _format_bytes(size_bytes):
     """格式化位元組為人類可讀格式"""
@@ -54,8 +51,14 @@ def _scan_cg_databases_with_size():
     Returns:
         dict: {db_name: size_bytes, ...}
     """
+    # superuser 憑證沿用 sql_sync 的 SYNC_PG_ADMIN_URL（.env），不硬編碼（PF-199）。
+    # 未設定時降級為「查不到大小」，與連線失敗同一種表現。
+    dsn = os.environ.get('SYNC_PG_ADMIN_URL')
+    if not dsn:
+        logger.warning('CgDB overview: SYNC_PG_ADMIN_URL 未設定，無法掃描 pg_database')
+        return {}
     try:
-        conn = psycopg2.connect(_PG_SUPERUSER_DSN, connect_timeout=5)
+        conn = psycopg2.connect(dsn, connect_timeout=5)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         try:
             with conn.cursor() as cur:
