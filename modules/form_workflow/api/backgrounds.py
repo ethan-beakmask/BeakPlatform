@@ -8,7 +8,7 @@ import logging
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.data import get_current_org
 from app.services import file_service
 from app import db, csrf
@@ -115,6 +115,7 @@ def upload_background():
 @backgrounds_bp.route('/<secure_code>', methods=['PUT'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def update_background(secure_code):
     """更新底圖描述"""
     from ..models import FwWorkflowBackground
@@ -153,6 +154,7 @@ def update_background(secure_code):
 @backgrounds_bp.route('/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def delete_background(secure_code):
     """刪除底圖"""
     from ..models import FwWorkflowBackground

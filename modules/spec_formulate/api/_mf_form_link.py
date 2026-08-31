@@ -78,6 +78,7 @@ def register(bp):
 
     @bp.route('/by-form-template/<ft_sc>', methods=['GET', 'POST'])
     @module_access_required('spec_formulate')
+    @page_keys_required('form_workflow.templates')
     def get_or_create_spec_by_form_template(ft_sc):
         """
         依表單模板查找或自動建立關聯的 spec

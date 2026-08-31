@@ -9,7 +9,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
-from app.security.decorators import module_access_required
+from app.security.decorators import module_access_required, page_keys_required
 from app.platform.auth import (
     has_permission,
     require_permission,
@@ -206,39 +206,10 @@ def list_categories():
 # 數據 API
 # =============================================================================
 
-@forms_bp.route('/data/templates')
-@module_access_required('form_workflow')
-def list_templates():
-    """取得表單模板列表"""
-    from ..models import FwFormTemplate
-
-    org = get_current_org()
-    if not org:
-        return jsonify({'success': False, 'error': 'Organization not found'}), 400
-
-    query = FwFormTemplate.query.filter_by(
-        org_secure_code=org.secure_code,
-        is_deleted=False
-    )
-
-    # 搜尋
-    q = request.args.get('q', '').strip()
-    if q:
-        query = query.filter(
-            FwFormTemplate.name.ilike(f'%{q}%') |
-            FwFormTemplate.code.ilike(f'%{q}%')
-        )
-
-    templates = query.order_by(FwFormTemplate.updated_at.desc()).all()
-
-    return jsonify({
-        'success': True,
-        'templates': [t.to_dict(include_schema=False) for t in templates]
-    })
-
 
 @forms_bp.route('/data/templates/<secure_code>')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.templates')
 def get_template(secure_code):
     """取得單一表單模板"""
     from ..models import FwFormTemplate
@@ -271,6 +242,7 @@ def get_template(secure_code):
 @forms_bp.route('/data/templates', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.templates')
 def create_template():
     """建立表單模板"""
     from ..models import FwFormTemplate
@@ -351,6 +323,7 @@ def create_template():
 @forms_bp.route('/data/templates/<secure_code>', methods=['PUT'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.templates')
 def update_template(secure_code):
     """更新表單模板"""
     from ..models import FwFormTemplate
@@ -444,6 +417,7 @@ def update_template(secure_code):
 @forms_bp.route('/data/templates/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.templates')
 def delete_template(secure_code):
     """刪除表單模板（軟刪除）"""
     from ..models import FwFormTemplate
@@ -471,107 +445,9 @@ def delete_template(secure_code):
     })
 
 
-@forms_bp.route('/data/templates/<secure_code>/publish', methods=['POST'])
-@csrf.exempt
-@module_access_required('form_workflow')
-def publish_template(secure_code):
-    """發布表單模板"""
-    from ..models import FwFormTemplate
-
-    org = get_current_org()
-    if not org:
-        return jsonify({'success': False, 'error': 'Organization not found'}), 400
-
-    template = FwFormTemplate.query.filter_by(
-        secure_code=secure_code,
-        org_secure_code=org.secure_code,
-        is_deleted=False
-    ).first()
-
-    if not template:
-        return jsonify({'success': False, 'error': 'Template not found'}), 404
-
-    # 檢查是否可以發布
-    if not template.schema or not template.schema.get('components'):
-        return jsonify({'success': False, 'error': _('表單沒有任何欄位，無法發布')}), 400
-
-    template.is_published = True
-    template.publish_at = datetime.utcnow()
-    template.updated_at = datetime.utcnow()
-    db.session.commit()
-
-    return jsonify({
-        'success': True,
-        'data': template.to_dict(include_schema=True),
-        'message': _('表單模板已發布')
-    })
-
-
-@forms_bp.route('/data/templates/<secure_code>/unpublish', methods=['POST'])
-@csrf.exempt
-@module_access_required('form_workflow')
-def unpublish_template(secure_code):
-    """取消發布表單模板"""
-    from ..models import FwFormTemplate
-
-    org = get_current_org()
-    if not org:
-        return jsonify({'success': False, 'error': 'Organization not found'}), 400
-
-    template = FwFormTemplate.query.filter_by(
-        secure_code=secure_code,
-        org_secure_code=org.secure_code,
-        is_deleted=False
-    ).first()
-
-    if not template:
-        return jsonify({'success': False, 'error': 'Template not found'}), 404
-
-    template.is_published = False
-    template.updated_at = datetime.utcnow()
-    db.session.commit()
-
-    return jsonify({
-        'success': True,
-        'data': template.to_dict(include_schema=True),
-        'message': _('表單模板已取消發布')
-    })
-
-
 # =============================================================================
 # 欄位提取 API
 # =============================================================================
-
-@forms_bp.route('/data/templates/<secure_code>/fields')
-@module_access_required('form_workflow')
-def get_template_fields(secure_code):
-    """取得表單模板的欄位列表"""
-    from ..models import FwFormTemplate
-
-    org = get_current_org()
-    if not org:
-        return jsonify({'success': False, 'error': 'Organization not found'}), 400
-
-    template = FwFormTemplate.query.filter_by(
-        secure_code=secure_code,
-        org_secure_code=org.secure_code,
-        is_deleted=False
-    ).first()
-
-    if not template:
-        return jsonify({'success': False, 'error': 'Template not found'}), 404
-
-    # 從 schema 中提取欄位
-    schema = template.schema or {}
-    components = schema.get('components', [])
-    fields = extract_input_fields(components)
-
-    return jsonify({
-        'success': True,
-        'fields': fields,
-        'form_code': template.code,
-        'form_name': template.name
-    })
 
 
 # =============================================================================
@@ -794,6 +670,7 @@ _FORMIO_TEMPLATES = [
 
 @forms_bp.route('/data/formio-templates')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.templates')
 def list_formio_templates():
     """取得 Form.io 預設範本列表"""
     return jsonify({
@@ -813,6 +690,7 @@ def list_formio_templates():
 
 @forms_bp.route('/data/formio-templates/<template_id>')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.templates')
 def get_formio_template(template_id):
     """取得單一 Form.io 預設範本"""
     template = next((t for t in _FORMIO_TEMPLATES if t['id'] == template_id), None)
@@ -833,6 +711,7 @@ def get_formio_template(template_id):
 @forms_bp.route('/data/templates/<secure_code>/save-new-version', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.templates')
 def save_new_version(secure_code):
     """另存新版：複製目前表單為新記錄，版本號遞增"""
     from ..models import FwFormTemplate

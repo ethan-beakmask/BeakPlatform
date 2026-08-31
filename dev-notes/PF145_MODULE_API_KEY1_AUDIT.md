@@ -167,8 +167,8 @@ BELUGA 的 EXTERNAL 帳號 `gg@gmail.com`（只有 `EXTERNAL_USERS` 角色）實
 | ~~1~~ | ~~`/api/form-center/org-tree` 依身分裁剪~~ **已完成 2026-08-23**（見本節下方） | 小 | 低 |
 | ~~2~~ | ~~C 級中選單唯一的 15 支加掛 `page_keys_required`~~ **已完成 2026-08-23，實際是 29 支**（見本節下方） | 小 | 低 |
 | ~~3~~ | ~~B 級「選單候選唯一」47 支，一模組一 commit~~ **已完成 2026-08-23，實際掛 52 支**（見本節下方） | 中 | 中（要逐支實測） |
-| 4 | 四支掛在 `/api/` 下的頁面路由：確認去留 | 小 | 低 |
-| 5 | B 級反查不到呼叫者的 104 支：先確認存活再處理 | 大 | — |
+| ~~4~~ | ~~四支掛在 `/api/` 下的頁面路由~~ **已完成 2026-09-01，確認零引用後刪除**（commit `640ddc2b`） | 小 | 低 |
+| ~~5~~ | ~~B 級反查不到呼叫者的 104 支~~ **已完成 2026-09-01**（見本節下方「第 5 項已完成」；實際可動範圍是 form_workflow 36 + spec_formulate 1，nocode_builder 55 支因選單隱藏中另案） | 大 | — |
 | 6 | （階段三）模組 ACL fail-open → fail-closed + 建企業時 seed | 大 | **高，全平台** |
 | 7 | （階段三）`roles` 加 user_type 約束 | 大 | **高，全平台** |
 
@@ -377,6 +377,39 @@ FLOW_DESIGNER 的欄位設定鈕 `offsetParent === null`、規格管理 2 筆、
 | **PF-150** | `POST /api/users/` 忽略 `user_type`、一律建成 EMPLOYEE 並順帶指派 `EMPLOYEE` 角色 |
 
 ---
+
+### 第 4、5 項已完成（2026-09-01，commit 見 git log）
+
+**第 4 項**：`/api/workflows/list|designer`、`/api/forms/list|designer` 確認全專案
+零引用（無 JS/HTML、無 `url_for`、無選單、無測試）且與 `form_workflow_web` 正牌頁
+渲染同一批模板、守門更弱，直接刪除。留證 `/opt/tmp/verify/20260901-pf145-stage4.log`。
+
+**第 5 項**：逐支精確反查（不信 CSV 的前綴聚合 callers，逐 URL grep ＋ JS→template
+對映 ＋ HTTP method 比對）後的處置：
+
+| 處置 | 支數 | 明細 |
+|---|---:|---|
+| 掛 `@page_keys_required('form_workflow.templates')` | 8 | forms.py 7（formio-templates ×2、templates CRUD 5：create/get/update/delete/save-new-version）＋ spec_formulate `by-form-template`（呼叫者唯一是 form_designer.html，跨模組掛呼叫頁的鑰匙） |
+| 掛 `@page_keys_required('form_workflow.workflows')` | 20 | workflows.py 18（templates CRUD 6、org-* 4、node-definitions、sql-procedures、roles、forms/<id>/fields、subflows ×2、mapped-forms、variable-mapping）＋ backgrounds.py 2（update/delete——只有 wf-canvas.js 呼叫） |
+| **刪除（歷史上從未有呼叫者**，`git log -S/-G` 全歷史零命中，皆為模組移轉 `ddf4b3ed` 帶進來的死板面） | 6 | forms 側 `list_templates`(GET)、`get_template_fields`、`publish_template`、`unpublish_template`；`get_node_schema`（/api/workflows/nodes/<t>/schema）；`list_available_forms`（/api/mappings/available，**PF-149 一併收掉**） |
+| 跨頁不掛（兩個設計器共用，單一 menu_code 會誤擋；decorator 屬 security-core 禁改，不擴充） | 3 | `GET /api/forms/data/categories`、`GET /api/workflows/backgrounds`、`POST /api/workflows/backgrounds/upload` |
+| 不動（NoCode 選單隱藏中，page_keys 對不存在選單 fail-closed，掛了全擋死） | 55 | nocode_builder 全部 B 級，等選單復原或改走 D2 判準，另案 |
+
+驗收（留證 `/opt/tmp/verify/20260901-pf145-stage5.log`）：
+六身分 × 15 端點矩陣前後比對——TEST00（臨時合約重現無 ACL fail-open）純員工
+整排 200→403、BELUGA FLOW_DESIGNER 表單側 200→403 而流程側維持 200、
+管理員與既有 403 全數不變；mutation 三段（EXTERNAL gg 暫掛三設計者角色：
+修復在位 403 → stash 200 漏洞重現 → pop 403）；瀏覽器實測 FLOW_DESIGNER
+流程設計器與 ORG_ADMIN 表單設計器 XHR 全 200。臨時合約、測試角色指派已清除。
+
+**順帶發現（未處理）**：`wf-tree.js:268` 呼叫的
+`/api/workflows/data/templates/by-code/<code>` 端點**從來不存在**（try + `.ok` 包著
+所以靜默失敗，樹系圖少掉該節點）。表單設計器 console 既有
+`static/vendor/flatpickr-formio/*` 404（formio 對 datetime 欄位的 lazy-load，
+目錄不在 repo），與守門無關。
+
+刪除後 `/api/mappings/available` 落入 `GET /api/mappings/<sc>` 動態路由
+（已掛 `form_workflow.mappings` 鑰匙），持鑰者 404、無鑰者 403，屬預期。
 
 ## 五、逐支清單
 

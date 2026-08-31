@@ -25,7 +25,7 @@ BBN 待辦走 MCP（`note_search` / `note_update`），全域 CLAUDE.md 的 Auto
 | 施工3：B 級選單唯一（CSV 45 支，實際處理 52 支） | 完成 | `bc21a720` `97b6b892` |
 | 附帶：表單中心選單 Key2 補 EXTERNAL_USERS（出廠預設＋migration 113） | 完成 | `bc21a720` |
 | 施工4：4 支掛在 `/api/` 下的頁面路由（確認零引用後刪除） | 完成 | `640ddc2b` |
-| **施工5：B 級反查不到呼叫者的 104 支** | **未開始** | — |
+| 施工5：B 級無選單反查那批（實際 form_workflow 36＋spec 1：掛 28、刪 6、跨頁不掛 3；nocode 55 支另案） | 完成 | 2026-09-01，含 PF-149 收掉 |
 | 階段三：模組 ACL fail-open→fail-closed、`roles` 加 user_type 約束 | 未開始（全平台變更，要單獨評估） | — |
 
 盤點現況（**數字會腐爛，動工前自己重跑**）：
@@ -93,6 +93,15 @@ grep -rn "api/workflows/list\|api/workflows/designer\|api/forms/list\|api/forms/
 完整測試無新增失敗。
 
 ### 施工5：B 級剩下的那批
+
+> **2026-09-01 已完成**：處置明細與驗收記錄見
+> `dev-notes/PF145_MODULE_API_KEY1_AUDIT.md`「第 4、5 項已完成」節
+> 與 `/opt/tmp/verify/20260901-pf145-stage5.log`。
+> 掛 28（templates 8／workflows 20）、刪 6（含 PF-149 的 `/api/mappings/available`，
+> 六支全歷史零呼叫者）、跨頁不掛 3（categories、backgrounds list/upload）、
+> nocode_builder 55 支因選單隱藏中不動（另案）。
+> 收工分級：**325 支，A36 / B63 / C16 / D198 / E12**（B 剩 nocode 55 ＋ fw 8）。
+> 以下為當時的查證記錄，留供考古。
 
 **「反查不到呼叫者的 104 支」這個講法已經過時**，施工3 之後 B 級是 101 支，
 而且組成與原本的描述不一樣。當下分組（2026-08-23，重跑腳本後）：

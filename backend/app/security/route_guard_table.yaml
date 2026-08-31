@@ -5371,8 +5371,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -5407,8 +5410,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -6269,8 +6275,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.templates
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -6287,8 +6296,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.templates
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -6305,8 +6317,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.templates
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -6323,8 +6338,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.templates
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -6334,24 +6352,6 @@ routes:
     review: unreviewed
     rules:
     - /api/forms/data/templates/<secure_code>
-    source: modules/form_workflow/api/forms.py
-  form_workflow_forms.get_template_fields:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: form_workflow
-    guards:
-    - module_access_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/forms/data/templates/<secure_code>/fields
     source: modules/form_workflow/api/forms.py
   form_workflow_forms.list_categories:
     answer_source: db
@@ -6377,8 +6377,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.templates
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -6389,50 +6392,17 @@ routes:
     rules:
     - /api/forms/data/formio-templates
     source: modules/form_workflow/api/forms.py
-  form_workflow_forms.list_templates:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: form_workflow
-    guards:
-    - module_access_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/forms/data/templates
-    source: modules/form_workflow/api/forms.py
-  form_workflow_forms.publish_template:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: form_workflow
-    guards:
-    - module_access_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - POST
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/forms/data/templates/<secure_code>/publish
-    source: modules/form_workflow/api/forms.py
   form_workflow_forms.save_new_version:
     answer_source: db
     guard_args:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.templates
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -6443,32 +6413,17 @@ routes:
     rules:
     - /api/forms/data/templates/<secure_code>/save-new-version
     source: modules/form_workflow/api/forms.py
-  form_workflow_forms.unpublish_template:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: form_workflow
-    guards:
-    - module_access_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - POST
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/forms/data/templates/<secure_code>/unpublish
-    source: modules/form_workflow/api/forms.py
   form_workflow_forms.update_template:
     answer_source: db
     guard_args:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.templates
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -6803,24 +6758,6 @@ routes:
     review: unreviewed
     rules:
     - /api/mappings/published/<secure_code>/sql-sync/status
-    source: modules/form_workflow/api/mappings.py
-  form_workflow_mappings.list_available_forms:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: form_workflow
-    guards:
-    - module_access_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/mappings/available
     source: modules/form_workflow/api/mappings.py
   form_workflow_mappings.list_mappings:
     answer_source: db
@@ -7417,8 +7354,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7435,8 +7375,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7474,8 +7417,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7492,8 +7438,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7510,8 +7459,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7522,32 +7474,17 @@ routes:
     rules:
     - /api/workflows/data/node-definitions
     source: modules/form_workflow/api/workflows.py
-  form_workflow_workflows.get_node_schema:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: form_workflow
-    guards:
-    - module_access_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/workflows/nodes/<node_type>/schema
-    source: modules/form_workflow/api/workflows.py
   form_workflow_workflows.get_org_api_keys:
     answer_source: db
     guard_args:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7564,8 +7501,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7582,8 +7522,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7600,8 +7543,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7618,8 +7564,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7636,8 +7585,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7654,8 +7606,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7672,8 +7627,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7690,8 +7648,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7708,8 +7669,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7726,8 +7690,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7744,8 +7711,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -7762,8 +7732,11 @@ routes:
       module_access_required:
         check_acl: true
         module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -13048,8 +13021,11 @@ routes:
       module_access_required:
         check_acl: true
         module: spec_formulate
+      page_keys_required:
+        menu_code: form_workflow.templates
     guards:
     - module_access_required
+    - page_keys_required
     has_internal_check: true
     internal_identity_check: false
     max_audience: null

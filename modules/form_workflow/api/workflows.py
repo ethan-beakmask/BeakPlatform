@@ -130,6 +130,7 @@ def _reject_unauthorized_graph_nodes(graph, org):
 
 @workflows_bp.route('/data/templates')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def list_templates():
     """取得流程模板列表"""
     from ..models import FwWorkflowTemplate
@@ -173,6 +174,7 @@ def list_templates():
 
 @workflows_bp.route('/data/templates/<secure_code>')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def get_template(secure_code):
     """取得單一流程模板"""
     from ..models import FwWorkflowTemplate
@@ -205,6 +207,7 @@ def get_template(secure_code):
 @workflows_bp.route('/data/templates', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def create_template():
     """建立流程模板"""
     from ..models import FwWorkflowTemplate
@@ -271,6 +274,7 @@ def create_template():
 @workflows_bp.route('/data/templates/<secure_code>', methods=['PUT'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def update_template(secure_code):
     """更新流程模板"""
     from ..models import FwWorkflowTemplate, FwFormTemplate, FwFormWorkflowMapping
@@ -467,6 +471,7 @@ def update_template(secure_code):
 @workflows_bp.route('/data/templates/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def delete_template(secure_code):
     """刪除流程模板（軟刪除）
 
@@ -567,6 +572,7 @@ def delete_template(secure_code):
 @workflows_bp.route('/data/templates/<secure_code>/save-new-version', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def save_new_version(secure_code):
     """另存新版：複製目前流程為新記錄，版本號遞增"""
     from ..models import FwWorkflowTemplate, FwFormTemplate, FwFormWorkflowMapping
@@ -667,6 +673,7 @@ def save_new_version(secure_code):
 
 @workflows_bp.route('/data/node-definitions')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def get_node_definitions():
     """
     取得節點定義列表（按分類分組）- 從 DB 查詢
@@ -734,6 +741,7 @@ def get_node_definitions():
 
 @workflows_bp.route('/data/sql-procedures')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def get_sql_procedures():
     """
     取得 SqlExecutor 節點可用的預存程序白名單（設計器下拉用）
@@ -763,36 +771,13 @@ def get_sql_procedures():
     })
 
 
-@workflows_bp.route('/nodes/<node_type>/schema')
-@module_access_required('form_workflow')
-def get_node_schema(node_type):
-    """取得節點的配置 schema - 從 DB 查詢"""
-    from sqlalchemy import func
-    from ..models import WorkflowNodeDefinition
-
-    node_def = WorkflowNodeDefinition.query.filter(
-        func.lower(WorkflowNodeDefinition.node_type) == node_type.lower(),
-        WorkflowNodeDefinition.is_deleted == False
-    ).first()
-
-    if node_def:
-        return jsonify({
-            'success': True,
-            'schema': node_def.config_schema or {}
-        })
-
-    return jsonify({
-        'success': False,
-        'error': f'Node type {node_type} not found'
-    }), 404
-
-
 # =============================================================================
 # 子流程 API
 # =============================================================================
 
 @workflows_bp.route('/data/subflows/available')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def list_available_subflows():
     """取得可用的子流程列表（分區結構）
 
@@ -957,6 +942,7 @@ def list_available_subflows():
 @workflows_bp.route('/data/subflows/create', methods=['POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def create_subflow():
     """建立子流程"""
     from ..models import FwWorkflowTemplate
@@ -1145,6 +1131,7 @@ def delete_subflow(secure_code):
 @workflows_bp.route('/data/variable-mapping', methods=['GET', 'POST'])
 @csrf.exempt
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def variable_mapping():
     """
     取得或建立變數映射
@@ -1267,6 +1254,7 @@ def variable_mapping():
 
 @workflows_bp.route('/data/org-tree')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def get_org_tree():
     """取得組織架構樹（用於選擇簽核人）"""
     from app.models.organizational_unit import OrganizationalUnit, UnitType
@@ -1342,6 +1330,7 @@ def get_org_tree():
 
 @workflows_bp.route('/data/roles')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def get_roles_list():
     """取得角色列表（用於簽核人角色選擇）"""
     from app.models.role import Role
@@ -1376,6 +1365,7 @@ def get_roles_list():
 
 @workflows_bp.route('/data/templates/<template_id>/mapped-forms', methods=['GET'])
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def get_workflow_mapped_forms(template_id):
     """
     取得指定流程的已配對表單清單
@@ -1505,6 +1495,7 @@ def get_workflow_mapped_forms(template_id):
 
 @workflows_bp.route('/data/forms/<form_id>/fields', methods=['GET'])
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def get_form_fields(form_id):
     """
     分析並取得指定表單的欄位清單
@@ -1800,6 +1791,7 @@ def _extract_form_fields(components, path_prefix='data', nested_level=0):
 
 @workflows_bp.route('/data/org-roles')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def get_org_roles():
     """取得企業角色列表（用於廣播目標選擇）"""
     from app.models import Role
@@ -1822,6 +1814,7 @@ def get_org_roles():
 
 @workflows_bp.route('/data/org-departments')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def get_org_departments():
     """取得企業部門列表（用於廣播目標選擇）"""
     from app.models.organizational_unit import OrganizationalUnit, UnitType
@@ -1850,6 +1843,7 @@ def get_org_departments():
 
 @workflows_bp.route('/data/org-api-keys')
 @module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def get_org_api_keys():
     """取得企業 API Key 清單（用於 ApiKeyAction 節點選擇處置對象；不含 secret）"""
     from app.services import api_key_service
