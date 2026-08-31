@@ -6,7 +6,7 @@ FormWorkflow Module - Forms API
 """
 import secrets
 from datetime import datetime
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
 from app.security.decorators import module_access_required
@@ -109,54 +109,11 @@ def extract_input_fields(components, fields=None):
 
 
 # =============================================================================
-# 頁面路由
-# =============================================================================
-
-@forms_bp.route('/list')
-@module_access_required('form_workflow')
-def list_page():
-    """表單模板列表頁面"""
-    return render_template(
-        'modules/form_workflow/template_list.html',
-        active_menu_code='form_workflow.templates'
-    )
-
-
-@forms_bp.route('/designer')
-@forms_bp.route('/designer/<secure_code>')
-@module_access_required('form_workflow')
-def designer(secure_code=None):
-    """表單設計器頁面"""
-    from ..models import FwFormTemplate
-
-    org = get_current_org()
-    if not org:
-        return jsonify({'success': False, 'error': 'Organization not found'}), 400
-
-    if secure_code:
-        template = FwFormTemplate.query.filter_by(
-            secure_code=secure_code,
-            org_secure_code=org.secure_code,
-            is_deleted=False
-        ).first()
-
-        if not template:
-            return jsonify({'success': False, 'error': 'Template not found'}), 404
-    else:
-        template = None
-
-    return render_template(
-        'modules/form_workflow/form_designer.html',
-        org_secure_code=org.secure_code,
-        form_secure_code=secure_code,
-        form=template.to_dict(include_schema=True) if template else None,
-        user_type=current_user.user_type
-    )
-
-
-# =============================================================================
 # 分類 API
 # =============================================================================
+# （原本此處有 /list 與 /designer 兩支回 HTML 的頁面路由，2026-09-01 PF-145 施工4
+#   移除：與 form_workflow_web.templates / template_detail 重複，且 /api/ 前綴
+#   在 PageRoleGuard.SKIP_PREFIXES 內，結構上不可能被雙鑰匙保護。）
 
 @forms_bp.route('/data/categories')
 @module_access_required('form_workflow')
