@@ -678,8 +678,18 @@
                     }, 1000);
 
                     // 背景生成縮圖（前端）
+                    // 這裡就同步把畫面截下來並綁定流程 id：呼叫端（例如流程樹系切換）
+                    // 可能在下一刻就換掉 cy 與 currentWorkflowId，延遲到 setTimeout 才截圖
+                    // 會把「這張圖」存到「下一張流程」上
+                    const thumbTargetId = currentWorkflowId;
+                    let thumbPngRaw = null;
+                    try {
+                        thumbPngRaw = cy ? cy.png({ output: 'base64', bg: 'white', full: true, scale: 2 }) : null;
+                    } catch (e) {
+                        console.warn('截取流程畫面失敗，改由縮圖函式自行截圖:', e);
+                    }
                     setTimeout(() => {
-                        generateAndSaveThumbnail();
+                        generateAndSaveThumbnail(thumbTargetId, thumbPngRaw);
                     }, 100);
 
                     return true;
@@ -698,17 +708,20 @@
         }
 
         // 生成並儲存縮圖（前端使用 Cytoscape PNG 導出 + Canvas 調整尺寸）
-        async function generateAndSaveThumbnail() {
-            if (!currentWorkflowId || !cy) {
+        // targetWorkflowId / prefetchedPngRaw 由呼叫端在「畫布還是那張圖」時綁定，
+        // 不給就沿用當下狀態（儲存按鈕、saveAndClose 這類不會馬上換圖的路徑）
+        async function generateAndSaveThumbnail(targetWorkflowId, prefetchedPngRaw) {
+            const workflowId = targetWorkflowId || currentWorkflowId;
+            if (!workflowId || (!prefetchedPngRaw && !cy)) {
                 console.log('⚠️ 無法生成縮圖：缺少 workflow ID 或 Cytoscape 實例');
                 return;
             }
 
             try {
-                console.log('📸 開始生成縮圖...');
+                console.log('📸 開始生成縮圖...', workflowId);
 
                 // 使用 Cytoscape 的 PNG 導出功能，full: true 會自動涵蓋所有元素範圍
-                const pngBase64Raw = cy.png({
+                const pngBase64Raw = prefetchedPngRaw || cy.png({
                     output: 'base64',
                     bg: 'white',
                     full: true,
@@ -751,7 +764,7 @@
                             console.log('✓ 3:2 縮圖已生成 (600x400)');
 
                             // 上傳縮圖到後端
-                            const response = await fetch(`${window.__BP}/api/workflows/data/templates/${currentWorkflowId}`, {
+                            const response = await fetch(`${window.__BP}/api/workflows/data/templates/${workflowId}`, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({

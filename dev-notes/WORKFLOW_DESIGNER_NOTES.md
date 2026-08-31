@@ -129,6 +129,22 @@ http://192.168.0.16:7000/beakplatform/forms/workflows/7LJRvpSPUYcmK1M1wcOTzY
   `saveWorkflow()` 因此改成**回傳 boolean**——在此之前它 catch 掉所有錯誤、
   一律回 undefined，而且用 `if (data)` 判斷成功，**後端回 4xx 也會顯示「已儲存」**
 
+### 自動儲存會連帶生成縮圖，而縮圖綁在「當下的 currentWorkflowId 與 cy」上
+
+`saveWorkflow()` 成功後排 `setTimeout(..., 100)` 生成縮圖。設計器裡按儲存按鈕時
+畫布不會變，所以一直沒事；但「切換流程時先自動儲存」讓呼叫端在**存檔後幾毫秒內**
+就換掉 `currentWorkflowId` 與 `cy`，100ms 後那支縮圖函式看到的已經是**下一張流程**：
+
+```
+A 存檔 10:55:31.468  →  縮圖 PUT 打到 B  10:55:31.690（差 222ms）
+結果：A 的縮圖沒更新，B 被寫入一張不屬於它的圖
+```
+
+修法是在存檔成功的當下**同步** `cy.png()` 把畫面截下來、同時記住流程 id，
+再把兩者一起交給 `generateAndSaveThumbnail(targetWorkflowId, prefetchedPngRaw)`
+（兩個參數都可省略，儲存按鈕那類路徑維持原行為）。
+**日後若再加「離開前自動儲存」的路徑，記得縮圖也要跟著綁 id。**
+
 ### 這裡曾經有一段永遠不會執行的死碼
 
 `wf-tree.js::switchToWorkflow()` 原本寫 `typeof hasUnsavedChanges === 'function'
