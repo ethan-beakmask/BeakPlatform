@@ -24,7 +24,7 @@ BBN 待辦走 MCP（`note_search` / `note_update`），全域 CLAUDE.md 的 Auto
 | 附帶：管理員帳號發 ADM 編號（新企業＋回填） | 完成 | `3eabb1b2` `147f6f0e` |
 | 施工3：B 級選單唯一（CSV 45 支，實際處理 52 支） | 完成 | `bc21a720` `97b6b892` |
 | 附帶：表單中心選單 Key2 補 EXTERNAL_USERS（出廠預設＋migration 113） | 完成 | `bc21a720` |
-| **施工4：4 支掛在 `/api/` 下的頁面路由，確認去留** | **未開始** | — |
+| 施工4：4 支掛在 `/api/` 下的頁面路由（確認零引用後刪除） | 完成 | `640ddc2b` |
 | **施工5：B 級反查不到呼叫者的 104 支** | **未開始** | — |
 | 階段三：模組 ACL fail-open→fail-closed、`roles` 加 user_type 約束 | 未開始（全平台變更，要單獨評估） | — |
 
@@ -43,6 +43,16 @@ venv/bin/python scripts/audit_module_api_gates.py --summary  # 只看統計
 ## 二、下一步（施工4 與施工5）
 
 ### 施工4：四支掛在 `/api/` 前綴下的頁面路由
+
+> **2026-09-01 已完成（commit `640ddc2b`）**：重新確認零引用後直接刪除四支
+> （含 `render_template` import；`forms_bp` 的 `template_folder` 保留）。
+> route_guard_table `--update` 恰好移除那 4 個 endpoint。驗收：四支 404、
+> 正牌頁 bytes 與刪除前完全相同、瀏覽器實測兩列表頁各 7 列 console error 0、
+> 完整測試 1 failed（PF-34）/ 830 passed / 2 skipped。
+> 留證 `/opt/tmp/verify/20260901-pf145-stage4.log`。
+> 附帶事實：TEST00 的 form_workflow 合約與 ACL 現皆為 0 筆，8/23 那組
+> fail-open 曝露面測試身分已不可用，日後要驗 PERM-04 得重造「有合約零 ACL」企業。
+> 以下為當時的查證記錄，留供考古。
 
 回的是 HTML 整頁，而 `/api/` 在 `PageRoleGuard.SKIP_PREFIXES` 內，
 所以這四頁**結構上不可能被雙鑰匙保護**。定義位置與現況（2026-08-23 查證）：
