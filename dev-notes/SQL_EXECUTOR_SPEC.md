@@ -48,6 +48,13 @@ PUT 改寫 —— **設計器的下拉選單不是防線**。
 ## 白名單維護（刻意不做 Web UI）
 
 **登錄一筆 ＝ 授權流程設計者呼叫那支 SP，屬於部署期決定**，所以走 migration。
+
+**2026-08-31（migration 133）起 `fw_sp` 的 owner 是 NOLOGIN 角色 `fw_sp_owner`，
+`beakplatform` 只有 USAGE + EXECUTE**——所以建 SP 的 migration **必須用 postgres 跑**
+（`sudo -u postgres psql -d beakplatform_dev -f ...`），用 beakplatform 跑會
+`permission denied for schema fw_sp`。建完要把 ownership 交回 `fw_sp_owner`
+並明確授 EXECUTE（見步驟 1b）。
+
 新增一支 SP 的完整步驟：
 
 ```sql
@@ -60,6 +67,12 @@ AS $$
     WHERE t.org_secure_code = p_org_secure_code   -- 租戶邊界
       AND t.x = p_x;
 $$;
+
+-- 1b) ownership 交給 fw_sp_owner、EXECUTE 只給 app role（PF-190 P3-1）
+--     （用 postgres 跑時 CREATE 出來的 owner 是 postgres，一律明確轉移）
+ALTER FUNCTION fw_sp.my_query(TEXT, TEXT) OWNER TO fw_sp_owner;
+REVOKE ALL ON FUNCTION fw_sp.my_query(TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION fw_sp.my_query(TEXT, TEXT) TO beakplatform;
 
 -- 2) 登錄白名單（org_secure_code 留 NULL = 全平台共用）
 INSERT INTO fw_sql_procedures
@@ -338,8 +351,16 @@ done
     **不要再把 `vulnmgmt` / `test_temp` 的共用 owner 提報為缺陷。**
   重測：見上方重測指令第 5 條（那條只看得到「讀得到幾張表」，
   要看根因要另外查 `pg_get_userbyid(datdba)` 與 `pg_tables.tableowner`）。
-- **P3-1**：`beakplatform` 是 `fw_sp` schema owner（ACL=`UC`），可 `CREATE FUNCTION`。
-  SqlExecutor 觸發不了，但平台他處若有 SQL 寫入漏洞可種後門 SP。
-  縱深建議：`fw_sp` 函式改由獨立 role 擁有，app role 只給 `USAGE`+`EXECUTE`。
+- **P3-1【已完成 2026-08-31，migration 133】**：`fw_sp` schema 與函式改由
+  NOLOGIN 角色 `fw_sp_owner` 擁有，`beakplatform` 只剩 USAGE + EXECUTE
+  （CREATE / REPLACE / DROP / ALTER 實測全數 permission denied，
+  憑證 `/opt/tmp/verify/20260831-pf190-p31.log`）。配套：
+  新增 SP 的 migration 從此必須用 postgres 跑（見「白名單維護」步驟 1b）；
+  default privileges 的 REVOKE 用全域形式——schema 範圍的
+  `ALTER DEFAULT PRIVILEGES ... IN SCHEMA ... REVOKE` 收不掉內建的
+  PUBLIC EXECUTE（只能增不能減，實測無效）。
+  另注意：三支 demo SP 引用的 `fw_demo_inventory` 已被 migration 118
+  （PF-169 dev 清理）刪除，dev 環境呼叫它們會報 relation not exist，
+  與本變更無關、早已如此。
 - **P3-2**：`_execute` 未固定 `search_path`。目前安全（函式呼叫與 SP 內表引用皆 schema 限定），
   屬 belt-and-suspenders，可在唯讀交易內加 `SET LOCAL search_path = pg_catalog`。
