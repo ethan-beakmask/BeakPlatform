@@ -13,7 +13,7 @@ from app.security.decorators import module_access_required, page_keys_required
 from app.platform.data import get_current_org
 from app import db, csrf
 from flask_babel import gettext as _
-from ..services.node_grant_service import find_unauthorized_node_types
+from .graph_authz import reject_unauthorized_graph_nodes
 
 # 建立 API Blueprint
 mappings_bp = Blueprint(
@@ -55,20 +55,6 @@ def _nocode_usage(org_sc, mapping_sc):
     except Exception:
         return []
     return find_pages_using_mapping(org_sc, mapping_sc)
-
-
-def _reject_unauthorized_graph_nodes(graph, org):
-    unauthorized = find_unauthorized_node_types(
-        graph,
-        org.secure_code if org else None,
-    )
-    if unauthorized:
-        return jsonify({
-            'success': False,
-            'error': _('流程中含有本企業未獲授權的節點型別：%(types)s',
-                       types=', '.join(unauthorized))
-        }), 403
-    return None
 
 
 # =============================================================================
@@ -616,7 +602,7 @@ def publish_mapping(secure_code):
     if not workflow_template.graph or not workflow_template.graph.get('nodes'):
         return jsonify({'success': False, 'error': _('工作流沒有節點，無法發行')}), 400
 
-    unauthorized_response = _reject_unauthorized_graph_nodes(workflow_template.graph, org)
+    unauthorized_response = reject_unauthorized_graph_nodes(workflow_template.graph, org)
     if unauthorized_response:
         return unauthorized_response
 

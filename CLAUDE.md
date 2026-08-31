@@ -1930,8 +1930,8 @@ PF-185 於 2026-08-31 完成）或維運工具
 | 消費點 | 位置 |
 |---|---|
 | 設計器面板可見性 | `api/workflows.py::get_node_definitions()` |
-| graph 寫入（7 個入口，含 publish） | `api/workflows.py` ×4、`api/workflow_routes.py` ×2、`api/mappings.py::publish_mapping` |
-| handler 執行期（唯一防線） | `os_executor_handler` / `os_file_read_handler` / `os_file_write_handler` / `telegram_handler`（服務 `SysTelegram`）/ `sys_emailrelay_handler` |
+| graph 寫入（9 個入口，含 publish 與批次匯入） | 共用 helper `api/graph_authz.py::reject_unauthorized_graph_nodes()`（2026-09-01 PF-196 收斂，之前三個檔案各一份複本且批次匯入完全沒檢查）；批次匯入／批次另存走 per-item 判定 |
+| 執行期 | 兩層（2026-09-01 PF-194 起）：`node_runner.execute_handler()` 在 `validate()` **之前**用 `find_runtime_denial()` 統一擋（只擋 restricted 且未授權，定義消失／查詢失敗刻意放行）；5 支受限 handler 內的 `is_node_allowed()` 保留為 fail-closed 最後防線。被擋時的回報格式由 `grant_denied_result()` hook 決定，Os 三兄弟覆寫維持四分法 |
 
 **寫入路徑（grant / revoke）也收斂在同一支服務**：`grant_node_to_org()` /
 `revoke_node_from_org()`，Web API 與 CLI 都呼叫它，錯誤用 `NodeGrantError.code`

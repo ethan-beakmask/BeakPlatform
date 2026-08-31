@@ -85,6 +85,39 @@ def is_node_allowed(node_type: str, org_secure_code: str) -> bool:
         return False
 
 
+def find_runtime_denial(node_type: str, org_secure_code: str):
+    """執行期統一守門（node_runner 在 validate() 之前呼叫，PF-194）。
+
+    只擋「restricted 且該企業未授權」；定義不存在或已軟刪除的節點一律回 None——
+    退役節點（如 ParallelFork）仍存在於既有發行快照，這裡擋了會弄壞既有流程。
+    查詢失敗也回 None，fail-closed 的最後防線是各受限 handler 內的
+    is_node_allowed()（那邊對定義消失與查詢失敗都拒絕）。
+
+    Returns:
+        未授權時回傳訊息字串（與 handler 內的訊息一致），可用時回傳 None。
+    """
+    try:
+        node_def = WorkflowNodeDefinition.query.filter(
+            WorkflowNodeDefinition.node_type == node_type,
+            WorkflowNodeDefinition.is_deleted.is_(False),
+        ).first()
+        if not node_def or not node_def.org_restricted:
+            return None
+
+        if isinstance(org_secure_code, str) and org_secure_code.strip():
+            grant = WorkflowNodeOrgGrant.query.filter(
+                WorkflowNodeOrgGrant.node_type == node_type,
+                WorkflowNodeOrgGrant.org_secure_code == org_secure_code,
+                WorkflowNodeOrgGrant.is_deleted.is_(False),
+            ).first()
+            if grant is not None:
+                return None
+        return f'企業未取得 {node_type} 節點授權'
+    except Exception:
+        logger.exception('runtime node grant precheck failed node_type=%s', node_type)
+        return None
+
+
 def allowed_restricted_types(org_secure_code: str) -> set:
     """該企業有授權的 restricted node_type 集合（給可見性過濾用，一次查完）。"""
     if not isinstance(org_secure_code, str) or not org_secure_code.strip():

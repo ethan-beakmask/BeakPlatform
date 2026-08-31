@@ -16,20 +16,7 @@ from app.platform.data import get_current_org
 from . import api_bp
 from flask_babel import gettext as _
 from ..services.node_grant_service import find_unauthorized_node_types
-
-
-def _reject_unauthorized_graph_nodes(graph, org):
-    unauthorized = find_unauthorized_node_types(
-        graph,
-        org.secure_code if org else None,
-    )
-    if unauthorized:
-        return jsonify({
-            'success': False,
-            'error': _('流程中含有本企業未獲授權的節點型別：%(types)s',
-                       types=', '.join(unauthorized))
-        }), 403
-    return None
+from .graph_authz import reject_unauthorized_graph_nodes
 
 
 @api_bp.route('/workflows')
@@ -275,7 +262,7 @@ def create_workflow():
         code = f'SF{secrets.token_hex(4).upper()}'
 
     graph = data.get('graph', {'nodes': [], 'edges': []})
-    unauthorized_response = _reject_unauthorized_graph_nodes(graph, org)
+    unauthorized_response = reject_unauthorized_graph_nodes(graph, org)
     if unauthorized_response:
         return unauthorized_response
 
@@ -327,7 +314,7 @@ def update_workflow(secure_code):
     data = request.get_json() or {}
 
     if 'graph' in data:
-        unauthorized_response = _reject_unauthorized_graph_nodes(data['graph'], org)
+        unauthorized_response = reject_unauthorized_graph_nodes(data['graph'], org)
         if unauthorized_response:
             return unauthorized_response
 
@@ -883,8 +870,27 @@ def batch_import_workflows():
     skipped = 0
 
     for item in items:
-        # 先匯入 sub_workflows
         sub_workflows = item.get('sub_workflows') or {}
+
+        # PF-196：匯入也是 graph 寫入入口（2026-09-01 之前漏了檢查）。
+        # 主流程與其子流程任一含未授權節點就整個 item 跳過——
+        # 子流程被主流程引用，只跳部分會留下斷掉的引用。
+        unauthorized = set(find_unauthorized_node_types(
+            item.get('graph'), org.secure_code))
+        for sf_data in sub_workflows.values():
+            if isinstance(sf_data, dict):
+                unauthorized.update(find_unauthorized_node_types(
+                    sf_data.get('graph'), org.secure_code))
+        if unauthorized:
+            results.append({
+                'code': (item.get('code') or '').strip(),
+                'status': 'skipped',
+                'reason': '含本企業未獲授權的節點型別: ' + ', '.join(sorted(unauthorized)),
+            })
+            skipped += 1
+            continue
+
+        # 先匯入 sub_workflows
         # 匯入是「還原」語意，去重只看 code：名稱重複刻意不擋（見 create_subflow 的
         # _find_duplicate_subflow_name），否則合法的備份檔會匯不進來。
         # 同名的辨識靠清單與樹系圖在同名時附掛 code。
@@ -987,6 +993,18 @@ def batch_save_new_version_workflows():
         if not wf:
             results.append({'secure_code': sc, 'success': False, 'message': _('找不到流程')})
             continue
+
+        # PF-196：與單筆 save-new-version 一致，複製的既有 graph 含未授權節點
+        # 也擋（授權可能在流程建立後被撤銷）。
+        unauthorized = find_unauthorized_node_types(wf.graph, org.secure_code)
+        if unauthorized:
+            results.append({
+                'secure_code': sc, 'success': False,
+                'message': _('流程中含有本企業未獲授權的節點型別：%(types)s',
+                             types=', '.join(unauthorized)),
+            })
+            continue
+
         current_version = wf.version or 'AA'
         if len(current_version) >= 2:
             first, second = current_version[0], current_version[1]

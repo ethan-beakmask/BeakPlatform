@@ -46,11 +46,11 @@
 | NT-11 | `SubFlow` | 子流程 | 控制 | 端到端 | `20260830-end-cancel-mode.log`；**修復後才首次成功**，見 §缺陷 |
 | NT-12 | `Switch` | 條件分支 | 控制 | 已刪除 | 2026-08-30 刪除，行為與 ParallelFork 一字不差 |
 | NT-13 | `AiAgent` | AI 分析 | 整合 | 端到端 | 2026-08-20 經 executor 實跑（發現 `AI_NODE_CLI_PATH` 問題）；單元測試 `test_ai_agent_node.py` |
-| NT-14 | `SysEmailRelay` | 系統 Email 轉發 | 系統 | 授權面已驗 | 2026-08-31 PF-188 改名並改用 `org_restricted`＋grants；面板／PUT graph／publish／handler 執行期四層皆實測（`20260831-pf188.log`）。**實際寄信仍未驗** |
+| NT-14 | `SysEmailRelay` | 系統 Email 轉發 | 系統 | 端到端 | 2026-08-31 PF-188 四層授權面實測（`20260831-pf188.log`）；2026-09-01 PF-193 實際寄信成功（`20260901-pf193-e2e.log`）：收件 `beakmask2026@gmail.com`、主旨 `[BeakPlatform 測試] PF-193 端對端驗證 PROC-20260901-0001`、spool 03:05 被取走且 SMTP 已連 Google（無 `.bad` 殘留） |
 | NT-15 | `SqlExecutor` | SQL 執行 | 整合 | 端到端 | `20260830-end-cancel-mode.log`；單元測試 `test_sqlexecutor_node.py`（47 項） |
 | NT-16 | `SubSystemProvision` | 子系統配置 | 整合 | 未驗證 | — |
 | NT-17 | `Abandon` | 中止 | 系統 | 未驗證 | 與 NT-11 共用父流程喚醒邏輯，**同一個 `created_by` bug 的鄰居，要一併檢查** |
-| NT-18 | `SysTelegram` | 系統 Telegram | 系統 | 授權面已驗 | 2026-08-31 PF-188 改用 `org_restricted`＋grants，同 NT-14；面板設定組下拉的 404 來源一併修掉。**實際發送 Telegram 仍未驗** |
+| NT-18 | `SysTelegram` | 系統 Telegram | 系統 | 端到端 | 2026-08-31 PF-188 授權面同 NT-14；2026-09-01 PF-193 實際發送成功（`20260901-pf193-e2e.log`）：測試頻道 `-4645997172`、`message_id=51561`、內容含 `PROC-20260901-0001` |
 | NT-19 | `FormAdapter` | 簽核 | 表單 | 未驗證 | 日常在用，但無落地憑證；授權判定點共 12 處（`task_authorizer.py`） |
 | NT-20 | `OpFieldRead` | 讀取欄位 | 變數 | 未驗證 | — |
 | NT-21 | `OpFieldWrite` | 寫入欄位 | 變數 | 未驗證 | — |
@@ -552,8 +552,9 @@ systemctl is-active beakplatform-dev-executor -> active   # 沒跑的話節點�
 ```
 
 E-MailRelay 路徑由 `app.services.emailrelay_config.get_paths()` 決定，本機是：
-`install_dir=/opt/E-MailRelay`、`submit_bin=/opt/E-MailRelay/sbin/emailrelay-submit`、
-`spool_dir=/opt/E-MailRelay/spool`、`log_dir=/opt/E-MailRelay/logs`。
+`install_dir=/opt/emailrelay`（**小寫**，本節初版寫 `/opt/E-MailRelay` 是錯的，
+2026-09-01 實測更正）、`submit_bin=/opt/emailrelay/sbin/emailrelay-submit`、
+`spool_dir=/opt/emailrelay/spool`、`log_dir=/opt/emailrelay/logs`。
 
 ### 成功判準（三層都要看，只看一層會誤判）
 
@@ -569,7 +570,19 @@ E-MailRelay 路徑由 `app.services.emailrelay_config.get_paths()` 決定，本�
 SELECT node_type, node_id, started_at FROM fw_node_execution_queue WHERE status='RUNNING';
 ```
 
-### 還缺的一項
+### 端對端已於 2026-09-01（PF-193）驗過，重跑時直接沿用這些事實
 
-**SysEmailRelay 的測試收件信箱要 Ethan 指定**——寄出去是真的會送到外部 SMTP。
-在拿到指定信箱之前，可以只驗到「spool 出現新檔」那一層（不需要收件人真的存在）。
+- 測試收件信箱（Ethan 指定）：`beakmask2026@gmail.com`
+- **送件會被「您沒有填寫此表單的權限」擋下**：填寫權限走 `FwMappingPermission`
+  （`fill_permission_service.py`），無記錄時預設要有 `EMPLOYEE` 角色，系統企業
+  ORG_ADMIN 沒有。已補一筆 user 型授權（`created_by_name='PF193-TEST'`，
+  grant_target 即該管理員），**留著沒刪**，之後重跑不會再撞到
+- log 表欄位是 `log_level` / `log_message` / `log_data`（不是 level/message/data）；
+  Telegram 成功的憑證是 `log_data` 裡的 `message_id`
+- spool 檔被 daemon 取走後會消失；**取走＝遠端 SMTP 已收**（失敗會留 `.bad` 檔），
+  搭配 `logs/emailrelay-YYYYMMDD.log` 的 `smtp connection to ...` 時間戳即可判定
+- 驗完的清理：還原模板 graph（PUT 回備份）、發行快照**用 archive**
+  （被使用過的版本 DELETE 會回 400「此版本已被使用過」）、實例軟刪除
+- 2026-09-01 實測記錄：`20260901-pf193-e2e.log`，execution_code
+  `PROC-20260901-0001`，Telegram `message_id=51561`（03:04）、
+  郵件 03:05 交付 Google SMTP

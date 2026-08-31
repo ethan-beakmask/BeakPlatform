@@ -105,6 +105,22 @@ class BaseNodeHandler(ABC):
         """
         return True
 
+    def grant_denied_result(self, message: str) -> Dict[str, Any]:
+        """
+        執行期節點授權被擋時的回報（node_runner 在 validate() 之前呼叫，PF-194）
+
+        預設走 error 路徑（queue 走 fail() 的重試機制），順序與各受限 handler
+        在 handle() 開頭的檢查一致（先 report_running 再記 ERROR log）。
+        回報格式特殊的 handler（Os 系四分法：status=success + 流程變數記結果）
+        覆寫本方法。
+        """
+        self.report_running()
+        self.log_error('企業未取得節點授權', {
+            'node_type': self.queue_item.node_type,
+            'org_secure_code': self.queue_item.org_secure_code,
+        })
+        return {'status': 'error', 'message': message}
+
     def report_running(self):
         """
         回報程式開始執行

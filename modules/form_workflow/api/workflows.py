@@ -18,10 +18,8 @@ from app.platform.data import get_current_org, get_current_org_code
 from app import db, csrf
 from flask_babel import gettext as _
 
-from ..services.node_grant_service import (
-    allowed_restricted_types,
-    find_unauthorized_node_types,
-)
+from ..services.node_grant_service import allowed_restricted_types
+from .graph_authz import reject_unauthorized_graph_nodes
 
 # 建立 API Blueprint - 使用與 A6 相同的路徑
 workflows_bp = Blueprint(
@@ -103,22 +101,6 @@ def _duplicate_subflow_name_response(name, parent_secure_code):
     else:
         message = _('已有名為「%(name)s」的通用子流程，請換一個名稱', name=name)
     return jsonify({'success': False, 'error': message}), 409
-
-
-def _reject_unauthorized_graph_nodes(graph, org):
-    unauthorized = find_unauthorized_node_types(
-        graph,
-        org.secure_code if org else None,
-    )
-    if unauthorized:
-        return jsonify({
-            'success': False,
-            'error': _('流程中含有本企業未獲授權的節點型別：%(types)s',
-                       types=', '.join(unauthorized))
-        }), 403
-    return None
-
-
 
 
 # =============================================================================
@@ -237,7 +219,7 @@ def create_template():
         return jsonify({'success': False, 'error': f'Code {code} already exists'}), 400
 
     graph = data.get('graph') or _get_default_graph()
-    unauthorized_response = _reject_unauthorized_graph_nodes(graph, org)
+    unauthorized_response = reject_unauthorized_graph_nodes(graph, org)
     if unauthorized_response:
         return unauthorized_response
 
@@ -295,7 +277,7 @@ def update_template(secure_code):
     data = request.get_json() or {}
 
     if 'graph' in data:
-        unauthorized_response = _reject_unauthorized_graph_nodes(data['graph'], org)
+        unauthorized_response = reject_unauthorized_graph_nodes(data['graph'], org)
         if unauthorized_response:
             return unauthorized_response
 
@@ -592,7 +574,7 @@ def save_new_version(secure_code):
 
     data = request.get_json() or {}
     graph = data.get('graph') or template.graph
-    unauthorized_response = _reject_unauthorized_graph_nodes(graph, org)
+    unauthorized_response = reject_unauthorized_graph_nodes(graph, org)
     if unauthorized_response:
         return unauthorized_response
 
@@ -962,7 +944,7 @@ def create_subflow():
         return _duplicate_subflow_name_response(name, parent_id)
 
     graph = data.get('graph') or _get_default_graph()
-    unauthorized_response = _reject_unauthorized_graph_nodes(graph, org)
+    unauthorized_response = reject_unauthorized_graph_nodes(graph, org)
     if unauthorized_response:
         return unauthorized_response
 

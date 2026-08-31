@@ -81,11 +81,22 @@ def execute_handler(queue_item):
         dict: 執行結果
     """
     from modules.form_workflow.services.node_handlers.factory import NodeHandlerFactory
+    from modules.form_workflow.services.node_grant_service import find_runtime_denial
 
     node_type = queue_item.node_type
 
     # 使用工廠建立處理器
     handler = NodeHandlerFactory.create(queue_item)
+
+    # PF-194：受限節點的企業授權在 validate() 之前統一擋。
+    # 否則未授權企業會先拿到 validate() 的錯誤（例如「找不到 Telegram 設定」），
+    # 往設定方向排錯查不到原因。handler 內各自的檢查保留為最後防線
+    # （find_runtime_denial 對定義消失／查詢失敗刻意放行，fail-closed 在 handler）。
+    denial = find_runtime_denial(node_type, queue_item.org_secure_code)
+    if denial is not None:
+        logger.warning(f'節點授權未通過，跳過 validate: {node_type} '
+                       f'org={queue_item.org_secure_code}')
+        return handler.grant_denied_result(denial)
 
     # 驗證配置
     handler.validate()

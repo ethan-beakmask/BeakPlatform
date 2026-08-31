@@ -112,6 +112,11 @@ class OsFileReadHandler(BaseNodeHandler):
     def validate(self) -> bool:
         return True
 
+    def grant_denied_result(self, message: str) -> Dict[str, Any]:
+        # 四分法回報（status=success + 流程變數記 not_authorized）就在 handle()
+        # 內 _load_config 的授權檢查裡；直接走同一條路徑，格式不會漂移。
+        return self.handle()
+
     def handle(self) -> Dict[str, Any]:
         self.report_running()
 
