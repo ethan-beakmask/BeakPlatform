@@ -1851,23 +1851,23 @@ Playwright E2E 的三條硬規則與 mutation 驗證。
 企業授權（見下條）、`workflow_node_definitions.is_active=false`。
 部署說明在 `docs/install/os_node.md`（會推 GitHub）。
 
-### 系統級節點的邊界單位是「企業」，不是帳號身分（Ethan 2026-08-31 口述的設計本意）
+### 【測系統級 node 前必讀】邊界單位是「企業」，不是帳號身分
 
-**「系統級 node」＝系統管理員才能用，但系統級沒有流程設計的 UI，這是分責不是錯誤。**
-所以平台有一個屬性特別的、**安裝時就會建立的「系統預設企業」**
-（`organizations.is_system_org=true`，code `SYSTEM` / secure_code `system.local`），
-它代表 BeakPlatform 這個平台自己，**是唯一能看見系統級節點的企業**。
+**開發史（Ethan 2026-08-31 口述）**：系統級 node ＝系統管理員才能用，
+但**系統級沒有流程設計 UI，這是分責不是錯誤**。所以有安裝時建立的
+**「系統預設企業」**（`is_system_org=true`，code `SYSTEM` / sc `system.local`），
+它代表平台自己，**是唯一能看見系統級節點的企業**。
 
-**沒讀到這段就會把測試結果判反**：測試時很容易把系統預設企業當成一般企業，
-於是誤判成「一般企業看得到系統級功能」（其實那是平台自己的企業）或
-「系統級功能連預設企業都看不見」。**驗系統級功能一律用系統預設企業的 ORG_ADMIN
-（quick-login `UC1oK01uDeKbG2MDwBflGD`），而且要與一般企業分開各測一次。**
+**不知道這件事就會把測試結果判反**（把預設企業當一般企業，於是誤判成
+「一般企業看得到系統級功能」或「連預設企業都看不見」）。所以：
 
-因此 `org_restricted` + `workflow_node_org_grants`（判準是**企業**）才是正確實作，
-而 `require_system_admin`（判準是**帳號 user_type**）從一開始就選錯維度——
-它擋不住 API，而且與模組 ACL 疊在一起會把節點鎖到誰都看不見
-（SysTelegram / EmailRelay 的現況，見待辦 **PF-188** 與
-`dev-notes/handoff_sys_level_nodes_20260831.md`）。
+- **驗系統級功能一律用系統預設企業的 ORG_ADMIN**（quick-login `UC1oK01uDeKbG2MDwBflGD`），
+  **且必須與一般企業分開各測一次**
+- `org_restricted` + grants（判準＝企業）是正確實作；`require_system_admin`
+  （判準＝帳號 user_type）選錯維度，擋不住 API 且會與模組 ACL 疊成死鎖
+  → 現況見待辦 **PF-188**、`dev-notes/handoff_sys_level_nodes_20260831.md`
+- **新增任何一道授權前先讀知識庫 atom #5326**（`note_get(5326)`）：
+  多道授權的判準維度不一致時，交集可能是空集合而且不報錯
 
 ### 節點型別的企業授權：受限節點只有被 grant 的企業看得到（2026-08-31 起）
 
