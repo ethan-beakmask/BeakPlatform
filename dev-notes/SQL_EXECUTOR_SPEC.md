@@ -58,7 +58,9 @@ PUT 改寫 —— **設計器的下拉選單不是防線**。
 新增一支 SP 的完整步驟：
 
 ```sql
--- 1) 函式建在 fw_sp，第一個參數固定 p_org_secure_code，且必須是實際 filter 條件
+-- 1) 函式建在 fw_sp，第一個參數固定 p_org_secure_code，且必須是實際 filter 條件。
+--    表引用一律 schema 限定（public.xxx）——執行時 search_path 釘死為 pg_catalog
+--    （P3-2），沒限定的執行時直接 relation not exist
 CREATE OR REPLACE FUNCTION fw_sp.my_query(p_org_secure_code TEXT, p_x TEXT)
 RETURNS TABLE (col_a VARCHAR, col_b NUMERIC)
 LANGUAGE sql STABLE SECURITY INVOKER   -- 不可以是 SECURITY DEFINER
@@ -362,5 +364,10 @@ done
   另注意：三支 demo SP 引用的 `fw_demo_inventory` 已被 migration 118
   （PF-169 dev 清理）刪除，dev 環境呼叫它們會報 relation not exist，
   與本變更無關、早已如此。
-- **P3-2**：`_execute` 未固定 `search_path`。目前安全（函式呼叫與 SP 內表引用皆 schema 限定），
-  屬 belt-and-suspenders，可在唯讀交易內加 `SET LOCAL search_path = pg_catalog`。
+- **P3-2【已完成 2026-08-31】**：`_execute` 唯讀交易內以
+  `set_config('search_path', 'pg_catalog', true)` 釘死 search_path。
+  **連帶要求：SP 內表引用必須 schema 限定（`public.xxx`）**，未限定者執行時
+  直接 relation not exist——這從建議升格為硬約束，測試
+  `test_search_path_pinned_unqualified_table_fails` 釘住。
+- **P3-3【已完成 2026-08-31】**：integer/numeric 正則 `\d` 改 `[0-9]`，
+  全形數字從「安全轉換」改為「直接拒絕」（原釘住現況的測試已改為斷言拒絕）。

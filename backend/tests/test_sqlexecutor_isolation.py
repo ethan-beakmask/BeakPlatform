@@ -140,14 +140,16 @@ def test_integer_boundary_rejected(bad):
         coerce_param(bad, 'integer', 'p_x')
 
 
-def test_integer_unicode_digits_accepted_but_safe():
+def test_integer_unicode_digits_rejected():
     """
-    紅隊觀察（非漏洞）：整數正則用 \\d（Unicode 感知），全形數字「１２３」會通過並被
-    int() 轉成 123。**它仍是綁定的整數值，無法變成 SQL**，所以沒有注入面 ——
-    純粹是 ASCII 嚴格性的小瑕疵（用 [0-9] 會更嚴，但無安全影響）。
-    此測試釘住這個行為，避免日後誤以為是漏洞或誤改成「拒絕」而破壞既有相容性。
+    PF-190 P3-3（2026-08-31 Ethan 指示收緊）：整數/數值正則從 \\d 改 [0-9]。
+    全形數字「１２３」過去會通過並被 int() 安全轉換（綁定值、無注入面），
+    現在一律拒絕 —— 純 ASCII 嚴格性收緊，新行為由本測試釘住。
     """
-    assert coerce_param('１２３', 'integer', 'p_x') == 123
+    with pytest.raises(SqlProcedureRejected):
+        coerce_param('１２３', 'integer', 'p_x')
+    with pytest.raises(SqlProcedureRejected):
+        coerce_param('１２３.５', 'numeric', 'p_x')
 
 
 @pytest.mark.parametrize('bad', [
@@ -184,6 +186,16 @@ def fw_sp_iso(app):
         RETURNS TABLE (n INT)
         LANGUAGE sql STABLE SECURITY INVOKER
         AS $$ SELECT 1 FROM pg_sleep(3) $$;
+    """))
+    db.session.execute(text("""
+        CREATE OR REPLACE FUNCTION fw_sp.t_unqualified(p_org_secure_code TEXT)
+        RETURNS TABLE (n BIGINT)
+        LANGUAGE plpgsql STABLE SECURITY INVOKER
+        AS $$
+        BEGIN
+            -- 刻意不寫 public. 前綴：驗 _execute 的 search_path 釘死
+            RETURN QUERY SELECT count(*) FROM fw_sql_procedures;
+        END $$;
     """))
     db.session.commit()
     yield
@@ -248,6 +260,24 @@ def test_procedure_code_injection_rejected(app, evil_code):
     """
     with pytest.raises(SqlProcedureRejected):
         _handler({'procedure_code': evil_code})._load_procedure()
+
+
+@pg_only
+def test_search_path_pinned_unqualified_table_fails(app, fw_sp_iso):
+    """
+    _execute 的交易內 search_path 固定為 pg_catalog（PF-190 P3-2）：
+    SP 內未 schema 限定的表引用，即使該表真的存在於 public，
+    也直接 relation not exist。堵掉「在 search_path 上動手腳換掉目標表」
+    整類手法，同時強制 SP 撰寫規範（表引用一律 public.xxx）。
+    """
+    from sqlalchemy.exc import SQLAlchemyError
+
+    handler = _handler({'procedure_code': 'x', 'timeout_seconds': 5})
+    entry = _entry(function_name='t_unqualified', max_rows=10,
+                   parameters=[{'name': ORG_PARAM, 'type': 'text', 'required': True}])
+    with pytest.raises(SQLAlchemyError) as exc:
+        handler._execute(entry, {ORG_PARAM: ORG_A})
+    assert 'does not exist' in str(exc.value)
 
 
 @pg_only

@@ -25,8 +25,11 @@ PUT 改寫 —— **設計器的下拉選單不是防線**。所以這裡的每�
    SP 內部必須拿它當實際 filter —— 平台主庫多數表沒有 RLS（只有 10 張有且非 FORCE）、
    `beakplatform` 又是 owner，**RLS 不會替你擋，租戶邊界就在 SP 的 WHERE 裡**。
 5. **參數一律 bind，不做字串拼接**。型別依白名單登記的宣告轉換，轉不動就拒絕。
-6. **唯讀交易 + statement_timeout**。走獨立連線、`SET TRANSACTION READ ONLY`，
-   由資料庫層保證這個節點不可能寫入任何東西。
+6. **唯讀交易 + statement_timeout + 固定 search_path**。走獨立連線、
+   `SET TRANSACTION READ ONLY`，由資料庫層保證這個節點不可能寫入任何東西；
+   交易內 `search_path` 固定為 `pg_catalog`（PF-190 P3-2），SP 內的表引用
+   必須 schema 限定（`public.xxx`），沒限定的會直接 relation not exist ——
+   這讓「在 search_path 上動手腳換掉目標表」整類手法失效。
 7. **結果有上限**。列數、單格長度、總長度三層截斷 —— 流程變數會流到表單、
    簽核意見甚至 SQL Sync，一個沒有上限的 SP 等於把整張表灌出去。
 
@@ -101,13 +104,15 @@ def coerce_param(raw: Any, declared_type: str, param_name: str) -> Any:
     if declared_type == 'text':
         return value[:MAX_TEXT_PARAM_CHARS]
 
+    # [0-9] 而不是 \d：\d 是 Unicode 感知，全形數字「１２３」會通過
+    # （int() 轉得動、無注入面，但沒理由收）。PF-190 P3-3 起收緊為 ASCII
     if declared_type == 'integer':
-        if not re.fullmatch(r'[+-]?\d{1,18}', value):
+        if not re.fullmatch(r'[+-]?[0-9]{1,18}', value):
             raise SqlProcedureRejected(f'參數 {param_name} 需要整數，收到「{value[:50]}」')
         return int(value)
 
     if declared_type == 'numeric':
-        if not re.fullmatch(r'[+-]?(\d{1,18})(\.\d{1,6})?', value):
+        if not re.fullmatch(r'[+-]?([0-9]{1,18})(\.[0-9]{1,6})?', value):
             raise SqlProcedureRejected(f'參數 {param_name} 需要數值，收到「{value[:50]}」')
         return Decimal(value)
 
@@ -351,6 +356,9 @@ class SqlExecutorHandler(BaseNodeHandler):
 
         with db.engine.connect() as conn:
             conn.execute(text('SET TRANSACTION READ ONLY'))
+            # 固定 search_path（交易內生效）：SP 的表引用必須 schema 限定，
+            # 未限定者直接 relation not exist（PF-190 P3-2，belt-and-suspenders）
+            conn.execute(text("SELECT set_config('search_path', 'pg_catalog', true)"))
             conn.execute(text("SELECT set_config('statement_timeout', :ms, true)"),
                          {'ms': str(self._timeout_ms())})
             result = conn.execute(text(sql), values)

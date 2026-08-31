@@ -281,7 +281,10 @@ def fw_sp_schema(app):
         LANGUAGE plpgsql VOLATILE SECURITY INVOKER
         AS $$
         BEGIN
-            INSERT INTO fw_sql_procedures
+            -- public. 前綴不可省：_execute 的交易內 search_path 已釘為 pg_catalog
+            -- （PF-190 P3-2），不限定的話這裡會先死在 relation not exist，
+            -- 就測不到唯讀交易的擋寫行為了
+            INSERT INTO public.fw_sql_procedures
                 (secure_code, code, function_name, display_name, parameters,
                  result_mode, result_columns, max_rows, is_active, is_deleted,
                  created_at, updated_at)
