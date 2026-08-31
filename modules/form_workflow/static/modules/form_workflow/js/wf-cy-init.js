@@ -337,7 +337,7 @@
                         }
                     },
                     {
-                        // 系統專用節點：桃紅方形
+                        // 系統級管理員專用節點：桃紅方形
                         selector: 'node[type="SysTelegram"], node[type="SYS_TELEGRAM"]',
                         style: {
                             'background-color': '#FCE4EC',

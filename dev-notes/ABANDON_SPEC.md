@@ -8,13 +8,50 @@
 > 設計器面板：`wf-accordion-flow.js::renderAbandonPanel()` +
 > `wf-form-adapter.js::applyAbandonConfig()`（見第五節）。
 
-## 零、一句話結論
+## 零、一句話結論（2026-08-31 當天下午改寫，見下方「存廢定案」）
 
-**Abandon 在行為上等於 `End` 節點的 `finish_mode='cancel'`**，唯一差異是子流程情境下
-父流程 SubFlow 節點的 `result.data` 多一個 `abandoned: true` 標記——但這個標記**目前
-沒有任何變數語法能被流程設計者讀到**（見第四節），所以現況下這是一個「看起來有差異、
-實際上讀不到差異」的獨立節點。是否保留、退役、或補上讓標記真的能被讀取，見第七節，
-**這是要 Ethan 決策的事，本檔不擅自執行**。
+**Abandon 是唯一會把流程與表單記成「已中止」的結束方式。** handler 回傳
+`data.workflow_status='CANCELLED'`，`node_runner` 依白名單採用它；`End` 的三種
+`finish_mode` 一律落到 `COMPLETED`，`complete_workflow()` 再把表單記成 `APPROVED`。
+
+在此之前它與 `End(finish_mode='cancel')` **完全等價**，唯一差異（子流程的
+`abandoned: true` 標記）**沒有任何變數語法讀得到**（第四節），是不折不扣的冗餘節點。
+
+---
+
+## 零之一、存廢定案（Ethan 2026-08-31 提供歷史脈絡後）
+
+**原始設計動機（Ethan 提供，程式碼與 git log 都查不到）**：最古老的流程版本
+**限定一個流程只能有一個 End 節點**，流程圖大而複雜時，每條支線都要拉一條線回到那個
+End，線太多太亂。Abandon 就是為了「不必拉線也能收掉流程」而生的。
+
+**該理由在「允許多個 End + 三種結束模式」之後已經完全消失**——現在每條支線末端各放一個
+End 即可，不會產生長線。所以 2026-08-31 上午的評估結論是：Abandon 當時確實只是冗餘。
+
+**保留的決定與代價**：與其退役，不如讓它承擔一個 `End` 做不到、而且平台確實需要的
+語意——「這個案子是被擋下來的，不是談成的」。理由是這修掉一個真實的資料正確性缺陷
+（見下方），且成本只有 `node_runner` 加一段白名單分支。
+
+- **被中止的案子原本會被記成「已核准」**：`fw_workflow_instances.status='COMPLETED'`
+  → `fw_form_instances.status='APPROVED'` → 表單中心顯示「已核准」
+- 更嚴重的是下游：`complete_workflow()` 無條件呼叫 `enqueue_sync_safe()`，而
+  `enqueue_sync()` **不看表單狀態、一律 `action='upsert'`**，所以那個錯誤終態會被
+  **寫進該企業的獨立資料庫 `org_<id>`**，而 SQL Sync 一旦啟用就無法關閉
+  （`api/mappings.py:439` 硬擋），**沒有回收路徑**
+- 平台本來就有一條把中止表達正確的路徑：`fc_admin.py:73`（管理員強制結束）傳
+  `status='CANCELLED'`，`complete_workflow()` 的 `elif status == 'CANCELLED'` 分支
+  早就在了。**Abandon 只是走不到它**
+
+**連帶處置**：Abandon 的 `require_system_admin` 與 `org_restricted` 都是 false
+（所有企業都看得到），放在「系統級管理員專用」分類本來就是錯的，
+已移到「基本」分類與 `End` 並列（`scripts/migrations/128_abandon_move_to_basic.sql`）。
+
+**`End(cancel)` 維持原樣**——它的語意是「正常結束並清理未完成節點」，記成完成是對的。
+
+實測憑證：`/opt/tmp/verify/20260831-abandon.log`（真實 executor 端對端，
+`queue=SUCCESS` / `workflow_status=CANCELLED` / 流程與表單雙雙 `CANCELLED`）。
+測試：`backend/tests/test_abandon_node.py::test_abandon_reports_cancelled_workflow_status`
+與 `::test_node_runner_honours_workflow_status_and_rejects_junk`。
 
 ---
 

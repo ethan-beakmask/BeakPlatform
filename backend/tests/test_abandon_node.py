@@ -4,8 +4,8 @@ Abandon（中止）節點測試
 背景見 dev-notes/ABANDON_SPEC.md。本檔聚焦 AbandonHandler 自身的行為：
 主流程中止的回傳結構、子流程中止喚醒父流程（含找不到父節點的降級路徑）、
 wait_seconds 上限保護，以及與 node_runner 串接後 cancel 模式對同儕分支的
-連鎖效應（順帶釘住「Abandon 完成後 workflow/form 狀態被記為
-COMPLETED/APPROVED」這個與「中止」語意不符的現況，供 SPEC 引用）。
+連鎖效應，以及 2026-08-31 起的終態語意（Abandon 回報
+workflow_status='CANCELLED'，是唯一不會被記成「已核准」的結束方式）。
 
 cancel_pending_nodes 本身的樹狀展開、PID 比對、程序終止邏輯已由
 backend/tests/test_workflow_cancel_mode.py 覆蓋，本檔不重複測那些細節。
@@ -271,7 +271,9 @@ def test_subflow_abandon_missing_parent_node_id_still_cancels_real_parent(app, d
     db_session.refresh(child)
     assert parent_subflow_item.status == 'CANCELLED'
     assert parent.status == 'CANCELLED'
-    assert child.status == 'COMPLETED'
+    # 走 Abandon 的 child 自己也記成 CANCELLED（2026-08-31 起）：
+    # 同一次中止事件，整棵樹的終態一致，不再是「觸發者 COMPLETED、其餘 CANCELLED」
+    assert child.status == 'CANCELLED'
 
 
 # ---------------------------------------------------------------------------
@@ -311,24 +313,20 @@ def test_abandon_via_node_runner_cancels_sibling_running_node(app, db_session, m
     db_session.refresh(wf)
     assert sibling_running.status == 'CANCELLED'
 
-    # 釘住現況（見 ABANDON_SPEC.md 已知限制）：
-    # 觸發 Abandon 的 instance 自己被 complete_workflow(status='COMPLETED') 收尾，
-    # 不是 'CANCELLED' —— 與「中止」的直覺語意不符，但這是 End(cancel) 共用的
-    # 既有引擎行為，不是 Abandon 獨有的缺陷。
-    assert wf.status == 'COMPLETED'
+    # 觸發 Abandon 的 instance 自己也記成 CANCELLED（handler 回報
+    # data.workflow_status='CANCELLED'，node_runner 採用它）。
+    # 用 End(finish_mode='cancel') 收尾時這裡會是 COMPLETED —— 那正是兩者的差別。
+    assert wf.status == 'CANCELLED'
 
 
 def test_cancel_complete_marks_form_instance_approved_not_cancelled(app, db_session):
     """
-    釘住語意矛盾（ABANDON_SPEC.md 第一節重點）：cancel 模式的 complete_workflow
-    最終呼叫 WorkflowEngine.complete_workflow(status='COMPLETED')（node_runner.py
-    的 wf_status 只有 finish_mode=='strict' 且 has_failures 才會是 'FAILED'），
-    連帶讓 fw_form_instances.status 變成 'APPROVED'。
+    釘住 complete_workflow 的狀態對應：status='COMPLETED' -> form 'APPROVED'。
 
-    被 Abandon（或 End cancel 模式）中止的申請單，在表單中心會顯示成「已核准」，
-    而不是任何形式的「已取消/已中止」。這不是 Abandon handler 自己的邏輯
-    （wf_status 判斷在 node_runner.py），本測試只是用測試釘住現況以供 SPEC 引用，
-    不代表這是刻意設計。
+    2026-08-31 起 Abandon 不再走這條（它回報 workflow_status='CANCELLED'，
+    見下方兩個測試），但 **End 的三種 finish_mode 仍然全部落在這裡** ——
+    也就是用 End(cancel) 收掉的案子在表單中心依舊顯示「已核准」。
+    這個對應本身是刻意的（正常結束＝核准），本測試釘住它以免被順手改掉。
     """
     wf = _workflow_instance('wf_abandon_form_status', 'ABANDON-FORM-STATUS')
     form = FwFormInstance(
@@ -349,3 +347,73 @@ def test_cancel_complete_marks_form_instance_approved_not_cancelled(app, db_sess
 
     db_session.refresh(form)
     assert form.status == 'APPROVED'
+
+
+# ---------------------------------------------------------------------------
+# 終態語意：Abandon 是唯一會把案子記成「已中止」的結束方式（2026-08-31）
+# ---------------------------------------------------------------------------
+
+def test_abandon_reports_cancelled_workflow_status(app, db_session):
+    """
+    主流程與子流程兩條路徑都必須回報 workflow_status='CANCELLED'。
+
+    漏掉的話 node_runner 會落回舊規則（cancel -> COMPLETED -> 表單 APPROVED），
+    症狀是「被中止的申請單顯示已核准」且完全不報錯，所以兩條路徑分開釘。
+    """
+    main_wf = _workflow_instance('wf_abandon_status_main', 'ABANDON-ST-MAIN')
+    main_node = _queue_item(
+        'q_abandon_status_main', main_wf.secure_code, 'node-Abandon-1',
+        node_type='Abandon', node_config={'wait_seconds': 0},
+    )
+    child_wf = _workflow_instance('wf_abandon_status_child', 'ABANDON-ST-CHILD')
+    child_wf.parent_instance_code = 'wf_abandon_status_parent'
+    child_node = _queue_item(
+        'q_abandon_status_child', child_wf.secure_code, 'node-Abandon-2',
+        node_type='Abandon', node_config={'wait_seconds': 0},
+    )
+    db_session.add_all([main_wf, main_node, child_wf, child_node])
+    db_session.commit()
+
+    assert AbandonHandler(main_node).handle()['data']['workflow_status'] == 'CANCELLED'
+    assert AbandonHandler(child_node).handle()['data']['workflow_status'] == 'CANCELLED'
+
+
+def test_node_runner_honours_workflow_status_and_rejects_junk(app, db_session, monkeypatch):
+    """
+    node_runner 採用 data.workflow_status，但只接受白名單內的值。
+
+    白名單是為了讓「handler 回傳了奇怪字串」退回舊規則，而不是把任意值寫進
+    fw_workflow_instances.status。
+
+    注意 update_result() 是在函式內 import WorkflowEngine 的，所以要 patch
+    workflow_engine 模組上的類別本身，patch node_runner 的屬性不會生效。
+    """
+    captured = []
+    monkeypatch.setattr(
+        WorkflowEngine, 'complete_workflow',
+        staticmethod(lambda code, status=None, end_message=None: captured.append(status)))
+    monkeypatch.setattr(
+        WorkflowEngine, 'cancel_pending_nodes',
+        staticmethod(lambda *a, **k: None))
+
+    cases = (
+        ('CANCELLED', 'CANCELLED'),
+        ('REJECTED', 'REJECTED'),
+        ('NOT_A_STATUS', 'COMPLETED'),   # 白名單外 -> 退回舊規則
+        (None, 'COMPLETED'),
+    )
+    for idx, (requested, _expected) in enumerate(cases):
+        wf = _workflow_instance(f'wf_runner_{idx}', f'RUNNER-{idx}')
+        node = _queue_item(
+            f'q_runner_{idx}', wf.secure_code, 'node-Abandon-x',
+            node_type='Abandon', node_config={},
+        )
+        db_session.add_all([wf, node])
+        db_session.commit()
+        data = {'finish_mode': 'cancel'}
+        if requested is not None:
+            data['workflow_status'] = requested
+        node_runner.update_result(
+            node, {'status': 'complete_workflow', 'message': 'x', 'data': data})
+
+    assert captured == [expected for _r, expected in cases]

@@ -57,7 +57,7 @@
                 'data': __('資料處理'),
                 'operation': __('運算操作'),
                 'integration': __('系統整合'),
-                'system_admin': __('系統專用')
+                'system_admin': __('系統級管理員專用')
             };
 
             // 建立模態框

@@ -2,9 +2,18 @@
 FormWorkflow Module - Abandon Handler
 中止節點處理器
 
-簡化版 EndHandler，固定使用 cancel 模式：
+固定使用 cancel 模式，但與 End 有一處不可替代的差異：
+
 - 結束流程並主動取消所有未完成節點
+- **回傳 `data.workflow_status='CANCELLED'`，讓流程與表單被記成「已中止」**。
+  End 的三種 finish_mode 都會落到 COMPLETED，`complete_workflow()` 再把表單記成
+  APPROVED——也就是「被中止的申請單顯示已核准」，而且會以那個終態 upsert 進企業
+  獨立資料庫（SQL Sync 不看狀態、無回收路徑）。Abandon 是唯一避開這件事的節點。
 - 子流程中止時，同樣喚醒父流程的 SubFlow 節點並推進父流程
+
+2026-08-31 之前本節點與 `End(finish_mode='cancel')` 完全等價（原始設計動機是
+「舊版只允許一個 End，支線各拉一條線到 End 太亂」，該理由在允許多個 End 之後已消失）。
+上面那條終態差異就是它現在的存在理由，詳見 `dev-notes/ABANDON_SPEC.md`。
 """
 import logging
 import time
@@ -71,6 +80,7 @@ class AbandonHandler(BaseNodeHandler):
             'message': '流程已中止',
             'data': {
                 'finish_mode': 'cancel',
+                'workflow_status': 'CANCELLED',
                 'completed_at': datetime.utcnow().isoformat()
             }
         }
@@ -170,6 +180,7 @@ class AbandonHandler(BaseNodeHandler):
             'message': '子流程已中止',
             'data': {
                 'finish_mode': 'cancel',
+                'workflow_status': 'CANCELLED',
                 'parent_instance_code': parent_code,
                 'abandoned': True,
                 'completed_at': datetime.utcnow().isoformat()

@@ -1713,7 +1713,7 @@ formadapter_handler.py:148     # 驗證 target_edges 合法性（空 target_edge
 | 無出邊的節點 | 安全終止該分支，不報錯也不結束流程（`workflow_engine.py:360`） | 並行分支要靜靜收尾就指向這種節點，**不要指向 End** |
 | End 的 `finish_mode` | `detach`（預設，直接結束）／`cancel`（結束並取消所有未完成節點）／`strict`（等全部完成） | 有並行分支一律用 `cancel`，否則計時分支殘留 |
 | 並行分支各自走 End | End 是**流程級**結束，任一分支走到就整個流程 COMPLETED | 另一條的簽核任務會被 executor 視為流程已結束 |
-| **cancel 模式結束（Abandon 與 `End(cancel)`）** | `node_runner.py:174` 只有 `strict and has_failures` 才給 FAILED，**cancel 一律 COMPLETED**，`complete_workflow()` 再把它對應成 `form_instance.status='APPROVED'` | **被中止的申請單在表單中心顯示「已核准」**，而且 `complete_workflow()` 接著無條件 `enqueue_sync_safe()`（不看狀態、一律 upsert），**錯誤終態會流進企業獨立資料庫且無回收路徑**。平台另有一條把中止表達正確的路徑：`fc_admin.py` 的管理員強制結束傳 `status='CANCELLED'`。完整分析與三個修法見 `dev-notes/ABANDON_SPEC.md` |
+| **`End` 的三種 finish_mode 全部記成 COMPLETED** | `node_runner.py` 的 `wf_status` 只有 `strict and has_failures` 才給 FAILED，`complete_workflow()` 再把 COMPLETED 對應成 `form_instance.status='APPROVED'` | **用 `End(cancel)` 收掉的案子在表單中心顯示「已核准」**，而且 `complete_workflow()` 接著無條件 `enqueue_sync_safe()`（不看狀態、一律 upsert），錯誤終態會流進企業獨立資料庫且無回收路徑。**要記成「已中止」就用 Abandon**——2026-08-31 起它回報 `data.workflow_status='CANCELLED'`，是唯一避開這件事的結束節點（`node_runner` 對該欄位走白名單）。脈絡見 `dev-notes/ABANDON_SPEC.md` |
 | `AlertBroadcast.broadcast_code` | **不做變數替換**（只有 title/message 有），同 code 覆蓋前一則並清掉已讀記錄 | 它是「最新一則橫幅」不是每案通知，別拿來當逐案稽核 |
 | `fw_workflow_templates.timeout_minutes` | 只被寫入 `timeout_at`（`workflow_engine.py:124-139`），**全專案沒有任何地方讀它** | 填了不會有任何效果，逾時要用流程內 Delay 節點 |
 | `DecisionWriter.decided_via` 自動推斷 | 看 `last_completed_node_type`，並行分支下不可靠 | 一律在節點 config 明確標 `human` / `auto` |

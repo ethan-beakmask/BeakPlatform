@@ -170,8 +170,18 @@ def update_result(queue_item, result):
                 exclude_queue_item_id=queue_item.id
             )
 
-        # strict 模式且有節點失敗 → 標記為 FAILED
-        wf_status = 'FAILED' if (finish_mode == 'strict' and has_failures) else 'COMPLETED'
+        # 節點可用 data.workflow_status 明示終態。Abandon 用它回報 CANCELLED，
+        # 讓「被中止」與「正常結束」在 fw_workflow_instances / fw_form_instances 上
+        # 分得出來——沒有這個分支時 cancel 模式一律 COMPLETED，complete_workflow()
+        # 再把表單記成 APPROVED，於是被中止的申請單在表單中心顯示「已核准」，
+        # 而且會以那個終態 upsert 進企業獨立資料庫（SQL Sync 不看狀態、無回收路徑）。
+        # 值走白名單是刻意的：result 來自 handler，不接受任意字串。
+        requested_status = result.get('data', {}).get('workflow_status')
+        if requested_status in ('COMPLETED', 'CANCELLED', 'REJECTED', 'FAILED'):
+            wf_status = requested_status
+        else:
+            # strict 模式且有節點失敗 → 標記為 FAILED
+            wf_status = 'FAILED' if (finish_mode == 'strict' and has_failures) else 'COMPLETED'
 
         WorkflowEngine.complete_workflow(
             queue_item.workflow_instance_secure_code,

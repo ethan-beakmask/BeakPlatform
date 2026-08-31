@@ -68,7 +68,7 @@ var CATEGORY_NAMES = {
     'integration': __('系統整合'),
     'security': __('安全管控'),
     'security_ops': __('資安處置'),
-    'system_admin': __('系統專用')
+    'system_admin': __('系統級管理員專用')
 };
 
 // 分類圖示對應

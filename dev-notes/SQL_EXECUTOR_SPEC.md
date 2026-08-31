@@ -307,11 +307,30 @@ done
   | `org_106`（企業獨立庫） | **拒絕 CONNECT** —— 這條做對了 |
 
   **Session B 原本回報「那些庫 public schema 0 張可讀表」是錯的**，只對後面那四個成立。
-  任何能控制 DSN 的程式碼路徑（例如 `modules/form_workflow/services/sql_sync/` 那一整組
-  `psycopg2.connect()`）都到得了這些表。建議叢集層
-  `REVOKE CONNECT ON DATABASE <db> FROM PUBLIC`，並優先處理退役的 `beakplatform` 庫
-  （PF-39 重裝前它不該是可讀狀態）。**全主機決策，不在此改。**
-  重測：見上方重測指令第 5 條。
+
+  **根因不是 CONNECT 權限鬆，是 ownership**（2026-08-31 續查）：
+
+  | 資料庫 | db owner | 那些可讀表的 owner |
+  |---|---|---|
+  | `beakplatform`（退役正式庫，21MB） | **`beakplatform`** | `beakplatform`（97 張全部） |
+  | `vulnmgmt`（25MB） | **`beakplatform`** | `beakplatform`（14 張） |
+  | `test_temp`（18MB） | **`beakplatform`** | `beakplatform`（8 張） |
+  | `beakplatform_dev`（本專案實際在用的） | `beakmask` | — |
+  | `forgejo` | `beakmask` | — |
+
+  也就是說 **`beakplatform` 這個 DB role 同時是另外三個資料庫的 owner**，
+  它讀得到那些表不是因為誰把權限開太鬆，而是那些表本來就是同一個帳號建的。
+  **所以 `REVOKE ... FROM PUBLIC` 對這個情況無效**——owner 的權限 revoke 不掉
+  （它可以自己 GRANT 回來）。正確處置只有兩種：
+
+  1. 退役的 `beakplatform` 庫 → `pg_dump` 留底後 **`DROP DATABASE`**（Ethan 2026-08-31
+     判定該庫已無存在必要；最後一筆 users 是 2026-04-20，4 個帳號 2 家企業）
+  2. `vulnmgmt` / `test_temp` → 那是別的專案的庫，**共用同一個 DB 帳號才是根因**。
+     要隔離就得讓各專案各自持有獨立的 DB role。屬主機層架構決定，不是本專案單方面能改。
+
+  兩者都是**作業系統層級變更，需 Ethan 當場同意後執行**，不在此改。
+  重測：見上方重測指令第 5 條（那條只看得到「讀得到幾張表」，
+  要看根因要另外查 `pg_get_userbyid(datdba)` 與 `pg_tables.tableowner`）。
 - **P3-1**：`beakplatform` 是 `fw_sp` schema owner（ACL=`UC`），可 `CREATE FUNCTION`。
   SqlExecutor 觸發不了，但平台他處若有 SQL 寫入漏洞可種後門 SP。
   縱深建議：`fw_sp` 函式改由獨立 role 擁有，app role 只給 `USAGE`+`EXECUTE`。
