@@ -1,7 +1,7 @@
 /**
  * wf-form-adapter.js -- FormAdapter 設定 Modal
  * 從 workflow-main.js 拆分
- * 包含: openFormAdapterModal, field permissions tab, end/abandon/SSP config
+ * 包含: openFormAdapterModal, field permissions tab, end/SSP config
  */
 
         // ==================== FormAdapter 設定 Modal ====================
@@ -534,32 +534,6 @@
             });
         }
         window.applyEndConfig = applyEndConfig;
-
-        // 套用 Abandon 中止節點設定
-        function applyAbandonConfig(nodeId) {
-            const node = applyNodeBasicInfo(nodeId, true);
-            if (!node) return;
-
-            const waitSecondsInput = document.getElementById('abandonWaitSeconds');
-            const waitSeconds = waitSecondsInput ? parseInt(waitSecondsInput.value) || 1 : 1;
-
-            const currentConfig = node.data('config') || {};
-            const updatedConfig = {
-                ...currentConfig,
-                finish_mode: 'cancel',
-                wait_seconds: waitSeconds
-            };
-
-            node.data('config', updatedConfig);
-            updateStatus(`✅ 中止節點：等待 ${waitSeconds} 秒後中止`, 'success');
-
-            console.log('ABANDON 節點配置已更新:', {
-                nodeId: nodeId,
-                wait_seconds: waitSeconds,
-                config: updatedConfig
-            });
-        }
-        window.applyAbandonConfig = applyAbandonConfig;
 
         // SubSystemProvision 子系統配置節點
 

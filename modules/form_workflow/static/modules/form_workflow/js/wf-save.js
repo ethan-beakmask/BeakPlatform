@@ -86,15 +86,6 @@
                     }
                     break;
                 }
-                case 'Abandon': {
-                    const abandonWait = document.getElementById('abandonWaitSeconds');
-                    if (abandonWait && abandonWait.value) {
-                        config.finish_mode = 'cancel';
-                        config.wait_seconds = parseInt(abandonWait.value) || 1;
-                        changed = true;
-                    }
-                    break;
-                }
                 case 'SubSystemProvision': {
                     const sspAction = document.querySelector('input[name="sspAction"]:checked');
                     if (sspAction) {

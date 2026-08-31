@@ -280,14 +280,6 @@
                             'background-color': '#22C55E'
                         }
                     },
-                    // Abandon 中止節點（淡紅色）
-                    {
-                        selector: 'node[type="Abandon"]',
-                        style: {
-                            'background-color': '#FCA5A5',
-                            'shape': 'round-rectangle'
-                        }
-                    },
                     // Subflow 節點 - 通用子流程（藍色）
                     {
                         selector: 'node[type="Subflow"][subflowKind="common"]',

@@ -9,6 +9,26 @@
         function renderSubflowPanel(node, nodeId) {
             const currentConfig = node.data('config') || {};
             const currentChildFlowId = currentConfig.childFlowId || '';
+            const currentMaxIterations = currentConfig.max_iterations || '';
+            const routing = currentConfig.resultRouting || {};
+            const routeCompleted = (routing.completed && routing.completed[0]) || '';
+            const routeCancelled = (routing.cancelled && routing.cancelled[0]) || '';
+
+            // 出邊清單（供結束路由下拉）：以目標節點名稱標示
+            let edgeOptions = '';
+            try {
+                cy.getElementById(nodeId).outgoers('edge').forEach(edge => {
+                    const target = edge.target();
+                    const label = target.data('label') || target.id();
+                    edgeOptions += `<option value="${edge.id()}">${label}</option>`;
+                });
+            } catch (e) { /* cy 未就緒時留空 */ }
+
+            const routeSelect = (id, selected) => `
+                <select id="${id}" style="width: 100%; padding: 6px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 13px;">
+                    <option value="">${__('所有出邊（預設）')}</option>
+                    ${edgeOptions.replace(`value="${selected}"`, `value="${selected}" selected`)}
+                </select>`;
 
             return `
                 <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
@@ -51,6 +71,31 @@
                         <div id="commonSubflowList" style="border: 1px solid #e0e0e0; border-radius: 4px; max-height: 220px; overflow-y: auto;">
                             <div style="padding: 10px; color: #999; font-size: 12px; text-align: center;">載入中...</div>
                         </div>
+                    </div>
+                </div>
+
+                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                    <h4 style="margin: 0 0 10px 0; color: #667eea;">
+                        <i class="fas fa-shield-alt"></i> ${__('執行控制')}
+                    </h4>
+                    <div style="margin-bottom: 12px;">
+                        <strong style="font-size: 13px; display: block; margin-bottom: 6px;">${__('執行次數上限')}</strong>
+                        <input type="number" id="subflowMaxIterations" min="0" max="9999" value="${currentMaxIterations}"
+                               placeholder="${__('留空＝不限制')}"
+                               style="width: 100%; padding: 6px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 13px;">
+                        <p style="font-size: 12px; color: #666; margin: 6px 0 0 0;">
+                            ${__('子流程可被同一節點重複執行（迴圈是合理應用），但平台不會自動偵測無限循環。含迴圈的設計請設定上限，超過時此節點以錯誤中止。')}
+                        </p>
+                    </div>
+                    <div style="margin-bottom: 6px;">
+                        <strong style="font-size: 13px; display: block; margin-bottom: 6px;">${__('下層結束路由（選填）')}</strong>
+                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; font-size: 13px;">
+                            <span>${__('完成時走')}</span>${routeSelect('subflowRouteCompleted', routeCompleted)}
+                            <span>${__('中止時走')}</span>${routeSelect('subflowRouteCancelled', routeCancelled)}
+                        </div>
+                        <p style="font-size: 12px; color: #666; margin: 6px 0 0 0;">
+                            ${__('依子流程的結束方式分流：「中止」＝子流程走到 End(取消/終止)，「完成」＝其他結束方式。未設定＝走所有出邊。')}
+                        </p>
                     </div>
                 </div>
 
@@ -555,6 +600,29 @@
                 ...currentConfig,
                 childFlowId: childFlowId
             };
+
+            // 執行控制（PF-200）：max_iterations 與 resultRouting
+            const maxIterEl = document.getElementById('subflowMaxIterations');
+            if (maxIterEl) {
+                const maxIter = parseInt(maxIterEl.value, 10);
+                if (maxIter > 0) {
+                    updatedConfig.max_iterations = maxIter;
+                } else {
+                    delete updatedConfig.max_iterations;
+                }
+            }
+            const routeCompletedEl = document.getElementById('subflowRouteCompleted');
+            const routeCancelledEl = document.getElementById('subflowRouteCancelled');
+            if (routeCompletedEl || routeCancelledEl) {
+                const resultRouting = {};
+                if (routeCompletedEl && routeCompletedEl.value) resultRouting.completed = [routeCompletedEl.value];
+                if (routeCancelledEl && routeCancelledEl.value) resultRouting.cancelled = [routeCancelledEl.value];
+                if (Object.keys(resultRouting).length > 0) {
+                    updatedConfig.resultRouting = resultRouting;
+                } else {
+                    delete updatedConfig.resultRouting;
+                }
+            }
 
             // 儲存設定到節點的 config
             node.data('config', updatedConfig);

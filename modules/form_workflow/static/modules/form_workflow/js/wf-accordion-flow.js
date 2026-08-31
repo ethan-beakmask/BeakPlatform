@@ -1,7 +1,7 @@
 /**
  * wf-accordion-flow.js -- 流程控制類節點面板
  * 從 wf-accordion.js 拆分
- * 包含: Delay, End, Abandon, Branch, ParallelJoin, applyDelayConfig
+ * 包含: Delay, End, Branch, ParallelJoin, applyDelayConfig
  */
 
         // ==================== Delay 面板 ====================
@@ -85,8 +85,9 @@
                             <input type="radio" name="finishMode" value="cancel" ${finishMode === 'cancel' ? 'checked' : ''} onchange="updateFinishModeSelection(this)" style="margin-right: 10px;">
                             <strong style="color: #ff6b00;">取消/終止模式 (Cancel)</strong>
                             <p style="margin: 5px 0 0 24px; font-size: 12px; color: #666;">
-                                取消未執行的節點，強制終止執行中的節點。<br>
-                                <span style="color: #999;">適合：需要明確終止所有任務的流程</span>
+                                中止流程：取消未執行的節點，強制終止執行中的節點，流程與表單記為「已取消」。<br>
+                                放在子流程時只中斷子流程自己與其下層，不影響上層流程。<br>
+                                <span style="color: #999;">適合：確認不再繼續、要把案件標為中止的流程</span>
                             </p>
                         </label>
                         <label style="display: block; padding: 12px; border: 2px solid ${finishMode === 'strict' ? '#28a745' : '#e0e0e0'}; border-radius: 8px; cursor: pointer; background: ${finishMode === 'strict' ? '#f0fff4' : 'white'};">
@@ -102,39 +103,6 @@
                         <i class="fas fa-check"></i> 套用
                     </button>
                 </div>
-            `;
-        }
-
-        // ==================== Abandon 面板 ====================
-
-        function renderAbandonPanel(node, nodeId) {
-            const currentConfig = node.data('config') || {};
-            const waitSeconds = currentConfig.wait_seconds !== undefined ? currentConfig.wait_seconds : 1;
-
-            return `
-                <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e0e0e0;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <label style="font-size: 11px; color: #666; white-space: nowrap;">
-                            <i class="fas fa-clock" style="color: #991B1B;"></i> 等待
-                        </label>
-                        <input type="number" id="abandonWaitSeconds" value="${waitSeconds}" min="0" max="300"
-                               style="width: 60px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; text-align: center;">
-                        <span style="font-size: 11px; color: #666;">秒後中止流程</span>
-                    </div>
-                </div>
-
-                <div style="background: #fef2f2; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #fca5a5;">
-                    <div style="font-size: 12px; color: #991B1B; margin-bottom: 6px;">
-                        <i class="fas fa-exclamation-triangle"></i> <strong>中止模式</strong>
-                    </div>
-                    <p style="font-size: 11px; color: #666; margin: 0;">
-                        取消所有未執行的節點，強制終止執行中的節點，立即結束流程。
-                    </p>
-                </div>
-
-                <button class="btn-primary" onclick="applyAbandonConfig('${nodeId}')" style="width: 100%; background: #991B1B; border-color: #991B1B;">
-                    <i class="fas fa-check"></i> 套用
-                </button>
             `;
         }
 

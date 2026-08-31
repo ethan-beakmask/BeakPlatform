@@ -198,3 +198,16 @@ A 存檔 10:55:31.468  →  縮圖 PUT 打到 B  10:55:31.690（差 222ms）
 not callable`。**軟刪除已經 commit 成功才炸**，所以症狀是
 「前端說刪除失敗、重新整理卻發現真的刪掉了」。同檔 `list_available_subflows()`
 有同樣寫法（該函式尾端剛好沒用到 `_()` 才沒爆），兩處都改成 `for _hop in range(10)`。
+
+## End／SubFlow 的 PF-200 語意（2026-08-31）
+
+- `End(finish_mode='cancel')`＝**中止**：終態 CANCELLED（主流程連表單）。
+  正常完工用 `detach`。子流程裡 cancel 只收自己＋下層（subtree），上一層照常跑。
+- SubFlow 節點 config 新增兩項（面板「執行控制」卡）：
+  - `max_iterations`：迴圈上限，計數在含節點那一層的流程變數 `<節點ID>_runs`
+  - `resultRouting`：`{'completed': [edgeId], 'cancelled': [edgeId]}`，
+    依子流程結束方式選出邊；未配置＝所有出邊
+- 子流程結束會寫父層變數 `${v.<節點ID>_result}`（completed/cancelled）與 `_child`。
+- **queue 的 node_type 逐字複製 graph，設計器寫的是 `Subflow`（小寫 f）**——
+  引擎端比對一律 `func.lower()`，寫死 `'SubFlow'` 會靜默 miss。
+- 完整定案：`dev-notes/handoff_end_subflow_cancel_20260831.md` 第十節。

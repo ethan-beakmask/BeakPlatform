@@ -163,14 +163,22 @@ def update_result(queue_item, result):
         finish_mode = result.get('data', {}).get('finish_mode', 'detach')
         has_failures = result.get('data', {}).get('has_failures', False)
 
-        # cancel 模式：主動取消所有未完成節點
+        # cancel 模式：主動取消未完成節點。
+        # 子流程（有 parent_instance_code）只收自己與所有後代（scope='subtree'），
+        # 不得波及上一層與其他支線；主流程維持整棵樹（PF-200）。
         if finish_mode == 'cancel':
+            from modules.form_workflow.models import FwWorkflowInstance
+            instance = FwWorkflowInstance.query.filter_by(
+                secure_code=queue_item.workflow_instance_secure_code
+            ).first()
+            scope = 'subtree' if (instance and instance.parent_instance_code) else 'tree'
             WorkflowEngine.cancel_pending_nodes(
                 queue_item.workflow_instance_secure_code,
-                exclude_queue_item_id=queue_item.id
+                exclude_queue_item_id=queue_item.id,
+                scope=scope
             )
 
-        # 節點可用 data.workflow_status 明示終態。Abandon 用它回報 CANCELLED，
+        # 節點可用 data.workflow_status 明示終態。End(cancel) 用它回報 CANCELLED（PF-200），
         # 讓「被中止」與「正常結束」在 fw_workflow_instances / fw_form_instances 上
         # 分得出來——沒有這個分支時 cancel 模式一律 COMPLETED，complete_workflow()
         # 再把表單記成 APPROVED，於是被中止的申請單在表單中心顯示「已核准」，

@@ -1715,5 +1715,14 @@
  "：本節點在同一流程中只會往下推進一次。取消勾選的話，": ": this node advances downstream only once in the same workflow. If unchecked,",
  "🔄 拖動垂直線段（只能左右移動）": "🔄 Drag the vertical line segment (can only move left and right)",
  "🔄 拖動水平線段（只能上下移動）": "🔄 Drag the horizontal line segment (can only move up and down)",
- "🛡️ 後退已被阻擋（請使用上方的「放棄」按鈕返回目錄）": "🛡️ Back is blocked (please use the \"abandon\" button above to return to the directory)"
+ "🛡️ 後退已被阻擋（請使用上方的「放棄」按鈕返回目錄）": "🛡️ Back is blocked (please use the \"abandon\" button above to return to the directory)",
+ "所有出邊（預設）": "All outgoing edges (default)",
+ "執行控制": "Execution control",
+ "執行次數上限": "Max iterations",
+ "留空＝不限制": "Empty = unlimited",
+ "子流程可被同一節點重複執行（迴圈是合理應用），但平台不會自動偵測無限循環。含迴圈的設計請設定上限，超過時此節點以錯誤中止。": "A subflow may be executed repeatedly by the same node (loops are a legitimate pattern), but the platform does not detect infinite loops automatically. Set a limit for loop designs; exceeding it fails this node with an error.",
+ "下層結束路由（選填）": "Child-end routing (optional)",
+ "完成時走": "On completed",
+ "中止時走": "On cancelled",
+ "依子流程的結束方式分流：「中止」＝子流程走到 End(取消/終止)，「完成」＝其他結束方式。未設定＝走所有出邊。": "Route by how the subflow ended: \"cancelled\" = the subflow reached End (cancel mode); \"completed\" = any other ending. Unset = all outgoing edges."
 }

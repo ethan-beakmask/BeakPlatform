@@ -443,3 +443,43 @@ WHERE workflow_instance_secure_code = :parent_of_A1;
 
 `end_status` 的兩個選項標籤與說明文字要包 `__()`／`_()`，並補進
 `backend/app/static/i18n/en.json`。漏了不會報錯，只是英文介面顯示中文（I18N-01）。
+
+---
+
+## 十、【定案與實作記錄 2026-08-31 晚】甲案：cancel＝中止，end_status 不存在
+
+實作 session 開工前逐條查證本檔，與 Ethan 確認後的定案。**本節優先於前九節**，
+衝突處以本節為準（第九節 9-1 的 `end_status` 設計已棄用）。
+
+### 定案（Ethan 口述模型）
+
+1. **`finish_mode='cancel'` 統一為「中止」語意**：終態記 CANCELLED（主流程連表單一起）。
+   不另設 `end_status` 第二顆旋鈕——原 9-1 擔心的「既有模板用 cancel 收並行分支」
+   由 migration 132 處置：兩張資安處置範本＋14 個發行快照＋
+   `scripts/examples/od_workflow_graphs.py` 一律改 `detach`。
+   Ethan 明知會失去「正常完工＋主動作廢其他分支人工任務」的組合，仍選甲案。
+2. **子流程 End 三模式都有效**。cancel 只收「自己＋所有下層」
+   （`cancel_pending_nodes(scope='subtree')`，`parent_instance_code` 遞迴 CTE），
+   上一層照常推進。層例：根→L2→L3→L4→L5，L3 觸發 cancel → L3、L4（L5 還沒
+   instance）中斷，L2 與根不受影響但**必須得知**（否則上層 strict 永遠等不到）。
+3. **上一層的 SubFlow 節點接收下層結束方式並做出邊路由**（取代原 9-2 的純變數方案）：
+   config `resultRouting: {'completed': [edge...], 'cancelled': [edge...]}`，
+   未配置＝所有出邊。detach 與 strict 對上層同為 completed（分開配對無路由價值）。
+   變數 `${v.<節點ID>_result}`／`_child` 照寫，當輔助管道。
+4. **循環防護採 (b)**：SubFlow config `max_iterations`，計數記在「含節點的那一層」
+   的流程變數 `<節點ID>_runs`。超限回 error。文件建議寫在 `docs/manual/04_form_workflow/workflows.md`。
+
+### 實作要點（與前九節不同或它沒講的）
+
+- **queue 的 node_type 是設計器寫的 `'Subflow'`（小寫 f）**，比對一律
+  `func.lower(node_type)`——9-3 原寫 `node_type='SubFlow'` 精確比對會 0 筆命中。
+- **標父節點 FAILED 不可用 `queue_item.fail()`**——它會重試 3 次（狀態回 PENDING），
+  executor 撿起來會再開一個子流程。直接設 `status='FAILED'`。
+- 子流程 strict 且有失敗節點：子流程記 FAILED、父 SubFlow 節點標 FAILED（不推進）。
+- 9-6 的驗收 SQL 欄位名有誤：實際是 `var_name`／`var_value`／`var_type`。
+- 改動落點：`workflow_engine.py`（advance 終態檢查＋subtree scope）、
+  `end_handler.py`（整檔改寫）、`node_runner.py`（cancel 分支選 scope）、
+  `subflow_handler.py`（max_iterations）、`wf-accordion-subflow.js`（執行控制卡）、
+  Abandon 全拆（migration 131）、範本轉 detach（migration 132）。
+- 測試：`backend/tests/test_end_node_semantics.py`（原 test_abandon_node.py 改寫，
+  含 P/A1-B1/A2-B2 子樹隔離、resultRouting、max_iterations、advance 終態防護）。

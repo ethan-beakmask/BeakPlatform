@@ -68,6 +68,35 @@ class SubFlowHandler(BaseNodeHandler):
                 'data': {}
             }
 
+        # 循環上限（PF-200）：子流程可被同一節點重複執行（迴圈是合理應用），
+        # 但平台不自動偵測無限循環。設定 max_iterations 時超過即失敗。
+        # 計數記在「本層」（含這個 SubFlow 節點的 instance）的流程變數——
+        # 每次執行子流程都是全新 instance，記在子流程身上永遠是 1。
+        max_iterations = self.get_config_value('max_iterations')
+        run_count = 0
+        try:
+            max_iterations = int(max_iterations) if max_iterations else 0
+        except (TypeError, ValueError):
+            max_iterations = 0
+        if max_iterations > 0:
+            from ..variable_service import VariableService
+            instance_code = self.queue_item.workflow_instance_secure_code
+            counter_name = f'{self.queue_item.node_id}_runs'
+            try:
+                run_count = int(VariableService.get_flow_var(instance_code, counter_name) or 0)
+            except (TypeError, ValueError):
+                run_count = 0
+            if run_count >= max_iterations:
+                msg = (f'子流程節點已達執行次數上限 max_iterations={max_iterations}'
+                       f'（已執行 {run_count} 次），中止以防止無限循環')
+                self.log_error(msg, {'child_flow_id': child_flow_id})
+                return {'status': 'error', 'message': msg,
+                        'data': {'max_iterations': max_iterations, 'run_count': run_count}}
+            VariableService.set_flow_var(
+                instance_code, counter_name, run_count + 1,
+                org_code=self.queue_item.org_secure_code,
+                source_node_id=self.queue_item.node_id)
+
         self.log_info(f'啟動子流程: {child_flow_id}', {
             'child_flow_id': child_flow_id
         })

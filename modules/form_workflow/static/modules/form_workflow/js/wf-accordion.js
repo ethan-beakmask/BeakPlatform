@@ -4,7 +4,7 @@
  *   wf-accordion-subflow.js     -- 子流程節點
  *   wf-accordion-messaging.js   -- Telegram, SysTelegram, SysEmailRelay, EmailAdapter
  *   wf-accordion-broadcast.js   -- NavbarBroadcast, AlertBroadcast
- *   wf-accordion-flow.js        -- Delay, End, Abandon, Branch, ParallelJoin
+ *   wf-accordion-flow.js        -- Delay, End, Branch, ParallelJoin
  *   wf-accordion-operations.js  -- OpSet, OpFieldWrite, FormAdapter, SubSystemProvision
  */
 
@@ -73,7 +73,7 @@
                 'FormAdapter', 'End', 'SqlExecutor', 'OsExecutor', 'OsFileRead',
                 'ParallelJoin',
                 'NavbarBroadcast', 'AlertBroadcast',
-                'Abandon', 'SubSystemProvision', 'ApiKeyAction',
+                'SubSystemProvision', 'ApiKeyAction',
                 'DecisionWriter'
             ];
             const hasAdditionalSettings = nodesWithSettings.includes(type);
@@ -119,7 +119,6 @@
             if (type === 'AlertBroadcast')       info += renderAlertBroadcastPanel(node, nodeId);
             if (type === 'Branch')               info += renderBranchPanel(node, nodeId);
             if (type === 'End')                  info += renderEndPanel(node, nodeId);
-            if (type === 'Abandon')              info += renderAbandonPanel(node, nodeId);
             if (type === 'SubSystemProvision')   info += renderSubSystemProvisionPanel(node, nodeId);
             if (type === 'ApiKeyAction')         info += renderApiKeyActionPanel(node, nodeId);
             if (type === 'AiAgent')              info += renderAiAgentPanel(node, nodeId);

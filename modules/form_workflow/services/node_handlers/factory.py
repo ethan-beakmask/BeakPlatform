@@ -107,7 +107,6 @@ def register_builtin_handlers():
     from .email_handler import EmailHandler
     from .sys_emailrelay_handler import SysEmailRelayHandler
     from .subflow_handler import SubFlowHandler
-    from .abandon_handler import AbandonHandler
     from .sub_system_provision_handler import SubSystemProvisionHandler
     from .navbar_broadcast_handler import NavbarBroadcastHandler
     from .alert_broadcast_handler import AlertBroadcastHandler
@@ -123,7 +122,6 @@ def register_builtin_handlers():
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
     NodeHandlerFactory.register('End', EndHandler)
-    NodeHandlerFactory.register('Abandon', AbandonHandler)
 
     # 簽核
     NodeHandlerFactory.register('FormAdapter', FormAdapterHandler)

@@ -1,4 +1,11 @@
-# Abandon（中止）節點規格
+# Abandon（中止）節點規格【已退役】
+
+> **【PF-200，2026-08-31 晚】本檔描述的節點已刪除。** 下方「存廢定案：保留」是
+> 同日稍早的結論，**當晚被 Ethan 推翻**：Abandon 併入 `End(finish_mode='cancel')`
+> （cancel 自此＝中止語意，記 CANCELLED），節點的 handler／factory 註冊／設計器面板
+> 全數移除，nodedef 由 migration 131 軟刪除。定案與實作記錄見
+> `dev-notes/handoff_end_subflow_cancel_20260831.md` 第十節。
+> 本檔保留當時的分析脈絡，**內容不再反映現況，不要依它動工**。
 
 > 2026-08-31 建立。Abandon 節點自 2026-02-17（commit `45dfa233`）上線以來從未有規格文件，
 > `dev-notes/NODE_TEST_INVENTORY.md` 的 NT-17 標記「未驗證」。本檔是實測後的第一份規格，

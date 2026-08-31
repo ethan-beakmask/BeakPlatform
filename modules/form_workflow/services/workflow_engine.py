@@ -14,7 +14,7 @@ import subprocess
 import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, text
 from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
@@ -483,6 +483,15 @@ class WorkflowEngine:
         if not workflow_instance:
             return []
 
+        # 終態防護：已結束的流程不得再建新節點（PF-200 改動 1）。
+        # node_runner.advance_to_next_nodes 有同樣的檢查，但 end_handler 喚醒父流程
+        # 與簽核路徑會直接呼叫本函式繞過它，缺這段會讓已結束的流程被復活。
+        if workflow_instance.status in ('COMPLETED', 'CANCELLED', 'ERROR', 'FAILED', 'REJECTED'):
+            logger.info(f'[advance_workflow] 工作流已是終態，跳過推進: '
+                        f'workflow={workflow_instance.secure_code}, status={workflow_instance.status}, '
+                        f'completed_node={completed_node_id}')
+            return []
+
         # 取得有效流程圖（快照優先）
         graph = WorkflowEngine.get_effective_graph(workflow_instance)
         if not graph:
@@ -626,7 +635,8 @@ class WorkflowEngine:
     @staticmethod
     def cancel_pending_nodes(
         workflow_instance_secure_code: str,
-        exclude_queue_item_id: int = None
+        exclude_queue_item_id: int = None,
+        scope: str = 'tree'
     ):
         """
         取消工作流中所有未完成的節點（cancel 模式用）
@@ -634,13 +644,30 @@ class WorkflowEngine:
         Args:
             workflow_instance_secure_code: 工作流實例 secure_code
             exclude_queue_item_id: 排除的佇列項目 ID（End 節點自己）
+            scope: 'tree' = 整棵樹（主流程 End(cancel)、管理員強制結案、portal 撤單）
+                   'subtree' = 自己與所有後代（子流程 End(cancel) 用，PF-200）——
+                   不能用 root_instance_code：同一子流程模板可能在多條支線同時執行，
+                   必須沿 parent_instance_code 只收自己這一串，不得波及上一層與其他支線
         """
         workflow_instance = FwWorkflowInstance.query.filter_by(
             secure_code=workflow_instance_secure_code,
             is_deleted=False
         ).first()
 
-        if workflow_instance:
+        if workflow_instance and scope == 'subtree':
+            rows = db.session.execute(text("""
+                WITH RECURSIVE subtree AS (
+                    SELECT secure_code FROM fw_workflow_instances
+                    WHERE secure_code = :self AND is_deleted = false
+                  UNION ALL
+                    SELECT i.secure_code FROM fw_workflow_instances i
+                    JOIN subtree s ON i.parent_instance_code = s.secure_code
+                    WHERE i.is_deleted = false
+                )
+                SELECT secure_code FROM subtree
+            """), {'self': workflow_instance_secure_code}).fetchall()
+            tree_codes = [row[0] for row in rows]
+        elif workflow_instance:
             root_instance_code = workflow_instance.root_instance_code or workflow_instance.secure_code
             tree_instances = FwWorkflowInstance.query.filter(
                 or_(
@@ -688,7 +715,8 @@ class WorkflowEngine:
             db.session.commit()
             logger.info(f'cancel 模式：已取消 {len(pending_nodes)} 個未完成節點 '
                         f'與 {len(cancelled_instances)} 個子流程 '
-                        f'(workflow={workflow_instance_secure_code}, scope={len(tree_codes)})')
+                        f'(workflow={workflow_instance_secure_code}, scope={scope}, '
+                        f'instances={len(tree_codes)})')
 
         if process_targets:
             terminate_counts = {}

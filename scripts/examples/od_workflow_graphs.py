@@ -31,8 +31,9 @@ B. 小企業單人版 (build_solo_graph)
 4. 節點沒有出邊時該分支安全終止，不會報錯也不會結束流程
    （workflow_engine.py:360 `if not next_node_ids: return []`）。
    並行分支要「靜靜結束」就指向一個無出邊的 OpSet 節點。
-5. End 的 finish_mode='cancel' 會取消所有未完成節點（node_runner.py:163）。
-   有並行分支的流程一律用 cancel，否則計時分支會殘留。
+5. End 的 finish_mode='cancel' 自 PF-200 起是「中止」語意（流程與表單記 CANCELLED），
+   正常完工的流程一律用 detach——SLA 計時分支到期後會被 advance_workflow 的
+   終態檢查擋住，不會有副作用。
 6. DecisionWriter 的 target_value 替換後為空會回 error 讓節點失敗，
    所以自動封鎖前必須先用 Branch 確認 actor_ip 非空。
 7. decided_via 的自動推斷看 last_completed_node_type，在並行分支下不可靠，
@@ -443,7 +444,7 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
 
         _node(
             'node-End', 'End', 'End',
-            {'finish_mode': 'cancel', 'wait_seconds': 3},
+            {'finish_mode': 'detach', 'wait_seconds': 3},
             660, 90,
             'cancel 模式：簽核完成時一併清掉還在計時的分支。',
         ),
@@ -841,7 +842,7 @@ def build_solo_graph(role_staff_sc: str) -> dict:
 
         _node(
             'node-End', 'End', 'End',
-            {'finish_mode': 'cancel', 'wait_seconds': 3},
+            {'finish_mode': 'detach', 'wait_seconds': 3},
             720, 100,
             'cancel 模式：處置完成時清掉還在計時的分支。',
         ),

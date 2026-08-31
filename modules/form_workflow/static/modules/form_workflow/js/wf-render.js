@@ -699,7 +699,6 @@
                 'file_read': 'OsFileRead',
                 'sys_telegram': 'SysTelegram',
                 'systelegram': 'SysTelegram',
-                'abandon': 'Abandon',
                 'navbarbroadcast': 'NavbarBroadcast',
                 'navbar_broadcast': 'NavbarBroadcast',
                 'alertbroadcast': 'AlertBroadcast',
