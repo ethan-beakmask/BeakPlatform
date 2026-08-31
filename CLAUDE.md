@@ -1712,6 +1712,7 @@ formadapter_handler.py:148     # 驗證 target_edges 合法性（空 target_edge
 | Branch 的 fallback（**2026-08-30 起**） | `action='route'` 走指定那條；**其餘一律不推進任何出邊**（回 `skip_advance`） | 改版前 `log` 與 `default` 都會走**所有**出邊（選項寫「走第一條出線」但實際走全部）。舊 graph 若還存著 `action='default'`，會自動落到「不推進」那條路 |
 | 無出邊的節點 | 安全終止該分支，不報錯也不結束流程（`workflow_engine.py:360`） | 並行分支要靜靜收尾就指向這種節點，**不要指向 End** |
 | End 的 `finish_mode` | `detach`（預設，直接結束）／`cancel`（結束並取消所有未完成節點）／`strict`（等全部完成） | 有並行分支一律用 `cancel`，否則計時分支殘留 |
+| **子流程裡的 End，`finish_mode` 根本不會被讀** | `end_handler.py::handle()` 先判斷 `parent_instance_code`，是子流程就走 `_handle_subflow_end()`，該路徑不讀 `finish_mode`，回傳值把它硬寫成 `'subflow_end'` | **在子流程的 End 面板上選 `cancel` 或 `strict` 不報錯也不會有任何效果**，三種模式完全等價。上一表的三模式語意只適用主流程。父子流程的完整行為表在 `dev-notes/NODE_TEST_INVENTORY.md`「附：子流程的結束語意」，改動計畫見待辦 **PF-200** |
 | 並行分支各自走 End | End 是**流程級**結束，任一分支走到就整個流程 COMPLETED | 另一條的簽核任務會被 executor 視為流程已結束 |
 | **`End` 的三種 finish_mode 全部記成 COMPLETED** | `node_runner.py` 的 `wf_status` 只有 `strict and has_failures` 才給 FAILED，`complete_workflow()` 再把 COMPLETED 對應成 `form_instance.status='APPROVED'` | **用 `End(cancel)` 收掉的案子在表單中心顯示「已核准」**，而且 `complete_workflow()` 接著無條件 `enqueue_sync_safe()`（不看狀態、一律 upsert），錯誤終態會流進企業獨立資料庫且無回收路徑。**要記成「已中止」就用 Abandon**——2026-08-31 起它回報 `data.workflow_status='CANCELLED'`，是唯一避開這件事的結束節點（`node_runner` 對該欄位走白名單）。脈絡見 `dev-notes/ABANDON_SPEC.md` |
 | `AlertBroadcast.broadcast_code` | **不做變數替換**（只有 title/message 有），同 code 覆蓋前一則並清掉已讀記錄 | 它是「最新一則橫幅」不是每案通知，別拿來當逐案稽核 |
@@ -1791,6 +1792,18 @@ executor 隨後會把未完成節點一律 cancel，就觀察不到第二條入�
 **一律用 `bash scripts/run_tests.sh`，不要自己 `source .env` 之後直接叫 pytest。**
 後者的 `DATABASE_URL` 指向**開發庫**，而多個 app fixture 收尾會 `db.drop_all()`。
 run_tests.sh 會把庫覆寫成拋棄式的 `beakplatform_test`。
+
+**`beakplatform_test` 雖然叫「拋棄式」，但它是現役測試庫、而且 `run_tests.sh`
+不會自動建立它**——連不上就印出建立指令並 `exit 1`。所以刪掉它等於
+`bash scripts/run_tests.sh` 從此無法執行，直到有人手動 createdb。
+它的體積會因為 `db.drop_all()` 不 VACUUM 而膨脹（2026-08-31 是 70 MB / 0 張表），
+**要回收空間就 DROP 後立刻重建，不要只 DROP**：
+
+```bash
+sudo -u postgres psql -c "DROP DATABASE beakplatform_test;" \
+  -c "CREATE DATABASE beakplatform_test OWNER beakplatform;"
+```
+
 
 ```bash
 bash scripts/run_tests.sh                     # 全部，約 9 分鐘

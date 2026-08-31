@@ -378,6 +378,123 @@ portal 撤單，行為一致）。**送訊號前一律先 `/proc/<pid>/cmdline` 
 
 ---
 
+## 附：子流程的結束語意——End 三模式與 Abandon 對「上一層」與「整棵樹」的影響
+
+> 2026-08-31 冷讀查證（PF-189-2 衍生）。**本節結論全部由程式碼路徑推導，尚未跑端對端實測**，
+> 需要實測的兩項在本節末尾標明。上一節的 End 三模式表講的是**主流程**，
+> 本節講的是**子流程裡的 End**——兩者行為完全不同，不要互相套用。
+
+### 名詞：三個範圍不要混用
+
+| 詞 | 欄位 | 意思 |
+|---|---|---|
+| **上一層** | `fw_workflow_instances.parent_instance_code` | 直接呼叫我的那一層。喚醒／推進走這個 |
+| **整棵樹** | `root_instance_code`（root 自己是 NULL） | root ＋ 它的所有後代。`cancel_pending_nodes()` 走這個 |
+| **root（主流程）** | `parent_instance_code IS NULL` 的那一個 | 唯一持有 `form_instance` 狀態的一層 |
+
+多層時（孫 → 子 → 主）「上一層」是子、「整棵樹」含主，**兩者不是同義詞**。
+
+### 分流點：子流程裡的 End，`finish_mode` 根本不會被讀
+
+`end_handler.py::handle()` 第 49 行：
+
+```python
+if workflow_instance and workflow_instance.parent_instance_code:
+    return self._handle_subflow_end(workflow_instance)   # ← finish_mode 在這條路上完全沒被讀
+return self._handle_main_flow_end()                       # ← 只有這條讀 finish_mode
+```
+
+`_handle_subflow_end()` 回傳的 `data.finish_mode` 被**硬寫成 `'subflow_end'`**
+（`_subflow_complete_result()`），所以 `node_runner` 的 `if finish_mode == 'cancel'`
+永遠不成立。
+
+**結論：子流程裡的 End，`detach` / `cancel` / `strict` 三種模式行為完全相同。**
+唯一殘留的差別是 `wait_seconds` 的預設值（主流程 3 秒、子流程 1 秒），與模式無關。
+
+在子流程的 End 面板上選 `cancel` 或 `strict` **不會報錯、不會有任何效果**，
+這是本節最容易誤判的一點——設計者以為選了「取消/終止」就會收掉整棵樹，實際上不會。
+要收掉整棵樹只有 Abandon。
+
+### 六種組合的實際影響
+
+| 放在哪 | 節點 | 上一層 | 整棵樹 | `fw_workflow_instances` | `fw_form_instances` |
+|---|---|---|---|---|---|
+| 主流程 | `End(detach)` | — | 不動，未啟動節點由 executor 下輪撿到才取消 | 自己 `COMPLETED` | **`APPROVED`** |
+| 主流程 | `End(cancel)` | — | **全部節點與 instance 標 `CANCELLED`** ＋ RUNNING 送 SIGTERM | 自己 `COMPLETED` | **`APPROVED`** |
+| 主流程 | `End(strict)` | — | 等同 instance 內節點完成才結束；有 FAILED 則 `has_failures` | 自己 `COMPLETED`（有失敗才 `FAILED`） | `APPROVED`（`FAILED` 時 `ERROR`） |
+| 主流程 | `Abandon` | — | 同 `End(cancel)` | 自己 **`CANCELLED`** | **`CANCELLED`** |
+| **子流程** | `End(任一模式)` | SubFlow 節點標 **SUCCESS**（`data` 無 `abandoned`）→ `advance_workflow()` 推進上一層 | **不受影響**，其他分支繼續跑 | 自己 `COMPLETED`，其他層不動 | **完全不動**（`complete_workflow()` 對子流程提前 return） |
+| **子流程** | `Abandon` | 先做與 End 相同的「標 SUCCESS（`data.abandoned=True`）＋推進」 | **隨即整棵樹全部 `CANCELLED`**，含剛推進出來的那些節點 | 自己 `CANCELLED`，樹上其他 `PENDING`/`RUNNING` 的也被設 `CANCELLED` | **完全不動** ← 見下方缺口一 |
+
+### 三個猜不到的後果
+
+**一、子流程 Abandon 的「喚醒並推進上一層」是白做工。**
+`_handle_subflow_abandon()` 先呼叫 `_complete_parent_subflow_node()` ＋
+`_trigger_parent_next_nodes()` 把上一層推進出新節點，**然後**才 return
+`finish_mode='cancel'`；`node_runner` 收到後呼叫
+`cancel_pending_nodes(子流程 sc)`，而該函式的範圍是**整棵樹**——
+剛建出來的那些 PENDING 節點當場被取消。
+
+淨效果 ＝ 子流程 Abandon 收掉整棵樹（含主流程）。這與 `End(cancel)` 放在主流程的效果相同，
+差別只在終態記成 `CANCELLED` 而不是 `COMPLETED`。
+
+**二、【缺口】子流程 Abandon 之後，表單狀態停在 `PROCESSING` 永遠不會變。**
+`complete_workflow()` 開頭就判斷「有 `parent_instance_code` → 跳過 form_instance 更新並 return」，
+而收掉整棵樹的 `cancel_pending_nodes()` **完全不碰 `fw_form_instances`**
+（只改 `fw_workflow_instances.status`）。
+
+所以會出現：**流程樹全部 `CANCELLED`，但表單中心顯示「處理中」，且不會再有任何東西去更新它。**
+主流程放 Abandon 沒有這個問題（走的是 `_handle_main_flow_abandon` → root 自己
+→ `complete_workflow` 正常更新成 `CANCELLED`）。
+
+這是本次冷讀新發現的，比 PF-189-2 原本記的「`abandoned` 標記讀不到」嚴重一級——
+前者只是父流程分不出原因，後者是**案件狀態永久錯誤**，而且會被 SQL Sync 之外的
+所有清單、統計、SLA 當成進行中的案子。
+
+**三、【缺口】子流程 End 的失敗路徑會讓上一層永久卡死，Abandon 則不會。**
+兩支 handler 都有同樣的兩個吞錯誤路徑（找不到 `parent_node_id`、喚醒時拋例外），
+但後果完全不同：
+
+- `Abandon`：吞掉之後仍回 `finish_mode='cancel'` → `cancel_pending_nodes` 收掉整棵樹，
+  上一層那個 WAITING 的 SubFlow 節點跟著被 `CANCELLED`。**不會卡住**
+- `End`：回的是 `'subflow_end'`，**不觸發 cancel**。上一層的 SubFlow 節點停在 `WAITING`，
+  而 `workflow_executor` 只撿 `['Delay', 'End', 'ParallelJoin', 'OsExecutor']` 型別的 WAITING
+  （兩處清單，`SubFlow` 不在內），全 repo 也沒有 stale WAITING 的回收機制。
+  → **上一層永久卡死，不報錯、不逾時、無回收路徑**
+
+`end_handler.py:116` 的警告文字「父流程可能卡住」其實是「一定卡住」。
+PF-189 第 3 項原本只記了 `abandon_handler` 的吞錯誤路徑，**真正該優先修的是 `end_handler` 這一條**。
+
+### `abandoned: True` 標記的實際去向（PF-189-2 的證據）
+
+`abandon_handler._complete_parent_subflow_node()` 把它寫進上一層那筆 SubFlow queue item 的
+`result` JSONB：
+
+```python
+parent_queue_item.success({
+    'status': 'success', 'message': '子流程已中止',
+    'data': {'child_instance_code': ..., 'abandoned': True, ...}
+})
+```
+
+`fw_node_execution_queue.result` **沒有任何變數前綴讀得到**
+（`f. / fi. / v. / wi. / n. / t.` 六種全部核對過）。而且承上「後果一」，
+上一層被推進出來的節點隨即全被取消，所以**即使讀得到也沒有節點還活著能去讀它**。
+
+也就是說 PF-189-2 想達成的「父流程用 Branch 分辨子流程是中止還是正常結束」，
+在現行語意下**根本不可能**——不是缺一個變數，是 Abandon 的語意就是「整棵樹一起結束」。
+要做到那件事得先決定：子流程 Abandon 應該只結束子流程（改成不觸發整棵樹 cancel），
+還是維持現狀。**這是規格問題，不是實作問題。**
+
+### 尚未實測、需要補的兩項
+
+1. 子流程 Abandon 之後 `fw_form_instances.status` 的實際值（推導是停在 `PROCESSING`）
+2. 子流程 End 走「找不到 `parent_node_id`」時上一層是否真的永久 WAITING（推導是會）
+
+兩項都可用本檔「怎麼補測」那節的手法造流程樹驗證，不必經表單提交。
+
+---
+
 ## 附錄：系統級通知節點（NT-14 / NT-18）的端對端驗證 runbook
 
 2026-08-31 PF-188 只驗到授權面，端對端待辦是 **PF-193**。
