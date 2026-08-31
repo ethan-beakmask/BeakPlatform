@@ -157,3 +157,138 @@ fallback 成空 graph 再 PUT 出去就把模板清空了。
 前一 session 因此清空了 BELUGA 的測試模板「多支線範例」，
 **Ethan 2026-08-31 回覆「弄壞的模板是測試用的，沒關係，不用處理，我已經把他刪除」，此事已結案**。
 留這段只是提醒寫驗證腳本時**先確認讀到的 graph 不是空的再送出**。
+
+---
+
+## 六、冷讀補洞（codex 以「全新接手者只有本檔＋CLAUDE.md」的視角列出的 10 個缺口）
+
+冷讀原始輸出：`/opt/tmp/verify/20260831-handoff-coldread.log`
+
+### 6.1 哪些可以直接做、哪些要等 Ethan
+
+| 項目 | 狀態 |
+|---|---|
+| 查清 handler 執行期有無企業檢查（唯讀調查） | **直接做**，這是判斷嚴重性的前提 |
+| 補齊兩組企業的測試矩陣（第二節） | **直接做** |
+| `EmailRelay` 的 `category` 改「系統」 | **直接做**，分類錯置沒有爭議 |
+| 兩者 `org_restricted=true` + 出廠 grant 系統預設企業 | **直接做**，這是主方向 |
+| **拿掉 `require_system_admin`** | **要等 Ethan**——它是既有的授權欄位，拿掉等於改變授權模型 |
+| `EmailRelay` 改名 `SysEmailRelay` | **要等 Ethan**（已在第三節註明） |
+
+先做前四項並把結果攤給 Ethan，後兩項一起請示。
+
+### 6.2 測試用的 secure_code：系統預設企業目前一個模板都沒有
+
+```sql
+-- 一般企業（BELUGA）現成可用的（挑節點少的，改壞了影響小）
+--   ODio5SzspVcNsrodKG8Wwl  API Key 申請核發流程   5 nodes
+--   1bBpvNh6bWi5lVZwBz2NHQ  資安事件處置流程       9 nodes
+-- 系統預設企業（SYSTEM）**沒有任何流程模板**，要測它得自己建一個：
+SELECT t.secure_code, o.code, t.name, t.revision
+FROM fw_workflow_templates t JOIN organizations o ON o.secure_code=t.org_secure_code
+WHERE t.is_deleted=false AND o.code IN ('SYSTEM','BELUGA') ORDER BY o.code;
+```
+
+**建系統預設企業的測試模板**：用系統預設企業 ORG_ADMIN 登入後
+`POST /api/workflows/data/templates`（欄位照 `api/workflows.py:208` 的實作），
+或直接在設計器 `/forms/workflows/` 列表頁按新增。
+
+### 6.3 PUT 驗證的安全做法（前一 session 就是這裡把模板清空的）
+
+**不要拿現成模板直接 PUT**。先複製一份再測，或至少加 sanity assertion：
+
+```javascript
+const cur = await fetch(`/beakplatform/api/workflows/data/templates/${sc}`).then(r => r.json());
+// 這支 API 回的是 {success, **result}，graph 在最外層——不是 cur.data.graph
+if (!cur.graph || !Array.isArray(cur.graph.nodes)) throw new Error('讀不到 graph，中止');
+const graph = JSON.parse(JSON.stringify(cur.graph));
+graph.nodes.push({id: 'probe_SysTelegram', type: 'SysTelegram', name: 'probe', config: {}});
+const r = await fetch(`/beakplatform/api/workflows/data/templates/${sc}`, {
+  method: 'PUT',
+  headers: {'Content-Type': 'application/json', 'X-CSRFToken': token},
+  body: JSON.stringify({graph, cytoscape_config: cur.cytoscape_config})});
+// 預期：一般企業 403、系統預設企業 200
+```
+
+**測完把 probe_ 節點移除**（前一 session 的清理腳本可參考
+`/tmp/.../scratchpad/cleanup_probe.py` 的邏輯：讀出 → filter 掉 id 以 `probe_` 開頭的 → 寫回）。
+
+### 6.4 publish 路徑
+
+publish 走 `POST /api/mappings/<mapping_sc>/publish`（`api/mappings.py::publish_mapping`，
+它是 graph 寫入的 7 個入口之一，也是 `find_unauthorized_node_types` 的消費點）。
+**直接改 graph 不會 bump revision**，publish 會回「版本未變更」沿用舊快照，
+要先 `UPDATE fw_workflow_templates SET revision = revision + 1 WHERE secure_code='<sc>'`。
+細節見 `dev-notes/WORKFLOW_DESIGNER_NOTES.md`。
+
+### 6.5 執行期測試的外部服務資源
+
+本機現況：`telegram_configs` 1 筆、`smtp_configs` 1 筆。
+
+**先讀碼判斷，不要一開始就真的送出訊息**：
+`modules/form_workflow/services/node_handlers/telegram_handler.py`（同時服務
+`Telegram` 與 `SysTelegram` 兩個 node_type）與 `emailrelay_handler.py`，
+看它們用 `queue_item.org_secure_code` 還是寫死系統企業去撈設定。
+**光是這一步就能回答「一般企業塞了這個節點會不會借到平台的設定」**，
+不必真的發訊息。要實測發送再處理收件者與擾民問題。
+
+### 6.6 參考實作的完整路徑
+
+| 用途 | 路徑 |
+|---|---|
+| handler 執行期授權的範本 | `modules/form_workflow/services/node_handlers/os_file_write_handler.py`（授權段在 `_check_authorized()`） |
+| 唯一判定實作 | `modules/form_workflow/services/node_grant_service.py`（`is_node_allowed` / `find_unauthorized_node_types` / `restricted_node_types`） |
+| 面板可見性過濾 | `modules/form_workflow/api/workflows.py::get_node_definitions()` |
+| /node-grants/ 的 API | `backend/app/api/node_grants.py`（第 84 行是 `org_restricted.is_(True)` 的篩選） |
+
+### 6.7 節點定義的 seed 檔在哪
+
+- **全平台節點的出廠預設**：`modules/form_workflow/migrations/013_seed_node_definitions.sql`
+  （`SysTelegram` / `EmailRelay` 的定義在這裡）
+- **後來單獨加的節點**：`scripts/migrations/1XX_seed_<node>_node.sql`
+  （範本：`120_seed_os_executor_node.sql` / `121_seed_file_read_node.sql` / `124_seed_file_write_node.sql`，
+  含 `is_active=FALSE` 出廠與只 grant 系統企業的寫法，**照抄這三個就對了**）
+
+**只改 DB 不改 seed 檔的話，新建的企業/新環境會長回舊的樣子且不報錯。**
+
+### 6.8 migration 的命名、執行與登記
+
+- 檔名 `scripts/migrations/NNN_描述.sql`（或 `.py`），**下一個序號是 130**
+- SQL 要冪等（以舊值為 WHERE 條件，重跑 0 筆），範本
+  `scripts/migrations/129_os_prefix_for_system_nodes.sql`
+- 執行：`PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -f <檔>`
+- **登記**：`INSERT INTO schema_migrations (filename) VALUES ('130_xxx.sql') ON CONFLICT DO NOTHING;`
+  （欄位是 **`filename`** 含副檔名，不是 `version`）
+- **不要跑 `scripts/run_migrations.py --run`**：`--status` 顯示有 20+ 個歷史 migration 未登記，
+  `--run` 會把它們全部重跑一遍（屬 PF-168 的範圍，不要在這個任務裡順手處理）
+
+### 6.9 前一 session 的 log 對應表
+
+| log | 內容 |
+|---|---|
+| `/opt/tmp/verify/20260831-filewrite.log` | OsFileWrite 的 10 項驗收、三層授權實測、executor 端對端 |
+| `/opt/tmp/verify/20260831-abandon.log` | Abandon 實測、C 案端對端、migration 127 |
+| `/opt/tmp/verify/20260831-sqlexecutor-isolation.log` | SqlExecutor 紅隊測試 536 行 |
+| `/opt/tmp/verify/20260831-os-prefix-rename.log` | Os 前綴改名的 migration 與端對端 |
+| `/opt/tmp/verify/20260831-drop-retired-db.log` | 退役庫 DROP 的備份與還原演練 |
+| `/opt/tmp/verify/20260831-handoff-coldread.log` | 本節的冷讀原始輸出 |
+| `/opt/tmp/verify/20260831-final-fulltests.log` / `-os-prefix-fulltests.log` | 兩次全量測試 |
+
+**本次問題的實測（三身分 × 節點可見性、一般企業 PUT graph）是在瀏覽器 console 做的，
+沒有落地成 log**——數據在本檔第一、二節，要復現照第 6.3 節的腳本跑。
+
+### 6.10 `/node-grants/` 修好後應該長什麼樣
+
+那頁是「企業當列、節點當欄」的矩陣（PF-185）。兩個節點改成 `org_restricted=true` 後，
+應該各多出一欄，欄位標題是 `display_name` + node_type 兩行。預期呈現：
+
+| | SysTelegram | EmailRelay |
+|---|---|---|
+| system.local（系統預設企業） | 勾選 | 勾選 |
+| beluga / lion | 空 | 空 |
+
+**要一併測撤銷與再授權**（`workflow_node_org_grants` 是軟刪除 + partial unique index，
+撤銷後再授權會新增一列，那張表本身就是授權歷史）。
+頁面在 `/node-grants/`，`@system_admin_required`——
+**注意它是平台層 API（`backend/app/api/node_grants.py`）不是模組 API，
+所以 SYSTEM_ADMIN 打得進去**（模組 API 才會 403，見 CLAUDE.md 的 PERM-04）。
