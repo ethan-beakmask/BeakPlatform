@@ -53,19 +53,35 @@ handler 是 `fieldwrite_handler.py`。把 OS 檔案寫入塞進去會同時破�
    換行位元組定義為 `0x0A`（`\n`）與 `0x0D`（`\r`），**任意組合、任意數量**
    （涵蓋 LF / CRLF / 舊 Mac CR）。得到 `trimmed_bytes`
 3. `trimmed_bytes > 0` 時 `os.ftruncate(fd, size_before - trimmed_bytes)`
-4. 組 payload：
-   - `prefix` = 換行 **當且僅當** `newline_before` 為真 **且截斷後檔案非空**
+4. 組 payload（2026-08-31 PF-191 起）：
+   - `prefix` = 換行 **當且僅當** `(newline_smart 或 newline_before)` 為真 **且截斷後檔案非空**
    - `body` = `content`（變數替換後）以 `encoding` 編碼的位元組
    - `suffix` = 換行 **當且僅當** `newline_after` 為真
+
+   `newline_smart`（面板「緊接上一筆，另起新行」）**預設 true，config 缺 key 也視為 true**。
+   啟用時 `newline_before` 完全無作用（面板 disable＋灰化）；關閉時 `newline_before`
+   恢復原本的條件式行為（為真且截斷後非空才補——**不是**無條件補，舊 graph 行為不變）。
 5. `lseek` 到檔尾，**迴圈 `os.write`** 直到 payload 全部寫出，再 `fsync`
 
 截斷點之前的既有位元組**逐位元組不變**：不重寫、不做編碼轉換、不加 BOM、
 不加時間戳、不排序、不去重。
 
-### 這個演算法的一個必然後果（設計流程的人一定要知道）
+### 出廠預設（PF-191 起）就是一筆一行
 
-**`newline_before=False` + `newline_after=True` 連續寫入會全部黏成同一行。**
+出廠組合 `newline_smart=True` ＋ `newline_after=True` ＋ `newline_before=False`：
 
+```
+初始 ''      → 寫 A → 'A\n'          （截斷後為空，不加 prefix）
+'A\n'        → 寫 B → 清掉 \n 得 'A' → 'A\nB\n'
+'A\nB\n'     → 寫 C → 'A\nB\nC\n'
+```
+
+一筆一行、檔首無空行、檔尾單一換行，且節點**不需要知道自己是不是第一筆**
+（這就是 `newline_smart` 的全部價值：prefix 的「非空才補」讓空檔與續寫都正確）。
+
+### 舊出廠預設的坑（只在 `newline_smart=False` 時存在）
+
+**`smart=False` ＋ `before=False` ＋ `after=True` 連續寫入會全部黏成同一行**，
 因為每一次寫入都會先把「上一次留下的尾端換行」清掉：
 
 ```
@@ -73,21 +89,15 @@ handler 是 `fieldwrite_handler.py`。把 OS 檔案寫入塞進去會同時破�
 'L1\n'       → 寫 L2 → 清掉 \n 得 'L1' → 'L1L2\n'      ← 黏在一起
 ```
 
-**要一筆一行的 log，兩個勾選都要開**：
-
-```
-初始 ''      → 寫 L1 → 'L1\n'        （空檔不加 prefix）
-'L1\n'       → 寫 L2 → 清掉 \n 得 'L1' → 'L1\nL2\n'   ← 正確
-```
-
-面板的提示小字與 `docs/install/os_file_write_node.md` 都寫了這件事。
-**出廠預設目前是 `before=False` / `after=True`**，也就是「組合字串」語意
-而不是「一行一筆」語意——這是**待 Ethan 裁決**的項目，見第八節。
+2026-08-31 PF-191 之前這正是出廠預設，「要一筆一行必須勾前面」的舊敘述
+（CLAUDE.md／面板提示／部署文件）已隨改版更新。三個都不勾＝字串直接接在
+檔案最後一個字後面（組合字串用），這個用法不受改版影響。
 
 ### 空檔的特例
 
-`newline_before` 在「檔案為空」或「截斷後變空」時**不插入換行**，
-否則檔案開頭會多一個空行。已由測試涵蓋（原檔 `b''` 與 `b'\n\n\n'` 兩個案例）。
+prefix（不論來自 `newline_smart` 或 `newline_before`）在「檔案為空」或
+「截斷後變空」時**不插入換行**，否則檔案開頭會多一個空行。
+已由測試涵蓋（原檔 `b''` 與 `b'\n\n\n'` 兩個案例）。
 
 ### content 自己的換行不處理
 
@@ -186,7 +196,8 @@ queue 38a18c26... status=SUCCESS retry_count=0  → 流程變數 e2e_result="exc
 | `base_dir` | string 必填 | — | 節點層允許根目錄，**不做變數替換** |
 | `file_path` | string 必填 | — | 支援 `${...}`，替換後才做路徑驗證 |
 | `content` | string 必填 | — | 支援 `${...}`；**空字串合法**（等同只整理檔尾） |
-| `newline_before` | bool | `false` | |
+| `newline_smart` | bool | `true` | 「緊接上一筆，另起新行」。啟用時 `newline_before` 無作用；**缺 key＝啟用**（PF-191） |
+| `newline_before` | bool | `false` | 僅 `newline_smart=false` 時生效 |
 | `newline_after` | bool | `true` | |
 | `create_if_missing` | bool | `true` | |
 | `encoding` | string | `utf-8` | 見第六節的限制 |
@@ -245,12 +256,13 @@ base_dir 一律設在本機檔案系統。
 
 ## 八、待 Ethan 裁決 / 已知限制
 
-1. **命名**：`OsFileWrite`（與 `OsFileRead` 對稱）。要改名的話 node_type 字串出現在
-   handler / factory / migration 124 / 前端面板 / 本文件 / 部署文件，約 6 處
-2. **兩個換行勾選的出廠預設**：目前 `before=False` / `after=True`，
-   連續寫入會黏成一行（第二節）。若主要情境是 log，應改成兩個都 `True`
+1. **命名**：已定案 `OsFileWrite`（Ethan 2026-08-31，系統級節點一律 `Os` 前綴，
+   migration 129 完成改名）
+2. **換行出廠預設**：已定案（PF-191，2026-08-31）——不改 before/after 的預設，
+   改為新增 `newline_smart`（預設啟用）接管 prefix，見第二節
 3. **`content` 尾端自帶換行 + `newline_after` 也勾** → 會有兩個換行。
-   目前照使用者原話「只清檔案既有內容的尾端」實作，未清 content 自己的尾巴
+   已定案維持現況（PF-191）：content 自身的換行原樣寫入，保留設計者刻意留空行的能力；
+   規則只約束「檔案既有內容」的尾端
 4. **v1 不做的**：不自動建目錄、不支援覆寫模式、不支援指定寫入位置、
    不做 log rotation、不偵測既有檔案的換行風格（固定 LF）
 5. **實體層**：`max_file_bytes` 只擋單一檔案大小，**不擋磁碟寫滿**。

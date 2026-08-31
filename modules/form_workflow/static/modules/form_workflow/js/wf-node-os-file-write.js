@@ -24,6 +24,7 @@ function renderOsFileWritePanel(node, nodeId) {
     const baseDir = cfg.base_dir || '';
     const filePath = cfg.file_path || '';
     const content = cfg.content || '';
+    const newlineSmart = cfg.newline_smart !== false;
     const newlineBefore = cfg.newline_before === true;
     const newlineAfter = cfg.newline_after !== false;
     const createIfMissing = cfg.create_if_missing !== false;
@@ -57,15 +58,22 @@ function renderOsFileWritePanel(node, nodeId) {
             style="width:100%;font-size:11px;margin-bottom:6px;">${_fwEscapeHtml(content)}</textarea>
 
         <label style="display:block;font-size:11px;margin-bottom:2px;">
-            <input type="checkbox" id="fwNewlineBefore" ${newlineBefore ? 'checked' : ''}>
+            <input type="checkbox" id="fwNewlineSmart" ${newlineSmart ? 'checked' : ''} onchange="toggleFwNewlineSmartUi()">
+            ${__('緊接上一筆，另起新行')}
+        </label>
+        <label id="fwNewlineBeforeLabel" style="display:block;font-size:11px;margin-bottom:2px;${newlineSmart ? 'opacity:0.5;' : ''}">
+            <input type="checkbox" id="fwNewlineBefore" ${newlineBefore ? 'checked' : ''} ${newlineSmart ? 'disabled' : ''}>
             ${__('內容前面加一個換行')}
         </label>
+        <div id="fwNewlineBeforeNote" style="font-size:10px;color:#888;margin-bottom:2px;${newlineSmart ? '' : 'display:none;'}">
+            ${__('已由「緊接上一筆，另起新行」接管')}
+        </div>
         <label style="display:block;font-size:11px;margin-bottom:2px;">
             <input type="checkbox" id="fwNewlineAfter" ${newlineAfter ? 'checked' : ''}>
             ${__('內容後面加一個換行')}
         </label>
         <div style="font-size:10px;color:#888;line-height:1.5;margin-bottom:6px;">
-            ${__('要寫成一筆一行的 log，兩個都要勾。只勾後面那個時，下一次寫入會先把這個換行清掉，結果會全部黏成同一行。兩個都不勾則字串直接接在檔案最後一個字後面（組合字串用）。')}
+            ${__('預設的「緊接上一筆，另起新行」會自動接在既有內容後面另起一行：檔案是空的就直接從第一行開始，不會多出空行。取消它之後才由「內容前面加一個換行」手動控制；三個都不勾則字串直接接在檔案最後一個字後面（組合字串用）。')}
         </div>
 
         <label style="display:block;font-size:11px;margin-bottom:6px;">
@@ -101,6 +109,17 @@ function renderOsFileWritePanel(node, nodeId) {
     </div>`;
 }
 
+// eslint-disable-next-line no-unused-vars
+function toggleFwNewlineSmartUi() {
+    const smart = !!document.getElementById('fwNewlineSmart')?.checked;
+    const before = document.getElementById('fwNewlineBefore');
+    const label = document.getElementById('fwNewlineBeforeLabel');
+    const note = document.getElementById('fwNewlineBeforeNote');
+    if (before) before.disabled = smart;
+    if (label) label.style.opacity = smart ? '0.5' : '';
+    if (note) note.style.display = smart ? '' : 'none';
+}
+
 /** 收集面板設定，回傳要合併進 node config 的物件；面板不存在時回傳 null */
 // eslint-disable-next-line no-unused-vars
 function collectOsFileWriteConfig() {
@@ -111,6 +130,7 @@ function collectOsFileWriteConfig() {
         base_dir: baseDir.value.trim(),
         file_path: document.getElementById('fwFilePath')?.value.trim() || '',
         content: document.getElementById('fwContent')?.value || '',
+        newline_smart: !!document.getElementById('fwNewlineSmart')?.checked,
         newline_before: !!document.getElementById('fwNewlineBefore')?.checked,
         newline_after: !!document.getElementById('fwNewlineAfter')?.checked,
         create_if_missing: !!document.getElementById('fwCreateIfMissing')?.checked,

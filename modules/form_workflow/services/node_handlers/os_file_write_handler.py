@@ -195,6 +195,7 @@ class OsFileWriteHandler(BaseNodeHandler):
             'content': content,
             'body': body,
             'newline': newline,
+            'newline_smart': _coerce_bool(self.get_config_value('newline_smart'), True),
             'newline_before': _coerce_bool(self.get_config_value('newline_before'), False),
             'newline_after': _coerce_bool(self.get_config_value('newline_after'), True),
             'create_if_missing': _coerce_bool(self.get_config_value('create_if_missing'), True),
@@ -393,7 +394,8 @@ class OsFileWriteHandler(BaseNodeHandler):
         return trimmed
 
     def _build_payload(self, config: Dict[str, Any], new_size: int) -> bytes:
-        prefix = config['newline'] if config['newline_before'] and new_size > 0 else b''
+        use_prefix = config['newline_smart'] or config['newline_before']
+        prefix = config['newline'] if use_prefix and new_size > 0 else b''
         suffix = config['newline'] if config['newline_after'] else b''
         return prefix + config['body'] + suffix
 
@@ -470,6 +472,7 @@ class OsFileWriteHandler(BaseNodeHandler):
             'base_dir': config.get('base_dir_real'),
             'file_path': config.get('file_path_real'),
             'content_len': len(config.get('content') or ''),
+            'newline_smart': config['newline_smart'],
             'newline_before': config['newline_before'],
             'newline_after': config['newline_after'],
             'create_if_missing': config['create_if_missing'],

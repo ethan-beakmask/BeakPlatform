@@ -1982,11 +1982,13 @@ base_dir 用**獨立**的 `os_file_write_base_dirs` / `os_file_write_org_base_di
 （原本都無 org 條件，且有可枚舉的整數 ID 向下相容，已移除）。
 
 **它每次寫入前會把檔尾連續的所有換行位元組（`\r` `\n` 任意組合）truncate 掉**，
-再依 `newline_before` / `newline_after` 兩個勾選補換行。這是規格要求，
-但有一個必然後果：**出廠預設（before=false / after=true）連續寫入會全部黏成一行**，
-因為下一次寫入會先清掉上一次留的那個換行。**要一筆一行的 log，兩個都要勾。**
-症狀是「log 檔看起來像壞了」而程式完全沒報錯（實測見
-`/opt/tmp/verify/20260831-filewrite.log`）。
+再依勾選補換行。PF-191（2026-08-31）起出廠預設多了 `newline_smart`
+（「緊接上一筆，另起新行」，**缺 key＝啟用**）：截斷後檔案非空才補一個前置換行，
+所以**出廠預設就是一筆一行**，舊的「連續寫入黏成一行」坑只在 `newline_smart=false`
+＋只勾後面時存在（舊敘述「要一筆一行兩個都要勾」已過時）。`newline_smart` 啟用時
+`newline_before` 完全無作用（面板反灰）；content 自身的尾端換行一律原樣寫入不清理，
+content 帶 `\n` 結尾又勾 `newline_after` 會得到一個空行，這是刻意保留的能力。
+實測見 `/opt/tmp/verify/20260831-filewrite.log` 與 `20260831-pf191-smart.log`。
 
 **這三個節點的失敗不會讓 queue 變成 FAILED**：四分法
 （`ok` / `exception` / `timeout` / `dispatched`）全部回 `status: 'success'`，

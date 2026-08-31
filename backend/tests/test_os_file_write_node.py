@@ -190,18 +190,79 @@ def test_truncates_all_trailing_newline_bytes(filewrite_env, initial, expected, 
     (True, False, b'abc\nXYZ'),
     (True, True, b'abc\nXYZ\n'),
 ])
-def test_newline_before_after_combinations(filewrite_env, before, after, expected):
+def test_newline_before_after_combinations_legacy(filewrite_env, before, after, expected):
     target = filewrite_env / 'out.log'
     target.write_bytes(b'abc\n')
 
     resp, _ = run_filewrite(
         filewrite_env,
+        newline_smart=False,
         newline_before=before,
         newline_after=after,
     )
 
     assert_success_response(resp)
     assert target.read_bytes() == expected
+
+
+@pytest.mark.parametrize('smart', [False, True])
+@pytest.mark.parametrize('before', [False, True])
+@pytest.mark.parametrize('after', [False, True])
+@pytest.mark.parametrize('initial', [b'', b'abc\n'])
+def test_newline_smart_full_matrix(filewrite_env, smart, before, after, initial):
+    target = filewrite_env / 'out.log'
+    target.write_bytes(initial)
+    trimmed_initial = initial.rstrip(b'\r\n')
+    expected = trimmed_initial
+    if (smart or before) and len(trimmed_initial) > 0:
+        expected += b'\n'
+    expected += b'XYZ'
+    if after:
+        expected += b'\n'
+
+    resp, _ = run_filewrite(
+        filewrite_env,
+        newline_smart=smart,
+        newline_before=before,
+        newline_after=after,
+    )
+
+    assert_success_response(resp)
+    assert target.read_bytes() == expected
+
+
+def test_newline_smart_defaults_on_when_key_missing(filewrite_env):
+    target = filewrite_env / 'out.log'
+    target.write_bytes(b'abc\n')
+
+    resp, _ = run_filewrite(filewrite_env)
+
+    assert_success_response(resp)
+    assert target.read_bytes() == b'abc\nXYZ\n'
+
+
+def test_factory_default_sequence_one_line_per_entry(filewrite_env):
+    target = filewrite_env / 'out.log'
+
+    for content in ('A', 'B', 'C'):
+        resp, _ = run_filewrite(filewrite_env, content=content)
+        assert_success_response(resp)
+
+    assert target.read_bytes() == b'A\nB\nC\n'
+
+
+def test_smart_ignores_newline_before(filewrite_env):
+    target = filewrite_env / 'out.log'
+    target.write_bytes(b'abc\n')
+
+    resp, _ = run_filewrite(
+        filewrite_env,
+        newline_smart=True,
+        newline_before=True,
+    )
+
+    assert_success_response(resp)
+    assert target.read_bytes() == b'abc\nXYZ\n'
 
 
 def test_content_newlines_are_written_verbatim(filewrite_env):
@@ -211,6 +272,7 @@ def test_content_newlines_are_written_verbatim(filewrite_env):
     resp, _ = run_filewrite(
         filewrite_env,
         content='L1\nL2\n',
+        newline_smart=False,
         newline_before=False,
         newline_after=True,
     )
@@ -223,7 +285,7 @@ def test_empty_content_is_valid(filewrite_env):
     target = filewrite_env / 'out.log'
     target.write_bytes(b'abc\n\n\n')
 
-    resp, _ = run_filewrite(filewrite_env, content='', newline_after=True)
+    resp, _ = run_filewrite(filewrite_env, content='', newline_smart=False, newline_after=True)
 
     assert_success_response(resp)
     assert target.read_bytes() == b'abc\n'
@@ -260,6 +322,7 @@ def test_big5_file_prefix_and_append_bytes_are_preserved(filewrite_env):
         filewrite_env,
         content='新增',
         encoding='big5',
+        newline_smart=False,
         newline_after=False,
     )
 
@@ -272,7 +335,7 @@ def test_binary_prefix_is_not_decoded_or_rewritten(filewrite_env):
     target = filewrite_env / 'out.log'
     target.write_bytes(prefix)
 
-    resp, _ = run_filewrite(filewrite_env, content='OK')
+    resp, _ = run_filewrite(filewrite_env, content='OK', newline_smart=False)
 
     assert_success_response(resp)
     assert target.read_bytes() == prefix + b'OK\n'
