@@ -198,7 +198,13 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                    // 同名子流程會被後端以 409 擋下，要把原因帶出來（否則名稱被還原卻沒說明）
+                    let reason = `HTTP ${response.status}`;
+                    try {
+                        const err = await response.json();
+                        if (err && (err.error || err.message)) reason = err.error || err.message;
+                    } catch (e) { /* 非 JSON 回應，沿用狀態碼 */ }
+                    throw new Error(reason);
                 }
 
                 const result = await response.json();
@@ -209,7 +215,8 @@
                 console.log('✅ 流程資訊已更新:', { name: newName, description: newDescription, category_secure_code: newCategorySc });
             } catch (error) {
                 console.error('❌ 更新流程資訊失敗:', error);
-                updateStatus(__('更新流程資訊失敗'), 'warning');
+                updateStatus(__('更新流程資訊失敗：') + error.message, 'warning');
+                alert(error.message);
                 nameInput.value = currentWorkflow?.name || __('未命名流程');
                 document.getElementById('current-workflow-description').value = (currentWorkflow?.description || '').split('\n')[0];
                 if (categoryInput) categoryInput.value = currentWorkflow?.category_secure_code || '';

@@ -191,6 +191,21 @@ function workflowListManager() {
             const CONN_W = 149;   // horizontal connector width (INDENT - STEM_X)
             const CARD_MID = 85;  // card vertical center from top of row
 
+            // 同名流程在圖上分不出是哪一個，這種情況才把 code 一起顯示
+            // （以 secure_code 去重，同一個子流程被引用兩次不算同名）
+            const nameCounts = {};
+            const counted = new Set();
+            (function countNames(node) {
+                if (!node) return;
+                if (node.secure_code && !counted.has(node.secure_code)) {
+                    counted.add(node.secure_code);
+                    nameCounts[node.name] = (nameCounts[node.name] || 0) + 1;
+                }
+                (node.children || []).forEach(countNames);
+            })(tree);
+            const displayName = (node) =>
+                (nameCounts[node.name] > 1 && node.code) ? `${node.name}（${node.code}）` : node.name;
+
             const renderCard = (node, isRoot) => {
                 const qp = [];
                 if (!isRoot) { qp.push('from=tree', 'root=' + rootCode); }
@@ -202,13 +217,13 @@ function workflowListManager() {
                 const borderLeft = isRoot ? 'border-left:3px solid #6366f1;' : '';
                 const unusedStyle = node.is_unused ? 'opacity:0.75;border-style:dashed;border-color:#d4944a;' : '';
                 const unusedBadge = node.is_unused ? ' <span style="background:#fef3c7;color:#d97706;font-size:10px;padding:1px 6px;border-radius:3px;">unused</span>' : '';
-                return '<a href="' + href + '" style="text-decoration:none;display:inline-block;" title="' + esc(node.name) + ' — 點擊進入編輯">' +
+                return '<a href="' + href + '" style="text-decoration:none;display:inline-block;" title="' + esc(displayName(node)) + ' — 點擊進入編輯">' +
                     '<div style="display:inline-block;padding:6px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;' + borderLeft + unusedStyle +
                     'box-shadow:0 1px 2px rgba(0,0,0,0.04);transition:box-shadow 0.15s;" ' +
                     'onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,0.12)\'" onmouseout="this.style.boxShadow=\'0 1px 2px rgba(0,0,0,0.04)\'">' +
                     thumb +
                     '<div style="text-align:center;padding:4px 2px 2px;font-size:12px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px;">' +
-                    esc(node.name) + unusedBadge +
+                    esc(displayName(node)) + unusedBadge +
                     '</div></div></a>';
             };
 

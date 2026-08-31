@@ -885,6 +885,9 @@ def batch_import_workflows():
     for item in items:
         # 先匯入 sub_workflows
         sub_workflows = item.get('sub_workflows') or {}
+        # 匯入是「還原」語意，去重只看 code：名稱重複刻意不擋（見 create_subflow 的
+        # _find_duplicate_subflow_name），否則合法的備份檔會匯不進來。
+        # 同名的辨識靠清單與樹系圖在同名時附掛 code。
         for sf_code, sf_data in sub_workflows.items():
             sf_code_clean = (sf_data.get('code') or sf_code).strip()
             if not sf_code_clean or sf_code_clean in existing_codes:

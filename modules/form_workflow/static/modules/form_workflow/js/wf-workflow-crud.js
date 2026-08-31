@@ -15,8 +15,12 @@
                 return;
             }
 
-            // 調用儲存函數
-            await saveWorkflow();
+            // 調用儲存函數（存檔失敗就停在原地，帶著未存的變更離開等於丟資料）
+            const saved = await saveWorkflow();
+            if (saved !== true) {
+                updateStatus(__('儲存失敗，已留在目前流程'), 'warning');
+                return;
+            }
 
             // 等待縮圖生成完成（最多等待 5 秒）
             console.log('📸 等待縮圖生成完成...');

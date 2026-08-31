@@ -152,6 +152,9 @@
 
                 const { dedicated, common_categories } = result.data;
 
+                // 同名的子流程在清單上分不出是哪一個，這種情況才把 code 一起顯示
+                const labelOf = _buildSubflowLabelMap(dedicated, common_categories);
+
                 // 渲染專屬子流程列表
                 if (dedicated.length === 0) {
                     dedicatedList.innerHTML = '<div style="padding: 10px; color: #999; font-size: 12px; text-align: center;">尚無專屬子流程</div>';
@@ -161,8 +164,9 @@
                         const isSelected = sf.code === currentChildFlowId;
                         const bgColor = isSelected ? '#e8f0fe' : 'transparent';
                         const borderLeft = isSelected ? '3px solid #667eea' : '3px solid transparent';
-                        html += `<div style="display: flex; align-items: center; padding: 7px 10px; border-bottom: 1px solid #f0f0f0; background: ${bgColor}; border-left: ${borderLeft}; cursor: pointer;" onmouseover="this.style.background='${isSelected ? '#e8f0fe' : '#f8f9fa'}'" onmouseout="this.style.background='${bgColor}'" onclick="selectSubflow('${nodeId}', '${sf.code}', '${sf.name.replace(/'/g, "\\'")}', true)">
-                            <span style="flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sf.name}</span>`;
+                        const label = labelOf(sf);
+                        html += `<div style="display: flex; align-items: center; padding: 7px 10px; border-bottom: 1px solid #f0f0f0; background: ${bgColor}; border-left: ${borderLeft}; cursor: pointer;" onmouseover="this.style.background='${isSelected ? '#e8f0fe' : '#f8f9fa'}'" onmouseout="this.style.background='${bgColor}'" onclick="selectSubflow('${nodeId}', '${sf.code}', '${label.replace(/'/g, "\\'")}', true)" title="${label}">
+                            <span style="flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${label}</span>`;
                         if (sf.is_referenced) {
                             html += `<span style="font-size: 11px; color: #667eea; margin-left: 8px; white-space: nowrap;">使用中</span>`;
                         } else {
@@ -190,8 +194,9 @@
                             const isSelected = sf.code === currentChildFlowId;
                             const bgColor = isSelected ? '#e8f0fe' : 'transparent';
                             const borderLeft = isSelected ? '3px solid #667eea' : '3px solid transparent';
-                            html += `<div style="display: flex; align-items: center; padding: 6px 10px 6px 24px; border-bottom: 1px solid #f0f0f0; background: ${bgColor}; border-left: ${borderLeft}; cursor: pointer;" onmouseover="this.style.background='${isSelected ? '#e8f0fe' : '#f8f9fa'}'" onmouseout="this.style.background='${bgColor}'" onclick="selectSubflow('${nodeId}', '${sf.code}', '${sf.name.replace(/'/g, "\\'")}', false)">
-                                <span style="flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sf.name}</span>
+                            const label = labelOf(sf);
+                            html += `<div style="display: flex; align-items: center; padding: 6px 10px 6px 24px; border-bottom: 1px solid #f0f0f0; background: ${bgColor}; border-left: ${borderLeft}; cursor: pointer;" onmouseover="this.style.background='${isSelected ? '#e8f0fe' : '#f8f9fa'}'" onmouseout="this.style.background='${bgColor}'" onclick="selectSubflow('${nodeId}', '${sf.code}', '${label.replace(/'/g, "\\'")}', false)" title="${label}">
+                                <span style="flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${label}</span>
                             </div>`;
                         });
                         html += '</div></div>';
@@ -200,7 +205,7 @@
                 }
 
                 // 更新「目前」顯示
-                _updateCurrentSubflowDisplay(currentChildFlowId, dedicated, common_categories);
+                _updateCurrentSubflowDisplay(currentChildFlowId, dedicated, common_categories, labelOf);
 
                 // 自動補齊舊資料的 subflowKind（載入時節點已有 childFlowId 但沒有 subflowKind）
                 if (currentChildFlowId && node.length > 0 && !node.data('subflowKind')) {
@@ -223,23 +228,41 @@
             }
         }
 
+        // 建立 code -> 顯示名稱 的對照：只有同名時才在名稱後補上 code
+        function _buildSubflowLabelMap(dedicated, common_categories) {
+            const all = (dedicated || []).concat(
+                (common_categories || []).flatMap(cat => cat.subflows || [])
+            );
+            const counts = {};
+            const seen = {};
+            all.forEach(sf => {
+                if (seen[sf.secure_code]) return;   // 同一筆重複出現不算同名
+                seen[sf.secure_code] = true;
+                counts[sf.name] = (counts[sf.name] || 0) + 1;
+            });
+            return function (sf) {
+                return counts[sf.name] > 1 ? `${sf.name}（${sf.code}）` : sf.name;
+            };
+        }
+
         // 更新「目前」顯示文字
-        function _updateCurrentSubflowDisplay(currentCode, dedicated, common_categories) {
+        function _updateCurrentSubflowDisplay(currentCode, dedicated, common_categories, labelOf) {
             const display = document.getElementById('currentSubflowDisplay');
             if (!display) return;
             if (!currentCode) {
                 display.innerHTML = '目前：<strong style="color: #999;">未選擇</strong>';
                 return;
             }
-            // 在專屬和通用中查找名稱
+            // 在專屬和通用中查找名稱（code 唯一，找到就是那一筆）
+            const label = labelOf || ((sf) => sf.name);
             let name = currentCode;
             for (const sf of dedicated) {
-                if (sf.code === currentCode) { name = sf.name; break; }
+                if (sf.code === currentCode) { name = label(sf); break; }
             }
             if (name === currentCode) {
                 for (const cat of common_categories) {
                     for (const sf of cat.subflows) {
-                        if (sf.code === currentCode) { name = sf.name; break; }
+                        if (sf.code === currentCode) { name = label(sf); break; }
                     }
                     if (name !== currentCode) break;
                 }
@@ -322,9 +345,17 @@
                 });
 
                 if (!response.ok) {
-                    const text = await response.text();
-                    console.error('建立子流程 API 錯誤:', response.status, text.substring(0, 200));
-                    updateStatus(`建立子流程失敗：HTTP ${response.status}`, 'warning');
+                    // 後端會用 409 擋同名子流程，原因要讓使用者看得到（狀態列容易被忽略）
+                    let reason = `HTTP ${response.status}`;
+                    try {
+                        const err = await response.json();
+                        if (err && (err.error || err.message)) reason = err.error || err.message;
+                    } catch (e) {
+                        console.error('建立子流程 API 錯誤（非 JSON 回應）:', response.status);
+                    }
+                    console.error('建立子流程 API 錯誤:', response.status, reason);
+                    updateStatus(__('建立子流程失敗：') + reason, 'warning');
+                    alert(reason);
                     return;
                 }
 

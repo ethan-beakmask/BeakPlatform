@@ -137,9 +137,29 @@ function workflowTreePage() {
             var CONN_W = 149;
             var CARD_MID = 85;
 
+            // 同名流程在圖上分不出是哪一個，這種情況才把 code 一起顯示
+            // （以 secure_code 去重，同一個子流程被引用兩次不算同名）
+            var nameCounts = {};
+            var counted = {};
+            (function countNames(node) {
+                if (!node) return;
+                var key = node.secure_code || '';
+                if (key && !counted[key]) {
+                    counted[key] = true;
+                    nameCounts[node.name] = (nameCounts[node.name] || 0) + 1;
+                }
+                (node.children || []).forEach(countNames);
+            })(tree);
+            var displayName = function(node) {
+                return (nameCounts[node.name] > 1 && node.code)
+                    ? node.name + '（' + node.code + '）'
+                    : node.name;
+            };
+
             var renderCard = function(node, isRoot) {
                 var qp = [];
-                if (!isRoot) { qp.push('from=tree', 'root=' + rootCode); }
+                // 根節點也要帶來源，否則從樹系圖點主流程進去後「儲存並返回」會跑回清單
+                qp.push('from=tree', 'root=' + rootCode);
                 if (node.is_unused) { qp.push('editable=1'); }
                 var href = window.__BP + '/forms/workflows/' + node.secure_code + (qp.length ? '?' + qp.join('&') : '');
                 var thumb = node.thumbnail_2x1
@@ -148,13 +168,13 @@ function workflowTreePage() {
                 var borderLeft = isRoot ? 'border-left:3px solid #6366f1;' : '';
                 var unusedStyle = node.is_unused ? 'opacity:0.75;border-style:dashed;border-color:#d4944a;' : '';
                 var unusedBadge = node.is_unused ? ' <span style="background:#fef3c7;color:#d97706;font-size:10px;padding:1px 6px;border-radius:3px;">unused</span>' : '';
-                return '<a href="' + href + '" style="text-decoration:none;display:inline-block;" title="' + esc(node.name) + ' — 點擊進入編輯">' +
+                return '<a href="' + href + '" style="text-decoration:none;display:inline-block;" title="' + esc(displayName(node)) + ' — 點擊進入編輯">' +
                     '<div style="display:inline-block;padding:6px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;' + borderLeft + unusedStyle +
                     'box-shadow:0 1px 2px rgba(0,0,0,0.04);transition:box-shadow 0.15s;" ' +
                     'onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,0.12)\'" onmouseout="this.style.boxShadow=\'0 1px 2px rgba(0,0,0,0.04)\'">' +
                     thumb +
                     '<div style="text-align:center;padding:4px 2px 2px;font-size:12px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px;">' +
-                    esc(node.name) + unusedBadge +
+                    esc(displayName(node)) + unusedBadge +
                     '</div></div></a>';
             };
 

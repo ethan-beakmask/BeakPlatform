@@ -4,6 +4,8 @@ FormWorkflow Module - Web Routes
 
 提供表單填寫、簽核等頁面。
 """
+import re
+
 from flask import Blueprint, render_template, redirect, url_for, request
 
 from app.security.decorators import module_access_required
@@ -123,12 +125,27 @@ def workflow_detail(secure_code):
     )
 
 
+# secure_code 字元集（token_urlsafe 與既有的固定代號），用於驗證返回來源參數
+_SECURE_CODE_RE = re.compile(r'^[A-Za-z0-9_.-]{1,64}$')
+
+
 @web_bp.route('/workflows/<secure_code>/tree')
 @module_access_required('form_workflow', False)
 @require_permission('form_workflow.workflow.view')
 def workflow_tree(secure_code):
     """工作流樹系圖（獨立分頁）"""
-    return render_template('modules/form_workflow/workflow_tree.html', secure_code=secure_code)
+    # 返回按鈕依來源決定去處：設計器來的回那張設計圖，其餘（清單）一律回清單
+    back_url = url_for('form_workflow_web.workflows')
+    if request.args.get('from') == 'designer':
+        source_sc = request.args.get('sc', '')
+        if source_sc and _SECURE_CODE_RE.match(source_sc):
+            back_url = url_for('form_workflow_web.workflow_detail', secure_code=source_sc)
+
+    return render_template(
+        'modules/form_workflow/workflow_tree.html',
+        secure_code=secure_code,
+        back_url=back_url
+    )
 
 
 # =============================================================================

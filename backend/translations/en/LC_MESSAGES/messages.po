@@ -21931,6 +21931,22 @@ msgstr "- Form:"
 msgid "流程樹系圖 - BeakPlatform"
 msgstr "Workflow tree diagram - BeakPlatform"
 
+#: ../modules/form_workflow/api/workflows.py:107
+msgid "同一主流程下已有名為「%(name)s」的子流程，請換一個名稱"
+msgstr ""
+"A subworkflow named \"%(name)s\" already exists under the same main "
+"workflow. Please use a different name."
+
+#: ../modules/form_workflow/api/workflows.py:109
+msgid "已有名為「%(name)s」的通用子流程，請換一個名稱"
+msgstr ""
+"A general subworkflow named \"%(name)s\" already exists. Please use a "
+"different name."
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:13
+msgid "返回"
+msgstr "Back"
+
 #~ msgid "前往「%(link_start)s新增企業管理員%(link_end)s」，建立正式管理員並綁定該企業成員帳號"
 #~ msgstr ""
 #~ "Go to \"%(link_start)sAdd Organization "

@@ -97,3 +97,88 @@ http://192.168.0.16:7000/beakplatform/forms/workflows/7LJRvpSPUYcmK1M1wcOTzY
 `scripts/examples/provision_api_key_request_flow.py` 是它的 CLI 外殼、
 反過來 import defaults——**要改表單欄位或流程 graph 一律改 defaults 那一份**，
 改腳本不會生效。既有企業由 `scripts/migrations/116_seed_api_key_request_flow_existing_orgs.py` 補。
+
+## 樹系圖有兩份幾乎相同的實作（2026-08-31 PF-201 期間發現）
+
+同一張「流程樹系圖」在兩個地方各有一份渲染程式碼，**改一份另一份不會跟著變，
+而且兩邊畫出來一模一樣、看不出是哪一份**：
+
+| 入口 | 實作 | 型態 |
+|---|---|---|
+| 清單頁 `/forms/workflows/` 每列的 [樹系圖] | `workflow-list.js::_renderTree()`（`openTree(w)` 開） | 頁內 overlay，**不換頁** |
+| 設計器左側「流程樹系 → 開啟樹系圖」 | `fw-workflow-tree.js::_renderTree()` + `workflow_tree.html` | 獨立頁 `/forms/workflows/<sc>/tree` |
+
+兩份的 `renderCard()` / `renderChildren()` 是複本（連 `STEM_X=111`、`CARD_MID=85`
+這些常數都一樣）。動其中一份時記得問「另一份要不要一起動」。
+
+另有第三份**不同**的東西不要混淆：設計器左側面板那個文字清單是
+`wf-tree.js::renderFlowTree()`（純文字縮排樹，點了走 `switchToWorkflow()` 同頁切換）。
+
+### 三個入口的「返回 / 離開」語意（2026-08-31 PF-201 定版）
+
+- 獨立樹系圖頁的返回按鈕**依來源決定**：`?from=designer&sc=<設計器那張的 sc>`
+  就回那張設計圖，沒有參數（＝從清單來）就回清單。判斷在後端
+  `web/__init__.py::workflow_tree()`（算出 `back_url` 傳給模板），
+  `sc` 過 `_SECURE_CODE_RE` 白名單
+- 卡片連結帶 `?from=tree&root=<根流程 sc>`，設計器的「儲存並返回」
+  （`wf-workflow-crud.js::saveAndClose()`）讀這組參數決定回樹系圖或回清單。
+  **獨立頁的根節點也帶**（回獨立樹系圖頁），**清單 overlay 的根節點刻意不帶**
+  （overlay 本來就疊在清單上，回清單才對）
+- 設計器內切換流程（左側文字樹）與「開啟樹系圖」一律**先無提示自動儲存**再走，
+  存檔失敗就停在原地並在狀態列報錯（`wf-tree.js::autoSaveBeforeLeave()`）。
+  `saveWorkflow()` 因此改成**回傳 boolean**——在此之前它 catch 掉所有錯誤、
+  一律回 undefined，而且用 `if (data)` 判斷成功，**後端回 4xx 也會顯示「已儲存」**
+
+### 這裡曾經有一段永遠不會執行的死碼
+
+`wf-tree.js::switchToWorkflow()` 原本寫 `typeof hasUnsavedChanges === 'function'
+&& hasUnsavedChanges()`，但 `hasUnsavedChanges` 是 `wf-workflow-crud.js` 的
+**布林變數**（`let hasUnsavedChanges = false`），`typeof` 恆為 `'boolean'`——
+所以那個「確定要切換嗎」的 confirm **從來沒有跳過**，切換流程一直是靜默丟棄變更。
+待辦卡當時記的是「會跳確認框」，與實際不符。判斷這類跨檔案共享狀態時，
+先確認它是變數還是函式（這些 js 是各自 `<script src>`，共享 script-level scope，
+`function` 宣告掛得到 `window`、`let`/`const` 掛不到）。
+
+## 子流程同名：DB 不擋，改由兩個 API 入口擋（2026-08-31 PF-202）
+
+`fw_workflow_templates` 的唯一索引**只有 `secure_code`**（`code` 是非唯一索引、
+`name` 連索引都沒有），所以同一個父流程下可以建出兩個同名子流程，
+而清單與樹系圖都只顯示 `name` ——使用者看到兩個一模一樣的項目，
+改其中一個的名字就會覺得「兩個都變了」。
+
+**不加 DB 唯一約束**（跨流程樹同名是合理的，兩棵樹各有一個「通知」子流程），
+改成在兩個入口擋，都走 `api/workflows.py::_find_duplicate_subflow_name()`：
+
+| 入口 | 位置 | 比對範圍 |
+|---|---|---|
+| 建立子流程 | `create_subflow()` | 同一 `parent_workflow_secure_code` 底下 |
+| 改名 | `update_template()`（只在 `is_subprocess` 時） | 同上；通用子流程（無 parent）則比同企業所有通用子流程 |
+
+衝突一律回 **409** + `error` 訊息，前端 `createNewSubflow()` 與
+`updateWorkflowInfo()` 會 alert 出原因（狀態列訊息容易被忽略）。
+**主流程不受此限**——同名主流程沿用既有行為，沒有改。
+
+**新增任何「會建立或改名子流程」的路徑時要一併掛這道檢查**，
+漏掛不會報錯，症狀就是清單上又出現兩個分不出來的同名項目。
+
+**兩條刻意不擋的路徑**（反向檢查時查過，都在程式碼留了註解）：
+
+| 路徑 | 為什麼不擋 |
+|---|---|
+| `POST /api/form-workflow/workflows/batch/import` | 還原語意，去重只看 `code`；擋名稱會讓合法備份檔匯不進來 |
+| `POST /data/templates/<sc>/save-new-version` | 另存新版本來就是同名不同 `version`（AA → AB） |
+
+兩者建出的同名項目靠上面說的 code 後綴辨識。
+
+已經同名的既有資料不會被回頭清理，所以三處清單（子流程面板、設計器左側文字樹、
+樹系圖卡片×2 份）**在偵測到同名時會把 code 一起顯示**成
+`sub_C_L2_2（SF0EADE7C5）`；不同名時維持只顯示名稱。判定以 `secure_code` 去重，
+同一個子流程被引用兩次不算同名。
+
+### 順帶修掉的：`delete_subflow` 一定回 500
+
+`for _ in range(10)` 把 `from flask_babel import gettext as _` 覆寫成 int，
+函式尾端的 `_('已刪除 %(count)s 個子流程')` 直接 `TypeError: 'int' object is
+not callable`。**軟刪除已經 commit 成功才炸**，所以症狀是
+「前端說刪除失敗、重新整理卻發現真的刪掉了」。同檔 `list_available_subflows()`
+有同樣寫法（該函式尾端剛好沒用到 `_()` 才沒爆），兩處都改成 `for _hop in range(10)`。

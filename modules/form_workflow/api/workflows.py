@@ -65,6 +65,46 @@ def _get_default_graph():
     }
 
 
+def _find_duplicate_subflow_name(org_secure_code, name, parent_secure_code, exclude_id=None):
+    """回傳同範圍內已存在的同名子流程（沒有則 None）
+
+    子流程清單與樹系圖只顯示 name，同名等於使用者無法辨識自己在編輯哪一個，
+    所以在建立與改名時擋下。比對範圍：
+      - 專屬子流程：同一父流程底下
+      - 通用子流程：同企業的所有通用子流程（清單就是這個範圍）
+    跨父流程同名是合理的（不同流程樹各有一個「通知」子流程），
+    因此不加 DB 唯一約束，只在這兩個入口擋。
+    """
+    from ..models import FwWorkflowTemplate
+
+    query = FwWorkflowTemplate.query.filter(
+        FwWorkflowTemplate.org_secure_code == org_secure_code,
+        FwWorkflowTemplate.is_subprocess == True,  # noqa: E712
+        FwWorkflowTemplate.is_deleted == False,    # noqa: E712
+        FwWorkflowTemplate.name == name,
+    )
+    if parent_secure_code:
+        query = query.filter(
+            FwWorkflowTemplate.parent_workflow_secure_code == parent_secure_code
+        )
+    else:
+        query = query.filter(
+            FwWorkflowTemplate.parent_workflow_secure_code.is_(None)
+        )
+    if exclude_id is not None:
+        query = query.filter(FwWorkflowTemplate.id != exclude_id)
+
+    return query.first()
+
+
+def _duplicate_subflow_name_response(name, parent_secure_code):
+    if parent_secure_code:
+        message = _('同一主流程下已有名為「%(name)s」的子流程，請換一個名稱', name=name)
+    else:
+        message = _('已有名為「%(name)s」的通用子流程，請換一個名稱', name=name)
+    return jsonify({'success': False, 'error': message}), 409
+
+
 def _reject_unauthorized_graph_nodes(graph, org):
     unauthorized = find_unauthorized_node_types(
         graph,
@@ -302,7 +342,18 @@ def update_template(secure_code):
     old_revision = template.revision or 0
 
     if 'name' in data:
-        template.name = data['name'].strip()
+        new_name = (data['name'] or '').strip()
+        if template.is_subprocess and new_name and new_name != template.name:
+            if _find_duplicate_subflow_name(
+                org.secure_code,
+                new_name,
+                template.parent_workflow_secure_code,
+                exclude_id=template.id,
+            ):
+                return _duplicate_subflow_name_response(
+                    new_name, template.parent_workflow_secure_code
+                )
+        template.name = new_name
     if 'description' in data:
         template.description = data['description']
     if 'graph' in data:
@@ -598,6 +649,7 @@ def save_new_version(secure_code):
         secure_code=secrets.token_urlsafe(16),
         org_secure_code=org.secure_code,
         code=template.code,
+        # 另存新版刻意沿用同名（靠 version 區分），不做 _find_duplicate_subflow_name 檢查
         name=data.get('name') or template.name,
         description=data.get('description') or template.description,
         category=template.category,
@@ -806,7 +858,7 @@ def list_available_subflows():
     if parent_id:
         visited = set()
         current = parent_id
-        for _ in range(10):
+        for _hop in range(10):
             if current in visited:
                 break
             visited.add(current)
@@ -963,6 +1015,9 @@ def create_subflow():
     if not name:
         return jsonify({'success': False, 'error': 'Name is required'}), 400
 
+    if _find_duplicate_subflow_name(org.secure_code, name, parent_id):
+        return _duplicate_subflow_name_response(name, parent_id)
+
     graph = data.get('graph') or _get_default_graph()
     unauthorized_response = _reject_unauthorized_graph_nodes(graph, org)
     if unauthorized_response:
@@ -1045,7 +1100,7 @@ def delete_subflow(secure_code):
     root_code = subflow.parent_workflow_secure_code
     visited = set()
     current = root_code
-    for _ in range(10):
+    for _hop in range(10):
         if current in visited:
             break
         visited.add(current)

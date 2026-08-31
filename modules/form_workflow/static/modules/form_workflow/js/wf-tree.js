@@ -30,12 +30,47 @@
         function updateFlowTreeRootLabel() {}
 
         /**
+         * 離開目前流程前的自動儲存
+         * 規格：無提示、無條件儲存後才離開；存檔失敗時停在原地（避免靜默丟資料）
+         * @returns {Promise<boolean>} true 代表可以離開
+         */
+        async function autoSaveBeforeLeave() {
+            if (typeof isReadOnly !== 'undefined' && isReadOnly) return true;   // 唯讀本來就沒東西可存
+            if (!currentWorkflowId) return true;
+
+            // 先把當前節點面板的設定套進畫布，否則「剛改完面板就切換」會被判定成無變更
+            if (typeof autoApplyCurrentPanel === 'function') {
+                try {
+                    autoApplyCurrentPanel();
+                } catch (e) {
+                    console.warn('套用面板設定失敗:', e);
+                }
+            }
+
+            const dirty = (typeof checkForChanges === 'function') ? checkForChanges() : true;
+            if (!dirty) return true;
+
+            const saved = await saveWorkflow();
+            if (saved !== true) {
+                updateStatus(__('儲存失敗，已留在目前流程'), 'warning');
+                return false;
+            }
+            return true;
+        }
+
+        /**
          * 開啟樹系圖頁面
          */
-        function openFlowTreePage() {
+        async function openFlowTreePage() {
             const code = rootWorkflowId || currentWorkflowId;
             if (!code) return;
-            window.location.href = window.__BP + '/forms/workflows/' + code + '/tree';
+
+            // 整頁跳轉前先存檔，回來時才不會少一段
+            if (!(await autoSaveBeforeLeave())) return;
+
+            const params = new URLSearchParams({ from: 'designer' });
+            if (currentWorkflowId) params.set('sc', currentWorkflowId);
+            window.location.href = window.__BP + '/forms/workflows/' + code + '/tree?' + params.toString();
         }
 
         /**
@@ -170,6 +205,7 @@
                     const node = {
                         id: workflowData.secure_code,
                         name: workflowData.name,
+                        code: workflowData.code,
                         secureCode: workflowData.secure_code,
                         isCurrent: (workflowData.secure_code === currentWorkflowId),
                         children: []
@@ -212,6 +248,7 @@
                                 node.children.push({
                                     id: sfFromApi.secure_code,
                                     name: sfFromApi.name,
+                                    code: sfFromApi.code,
                                     secureCode: sfFromApi.secure_code,
                                     isCurrent: (sfFromApi.secure_code === currentWorkflowId),
                                     children: []  // 不再遞迴載入
@@ -237,6 +274,7 @@
                                             node.children.push({
                                                 id: sfData.secure_code,
                                                 name: sfData.name,
+                                                code: sfData.code,
                                                 secureCode: sfData.secure_code,
                                                 isCurrent: (sfData.secure_code === currentWorkflowId),
                                                 children: []
@@ -297,6 +335,22 @@
             // 每層不同顏色
             const depthColors = ['#2ecc71', '#3498db', '#9b59b6', '#e67e22', '#e74c3c'];
 
+            // 同名的流程在樹上分不出是哪一個，這種情況才把 code 一起顯示
+            // （以 secureCode 去重，同一個流程被引用兩次不算同名）
+            const nameCounts = {};
+            const countedCodes = new Set();
+            (function countNames(node) {
+                if (!node) return;
+                const key = node.secureCode || node.id;
+                if (key && !countedCodes.has(key)) {
+                    countedCodes.add(key);
+                    nameCounts[node.name] = (nameCounts[node.name] || 0) + 1;
+                }
+                (node.children || []).forEach(countNames);
+            })(treeData);
+            const displayName = (node) =>
+                (nameCounts[node.name] > 1 && node.code) ? `${node.name}（${node.code}）` : node.name;
+
             // 生成 HTML
             let html = '';
 
@@ -304,9 +358,9 @@
             const rootColor = depthColors[0];
             const rootCurrentClass = treeData.isCurrent ? 'current' : '';
             const rootClickHandler = `onclick="switchToWorkflow('${treeData.secureCode}')"`;
-            html += `<div class="flow-tree-item ${rootCurrentClass}" style="padding-left: 6px;" ${rootClickHandler} title="${treeData.name}">
+            html += `<div class="flow-tree-item ${rootCurrentClass}" style="padding-left: 6px;" ${rootClickHandler} title="${displayName(treeData)}">
                 <span class="dot" style="background: ${rootColor};"></span>
-                <span class="name">${treeData.name}</span>
+                <span class="name">${displayName(treeData)}</span>
             </div>`;
 
             // 渲染子流程
@@ -317,9 +371,9 @@
                 const secureCode = node.secureCode || '';
                 const clickHandler = secureCode ? `onclick="switchToWorkflow('${secureCode}')"` : '';
 
-                html += `<div class="flow-tree-item ${currentClass}" style="padding-left: ${6 + indent}px;" ${clickHandler} title="${node.name}">
+                html += `<div class="flow-tree-item ${currentClass}" style="padding-left: ${6 + indent}px;" ${clickHandler} title="${displayName(node)}">
                     <span class="dot" style="background: ${color};"></span>
-                    <span class="name">${node.name}</span>
+                    <span class="name">${displayName(node)}</span>
                 </div>`;
 
                 if (node.children && node.children.length > 0) {
@@ -343,13 +397,8 @@
                 return;
             }
 
-            // 檢查是否有未儲存的變更
-            if (typeof hasUnsavedChanges === 'function' && hasUnsavedChanges()) {
-                const confirmed = confirm(__('目前有未儲存的變更，確定要切換到其他流程嗎？'));
-                if (!confirmed) {
-                    return;
-                }
-            }
+            // 切換前無提示自動儲存；存檔失敗就停在原地，不帶著未存的變更跳走
+            if (!(await autoSaveBeforeLeave())) return;
 
             updateStatus(`正在切換到流程...`);
 

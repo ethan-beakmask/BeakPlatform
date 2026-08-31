@@ -452,10 +452,11 @@
         }
 
         // 儲存流程
+        // 回傳 true 代表確實存檔成功；呼叫端可據此決定要不要離開目前流程
         async function saveWorkflow() {
             if (isReadOnly) {
                 updateStatus(__('唯讀模式，無法儲存'), 'warning');
-                return;
+                return false;
             }
             // 儲存前自動套用當前面板的設定
             autoApplyCurrentPanel();
@@ -468,7 +469,7 @@
             if (!currentWorkflowId) {
                 console.error('❌ currentWorkflowId 未設置！');
                 updateStatus(__('請先選擇或建立一個流程'), 'warning');
-                return;
+                return false;
             }
 
             try {
@@ -651,7 +652,8 @@
                 const data = await response.json();
                 console.log('📦 後端回應資料:', data);
 
-                if (data) {
+                // 後端失敗時同樣回 JSON（含 success:false），只判斷 data 存在會誤判成功
+                if (response.ok && data && data.success !== false) {
                     updateStatus(__('✅ 流程已儲存'));
                     console.log('✅ 儲存成功');
 
@@ -679,14 +681,19 @@
                     setTimeout(() => {
                         generateAndSaveThumbnail();
                     }, 100);
+
+                    return true;
                 } else {
-                    updateStatus(__('儲存失敗'), 'warning');
-                    console.log('❌ 儲存失敗：後端返回空資料');
+                    const reason = (data && (data.error || data.message)) || `HTTP ${response.status}`;
+                    updateStatus(__('儲存失敗：') + reason, 'warning');
+                    console.log('❌ 儲存失敗：', response.status, data);
+                    return false;
                 }
             } catch (error) {
                 console.error('❌ 儲存流程失敗:', error);
                 console.error('錯誤堆疊:', error.stack);
                 updateStatus(__('儲存失敗：') + error.message, 'warning');
+                return false;
             }
         }
 
