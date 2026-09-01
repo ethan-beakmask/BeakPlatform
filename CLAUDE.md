@@ -1662,22 +1662,27 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   token，會看到每一種身分都回 400，看起來像守門完全沒生效，實際上根本還沒走到
   守門那一步（2026-08-31 驗 PF-185 時踩過）。**測授權一律先取 token。**
 
-### bpserv 測試機（2026-09-01 建立，install.sh 全新安裝的驗證環境）
+### bpserv 測試機（2026-09-01 建立，2026-09-02 PF-211 後重裝，install.sh 全新安裝的驗證環境）
 
 Ethan 提供的 Proxmox VM，用途是驗證「讀者照裝」路徑與 fresh 環境行為，
 **憑證都是測試用途、Ethan 明示可放本檔**（本檔不推 GitHub）：
 
 | 項目 | 值 |
 |---|---|
-| SSH | `sshpass -p 'P@ssw0rd' ssh ethan@192.168.0.66`（sudo NOPASSWD；Ubuntu 24.04，hostname bpserv，固定 IP netplan + cloud-init 網路接管已停用） |
+| SSH | `sshpass -p 'P@ssw0rd' ssh ethan@192.168.0.66`（sudo NOPASSWD；Ubuntu 24.04，hostname bpserv，固定 IP netplan + cloud-init 網路接管已停用；**系統時鐘是 UTC**，`uptime` 顯示的時間比台北慢 8 小時） |
 | 平台 URL | `http://192.168.0.66:8000/beakplatform`（**80 埠是 nginx default site 回 404，必帶 :8000**；無前綴也 404） |
-| 系統企業 | code `SYSTEM`，SYSTEM_ORG_CODE＝`sys-d22c67632c06`（install.sh 隨機產生，與 dev 的 `system.local` 不同） |
-| 帳號 | `admin@sys-d22c67632c06`（SYSTEM_ADMIN，密碼 `BpservTest2026BpservTest2026`）；`enterprise`（原始 ORG_ADMIN，已停用—轉移設計）；`ethan`（EMPLOYEE，僅持 EMPLOYEE 角色）與 `admin-ethan`（ORG_ADMIN），後兩者密碼 `P@ssw0rdP@ssw0rd` |
-| 登入 | 無 quick-login（dev 機限定），走 `POST /auth/login` JSON（`{"account":"ethan@sys-d22c67632c06","password":"..."}`） |
+| 系統企業 | code `SYSTEM`，SYSTEM_ORG_CODE＝`sys-1271967103b6`（install.sh 隨機產生，**每次重裝都會變**，與 dev 的 `system.local` 不同） |
+| 帳號 | 只有出廠兩個：`admin@sys-1271967103b6`（SYSTEM_ADMIN）與 `enterprise@sys-1271967103b6`（ORG_ADMIN，ADM001，is_original_admin），密碼都是 `BpservTest2026BpservTest2026`，都還是 `must_change_password`（首登會被導去改密碼）。2026-09-02 重裝前的 `ethan` / `admin-ethan` 已不存在 |
+| 登入 | 無 quick-login（dev 機限定），走 `POST /auth/login` JSON（`{"account":"admin@sys-1271967103b6","password":"..."}`，成功回 200 + 改密 redirect，錯密碼 401） |
 | DB | `sudo -u postgres psql -d beakplatform`（beakplatform 帳號密碼同 dev 慣例） |
 | 服務 | `sudo systemctl restart beakplatform`（unit 名無 `-dev`） |
-| 同步 dev 修補 | 不必重裝：tar 打包改動檔 → scp → `sudo tar xzf -C /opt/BeakPlatform` → chown 給服務帳號 → restart（本 session 用法見 git log 20260902 各修補） |
-| 部署狀態 | 2026-09-02 起含 dev 到 `767b1955` 的手動同步；日後正式更新走 `install.sh --update`（需 GitHub PAT，安裝用的那把 7 天後過期） |
+| 更新 | `sudo bash /opt/BeakPlatform/scripts/install.sh --update`（拉 GitHub 過濾鏡像；`.git/config` 的 origin 已帶 PAT，不會再問 token。PAT 是 read-only fine-grained，2026-10 初到期，到期後 `--update` 會要新的） |
+| 部署狀態 | 2026-09-02 以 GitHub `6ea7fde3`（＝dev `3ad7bc23`，PF-211）全新重裝，出廠計數 `17\|17\|55\|0\|6\|25\|5\|62\|13\|2` 與 dev 拋棄式庫走 `init_database.sh` 完全一致；重裝後又跑過一次 `--update`（新的 1/4~4/4 路徑）確認冪等。**不要再用 tar/scp 手動同步 dev 檔案**——那是 PF-211 之前沒有可靠更新路徑時的權宜做法，現在直接 `push github` 後 `--update` |
+
+**`install.sh --update` 是「舊 shell 邏輯 ＋ 新 Python」**（2026-09-02 實測）：
+`git reset --hard` 換掉的是磁碟上的 install.sh，記憶體裡正在跑的仍是舊版
+（bash 持有舊 inode），所以某次更新若改了 install.sh 本身，那些 shell 層變更
+要**下一次** `--update` 才會生效。驗新的 shell 路徑一律跑兩次 `--update`。
 
 ### open_defense / 資安堆疊（備忘已移出，2026-08-30）
 
