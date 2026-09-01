@@ -956,6 +956,16 @@ else
     DISPLAY_URL="http://$SERVER_IP:$NGINX_PORT"
 fi
 
+# 種入系統對外網址（URL-02：未設定時領取頁等處只會顯示「尚未設定」，
+# 安裝當下就知道正確值，直接種入；已設定的不覆蓋，管理員可在
+# /hostconfig/server-settings 調整）
+sudo -u postgres psql -d "$DB_NAME" -q -c "
+INSERT INTO system_settings (secure_code, key, value, value_type, category, created_at, updated_at, is_deleted)
+SELECT substr(md5(random()::text),1,22), 'system_base_url', '$DISPLAY_URL', 'string', 'general',
+       now() AT TIME ZONE 'UTC', now() AT TIME ZONE 'UTC', false
+WHERE NOT EXISTS (SELECT 1 FROM system_settings WHERE key='system_base_url' AND is_deleted=false);
+" 2>/dev/null || log_warn "system_base_url 種入失敗，可事後在 /hostconfig/server-settings 設定"
+
 echo ""
 echo "============================================"
 log_info "全新安裝完成"
