@@ -1455,7 +1455,43 @@ bash scripts/check_schema_drift.sh          # --show-indexes / --show-defaults �
 4. create_all 建不出來的 DB 物件（schema／role／ACL）與出廠資料，
    加進 `scripts/sql/`（現有：`fw_sp_setup.sql`、`seed_workflow_node_definitions.sql`、
    `seed_node_org_grants.sql`、`seed_menu_defaults.sql`、`seed_rbac_defaults.sql`）
-   並讓 `init_database.sh` 與 `install.sh` 的 `apply_db_extras()` 兩邊都執行
+   並登記到 `backend/app/defaults/bootstrap.py` 的 `SQL_EXTRAS`（見下段）。
+   **只有需要 superuser 的物件**（目前僅 `fw_sp_setup.sql`）才留在 shell
+
+### 安裝／升級的 DB 初始化只有一個入口：`scripts/bootstrap_db.py`（2026-09-02 PF-211 起）
+
+`install.sh`（全新安裝與 `--update`）與 `init_database.sh` 都不再各自串 create_all、
+heredoc 建企業、`init_menus.py`、`init_permissions.py`、`flask module sync`、
+`seed_system_org_defaults.py`——那套曾經兩邊各一份、PF-210 就是兩份 heredoc 分歧出來的 bug。
+現在：
+
+| 誰 | 做什麼 |
+|---|---|
+| shell（`install.sh` / `init_database.sh`） | 只做需要 **postgres superuser** 的事：建 DB 使用者與資料庫、`pgcrypto`、`scripts/sql/fw_sp_setup.sql`；然後呼叫 bootstrap |
+| `scripts/bootstrap_db.py --fresh` | create_all → 驗證 fw_sp 已就緒 → 系統企業＋出廠角色＋SYSTEM_ADMIN → 4 支 SQL extras → 平台選單（force）→ 平台權限 → 模組同步（force）→ 系統企業出廠資料 |
+| `scripts/bootstrap_db.py --update` | create_all（只補新表）→ 驗證 fw_sp → 系統企業必須已存在 → SQL extras → 平台選單（非 force，已有就跳過）→ 平台權限（逐 code 補缺）→ 模組同步（非 force）。**刻意不建企業、不種出廠資料**（不回填既有環境） |
+
+唯一實作是 `backend/app/defaults/bootstrap.py::run_bootstrap()`，順序有依賴不可調換
+（受限節點授權需要 `is_system_org` 的企業先存在；平台選單必須在模組同步之前，
+否則模組選單先佔位會讓平台選單被誤判「已存在」而整批跳過；出廠資料的 Key2
+需要模組選單已存在）。`init_menus.py` / `init_permissions.py` /
+`seed_system_org_defaults.py` 仍在，但只是薄殼維運入口，邏輯在
+`backend/app/defaults/platform_menu_defaults.py` / `permission_defaults.py` /
+`system_org_defaults.py`；`flask module sync` 與 bootstrap 共用
+`ModuleSyncService.sync_all()`（權限、選單、lookup、模組預設角色四段，
+漏一段就會像 PF-210 那樣分歧）。
+
+三件猜不到的：
+
+- **bootstrap 以應用帳號執行、不 sudo**（install.sh 裡是 `beakplatform` 服務帳號），
+  SQL extras 走 `psql` 子程序、密碼只經 `PGPASSWORD`。所以 `fw_sp_setup.sql`
+  不能塞進 `SQL_EXTRAS`——它要 CREATE ROLE，app 角色做不到；bootstrap 只在第二步
+  `verify_superuser_objects()` 檢查 schema `fw_sp` 存在且 owner 是 `fw_sp_owner`，
+  沒有就直接退出並印出該用 postgres 執行的指令
+- **任一步失敗即非零退出，`install.sh` 因 `set -e` 立刻中止**。改版前 install.sh 對
+  選單／權限／模組同步／出廠資料全部 `|| log_warn "跳過"`，半套安裝會被回報成成功
+- 管理員密碼只從 `ADMIN_INITIAL_PASSWORD` 環境變數讀（fresh 模式建 `admin` 與
+  `enterprise` 兩個帳號都用它），不接受命令列參數
 
 守恆檢查的警告區（索引 800+ 筆、server default 500+ 筆、fw_sp 的 demo 函式）
 是已知不列入判定的差異；**只有硬判定區（表／欄位／型別／NOT NULL／fw_sp ACL）

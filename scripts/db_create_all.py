@@ -20,11 +20,12 @@ def main():
     if len(sys.argv) > 1:
         print(__doc__)
         return
-    from app import create_app, db
+    from app import create_app
+    from app.defaults.bootstrap import create_tables
     app = create_app()
     with app.app_context():
-        db.create_all()
-        print(f"create_all 完成（metadata 內共 {len(db.metadata.tables)} 張表）")
+        table_count = create_tables()
+        print(f"create_all 完成（metadata 內共 {table_count} 張表）")
 
 
 if __name__ == '__main__':

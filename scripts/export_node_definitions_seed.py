@@ -5,7 +5,7 @@ export_node_definitions_seed.py - 從 dev 庫匯出節點型別定義的安裝 s
 背景（PF-168）：workflow_node_definitions 是 single source of truth（FRONT-03），
 dev 的資料由歷代 migration 種出來；migration 制度廢止後，全新安裝的種子改由
 本工具產出的 scripts/sql/seed_workflow_node_definitions.sql 提供，
-由 scripts/init_database.sh 在建立初始資料後執行。
+由 scripts/bootstrap_db.py（安裝與升級共用）執行。
 
 **新增或修改節點型別定義後必須重跑本工具**，否則全新安裝的設計器
 不會出現新節點（且不報錯）。

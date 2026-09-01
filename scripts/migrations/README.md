@@ -4,10 +4,12 @@
 
 ## 現況
 
-- 全新安裝：`scripts/init_database.sh` 或 `scripts/install.sh` → `db.create_all()`
-  ＋ `scripts/sql/` 的 DB 物件與出廠資料（fw_sp schema、節點型別定義、
-  受限節點授權、出廠預設值）
-- 更新：`install.sh --update` → `create_all`（只補新表）＋ 同一批冪等 seed
+- 全新安裝：`scripts/init_database.sh` 或 `scripts/install.sh` → shell 只做
+  superuser 物件（DB／pgcrypto／`fw_sp_setup.sql`）→ `scripts/bootstrap_db.py --fresh`
+  （`db.create_all()` ＋ `scripts/sql/` 的出廠 seed ＋ 系統企業／選單／權限／模組同步，
+  唯一實作 `backend/app/defaults/bootstrap.py`，PF-211）
+- 更新：`install.sh --update` → 同一批 superuser 物件 → `scripts/bootstrap_db.py --update`
+  （`create_all` 只補新表 ＋ 同一批冪等 seed，不建企業、不種出廠資料）
 - 守恆機制：`scripts/check_schema_drift.sh` 比對「乾淨安裝庫 vs dev 庫」，
   有差就紅——改 model、加表、動 DB 物件之後跑一次
 - `schema_migrations` 表已於 2026-09-01 自 dev 庫刪除（登記早已失真）

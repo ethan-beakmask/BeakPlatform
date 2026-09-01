@@ -4,7 +4,7 @@ BeakPlatform 出廠預設值匯出工具（原廠專用）
 
 從 menu_defaults 和 rbac_defaults 資料表產出安裝用 SQL
 （scripts/sql/seed_menu_defaults.sql / seed_rbac_defaults.sql），
-供 install.sh / init_database.sh 全新安裝時灌入預設值。
+供 scripts/bootstrap_db.py 全新安裝時灌入預設值。
 
 不會覆蓋用戶設定：SQL 使用 IF NOT EXISTS 條件，表有資料時不插入。
 

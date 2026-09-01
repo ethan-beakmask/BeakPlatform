@@ -101,9 +101,7 @@ def _print_menu_tree(items, indent=0):
 def sync_modules(force):
     """同步所有模組（權限、選單）"""
     from .module_loader import module_loader
-    from .services.module_permission_service import ModulePermissionService
-    from .services.module_menu_service import ModuleMenuService
-    from .services.module_role_service import ModuleRoleService
+    from .services.module_sync_service import ModuleSyncService
 
     click.echo("\n=== Syncing Modules ===\n")
 
@@ -111,9 +109,9 @@ def sync_modules(force):
         click.echo(click.style("Force mode: 將覆蓋所有手動修改", fg="yellow"))
         click.echo()
 
-    # 同步權限
     click.echo("Syncing permissions...")
-    perm_results = ModulePermissionService.sync_all_module_permissions(module_loader)
+    results = ModuleSyncService.sync_all(module_loader, force=force)
+    perm_results = results['permissions']
     for mod_name, result in perm_results.items():
         if 'error' in result:
             click.echo(f"  {mod_name}: " + click.style(f"ERROR - {result['error']}", fg="red"))
@@ -125,9 +123,8 @@ def sync_modules(force):
                 f"{result.get('unchanged', 0)} unchanged"
             )
 
-    # 同步選單
     click.echo("\nSyncing menus...")
-    menu_results = ModuleMenuService.sync_all_module_menus(module_loader, force=force)
+    menu_results = results['menus']
     for mod_name, result in menu_results.items():
         if 'error' in result:
             click.echo(f"  {mod_name}: " + click.style(f"ERROR - {result['error']}", fg="red"))
@@ -139,13 +136,16 @@ def sync_modules(force):
                 f"{result.get('unchanged', 0)} unchanged"
             )
 
-    # 補種模組預設角色（對所有持有效合約的企業，冪等）
+    lookup_result = results['lookup']
+    click.echo(
+        "\nLookup: "
+        f"{lookup_result.get('created', 0)} created, "
+        f"{lookup_result.get('updated', 0)} updated, "
+        f"{lookup_result.get('deactivated', 0)} deactivated"
+    )
+
     click.echo("\nSyncing module default roles...")
-    try:
-        role_results = ModuleRoleService.sync_all_module_roles(module_loader)
-    except Exception as e:
-        click.echo("  " + click.style(f"ERROR - {e}", fg="red"))
-        raise
+    role_results = results['roles']
     if not role_results:
         click.echo("  (no modules declare default_roles)")
     for mod_name, result in role_results.items():

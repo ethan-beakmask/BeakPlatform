@@ -1,0 +1,26 @@
+# 安裝／升級的 DB bootstrap（PF-211）
+description: 安裝／升級的 DB bootstrap（PF-211）
+
+files:
+  script:
+    - scripts/install.sh
+    - scripts/init_database.sh
+    - scripts/bootstrap_db.py
+    - scripts/db_create_all.py
+    - scripts/init_menus.py
+    - scripts/init_permissions.py
+    - scripts/seed_system_org_defaults.py
+    - scripts/check_schema_drift.sh
+  service:
+    - backend/app/defaults/bootstrap.py
+    - backend/app/defaults/platform_menu_defaults.py
+    - backend/app/defaults/permission_defaults.py
+    - backend/app/defaults/system_org_defaults.py
+    - backend/app/services/module_sync_service.py
+    - backend/app/cli.py
+  sql:
+    - scripts/sql/fw_sp_setup.sql
+    - scripts/sql/seed_workflow_node_definitions.sql
+    - scripts/sql/seed_node_org_grants.sql
+    - scripts/sql/seed_menu_defaults.sql
+    - scripts/sql/seed_rbac_defaults.sql

@@ -182,30 +182,27 @@ run_as_app() {
     "
 }
 
-# Schema 權威是 ORM model（db.create_all），migration 制度已廢止（PF-168，
-# 歷史封存在 scripts/migrations/legacy/）。create_all 之外的 DB 物件與
-# 出廠資料由 scripts/sql/ 的檔案補齊，全部冪等，安裝與更新共用。
-# 前置：資料庫與系統企業已存在。
-apply_db_extras() {
-    local sys_org
-    sys_org=$(grep -m1 '^SYSTEM_ORG_CODE=' "$INSTALL_DIR/.env" | cut -d'=' -f2-)
-    if [ -z "$sys_org" ]; then
-        log_error ".env 缺少 SYSTEM_ORG_CODE，無法種入出廠資料"
-        return 1
-    fi
+# 需要 postgres superuser 的 DB 物件（PF-211 分工線）：extension 與 fw_sp schema／
+# 擁有權分離。其餘 seed 全部在 scripts/bootstrap_db.py（以應用帳號執行，不需 sudo）。
+# 冪等，安裝與更新共用。
+apply_superuser_db_objects() {
+    sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" 2>/dev/null || true
     sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -v app_user="$DB_USER" \
         -q -f "$INSTALL_DIR/scripts/sql/fw_sp_setup.sql"
-    sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -v system_org="$sys_org" \
-        -q -f "$INSTALL_DIR/scripts/sql/seed_workflow_node_definitions.sql"
-    sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 \
-        -q -f "$INSTALL_DIR/scripts/sql/seed_node_org_grants.sql"
-    local seed
-    for seed in seed_menu_defaults.sql seed_rbac_defaults.sql; do
-        if [ -f "$INSTALL_DIR/scripts/sql/$seed" ]; then
-            sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -q \
-                -f "$INSTALL_DIR/scripts/sql/$seed"
-        fi
-    done
+}
+
+# 單一 DB bootstrap 入口（PF-211）。$1 為 --fresh 或 --update。
+# 管理員密碼只經環境變數傳遞，不進命令列字串（避免引號問題與 ps 洩漏）。
+run_bootstrap() {
+    sudo -u "$SERVICE_USER" env \
+        ADMIN_INITIAL_PASSWORD="${ADMIN_PASS:-}" \
+        HOME="$INSTALL_DIR" \
+        bash -c "
+            set -a; source '$INSTALL_DIR/.env'; set +a
+            export PATH='$INSTALL_DIR/venv/bin':\$PATH
+            cd '$INSTALL_DIR/backend'
+            python3 ../scripts/bootstrap_db.py $1
+        "
 }
 
 # === 參數處理 ===
@@ -384,7 +381,7 @@ if [ "$ACTION" = "update" ]; then
     cd "$INSTALL_DIR"
 
     # [1] 拉取最新程式碼
-    log_step "1/6" "拉取最新程式碼..."
+    log_step "1/4" "拉取最新程式碼..."
 
     # 允許 root 操作非 root 擁有的 repo
     git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true
@@ -421,7 +418,7 @@ if [ "$ACTION" = "update" ]; then
     fix_ownership
 
     # [2] 更新 Python 依賴（以應用帳號執行）
-    log_step "2/6" "更新 Python 依賴..."
+    log_step "2/4" "更新 Python 依賴與 .env..."
     sudo -u "$SERVICE_USER" "$INSTALL_DIR/venv/bin/pip" install --upgrade pip -q
     sudo -u "$SERVICE_USER" "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/backend/requirements.txt" -q
 
@@ -446,22 +443,12 @@ if [ "$ACTION" = "update" ]; then
     #     model 即權威：create_all 只補「新表」，不改既有表的欄位。
     #     欄位級的升級機制目前刻意不存在（尚無任何已公開的既有環境需要升級），
     #     公開後首次需要時另行設計，不要回頭復活 run_migrations。
-    log_step "3/6" "同步資料庫 schema 與出廠資料..."
-    sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" 2>/dev/null || true
-    run_as_app "cd backend && EXECUTOR_STANDALONE=1 SKIP_MODULE_SYNC=1 python3 ../scripts/db_create_all.py"
-    apply_db_extras
+    log_step "3/4" "DB bootstrap（schema、SQL extras、選單、權限、模組同步）..."
+    apply_superuser_db_objects
+    run_bootstrap --update
 
-    # [4] 初始化選單與權限 (冪等)
-    log_step "4/6" "同步選單與權限..."
-    run_as_app "EXECUTOR_STANDALONE=1 python3 scripts/init_menus.py" || log_warn "選單初始化跳過"
-    run_as_app "EXECUTOR_STANDALONE=1 python3 scripts/init_permissions.py" || log_warn "權限初始化跳過"
-
-    # [5] 同步模組
-    log_step "5/6" "同步模組..."
-    run_as_app "cd backend && EXECUTOR_STANDALONE=1 FLASK_ENV=${FLASK_ENV:-production} flask module sync" 2>/dev/null || log_warn "模組同步跳過"
-
-    # [6] 重啟服務
-    log_step "6/6" "重啟服務..."
+    # [4] 重啟服務
+    log_step "4/4" "重啟服務..."
     # 從已安裝的 .env 讀取 Gunicorn port 與 APP_PREFIX，設定 health check URL
     local_app_port=$(grep '^GUNICORN_BIND=' "$INSTALL_DIR/.env" 2>/dev/null | sed 's/.*://' || echo "")
     local_app_prefix=$(grep '^APP_PREFIX=' "$INSTALL_DIR/.env" 2>/dev/null | cut -d'=' -f2- || echo "")
@@ -568,8 +555,6 @@ fi
 sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null
 
-# 啟用必要的 PostgreSQL extensions
-sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" 2>/dev/null
 log_info "PostgreSQL 設定完成 (DB: $DB_NAME)"
 
 
@@ -728,114 +713,8 @@ load_env
 redis-cli FLUSHDB > /dev/null 2>&1 || log_warn "Redis FLUSHDB 失敗，請手動清除"
 rm -rf /tmp/beakplatform_sessions* /tmp/beakplatform_test_sessions* 2>/dev/null || true
 
-# 建立資料表 + 初始資料（以應用帳號執行，避免產生 root 擁有的暫存檔）
-# EXECUTOR_STANDALONE=1 防止 workflow executor 背景線程啟動查詢尚未建立的表
-# SKIP_MODULE_SYNC=1 避免 create_app 在表建立前嘗試同步模組產生大量錯誤訊息
-INIT_SCRIPT=$(mktemp)
-cat > "$INIT_SCRIPT" << 'PYEOF'
-import os, sys, bcrypt, importlib
-from pathlib import Path
-from app import create_app, db
-from app.models import Organization, User, UserType
-from app.constants import SYSTEM_ORG_CODE
-
-admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
-
-app = create_app()
-with app.app_context():
-    # 顯式載入所有模組 models，確保 db.create_all() 能建立模組表
-    # app.root_path = <INSTALL_DIR>/backend/app，往上兩層到專案根目錄
-    modules_dir = Path(app.root_path).parent.parent / 'modules'
-    if modules_dir.exists():
-        for mod_dir in sorted(modules_dir.iterdir()):
-            models_init = mod_dir / 'models' / '__init__.py'
-            if models_init.exists():
-                mod_name = mod_dir.name
-                try:
-                    importlib.import_module(f'modules.{mod_name}.models')
-                    print(f"  載入模組 models: {mod_name}")
-                except Exception as e:
-                    print(f"  警告: 載入 {mod_name} models 失敗: {e}")
-
-    # 建立所有資料表（含平台 + 模組）
-    db.create_all()
-    print("  資料表建立完成")
-
-    # 檢查是否已有初始資料（用 code='SYSTEM' 檢查，不受 SYSTEM_ORG_CODE 變動影響）
-    existing = Organization.query.filter_by(code='SYSTEM').first()
-    if existing:
-        print(f"  初始資料已存在 (secure_code={existing.secure_code})，跳過")
-    else:
-        if not admin_password or len(admin_password) < 8:
-            print("  錯誤: 管理員密碼無效")
-            sys.exit(1)
-
-        # 建立系統企業
-        system_org = Organization(
-            secure_code=SYSTEM_ORG_CODE,
-            code='SYSTEM',
-            name=SYSTEM_ORG_CODE,
-            domain_name=SYSTEM_ORG_CODE,
-            is_active=True,
-            is_system_org=True
-        )
-        db.session.add(system_org)
-        db.session.flush()
-
-        # 建立系統企業的預設角色（鑰匙2 需要這些角色才能建立 MRR）
-        from app.services.organization_service import OrganizationService
-        OrganizationService._create_default_roles(system_org)
-        db.session.flush()
-        print("  預設角色建立完成")
-
-        # 建立管理員
-        password = admin_password.encode('utf-8')
-        salt = bcrypt.gensalt()
-        password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
-
-        admin = User(
-            org_secure_code=SYSTEM_ORG_CODE,
-            username='admin',
-            email=f'admin@{SYSTEM_ORG_CODE}',
-            display_name='System Admin',
-            password_hash=password_hash,
-            user_type=UserType.SYSTEM_ADMIN,
-            is_active=True,
-            must_change_password=True
-        )
-        db.session.add(admin)
-        db.session.commit()
-        print("  初始資料建立完成")
-PYEOF
-chmod 644 "$INIT_SCRIPT"
-sudo -u "$SERVICE_USER" env \
-    ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" \
-    SKIP_MODULE_SYNC=1 \
-    EXECUTOR_STANDALONE=1 \
-    PYTHONPATH="$INSTALL_DIR/backend" \
-    HOME="$INSTALL_DIR" \
-    bash -c "
-        set -a; source '$INSTALL_DIR/.env'; set +a
-        cd '$INSTALL_DIR/backend'
-        '$INSTALL_DIR/venv/bin/python3' '$INIT_SCRIPT'
-    "
-rm -f "$INIT_SCRIPT"
-
-# create_all 之外的 DB 物件（fw_sp schema／擁有權分離）與出廠資料
-#（節點型別定義、受限節點授權、出廠預設值）
-apply_db_extras
-
-# 初始化選單
-run_as_app "EXECUTOR_STANDALONE=1 python3 scripts/init_menus.py --force" || log_warn "選單初始化跳過"
-
-# 初始化權限
-run_as_app "EXECUTOR_STANDALONE=1 python3 scripts/init_permissions.py" || log_warn "權限初始化跳過"
-
-# 同步模組
-run_as_app "cd backend && EXECUTOR_STANDALONE=1 FLASK_ENV=production flask module sync" 2>/dev/null || log_warn "模組同步跳過"
-
-# 種入系統企業出廠資料（角色權限、ORG_ADMIN 帳號、編號規則、Key2 等，冪等）
-run_as_app "cd backend && EXECUTOR_STANDALONE=1 SKIP_MODULE_SYNC=1 ADMIN_INITIAL_PASSWORD='$ADMIN_PASS' python3 ../scripts/seed_system_org_defaults.py" || log_warn "系統企業出廠資料種入失敗，可事後手動執行 scripts/seed_system_org_defaults.py"
+apply_superuser_db_objects
+run_bootstrap --fresh
 
 log_info "資料庫初始化完成"
 

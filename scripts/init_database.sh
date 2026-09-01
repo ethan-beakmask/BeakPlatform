@@ -10,12 +10,10 @@
 #
 # Schema 權威是 ORM model（db.create_all），不跑任何 migration（PF-168 起
 # migration 制度廢止，歷史封存在 scripts/migrations/legacy/）。
-# create_all 之外的 DB 物件與出廠資料由 scripts/sql/ 的檔案補齊：
-#   fw_sp_setup.sql                     SqlExecutor 白名單 schema 與擁有權分離
-#   seed_workflow_node_definitions.sql  節點型別定義（export_node_definitions_seed.py 產生）
-#   seed_node_org_grants.sql            受限節點出廠授權（只給系統企業）
-#   seed_menu_defaults.sql              選單出廠預設值（選配，原廠匯出才有）
-#   seed_rbac_defaults.sql              RBAC 出廠預設值（選配，原廠匯出才有）
+# Shell 只負責需要 postgres superuser 的物件：pgcrypto extension 與
+# fw_sp_setup.sql（SqlExecutor 白名單 schema 與擁有權分離）。其餘流程集中在
+# scripts/bootstrap_db.py：create_all、系統企業、節點 seed、選單、權限、
+# 模組同步、系統企業出廠資料。
 #
 # 注意：此腳本會刪除現有資料庫！執行前務必確認第一行印出的庫名。
 
@@ -56,6 +54,9 @@ sudo -u postgres psql -c "DROP DATABASE IF EXISTS $DB_NAME;"
 echo "3. 建立新資料庫..."
 sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
 
+echo "3.1 啟用 pgcrypto extension..."
+sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+
 echo "4. 授權..."
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
 
@@ -84,109 +85,18 @@ else
     done
 fi
 
-echo "7. 建立資料表 (db.create_all)..."
-cd "$REPO_ROOT/backend"
-source "$REPO_ROOT/venv/bin/activate"
-set -a && source "$REPO_ROOT/.env" && set +a
-
-# DATABASE_URL 一律跟隨 DB_NAME——沒有這行，DB_NAME 被覆寫時
-# create_all 會打進 .env 指向的那個庫（通常是 dev 庫），靜默毀掉它
-export DATABASE_URL="postgresql://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME"
-
-# SKIP_MODULE_SYNC 只跳過選單/權限同步；模組 models 仍會載入，
-# 模組表由 create_all 一併建立（module_loader 的 models 載入步驟，PF-168）
-SKIP_MODULE_SYNC=1 python3 << 'EOF'
-from app import create_app, db
-app = create_app()
-with app.app_context():
-    db.create_all()
-    print("   資料表建立完成")
-EOF
-
-echo "8. 建立初始資料..."
-SKIP_MODULE_SYNC=1 ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 << 'EOF'
-import os, sys, bcrypt
-from app import create_app, db
-from app.models import Organization, User, UserType
-from app.constants import SYSTEM_ORG_CODE
-
-admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
-if not admin_password or len(admin_password) < 8:
-    print("   錯誤: 管理員密碼無效")
-    sys.exit(1)
-
-app = create_app()
-with app.app_context():
-    system_org = Organization(
-        secure_code=SYSTEM_ORG_CODE,
-        code='SYSTEM',
-        name=SYSTEM_ORG_CODE,
-        domain_name=SYSTEM_ORG_CODE,
-        is_active=True,
-        is_system_org=True
-    )
-    db.session.add(system_org)
-    db.session.flush()
-
-    from app.services.organization_service import OrganizationService
-    OrganizationService._create_default_roles(system_org)
-    db.session.flush()
-    print("   預設角色建立完成")
-
-    password = admin_password.encode('utf-8')
-    salt = bcrypt.gensalt()
-    password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
-
-    admin = User(
-        org_secure_code=SYSTEM_ORG_CODE,
-        username='admin',
-        email=f'admin@{SYSTEM_ORG_CODE}',
-        display_name='系統管理員',
-        password_hash=password_hash,
-        user_type=UserType.SYSTEM_ADMIN,
-        is_active=True,
-        must_change_password=True
-    )
-    db.session.add(admin)
-    db.session.commit()
-
-    print("   初始資料建立完成")
-    print(f"   - 企業: {SYSTEM_ORG_CODE}")
-    print(f"   - 管理員: admin@{SYSTEM_ORG_CODE} (首次登入須改密碼)")
-EOF
-
-echo "9. 建立 fw_sp schema 與擁有權分離..."
+echo "7. superuser 物件：fw_sp schema 與擁有權分離..."
 sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -v app_user="$DB_USER" \
     -q -f "$REPO_ROOT/scripts/sql/fw_sp_setup.sql"
 
-echo "10. 種入節點型別定義與受限節點出廠授權..."
-sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -v system_org="$SYSTEM_ORG_CODE" \
-    -q -f "$REPO_ROOT/scripts/sql/seed_workflow_node_definitions.sql"
-sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 \
-    -q -f "$REPO_ROOT/scripts/sql/seed_node_org_grants.sql"
-
-echo "11. 出廠預設值（存在才執行）..."
-for seed in seed_menu_defaults.sql seed_rbac_defaults.sql; do
-    if [ -f "$REPO_ROOT/scripts/sql/$seed" ]; then
-        sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -q \
-            -f "$REPO_ROOT/scripts/sql/$seed"
-        echo "   已執行 $seed"
-    fi
-done
-
-echo "12. 初始化平台選單..."
-python3 "$REPO_ROOT/scripts/init_menus.py" --force
-
-echo "13. 初始化權限..."
-python3 "$REPO_ROOT/scripts/init_permissions.py"
-
-echo "14. 同步模組選單與權限..."
-(cd "$REPO_ROOT/backend" && flask module sync --force) || echo "   警告: 模組同步失敗，首次啟動服務時會自動再同步"
-
-echo "15. 種入系統企業出廠資料..."
-(cd "$REPO_ROOT/backend" && SKIP_MODULE_SYNC=1 EXECUTOR_STANDALONE=1 \
-    ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" \
-    python3 "$REPO_ROOT/scripts/seed_system_org_defaults.py")
+echo "8. bootstrap（建表、系統企業、出廠 seed、選單、權限、模組同步）..."
+cd "$REPO_ROOT/backend"
+source "$REPO_ROOT/venv/bin/activate"
+set -a && source "$REPO_ROOT/.env" && set +a
+# DATABASE_URL 一律跟隨 DB_NAME——沒有這行，DB_NAME 被覆寫時
+# bootstrap 會打進 .env 指向的那個庫（通常是 dev 庫），靜默毀掉它
+export DATABASE_URL="postgresql://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME"
+ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 "$REPO_ROOT/scripts/bootstrap_db.py" --fresh
 
 echo ""
 echo "=== 初始化完成 ==="
