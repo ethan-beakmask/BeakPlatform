@@ -19,7 +19,7 @@
 #   BEAK_PORT              BeakPlatform 存取 port (預設: 8000，被佔用時自動找空 port)
 #   ADMIN_INITIAL_PASSWORD 管理員初始密碼 (不設定則互動式輸入)
 #   GITHUB_TOKEN           GitHub Personal Access Token (不設定則互動式輸入)
-#   GITHUB_REPO            GitHub clone URL (預設: https://github.com/beakplatform/BeakPlatform.git)
+#   GITHUB_REPO            GitHub clone URL (預設: https://github.com/ethan-beakmask/BeakPlatform.git)
 # =============================================================================
 set -e
 
@@ -29,7 +29,7 @@ DB_NAME="${DB_NAME:-beakplatform}"
 DB_USER="${DB_USER:-beakplatform}"
 DB_PASS="${DB_PASS:-postgres123}"
 BEAK_PORT="${BEAK_PORT:-8000}"
-GITHUB_REPO="${GITHUB_REPO:-https://github.com/beakplatform/BeakPlatform.git}"
+GITHUB_REPO="${GITHUB_REPO:-https://github.com/ethan-beakmask/BeakPlatform.git}"
 SERVICE_NAME="beakplatform"
 SERVICE_USER="beakplatform"
 HEALTH_TIMEOUT=60
@@ -401,7 +401,7 @@ if [ "$ACTION" = "update" ]; then
                 exit 1
             fi
         fi
-        git remote set-url origin "https://${GITHUB_TOKEN}@github.com/beakplatform/BeakPlatform.git"
+        git remote set-url origin "https://${GITHUB_TOKEN}@${GITHUB_REPO#https://}"
     fi
 
     git fetch origin main
@@ -581,7 +581,7 @@ if [ -z "${GITHUB_TOKEN:-}" ]; then
     echo ""
     echo "  BeakPlatform 使用私有 GitHub 儲存庫，需要 Personal Access Token (PAT) 才能下載。"
     echo "  產生方式: GitHub → Settings → Developer settings → Personal access tokens"
-    echo "  權限需求: repo (Full control of private repositories)"
+    echo "  權限需求: Fine-grained token，僅授本 repo 的 Contents: Read-only"
     echo ""
     read -s -p "請輸入 GitHub Personal Access Token: " GITHUB_TOKEN
     echo ""
@@ -592,7 +592,7 @@ if [ -z "${GITHUB_TOKEN:-}" ]; then
 fi
 
 # 組成帶 token 的 clone URL
-GITHUB_CLONE_URL="https://${GITHUB_TOKEN}@github.com/beakplatform/BeakPlatform.git"
+GITHUB_CLONE_URL="https://${GITHUB_TOKEN}@${GITHUB_REPO#https://}"
 
 # 允許 root 操作非 root 擁有的 repo（覆蓋安裝時目錄已 chown 給 service user）
 git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true
