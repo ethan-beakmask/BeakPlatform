@@ -1607,10 +1607,9 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   # ORG_ADMIN（LION）                   的 user_id 是 1W0Fkn7IK1RW1qwE8HkYQu
   # EMPLOYEE ethanyu@beluga.com（持 FLOW_DESIGNER + SECURITY_STAFF，測 Key2 場景用）
   #          的 user_id 是 FhsmtyPjsnXYotN-iz_Q-X
-  #          注意：它持 FLOW_DESIGNER 會合法通過 form_workflow 的模組 ACL，
-  #          驗「純員工該被 ACL 擋下」的場景不能拿它當樣本（2026-09-02 踩過，
-  #          得到假通過）。dev 的 BELUGA 沒有現成純員工，要嘛臨時建、
-  #          要嘛用 bpserv 的 ethan（見下方 bpserv 段）
+  # 挑測試帳號的通則：對照「該帳號實際持有的角色」與場景所需權限來選，
+  # 不要憑 user_type 或帳號名假設——角色會合法改變授權結果，
+  # 選錯樣本會得到假通過（2026-09-02 驗 ACL 場景踩過）
   ```
   **LION 的管理員不要自己用 SQL 撈**：`SELECT ... WHERE user_type='ORG_ADMIN'`
   在該企業會撈到不能登入的那一筆，quick-login 回 401（2026-08-31 踩過）。
@@ -1637,7 +1636,7 @@ Ethan 提供的 Proxmox VM，用途是驗證「讀者照裝」路徑與 fresh �
 | SSH | `sshpass -p 'P@ssw0rd' ssh ethan@192.168.0.66`（sudo NOPASSWD；Ubuntu 24.04，hostname bpserv，固定 IP netplan + cloud-init 網路接管已停用） |
 | 平台 URL | `http://192.168.0.66:8000/beakplatform`（**80 埠是 nginx default site 回 404，必帶 :8000**；無前綴也 404） |
 | 系統企業 | code `SYSTEM`，SYSTEM_ORG_CODE＝`sys-d22c67632c06`（install.sh 隨機產生，與 dev 的 `system.local` 不同） |
-| 帳號 | `admin@sys-d22c67632c06`（SYSTEM_ADMIN，密碼 `BpservTest2026BpservTest2026`）；`enterprise`（原始 ORG_ADMIN，已停用—轉移設計）；`ethan`（**純員工，驗 ACL 擋下場景用這個**）與 `admin-ethan`（ORG_ADMIN），後兩者密碼 `P@ssw0rdP@ssw0rd` |
+| 帳號 | `admin@sys-d22c67632c06`（SYSTEM_ADMIN，密碼 `BpservTest2026BpservTest2026`）；`enterprise`（原始 ORG_ADMIN，已停用—轉移設計）；`ethan`（EMPLOYEE，僅持 EMPLOYEE 角色）與 `admin-ethan`（ORG_ADMIN），後兩者密碼 `P@ssw0rdP@ssw0rd` |
 | 登入 | 無 quick-login（dev 機限定），走 `POST /auth/login` JSON（`{"account":"ethan@sys-d22c67632c06","password":"..."}`） |
 | DB | `sudo -u postgres psql -d beakplatform`（beakplatform 帳號密碼同 dev 慣例） |
 | 服務 | `sudo systemctl restart beakplatform`（unit 名無 `-dev`） |
