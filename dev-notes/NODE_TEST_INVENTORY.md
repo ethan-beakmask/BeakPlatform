@@ -46,7 +46,7 @@
 | NT-11 | `SubFlow` | 子流程 | 控制 | 端到端 | `20260830-end-cancel-mode.log`；**修復後才首次成功**，見 §缺陷 |
 | NT-12 | `Switch` | 條件分支 | 控制 | 已刪除 | 2026-08-30 刪除，行為與 ParallelFork 一字不差 |
 | NT-13 | `AiAgent` | AI 分析 | 整合 | 端到端 | 2026-08-20 經 executor 實跑（發現 `AI_NODE_CLI_PATH` 問題）；單元測試 `test_ai_agent_node.py` |
-| NT-14 | `SysEmailRelay` | 系統 Email 轉發 | 系統 | 端到端 | 2026-08-31 PF-188 四層授權面實測（`20260831-pf188.log`）；2026-09-01 PF-193 實際寄信成功（`20260901-pf193-e2e.log`）：收件 `beakmask2026@gmail.com`、主旨 `[BeakPlatform 測試] PF-193 端對端驗證 PROC-20260901-0001`、spool 03:05 被取走且 SMTP 已連 Google（無 `.bad` 殘留） |
+| NT-14 | `SysEmailRelay` | 系統 Email 轉發 | 系統 | 端到端 | 2026-08-31 PF-188 四層授權面實測（`20260831-pf188.log`）；2026-09-01 PF-193 實際寄信成功（`20260901-pf193-e2e.log`）：收件私人測試信箱（值見 `scripts/.secrets-scan-extra` 末行或 BBN #5353，不進版控）、主旨 `[BeakPlatform 測試] PF-193 端對端驗證 PROC-20260901-0001`。**Ethan 已確認收到（進了 Gmail 垃圾信匣）**——日後重跑要去垃圾信匣找，收不到不等於沒寄達 |
 | NT-15 | `SqlExecutor` | SQL 執行 | 整合 | 端到端 | `20260830-end-cancel-mode.log`；單元測試 `test_sqlexecutor_node.py`（47 項） |
 | NT-16 | `SubSystemProvision` | 子系統配置 | 整合 | 未驗證 | — |
 | NT-17 | `Abandon` | 中止 | 系統 | 未驗證 | 與 NT-11 共用父流程喚醒邏輯，**同一個 `created_by` bug 的鄰居，要一併檢查** |
@@ -572,7 +572,9 @@ SELECT node_type, node_id, started_at FROM fw_node_execution_queue WHERE status=
 
 ### 端對端已於 2026-09-01（PF-193）驗過，重跑時直接沿用這些事實
 
-- 測試收件信箱（Ethan 指定）：`beakmask2026@gmail.com`
+- 測試收件信箱（Ethan 指定的私人信箱，**明文不進版控**——值在 `scripts/.secrets-scan-extra` 末行（gitignored）或 BBN #5353）。**信會進 Gmail 垃圾信匣**
+  （2026-09-01 Ethan 確認）——寄件來源無 SPF/DKIM 對齊是預期現象，
+  驗收時去垃圾信匣找，別誤判成沒寄達
 - **送件會被「您沒有填寫此表單的權限」擋下**：填寫權限走 `FwMappingPermission`
   （`fill_permission_service.py`），無記錄時預設要有 `EMPLOYEE` 角色，系統企業
   ORG_ADMIN 沒有。已補一筆 user 型授權（`created_by_name='PF193-TEST'`，
