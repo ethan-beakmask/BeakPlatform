@@ -1498,6 +1498,7 @@ DB 卻登記著檔案系統早已不存在的檔名。修它是 PF-168 的一部
 | 節點執行紀錄指向的流程 | `fw_node_execution_logs.workflow_instance_secure_code` | **`workflow_instance_id`（bigint，指向 `fw_workflow_instances.id`）**；同專案的 `fw_node_execution_queue` 卻是 `workflow_instance_secure_code`，兩張表不一致 |
 | 表單同步佇列的目標表 | `fw_sync_queue.table_name` | **沒有這個欄位**；表名在 `fw_sql_form_registries.table_name`，queue 只存 `form_instance_secure_code` + `published_secure_code` |
 | 選單 Key1 是否可見 | `menu_permissions.is_visible` | **沒有這個欄位**；有記錄＝該 user_type 可見，只有 `menu_secure_code` + `user_type` + `conditions` |
+| 節點執行 log 的欄位 | `fw_node_execution_logs.level` / `.message` / `.data` | **`log_level` / `log_message` / `log_data`**（2026-09-01 撞過）；Telegram 送達憑證在 `log_data` 的 `message_id` |
 | 角色指派是否生效 | `user_role_assignments.is_active` | **沒有這個欄位**；用 `is_deleted` ＋ `valid_from` / `valid_until`（date） |
 | 模組 ACL 的表 | `module_access_controls`（複數） | **`module_access_control`**（單數）；`target_type` 是 `ROLE` / `ACCOUNT`，值放 `target_secure_code` |
 | 表單模板的欄位定義 | `fw_form_templates.form_schema` | **`schema`**（jsonb）；另有 `builder_config` / `allowed_editors` |
