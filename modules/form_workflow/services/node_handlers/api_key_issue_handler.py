@@ -176,9 +176,17 @@ class ApiKeyIssueHandler(BaseNodeHandler):
         """
         if not value:
             return None
-        try:
-            day = datetime.strptime(value, '%Y-%m-%d')
-        except ValueError:
+        # flatpickr 缺失時（PF-207）datetime 元件退化成純文字輸入，
+        # 使用者手打的常見變體（斜線、含時間的 ISO 字串）也要能解讀。
+        date_part = value.split('T')[0].strip()
+        day = None
+        for fmt in ('%Y-%m-%d', '%Y/%m/%d'):
+            try:
+                day = datetime.strptime(date_part, fmt)
+                break
+            except ValueError:
+                continue
+        if day is None:
             return None
 
         try:
