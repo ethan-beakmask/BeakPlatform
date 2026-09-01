@@ -1532,6 +1532,7 @@ blueprint 的 `url_prefix` 與模組名不一致，照模組名猜必 404：
 | 流程設計器**底圖**清單 | `/api/form-workflow/backgrounds` | **`/api/workflows/backgrounds`**（上傳是同一前綴的 `/upload`；`backgrounds.py` 的 blueprint prefix 就是 `/api/workflows/backgrounds`） |
 | 企業 logo 的資訊與上傳 | `/api/enterprise-settings/logo` | **`/api/admin/settings/logo`**（`enterprise_settings.py` 的 blueprint prefix 是 `/api/admin/settings`，與檔名不一致） |
 | 本人領取自己的 API Key | `/security/api-keys`（那是管理員面） | **`/personal-settings`** 最下方「我的 API Key」區塊；API 是 `/api/my-api-keys`（清單／`<key_sc>/claim`／`<key_sc>/regenerate`），授權條件是**本人**（`applicant_user_secure_code` ＋ `org_secure_code` 雙條件）而不是 permission code |
+| 帳密登入端點（對非 dev 庫驗登入時，如 fresh install 驗收） | `/login`（回 401） | **`/auth/login`**——GET 登入頁；POST JSON 版 body 是 `account` + `password`（`account` 格式 `username@domain`，例 `admin@system.local`），`@csrf.exempt`。成功回 200，`must_change_password` 帳號會回改密碼 redirect（2026-09-01 PF-168 驗收實測）。dev 庫日常自動化仍一律走 quick-login |
 
 ### 外部系統用 API Key 發動表單流程：`/api/trigger/form`（2026-08-13 起）
 
