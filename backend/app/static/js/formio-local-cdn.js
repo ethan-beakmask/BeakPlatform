@@ -5,9 +5,11 @@
  * datetime 元件（flatpickr）等 lazy-load 資源必須從本地 vendor 供應，
  * 否則元件靜默退化成純文字輸入（PF-207 / PF-160 實害）。
  *
- * 鏡像佈局須符合 Formio.cdn 的 `${base}/<lib>/<version>/...` 規則：
- *   static/vendor/flatpickr-formio/4.6.13-formio.3/flatpickr.min.{js,css}
- *   static/vendor/flatpickr-formio/4.6.13-formio.3/l10n/flatpickr-<locale>.js
+ * 鏡像佈局：CDN 類別的 buildUrl() 只在官方 cdn.form.io 網址才附版本段，
+ * 自訂 baseUrl 一律是 `${base}/<lib>/...`（**不帶版本目錄**，與 vendor/ace 同慣例）：
+ *   static/vendor/flatpickr-formio/flatpickr.min.{js,css}
+ *   static/vendor/flatpickr-formio/l10n/flatpickr-<locale>.js
+ * 版本記在 vendor/flatpickr-formio/VERSION（VENDOR-01）。
  *
  * 引入位置：所有載入 formio.full.min.js 的模板，緊接其後。
  * prefix 從本檔自身 src 推導（nginx 的 /beakplatform 前綴，FRONT-10），
