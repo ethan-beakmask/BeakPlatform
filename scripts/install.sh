@@ -834,6 +834,9 @@ run_as_app "EXECUTOR_STANDALONE=1 python3 scripts/init_permissions.py" || log_wa
 # 同步模組
 run_as_app "cd backend && EXECUTOR_STANDALONE=1 FLASK_ENV=production flask module sync" 2>/dev/null || log_warn "模組同步跳過"
 
+# 種入系統企業出廠資料（角色權限、ORG_ADMIN 帳號、編號規則、Key2 等，冪等）
+run_as_app "cd backend && EXECUTOR_STANDALONE=1 SKIP_MODULE_SYNC=1 ADMIN_INITIAL_PASSWORD='$ADMIN_PASS' python3 ../scripts/seed_system_org_defaults.py" || log_warn "系統企業出廠資料種入失敗，可事後手動執行 scripts/seed_system_org_defaults.py"
+
 log_info "資料庫初始化完成"
 
 

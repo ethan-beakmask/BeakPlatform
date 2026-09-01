@@ -128,6 +128,11 @@ with app.app_context():
     db.session.add(system_org)
     db.session.flush()
 
+    from app.services.organization_service import OrganizationService
+    OrganizationService._create_default_roles(system_org)
+    db.session.flush()
+    print("   預設角色建立完成")
+
     password = admin_password.encode('utf-8')
     salt = bcrypt.gensalt()
     password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
@@ -172,8 +177,16 @@ done
 echo "12. 初始化平台選單..."
 python3 "$REPO_ROOT/scripts/init_menus.py" --force
 
-echo "13. 同步模組選單與權限..."
+echo "13. 初始化權限..."
+python3 "$REPO_ROOT/scripts/init_permissions.py"
+
+echo "14. 同步模組選單與權限..."
 (cd "$REPO_ROOT/backend" && flask module sync --force) || echo "   警告: 模組同步失敗，首次啟動服務時會自動再同步"
+
+echo "15. 種入系統企業出廠資料..."
+(cd "$REPO_ROOT/backend" && SKIP_MODULE_SYNC=1 EXECUTOR_STANDALONE=1 \
+    ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" \
+    python3 "$REPO_ROOT/scripts/seed_system_org_defaults.py")
 
 echo ""
 echo "=== 初始化完成 ==="
@@ -184,6 +197,7 @@ echo ""
 echo "管理員帳號："
 echo "  帳號: admin@$SYSTEM_ORG_CODE"
 echo "  密碼: (安裝時設定的密碼，首次登入須變更)"
+echo "  企業管理員: enterprise@$SYSTEM_ORG_CODE (同一組初始密碼，首次登入須變更)"
 echo ""
 echo "啟動服務："
 echo "  cd $REPO_ROOT/backend"
