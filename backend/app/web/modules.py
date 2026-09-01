@@ -7,7 +7,7 @@ NOTE: /modules/ 頁面內容與 /admin/module-permissions 同步顯示模組權�
       以及 templates/pages/admin/module_permissions.html
 """
 import json
-from datetime import date, datetime
+from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import current_user
 from flask_babel import gettext as _
@@ -16,6 +16,8 @@ from ..security.decorators import system_admin_required
 from ..services.module_builder_service import ModuleBuilderService
 from ..services.lookup_service import LookupService
 from ..models.module import Module
+from ..models.organization import Organization
+from ..utils.timezone import local_today
 from .. import db
 
 modules_web_bp = Blueprint('modules', __name__)
@@ -33,7 +35,8 @@ def list_modules():
     from ..models.contract import Contract, ContractStatus
 
     org_sc = current_user.org_secure_code
-    today = date.today()
+    org = Organization.query.filter_by(secure_code=org_sc).first()
+    today = org.local_today() if org else local_today('Asia/Taipei')
 
     # 查詢企業的有效合約
     contracts = Contract.query.filter(

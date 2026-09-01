@@ -6,7 +6,8 @@ BeakMask Organization Management Web Routes
 整合企業列表、合約管理、集團管理
 """
 import json
-from datetime import datetime, date
+from collections import Counter
+from datetime import datetime, date, timedelta
 from flask import Blueprint, render_template, abort, jsonify, request, flash, redirect, url_for
 from flask_babel import gettext as _
 from flask_login import current_user
@@ -99,22 +100,21 @@ def list_orgs():
     # 建立集團名稱映射
     conglomerate_map = {c.secure_code: c for c in conglomerates}
 
-    # 計算每個企業的合約數量
-    from sqlalchemy import func
-    today = date.today()
-
     # 有效合約數量（狀態為 ACTIVE 且在有效期間內）
-    active_contract_counts = db.session.query(
-        Contract.org_secure_code,
-        func.count(Contract.id).label('count')
-    ).filter(
+    utc_today = datetime.utcnow().date()
+    window_lo = utc_today - timedelta(days=1)
+    window_hi = utc_today + timedelta(days=1)
+    active_contract_rows = Contract.query.filter(
         Contract.is_deleted == False,
         Contract.status == 'ACTIVE',
-        Contract.start_date <= today,
-        Contract.end_date >= today
-    ).group_by(Contract.org_secure_code).all()
+        Contract.start_date <= window_hi,
+        Contract.end_date >= window_lo
+    ).all()
+    active_contract_counts = Counter(
+        c.org_secure_code for c in active_contract_rows if c.is_active
+    )
 
-    org_active_counts = {row[0]: row[1] for row in active_contract_counts}
+    org_active_counts = dict(active_contract_counts)
 
     # 總合約數量（所有未刪除的合約）
     total_contract_counts = db.session.query(
@@ -342,7 +342,7 @@ def edit_org(secure_code: str):
                 flash(_('更新失敗: %(error)s', error=str(e)), 'error')
 
     # 查詢未到期的有效合約（狀態 ACTIVE 且結束日期 >= 今天）
-    today = date.today()
+    today = org.local_today()
     active_contracts = Contract.query.filter(
         Contract.org_secure_code == org.secure_code,
         Contract.is_deleted == False,

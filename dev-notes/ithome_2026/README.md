@@ -170,3 +170,33 @@ error 在完整跑時才出現、單獨跑就消失，下個 session 看到會�
   `dev-notes/Ai_node_security_requirements.md`，鐵人賽期間當**教材**用，不要求全實作）
 - **PF-133** 資料維護的孤兒清理表缺三大塊（fw 實例子表、全部 `dc_*`、全部 `od_*`）
 - **PF-124** 平台 API 未走 ResourceGateway 的既有技術債基準
+
+## 2026-09-02 全新環境走查（PF-125 的 C 項，bpserv 192.168.0.66）
+
+照讀者路徑從零跑完一次，**封鎖與不封鎖兩條人工簽核路徑都在全新安裝的環境通過**：
+
+```
+SYSTEM_ADMIN 改密 → 建企業 DemoSOC → 合約（form_workflow + open_defense）
+→ 原始管理員改密 → 初始設定（soc1 / admin-soc1 兩帳號制）→ 指派 SECURITY_STAFF
+→ provision_od_intake_for_org.py → provision_od_workflow_variants.py --with-routing
+→ 啟用「>=3 走 SOC 團隊版」路由 → 從 .16 用 od_intake_send_event.py 送兩筆事件
+→ soc1 在處置中心按「封鎖攻擊來源」／「放行（可接受風險）」
+→ od_defense_decisions 各一筆（block / allow）→ od_render_edl.py → blocklist.txt 只含 203.0.113.42
+→ HTTP /edl/<org>/blocklist.txt 從白名單主機 200
+```
+
+留證：`/opt/tmp/verify/20260902-pf125-bpserv-soc.log`。環境事實已寫進 CLAUDE.md 的 bpserv 表。
+
+走查抓到的讀者級問題與處置：
+
+| 問題 | 處置 |
+|---|---|
+| 合約效期用 `date.today()`（伺服器 UTC 日期）判定，台北凌晨建「起日＝今天」的合約被判尚未生效，EMPLOYEE 開處置中心 403 | 改為依企業時區 `Organization.local_today()`（本次 commit，含測試） |
+| install.sh 不裝 executor unit；流程引擎其實跑在 gunicorn master 的內建 thread（`preload_app=True` 下只會有一個）| 行為正確，寫進手冊 09 章除錯表；文章第 2 篇要提「重啟服務＝重啟引擎」 |
+| install.sh 不裝 EDL cron、`.env` 沒有 `OD_EDL_*` | 依 `docs/install/edl.md` 手動加，文章第 3 篇要帶到 |
+| 處置中心／決策列表／企業管理員三頁手冊是「內容撰寫中」 | 處置中心已補寫（`docs/manual/05_security_ops/security_cases.md`）；另兩頁待補 |
+| `od_workflow_graphs.py` 的 DecisionWriter 只寫 `nftables`，與 dev DB 的 `["nftables","edl"]` 不同步 | 腳本已同步（observe 刻意維持 nftables-only） |
+| 企業登入頁是「帳號＋驗證碼 1/2/3」（部分密碼），自動化只能走 `POST /auth/login` JSON | 文章示範登入畫面時要說明這個機制（見 `docs/manual/01_getting_started/login.md`） |
+| 企業密碼政策要特殊符號，但平台級改密只驗長度 | 屬設計，文章第 5 篇提一句即可 |
+
+第 1 篇仍缺「預設企業與預設表單流程」的出廠資料包（見上方「賽前已完成的驗證」段），本次未動。

@@ -100,23 +100,30 @@ class Contract(TenantBaseModel):
 
         return f'{prefix}{(count + 1):04d}'
 
+    def _org_today(self) -> date:
+        if self.organization:
+            return self.organization.local_today()
+
+        from app.utils.timezone import local_today
+        return local_today('Asia/Taipei')
+
     @property
     def is_active(self) -> bool:
         """合約是否有效（狀態為 ACTIVE 且在期限內）"""
         if self.status != ContractStatus.ACTIVE:
             return False
-        today = date.today()
+        today = self._org_today()
         return self.start_date <= today <= self.end_date
 
     @property
     def is_expired(self) -> bool:
         """合約是否已過期"""
-        return date.today() > self.end_date
+        return self._org_today() > self.end_date
 
     @property
     def is_not_started(self) -> bool:
         """合約是否尚未開始"""
-        return date.today() < self.start_date
+        return self._org_today() < self.start_date
 
     @property
     def days_remaining(self) -> Optional[int]:
@@ -129,7 +136,7 @@ class Contract(TenantBaseModel):
         """
         if self.status == ContractStatus.DISABLED:
             return None
-        today = date.today()
+        today = self._org_today()
         return (self.end_date - today).days
 
     def to_dict(self, include_org: bool = False) -> Dict[str, Any]:

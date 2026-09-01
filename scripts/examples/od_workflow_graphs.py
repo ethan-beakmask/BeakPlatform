@@ -311,7 +311,7 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
                 'severity': 'high',
                 'ttl_seconds': SOC_BLOCK_TTL_SECONDS,
                 'decided_via': 'human',
-                'enforcement_points': ['nftables'],
+                'enforcement_points': ['nftables', 'edl'],
                 'reason_template':
                     'SOC 處置 ${wi.exec_code}：${f.finding_title}（rule ${f.finding_rule_id}）',
             },
@@ -326,7 +326,7 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
                 'target_value': '${f.actor_ip}',
                 'severity': 'info',
                 'decided_via': 'human',
-                'enforcement_points': ['nftables'],
+                'enforcement_points': ['nftables', 'edl'],
                 'reason_template':
                     'SOC 判定可接受風險 ${wi.exec_code}：${f.finding_title}',
             },
@@ -339,7 +339,7 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
                 'broadcast_code': 'SOC-BLOCK-DONE',
                 'title': '資安處置：已封鎖 ${f.actor_ip}',
                 'message': '案件 ${wi.exec_code}（${f.finding_title}）已寫入封鎖決策，'
-                           '目標 ${f.actor_ip}，TTL 1 小時，執行點 nftables。',
+                           '目標 ${f.actor_ip}，TTL 1 小時，執行點 nftables 與 EDL。',
                 'require_ack': False,
                 'target_type': 'specific',
                 'target_roles': ['SECURITY_STAFF', 'SOC_SUPERVISOR'],
@@ -601,7 +601,7 @@ def build_solo_graph(role_staff_sc: str) -> dict:
                 'severity': 'high',
                 'ttl_seconds': AUTO_BLOCK_TTL_SECONDS,
                 'decided_via': 'auto',
-                'enforcement_points': ['nftables'],
+                'enforcement_points': ['nftables', 'edl'],
                 'reason_template':
                     '非上班時段自動封鎖 ${wi.exec_code}：${f.finding_title}'
                     '（rule ${f.finding_rule_id}），待人工複核',
@@ -740,7 +740,7 @@ def build_solo_graph(role_staff_sc: str) -> dict:
                 'severity': 'high',
                 'ttl_seconds': AUTO_BLOCK_TTL_SECONDS,
                 'decided_via': 'auto',
-                'enforcement_points': ['nftables'],
+                'enforcement_points': ['nftables', 'edl'],
                 'reason_template':
                     '上班時段逾時自動封鎖 ${wi.exec_code}：${f.finding_title}'
                     '（rule ${f.finding_rule_id}）',
@@ -804,7 +804,7 @@ def build_solo_graph(role_staff_sc: str) -> dict:
                 'severity': 'high',
                 'ttl_seconds': CONFIRMED_BLOCK_TTL_SECONDS,
                 'decided_via': 'human',
-                'enforcement_points': ['nftables'],
+                'enforcement_points': ['nftables', 'edl'],
                 'reason_template':
                     '人工確認封鎖 ${wi.exec_code}：${f.finding_title}'
                     '（rule ${f.finding_rule_id}）',
@@ -819,7 +819,7 @@ def build_solo_graph(role_staff_sc: str) -> dict:
                 'target_value': '${f.actor_ip}',
                 'severity': 'info',
                 'decided_via': 'human',
-                'enforcement_points': ['nftables'],
+                'enforcement_points': ['nftables', 'edl'],
                 'reason_template':
                     '人工解除封鎖 ${wi.exec_code}：${f.finding_title}',
             },

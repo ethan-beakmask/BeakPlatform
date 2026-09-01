@@ -29,7 +29,7 @@ Seeding 時機:
 """
 import json
 import logging
-from datetime import date
+from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
 from sqlalchemy import text
@@ -257,16 +257,19 @@ class ModuleRoleService:
         db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
 
         # 建立 org → 已授權模組集合（ACTIVE 且在效期內的合約聯集）
-        today = date.today()
+        utc_today = datetime.utcnow().date()
+        window_lo = utc_today - timedelta(days=1)
+        window_hi = utc_today + timedelta(days=1)
         contracts = Contract.query.filter(
             Contract.status == ContractStatus.ACTIVE,
-            Contract.start_date <= today,
-            Contract.end_date >= today,
+            Contract.start_date <= window_hi,
+            Contract.end_date >= window_lo,
             Contract.is_deleted == False,
         ).all()
+        active_contracts = [c for c in contracts if c.is_active]
 
         org_modules: Dict[str, set] = {}
-        for contract in contracts:
+        for contract in active_contracts:
             if not contract.modules_config:
                 continue
             try:

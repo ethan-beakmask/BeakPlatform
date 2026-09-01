@@ -146,6 +146,11 @@ class Organization(BaseModel):
         settings.update(new_settings)
         self.settings = json.dumps(settings, ensure_ascii=False)
 
+    def local_today(self, ref: datetime = None) -> date:
+        """依企業設定的時區回傳當地日曆日（合約效期等日曆日判定用）。"""
+        from app.utils.timezone import local_today
+        return local_today(self.get_setting('timezone', 'Asia/Taipei'), ref)
+
     def get_contract_valid_range(self) -> Optional[Tuple[date, date]]:
         """
         取得所有有效合約的日期範圍
@@ -188,14 +193,13 @@ class Organization(BaseModel):
         Returns:
             bool: True 如果在有效期內
 
-        純日期比較：以 Asia/Taipei 的「今天」為準，避免 UTC 凌晨死區。
+        純日期比較：以企業設定時區的「今天」為準（TZ-01），避免 UTC 凌晨死區。
         """
         contract_range = self.get_contract_valid_range()
         if not contract_range:
             return False
 
-        from zoneinfo import ZoneInfo
-        today = datetime.now(ZoneInfo('Asia/Taipei')).date()
+        today = self.local_today()
         start, end = contract_range
         return start <= today <= end
 

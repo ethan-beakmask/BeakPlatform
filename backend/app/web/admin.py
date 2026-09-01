@@ -13,7 +13,7 @@ from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required, system_admin_required, login_required
-from ..utils.timezone import get_timezone_choices
+from ..utils.timezone import get_timezone_choices, local_today
 from ..services.lookup_service import LookupService
 from .. import db
 
@@ -73,9 +73,11 @@ def module_permissions():
           - templates/pages/modules/list.html
     """
     from ..models.contract import Contract, ContractStatus
+    from ..models.organization import Organization
 
     org_sc = current_user.org_secure_code
-    today = date.today()
+    org = Organization.query.filter_by(secure_code=org_sc).first()
+    today = org.local_today() if org else local_today('Asia/Taipei')
 
     # 查詢企業的有效合約
     contracts = Contract.query.filter(

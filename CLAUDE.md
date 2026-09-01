@@ -1321,6 +1321,14 @@ from app.utils.timezone import local_day_start_utc
 today_start = local_day_start_utc(getattr(g, 'timezone', 'Asia/Taipei'), datetime.utcnow())
 ```
 
+**合約效期的「今日」依企業時區（2026-09-02 PF-125 起）**：`Contract.is_active` / `is_expired` /
+`is_not_started` / `days_remaining` 與 `ModuleAccessService` 的合約檢查一律走
+`Organization.local_today()`（`app.utils.timezone.local_today()`），**禁止 `date.today()`**。
+成因：bpserv 這類 UTC 時鐘的主機，台北 00:00～08:00 建立「起日＝今天」的合約會被判
+「尚未生效」，EMPLOYEE 開模組頁一律 403、隔天早上自己好，沒有任何錯誤訊息。
+跨企業彙總（企業列表的有效合約數、`ModuleRoleService` 的 org→modules）用 UTC ±1 天寬鬆視窗
+查出來再以 `contract.is_active` 過濾。`generate_contract_number()` 的日期戳刻意維持伺服器日期。
+
 **時間差運算（SLA 倒數、逾時判定、滾動 24h 視窗）不受此條影響**，維持 UTC——
 那是兩個時間點相減，與時區無關。只有「切在某個日曆日邊界」才要換算。
 
@@ -1672,7 +1680,8 @@ Ethan 提供的 Proxmox VM，用途是驗證「讀者照裝」路徑與 fresh �
 | SSH | `sshpass -p 'P@ssw0rd' ssh ethan@192.168.0.66`（sudo NOPASSWD；Ubuntu 24.04，hostname bpserv，固定 IP netplan + cloud-init 網路接管已停用；**系統時鐘是 UTC**，`uptime` 顯示的時間比台北慢 8 小時） |
 | 平台 URL | `http://192.168.0.66:8000/beakplatform`（**80 埠是 nginx default site 回 404，必帶 :8000**；無前綴也 404） |
 | 系統企業 | code `SYSTEM`，SYSTEM_ORG_CODE＝`sys-1271967103b6`（install.sh 隨機產生，**每次重裝都會變**，與 dev 的 `system.local` 不同） |
-| 帳號 | 只有出廠兩個：`admin@sys-1271967103b6`（SYSTEM_ADMIN）與 `enterprise@sys-1271967103b6`（ORG_ADMIN，ADM001，is_original_admin），密碼都是 `BpservTest2026BpservTest2026`，都還是 `must_change_password`（首登會被導去改密碼）。2026-09-02 重裝前的 `ethan` / `admin-ethan` 已不存在 |
+| 帳號 | 出廠兩個：`admin@sys-1271967103b6`（SYSTEM_ADMIN，**密碼 2026-09-02 已改為 `BpservTest2026Changed`**，must_change 已清）與 `enterprise@sys-1271967103b6`（ORG_ADMIN，ADM001，is_original_admin，密碼仍是 `BpservTest2026BpservTest2026`、仍 `must_change_password`）。2026-09-02 重裝前的 `ethan` / `admin-ethan` 已不存在 |
+| 示範企業 DemoSOC（2026-09-02 PF-125 走查建立） | code `DEMOSOC`，domain `demo-soc.example`，sc `ugRNno6lA97ZicqIbBvBEb`；合約兩份（含 form_workflow + open_defense，第一份 start 2026-09-02 建立當下被 UTC 日界判「尚未生效」，見 PF-125 追記）。帳號：`soc1@demo-soc.example`（EMPLOYEE，持 SECURITY_STAFF + SOC_SUPERVISOR）與 `admin-soc1@demo-soc.example`（ORG_ADMIN），密碼同為 `DemoSoc-Staff2026#`；原始 `admin@demo-soc.example` 已停用。三個 OD 流程由 `provision_od_intake_for_org.py` ＋ `provision_od_workflow_variants.py --with-routing` 建出，SOC 團隊版路由已啟用（sev>=3）；intake API Key `ak_475b051bb6c2f424`（secret 在 `/opt/tmp/verify/20260902-pf125-bpserv-soc.log`）。`.env` 已加 `OD_EDL_OUTPUT_DIR=/opt/BeakPlatform/data/edl`、`OD_EDL_ALLOWED_IPS=192.168.0.16,192.168.0.10`（無 cron，EDL 要手動跑 `scripts/cron/od_render_edl.py`）。已完成案件 OD-20260901-0001（封鎖 203.0.113.42）／0002（放行 198.51.100.77） |
 | 登入 | 無 quick-login（dev 機限定），走 `POST /auth/login` JSON（`{"account":"admin@sys-1271967103b6","password":"..."}`，成功回 200 + 改密 redirect，錯密碼 401） |
 | DB | `sudo -u postgres psql -d beakplatform`（beakplatform 帳號密碼同 dev 慣例） |
 | 服務 | `sudo systemctl restart beakplatform`（unit 名無 `-dev`） |

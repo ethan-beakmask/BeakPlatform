@@ -13,7 +13,7 @@ fail-closed（2026-09-01 PF-145 階段三之一起）:
 """
 import json
 import logging
-from datetime import date, datetime
+from datetime import datetime
 from typing import Set, Dict, Any, List, Tuple, Optional
 
 from ..models.module_access_control import ModuleAccessControl, TargetType
@@ -22,6 +22,7 @@ from ..models.user_unit_membership import UserUnitMembership, MembershipType
 from ..models.user import User, UserType
 from ..models.role import Role
 from ..models.organizational_unit import OrganizationalUnit, UnitType
+from ..utils.timezone import local_today
 from .. import db
 
 logger = logging.getLogger(__name__)
@@ -293,7 +294,8 @@ class ModuleAccessService:
         if org_sc == SYSTEM_ORG_CODE:
             return True
 
-        today = date.today()
+        org = getattr(user, 'organization', None)
+        today = org.local_today() if org else local_today('Asia/Taipei')
 
         contracts = Contract.query.filter(
             Contract.org_secure_code == org_sc,
