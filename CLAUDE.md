@@ -1607,6 +1607,10 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   # ORG_ADMIN（LION）                   的 user_id 是 1W0Fkn7IK1RW1qwE8HkYQu
   # EMPLOYEE ethanyu@beluga.com（持 FLOW_DESIGNER + SECURITY_STAFF，測 Key2 場景用）
   #          的 user_id 是 FhsmtyPjsnXYotN-iz_Q-X
+  #          注意：它持 FLOW_DESIGNER 會合法通過 form_workflow 的模組 ACL，
+  #          驗「純員工該被 ACL 擋下」的場景不能拿它當樣本（2026-09-02 踩過，
+  #          得到假通過）。dev 的 BELUGA 沒有現成純員工，要嘛臨時建、
+  #          要嘛用 bpserv 的 ethan（見下方 bpserv 段）
   ```
   **LION 的管理員不要自己用 SQL 撈**：`SELECT ... WHERE user_type='ORG_ADMIN'`
   在該企業會撈到不能登入的那一筆，quick-login 回 401（2026-08-31 踩過）。
@@ -1622,6 +1626,23 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   `before_request`，比 decorator 早）。跑「哪種身分打得進去」的矩陣時若忘了帶
   token，會看到每一種身分都回 400，看起來像守門完全沒生效，實際上根本還沒走到
   守門那一步（2026-08-31 驗 PF-185 時踩過）。**測授權一律先取 token。**
+
+### bpserv 測試機（2026-09-01 建立，install.sh 全新安裝的驗證環境）
+
+Ethan 提供的 Proxmox VM，用途是驗證「讀者照裝」路徑與 fresh 環境行為，
+**憑證都是測試用途、Ethan 明示可放本檔**（本檔不推 GitHub）：
+
+| 項目 | 值 |
+|---|---|
+| SSH | `sshpass -p 'P@ssw0rd' ssh ethan@192.168.0.66`（sudo NOPASSWD；Ubuntu 24.04，hostname bpserv，固定 IP netplan + cloud-init 網路接管已停用） |
+| 平台 URL | `http://192.168.0.66:8000/beakplatform`（**80 埠是 nginx default site 回 404，必帶 :8000**；無前綴也 404） |
+| 系統企業 | code `SYSTEM`，SYSTEM_ORG_CODE＝`sys-d22c67632c06`（install.sh 隨機產生，與 dev 的 `system.local` 不同） |
+| 帳號 | `admin@sys-d22c67632c06`（SYSTEM_ADMIN，密碼 `BpservTest2026BpservTest2026`）；`enterprise`（原始 ORG_ADMIN，已停用—轉移設計）；`ethan`（**純員工，驗 ACL 擋下場景用這個**）與 `admin-ethan`（ORG_ADMIN），後兩者密碼 `P@ssw0rdP@ssw0rd` |
+| 登入 | 無 quick-login（dev 機限定），走 `POST /auth/login` JSON（`{"account":"ethan@sys-d22c67632c06","password":"..."}`） |
+| DB | `sudo -u postgres psql -d beakplatform`（beakplatform 帳號密碼同 dev 慣例） |
+| 服務 | `sudo systemctl restart beakplatform`（unit 名無 `-dev`） |
+| 同步 dev 修補 | 不必重裝：tar 打包改動檔 → scp → `sudo tar xzf -C /opt/BeakPlatform` → chown 給服務帳號 → restart（本 session 用法見 git log 20260902 各修補） |
+| 部署狀態 | 2026-09-02 起含 dev 到 `767b1955` 的手動同步；日後正式更新走 `install.sh --update`（需 GitHub PAT，安裝用的那把 7 天後過期） |
 
 ### open_defense / 資安堆疊（備忘已移出，2026-08-30）
 

@@ -152,3 +152,25 @@ bash scripts/run_e2e.sh -g "A. 點不可簽核"  # 其餘參數原樣傳給 npx 
 確認測試會紅。恆真斷言（locator 打錯 → count 恆 0、監聽器沒掛上 → 陣列恆空）
 會穩定通過而什麼都沒驗，**讀起來像有保障，比沒測更危險**。
 PF-79 這組就是這樣驗的（記錄在 `/opt/tmp/verify/20260812-e2e-od-pf79.log`）。
+
+## chrome-devtools MCP 掛掉時的瀏覽器驗收備援（2026-09-02 實證）
+
+chrome-devtools MCP 連不上（VM 重開後常見）時，**不必放棄 VERIFY-01 的瀏覽器驗收**：
+直接用專案的 Playwright 寫拋棄式 `.mjs` 腳本驅動。要點：
+
+- 腳本要放在 repo 根目錄下執行（ESM 解析靠 node_modules 向上尋找，
+  `NODE_PATH` 對 ESM 無效），驗完移出，**不要留著被 `git add -A` 收進去**
+- 登入用 `ctx.request.post('<BASE>/auth/login', {data:{account, password}})`，
+  session cookie 自動進 context（dev 機另有 quick-login 可用）
+- 抓 JS 錯誤掛 `page.on('pageerror')` ＋ `page.on('console')` 兩個都要
+- **Alpine 壓縮版的錯誤堆疊看不出出錯元素**：用
+  `page.route('**/vendor/alpine.min.js*', ...)` 攔截改餵同版 `alpinejs@<版本>/dist/cdn.js`
+  非壓縮版，console 會多印出錯的 expression 與 Duplicate key 警告
+  （2026-09-02 就是這樣定位到簽核 modal 的 x-for key bug，commit 767b1955）
+- 可見性判定沿用 VERIFY-01 規則：fixed 定位元素（`.fc-modal` 等）
+  `offsetParent` 恆為 null，要用 `getComputedStyle().display` + `getBoundingClientRect()`
+- flatpickr 接管後原生 input 會變 `type="hidden"`，點欄位要選
+  `.formio-component-datetime input:not([type=hidden])`
+
+範本腳本留存：session scratchpad 的 `repro_approval.mjs` / `.tmp-fill.mjs`
+（拋棄式，邏輯照上面要點重寫即可）。
