@@ -245,7 +245,7 @@ API 實測全部 200 —— 症狀是「API 打得到、選單看不到」，與
 
 處置（Ethan 2026-08-23 拍板）：先讓選單與 API 一致，再掛 page_keys。
 
-- `scripts/migrations/111_open_vuln_lifecycle_menu_to_risk_controller.py`
+- `scripts/migrations/legacy/111_open_vuln_lifecycle_menu_to_risk_controller.py`
   （冪等，`--dry-run` / `--run`）：Key1 補 EMPLOYEE 5 筆、Key2 補 RISK_CONTROLLER 28 筆
 - 出廠預設同步改兩處（MENU-01：只改 DB 的話新建企業會長回舊樣子）：
   `modules/vuln_lifecycle/__init__.py` 的 `user_types`、
@@ -336,7 +336,7 @@ PageRoleGuard Key2 擋成 302 強制登出，與 CLAUDE.md「表單中心對 EXT
 而且不報任何錯。
 
 處置（MENU-01 兩件事都做）：`menu_defaults.py` 補 `EXTERNAL_USERS`；
-`scripts/migrations/113_form_center_menu_external_users.py`（冪等）對既有企業補同一筆，
+`scripts/migrations/legacy/113_form_center_menu_external_users.py`（冪等）對既有企業補同一筆，
 實際只有 TEST00 缺。
 
 #### 驗收

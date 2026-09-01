@@ -182,6 +182,32 @@ run_as_app() {
     "
 }
 
+# Schema 權威是 ORM model（db.create_all），migration 制度已廢止（PF-168，
+# 歷史封存在 scripts/migrations/legacy/）。create_all 之外的 DB 物件與
+# 出廠資料由 scripts/sql/ 的檔案補齊，全部冪等，安裝與更新共用。
+# 前置：資料庫與系統企業已存在。
+apply_db_extras() {
+    local sys_org
+    sys_org=$(grep -m1 '^SYSTEM_ORG_CODE=' "$INSTALL_DIR/.env" | cut -d'=' -f2-)
+    if [ -z "$sys_org" ]; then
+        log_error ".env 缺少 SYSTEM_ORG_CODE，無法種入出廠資料"
+        return 1
+    fi
+    sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -v app_user="$DB_USER" \
+        -q -f "$INSTALL_DIR/scripts/sql/fw_sp_setup.sql"
+    sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -v system_org="$sys_org" \
+        -q -f "$INSTALL_DIR/scripts/sql/seed_workflow_node_definitions.sql"
+    sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 \
+        -q -f "$INSTALL_DIR/scripts/sql/seed_node_org_grants.sql"
+    local seed
+    for seed in seed_menu_defaults.sql seed_rbac_defaults.sql; do
+        if [ -f "$INSTALL_DIR/scripts/sql/$seed" ]; then
+            sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -q \
+                -f "$INSTALL_DIR/scripts/sql/$seed"
+        fi
+    done
+}
+
 # === 參數處理 ===
 ACTION="fresh"
 
@@ -257,16 +283,6 @@ if [ "$ACTION" = "status" ]; then
         log_info "PostgreSQL: 運行中"
     else
         log_warn "PostgreSQL: 未運行"
-    fi
-
-    # Migration 狀態
-    if [ -d "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/.env" ]; then
-        echo ""
-        cd "$INSTALL_DIR"
-        activate_venv
-        load_env
-        cd backend
-        python3 ../scripts/run_migrations.py --status 2>/dev/null || true
     fi
 
     exit 0
@@ -394,14 +410,7 @@ if [ "$ACTION" = "update" ]; then
 
     if [ "$local_hash" = "$remote_hash" ]; then
         log_info "程式碼已是最新版本 ($(git log --oneline -1))"
-
-        # 檢查是否有未完成的 migration（上次更新可能中途失敗）
-        pending_count=$(run_as_app "cd backend && EXECUTOR_STANDALONE=1 python3 ../scripts/run_migrations.py --status 2>/dev/null" | grep -c "待執行:" || true)
-        if [ "${pending_count:-0}" -eq 0 ]; then
-            log_info "無待處理的 migration，已完全更新"
-            exit 0
-        fi
-        log_warn "偵測到 ${pending_count} 個未完成的 migration，繼續執行..."
+        log_info "仍會執行 schema 同步與出廠資料補種（冪等），修復上次可能中斷的更新"
     else
         git reset --hard origin/main
         log_info "更新至: $(git log --oneline -1)"
@@ -433,12 +442,14 @@ if [ "$ACTION" = "update" ]; then
     chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/backend/encrypted_storage"
     chmod 700 "$INSTALL_DIR/backend/encrypted_storage"
 
-    # [3] 載入環境變數 + 執行 migrations
-    log_step "3/6" "執行資料庫遷移..."
-    # PostgreSQL 管理操作仍以 root 執行
+    # [3] 同步資料庫 schema 與出廠資料
+    #     model 即權威：create_all 只補「新表」，不改既有表的欄位。
+    #     欄位級的升級機制目前刻意不存在（尚無任何已公開的既有環境需要升級），
+    #     公開後首次需要時另行設計，不要回頭復活 run_migrations。
+    log_step "3/6" "同步資料庫 schema 與出廠資料..."
     sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" 2>/dev/null || true
-    sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
-    run_as_app "cd backend && EXECUTOR_STANDALONE=1 python3 ../scripts/run_migrations.py --run"
+    run_as_app "cd backend && EXECUTOR_STANDALONE=1 SKIP_MODULE_SYNC=1 python3 ../scripts/db_create_all.py"
+    apply_db_extras
 
     # [4] 初始化選單與權限 (冪等)
     log_step "4/6" "同步選單與權限..."
@@ -810,11 +821,9 @@ sudo -u "$SERVICE_USER" env \
     "
 rm -f "$INIT_SCRIPT"
 
-# 執行所有 migrations（冪等，db.create_all 已建的表會被 IF NOT EXISTS 跳過）
-# 確保非 ORM 管理的表（如 timeout_trackers、workflow_node_categories）也被建立
-# 先終止其他 DB 連線，避免 ALTER TABLE 被 idle in transaction 的連線鎖住
-sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
-run_as_app "cd backend && EXECUTOR_STANDALONE=1 python3 ../scripts/run_migrations.py --run"
+# create_all 之外的 DB 物件（fw_sp schema／擁有權分離）與出廠資料
+#（節點型別定義、受限節點授權、出廠預設值）
+apply_db_extras
 
 # 初始化選單
 run_as_app "EXECUTOR_STANDALONE=1 python3 scripts/init_menus.py --force" || log_warn "選單初始化跳過"

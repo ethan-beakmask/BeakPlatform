@@ -7,7 +7,8 @@ SQL 同步登記表
 """
 import secrets
 from datetime import datetime
-from sqlalchemy import Column, String, Integer, DateTime, JSON, Text, event
+from sqlalchemy import Column, String, Integer, BigInteger, DateTime, Text, event
+from sqlalchemy.dialects.postgresql import JSONB
 from .base import ModuleBaseModel
 
 
@@ -18,6 +19,9 @@ class FwSqlFormRegistry(ModuleBaseModel):
     記錄哪些發行版本啟用了 SQL 同步，以及對應的 SQL 表名和欄位映射。
     """
     __tablename__ = 'fw_sql_form_registries'
+
+    # PK 為 bigint（與既有資料一致，PF-168 對齊）
+    id = Column(BigInteger, primary_key=True)
 
     org_secure_code = Column(String(100), nullable=False, index=True)
 
@@ -34,10 +38,10 @@ class FwSqlFormRegistry(ModuleBaseModel):
 
     # 欄位定義快照 (form.io schema → SQL columns mapping)
     # {field_key: {pg_type: 'VARCHAR(500)', nullable: True, ...}}
-    column_mapping = Column(JSON, nullable=False)
+    column_mapping = Column(JSONB, nullable=False)
 
     # form.io schema 快取（建立 registry 時從 published.form_snapshot.schema 複製）
-    form_schema = Column(JSON)
+    form_schema = Column(JSONB)
 
     # 狀態
     status = Column(String(20), default='active')  # active / suspended / archived

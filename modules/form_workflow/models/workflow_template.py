@@ -3,7 +3,7 @@ FormWorkflow Module - Workflow Template Model
 工作流模板
 """
 from sqlalchemy import Column, String, Text, Boolean, Integer, ForeignKey, BigInteger
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from .base import ModuleBaseModel
@@ -28,8 +28,8 @@ class FwWorkflowTemplate(ModuleBaseModel):
     category_secure_code = Column(String(32), nullable=True, index=True)
 
     # Cytoscape.js 流程圖
-    graph = Column(JSON, nullable=False)  # 舊格式
-    cytoscape_config = Column(JSON, nullable=True)  # 新格式
+    graph = Column(JSONB, nullable=False)  # 舊格式
+    cytoscape_config = Column(JSONB, nullable=True)  # 新格式
 
     # 版本控制
     version = Column(String(2), default='AA')
@@ -48,7 +48,7 @@ class FwWorkflowTemplate(ModuleBaseModel):
     # 權限控制
     permission_type = Column(String(20), default='org', nullable=False)
     owner_secure_code = Column(String(50), nullable=True, index=True)
-    allowed_editors = Column(JSON, nullable=True)
+    allowed_editors = Column(JSONB, nullable=True)
 
     # 建立者/編輯者
     created_by_secure_code = Column(String(32), nullable=True)

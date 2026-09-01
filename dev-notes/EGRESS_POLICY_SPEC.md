@@ -133,7 +133,7 @@ node_key，故逐一 node_key 評估，任一節點下該欄位為 masked 即允
 - `egress_tier_thresholds`：org、tier、meter、threshold、window_minutes、is_active
 - `egress_audit_logs`：見稽核節
 
-Migration：`scripts/migrations/081_egress_policy.sql`
+Migration：`scripts/migrations/legacy/081_egress_policy.sql`
 
 ## 明示的限制（非資安承諾）
 

@@ -3,7 +3,7 @@ FormWorkflow Module - Category Model
 表單流程分類（二層結構）
 """
 import secrets
-from sqlalchemy import Column, String, Text, Boolean, Integer, event
+from sqlalchemy import Column, String, Text, Boolean, Integer, BigInteger, event
 from sqlalchemy.dialects.postgresql import JSON
 
 from app.models.base import BaseModel
@@ -17,6 +17,9 @@ class FwCategory(BaseModel):
     parent_secure_code 非 NULL → 第二層（子分類）
     """
     __tablename__ = 'fw_categories'
+
+    # PK 為 bigint（與既有資料一致，PF-168 對齊）
+    id = Column(BigInteger, primary_key=True)
 
     # 企業識別碼（NULL = 系統分類，所有企業共用）
     org_secure_code = Column(String(32), nullable=True, index=True)

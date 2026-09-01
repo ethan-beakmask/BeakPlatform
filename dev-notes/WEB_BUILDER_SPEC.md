@@ -200,7 +200,7 @@ Blueprint: `sub_system_api`, prefix `/api/nocode-builder/sub-systems`
 
 | 檔案 | 說明 |
 |------|------|
-| `scripts/migrations/031_module_access_control.sql` | 模組使用權控制表 |
+| `scripts/migrations/legacy/031_module_access_control.sql` | 模組使用權控制表 |
 | `modules/nocode_builder/migrations/004_page_layout_status.sql` | 頁面 status 欄位 |
 
 ---

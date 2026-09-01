@@ -178,7 +178,7 @@
 - 系統管理員標記 `current_setting('app.is_system_admin')` 可存取所有記錄
 - 已啟用 RLS 的表: `lookup_categories`, `lookup_items`, `modules`, `menu_items`, `pages`
 
-實作檔案: `scripts/migrations/001_menu_system.sql`, `scripts/migrations/030_lookup_tables.sql`
+實作檔案: `scripts/migrations/legacy/001_menu_system.sql`, `scripts/migrations/legacy/030_lookup_tables.sql`
 
 ---
 

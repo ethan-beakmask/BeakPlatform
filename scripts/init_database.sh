@@ -1,12 +1,21 @@
 #!/bin/bash
 # BeakPlatform 資料庫初始化腳本
-# 用途：建立乾淨的資料庫（庫名取自本 repo 的 .env）
+# 用途：建立乾淨的資料庫（庫名取自本 repo 的 .env，可用環境變數 DB_NAME 覆寫）
 #
 # 使用方式：
 #   sudo ./init_database.sh
 #
 # 路徑一律由腳本自身位置推導，同一份腳本可用於開發與正式環境，
 # 不得再出現硬編碼的 /opt/BeakPlatform 或 /opt/BeakPlatform-dev。
+#
+# Schema 權威是 ORM model（db.create_all），不跑任何 migration（PF-168 起
+# migration 制度廢止，歷史封存在 scripts/migrations/legacy/）。
+# create_all 之外的 DB 物件與出廠資料由 scripts/sql/ 的檔案補齊：
+#   fw_sp_setup.sql                     SqlExecutor 白名單 schema 與擁有權分離
+#   seed_workflow_node_definitions.sql  節點型別定義（export_node_definitions_seed.py 產生）
+#   seed_node_org_grants.sql            受限節點出廠授權（只給系統企業）
+#   seed_menu_defaults.sql              選單出廠預設值（選配，原廠匯出才有）
+#   seed_rbac_defaults.sql              RBAC 出廠預設值（選配，原廠匯出才有）
 #
 # 注意：此腳本會刪除現有資料庫！執行前務必確認第一行印出的庫名。
 
@@ -28,11 +37,13 @@ echo "    Repo: $REPO_ROOT"
 echo "    資料庫: $DB_NAME"
 echo ""
 
-# 確認執行
-read -p "警告：這將刪除現有的 $DB_NAME 資料庫！確定要繼續？(y/N) " confirm
-if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-    echo "已取消"
-    exit 0
+# 確認執行（環境變數 INIT_DB_YES=1 可跳過，供自動化驗證使用）
+if [ "${INIT_DB_YES:-0}" != "1" ]; then
+    read -p "警告：這將刪除現有的 $DB_NAME 資料庫！確定要繼續？(y/N) " confirm
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+        echo "已取消"
+        exit 0
+    fi
 fi
 
 echo ""
@@ -73,12 +84,17 @@ else
     done
 fi
 
-echo "7. 執行 Flask 資料庫遷移..."
+echo "7. 建立資料表 (db.create_all)..."
 cd "$REPO_ROOT/backend"
 source "$REPO_ROOT/venv/bin/activate"
 set -a && source "$REPO_ROOT/.env" && set +a
 
-# 使用 Flask-Migrate 或直接建立表（跳過模組同步）
+# DATABASE_URL 一律跟隨 DB_NAME——沒有這行，DB_NAME 被覆寫時
+# create_all 會打進 .env 指向的那個庫（通常是 dev 庫），靜默毀掉它
+export DATABASE_URL="postgresql://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME"
+
+# SKIP_MODULE_SYNC 只跳過選單/權限同步；模組 models 仍會載入，
+# 模組表由 create_all 一併建立（module_loader 的 models 載入步驟，PF-168）
 SKIP_MODULE_SYNC=1 python3 << 'EOF'
 from app import create_app, db
 app = create_app()
@@ -134,8 +150,30 @@ with app.app_context():
     print(f"   - 管理員: admin@{SYSTEM_ORG_CODE} (首次登入須改密碼)")
 EOF
 
-echo "9. 初始化平台選單..."
+echo "9. 建立 fw_sp schema 與擁有權分離..."
+sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -v app_user="$DB_USER" \
+    -q -f "$REPO_ROOT/scripts/sql/fw_sp_setup.sql"
+
+echo "10. 種入節點型別定義與受限節點出廠授權..."
+sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -v system_org="$SYSTEM_ORG_CODE" \
+    -q -f "$REPO_ROOT/scripts/sql/seed_workflow_node_definitions.sql"
+sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 \
+    -q -f "$REPO_ROOT/scripts/sql/seed_node_org_grants.sql"
+
+echo "11. 出廠預設值（存在才執行）..."
+for seed in seed_menu_defaults.sql seed_rbac_defaults.sql; do
+    if [ -f "$REPO_ROOT/scripts/sql/$seed" ]; then
+        sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -q \
+            -f "$REPO_ROOT/scripts/sql/$seed"
+        echo "   已執行 $seed"
+    fi
+done
+
+echo "12. 初始化平台選單..."
 python3 "$REPO_ROOT/scripts/init_menus.py" --force
+
+echo "13. 同步模組選單與權限..."
+(cd "$REPO_ROOT/backend" && flask module sync --force) || echo "   警告: 模組同步失敗，首次啟動服務時會自動再同步"
 
 echo ""
 echo "=== 初始化完成 ==="
@@ -151,4 +189,4 @@ echo "啟動服務："
 echo "  cd $REPO_ROOT/backend"
 echo "  source $REPO_ROOT/venv/bin/activate"
 echo "  set -a && source $REPO_ROOT/.env && set +a"
-echo "  flask run --host=0.0.0.0 --port=7000"
+echo "  flask run --host=127.0.0.1 --port=7000"

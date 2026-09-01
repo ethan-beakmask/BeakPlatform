@@ -3,7 +3,7 @@ NoCode Builder - Background Model
 底圖圖庫
 """
 from flask import has_request_context, request
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, String, Integer, BigInteger
 
 from .base import ModuleBaseModel
 
@@ -11,6 +11,9 @@ from .base import ModuleBaseModel
 class DcBackground(ModuleBaseModel):
     """底圖圖庫"""
     __tablename__ = 'dc_backgrounds'
+
+    # PK 為 bigint（與既有資料一致，PF-168 對齊）
+    id = Column(BigInteger, primary_key=True)
 
     filename = Column(String(255), nullable=False)
     original_filename = Column(String(255), nullable=False)

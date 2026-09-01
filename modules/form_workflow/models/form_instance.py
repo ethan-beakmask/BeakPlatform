@@ -4,7 +4,7 @@ FormWorkflow Module - Form Instance Model
 """
 from datetime import datetime
 from sqlalchemy import Column, BigInteger, Integer, String, Text, Boolean, DateTime, Index, text as sa_text
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import ModuleBaseModel
 
@@ -67,9 +67,9 @@ class FwFormInstance(ModuleBaseModel):
     applicant_email = Column(String(200), nullable=True)
 
     # 表單內容
-    form_data = Column(JSON, nullable=False)
-    schema_snapshot = Column(JSON, nullable=True)  # 表單 schema 快照
-    builder_config = Column(JSON, nullable=True)
+    form_data = Column(JSONB, nullable=False)
+    schema_snapshot = Column(JSONB, nullable=True)  # 表單 schema 快照
+    builder_config = Column(JSONB, nullable=True)
 
     # 狀態：DRAFT, INITIAL, PENDING, APPROVED, REJECTED, CANCELLED
     status = Column(String(50), default='DRAFT', nullable=False, index=True)

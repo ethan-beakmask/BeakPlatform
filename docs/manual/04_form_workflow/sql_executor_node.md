@@ -11,7 +11,7 @@ produces:
 covers:
   - modules/form_workflow/services/node_handlers/sqlexecutor_handler.py
   - modules/form_workflow/static/modules/form_workflow/js/wf-node-sql-executor.js
-  - scripts/migrations/106_sqlexecutor_whitelist.sql
+  - scripts/sql/fw_sp_setup.sql
 ---
 
 # SQL 執行節點

@@ -93,7 +93,7 @@
 
 ### [低] SEC-06: migration 032 建立不再需要的 MenuPermission
 
-**位置**: `scripts/migrations/032_web_builder_menus.sql`
+**位置**: `scripts/migrations/legacy/032_web_builder_menus.sql`
 
 **問題**: Migration 的 Step 4 建立 web_builder 的 MenuPermission (9 筆)，但當前架構已改為動態注入 (menu_service.py Step 1.5)。這些記錄在開發期間被手動移除，但 fresh install 會重新建立。
 
@@ -153,8 +153,8 @@
 | `backend/app/api/module_access.py` | 修正: 傳入 org_secure_code |
 | `backend/app/services/menu_service.py` | 修正: 移除 _filter_by_module_access 的 rollback |
 | `backend/app/services/module_menu_service.py` | 修正: deactivate/get 前綴匹配精確化 |
-| `scripts/migrations/032_web_builder_menus.sql` | 修正: 移除不再需要的 MenuPermission 建立 |
-| `scripts/migrations/033_security_audit_cleanup.sql` | 新增: DB 資料清理 migration |
+| `scripts/migrations/legacy/032_web_builder_menus.sql` | 修正: 移除不再需要的 MenuPermission 建立 |
+| `scripts/migrations/legacy/033_security_audit_cleanup.sql` | 新增: DB 資料清理 migration |
 
 ## DB 直接變更
 

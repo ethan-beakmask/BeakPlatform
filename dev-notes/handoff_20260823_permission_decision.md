@@ -178,7 +178,7 @@ NoCode API 回自己企業資料且 `can_manage: false`。
 | 冷讀提出的疑問 | 回答 |
 |---|---|
 | PF-34 的完整內容不在文件裡 | BBN **PF-34**（atom **5031**，status=planning、urgency=L）「測試庫缺 RBAC seed，test_admin_required_for_admin 過不了」。`note_get(5031)` 取全文 |
-| 缺「測試庫該 seed 哪些角色／使用者／指派」的權威對照 | **沒有現成的權威對照，這正是要做的事**。permission code 的權威清單是 `scripts/migrations/075_seed_resource_crud_permissions.py`；角色與指派要照 `backend/app/defaults/` 的出廠值推導 |
+| 缺「測試庫該 seed 哪些角色／使用者／指派」的權威對照 | **沒有現成的權威對照，這正是要做的事**。permission code 的權威清單是 `scripts/migrations/legacy/075_seed_resource_crud_permissions.py`；角色與指派要照 `backend/app/defaults/` 的出廠值推導 |
 | 缺實作位置 | **建議放 `backend/tests/conftest.py` 的 session-scoped fixture**，理由：`scripts/run_tests.sh` 前置 seed 會在每次跑單一測試檔時也付出成本；而 `test_smoke.py` / `test_page_template_*.py` 各自定義的 app fixture 會覆蓋 conftest 的 app fixture，所以 seed 不能掛在 app fixture 上 |
 | 缺「最小修補」與「完整 RBAC seed」的邊界 | **做最小修補即可**。目的是「讓測試不要跑在 fail-open 狀態」，不是重建整個 RBAC。驗收標準：`test_admin_required_for_admin` 轉綠，且完整測試沒有新增失敗 |
 | 完成後怎麼回寫 BBN | `note_task_status(ref='PF-34', status='completed', reason='...')` |

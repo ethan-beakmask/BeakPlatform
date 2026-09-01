@@ -636,7 +636,7 @@ def export_factory_sql():
     """
     從 menu_defaults 表匯出安裝用 SQL（原廠專用）
 
-    生成 058_seed_menu_defaults.sql，供全新安裝時灌入預設值。
+    生成 seed_menu_defaults.sql，供全新安裝時灌入預設值。
     upgrade 不會覆蓋用戶已儲存的預設值。
 
     Returns:

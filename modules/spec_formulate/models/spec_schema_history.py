@@ -4,7 +4,8 @@ Spec Schema History Model - 資料結構規格版本歷史
 記錄每次 spec 變更的快照和差異。
 """
 import secrets
-from sqlalchemy import Column, String, Integer, Text, JSON, event
+from sqlalchemy import Column, String, Integer, BigInteger, Text, event
+from sqlalchemy.dialects.postgresql import JSONB
 from .base import ModuleBaseModel
 
 
@@ -17,6 +18,9 @@ class FwSpecSchemaHistory(ModuleBaseModel):
     """
     __tablename__ = 'fw_spec_schema_histories'
 
+    # PK 為 bigint（與既有資料一致，PF-168 對齊）
+    id = Column(BigInteger, primary_key=True)
+
     # 關聯 spec
     spec_secure_code = Column(String(32), nullable=False, index=True)
 
@@ -24,16 +28,16 @@ class FwSpecSchemaHistory(ModuleBaseModel):
     version = Column(Integer, nullable=False)
 
     # 欄位快照（含完整 core + facets 結構）
-    fields_snapshot = Column(JSON, nullable=False, default=list)
+    fields_snapshot = Column(JSONB, nullable=False, default=list)
 
     # 當時的 active_facets 快照
-    active_facets_snapshot = Column(JSON, nullable=False, default=list)
+    active_facets_snapshot = Column(JSONB, nullable=False, default=list)
 
     # 變更描述
     change_description = Column(Text)
 
     # 變更差異
-    change_diff = Column(JSON)
+    change_diff = Column(JSONB)
 
     # 修改者
     changed_by = Column(String(32))

@@ -26,6 +26,9 @@ class FwMappingPermission(ModuleBaseModel):
     """
     __tablename__ = 'fw_mapping_permissions'
 
+    # PK 為 bigint（與既有資料一致，PF-168 對齊）
+    id = Column(BigInteger, primary_key=True)
+
     # 對應的配對
     mapping_secure_code = Column(String(32), nullable=False, index=True)
 

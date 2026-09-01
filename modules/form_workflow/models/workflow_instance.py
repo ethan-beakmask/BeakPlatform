@@ -4,7 +4,7 @@ FormWorkflow Module - Workflow Instance Model
 """
 from datetime import datetime
 from sqlalchemy import Column, BigInteger, String, Text, DateTime, Integer, Boolean, Index, text as sa_text
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import ModuleBaseModel
 
@@ -35,7 +35,7 @@ class FwWorkflowInstance(ModuleBaseModel):
     # 流程基本資訊（快照）
     workflow_name = Column(String(200), nullable=True)
     workflow_version = Column(String(10), nullable=True)
-    graph_snapshot = Column(JSON, nullable=True)  # 流程圖快照
+    graph_snapshot = Column(JSONB, nullable=True)  # 流程圖快照
 
     # 測試標記
     is_test = Column(Boolean, default=False, nullable=False, index=True)
@@ -54,10 +54,10 @@ class FwWorkflowInstance(ModuleBaseModel):
 
     # 執行紀錄
     execution_code = Column(String(50), nullable=False, index=True)
-    execution_log = Column(JSON, default=list)  # 執行日誌
+    execution_log = Column(JSONB, default=list)  # 執行日誌
 
     # 流程變數
-    variables = Column(JSON, default=dict)
+    variables = Column(JSONB, default=dict)
 
     # NoCode portal 來源追蹤
     nocode_sub_system_sc = Column(String(32), nullable=True, index=True)

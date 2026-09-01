@@ -79,7 +79,7 @@ check "模組 models 存在" "test -d $INSTALL_DIR/modules/form_workflow/models"
 check "模組 api 存在" "test -d $INSTALL_DIR/modules/form_workflow/api"
 check "模組 web 存在" "test -d $INSTALL_DIR/modules/form_workflow/web"
 check "模組 templates 存在" "test -d $INSTALL_DIR/modules/form_workflow/templates"
-check "模組 migrations 存在" "test -d $INSTALL_DIR/modules/form_workflow/migrations"
+check "安裝 SQL 資產存在" "test -f $INSTALL_DIR/scripts/sql/fw_sp_setup.sql -a -f $INSTALL_DIR/scripts/sql/seed_workflow_node_definitions.sql"
 
 # 資料庫檢查
 echo -e "\n${BLUE}[資料庫]${NC}"

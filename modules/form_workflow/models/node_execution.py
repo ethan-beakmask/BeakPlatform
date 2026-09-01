@@ -4,7 +4,7 @@ FormWorkflow Module - Node Execution Queue Model
 """
 from datetime import datetime, timedelta
 from sqlalchemy import Column, String, Text, DateTime, Integer
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import ModuleBaseModel
 
@@ -32,7 +32,7 @@ class FwNodeExecutionQueue(ModuleBaseModel):
     node_id = Column(String(100), nullable=False)
     node_type = Column(String(50), nullable=False, index=True)
     node_name = Column(String(200), nullable=True)
-    node_config = Column(JSON, default=dict)
+    node_config = Column(JSONB, default=dict)
     priority = Column(Integer, default=5, nullable=False)
 
     # 執行狀態：PENDING, RUNNING, SUCCESS, FAILED, CANCELLED, WAITING
@@ -43,7 +43,7 @@ class FwNodeExecutionQueue(ModuleBaseModel):
     max_retries = Column(Integer, default=3, nullable=False)
 
     # 執行結果
-    result = Column(JSON, nullable=True)
+    result = Column(JSONB, nullable=True)
     error_message = Column(Text, nullable=True)
 
     # 時間

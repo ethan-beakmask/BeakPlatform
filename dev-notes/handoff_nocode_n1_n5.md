@@ -573,7 +573,7 @@ SQLite 業務表沒有材料所以沒有這道檢查。派工 spec 也沒寫這�
 實作：
 
 - `dc_crud_views.row_owner_scope VARCHAR(8) NOT NULL DEFAULT 'own'`
-  （migration `scripts/migrations/089_portal_row_owner_scope.sql`，已執行；
+  （migration `scripts/migrations/legacy/089_portal_row_owner_scope.sql`，已執行；
   現有 19 個視圖全部是 `own`）
 - 業務表系統欄位 `portal_user_ref TEXT`，值即 `nocode_user_ref()` 的
   `u:<user_id>` / `g:<guest_token>`。新表由建表端點自動注入；

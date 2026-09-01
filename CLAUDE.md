@@ -474,7 +474,7 @@ ORG_ADMIN 仍由 decorator 層放行（在 ACL 檢查之前），所以清空 AC
   要做到「僅管理員可用」得留至少一筆無人持有的目標，或改用角色成員管理
 - 系統企業（SYSTEM）刻意不種（沿用 ModuleRoleService 的既有排除），
   其 ACL 現況是刻意配置
-- 既有企業已由 `scripts/migrations/135_seed_module_acl_fail_closed.py` 補種
+- 既有企業已由 `scripts/migrations/legacy/135_seed_module_acl_fail_closed.py` 補種
   （zero-record 規則，BELUGA 已設定的模組未動）
 
 **終端用戶面不受影響**：表單中心等走 `check_acl=False`（僅驗合約），
@@ -532,7 +532,7 @@ Contract 等），**一個模組 model 都沒有**；該檔註解寫明「未列
 
 模組 API 要改走 gateway 的前置作業（缺一不可）：註冊 model 進
 `MODEL_RESOURCE_TYPE_MAP` → 建對應 permission code（`{resource_type}:read` 等，
-參考 `scripts/migrations/075_seed_resource_crud_permissions.py`）→
+參考 `scripts/migrations/legacy/075_seed_resource_crud_permissions.py`）→
 決定要不要進 `LIST_RBAC_ENFORCED_MODELS`。
 
 **模組 API 的實質要求（這才是驗收時該查的）**：
@@ -781,7 +781,7 @@ SELECT code, link_type, link_target FROM menu_items WHERE parent_secure_code = '
 所以查 Key2 現況**一定要 `GROUP BY` 企業**，不分組會把各企業的角色 `string_agg`
 成一串，看不出「只有某一家缺一筆」。`form_workflow.center` 的出廠預設漏了
 `EXTERNAL_USERS`（新企業的廠商進不了表單中心、被 302 強制登出且不報錯）
-就是這樣才被發現的，修法見 `scripts/migrations/113_form_center_menu_external_users.py`。
+就是這樣才被發現的，修法見 `scripts/migrations/legacy/113_form_center_menu_external_users.py`。
 
 **改選單一定是「DB + 出廠預設」兩件事**（2026-08-13 踩到）：
 `backend/app/defaults/menu_defaults.py` 的 `CORE_MENUS` 與 `MENU_ROLE_DEFAULTS`
@@ -796,14 +796,14 @@ SELECT code, link_type, link_target FROM menu_items WHERE parent_secure_code = '
   可省下重建 `menu_permissions` / `menu_role_requirements`；
   逐企業補 `menu_role_requirements` 時記得 **`roles.code` 跨企業不唯一**，
   要用該企業自己的 role secure_code
-- 範例：`scripts/migrations/099_merge_platform_help_menu.py`（含 `--dry-run`，冪等）
+- 範例：`scripts/migrations/legacy/099_merge_platform_help_menu.py`（含 `--dry-run`，冪等）
 
 **模組選單「刪掉定義」不等於選單會消失**（2026-08-17 踩到）：
 `flask module sync` 只做 create / update / unchanged
 （`backend/app/services/module_menu_service.py` 沒有任何刪除路徑），
 所以從 `MODULE_INFO['menu_items']` 拿掉一項之後，既有 DB 記錄照樣留著、
 選單照樣顯示。**要另寫 migration 把該 `code` 的 `menu_items` 設 `is_deleted`**
-（範例：`scripts/migrations/104_retire_od_intake_keys_menu.py`）。
+（範例：`scripts/migrations/legacy/104_retire_od_intake_keys_menu.py`）。
 
 **連帶要檢查 `docs/manual/**` 有沒有頁面 `nav_menu` 綁著那個 code**——
 站內 `/help/` 的可見性只看該 code 是否可見，綁到已刪除的 code 會讓整頁
@@ -1430,52 +1430,40 @@ endpoint 本身仍被 `portal_base.html` 與 `dev/index.html` 引用，所以**�
 - 有 `platform_files` 記錄的檔案一律走 `file_service.delete_file()`（FILE-01），
   只有無主檔案才能 `os.remove`；路徑一律先過 `safe_child_dir()`
 
-### 比對「乾淨安裝」與 dev 的 schema（2026-08-29 起，PF-168 用得到）
+### Schema 權威是 ORM model，migration 制度已廢止（2026-09-01 PF-168 起）
 
-`scripts/init_database.sh` 走的是 **`db.create_all()`（從 ORM model 建表）**，
-不是跑 migration。所以 dev（121 個 migration 疊出來）與外部使用者的全新安裝
-**schema 不一樣，而且沒有任何機制會發現**。要判斷現況差多少就跑這段，
-全程約 2 分鐘（本 session 實際跑過三次）：
+兩條建庫路徑已收斂為一條：**`db.create_all()` 是唯一權威**，dev 庫已於
+2026-09-01 一次性收斂到與 model 一致（含 timestamptz 轉 timestamp、jsonb 對齊、
+死欄位清除；記錄在 `scripts/migrations/legacy/136_pf168_dev_convergence.sql`）。
+137 支歷史 migration 與 `run_migrations.py` 全部封存在
+`scripts/migrations/legacy/`（含兩個模組的 migrations 目錄），**僅供考古，
+不要對任何資料庫執行**；`schema_migrations` 表已自 dev 庫刪除。
+文件裡引用 `scripts/migrations/legacy/0xx`／`1xx` 的舊路徑一律到 `legacy/` 底下找。
+
+開發時改 schema 的規則（詳見 `scripts/migrations/README.md`）：
+
+1. 改 ORM model（新表由 create_all 建出，新欄位要自己對 dev 庫下一次性 SQL）
+2. 跑守恆檢查，**有差就紅**（約 1~2 分鐘，改 model／加表／動 DB 物件後必跑）：
 
 ```bash
-cd /opt/BeakPlatform-dev
-sudo -u postgres psql -c "DROP DATABASE IF EXISTS beakplatform_freshcheck;" \
-  -c "CREATE DATABASE beakplatform_freshcheck OWNER beakplatform;"
-set -a && source .env && set +a
-export DATABASE_URL="postgresql://beakplatform:postgres123@localhost:5432/beakplatform_freshcheck"
-export SKIP_MODULE_SYNC=1
-cd backend && ../venv/bin/python -c "
-from app import create_app, db
-app = create_app()
-with app.app_context(): db.create_all()"
-# 比對（表清單；欄位把 tables 換成 columns、選 table_name||'.'||column_name||':'||data_type）
-cd /opt/BeakPlatform-dev
-for d in beakplatform_dev beakplatform_freshcheck; do
-  PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d $d -t -A -c \
-    "SELECT table_name FROM information_schema.tables
-     WHERE table_schema='public' AND table_type='BASE TABLE';" > /tmp/t_$d.txt
-done
-python3 -c "
-d=set(x.strip() for x in open('/tmp/t_beakplatform_dev.txt') if x.strip())
-f=set(x.strip() for x in open('/tmp/t_beakplatform_freshcheck.txt') if x.strip())
-print('dev 有 fresh 沒有:', sorted(d-f)); print('fresh 有 dev 沒有:', sorted(f-d))"
-sudo -u postgres psql -c "DROP DATABASE beakplatform_freshcheck;"
+bash scripts/check_schema_drift.sh          # --show-indexes / --show-defaults 看警告明細
 ```
 
-**比對一律用 python 的 set 差集，不要用 `comm`**——psql 的 `ORDER BY` 走
-collation，與 `sort` 的順序不一致，`comm` 會噴 "not in sorted order"
-並給出錯誤結果（2026-08-29 踩過）。
+3. 動了 `workflow_node_definitions`（新節點型別）要重跑
+   `venv/bin/python scripts/export_node_definitions_seed.py`，
+   否則**全新安裝的設計器不會出現新節點且不報錯**
+4. create_all 建不出來的 DB 物件（schema／role／ACL）與出廠資料，
+   加進 `scripts/sql/`（現有：`fw_sp_setup.sql`、`seed_workflow_node_definitions.sql`、
+   `seed_node_org_grants.sql`、`seed_menu_defaults.sql`、`seed_rbac_defaults.sql`）
+   並讓 `init_database.sh` 與 `install.sh` 的 `apply_db_extras()` 兩邊都執行
 
-**`freshcheck` 是拋棄式的獨立庫，與 `beakplatform_test` 無關**，
-跑測試時同時建它不會互相卡鎖。
+守恆檢查的警告區（索引 800+ 筆、server default 500+ 筆、fw_sp 的 demo 函式）
+是已知不列入判定的差異；**只有硬判定區（表／欄位／型別／NOT NULL／fw_sp ACL）
+出現差異才是回歸**。`freshcheck` 是拋棄式獨立庫，與 `beakplatform_test` 無關。
 
-2026-08-29 現況：dev 105 表 / 乾淨安裝 101 表，差 4 張
-（3 張 spec_formulate 模組 model 因 `SKIP_MODULE_SYNC=1` 不載入、
-`schema_migrations` 是登記表本身）。**數字會腐爛，自己跑。**
-
-**`schema_migrations` 不能用來判斷「這個庫跑到哪一版」**：
-檔案系統 118 個 / DB 登記 121 筆，084 以後的 SQL migration 全數未登記，
-DB 卻登記著檔案系統早已不存在的檔名。修它是 PF-168 的一部分。
+欄位級的升級機制（公開後既有環境的升級）**刻意不存在**——2026-09-01 時點
+沒有任何已安裝的外部環境。首次需要時另行設計（候選 alembic），
+不要復活 `run_migrations.py`。
 
 ### 每個 session 都會撞一次的欄位名（2026-08-09 逐一試誤才弄對）
 
@@ -1502,9 +1490,9 @@ DB 卻登記著檔案系統早已不存在的檔名。修它是 PF-168 的一部
 | 角色指派是否生效 | `user_role_assignments.is_active` | **沒有這個欄位**；用 `is_deleted` ＋ `valid_from` / `valid_until`（date） |
 | 模組 ACL 的表 | `module_access_controls`（複數） | **`module_access_control`**（單數）；`target_type` 是 `ROLE` / `ACCOUNT`，值放 `target_secure_code` |
 | 表單模板的欄位定義 | `fw_form_templates.form_schema` | **`schema`**（jsonb）；另有 `builder_config` / `allowed_editors` |
-| 使用者的員工編號 | `users.employee_number` / `emp_no` | **`users.employee_id`**（varchar 50，組織內唯一）；**兩帳號制的管理員帳號 2026-08-23 起才有號**——新企業由 `_create_default_numbering_rules()` 的第 6 條規則自動發 `ADM001`，既有企業已由 `scripts/migrations/112_backfill_org_admin_employee_id.py` 回填；SYSTEM_ADMIN 型帳號刻意不發（平台級身分不屬企業人事編制） |
+| 使用者的員工編號 | `users.employee_number` / `emp_no` | **`users.employee_id`**（varchar 50，組織內唯一）；**兩帳號制的管理員帳號 2026-08-23 起才有號**——新企業由 `_create_default_numbering_rules()` 的第 6 條規則自動發 `ADM001`，既有企業已由 `scripts/migrations/legacy/112_backfill_org_admin_employee_id.py` 回填；SYSTEM_ADMIN 型帳號刻意不發（平台級身分不屬企業人事編制） |
 | 企業獨立資料庫的庫名 | `fw_org_databases.database_name` | **`db_name`**（另有 `org_id` / `db_host` / `db_port` / `is_ready`）；注意「記錄在、實體庫不在」是既有狀態（本機 `org_14`），反向不一致兩個方向都要查 |
-| migration 登記表的欄位 | `schema_migrations.version` | **`schema_migrations.filename`**（含副檔名，例 `116_xxx.py`）；PF-162 卡片裡那句 `INSERT INTO schema_migrations (version)` 是錯的，照抄會拿到 `column "version" does not exist` |
+| migration 登記表 | 查 `schema_migrations` | **表已於 2026-09-01（PF-168）自 dev 庫刪除**，migration 制度廢止、model 即權威；查到引用它的舊文件一律過時 |
 | 編號規則的流水號 counter | `user_numbering_rules.current_counter` / `.code` | **兩個都不存在**；該表只有 `id / secure_code / org_secure_code / name / description / elements / is_active / usage_scope / default_for` 等，**流水號設定與計數藏在 `elements` 這個 jsonb 內**（`components` 陣列裡 `type='sequence'` 的項目）。要看「號碼有沒有被消耗」一律查 `used_user_numbers`，不要找 counter 欄位 |
 | 企業獨立資料庫登記表的必填欄位 | 只填 `org_secure_code` / `org_id` / `db_name` | 還要 **`secure_code`**、**`admin_user`**、**`admin_password_enc`**、**`sync_user`**、**`sync_password_enc`** 五個 NOT NULL（2026-08-29 造測試資料時逐一撞出來，錯誤訊息一次只報一個）。查全部必填：`SELECT column_name FROM information_schema.columns WHERE table_name='fw_org_databases' AND is_nullable='NO';` |
 | 用 SQL 造測試角色指派（mutation 驗證常用） | 只填 user/role/org 三個 secure_code | 還要 **`secure_code`**、**`assigned_at`** 兩個 NOT NULL（2026-09-01 逐一撞出來，錯誤一次只報一個）。`assigned_by` 填可辨識標記（如 `PF145-S5-TEST`），事後 `DELETE FROM user_role_assignments WHERE assigned_by='<標記>'` 一次撤乾淨；成功範例在 `/opt/tmp/verify/20260901-pf145-stage5.log` |
@@ -1731,7 +1719,7 @@ formadapter_handler.py:148     # 驗證 target_edges 合法性（空 target_edge
 | 並行分支各自走 End | End 是**流程級**結束，任一分支走到就整個流程 COMPLETED | 另一條的簽核任務會被 executor 視為流程已結束 |
 | **`End(cancel)` 記 CANCELLED（案件「已取消」）；`detach`／`strict` 記 COMPLETED（案件「已核准」）** | PF-200：`end_handler` 對 cancel 回報 `data.workflow_status='CANCELLED'`，`node_runner` 白名單採用；**Abandon 節點已刪除**（handler／factory／面板全拆，nodedef 軟刪除，migration 131） | 既有用 `End(cancel)` 當「正常完工＋清分支」的兩張資安處置範本已由 migration 132 連同 14 個發行快照改成 `detach`（`scripts/examples/od_workflow_graphs.py` 同步）。`complete_workflow()` 仍無條件 `enqueue_sync_safe()`，終態會 upsert 進企業獨立資料庫——所以終態記錯比以前更難回收，改 End 語意前先讀 `dev-notes/handoff_end_subflow_cancel_20260831.md` 第十節 |
 | `AlertBroadcast.broadcast_code` | **不做變數替換**（只有 title/message 有），同 code 覆蓋前一則並清掉已讀記錄 | 它是「最新一則橫幅」不是每案通知，別拿來當逐案稽核 |
-| `fw_workflow_templates.timeout_minutes` | 只被寫入 `timeout_at`（`workflow_engine.py:124-139`），**全專案沒有任何地方讀它** | 填了不會有任何效果，逾時要用流程內 Delay 節點 |
+| 流程模板層級的逾時 | **不存在**（`timeout_minutes`／`timeout_at` 欄位與其唯一使用者 `WorkflowEngine.start_workflow` 死碼已於 2026-09-01 PF-168 刪除） | 逾時要用流程內 Delay 節點 |
 | `DecisionWriter.decided_via` 自動推斷 | 看 `last_completed_node_type`，並行分支下不可靠 | 一律在節點 config 明確標 `human` / `auto` |
 | `DecisionWriter.target_value` 替換後為空 | 節點回 error、流程卡住 | 自動封鎖前必須先用 Branch 擋掉 `actor_ip` 為空的案件 |
 
@@ -1968,12 +1956,12 @@ API 也**必須放平台層**（`backend/app/api/node_grants.py`）——SYSTEM_
 判準是「碰不碰作業系統」而不是「是不是管理員專用」——所以 `SysTelegram` 與
 `SysEmailRelay` 不在此列（碰的是外部服務不是 OS，用 `Sys` 前綴）。
 `EmailRelay` 於 2026-08-31（PF-188）改名為 `SysEmailRelay`，
-走 `scripts/migrations/130_sys_nodes_org_restricted.sql`。
+走 `scripts/migrations/legacy/130_sys_nodes_org_restricted.sql`。
 **小寫的 `emailrelay` 一律不動**——那是外部服務 E-MailRelay 本身
 （`emailrelay-submit`、`app.services.emailrelay_config`、spool 目錄、
 `/api/system-settings/emailrelay`），與節點型別無關。
 2026-08-31 之前叫 `FileRead` / `FileWrite`，改名走
-`scripts/migrations/129_os_prefix_for_system_nodes.sql`（連 graph、發行快照、
+`scripts/migrations/legacy/129_os_prefix_for_system_nodes.sql`（連 graph、發行快照、
 執行紀錄、system_settings 鍵一起換——**node_type 是 factory 查 handler 的鍵，
 graph 裡的舊字串沒換掉的話該流程執行時會拋 `ValueError`**）。
 

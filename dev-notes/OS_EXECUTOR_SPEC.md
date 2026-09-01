@@ -756,7 +756,7 @@ sudo systemctl restart beakplatform-dev-executor
 | `modules/form_workflow/services/node_handlers/os_file_read_handler.py` | OsFileRead handler |
 | `modules/form_workflow/services/workflow_engine.py` | `_stop_os_dispatched_units()`，cancel 時停 unit |
 | `modules/form_workflow/services/workflow_executor.py` | **WAITING 喚醒清單加 `OsExecutor`**（見下方差異 2） |
-| `scripts/migrations/120_seed_os_executor_node.sql` / `121_seed_file_read_node.sql` | 節點定義與 system_settings，`is_active=FALSE` 出廠 |
+| `scripts/migrations/legacy/120_seed_os_executor_node.sql` / `121_seed_file_read_node.sql` | 節點定義與 system_settings，`is_active=FALSE` 出廠 |
 | `scripts/cron/os_node_cleanup.py` | 輸出檔清理 + `systemctl reset-failed 'bp-*'` |
 | `wf-node-os-executor.js` / `wf-node-os-file-read.js` | 設計器面板 |
 | `docs/install/os_node.md` | 部署與授權說明（會推 GitHub） |

@@ -71,7 +71,7 @@
 | `.../node_handlers/factory.py` | 註冊（handler 從 22 個增為 23 個） |
 | `.../js/wf-node-ai-agent.js` | 設計器屬性面板 |
 | `.../js/wf-accordion.js`、`wf-save.js`、`workflow_designer.html` | 面板 dispatch／存檔／載入三處接線 |
-| `scripts/migrations/105_seed_ai_agent_node.sql` | 節點定義（category=整合） |
+| `scripts/migrations/legacy/105_seed_ai_agent_node.sql` | 節點定義（category=整合） |
 | `backend/tests/test_ai_agent_node.py` | 30 個測試，全部做過 mutation 驗證 |
 
 **一手實測結論在 `ai_node_findings.md`**，那是第 18 篇的主要素材：
@@ -126,7 +126,7 @@ worker 5 秒內消化 → 資料落地，`textField` 是**簽核者改過的終�
 建企業時自動 seed 表單 `API_KEY_REQUEST` ＋ 流程 `API_KEY_REQUEST_FLOW` ＋ 配對發行
 ＋ 三筆填寫權限（`backend/app/defaults/api_key_request_defaults.py`，掛在
 `organization_service.create_organization()` 與 `init_system_organization()` 兩處），
-既有企業由 `scripts/migrations/116_seed_api_key_request_flow_existing_orgs.py` 補。
+既有企業由 `scripts/migrations/legacy/116_seed_api_key_request_flow_existing_orgs.py` 補。
 **第 2 篇的「缺出廠資料包」尚未整體解除**——第 1 篇要的「預設企業與預設表單流程」
 還沒有對應的匯出機制（`export_factory_defaults.py` 只處理 menu_defaults 與
 rbac_defaults 兩張表，不含 fw_* 的表單流程）。

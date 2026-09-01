@@ -7,7 +7,8 @@ Spec Schema Model - 資料結構規格定義
 - linked_form_template_sc / linked_sql_table 標示關聯但不影響 SPEC 運作
 """
 import secrets
-from sqlalchemy import Column, String, Integer, Text, JSON, event
+from sqlalchemy import Column, String, Integer, BigInteger, Text, event
+from sqlalchemy.dialects.postgresql import JSONB
 from .base import ModuleBaseModel
 
 
@@ -42,6 +43,9 @@ class FwSpecSchema(ModuleBaseModel):
     """
     __tablename__ = 'fw_spec_schema'
 
+    # PK 為 bigint（與既有資料一致，PF-168 對齊）
+    id = Column(BigInteger, primary_key=True)
+
     org_secure_code = Column(String(100), nullable=False, index=True)
 
     # 規格名稱（必填）
@@ -57,10 +61,10 @@ class FwSpecSchema(ModuleBaseModel):
     version = Column(Integer, nullable=False, default=1)
 
     # 欄位定義 (JSONB array, core + facets 分層結構)
-    fields = Column(JSON, nullable=False, default=list)
+    fields = Column(JSONB, nullable=False, default=list)
 
     # 已操作過的格式清單，如 ["postgresql", "formio"]
-    active_facets = Column(JSON, nullable=False, default=list)
+    active_facets = Column(JSONB, nullable=False, default=list)
 
     # 狀態: active / archived
     status = Column(String(20), nullable=False, default='active')

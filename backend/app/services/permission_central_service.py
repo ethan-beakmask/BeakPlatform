@@ -1152,8 +1152,8 @@ class PermissionCentralService:
         sql_content = '\n'.join(lines)
 
         sql_path = os.path.join(
-            cls._PROJECT_ROOT, 'scripts', 'migrations',
-            '060_seed_rbac_defaults.sql'
+            cls._PROJECT_ROOT, 'scripts', 'sql',
+            'seed_rbac_defaults.sql'
         )
         os.makedirs(os.path.dirname(sql_path), exist_ok=True)
         with open(sql_path, 'w', encoding='utf-8') as f:
@@ -1162,14 +1162,14 @@ class PermissionCentralService:
         total_perms = sum(len(v) for v in snapshot.values())
         logger.info(
             f"RBAC factory SQL exported: {len(snapshot)} roles, "
-            f"{total_perms} permissions -> 060_seed_rbac_defaults.sql"
+            f"{total_perms} permissions -> seed_rbac_defaults.sql"
         )
 
         return {
             'message': '安裝用 SQL 已產出',
             'roles_count': len(snapshot),
             'permissions_count': total_perms,
-            'sql_file': '060_seed_rbac_defaults.sql',
+            'sql_file': 'seed_rbac_defaults.sql',
         }
 
     @classmethod

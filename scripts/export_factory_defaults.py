@@ -2,12 +2,11 @@
 """
 BeakPlatform 出廠預設值匯出工具（原廠專用）
 
-從 menu_defaults 和 rbac_defaults 資料表產出安裝用 SQL，
-供 install.sh 全新安裝時灌入預設值。
+從 menu_defaults 和 rbac_defaults 資料表產出安裝用 SQL
+（scripts/sql/seed_menu_defaults.sql / seed_rbac_defaults.sql），
+供 install.sh / init_database.sh 全新安裝時灌入預設值。
 
---update 時不會覆蓋用戶設定（雙重保護）：
-  1. run_migrations.py 追蹤 filename，已執行的不重跑
-  2. SQL 使用 IF NOT EXISTS 條件，表有資料時不插入
+不會覆蓋用戶設定：SQL 使用 IF NOT EXISTS 條件，表有資料時不插入。
 
 用法:
     python3 scripts/export_factory_defaults.py              # 匯出全部
@@ -26,10 +25,10 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MIGRATIONS_DIR = os.path.join(PROJECT_ROOT, 'scripts', 'migrations')
+SQL_DIR = os.path.join(PROJECT_ROOT, 'scripts', 'sql')
 
-MENU_SQL_FILE = '058_seed_menu_defaults.sql'
-RBAC_SQL_FILE = '060_seed_rbac_defaults.sql'
+MENU_SQL_FILE = 'seed_menu_defaults.sql'
+RBAC_SQL_FILE = 'seed_rbac_defaults.sql'
 
 
 def export_menu_defaults(app, dry_run=False):
@@ -110,7 +109,7 @@ def export_menu_defaults(app, dry_run=False):
             print(f"[menu] 預覽: {len(rows)} 筆 -> {MENU_SQL_FILE}")
             print(f"       前 3 筆: {', '.join(r.code for r in rows[:3])}...")
         else:
-            path = os.path.join(MIGRATIONS_DIR, MENU_SQL_FILE)
+            path = os.path.join(SQL_DIR, MENU_SQL_FILE)
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(sql_content)
             print(f"[menu] {len(rows)} 筆 -> {MENU_SQL_FILE}")
@@ -180,7 +179,7 @@ def export_rbac_defaults(app, dry_run=False):
             for rc, pcs in sorted(roles.items()):
                 print(f"       {rc}: {len(pcs)} permissions")
         else:
-            path = os.path.join(MIGRATIONS_DIR, RBAC_SQL_FILE)
+            path = os.path.join(SQL_DIR, RBAC_SQL_FILE)
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(sql_content)
             print(f"[rbac] {len(roles)} 角色, {len(rows)} 筆 -> {RBAC_SQL_FILE}")

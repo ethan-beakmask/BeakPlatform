@@ -26,7 +26,7 @@
 
 ## 一、資料模型：`api_keys`（平台層）
 
-`backend/app/models/api_key.py`，migration `scripts/migrations/077_api_keys.sql`。
+`backend/app/models/api_key.py`，migration `scripts/migrations/legacy/077_api_keys.sql`。
 
 | 欄位 | 型別 | 說明 |
 |------|------|------|

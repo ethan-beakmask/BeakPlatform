@@ -38,7 +38,7 @@
 > - `modules/form_workflow/api/fc_utils.py` get_org_tree(員工填單選簽核人)
 > - `api/contracts.py` list_my_contracts(contract:read 是 SYSTEM 級,org admin 看自己合約由 decorator+租戶過濾把關)
 >
-> **SYSTEM_ADMIN 角色已建置**:`scripts/migrations/076_seed_system_admin_role.py`（系統企業由 DB code=SYSTEM 動態解析）
+> **SYSTEM_ADMIN 角色已建置**:`scripts/migrations/legacy/076_seed_system_admin_role.py`（系統企業由 DB code=SYSTEM 動態解析）
 > (角色+全權限授予+指派給 user_type=SYSTEM_ADMIN 帳號)。階段 A 擱置的
 > list_organizations 現已被 enforced 覆蓋,sysadmin 走 RBAC 通過。
 >

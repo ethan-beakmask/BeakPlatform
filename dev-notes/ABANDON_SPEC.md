@@ -51,7 +51,7 @@ End 即可，不會產生長線。所以 2026-08-31 上午的評估結論是：A
 
 **連帶處置**：Abandon 的 `require_system_admin` 與 `org_restricted` 都是 false
 （所有企業都看得到），放在「系統級管理員專用」分類本來就是錯的，
-已移到「基本」分類與 `End` 並列（`scripts/migrations/128_abandon_move_to_basic.sql`）。
+已移到「基本」分類與 `End` 並列（`scripts/migrations/legacy/128_abandon_move_to_basic.sql`）。
 
 **`End(cancel)` 維持原樣**——它的語意是「正常結束並清理未完成節點」，記成完成是對的。
 

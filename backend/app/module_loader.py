@@ -270,6 +270,20 @@ class ModuleLoader:
         Args:
             module: ModuleInfo 物件
         """
+        # 載入 Models（確保 model 進 SQLAlchemy metadata，db.create_all 才建得出模組表；
+        # 不能依賴 api/web 的 import 鏈——lazy import 的模組（如 spec_formulate）不會註冊，
+        # 全新安裝就缺表且不報錯，見 PF-168）
+        models_init = module.path / 'models' / '__init__.py'
+        if models_init.exists():
+            try:
+                self._import_module_file(
+                    f"modules.{module.name}.models",
+                    models_init
+                )
+                logger.debug(f"Registered models for {module.name}")
+            except Exception as e:
+                logger.error(f"Failed to load models for {module.name}: {e}")
+
         # 載入 API Blueprint
         api_init = module.path / 'api' / '__init__.py'
         if api_init.exists():

@@ -5,7 +5,8 @@ FormWorkflow Module - Field Change Record Model
 記錄簽核過程中，簽核者對表單欄位的修改。
 """
 from datetime import datetime
-from sqlalchemy import Column, String, Text, DateTime, JSON
+from sqlalchemy import Column, String, Text, DateTime
+from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import ModuleBaseModel
 
@@ -35,8 +36,8 @@ class FwFormFieldChange(ModuleBaseModel):
     field_label = Column(String(200), nullable=True)
 
     # 變更值 (JSONB 以支援各種型別)
-    old_value = Column(JSON, nullable=True)
-    new_value = Column(JSON, nullable=True)
+    old_value = Column(JSONB, nullable=True)
+    new_value = Column(JSONB, nullable=True)
 
     # 時間
     changed_at = Column(DateTime, default=datetime.utcnow, nullable=False)

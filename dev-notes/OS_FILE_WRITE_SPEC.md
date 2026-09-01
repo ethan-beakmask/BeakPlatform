@@ -2,7 +2,7 @@
 
 對應 handler：`modules/form_workflow/services/node_handlers/os_file_write_handler.py`
 設計器面板：`modules/form_workflow/static/modules/form_workflow/js/wf-node-os-file-write.js`
-migration：`scripts/migrations/124_seed_file_write_node.sql`
+migration：`scripts/migrations/legacy/124_seed_file_write_node.sql`
 測試：`backend/tests/test_os_file_write_node.py`
 部署說明（會推 GitHub）：`docs/install/os_file_write_node.md`
 

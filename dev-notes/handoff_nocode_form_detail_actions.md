@@ -67,7 +67,7 @@
 | guest token | `portal_auth_service.ensure_guest_token()` |
 | mapping 引用守衛 | `nocode_builder/services/pageir_mapping_usage.py` + `mappings.py` 的 `_nocode_usage()` |
 | 設計器面板 | form widget 可設配對／送出動作／元件准入；准入 UI 抽成 `_ir_designer_access_matrix.html` macro，table/detail/form 共用 |
-| migration | `scripts/migrations/088_nocode_form_submit.sql` |
+| migration | `scripts/migrations/legacy/088_nocode_form_submit.sql` |
 
 送件成立的三個條件（缺一即唯讀，**渲染層與 API 層都檢查**）：
 `submit_action_ref` 已註冊 + `mapping_ref` 有值 + `access_matrix.create` 判定通過。

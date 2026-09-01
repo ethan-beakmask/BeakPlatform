@@ -14,7 +14,7 @@
 > | 第二節的破口 | 一般企業 PUT graph / publish 皆已回 403（實測） |
 > | 第 6.5 節的「最大未知」 | **答案是「handler 完全沒有企業檢查」**，見下方「調查補記」 |
 >
-> **migration**：`scripts/migrations/130_sys_nodes_org_restricted.sql`（已執行、已登記、冪等重跑 0 筆）
+> **migration**：`scripts/migrations/legacy/130_sys_nodes_org_restricted.sql`（已執行、已登記、冪等重跑 0 筆）
 > **驗收留證**：`/opt/tmp/verify/20260831-pf188.log`（含兩組企業矩陣、publish、瀏覽器實測、執行期）
 >
 > ### 調查補記（原本不在本檔，是動工時才查出來的）
@@ -290,7 +290,7 @@ publish 走 `POST /api/mappings/<mapping_sc>/publish`（`api/mappings.py::publis
 
 - **全平台節點的出廠預設**：`modules/form_workflow/migrations/013_seed_node_definitions.sql`
   （`SysTelegram` / `EmailRelay` 的定義在這裡）
-- **後來單獨加的節點**：`scripts/migrations/1XX_seed_<node>_node.sql`
+- **後來單獨加的節點**：`scripts/migrations/legacy/1XX_seed_<node>_node.sql`
   （範本：`120_seed_os_executor_node.sql` / `121_seed_file_read_node.sql` / `124_seed_file_write_node.sql`，
   含 `is_active=FALSE` 出廠與只 grant 系統企業的寫法，**照抄這三個就對了**）
 
@@ -300,7 +300,7 @@ publish 走 `POST /api/mappings/<mapping_sc>/publish`（`api/mappings.py::publis
 
 - 檔名 `scripts/migrations/NNN_描述.sql`（或 `.py`），**下一個序號是 130**
 - SQL 要冪等（以舊值為 WHERE 條件，重跑 0 筆），範本
-  `scripts/migrations/129_os_prefix_for_system_nodes.sql`
+  `scripts/migrations/legacy/129_os_prefix_for_system_nodes.sql`
 - 執行：`PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -f <檔>`
 - **登記**：`INSERT INTO schema_migrations (filename) VALUES ('130_xxx.sql') ON CONFLICT DO NOTHING;`
   （欄位是 **`filename`** 含副檔名，不是 `version`）

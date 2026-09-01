@@ -8,7 +8,7 @@
 |---|---|
 | `modules/form_workflow/services/node_handlers/sqlexecutor_handler.py` | handler（安全核心，檔頭有完整設計說明） |
 | `modules/form_workflow/models/sql_procedure.py` | 白名單 model `FwSqlProcedure` |
-| `scripts/migrations/106_sqlexecutor_whitelist.sql` | schema `fw_sp`、白名單表、範例 SP 與範例資料 |
+| `scripts/migrations/legacy/106_sqlexecutor_whitelist.sql` | schema `fw_sp`、白名單表、範例 SP 與範例資料 |
 | `modules/form_workflow/api/workflows.py::get_sql_procedures` | 設計器下拉用的清單 API |
 | `modules/form_workflow/static/.../js/wf-node-sql-executor.js` | 屬性面板 |
 | `backend/tests/test_sqlexecutor_node.py` | 47 個測試（含四道防線的 mutation 驗證） |
@@ -47,7 +47,10 @@ PUT 改寫 —— **設計器的下拉選單不是防線**。
 
 ## 白名單維護（刻意不做 Web UI）
 
-**登錄一筆 ＝ 授權流程設計者呼叫那支 SP，屬於部署期決定**，所以走 migration。
+**登錄一筆 ＝ 授權流程設計者呼叫那支 SP，屬於部署期決定**，所以走 SQL 檔
+而非 Web UI。（2026-09-01 PF-168 起 migration 制度廢止：一次性 SQL 對 dev 庫
+執行後歸檔 `scripts/migrations/legacy/`；`fw_sp` schema 本身由安裝資產
+`scripts/sql/fw_sp_setup.sql` 建立。下文提到「migration」的地方一律照此理解。）
 
 **2026-08-31（migration 133）起 `fw_sp` 的 owner 是 NOLOGIN 角色 `fw_sp_owner`，
 `beakplatform` 只有 USAGE + EXECUTE**——所以建 SP 的 migration **必須用 postgres 跑**
@@ -235,7 +238,7 @@ beluga 1200 / lion 5。用它驗跨企業隔離最直接。
 （同交易則 SP 內不能 COMMIT；獨立交易則流程失敗時副作用留著），
 **不是把那一行拿掉**。
 
-白名單維護走 migration（`scripts/migrations/106_sqlexecutor_whitelist.sql`），
+白名單維護走 migration（`scripts/migrations/legacy/106_sqlexecutor_whitelist.sql`），
 **刻意不做 Web UI** —— 登錄一筆等同授權。
 
 **改 handler 後 executor 要重啟才認得**（`beakplatform-dev-executor` 是獨立進程）。

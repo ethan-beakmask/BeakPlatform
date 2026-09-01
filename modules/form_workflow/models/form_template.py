@@ -3,7 +3,7 @@ FormWorkflow Module - Form Template Model
 表單模板
 """
 from sqlalchemy import Column, String, Text, Boolean, DateTime, BigInteger
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import ModuleBaseModel
 
@@ -24,14 +24,14 @@ class FwFormTemplate(ModuleBaseModel):
     category_secure_code = Column(String(32), nullable=True, index=True)
 
     # form.io schema
-    schema = Column(JSON, nullable=False)
+    schema = Column(JSONB, nullable=False)
 
     # 版本控制
     version = Column(String(2), default='AA')  # AA~ZZ (676 組合)
     revision = Column(BigInteger, default=1)   # 修訂號
 
     # 設計器配置
-    builder_config = Column(JSON, default=dict)
+    builder_config = Column(JSONB, default=dict)
 
     # 縮圖 (base64)
     thumbnail_2x1 = Column(Text, nullable=True)
@@ -47,7 +47,7 @@ class FwFormTemplate(ModuleBaseModel):
     # 權限控制
     permission_type = Column(String(20), default='org', nullable=False)
     owner_secure_code = Column(String(50), nullable=True, index=True)
-    allowed_editors = Column(JSON, nullable=True)
+    allowed_editors = Column(JSONB, nullable=True)
 
     # 建立者/編輯者
     created_by_secure_code = Column(String(32), nullable=True)

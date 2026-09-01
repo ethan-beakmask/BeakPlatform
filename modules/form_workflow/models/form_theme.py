@@ -4,7 +4,7 @@ FormWorkflow Module - Form Theme Model
 """
 import secrets
 from sqlalchemy import Column, String, Text, Boolean, Integer, event
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.models.base import BaseModel
 
@@ -30,7 +30,7 @@ class FwFormTheme(BaseModel):
     css_content = Column(Text, nullable=True)
 
     # 元件預設屬性（如 labelPosition, labelWidth, labelMargin）
-    component_defaults = Column(JSON, nullable=True)
+    component_defaults = Column(JSONB, nullable=True)
 
     # 狀態
     is_system = Column(Boolean, default=False, nullable=False)

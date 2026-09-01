@@ -3,7 +3,7 @@ BeakPlatform Store Installation Model
 內部商場安裝記錄
 """
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Boolean
+from sqlalchemy import Column, String, DateTime, Boolean, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import BaseModel
@@ -16,6 +16,9 @@ class StoreInstallation(BaseModel):
     記錄哪個企業安裝了哪個商品、誰安裝的、安裝結果。
     """
     __tablename__ = 'store_installations'
+
+    # PK 為 bigint（與既有資料一致，PF-168 對齊）
+    id = Column(BigInteger, primary_key=True)
 
     org_secure_code = Column(String(100), nullable=False, index=True)
 

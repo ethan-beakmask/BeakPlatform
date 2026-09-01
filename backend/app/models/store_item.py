@@ -2,7 +2,7 @@
 BeakPlatform Store Item Model
 內部商場商品
 """
-from sqlalchemy import Column, String, Text, Boolean, DateTime
+from sqlalchemy import Column, String, Text, Boolean, DateTime, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import BaseModel
@@ -25,6 +25,9 @@ class StoreItem(BaseModel):
       - platform: 僅系統企業可用
     """
     __tablename__ = 'store_items'
+
+    # PK 為 bigint（與既有資料一致，PF-168 對齊）
+    id = Column(BigInteger, primary_key=True)
 
     # org_secure_code: NULL=官方, 有值=企業自建
     org_secure_code = Column(String(100), nullable=True, index=True)

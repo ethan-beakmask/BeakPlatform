@@ -96,7 +96,7 @@ http://192.168.0.16:7000/beakplatform/forms/workflows/7LJRvpSPUYcmK1M1wcOTzY
 `init_system_organization()` **兩處**呼叫（後者不走前者）。
 `scripts/examples/provision_api_key_request_flow.py` 是它的 CLI 外殼、
 反過來 import defaults——**要改表單欄位或流程 graph 一律改 defaults 那一份**，
-改腳本不會生效。既有企業由 `scripts/migrations/116_seed_api_key_request_flow_existing_orgs.py` 補。
+改腳本不會生效。既有企業由 `scripts/migrations/legacy/116_seed_api_key_request_flow_existing_orgs.py` 補。
 
 ## 樹系圖有兩份幾乎相同的實作（2026-08-31 PF-201 期間發現）
 

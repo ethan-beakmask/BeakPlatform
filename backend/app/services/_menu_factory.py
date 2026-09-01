@@ -659,8 +659,8 @@ class MenuFactoryMixin:
             os.path.join(os.path.dirname(__file__), '..', '..', '..')
         )
         sql_path = os.path.join(
-            project_root, 'scripts', 'migrations',
-            '058_seed_menu_defaults.sql'
+            project_root, 'scripts', 'sql',
+            'seed_menu_defaults.sql'
         )
         os.makedirs(os.path.dirname(sql_path), exist_ok=True)
         with open(sql_path, 'w', encoding='utf-8') as f:
@@ -668,11 +668,11 @@ class MenuFactoryMixin:
 
         logger.info(
             f"Menu factory SQL exported: {len(rows)} items "
-            f"→ 058_seed_menu_defaults.sql"
+            f"→ seed_menu_defaults.sql"
         )
 
         return {
             'message': '安裝用 SQL 已產出',
             'count': len(rows),
-            'sql_file': '058_seed_menu_defaults.sql',
+            'sql_file': 'seed_menu_defaults.sql',
         }

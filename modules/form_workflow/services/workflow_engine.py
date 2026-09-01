@@ -12,9 +12,9 @@ import secrets
 import signal
 import subprocess
 import time
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Tuple
-from sqlalchemy import and_, or_, text
+from datetime import datetime
+from typing import List, Optional, Tuple
+from sqlalchemy import or_, text
 from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
@@ -23,13 +23,8 @@ OS_EXECUTOR_UNIT_RE = re.compile(r'^[A-Za-z0-9_.-]+$')
 OS_EXECUTOR_UNIT_PREFIX = 'bp-'
 
 from app import db
-from app.platform.auth import current_user
-from app.platform.data import get_current_org
-from flask_babel import gettext as _
 
 from ..models import (
-    FwFormTemplate,
-    FwWorkflowTemplate,
     FwFormInstance,
     FwWorkflowInstance,
     FwApprovalRecord,
@@ -201,188 +196,6 @@ class WorkflowEngine:
         date_str = datetime.utcnow().strftime('%Y%m%d')
         random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
         return f"{org_secure_code[:4]}-{date_str}-{random_str}"
-
-    @staticmethod
-    def start_workflow(
-        form_instance_secure_code: str,
-        workflow_template_secure_code: Optional[str] = None,
-        is_test: bool = True
-    ) -> FwWorkflowInstance:
-        """
-        啟動工作流
-
-        Args:
-            form_instance_secure_code: 表單實例 secure_code
-            workflow_template_secure_code: 工作流模板 secure_code（可選）
-            is_test: 是否為測試模式
-
-        Returns:
-            FwWorkflowInstance: 工作流實例
-        """
-        # 1. 取得表單實例
-        form_instance = FwFormInstance.query.filter_by(
-            secure_code=form_instance_secure_code,
-            is_deleted=False
-        ).first()
-
-        if not form_instance:
-            raise ValueError(_('表單實例 %(form_instance_secure_code)s 不存在', form_instance_secure_code=form_instance_secure_code))
-
-        # 2. 取得工作流模板
-        if workflow_template_secure_code:
-            workflow_template = FwWorkflowTemplate.query.filter_by(
-                secure_code=workflow_template_secure_code,
-                org_secure_code=form_instance.org_secure_code,
-                is_deleted=False
-            ).first()
-        else:
-            # 自動查找關聯的工作流模板
-            form_template = FwFormTemplate.query.filter_by(
-                secure_code=form_instance.form_template_secure_code,
-                is_deleted=False
-            ).first()
-
-            if form_template and form_template.workflow_template_secure_code:
-                workflow_template = FwWorkflowTemplate.query.filter_by(
-                    secure_code=form_template.workflow_template_secure_code,
-                    is_deleted=False
-                ).first()
-            else:
-                raise ValueError(_('找不到對應的工作流模板'))
-
-        if not workflow_template:
-            raise ValueError(_('工作流模板不存在'))
-
-        # 3. 取得流程定義並保存快照
-        graph = workflow_template.graph
-        if not graph or 'nodes' not in graph:
-            raise ValueError(_('工作流模板缺少 graph 資料'))
-
-        # 4. 創建工作流實例（保存 graph_snapshot，確保流程執行期間使用發行時的圖）
-        timeout_at = None
-        if workflow_template.timeout_minutes:
-            timeout_at = datetime.utcnow() + timedelta(minutes=workflow_template.timeout_minutes)
-
-        execution_code = WorkflowEngine.generate_execution_code(form_instance.org_secure_code)
-
-        workflow_instance = FwWorkflowInstance(
-            org_secure_code=form_instance.org_secure_code,
-            workflow_template_secure_code=workflow_template.secure_code,
-            form_instance_secure_code=form_instance_secure_code,
-            is_test=is_test,
-            execution_code=execution_code,
-            status='RUNNING',
-            current_node_id=None,
-            graph_snapshot=graph,
-            timeout_at=timeout_at,
-            created_by_secure_code=form_instance.applicant_secure_code
-        )
-
-        db.session.add(workflow_instance)
-        db.session.flush()  # 取得 secure_code
-
-        # 5. 從 graph 中找到 START 節點並加入佇列
-        graph_nodes = graph.get('nodes', [])
-        start_nodes = []
-
-        for node in graph_nodes:
-            node_id = node.get('id')
-            node_type = node.get('type')
-
-            # 推斷節點類型
-            if not node_type:
-                if node_id and node_id.startswith('node-Start'):
-                    node_type = 'Start'
-                elif node_id and node_id.startswith('node-End'):
-                    node_type = 'End'
-                else:
-                    node_data = node.get('data', {})
-                    node_type = node_data.get('type', 'UNKNOWN')
-
-            if node_type == 'Start':
-                display_name = node.get('label') or node.get('data', {}).get('label') or ''
-                start_nodes.append({
-                    'id': node_id,
-                    'config': node.get('data', {}).get('config', {}),
-                    'display_name': display_name
-                })
-
-        if not start_nodes:
-            raise ValueError(_('工作流模板缺少 Start 節點'))
-
-        # 6. 將 START 節點加入執行佇列
-        for start_node in start_nodes:
-            queue_item = FwNodeExecutionQueue(
-                org_secure_code=workflow_instance.org_secure_code,
-                workflow_instance_secure_code=workflow_instance.secure_code,
-                node_id=start_node['id'],
-                node_type='Start',
-                node_name=start_node.get('display_name', ''),
-                node_config=start_node['config'],
-                status='PENDING',
-                scheduled_at=datetime.utcnow()
-            )
-            db.session.add(queue_item)
-
-            # 更新當前節點
-            if not workflow_instance.current_node_id:
-                workflow_instance.current_node_id = start_node['id']
-
-        # 更新表單實例狀態
-        form_instance.status = 'PROCESSING'
-        form_instance.submitted_at = datetime.utcnow()
-
-        db.session.commit()
-
-        return workflow_instance
-
-    @staticmethod
-    def start_pure_workflow(
-        workflow_template_secure_code: str,
-        org_secure_code: str,
-        applicant_secure_code: Optional[str] = None,
-        applicant_name: Optional[str] = "系統"
-    ) -> FwWorkflowInstance:
-        """
-        啟動純流程（無需預先建立表單）
-
-        Args:
-            workflow_template_secure_code: 工作流模板 secure_code
-            org_secure_code: 組織安全碼
-            applicant_secure_code: 申請人 secure_code
-            applicant_name: 申請人名稱
-
-        Returns:
-            FwWorkflowInstance: 工作流實例
-        """
-        # 取得工作流模板
-        workflow_template = FwWorkflowTemplate.query.filter_by(
-            secure_code=workflow_template_secure_code,
-            org_secure_code=org_secure_code,
-            is_deleted=False
-        ).first()
-
-        if not workflow_template:
-            raise ValueError(_('工作流模板 %(workflow_template_secure_code)s 不存在', workflow_template_secure_code=workflow_template_secure_code))
-
-        # 建立流程記錄單作為 FormInstance
-        record_instance = FwFormInstance(
-            org_secure_code=org_secure_code,
-            form_template_secure_code=None,  # 純流程無表單模板
-            title=f'流程記錄 - {workflow_template.name}',
-            applicant_secure_code=applicant_secure_code,
-            applicant_name=applicant_name,
-            status='PROCESSING',
-            form_data={'_workflow_record': True}
-        )
-        db.session.add(record_instance)
-        db.session.flush()
-
-        # 啟動工作流
-        return WorkflowEngine.start_workflow(
-            form_instance_secure_code=record_instance.secure_code,
-            workflow_template_secure_code=workflow_template_secure_code
-        )
 
     @staticmethod
     def get_next_nodes(graph: dict, current_node_id: str) -> List[str]:
@@ -809,60 +622,3 @@ class WorkflowEngine:
         except Exception as e:
             db.session.rollback()
             return False, f'處理失敗: {str(e)}'
-
-    @staticmethod
-    def get_pending_tasks(
-        user_secure_code: str,
-        org_secure_code: Optional[str] = None
-    ) -> List[Dict]:
-        """
-        取得用戶的待處理任務
-
-        Args:
-            user_secure_code: 用戶 secure_code
-            org_secure_code: 組織代碼（可選）
-
-        Returns:
-            List[Dict]: 任務列表
-        """
-        query = FwNodeExecutionQueue.query.filter(
-            FwNodeExecutionQueue.status.in_(['PENDING', 'WAITING'])
-        )
-
-        if org_secure_code:
-            query = query.filter_by(org_secure_code=org_secure_code)
-
-        # TODO: 根據指派邏輯過濾
-        # 目前返回所有待處理任務
-
-        queue_items = query.order_by(
-            FwNodeExecutionQueue.scheduled_at.asc()
-        ).all()
-
-        tasks = []
-        for item in queue_items:
-            workflow_instance = FwWorkflowInstance.query.filter_by(
-                secure_code=item.workflow_instance_secure_code
-            ).first()
-
-            if not workflow_instance:
-                continue
-
-            form_instance = FwFormInstance.query.filter_by(
-                secure_code=workflow_instance.form_instance_secure_code
-            ).first()
-
-            tasks.append({
-                'queue_secure_code': item.secure_code,
-                'node_id': item.node_id,
-                'node_type': item.node_type,
-                'node_name': item.node_name,
-                'status': item.status,
-                'workflow_instance_secure_code': workflow_instance.secure_code,
-                'form_instance_secure_code': form_instance.secure_code if form_instance else None,
-                'form_title': form_instance.title if form_instance else None,
-                'applicant_name': form_instance.applicant_name if form_instance else None,
-                'scheduled_at': item.scheduled_at.isoformat() if item.scheduled_at else None,
-            })
-
-        return tasks

@@ -4,7 +4,7 @@ FormWorkflow Module - Workflow Background Model
 """
 import secrets
 from flask import has_request_context, request
-from sqlalchemy import Column, String, Integer, event
+from sqlalchemy import Column, String, Integer, BigInteger, event
 
 from app.models.base import BaseModel
 
@@ -16,6 +16,9 @@ class FwWorkflowBackground(BaseModel):
     儲存使用者上傳的底圖，供流程設計器使用。
     """
     __tablename__ = 'fw_workflow_backgrounds'
+
+    # PK 為 bigint（與既有資料一致，PF-168 對齊）
+    id = Column(BigInteger, primary_key=True)
 
     # 企業識別碼
     org_secure_code = Column(String(32), nullable=False, index=True)
