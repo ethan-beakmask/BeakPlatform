@@ -3293,7 +3293,7 @@ routes:
     guards:
     - admin_required
     has_internal_check: false
-    internal_identity_check: false
+    internal_identity_check: true
     max_audience: null
     methods:
     - POST
@@ -3563,7 +3563,7 @@ routes:
     guards:
     - admin_required
     has_internal_check: false
-    internal_identity_check: false
+    internal_identity_check: true
     max_audience: null
     methods:
     - POST
@@ -3578,7 +3578,7 @@ routes:
     guards:
     - admin_required
     has_internal_check: false
-    internal_identity_check: false
+    internal_identity_check: true
     max_audience: null
     methods:
     - POST
@@ -5519,7 +5519,7 @@ routes:
     answer_source: db
     guard_args:
       module_access_required:
-        check_acl: true
+        check_acl: false
         module: form_workflow
     guards:
     - module_access_required

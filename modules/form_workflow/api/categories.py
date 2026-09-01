@@ -35,7 +35,7 @@ def _build_tree(parents, children_map, context=None):
 # =============================================================================
 
 @categories_bp.route('', methods=['GET'])
-@module_access_required('form_workflow')
+@module_access_required('form_workflow', check_acl=False)  # PF-146: 表單中心（純員工）也要讀分類做篩選，終端用戶面僅驗合約；寫入類端點維持 check_acl=True
 def list_categories():
     """
     列出分類
