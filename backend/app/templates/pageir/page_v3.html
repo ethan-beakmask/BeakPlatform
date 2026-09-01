@@ -20,6 +20,7 @@
 {% block scripts %}
 {% if has_form %}
 <script src="{{ url_for('static', filename='vendor/formio.full.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/formio-local-cdn.js') }}"></script>
 {% endif %}
 <script src="{{ url_for('static', filename='js/pageir.js') }}"></script>
 <script>BkEgress.bind();</script>

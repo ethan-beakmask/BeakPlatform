@@ -54,6 +54,7 @@
     </div>
     {% if has_form %}
     <script src="{{ app_prefix }}/static/vendor/formio.full.min.js"></script>
+    <script src="{{ app_prefix }}/static/js/formio-local-cdn.js"></script>
     {% endif %}
     {% if not is_preview|default(false) %}
     <script>window.__PIR_ROWS_URL_BASE = {{ (app_prefix ~ '/public/portal/' ~ path_id ~ '/api/pages/' ~ page.secure_code ~ '/widgets')|tojson }};</script>

@@ -1331,6 +1331,7 @@
  "表名格式不正確": "Invalid table name format",
  "表單": "Form",
  "表單 x{count}": "Form x{count}",
+ "表單模板 x{count}": "Form template x{count}",
  "表單+流程": "Form + Workflow",
  "表單主旨": "Form subject",
  "表單代碼": "form code",

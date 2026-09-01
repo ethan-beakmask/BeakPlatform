@@ -30,6 +30,16 @@
             <div class="ak-hint">{{ _('留空 = 不鎖 IP（動態 IP 場景建議留空，改以暫停 Key 做處置）') }}</div>
         </div>
 
+        <template x-if="form._extra_scopes && (form._extra_scopes.form_template || []).length">
+            <div class="ak-field">
+                <label>{{ _('授權範圍 - 表單模板（申請流程核發）') }}</label>
+                <div class="ak-hint">
+                    <span x-text="(form._extra_scopes.form_template || []).length"></span>
+                    {{ _('筆表單模板授權由 API Key 申請流程核發，此處不可編輯；儲存本表單時會原樣保留。') }}
+                </div>
+            </div>
+        </template>
+
         <div class="ak-field">
             <label>{{ _('授權範圍 - 表單分類（勾選父分類即涵蓋其子分類）') }}</label>
             <div class="ak-scope-box">

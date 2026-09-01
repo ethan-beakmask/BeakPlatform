@@ -343,6 +343,7 @@
 {% block scripts %}
 <script>window.__PAGE_CAPS = {{ page_caps | default({}) | tojson }};</script>
 <script src="{{ url_for('static', filename='vendor/formio.full.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/formio-local-cdn.js') }}"></script>
 <script src="{{ app_prefix }}/static/vendor/gridstack/gridstack-all.js"></script>
 <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-model.js"></script>
 <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.js"></script>

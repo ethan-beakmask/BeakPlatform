@@ -123,10 +123,12 @@
                 const s = key.scopes || {};
                 const cats = (s.form_category || []).length;
                 const forms = (s.form || []).length;
+                const templates = (s.form_template || []).length;
                 const odSources = ((s.od_intake || {}).source_systems || []).length;
                 const parts = [];
                 if (cats) parts.push(__('分類 x{count}', {count: cats}));
                 if (forms) parts.push(__('表單 x{count}', {count: forms}));
+                if (templates) parts.push(__('表單模板 x{count}', {count: templates}));
                 if (odSources) parts.push(__('資安事件來源 x{count}', {count: odSources}));
                 return parts.length ? parts.join('、') : __('（無授權範圍）');
             },
