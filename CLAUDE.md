@@ -1676,6 +1676,7 @@ Ethan 提供的 Proxmox VM，用途是驗證「讀者照裝」路徑與 fresh �
 | 登入 | 無 quick-login（dev 機限定），走 `POST /auth/login` JSON（`{"account":"admin@sys-1271967103b6","password":"..."}`，成功回 200 + 改密 redirect，錯密碼 401） |
 | DB | `sudo -u postgres psql -d beakplatform`（beakplatform 帳號密碼同 dev 慣例） |
 | 服務 | `sudo systemctl restart beakplatform`（unit 名無 `-dev`） |
+| 重裝（讀者路徑，2026-09-02 實跑成功） | 先 `echo YES \| sudo bash /opt/BeakPlatform/scripts/install.sh --uninstall`（會刪目錄、DB、服務帳號，不備份），再用 PAT 從 GitHub API 抓 install.sh：`curl -sfL -H "Authorization: Bearer $PAT" -H "Accept: application/vnd.github.raw" "https://api.github.com/repos/ethan-beakmask/BeakPlatform/contents/scripts/install.sh?ref=main" -o install.sh`，然後 `sudo env GITHUB_TOKEN=$PAT ADMIN_INITIAL_PASSWORD=<密碼> bash install.sh`（環境變數要走 `sudo env`，不要 `sudo -E`；全程約 3 分鐘，pip 佔大半）。重裝後 SYSTEM_ORG_CODE 會變，記得回來改本表 |
 | 更新 | `sudo bash /opt/BeakPlatform/scripts/install.sh --update`（拉 GitHub 過濾鏡像；`.git/config` 的 origin 已帶 PAT，不會再問 token。PAT 是 read-only fine-grained，2026-10 初到期，到期後 `--update` 會要新的） |
 | 部署狀態 | 2026-09-02 以 GitHub `6ea7fde3`（＝dev `3ad7bc23`，PF-211）全新重裝，出廠計數 `17\|17\|55\|0\|6\|25\|5\|62\|13\|2` 與 dev 拋棄式庫走 `init_database.sh` 完全一致；重裝後又跑過一次 `--update`（新的 1/4~4/4 路徑）確認冪等。**不要再用 tar/scp 手動同步 dev 檔案**——那是 PF-211 之前沒有可靠更新路徑時的權宜做法，現在直接 `push github` 後 `--update` |
 
