@@ -120,7 +120,10 @@
                         <span x-show="currentApproval?.selection_mode === 'multiple'" style="color: #7c3aed;">{{ _('（可複選）') }}</span>
                     </label>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <template x-for="path in (currentApproval?.available_paths || [])" :key="path.edge_id">
+                        {# 本區塊用 x-show 隱藏，自訂決策流程下這個 x-for 仍會執行；
+                           自訂決策的項目只有 id 沒有 edge_id，key 必須有 fallback，
+                           否則兩筆 undefined 重複 key 會讓 Alpine 崩潰（reading 'after'） #}
+                        <template x-for="path in (currentApproval?.available_paths || [])" :key="path.edge_id || path.id">
                             <label style="display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; cursor: pointer; background: white;"
                                    :style="selectedEdges.includes(path.edge_id) ? 'border-color: #3b82f6; background: #eff6ff;' : ''">
                                 <input x-show="currentApproval?.selection_mode !== 'multiple'" type="radio" name="approval_path" :value="path.edge_id"

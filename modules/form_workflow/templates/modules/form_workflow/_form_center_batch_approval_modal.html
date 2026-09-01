@@ -80,7 +80,9 @@
                         <span x-show="batchApprovalInfo?.selection_mode === 'multiple'" style="color: #7c3aed;">{{ _('（可複選）') }}</span>
                     </label>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <template x-for="path in (batchApprovalInfo?.available_paths || [])" :key="path.edge_id">
+                        {# 同 _form_center_approval_modal：x-show 下自訂決策流程也會執行，
+                           key 缺 fallback 會因重複 undefined 讓 Alpine 崩潰 #}
+                        <template x-for="path in (batchApprovalInfo?.available_paths || [])" :key="path.edge_id || path.id">
                             <label style="display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; cursor: pointer; background: white;"
                                    :style="batchApprovalEdges.includes(path.edge_id) ? 'border-color: #3b82f6; background: #eff6ff;' : ''">
                                 <input x-show="batchApprovalInfo?.selection_mode !== 'multiple'" type="radio" name="batch_approval_path" :value="path.edge_id"
