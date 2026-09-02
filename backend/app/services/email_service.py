@@ -2,25 +2,31 @@
 BeakPlatform Email Service
 郵件發送服務
 
-透過 E-MailRelay 發送系統郵件
+系統級郵件依主機設定選擇 E-MailRelay 或 SMTP 發送。
 """
-import os
 import logging
-import tempfile
+import os
+import smtplib
 import subprocess
-from datetime import datetime
-from email.mime.text import MIMEText
+import tempfile
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
-from typing import Optional, List
+from typing import List, Optional
 
 from .emailrelay_config import get_paths as _get_emailrelay_paths
 
 logger = logging.getLogger(__name__)
 
-# 預設發件人設定
 DEFAULT_FROM_EMAIL = 'system@beakplatform.local'
 DEFAULT_FROM_NAME = 'BeakPlatform System'
+
+MAIL_SERVICE_EMAILRELAY = 'emailrelay'
+MAIL_SERVICE_SMTP = 'smtp'
+MAIL_SERVICES = (MAIL_SERVICE_EMAILRELAY, MAIL_SERVICE_SMTP)
+SETTING_PRIMARY_KEY = 'mail_primary_service'
+SETTING_SEND_BOTH_KEY = 'mail_send_both'
+SETTING_CATEGORY = 'mail_service'
 
 
 class EmailService:
@@ -28,7 +34,7 @@ class EmailService:
 
     @staticmethod
     def _get_from_settings() -> tuple:
-        """取得發件人設定"""
+        """取得 E-MailRelay 預設發件人設定"""
         try:
             from ..models.system_setting import SystemSetting
             from_email = SystemSetting.get('emailrelay_from_email', DEFAULT_FROM_EMAIL)
@@ -38,65 +44,106 @@ class EmailService:
             return DEFAULT_FROM_EMAIL, DEFAULT_FROM_NAME
 
     @staticmethod
-    def _get_spool_dir() -> str:
-        """取得 spool 目錄"""
-        return _get_emailrelay_paths()['spool_dir']
+    def get_mail_settings() -> dict:
+        """取得系統級發信設定。"""
+        from ..models.system_setting import SystemSetting
+
+        primary = SystemSetting.get(SETTING_PRIMARY_KEY)
+        if primary not in MAIL_SERVICES:
+            primary = None
+        return {
+            'primary': primary,
+            'send_both': bool(SystemSetting.get(SETTING_SEND_BOTH_KEY, False)),
+        }
 
     @staticmethod
-    def _is_emailrelay_available() -> bool:
-        """檢查 E-MailRelay 是否可用"""
-        paths = _get_emailrelay_paths()
-        submit_bin = paths['submit_bin']
-        spool_dir = paths['spool_dir']
+    def _get_default_system_smtp_config():
+        from ..constants import SYSTEM_ORG_CODE
+        from ..models.smtp_config import SmtpConfig
 
-        # 檢查 emailrelay-submit 是否存在
-        if not os.path.exists(submit_bin):
-            logger.warning(f"[EMAIL] emailrelay-submit not found: {submit_bin}")
-            return False
-
-        # 檢查 spool 目錄是否存在且可寫入
-        if not os.path.exists(spool_dir):
-            logger.warning(f"[EMAIL] Spool directory not found: {spool_dir}")
-            return False
-
-        if not os.access(spool_dir, os.W_OK):
-            logger.warning(f"[EMAIL] Spool directory not writable: {spool_dir}")
-            return False
-
-        return True
+        return SmtpConfig.query.filter_by(
+            org_secure_code=SYSTEM_ORG_CODE,
+            is_default=True,
+            is_active=True,
+            is_deleted=False,
+        ).first()
 
     @staticmethod
-    def _submit_email(
+    def check_service(service: str) -> dict:
+        """檢查指定發信服務是否就緒。"""
+        if service == MAIL_SERVICE_EMAILRELAY:
+            paths = _get_emailrelay_paths()
+            submit_bin = paths['submit_bin']
+            spool_dir = paths['spool_dir']
+
+            if not os.path.exists(submit_bin):
+                return {'ready': False, 'reason': 'submit_missing', 'detail': submit_bin}
+            if not os.path.exists(spool_dir):
+                return {'ready': False, 'reason': 'spool_missing', 'detail': spool_dir}
+            if not os.access(spool_dir, os.W_OK):
+                return {'ready': False, 'reason': 'spool_not_writable', 'detail': spool_dir}
+            return {'ready': True, 'reason': None, 'detail': None}
+
+        if service == MAIL_SERVICE_SMTP:
+            config = EmailService._get_default_system_smtp_config()
+            if not config:
+                return {'ready': False, 'reason': 'no_default_config', 'detail': None}
+            return {'ready': True, 'reason': None, 'detail': config.name}
+
+        return {'ready': False, 'reason': 'unknown_service', 'detail': service}
+
+    @staticmethod
+    def get_readiness() -> dict:
+        """取得系統級發信整體就緒狀態。"""
+        settings = EmailService.get_mail_settings()
+        primary = settings['primary']
+        send_both = settings['send_both']
+        services = {
+            MAIL_SERVICE_EMAILRELAY: EmailService.check_service(MAIL_SERVICE_EMAILRELAY),
+            MAIL_SERVICE_SMTP: EmailService.check_service(MAIL_SERVICE_SMTP),
+        }
+
+        ready = False
+        reason = None
+        if not primary:
+            reason = 'not_selected'
+        elif not services[primary]['ready']:
+            reason = 'primary_not_ready'
+        elif send_both:
+            secondary = EmailService._secondary_service(primary)
+            if not services[secondary]['ready']:
+                reason = 'secondary_not_ready'
+            else:
+                ready = True
+        else:
+            ready = True
+
+        return {
+            'primary': primary,
+            'send_both': send_both,
+            'services': services,
+            'ready': ready,
+            'reason': reason,
+        }
+
+    @staticmethod
+    def is_ready() -> bool:
+        """系統級發信是否已可用。"""
+        return EmailService.get_readiness()['ready']
+
+    @staticmethod
+    def _secondary_service(primary: str) -> str:
+        return MAIL_SERVICE_SMTP if primary == MAIL_SERVICE_EMAILRELAY else MAIL_SERVICE_EMAILRELAY
+
+    @staticmethod
+    def _build_message(
         to_email: str,
         subject: str,
         body: str,
-        from_email: Optional[str] = None,
+        from_email: str,
         from_name: Optional[str] = None,
-        html_body: Optional[str] = None
-    ) -> bool:
-        """
-        透過 emailrelay-submit 提交郵件
-
-        Args:
-            to_email: 收件人 email
-            subject: 主旨
-            body: 純文字內容
-            from_email: 寄件人 email
-            from_name: 寄件人名稱
-            html_body: HTML 內容（選填）
-
-        Returns:
-            bool: 是否成功提交
-        """
-        # 取得發件人設定
-        if not from_email or not from_name:
-            default_email, default_name = EmailService._get_from_settings()
-            from_email = from_email or default_email
-            from_name = from_name or default_name
-
-        spool_dir = EmailService._get_spool_dir()
-
-        # 建立郵件
+        html_body: Optional[str] = None,
+    ):
         if html_body:
             msg = MIMEMultipart('alternative')
             msg.attach(MIMEText(body, 'plain', 'utf-8'))
@@ -110,68 +157,167 @@ class EmailService:
         msg['Date'] = formatdate(localtime=True)
         msg['Message-ID'] = make_msgid(domain='beakplatform.local')
         msg['X-BeakPlatform-Auto'] = 'true'
+        return msg
 
-        eml_content = msg.as_string()
+    @staticmethod
+    def _send_via_emailrelay(
+        to_email: str,
+        subject: str,
+        body: str,
+        from_email: Optional[str] = None,
+        from_name: Optional[str] = None,
+        html_body: Optional[str] = None,
+    ) -> tuple:
+        """透過 E-MailRelay 發信，回傳 (ok, error)。"""
+        readiness = EmailService.check_service(MAIL_SERVICE_EMAILRELAY)
+        if not readiness['ready']:
+            return False, readiness['reason']
 
-        # 使用 emailrelay-submit 提交
+        if not from_email or not from_name:
+            default_email, default_name = EmailService._get_from_settings()
+            from_email = from_email or default_email
+            from_name = from_name or default_name
+
+        paths = _get_emailrelay_paths()
+        submit_bin = paths['submit_bin']
+        spool_dir = paths['spool_dir']
+        msg = EmailService._build_message(
+            to_email, subject, body, from_email, from_name, html_body
+        )
+        tmp_filepath = None
+
         try:
             with tempfile.NamedTemporaryFile(
                 mode='w', suffix='.eml', delete=False, encoding='utf-8'
             ) as tmp_file:
-                tmp_file.write(eml_content)
+                tmp_file.write(msg.as_string())
                 tmp_filepath = tmp_file.name
 
-            cmd = [
-                _get_emailrelay_paths()['submit_bin'],
-                '--spool-dir', spool_dir,
-                '--from', from_email,
-                '--input-file', tmp_filepath,
-                to_email
-            ]
-
             result = subprocess.run(
-                cmd,
+                [
+                    submit_bin,
+                    '--spool-dir', spool_dir,
+                    '--from', from_email,
+                    '--input-file', tmp_filepath,
+                    to_email,
+                ],
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
             )
 
-            # 清理暫存檔
-            if os.path.exists(tmp_filepath):
-                os.unlink(tmp_filepath)
-
             if result.returncode != 0:
-                logger.error(f"[EMAIL] emailrelay-submit failed: {result.stderr}")
-                return False
-
-            logger.info(f"[EMAIL] Email submitted: to={to_email}, subject={subject}")
-            return True
-
+                return False, result.stderr.strip() or f'exit_code_{result.returncode}'
+            return True, None
         except subprocess.TimeoutExpired:
-            logger.error("[EMAIL] emailrelay-submit timeout")
-            return False
+            return False, 'timeout'
         except FileNotFoundError:
-            logger.error(f"[EMAIL] emailrelay-submit not found: {EMAILRELAY_SUBMIT}")
-            return False
+            return False, f'emailrelay-submit not found: {submit_bin}'
         except Exception as e:
-            logger.error(f"[EMAIL] Submit failed: {str(e)}")
-            return False
+            return False, str(e)
+        finally:
+            if tmp_filepath and os.path.exists(tmp_filepath):
+                try:
+                    os.unlink(tmp_filepath)
+                except OSError as e:
+                    logger.warning("[EMAIL] temporary file cleanup failed: %s", e)
 
     @staticmethod
-    def _log_email(
+    def _send_via_smtp(
         to_email: str,
         subject: str,
         body: str,
-        reason: str = "E-MailRelay unavailable"
-    ):
-        """當無法發送時，記錄郵件內容到日誌"""
-        logger.info(f"[EMAIL] {reason}, logging email instead:")
-        logger.info(f"  To: {to_email}")
-        logger.info(f"  Subject: {subject}")
-        logger.info(f"  ------ Email Content ------")
-        for line in body.split('\n'):
-            logger.info(f"  {line}")
-        logger.info(f"  ------ End of Email ------")
+        from_email: Optional[str] = None,
+        from_name: Optional[str] = None,
+        html_body: Optional[str] = None,
+    ) -> tuple:
+        """透過系統級 SMTP 預設設定發信，回傳 (ok, error)。"""
+        config = EmailService._get_default_system_smtp_config()
+        if not config:
+            return False, 'no_default_config'
+
+        from_email = from_email or config.from_email
+        from_name = from_name or config.from_name
+        msg = EmailService._build_message(
+            to_email, subject, body, from_email, from_name, html_body
+        )
+
+        smtp = None
+        try:
+            if config.use_ssl:
+                smtp = smtplib.SMTP_SSL(config.smtp_host, config.smtp_port, timeout=30)
+            else:
+                smtp = smtplib.SMTP(config.smtp_host, config.smtp_port, timeout=30)
+                if config.use_tls:
+                    smtp.starttls()
+
+            password = config.get_password()
+            if config.username and password:
+                smtp.login(config.username, password)
+            smtp.sendmail(from_email, [to_email], msg.as_string())
+            smtp.quit()
+            smtp = None
+            return True, None
+        except Exception as e:
+            return False, str(e)
+        finally:
+            if smtp is not None:
+                try:
+                    smtp.quit()
+                except Exception:
+                    pass
+
+    @staticmethod
+    def send_email_detailed(
+        to_email: str,
+        subject: str,
+        body: str,
+        from_email: Optional[str] = None,
+        from_name: Optional[str] = None,
+        html_body: Optional[str] = None,
+    ) -> dict:
+        """發送郵件，回傳每個已嘗試服務的詳細結果。"""
+        settings = EmailService.get_mail_settings()
+        primary = settings['primary']
+        if not primary:
+            logger.error('[EMAIL] mail_primary_service not configured; mail to %s dropped', to_email)
+            return {
+                'success': False,
+                'any_success': False,
+                'attempted': [],
+                'results': {},
+            }
+
+        services = [primary]
+        if settings['send_both']:
+            services.append(EmailService._secondary_service(primary))
+
+        results = {}
+        for service in services:
+            if service == MAIL_SERVICE_EMAILRELAY:
+                ok, error = EmailService._send_via_emailrelay(
+                    to_email, subject, body, from_email, from_name, html_body
+                )
+            elif service == MAIL_SERVICE_SMTP:
+                ok, error = EmailService._send_via_smtp(
+                    to_email, subject, body, from_email, from_name, html_body
+                )
+            else:
+                ok, error = False, 'unknown_service'
+
+            results[service] = {'success': ok, 'error': error}
+            if ok:
+                logger.info('[EMAIL] sent via %s: to=%s, subject=%s', service, to_email, subject)
+            else:
+                logger.error('[EMAIL] send via %s failed: to=%s, error=%s', service, to_email, error)
+
+        attempted = list(results.keys())
+        return {
+            'success': all(item['success'] for item in results.values()),
+            'any_success': any(item['success'] for item in results.values()),
+            'attempted': attempted,
+            'results': results,
+        }
 
     @staticmethod
     def send_email(
@@ -180,61 +326,27 @@ class EmailService:
         body: str,
         from_email: Optional[str] = None,
         from_name: Optional[str] = None,
-        html_body: Optional[str] = None
+        html_body: Optional[str] = None,
     ) -> bool:
-        """
-        發送郵件（通用方法）
-
-        Args:
-            to_email: 收件人 email
-            subject: 主旨
-            body: 純文字內容
-            from_email: 寄件人 email（選填）
-            from_name: 寄件人名稱（選填）
-            html_body: HTML 內容（選填）
-
-        Returns:
-            bool: 是否成功發送
-        """
-        if EmailService._is_emailrelay_available():
-            return EmailService._submit_email(
-                to_email=to_email,
-                subject=subject,
-                body=body,
-                from_email=from_email,
-                from_name=from_name,
-                html_body=html_body
-            )
-        else:
-            EmailService._log_email(to_email, subject, body)
-            return True  # 返回 True 避免業務邏輯中斷
+        """發送郵件，回傳所有指定服務是否全部成功。"""
+        return EmailService.send_email_detailed(
+            to_email=to_email,
+            subject=subject,
+            body=body,
+            from_email=from_email,
+            from_name=from_name,
+            html_body=html_body,
+        )['success']
 
     @staticmethod
     def send_password_reset_verification(
         to_email: str,
         verification_url: str,
         verification_code: str,
-        org_name: str
-    ) -> bool:
-        """
-        發送密碼重設驗證信
-
-        郵件內容包含:
-        - 驗證 URL
-        - 6 碼驗證碼
-        - 10 分鐘有效期限提醒
-
-        Args:
-            to_email: 收件人 email
-            verification_url: 驗證 URL
-            verification_code: 6 碼驗證碼
-            org_name: 企業名稱
-
-        Returns:
-            bool: 是否成功發送
-        """
+        org_name: str,
+    ) -> dict:
+        """發送密碼重設驗證信，回傳 send_email_detailed 的 dict。"""
         subject = f'[{org_name}] 密碼重設驗證'
-
         body = f'''您好，
 
 您已申請 {org_name} 系統的密碼重設。
@@ -249,28 +361,16 @@ class EmailService:
 ---
 {org_name} 系統
 '''
-
-        return EmailService.send_email(to_email, subject, body)
+        return EmailService.send_email_detailed(to_email, subject, body)
 
     @staticmethod
     def send_temp_password(
         to_email: str,
         temp_password: str,
-        org_name: str
-    ) -> bool:
-        """
-        發送暫時密碼
-
-        Args:
-            to_email: 收件人 email
-            temp_password: 暫時密碼
-            org_name: 企業名稱
-
-        Returns:
-            bool: 是否成功發送
-        """
+        org_name: str,
+    ) -> dict:
+        """發送暫時密碼，回傳 send_email_detailed 的 dict。"""
         subject = f'[{org_name}] 暫時密碼'
-
         body = f'''您好，
 
 您的 {org_name} 系統暫時密碼如下：
@@ -283,44 +383,7 @@ class EmailService:
 ---
 {org_name} 系統
 '''
-
-        return EmailService.send_email(to_email, subject, body)
-
-    @staticmethod
-    def send_welcome_email(
-        to_email: str,
-        username: str,
-        org_name: str,
-        login_url: str
-    ) -> bool:
-        """
-        發送歡迎郵件 (新用戶建立時)
-
-        Args:
-            to_email: 收件人 email
-            username: 用戶名
-            org_name: 企業名稱
-            login_url: 登入 URL
-
-        Returns:
-            bool: 是否成功發送
-        """
-        subject = f'[{org_name}] 歡迎加入'
-
-        body = f'''您好 {username}，
-
-歡迎加入 {org_name} 系統！
-
-您的帳號已建立，請使用以下連結登入：
-{login_url}
-
-如有任何問題，請聯繫系統管理員。
-
----
-{org_name} 系統
-'''
-
-        return EmailService.send_email(to_email, subject, body)
+        return EmailService.send_email_detailed(to_email, subject, body)
 
     @staticmethod
     def send_admin_password_reset_notification(
@@ -330,28 +393,10 @@ class EmailService:
         operator_name: str,
         operator_email: str,
         org_name: str,
-        reset_time: str
+        reset_time: str,
     ) -> bool:
-        """
-        發送企業管理員密碼被重設的通知
-
-        當企業管理員的密碼被其他管理員重設時，通知該企業所有企業管理員
-        （包含停用中的帳號，作為防弊措施）
-
-        Args:
-            to_emails: 收件人 email 列表
-            target_admin_name: 被重設密碼的管理員姓名
-            target_admin_email: 被重設密碼的管理員 email
-            operator_name: 操作者姓名
-            operator_email: 操作者 email
-            org_name: 企業名稱
-            reset_time: 重設時間
-
-        Returns:
-            bool: 是否成功發送
-        """
+        """發送企業管理員密碼被重設的通知，回傳 bool。"""
         subject = f'[{org_name}] 企業管理員密碼重設通知'
-
         body = f'''企業管理員密碼重設通知
 
 您好，
@@ -371,13 +416,10 @@ class EmailService:
 ---
 {org_name} 系統
 '''
-
-        # 發送給所有收件人
         success = True
         for email in to_emails:
             if not EmailService.send_email(email, subject, body):
                 success = False
-
         return success
 
     @staticmethod
@@ -385,20 +427,9 @@ class EmailService:
         to_email: str,
         title: str,
         content: str,
-        org_name: Optional[str] = None
+        org_name: Optional[str] = None,
     ) -> bool:
-        """
-        發送一般通知郵件
-
-        Args:
-            to_email: 收件人 email
-            title: 通知標題
-            content: 通知內容
-            org_name: 企業名稱（選填）
-
-        Returns:
-            bool: 是否成功發送
-        """
+        """發送一般通知郵件，回傳 bool。"""
         if org_name:
             subject = f'[{org_name}] {title}'
             footer = f'\n---\n{org_name} 系統'
@@ -406,6 +437,4 @@ class EmailService:
             subject = f'[BeakPlatform] {title}'
             footer = '\n---\nBeakPlatform System'
 
-        body = f'{content}{footer}'
-
-        return EmailService.send_email(to_email, subject, body)
+        return EmailService.send_email(to_email, subject, f'{content}{footer}')

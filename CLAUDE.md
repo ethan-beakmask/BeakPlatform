@@ -2115,6 +2115,29 @@ PGPASSWORD=postgres123 pg_restore -h localhost -U beakplatform -d <新庫名> \
 `DB_NAME` 從該 repo `.env` 的 `DATABASE_URL` 解析（`DB_NAME` 環境變數可覆寫），
 一份腳本 dev 與正式環境通用。**禁止再往裡面寫死 `/opt/BeakPlatform` 或 `-dev`。**
 
+### 系統級發信只有一個入口：`EmailService`，而且會依主機設定二選一（2026-09-02 PF-218 起）
+
+忘記密碼、暫時密碼、管理員密碼重設通知、登入救助警報、OS 節點失敗通知這類**系統信**
+一律呼叫 `backend/app/services/email_service.py::EmailService`，它依 `system_settings` 的
+`mail_primary_service`（`emailrelay` / `smtp`）與 `mail_send_both` 決定走 E-MailRelay
+還是系統級 SMTP 預設設定組（`is_default` 且啟用），**沒指定就是寄不出去、不做 fallback**。
+主機設定頁的 UI 已把 E-MailRelay 與 SMTP 合併成「發信服務」分類
+（API `GET/PUT /api/system-settings/mail-service`，`_ss_mail_service.py`）。
+
+三件猜不到的：
+
+- **`send_email()` 回 False 就是真的沒寄出**，2026-09-02 之前它在 E-MailRelay 不可用時
+  只把信印進 log 就 `return True`，呼叫端全部以為寄出去了。新增系統信呼叫端時
+  **一定要接回傳值並反映到 UI 或 log**；要區分「全部失敗」與「併發時其中一路失敗」
+  用 `send_email_detailed()`（`any_success` / `success`）
+- **dev 機沒指定時所有系統信都會失敗**——`mail_primary_service` 是新鍵，
+  全新環境與 bpserv 出廠都是未指定，忘記密碼頁會直接顯示「系統發信服務尚未就緒」。
+  dev 現況是 `emailrelay`、不併發。企業「密碼政策」分頁的黃色提示看的也是這個就緒狀態
+  （API 回 `system_mail_ready`，`has_smtp` 已移除）
+- 流程 `Email` 節點與受限節點 `SysEmailRelay` **不走**這個入口，那是流程設計者選的通道；
+  dev 的系統級 SMTP 設定組 `lionsecbot@gmail.com` 密碼已失效（既有 `/smtp/<sc>/test` 端點也回
+  「認證失敗」），驗 SMTP 路徑前要先換成有效的應用程式密碼
+
 ### 服務啟動
 
 **`systemctl restart beakplatform-dev-executor` 會殺掉當下所有正在跑的節點進程**

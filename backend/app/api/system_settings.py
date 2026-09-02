@@ -18,6 +18,10 @@ E-MailRelay:
 - POST   /api/system-settings/emailrelay/test         測試發送
 - POST   /api/system-settings/emailrelay/service/<action>  服務控制
 
+發信服務:
+- GET    /api/system-settings/mail-service            取得發信服務設定
+- PUT    /api/system-settings/mail-service            更新發信服務設定
+
 SMTP 設定 (系統級):
 - GET    /api/system-settings/smtp                    列出 SMTP 設定
 - POST   /api/system-settings/smtp                    新增 SMTP 設定
@@ -62,6 +66,7 @@ Telegram 設定 (系統級):
 from flask import Blueprint
 
 from . import _ss_emailrelay
+from . import _ss_mail_service
 from . import _ss_smtp
 from . import _ss_telegram
 from . import _ss_recipient_groups
@@ -74,6 +79,7 @@ api_system_settings = Blueprint('api_system_settings', __name__, url_prefix='/ap
 
 # 掛載子模組路由
 _ss_emailrelay.register(api_system_settings)
+_ss_mail_service.register(api_system_settings)
 _ss_smtp.register(api_system_settings)
 _ss_telegram.register(api_system_settings)
 _ss_recipient_groups.register(api_system_settings)

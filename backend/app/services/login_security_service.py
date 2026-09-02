@@ -223,7 +223,8 @@ class LoginSecurityService:
 '''
 
         for email in notify_emails:
-            EmailService.send_email(email, subject, body)
+            if not EmailService.send_email(email, subject, body):
+                logger.error(f"[RESCUE] 救助通知寄送失敗: {email}")
 
         logger.info(
             f"[RESCUE] 救助通知已發送: org={org.name}, "

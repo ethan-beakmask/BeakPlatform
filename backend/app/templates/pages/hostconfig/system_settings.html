@@ -14,15 +14,10 @@
     <!-- 左側選單 -->
     <div class="settings-sidebar">
         <h3>{{ _('設定分類') }}</h3>
-        <div class="settings-menu-item" :class="{ active: activeSection === 'emailrelay' }"
-             @click="activeSection = 'emailrelay'">
+        <div class="settings-menu-item" :class="{ active: activeSection === 'mailservice' }"
+             @click="activeSection = 'mailservice'; loadMailServiceSection()">
             <span class="settings-menu-icon">[M]</span>
-            <span>E-MailRelay</span>
-        </div>
-        <div class="settings-menu-item" :class="{ active: activeSection === 'smtp' }"
-             @click="activeSection = 'smtp'; loadSmtpConfigs()">
-            <span class="settings-menu-icon">[S]</span>
-            <span>{{ _('SMTP 郵件') }}</span>
+            <span>{{ _('發信服務') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'telegram' }"
              @click="activeSection = 'telegram'; loadTelegramConfigs()">
@@ -73,8 +68,7 @@
 
     <!-- 右側內容 -->
     <div class="settings-content">
-        {% include "pages/hostconfig/_system_settings_section_emailrelay.html" %}
-        {% include "pages/hostconfig/_system_settings_section_smtp.html" %}
+        {% include "pages/hostconfig/_system_settings_section_mailservice.html" %}
         {% include "pages/hostconfig/_system_settings_section_telegram.html" %}
         {% include "pages/hostconfig/_system_settings_section_recipients.html" %}
         {% include "pages/hostconfig/_system_settings_section_menucolors.html" %}
@@ -97,12 +91,14 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 function serverSettings() {
     return {
-        activeSection: 'emailrelay',
+        activeSection: 'mailservice',
 
         // 訊息
         message: {
             emailrelay: '',
             emailrelayError: false,
+            mailservice: '',
+            mailserviceError: false,
             smtp: '',
             smtpError: false,
             telegram: '',
@@ -123,6 +119,16 @@ function serverSettings() {
             fileStorageError: false,
             loginSecurity: '',
             loginSecurityError: false
+        },
+
+        // 發信服務
+        mailService: {
+            primary: '',
+            send_both: false,
+            readiness: null,
+            messages: {},
+            saving: false,
+            loaded: false
         },
 
         // 載入狀態
@@ -250,7 +256,7 @@ function serverSettings() {
 
         // 初始化
         async init() {
-            await this.loadEmailrelaySettings();
+            await this.loadMailServiceSection();
             // 載入 SMTP 預設值
             try {
                 const res = await fetch(`${API_BASE}/smtp/presets`, {
@@ -264,6 +270,7 @@ function serverSettings() {
         },
 
 {% include "pages/hostconfig/_system_settings_emailrelay_methods.html" %}
+{% include "pages/hostconfig/_system_settings_mailservice_methods.html" %}
 {% include "pages/hostconfig/_system_settings_notification_methods.html" %}
 {% include "pages/hostconfig/_system_settings_packages_methods.html" %}
 {% include "pages/hostconfig/_system_settings_menucolors_methods.html" %}

@@ -392,22 +392,3 @@ class PasswordPolicyService:
             requirements.append('包含特殊符號')
 
         return '、'.join(requirements)
-
-    @staticmethod
-    def has_smtp_configured(org_secure_code: str) -> bool:
-        """
-        檢查企業是否有設定 SMTP
-
-        Args:
-            org_secure_code: 企業 secure_code
-
-        Returns:
-            是否有設定 SMTP
-        """
-        from ..models.smtp_config import SmtpConfig
-
-        return SmtpConfig.query.filter_by(
-            org_secure_code=org_secure_code,
-            is_active=True,
-            is_deleted=False
-        ).first() is not None

@@ -935,6 +935,12 @@ def _process_forgot_password(username: str, domain_name: str, login_type: str, o
     from ..models import PasswordResetToken
     from ..services.email_service import EmailService
 
+    if not EmailService.is_ready():
+        flash(_('系統發信服務尚未就緒，無法寄送驗證信，請聯絡系統管理員'), 'error')
+        if login_type == 'org' and org:
+            return redirect(url_for('auth.org_login', domain_name=domain_name))
+        return redirect(url_for('auth.login'))
+
     email = f'{username}@{domain_name}'
 
     # 查詢企業
@@ -986,20 +992,41 @@ def _process_forgot_password(username: str, domain_name: str, login_type: str, o
                     _external=True
                 )
             notification_emails = _get_notification_emails(user)
+            send_results = []
             for to_addr in notification_emails:
-                EmailService.send_password_reset_verification(
+                send_results.append(EmailService.send_password_reset_verification(
                     to_email=to_addr,
                     verification_url=verification_url,
                     verification_code=token.verification_code,
                     org_name=target_org.name
-                )
-            logger.info(
-                f"Password reset requested for: {email}, "
-                f"notifications sent to: {notification_emails}"
-            )
+                ))
 
-    # 一律顯示成功訊息 (防止帳號列舉)
-    flash(_('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證'), 'success')
+            all_ok = all(result['success'] for result in send_results)
+            any_ok = any(result['any_success'] for result in send_results)
+            if not any_ok:
+                logger.error(
+                    "Password reset verification email failed for: %s, recipients=%s",
+                    email,
+                    notification_emails,
+                )
+                flash(_('驗證信寄送失敗，請聯絡系統管理員'), 'error')
+            elif not all_ok:
+                logger.error(
+                    "Password reset verification partially failed for: %s, recipients=%s",
+                    email,
+                    notification_emails,
+                )
+                flash(_('驗證信已寄出，但其中一個發信服務失敗，請通知系統管理員檢查主機設定'), 'error')
+            else:
+                logger.info(
+                    f"Password reset requested for: {email}, "
+                    f"notifications sent to: {notification_emails}"
+                )
+                flash(_('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證'), 'success')
+        else:
+            flash(_('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證'), 'success')
+    else:
+        flash(_('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證'), 'success')
 
     if login_type == 'org' and org:
         return redirect(url_for('auth.org_login', domain_name=domain_name))
@@ -1187,30 +1214,62 @@ def verify_reset(token: str):
     ).first()
 
     if user:
+        if not EmailService.is_ready():
+            flash(_('系統發信服務尚未就緒，無法寄送暫時密碼，請聯絡系統管理員'), 'error')
+            db.session.rollback()
+            return render_template(
+                'auth/verify_reset.html',
+                token=token,
+                email=reset_token.email,
+                org=org
+            )
+
         user.set_password(temp_password)
         user.must_change_password = True
         reset_token.mark_temp_password_sent()
-        db.session.commit()
 
         # 寄送暫時密碼到用戶的可寄送信箱
         org_name = org.name if org else 'BeakMask'
         notification_emails = _get_notification_emails(user)
+        send_results = []
         for to_addr in notification_emails:
-            EmailService.send_temp_password(
+            send_results.append(EmailService.send_temp_password(
                 to_email=to_addr,
                 temp_password=temp_password,
                 org_name=org_name
+            ))
+
+        all_ok = all(result['success'] for result in send_results)
+        any_ok = any(result['any_success'] for result in send_results)
+        if not any_ok:
+            db.session.rollback()
+            logger.error(
+                "Temp password email failed for: %s, recipients=%s",
+                reset_token.email,
+                notification_emails,
             )
+            flash(_('暫時密碼寄送失敗，密碼未變更，請聯絡系統管理員'), 'error')
+            return render_template(
+                'auth/verify_reset.html',
+                token=token,
+                email=reset_token.email,
+                org=org
+            )
+
+        db.session.commit()
         logger.info(
             f"Temp password sent for: {reset_token.email}, "
             f"notifications sent to: {notification_emails}"
         )
+        if not all_ok:
+            flash(_('暫時密碼已寄出，但其中一個發信服務失敗，請通知系統管理員檢查主機設定'), 'error')
+        else:
+            flash(_('已寄送暫時密碼到您的信箱，請使用暫時密碼登入後變更密碼'), 'success')
     else:
         # 用戶不存在但仍標記為已使用 (防止重複嘗試)
         reset_token.mark_temp_password_sent()
         db.session.commit()
-
-    flash(_('已寄送暫時密碼到您的信箱，請使用暫時密碼登入後變更密碼'), 'success')
+        flash(_('已寄送暫時密碼到您的信箱，請使用暫時密碼登入後變更密碼'), 'success')
 
     # 導向對應的登入頁
     if org:

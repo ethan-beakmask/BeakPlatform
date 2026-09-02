@@ -186,19 +186,20 @@ def update_login_security_vendor():
 def get_password_policy():
     """取得密碼政策設定"""
     from ..services.password_policy_service import PasswordPolicyService
+    from ..services.email_service import EmailService
 
     org = current_user.organization
     if not org:
         return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     policy = PasswordPolicyService.get_policy(org.secure_code)
-    has_smtp = PasswordPolicyService.has_smtp_configured(org.secure_code)
+    system_mail_ready = EmailService.is_ready()
 
     return jsonify({
         'success': True,
         'data': {
             'policy': policy,
-            'has_smtp': has_smtp
+            'system_mail_ready': system_mail_ready
         }
     })
 
@@ -208,6 +209,7 @@ def get_password_policy():
 def update_password_policy():
     """更新密碼政策設定"""
     from ..services.password_policy_service import PasswordPolicyService
+    from ..services.email_service import EmailService
 
     org = current_user.organization
     if not org:
@@ -219,14 +221,14 @@ def update_password_policy():
 
     # 更新密碼政策
     PasswordPolicyService.set_policy(org.secure_code, data)
-    has_smtp = PasswordPolicyService.has_smtp_configured(org.secure_code)
+    system_mail_ready = EmailService.is_ready()
 
     return jsonify({
         'success': True,
         'message': _('密碼政策已儲存'),
         'data': {
             'policy': data,
-            'has_smtp': has_smtp
+            'system_mail_ready': system_mail_ready
         }
     })
 

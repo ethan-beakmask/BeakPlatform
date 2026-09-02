@@ -1,8 +1,4 @@
 <!-- ==================== SMTP 設定 ==================== -->
-<div id="section-smtp" class="settings-section" :class="{ active: activeSection === 'smtp' }">
-    <h2>{{ _('SMTP 郵件設定') }}</h2>
-    <p>{{ _('系統級外部郵件伺服器設定，供流程節點發送郵件使用。') }}</p>
-
     <div x-show="message.smtp" x-cloak
          :class="'message ' + (message.smtpError ? 'message-error' : 'message-success')"
          x-text="message.smtp"
@@ -60,4 +56,3 @@
             </table>
         </template>
     </div>
-</div>

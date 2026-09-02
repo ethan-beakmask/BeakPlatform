@@ -1,0 +1,56 @@
+<!-- ==================== 發信服務 ==================== -->
+<div id="section-mailservice" class="settings-section" :class="{ active: activeSection === 'mailservice' }">
+    <h2>{{ _('發信服務') }}</h2>
+    <p>{{ _('平台自己的系統信（忘記密碼、暫時密碼、管理員密碼重設通知、登入救助警報）由這裡指定的服務寄出。E-MailRelay 與 SMTP 必須明確指定一個，另一個不會自動備援。') }}</p>
+
+    <template x-if="mailService.readiness">
+        <div class="mail-service-banner"
+             :class="mailService.readiness.ready ? 'mail-service-banner-ok' : 'mail-service-banner-bad'"
+             x-text="mailService.messages.overall"></div>
+    </template>
+
+    <div x-show="message.mailservice" x-cloak
+         :class="'message ' + (message.mailserviceError ? 'message-error' : 'message-success')"
+         x-text="message.mailservice"
+         x-transition></div>
+
+    <div class="settings-card">
+        <h4>{{ _('指定發信服務') }}</h4>
+        <form @submit.prevent="saveMailService()">
+            <div class="mail-service-choice">
+                <label class="mail-service-option">
+                    <input type="radio" name="mail_primary" value="emailrelay" x-model="mailService.primary">
+                    <span class="mail-service-option-name">E-MailRelay</span>
+                    <span class="badge"
+                          :class="mailService.readiness && mailService.readiness.services.emailrelay.ready ? 'badge-success' : 'badge-danger'"
+                          x-text="mailService.messages.emailrelay"></span>
+                </label>
+                <label class="mail-service-option">
+                    <input type="radio" name="mail_primary" value="smtp" x-model="mailService.primary">
+                    <span class="mail-service-option-name">SMTP</span>
+                    <span class="badge"
+                          :class="mailService.readiness && mailService.readiness.services.smtp.ready ? 'badge-success' : 'badge-danger'"
+                          x-text="mailService.messages.smtp"></span>
+                </label>
+            </div>
+            <div class="form-group mail-service-both">
+                <label>
+                    <input type="checkbox" x-model="mailService.send_both">
+                    {{ _('同一封信讓兩個服務都發（提高收信成功機率）') }}
+                </label>
+                <div class="form-hint">{{ _('不勾＝只走指定的服務。沒被指定的那一個只是「有設定」，不是備用；勾選時兩個服務都必須就緒。') }}</div>
+            </div>
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary" :disabled="mailService.saving">{{ _('儲存發信服務') }}</button>
+            </div>
+        </form>
+    </div>
+
+    <h3 class="mail-service-subtitle">{{ _('E-MailRelay 設定') }}</h3>
+    <p class="mail-service-subdesc">{{ _('系統郵件中繼服務，用於發送系統通知郵件。') }}</p>
+    {% include "pages/hostconfig/_system_settings_section_emailrelay.html" %}
+
+    <h3 class="mail-service-subtitle">{{ _('SMTP 設定組（系統級）') }}</h3>
+    <p class="mail-service-subdesc">{{ _('系統級 SMTP 設定組。被指定為發信服務時，系統信用勾了「設為預設」的那一組寄出；流程節點也可以選用這裡的設定組。') }}</p>
+    {% include "pages/hostconfig/_system_settings_section_smtp.html" %}
+</div>

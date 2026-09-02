@@ -86,6 +86,7 @@
                 if (data.success) {
                     this.smtp.showModal = false;
                     await this.loadSmtpConfigs();
+                    await this.loadMailService();
                 }
                 this.showMessage('smtp', data.message, !data.success);
             } catch (e) {
@@ -121,6 +122,7 @@
                 const data = await res.json();
                 if (data.success) {
                     await this.loadSmtpConfigs();
+                    await this.loadMailService();
                 }
                 this.showMessage('smtp', data.message, !data.success);
             } catch (e) {

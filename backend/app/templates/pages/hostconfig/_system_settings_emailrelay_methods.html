@@ -36,6 +36,7 @@
                 if (data.success) {
                     this.showMessage('emailrelay', data.message, false);
                     await this.loadEmailrelaySettings();
+                    await this.loadMailService();
                 } else {
                     let msg = data.message;
                     if (data.errors && data.errors.length > 0) {
@@ -63,6 +64,9 @@
                 });
                 const data = await res.json();
                 this.showMessage('emailrelay', data.message, !data.success);
+                if (data.success) {
+                    await this.loadMailService();
+                }
             } catch (e) {
                 this.showMessage('emailrelay', __('儲存失敗: {message}', {message: e.message}), true);
             }

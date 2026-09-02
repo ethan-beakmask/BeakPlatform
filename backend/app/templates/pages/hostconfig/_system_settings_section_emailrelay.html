@@ -1,8 +1,4 @@
 <!-- ==================== E-MailRelay 設定 ==================== -->
-<div id="section-emailrelay" class="settings-section" :class="{ active: activeSection === 'emailrelay' }">
-    <h2>{{ _('E-MailRelay 設定') }}</h2>
-    <p>{{ _('系統郵件中繼服務，用於發送系統通知郵件。') }}</p>
-
     <div x-show="message.emailrelay" x-cloak
          :class="'message ' + (message.emailrelayError ? 'message-error' : 'message-success')"
          x-text="message.emailrelay"
@@ -97,4 +93,3 @@
             </div>
         </form>
     </div>
-</div>

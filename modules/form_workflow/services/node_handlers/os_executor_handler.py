@@ -801,7 +801,8 @@ class OsExecutorHandler(BaseNodeHandler):
                 f"Queue：{self.queue_item.secure_code}"
             )
             for user in users:
-                EmailService.send_notification(user.email, title, content)
+                if not EmailService.send_notification(user.email, title, content):
+                    self.log_warning('OsExecutor 例外通知寄送失敗', {'recipient': user.email})
             self.log_info(message, {'recipient_count': len(users)})
         except Exception as e:
             self.log_warning('OsExecutor 例外通知失敗', {'error': str(e)})

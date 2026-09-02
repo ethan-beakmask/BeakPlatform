@@ -162,7 +162,7 @@ def reset_password(org_code: str, admin_code: str):
                 org_name = org.name or '未知企業'
                 reset_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
 
-                EmailService.send_admin_password_reset_notification(
+                ok = EmailService.send_admin_password_reset_notification(
                     to_emails=notify_emails,
                     target_admin_name=admin.display_name,
                     target_admin_email=admin.email,
@@ -172,7 +172,12 @@ def reset_password(org_code: str, admin_code: str):
                     reset_time=reset_time
                 )
 
-            flash(_('已重設 %(name)s 的密碼，並通知所有企業管理員', name=admin.display_name), 'success')
+                if not ok:
+                    flash(_('已重設 %(name)s 的密碼，但通知信寄送失敗，請檢查主機設定的發信服務', name=admin.display_name), 'error')
+                else:
+                    flash(_('已重設 %(name)s 的密碼，並通知所有企業管理員', name=admin.display_name), 'success')
+            else:
+                flash(_('已重設 %(name)s 的密碼，並通知所有企業管理員', name=admin.display_name), 'success')
         except Exception as e:
             db.session.rollback()
             flash(_('重設密碼失敗: %(error)s', error=str(e)), 'error')

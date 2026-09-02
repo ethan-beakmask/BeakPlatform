@@ -231,7 +231,7 @@ function passwordPolicySettings() {
             lockout_duration_minutes: 15,
             lockout_multiplier: 2
         },
-        hasSmtp: false,
+        systemMailReady: false,
         saveMessage: '',
 
         async init() {
@@ -245,7 +245,7 @@ function passwordPolicySettings() {
                     const data = await response.json();
                     if (data.success) {
                         this.policy = { ...this.policy, ...data.data.policy };
-                        this.hasSmtp = data.data.has_smtp;
+                        this.systemMailReady = data.data.system_mail_ready;
                     }
                 }
             } catch (err) {
@@ -266,7 +266,7 @@ function passwordPolicySettings() {
 
                 const data = await response.json();
                 if (data.success) {
-                    this.hasSmtp = data.data.has_smtp;
+                    this.systemMailReady = data.data.system_mail_ready;
                     this.saveMessage = __('設定已儲存');
                     setTimeout(() => { this.saveMessage = ''; }, 2000);
                 } else {

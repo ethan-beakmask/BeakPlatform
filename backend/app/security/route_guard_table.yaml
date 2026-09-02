@@ -2777,6 +2777,22 @@ routes:
     rules:
     - /api/system-settings/login-security/vendor
     source: backend/app/api/_ss_login_security.py
+  api_system_settings.get_mail_service:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - SYSTEM_ADMIN
+    methods:
+    - GET
+    note: 系統級發信服務設定與就緒狀態（PF-218）。只有 SYSTEM_ADMIN 能讀，值不分企業。
+    review: confirmed
+    rules:
+    - /api/system-settings/mail-service
+    source: backend/app/api/_ss_mail_service.py
   api_system_settings.get_menu_colors:
     answer_source: code
     guard_args: {}
@@ -3152,6 +3168,22 @@ routes:
     rules:
     - /api/system-settings/login-security/vendor
     source: backend/app/api/_ss_login_security.py
+  api_system_settings.update_mail_service:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - SYSTEM_ADMIN
+    methods:
+    - PUT
+    note: 指定系統級發信服務（E-MailRelay／SMTP 二選一＋併發勾選），寫 system_settings（PF-218）。
+    review: confirmed
+    rules:
+    - /api/system-settings/mail-service
+    source: backend/app/api/_ss_mail_service.py
   api_system_settings.update_menu_colors:
     answer_source: code
     guard_args: {}

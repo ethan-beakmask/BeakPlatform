@@ -287,12 +287,12 @@
                 </label>
             </div>
 
-            <!-- SMTP 未設定警告 -->
-            <div x-show="!hasSmtp && policy.enabled"
+            <!-- 系統發信服務未就緒警告 -->
+            <div x-show="!systemMailReady"
                  style="padding: 12px 16px; margin-bottom: 16px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
                 <strong style="color: #92400e;">{{ _('注意') }}</strong>
                 <span style="color: #78350f;">
-                    {{ _('尚未設定 SMTP，忘記密碼功能無法使用。請切換到「SMTP 郵件」分頁進行設定。') }}
+                    {{ _('系統發信服務尚未就緒，忘記密碼驗證信與登入救助警報信目前寄不出去。這項設定由系統管理員在「主機設定 → 發信服務」完成，本頁的 SMTP 設定組只給流程節點使用，不影響系統信。') }}
                 </span>
             </div>
 

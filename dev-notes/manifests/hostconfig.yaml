@@ -18,12 +18,17 @@ files:
   template:
     - backend/app/templates/pages/hostconfig/data_maintenance.html
     - backend/app/templates/pages/hostconfig/system_settings.html
+    - backend/app/templates/pages/hostconfig/_system_settings_section_mailservice.html
+    - backend/app/templates/pages/hostconfig/_system_settings_mailservice_methods.html
+    - backend/app/templates/pages/hostconfig/_system_settings_section_emailrelay.html
+    - backend/app/templates/pages/hostconfig/_system_settings_section_smtp.html
   js:
     - backend/app/static/js/hostconfig-index.js
   css:
     - backend/app/static/css/hostconfig-index.css
   test:
     - backend/tests/test_org_physical_cleanup.py
+    - backend/tests/test_mail_service.py
   doc:
     - docs/manual/02_platform_admin/data_maintenance.md
   related:

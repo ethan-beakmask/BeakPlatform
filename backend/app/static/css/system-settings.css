@@ -265,3 +265,53 @@
     font-size: 11px;
     line-height: 1.2;
 }
+
+/* 發信服務（PF-218） */
+.mail-service-banner {
+    padding: 10px 14px;
+    border-radius: var(--border-radius);
+    margin-bottom: 16px;
+    font-size: var(--font-size-sm);
+}
+.mail-service-banner-ok {
+    background: var(--color-success-light);
+    color: var(--color-success);
+    border: 1px solid var(--color-success);
+}
+.mail-service-banner-bad {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
+}
+.mail-service-choice {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.mail-service-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+.mail-service-option-name {
+    font-weight: 500;
+    min-width: 100px;
+}
+.mail-service-both label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+.mail-service-subtitle {
+    margin: 24px 0 4px 0;
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+}
+.mail-service-subdesc {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    margin: 0 0 12px 0;
+}
