@@ -1690,7 +1690,8 @@ Ethan 提供的 Proxmox VM，用途是驗證「讀者照裝」路徑與 fresh �
 | 服務 | `sudo systemctl restart beakplatform`（unit 名無 `-dev`） |
 | 重裝（讀者路徑，2026-09-02 實跑成功） | 先 `echo YES \| sudo bash /opt/BeakPlatform/scripts/install.sh --uninstall`（會刪目錄、DB、服務帳號，不備份），再用 PAT 從 GitHub API 抓 install.sh：`curl -sfL -H "Authorization: Bearer $PAT" -H "Accept: application/vnd.github.raw" "https://api.github.com/repos/ethan-beakmask/BeakPlatform/contents/scripts/install.sh?ref=main" -o install.sh`，然後 `sudo env GITHUB_TOKEN=$PAT ADMIN_INITIAL_PASSWORD=<密碼> bash install.sh`（環境變數要走 `sudo env`，不要 `sudo -E`；全程約 3 分鐘，pip 佔大半）。重裝後 SYSTEM_ORG_CODE 會變，記得回來改本表 |
 | 更新 | `sudo bash /opt/BeakPlatform/scripts/install.sh --update`（拉 GitHub 過濾鏡像；`.git/config` 的 origin 已帶 PAT，不會再問 token。PAT 是 read-only fine-grained，2026-10 初到期，到期後 `--update` 會要新的） |
-| 部署狀態 | 2026-09-02 以 GitHub `6ea7fde3`（＝dev `3ad7bc23`，PF-211）全新重裝，出廠計數 `17\|17\|55\|0\|6\|25\|5\|62\|13\|2` 與 dev 拋棄式庫走 `init_database.sh` 完全一致；重裝後又跑過一次 `--update`（新的 1/4~4/4 路徑）確認冪等。**不要再用 tar/scp 手動同步 dev 檔案**——那是 PF-211 之前沒有可靠更新路徑時的權宜做法，現在直接 `push github` 後 `--update` |
+| 發信服務（2026-09-02 PF-218 收尾） | bpserv 沒裝 E-MailRelay，`mail_primary_service=smtp`、不併發；系統級 SMTP 設定組 `lionsecbot`（sc `isB6udCQ3VKrwoAHRG1PL8`，Gmail 應用程式密碼，is_default）。忘記密碼等系統信會真的寄出（自寄到 `lionsecbot@gmail.com`）。指定 E-MailRelay 會被 400 擋下，這是預期行為不是故障 |
+| 部署狀態 | 2026-09-02 16:18 以 GitHub `f29e60f1`（＝dev `b45848de`）跑 `--update` 4/4 通過。更早：以 GitHub `6ea7fde3`（＝dev `3ad7bc23`，PF-211）全新重裝，出廠計數 `17\|17\|55\|0\|6\|25\|5\|62\|13\|2` 與 dev 拋棄式庫走 `init_database.sh` 完全一致；重裝後又跑過一次 `--update`（新的 1/4~4/4 路徑）確認冪等。**不要再用 tar/scp 手動同步 dev 檔案**——那是 PF-211 之前沒有可靠更新路徑時的權宜做法，現在直接 `push github` 後 `--update` |
 
 **`install.sh --update` 是「舊 shell 邏輯 ＋ 新 Python」**（2026-09-02 實測）：
 `git reset --hard` 換掉的是磁碟上的 install.sh，記憶體裡正在跑的仍是舊版
@@ -2134,7 +2135,8 @@ PGPASSWORD=postgres123 pg_restore -h localhost -U beakplatform -d <新庫名> \
   **一定要接回傳值並反映到 UI 或 log**；要區分「全部失敗」與「併發時其中一路失敗」
   用 `send_email_detailed()`（`any_success` / `success`）
 - **dev 機沒指定時所有系統信都會失敗**——`mail_primary_service` 是新鍵，
-  全新環境與 bpserv 出廠都是未指定，忘記密碼頁會直接顯示「系統發信服務尚未就緒」。
+  全新環境出廠是未指定，忘記密碼頁會直接顯示「系統發信服務尚未就緒」
+  （bpserv 2026-09-02 已指定 SMTP，見上方 bpserv 表）。
   dev 現況是 `emailrelay`、不併發。企業「密碼政策」分頁的黃色提示看的也是這個就緒狀態
   （API 回 `system_mail_ready`，`has_smtp` 已移除）
 - 流程 `Email` 節點與受限節點 `SysEmailRelay` **不走**這個入口，那是流程設計者選的通道；
