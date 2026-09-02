@@ -31,6 +31,8 @@ files:
   css:
     - backend/app/static/css/user-form.css
     - backend/app/static/css/user-view.css
+  test:
+    - backend/tests/test_users_position_display.py
 
 tables:
   primary: users

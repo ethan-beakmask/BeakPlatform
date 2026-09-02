@@ -2,6 +2,7 @@
 """
 BeakMask 測試企業種子資料
 建立四家虛擬企業的完整資料：企業、合約、編號規則、職等、職系、職稱、部門、帳號、職位指派
+並補齊簽核展示需要的直屬主管鏈、核決類別與職等上限、兼任/代理職位樣本。
 
 使用方式:
     cd /opt/BeakPlatform
@@ -17,12 +18,14 @@ BeakMask 測試企業種子資料
     - 密碼統一: Test1234! (測試環境)
 """
 import sys
+import json
 import os
 import argparse
+import re
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from app import create_app, db
@@ -34,6 +37,11 @@ from app.models import (
     JobLevel, JobFamily, JobFamilyType, JobTitle,
     UserNumberingRule,
     Role, UserRoleAssignment,
+)
+from app.models.approval_category import (
+    ApprovalCategory,
+    JobLevelApprovalLimit,
+    DEFAULT_APPROVAL_CATEGORIES,
 )
 from app.models.employee_position import EmployeePosition, PositionType
 from app.models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
@@ -56,6 +64,10 @@ FAKE_SURNAMES = ['晧', '霄', '燁', '琥', '翎', '璃', '嵐', '灃', '珩', 
 
 # 標記用：方便清除
 SEED_TAG = 'seed_test_companies_v1'
+# 範例企業合約啟用的模組（表單流程是所有示範的前提）
+SEED_CONTRACT_MODULES = ['form_workflow']
+
+SQL_IDENTIFIER_RE = re.compile(r'^[a-z_][a-z0-9_]*$')
 
 
 # ============================================================================
@@ -118,16 +130,16 @@ COMPANIES = [
             ('總經理室', 'GM', None),
             ('行政管理部', 'ADMIN_DEPT', 'GM'),
             ('財務部', 'FIN', 'GM'),
-            ('業務處', 'SALES_DIV', None),
+            ('業務處', 'SALES_DIV', 'GM'),
             ('團體旅遊部', 'GROUP_TOUR', 'SALES_DIV'),
             ('自由行部', 'FIT', 'SALES_DIV'),
             ('企業旅遊部', 'CORP_TOUR', 'SALES_DIV'),
-            ('產品開發處', 'PROD_DIV', None),
+            ('產品開發處', 'PROD_DIV', 'GM'),
             ('國內旅遊部', 'DOMESTIC', 'PROD_DIV'),
             ('海外旅遊部', 'OVERSEAS', 'PROD_DIV'),
-            ('客服部', 'CS_DEPT', None),
-            ('行銷企劃部', 'MKT_DEPT', None),
-            ('資訊部', 'IT_DEPT', None),
+            ('客服部', 'CS_DEPT', 'GM'),
+            ('行銷企劃部', 'MKT_DEPT', 'GM'),
+            ('資訊部', 'IT_DEPT', 'GM'),
         ],
         # 帳號: (username, native_name, english_name, dept_code, title_code, is_unit_head)
         'employees': [
@@ -217,14 +229,14 @@ COMPANIES = [
             ('總經理室', 'GM', None),
             ('行政管理部', 'ADMIN_DEPT', 'GM'),
             ('財務部', 'FIN', 'GM'),
-            ('研發處', 'RD_DIV', None),
+            ('研發處', 'RD_DIV', 'GM'),
             ('前端開發部', 'FE_DEPT', 'RD_DIV'),
             ('後端開發部', 'BE_DEPT', 'RD_DIV'),
             ('品質保證部', 'QA_DEPT', 'RD_DIV'),
-            ('產品部', 'PROD_DEPT', None),
-            ('專案管理部', 'PM_DEPT', None),
-            ('業務部', 'SALES_DEPT', None),
-            ('資訊部', 'IT_DEPT', None),
+            ('產品部', 'PROD_DEPT', 'GM'),
+            ('專案管理部', 'PM_DEPT', 'GM'),
+            ('業務部', 'SALES_DEPT', 'GM'),
+            ('資訊部', 'IT_DEPT', 'GM'),
         ],
         'employees': [
             ('howard.xiao', '霄伯達', 'Howard Xiao', 'GM', 'PRES', True),
@@ -245,7 +257,7 @@ COMPANIES = [
             ('yuki.lan', '嵐悠希', 'Yuki Lan', 'QA_DEPT', 'QA_ENG', False),
             ('zack.feng', '灃乍克', 'Zack Feng', 'PROD_DEPT', 'UX_DESIGNER', False),
             ('anna.heng', '珩安娜', 'Anna Heng', 'PM_DEPT', 'SCRUM_MASTER', False),
-            ('bruce.che', '澈布魯', 'Bruce Che', 'IT_DEPT', 'DEVOPS_ENG', False),
+            ('bruce.che', '澈布魯', 'Bruce Che', 'IT_DEPT', 'DEVOPS_ENG', True),
             ('diana.hao', '晧黛安', 'Diana Hao', 'RD_DIV', 'ARCHITECT', False),
         ],
         'groups': [
@@ -311,13 +323,13 @@ COMPANIES = [
             ('總經理室', 'GM', None),
             ('行政管理部', 'ADMIN_DEPT', 'GM'),
             ('財務部', 'FIN', 'GM'),
-            ('SOC 監控中心', 'SOC', None),
-            ('滲透測試部', 'PENTEST', None),
-            ('資安顧問部', 'SEC_CONSULT', None),
-            ('研發處', 'RD_DIV', None),
+            ('SOC 監控中心', 'SOC', 'GM'),
+            ('滲透測試部', 'PENTEST', 'GM'),
+            ('資安顧問部', 'SEC_CONSULT', 'GM'),
+            ('研發處', 'RD_DIV', 'GM'),
             ('威脅情報部', 'CTI', 'RD_DIV'),
             ('工具開發部', 'TOOL_DEV', 'RD_DIV'),
-            ('業務部', 'SALES_DEPT', None),
+            ('業務部', 'SALES_DEPT', 'GM'),
         ],
         'employees': [
             ('ethan.ye', '燁守誠', 'Ethan Ye', 'GM', 'PRES', True),
@@ -408,6 +420,19 @@ STANDARD_JOB_TITLES = [
     ('ADMIN_SPEC', '行政專員', 'Admin Specialist', 'L100', 'ADMIN', False),
 ]
 
+JOB_LEVEL_APPROVAL_LIMITS = {
+    'L000': Decimal('0'),
+    'L100': Decimal('10000'),
+    'L200': Decimal('50000'),
+    'L300': Decimal('100000'),
+    'L400': Decimal('500000'),
+    'L500': Decimal('1000000'),
+    'L600': Decimal('5000000'),
+    'L700': Decimal('10000000'),
+    'L800': Decimal('50000000'),
+    'L900': Decimal('999999999'),
+}
+
 
 # ============================================================================
 # 建立函式
@@ -435,6 +460,52 @@ def create_job_levels(org_sc):
         db.session.flush()
         levels[code] = level
     return levels
+
+
+def create_approval_categories(org_sc, levels):
+    """建立核決類別與每個職等的核決上限"""
+    categories = {}
+    warned_missing_codes = set()
+
+    for cfg in DEFAULT_APPROVAL_CATEGORIES:
+        category = ApprovalCategory(
+            org_secure_code=org_sc,
+            code=cfg['code'],
+            name=cfg['name'],
+            name_en=cfg.get('name_en'),
+            description=cfg.get('description'),
+            currency='TWD',
+            sort_order=cfg.get('sort_order', 0),
+            is_system_default=False,
+            is_active=True,
+        )
+        db.session.add(category)
+        db.session.flush()
+        categories[cfg['code']] = category
+
+        for level_code, base_limit in JOB_LEVEL_APPROVAL_LIMITS.items():
+            level = levels.get(level_code)
+            if not level:
+                if level_code not in warned_missing_codes:
+                    print(f"  [WARN] 職等 {level_code} 不存在，跳過核決上限")
+                    warned_missing_codes.add(level_code)
+                continue
+
+            approval_limit = base_limit
+            if cfg['code'] == 'PETTY_CASH':
+                approval_limit = base_limit // Decimal('10')
+            elif cfg['code'] == 'MARKETING' and level.level_order <= 300:
+                approval_limit = Decimal('0')
+
+            limit = JobLevelApprovalLimit(
+                org_secure_code=org_sc,
+                job_level_secure_code=level.secure_code,
+                category_secure_code=category.secure_code,
+                approval_limit=approval_limit,
+            )
+            db.session.add(limit)
+
+    return categories
 
 
 def create_job_families(org_sc, extra_families=None):
@@ -673,6 +744,197 @@ def create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rul
     return users
 
 
+def _first_unit_heads(emp_list):
+    """依帳號清單順序取得每個部門的第一位主管。"""
+    unit_heads = {}
+    for username, native_name, english_name, dept_code, title_code, is_head in emp_list:
+        if is_head and dept_code not in unit_heads:
+            unit_heads[dept_code] = username
+    return unit_heads
+
+
+def _department_parent_map(dept_list):
+    return {code: parent_code for name, code, parent_code in dept_list}
+
+
+def _find_manager_username(username, dept_code, is_head, unit_heads, parent_by_dept):
+    if not is_head:
+        manager_username = unit_heads.get(dept_code)
+        return manager_username if manager_username != username else None
+
+    parent_code = parent_by_dept.get(dept_code)
+    while parent_code:
+        manager_username = unit_heads.get(parent_code)
+        if manager_username and manager_username != username:
+            return manager_username
+        parent_code = parent_by_dept.get(parent_code)
+    return None
+
+
+def _direct_manager_usernames(company_def):
+    emp_list = company_def.get('employees', [])
+    unit_heads = _first_unit_heads(emp_list)
+    parent_by_dept = _department_parent_map(company_def.get('departments', []))
+    managers = {}
+
+    for username, native_name, english_name, dept_code, title_code, is_head in emp_list:
+        is_first_head = unit_heads.get(dept_code) == username
+        managers[username] = _find_manager_username(
+            username=username,
+            dept_code=dept_code,
+            is_head=is_head and is_first_head,
+            unit_heads=unit_heads,
+            parent_by_dept=parent_by_dept,
+        )
+
+    return managers
+
+
+def print_manager_chain_preview(company_def):
+    """列印 dry-run 主管鏈預覽。"""
+    managers = _direct_manager_usernames(company_def)
+    names_by_username = {emp[0]: emp[1] for emp in company_def.get('employees', [])}
+    dept_names = {code: name for name, code, parent_code in company_def.get('departments', [])}
+    all_titles = STANDARD_JOB_TITLES + company_def.get('extra_titles', [])
+    title_names = {code: name for code, name, name_en, level_code, family_code, is_supv in all_titles}
+
+    print(f"  直屬主管鏈:")
+    for username, native_name, english_name, dept_code, title_code, is_head in company_def.get('employees', []):
+        manager_username = managers.get(username)
+        manager_name = names_by_username.get(manager_username, '無')
+        dept_name = dept_names.get(dept_code, dept_code)
+        title_name = title_names.get(title_code, title_code)
+        print(f"    {native_name} ({dept_name}/{title_name}) -> {manager_name}")
+
+
+def assign_direct_managers(org_sc, company_def, users):
+    """指派 PRIMARY 職位的直屬主管。
+
+    規則：
+    - 不是部門主管（is_unit_head=False）的人 -> 直屬主管＝自己部門的部門主管
+    - 是部門主管的人 -> 直屬主管＝上層部門的部門主管；上層沒有主管就再往上，直到找到為止
+    - 最頂層部門的主管（例如總經理）-> 沒有直屬主管（維持 NULL）
+    - 一個部門若定義了兩個以上 is_unit_head=True，取帳號清單裡先出現的那位當「部門主管」，其餘視為一般成員
+    - 自己不能是自己的主管
+    """
+    managers = _direct_manager_usernames(company_def)
+    emp_list = company_def.get('employees', [])
+    names_by_username = {emp[0]: emp[1] for emp in emp_list}
+    dept_names = {code: name for name, code, parent_code in company_def.get('departments', [])}
+    all_titles = STANDARD_JOB_TITLES + company_def.get('extra_titles', [])
+    title_names = {code: name for code, name, name_en, level_code, family_code, is_supv in all_titles}
+
+    print(f"         主管鏈:")
+    for username, native_name, english_name, dept_code, title_code, is_head in emp_list:
+        user = users.get(username)
+        if not user:
+            continue
+
+        manager_username = managers.get(username)
+        manager = users.get(manager_username) if manager_username else None
+        position = EmployeePosition.query.filter(
+            EmployeePosition.org_secure_code == org_sc,
+            EmployeePosition.user_secure_code == user.secure_code,
+            EmployeePosition.position_type == PositionType.PRIMARY,
+            EmployeePosition.is_deleted == False,
+        ).first()
+        if position:
+            position.direct_manager_secure_code = manager.secure_code if manager else None
+
+        dept_name = dept_names.get(dept_code, dept_code)
+        title_name = title_names.get(title_code, title_code)
+        manager_name = names_by_username.get(manager_username, '無')
+        print(f"           {native_name} ({dept_name}/{title_name}) -> {manager_name}")
+
+
+def _first_leaf_department(dept_list, excluded_code):
+    parent_codes = {parent_code for name, code, parent_code in dept_list if parent_code}
+    for name, code, parent_code in dept_list:
+        if code != excluded_code and code not in parent_codes:
+            return code
+    return None
+
+
+def _lowest_supervisor_title(titles):
+    supervisor_titles = [title for title in titles.values() if title.is_supervisor]
+    if not supervisor_titles:
+        return None
+    return min(
+        supervisor_titles,
+        key=lambda title: title.job_level.level_order if title.job_level else 999999,
+    )
+
+
+def create_additional_positions(org_sc, company_def, users, depts, titles):
+    """建立兼任與代理職位樣本。"""
+    emp_list = company_def.get('employees', [])
+    if len(emp_list) < 3:
+        print("         (跳過兼任/代理職位：企業成員不足)")
+        return {'concurrent': 0, 'acting': 0}
+
+    created = {'concurrent': 0, 'acting': 0}
+
+    second_emp = emp_list[1]
+    second_user = users.get(second_emp[0])
+    concurrent_dept_code = _first_leaf_department(company_def.get('departments', []), second_emp[3])
+    if not second_user or not concurrent_dept_code or concurrent_dept_code not in depts or second_emp[4] not in titles:
+        print("         (跳過兼任職位：找不到合適成員、葉部門或職稱)")
+    else:
+        primary = EmployeePosition.query.filter(
+            EmployeePosition.org_secure_code == org_sc,
+            EmployeePosition.user_secure_code == second_user.secure_code,
+            EmployeePosition.position_type == PositionType.PRIMARY,
+            EmployeePosition.is_deleted == False,
+        ).first()
+        position = EmployeePosition(
+            org_secure_code=org_sc,
+            user_secure_code=second_user.secure_code,
+            job_title_secure_code=titles[second_emp[4]].secure_code,
+            unit_secure_code=depts[concurrent_dept_code].secure_code,
+            position_type=PositionType.CONCURRENT,
+            is_unit_head=False,
+            direct_manager_secure_code=primary.direct_manager_secure_code if primary else None,
+            effective_from=date(2026, 1, 1),
+            effective_until=None,
+            is_active=True,
+        )
+        db.session.add(position)
+        created['concurrent'] += 1
+        print(f"         兼任: {second_emp[1]} -> {depts[concurrent_dept_code].name}/{titles[second_emp[4]].name}")
+
+    third_emp = emp_list[2]
+    third_user = users.get(third_emp[0])
+    acting_title = _lowest_supervisor_title(titles)
+    today = date.today()
+    if not third_user or not acting_title or third_emp[3] not in depts:
+        print("         (跳過代理職位：找不到合適成員、主管職稱或部門)")
+    else:
+        primary = EmployeePosition.query.filter(
+            EmployeePosition.org_secure_code == org_sc,
+            EmployeePosition.user_secure_code == third_user.secure_code,
+            EmployeePosition.position_type == PositionType.PRIMARY,
+            EmployeePosition.is_deleted == False,
+        ).first()
+        position = EmployeePosition(
+            org_secure_code=org_sc,
+            user_secure_code=third_user.secure_code,
+            job_title_secure_code=acting_title.secure_code,
+            unit_secure_code=depts[third_emp[3]].secure_code,
+            position_type=PositionType.ACTING,
+            is_unit_head=False,
+            direct_manager_secure_code=primary.direct_manager_secure_code if primary else None,
+            effective_from=today,
+            effective_until=today + timedelta(days=90),
+            remarks='代理職務（種子資料）',
+            is_active=True,
+        )
+        db.session.add(position)
+        created['acting'] += 1
+        print(f"         代理: {third_emp[1]} -> {depts[third_emp[3]].name}/{acting_title.name}")
+
+    return created
+
+
 def create_groups(org_sc, group_list):
     """建立群組"""
     groups = {}
@@ -779,7 +1041,7 @@ def seed_one_company(company_def):
     domain = company_def['domain']
     admin_only = company_def.get('admin_only', False)
 
-    total_steps = 1 if admin_only else 10
+    total_steps = 1 if admin_only else 13
 
     print(f"\n{'='*60}")
     print(f"  建立企業: {name} ({code})")
@@ -805,6 +1067,13 @@ def seed_one_company(company_def):
     )
     db.session.flush()
     org_sc = org.secure_code
+    # 合約要帶 form_workflow 模組，範例企業才跑得動表單流程（含 OpHrLookup 示範）；
+    # 走 create_contract 同一套種入（模組預設角色 + Key2 + 預設 ACL），不要只改 modules_config
+    if not admin_only:
+        contract.modules_config = json.dumps(SEED_CONTRACT_MODULES)
+        from app.services.module_role_service import ModuleRoleService
+        ModuleRoleService.seed_contract_module_roles(org_sc, SEED_CONTRACT_MODULES)
+        db.session.flush()
     print(f"         org_sc: {org_sc}")
     print(f"         admin: admin@{domain}")
 
@@ -829,34 +1098,47 @@ def seed_one_company(company_def):
     print(f"  [4/{total_steps}] 職等 (10 級)...")
     levels = create_job_levels(org_sc)
 
-    # 5. 職系
+    # 5. 核決類別與上限
+    print(f"  [5/{total_steps}] 核決類別 ({len(DEFAULT_APPROVAL_CATEGORIES)} 類) + 職等上限...")
+    approval_categories = create_approval_categories(org_sc, levels)
+    print(f"         {len(approval_categories)} 類，{len(approval_categories) * len(levels)} 筆上限")
+
+    # 6. 職系
     extra_fam = company_def.get('extra_families', [])
-    print(f"  [5/{total_steps}] 職系 ({len(STANDARD_JOB_FAMILIES) + len(extra_fam)} 個)...")
+    print(f"  [6/{total_steps}] 職系 ({len(STANDARD_JOB_FAMILIES) + len(extra_fam)} 個)...")
     families = create_job_families(org_sc, extra_fam)
 
-    # 6. 職稱
+    # 7. 職稱
     extra_titles = company_def.get('extra_titles', [])
-    print(f"  [6/{total_steps}] 職稱 ({len(STANDARD_JOB_TITLES) + len(extra_titles)} 個)...")
+    print(f"  [7/{total_steps}] 職稱 ({len(STANDARD_JOB_TITLES) + len(extra_titles)} 個)...")
     titles = create_job_titles(org_sc, levels, families, extra_titles)
 
-    # 7. 部門
+    # 8. 部門
     dept_list = company_def['departments']
-    print(f"  [7/{total_steps}] 部門 ({len(dept_list)} 個)...")
+    print(f"  [8/{total_steps}] 部門 ({len(dept_list)} 個)...")
     depts = create_departments(org_sc, dept_list)
 
-    # 8. 企業成員帳號 + 職位 + EMPLOYEE 角色
+    # 9. 企業成員帳號 + 職位 + EMPLOYEE 角色
     emp_list = company_def['employees']
-    print(f"  [8/{total_steps}] 企業成員帳號 ({len(emp_list)} 人) + 職位指派 + 角色...")
+    print(f"  [9/{total_steps}] 企業成員帳號 ({len(emp_list)} 人) + 職位指派 + 角色...")
     users = create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rules)
 
-    # 9. 群組
+    # 10. 直屬主管鏈
+    print(f"  [10/{total_steps}] 直屬主管鏈...")
+    assign_direct_managers(org_sc, company_def, users)
+
+    # 11. 兼任與代理職位
+    print(f"  [11/{total_steps}] 兼任/代理職位樣本...")
+    create_additional_positions(org_sc, company_def, users, depts, titles)
+
+    # 12. 群組
     group_list = company_def.get('groups', [])
-    print(f"  [9/{total_steps}] 群組 ({len(group_list)} 個)...")
+    print(f"  [12/{total_steps}] 群組 ({len(group_list)} 個)...")
     groups = create_groups(org_sc, group_list) if group_list else {}
 
-    # 10. 外部廠商帳號 + EXTERNAL_USERS 角色
+    # 13. 外部廠商帳號 + EXTERNAL_USERS 角色
     ext_list = company_def.get('external_users', [])
-    print(f"  [10/{total_steps}] 外部廠商 ({len(ext_list)} 人) + 角色...")
+    print(f"  [13/{total_steps}] 外部廠商 ({len(ext_list)} 人) + 角色...")
     ext_users = create_external_users(org, org_sc, ext_list, groups, numbering_rules) if ext_list else {}
 
     db.session.commit()
@@ -876,6 +1158,28 @@ def clean_test_companies():
 
     domains = [c['domain'] for c in COMPANIES]
 
+    def _quote_identifier(identifier):
+        if not SQL_IDENTIFIER_RE.match(identifier):
+            raise ValueError(f"Invalid SQL identifier: {identifier}")
+        return f'"{identifier}"'
+
+    def _table_exists(table):
+        if not SQL_IDENTIFIER_RE.match(table):
+            raise ValueError(f"Invalid SQL identifier: {table}")
+        return db.session.execute(
+            text("SELECT to_regclass(:table_name) IS NOT NULL"),
+            {'table_name': f'public.{table}'},
+        ).scalar()
+
+    def _delete_by_org(table, org_sc):
+        if not _table_exists(table):
+            print(f"    (跳過：資料表 {table} 不存在)")
+            return
+        db.session.execute(
+            text(f"DELETE FROM {_quote_identifier(table)} WHERE org_secure_code = :osc"),
+            {'osc': org_sc}
+        )
+
     print("清除測試企業資料...")
     for domain in domains:
         org = Organization.query.filter(
@@ -893,6 +1197,7 @@ def clean_test_companies():
         # Phase 1: 葉表 (有 org_secure_code，無其他表依賴它們)
         phase1_tables = [
             'employee_positions',
+            'menu_role_requirements',
             'user_role_assignments',
             'user_unit_assignments',
             'user_unit_memberships',
@@ -922,24 +1227,31 @@ def clean_test_companies():
             'telegram_configs',
         ]
         for table in phase1_tables:
+            _delete_by_org(table, org_sc)
+
+        # menu_permissions 透過 menu_items 子查詢 (無 org_secure_code)
+        if _table_exists('menu_permissions') and _table_exists('menu_items'):
             db.session.execute(
-                text(f"DELETE FROM {table} WHERE org_secure_code = :osc"),
+                text("DELETE FROM menu_permissions WHERE menu_secure_code IN "
+                     "(SELECT secure_code FROM menu_items WHERE org_secure_code = :osc)"),
                 {'osc': org_sc}
             )
 
-        # menu_permissions 透過 menu_items 子查詢 (無 org_secure_code)
-        db.session.execute(
-            text("DELETE FROM menu_permissions WHERE menu_secure_code IN "
-                 "(SELECT secure_code FROM menu_items WHERE org_secure_code = :osc)"),
-            {'osc': org_sc}
-        )
-
         # password_history 透過 user_secure_code (無 org_secure_code)
-        db.session.execute(
-            text("DELETE FROM password_history WHERE user_secure_code IN "
-                 "(SELECT secure_code FROM users WHERE org_secure_code = :osc)"),
-            {'osc': org_sc}
-        )
+        if _table_exists('password_history') and _table_exists('users'):
+            db.session.execute(
+                text("DELETE FROM password_history WHERE user_secure_code IN "
+                     "(SELECT secure_code FROM users WHERE org_secure_code = :osc)"),
+                {'osc': org_sc}
+            )
+
+        # role_permissions 透過 role_secure_code (無 org_secure_code)
+        if _table_exists('role_permissions') and _table_exists('roles'):
+            db.session.execute(
+                text("DELETE FROM role_permissions WHERE role_secure_code IN "
+                     "(SELECT secure_code FROM roles WHERE org_secure_code = :osc)"),
+                {'osc': org_sc}
+            )
 
         # Phase 2: 中層表
         phase2_tables = [
@@ -951,10 +1263,7 @@ def clean_test_companies():
             'roles',
         ]
         for table in phase2_tables:
-            db.session.execute(
-                text(f"DELETE FROM {table} WHERE org_secure_code = :osc"),
-                {'osc': org_sc}
-            )
+            _delete_by_org(table, org_sc)
 
         # Phase 3: users (先清自參照和部門 FK)
         db.session.execute(
@@ -1005,10 +1314,13 @@ def dry_run():
             print(f"  (僅管理員，無其他資料)")
             continue
         print(f"  編號規則: {len(company['numbering'])} 組")
+        print(f"  核決類別: {len(DEFAULT_APPROVAL_CATEGORIES)} 類")
+        print(f"  核決上限: {len(DEFAULT_APPROVAL_CATEGORIES) * len(STANDARD_JOB_LEVELS)} 筆")
         print(f"  職系: {len(STANDARD_JOB_FAMILIES) + len(company.get('extra_families', []))} 個")
         print(f"  職稱: {len(STANDARD_JOB_TITLES) + len(company.get('extra_titles', []))} 個")
         print(f"  部門: {len(company['departments'])} 個")
         print(f"  企業成員: {len(company['employees'])} 人")
+        print(f"  兼任/代理職位: 各 1 筆 (若成員與部門足夠)")
         print(f"  部門結構:")
         for name, code, parent in company['departments']:
             indent = '    '
@@ -1019,6 +1331,7 @@ def dry_run():
         for username, native, english, dept, title, head in company['employees']:
             head_mark = ' [主管]' if head else ''
             print(f"    {native} ({english}) - {dept}/{title}{head_mark}")
+        print_manager_chain_preview(company)
 
 
 def main():
@@ -1039,7 +1352,9 @@ def main():
 
 前三家企業包含:
   - 1 個管理員 (admin)
-  - 20 個企業成員帳號 (含職位指派)
+  - 20 個企業成員帳號 (含 PRIMARY 職位與直屬主管鏈)
+  - 兼任 CONCURRENT 與代理 ACTING 職位樣本各 1 筆
+  - 核決類別與各職等核決上限
   - 編號規則、職等、職系、職稱、部門
   - 密碼統一: Test1234!
         """,

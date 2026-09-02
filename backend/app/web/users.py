@@ -19,6 +19,7 @@ from ..security.resource_gateway import ResourceGateway
 from ..models.organization import counts_toward_user_limit
 from ..models.user import User, UserType
 from ..models.organizational_unit import OrganizationalUnit
+from ..models.employee_position import EmployeePosition, PositionType
 from ..models.user_numbering_rule import UsedUserNumber
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
 from ..models.work_schedule import WorkSchedule
@@ -27,6 +28,44 @@ from ..services.password_policy_service import PasswordPolicyService
 from .. import db
 
 users_bp = Blueprint('users', __name__)
+
+
+def _get_effective_positions_by_user():
+    """取得本企業有效職位並依成員分組。"""
+    today = current_user.organization.local_today()
+    positions = ResourceGateway.filter(
+        EmployeePosition,
+        is_deleted=False,
+        is_active=True,
+        # 企業成員頁已由既有 users 路由權限保護；此處只補充同租戶職稱顯示，
+        # 不新增 employee_position:read 作為進入此頁的額外門檻。
+        check_permission=False,
+    )
+
+    positions_by_user = {}
+    for position in positions:
+        if position.effective_from and position.effective_from > today:
+            continue
+        if position.effective_until and position.effective_until < today:
+            continue
+        positions_by_user.setdefault(position.user_secure_code, []).append(position)
+
+    for user_positions in positions_by_user.values():
+        user_positions.sort(key=lambda pos: (pos.effective_from is None, pos.effective_from))
+
+    return positions_by_user
+
+
+def _get_representative_positions(positions_by_user):
+    """挑選每位成員的代表職位。"""
+    representatives = {}
+    for user_secure_code, positions in positions_by_user.items():
+        primary = next(
+            (position for position in positions if position.position_type == PositionType.PRIMARY),
+            None
+        )
+        representatives[user_secure_code] = primary or positions[0]
+    return representatives
 
 
 @users_bp.route('/check-username')
@@ -68,10 +107,12 @@ def list_users():
     ).order_by(User.created_at.desc())
 
     pagination = base_query.paginate(page=page, per_page=20, error_out=False)
+    positions_by_user = _get_effective_positions_by_user()
 
     return render_template(
         'pages/users/list.html',
         users=pagination.items,
+        representative_positions=_get_representative_positions(positions_by_user),
         pagination={
             'items': pagination.items,
             'total': pagination.total,
@@ -154,10 +195,12 @@ def view_user(secure_code: str):
 
     from ..services import egress_service
     egress_service.meter_view('user', 'detail', [user.secure_code])
+    positions_by_user = _get_effective_positions_by_user()
 
     return render_template(
         'pages/users/view.html',
         user=user,
+        user_positions=positions_by_user.get(user.secure_code, []),
         groups=groups,
         cross_departments=cross_departments,
         is_admin=is_admin,

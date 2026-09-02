@@ -118,6 +118,7 @@ def register_builtin_handlers():
     from .os_executor_handler import OsExecutorHandler
     from .os_file_read_handler import OsFileReadHandler
     from .os_file_write_handler import OsFileWriteHandler
+    from .hr_lookup_handler import HrLookupHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
@@ -153,6 +154,7 @@ def register_builtin_handlers():
     NodeHandlerFactory.register('OpSet', OpSetHandler)
     NodeHandlerFactory.register('OpFieldRead', FieldReadHandler)
     NodeHandlerFactory.register('OpFieldWrite', FieldWriteHandler)
+    NodeHandlerFactory.register('OpHrLookup', HrLookupHandler)
 
     # 整合（系統動作）
     NodeHandlerFactory.register('SubSystemProvision', SubSystemProvisionHandler)

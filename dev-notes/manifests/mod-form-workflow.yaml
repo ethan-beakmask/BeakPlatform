@@ -46,6 +46,7 @@ files:
     - modules/form_workflow/services/ai_usage_service.py    # AiAgent 用量記錄與配額服務
     - modules/form_workflow/services/node_grant_service.py  # 流程節點型別企業授權判定
     - modules/form_workflow/services/trigger_scope_service.py # API Key 表單 scope 解析共用服務
+    - modules/form_workflow/services/node_handlers/hr_lookup_handler.py # OpHrLookup 人事資料取值節點
     - backend/app/defaults/api_key_request_defaults.py      # API Key 申請單出廠預設（表單/流程/發行/填寫權限 seed）
   model:
     - modules/form_workflow/models/
@@ -65,6 +66,7 @@ files:
     - modules/form_workflow/static/modules/form_workflow/js/formadapter-decisions.js
     - modules/form_workflow/static/modules/form_workflow/js/formio-bkfile-provider.js
     - modules/form_workflow/static/modules/form_workflow/js/ai-usage.js
+    - modules/form_workflow/static/modules/form_workflow/js/wf-node-hr-lookup.js
     # 平台層的 form.io 自訂元件（Formio.use 外掛）--
     # 新增時 form_designer.html 與 form_center.html 兩處都要掛 <script>
     - backend/app/static/js/formio-user-picker.js                     # 人員選擇（值=user secure_code）
@@ -77,6 +79,8 @@ files:
     - modules/form_workflow/static/modules/form_workflow/css/workflow-designer.css
     - modules/form_workflow/static/modules/form_workflow/css/workflow-list.css
     - modules/form_workflow/static/modules/form_workflow/css/ai-usage.css
+  icons:
+    - modules/form_workflow/static/modules/form_workflow/icons/workflow/ophrlookup.svg
   migration:
     - scripts/migrations/101_execution_code_per_org_unique.py  # PF-116 execution_code per-org unique index
     - scripts/migrations/102_form_serial_per_org_unique.py     # serial_number per-org unique index
@@ -96,6 +100,9 @@ files:
     - backend/tests/test_ai_usage_api.py                       # AiAgent 用量與配額管理 API
     - backend/tests/test_workflow_cancel_mode.py               # End cancel 模式流程樹取消與 process 終止
     - backend/tests/test_node_org_grants.py                    # 流程節點企業授權 service
+    - backend/tests/test_hr_lookup_node.py                     # OpHrLookup 人事資料取值節點
+  docs:
+    - dev-notes/HR_LOOKUP_NODE_SPEC.md                         # NT-31 人事資料取值節點規格
   vendor_deps:
     - backend/app/static/vendor/formio.full.min.js     # 表單設計器
     - backend/app/static/vendor/cytoscape.min.js       # 流程圖

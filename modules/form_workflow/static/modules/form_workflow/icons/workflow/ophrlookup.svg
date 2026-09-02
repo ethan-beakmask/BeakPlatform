@@ -1,0 +1,23 @@
+<!--
+category: Workflow
+tags: [user, hierarchy, lookup, human-resources]
+version: "1.0"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+  <path d="M5 21v-2a5 5 0 0 1 5 -5h2" />
+  <path d="M17 13v3" />
+  <path d="M14 16h6" />
+  <path d="M15 19h4" />
+  <path d="M17 16v5" />
+</svg>

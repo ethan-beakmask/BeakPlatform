@@ -60,6 +60,10 @@ VALUES ('C9a+u2hHDyCYT7iwre+0WA==', 'OpFieldWrite', 'SYSTEM', NULL, '變數', '�
 ON CONFLICT (node_type) DO NOTHING;
 
 INSERT INTO workflow_node_definitions (secure_code, node_type, scope, org_secure_code, category, display_name, description, icon, execution_handler, config_schema, canvas_shape, canvas_color, canvas_width, canvas_height, max_input_connections, max_output_connections, default_timeout_seconds, max_timeout_seconds, require_system_admin, is_active, is_deleted, org_restricted, created_at, updated_at)
+VALUES ('33e07c052fb00d303aaf7fbfcdb5c730', 'OpHrLookup', 'SYSTEM', NULL, '變數', '人事資料取值', '讀取成員職級、職稱、職系、部門、直屬主管與核決上限並寫入流程變數。', '/static/modules/form_workflow/icons/workflow/ophrlookup.svg', 'modules.form_workflow.services.node_handlers.hr_lookup_handler.HrLookupHandler', '{"var_prefix": "string", "amount_expr": "string", "target_expr": "string", "approver_mode": "boolean", "target_source": "string", "approval_category_code": "string"}'::jsonb, 'roundrectangle', '#3B82F6', 120, 60, 1, 1, 60, 3600, FALSE, TRUE, FALSE, FALSE, now() AT TIME ZONE 'UTC', now() AT TIME ZONE 'UTC')
+ON CONFLICT (node_type) DO NOTHING;
+
+INSERT INTO workflow_node_definitions (secure_code, node_type, scope, org_secure_code, category, display_name, description, icon, execution_handler, config_schema, canvas_shape, canvas_color, canvas_width, canvas_height, max_input_connections, max_output_connections, default_timeout_seconds, max_timeout_seconds, require_system_admin, is_active, is_deleted, org_restricted, created_at, updated_at)
 VALUES ('GtzjtXtTiJPnuhOGYrIKmA==', 'OpSet', 'SYSTEM', NULL, '變數', '設定變數', '設定流程變數值', '/static/modules/form_workflow/icons/workflow/opset.svg', 'modules.form_workflow.services.node_handlers.opset_handler.OpSetHandler', '{"variables": "array"}'::jsonb, 'roundrectangle', '#3B82F6', 120, 60, 1, 1, 60, 3600, FALSE, TRUE, FALSE, FALSE, now() AT TIME ZONE 'UTC', now() AT TIME ZONE 'UTC')
 ON CONFLICT (node_type) DO NOTHING;
 

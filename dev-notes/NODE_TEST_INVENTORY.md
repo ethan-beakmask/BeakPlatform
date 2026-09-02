@@ -9,7 +9,7 @@
 它是本表自訂的穩定識別碼，可被其他文件、BBN 卡片、commit message、待辦引用
 （例：「NT-13 已完成，見 `/opt/tmp/verify/20260830-end-cancel-mode.log`」）。
 
-- 編號一經指派**不得重排、不得回收**，新增節點型別時往後接續（下一個是 NT-30）
+- 編號一經指派**不得重排、不得回收**，新增節點型別時往後接續（下一個是 NT-32）
 - 編號綁的是 **`node_type` 字串**，不是顯示名稱——改中文顯示名不換編號
 - 與其他編號體系無關：`PF-xx` 是 BBN 待辦，`AUTH-01`／`TZ-01` 這類是 CLAUDE.md 的規範條號
 
@@ -62,8 +62,10 @@
 | NT-27 | `Telegram` | Telegram 通知 | 通知 | 未驗證 | — |
 | NT-28 | `OsExecutor` | OS 命令 | 系統 | 端到端 | `20260830-osnode.log`（四分法四條路徑、兩道授權閘門、cancel 協同兩種、併發上限、引號化對照） |
 | NT-29 | `OsFileRead` | 檔案讀取 | 系統 | 端到端 | `20260830-osnode.log`（四種模式、兩道授權閘門、symlink 與 `../` 逃逸各一次、regex／line_start／occurrence 三軸） |
+| NT-30 | `OsFileWrite` | OS 檔案寫入 | 系統 | 單元 | `20260831-filewrite.log` |
+| NT-31 | `OpHrLookup` | 人事資料取值 | 變數 | 單元 | `backend/tests/test_hr_lookup_node.py` |
 
-進度：端到端 9 / 單元 0 / 部分 1 / 未驗證 15 / 已退役 1 / 已刪除 3。
+進度：端到端 9 / 單元 2 / 部分 1 / 未驗證 15 / 已退役 1 / 已刪除 3。
 
 **剩餘項目的待辦是 BBN `PF-172`**（`note_search("PF-172")` 取全文，含依風險排序的優先順序）。
 `NT-06 Condition`、`NT-07 Converge`、`NT-12 Switch` 已刪除；`NT-09 ParallelFork`

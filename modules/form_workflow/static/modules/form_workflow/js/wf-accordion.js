@@ -109,6 +109,7 @@
             if (type === 'OsFileRead')             info += renderOsFileReadPanel(node, nodeId);
             if (type === 'OsFileWrite')            info += renderOsFileWritePanel(node, nodeId);
             if (type === 'OpSet')                info += renderOpSetPanel(node, nodeId);
+            if (type === 'OpHrLookup')           info += renderOpHrLookupPanel(node, nodeId);
             if (type === 'OpFieldWrite')         info += renderOpFieldWritePanel(node, nodeId);
             if (type === 'FormAdapter')          info += renderFormAdapterPanel(node, nodeId);
             if (type === 'Telegram')             info += renderTelegramPanel(node, nodeId);

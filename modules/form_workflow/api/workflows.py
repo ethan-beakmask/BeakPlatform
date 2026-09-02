@@ -1341,6 +1341,35 @@ def get_roles_list():
     })
 
 
+@workflows_bp.route('/data/approval-categories')
+@module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
+def get_approval_categories_list():
+    """取得核決類別列表（用於人事資料取值節點）。"""
+    from app.models.approval_category import ApprovalCategory
+
+    org_code = current_user.org_secure_code
+
+    categories = ApprovalCategory.query.filter(
+        ApprovalCategory.org_secure_code == org_code,
+        ApprovalCategory.is_deleted == False,
+        ApprovalCategory.is_active == True
+    ).order_by(ApprovalCategory.sort_order, ApprovalCategory.name).all()
+
+    result = []
+    for category in categories:
+        result.append({
+            'code': category.code,
+            'name': category.name,
+            'currency': category.currency,
+        })
+
+    return jsonify({
+        'success': True,
+        'data': result
+    })
+
+
 # =============================================================================
 # 表單欄位 API（用於 OPSET 變數）
 # =============================================================================

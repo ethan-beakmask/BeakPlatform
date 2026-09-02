@@ -7464,6 +7464,27 @@ routes:
     rules:
     - /api/workflows/data/templates/<secure_code>
     source: modules/form_workflow/api/workflows.py
+  form_workflow_workflows.get_approval_categories_list:
+    answer_source: db
+    guard_args:
+      module_access_required:
+        check_acl: true
+        module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
+    guards:
+    - module_access_required
+    - page_keys_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/workflows/data/approval-categories
+    source: modules/form_workflow/api/workflows.py
   form_workflow_workflows.get_form_fields:
     answer_source: db
     guard_args:

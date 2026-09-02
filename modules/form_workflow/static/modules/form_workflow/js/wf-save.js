@@ -217,6 +217,14 @@
                     }
                     break;
                 }
+                case 'OpHrLookup': {
+                    const hrCfg = collectOpHrLookupConfig();
+                    if (hrCfg) {
+                        Object.assign(config, hrCfg);
+                        changed = true;
+                    }
+                    break;
+                }
                 case 'Telegram': {
                     const cfgId = document.getElementById('telegramConfigId');
                     const channel = document.getElementById('telegramChannelName');

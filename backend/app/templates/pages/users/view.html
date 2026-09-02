@@ -75,6 +75,32 @@
                 {% endif %}
             </td>
         </tr>
+        <tr>
+            <th>{{ _('職位') }}</th>
+            <td>
+                {% if user_positions %}
+                    {% for position in user_positions %}
+                    <div>
+                        {% if position.position_type == 'PRIMARY' %}{{ _('主要') }}
+                        {% elif position.position_type == 'CONCURRENT' %}{{ _('兼任') }}
+                        {% elif position.position_type == 'ACTING' %}{{ _('代理') }}
+                        {% elif position.position_type == 'TEMPORARY' %}{{ _('臨時') }}
+                        {% else %}{{ position.position_type }}
+                        {% endif %}
+                        <a href="{{ url_for('positions.view_position', secure_code=position.secure_code) }}">{{ position.job_title.name if position.job_title else '-' }}</a>
+                        ／ {{ position.unit.name if position.unit else '-' }}
+                        {% if position.direct_manager and not position.direct_manager.is_deleted and position.direct_manager.is_active %}
+                        ／ {{ position.direct_manager.display_name }}
+                        {% endif %}
+                        ／ {{ position.effective_from.strftime('%Y-%m-%d') if position.effective_from else '-' }}～{{ position.effective_until.strftime('%Y-%m-%d') if position.effective_until else _('長期') }}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <span class="empty-value">{{ _('尚未指派') }}</span>
+                {% endif %}
+                <div><a href="{{ url_for('positions.create_position') }}">{{ _('[新增職位]') }}</a></div>
+            </td>
+        </tr>
     </table>
 
     <div class="section-title optional">{{ _('跨部門支援') }}</div>

@@ -1939,6 +1939,7 @@ Playwright E2E 的三條硬規則與 mutation 驗證。
 | AiAgent 的隔離設計（`--safe-mode` / `--tools ""`）與移植性 | `dev-notes/AI_NODE_SECURITY.md` |
 | AiAgent 用量與配額 | `dev-notes/AI_NODE_USAGE_QUOTA_SPEC.md` |
 | SqlExecutor 白名單（執行時重查、唯讀交易、schema 常數） | `dev-notes/SQL_EXECUTOR_SPEC.md` |
+| OpHrLookup 人事資料取值（NT-31，職位→流程變數、依金額沿主管鏈找核決人） | `dev-notes/HR_LOOKUP_NODE_SPEC.md`；示範流程可用 `scripts/seed_test_companies.py --run` 建的範例企業跑 |
 | OsExecutor / OsFileRead | `dev-notes/OS_EXECUTOR_SPEC.md`（第十四節是實作後記，與規格本文有六處差異，以後記為準） |
 
 **OsExecutor（NT-28）與 OsFileRead（NT-29）2026-08-30 上線，出廠三道全關**：

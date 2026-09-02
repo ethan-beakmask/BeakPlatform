@@ -14,6 +14,7 @@ chapter_index: true
 - [流程設計](workflows.md)
 - [AI 分析節點](ai_agent_node.md)
 - [SQL 執行節點](sql_executor_node.md)
+- [人事資料取值節點](hr_lookup_node.md)
 - [配對管理與發行](mappings.md)
 - [表單風格管理](form_themes.md)
 - [表單中心](center.md)
