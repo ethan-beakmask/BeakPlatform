@@ -1345,6 +1345,10 @@ today_start = local_day_start_utc(getattr(g, 'timezone', 'Asia/Taipei'), datetim
 WHERE created_at > (now() AT TIME ZONE 'UTC') - interval '15 minutes'
 ```
 
+**同一個坑的日界變體：`created_at >= CURRENT_DATE` 在台北 08:00 之前會漏掉「今天」建的資料**
+（2026-09-03 清測試資料時 `DELETE ... WHERE created_at >= CURRENT_DATE` 回 `DELETE 0`，
+資料明明就在）。要抓「最近建的」一律用 UTC 時窗，不要用日曆日。
+
 
 ## 資料庫資訊
 
