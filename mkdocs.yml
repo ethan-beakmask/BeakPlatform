@@ -82,12 +82,12 @@ nav:
           - 組織單位: manual/03_org_setup/units.md
           - 部門設定: manual/03_org_setup/departments.md
           - 社群設定: manual/03_org_setup/groups.md
+          - 職級職稱矩陣: manual/03_org_setup/job_matrix.md
           - 職等設定: manual/03_org_setup/job_levels.md
           - 職系設定: manual/03_org_setup/job_families.md
           - 職稱設定: manual/03_org_setup/job_titles.md
-          - 職位設定: manual/03_org_setup/positions.md
-          - 職級職稱矩陣: manual/03_org_setup/job_matrix.md
           - 核決權限: manual/03_org_setup/job_approval_categories.md
+          - 職位設定: manual/03_org_setup/positions.md
           - 企業成員帳號: manual/03_org_setup/users.md
           - 外部廠商帳號: manual/03_org_setup/external_users.md
           - 代理授權: manual/03_org_setup/delegations.md
