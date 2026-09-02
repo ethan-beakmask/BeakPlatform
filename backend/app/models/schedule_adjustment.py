@@ -9,7 +9,7 @@ BeakMask ScheduleAdjustment Model
 from typing import Dict, Any, List, Optional
 from datetime import date, datetime
 
-from sqlalchemy import Column, String, Date, DateTime, Text, ForeignKey
+from sqlalchemy import Column, String, Date, DateTime, Text, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -29,6 +29,14 @@ class ScheduleAdjustment(TenantBaseModel):
     優先級：排班調整 > 個人排班 > 共用班表
     """
     __tablename__ = 'schedule_adjustments'
+    __table_args__ = (
+        UniqueConstraint(
+            'user_secure_code',
+            'adjust_date',
+            'adjust_type',
+            name='schedule_adjustments_user_secure_code_adjust_date_adjust_ty_key',
+        ),
+    )
 
     # 用戶
     user_secure_code = Column(
@@ -52,6 +60,9 @@ class ScheduleAdjustment(TenantBaseModel):
 
     # 關聯表單（第三階段用）
     form_instance_secure_code = Column(String(32), nullable=True)
+
+    # 由行事曆 LEAVE/TRIP 事件同步產生的記錄；人工建立為 NULL
+    calendar_event_secure_code = Column(String(32), nullable=True, index=True)
 
     # 代班人
     substitute_user_secure_code = Column(
@@ -107,6 +118,7 @@ class ScheduleAdjustment(TenantBaseModel):
             'original_periods': self.original_periods,
             'adjusted_periods': self.adjusted_periods,
             'form_instance_secure_code': self.form_instance_secure_code,
+            'calendar_event_secure_code': self.calendar_event_secure_code,
             'substitute_user_secure_code': self.substitute_user_secure_code,
             'status': self.status,
             'approved_at': self.approved_at.isoformat() if self.approved_at else None,

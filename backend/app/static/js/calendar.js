@@ -41,6 +41,8 @@ function calendarApp() {
     const today = cfg.today || calFromUTC(new Date());
     return {
         scope: cfg.scope || 'org',
+        isOrgAdmin: !!cfg.isOrgAdmin,
+        userSecureCode: cfg.userSecureCode || '',
         today: today,
         timezone: cfg.timezone || '',
         view: 'month',
@@ -51,6 +53,18 @@ function calendarApp() {
         loading: false,
         error: '',
         panel: { open: false, date: null },
+        modal: { open: false, saving: false, error: '' },
+        form: {
+            secure_code: '',
+            calendar_kind: 'PERSONAL',
+            event_type: 'MEETING',
+            title: '',
+            all_day: false,
+            start: '',
+            end: '',
+            visibility: 'BUSY',
+            note: ''
+        },
         weekdayNames: [__('日'), __('一'), __('二'), __('三'), __('四'), __('五'), __('六')],
 
         init() {
@@ -203,7 +217,7 @@ function calendarApp() {
         },
 
         chipClass(ev) {
-            return 'cal-ev--' + (ev.masked ? 'busy' : String(ev.event_type || 'other').toLowerCase());
+            return 'cal-ev--' + ((ev.source_type === 'busy' || ev.masked) ? 'busy' : String(ev.event_type || 'other').toLowerCase());
         },
 
         chipLabel(ev, date) {
@@ -264,6 +278,143 @@ function calendarApp() {
             if (!meta || !meta.holiday) return '';
             const label = this.holidayLabel(meta);
             return meta.holiday.description ? `${label}：${meta.holiday.description}` : label;
+        },
+
+        resetForm(kind, date) {
+            // 從「在這天新增」進來時預設全天且起迄都是那一天；從工具列進來則全部留空
+            this.form = {
+                secure_code: '',
+                calendar_kind: kind,
+                event_type: kind === 'ORG' ? 'ORG_EVENT' : 'MEETING',
+                title: '',
+                all_day: !!date,
+                start: date || '',
+                end: date || '',
+                visibility: 'BUSY',
+                note: ''
+            };
+        },
+
+        // 切換「全天」時把 start/end 換成該 input 型別吃得下的格式，
+        // 否則 <input type="date"> 收到 YYYY-MM-DDTHH:MM 會顯示空白（值其實還在，只是看不到）
+        onAllDayToggle() {
+            const start = this.form.start || '';
+            const end = this.form.end || '';
+            if (this.form.all_day) {
+                this.form.start = start.slice(0, 10);
+                this.form.end = end.slice(0, 10);
+            } else {
+                if (start.length === 10) this.form.start = `${start}T09:00`;
+                if (end.length === 10) this.form.end = `${end}T18:00`;
+            }
+        },
+
+        openCreate(date) {
+            const kind = this.scope === 'me' ? 'PERSONAL' : 'ORG';
+            this.resetForm(kind, date || '');
+            this.modal = { open: true, saving: false, error: '' };
+        },
+
+        openEdit(ev) {
+            this.form = {
+                secure_code: ev.source_secure_code || '',
+                calendar_kind: ev.calendar_kind || 'PERSONAL',
+                event_type: ev.event_type || 'MEETING',
+                title: ev.title || '',
+                all_day: !!ev.all_day,
+                start: ev.all_day ? ev.start_date : ev.start_local,
+                end: ev.all_day ? ev.end_date : ev.end_local,
+                visibility: ev.visibility || 'BUSY',
+                note: ev.note || ''
+            };
+            this.closePanel();
+            this.modal = { open: true, saving: false, error: '' };
+        },
+
+        closeModal() {
+            if (this.modal.saving) return;
+            this.modal = { open: false, saving: false, error: '' };
+        },
+
+        csrfToken() {
+            const el = document.querySelector('meta[name="csrf-token"]');
+            return el ? el.content : '';
+        },
+
+        formPayload() {
+            let start = this.form.start || '';
+            let end = this.form.end || '';
+            if (this.form.all_day) {
+                start = start.slice(0, 10);
+                end = end.slice(0, 10);
+            } else {
+                if (start.length === 10) start = `${start}T09:00`;
+                if (end.length === 10) end = `${end}T18:00`;
+            }
+            return {
+                calendar_kind: this.form.calendar_kind,
+                event_type: this.form.event_type,
+                title: this.form.title,
+                all_day: !!this.form.all_day,
+                start,
+                end,
+                visibility: this.form.visibility,
+                note: this.form.note
+            };
+        },
+
+        async submitForm() {
+            this.modal.saving = true;
+            this.modal.error = '';
+            const editing = !!this.form.secure_code;
+            const url = editing
+                ? `${window.__BP}/api/calendar/events/${this.form.secure_code}`
+                : `${window.__BP}/api/calendar/events`;
+            try {
+                const resp = await fetch(url, {
+                    method: editing ? 'PUT' : 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.csrfToken()
+                    },
+                    body: JSON.stringify(this.formPayload())
+                });
+                let data = null;
+                try { data = await resp.json(); } catch (e) { data = null; }
+                if (!resp.ok || !data || !data.success) {
+                    this.modal.error = (data && data.message) || __('儲存失敗');
+                    return;
+                }
+                this.modal = { open: false, saving: false, error: '' };
+                await this.load();
+            } catch (e) {
+                this.modal.error = __('儲存失敗');
+            } finally {
+                this.modal.saving = false;
+            }
+        },
+
+        async deleteEvent(ev) {
+            const title = ev.title || '';
+            if (!confirm(__('確定要刪除「{t}」嗎？', { t: title }))) return;
+            try {
+                const resp = await fetch(`${window.__BP}/api/calendar/events/${ev.source_secure_code}`, {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                    headers: { 'X-CSRFToken': this.csrfToken() }
+                });
+                let data = null;
+                try { data = await resp.json(); } catch (e) { data = null; }
+                if (!resp.ok || !data || !data.success) {
+                    alert((data && data.message) || __('刪除失敗'));
+                    return;
+                }
+                this.closePanel();
+                await this.load();
+            } catch (e) {
+                alert(__('刪除失敗'));
+            }
         },
     };
 }

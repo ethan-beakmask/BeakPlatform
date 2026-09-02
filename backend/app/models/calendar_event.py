@@ -77,3 +77,17 @@ class CalendarEvent(TenantBaseModel):
             'note': self.note,
         })
         return base
+
+
+PERSONAL_EVENT_TYPES = (
+    CalendarEventType.LEAVE,
+    CalendarEventType.TRIP,
+    CalendarEventType.MEETING,
+    CalendarEventType.OTHER,
+)
+ORG_EVENT_TYPES = (
+    CalendarEventType.MEETING,
+    CalendarEventType.ORG_EVENT,
+    CalendarEventType.OTHER,
+)
+LEAVE_LIKE_TYPES = (CalendarEventType.LEAVE, CalendarEventType.TRIP)

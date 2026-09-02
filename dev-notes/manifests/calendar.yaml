@@ -12,9 +12,13 @@ files:
     - backend/app/api/calendar.py
   model:
     - backend/app/models/calendar_event.py
+    - backend/app/models/schedule_adjustment.py
   service:
+    - backend/app/services/calendar_event_service.py
     - backend/app/services/calendar_projection_service.py
     - backend/app/services/calendar_visibility.py
+  utils:
+    - backend/app/utils/calendar_time.py
   defaults:
     - backend/app/defaults/menu_defaults.py
     - backend/app/defaults/platform_menu_defaults.py
@@ -22,6 +26,7 @@ files:
     - scripts/seed_missing_platform_menus.py
   template:
     - backend/app/templates/pages/calendar/calendar.html
+    - backend/app/templates/pages/calendar/_event_modal.html
   js:
     - backend/app/static/js/calendar.js
   css:
@@ -29,6 +34,7 @@ files:
   docs:
     - docs/manual/07_daily_work/calendar.md
   test:
+    - backend/tests/test_calendar_events_api.py
     - backend/tests/test_calendar_projection.py
     - backend/tests/test_calendar_pages.py
 
@@ -42,6 +48,7 @@ tables:
     - employee_positions
     - lookup_items
     - fw_node_execution_queue
+    - schedule_adjustments
     - menu_items
     - menu_permissions
     - menu_role_requirements

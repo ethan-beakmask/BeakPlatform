@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="cal-page" x-data='calendarApp()' @keydown.escape.window="closePanel()">
+<div class="cal-page" x-data='calendarApp()' @keydown.escape.window="closePanel(); closeModal()">
     <div class="page-header">
         <div>
             <h1>{% if scope == 'me' %}{{ _('我的行事曆') }}{% else %}{{ _('企業行事曆') }}{% endif %}</h1>
@@ -24,6 +24,11 @@
                 <button type="button" class="btn btn-sm" :class="view === 'month' ? 'btn-primary' : 'btn-secondary'" @click="setView('month')">{{ _('月') }}</button>
                 <button type="button" class="btn btn-sm" :class="view === 'week' ? 'btn-primary' : 'btn-secondary'" @click="setView('week')">{{ _('週') }}</button>
             </div>
+            {% if scope == 'me' %}
+            <button type="button" class="btn btn-primary btn-sm" @click="openCreate()">{{ _('新增事件') }}</button>
+            {% elif current_user.is_org_admin %}
+            <button type="button" class="btn btn-primary btn-sm" @click="openCreate()">{{ _('新增企業事件') }}</button>
+            {% endif %}
             <div class="cal-nav">
                 <button type="button" @click="prev()" aria-label="{{ _('上一頁') }}">&lt;</button>
                 <button type="button" @click="goToday()">{{ _('今天') }}</button>
@@ -127,16 +132,22 @@
                                 <span class="cal-panel-owner text-muted" x-show="showOwner(ev)" x-text="ownerLabel(ev)"></span>
                                 <div class="cal-panel-note text-muted" x-show="ev.note" x-text="ev.note"></div>
                                 <a class="cal-panel-link" x-show="ev.link" :href="ev.link || '#'">{{ _('開啟') }}</a>
+                                <div class="cal-panel-actions" x-show="ev.editable">
+                                    <button type="button" class="btn btn-secondary btn-sm" @click="openEdit(ev)">{{ _('編輯') }}</button>
+                                    <button type="button" class="btn btn-danger btn-sm" @click="deleteEvent(ev)">{{ _('刪除') }}</button>
+                                </div>
                             </div>
                         </div>
                     </template>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" x-show="scope === 'me' || isOrgAdmin" @click="openCreate(panel.date)">{{ _('在這天新增') }}</button>
                     <button type="button" class="btn btn-secondary" @click="closePanel()">{{ _('關閉') }}</button>
                 </div>
             </div>
         </div>
     </template>
+    {% include 'pages/calendar/_event_modal.html' %}
 </div>
 {% endblock %}
 
@@ -146,7 +157,9 @@
 window.__CALENDAR_CONFIG = {
     scope: {{ scope | tojson }},
     today: {{ today | tojson }},
-    timezone: {{ timezone | tojson }}
+    timezone: {{ timezone | tojson }},
+    isOrgAdmin: {{ is_org_admin | tojson }},
+    userSecureCode: {{ user_secure_code | tojson }}
 };
 </script>
 <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>

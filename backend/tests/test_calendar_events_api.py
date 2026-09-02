@@ -1,0 +1,368 @@
+from datetime import date, datetime
+
+from app import db
+from app.constants import SYSTEM_ORG_CODE
+from app.models import (
+    CalendarEvent,
+    CalendarKind,
+    CalendarVisibility,
+    MenuItem,
+    MenuPermission,
+    MenuRoleRequirement,
+    Organization,
+    Role,
+    RoleLevel,
+    RoleType,
+    ScheduleAdjustment,
+    ScopeType,
+    User,
+    UserRoleAssignment,
+    UserType,
+    WorkSchedule,
+)
+from app.services.schedule_service import ScheduleService
+from app.services.calendar_projection_service import CalendarProjectionService
+
+
+def _login(client, user, org):
+    with client.session_transaction() as sess:
+        sess.clear()
+        sess['_user_id'] = user.get_id()
+        sess['_fresh'] = True
+        sess['org_secure_code'] = org.secure_code
+        sess['org_domain'] = org.domain_name
+        sess['_session_org'] = user.org_secure_code
+
+
+def _user(sc, org, username, name, user_type=UserType.EMPLOYEE):
+    user = User(
+        secure_code=sc,
+        org_secure_code=org.secure_code,
+        username=username,
+        email=f'{username}@example.com',
+        display_name=name,
+        user_type=user_type,
+        is_active=True,
+        is_deleted=False,
+    )
+    user.set_password('password123')
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
+def _default_schedule(org):
+    schedule = WorkSchedule(
+        secure_code=f'cal_sched_{org.secure_code[-8:]}',
+        org_secure_code=org.secure_code,
+        schedule_code='CAL_STD',
+        name='Calendar Standard',
+        timezone='Asia/Taipei',
+        weekly_hours={
+            'mon': ['09:00-12:00', '13:00-18:00'],
+            'tue': ['09:00-12:00', '13:00-18:00'],
+            'wed': ['09:00-12:00', '13:00-18:00'],
+            'thu': ['09:00-12:00', '13:00-18:00'],
+            'fri': ['09:00-12:00', '13:00-18:00'],
+            'sat': None,
+            'sun': None,
+        },
+        is_default=True,
+        is_active=True,
+    )
+    db.session.add(schedule)
+    db.session.commit()
+    return schedule
+
+
+def _grant_menu(user, org, menu_code):
+    system_org = Organization.query.filter_by(secure_code=SYSTEM_ORG_CODE).first()
+    if not system_org:
+        system_org = Organization(
+            secure_code=SYSTEM_ORG_CODE,
+            code='SYSTEM',
+            name='System',
+            domain_name='system.local',
+            is_system_org=True,
+            is_active=True,
+            is_deleted=False,
+        )
+        db.session.add(system_org)
+        db.session.commit()
+
+    menu = MenuItem.query.filter_by(code=menu_code, is_deleted=False).first()
+    if not menu:
+        menu = MenuItem(
+            secure_code=f'{menu_code}_menu_sc',
+            org_secure_code=SYSTEM_ORG_CODE,
+            code=menu_code,
+            title=menu_code,
+            title_i18n={'en': menu_code},
+            link_type='route',
+            link_target='calendar_web.my_calendar' if menu_code == 'calendar_me' else 'calendar_web.org_calendar',
+            display_order=0,
+            depth=1,
+            required_level=2,
+            is_shared=False,
+            is_active=True,
+        )
+        db.session.add(menu)
+        db.session.flush()
+    if not MenuPermission.query.filter_by(menu_secure_code=menu.secure_code, user_type='EMPLOYEE').first():
+        db.session.add(MenuPermission(menu_secure_code=menu.secure_code, user_type='EMPLOYEE'))
+
+    role_code = f'{menu_code}_{user.secure_code}_role'
+    role = Role(
+        secure_code=f'{role_code[:24]}',
+        org_secure_code=org.secure_code,
+        code=role_code[:30],
+        name=role_code,
+        role_type=RoleType.ROLE,
+        scope_type=ScopeType.GLOBAL,
+        role_level=RoleLevel.MEMBER,
+        is_active=True,
+    )
+    db.session.add(role)
+    db.session.flush()
+    db.session.add_all([
+        MenuRoleRequirement(
+            org_secure_code=org.secure_code,
+            menu_secure_code=menu.secure_code,
+            role_secure_code=role.secure_code,
+        ),
+        UserRoleAssignment(
+            org_secure_code=org.secure_code,
+            user_secure_code=user.secure_code,
+            role_secure_code=role.secure_code,
+        ),
+    ])
+    db.session.commit()
+
+
+def _client(client, user, org, *menus):
+    for menu in menus:
+        _grant_menu(user, org, menu)
+    _login(client, user, org)
+    return client
+
+
+def _post_event(client, payload):
+    return client.post('/beakplatform/api/calendar/events', json=payload)
+
+
+def _personal_payload(**overrides):
+    payload = {
+        'calendar_kind': 'PERSONAL',
+        'event_type': 'MEETING',
+        'title': 'Team sync',
+        'all_day': False,
+        'start': '2026-09-10T09:00',
+        'end': '2026-09-10T10:00',
+        'visibility': 'BUSY',
+        'note': 'Discuss plan',
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_employee_creates_personal_and_busy_masks_for_other_employee(auth_client, test_org, test_user):
+    _grant_menu(test_user, test_org, 'calendar_me')
+    resp = _post_event(auth_client, _personal_payload(title='Private sync'))
+    assert resp.status_code == 201
+
+    mine = auth_client.get('/beakplatform/api/calendar/me/events?start=2026-09-10&end=2026-09-10').get_json()
+    assert any(e['title'] == 'Private sync' and e['editable'] is True for e in mine['events'])
+
+    other = _user('cal_other_user_00001', test_org, 'calother', 'Calendar Other')
+    org_view = CalendarProjectionService.build(test_org, other, 'org', date(2026, 9, 10), date(2026, 9, 10))
+    masked = [e for e in org_view['events'] if e.get('masked')]
+    assert len(masked) == 1 and masked[0]['editable'] is False and masked[0]['title'] is None
+
+
+def test_employee_cannot_create_org(auth_client, test_org, test_user):
+    _grant_menu(test_user, test_org, 'calendar_me')
+    denied = _post_event(auth_client, _personal_payload(calendar_kind='ORG', event_type='ORG_EVENT'))
+    assert denied.status_code == 403 and denied.get_json()['error'] == 'forbidden'
+
+
+def test_admin_creates_org_event_as_public(admin_client):
+    created = _post_event(admin_client, {
+        'calendar_kind': 'ORG',
+        'event_type': 'ORG_EVENT',
+        'title': 'All hands',
+        'all_day': True,
+        'start': '2026-09-10',
+        'end': '2026-09-10',
+        'visibility': 'PRIVATE',
+    })
+    event = CalendarEvent.query.filter_by(secure_code=created.get_json()['event']['secure_code']).first()
+    assert created.status_code == 201 and event.visibility == CalendarVisibility.PUBLIC
+
+
+def test_personal_owner_payload_is_ignored(client, test_org, test_user):
+    other = _user('cal_owner_ignored_01', test_org, 'ignored', 'Ignored Owner')
+    client = _client(client, test_user, test_org, 'calendar_me')
+    resp = _post_event(client, _personal_payload(owner_user_secure_code=other.secure_code))
+    event = CalendarEvent.query.filter_by(secure_code=resp.get_json()['event']['secure_code']).first()
+    assert event.owner_user_secure_code == test_user.secure_code
+
+
+def test_non_owner_employee_cannot_update_or_delete_personal(auth_client, test_org, test_user):
+    other = _user('cal_non_owner_00001', test_org, 'nonowner', 'Non Owner')
+    event = CalendarEvent(
+        org_secure_code=test_org.secure_code,
+        calendar_kind=CalendarKind.PERSONAL,
+        owner_user_secure_code=other.secure_code,
+        event_type='MEETING',
+        title='Other personal',
+        starts_at=datetime(2026, 9, 10, 1, 0),
+        ends_at=datetime(2026, 9, 10, 2, 0),
+        all_day=False,
+        visibility='BUSY',
+    )
+    db.session.add(event)
+    db.session.commit()
+    _grant_menu(test_user, test_org, 'calendar_me')
+
+    put_resp = auth_client.put(f'/beakplatform/api/calendar/events/{event.secure_code}', json=_personal_payload(title='Steal'))
+    del_resp = auth_client.delete(f'/beakplatform/api/calendar/events/{event.secure_code}')
+    assert put_resp.status_code == 404 and del_resp.status_code == 404
+
+
+def test_org_admin_cannot_update_other_personal_event(admin_client, test_org, test_user):
+    event = CalendarEvent(
+        org_secure_code=test_org.secure_code,
+        calendar_kind=CalendarKind.PERSONAL,
+        owner_user_secure_code=test_user.secure_code,
+        event_type='MEETING',
+        title='Employee personal',
+        starts_at=datetime(2026, 9, 10, 1, 0),
+        ends_at=datetime(2026, 9, 10, 2, 0),
+        all_day=False,
+        visibility='BUSY',
+    )
+    db.session.add(event)
+    db.session.commit()
+    resp = admin_client.put(f'/beakplatform/api/calendar/events/{event.secure_code}', json=_personal_payload(title='Admin edit'))
+    assert resp.status_code == 404
+
+
+def test_calendar_kind_is_immutable(client, test_org, test_user):
+    client = _client(client, test_user, test_org, 'calendar_me')
+    secure_code = _post_event(client, _personal_payload()).get_json()['event']['secure_code']
+    resp = client.put(f'/beakplatform/api/calendar/events/{secure_code}', json=_personal_payload(calendar_kind='ORG'))
+    assert resp.status_code == 400 and resp.get_json()['error'] == 'kind_immutable'
+
+
+def test_validation_rejects_bad_ranges_types_and_title(client, test_org, test_user):
+    client = _client(client, test_user, test_org, 'calendar_me')
+    checks = [
+        _personal_payload(start='2026-09-10T11:00', end='2026-09-10T10:00'),
+        _personal_payload(event_type='HOLIDAY'),
+        _personal_payload(title=''),
+        _personal_payload(all_day=True, start='2026-01-01', end='2027-02-04'),
+    ]
+    results = [_post_event(client, payload) for payload in checks]
+    assert [r.status_code for r in results] == [400, 400, 400, 400]
+
+
+def test_all_day_leave_creates_adjustments_and_removes_work_periods(client, test_org, test_user):
+    _default_schedule(test_org)
+    client = _client(client, test_user, test_org, 'calendar_me')
+    resp = _post_event(client, _personal_payload(
+        event_type='LEAVE',
+        title='Annual leave',
+        all_day=True,
+        start='2026-09-08',
+        end='2026-09-10',
+    ))
+    secure_code = resp.get_json()['event']['secure_code']
+    rows = ScheduleAdjustment.query.order_by(ScheduleAdjustment.adjust_date).all()
+    assert len(rows) == 3 and all(r.status == 'APPROVED' and r.calendar_event_secure_code == secure_code for r in rows)
+    assert all(ScheduleService.get_work_periods(test_user, d) == [] for d in [date(2026, 9, 8), date(2026, 9, 9), date(2026, 9, 10)])
+
+
+def test_leave_update_shrinks_adjustments(client, test_org, test_user):
+    _default_schedule(test_org)
+    client = _client(client, test_user, test_org, 'calendar_me')
+    secure_code = _post_event(client, _personal_payload(event_type='LEAVE', all_day=True, start='2026-09-08', end='2026-09-10')).get_json()['event']['secure_code']
+    resp = client.put(f'/beakplatform/api/calendar/events/{secure_code}', json=_personal_payload(
+        event_type='LEAVE',
+        all_day=True,
+        start='2026-09-08',
+        end='2026-09-08',
+    ))
+    rows = {r.adjust_date: r for r in ScheduleAdjustment.query.all()}
+    assert resp.status_code == 200 and rows[date(2026, 9, 8)].is_deleted is False
+    assert rows[date(2026, 9, 9)].is_deleted is True and rows[date(2026, 9, 10)].is_deleted is True
+
+
+def test_delete_leave_soft_deletes_and_same_day_reuses_unique_row(client, test_org, test_user):
+    _default_schedule(test_org)
+    client = _client(client, test_user, test_org, 'calendar_me')
+    secure_code = _post_event(client, _personal_payload(event_type='LEAVE', all_day=True, start='2026-09-08', end='2026-09-10')).get_json()['event']['secure_code']
+    assert client.delete(f'/beakplatform/api/calendar/events/{secure_code}').status_code == 200
+    assert ScheduleAdjustment.query.filter_by(is_deleted=True).count() == 3
+
+    new_code = _post_event(client, _personal_payload(event_type='LEAVE', all_day=True, start='2026-09-09', end='2026-09-09')).get_json()['event']['secure_code']
+    row = ScheduleAdjustment.query.filter_by(adjust_date=date(2026, 9, 9)).first()
+    assert row.is_deleted is False and row.calendar_event_secure_code == new_code and ScheduleAdjustment.query.count() == 3
+
+
+def test_manual_adjustment_is_not_overwritten_or_deleted(client, test_org, test_user):
+    _default_schedule(test_org)
+    manual = ScheduleAdjustment(
+        org_secure_code=test_org.secure_code,
+        user_secure_code=test_user.secure_code,
+        adjust_date=date(2026, 9, 9),
+        adjust_type='LEAVE',
+        status='APPROVED',
+        calendar_event_secure_code=None,
+    )
+    db.session.add(manual)
+    db.session.commit()
+    client = _client(client, test_user, test_org, 'calendar_me')
+    secure_code = _post_event(client, _personal_payload(event_type='LEAVE', all_day=True, start='2026-09-09', end='2026-09-09')).get_json()['event']['secure_code']
+    client.delete(f'/beakplatform/api/calendar/events/{secure_code}')
+    db.session.refresh(manual)
+    assert manual.is_deleted is False and manual.calendar_event_secure_code is None
+
+
+def test_trip_syncs_leave_and_type_change_recovers_adjustments(client, test_org, test_user):
+    _default_schedule(test_org)
+    client = _client(client, test_user, test_org, 'calendar_me')
+    secure_code = _post_event(client, _personal_payload(event_type='TRIP', all_day=True, start='2026-09-09', end='2026-09-10')).get_json()['event']['secure_code']
+    assert ScheduleAdjustment.query.filter_by(is_deleted=False).count() == 2
+    client.put(f'/beakplatform/api/calendar/events/{secure_code}', json=_personal_payload(event_type='MEETING', all_day=True, start='2026-09-09', end='2026-09-10'))
+    assert ScheduleAdjustment.query.filter_by(is_deleted=False).count() == 0
+
+
+def test_partial_day_leave_spanning_midnight_creates_two_daily_adjustments(client, test_org, test_user):
+    _default_schedule(test_org)
+    client = _client(client, test_user, test_org, 'calendar_me')
+    _post_event(client, _personal_payload(event_type='LEAVE', start='2026-09-10T14:00', end='2026-09-11T10:00'))
+    dates = {r.adjust_date for r in ScheduleAdjustment.query.filter_by(is_deleted=False).all()}
+    assert dates == {date(2026, 9, 10), date(2026, 9, 11)}
+
+
+def test_busy_masks_merge_by_owner_only(client, test_org, test_user):
+    viewer = _user('cal_viewer_0000001', test_org, 'viewer', 'Viewer')
+    third = _user('cal_third_00000001', test_org, 'third', 'Third')
+    db.session.add_all([
+        CalendarEvent(org_secure_code=test_org.secure_code, calendar_kind=CalendarKind.PERSONAL, owner_user_secure_code=test_user.secure_code, event_type='MEETING', title='A1', starts_at=datetime(2026, 9, 10, 1, 0), ends_at=datetime(2026, 9, 10, 2, 0), all_day=False, visibility='BUSY'),
+        CalendarEvent(org_secure_code=test_org.secure_code, calendar_kind=CalendarKind.PERSONAL, owner_user_secure_code=test_user.secure_code, event_type='MEETING', title='A2', starts_at=datetime(2026, 9, 10, 1, 30), ends_at=datetime(2026, 9, 10, 3, 0), all_day=False, visibility='BUSY'),
+        CalendarEvent(org_secure_code=test_org.secure_code, calendar_kind=CalendarKind.PERSONAL, owner_user_secure_code=test_user.secure_code, event_type='MEETING', title='A3', starts_at=datetime(2026, 9, 10, 6, 0), ends_at=datetime(2026, 9, 10, 7, 0), all_day=False, visibility='BUSY'),
+        CalendarEvent(org_secure_code=test_org.secure_code, calendar_kind=CalendarKind.PERSONAL, owner_user_secure_code=third.secure_code, event_type='MEETING', title='C1', starts_at=datetime(2026, 9, 10, 1, 15), ends_at=datetime(2026, 9, 10, 2, 15), all_day=False, visibility='BUSY'),
+    ])
+    db.session.commit()
+    client = _client(client, viewer, test_org, 'calendar')
+    events = client.get('/beakplatform/api/calendar/org/events?start=2026-09-10&end=2026-09-10').get_json()['events']
+    owner_masks = [e for e in events if e.get('masked') and e['owner_user_secure_code'] == test_user.secure_code]
+    all_masks = [e for e in events if e.get('masked')]
+    assert len(owner_masks) == 2 and owner_masks[0]['start_local'] == '2026-09-10T09:00' and owner_masks[0]['end_local'] == '2026-09-10T11:00'
+    assert len(all_masks) == 3
+
+
+def test_unauthenticated_post_is_rejected(client):
+    resp = client.post('/beakplatform/api/calendar/events', json=_personal_payload())
+    assert resp.status_code in (401, 302)

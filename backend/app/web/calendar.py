@@ -22,6 +22,8 @@ def _render(scope: str):
         scope=scope,
         timezone=org.get_setting('timezone', 'Asia/Taipei'),
         today=org.local_today().isoformat(),
+        is_org_admin=current_user.is_org_admin,
+        user_secure_code=current_user.secure_code,
         page_caps={},
     )
 

@@ -322,6 +322,48 @@
     font-size: var(--font-size-sm);
     color: var(--color-primary);
 }
+.cal-panel-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+/* 事件表單 */
+.cal-form-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.cal-form-row > label {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+.cal-form-row input:not([type="radio"]):not([type="checkbox"]),
+.cal-form-row select,
+.cal-form-row textarea {
+    width: 100%;
+}
+.cal-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.cal-form-radios {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.cal-form-radios label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.cal-form-note {
+    margin: 0;
+    font-size: var(--font-size-sm);
+}
 
 @media (max-width: 900px) {
     .cal-page {

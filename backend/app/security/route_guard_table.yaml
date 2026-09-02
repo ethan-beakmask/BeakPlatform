@@ -271,6 +271,40 @@ routes:
     rules:
     - /api/broadcasts/active
     source: backend/app/api/broadcasts.py
+  api_calendar.create_event:
+    answer_source: db
+    guard_args:
+      page_keys_required:
+        menu_code: calendar_me
+    guards:
+    - page_keys_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/calendar/events
+    source: backend/app/api/calendar.py
+  api_calendar.delete_event:
+    answer_source: db
+    guard_args:
+      page_keys_required:
+        menu_code: calendar_me
+    guards:
+    - page_keys_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - DELETE
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/calendar/events/<secure_code>
+    source: backend/app/api/calendar.py
   api_calendar.me_events:
     answer_source: db
     guard_args:
@@ -308,6 +342,23 @@ routes:
     review: confirmed
     rules:
     - /api/calendar/org/events
+    source: backend/app/api/calendar.py
+  api_calendar.update_event:
+    answer_source: db
+    guard_args:
+      page_keys_required:
+        menu_code: calendar_me
+    guards:
+    - page_keys_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - PUT
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/calendar/events/<secure_code>
     source: backend/app/api/calendar.py
   api_code.generate_code:
     answer_source: none

@@ -1,0 +1,80 @@
+<template x-if="modal.open">
+    <div class="modal-overlay">
+        <div class="modal-content modal-sm" style="width:520px;">
+            <div class="modal-header">
+                <h3 x-text="form.secure_code ? __('編輯事件') : __('新增事件')"></h3>
+                <button type="button" class="close-btn" @click="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <template x-if="modal.error">
+                    <div class="error-list">
+                        <div x-text="modal.error"></div>
+                    </div>
+                </template>
+                <div class="cal-form-row">
+                    <label>{{ _('類型') }}</label>
+                    <div>
+                        <template x-if="form.calendar_kind === 'PERSONAL'">
+                            <select class="form-control" x-model="form.event_type">
+                                <option value="LEAVE">{{ _('請假') }}</option>
+                                <option value="TRIP">{{ _('出差') }}</option>
+                                <option value="MEETING">{{ _('會議') }}</option>
+                                <option value="OTHER">{{ _('其他') }}</option>
+                            </select>
+                        </template>
+                        <template x-if="form.calendar_kind === 'ORG'">
+                            <select class="form-control" x-model="form.event_type">
+                                <option value="MEETING">{{ _('會議') }}</option>
+                                <option value="ORG_EVENT">{{ _('企業活動') }}</option>
+                                <option value="OTHER">{{ _('其他') }}</option>
+                            </select>
+                        </template>
+                    </div>
+                </div>
+                <div class="cal-form-row">
+                    <label for="cal-event-title">{{ _('標題') }}</label>
+                    <input id="cal-event-title" type="text" class="form-control" x-model="form.title" maxlength="200">
+                </div>
+                <div class="cal-form-row">
+                    <label>{{ _('全天') }}</label>
+                    <label class="cal-check"><input type="checkbox" x-model="form.all_day" @change="onAllDayToggle()"> {{ _('全天事件') }}</label>
+                </div>
+                <div class="cal-form-row" x-show="form.all_day">
+                    <label>{{ _('開始') }}</label>
+                    <input type="date" class="form-control" x-model="form.start">
+                </div>
+                <div class="cal-form-row" x-show="form.all_day">
+                    <label>{{ _('結束') }}</label>
+                    <input type="date" class="form-control" x-model="form.end">
+                </div>
+                <div class="cal-form-row" x-show="!form.all_day">
+                    <label>{{ _('開始') }}</label>
+                    <input type="datetime-local" class="form-control" x-model="form.start">
+                </div>
+                <div class="cal-form-row" x-show="!form.all_day">
+                    <label>{{ _('結束') }}</label>
+                    <input type="datetime-local" class="form-control" x-model="form.end">
+                </div>
+                <div class="cal-form-row">
+                    <label>{{ _('可見性') }}</label>
+                    <div>
+                        <div class="cal-form-radios" x-show="form.calendar_kind === 'PERSONAL'">
+                            <label><input type="radio" value="PUBLIC" x-model="form.visibility"> {{ _('公開') }}</label>
+                            <label><input type="radio" value="BUSY" x-model="form.visibility"> {{ _('僅顯示已排程') }}</label>
+                            <label><input type="radio" value="PRIVATE" x-model="form.visibility"> {{ _('私人') }}</label>
+                        </div>
+                        <p class="text-muted cal-form-note" x-show="form.calendar_kind === 'ORG'">{{ _('企業事件對全企業公開') }}</p>
+                    </div>
+                </div>
+                <div class="cal-form-row">
+                    <label for="cal-event-note">{{ _('備註') }}</label>
+                    <textarea id="cal-event-note" class="form-control" x-model="form.note" maxlength="2000" rows="4"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @click="closeModal()">{{ _('取消') }}</button>
+                <button type="button" class="btn btn-primary" @click="submitForm()" :disabled="modal.saving" x-text="modal.saving ? __('儲存中…') : __('儲存')"></button>
+            </div>
+        </div>
+    </div>
+</template>

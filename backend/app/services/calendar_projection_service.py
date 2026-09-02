@@ -1,7 +1,6 @@
 """企業行事曆唯讀投影服務。"""
 import logging
 from datetime import date, datetime, time, timedelta
-from zoneinfo import ZoneInfo
 
 from flask import has_request_context, request
 from flask_babel import gettext as _
@@ -22,6 +21,12 @@ from app.models import (
 from app.models.employee_position import PositionType
 from app.services.calendar_visibility import apply_visibility
 from app.services.schedule_service import ScheduleService
+from app.utils.calendar_time import (
+    event_local_dates,
+    format_local,
+    local_date_to_utc,
+    utc_to_local,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +47,8 @@ class CalendarProjectionService:
             raise ValueError('range too large')
 
         tz_name = org.get_setting('timezone', 'Asia/Taipei')
-        start_utc = _local_date_to_utc(tz_name, start)
-        end_utc = _local_date_to_utc(tz_name, end + timedelta(days=1))
+        start_utc = local_date_to_utc(tz_name, start)
+        end_utc = local_date_to_utc(tz_name, end + timedelta(days=1))
         prefix = request.script_root if has_request_context() else ''
 
         schedule = cls._schedule_for_scope(org, viewer, scope)
@@ -63,6 +68,7 @@ class CalendarProjectionService:
             item = apply_visibility(event, viewer)
             if item is not None:
                 visible.append(item)
+        visible = cls._merge_masked(visible)
         visible.sort(key=lambda item: (item.get('start_local') or '', item.get('title') or ''))
 
         return {
@@ -150,9 +156,9 @@ class CalendarProjectionService:
 
         events = []
         for row in rows:
-            start_local = _utc_to_local(tz_name, row.starts_at)
-            end_local = _utc_to_local(tz_name, row.ends_at)
-            start_date, end_date = _event_local_dates(row.all_day, start_local, end_local)
+            start_local = utc_to_local(tz_name, row.starts_at)
+            end_local = utc_to_local(tz_name, row.ends_at)
+            start_date, end_date = event_local_dates(row.all_day, start_local, end_local)
             owner = owner_map.get(row.owner_user_secure_code)
             events.append({
                 'key': f'manual:{row.secure_code}',
@@ -165,15 +171,78 @@ class CalendarProjectionService:
                 'title': row.title,
                 'note': row.note,
                 'all_day': row.all_day,
-                'start_local': _format_local(start_local),
-                'end_local': _format_local(end_local),
+                'start_local': format_local(start_local),
+                'end_local': format_local(end_local),
                 'start_date': start_date.isoformat(),
                 'end_date': end_date.isoformat(),
                 'visibility': row.visibility,
                 'link': None,
                 'audience': None,
+                'editable': (row.source_type is None) and (
+                    (row.calendar_kind == CalendarKind.PERSONAL
+                     and row.owner_user_secure_code == viewer.secure_code)
+                    or (row.calendar_kind == CalendarKind.ORG and viewer.is_org_admin)
+                ),
             })
         return events
+
+    @classmethod
+    def _merge_masked(cls, events):
+        grouped = {}
+        visible = []
+        for event in events:
+            if event.get('masked') is True:
+                grouped.setdefault(event.get('owner_user_secure_code'), []).append(event)
+            else:
+                visible.append(event)
+
+        merged = []
+        for owner, rows in grouped.items():
+            rows.sort(key=lambda item: item.get('start_local') or '')
+            current = None
+            for row in rows:
+                if current is None:
+                    current = cls._busy_seed(row)
+                    continue
+                if (row.get('start_local') or '') <= (current.get('end_local') or ''):
+                    if (row.get('end_local') or '') > (current.get('end_local') or ''):
+                        current['end_local'] = row.get('end_local')
+                    if (row.get('end_date') or '') > (current.get('end_date') or ''):
+                        current['end_date'] = row.get('end_date')
+                    if row.get('all_day'):
+                        current['all_day'] = True
+                    continue
+                merged.append(current)
+                current = cls._busy_seed(row)
+            if current is not None:
+                merged.append(current)
+
+        for index, row in enumerate(merged, start=1):
+            row['key'] = f"busy:{row.get('owner_user_secure_code')}:{index}"
+        return visible + merged
+
+    @staticmethod
+    def _busy_seed(row):
+        return {
+            'key': None,
+            'source_type': 'busy',
+            'source_secure_code': None,
+            'calendar_kind': 'PERSONAL',
+            'owner_user_secure_code': row.get('owner_user_secure_code'),
+            'owner_name': row.get('owner_name'),
+            'event_type': 'BUSY',
+            'title': None,
+            'note': None,
+            'all_day': bool(row.get('all_day')),
+            'start_local': row.get('start_local'),
+            'end_local': row.get('end_local'),
+            'start_date': row.get('start_date'),
+            'end_date': row.get('end_date'),
+            'visibility': 'BUSY',
+            'link': None,
+            'masked': True,
+            'editable': False,
+        }
 
     @classmethod
     def _holiday_events(cls, holidays):
@@ -199,13 +268,14 @@ class CalendarProjectionService:
                 'title': title,
                 'note': holiday.description,
                 'all_day': True,
-                'start_local': _format_local(local_start),
-                'end_local': _format_local(local_end),
+                'start_local': format_local(local_start),
+                'end_local': format_local(local_end),
                 'start_date': holiday.holiday_date.isoformat(),
                 'end_date': holiday.holiday_date.isoformat(),
                 'visibility': CalendarVisibility.PUBLIC,
                 'link': None,
                 'audience': None,
+                'editable': False,
             })
         return events
 
@@ -239,8 +309,8 @@ class CalendarProjectionService:
                 'title': _('代理：%(a)s → %(b)s', a=delegator_name, b=delegate_name),
                 'note': row.reason,
                 'all_day': True,
-                'start_local': _format_local(datetime.combine(row.effective_from, time.min)),
-                'end_local': _format_local(datetime.combine(row.effective_until, time.min)),
+                'start_local': format_local(datetime.combine(row.effective_from, time.min)),
+                'end_local': format_local(datetime.combine(row.effective_until, time.min)),
                 'start_date': row.effective_from.isoformat(),
                 'end_date': row.effective_until.isoformat(),
                 'visibility': CalendarVisibility.PRIVATE,
@@ -249,6 +319,7 @@ class CalendarProjectionService:
                     'users': [row.delegator_secure_code, row.delegate_secure_code],
                     'org_admin': True,
                 },
+                'editable': False,
             })
         return events
 
@@ -292,13 +363,14 @@ class CalendarProjectionService:
                            type=position_type, title=title_name, unit=unit_name),
                 'note': row.remarks,
                 'all_day': True,
-                'start_local': _format_local(datetime.combine(row.effective_from, time.min)),
-                'end_local': _format_local(datetime.combine(row.effective_until, time.min)),
+                'start_local': format_local(datetime.combine(row.effective_from, time.min)),
+                'end_local': format_local(datetime.combine(row.effective_until, time.min)),
                 'start_date': row.effective_from.isoformat(),
                 'end_date': row.effective_until.isoformat(),
                 'visibility': CalendarVisibility.PRIVATE,
                 'link': None,
                 'audience': {'users': [row.user_secure_code], 'org_admin': True},
+                'editable': False,
             })
         return events
 
@@ -342,9 +414,9 @@ class CalendarProjectionService:
                 continue
             if not _overlaps(starts_at, ends_at, start_utc, end_utc):
                 continue
-            start_local = _utc_to_local(tz_name, starts_at)
-            end_local = _utc_to_local(tz_name, ends_at)
-            start_date, end_date = _event_local_dates(False, start_local, end_local)
+            start_local = utc_to_local(tz_name, starts_at)
+            end_local = utc_to_local(tz_name, ends_at)
+            start_date, end_date = event_local_dates(False, start_local, end_local)
             events.append({
                 'key': f'broadcast:{item.secure_code}',
                 'source_type': 'broadcast',
@@ -356,13 +428,14 @@ class CalendarProjectionService:
                 'title': title,
                 'note': value.get('message'),
                 'all_day': False,
-                'start_local': _format_local(start_local),
-                'end_local': _format_local(end_local),
+                'start_local': format_local(start_local),
+                'end_local': format_local(end_local),
                 'start_date': start_date.isoformat(),
                 'end_date': end_date.isoformat(),
                 'visibility': CalendarVisibility.PUBLIC,
                 'link': None,
                 'audience': None,
+                'editable': False,
             })
         return events
 
@@ -403,7 +476,7 @@ class CalendarProjectionService:
                 if not can_act_on_task(task, viewer.secure_code, org.secure_code, actor):
                     continue
                 form = form_map.get(task.form_instance_secure_code)
-                local_dt = _utc_to_local(tz_name, task.scheduled_at)
+                local_dt = utc_to_local(tz_name, task.scheduled_at)
                 form_name = form.form_name if form else ''
                 serial_number = form.serial_number if form else ''
                 events.append(_point_event(
@@ -438,7 +511,7 @@ class CalendarProjectionService:
             ).all() if wf_codes else []
             wf_map = {w.secure_code: w for w in workflows}
             for task in tasks:
-                local_dt = _utc_to_local(tz_name, task.scheduled_at)
+                local_dt = utc_to_local(tz_name, task.scheduled_at)
                 workflow = wf_map.get(task.workflow_instance_secure_code)
                 events.append(_point_event(
                     key=f'delay:{task.secure_code}',
@@ -459,31 +532,6 @@ class CalendarProjectionService:
         return events
 
 
-def _local_date_to_utc(tz_name: str, d: date) -> datetime:
-    return (
-        datetime.combine(d, time.min)
-        .replace(tzinfo=ZoneInfo(tz_name))
-        .astimezone(ZoneInfo('UTC'))
-        .replace(tzinfo=None)
-    )
-
-
-def _utc_to_local(tz_name: str, dt: datetime) -> datetime:
-    return dt.replace(tzinfo=ZoneInfo('UTC')).astimezone(ZoneInfo(tz_name))
-
-
-def _format_local(dt: datetime) -> str:
-    return dt.strftime('%Y-%m-%dT%H:%M')
-
-
-def _event_local_dates(all_day: bool, start_local: datetime, end_local: datetime) -> tuple[date, date]:
-    start_date = start_local.date()
-    end_date = end_local.date()
-    if all_day and end_local.time() == time.min and end_local.date() > start_date:
-        end_date = end_local.date() - timedelta(days=1)
-    return start_date, end_date
-
-
 def _overlaps(starts_at: datetime, ends_at: datetime, start_utc: datetime, end_utc: datetime) -> bool:
     return starts_at < end_utc and ends_at >= start_utc
 
@@ -495,10 +543,11 @@ def _point_event(**kwargs):
         **kwargs,
         'note': None,
         'all_day': False,
-        'start_local': _format_local(local_dt),
-        'end_local': _format_local(local_dt),
+        'start_local': format_local(local_dt),
+        'end_local': format_local(local_dt),
         'start_date': local_date,
         'end_date': local_date,
+        'editable': False,
     }
 
 

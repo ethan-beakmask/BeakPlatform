@@ -52,6 +52,7 @@ def apply_visibility(event: dict, viewer) -> dict | None:
             'note': None,
             'link': None,
             'event_type': MASKED_TITLE_KEY,
+            'editable': False,
         })
         return result
 

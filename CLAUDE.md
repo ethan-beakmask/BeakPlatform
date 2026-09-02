@@ -1355,23 +1355,35 @@ WHERE created_at > (now() AT TIME ZONE 'UTC') - interval '15 minutes'
 - **Password**: postgres123（開發環境）
 - **本機資料皆為測試資料**：變更後可忽略舊資料，不用修正舊資料，除非用戶要求
 
-### 行事曆是唯讀投影，可見性只有一個實作（2026-09-02 PF-229 第一期起）
+### 行事曆：投影只有一個實作、寫入只有一個實作（PF-229 第一期 2026-09-02、第二期 2026-09-03）
 
-`/calendar/`（企業）與 `/calendar/me`（個人）**沒有任何寫入路徑**（第二期才有），畫面上的事件全是
-`backend/app/services/calendar_projection_service.py` 從六種既有來源投影出來的：`calendar_events`（手建，第一期只能 SQL 造）、
+`/calendar/`（企業）與 `/calendar/me`（個人）畫面上的事件全是
+`backend/app/services/calendar_projection_service.py` 從六種來源投影出來的：`calendar_events`（手建）、
 班表假日、代理授權、限期職位、公告廣播、流程佇列（待簽核只在個人視圖、Delay 到期只給管理員）。
 受眾與遮罩**只在** `calendar_visibility.apply_visibility()` 判定——新增來源時產出正規化 dict 並填 `audience`，
-不要在外面另寫 if。三件猜不到的：
+不要在外面另寫 if。寫入（第二期起）**只走** `calendar_event_service.CalendarEventService`
+（`POST/PUT/DELETE /api/calendar/events`，掛 `@page_keys_required('calendar_me')`），
+org 與 owner 一律取自登入身分、payload 給了也忽略。五件猜不到的：
 
-- **`PRIVATE` 對 ORG_ADMIN 也隱藏**（Ethan 定案，避免變成監控工具）；`BUSY` 他人只拿到 `masked=true`、無 title。
+- **`PRIVATE` 對 ORG_ADMIN 也隱藏**（Ethan 定案，避免變成監控工具）；`BUSY` 他人只拿到 `masked=true`、無 title，
+  且**同一人重疊或相接的 BUSY 會合併成一筆** `source_type='busy'`（`_merge_masked()`，key 是 `busy:<owner>:<n>`）。
   代理／職位這類自帶受眾的來源對非受眾是「不顯示」，不是遮罩
-- API 的 `start`/`end` 是**企業時區當地日曆日**，回應的 `start_local` / `start_date` 也已換算完，前端一律不做時區運算
+- **PERSONAL 只有本人能改，ORG_ADMIN 改別人的個人事件也是 404**；ORG 事件只有 ORG_ADMIN 能建改刪且一律 `PUBLIC`
+  （payload 給 `PRIVATE` 會被靜默改成 PUBLIC，不報錯）。判定在 service 的 `_get_editable_event()`，不在 decorator
+- **`LEAVE`／`TRIP` 個人事件會同步寫 `schedule_adjustments`（`adjust_type='LEAVE'`、`status='APPROVED'`、
+  日粒度、`calendar_event_secure_code` 指回事件）**，`ScheduleService.get_work_periods()` 從此看得到請假。
+  改期／改型別／刪除時走同一支 `resync_leave_adjustments()` 軟刪除或復活（該表有
+  `(user, date, type)` 唯一約束，硬刪再插會撞，所以一律復活）；`calendar_event_secure_code IS NULL` 的列是
+  表單或人工建的，**行事曆絕不動它**
+- API 的 `start`/`end` 是**企業時區當地日曆日**（寫入時全天用 `YYYY-MM-DD`、非全天 `YYYY-MM-DDTHH:MM`），
+  回應的 `start_local` / `start_date` 也已換算完，前端一律不做時區運算；轉換函式集中在 `app/utils/calendar_time.py`
 - **新增平台選單對既有環境不會自動出現**：`seed_platform_menus()` 非 force 模式見到任何選單就整批跳過。
   補種走 `venv/bin/python scripts/seed_missing_platform_menus.py --dry-run` → `--apply`（通用、冪等，含所有企業 Key2）。
-  bpserv 這類已安裝環境 `--update` 後也要跑一次，否則選單不在、`page_keys_required` 對 EMPLOYEE 一律 403
+  bpserv 這類已安裝環境 `--update` 後也要跑一次，否則選單不在、`page_keys_required` 對 EMPLOYEE 一律 403。
+  **第二期在 bpserv 還要補 `schedule_adjustments.calendar_event_secure_code` 欄位**（`--update` 的 create_all 只補新表不補欄位）
 
 投影規則表、時區處理、前端行為與已知取捨見 `dev-notes/CALENDAR_SPEC.md`。
-班表假日 API 同日起收下 `COMP_OFF`（視同休假），`saveHoliday()` 改用 `result.imported` 回報。
+班表假日 API 2026-09-02 起收下 `COMP_OFF`（視同休假），`saveHoliday()` 改用 `result.imported` 回報。
 
 ### 造／清測試帳號（2026-08-23 試誤才弄對）
 
