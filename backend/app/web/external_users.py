@@ -152,13 +152,14 @@ def _log_audit(action: str, target_user: User, details: str = None):
 @external_users_bp.route('/external-users')
 def list_external_users():
     """外部廠商列表"""
+    # 停用的廠商也要列出（灰色列 + [啟用] 按鈕），否則停用後從畫面上消失、
+    # 沒有任何地方能重新啟用（2026-09-02 實測；模板本來就有 is_active 分支）
     users = User.query.filter(
         User.org_secure_code == current_user.org_secure_code,
         User.user_type == UserType.EXTERNAL,
         User.is_service_account == False,
         User.is_deleted == False,
-        User.is_active == True
-    ).order_by(User.created_at.desc()).all()
+    ).order_by(User.is_active.desc(), User.created_at.desc()).all()
 
     # 查詢每個用戶的群組歸屬
     for user in users:
