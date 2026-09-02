@@ -25,6 +25,29 @@ def set_menu_permissions(menu_secure_code, user_types):
         db.session.add(permission)
 
 
+def build_menu_item(menu_def, secure_code, parent_secure_code=None):
+    """由 menu_def 建立 MenuItem；供初始 seed 與補種腳本共用。"""
+    return MenuItem(
+        secure_code=secure_code,
+        org_secure_code=menu_def['org_secure_code'],
+        parent_secure_code=parent_secure_code,
+        code=menu_def['code'],
+        title=menu_def['title'],
+        title_i18n=menu_def.get('title_i18n') or {},
+        icon=menu_def.get('icon'),
+        link_type=menu_def['link_type'],
+        link_target=menu_def.get('link_target'),
+        open_in_new_tab=menu_def.get('open_in_new_tab', False),
+        display_order=menu_def['display_order'],
+        depth=menu_def.get('depth', 0),
+        is_expanded=menu_def.get('is_expanded', False),
+        is_active=True,
+        required_level=menu_def['required_level'],
+        is_shared=menu_def.get('is_shared', False),
+        required_permission=menu_def.get('required_permission'),
+    )
+
+
 def seed_platform_menus(force=False) -> dict:
     """初始化核心平台選單。"""
     from app.constants import SYSTEM_ORG_CODE
@@ -80,24 +103,7 @@ def seed_platform_menus(force=False) -> dict:
             continue
 
         secure_code = generate_secure_code()
-        menu = MenuItem(
-            secure_code=secure_code,
-            org_secure_code=SYSTEM_ORG_CODE,
-            code=menu_def['code'],
-            title=menu_def['title'],
-            title_i18n=menu_def.get('title_i18n') or {},
-            icon=menu_def.get('icon'),
-            link_type=menu_def['link_type'],
-            link_target=menu_def.get('link_target'),
-            open_in_new_tab=menu_def.get('open_in_new_tab', False),
-            display_order=menu_def['display_order'],
-            depth=0,
-            is_expanded=menu_def.get('is_expanded', False),
-            is_active=True,
-            required_level=menu_def['required_level'],
-            is_shared=menu_def.get('is_shared', False),
-            required_permission=menu_def.get('required_permission'),
-        )
+        menu = build_menu_item({**menu_def, 'org_secure_code': SYSTEM_ORG_CODE}, secure_code)
         db.session.add(menu)
         code_to_secure_code[menu_def['code']] = secure_code
 
@@ -126,24 +132,10 @@ def seed_platform_menus(force=False) -> dict:
             continue
 
         secure_code = generate_secure_code()
-        menu = MenuItem(
-            secure_code=secure_code,
-            org_secure_code=SYSTEM_ORG_CODE,
-            parent_secure_code=parent_secure_code,
-            code=menu_def['code'],
-            title=menu_def['title'],
-            title_i18n=menu_def.get('title_i18n') or {},
-            icon=menu_def.get('icon'),
-            link_type=menu_def['link_type'],
-            link_target=menu_def.get('link_target'),
-            open_in_new_tab=menu_def.get('open_in_new_tab', False),
-            display_order=menu_def['display_order'],
-            depth=1,
-            is_expanded=menu_def.get('is_expanded', False),
-            is_active=True,
-            required_level=menu_def['required_level'],
-            is_shared=menu_def.get('is_shared', False),
-            required_permission=menu_def.get('required_permission'),
+        menu = build_menu_item(
+            {**menu_def, 'org_secure_code': SYSTEM_ORG_CODE},
+            secure_code,
+            parent_secure_code,
         )
         db.session.add(menu)
         code_to_secure_code[menu_def['code']] = secure_code

@@ -1,0 +1,51 @@
+# 企業行事曆
+# 第一期（PF-229）：資料模型、唯讀投影、API、選單 seed、月／週視圖頁面
+page:
+  - /calendar/
+  - /calendar/me
+description: 企業行事曆／我的行事曆（唯讀投影六種來源；寫入 UI 為第二期）
+
+files:
+  route:
+    - backend/app/web/calendar.py
+  api:
+    - backend/app/api/calendar.py
+  model:
+    - backend/app/models/calendar_event.py
+  service:
+    - backend/app/services/calendar_projection_service.py
+    - backend/app/services/calendar_visibility.py
+  defaults:
+    - backend/app/defaults/menu_defaults.py
+    - backend/app/defaults/platform_menu_defaults.py
+  script:
+    - scripts/seed_missing_platform_menus.py
+  template:
+    - backend/app/templates/pages/calendar/calendar.html
+  js:
+    - backend/app/static/js/calendar.js
+  css:
+    - backend/app/static/css/calendar.css
+  docs:
+    - docs/manual/07_daily_work/calendar.md
+  test:
+    - backend/tests/test_calendar_projection.py
+    - backend/tests/test_calendar_pages.py
+
+tables:
+  primary:
+    - calendar_events
+  related:
+    - work_schedules
+    - schedule_holidays
+    - delegations
+    - employee_positions
+    - lookup_items
+    - fw_node_execution_queue
+    - menu_items
+    - menu_permissions
+    - menu_role_requirements
+
+security:
+  decorator: "@page_keys_required('calendar') / @page_keys_required('calendar_me')"
+  rls: false   # calendar_events 沒有 RLS policy（dev 庫僅 10 張表有 RLS），隔離靠 service 層顯式 org_secure_code 過濾

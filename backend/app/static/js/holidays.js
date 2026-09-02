@@ -201,7 +201,13 @@ function holidaysApp() {
                 });
                 const result = await response.json();
                 if (result.success) {
-                    this.showMessage(__('已新增 {count} 天假日設定', {count: datesToSave.length}), 'success');
+                    const imported = result.imported || 0;
+                    const skipped = result.skipped || 0;
+                    const style = imported === 0 ? 'error' : 'success';
+                    const message = skipped > 0
+                        ? __('已新增 {count} 天，略過 {skipped} 天（日期已存在或類型不符）', {count: imported, skipped})
+                        : __('已新增 {count} 天假日設定', {count: imported});
+                    this.showMessage(message, style);
                     this.closeModal();
                     await this.loadHolidays();
                 } else {

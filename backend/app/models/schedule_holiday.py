@@ -21,6 +21,7 @@ class ScheduleHoliday(TenantBaseModel):
 
     用於覆蓋共用班表的特定日期：
     - HOLIDAY: 國定假日、公司特休
+    - COMP_OFF: 補假
     - WORKDAY: 補班日
 
     優先級：假日設定 > 週間預設
@@ -38,10 +39,10 @@ class ScheduleHoliday(TenantBaseModel):
     # 假日日期
     holiday_date = Column(Date, nullable=False, index=True)
 
-    # 類型：HOLIDAY=休假, WORKDAY=補班
+    # 類型：HOLIDAY=休假, COMP_OFF=補假, WORKDAY=補班
     holiday_type = Column(String(20), nullable=False)
 
-    # 補班日的工作時段 (HOLIDAY 時為 null)
+    # 補班日的工作時段 (HOLIDAY/COMP_OFF 時為 null)
     work_periods = Column(JSONB, nullable=True)
 
     # 說明 (如: 中秋節, 補班日)

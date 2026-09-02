@@ -78,6 +78,10 @@ def register_blueprints(app: Flask) -> None:
     from .work_schedules import api_work_schedules
     app.register_blueprint(api_work_schedules)
 
+    # Calendar projection API
+    from .calendar import api_calendar
+    app.register_blueprint(api_calendar)
+
     # Transliteration (CJK to romanized)
     from .transliteration import api_transliteration
     app.register_blueprint(api_transliteration, url_prefix='/api/transliterate')

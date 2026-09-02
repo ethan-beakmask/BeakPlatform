@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-02 13:11+0800\n"
+"POT-Creation-Date: 2026-09-02 22:40+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -23,13 +23,13 @@ msgstr "Hover to reveal"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:293
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:361
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:392
-#: app/__init__.py:203 app/templates/pages/admin/numbering/list.html:148
-#: app/templates/pages/delegations/view.html:52
-#: app/templates/pages/users/view.html:65
-#: app/templates/pages/users/view.html:73
-#: app/templates/pages/users/view.html:115
-#: app/templates/pages/users/view.html:119
-#: app/templates/pages/users/view.html:123
+#: app/__init__.py:203 app/templates/pages/admin/numbering/list.html:149
+#: app/templates/pages/delegations/view.html:53
+#: app/templates/pages/users/view.html:66
+#: app/templates/pages/users/view.html:74
+#: app/templates/pages/users/view.html:142
+#: app/templates/pages/users/view.html:146
+#: app/templates/pages/users/view.html:150
 msgid "未設定"
 msgstr "Not set"
 
@@ -232,9 +232,9 @@ msgstr "Unsupported action: %(action)s"
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:481
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:931
 #: app/api/_ss_emailrelay.py:419 app/api/_ss_emailrelay.py:439
-#: app/web/external_users.py:529 app/web/external_users.py:582
-#: app/web/external_users.py:631 app/web/org_admin_rescue.py:100
-#: app/web/org_admins.py:502 app/web/users.py:724
+#: app/web/external_users.py:531 app/web/external_users.py:584
+#: app/web/external_users.py:633 app/web/org_admin_rescue.py:100
+#: app/web/org_admins.py:502 app/web/users.py:767
 #, python-format
 msgid "操作失敗: %(error)s"
 msgstr "Operation failed: %(error)s"
@@ -373,8 +373,8 @@ msgstr "Mail service settings saved"
 #: app/api/enterprise_settings.py:588 app/api/enterprise_settings.py:695
 #: app/api/enterprise_settings.py:761 app/api/enterprise_settings.py:827
 #: app/api/enterprise_settings.py:916 app/api/enterprise_settings.py:980
-#: app/api/work_schedules.py:89 app/api/work_schedules.py:179
-#: app/api/work_schedules.py:348 app/api/work_schedules.py:423
+#: app/api/work_schedules.py:91 app/api/work_schedules.py:181
+#: app/api/work_schedules.py:350 app/api/work_schedules.py:425
 msgid "請提供資料"
 msgstr "Please provide data"
 
@@ -477,142 +477,142 @@ msgstr "The specified API key was not found"
 msgid "請填寫暫停原因"
 msgstr "Please enter a suspension reason"
 
-#: app/api/auth.py:48 app/api/auth.py:56 app/api/auth.py:65
+#: app/api/auth.py:49 app/api/auth.py:57 app/api/auth.py:66
 msgid "請求過於頻繁，請稍後再試"
 msgstr "Too many requests. Please try again later"
 
-#: app/api/auth.py:49 app/api/auth.py:58 app/api/auth.py:67
+#: app/api/auth.py:50 app/api/auth.py:59 app/api/auth.py:68
 msgid "請求過於頻繁，請稍後再試。"
 msgstr "Too many requests. Please try again later."
 
-#: app/api/auth.py:155 app/api/auth.py:177 app/api/auth.py:189
-#: app/api/auth.py:220 app/api/auth.py:372 app/api/auth.py:498
-#: app/api/auth.py:660 app/api/auth.py:679 app/api/auth.py:687
+#: app/api/auth.py:156 app/api/auth.py:182 app/api/auth.py:194
+#: app/api/auth.py:225 app/api/auth.py:377 app/api/auth.py:503
+#: app/api/auth.py:665 app/api/auth.py:684 app/api/auth.py:692
 msgid "帳號或密碼錯誤"
 msgstr "Incorrect account or password"
 
-#: app/api/auth.py:342 app/api/auth.py:377 app/api/auth.py:481
-#: app/api/auth.py:503
+#: app/api/auth.py:347 app/api/auth.py:382 app/api/auth.py:486
+#: app/api/auth.py:508
 msgid "請輸入帳號和密碼"
 msgstr "Please enter account and password"
 
-#: app/api/auth.py:348
+#: app/api/auth.py:353
 msgid "請輸入正確的帳號格式 (username@domain)"
 msgstr "Please enter a valid account format (username@domain)"
 
-#: app/api/auth.py:446 app/api/auth.py:610
+#: app/api/auth.py:451 app/api/auth.py:615
 msgid "企業不存在或已停用"
 msgstr "Organization does not exist or is disabled"
 
-#: app/api/auth.py:643 app/api/auth.py:665
+#: app/api/auth.py:648 app/api/auth.py:670
 msgid "請輸入 Email 和密碼"
 msgstr "Please enter email and password"
 
-#: app/api/auth.py:683
+#: app/api/auth.py:688
 msgid "此帳號已停用"
 msgstr "This account is disabled"
 
-#: app/api/auth.py:714
+#: app/api/auth.py:719
 msgid "登入成功"
 msgstr "Login successful"
 
-#: app/api/auth.py:858 app/web/profile.py:57
+#: app/api/auth.py:863 app/web/profile.py:57
 msgid "目前密碼錯誤"
 msgstr "Current password is incorrect"
 
-#: app/api/auth.py:862
+#: app/api/auth.py:867
 #, python-format
 msgid "新密碼長度至少 %(min_length)s 碼"
 msgstr "New password must be at least %(min_length)s characters"
 
-#: app/api/auth.py:866
+#: app/api/auth.py:871
 msgid "兩次輸入的新密碼不一致"
 msgstr "The new passwords do not match"
 
-#: app/api/auth.py:870
+#: app/api/auth.py:875
 msgid "新密碼不能與目前密碼相同"
 msgstr "New password cannot be the same as the current password"
 
-#: app/api/auth.py:894 app/api/auth.py:896
+#: app/api/auth.py:899 app/api/auth.py:901
 msgid "密碼變更成功"
 msgstr "Password changed successfully"
 
-#: app/api/auth.py:939
+#: app/api/auth.py:944
 msgid "系統發信服務尚未就緒，無法寄送驗證信，請聯絡系統管理員"
 msgstr ""
 "The system mail service is not ready and cannot send the verification "
 "email. Contact the system administrator."
 
-#: app/api/auth.py:1012
+#: app/api/auth.py:1017
 msgid "驗證信寄送失敗，請聯絡系統管理員"
 msgstr "Failed to send the verification email. Contact the system administrator."
 
-#: app/api/auth.py:1019
+#: app/api/auth.py:1024
 msgid "驗證信已寄出，但其中一個發信服務失敗，請通知系統管理員檢查主機設定"
 msgstr ""
 "The verification email was sent, but one mail service failed. Ask the "
 "system administrator to check host settings."
 
-#: app/api/auth.py:1025 app/api/auth.py:1027 app/api/auth.py:1029
-#: app/api/auth.py:1127
+#: app/api/auth.py:1030 app/api/auth.py:1032 app/api/auth.py:1034
+#: app/api/auth.py:1132
 msgid "已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證"
 msgstr ""
 "A password reset verification email has been sent. Please complete "
 "verification within 10 minutes"
 
-#: app/api/auth.py:1079 app/api/auth.py:1116
+#: app/api/auth.py:1084 app/api/auth.py:1121
 msgid "請輸入帳號"
 msgstr "Please enter an account"
 
-#: app/api/auth.py:1159
+#: app/api/auth.py:1164
 msgid "無效的驗證連結"
 msgstr "Invalid verification link"
 
-#: app/api/auth.py:1163
+#: app/api/auth.py:1168
 msgid "驗證連結已過期，請重新申請"
 msgstr "Verification link has expired. Please request a new one"
 
-#: app/api/auth.py:1167
+#: app/api/auth.py:1172
 msgid "此驗證連結已使用過"
 msgstr "This verification link has already been used"
 
-#: app/api/auth.py:1188
+#: app/api/auth.py:1193
 msgid "請輸入驗證碼"
 msgstr "Please enter the verification code"
 
-#: app/api/auth.py:1197
+#: app/api/auth.py:1202
 msgid "驗證碼錯誤或已過期"
 msgstr "Verification code is incorrect or expired"
 
-#: app/api/auth.py:1218
+#: app/api/auth.py:1223
 msgid "系統發信服務尚未就緒，無法寄送暫時密碼，請聯絡系統管理員"
 msgstr ""
 "The system mail service is not ready and cannot send the temporary "
 "password. Contact the system administrator."
 
-#: app/api/auth.py:1251
+#: app/api/auth.py:1256
 msgid "暫時密碼寄送失敗，密碼未變更，請聯絡系統管理員"
 msgstr ""
 "Failed to send the temporary password. The password was not changed. "
 "Contact the system administrator."
 
-#: app/api/auth.py:1265
+#: app/api/auth.py:1270
 msgid "暫時密碼已寄出，但其中一個發信服務失敗，請通知系統管理員檢查主機設定"
 msgstr ""
 "The temporary password was sent, but one mail service failed. Ask the "
 "system administrator to check host settings."
 
-#: app/api/auth.py:1267 app/api/auth.py:1272
+#: app/api/auth.py:1272 app/api/auth.py:1277
 msgid "已寄送暫時密碼到您的信箱，請使用暫時密碼登入後變更密碼"
 msgstr ""
 "A temporary password has been sent to your email. Please log in with it "
 "and change your password"
 
-#: app/api/auth.py:1298
+#: app/api/auth.py:1303
 msgid "找不到目標企業"
 msgstr "Target organization not found"
 
-#: ../modules/form_workflow/api/ai_usage.py:37 app/api/auth.py:1303
+#: ../modules/form_workflow/api/ai_usage.py:37 app/api/auth.py:1308
 #: app/api/enterprise_settings.py:54 app/api/enterprise_settings.py:68
 #: app/api/enterprise_settings.py:95 app/api/enterprise_settings.py:113
 #: app/api/enterprise_settings.py:193 app/api/enterprise_settings.py:216
@@ -624,7 +624,7 @@ msgstr "Target organization not found"
 msgid "找不到企業"
 msgstr "Organization not found"
 
-#: app/api/auth.py:1379 app/api/enterprise_settings.py:268
+#: app/api/auth.py:1384 app/api/enterprise_settings.py:268
 msgid "請提供密碼"
 msgstr "Please provide a password"
 
@@ -639,6 +639,23 @@ msgstr "Confirmed"
 #: app/api/broadcasts.py:167
 msgid "確認成功"
 msgstr "Confirmation successful"
+
+#: app/api/calendar.py:38
+msgid "日期範圍不合法"
+msgstr "Invalid date range"
+
+#: app/api/calendar.py:41
+msgid "行事曆載入失敗"
+msgstr "Failed to load calendar"
+
+#: app/api/calendar.py:58
+msgid "請提供 start 與 end"
+msgstr "Both start and end are required"
+
+#: app/api/calendar.py:63 app/api/contracts.py:123
+#: app/api/work_schedules.py:365
+msgid "日期格式錯誤，請使用 YYYY-MM-DD"
+msgstr "Invalid date format. Please use YYYY-MM-DD"
 
 #: app/api/code_service.py:143 app/api/code_service.py:187
 #: app/api/transliteration.py:38 app/api/transliteration.py:77
@@ -678,15 +695,15 @@ msgstr "At least two organizations must be selected"
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:414
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:836
 #: app/api/conglomerates.py:84 app/api/conglomerates.py:276
-#: app/api/users.py:233 app/web/approval_categories.py:189
-#: app/web/delegations.py:148 app/web/external_users.py:330
-#: app/web/job_families.py:207 app/web/job_families.py:208
+#: app/api/users.py:247 app/web/approval_categories.py:189
+#: app/web/delegations.py:141 app/web/external_users.py:332
+#: app/web/job_families.py:239 app/web/job_families.py:240
 #: app/web/job_levels.py:181 app/web/job_titles.py:266
 #: app/web/job_titles.py:267 app/web/menu.py:324 app/web/menu.py:391
 #: app/web/modules.py:123 app/web/org_admins.py:284 app/web/org_admins.py:451
 #: app/web/organizations.py:283 app/web/positions.py:145
 #: app/web/sys_accounts.py:171 app/web/sys_accounts.py:172 app/web/units.py:128
-#: app/web/users.py:418
+#: app/web/users.py:461
 #, python-format
 msgid "建立失敗: %(error)s"
 msgstr "Creation failed: %(error)s"
@@ -704,13 +721,13 @@ msgstr "A conglomerate requires at least two organizations"
 #: ../modules/form_workflow/api/backgrounds.py:151
 #: ../modules/form_workflow/api/categories.py:314
 #: ../modules/form_workflow/api/form_themes.py:219 app/api/conglomerates.py:214
-#: app/web/approval_categories.py:269 app/web/delegations.py:237
-#: app/web/external_users.py:450 app/web/job_families.py:286
-#: app/web/job_families.py:287 app/web/job_levels.py:267
+#: app/web/approval_categories.py:269 app/web/delegations.py:223
+#: app/web/external_users.py:452 app/web/job_families.py:324
+#: app/web/job_families.py:325 app/web/job_levels.py:267
 #: app/web/job_titles.py:344 app/web/job_titles.py:345 app/web/menu.py:483
 #: app/web/modules.py:183 app/web/organizations.py:342 app/web/positions.py:239
 #: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:188
-#: app/web/users.py:624
+#: app/web/users.py:667
 #, python-format
 msgid "更新失敗: %(error)s"
 msgstr "Update failed: %(error)s"
@@ -732,10 +749,6 @@ msgstr "Please provide contract data"
 #, python-format
 msgid "缺少必要欄位: %(field)s"
 msgstr "Missing required field: %(field)s"
-
-#: app/api/contracts.py:123 app/api/work_schedules.py:363
-msgid "日期格式錯誤，請使用 YYYY-MM-DD"
-msgstr "Invalid date format. Please use YYYY-MM-DD"
 
 #: app/api/contracts.py:143
 msgid "合約建立成功"
@@ -951,14 +964,14 @@ msgstr "Logo deleted"
 #: ../modules/form_workflow/api/categories.py:360
 #: ../modules/form_workflow/api/form_themes.py:264
 #: app/api/enterprise_settings.py:383 app/api/files.py:474
-#: app/web/approval_categories.py:327 app/web/delegations.py:287
-#: app/web/external_users.py:669 app/web/job_families.py:369
-#: app/web/job_families.py:370 app/web/job_levels.py:318
+#: app/web/approval_categories.py:327 app/web/delegations.py:273
+#: app/web/external_users.py:671 app/web/job_families.py:421
+#: app/web/job_families.py:422 app/web/job_levels.py:318
 #: app/web/job_titles.py:395 app/web/job_titles.py:396 app/web/menu.py:537
 #: app/web/modules.py:211 app/web/org_admins.py:539
 #: app/web/organizations.py:418 app/web/positions.py:267
 #: app/web/sys_accounts.py:315 app/web/sys_accounts.py:316 app/web/units.py:221
-#: app/web/users.py:685
+#: app/web/users.py:728
 #, python-format
 msgid "刪除失敗: %(error)s"
 msgstr "Delete failed: %(error)s"
@@ -1029,7 +1042,7 @@ msgstr "You can only undo deletion of files you marked"
 msgid "已撤銷刪除"
 msgstr "Deletion undone"
 
-#: app/api/files.py:507 app/web/delegations.py:267
+#: app/api/files.py:507 app/web/delegations.py:253
 #, python-format
 msgid "撤銷失敗: %(error)s"
 msgstr "Undo failed: %(error)s"
@@ -1376,7 +1389,7 @@ msgstr "Name cannot exceed 255 characters (currently %(length)s)"
 #: ../modules/nocode_builder/api/template_api.py:425
 #: ../modules/nocode_builder/services/project_service.py:128
 #: ../modules/spec_formulate/api/_mf_specs_crud.py:46
-#: app/api/organizational_units.py:334 app/api/work_schedules.py:185
+#: app/api/organizational_units.py:334 app/api/work_schedules.py:187
 msgid "名稱不可為空"
 msgstr "Name cannot be empty"
 
@@ -1628,7 +1641,7 @@ msgstr "Membership removed"
 #: ../modules/nocode_builder/api/project_api.py:149
 #: ../modules/nocode_builder/api/project_api.py:171
 #: app/api/organizational_units.py:1727 app/api/organizations.py:218
-#: app/api/security_center.py:291 app/templates/pages/job_titles/view.html:41
+#: app/api/security_center.py:291
 msgid "無權限"
 msgstr "No permission"
 
@@ -1972,138 +1985,147 @@ msgstr "Number \"%(number)s\" is already in use"
 msgid "請提供編號"
 msgstr "Please provide a number"
 
-#: app/api/users.py:116 app/web/org_admins.py:121
+#: app/api/users.py:119 app/web/org_admins.py:121
 msgid "本國姓名、英文姓名、帳號為必填"
 msgstr "Local name, English name and account are required"
 
-#: app/api/users.py:118 app/web/users.py:320
+#: app/api/users.py:121 app/web/users.py:363
 msgid "用戶編號為必填"
 msgstr "User ID is required"
 
-#: app/api/users.py:122 app/web/external_users.py:183
-#: app/web/external_users.py:372 app/web/org_admins.py:70
-#: app/web/org_admins.py:382 app/web/users.py:327 app/web/users.py:861
+#: app/api/users.py:125 app/web/external_users.py:184
+#: app/web/external_users.py:374 app/web/org_admins.py:70
+#: app/web/org_admins.py:382 app/web/users.py:370 app/web/users.py:904
 msgid "找不到所屬企業"
 msgstr "Owning organization not found"
 
-#: app/api/users.py:129 app/web/org_admins.py:141 app/web/sys_accounts.py:128
-#: app/web/users.py:338
+#: app/api/users.py:132
+msgid "外部廠商帳號需提供完整 Email"
+msgstr "External vendor accounts require a full email address"
+
+#: app/api/users.py:137 app/web/external_users.py:239
+#, python-format
+msgid "Email %(email)s 已存在"
+msgstr "Email %(email)s already exists"
+
+#: app/api/users.py:144 app/web/org_admins.py:141 app/web/sys_accounts.py:128
+#: app/web/users.py:381
 #, python-format
 msgid "帳號 %(username)s 已存在"
 msgstr "Account %(username)s already exists"
 
-#: app/api/users.py:136 app/web/org_admins.py:152 app/web/users.py:341
+#: app/api/users.py:151 app/web/org_admins.py:152 app/web/users.py:384
 #, python-format
 msgid "用戶編號 %(employee_id)s 已存在"
 msgstr "User ID %(employee_id)s already exists"
 
-#: app/api/users.py:148
+#: app/api/users.py:163
 #, python-format
 msgid "找不到部門代碼 %(department_code)s"
 msgstr "Department code %(department_code)s not found"
 
-#: app/api/users.py:173 app/api/users.py:258 app/web/external_users.py:256
-#: app/web/external_users.py:603 app/web/users.py:344 app/web/users.py:562
-#: app/web/users.py:711
+#: app/api/users.py:187 app/api/users.py:272 app/web/external_users.py:258
+#: app/web/external_users.py:605 app/web/users.py:387 app/web/users.py:605
+#: app/web/users.py:754
 #, python-format
 msgid "已達帳號上限（%(limit)s），目前已使用 %(used)s 個"
 msgstr "Account limit reached (%(limit)s); %(used)s in use."
 
-#: app/api/users.py:228 app/web/users.py:414
+#: app/api/users.py:242 app/web/users.py:457
 #, python-format
 msgid "已建立用戶 %(name)s"
 msgstr "User %(name)s created"
 
-#: app/api/users.py:283 app/web/org_admins.py:522 app/web/sys_accounts.py:277
-#: app/web/users.py:664
+#: app/api/users.py:297 app/web/org_admins.py:522 app/web/sys_accounts.py:277
+#: app/web/users.py:707
 msgid "不能刪除自己的帳號"
 msgstr "You cannot delete your own account"
 
-#: app/api/users.py:287 app/web/users.py:669
+#: app/api/users.py:301 app/web/users.py:712
 msgid "不能刪除自己綁定的企業成員帳號"
 msgstr "You cannot delete the employee account bound to yourself"
 
-#: app/api/users.py:291 app/web/users.py:674
+#: app/api/users.py:305 app/web/users.py:717
 msgid "不能刪除企業原始管理員"
 msgstr "The original organization administrator cannot be deleted"
 
-#: app/api/work_schedules.py:95
+#: app/api/work_schedules.py:97
 msgid "請輸入班表代碼"
 msgstr "Please enter a schedule code"
 
-#: app/api/work_schedules.py:98
+#: app/api/work_schedules.py:100
 msgid "請輸入班表名稱"
 msgstr "Please enter a schedule name"
 
-#: app/api/work_schedules.py:103
+#: app/api/work_schedules.py:105
 #, python-format
 msgid "班表代碼 \"%(code)s\" 已存在"
 msgstr "Schedule code \"%(code)s\" already exists"
 
-#: app/api/work_schedules.py:108 app/api/work_schedules.py:194
+#: app/api/work_schedules.py:110 app/api/work_schedules.py:196
 msgid "週間工時格式錯誤"
 msgstr "Invalid weekly working-hours format"
 
-#: app/api/work_schedules.py:131
+#: app/api/work_schedules.py:133
 msgid "班表已建立"
 msgstr "Schedule created"
 
-#: app/api/work_schedules.py:147 app/api/work_schedules.py:175
-#: app/api/work_schedules.py:229 app/api/work_schedules.py:269
-#: app/api/work_schedules.py:305 app/api/work_schedules.py:344
-#: app/api/work_schedules.py:410 app/api/work_schedules.py:462
-#: app/api/work_schedules.py:507 app/web/work_schedules.py:54
+#: app/api/work_schedules.py:149 app/api/work_schedules.py:177
+#: app/api/work_schedules.py:231 app/api/work_schedules.py:271
+#: app/api/work_schedules.py:307 app/api/work_schedules.py:346
+#: app/api/work_schedules.py:412 app/api/work_schedules.py:464
+#: app/api/work_schedules.py:510 app/web/work_schedules.py:54
 msgid "班表不存在"
 msgstr "Schedule not found"
 
-#: app/api/work_schedules.py:207
+#: app/api/work_schedules.py:209
 msgid "班表已更新"
 msgstr "Schedule updated"
 
-#: app/api/work_schedules.py:232
+#: app/api/work_schedules.py:234
 msgid "預設班表不可刪除"
 msgstr "The default schedule cannot be deleted"
 
-#: app/api/work_schedules.py:244
+#: app/api/work_schedules.py:246
 #, python-format
 msgid "此班表已指派給 %(count)s 位用戶，無法刪除"
 msgstr "This schedule is assigned to %(count)s users and cannot be deleted"
 
-#: app/api/work_schedules.py:254
+#: app/api/work_schedules.py:256
 msgid "班表已刪除"
 msgstr "Schedule deleted"
 
-#: app/api/work_schedules.py:280
+#: app/api/work_schedules.py:282
 #, python-format
 msgid "已將 \"%(name)s\" 設為預設班表"
 msgstr "\"%(name)s\" set as the default schedule"
 
-#: app/api/work_schedules.py:355
+#: app/api/work_schedules.py:357
 msgid "請選擇日期"
 msgstr "Please select a date"
 
-#: app/api/work_schedules.py:358 app/api/work_schedules.py:428
-msgid "類型必須是 HOLIDAY 或 WORKDAY"
-msgstr "Type must be HOLIDAY or WORKDAY"
+#: app/api/work_schedules.py:360 app/api/work_schedules.py:430
+msgid "類型必須是 HOLIDAY、COMP_OFF 或 WORKDAY"
+msgstr "Type must be HOLIDAY, COMP_OFF or WORKDAY"
 
-#: app/api/work_schedules.py:368
+#: app/api/work_schedules.py:370
 msgid "補班日請設定工作時段"
 msgstr "Please set working hours for makeup workdays"
 
-#: app/api/work_schedules.py:378
+#: app/api/work_schedules.py:380
 #, python-format
 msgid "%(date)s 已設定過"
 msgstr "%(date)s has already been set"
 
-#: app/api/work_schedules.py:394
+#: app/api/work_schedules.py:396
 msgid "已新增"
 msgstr "Added"
 
-#: app/api/work_schedules.py:419 app/api/work_schedules.py:471
+#: app/api/work_schedules.py:421 app/api/work_schedules.py:473
 msgid "假日不存在"
 msgstr "Holiday not found"
 
-#: app/api/work_schedules.py:446
+#: app/api/work_schedules.py:448
 msgid "已更新"
 msgstr "Updated"
 
@@ -2111,15 +2133,15 @@ msgstr "Updated"
 #: ../modules/form_workflow/api/template_routes.py:239
 #: ../modules/form_workflow/api/workflow_routes.py:745
 #: ../modules/nocode_builder/api/portal_file_api.py:257
-#: app/api/work_schedules.py:479
+#: app/api/work_schedules.py:481
 msgid "已刪除"
 msgstr "Deleted"
 
-#: app/api/work_schedules.py:511
+#: app/api/work_schedules.py:514
 msgid "請提供假日資料"
 msgstr "Please provide holiday data"
 
-#: app/api/work_schedules.py:578
+#: app/api/work_schedules.py:581
 #, python-format
 msgid "已匯入 %(imported)s 筆，略過 %(skipped)s 筆"
 msgstr "%(imported)s records imported, %(skipped)s skipped"
@@ -2141,6 +2163,91 @@ msgstr "beneficiary_user_secure_code is required"
 #: app/services/api_key_claim_service.py:78
 msgid "無法領取 API Key"
 msgstr "Cannot claim this API key"
+
+#: app/services/calendar_projection_service.py:184
+#, python-format
+msgid "補班：%(desc)s"
+msgstr "Make-up workday: %(desc)s"
+
+#: app/services/calendar_projection_service.py:184
+#: app/templates/pages/admin/time/holidays.html:48
+#: app/templates/pages/calendar/calendar.html:43
+msgid "補班"
+msgstr "Make-up Workday"
+
+#: app/services/calendar_projection_service.py:187
+#: app/templates/pages/admin/time/holidays.html:44
+msgid "補假"
+msgstr "Make-up Holiday"
+
+#: app/services/calendar_projection_service.py:187
+#: app/templates/pages/admin/time/holidays.html:40
+msgid "假日"
+msgstr "Holiday"
+
+#: app/services/calendar_projection_service.py:239
+#, python-format
+msgid "代理：%(a)s → %(b)s"
+msgstr "Delegation: %(a)s → %(b)s"
+
+#: app/services/calendar_projection_service.py:269
+#: app/templates/pages/positions/list.html:54
+#: app/templates/pages/users/view.html:84
+msgid "主要"
+msgstr "Primary"
+
+#: app/services/calendar_projection_service.py:270
+#: app/templates/pages/positions/list.html:55
+#: app/templates/pages/positions/view.html:60
+#: app/templates/pages/users/list.html:59
+#: app/templates/pages/users/view.html:85
+msgid "兼任"
+msgstr "Concurrent"
+
+#: app/services/calendar_projection_service.py:271
+#: app/services/role_assignment_service.py:46
+#: app/services/role_assignment_service.py:47
+#: app/services/role_assignment_service.py:48
+#: app/services/role_assignment_service.py:49
+#: app/templates/pages/positions/list.html:56
+#: app/templates/pages/positions/view.html:61
+#: app/templates/pages/users/list.html:59
+#: app/templates/pages/users/view.html:86
+msgid "代理"
+msgstr "Delegated"
+
+#: app/services/calendar_projection_service.py:272
+#: app/templates/pages/positions/list.html:57
+#: app/templates/pages/positions/view.html:62
+#: app/templates/pages/users/list.html:59
+#: app/templates/pages/users/view.html:87
+msgid "臨時"
+msgstr "Temporary"
+
+#: app/services/calendar_projection_service.py:291
+#, python-format
+msgid "職位：%(type)s %(title)s（%(unit)s）"
+msgstr "Position: %(type)s %(title)s (%(unit)s)"
+
+#: app/services/calendar_projection_service.py:336
+#, python-format
+msgid "公告：%(m)s"
+msgstr "Notice: %(m)s"
+
+#: app/services/calendar_projection_service.py:340
+#, python-format
+msgid "緊急廣播：%(t)s"
+msgstr "Alert broadcast: %(t)s"
+
+#: app/services/calendar_projection_service.py:417
+#, python-format
+msgid "待簽核：%(form)s（%(sn)s）"
+msgstr "Pending approval: %(form)s (%(sn)s)"
+
+#: app/services/calendar_projection_service.py:451
+#, python-format
+msgid "流程等待到期：%(node)s（%(code)s）"
+msgstr "Workflow delay due: %(node)s (%(code)s)"
 
 #: app/services/capability_service.py:54
 #, python-format
@@ -2197,15 +2304,6 @@ msgstr "Deputy Head"
 msgid "團員"
 msgstr "member"
 
-#: app/services/role_assignment_service.py:46
-#: app/services/role_assignment_service.py:47
-#: app/services/role_assignment_service.py:48
-#: app/services/role_assignment_service.py:49
-#: app/templates/pages/positions/list.html:55
-#: app/templates/pages/positions/view.html:60
-msgid "代理"
-msgstr "Delegated"
-
 #: app/services/role_assignment_service.py:50
 #: app/services/role_assignment_service.py:297
 #: app/services/role_assignment_service.py:299
@@ -2220,9 +2318,9 @@ msgstr "Employee"
 #: app/templates/pages/platform_help/org_admin.html:52
 #: app/templates/pages/platform_help/org_admin.html:89
 #: app/templates/pages/profile/view.html:21
-#: app/templates/pages/users/edit.html:93
-#: app/templates/pages/users/edit.html:106
-#: app/templates/pages/users/view.html:41
+#: app/templates/pages/users/edit.html:94
+#: app/templates/pages/users/edit.html:107
+#: app/templates/pages/users/view.html:42
 msgid "企業管理員"
 msgstr "Organization Admin"
 
@@ -2233,9 +2331,9 @@ msgstr "Organization Admin"
 #: app/templates/pages/menu/list.html:137
 #: app/templates/pages/platform_help/org_admin.html:57
 #: app/templates/pages/platform_help/org_admin.html:142
-#: app/templates/pages/positions/edit.html:17
-#: app/templates/pages/positions/list.html:17
-#: app/templates/pages/positions/view.html:15
+#: app/templates/pages/positions/edit.html:18
+#: app/templates/pages/positions/list.html:18
+#: app/templates/pages/positions/view.html:16
 msgid "企業成員"
 msgstr "Employee"
 
@@ -2248,8 +2346,8 @@ msgstr "Employee"
 #: app/templates/pages/menu/list.html:141
 #: app/templates/pages/menu/list.html:153
 #: app/templates/pages/platform_help/org_admin.html:62
-#: app/templates/pages/users/edit.html:92
-#: app/templates/pages/users/edit.html:107
+#: app/templates/pages/users/edit.html:93
+#: app/templates/pages/users/edit.html:108
 msgid "外部廠商"
 msgstr "External Member"
 
@@ -2260,9 +2358,9 @@ msgstr "External Member"
 #: app/templates/pages/modules/create.html:51
 #: app/templates/pages/platform_help/org_admin.html:47
 #: app/templates/pages/profile/view.html:20
-#: app/templates/pages/users/edit.html:95
-#: app/templates/pages/users/edit.html:105
-#: app/templates/pages/users/view.html:40
+#: app/templates/pages/users/edit.html:96
+#: app/templates/pages/users/edit.html:106
+#: app/templates/pages/users/view.html:41
 msgid "系統管理員"
 msgstr "System Admin"
 
@@ -2332,7 +2430,7 @@ msgstr ""
 #: app/templates/pages/profile/password.html:42
 #: app/templates/pages/sys_accounts/edit.html:61
 #: app/templates/pages/sys_accounts/list.html:135
-#: app/templates/pages/users/edit.html:163
+#: app/templates/pages/users/edit.html:164
 msgid "變更密碼"
 msgstr "Change Password"
 
@@ -2354,8 +2452,8 @@ msgstr "Current password"
 #: app/templates/pages/organizations/admins.html:116
 #: app/templates/pages/sys_accounts/edit.html:64
 #: app/templates/pages/sys_accounts/list.html:138
-#: app/templates/pages/users/edit.html:132
-#: app/templates/pages/users/view.html:185
+#: app/templates/pages/users/edit.html:133
+#: app/templates/pages/users/view.html:212
 msgid "新密碼"
 msgstr "New password"
 
@@ -2379,7 +2477,7 @@ msgstr "Confirm new password"
 #: app/templates/pages/sys_accounts/edit.html:91
 #: app/templates/pages/sys_accounts/list.html:169
 #: app/templates/pages/sys_accounts/list.html:280
-#: app/templates/pages/users/view.html:207
+#: app/templates/pages/users/view.html:234
 msgid "密碼不一致"
 msgstr "Passwords do not match"
 
@@ -2388,7 +2486,7 @@ msgstr "Passwords do not match"
 #: app/templates/pages/admin/org-admins/list.html:137
 #: app/templates/pages/change_password.html:48
 #: app/templates/pages/organizations/admins.html:141
-#: app/templates/pages/users/view.html:210
+#: app/templates/pages/users/view.html:237
 msgid "確認密碼一致"
 msgstr "Passwords match"
 
@@ -2460,18 +2558,18 @@ msgstr "Passwords match"
 #: app/templates/pages/admin/_settings_telegram_section.html:168
 #: app/templates/pages/admin/departments.html:313
 #: app/templates/pages/admin/groups.html:243
-#: app/templates/pages/admin/numbering/edit.html:298
+#: app/templates/pages/admin/numbering/edit.html:299
 #: app/templates/pages/admin/org-admins/create.html:112
 #: app/templates/pages/admin/org-admins/list.html:140
-#: app/templates/pages/admin/time/holidays.html:182
-#: app/templates/pages/admin/time/schedules.html:210
+#: app/templates/pages/admin/time/holidays.html:183
+#: app/templates/pages/admin/time/schedules.html:211
 #: app/templates/pages/approval_categories/create.html:84
 #: app/templates/pages/approval_categories/edit.html:88
-#: app/templates/pages/approval_categories/list.html:212
-#: app/templates/pages/approval_categories/list.html:286
+#: app/templates/pages/approval_categories/list.html:213
+#: app/templates/pages/approval_categories/list.html:287
 #: app/templates/pages/change_password.html:55
-#: app/templates/pages/delegations/create.html:97
-#: app/templates/pages/delegations/edit.html:97
+#: app/templates/pages/delegations/create.html:98
+#: app/templates/pages/delegations/edit.html:98
 #: app/templates/pages/external-users/create.html:116
 #: app/templates/pages/external-users/edit.html:67
 #: app/templates/pages/hostconfig/_system_settings_modals.html:99
@@ -2480,15 +2578,15 @@ msgstr "Passwords match"
 #: app/templates/pages/job_families/create.html:96
 #: app/templates/pages/job_families/edit.html:93
 #: app/templates/pages/job_families/edit.html:119
-#: app/templates/pages/job_families/list.html:116
-#: app/templates/pages/job_families/list.html:192
+#: app/templates/pages/job_families/list.html:117
+#: app/templates/pages/job_families/list.html:193
 #: app/templates/pages/job_levels/create.html:90
 #: app/templates/pages/job_levels/edit.html:88
-#: app/templates/pages/job_levels/list.html:255
-#: app/templates/pages/job_titles/create.html:116
+#: app/templates/pages/job_levels/list.html:256
+#: app/templates/pages/job_titles/create.html:115
 #: app/templates/pages/job_titles/edit.html:113
-#: app/templates/pages/job_titles/list.html:129
-#: app/templates/pages/job_titles/list.html:215
+#: app/templates/pages/job_titles/list.html:130
+#: app/templates/pages/job_titles/list.html:216
 #: app/templates/pages/menu/create.html:114
 #: app/templates/pages/menu/edit.html:109 app/templates/pages/menu/list.html:46
 #: app/templates/pages/menu/list.html:70 app/templates/pages/menu/list.html:90
@@ -2501,8 +2599,8 @@ msgstr "Passwords match"
 #: app/templates/pages/organizations/edit.html:149
 #: app/templates/pages/organizations/list.html:65
 #: app/templates/pages/organizations/list.html:451
-#: app/templates/pages/positions/create.html:123
-#: app/templates/pages/positions/edit.html:127
+#: app/templates/pages/positions/create.html:124
+#: app/templates/pages/positions/edit.html:128
 #: app/templates/pages/profile/edit.html:39
 #: app/templates/pages/profile/password.html:43
 #: app/templates/pages/security/_api_keys_modals.html:100
@@ -2512,11 +2610,11 @@ msgstr "Passwords match"
 #: app/templates/pages/sys_accounts/list.html:285
 #: app/templates/pages/units/create.html:68
 #: app/templates/pages/units/edit.html:66
-#: app/templates/pages/users/create.html:23
-#: app/templates/pages/users/edit.html:340
-#: app/templates/pages/users/edit.html:342
-#: app/templates/pages/users/import.html:183
-#: app/templates/pages/users/view.html:213
+#: app/templates/pages/users/create.html:24
+#: app/templates/pages/users/edit.html:341
+#: app/templates/pages/users/edit.html:343
+#: app/templates/pages/users/import.html:184
+#: app/templates/pages/users/view.html:240
 msgid "取消"
 msgstr "Cancel"
 
@@ -2565,9 +2663,9 @@ msgstr ""
 #: app/templates/pages/sys_accounts/list.html:57
 #: app/templates/pages/sys_accounts/list.html:102
 #: app/templates/pages/sys_accounts/list.html:233
-#: app/templates/pages/users/create.html:73
-#: app/templates/pages/users/edit.html:49
-#: app/templates/pages/users/list.html:39
+#: app/templates/pages/users/create.html:74
+#: app/templates/pages/users/edit.html:50
+#: app/templates/pages/users/list.html:40
 msgid "帳號"
 msgstr "Account"
 
@@ -2790,11 +2888,11 @@ msgstr "Add"
 #: app/templates/pages/admin/_settings_smtp_section.html:33
 #: app/templates/pages/admin/_settings_telegram_section.html:32
 #: app/templates/pages/admin/module_list.html:86
-#: app/templates/pages/admin/numbering/list.html:122
+#: app/templates/pages/admin/numbering/list.html:123
 #: app/templates/pages/admin/org-admins/list.html:45
-#: app/templates/pages/admin/time/holidays.html:91
-#: app/templates/pages/admin/time/schedules.html:34
-#: app/templates/pages/delegations/list.html:26
+#: app/templates/pages/admin/time/holidays.html:92
+#: app/templates/pages/admin/time/schedules.html:35
+#: app/templates/pages/delegations/list.html:27
 #: app/templates/pages/external-users/edit.html:136
 #: app/templates/pages/external-users/list.html:38
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:36
@@ -2804,14 +2902,15 @@ msgstr "Add"
 #: app/templates/pages/organizations/admins.html:53
 #: app/templates/pages/organizations/list.html:295
 #: app/templates/pages/personal_settings.html:206
-#: app/templates/pages/positions/list.html:25
+#: app/templates/pages/positions/list.html:26
 #: app/templates/pages/security/api_keys.html:34
 #: app/templates/pages/units/list.html:29
-#: app/templates/pages/users/list.html:44
+#: app/templates/pages/users/list.html:46
 msgid "操作"
 msgstr "Actions"
 
 #: app/templates/pageir/_page_ir.html:83
+#: app/templates/pages/calendar/calendar.html:129
 msgid "開啟"
 msgstr "Open"
 
@@ -2836,9 +2935,9 @@ msgstr "Open"
 #: app/templates/pages/admin/_settings_smtp_section.html:63
 #: app/templates/pages/admin/_settings_telegram_section.html:55
 #: app/templates/pages/admin/_settings_telegram_section.html:57
-#: app/templates/pages/admin/numbering/list.html:161
-#: app/templates/pages/admin/time/holidays.html:105
-#: app/templates/pages/admin/time/schedules.html:75
+#: app/templates/pages/admin/numbering/list.html:162
+#: app/templates/pages/admin/time/holidays.html:106
+#: app/templates/pages/admin/time/schedules.html:76
 #: app/templates/pages/external-users/list.html:66
 #: app/templates/pages/external-users/view.html:28
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:50
@@ -2847,7 +2946,7 @@ msgstr "Open"
 #: app/templates/pages/job_families/view.html:10
 #: app/templates/pages/modules/view.html:16
 #: app/templates/pages/security/api_keys.html:59
-#: app/templates/pages/users/list.html:63
+#: app/templates/pages/users/list.html:73
 msgid "編輯"
 msgstr "Edit"
 
@@ -2890,20 +2989,20 @@ msgstr "Edit"
 #: app/templates/pages/admin/_settings_telegram_section.html:61
 #: app/templates/pages/admin/departments.html:314
 #: app/templates/pages/admin/groups.html:244
-#: app/templates/pages/admin/numbering/list.html:167
+#: app/templates/pages/admin/numbering/list.html:168
 #: app/templates/pages/admin/org-admins/list.html:94
 #: app/templates/pages/admin/settings.html:87
-#: app/templates/pages/admin/time/holidays.html:106
-#: app/templates/pages/admin/time/schedules.html:80
+#: app/templates/pages/admin/time/holidays.html:107
+#: app/templates/pages/admin/time/schedules.html:81
 #: app/templates/pages/external-users/list.html:77
 #: app/templates/pages/external-users/view.html:41
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:51
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:51
 #: app/templates/pages/hostconfig/_system_settings_section_telegram.html:52
-#: app/templates/pages/job_families/list.html:190
-#: app/templates/pages/job_levels/list.html:186
-#: app/templates/pages/job_titles/list.html:213
-#: app/templates/pages/users/list.html:74
+#: app/templates/pages/job_families/list.html:191
+#: app/templates/pages/job_levels/list.html:187
+#: app/templates/pages/job_titles/list.html:214
+#: app/templates/pages/users/list.html:84
 msgid "刪除"
 msgstr "Delete"
 
@@ -2925,7 +3024,8 @@ msgstr "Total"
 #: app/templates/pageir/_page_ir.html:102
 #: app/templates/pageir/_page_ir.html:217
 #: app/templates/pages/access_center/_tab_accounts.html:121
-#: app/templates/pages/users/list.html:89
+#: app/templates/pages/calendar/calendar.html:28
+#: app/templates/pages/users/list.html:99
 msgid "上一頁"
 msgstr "Previous"
 
@@ -2937,7 +3037,8 @@ msgstr "Previous"
 #: app/templates/pageir/_page_ir.html:104
 #: app/templates/pageir/_page_ir.html:219
 #: app/templates/pages/access_center/_tab_accounts.html:124
-#: app/templates/pages/users/list.html:93
+#: app/templates/pages/calendar/calendar.html:30
+#: app/templates/pages/users/list.html:103
 msgid "下一頁"
 msgstr "Next"
 
@@ -3062,6 +3163,7 @@ msgstr "Welcome, %(name)s"
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:20
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:84
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:33
+#: app/templates/pages/calendar/calendar.html:46
 #: app/templates/pages/dashboard.html:44
 msgid "待簽核"
 msgstr "Pending approval"
@@ -3089,7 +3191,7 @@ msgstr "Rank"
 
 #: app/templates/pages/personal_settings.html:5
 #: app/templates/pages/personal_settings.html:12
-#: app/templates/pages/users/edit.html:3 app/templates/pages/users/edit.html:15
+#: app/templates/pages/users/edit.html:4 app/templates/pages/users/edit.html:16
 msgid "個人設定"
 msgstr "Personal Settings"
 
@@ -3097,8 +3199,8 @@ msgstr "Personal Settings"
 #: app/templates/pages/personal_settings.html:32
 #: app/templates/pages/sys_accounts/edit.html:116
 #: app/templates/pages/sys_accounts/list.html:184
-#: app/templates/pages/users/edit.html:46
-#: app/templates/pages/users/view.html:27
+#: app/templates/pages/users/edit.html:47
+#: app/templates/pages/users/view.html:28
 msgid "帳號資訊"
 msgstr "Account Information"
 
@@ -3127,7 +3229,7 @@ msgstr "Display Name"
 #: app/templates/pages/personal_settings.html:51
 #: app/templates/pages/sys_accounts/create.html:55
 #: app/templates/pages/sys_accounts/list.html:252
-#: app/templates/pages/users/create.html:89
+#: app/templates/pages/users/create.html:90
 msgid "密碼"
 msgstr "Password"
 
@@ -3135,9 +3237,9 @@ msgstr "Password"
 #: app/templates/pages/personal_settings.html:63
 #: app/templates/pages/profile/view.html:3
 #: app/templates/pages/profile/view.html:6
-#: app/templates/pages/users/create.html:178
-#: app/templates/pages/users/edit.html:219
-#: app/templates/pages/users/view.html:111
+#: app/templates/pages/users/create.html:179
+#: app/templates/pages/users/edit.html:220
+#: app/templates/pages/users/view.html:138
 msgid "個人資料"
 msgstr "Profile"
 
@@ -3145,10 +3247,10 @@ msgstr "Profile"
 #: app/templates/pages/admin/initial_setup.html:164
 #: app/templates/pages/admin/settings.html:221
 #: app/templates/pages/personal_settings.html:68
-#: app/templates/pages/users/create.html:51
-#: app/templates/pages/users/edit.html:65
-#: app/templates/pages/users/import.html:130
-#: app/templates/pages/users/view.html:114
+#: app/templates/pages/users/create.html:52
+#: app/templates/pages/users/edit.html:66
+#: app/templates/pages/users/import.html:131
+#: app/templates/pages/users/view.html:141
 msgid "英文姓名"
 msgstr "English Name"
 
@@ -3156,10 +3258,10 @@ msgstr "English Name"
 #: app/templates/pages/admin/initial_setup.html:157
 #: app/templates/pages/admin/settings.html:220
 #: app/templates/pages/personal_settings.html:73
-#: app/templates/pages/users/create.html:42
-#: app/templates/pages/users/edit.html:55
-#: app/templates/pages/users/import.html:135
-#: app/templates/pages/users/view.html:118
+#: app/templates/pages/users/create.html:43
+#: app/templates/pages/users/edit.html:56
+#: app/templates/pages/users/import.html:136
+#: app/templates/pages/users/view.html:145
 msgid "本國姓名"
 msgstr "Native Name"
 
@@ -3172,12 +3274,12 @@ msgstr "Name in native language"
 #: app/templates/pages/admin/settings.html:222
 #: app/templates/pages/personal_settings.html:80
 #: app/templates/pages/personal_settings.html:139
-#: app/templates/pages/users/create.html:181
-#: app/templates/pages/users/edit.html:222
-#: app/templates/pages/users/edit.html:238
-#: app/templates/pages/users/edit.html:245
-#: app/templates/pages/users/import.html:140
-#: app/templates/pages/users/view.html:122
+#: app/templates/pages/users/create.html:182
+#: app/templates/pages/users/edit.html:223
+#: app/templates/pages/users/edit.html:239
+#: app/templates/pages/users/edit.html:246
+#: app/templates/pages/users/import.html:141
+#: app/templates/pages/users/view.html:149
 msgid "暱稱"
 msgstr "Nickname"
 
@@ -3190,16 +3292,16 @@ msgstr ""
 
 #: app/templates/pages/admin/_employee_create_form.html:127
 #: app/templates/pages/personal_settings.html:97
-#: app/templates/pages/users/create.html:222
-#: app/templates/pages/users/edit.html:291
-#: app/templates/pages/users/view.html:127
+#: app/templates/pages/users/create.html:223
+#: app/templates/pages/users/edit.html:292
+#: app/templates/pages/users/view.html:154
 msgid "聯絡方式"
 msgstr "Contact Information"
 
 #: app/templates/pages/admin/_employee_create_form.html:134
 #: app/templates/pages/personal_settings.html:102
 #: app/templates/pages/personal_settings.html:108
-#: app/templates/pages/users/edit.html:305
+#: app/templates/pages/users/edit.html:306
 msgid "備用 Email"
 msgstr "Backup email"
 
@@ -3217,16 +3319,16 @@ msgid "介面設定"
 msgstr "Interface Settings"
 
 #: app/templates/pages/personal_settings.html:136
-#: app/templates/pages/users/edit.html:233
+#: app/templates/pages/users/edit.html:234
 msgid "Navbar 顯示"
 msgstr "Navbar display"
 
 #: app/templates/pages/personal_settings.html:138
-#: app/templates/pages/users/create.html:195
-#: app/templates/pages/users/create.html:208
-#: app/templates/pages/users/edit.html:248
-#: app/templates/pages/users/edit.html:265
-#: app/templates/pages/users/edit.html:285
+#: app/templates/pages/users/create.html:196
+#: app/templates/pages/users/create.html:209
+#: app/templates/pages/users/edit.html:249
+#: app/templates/pages/users/edit.html:266
+#: app/templates/pages/users/edit.html:286
 msgid "跟隨企業設定"
 msgstr "Follow organization settings"
 
@@ -3235,23 +3337,23 @@ msgstr "Follow organization settings"
 #: app/templates/pages/admin/initial_setup.html:200
 #: app/templates/pages/admin/settings.html:224
 #: app/templates/pages/personal_settings.html:140
-#: app/templates/pages/users/create.html:122
-#: app/templates/pages/users/edit.html:172
-#: app/templates/pages/users/edit.html:239
-#: app/templates/pages/users/edit.html:246
-#: app/templates/pages/users/list.html:40
-#: app/templates/pages/users/view.html:64
+#: app/templates/pages/users/create.html:123
+#: app/templates/pages/users/edit.html:173
+#: app/templates/pages/users/edit.html:240
+#: app/templates/pages/users/edit.html:247
+#: app/templates/pages/users/list.html:41
+#: app/templates/pages/users/view.html:65
 msgid "用戶編號"
 msgstr "Employee ID"
 
 #: app/templates/pages/personal_settings.html:141
-#: app/templates/pages/users/edit.html:240
-#: app/templates/pages/users/edit.html:247
+#: app/templates/pages/users/edit.html:241
+#: app/templates/pages/users/edit.html:248
 msgid "用戶編號 + 部門"
 msgstr "User ID + Department"
 
 #: app/templates/pages/personal_settings.html:143
-#: app/templates/pages/users/edit.html:242
+#: app/templates/pages/users/edit.html:243
 msgid "在公開場所使用時，可改為不含真名的顯示方式"
 msgstr ""
 "When used in public places, you can switch to a display that hides your "
@@ -3261,16 +3363,16 @@ msgstr ""
 msgid "語言"
 msgstr "Language"
 
-#: app/templates/pages/admin/time/schedules.html:31
-#: app/templates/pages/admin/time/schedules.html:128
+#: app/templates/pages/admin/time/schedules.html:32
+#: app/templates/pages/admin/time/schedules.html:129
 #: app/templates/pages/personal_settings.html:156
-#: app/templates/pages/users/create.html:204
-#: app/templates/pages/users/edit.html:270
+#: app/templates/pages/users/create.html:205
+#: app/templates/pages/users/edit.html:271
 msgid "時區"
 msgstr "Timezone"
 
 #: app/templates/pages/personal_settings.html:158
-#: app/templates/pages/users/edit.html:213
+#: app/templates/pages/users/edit.html:214
 msgid "使用企業預設"
 msgstr "Use organization default"
 
@@ -3415,14 +3517,14 @@ msgstr "Loading..."
 #: app/templates/pages/access_center/_tab_roles.html:139
 #: app/templates/pages/admin/_settings_smtp_section.html:28
 #: app/templates/pages/admin/_settings_telegram_section.html:28
-#: app/templates/pages/approval_categories/list.html:94
-#: app/templates/pages/approval_categories/list.html:155
-#: app/templates/pages/approval_categories/list.html:246
+#: app/templates/pages/approval_categories/list.html:95
+#: app/templates/pages/approval_categories/list.html:156
+#: app/templates/pages/approval_categories/list.html:247
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:28
 #: app/templates/pages/hostconfig/_system_settings_section_telegram.html:32
 #: app/templates/pages/hostconfig/data_maintenance.html:236
 #: app/templates/pages/job_levels/create.html:99
-#: app/templates/pages/job_levels/list.html:80
+#: app/templates/pages/job_levels/list.html:81
 #: app/templates/pages/modules/list.html:85
 #: app/templates/pages/organizations/_org_hard_delete.html:74
 #: app/templates/pages/organizations/_org_hard_delete.html:132
@@ -3468,15 +3570,15 @@ msgstr "Authorized forms"
 #: app/templates/pages/admin/_settings_smtp_section.html:32
 #: app/templates/pages/admin/_settings_telegram_section.html:31
 #: app/templates/pages/admin/module_list.html:115
-#: app/templates/pages/admin/numbering/list.html:120
+#: app/templates/pages/admin/numbering/list.html:121
 #: app/templates/pages/admin/org-admins/list.html:43
-#: app/templates/pages/admin/time/schedules.html:33
+#: app/templates/pages/admin/time/schedules.html:34
 #: app/templates/pages/approval_categories/edit.html:76
-#: app/templates/pages/approval_categories/list.html:96
-#: app/templates/pages/approval_categories/list.html:182
+#: app/templates/pages/approval_categories/list.html:97
+#: app/templates/pages/approval_categories/list.html:183
 #: app/templates/pages/cg_databases/overview.html:213
-#: app/templates/pages/delegations/list.html:24
-#: app/templates/pages/delegations/view.html:62
+#: app/templates/pages/delegations/list.html:25
+#: app/templates/pages/delegations/view.html:63
 #: app/templates/pages/external-users/list.html:37
 #: app/templates/pages/external-users/view.html:57
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:61
@@ -3486,14 +3588,14 @@ msgstr "Authorized forms"
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:31
 #: app/templates/pages/hostconfig/_system_settings_section_telegram.html:35
 #: app/templates/pages/job_families/edit.html:80
-#: app/templates/pages/job_families/list.html:181
+#: app/templates/pages/job_families/list.html:182
 #: app/templates/pages/job_families/view.html:57
 #: app/templates/pages/job_levels/edit.html:75
-#: app/templates/pages/job_levels/list.html:162
+#: app/templates/pages/job_levels/list.html:163
 #: app/templates/pages/job_levels/view.html:43
 #: app/templates/pages/job_titles/edit.html:100
-#: app/templates/pages/job_titles/list.html:204
-#: app/templates/pages/job_titles/view.html:72
+#: app/templates/pages/job_titles/list.html:205
+#: app/templates/pages/job_titles/view.html:64
 #: app/templates/pages/modules/view.html:54
 #: app/templates/pages/modules/view.html:72
 #: app/templates/pages/organizations/admins.html:51
@@ -3501,9 +3603,9 @@ msgstr "Authorized forms"
 #: app/templates/pages/organizations/list.html:214
 #: app/templates/pages/organizations/list.html:294
 #: app/templates/pages/personal_settings.html:202
-#: app/templates/pages/positions/edit.html:114
-#: app/templates/pages/positions/list.html:24
-#: app/templates/pages/positions/view.html:96
+#: app/templates/pages/positions/edit.html:115
+#: app/templates/pages/positions/list.html:25
+#: app/templates/pages/positions/view.html:97
 #: app/templates/pages/security/api_keys.html:33
 #: app/templates/pages/sys_accounts/edit.html:47
 #: app/templates/pages/sys_accounts/list.html:59
@@ -3511,10 +3613,10 @@ msgstr "Authorized forms"
 #: app/templates/pages/units/edit.html:57
 #: app/templates/pages/units/list.html:28
 #: app/templates/pages/units/view.html:48
-#: app/templates/pages/users/edit.html:115
-#: app/templates/pages/users/edit.html:125
-#: app/templates/pages/users/list.html:42
-#: app/templates/pages/users/view.html:46
+#: app/templates/pages/users/edit.html:116
+#: app/templates/pages/users/edit.html:126
+#: app/templates/pages/users/list.html:44
+#: app/templates/pages/users/view.html:47
 msgid "狀態"
 msgstr "Status"
 
@@ -3569,6 +3671,7 @@ msgstr "API key integration examples"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_issue_modal.html:20
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_template_modal.html:77
 #: app/templates/pages/admin/_settings_recipients_section.html:267
+#: app/templates/pages/calendar/calendar.html:135
 #: app/templates/pages/organizations/list.html:386
 #: app/templates/pages/personal_settings.html:262
 #: app/templates/pages/server_manage/redis_monitor.html:185
@@ -3652,8 +3755,8 @@ msgstr "No matching accounts"
 #: app/templates/pages/profile/view.html:10
 #: app/templates/pages/security/alert_broadcasts.html:142
 #: app/templates/pages/security/alert_broadcasts.html:170
-#: app/templates/pages/users/list.html:38
-#: app/templates/pages/users/view.html:30
+#: app/templates/pages/users/list.html:39
+#: app/templates/pages/users/view.html:31
 msgid "姓名"
 msgstr "Name"
 
@@ -3662,17 +3765,17 @@ msgstr "Name"
 #: app/templates/pages/access_center/_tab_accounts.html:47
 #: app/templates/pages/admin/departments.html:256
 #: app/templates/pages/modules/list.html:157
-#: app/templates/pages/positions/list.html:19
-#: app/templates/pages/positions/view.html:44
+#: app/templates/pages/positions/list.html:20
+#: app/templates/pages/positions/view.html:45
 #: app/templates/pages/units/create.html:3
 #: app/templates/pages/units/create.html:11
 #: app/templates/pages/units/create.html:67
 #: app/templates/pages/units/list.html:40
 #: app/templates/pages/units/view.html:27
 #: app/templates/pages/units/view.html:77
-#: app/templates/pages/users/create.html:153
-#: app/templates/pages/users/edit.html:183
-#: app/templates/pages/users/list.html:41
+#: app/templates/pages/users/create.html:154
+#: app/templates/pages/users/edit.html:184
+#: app/templates/pages/users/list.html:42
 msgid "部門"
 msgstr "Department"
 
@@ -3685,17 +3788,17 @@ msgstr "Role Assignments"
 #: app/templates/pages/admin/_settings_recipients_section.html:45
 #: app/templates/pages/admin/_settings_smtp_section.html:54
 #: app/templates/pages/admin/_settings_telegram_section.html:48
-#: app/templates/pages/admin/numbering/list.html:156
+#: app/templates/pages/admin/numbering/list.html:157
 #: app/templates/pages/admin/org-admins/list.html:74
 #: app/templates/pages/admin/org-admins/list.html:87
-#: app/templates/pages/admin/time/schedules.html:70
+#: app/templates/pages/admin/time/schedules.html:71
 #: app/templates/pages/cg_databases/overview.html:225
 #: app/templates/pages/external-users/list.html:62
 #: app/templates/pages/external-users/list.html:70
 #: app/templates/pages/external-users/view.html:62
 #: app/templates/pages/job_families/view.html:58
 #: app/templates/pages/job_levels/view.html:44
-#: app/templates/pages/job_titles/view.html:73
+#: app/templates/pages/job_titles/view.html:65
 #: app/templates/pages/modules/view.html:55
 #: app/templates/pages/modules/view.html:82
 #: app/templates/pages/node_grants/index.html:85
@@ -3707,17 +3810,17 @@ msgstr "Role Assignments"
 #: app/templates/pages/organizations/list.html:127
 #: app/templates/pages/organizations/list.html:218
 #: app/templates/pages/organizations/list.html:307
-#: app/templates/pages/positions/list.html:69
-#: app/templates/pages/positions/view.html:97
+#: app/templates/pages/positions/list.html:70
+#: app/templates/pages/positions/view.html:98
 #: app/templates/pages/sys_accounts/edit.html:55
 #: app/templates/pages/sys_accounts/list.html:127
 #: app/templates/pages/units/list.html:42
 #: app/templates/pages/units/view.html:49
-#: app/templates/pages/users/edit.html:119
-#: app/templates/pages/users/edit.html:127
-#: app/templates/pages/users/list.html:58
-#: app/templates/pages/users/list.html:67
-#: app/templates/pages/users/view.html:48 app/web/external_users.py:624
+#: app/templates/pages/users/edit.html:120
+#: app/templates/pages/users/edit.html:128
+#: app/templates/pages/users/list.html:68
+#: app/templates/pages/users/list.html:77
+#: app/templates/pages/users/view.html:49 app/web/external_users.py:626
 #: app/web/org_admin_rescue.py:96
 msgid "停用"
 msgstr "Disabled"
@@ -3744,11 +3847,11 @@ msgstr "Assign Role"
 #: app/templates/pages/platform_help/org_admin.html:133
 #: app/templates/pages/platform_help/org_admin.html:399
 #: app/templates/pages/profile/view.html:18
-#: app/templates/pages/users/edit.html:88
-#: app/templates/pages/users/edit.html:102
-#: app/templates/pages/users/view.html:38
-#: app/templates/pages/users/view.html:85
-#: app/templates/pages/users/view.html:150
+#: app/templates/pages/users/edit.html:89
+#: app/templates/pages/users/edit.html:103
+#: app/templates/pages/users/view.html:39
+#: app/templates/pages/users/view.html:112
+#: app/templates/pages/users/view.html:177
 msgid "角色"
 msgstr "Role"
 
@@ -3896,7 +3999,7 @@ msgstr "Import RBAC"
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:161
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:90
 #: app/templates/pages/access_center/_tab_health.html:63
-#: app/templates/pages/users/create.html:161
+#: app/templates/pages/users/create.html:162
 #: app/templates/partials/_icon_picker.html:8
 msgid "清除"
 msgstr "Clear"
@@ -3957,11 +4060,11 @@ msgstr "Code"
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:89
 #: app/templates/pages/access_center/_tab_roles.html:53
 #: app/templates/pages/access_center/_tab_roles.html:148
-#: app/templates/pages/admin/time/holidays.html:88
+#: app/templates/pages/admin/time/holidays.html:89
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:18
 #: app/templates/pages/menu/list.html:123
 #: app/templates/pages/modules/list.html:84
-#: app/templates/pages/positions/list.html:20
+#: app/templates/pages/positions/list.html:21
 #: app/templates/pages/units/list.html:26
 msgid "類型"
 msgstr "Type"
@@ -4004,12 +4107,12 @@ msgstr "Holders"
 #: app/templates/pages/admin/_settings_smtp_section.html:177
 #: app/templates/pages/admin/_settings_telegram_section.html:47
 #: app/templates/pages/admin/_settings_telegram_section.html:143
-#: app/templates/pages/admin/numbering/list.html:154
+#: app/templates/pages/admin/numbering/list.html:155
 #: app/templates/pages/admin/org-admins/list.html:72
 #: app/templates/pages/admin/org-admins/list.html:87
-#: app/templates/pages/admin/time/schedules.html:67
+#: app/templates/pages/admin/time/schedules.html:68
 #: app/templates/pages/approval_categories/edit.html:81
-#: app/templates/pages/approval_categories/list.html:186
+#: app/templates/pages/approval_categories/list.html:187
 #: app/templates/pages/cg_databases/overview.html:222
 #: app/templates/pages/external-users/list.html:60
 #: app/templates/pages/external-users/list.html:70
@@ -4018,14 +4121,14 @@ msgstr "Holders"
 #: app/templates/pages/hostconfig/_system_settings_modals.html:159
 #: app/templates/pages/hostconfig/_system_settings_modals.html:198
 #: app/templates/pages/job_families/edit.html:85
-#: app/templates/pages/job_families/list.html:183
+#: app/templates/pages/job_families/list.html:184
 #: app/templates/pages/job_families/view.html:58
 #: app/templates/pages/job_levels/edit.html:80
-#: app/templates/pages/job_levels/list.html:166
+#: app/templates/pages/job_levels/list.html:167
 #: app/templates/pages/job_levels/view.html:44
 #: app/templates/pages/job_titles/edit.html:105
-#: app/templates/pages/job_titles/list.html:206
-#: app/templates/pages/job_titles/view.html:73
+#: app/templates/pages/job_titles/list.html:207
+#: app/templates/pages/job_titles/view.html:65
 #: app/templates/pages/menu/edit.html:102
 #: app/templates/pages/modules/edit.html:48
 #: app/templates/pages/modules/view.html:55
@@ -4034,20 +4137,20 @@ msgstr "Holders"
 #: app/templates/pages/organizations/admins.html:97
 #: app/templates/pages/organizations/edit.html:89
 #: app/templates/pages/organizations/list.html:217
-#: app/templates/pages/positions/edit.html:119
-#: app/templates/pages/positions/list.html:69
-#: app/templates/pages/positions/view.html:97
+#: app/templates/pages/positions/edit.html:120
+#: app/templates/pages/positions/list.html:70
+#: app/templates/pages/positions/view.html:98
 #: app/templates/pages/sys_accounts/edit.html:50
 #: app/templates/pages/sys_accounts/edit.html:54
 #: app/templates/pages/sys_accounts/list.html:122
 #: app/templates/pages/sys_accounts/list.html:126
 #: app/templates/pages/units/list.html:42
 #: app/templates/pages/units/view.html:49
-#: app/templates/pages/users/edit.html:118
-#: app/templates/pages/users/edit.html:127
-#: app/templates/pages/users/list.html:56
-#: app/templates/pages/users/list.html:67
-#: app/templates/pages/users/view.html:48 app/web/external_users.py:624
+#: app/templates/pages/users/edit.html:119
+#: app/templates/pages/users/edit.html:128
+#: app/templates/pages/users/list.html:66
+#: app/templates/pages/users/list.html:77
+#: app/templates/pages/users/view.html:49 app/web/external_users.py:626
 #: app/web/org_admin_rescue.py:96
 msgid "啟用"
 msgstr "Active"
@@ -4074,12 +4177,12 @@ msgstr "Manager role"
 #: app/templates/pages/access_center/_tab_roles.html:172
 #: app/templates/pages/approval_categories/create.html:67
 #: app/templates/pages/approval_categories/edit.html:62
-#: app/templates/pages/approval_categories/list.html:174
-#: app/templates/pages/approval_categories/list.html:276
-#: app/templates/pages/job_families/list.html:110
-#: app/templates/pages/job_families/list.html:177
-#: app/templates/pages/job_titles/list.html:119
-#: app/templates/pages/job_titles/list.html:196
+#: app/templates/pages/approval_categories/list.html:175
+#: app/templates/pages/approval_categories/list.html:277
+#: app/templates/pages/job_families/list.html:111
+#: app/templates/pages/job_families/list.html:178
+#: app/templates/pages/job_titles/list.html:120
+#: app/templates/pages/job_titles/list.html:197
 msgid "排序"
 msgstr "Sort"
 
@@ -4096,32 +4199,32 @@ msgstr "Sort"
 #: app/templates/pages/admin/_settings_telegram_section.html:90
 #: app/templates/pages/admin/groups.html:237
 #: app/templates/pages/admin/groups.html:255
-#: app/templates/pages/admin/numbering/edit.html:54
-#: app/templates/pages/admin/numbering/list.html:119
-#: app/templates/pages/admin/time/schedules.html:199
+#: app/templates/pages/admin/numbering/edit.html:55
+#: app/templates/pages/admin/numbering/list.html:120
+#: app/templates/pages/admin/time/schedules.html:200
 #: app/templates/pages/approval_categories/create.html:75
 #: app/templates/pages/approval_categories/edit.html:70
-#: app/templates/pages/approval_categories/list.html:178
-#: app/templates/pages/approval_categories/list.html:280
+#: app/templates/pages/approval_categories/list.html:179
+#: app/templates/pages/approval_categories/list.html:281
 #: app/templates/pages/hostconfig/_system_settings_modals.html:16
 #: app/templates/pages/hostconfig/_system_settings_modals.html:121
 #: app/templates/pages/hostconfig/_system_settings_modals.html:186
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:33
 #: app/templates/pages/job_families/create.html:79
 #: app/templates/pages/job_families/edit.html:66
-#: app/templates/pages/job_families/list.html:106
-#: app/templates/pages/job_families/list.html:173
+#: app/templates/pages/job_families/list.html:107
+#: app/templates/pages/job_families/list.html:174
 #: app/templates/pages/job_families/view.html:49
 #: app/templates/pages/job_levels/create.html:81
 #: app/templates/pages/job_levels/edit.html:69
-#: app/templates/pages/job_levels/list.html:158
-#: app/templates/pages/job_levels/list.html:249
+#: app/templates/pages/job_levels/list.html:159
+#: app/templates/pages/job_levels/list.html:250
 #: app/templates/pages/job_levels/view.html:39
-#: app/templates/pages/job_titles/create.html:99
+#: app/templates/pages/job_titles/create.html:98
 #: app/templates/pages/job_titles/edit.html:86
-#: app/templates/pages/job_titles/list.html:123
-#: app/templates/pages/job_titles/list.html:200
-#: app/templates/pages/job_titles/view.html:68
+#: app/templates/pages/job_titles/list.html:124
+#: app/templates/pages/job_titles/list.html:201
+#: app/templates/pages/job_titles/view.html:60
 #: app/templates/pages/modules/create.html:44
 #: app/templates/pages/modules/edit.html:40
 #: app/templates/pages/modules/view.html:46
@@ -4168,57 +4271,57 @@ msgstr ""
 "Employee\" after creation."
 
 #: app/templates/pages/admin/_employee_create_form.html:13
-#: app/templates/pages/users/create.html:39
+#: app/templates/pages/users/create.html:40
 msgid "必填欄位"
 msgstr "Required field"
 
 #: app/templates/pages/admin/_employee_create_form.html:32
 #: app/templates/pages/admin/initial_setup.html:173
-#: app/templates/pages/users/create.html:62
-#: app/templates/pages/users/edit.html:74
+#: app/templates/pages/users/create.html:63
+#: app/templates/pages/users/edit.html:75
 msgid "自動翻譯"
 msgstr "Auto Translate"
 
 #: app/templates/pages/admin/_employee_create_form.html:33
 #: app/templates/pages/admin/initial_setup.html:174
-#: app/templates/pages/users/create.html:63
-#: app/templates/pages/users/edit.html:75
+#: app/templates/pages/users/create.html:64
+#: app/templates/pages/users/edit.html:76
 msgid "翻譯中..."
 msgstr "Translating..."
 
 #: app/templates/pages/admin/_employee_create_form.html:37
-#: app/templates/pages/users/create.html:67
-#: app/templates/pages/users/edit.html:79
+#: app/templates/pages/users/create.html:68
+#: app/templates/pages/users/edit.html:80
 msgid "偵測語言:"
 msgstr "Detection language:"
 
 #: app/templates/pages/admin/_employee_create_form.html:47
 #: app/templates/pages/admin/initial_setup.html:190
-#: app/templates/pages/users/create.html:79
+#: app/templates/pages/users/create.html:80
 msgid "儲存時將轉換為:"
 msgstr "When saved it will be converted to:"
 
 #: app/templates/pages/admin/_employee_create_form.html:50
 #: app/templates/pages/admin/initial_setup.html:193
-#: app/templates/pages/users/create.html:82
+#: app/templates/pages/users/create.html:83
 msgid "檢查帳號中..."
 msgstr "Checking account..."
 
 #: app/templates/pages/admin/_employee_create_form.html:51
 #: app/templates/pages/admin/initial_setup.html:194
-#: app/templates/pages/users/create.html:83
+#: app/templates/pages/users/create.html:84
 msgid "帳號可用"
 msgstr "Account available"
 
 #: app/templates/pages/admin/_employee_create_form.html:52
 #: app/templates/pages/admin/initial_setup.html:195
-#: app/templates/pages/users/create.html:84
+#: app/templates/pages/users/create.html:85
 msgid "帳號已存在"
 msgstr "Account already exists"
 
 #: app/templates/pages/admin/_employee_create_form.html:67
 #: app/templates/pages/admin/initial_setup.html:225
-#: app/templates/pages/users/create.html:103
+#: app/templates/pages/users/create.html:104
 msgid "使用建議密碼"
 msgstr "Use suggested passwords"
 
@@ -4236,41 +4339,41 @@ msgstr "Leave blank to automatically generate a strengthened password"
 #: app/templates/pages/sys_accounts/edit.html:81
 #: app/templates/pages/sys_accounts/list.html:156
 #: app/templates/pages/sys_accounts/list.html:269
-#: app/templates/pages/users/create.html:117
-#: app/templates/pages/users/edit.html:159
-#: app/templates/pages/users/view.html:201
+#: app/templates/pages/users/create.html:118
+#: app/templates/pages/users/edit.html:160
+#: app/templates/pages/users/view.html:228
 msgid "密碼符合要求"
 msgstr "The password meets the requirements"
 
 #: app/templates/pages/admin/_employee_create_form.html:86
 #: app/templates/pages/external-users/create.html:100
-#: app/templates/pages/users/create.html:128
+#: app/templates/pages/users/create.html:129
 msgid "自動產生"
 msgstr "automatically generated"
 
 #: app/templates/pages/admin/_employee_create_form.html:94
-#: app/templates/pages/users/create.html:136
+#: app/templates/pages/users/create.html:137
 msgid "將使用自動編號:"
 msgstr "Automatic numbering will be used:"
 
 #: app/templates/pages/admin/_employee_create_form.html:95
-#: app/templates/pages/users/create.html:137
+#: app/templates/pages/users/create.html:138
 msgid "手動輸入模式"
 msgstr "Manual input mode"
 
 #: app/templates/pages/admin/_employee_create_form.html:96
-#: app/templates/pages/users/create.html:138
+#: app/templates/pages/users/create.html:139
 msgid "尚未設定編號規則，請手動輸入"
 msgstr "The numbering sequence has not been set, please enter it manually"
 
 #: app/templates/pages/admin/_employee_create_form.html:103
 #: app/templates/pages/admin/initial_setup.html:257
-#: app/templates/pages/users/create.html:147
+#: app/templates/pages/users/create.html:148
 msgid "選填欄位"
 msgstr "Optional field"
 
 #: app/templates/pages/admin/_employee_create_form.html:110
-#: app/templates/pages/users/create.html:186
+#: app/templates/pages/users/create.html:187
 msgid "自動遮罩"
 msgstr "Automatic masking"
 
@@ -4279,23 +4382,23 @@ msgid "預設遮罩處理本國姓名"
 msgstr "Default mask processing of national names"
 
 #: app/templates/pages/admin/_employee_create_form.html:115
-#: app/templates/pages/users/create.html:191
-#: app/templates/pages/users/edit.html:254
+#: app/templates/pages/users/create.html:192
+#: app/templates/pages/users/edit.html:255
 msgid "語系"
 msgstr "Language"
 
 #: app/templates/pages/admin/_employee_create_form.html:118
-#: app/templates/pages/users/edit.html:237
-#: app/templates/pages/users/edit.html:258
-#: app/templates/pages/users/edit.html:274
+#: app/templates/pages/users/edit.html:238
+#: app/templates/pages/users/edit.html:259
+#: app/templates/pages/users/edit.html:275
 msgid "-- 跟隨企業設定 --"
 msgstr "-- Follow Organization settings --"
 
 #: app/templates/pages/admin/_employee_create_form.html:130
 #: app/templates/pages/admin/initial_setup.html:267
 #: app/templates/pages/admin/org-admins/create.html:73
-#: app/templates/pages/users/create.html:225
-#: app/templates/pages/users/edit.html:294
+#: app/templates/pages/users/create.html:226
+#: app/templates/pages/users/edit.html:295
 msgid "通知 Email"
 msgstr "Notification Email"
 
@@ -4477,11 +4580,11 @@ msgstr "Group name"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:107
 #: app/templates/pages/admin/_settings_recipients_section.html:29
 #: app/templates/pages/admin/_settings_recipients_section.html:86
-#: app/templates/pages/admin/numbering/list.html:183
+#: app/templates/pages/admin/numbering/list.html:184
 #: app/templates/pages/admin/org-admins/list.html:155
-#: app/templates/pages/admin/time/holidays.html:89
-#: app/templates/pages/admin/time/holidays.html:175
-#: app/templates/pages/admin/time/schedules.html:98
+#: app/templates/pages/admin/time/holidays.html:90
+#: app/templates/pages/admin/time/holidays.html:176
+#: app/templates/pages/admin/time/schedules.html:99
 #: app/templates/pages/cg_databases/overview.html:251
 #: app/templates/pages/external-users/list.html:92
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:63
@@ -4499,8 +4602,8 @@ msgstr "Group name"
 #: app/templates/pages/platform_help/org_admin.html:389
 #: app/templates/pages/security/_api_keys_modals.html:18
 #: app/templates/pages/security/org_rate_limits.html:101
-#: app/templates/pages/users/import.html:93
-#: app/templates/pages/users/list.html:103
+#: app/templates/pages/users/import.html:94
+#: app/templates/pages/users/list.html:113
 msgid "說明"
 msgstr "Notes"
 
@@ -4596,7 +4699,7 @@ msgstr "Recipient preview -"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:309
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:157
 #: app/templates/pages/admin/_settings_recipients_section.html:245
-#: app/templates/pages/job_levels/list.html:67
+#: app/templates/pages/job_levels/list.html:68
 msgid "共"
 msgstr "total"
 
@@ -4642,7 +4745,7 @@ msgstr "Are you sure you want to delete the recipient group\""
 #: app/templates/pages/admin/_settings_recipients_section.html:277
 #: app/templates/pages/admin/_settings_smtp_section.html:199
 #: app/templates/pages/admin/_settings_telegram_section.html:165
-#: app/templates/pages/approval_categories/list.html:209
+#: app/templates/pages/approval_categories/list.html:210
 msgid "」嗎？"
 msgstr "\"?\""
 
@@ -4686,8 +4789,8 @@ msgstr "sender"
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:91
 #: app/templates/pages/admin/_settings_smtp_section.html:31
 #: app/templates/pages/admin/_settings_telegram_section.html:130
-#: app/templates/pages/admin/time/schedules.html:43
-#: app/templates/pages/approval_categories/list.html:110
+#: app/templates/pages/admin/time/schedules.html:44
+#: app/templates/pages/approval_categories/list.html:111
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:40
 #: app/templates/pages/organizations/admins.html:62 app/web/numbering.py:196
 msgid "預設"
@@ -4770,7 +4873,7 @@ msgid "寄件人名稱"
 msgstr "Sender name"
 
 #: app/templates/pages/admin/_settings_smtp_section.html:174
-#: app/templates/pages/admin/time/schedules.html:77
+#: app/templates/pages/admin/time/schedules.html:78
 #: app/templates/pages/hostconfig/_system_settings_modals.html:87
 msgid "設為預設"
 msgstr "Set as default"
@@ -4874,7 +4977,7 @@ msgid "最多 255 字元"
 msgstr "Maximum 255 characters"
 
 #: app/templates/pages/admin/departments.html:294
-#: app/templates/pages/users/import.html:125
+#: app/templates/pages/users/import.html:126
 msgid "部門代碼"
 msgstr "Department code"
 
@@ -5178,7 +5281,7 @@ msgstr ""
 #: app/templates/pages/sys_accounts/create.html:77
 #: app/templates/pages/sys_accounts/list.html:161
 #: app/templates/pages/sys_accounts/list.html:274
-#: app/templates/pages/users/view.html:203
+#: app/templates/pages/users/view.html:230
 msgid "確認密碼"
 msgstr "Confirm password"
 
@@ -5281,7 +5384,6 @@ msgstr "Expand"
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:57
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:188
 #: app/templates/pages/admin/module_list.html:102
-#: app/templates/pages/job_titles/create.html:68
 #: app/templates/pages/organizations/edit.html:99
 msgid "無"
 msgstr "None"
@@ -5309,9 +5411,9 @@ msgstr "Expiration Date"
 
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:20
 #: app/templates/pages/admin/module_list.html:126
-#: app/templates/pages/delegations/edit.html:86
-#: app/templates/pages/delegations/list.html:61
-#: app/templates/pages/delegations/view.html:69
+#: app/templates/pages/delegations/edit.html:87
+#: app/templates/pages/delegations/list.html:62
+#: app/templates/pages/delegations/view.html:70
 #: app/templates/pages/organizations/list.html:308 app/web/admin.py:26
 msgid "已過期"
 msgstr "Expired"
@@ -5631,22 +5733,22 @@ msgstr ""
 "Example: Basic 15 minutes x 2, first lock 15 minutes, second lock 30 "
 "minutes, third lock 60 minutes... (up to 24 hours)"
 
-#: app/templates/pages/admin/numbering/edit.html:3
-#: app/templates/pages/admin/numbering/edit.html:27
+#: app/templates/pages/admin/numbering/edit.html:4
+#: app/templates/pages/admin/numbering/edit.html:28
 msgid "編輯編號規則"
 msgstr "Edit Numbering Rule"
 
-#: app/templates/pages/admin/numbering/edit.html:3
-#: app/templates/pages/admin/numbering/edit.html:27
+#: app/templates/pages/admin/numbering/edit.html:4
+#: app/templates/pages/admin/numbering/edit.html:28
 msgid "新增編號規則"
 msgstr "Add Numbering Rule"
 
-#: app/templates/pages/admin/numbering/edit.html:23
+#: app/templates/pages/admin/numbering/edit.html:24
 msgid "返回規則列表"
 msgstr "Return to rule list"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:159
-#: app/templates/pages/admin/numbering/edit.html:45
+#: app/templates/pages/admin/numbering/edit.html:46
 #: app/templates/pages/cg_databases/overview.html:164
 #: app/templates/pages/external-users/edit.html:29
 #: app/templates/pages/organizations/edit.html:39
@@ -5654,74 +5756,74 @@ msgid "基本資訊"
 msgstr "Basic Information"
 
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:106
-#: app/templates/pages/admin/numbering/edit.html:47
-#: app/templates/pages/admin/numbering/list.html:117
+#: app/templates/pages/admin/numbering/edit.html:48
+#: app/templates/pages/admin/numbering/list.html:118
 msgid "規則名稱"
 msgstr "Rule Name"
 
-#: app/templates/pages/admin/numbering/edit.html:50
+#: app/templates/pages/admin/numbering/edit.html:51
 msgid "例如：企業成員編號、來賓編號、臨時編號"
 msgstr "For example: Employee number, guest number, temporary number"
 
-#: app/templates/pages/admin/numbering/edit.html:60
-#: app/templates/pages/admin/numbering/list.html:118
+#: app/templates/pages/admin/numbering/edit.html:61
+#: app/templates/pages/admin/numbering/list.html:119
 msgid "使用範圍"
 msgstr "Scope of use"
 
-#: app/templates/pages/admin/numbering/edit.html:63
-#: app/templates/pages/admin/numbering/list.html:142
+#: app/templates/pages/admin/numbering/edit.html:64
+#: app/templates/pages/admin/numbering/list.html:143
 msgid "內部專用"
 msgstr "Internal only"
 
-#: app/templates/pages/admin/numbering/edit.html:64
-#: app/templates/pages/admin/numbering/list.html:144
+#: app/templates/pages/admin/numbering/edit.html:65
+#: app/templates/pages/admin/numbering/list.html:145
 msgid "外部專用"
 msgstr "External only"
 
-#: app/templates/pages/admin/numbering/edit.html:65
+#: app/templates/pages/admin/numbering/edit.html:66
 msgid "內外都通用編號"
 msgstr "Common numbers for both internal and external use"
 
-#: app/templates/pages/admin/numbering/edit.html:68
+#: app/templates/pages/admin/numbering/edit.html:69
 msgid "內部專用：企業成員編號、公司資產 ／ 外部專用：廠商、訪客 ／ 內外都通用編號：門禁卡、跨公司資源"
 msgstr ""
 "Internally exclusive: Employee number, organization assets / Externally "
 "exclusive: vendors, visitors / Common internal and external numbers: "
 "access cards, cross-organization resources"
 
-#: app/templates/pages/admin/numbering/edit.html:73
+#: app/templates/pages/admin/numbering/edit.html:74
 msgid "編號長度"
 msgstr "Number length"
 
-#: app/templates/pages/admin/numbering/edit.html:78
+#: app/templates/pages/admin/numbering/edit.html:79
 msgid "設定 0 表示不限制長度"
 msgstr "Setting 0 means no length limit"
 
-#: app/templates/pages/admin/numbering/edit.html:82
+#: app/templates/pages/admin/numbering/edit.html:83
 msgid "預設用途"
 msgstr "Default Purpose"
 
-#: app/templates/pages/admin/numbering/edit.html:85
+#: app/templates/pages/admin/numbering/edit.html:86
 msgid "非預設"
 msgstr "Not default"
 
-#: app/templates/pages/admin/numbering/edit.html:86
+#: app/templates/pages/admin/numbering/edit.html:87
 msgid "企業成員編號預設"
 msgstr "Employee number default"
 
-#: app/templates/pages/admin/numbering/edit.html:87
+#: app/templates/pages/admin/numbering/edit.html:88
 msgid "外部廠商預設"
 msgstr "External Vendor default"
 
-#: app/templates/pages/admin/numbering/edit.html:88
+#: app/templates/pages/admin/numbering/edit.html:89
 msgid "表單編號預設"
 msgstr "Form number default"
 
-#: app/templates/pages/admin/numbering/edit.html:89
+#: app/templates/pages/admin/numbering/edit.html:90
 msgid "企業管理員預設"
 msgstr "Organization admin default"
 
-#: app/templates/pages/admin/numbering/edit.html:92
+#: app/templates/pages/admin/numbering/edit.html:93
 msgid ""
 "企業成員預設：新增企業成員帳號時自動使用 ／ 外部預設：新增外部廠商時自動使用 ／ 表單預設：表單送出時自動產生單號 ／ "
 "企業管理員預設：建立企業時給原始管理員帳號使用"
@@ -5732,280 +5834,280 @@ msgstr ""
 "Organization admin default: used for the initial admin account when an "
 "organization is created"
 
-#: app/templates/pages/admin/numbering/edit.html:103
+#: app/templates/pages/admin/numbering/edit.html:104
 msgid "啟用此規則"
 msgstr "Enable this rule"
 
-#: app/templates/pages/admin/numbering/edit.html:112
+#: app/templates/pages/admin/numbering/edit.html:113
 msgid "編號元素（勾選並設定，拖曳左側把手調整順序）"
 msgstr ""
 "Numbering elements (check and set, drag the left handle to adjust the "
 "order)"
 
-#: app/templates/pages/admin/numbering/edit.html:126
+#: app/templates/pages/admin/numbering/edit.html:127
 msgid "前綴文字"
 msgstr "prefix text"
 
-#: app/templates/pages/admin/numbering/edit.html:130
-#: app/templates/pages/admin/numbering/edit.html:266
+#: app/templates/pages/admin/numbering/edit.html:131
+#: app/templates/pages/admin/numbering/edit.html:267
 msgid "文字（逗號分隔）:"
 msgstr "Text (comma separated):"
 
-#: app/templates/pages/admin/numbering/edit.html:131
+#: app/templates/pages/admin/numbering/edit.html:132
 msgid "天,地,玄,黃"
 msgstr "heaven, earth, xuan, yellow"
 
-#: app/templates/pages/admin/numbering/edit.html:134
+#: app/templates/pages/admin/numbering/edit.html:135
 msgid "序號滿時進位到下一個，最後一個滿時回到第一個"
 msgstr ""
 "When the serial number is full, it carries to the next one, and when the "
 "last one is full, it returns to the first one."
 
-#: app/templates/pages/admin/numbering/edit.html:149
+#: app/templates/pages/admin/numbering/edit.html:150
 msgid "公元年碼"
 msgstr "AD year code"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:214
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:249
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:618
-#: app/templates/pages/admin/numbering/edit.html:153
-#: app/templates/pages/admin/numbering/edit.html:212
+#: app/templates/pages/admin/numbering/edit.html:154
+#: app/templates/pages/admin/numbering/edit.html:213
 msgid "格式:"
 msgstr "Format:"
 
-#: app/templates/pages/admin/numbering/edit.html:155
+#: app/templates/pages/admin/numbering/edit.html:156
 msgid "2026（4位）"
 msgstr "2026 (4 places)"
 
-#: app/templates/pages/admin/numbering/edit.html:156
+#: app/templates/pages/admin/numbering/edit.html:157
 msgid "26（2位）"
 msgstr "26 (2 people)"
 
-#: app/templates/pages/admin/numbering/edit.html:157
+#: app/templates/pages/admin/numbering/edit.html:158
 msgid "6（1位）"
 msgstr "6 (1 person)"
 
-#: app/templates/pages/admin/numbering/edit.html:173
+#: app/templates/pages/admin/numbering/edit.html:174
 msgid "年換算碼"
 msgstr "year conversion code"
 
-#: app/templates/pages/admin/numbering/edit.html:178
+#: app/templates/pages/admin/numbering/edit.html:179
 msgid "運算:"
 msgstr "Operation:"
 
-#: app/templates/pages/admin/numbering/edit.html:180
-#: app/templates/pages/admin/numbering/edit.html:233
+#: app/templates/pages/admin/numbering/edit.html:181
+#: app/templates/pages/admin/numbering/edit.html:234
 msgid "位數:"
 msgstr "Number of digits:"
 
-#: app/templates/pages/admin/numbering/edit.html:182
+#: app/templates/pages/admin/numbering/edit.html:183
 msgid "1 位"
 msgstr "1 place"
 
-#: app/templates/pages/admin/numbering/edit.html:183
+#: app/templates/pages/admin/numbering/edit.html:184
 msgid "2 位"
 msgstr "2 digits"
 
-#: app/templates/pages/admin/numbering/edit.html:184
+#: app/templates/pages/admin/numbering/edit.html:185
 msgid "3 位"
 msgstr "3 digits"
 
-#: app/templates/pages/admin/numbering/edit.html:185
+#: app/templates/pages/admin/numbering/edit.html:186
 msgid "4 位"
 msgstr "4 digits"
 
-#: app/templates/pages/admin/numbering/edit.html:189
+#: app/templates/pages/admin/numbering/edit.html:190
 msgid "公式："
 msgstr "Formula:"
 
-#: app/templates/pages/admin/numbering/edit.html:189
+#: app/templates/pages/admin/numbering/edit.html:190
 msgid "|公元年 + 運算值| 補0至指定位數"
 msgstr "| AD year + operation value | Add 0 to the specified number of digits"
 
-#: app/templates/pages/admin/numbering/edit.html:190
+#: app/templates/pages/admin/numbering/edit.html:191
 msgid "範例："
 msgstr "Example:"
 
-#: app/templates/pages/admin/numbering/edit.html:190
+#: app/templates/pages/admin/numbering/edit.html:191
 msgid "運算值填"
 msgstr "Fill in the operation value"
 
-#: app/templates/pages/admin/numbering/edit.html:190
+#: app/templates/pages/admin/numbering/edit.html:191
 msgid "，位數選 3 位"
 msgstr ", choose 3 digits"
 
-#: app/templates/pages/admin/numbering/edit.html:191
+#: app/templates/pages/admin/numbering/edit.html:192
 msgid "→ 公元 2010 年：|2010 + (-1911)| = 99 → 補0得"
 msgstr "→ 2010 AD: |2010 + (-1911)| = 99 → Add 0 to get"
 
-#: app/templates/pages/admin/numbering/edit.html:191
+#: app/templates/pages/admin/numbering/edit.html:192
 msgid "（民國99年）"
 msgstr "(99 years of the Republic of China)"
 
-#: app/templates/pages/admin/numbering/edit.html:192
+#: app/templates/pages/admin/numbering/edit.html:193
 msgid "→ 公元 2026 年：|2026 + (-1911)| = 115 →"
 msgstr "→ 2026 AD: |2026 + (-1911)| = 115 →"
 
-#: app/templates/pages/admin/numbering/edit.html:192
+#: app/templates/pages/admin/numbering/edit.html:193
 msgid "（民國115年）"
 msgstr "(115th year of the Republic of China)"
 
-#: app/templates/pages/admin/numbering/edit.html:208
+#: app/templates/pages/admin/numbering/edit.html:209
 msgid "月碼"
 msgstr "month code"
 
-#: app/templates/pages/admin/numbering/edit.html:214
+#: app/templates/pages/admin/numbering/edit.html:215
 msgid "01（2位）"
 msgstr "01 (2 digits)"
 
-#: app/templates/pages/admin/numbering/edit.html:215
+#: app/templates/pages/admin/numbering/edit.html:216
 msgid "1（1位）"
 msgstr "1 (1 person)"
 
-#: app/templates/pages/admin/numbering/edit.html:229
+#: app/templates/pages/admin/numbering/edit.html:230
 msgid "序號（必要）"
 msgstr "Serial number (required)"
 
-#: app/templates/pages/admin/numbering/edit.html:238
+#: app/templates/pages/admin/numbering/edit.html:239
 msgid "起始:"
 msgstr "Start:"
 
-#: app/templates/pages/admin/numbering/edit.html:242
+#: app/templates/pages/admin/numbering/edit.html:243
 msgid "重置:"
 msgstr "Reset:"
 
-#: app/templates/pages/admin/numbering/edit.html:244
+#: app/templates/pages/admin/numbering/edit.html:245
 msgid "永不重置"
 msgstr "Never reset"
 
-#: app/templates/pages/admin/numbering/edit.html:245
+#: app/templates/pages/admin/numbering/edit.html:246
 msgid "每年重置"
 msgstr "Reset every year"
 
-#: app/templates/pages/admin/numbering/edit.html:246
+#: app/templates/pages/admin/numbering/edit.html:247
 msgid "每月重置"
 msgstr "reset monthly"
 
-#: app/templates/pages/admin/numbering/edit.html:262
+#: app/templates/pages/admin/numbering/edit.html:263
 msgid "後綴文字"
 msgstr "suffix text"
 
-#: app/templates/pages/admin/numbering/edit.html:278
+#: app/templates/pages/admin/numbering/edit.html:279
 msgid "編號預覽（連續 10 個）"
 msgstr "Number preview (10 consecutive)"
 
-#: app/templates/pages/admin/numbering/edit.html:287
+#: app/templates/pages/admin/numbering/edit.html:288
 msgid "預覽失敗"
 msgstr "Preview failed"
 
-#: app/templates/pages/admin/numbering/edit.html:293
+#: app/templates/pages/admin/numbering/edit.html:294
 #: app/templates/pages/approval_categories/edit.html:87
-#: app/templates/pages/approval_categories/limits.html:82
-#: app/templates/pages/approval_categories/list.html:195
-#: app/templates/pages/delegations/edit.html:95
+#: app/templates/pages/approval_categories/limits.html:83
+#: app/templates/pages/approval_categories/list.html:196
+#: app/templates/pages/delegations/edit.html:96
 #: app/templates/pages/external-users/edit.html:64
 #: app/templates/pages/job_families/edit.html:91
-#: app/templates/pages/job_families/list.html:193
+#: app/templates/pages/job_families/list.html:194
 #: app/templates/pages/job_levels/edit.html:86
 #: app/templates/pages/job_titles/edit.html:111
-#: app/templates/pages/job_titles/list.html:216
+#: app/templates/pages/job_titles/list.html:217
 #: app/templates/pages/menu/edit.html:108
 #: app/templates/pages/modules/edit.html:54
 #: app/templates/pages/organizations/edit.html:148
-#: app/templates/pages/positions/edit.html:125
+#: app/templates/pages/positions/edit.html:126
 #: app/templates/pages/profile/edit.html:38
 #: app/templates/pages/sys_accounts/edit.html:98
 #: app/templates/pages/units/edit.html:65
-#: app/templates/pages/users/edit.html:338
+#: app/templates/pages/users/edit.html:339
 msgid "儲存變更"
 msgstr "Save Changes"
 
-#: app/templates/pages/admin/numbering/edit.html:293
+#: app/templates/pages/admin/numbering/edit.html:294
 msgid "建立規則"
 msgstr "Create Rule"
 
-#: app/templates/pages/admin/numbering/edit.html:295
-#: app/templates/pages/admin/numbering/list.html:121
+#: app/templates/pages/admin/numbering/edit.html:296
+#: app/templates/pages/admin/numbering/list.html:122
 msgid "編號預覽"
 msgstr "Number preview"
 
-#: app/templates/pages/admin/numbering/edit.html:296
+#: app/templates/pages/admin/numbering/edit.html:297
 msgid "產生中..."
 msgstr "Generating..."
 
-#: app/templates/pages/admin/numbering/list.html:3
-#: app/templates/pages/admin/numbering/list.html:99
+#: app/templates/pages/admin/numbering/list.html:4
+#: app/templates/pages/admin/numbering/list.html:100
 msgid "用戶編號規則"
 msgstr "User Numbering Rules"
 
-#: app/templates/pages/admin/numbering/list.html:95
+#: app/templates/pages/admin/numbering/list.html:96
 #: app/templates/pages/admin/org-admins/list.html:12
 msgid "返回系統設定"
 msgstr "Back to System Settings"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:247
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:5
-#: app/templates/pages/admin/numbering/list.html:100
+#: app/templates/pages/admin/numbering/list.html:101
 msgid "新增規則"
 msgstr "Add Rule"
 
-#: app/templates/pages/admin/numbering/list.html:131 app/web/numbering.py:192
+#: app/templates/pages/admin/numbering/list.html:132 app/web/numbering.py:192
 msgid "企業成員預設"
 msgstr "Employee default"
 
-#: app/templates/pages/admin/numbering/list.html:133 app/web/numbering.py:193
+#: app/templates/pages/admin/numbering/list.html:134 app/web/numbering.py:193
 msgid "外部預設"
 msgstr "External default"
 
-#: app/templates/pages/admin/numbering/list.html:135 app/web/numbering.py:194
+#: app/templates/pages/admin/numbering/list.html:136 app/web/numbering.py:194
 msgid "表單預設"
 msgstr "Form default"
 
-#: app/templates/pages/admin/numbering/list.html:137
+#: app/templates/pages/admin/numbering/list.html:138
 msgid "管理員預設"
 msgstr "Admin default"
 
-#: app/templates/pages/admin/numbering/list.html:146
+#: app/templates/pages/admin/numbering/list.html:147
 msgid "內外都通用"
 msgstr "Universal for both inside and outside"
 
-#: app/templates/pages/admin/numbering/list.html:177
+#: app/templates/pages/admin/numbering/list.html:178
 msgid "尚未建立任何編號規則"
 msgstr "No numbering scheme has been established yet"
 
-#: app/templates/pages/admin/numbering/list.html:178
+#: app/templates/pages/admin/numbering/list.html:179
 msgid "建立第一個規則"
 msgstr "Create First Rule"
 
-#: app/templates/pages/admin/numbering/list.html:185
+#: app/templates/pages/admin/numbering/list.html:186
 msgid "每個企業可設定多組編號規則"
 msgstr "Each Organization can set multiple sets of numbering rules"
 
-#: app/templates/pages/admin/numbering/list.html:186
+#: app/templates/pages/admin/numbering/list.html:187
 msgid "「企業成員預設」規則會在新增企業成員帳號時自動使用"
 msgstr ""
 "The \"Employee Default\" rule will be automatically used when adding a "
 "Employee account"
 
-#: app/templates/pages/admin/numbering/list.html:187
+#: app/templates/pages/admin/numbering/list.html:188
 msgid "「外部預設」規則會在新增外部廠商時自動使用"
 msgstr ""
 "The \"External Default\" rule will be automatically used when adding "
 "External Vendor"
 
-#: app/templates/pages/admin/numbering/list.html:188
+#: app/templates/pages/admin/numbering/list.html:189
 msgid "「表單預設」規則會在表單送出時自動產生單號"
 msgstr ""
 "The \"Form Default\" rule will automatically generate an order number "
 "when the form is sent."
 
-#: app/templates/pages/admin/numbering/list.html:189
+#: app/templates/pages/admin/numbering/list.html:190
 msgid "編號元素可包含：前綴文字、序號、年碼、月碼、後綴文字"
 msgstr ""
 "Numbering elements can include: prefix text, serial number, year code, "
 "month code, suffix text"
 
-#: app/templates/pages/admin/numbering/list.html:190
+#: app/templates/pages/admin/numbering/list.html:191
 msgid "序號滿時會自動進位（前綴循環）"
 msgstr "When the serial number is full, it will automatically carry (prefix cycle)"
 
@@ -6025,7 +6127,7 @@ msgid "綁定企業成員"
 msgstr "Bind Employee"
 
 #: app/templates/pages/admin/org-admins/create.html:38
-#: app/templates/pages/positions/create.html:21
+#: app/templates/pages/positions/create.html:22
 msgid "-- 請選擇企業成員 --"
 msgstr "-- Please select Employee --"
 
@@ -6063,8 +6165,8 @@ msgstr "Automatically bring into the bound Employee notification mailbox"
 #: app/templates/pages/sys_accounts/edit.html:72
 #: app/templates/pages/sys_accounts/list.html:147
 #: app/templates/pages/sys_accounts/list.html:260
-#: app/templates/pages/users/edit.html:146
-#: app/templates/pages/users/view.html:192
+#: app/templates/pages/users/edit.html:147
+#: app/templates/pages/users/view.html:219
 msgid "建議密碼"
 msgstr "Suggested password"
 
@@ -6125,24 +6227,24 @@ msgstr "(Must retain at least one enabled administrator)"
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:32
 #: app/templates/pages/admin/org-admins/list.html:44
 #: app/templates/pages/cg_databases/overview.html:187
-#: app/templates/pages/delegations/view.html:94
+#: app/templates/pages/delegations/view.html:95
 #: app/templates/pages/external-users/view.html:85
 #: app/templates/pages/job_levels/view.html:51
 #: app/templates/pages/modules/list.html:86
 #: app/templates/pages/organizations/admins.html:52
 #: app/templates/pages/organizations/list.html:243
-#: app/templates/pages/positions/view.html:104
+#: app/templates/pages/positions/view.html:105
 #: app/templates/pages/sys_accounts/edit.html:119
 #: app/templates/pages/sys_accounts/list.html:187
 #: app/templates/pages/units/view.html:60
-#: app/templates/pages/users/list.html:43
-#: app/templates/pages/users/view.html:52
+#: app/templates/pages/users/list.html:45
+#: app/templates/pages/users/view.html:53
 msgid "建立時間"
 msgstr "Created"
 
 #: app/templates/pages/admin/org-admins/list.html:54
-#: app/templates/pages/job_levels/list.html:93
-#: app/templates/pages/users/edit.html:207
+#: app/templates/pages/job_levels/list.html:94
+#: app/templates/pages/users/edit.html:208
 msgid "(預設)"
 msgstr "(Default)"
 
@@ -6155,8 +6257,8 @@ msgstr "Not bound"
 #: app/templates/pages/admin/org-admins/list.html:108
 #: app/templates/pages/organizations/admins.html:89
 #: app/templates/pages/organizations/admins.html:110
-#: app/templates/pages/users/view.html:22
-#: app/templates/pages/users/view.html:181
+#: app/templates/pages/users/view.html:23
+#: app/templates/pages/users/view.html:208
 msgid "重設密碼"
 msgstr "reset password"
 
@@ -6166,19 +6268,19 @@ msgstr "(self)"
 
 #: app/templates/pages/admin/org-admins/list.html:109
 #: app/templates/pages/organizations/admins.html:113
-#: app/templates/pages/users/view.html:182
+#: app/templates/pages/users/view.html:209
 msgid "為"
 msgstr "for"
 
 #: app/templates/pages/admin/org-admins/list.html:109
 #: app/templates/pages/organizations/admins.html:113
-#: app/templates/pages/users/view.html:182
+#: app/templates/pages/users/view.html:209
 msgid "設定新密碼"
 msgstr "Set new password"
 
 #: app/templates/pages/admin/org-admins/list.html:142
 #: app/templates/pages/organizations/admins.html:146
-#: app/templates/pages/users/view.html:215
+#: app/templates/pages/users/view.html:242
 msgid "確認重設"
 msgstr "Confirm reset"
 
@@ -6217,291 +6319,286 @@ msgstr ""
 "Employee number. When the Employee account is deactivated or deleted, the"
 " corresponding administrator account cannot log in."
 
-#: app/templates/pages/admin/time/holidays.html:3
+#: app/templates/pages/admin/time/holidays.html:4
 #, python-format
 msgid "共用月曆 - %(name)s"
 msgstr "Shared Calendar - %(name)s"
 
-#: app/templates/pages/admin/time/holidays.html:12
+#: app/templates/pages/admin/time/holidays.html:13
 msgid "&lt; 返回班表列表"
 msgstr "&lt; Return to Schedule list"
 
-#: app/templates/pages/admin/time/holidays.html:17
+#: app/templates/pages/admin/time/holidays.html:18
 msgid "共用月曆"
 msgstr "Shared Calendar"
 
-#: app/templates/pages/admin/time/holidays.html:26
+#: app/templates/pages/admin/time/holidays.html:27
 msgid "+ 新增假日"
 msgstr "+ Added holidays"
 
-#: app/templates/pages/admin/time/holidays.html:39
-msgid "假日"
-msgstr "Holiday"
-
-#: app/templates/pages/admin/time/holidays.html:43
-msgid "補假"
-msgstr "Make-up Holiday"
-
-#: app/templates/pages/admin/time/holidays.html:47
-msgid "補班"
-msgstr "Make-up Workday"
-
-#: app/templates/pages/admin/time/holidays.html:50
-#: app/templates/pages/admin/time/holidays.html:67
+#: app/templates/pages/admin/time/holidays.html:51
+#: app/templates/pages/admin/time/holidays.html:68
+#: app/templates/pages/calendar/calendar.html:63
 msgid "六"
 msgstr "Sat"
 
-#: app/templates/pages/admin/time/holidays.html:51
+#: app/templates/pages/admin/time/holidays.html:52
 msgid "週末（依班表設定）"
 msgstr "Weekend (according to Schedule setting)"
 
-#: app/templates/pages/admin/time/holidays.html:61
+#: app/templates/pages/admin/time/holidays.html:62
+#: app/templates/pages/calendar/calendar.html:57
 msgid "日"
 msgstr "Sun"
 
-#: app/templates/pages/admin/time/holidays.html:62
+#: app/templates/pages/admin/time/holidays.html:63
+#: app/templates/pages/calendar/calendar.html:58
 msgid "一"
 msgstr "Mon"
 
-#: app/templates/pages/admin/time/holidays.html:63
+#: app/templates/pages/admin/time/holidays.html:64
+#: app/templates/pages/calendar/calendar.html:59
 msgid "二"
 msgstr "Tue"
 
-#: app/templates/pages/admin/time/holidays.html:64
+#: app/templates/pages/admin/time/holidays.html:65
+#: app/templates/pages/calendar/calendar.html:60
 msgid "三"
 msgstr "Wed"
 
-#: app/templates/pages/admin/time/holidays.html:65
+#: app/templates/pages/admin/time/holidays.html:66
+#: app/templates/pages/calendar/calendar.html:61
 msgid "四"
 msgstr "Thu"
 
-#: app/templates/pages/admin/time/holidays.html:66
+#: app/templates/pages/admin/time/holidays.html:67
+#: app/templates/pages/calendar/calendar.html:62
 msgid "五"
 msgstr "Fri"
 
-#: app/templates/pages/admin/time/holidays.html:82
+#: app/templates/pages/admin/time/holidays.html:83
 msgid "假日/補班列表"
 msgstr "Holiday/make-up work list"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:396
-#: app/templates/pages/admin/time/holidays.html:87
+#: app/templates/pages/admin/time/holidays.html:88
 msgid "日期"
 msgstr "Date"
 
-#: app/templates/pages/admin/time/holidays.html:90
+#: app/templates/pages/admin/time/holidays.html:91
 msgid "工作時段"
 msgstr "Work Period"
 
-#: app/templates/pages/admin/time/holidays.html:114
+#: app/templates/pages/admin/time/holidays.html:115
 msgid "本年度尚未設定任何假日/補班"
 msgstr "No holidays/make-up shifts have been set for this year"
 
-#: app/templates/pages/admin/time/holidays.html:120
+#: app/templates/pages/admin/time/holidays.html:121
 msgid "批次匯入"
 msgstr "Batch import"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:32
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:182
-#: app/templates/pages/admin/time/holidays.html:122
-#: app/templates/pages/admin/time/holidays.html:124
+#: app/templates/pages/admin/time/holidays.html:123
+#: app/templates/pages/admin/time/holidays.html:125
 msgid "匯入"
 msgstr "Import"
 
-#: app/templates/pages/admin/time/holidays.html:122
+#: app/templates/pages/admin/time/holidays.html:123
 msgid "年台灣國定假日"
 msgstr "Taiwan National Holidays"
 
-#: app/templates/pages/admin/time/holidays.html:124
+#: app/templates/pages/admin/time/holidays.html:125
 msgid "年台灣假日"
 msgstr "annual taiwan holidays"
 
-#: app/templates/pages/admin/time/holidays.html:137
+#: app/templates/pages/admin/time/holidays.html:138
 #: app/templates/pages/organizations/list.html:407
 msgid "開始日期 *"
 msgstr "Start date *"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:157
-#: app/templates/pages/admin/time/holidays.html:142
+#: app/templates/pages/admin/time/holidays.html:143
 #: app/templates/pages/organizations/list.html:291
 #: app/templates/pages/organizations/list.html:369
 msgid "結束日期"
 msgstr "End Date"
 
-#: app/templates/pages/admin/time/holidays.html:144
+#: app/templates/pages/admin/time/holidays.html:145
 msgid "留空表示僅設定單日"
 msgstr "Leave blank to set only single day"
 
-#: app/templates/pages/admin/time/holidays.html:151
+#: app/templates/pages/admin/time/holidays.html:152
 msgid "取消設定（回復班表預設值）"
 msgstr "Cancel setting (restore Schedule default value)"
 
-#: app/templates/pages/admin/time/holidays.html:153
+#: app/templates/pages/admin/time/holidays.html:154
 msgid "勾選後將刪除範圍內的假日/補班設定"
 msgstr ""
 "If checked, the holiday/make-up work settings within the range will be "
 "deleted."
 
-#: app/templates/pages/admin/time/holidays.html:159
+#: app/templates/pages/admin/time/holidays.html:160
 msgid "類型 *"
 msgstr "Type *"
 
-#: app/templates/pages/admin/time/holidays.html:161
+#: app/templates/pages/admin/time/holidays.html:162
 msgid "假日（休假）"
 msgstr "Holiday (vacation)"
 
-#: app/templates/pages/admin/time/holidays.html:162
+#: app/templates/pages/admin/time/holidays.html:163
 msgid "補假（休假）"
 msgstr "Compensatory leave (vacation)"
 
-#: app/templates/pages/admin/time/holidays.html:163
+#: app/templates/pages/admin/time/holidays.html:164
 msgid "補班（上班）"
 msgstr "Make up a shift (work)"
 
-#: app/templates/pages/admin/time/holidays.html:168
+#: app/templates/pages/admin/time/holidays.html:169
 msgid "工作時段 *"
 msgstr "Working hours *"
 
-#: app/templates/pages/admin/time/holidays.html:171
+#: app/templates/pages/admin/time/holidays.html:172
 msgid "多時段用逗號分隔"
 msgstr "Separate multiple time periods with commas"
 
-#: app/templates/pages/admin/time/holidays.html:176
+#: app/templates/pages/admin/time/holidays.html:177
 msgid "例：中秋節"
 msgstr "Example: Mid-Autumn Festival"
 
-#: app/templates/pages/admin/time/schedules.html:3
-#: app/templates/pages/admin/time/schedules.html:16
+#: app/templates/pages/admin/time/schedules.html:4
+#: app/templates/pages/admin/time/schedules.html:17
 msgid "基本班表"
 msgstr "Basic Schedule"
 
-#: app/templates/pages/admin/time/schedules.html:12
+#: app/templates/pages/admin/time/schedules.html:13
 msgid "&lt; 返回系統設定"
 msgstr "&lt; Return to system settings"
 
-#: app/templates/pages/admin/time/schedules.html:17
+#: app/templates/pages/admin/time/schedules.html:18
 msgid "+ 新增班表"
 msgstr "+ Added Schedule"
 
-#: app/templates/pages/admin/time/schedules.html:30
+#: app/templates/pages/admin/time/schedules.html:31
 msgid "班表名稱"
 msgstr "Schedule Name"
 
-#: app/templates/pages/admin/time/schedules.html:32
-#: app/templates/pages/admin/time/schedules.html:140
+#: app/templates/pages/admin/time/schedules.html:33
+#: app/templates/pages/admin/time/schedules.html:141
 msgid "週間工時"
 msgstr "Weekly working hours"
 
-#: app/templates/pages/admin/time/schedules.html:59
-#: app/templates/pages/admin/time/schedules.html:166
+#: app/templates/pages/admin/time/schedules.html:60
+#: app/templates/pages/admin/time/schedules.html:167
 msgid "休"
 msgstr "Off"
 
-#: app/templates/pages/admin/time/schedules.html:74
+#: app/templates/pages/admin/time/schedules.html:75
 msgid "假日設定"
 msgstr "Holiday Settings"
 
-#: app/templates/pages/admin/time/schedules.html:91
+#: app/templates/pages/admin/time/schedules.html:92
 msgid "尚未建立任何班表"
 msgstr "No Schedule has been created yet"
 
-#: app/templates/pages/admin/time/schedules.html:92
+#: app/templates/pages/admin/time/schedules.html:93
 msgid "建立第一個班表"
 msgstr "Create First Schedule"
 
-#: app/templates/pages/admin/time/schedules.html:100
+#: app/templates/pages/admin/time/schedules.html:101
 msgid "班表定義企業成員的標準工作時間"
 msgstr "Schedule defines the standard working time of Employee"
 
-#: app/templates/pages/admin/time/schedules.html:101
+#: app/templates/pages/admin/time/schedules.html:102
 msgid "「預設」班表會自動套用給未指定班表的企業成員"
 msgstr ""
 "\"Default\" Schedule will be automatically applied to Employee that does "
 "not specify Schedule"
 
-#: app/templates/pages/admin/time/schedules.html:102
+#: app/templates/pages/admin/time/schedules.html:103
 msgid "週間工時格式：HH:MM-HH:MM，可設定多個時段（如午休分隔）"
 msgstr ""
 "Weekly working hours format: HH:MM-HH:MM, multiple time periods can be "
 "set (such as lunch break separation)"
 
-#: app/templates/pages/admin/time/schedules.html:103
+#: app/templates/pages/admin/time/schedules.html:104
 msgid "留空或設為休表示休息日"
 msgstr "Leave blank or set to holiday to indicate rest days"
 
-#: app/templates/pages/admin/time/schedules.html:104
+#: app/templates/pages/admin/time/schedules.html:105
 msgid "點擊「假日設定」可設定國定假日與補班日"
 msgstr "Click \"Holiday Settings\" to set national holidays and make-up days"
 
-#: app/templates/pages/admin/time/schedules.html:118
+#: app/templates/pages/admin/time/schedules.html:119
 msgid "班表代碼 *"
 msgstr "Schedule code *"
 
-#: app/templates/pages/admin/time/schedules.html:119
+#: app/templates/pages/admin/time/schedules.html:120
 msgid "例：TW-STANDARD"
 msgstr "Example: TW-STANDARD"
 
-#: app/templates/pages/admin/time/schedules.html:121
+#: app/templates/pages/admin/time/schedules.html:122
 msgid "用於系統識別，建立後不可修改"
 msgstr "Used for system identification and cannot be modified after creation."
 
-#: app/templates/pages/admin/time/schedules.html:124
+#: app/templates/pages/admin/time/schedules.html:125
 msgid "班表名稱 *"
 msgstr "Schedule name *"
 
-#: app/templates/pages/admin/time/schedules.html:125
+#: app/templates/pages/admin/time/schedules.html:126
 msgid "例：台灣標準班表"
 msgstr "Example: Taiwan standard Schedule"
 
-#: app/templates/pages/admin/time/schedules.html:130
+#: app/templates/pages/admin/time/schedules.html:131
 msgid "Asia/Taipei (台北)"
 msgstr "Asia/Taipei (Taipei)"
 
-#: app/templates/pages/admin/time/schedules.html:131
+#: app/templates/pages/admin/time/schedules.html:132
 msgid "Asia/Tokyo (東京)"
 msgstr "Asia/Tokyo (Tokyo)"
 
-#: app/templates/pages/admin/time/schedules.html:132
+#: app/templates/pages/admin/time/schedules.html:133
 msgid "Asia/Shanghai (上海)"
 msgstr "Asia/Shanghai (Shanghai)"
 
-#: app/templates/pages/admin/time/schedules.html:133
+#: app/templates/pages/admin/time/schedules.html:134
 msgid "Asia/Singapore (新加坡)"
 msgstr "Asia/Singapore (Singapore)"
 
-#: app/templates/pages/admin/time/schedules.html:134
+#: app/templates/pages/admin/time/schedules.html:135
 msgid "America/Los_Angeles (洛杉磯)"
 msgstr "America/Los_Angeles (Los Angeles)"
 
-#: app/templates/pages/admin/time/schedules.html:135
+#: app/templates/pages/admin/time/schedules.html:136
 msgid "America/New_York (紐約)"
 msgstr "America/New_York (New York)"
 
-#: app/templates/pages/admin/time/schedules.html:136
+#: app/templates/pages/admin/time/schedules.html:137
 msgid "Europe/London (倫敦)"
 msgstr "Europe/London (London)"
 
-#: app/templates/pages/admin/time/schedules.html:148
+#: app/templates/pages/admin/time/schedules.html:149
 msgid "上班"
 msgstr "Work"
 
-#: app/templates/pages/admin/time/schedules.html:149
+#: app/templates/pages/admin/time/schedules.html:150
 msgid "休息"
 msgstr "Rest"
 
-#: app/templates/pages/admin/time/schedules.html:184
+#: app/templates/pages/admin/time/schedules.html:185
 msgid "+ 休息"
 msgstr "+ Rest"
 
-#: app/templates/pages/admin/time/schedules.html:193
+#: app/templates/pages/admin/time/schedules.html:194
 msgid "將目前設定的第一個上班日時間複製到所有上班日"
 msgstr "Copy the currently set first working day time to all working days"
 
-#: app/templates/pages/admin/time/schedules.html:200
+#: app/templates/pages/admin/time/schedules.html:201
 #: app/templates/pages/external-users/edit.html:57
 #: app/templates/pages/hostconfig/_system_settings_modals.html:17
 #: app/templates/pages/hostconfig/_system_settings_modals.html:122
 #: app/templates/pages/hostconfig/_system_settings_modals.html:187
-#: app/templates/pages/job_titles/list.html:88
+#: app/templates/pages/job_titles/list.html:89
 #: app/templates/pages/organizations/create.html:72
 #: app/templates/pages/organizations/list.html:402
 #: app/templates/pages/organizations/list.html:418
@@ -6511,13 +6608,13 @@ msgstr "Copy the currently set first working day time to all working days"
 msgid "選填"
 msgstr "Optional"
 
-#: app/templates/pages/admin/time/schedules.html:205
+#: app/templates/pages/admin/time/schedules.html:206
 msgid "設為企業預設班表"
 msgstr "Set to Organization Default Schedule"
 
 #: app/templates/pages/approval_categories/create.html:3
 #: app/templates/pages/approval_categories/create.html:11
-#: app/templates/pages/approval_categories/list.html:232
+#: app/templates/pages/approval_categories/list.html:233
 msgid "新增核決權限類別"
 msgstr "Added Approval Authority category"
 
@@ -6525,8 +6622,8 @@ msgstr "Added Approval Authority category"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:148
 #: app/templates/pages/approval_categories/create.html:7
 #: app/templates/pages/approval_categories/edit.html:20
-#: app/templates/pages/approval_categories/limits.html:24
-#: app/templates/pages/delegations/create.html:7
+#: app/templates/pages/approval_categories/limits.html:25
+#: app/templates/pages/delegations/create.html:8
 #: app/templates/pages/job_families/create.html:11
 #: app/templates/pages/job_families/edit.html:9
 #: app/templates/pages/job_families/view.html:9
@@ -6539,51 +6636,51 @@ msgstr "Back to List"
 
 #: app/templates/pages/approval_categories/create.html:15
 #: app/templates/pages/approval_categories/edit.html:9
-#: app/templates/pages/approval_categories/limits.html:13
-#: app/templates/pages/approval_categories/list.html:61
-#: app/templates/pages/job_families/list.html:27
-#: app/templates/pages/job_levels/matrix.html:3
-#: app/templates/pages/job_levels/matrix.html:10
+#: app/templates/pages/approval_categories/limits.html:14
+#: app/templates/pages/approval_categories/list.html:62
+#: app/templates/pages/job_families/list.html:28
+#: app/templates/pages/job_levels/matrix.html:4
+#: app/templates/pages/job_levels/matrix.html:11
 msgid "職級職稱矩陣"
 msgstr "Rank Job Title matrix"
 
 #: app/templates/pages/approval_categories/create.html:17
 #: app/templates/pages/approval_categories/edit.html:11
-#: app/templates/pages/approval_categories/limits.html:15
-#: app/templates/pages/approval_categories/list.html:63
-#: app/templates/pages/job_families/list.html:29
-#: app/templates/pages/job_levels/list.html:3
-#: app/templates/pages/job_levels/list.html:50
+#: app/templates/pages/approval_categories/limits.html:16
+#: app/templates/pages/approval_categories/list.html:64
+#: app/templates/pages/job_families/list.html:30
+#: app/templates/pages/job_levels/list.html:4
+#: app/templates/pages/job_levels/list.html:51
 msgid "職等管理"
 msgstr "Job Level Management"
 
 #: app/templates/pages/approval_categories/create.html:19
 #: app/templates/pages/approval_categories/edit.html:13
-#: app/templates/pages/approval_categories/limits.html:17
-#: app/templates/pages/approval_categories/list.html:65
-#: app/templates/pages/job_families/list.html:3
-#: app/templates/pages/job_families/list.html:24
-#: app/templates/pages/job_families/list.html:31
+#: app/templates/pages/approval_categories/limits.html:18
+#: app/templates/pages/approval_categories/list.html:66
+#: app/templates/pages/job_families/list.html:4
+#: app/templates/pages/job_families/list.html:25
+#: app/templates/pages/job_families/list.html:32
 msgid "職系管理"
 msgstr "Job Family Management"
 
 #: app/templates/pages/approval_categories/create.html:21
 #: app/templates/pages/approval_categories/edit.html:15
-#: app/templates/pages/approval_categories/limits.html:19
-#: app/templates/pages/approval_categories/list.html:67
-#: app/templates/pages/job_families/list.html:33
-#: app/templates/pages/job_titles/list.html:3
-#: app/templates/pages/job_titles/list.html:24
+#: app/templates/pages/approval_categories/limits.html:20
+#: app/templates/pages/approval_categories/list.html:68
+#: app/templates/pages/job_families/list.html:34
+#: app/templates/pages/job_titles/list.html:4
+#: app/templates/pages/job_titles/list.html:25
 msgid "職稱管理"
 msgstr "Job Title Management"
 
 #: app/templates/pages/approval_categories/create.html:23
 #: app/templates/pages/approval_categories/edit.html:17
-#: app/templates/pages/approval_categories/limits.html:21
-#: app/templates/pages/approval_categories/list.html:3
-#: app/templates/pages/approval_categories/list.html:58
-#: app/templates/pages/approval_categories/list.html:69
-#: app/templates/pages/job_families/list.html:35
+#: app/templates/pages/approval_categories/limits.html:22
+#: app/templates/pages/approval_categories/list.html:4
+#: app/templates/pages/approval_categories/list.html:59
+#: app/templates/pages/approval_categories/list.html:70
+#: app/templates/pages/job_families/list.html:36
 msgid "核決權限類別"
 msgstr "Approval Authority Category"
 
@@ -6598,22 +6695,22 @@ msgstr "Such as petty cash"
 
 #: app/templates/pages/approval_categories/create.html:38
 #: app/templates/pages/approval_categories/edit.html:43
-#: app/templates/pages/approval_categories/list.html:159
-#: app/templates/pages/approval_categories/list.html:250
+#: app/templates/pages/approval_categories/list.html:160
+#: app/templates/pages/approval_categories/list.html:251
 #: app/templates/pages/job_families/create.html:44
 #: app/templates/pages/job_families/edit.html:32
-#: app/templates/pages/job_families/list.html:80
-#: app/templates/pages/job_families/list.html:147
+#: app/templates/pages/job_families/list.html:81
+#: app/templates/pages/job_families/list.html:148
 #: app/templates/pages/job_families/view.html:23
 #: app/templates/pages/job_levels/create.html:44
 #: app/templates/pages/job_levels/edit.html:32
-#: app/templates/pages/job_levels/list.html:134
-#: app/templates/pages/job_levels/list.html:225
+#: app/templates/pages/job_levels/list.html:135
+#: app/templates/pages/job_levels/list.html:226
 #: app/templates/pages/job_levels/view.html:23
 #: app/templates/pages/job_titles/create.html:44
 #: app/templates/pages/job_titles/edit.html:32
-#: app/templates/pages/job_titles/list.html:83
-#: app/templates/pages/job_titles/list.html:160
+#: app/templates/pages/job_titles/list.html:84
+#: app/templates/pages/job_titles/list.html:161
 #: app/templates/pages/job_titles/view.html:23
 msgid "英文名稱"
 msgstr "English Name"
@@ -6624,7 +6721,7 @@ msgstr "as Petty Cash"
 
 #: app/templates/pages/approval_categories/create.html:47
 #: app/templates/pages/approval_categories/edit.html:28
-#: app/templates/pages/approval_categories/list.html:148
+#: app/templates/pages/approval_categories/list.html:149
 msgid "類別代碼"
 msgstr "Category Code"
 
@@ -6633,25 +6730,25 @@ msgid "如 PETTY_CASH"
 msgstr "Such as PETTY_CASH"
 
 #: app/templates/pages/approval_categories/create.html:52
-#: app/templates/pages/approval_categories/list.html:261
+#: app/templates/pages/approval_categories/list.html:262
 msgid "自動從英文名稱產生，可手動修改"
 msgstr "Automatically generated from the English name and can be modified manually"
 
 #: app/templates/pages/approval_categories/create.html:56
 #: app/templates/pages/approval_categories/edit.html:51
-#: app/templates/pages/approval_categories/list.html:95
-#: app/templates/pages/approval_categories/list.html:163
-#: app/templates/pages/approval_categories/list.html:265
+#: app/templates/pages/approval_categories/list.html:96
+#: app/templates/pages/approval_categories/list.html:164
+#: app/templates/pages/approval_categories/list.html:266
 msgid "幣別"
 msgstr "Currency"
 
 #: app/templates/pages/approval_categories/create.html:78
-#: app/templates/pages/approval_categories/list.html:281
+#: app/templates/pages/approval_categories/list.html:282
 msgid "類別的詳細說明"
 msgstr "Detailed description of the category"
 
 #: app/templates/pages/approval_categories/create.html:83
-#: app/templates/pages/approval_categories/list.html:288
+#: app/templates/pages/approval_categories/list.html:289
 msgid "建立類別"
 msgstr "Create Category"
 
@@ -6661,101 +6758,101 @@ msgid "編輯核決權限類別"
 msgstr "Edit Approval Authority Category"
 
 #: app/templates/pages/approval_categories/edit.html:21
-#: app/templates/pages/approval_categories/list.html:193
+#: app/templates/pages/approval_categories/list.html:194
 msgid "設定上限"
 msgstr "set upper limit"
 
 #: app/templates/pages/approval_categories/edit.html:31
-#: app/templates/pages/approval_categories/list.html:151
+#: app/templates/pages/approval_categories/list.html:152
 #: app/templates/pages/job_families/edit.html:20
-#: app/templates/pages/job_families/list.html:140
+#: app/templates/pages/job_families/list.html:141
 msgid "不可修改"
 msgstr "Cannot be modified"
 
 #: app/templates/pages/approval_categories/edit.html:96
-#: app/templates/pages/delegations/edit.html:104
+#: app/templates/pages/delegations/edit.html:105
 #: app/templates/pages/job_families/edit.html:101
 #: app/templates/pages/job_levels/edit.html:96
 #: app/templates/pages/job_titles/edit.html:121
-#: app/templates/pages/positions/edit.html:134
-#: app/templates/pages/users/edit.html:350
+#: app/templates/pages/positions/edit.html:135
+#: app/templates/pages/users/edit.html:351
 msgid "危險區域"
 msgstr "Danger Zone"
 
 #: app/templates/pages/approval_categories/edit.html:101
-#: app/templates/pages/approval_categories/list.html:204
+#: app/templates/pages/approval_categories/list.html:205
 msgid "刪除此類別"
 msgstr "Delete This Category"
 
 #: app/templates/pages/approval_categories/edit.html:107
-#: app/templates/pages/approval_categories/list.html:219
+#: app/templates/pages/approval_categories/list.html:220
 msgid "此為系統預設類別，不可刪除。"
 msgstr "This is a system default category and cannot be deleted."
 
-#: app/templates/pages/approval_categories/limits.html:3
-#: app/templates/pages/approval_categories/limits.html:10
+#: app/templates/pages/approval_categories/limits.html:4
+#: app/templates/pages/approval_categories/limits.html:11
 msgid "設定核決上限"
 msgstr "Set Approval Limit"
 
-#: app/templates/pages/approval_categories/limits.html:25
-#: app/templates/pages/approval_categories/list.html:132
+#: app/templates/pages/approval_categories/limits.html:26
+#: app/templates/pages/approval_categories/list.html:133
 msgid "編輯類別"
 msgstr "Edit Category"
 
-#: app/templates/pages/approval_categories/limits.html:29
+#: app/templates/pages/approval_categories/limits.html:30
 #, python-format
 msgid "說明：設定各職等對於「%(name)s」的核決金額上限。0 表示無核決權限。"
 msgstr ""
 "Description: Set the Approval amount limit for each Job Level for "
 "\"%(name)s\". 0 means no Approval Authority."
 
-#: app/templates/pages/approval_categories/limits.html:37
-#: app/templates/pages/approval_categories/limits.html:98
-#: app/templates/pages/job_levels/matrix.html:25
-#: app/templates/pages/job_levels/matrix.html:92
+#: app/templates/pages/approval_categories/limits.html:38
+#: app/templates/pages/approval_categories/limits.html:99
+#: app/templates/pages/job_levels/matrix.html:26
+#: app/templates/pages/job_levels/matrix.html:93
 #: app/templates/pages/job_titles/view.html:31
 msgid "職等"
 msgstr "Job Level"
 
-#: app/templates/pages/approval_categories/limits.html:38
+#: app/templates/pages/approval_categories/limits.html:39
 msgid "核決上限"
 msgstr "Approval Limit"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:24
-#: app/templates/pages/approval_categories/limits.html:51
-#: app/templates/pages/job_levels/matrix.html:38
-#: app/templates/pages/job_levels/matrix.html:73
+#: app/templates/pages/approval_categories/limits.html:52
+#: app/templates/pages/job_levels/matrix.html:39
+#: app/templates/pages/job_levels/matrix.html:74
 msgid "管理"
 msgstr "Manage"
 
-#: app/templates/pages/approval_categories/limits.html:97
+#: app/templates/pages/approval_categories/limits.html:98
 msgid "尚無職等或職系資料。請先建立"
 msgstr ""
 "There is no information on Job Level or Job Family yet. Please create "
 "first"
 
-#: app/templates/pages/approval_categories/limits.html:98
-#: app/templates/pages/job_levels/matrix.html:93
+#: app/templates/pages/approval_categories/limits.html:99
+#: app/templates/pages/job_levels/matrix.html:94
 msgid "和"
 msgstr "and"
 
-#: app/templates/pages/approval_categories/limits.html:99
-#: app/templates/pages/job_levels/matrix.html:93
-#: app/templates/pages/job_titles/view.html:51
+#: app/templates/pages/approval_categories/limits.html:100
+#: app/templates/pages/job_levels/matrix.html:94
+#: app/templates/pages/job_titles/view.html:43
 msgid "職系"
 msgstr "Job Family"
 
-#: app/templates/pages/approval_categories/list.html:73
+#: app/templates/pages/approval_categories/list.html:74
 msgid "管理各種費用的核決權限類別，並針對每個職等設定不同的核決上限。"
 msgstr ""
 "Manage Approval Authority categories of various expenses and set "
 "different approval limits for each Job Level."
 
-#: app/templates/pages/approval_categories/list.html:81
+#: app/templates/pages/approval_categories/list.html:82
 msgid "新增類別"
 msgstr "Add Category"
 
-#: app/templates/pages/approval_categories/list.html:86
+#: app/templates/pages/approval_categories/list.html:87
 msgid "尚無類別資料"
 msgstr "No category information yet"
 
@@ -6765,29 +6862,29 @@ msgstr "No category information yet"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:349
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:302
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:352
-#: app/templates/pages/approval_categories/list.html:93
-#: app/templates/pages/approval_categories/list.html:258
+#: app/templates/pages/approval_categories/list.html:94
+#: app/templates/pages/approval_categories/list.html:259
 #: app/templates/pages/cg_databases/overview.html:213
 #: app/templates/pages/job_levels/create.html:99
-#: app/templates/pages/job_levels/list.html:79
-#: app/templates/pages/job_levels/list.html:123
-#: app/templates/pages/job_levels/list.html:218
-#: app/templates/pages/job_titles/list.html:76
-#: app/templates/pages/job_titles/list.html:152
+#: app/templates/pages/job_levels/list.html:80
+#: app/templates/pages/job_levels/list.html:124
+#: app/templates/pages/job_levels/list.html:219
+#: app/templates/pages/job_titles/list.html:77
+#: app/templates/pages/job_titles/list.html:153
 #: app/templates/pages/modules/view.html:97
 #: app/templates/pages/platform_help/org_admin.html:41
 #: app/templates/pages/units/list.html:24
 msgid "代碼"
 msgstr "Code"
 
-#: app/templates/pages/approval_categories/list.html:126
+#: app/templates/pages/approval_categories/list.html:127
 msgid "請從左側選擇類別進行編輯"
 msgstr "Please select a category from the left to edit"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:422
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:98
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:65
-#: app/templates/pages/approval_categories/list.html:196
+#: app/templates/pages/approval_categories/list.html:197
 #: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:34
 #: app/templates/pages/menu/list.html:98
 msgid "儲存中..."
@@ -6797,23 +6894,23 @@ msgstr "Saving..."
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:169
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:223
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:409
-#: app/templates/pages/approval_categories/list.html:209
+#: app/templates/pages/approval_categories/list.html:210
 msgid "確定要刪除「"
 msgstr "Are you sure you want to delete \""
 
-#: app/templates/pages/approval_categories/list.html:211
+#: app/templates/pages/approval_categories/list.html:212
 msgid "確定刪除"
 msgstr "Confirm deletion"
 
-#: app/templates/pages/approval_categories/list.html:247
+#: app/templates/pages/approval_categories/list.html:248
 msgid "如: 零用金"
 msgstr "Such as: petty cash"
 
-#: app/templates/pages/approval_categories/list.html:253
+#: app/templates/pages/approval_categories/list.html:254
 msgid "如: Petty Cash"
 msgstr "Such as: Petty Cash"
 
-#: app/templates/pages/approval_categories/list.html:260
+#: app/templates/pages/approval_categories/list.html:261
 msgid "如: PETTY_CASH"
 msgstr "Such as: PETTY_CASH"
 
@@ -6821,19 +6918,88 @@ msgstr "Such as: PETTY_CASH"
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:121
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:428
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:555
-#: app/templates/pages/approval_categories/list.html:289
+#: app/templates/pages/approval_categories/list.html:290
 msgid "建立中..."
 msgstr "Creating..."
 
-#: app/templates/pages/approval_categories/list.html:299
+#: app/templates/pages/approval_categories/list.html:300
 msgid "核決金額矩陣"
 msgstr "Approval amount matrix"
 
-#: app/templates/pages/approval_categories/list.html:300
+#: app/templates/pages/approval_categories/list.html:301
 msgid "僅顯示啟用中的類別。左側職等固定，右側類別可水平捲動。"
 msgstr ""
 "Show only enabled categories. Job Level on the left is fixed, and the "
 "categories on the right can be scrolled horizontally."
+
+#: app/templates/pages/calendar/calendar.html:4
+#: app/templates/pages/calendar/calendar.html:14
+#: app/templates/pages/calendar/calendar.html:21
+msgid "我的行事曆"
+msgstr "My Calendar"
+
+#: app/templates/pages/calendar/calendar.html:4
+#: app/templates/pages/calendar/calendar.html:14
+#: app/templates/pages/calendar/calendar.html:19
+msgid "企業行事曆"
+msgstr "Company Calendar"
+
+#: app/templates/pages/calendar/calendar.html:15
+#, python-format
+msgid "時區：%(tz)s"
+msgstr "Time zone: %(tz)s"
+
+#: app/templates/pages/calendar/calendar.html:24
+msgid "月"
+msgstr "Month"
+
+#: app/templates/pages/calendar/calendar.html:25
+msgid "週"
+msgstr "Week"
+
+#: app/templates/pages/calendar/calendar.html:29
+msgid "今天"
+msgstr "Today"
+
+#: app/templates/pages/calendar/calendar.html:39
+msgid "載入中…"
+msgstr "Loading…"
+
+#: app/templates/pages/calendar/calendar.html:42
+msgid "假日／補假"
+msgstr "Holiday / Comp off"
+
+#: app/templates/pages/calendar/calendar.html:44
+msgid "代理授權"
+msgstr "Delegation"
+
+#: app/templates/pages/calendar/calendar.html:45
+msgid "限期職位"
+msgstr "Time-limited position"
+
+#: app/templates/pages/calendar/calendar.html:47
+msgid "公告"
+msgstr "Notice"
+
+#: app/templates/pages/calendar/calendar.html:48
+msgid "個人／企業事件"
+msgstr "Personal / company event"
+
+#: app/templates/pages/calendar/calendar.html:49
+msgid "已排程（不公開內容）"
+msgstr "Scheduled (details hidden)"
+
+#: app/templates/pages/calendar/calendar.html:50
+msgid "非工作日"
+msgstr "Non-working day"
+
+#: app/templates/pages/calendar/calendar.html:101
+msgid "無事件"
+msgstr "No events"
+
+#: app/templates/pages/calendar/calendar.html:119
+msgid "這天沒有事件"
+msgstr "No events on this day"
 
 #: app/templates/pages/cg_databases/overview.html:4
 #: app/templates/pages/cg_databases/overview.html:78
@@ -6966,282 +7132,286 @@ msgstr "operator"
 msgid "無異動記錄"
 msgstr "No abnormal records"
 
-#: app/templates/pages/delegations/create.html:3
-#: app/templates/pages/delegations/create.html:11
+#: app/templates/pages/delegations/create.html:4
+#: app/templates/pages/delegations/create.html:12
 msgid "新增代理授權"
 msgstr "Added Delegation"
 
-#: app/templates/pages/delegations/create.html:15
-#: app/templates/pages/delegations/list.html:13
+#: app/templates/pages/delegations/create.html:16
+#: app/templates/pages/delegations/list.html:14
 msgid "代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住"
 msgstr ""
 "Delegation is used as the Duty agent when the supervisor is on "
 "vacation/business trip to ensure that the sign-off process does not get "
 "stuck."
 
-#: app/templates/pages/delegations/create.html:22
-#: app/templates/pages/delegations/edit.html:17
-#: app/templates/pages/delegations/list.html:21
-#: app/templates/pages/delegations/view.html:17
+#: app/templates/pages/delegations/create.html:23
+#: app/templates/pages/delegations/edit.html:18
+#: app/templates/pages/delegations/list.html:22
+#: app/templates/pages/delegations/view.html:18
 msgid "授權人"
 msgstr "Authorizer"
 
-#: app/templates/pages/delegations/create.html:25
+#: app/templates/pages/delegations/create.html:26
 msgid "-- 請選擇授權人 --"
 msgstr "-- Please select the authorizer --"
 
-#: app/templates/pages/delegations/create.html:33
+#: app/templates/pages/delegations/create.html:34
 msgid "原本負責簽核的人 (如: 休假的主管)"
 msgstr "The person originally responsible for sign-off (e.g. supervisor on leave)"
 
-#: app/templates/pages/delegations/create.html:37
-#: app/templates/pages/delegations/edit.html:28
-#: app/templates/pages/delegations/list.html:22
-#: app/templates/pages/delegations/view.html:30
+#: app/templates/pages/delegations/create.html:38
+#: app/templates/pages/delegations/edit.html:29
+#: app/templates/pages/delegations/list.html:23
+#: app/templates/pages/delegations/view.html:31
 msgid "被授權人"
 msgstr "authorized person"
 
-#: app/templates/pages/delegations/create.html:40
+#: app/templates/pages/delegations/create.html:41
 msgid "-- 請選擇被授權人 --"
 msgstr "-- Please select the authorized person --"
 
-#: app/templates/pages/delegations/create.html:48
+#: app/templates/pages/delegations/create.html:49
 msgid "代理簽核的人 (如: 代理主管)"
 msgstr "The person who signs off on behalf of the person (e.g. acting supervisor)"
 
-#: app/templates/pages/delegations/create.html:52
-#: app/templates/pages/delegations/list.html:23
-#: app/templates/pages/delegations/view.html:43
+#: app/templates/pages/delegations/create.html:53
+#: app/templates/pages/delegations/list.html:24
+#: app/templates/pages/delegations/view.html:44
 msgid "代理類型"
 msgstr "Agent type"
 
-#: app/templates/pages/delegations/create.html:65
-#: app/templates/pages/delegations/edit.html:52
+#: app/templates/pages/delegations/create.html:66
+#: app/templates/pages/delegations/edit.html:53
 msgid "簽核金額上限"
 msgstr "Maximum amount of approval"
 
-#: app/templates/pages/delegations/create.html:69
+#: app/templates/pages/delegations/create.html:70
 msgid "如: 100000"
 msgstr "Such as: 100000"
 
-#: app/templates/pages/delegations/create.html:70
+#: app/templates/pages/delegations/create.html:71
 msgid "超過此金額需要原授權人或更高層簽核"
 msgstr ""
 "Amounts exceeding this amount require approval from the original "
 "authorizer or higher level"
 
-#: app/templates/pages/delegations/create.html:74
-#: app/templates/pages/delegations/view.html:78
+#: app/templates/pages/delegations/create.html:75
+#: app/templates/pages/delegations/view.html:79
 msgid "生效開始"
 msgstr "Effective start"
 
-#: app/templates/pages/delegations/create.html:81
-#: app/templates/pages/delegations/view.html:82
+#: app/templates/pages/delegations/create.html:82
+#: app/templates/pages/delegations/view.html:83
 msgid "生效結束"
 msgstr "Effective end"
 
-#: app/templates/pages/delegations/create.html:88
-#: app/templates/pages/delegations/edit.html:73
-#: app/templates/pages/delegations/view.html:86
+#: app/templates/pages/delegations/create.html:89
+#: app/templates/pages/delegations/edit.html:74
+#: app/templates/pages/delegations/view.html:87
 msgid "授權原因"
 msgstr "Authorization reason"
 
-#: app/templates/pages/delegations/create.html:91
+#: app/templates/pages/delegations/create.html:92
 msgid "如: 休假出國 12/20-12/25"
 msgstr "For example: Going abroad on vacation 12/20-12/25"
 
-#: app/templates/pages/delegations/create.html:96
+#: app/templates/pages/delegations/create.html:97
 msgid "建立代理授權"
 msgstr "Create Delegation"
 
-#: app/templates/pages/delegations/edit.html:3
-#: app/templates/pages/delegations/edit.html:6
+#: app/templates/pages/delegations/edit.html:4
+#: app/templates/pages/delegations/edit.html:7
 msgid "編輯代理授權"
 msgstr "Edit Delegation"
 
-#: app/templates/pages/delegations/edit.html:9
-#: app/templates/pages/delegations/view.html:9
+#: app/templates/pages/delegations/edit.html:10
+#: app/templates/pages/delegations/view.html:10
 #: app/templates/pages/job_levels/edit.html:9
 #: app/templates/pages/job_levels/view.html:9
 #: app/templates/pages/job_titles/edit.html:9
 #: app/templates/pages/job_titles/view.html:9
-#: app/templates/pages/positions/edit.html:9
-#: app/templates/pages/positions/view.html:9
+#: app/templates/pages/positions/edit.html:10
+#: app/templates/pages/positions/view.html:10
 msgid "[返回列表]"
 msgstr "[Return to list]"
 
-#: app/templates/pages/delegations/edit.html:10
+#: app/templates/pages/delegations/edit.html:11
 #: app/templates/pages/job_levels/edit.html:10
 #: app/templates/pages/job_titles/edit.html:10
-#: app/templates/pages/positions/edit.html:10
+#: app/templates/pages/positions/edit.html:11
 msgid "[查看詳情]"
 msgstr "[View details]"
 
-#: app/templates/pages/delegations/edit.html:24
-#: app/templates/pages/delegations/edit.html:35
+#: app/templates/pages/delegations/edit.html:25
+#: app/templates/pages/delegations/edit.html:36
 #: app/templates/pages/job_levels/edit.html:20
-#: app/templates/pages/job_levels/list.html:126
+#: app/templates/pages/job_levels/list.html:127
 #: app/templates/pages/job_titles/edit.html:20
-#: app/templates/pages/job_titles/list.html:153
-#: app/templates/pages/positions/edit.html:21
+#: app/templates/pages/job_titles/list.html:154
+#: app/templates/pages/positions/edit.html:22
 msgid "(不可修改)"
 msgstr "(cannot be modified)"
 
-#: app/templates/pages/delegations/edit.html:39
+#: app/templates/pages/delegations/edit.html:40
 msgid "代理類型 *"
 msgstr "Agent type *"
 
-#: app/templates/pages/delegations/edit.html:59
+#: app/templates/pages/delegations/edit.html:60
 msgid "生效開始 *"
 msgstr "Effective from *"
 
-#: app/templates/pages/delegations/edit.html:66
+#: app/templates/pages/delegations/edit.html:67
 msgid "生效結束 *"
 msgstr "Effective end *"
 
-#: app/templates/pages/delegations/edit.html:79
+#: app/templates/pages/delegations/edit.html:80
 msgid "目前狀態"
 msgstr "current status"
 
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:19
-#: app/templates/pages/delegations/edit.html:82
-#: app/templates/pages/delegations/list.html:57
-#: app/templates/pages/delegations/view.html:65
+#: app/templates/pages/delegations/edit.html:83
+#: app/templates/pages/delegations/list.html:58
+#: app/templates/pages/delegations/view.html:66
 msgid "生效中"
 msgstr "Active"
 
-#: app/templates/pages/delegations/edit.html:84
-#: app/templates/pages/delegations/list.html:59
-#: app/templates/pages/delegations/view.html:67
+#: app/templates/pages/delegations/edit.html:85
+#: app/templates/pages/delegations/list.html:60
+#: app/templates/pages/delegations/view.html:68
 msgid "待生效"
 msgstr "Pending"
 
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:21
-#: app/templates/pages/delegations/edit.html:88
-#: app/templates/pages/delegations/list.html:63
-#: app/templates/pages/delegations/view.html:71
+#: app/templates/pages/delegations/edit.html:89
+#: app/templates/pages/delegations/list.html:64
+#: app/templates/pages/delegations/view.html:72
 msgid "已撤銷"
 msgstr "Revoked"
 
-#: app/templates/pages/delegations/edit.html:90
+#: app/templates/pages/delegations/edit.html:91
 msgid "(依日期自動判定)"
 msgstr "(automatically determined based on date)"
 
 #: app/templates/pages/delegations/edit.html:110
-#: app/templates/pages/delegations/view.html:115
+msgid "由管理員手動撤銷"
+msgstr "Revoked manually by administrator"
+
+#: app/templates/pages/delegations/edit.html:112
+#: app/templates/pages/delegations/view.html:116
 msgid "撤銷授權"
 msgstr "Revoke authorization"
 
-#: app/templates/pages/delegations/edit.html:117
+#: app/templates/pages/delegations/edit.html:119
 msgid "刪除紀錄"
 msgstr "Delete record"
 
-#: app/templates/pages/delegations/list.html:3
-#: app/templates/pages/delegations/list.html:6
+#: app/templates/pages/delegations/list.html:4
+#: app/templates/pages/delegations/list.html:7
 msgid "代理授權管理"
 msgstr "Delegation Management"
 
-#: app/templates/pages/delegations/list.html:9
+#: app/templates/pages/delegations/list.html:10
 msgid "[新增代理授權]"
 msgstr "[New Delegation]"
 
-#: app/templates/pages/delegations/list.html:16
+#: app/templates/pages/delegations/list.html:17
 #, python-format
 msgid "共 %(count)s 筆代理授權"
 msgstr "%(count)s Delegations total"
 
-#: app/templates/pages/delegations/list.html:25
+#: app/templates/pages/delegations/list.html:26
 msgid "生效期間"
 msgstr "Effective period"
 
-#: app/templates/pages/delegations/list.html:47
-#: app/templates/pages/delegations/view.html:46
+#: app/templates/pages/delegations/list.html:48
+#: app/templates/pages/delegations/view.html:47
 msgid "全權代理"
 msgstr "Fully authorized agent"
 
-#: app/templates/pages/delegations/list.html:49
-#: app/templates/pages/delegations/view.html:48
+#: app/templates/pages/delegations/list.html:50
+#: app/templates/pages/delegations/view.html:49
 msgid "限額代理"
 msgstr "Quota Agent"
 
-#: app/templates/pages/delegations/list.html:51
-#: app/templates/pages/delegations/view.html:55
+#: app/templates/pages/delegations/list.html:52
+#: app/templates/pages/delegations/view.html:56
 msgid "特定代理"
 msgstr "specific agent"
 
-#: app/templates/pages/delegations/list.html:73
-#: app/templates/pages/positions/list.html:71
+#: app/templates/pages/delegations/list.html:74
+#: app/templates/pages/positions/list.html:72
 #: app/templates/pages/units/list.html:44
 msgid "[查看]"
 msgstr "[View]"
 
-#: app/templates/pages/delegations/list.html:75
-#: app/templates/pages/delegations/view.html:11
+#: app/templates/pages/delegations/list.html:76
+#: app/templates/pages/delegations/view.html:12
 #: app/templates/pages/job_levels/view.html:10
 #: app/templates/pages/job_titles/view.html:10
-#: app/templates/pages/positions/list.html:72
-#: app/templates/pages/positions/view.html:10
+#: app/templates/pages/positions/list.html:73
+#: app/templates/pages/positions/view.html:11
 #: app/templates/pages/units/list.html:45
 #: app/templates/pages/units/view.html:14
-#: app/templates/pages/users/view.html:20
+#: app/templates/pages/users/view.html:21
 msgid "[編輯]"
 msgstr "[edit]"
 
-#: app/templates/pages/delegations/list.html:81
+#: app/templates/pages/delegations/list.html:82
 msgid "尚無代理授權"
 msgstr "No Delegation yet"
 
-#: app/templates/pages/delegations/view.html:3
-#: app/templates/pages/delegations/view.html:6
+#: app/templates/pages/delegations/view.html:4
+#: app/templates/pages/delegations/view.html:7
 msgid "代理授權詳情"
 msgstr "Delegation details"
 
-#: app/templates/pages/delegations/view.html:23
+#: app/templates/pages/delegations/view.html:24
 msgid "(原本負責簽核的人)"
 msgstr "(The person originally responsible for signing)"
 
-#: app/templates/pages/delegations/view.html:36
+#: app/templates/pages/delegations/view.html:37
 msgid "(代理簽核的人)"
 msgstr "(person signing on behalf of the person)"
 
-#: app/templates/pages/delegations/view.html:46
+#: app/templates/pages/delegations/view.html:47
 msgid "代理所有權限"
 msgstr "Agent all rights"
 
-#: app/templates/pages/delegations/view.html:48
+#: app/templates/pages/delegations/view.html:49
 msgid "簽核金額上限:"
 msgstr "Maximum amount of approval:"
 
-#: app/templates/pages/delegations/view.html:55
+#: app/templates/pages/delegations/view.html:56
 msgid "限定特定流程類型"
 msgstr "Limit to specific process types"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:49
-#: app/templates/pages/delegations/view.html:90
+#: app/templates/pages/delegations/view.html:91
 msgid "建立者"
 msgstr "founder"
 
-#: app/templates/pages/delegations/view.html:99
+#: app/templates/pages/delegations/view.html:100
 msgid "撤銷者"
 msgstr "Undoer"
 
-#: app/templates/pages/delegations/view.html:103
+#: app/templates/pages/delegations/view.html:104
 msgid "撤銷時間"
 msgstr "Undo time"
 
-#: app/templates/pages/delegations/view.html:107
+#: app/templates/pages/delegations/view.html:108
 msgid "撤銷原因"
 msgstr "Reason for withdrawal"
 
-#: app/templates/pages/delegations/view.html:120
+#: app/templates/pages/delegations/view.html:121
 msgid "撤銷原因:"
 msgstr "Reason for cancellation:"
 
-#: app/templates/pages/delegations/view.html:121
+#: app/templates/pages/delegations/view.html:122
 msgid "如: 授權人已返回"
 msgstr "For example: The authorizer has returned"
 
-#: app/templates/pages/delegations/view.html:124
+#: app/templates/pages/delegations/view.html:125
 msgid "撤銷代理授權"
 msgstr "Revoke Delegation"
 
@@ -7364,10 +7534,10 @@ msgstr "Belonging group *"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:313
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:285
 #: app/templates/pages/external-users/create.html:85
-#: app/templates/pages/job_titles/list.html:94
-#: app/templates/pages/job_titles/list.html:105
-#: app/templates/pages/job_titles/list.html:171
-#: app/templates/pages/job_titles/list.html:182
+#: app/templates/pages/job_titles/list.html:95
+#: app/templates/pages/job_titles/list.html:106
+#: app/templates/pages/job_titles/list.html:172
+#: app/templates/pages/job_titles/list.html:183
 msgid "-- 請選擇 --"
 msgstr "-- Please select --"
 
@@ -7399,9 +7569,9 @@ msgstr "(Usage rules: %(name)s)"
 #: app/templates/pages/external-users/view.html:81
 #: app/templates/pages/organizations/list.html:372
 #: app/templates/pages/organizations/list.html:427
-#: app/templates/pages/positions/create.html:115
-#: app/templates/pages/positions/edit.html:108
-#: app/templates/pages/positions/view.html:92
+#: app/templates/pages/positions/create.html:116
+#: app/templates/pages/positions/edit.html:109
+#: app/templates/pages/positions/view.html:93
 msgid "備註"
 msgstr "Notes"
 
@@ -7424,7 +7594,7 @@ msgid "編輯外部廠商：%(display_name)s"
 msgstr "Edit External Vendor: %(display_name)s"
 
 #: app/templates/pages/external-users/edit.html:118
-#: app/templates/pages/users/edit.html:139
+#: app/templates/pages/users/edit.html:140
 msgid "留空則不變更"
 msgstr "Leave blank to make no changes"
 
@@ -7435,7 +7605,7 @@ msgid "歸屬群組"
 msgstr "belonging group"
 
 #: app/templates/pages/external-users/edit.html:135
-#: app/templates/pages/users/view.html:151
+#: app/templates/pages/users/view.html:178
 msgid "加入日期"
 msgstr "Joining date"
 
@@ -7526,12 +7696,12 @@ msgstr "Activate account"
 #: app/templates/pages/security/alert_broadcasts.html:172
 #: app/templates/pages/sys_accounts/edit.html:123
 #: app/templates/pages/sys_accounts/list.html:191
-#: app/templates/pages/users/view.html:56
+#: app/templates/pages/users/view.html:57
 msgid "最後登入"
 msgstr "last login"
 
 #: app/templates/pages/external-users/view.html:90
-#: app/templates/pages/users/view.html:57
+#: app/templates/pages/users/view.html:58
 msgid "從未登入"
 msgstr "Never logged in"
 
@@ -8557,28 +8727,28 @@ msgstr "rate limit"
 
 #: app/templates/pages/job_families/create.html:3
 #: app/templates/pages/job_families/create.html:15
-#: app/templates/pages/job_families/list.html:39
-#: app/templates/pages/job_families/list.html:59
+#: app/templates/pages/job_families/list.html:40
+#: app/templates/pages/job_families/list.html:60
 msgid "新增職系"
 msgstr "Add Job Family"
 
 #: app/templates/pages/job_families/create.html:24
 #: app/templates/pages/job_families/edit.html:24
-#: app/templates/pages/job_families/list.html:72
-#: app/templates/pages/job_families/list.html:143
+#: app/templates/pages/job_families/list.html:73
+#: app/templates/pages/job_families/list.html:144
 #: app/templates/pages/job_families/view.html:19
 msgid "職系名稱"
 msgstr "Job Family Name"
 
 #: app/templates/pages/job_families/create.html:27
-#: app/templates/pages/job_families/list.html:73
+#: app/templates/pages/job_families/list.html:74
 msgid "如 工程技術職"
 msgstr "Such as engineering and technical occupations"
 
 #: app/templates/pages/job_families/create.html:33
 #: app/templates/pages/job_families/edit.html:17
-#: app/templates/pages/job_families/list.html:76
-#: app/templates/pages/job_families/list.html:139
+#: app/templates/pages/job_families/list.html:77
+#: app/templates/pages/job_families/list.html:140
 #: app/templates/pages/job_families/view.html:15
 msgid "職系代碼"
 msgstr "Job Family Code"
@@ -8593,24 +8763,24 @@ msgstr "Such as Technical Position"
 
 #: app/templates/pages/job_families/create.html:52
 #: app/templates/pages/job_families/edit.html:40
-#: app/templates/pages/job_families/list.html:84
-#: app/templates/pages/job_families/list.html:151
+#: app/templates/pages/job_families/list.html:85
+#: app/templates/pages/job_families/list.html:152
 #: app/templates/pages/job_families/view.html:27
 msgid "職系類型"
 msgstr "Job Family Type"
 
 #: app/templates/pages/job_families/create.html:64
 #: app/templates/pages/job_families/edit.html:52
-#: app/templates/pages/job_families/list.html:95
-#: app/templates/pages/job_families/list.html:162
+#: app/templates/pages/job_families/list.html:96
+#: app/templates/pages/job_families/list.html:163
 #: app/templates/pages/job_families/view.html:37
 msgid "上層職系"
 msgstr "Parent Job Family"
 
 #: app/templates/pages/job_families/create.html:67
 #: app/templates/pages/job_families/edit.html:55
-#: app/templates/pages/job_families/list.html:98
-#: app/templates/pages/job_families/list.html:165
+#: app/templates/pages/job_families/list.html:99
+#: app/templates/pages/job_families/list.html:166
 msgid "-- 無 (根職系) --"
 msgstr "-- None (root Job Family) --"
 
@@ -8627,7 +8797,7 @@ msgstr "Detailed description of Job Family"
 #: app/templates/pages/job_families/create.html:86
 #: app/templates/pages/job_families/edit.html:72
 #: app/templates/pages/job_families/view.html:53
-#: app/templates/pages/job_titles/create.html:106
+#: app/templates/pages/job_titles/create.html:105
 #: app/templates/pages/job_titles/edit.html:92
 #: app/templates/pages/units/create.html:58
 #: app/templates/pages/units/edit.html:53
@@ -8636,12 +8806,12 @@ msgid "排序順序"
 msgstr "Sort Order"
 
 #: app/templates/pages/job_families/create.html:95
-#: app/templates/pages/job_families/list.html:117
+#: app/templates/pages/job_families/list.html:118
 msgid "建立職系"
 msgstr "Create Job Family"
 
 #: app/templates/pages/job_families/edit.html:3
-#: app/templates/pages/job_families/list.html:126
+#: app/templates/pages/job_families/list.html:127
 msgid "編輯職系"
 msgstr "Edit Job Family"
 
@@ -8673,27 +8843,27 @@ msgstr "Confirm deletion of Job Family and Job Title"
 msgid "刪除此職系"
 msgstr "Delete this Job Family"
 
-#: app/templates/pages/job_families/list.html:40
+#: app/templates/pages/job_families/list.html:41
 msgid "點擊列可編輯"
 msgstr "Click on column to edit"
 
-#: app/templates/pages/job_families/list.html:44
+#: app/templates/pages/job_families/list.html:45
 msgid "說明：職系代表職涯發展軌道。管理職 = 帶人主管；專業職 = 不帶人的專業人員。"
 msgstr ""
 "Explanation: Job Family represents career development track. Managerial ="
 " supervisor who leads people; professional = professional who does not "
 "lead people."
 
-#: app/templates/pages/job_families/list.html:52
+#: app/templates/pages/job_families/list.html:53
 #, python-format
 msgid "共 %(count)s 個職系"
 msgstr "%(count)s Job Families total"
 
-#: app/templates/pages/job_families/list.html:77
+#: app/templates/pages/job_families/list.html:78
 msgid "留空自動產生，如 MGR, TECH"
 msgstr "Leave blank to generate automatically, such as MGR, TECH"
 
-#: app/templates/pages/job_families/list.html:81
+#: app/templates/pages/job_families/list.html:82
 msgid "如 Technical"
 msgstr "Such as Technical"
 
@@ -8702,15 +8872,15 @@ msgid "職系詳情"
 msgstr "Job Family details"
 
 #: app/templates/pages/job_families/view.html:30
-#: app/templates/pages/job_levels/list.html:82
-#: app/templates/pages/job_levels/list.html:145
-#: app/templates/pages/job_levels/list.html:236
-#: app/templates/pages/job_levels/matrix.html:72
-#: app/templates/pages/job_titles/create.html:89
+#: app/templates/pages/job_levels/list.html:83
+#: app/templates/pages/job_levels/list.html:146
+#: app/templates/pages/job_levels/list.html:237
+#: app/templates/pages/job_levels/matrix.html:73
+#: app/templates/pages/job_titles/create.html:88
 #: app/templates/pages/job_titles/edit.html:76
-#: app/templates/pages/job_titles/list.html:113
-#: app/templates/pages/job_titles/list.html:190
-#: app/templates/pages/job_titles/view.html:64
+#: app/templates/pages/job_titles/list.html:114
+#: app/templates/pages/job_titles/list.html:191
+#: app/templates/pages/job_titles/view.html:56
 msgid "管理職"
 msgstr "management position"
 
@@ -8724,13 +8894,13 @@ msgstr "Root Job Family"
 
 #: app/templates/pages/job_families/view.html:61
 #: app/templates/pages/job_levels/view.html:47
-#: app/templates/pages/job_titles/view.html:76
+#: app/templates/pages/job_titles/view.html:68
 msgid "系統預設"
 msgstr "System default"
 
 #: app/templates/pages/job_families/view.html:62
 #: app/templates/pages/job_levels/view.html:48
-#: app/templates/pages/job_titles/view.html:77
+#: app/templates/pages/job_titles/view.html:69
 msgid "是 (不可刪除)"
 msgstr "Yes (cannot be deleted)"
 
@@ -8738,10 +8908,10 @@ msgstr "Yes (cannot be deleted)"
 #: app/templates/pages/job_families/view.html:62
 #: app/templates/pages/job_levels/view.html:32
 #: app/templates/pages/job_levels/view.html:48
-#: app/templates/pages/job_titles/view.html:65
-#: app/templates/pages/job_titles/view.html:77
+#: app/templates/pages/job_titles/view.html:57
+#: app/templates/pages/job_titles/view.html:69
 #: app/templates/pages/modules/view.html:51
-#: app/templates/pages/positions/view.html:68
+#: app/templates/pages/positions/view.html:69
 msgid "否"
 msgstr "No"
 
@@ -8755,7 +8925,7 @@ msgstr "Use this Job Family for Job Title"
 
 #: app/templates/pages/job_levels/create.html:3
 #: app/templates/pages/job_levels/create.html:15
-#: app/templates/pages/job_levels/list.html:203
+#: app/templates/pages/job_levels/list.html:204
 msgid "新增職等"
 msgstr "Add Job Level"
 
@@ -8765,7 +8935,7 @@ msgid "職等名稱"
 msgstr "Job Level Name"
 
 #: app/templates/pages/job_levels/create.html:27
-#: app/templates/pages/job_levels/list.html:215
+#: app/templates/pages/job_levels/list.html:216
 msgid "如 職員級"
 msgstr "Such as staff level"
 
@@ -8782,7 +8952,7 @@ msgstr ""
 "serial number, such as L100, L150"
 
 #: app/templates/pages/job_levels/create.html:47
-#: app/templates/pages/job_levels/list.html:226
+#: app/templates/pages/job_levels/list.html:227
 msgid "如 Staff Level"
 msgstr "Such as Staff Level"
 
@@ -8792,7 +8962,7 @@ msgid "職等序號"
 msgstr "Job Level Sequence"
 
 #: app/templates/pages/job_levels/create.html:55
-#: app/templates/pages/job_levels/list.html:231
+#: app/templates/pages/job_levels/list.html:232
 msgid "如 150"
 msgstr "Such as 150"
 
@@ -8804,29 +8974,29 @@ msgstr ""
 
 #: app/templates/pages/job_levels/create.html:63
 #: app/templates/pages/job_levels/edit.html:51
-#: app/templates/pages/job_levels/matrix.html:73
+#: app/templates/pages/job_levels/matrix.html:74
 #: app/templates/pages/job_levels/view.html:31
 msgid "管理職等"
 msgstr "Manage Job Levels"
 
 #: app/templates/pages/job_levels/create.html:68
 #: app/templates/pages/job_levels/edit.html:56
-#: app/templates/pages/job_levels/list.html:149
-#: app/templates/pages/job_levels/list.html:240
+#: app/templates/pages/job_levels/list.html:150
+#: app/templates/pages/job_levels/list.html:241
 msgid "是管理職等 (帶人主管)"
 msgstr "Is the manager Job Level (lead person in charge)"
 
 #: app/templates/pages/job_levels/create.html:73
 #: app/templates/pages/job_levels/edit.html:61
-#: app/templates/pages/job_levels/list.html:154
-#: app/templates/pages/job_levels/list.html:245
+#: app/templates/pages/job_levels/list.html:155
+#: app/templates/pages/job_levels/list.html:246
 #: app/templates/pages/job_levels/view.html:35
 msgid "管理幅度"
 msgstr "span of management"
 
 #: app/templates/pages/job_levels/create.html:76
-#: app/templates/pages/job_levels/list.html:155
-#: app/templates/pages/job_levels/list.html:246
+#: app/templates/pages/job_levels/list.html:156
+#: app/templates/pages/job_levels/list.html:247
 msgid "如 單一部門、全公司"
 msgstr "Such as single Department, the whole organization"
 
@@ -8843,7 +9013,7 @@ msgid "職等序號參考"
 msgstr "Job Level serial number reference"
 
 #: app/templates/pages/job_levels/create.html:99
-#: app/templates/pages/job_levels/list.html:81
+#: app/templates/pages/job_levels/list.html:82
 msgid "序號"
 msgstr "serial number"
 
@@ -8913,53 +9083,53 @@ msgstr "Delete this Job Level"
 msgid "此為系統預設職等，不可刪除。"
 msgstr "This is the system default Job Level and cannot be deleted."
 
-#: app/templates/pages/job_levels/list.html:53
-#: app/templates/pages/job_levels/matrix.html:13
-#: app/templates/pages/job_titles/list.html:27
+#: app/templates/pages/job_levels/list.html:54
+#: app/templates/pages/job_levels/matrix.html:14
+#: app/templates/pages/job_titles/list.html:28
 msgid "[職級職稱矩陣]"
 msgstr "[Rank Job Title matrix]"
 
-#: app/templates/pages/job_levels/list.html:55
-#: app/templates/pages/job_levels/matrix.html:14
-#: app/templates/pages/job_titles/list.html:29
+#: app/templates/pages/job_levels/list.html:56
+#: app/templates/pages/job_levels/matrix.html:15
+#: app/templates/pages/job_titles/list.html:30
 msgid "[職等管理]"
 msgstr "[Job Level Management]"
 
-#: app/templates/pages/job_levels/list.html:57
-#: app/templates/pages/job_levels/matrix.html:15
-#: app/templates/pages/job_titles/list.html:31
+#: app/templates/pages/job_levels/list.html:58
+#: app/templates/pages/job_levels/matrix.html:16
+#: app/templates/pages/job_titles/list.html:32
 msgid "[職系管理]"
 msgstr "[Job Family Management]"
 
-#: app/templates/pages/job_levels/list.html:59
-#: app/templates/pages/job_levels/matrix.html:16
-#: app/templates/pages/job_titles/list.html:33
+#: app/templates/pages/job_levels/list.html:60
+#: app/templates/pages/job_levels/matrix.html:17
+#: app/templates/pages/job_titles/list.html:34
 msgid "[職稱管理]"
 msgstr "[Job Title Management]"
 
-#: app/templates/pages/job_levels/list.html:61
-#: app/templates/pages/job_levels/matrix.html:17
-#: app/templates/pages/job_titles/list.html:35
+#: app/templates/pages/job_levels/list.html:62
+#: app/templates/pages/job_levels/matrix.html:18
+#: app/templates/pages/job_titles/list.html:36
 msgid "[核決權限類別]"
 msgstr "[Approval Authority category]"
 
-#: app/templates/pages/job_levels/list.html:65
+#: app/templates/pages/job_levels/list.html:66
 msgid "+ 新增職等"
 msgstr "+ Added Job Level"
 
-#: app/templates/pages/job_levels/list.html:67
+#: app/templates/pages/job_levels/list.html:68
 msgid "個職等"
 msgstr "Job Level"
 
-#: app/templates/pages/job_levels/list.html:103
+#: app/templates/pages/job_levels/list.html:104
 msgid "尚無職等資料"
 msgstr "There is no information about Job Level yet"
 
-#: app/templates/pages/job_levels/list.html:111
+#: app/templates/pages/job_levels/list.html:112
 msgid "請從左側選擇職等"
 msgstr "Please select Job Level from the left"
 
-#: app/templates/pages/job_levels/list.html:118
+#: app/templates/pages/job_levels/list.html:119
 msgid "編輯職等:"
 msgstr "Edit Job Level:"
 
@@ -8967,73 +9137,74 @@ msgstr "Edit Job Level:"
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:150
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:345
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:77
-#: app/templates/pages/job_levels/list.html:130
-#: app/templates/pages/job_levels/list.html:214
-#: app/templates/pages/job_titles/list.html:72
-#: app/templates/pages/job_titles/list.html:156
+#: app/templates/pages/job_levels/list.html:131
+#: app/templates/pages/job_levels/list.html:215
+#: app/templates/pages/job_titles/list.html:73
+#: app/templates/pages/job_titles/list.html:157
 msgid "名稱 *"
 msgstr "Name *"
 
-#: app/templates/pages/job_levels/list.html:138
-#: app/templates/pages/job_levels/list.html:229
+#: app/templates/pages/job_levels/list.html:139
+#: app/templates/pages/job_levels/list.html:230
 msgid "序號 *"
 msgstr "Serial number *"
 
-#: app/templates/pages/job_levels/list.html:141
+#: app/templates/pages/job_levels/list.html:142
 msgid "數字越大職等越高 (0-9999)"
 msgstr "The larger the number, the higher Job Level (0-9999)"
 
-#: app/templates/pages/job_levels/list.html:191 app/web/job_levels.py:289
+#: app/templates/pages/job_levels/list.html:192 app/web/job_levels.py:289
 msgid "系統預設職等不可刪除"
 msgstr "System default job levels cannot be deleted"
 
-#: app/templates/pages/job_levels/list.html:220
-#: app/templates/pages/job_titles/list.html:78
+#: app/templates/pages/job_levels/list.html:221
+#: app/templates/pages/job_titles/list.html:79
 msgid "留空自動產生"
 msgstr "Leave blank to automatically generate"
 
-#: app/templates/pages/job_levels/list.html:221
+#: app/templates/pages/job_levels/list.html:222
 msgid "選填，建議格式: L + 序號 (如 L100)"
 msgstr "Optional, recommended format: L + serial number (such as L100)"
 
-#: app/templates/pages/job_levels/list.html:232
+#: app/templates/pages/job_levels/list.html:233
 msgid "數字越大職等越高 (0-9999)，等距跳號: 0, 100, 200...900"
 msgstr ""
 "The larger the number, the higher Job Level (0-9999), equidistant jump "
 "numbers: 0, 100, 200...900"
 
-#: app/templates/pages/job_levels/matrix.html:54
+#: app/templates/pages/job_levels/matrix.html:55
 msgid "(管理職)"
 msgstr "(Management position)"
 
-#: app/templates/pages/job_levels/matrix.html:54
+#: app/templates/pages/job_levels/matrix.html:55
 msgid "- 拖拉可移動"
 msgstr "- Drag to move"
 
-#: app/templates/pages/job_levels/matrix.html:70
+#: app/templates/pages/job_levels/matrix.html:71
 msgid "圖例："
 msgstr "Legend:"
 
-#: app/templates/pages/job_levels/matrix.html:71
+#: app/templates/pages/job_levels/matrix.html:72
 msgid "一般職稱"
 msgstr "General Job Title"
 
-#: app/templates/pages/job_levels/matrix.html:77
+#: app/templates/pages/job_levels/matrix.html:78
 #, python-format
 msgid "共 %(levels)s 個職等 × %(families)s 個職系"
 msgstr "Total %(levels)s Job Level × %(families)s Job Family"
 
-#: app/templates/pages/job_levels/matrix.html:79
+#: app/templates/pages/job_levels/matrix.html:80
 msgid "提示：拖拉職稱可以移動到不同的職等或職系"
 msgstr "Tip: Drag Job Title to move to a different Job Level or Job Family"
 
-#: app/templates/pages/job_levels/matrix.html:91
+#: app/templates/pages/job_levels/matrix.html:92
 msgid "尚無資料。請先建立"
 msgstr "No information yet. Please create first"
 
-#: app/templates/pages/job_levels/matrix.html:94
-#: app/templates/pages/positions/list.html:18
-#: app/templates/pages/positions/view.html:27
+#: app/templates/pages/job_levels/matrix.html:95
+#: app/templates/pages/positions/list.html:19
+#: app/templates/pages/positions/view.html:28
+#: app/templates/pages/users/list.html:43
 msgid "職稱"
 msgstr "Job Title"
 
@@ -9047,7 +9218,7 @@ msgstr "%(name)s - Job Level Details"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:116
 #: app/templates/pages/job_levels/view.html:32
 #: app/templates/pages/modules/view.html:51
-#: app/templates/pages/positions/list.html:60
+#: app/templates/pages/positions/list.html:61
 msgid "是"
 msgstr "Yes"
 
@@ -9068,8 +9239,8 @@ msgstr "Use Job Title of this Job Level"
 
 #: app/templates/pages/job_titles/create.html:3
 #: app/templates/pages/job_titles/create.html:15
-#: app/templates/pages/job_titles/list.html:39
-#: app/templates/pages/job_titles/list.html:59
+#: app/templates/pages/job_titles/list.html:40
+#: app/templates/pages/job_titles/list.html:60
 msgid "新增職稱"
 msgstr "Add Job Title"
 
@@ -9098,8 +9269,8 @@ msgstr "Such as Senior Engineer"
 
 #: app/templates/pages/job_titles/create.html:52
 #: app/templates/pages/job_titles/edit.html:40
-#: app/templates/pages/job_titles/list.html:87
-#: app/templates/pages/job_titles/list.html:164
+#: app/templates/pages/job_titles/list.html:88
+#: app/templates/pages/job_titles/list.html:165
 #: app/templates/pages/job_titles/view.html:27
 msgid "簡稱"
 msgstr "abbreviation"
@@ -9110,8 +9281,8 @@ msgstr "Such as senior engineer"
 
 #: app/templates/pages/job_titles/create.html:60
 #: app/templates/pages/job_titles/edit.html:48
-#: app/templates/pages/job_titles/list.html:91
-#: app/templates/pages/job_titles/list.html:168
+#: app/templates/pages/job_titles/list.html:92
+#: app/templates/pages/job_titles/list.html:169
 msgid "職等 *"
 msgstr "Job Level*"
 
@@ -9120,44 +9291,35 @@ msgstr "Job Level*"
 msgid "-- 請選擇職等 --"
 msgstr "-- Please select Job Level --"
 
-#: app/templates/pages/job_titles/create.html:68
-msgid "簽核:"
-msgstr "Sign off:"
-
-#: app/templates/pages/job_titles/create.html:68
-#: app/templates/pages/job_titles/view.html:40
-msgid "無上限"
-msgstr "No limit"
-
-#: app/templates/pages/job_titles/create.html:75
+#: app/templates/pages/job_titles/create.html:74
 #: app/templates/pages/job_titles/edit.html:62
-#: app/templates/pages/job_titles/list.html:102
-#: app/templates/pages/job_titles/list.html:179
+#: app/templates/pages/job_titles/list.html:103
+#: app/templates/pages/job_titles/list.html:180
 msgid "職系 *"
 msgstr "Job Family*"
 
-#: app/templates/pages/job_titles/create.html:78
+#: app/templates/pages/job_titles/create.html:77
 #: app/templates/pages/job_titles/edit.html:65
 msgid "-- 請選擇職系 --"
 msgstr "-- Please select Job Family --"
 
-#: app/templates/pages/job_titles/create.html:94
+#: app/templates/pages/job_titles/create.html:93
 #: app/templates/pages/job_titles/edit.html:81
 msgid "是管理職 (帶人)"
 msgstr "I am in a management position (leading people)"
 
-#: app/templates/pages/job_titles/create.html:102
-#: app/templates/pages/job_titles/list.html:124
+#: app/templates/pages/job_titles/create.html:101
+#: app/templates/pages/job_titles/list.html:125
 msgid "職責說明"
 msgstr "Responsibilities"
 
-#: app/templates/pages/job_titles/create.html:115
-#: app/templates/pages/job_titles/list.html:130
+#: app/templates/pages/job_titles/create.html:114
+#: app/templates/pages/job_titles/list.html:131
 msgid "建立職稱"
 msgstr "Create Job Title"
 
 #: app/templates/pages/job_titles/edit.html:3
-#: app/templates/pages/job_titles/list.html:139
+#: app/templates/pages/job_titles/list.html:140
 msgid "編輯職稱"
 msgstr "Edit Job Title"
 
@@ -9170,35 +9332,35 @@ msgstr "Edit Job Title: %(name)s"
 msgid "刪除此職稱"
 msgstr "Delete this Job Title"
 
-#: app/templates/pages/job_titles/list.html:40
+#: app/templates/pages/job_titles/list.html:41
 msgid "點擊職稱列可編輯"
 msgstr "Click on the Job Title column to edit it"
 
-#: app/templates/pages/job_titles/list.html:44
+#: app/templates/pages/job_titles/list.html:45
 msgid "說明：職稱 = 職等 + 職系 的具體組合。依職系分組顯示。"
 msgstr ""
 "Explanation: Job Title = the specific combination of Job Level + Job "
 "Family. Displayed in groups according to Job Family."
 
-#: app/templates/pages/job_titles/list.html:52
+#: app/templates/pages/job_titles/list.html:53
 #, python-format
 msgid "共 %(count)s 個職稱"
 msgstr "%(count)s Job Titles total"
 
-#: app/templates/pages/job_titles/list.html:73
+#: app/templates/pages/job_titles/list.html:74
 msgid "如 經理"
 msgstr "as manager"
 
-#: app/templates/pages/job_titles/list.html:79
+#: app/templates/pages/job_titles/list.html:80
 msgid "選填，如 MGR, SR_ENG"
 msgstr "Optional, such as MGR, SR_ENG"
 
-#: app/templates/pages/job_titles/list.html:84
+#: app/templates/pages/job_titles/list.html:85
 msgid "如 Manager"
 msgstr "Such as Manager"
 
-#: app/templates/pages/job_titles/list.html:115
-#: app/templates/pages/job_titles/list.html:192
+#: app/templates/pages/job_titles/list.html:116
+#: app/templates/pages/job_titles/list.html:193
 msgid "帶人主管"
 msgstr "Leading people to be in charge"
 
@@ -9210,15 +9372,11 @@ msgstr "Job Title details"
 msgid "職稱名稱"
 msgstr "Job Title Name"
 
-#: app/templates/pages/job_titles/view.html:39
-msgid "簽核上限:"
-msgstr "Sign-off limit:"
-
-#: app/templates/pages/job_titles/view.html:65
+#: app/templates/pages/job_titles/view.html:57
 msgid "是 (帶人)"
 msgstr "Yes (bring someone)"
 
-#: app/templates/pages/job_titles/view.html:82
+#: app/templates/pages/job_titles/view.html:74
 msgid "擁有此職稱的企業成員"
 msgstr "Employee that owns this Job Title"
 
@@ -9622,9 +9780,9 @@ msgstr "Menu authority level"
 
 #: app/templates/pages/modules/create.html:53
 #: app/templates/pages/profile/view.html:22
-#: app/templates/pages/users/edit.html:91
-#: app/templates/pages/users/edit.html:108
-#: app/templates/pages/users/view.html:42
+#: app/templates/pages/users/edit.html:92
+#: app/templates/pages/users/edit.html:109
+#: app/templates/pages/users/view.html:43
 msgid "一般用戶"
 msgstr "Regular User"
 
@@ -10430,7 +10588,7 @@ msgstr "Contract name"
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:153
 #: app/templates/pages/organizations/list.html:289
 #: app/templates/pages/organizations/list.html:368
-#: app/templates/pages/users/view.html:86
+#: app/templates/pages/users/view.html:113
 msgid "開始日期"
 msgstr "Start Date"
 
@@ -10700,10 +10858,10 @@ msgstr ""
 "organization management."
 
 #: app/templates/pages/platform_help/org_admin.html:138
-#: app/templates/pages/positions/create.html:74
-#: app/templates/pages/positions/edit.html:70
-#: app/templates/pages/positions/list.html:21
-#: app/templates/pages/positions/view.html:67
+#: app/templates/pages/positions/create.html:75
+#: app/templates/pages/positions/edit.html:71
+#: app/templates/pages/positions/list.html:22
+#: app/templates/pages/positions/view.html:68
 msgid "部門主管"
 msgstr "Department Manager"
 
@@ -11272,172 +11430,159 @@ msgstr "Applicable: %(audience)s"
 msgid "此頁面（%(menu_code)s）尚未提供說明文件。"
 msgstr "Documentation is not yet available for this page (%(menu_code)s)."
 
-#: app/templates/pages/positions/create.html:3
+#: app/templates/pages/positions/create.html:4
 msgid "新增職位"
 msgstr "Add Position"
 
-#: app/templates/pages/positions/create.html:7
+#: app/templates/pages/positions/create.html:8
 msgid "&lt; 返回列表"
 msgstr "&lt; Return to list"
 
-#: app/templates/pages/positions/create.html:11
+#: app/templates/pages/positions/create.html:12
 msgid "新增職位指派"
 msgstr "Add Position Assignment"
 
-#: app/templates/pages/positions/create.html:18
+#: app/templates/pages/positions/create.html:19
 msgid "企業成員 *"
 msgstr "Employee*"
 
-#: app/templates/pages/positions/create.html:32
-#: app/templates/pages/positions/edit.html:28
+#: app/templates/pages/positions/create.html:33
+#: app/templates/pages/positions/edit.html:29
 msgid "職稱 *"
 msgstr "Job Title *"
 
-#: app/templates/pages/positions/create.html:35
-#: app/templates/pages/positions/edit.html:31
+#: app/templates/pages/positions/create.html:36
+#: app/templates/pages/positions/edit.html:32
 msgid "-- 請選擇職稱 --"
 msgstr "-- Please select Job Title --"
 
-#: app/templates/pages/positions/create.html:47
-#: app/templates/pages/positions/edit.html:43
+#: app/templates/pages/positions/create.html:48
+#: app/templates/pages/positions/edit.html:44
 msgid "部門 *"
 msgstr "Department *"
 
-#: app/templates/pages/positions/create.html:50
-#: app/templates/pages/positions/edit.html:46
+#: app/templates/pages/positions/create.html:51
+#: app/templates/pages/positions/edit.html:47
 msgid "-- 請選擇部門 --"
 msgstr "-- Please select Department --"
 
-#: app/templates/pages/positions/create.html:61
-#: app/templates/pages/positions/edit.html:57
+#: app/templates/pages/positions/create.html:62
+#: app/templates/pages/positions/edit.html:58
 msgid "職位類型 *"
 msgstr "Position Type *"
 
-#: app/templates/pages/positions/create.html:79
-#: app/templates/pages/positions/edit.html:75
+#: app/templates/pages/positions/create.html:80
+#: app/templates/pages/positions/edit.html:76
 msgid "此企業成員為該部門主管"
 msgstr "This Employee is the supervisor of Department"
 
-#: app/templates/pages/positions/create.html:84
-#: app/templates/pages/positions/edit.html:80
-#: app/templates/pages/positions/list.html:22
-#: app/templates/pages/positions/view.html:71
+#: app/templates/pages/positions/create.html:85
+#: app/templates/pages/positions/edit.html:81
+#: app/templates/pages/positions/list.html:23
+#: app/templates/pages/positions/view.html:72
 msgid "直屬主管"
 msgstr "Direct Manager"
 
-#: app/templates/pages/positions/create.html:87
-#: app/templates/pages/positions/edit.html:83
+#: app/templates/pages/positions/create.html:88
+#: app/templates/pages/positions/edit.html:84
 msgid "-- 無直屬主管 --"
 msgstr "-- No direct supervisor --"
 
-#: app/templates/pages/positions/create.html:95
+#: app/templates/pages/positions/create.html:96
 msgid "簽核流程會送到直屬主管審核"
 msgstr "The sign-off process will be sent to the immediate supervisor for review"
 
-#: app/templates/pages/positions/create.html:99
-#: app/templates/pages/positions/edit.html:94
-#: app/templates/pages/positions/view.html:84
+#: app/templates/pages/positions/create.html:100
+#: app/templates/pages/positions/edit.html:95
+#: app/templates/pages/positions/view.html:85
 msgid "生效日期"
 msgstr "Effective Date"
 
-#: app/templates/pages/positions/create.html:103
+#: app/templates/pages/positions/create.html:104
 msgid "未填則為今日生效"
 msgstr "If not filled in, it will take effect today"
 
-#: app/templates/pages/positions/create.html:107
-#: app/templates/pages/positions/edit.html:101
-#: app/templates/pages/positions/view.html:88
+#: app/templates/pages/positions/create.html:108
+#: app/templates/pages/positions/edit.html:102
+#: app/templates/pages/positions/view.html:89
 msgid "失效日期"
 msgstr "Expiration Date"
 
-#: app/templates/pages/positions/create.html:111
+#: app/templates/pages/positions/create.html:112
 msgid "未填則為長期有效"
 msgstr "If not filled in, it will be valid for a long time."
 
-#: app/templates/pages/positions/create.html:122
+#: app/templates/pages/positions/create.html:123
 msgid "建立職位"
 msgstr "Create Position"
 
-#: app/templates/pages/positions/edit.html:3
-#: app/templates/pages/positions/edit.html:6
+#: app/templates/pages/positions/edit.html:4
+#: app/templates/pages/positions/edit.html:7
 msgid "編輯職位"
 msgstr "Edit Position"
 
-#: app/templates/pages/positions/edit.html:139
+#: app/templates/pages/positions/edit.html:140
 msgid "刪除此職位"
 msgstr "Delete This Position"
 
-#: app/templates/pages/positions/list.html:3
-#: app/templates/pages/positions/list.html:6
+#: app/templates/pages/positions/list.html:4
+#: app/templates/pages/positions/list.html:7
 msgid "職位管理"
 msgstr "Position management"
 
-#: app/templates/pages/positions/list.html:9
+#: app/templates/pages/positions/list.html:10
+#: app/templates/pages/users/view.html:101
 msgid "[新增職位]"
 msgstr "[New position]"
 
-#: app/templates/pages/positions/list.html:12
+#: app/templates/pages/positions/list.html:13
 #, python-format
 msgid "共 %(positions)s 筆職位指派"
 msgstr "%(positions)s Position assignments total"
 
-#: app/templates/pages/positions/list.html:23
+#: app/templates/pages/positions/list.html:24
 msgid "生效日"
 msgstr "Effective date"
 
-#: app/templates/pages/positions/list.html:53
-msgid "主要"
-msgstr "Primary"
-
-#: app/templates/pages/positions/list.html:54
-#: app/templates/pages/positions/view.html:59
-msgid "兼任"
-msgstr "Concurrent"
-
-#: app/templates/pages/positions/list.html:56
-#: app/templates/pages/positions/view.html:61
-msgid "臨時"
-msgstr "Temporary"
-
-#: app/templates/pages/positions/list.html:77
+#: app/templates/pages/positions/list.html:78
 msgid "尚無職位指派"
 msgstr "No job assignments yet"
 
-#: app/templates/pages/positions/view.html:3
-#: app/templates/pages/positions/view.html:6
+#: app/templates/pages/positions/view.html:4
+#: app/templates/pages/positions/view.html:7
 msgid "職位詳情"
 msgstr "Job details"
 
-#: app/templates/pages/positions/view.html:35
+#: app/templates/pages/positions/view.html:36
 #, python-format
 msgid "職等: %(name)s"
 msgstr "Job Level: %(name)s"
 
-#: app/templates/pages/positions/view.html:56
+#: app/templates/pages/positions/view.html:57
 msgid "職位類型"
 msgstr "Position Type"
 
-#: app/templates/pages/positions/view.html:58
+#: app/templates/pages/positions/view.html:59
 msgid "主要職位"
 msgstr "Main positions"
 
-#: app/templates/pages/positions/view.html:68
+#: app/templates/pages/positions/view.html:69
 msgid "是 (此企業成員為該部門主管)"
 msgstr "Yes (this Employee is the supervisor of this Department)"
 
-#: app/templates/pages/positions/view.html:77
+#: app/templates/pages/positions/view.html:78
 msgid "(簽核流程會送到此主管)"
 msgstr "(The approval process will be sent to this supervisor)"
 
-#: app/templates/pages/positions/view.html:79
+#: app/templates/pages/positions/view.html:80
 msgid "未指定"
 msgstr "unspecified"
 
-#: app/templates/pages/positions/view.html:89
+#: app/templates/pages/positions/view.html:90
 msgid "無 (長期有效)"
 msgstr "None (valid for a long time)"
 
-#: app/templates/pages/positions/view.html:100
+#: app/templates/pages/positions/view.html:101
 msgid "指派者"
 msgstr "Assigner"
 
@@ -11453,7 +11598,7 @@ msgstr "&lt; Return to personal information"
 
 #: app/templates/pages/profile/edit.html:28
 #: app/templates/pages/profile/view.html:14
-#: app/templates/pages/users/view.html:34
+#: app/templates/pages/users/view.html:35
 msgid "帳號 (Email)"
 msgstr "Account (Email)"
 
@@ -12294,180 +12439,180 @@ msgstr "Layer %(level)s"
 msgid "子單位"
 msgstr "subunit"
 
-#: app/templates/pages/users/create.html:3
-#: app/templates/pages/users/create.html:18
+#: app/templates/pages/users/create.html:4
+#: app/templates/pages/users/create.html:19
 msgid "新增用戶"
 msgstr "Add new user"
 
-#: app/templates/pages/users/create.html:14
+#: app/templates/pages/users/create.html:15
 msgid "返回用戶列表"
 msgstr "Return to user list"
 
-#: app/templates/pages/users/create.html:22
+#: app/templates/pages/users/create.html:23
 msgid "建立用戶"
 msgstr "Create User"
 
-#: app/templates/pages/users/create.html:47
+#: app/templates/pages/users/create.html:48
 msgid "文件與流程使用的正式姓名"
 msgstr "Formal name used on documents and procedures"
 
-#: app/templates/pages/users/create.html:69
+#: app/templates/pages/users/create.html:70
 msgid "帳號與 Email 的名稱來源，非 CJK 姓名可直接輸入"
 msgstr ""
 "The source of the account number and Email, non-CJK names can be entered "
 "directly"
 
-#: app/templates/pages/users/create.html:107
+#: app/templates/pages/users/create.html:108
 msgid "留空將自動產生強化密碼（後續透過通知信件寄送）"
 msgstr ""
 "Leave this blank and a strengthened password will be automatically "
 "generated (sent via notification email later)"
 
-#: app/templates/pages/users/create.html:150
-#: app/templates/pages/users/edit.html:169
-#: app/templates/pages/users/view.html:61
+#: app/templates/pages/users/create.html:151
+#: app/templates/pages/users/edit.html:170
+#: app/templates/pages/users/view.html:62
 msgid "組織資訊"
 msgstr "Organization information"
 
-#: app/templates/pages/users/create.html:159
+#: app/templates/pages/users/create.html:160
 msgid "點擊選擇部門"
 msgstr "Click to select Department"
 
-#: app/templates/pages/users/create.html:165
+#: app/templates/pages/users/create.html:166
 msgid "選擇部門"
 msgstr "Select Department"
 
-#: app/templates/pages/users/create.html:173
+#: app/templates/pages/users/create.html:174
 msgid "選擇用戶所屬部門（點擊展開組織樹）"
 msgstr ""
 "Select Department to which the user belongs (click to expand the "
 "organization tree)"
 
-#: app/templates/pages/users/create.html:187
+#: app/templates/pages/users/create.html:188
 msgid "預設遮罩處理本國姓名，避免螢幕旁的窺視者識別身份或推測登入帳號"
 msgstr ""
 "The default mask handles national names to prevent peepers next to the "
 "screen from identifying the identity or guessing the login account"
 
-#: app/templates/pages/users/create.html:200
-#: app/templates/pages/users/create.html:217
-#: app/templates/pages/users/edit.html:263
+#: app/templates/pages/users/create.html:201
+#: app/templates/pages/users/create.html:218
+#: app/templates/pages/users/edit.html:264
 msgid "留空則跟隨企業設定"
 msgstr "Leave blank to follow Organization setting"
 
-#: app/templates/pages/users/create.html:227
-#: app/templates/pages/users/edit.html:297
+#: app/templates/pages/users/create.html:228
+#: app/templates/pages/users/edit.html:298
 msgid "留空則使用帳號 Email"
 msgstr "Leave blank to use account number Email"
 
-#: app/templates/pages/users/create.html:228
+#: app/templates/pages/users/create.html:229
 msgid "系統通知發送地址，留空自動使用帳號 Email"
 msgstr ""
 "System notification sending address, leave it blank to automatically use "
 "the account number Email"
 
-#: app/templates/pages/users/create.html:232
-#: app/templates/pages/users/import.html:150
-#: app/templates/pages/users/view.html:131
+#: app/templates/pages/users/create.html:233
+#: app/templates/pages/users/import.html:151
+#: app/templates/pages/users/view.html:158
 msgid "備用 Email 2"
 msgstr "Backup Email 2"
 
-#: app/templates/pages/users/create.html:236
-#: app/templates/pages/users/edit.html:315
-#: app/templates/pages/users/import.html:155
-#: app/templates/pages/users/view.html:132
+#: app/templates/pages/users/create.html:237
+#: app/templates/pages/users/edit.html:316
+#: app/templates/pages/users/import.html:156
+#: app/templates/pages/users/view.html:159
 msgid "手機號碼 1"
 msgstr "Mobile number 1"
 
-#: app/templates/pages/users/create.html:240
-#: app/templates/pages/users/edit.html:325
-#: app/templates/pages/users/import.html:160
-#: app/templates/pages/users/view.html:133
+#: app/templates/pages/users/create.html:241
+#: app/templates/pages/users/edit.html:326
+#: app/templates/pages/users/import.html:161
+#: app/templates/pages/users/view.html:160
 msgid "手機號碼 2"
 msgstr "Mobile number 2"
 
-#: app/templates/pages/users/edit.html:3
+#: app/templates/pages/users/edit.html:4
 #, python-format
 msgid "編輯用戶 - %(name)s"
 msgstr "Edit User - %(name)s"
 
-#: app/templates/pages/users/edit.html:12
+#: app/templates/pages/users/edit.html:13
 msgid "&lt; 返回首頁"
 msgstr "&lt; Return to home page"
 
-#: app/templates/pages/users/edit.html:19
-#: app/templates/pages/users/import.html:69
-#: app/templates/pages/users/view.html:12
+#: app/templates/pages/users/edit.html:20
+#: app/templates/pages/users/import.html:70
+#: app/templates/pages/users/view.html:13
 msgid "&lt; 返回用戶列表"
 msgstr "&lt; Return to user list"
 
-#: app/templates/pages/users/edit.html:22
+#: app/templates/pages/users/edit.html:23
 msgid "編輯用戶"
 msgstr "Edit user"
 
-#: app/templates/pages/users/edit.html:38
+#: app/templates/pages/users/edit.html:39
 msgid "企業管理員已關閉「允許用戶修改個人資料」功能，目前您只能檢視資料。如需修改請聯繫管理員。"
 msgstr ""
 "Organization Admin has turned off the \"Allow users to modify personal "
 "information\" function. Currently you can only view the information. If "
 "you need to modify it, please contact the administrator."
 
-#: app/templates/pages/users/edit.html:51
+#: app/templates/pages/users/edit.html:52
 msgid "帳號不可變更"
 msgstr "Account cannot be changed"
 
-#: app/templates/pages/users/edit.html:176
+#: app/templates/pages/users/edit.html:177
 msgid "同一企業內需唯一"
 msgstr "The same Organization internal demand is the only one"
 
-#: app/templates/pages/users/edit.html:187
+#: app/templates/pages/users/edit.html:188
 msgid "-- 未分配 --"
 msgstr "-- not assigned --"
 
-#: app/templates/pages/users/edit.html:200
+#: app/templates/pages/users/edit.html:201
 msgid "班表"
 msgstr "Schedule"
 
-#: app/templates/pages/users/edit.html:204
+#: app/templates/pages/users/edit.html:205
 msgid "-- 使用企業預設 --"
 msgstr "-- Use Organization preset --"
 
-#: app/templates/pages/users/edit.html:211
+#: app/templates/pages/users/edit.html:212
 msgid "用於計算工作時間"
 msgstr "Used to calculate working hours"
 
-#: app/templates/pages/users/edit.html:226
+#: app/templates/pages/users/edit.html:227
 msgid "遮罩處理的姓名，避免螢幕旁的窺視者識別身份或推測登入帳號"
 msgstr ""
 "Masked names to prevent prying eyes at the screen from identifying the "
 "identity or guessing the login account"
 
-#: app/templates/pages/users/edit.html:283
+#: app/templates/pages/users/edit.html:284
 msgid "留空則使用企業預設時區"
 msgstr "Leave blank to use Organization default time zone"
 
-#: app/templates/pages/users/edit.html:298
+#: app/templates/pages/users/edit.html:299
 msgid "系統通知發送地址"
 msgstr "System notification sending address"
 
-#: app/templates/pages/users/edit.html:351
+#: app/templates/pages/users/edit.html:352
 msgid "刪除此用戶將無法復原，請謹慎操作。"
 msgstr "Deleting this user cannot be restored, so please proceed with caution."
 
-#: app/templates/pages/users/edit.html:354
+#: app/templates/pages/users/edit.html:355
 msgid "刪除用戶"
 msgstr "Delete User"
 
-#: app/templates/pages/users/import.html:3
-#: app/templates/pages/users/import.html:73
+#: app/templates/pages/users/import.html:4
+#: app/templates/pages/users/import.html:74
 msgid "匯入用戶"
 msgstr "Import users"
 
-#: app/templates/pages/users/import.html:88
+#: app/templates/pages/users/import.html:89
 msgid "CSV 欄位說明"
 msgstr "CSV field description"
 
-#: app/templates/pages/users/import.html:92
+#: app/templates/pages/users/import.html:93
 msgid "欄位名稱"
 msgstr "Field name"
 
@@ -12476,141 +12621,153 @@ msgstr "Field name"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:468
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:267
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:322
-#: app/templates/pages/users/import.html:94
+#: app/templates/pages/users/import.html:95
 msgid "必填"
 msgstr "Required"
 
-#: app/templates/pages/users/import.html:100
+#: app/templates/pages/users/import.html:101
 msgid "帳號 (不含 @domain)"
 msgstr "Account (excluding @domain)"
 
-#: app/templates/pages/users/import.html:105
+#: app/templates/pages/users/import.html:106
 msgid "密碼 (至少 8 字元)"
 msgstr "Password (at least 8 characters)"
 
-#: app/templates/pages/users/import.html:110
+#: app/templates/pages/users/import.html:111
 msgid "顯示姓名"
 msgstr "Display Name"
 
-#: app/templates/pages/users/import.html:115
+#: app/templates/pages/users/import.html:116
 msgid "角色: user / org_admin"
 msgstr "Role: user/org_admin"
 
-#: app/templates/pages/users/import.html:120
+#: app/templates/pages/users/import.html:121
 msgid "用戶編號 (組織內唯一)"
 msgstr "User number (unique within the organization)"
 
-#: app/templates/pages/users/import.html:145
-#: app/templates/pages/users/view.html:130
+#: app/templates/pages/users/import.html:146
+#: app/templates/pages/users/view.html:157
 msgid "備用 Email 1"
 msgstr "Backup Email 1"
 
-#: app/templates/pages/users/import.html:166
+#: app/templates/pages/users/import.html:167
 msgid "[下載 CSV 範本]"
 msgstr "[Download CSV template]"
 
-#: app/templates/pages/users/import.html:174
+#: app/templates/pages/users/import.html:175
 msgid "選擇 CSV 檔案上傳"
 msgstr "Select CSV file to upload"
 
-#: app/templates/pages/users/import.html:177
+#: app/templates/pages/users/import.html:178
 msgid "支援 UTF-8 編碼的 CSV 檔案"
 msgstr "Supports UTF-8 encoded CSV files"
 
-#: app/templates/pages/users/import.html:182
+#: app/templates/pages/users/import.html:183
 msgid "開始匯入"
 msgstr "Start importing"
 
-#: app/templates/pages/users/list.html:3 app/templates/pages/users/list.html:8
+#: app/templates/pages/users/list.html:4 app/templates/pages/users/list.html:9
 msgid "企業成員管理"
 msgstr "Employee Management"
 
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:13
-#: app/templates/pages/users/list.html:12
+#: app/templates/pages/users/list.html:13
 msgid "新增帳號"
 msgstr "Add Account"
 
-#: app/templates/pages/users/list.html:14
+#: app/templates/pages/users/list.html:15
 msgid "匯入CSV"
 msgstr "Import CSV"
 
-#: app/templates/pages/users/list.html:15
+#: app/templates/pages/users/list.html:16
 msgid "下載範本"
 msgstr "Download Template"
 
-#: app/templates/pages/users/list.html:30
+#: app/templates/pages/users/list.html:31
 msgid "此頁面管理一般用戶帳號。"
 msgstr "This page manages regular user accounts."
 
-#: app/templates/pages/users/list.html:31
+#: app/templates/pages/users/list.html:32
 msgid "企業管理員請至「企業管理員帳號」管理，外部廠商請至「外部廠商帳號」管理。"
 msgstr ""
 "Organization admins should be managed in \"Organization Admin Accounts\","
 " external members in \"External Member Accounts\"."
 
-#: app/templates/pages/users/list.html:91
+#: app/templates/pages/users/list.html:101
 #, python-format
 msgid "第 %(page)s / %(pages)s 頁 （共 %(total)s 筆）"
 msgstr "Page %(page)s / %(pages)s (%(total)s records)"
 
-#: app/templates/pages/users/list.html:99
+#: app/templates/pages/users/list.html:109
 msgid "尚無一般用戶帳號。"
 msgstr "No user accounts yet."
 
-#: app/templates/pages/users/list.html:99
+#: app/templates/pages/users/list.html:109
 msgid "建立第一位用戶"
 msgstr "Create the first user"
 
-#: app/templates/pages/users/list.html:105
+#: app/templates/pages/users/list.html:115
 msgid "此頁面只顯示一般用戶帳號"
 msgstr "This page only shows regular user accounts"
 
-#: app/templates/pages/users/list.html:106
+#: app/templates/pages/users/list.html:116
 msgid "企業管理員帳號請至「帳號管理 > 企業管理員帳號」管理"
 msgstr ""
 "Organization admin accounts should be managed in \"Account Management > "
 "Organization Admin Accounts\""
 
-#: app/templates/pages/users/list.html:107
+#: app/templates/pages/users/list.html:117
 msgid "外部廠商帳號請至「帳號管理 > 外部廠商帳號」管理"
 msgstr ""
 "External member accounts should be managed in \"Account Management > "
 "External Member Accounts\""
 
-#: app/templates/pages/users/list.html:108
+#: app/templates/pages/users/list.html:118
 msgid "停用的用戶無法登入系統"
 msgstr "Disabled users cannot log in to the system"
 
-#: app/templates/pages/users/view.html:3
+#: app/templates/pages/users/view.html:4
 #, python-format
 msgid "%(name)s - 用戶詳情"
 msgstr "%(name)s - User Details"
 
-#: app/templates/pages/users/view.html:68
+#: app/templates/pages/users/view.html:69
 msgid "歸屬部門"
 msgstr "Assigned Department"
 
 #: app/templates/pages/users/view.html:79
+msgid "職位"
+msgstr "Position"
+
+#: app/templates/pages/users/view.html:95
+msgid "長期"
+msgstr "Long-term"
+
+#: app/templates/pages/users/view.html:99
+msgid "尚未指派"
+msgstr "Not assigned"
+
+#: app/templates/pages/users/view.html:106
 msgid "跨部門支援"
 msgstr "Cross-Department support"
 
-#: app/templates/pages/users/view.html:84
+#: app/templates/pages/users/view.html:111
 msgid "支援部門"
 msgstr "Supporting Department"
 
-#: app/templates/pages/users/view.html:108
+#: app/templates/pages/users/view.html:135
 msgid "無跨部門支援關係"
 msgstr "No cross-Department support relationship"
 
-#: app/templates/pages/users/view.html:144
+#: app/templates/pages/users/view.html:171
 msgid "參與社團"
 msgstr "Participate in clubs"
 
-#: app/templates/pages/users/view.html:149
+#: app/templates/pages/users/view.html:176
 msgid "社團名稱"
 msgstr "Club Name"
 
-#: app/templates/pages/users/view.html:173
+#: app/templates/pages/users/view.html:200
 msgid "尚未參加任何社團"
 msgstr "Not yet joined any club"
 
@@ -12707,15 +12864,15 @@ msgstr "Effective start date is required"
 msgid "生效結束日期為必填"
 msgstr "Effective end date is required"
 
-#: app/web/delegations.py:95 app/web/delegations.py:193
+#: app/web/delegations.py:95 app/web/delegations.py:186
 msgid "生效開始日期格式錯誤"
 msgstr "Invalid effective start date format"
 
-#: app/web/delegations.py:101 app/web/delegations.py:199
+#: app/web/delegations.py:101 app/web/delegations.py:192
 msgid "生效結束日期格式錯誤"
 msgstr "Invalid effective end date format"
 
-#: app/web/delegations.py:104 app/web/delegations.py:202
+#: app/web/delegations.py:104 app/web/delegations.py:195
 msgid "生效開始日期不能晚於結束日期"
 msgstr "Effective start date cannot be later than the end date"
 
@@ -12724,24 +12881,24 @@ msgstr "Effective start date cannot be later than the end date"
 msgid "簽核金額上限不可為負數"
 msgstr "Approval amount limit cannot be negative"
 
-#: app/web/delegations.py:113 app/web/delegations.py:209
+#: app/web/delegations.py:113 app/web/delegations.py:202
 #: app/web/job_levels.py:119 app/web/job_levels.py:236
 msgid "簽核金額上限格式錯誤"
 msgstr "Invalid approval amount limit format"
 
-#: app/web/delegations.py:144
+#: app/web/delegations.py:137
 msgid "已建立代理授權"
 msgstr "Delegation created"
 
-#: app/web/delegations.py:233
+#: app/web/delegations.py:219
 msgid "已更新代理授權"
 msgstr "Delegation updated"
 
-#: app/web/delegations.py:263
+#: app/web/delegations.py:249
 msgid "已撤銷代理授權"
 msgstr "Delegation revoked"
 
-#: app/web/delegations.py:283
+#: app/web/delegations.py:269
 msgid "已刪除代理授權"
 msgstr "Delegation deleted"
 
@@ -12769,133 +12926,128 @@ msgstr "System has not been initialized"
 msgid "Portal session 已清除"
 msgstr "Portal session cleared"
 
-#: app/web/external_users.py:189
+#: app/web/external_users.py:190
 msgid "尚未設定「外部廠商」預設編號規則，請先到「用戶編號規則」頁面設定。"
 msgstr ""
 "No default numbering rule for \"External Vendors\" has been set. Please "
 "configure it on the \"User Numbering Rules\" page first."
 
-#: app/web/external_users.py:218
+#: app/web/external_users.py:219
 msgid "姓名、Email、密碼為必填"
 msgstr "Name, email and password are required"
 
-#: app/web/external_users.py:220 app/web/external_users.py:416
+#: app/web/external_users.py:221 app/web/external_users.py:418
 msgid "請輸入有效的 Email 格式"
 msgstr "Please enter a valid email format"
 
-#: app/web/external_users.py:225
+#: app/web/external_users.py:226
 msgid "必須選擇歸屬群組"
 msgstr "A home group must be selected"
 
-#: app/web/external_users.py:237
-#, python-format
-msgid "Email %(email)s 已存在"
-msgstr "Email %(email)s already exists"
-
-#: app/web/external_users.py:247
+#: app/web/external_users.py:249
 #, python-format
 msgid "找不到群組 %(code)s"
 msgstr "Group %(code)s not found"
 
-#: app/web/external_users.py:268
+#: app/web/external_users.py:270
 msgid "找不到外部廠商預設編號規則，請先設定"
 msgstr ""
 "Default numbering rule for external vendors not found. Please configure "
 "it first"
 
-#: app/web/external_users.py:279
+#: app/web/external_users.py:281
 #, python-format
 msgid "產生編號失敗: %(error)s"
 msgstr "Failed to generate number: %(error)s"
 
-#: app/web/external_users.py:325
+#: app/web/external_users.py:327
 #, python-format
 msgid "已建立外部廠商 %(name)s（編號：%(employee_id)s）"
 msgstr "External vendor %(name)s created (ID: %(employee_id)s)"
 
-#: app/web/external_users.py:349 app/web/external_users.py:381
-#: app/web/external_users.py:482 app/web/external_users.py:543
-#: app/web/external_users.py:596 app/web/external_users.py:645
-#: app/web/external_users.py:683
+#: app/web/external_users.py:351 app/web/external_users.py:383
+#: app/web/external_users.py:484 app/web/external_users.py:545
+#: app/web/external_users.py:598 app/web/external_users.py:647
+#: app/web/external_users.py:685
 msgid "此帳號不是外部廠商"
 msgstr "This account is not an external vendor"
 
-#: app/web/external_users.py:414 app/web/sys_accounts.py:106
+#: app/web/external_users.py:416 app/web/sys_accounts.py:106
 msgid "Email 為必填"
 msgstr "Email is required"
 
-#: app/web/external_users.py:426
+#: app/web/external_users.py:428
 #, python-format
 msgid "Email %(email)s 已被其他帳號使用"
 msgstr "Email %(email)s is already used by another account"
 
-#: app/web/external_users.py:446
+#: app/web/external_users.py:448
 #, python-format
 msgid "已更新外部廠商 %(name)s"
 msgstr "External vendor %(name)s updated"
 
-#: app/web/external_users.py:487
+#: app/web/external_users.py:489
 msgid "請選擇群組"
 msgstr "Please select a group"
 
-#: app/web/external_users.py:499
+#: app/web/external_users.py:501
 msgid "找不到群組"
 msgstr "Group not found"
 
-#: app/web/external_users.py:511
+#: app/web/external_users.py:513
 #, python-format
 msgid "已是「%(name)s」的成員"
 msgstr "Already a member of \"%(name)s\""
 
-#: app/web/external_users.py:526
+#: app/web/external_users.py:528
 #, python-format
 msgid "已加入群組「%(name)s」"
 msgstr "Joined group \"%(name)s\""
 
-#: app/web/external_users.py:548
+#: app/web/external_users.py:550
 msgid "參數錯誤"
 msgstr "Invalid parameters"
 
-#: app/web/external_users.py:558
+#: app/web/external_users.py:560
 msgid "找不到成員關係"
 msgstr "Membership not found"
 
-#: app/web/external_users.py:570
+#: app/web/external_users.py:572
 msgid "外部廠商必須至少屬於一個群組"
 msgstr "An external vendor must belong to at least one group"
 
-#: app/web/external_users.py:579
+#: app/web/external_users.py:581
 #, python-format
 msgid "已從群組「%(name)s」移除"
 msgstr "Removed from group \"%(name)s\""
 
-#: app/web/external_users.py:627
+#: app/web/external_users.py:629
 #, python-format
 msgid "（自動退出 %(g_count)s 個社群、解除 %(r_count)s 個角色）"
 msgstr "(automatically left %(g_count)s groups and released %(r_count)s roles)"
 
-#: app/web/external_users.py:628
+#: app/web/external_users.py:630
 #, python-format
 msgid "已%(status)s外部廠商 %(name)s%(detail)s"
 msgstr "External vendor %(name)s %(status)s%(detail)s"
 
-#: app/web/external_users.py:666
+#: app/web/external_users.py:668
 #, python-format
 msgid "已刪除外部廠商 %(name)s"
 msgstr "External vendor %(name)s deleted"
 
-#: app/web/external_users.py:689 app/web/main.py:231
+#: app/web/external_users.py:691 app/web/main.py:231
 #: app/web/org_admin_rescue.py:136 app/web/org_admins.py:577
-#: app/web/users.py:765
+#: app/web/users.py:808
 msgid "請輸入新密碼"
 msgstr "Please enter a new password"
 
-#: app/web/external_users.py:704
+#: app/web/external_users.py:706
 #, python-format
 msgid "已變更 %(name)s 的密碼"
 msgstr "Password of %(name)s changed"
 
-#: app/web/external_users.py:707
+#: app/web/external_users.py:709
 #, python-format
 msgid "密碼變更失敗: %(error)s"
 msgstr "Password change failed: %(error)s"
@@ -12928,69 +13080,88 @@ msgstr "%(count)s records marked for deletion purged"
 msgid "，另清理 %(count)s 筆孤兒記錄"
 msgstr ", plus %(count)s orphan records cleaned up"
 
-#: app/web/job_families.py:143 app/web/job_families.py:251
+#: app/web/job_families.py:45
+msgid "上層職系不存在"
+msgstr "Parent job family not found"
+
+#: app/web/job_families.py:52
+#, python-format
+msgid "上層職系「%(name)s」已直接掛有 %(count)s 個職稱，請先把職稱移到其他末端職系，再新增子職系"
+msgstr ""
+"Parent job family \"%(name)s\" already has %(count)s job titles attached "
+"directly. Move them to another leaf job family before adding a child job "
+"family."
+
+#: app/web/job_families.py:171 app/web/job_families.py:283
 msgid "職系名稱為必填"
 msgstr "Job family name is required"
 
-#: app/web/job_families.py:145
+#: app/web/job_families.py:173
 msgid "職系類型無效"
 msgstr "Invalid job family type"
 
-#: app/web/job_families.py:159 app/web/job_levels.py:133
+#: app/web/job_families.py:187 app/web/job_levels.py:133
 #: app/web/job_titles.py:216 app/web/menu.py:270 app/web/menu.py:355
 msgid "無法自動產生代碼，請手動輸入"
 msgstr "Failed to auto-generate code. Please enter it manually"
 
-#: app/web/job_families.py:165 app/web/job_families.py:257
+#: app/web/job_families.py:193 app/web/job_families.py:289
 #: app/web/job_titles.py:222 app/web/job_titles.py:317
 msgid "排序順序須為整數"
 msgstr "Sort order must be an integer"
 
-#: app/web/job_families.py:182 app/web/job_families.py:183
+#: app/web/job_families.py:214 app/web/job_families.py:215
 #, python-format
 msgid "職系代碼 %(code)s 已存在"
 msgstr "Job family code %(code)s already exists"
 
-#: app/web/job_families.py:201 app/web/job_families.py:202
+#: app/web/job_families.py:233 app/web/job_families.py:234
 #, python-format
 msgid "已建立職系 %(name)s"
 msgstr "Job family %(name)s created"
 
-#: app/web/job_families.py:227 app/web/job_families.py:307
+#: app/web/job_families.py:259 app/web/job_families.py:345
 #: app/web/job_levels.py:454
 msgid "職系不存在"
 msgstr "Job family not found"
 
-#: app/web/job_families.py:261
+#: app/web/job_families.py:293
 msgid "不能將自己設為父職系"
 msgstr "Cannot set itself as the parent job family"
 
-#: app/web/job_families.py:280 app/web/job_families.py:281
+#: app/web/job_families.py:318 app/web/job_families.py:319
 msgid "已更新職系"
 msgstr "Job family updated"
 
-#: app/web/job_families.py:313 app/web/job_families.py:314
+#: app/web/job_families.py:351 app/web/job_families.py:352
 msgid "系統預設職系不可刪除"
 msgstr "System default job families cannot be deleted"
 
-#: app/web/job_families.py:324
+#: app/web/job_families.py:362
 #, python-format
 msgid "此職系有 %(count)s 個子職系，請先刪除子職系"
 msgstr "This job family has %(count)s child families. Please delete them first"
 
-#: app/web/job_families.py:335
+#: app/web/job_families.py:373
 #, python-format
 msgid "此職系有 %(count)s 個職稱使用中，需連同職稱一併刪除"
 msgstr ""
 "This job family has %(count)s job titles in use; they must be deleted "
 "together"
 
-#: app/web/job_families.py:358
+#: app/web/job_families.py:392
+#, python-format
+msgid "連動刪除的職稱中仍有 %(count)s 筆成員職位指派，請先到職位設定移除"
+msgstr ""
+"The job titles to be deleted together still have %(count)s employee "
+"position assignments. Remove them in Position settings first."
+
+#: app/web/job_families.py:410
 #, python-format
 msgid "已刪除職系 %(name)s 及 %(count)s 個職稱"
 msgstr "Job family %(name)s and %(count)s job titles deleted"
 
-#: app/web/job_families.py:360
+#: app/web/job_families.py:412
 #, python-format
 msgid "已刪除職系 %(name)s"
 msgstr "Job family %(name)s deleted"
@@ -13222,7 +13393,7 @@ msgstr "Administrator %(name)s %(status)s"
 
 #: app/web/org_admin_rescue.py:141 app/web/org_admins.py:130
 #: app/web/org_admins.py:582 app/web/sys_accounts.py:118
-#: app/web/sys_accounts.py:213 app/web/users.py:770
+#: app/web/sys_accounts.py:213 app/web/users.py:813
 msgid "兩次輸入的密碼不一致"
 msgstr "The passwords do not match"
 
@@ -13240,7 +13411,7 @@ msgid "已重設 %(name)s 的密碼，並通知所有企業管理員"
 msgstr "Password of %(name)s reset; all organization admins notified"
 
 #: app/web/org_admin_rescue.py:183 app/web/org_admins.py:627
-#: app/web/users.py:781
+#: app/web/users.py:824
 #, python-format
 msgid "重設密碼失敗: %(error)s"
 msgstr "Password reset failed: %(error)s"
@@ -13299,7 +13470,7 @@ msgstr "Administrator %(admin)s created (bound employee: %(employee)s)%(extra)s"
 msgid "此帳號不是企業管理員"
 msgstr "This account is not an organization administrator"
 
-#: app/web/org_admins.py:478 app/web/sys_accounts.py:217 app/web/users.py:699
+#: app/web/org_admins.py:478 app/web/sys_accounts.py:217 app/web/users.py:742
 msgid "不能停用自己的帳號"
 msgstr "You cannot disable your own account"
 
@@ -13324,7 +13495,7 @@ msgstr "Administrator %(name)s disabled"
 msgid "已刪除管理員 %(name)s"
 msgstr "Administrator %(name)s deleted"
 
-#: app/web/org_admins.py:562 app/web/users.py:745
+#: app/web/org_admins.py:562 app/web/users.py:788
 msgid "請使用「變更密碼」功能修改自己的密碼"
 msgstr "Please use the \"Change Password\" function to change your own password"
 
@@ -13597,125 +13768,132 @@ msgstr "This unit has child units. Please delete them first"
 msgid "已刪除 %(name)s"
 msgstr "%(name)s deleted"
 
-#: app/web/users.py:318
+#: app/web/users.py:361
 msgid "英文姓名、本國姓名、帳號為必填"
 msgstr "English name, local name and account are required"
 
-#: app/web/users.py:352 app/web/users.py:570
+#: app/web/users.py:395 app/web/users.py:613
 #, python-format
 msgid "找不到部門代碼 %(code)s"
 msgstr "Department code %(code)s not found"
 
-#: app/web/users.py:503
+#: app/web/users.py:546
 msgid "您沒有編輯權限"
 msgstr "You do not have edit permission"
 
-#: app/web/users.py:555
+#: app/web/users.py:598
 msgid "本國姓名、英文姓名為必填"
 msgstr "Local name and English name are required"
 
-#: app/web/users.py:560
+#: app/web/users.py:603
 #, python-format
 msgid "企業成員編號 %(employee_id)s 已存在"
 msgstr "Employee ID %(employee_id)s already exists"
 
-#: app/web/users.py:615
+#: app/web/users.py:658
 msgid "已更新用戶資料"
 msgstr "User data updated"
 
-#: app/web/users.py:681
+#: app/web/users.py:724
 #, python-format
 msgid "已刪除用戶 %(name)s"
 msgstr "User %(name)s deleted"
 
-#: app/web/users.py:704
+#: app/web/users.py:747
 msgid "不能停用自己綁定的企業成員帳號"
 msgstr "You cannot disable the employee account bound to yourself"
 
-#: app/web/users.py:719
+#: app/web/users.py:762
 #, python-format
 msgid "已啟用用戶 %(name)s"
 msgstr "User %(name)s enabled"
 
-#: app/web/users.py:721
+#: app/web/users.py:764
 #, python-format
 msgid "已停用用戶 %(name)s"
 msgstr "User %(name)s disabled"
 
-#: app/web/users.py:740
+#: app/web/users.py:783
 msgid "找不到該用戶"
 msgstr "User not found"
 
-#: app/web/users.py:750
+#: app/web/users.py:793
 msgid "無權重設系統管理員的密碼"
 msgstr "No permission to reset a system administrator's password"
 
-#: app/web/users.py:778
+#: app/web/users.py:821
 #, python-format
 msgid "已重設 %(name)s 的密碼"
 msgstr "Password of %(name)s reset"
 
-#: app/web/users.py:852
+#: app/web/users.py:895
 msgid "請選擇 CSV 檔案"
 msgstr "Please select a CSV file"
 
-#: app/web/users.py:856
+#: app/web/users.py:899
 msgid "請上傳 CSV 格式檔案"
 msgstr "Please upload a CSV file"
 
-#: app/web/users.py:887
+#: app/web/users.py:930
 #, python-format
 msgid "第 %(row)s 列: %(error)s"
 msgstr "Row %(row)s: %(error)s"
 
-#: app/web/users.py:893
+#: app/web/users.py:936
 #, python-format
 msgid "已達帳號上限（%(limit)s）：本次將新增 %(need)s 筆，剩餘名額 %(remain)s，未匯入任何資料"
 msgstr ""
 "Account limit reached (%(limit)s): this import would add %(need)s "
 "account(s) with only %(remain)s slot(s) left. Nothing was imported."
 
-#: app/web/users.py:902
+#: app/web/users.py:945
 #, python-format
 msgid "成功匯入 %(count)s 位用戶"
 msgstr "%(count)s users imported successfully"
 
-#: app/web/users.py:907
+#: app/web/users.py:950
 #, python-format
 msgid "... 還有 %(count)s 個錯誤"
 msgstr "... %(count)s more errors"
 
-#: app/web/users.py:913
+#: app/web/users.py:956
 #, python-format
 msgid "匯入失敗: %(error)s"
 msgstr "Import failed: %(error)s"
 
-#: app/web/users.py:931
+#: app/web/users.py:974
 #, python-format
 msgid "第 %(row)s 列: 帳號為必填"
 msgstr "Row %(row)s: account is required"
 
-#: app/web/users.py:933
+#: app/web/users.py:976
 #, python-format
 msgid "第 %(row)s 列: 密碼為必填"
 msgstr "Row %(row)s: password is required"
 
-#: app/web/users.py:935
+#: app/web/users.py:978
 #, python-format
 msgid "第 %(row)s 列: 姓名為必填"
 msgstr "Row %(row)s: name is required"
 
-#: app/web/users.py:939
+#: app/web/users.py:982
 #, python-format
 msgid "第 %(row)s 列: "
 msgstr "Row %(row)s: "
 
-#: app/web/users.py:946
+#: app/web/users.py:989
 #, python-format
 msgid "第 %(row)s 列: 帳號 %(username)s 已存在"
 msgstr "Row %(row)s: account %(username)s already exists"
 
-#: app/web/users.py:957
+#: app/web/users.py:995
+#, python-format
+msgid "第 %(row)s 列: 外部廠商帳號請在「外部廠商帳號」頁面以完整 Email 建立"
+msgstr ""
+"Row %(row)s: create external vendor accounts on the External Vendors page"
+" with a full email address"
+
+#: app/web/users.py:1003
 #, python-format
 msgid "第 %(row)s 列: 企業成員編號 %(employee_id)s 已存在"
 msgstr "Row %(row)s: employee ID %(employee_id)s already exists"
@@ -18936,20 +19114,20 @@ msgstr "%(count)s subworkflow deleted"
 msgid "建立變數映射失敗: %(error)s"
 msgstr "Failed to create variable mapping: %(error)s"
 
-#: ../modules/form_workflow/api/workflows.py:1399
+#: ../modules/form_workflow/api/workflows.py:1428
 msgid "流程不存在"
 msgstr "Workflow does not exist"
 
-#: ../modules/form_workflow/api/workflows.py:1475
+#: ../modules/form_workflow/api/workflows.py:1504
 #, python-format
 msgid "取得配對表單失敗: %(error)s"
 msgstr "Failed to obtain pairing form: %(error)s"
 
-#: ../modules/form_workflow/api/workflows.py:1536
+#: ../modules/form_workflow/api/workflows.py:1565
 msgid "表單不存在"
 msgstr "form does not exist"
 
-#: ../modules/form_workflow/api/workflows.py:1590
+#: ../modules/form_workflow/api/workflows.py:1619
 #, python-format
 msgid "分析表單欄位失敗: %(error)s"
 msgstr "Failed to parse form fields: %(error)s"
@@ -23629,9 +23807,12 @@ msgstr "Workflow tree diagram - BeakPlatform"
 #~ msgid "工作流模板 %(workflow_template_secure_code)s 不存在"
 #~ msgstr "Workflow template %(workflow_template_secure_code)s does not exist"
 
+#~ msgid "簽核:"
+#~ msgstr "Sign off:"
 
-msgid "外部廠商帳號需提供完整 Email"
-msgstr "External vendor accounts require a full email address"
+#~ msgid "無上限"
+#~ msgstr "No limit"
 
-msgid "第 %(row)s 列: 外部廠商帳號請在「外部廠商帳號」頁面以完整 Email 建立"
-msgstr "Row %(row)s: create external vendor accounts on the External Vendors page with a full email address"
+#~ msgid "簽核上限:"
+#~ msgstr "Sign-off limit:"
+

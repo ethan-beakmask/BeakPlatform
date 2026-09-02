@@ -68,7 +68,7 @@ class WorkSchedule(TenantBaseModel):
 
         Returns:
             工作時段列表，如 ["09:00-12:00", "13:00-18:00"]
-            休息日返回空列表
+            休息日返回空列表；COMP_OFF 補假視同休假
         """
         # 先檢查假日/補班
         from .schedule_holiday import ScheduleHoliday
@@ -79,7 +79,7 @@ class WorkSchedule(TenantBaseModel):
         ).first()
 
         if holiday:
-            if holiday.holiday_type == 'HOLIDAY':
+            if holiday.holiday_type in ('HOLIDAY', 'COMP_OFF'):
                 return []
             else:  # WORKDAY 補班
                 return holiday.work_periods or []

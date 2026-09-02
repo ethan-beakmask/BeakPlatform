@@ -41,6 +41,8 @@ url_index:
 
   # === 選單 ===
   /menu/:                        menu.yaml
+  /calendar/:                    calendar.yaml
+  /api/calendar/:                calendar.yaml
   /help/:                        platform-help.yaml
   /help/manual/*:                platform-help.yaml
 
@@ -114,6 +116,7 @@ manifest_files:
   - units.yaml                   # 組織單位（部門+群組）
   - roles.yaml                   # 角色管理
   - menu.yaml                    # 選單管理
+  - calendar.yaml                # 企業行事曆
   - permissions.yaml             # 權限中央+帳號角色
   - node-grants.yaml             # 流程節點企業授權
   - platform-help.yaml           # 平台說明與使用者手冊

@@ -21,6 +21,7 @@
 | open_defense 平台側 / `.20` 資安堆疊 | `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md`、`dev-notes/SEC_STACK_ARCHITECTURE.md` |
 | 測試（pytest 環境、`test_client` 坑、Playwright） | `dev-notes/TESTING_NOTES.md` |
 | 流程設計器、graph 操作、publish | `dev-notes/WORKFLOW_DESIGNER_NOTES.md` |
+| 企業行事曆（投影來源、受眾規則、二三期入口） | `dev-notes/CALENDAR_SPEC.md`（PF-229） |
 | 節點型別規格（AiAgent / SqlExecutor / OsExecutor / 盤點） | `dev-notes/AI_NODE_SECURITY.md`、`dev-notes/SQL_EXECUTOR_SPEC.md`、`dev-notes/OS_EXECUTOR_SPEC.md`、`dev-notes/NODE_TEST_INVENTORY.md` |
 
 **維護原則**：新的踩坑先問「這是 codex 猜不到的專案特有事實，還是通用工程常識？」
@@ -1354,6 +1355,24 @@ WHERE created_at > (now() AT TIME ZONE 'UTC') - interval '15 minutes'
 - **Password**: postgres123（開發環境）
 - **本機資料皆為測試資料**：變更後可忽略舊資料，不用修正舊資料，除非用戶要求
 
+### 行事曆是唯讀投影，可見性只有一個實作（2026-09-02 PF-229 第一期起）
+
+`/calendar/`（企業）與 `/calendar/me`（個人）**沒有任何寫入路徑**（第二期才有），畫面上的事件全是
+`backend/app/services/calendar_projection_service.py` 從六種既有來源投影出來的：`calendar_events`（手建，第一期只能 SQL 造）、
+班表假日、代理授權、限期職位、公告廣播、流程佇列（待簽核只在個人視圖、Delay 到期只給管理員）。
+受眾與遮罩**只在** `calendar_visibility.apply_visibility()` 判定——新增來源時產出正規化 dict 並填 `audience`，
+不要在外面另寫 if。三件猜不到的：
+
+- **`PRIVATE` 對 ORG_ADMIN 也隱藏**（Ethan 定案，避免變成監控工具）；`BUSY` 他人只拿到 `masked=true`、無 title。
+  代理／職位這類自帶受眾的來源對非受眾是「不顯示」，不是遮罩
+- API 的 `start`/`end` 是**企業時區當地日曆日**，回應的 `start_local` / `start_date` 也已換算完，前端一律不做時區運算
+- **新增平台選單對既有環境不會自動出現**：`seed_platform_menus()` 非 force 模式見到任何選單就整批跳過。
+  補種走 `venv/bin/python scripts/seed_missing_platform_menus.py --dry-run` → `--apply`（通用、冪等，含所有企業 Key2）。
+  bpserv 這類已安裝環境 `--update` 後也要跑一次，否則選單不在、`page_keys_required` 對 EMPLOYEE 一律 403
+
+投影規則表、時區處理、前端行為與已知取捨見 `dev-notes/CALENDAR_SPEC.md`。
+班表假日 API 同日起收下 `COMP_OFF`（視同休假），`saveHoliday()` 改用 `result.imported` 回報。
+
 ### 造／清測試帳號（2026-08-23 試誤才弄對）
 
 - `POST /api/users/` 必填四項：`native_name` / `english_name` / `username` /
@@ -1546,6 +1565,7 @@ heredoc 建企業、`init_menus.py`、`init_permissions.py`、`flask module sync
 | 編號規則的流水號 counter | `user_numbering_rules.current_counter` / `.code` | **兩個都不存在**；該表只有 `id / secure_code / org_secure_code / name / description / elements / is_active / usage_scope / default_for` 等，**流水號設定與計數藏在 `elements` 這個 jsonb 內**（`components` 陣列裡 `type='sequence'` 的項目）。要看「號碼有沒有被消耗」一律查 `used_user_numbers`，不要找 counter 欄位 |
 | 企業獨立資料庫登記表的必填欄位 | 只填 `org_secure_code` / `org_id` / `db_name` | 還要 **`secure_code`**、**`admin_user`**、**`admin_password_enc`**、**`sync_user`**、**`sync_password_enc`** 五個 NOT NULL（2026-08-29 造測試資料時逐一撞出來，錯誤訊息一次只報一個）。查全部必填：`SELECT column_name FROM information_schema.columns WHERE table_name='fw_org_databases' AND is_nullable='NO';` |
 | 代理授權是否生效 | `delegations.status='ACTIVE'` | **`status` 只是儲存時的快照，沒有排程更新**（2026-09-02 起畫面與簽核授權都改看日期）。SQL 查生效中一律用 `status<>'REVOKED' AND CURRENT_DATE BETWEEN effective_from AND effective_until`（嚴格說日界是企業時區，Python 端用 `Delegation.is_effective_on()` / `effective_status`） |
+| 行事曆事件的擁有者／可見性 | `calendar_events.user_secure_code` / `is_public` | **`owner_user_secure_code`**（PERSONAL 必填，ORG 為 NULL）／**`visibility`**（`PUBLIC` / `BUSY` / `PRIVATE`）；`calendar_kind` 是 `ORG` / `PERSONAL`。時間欄位 `starts_at` / `ends_at` 存 naive UTC |
 | SMTP 設定組的主機欄位 | `smtp_configs.host` / `port` | **`smtp_host` / `smtp_port`**（另有 `use_tls` / `use_ssl` / `use_app_password` / `provider_type`；dev 只有 SYSTEM 一筆 `lionsecbot@gmail.com`，BELUGA／LION 沒有，統一設定見 PF-228） |
 | 用 SQL 造測試角色指派（mutation 驗證常用） | 只填 user/role/org 三個 secure_code | 還要 **`secure_code`**、**`assigned_at`** 兩個 NOT NULL（2026-09-01 逐一撞出來，錯誤一次只報一個）。`assigned_by` 填可辨識標記（如 `PF145-S5-TEST`），事後 `DELETE FROM user_role_assignments WHERE assigned_by='<標記>'` 一次撤乾淨；成功範例在 `/opt/tmp/verify/20260901-pf145-stage5.log` |
 

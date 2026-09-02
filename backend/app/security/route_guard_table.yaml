@@ -271,6 +271,44 @@ routes:
     rules:
     - /api/broadcasts/active
     source: backend/app/api/broadcasts.py
+  api_calendar.me_events:
+    answer_source: db
+    guard_args:
+      page_keys_required:
+        menu_code: calendar_me
+    guards:
+    - page_keys_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - EMPLOYEE
+    methods:
+    - GET
+    note: ''
+    review: confirmed
+    rules:
+    - /api/calendar/me/events
+    source: backend/app/api/calendar.py
+  api_calendar.org_events:
+    answer_source: db
+    guard_args:
+      page_keys_required:
+        menu_code: calendar
+    guards:
+    - page_keys_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - EMPLOYEE
+    methods:
+    - GET
+    note: ''
+    review: confirmed
+    rules:
+    - /api/calendar/org/events
+    source: backend/app/api/calendar.py
   api_code.generate_code:
     answer_source: none
     guard_args: {}
@@ -4177,6 +4215,44 @@ routes:
     rules:
     - /auth/verify-reset/<token>
     source: backend/app/api/auth.py
+  calendar_web.my_calendar:
+    answer_source: db
+    guard_args:
+      page_keys_required:
+        menu_code: calendar_me
+    guards:
+    - page_keys_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - EMPLOYEE
+    methods:
+    - GET
+    note: ''
+    review: confirmed
+    rules:
+    - /calendar/me
+    source: backend/app/web/calendar.py
+  calendar_web.org_calendar:
+    answer_source: db
+    guard_args:
+      page_keys_required:
+        menu_code: calendar
+    guards:
+    - page_keys_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - EMPLOYEE
+    methods:
+    - GET
+    note: ''
+    review: confirmed
+    rules:
+    - /calendar/
+    source: backend/app/web/calendar.py
   cg_databases.db_logs:
     answer_source: code
     guard_args: {}

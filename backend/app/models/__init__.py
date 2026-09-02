@@ -35,6 +35,12 @@ from .job_family import JobFamily, JobFamilyType, DEFAULT_JOB_FAMILIES
 from .job_title import JobTitle, DEFAULT_JOB_TITLES
 from .employee_position import EmployeePosition, PositionType
 from .delegation import Delegation, DelegationType, DelegationStatus
+from .calendar_event import (
+    CalendarEvent,
+    CalendarKind,
+    CalendarEventType,
+    CalendarVisibility,
+)
 from .approval_category import (
     ApprovalCategory,
     JobLevelApprovalLimit,
@@ -169,6 +175,10 @@ __all__ = [
     'Delegation',
     'DelegationType',
     'DelegationStatus',
+    'CalendarEvent',
+    'CalendarKind',
+    'CalendarEventType',
+    'CalendarVisibility',
     'ApprovalCategory',
     'JobLevelApprovalLimit',
     'DEFAULT_APPROVAL_CATEGORIES',

@@ -241,6 +241,20 @@ CORE_MENUS = [
         'required_level': 2,
         'is_shared': True,
     },
+    {
+        'code': 'calendar_menu',
+        'title': '行事曆',
+        'title_i18n': {'en': 'Calendar'},
+        'icon': None,
+        'link_type': 'header',
+        'link_target': None,
+        'display_order': 19,
+        'depth': 0,
+        'required_level': 2,
+        'is_shared': False,
+        'is_expanded': False,
+        '_user_types_override': ['ORG_ADMIN', 'EMPLOYEE'],
+    },
 
     # ===== 深度 1 子選單 =====
 
@@ -625,6 +639,32 @@ CORE_MENUS = [
         'is_shared': False,
         '_user_types_override': ['SYSTEM_ADMIN', 'ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL'],
     },
+    {
+        'code': 'calendar',
+        'title': '企業行事曆',
+        'title_i18n': {'en': 'Company Calendar'},
+        'parent_code': 'calendar_menu',
+        'link_type': 'route',
+        'link_target': 'calendar_web.org_calendar',
+        'display_order': 0,
+        'depth': 1,
+        'required_level': 2,
+        'is_shared': False,
+        '_user_types_override': ['ORG_ADMIN', 'EMPLOYEE'],
+    },
+    {
+        'code': 'calendar_me',
+        'title': '我的行事曆',
+        'title_i18n': {'en': 'My Calendar'},
+        'parent_code': 'calendar_menu',
+        'link_type': 'route',
+        'link_target': 'calendar_web.my_calendar',
+        'display_order': 1,
+        'depth': 1,
+        'required_level': 2,
+        'is_shared': False,
+        '_user_types_override': ['ORG_ADMIN', 'EMPLOYEE'],
+    },
 ]
 
 
@@ -648,6 +688,10 @@ MENU_ROLE_DEFAULTS = {
 
     # 說明子選單（共用使用者手冊）
     'platform_help.manual': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
+
+    # 行事曆
+    'calendar': ['ORG_ADMIN', 'EMPLOYEE'],
+    'calendar_me': ['ORG_ADMIN', 'EMPLOYEE'],
 
     # 表單流程模組（ORG_ADMIN + FORM_DESIGNER + FLOW_DESIGNER）
     'form_workflow.categories': ['ORG_ADMIN', 'FORM_DESIGNER', 'FLOW_DESIGNER'],

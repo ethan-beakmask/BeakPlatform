@@ -2,7 +2,7 @@
 BeakMask Association Tables
 關聯表 Model (多對多關係)
 """
-from datetime import datetime
+from datetime import date, datetime
 from typing import Dict, Any, Optional
 
 from sqlalchemy import Column, String, Boolean, DateTime, Date
@@ -121,14 +121,26 @@ class UserRoleAssignment(TenantBaseModel):
     @property
     def is_valid(self) -> bool:
         """檢查角色指派是否在有效期內"""
-        from datetime import date
-        today = date.today()
+        return self.is_valid_on(self._org_today())
 
+    def is_valid_on(self, today: date) -> bool:
+        """指定企業當地日期是否在有效期內。"""
         if self.valid_from and today < self.valid_from:
             return False
         if self.valid_until and today > self.valid_until:
             return False
         return True
+
+    def _org_today(self) -> date:
+        """企業當地日曆日。"""
+        org = getattr(self, 'organization', None)
+        if org is None and self.org_secure_code:
+            from .organization import Organization
+            org = Organization.query.filter_by(secure_code=self.org_secure_code).first()
+        if org is not None:
+            return org.local_today()
+        from app.utils.timezone import local_today
+        return local_today('Asia/Taipei')
 
     @classmethod
     def get_active_assignments(cls, user_secure_code: str) -> list:
@@ -142,7 +154,16 @@ class UserRoleAssignment(TenantBaseModel):
             cls.user_secure_code == user_secure_code,
             cls.is_deleted == False,
         ).all()
-        return [a for a in assignments if a.is_valid]
+        if not assignments:
+            return []
+
+        today = None
+        user = assignments[0].user
+        if user and user.organization:
+            today = user.organization.local_today()
+        if today is None:
+            today = assignments[0]._org_today()
+        return [a for a in assignments if a.is_valid_on(today)]
 
     @classmethod
     def get_active_role_secure_codes(cls, user_secure_code: str) -> set:

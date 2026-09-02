@@ -20,7 +20,7 @@
 - DELETE /api/admin/work-schedules/<id>/holidays/<hid>   刪除假日
 - POST   /api/admin/work-schedules/<id>/holidays/batch   批次匯入假日
 """
-from datetime import datetime, date
+from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_babel import gettext as _
 from flask_login import current_user
@@ -32,6 +32,8 @@ from ..security.resource_gateway import ResourceGateway
 
 
 api_work_schedules = Blueprint('api_work_schedules', __name__, url_prefix='/api/admin')
+
+HOLIDAY_TYPES = ('HOLIDAY', 'COMP_OFF', 'WORKDAY')
 
 
 # ==================== 班表 CRUD ====================
@@ -304,7 +306,7 @@ def list_holidays(secure_code):
     if not schedule:
         return jsonify({'success': False, 'message': _('班表不存在')}), 404
 
-    year = request.args.get('year', date.today().year, type=int)
+    year = request.args.get('year', current_user.organization.local_today().year, type=int)
 
     # 查詢指定年份的假日
     holidays = ScheduleHoliday.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
@@ -327,7 +329,7 @@ def create_holiday(secure_code):
 
     Body:
         holiday_date: 日期 (必填, YYYY-MM-DD)
-        holiday_type: 類型 (必填, HOLIDAY 或 WORKDAY)
+        holiday_type: 類型 (必填, HOLIDAY、COMP_OFF 或 WORKDAY)
         work_periods: 工作時段 (補班日必填)
         description: 說明
 
@@ -354,8 +356,8 @@ def create_holiday(secure_code):
     if not holiday_date_str:
         return jsonify({'success': False, 'message': _('請選擇日期')}), 400
 
-    if holiday_type not in ('HOLIDAY', 'WORKDAY'):
-        return jsonify({'success': False, 'message': _('類型必須是 HOLIDAY 或 WORKDAY')}), 400
+    if holiday_type not in HOLIDAY_TYPES:
+        return jsonify({'success': False, 'message': _('類型必須是 HOLIDAY、COMP_OFF 或 WORKDAY')}), 400
 
     try:
         holiday_date = datetime.strptime(holiday_date_str, '%Y-%m-%d').date()
@@ -424,12 +426,12 @@ def update_holiday(secure_code, holiday_secure_code):
 
     if 'holiday_type' in data:
         holiday_type = data['holiday_type'].upper()
-        if holiday_type not in ('HOLIDAY', 'WORKDAY'):
-            return jsonify({'success': False, 'message': _('類型必須是 HOLIDAY 或 WORKDAY')}), 400
+        if holiday_type not in HOLIDAY_TYPES:
+            return jsonify({'success': False, 'message': _('類型必須是 HOLIDAY、COMP_OFF 或 WORKDAY')}), 400
         holiday.holiday_type = holiday_type
 
         # 切換類型時調整 work_periods
-        if holiday_type == 'HOLIDAY':
+        if holiday_type != 'WORKDAY':
             holiday.work_periods = None
 
     if 'work_periods' in data:
@@ -489,6 +491,7 @@ def batch_import_holidays(secure_code):
     Body:
         holidays: [
             { "date": "2026-01-01", "type": "HOLIDAY", "description": "元旦" },
+            { "date": "2026-01-02", "type": "COMP_OFF", "description": "補假" },
             { "date": "2026-02-14", "type": "WORKDAY", "work_periods": ["09:00-17:00"], "description": "補班" },
             ...
         ]
@@ -540,7 +543,7 @@ def batch_import_holidays(secure_code):
             holiday_date = datetime.strptime(item.get('date', ''), '%Y-%m-%d').date()
             holiday_type = item.get('type', 'HOLIDAY').upper()
 
-            if holiday_type not in ('HOLIDAY', 'WORKDAY'):
+            if holiday_type not in HOLIDAY_TYPES:
                 skipped += 1
                 continue
 

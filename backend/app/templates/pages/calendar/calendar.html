@@ -1,0 +1,153 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/07_daily_work/calendar{% endblock %}
+
+{% block title %}{% if scope == 'me' %}{{ _('我的行事曆') }}{% else %}{{ _('企業行事曆') }}{% endif %} - BeakMask{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="cal-page" x-data='calendarApp()' @keydown.escape.window="closePanel()">
+    <div class="page-header">
+        <div>
+            <h1>{% if scope == 'me' %}{{ _('我的行事曆') }}{% else %}{{ _('企業行事曆') }}{% endif %}</h1>
+            <p class="cal-subtitle">{{ _('時區：%(tz)s', tz=timezone) }}</p>
+        </div>
+        <div class="cal-toolbar">
+            {% if scope == 'me' %}
+            <a class="cal-switch" href="{{ url_for('calendar_web.org_calendar') }}">{{ _('企業行事曆') }}</a>
+            {% else %}
+            <a class="cal-switch" href="{{ url_for('calendar_web.my_calendar') }}">{{ _('我的行事曆') }}</a>
+            {% endif %}
+            <div class="cal-viewswitch">
+                <button type="button" class="btn btn-sm" :class="view === 'month' ? 'btn-primary' : 'btn-secondary'" @click="setView('month')">{{ _('月') }}</button>
+                <button type="button" class="btn btn-sm" :class="view === 'week' ? 'btn-primary' : 'btn-secondary'" @click="setView('week')">{{ _('週') }}</button>
+            </div>
+            <div class="cal-nav">
+                <button type="button" @click="prev()" aria-label="{{ _('上一頁') }}">&lt;</button>
+                <button type="button" @click="goToday()">{{ _('今天') }}</button>
+                <button type="button" @click="next()" aria-label="{{ _('下一頁') }}">&gt;</button>
+                <span class="cal-range-title" x-text="rangeTitle()"></span>
+            </div>
+        </div>
+    </div>
+
+    <template x-if="error">
+        <div class="alert alert-error" x-text="error"></div>
+    </template>
+    <p class="cal-loading text-muted" x-show="loading">{{ _('載入中…') }}</p>
+
+    <div class="cal-legend">
+        <span class="cal-legend-item"><i class="cal-ev cal-ev--holiday"></i>{{ _('假日／補假') }}</span>
+        <span class="cal-legend-item"><i class="cal-ev cal-ev--workday"></i>{{ _('補班') }}</span>
+        <span class="cal-legend-item"><i class="cal-ev cal-ev--delegation"></i>{{ _('代理授權') }}</span>
+        <span class="cal-legend-item"><i class="cal-ev cal-ev--position"></i>{{ _('限期職位') }}</span>
+        <span class="cal-legend-item"><i class="cal-ev cal-ev--approval"></i>{{ _('待簽核') }}</span>
+        <span class="cal-legend-item"><i class="cal-ev cal-ev--broadcast"></i>{{ _('公告') }}</span>
+        <span class="cal-legend-item"><i class="cal-ev cal-ev--meeting"></i>{{ _('個人／企業事件') }}</span>
+        <span class="cal-legend-item"><i class="cal-ev cal-ev--busy"></i>{{ _('已排程（不公開內容）') }}</span>
+        <span class="cal-legend-item"><i class="cal-legend-off"></i>{{ _('非工作日') }}</span>
+    </div>
+
+    <!-- 月視圖 -->
+    <template x-if="view === 'month'">
+        <div class="cal-month">
+            <div class="cal-weekhead">
+                <div class="cal-weekhead-cell cal-weekhead-cell--weekend">{{ _('日') }}</div>
+                <div class="cal-weekhead-cell">{{ _('一') }}</div>
+                <div class="cal-weekhead-cell">{{ _('二') }}</div>
+                <div class="cal-weekhead-cell">{{ _('三') }}</div>
+                <div class="cal-weekhead-cell">{{ _('四') }}</div>
+                <div class="cal-weekhead-cell">{{ _('五') }}</div>
+                <div class="cal-weekhead-cell cal-weekhead-cell--weekend">{{ _('六') }}</div>
+            </div>
+            <div class="cal-grid">
+                <template x-for="cell in cells()" :key="cell.date">
+                    <div class="cal-day" :class="dayClass(cell)" @click="openPanel(cell.date)">
+                        <div class="cal-day-head">
+                            <span class="cal-day-num" x-text="cell.day"></span>
+                            <span class="cal-day-holiday" x-show="cell.meta && cell.meta.holiday" x-text="holidayLabel(cell.meta)"></span>
+                        </div>
+                        <div class="cal-day-events">
+                            <template x-for="ev in cell.chips.slice(0, 3)" :key="ev.key">
+                                <div class="cal-ev cal-ev--chip" :class="chipClass(ev)" x-text="chipLabel(ev, cell.date)" :title="chipLabel(ev, cell.date)"></div>
+                            </template>
+                            <div class="cal-more" x-show="cell.chips.length > 3" x-text="cell.chips.length > 3 ? moreLabel(cell.chips.length - 3) : ''"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+
+    <!-- 週視圖 -->
+    <template x-if="view === 'week'">
+        <div class="cal-week">
+            <template x-for="cell in weekDays()" :key="cell.date">
+                <div class="cal-weekcol" :class="dayClass(cell)">
+                    <div class="cal-weekcol-head" @click="openPanel(cell.date)">
+                        <span class="cal-weekcol-name" x-text="weekdayName(cell.date)"></span>
+                        <span class="cal-day-num" x-text="cell.date"></span>
+                        <span class="cal-day-holiday" x-show="cell.meta && cell.meta.holiday" x-text="holidayLabel(cell.meta)"></span>
+                    </div>
+                    <div class="cal-weekcol-body">
+                        <template x-for="ev in cell.chips" :key="ev.key">
+                            <div class="cal-ev cal-ev--row" :class="chipClass(ev)" @click="openPanel(cell.date)">
+                                <span class="cal-ev-time" x-text="timeLabel(ev, cell.date)"></span>
+                                <span class="cal-ev-title" x-text="chipLabel(ev, cell.date)" :title="chipLabel(ev, cell.date)"></span>
+                            </div>
+                        </template>
+                        <p class="cal-empty text-muted" x-show="cell.chips.length === 0">{{ _('無事件') }}</p>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </template>
+
+    <!-- 當日明細面板 -->
+    <template x-if="panel.open">
+        <div class="modal-overlay">
+            <div class="modal-content modal-sm cal-panel">
+                <div class="modal-header">
+                    <h3><span x-text="panel.date"></span> <span x-text="weekdayName(panel.date)"></span></h3>
+                    <button type="button" class="close-btn" @click="closePanel()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p class="cal-panel-holiday" x-show="panelHoliday()" x-text="panelHoliday()"></p>
+                    <template x-if="panelEvents().length === 0">
+                        <p class="text-muted">{{ _('這天沒有事件') }}</p>
+                    </template>
+                    <template x-for="ev in panelEvents()" :key="ev.key">
+                        <div class="cal-panel-item">
+                            <div class="cal-panel-time" x-text="timeLabel(ev, panel.date)"></div>
+                            <div class="cal-panel-main">
+                                <span class="cal-ev cal-ev--dot" :class="chipClass(ev)"></span>
+                                <span class="cal-panel-title" x-text="chipLabel(ev)"></span>
+                                <span class="cal-panel-owner text-muted" x-show="showOwner(ev)" x-text="ownerLabel(ev)"></span>
+                                <div class="cal-panel-note text-muted" x-show="ev.note" x-text="ev.note"></div>
+                                <a class="cal-panel-link" x-show="ev.link" :href="ev.link || '#'">{{ _('開啟') }}</a>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="closePanel()">{{ _('關閉') }}</button>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Window Bridge: Jinja2 → JS -->
+<script>
+window.__CALENDAR_CONFIG = {
+    scope: {{ scope | tojson }},
+    today: {{ today | tojson }},
+    timezone: {{ timezone | tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}

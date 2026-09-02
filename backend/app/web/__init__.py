@@ -126,6 +126,10 @@ def register_web_blueprints(app: Flask) -> None:
     from .work_schedules import work_schedules_bp
     app.register_blueprint(work_schedules_bp)
 
+    # 企業行事曆（PF-229）
+    from .calendar import calendar_web
+    app.register_blueprint(calendar_web, url_prefix='/calendar')
+
     # Org Database Monitor (企業獨立資料庫監視)
     from .org_databases import org_databases_bp
     app.register_blueprint(org_databases_bp)
