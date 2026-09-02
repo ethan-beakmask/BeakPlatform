@@ -24,7 +24,6 @@ chapter_index: true
 - [基本班表](work_schedules.md)
 - [編號設定](numbering.md)
 - [權限管理中心](access_center.md)
-- [選單管理](menu_manage.md)
 - [模組權限管理](module_permissions.md)
 - [企業管理員](org_admins.md)
 - [企業系統設定](system_settings.md)

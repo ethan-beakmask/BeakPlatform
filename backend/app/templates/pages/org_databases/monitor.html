@@ -1,4 +1,5 @@
 {% extends 'layouts/base.html' %}
+{% block help_doc %}{% if is_system_view %}manual/02_platform_admin/org_databases{% else %}manual/03_org_setup/org_database{% endif %}{% endblock %}
 
 {% block title %}
 {% if is_system_view %}{{ _('企業獨立資料庫管理') }}{% else %}{{ _('獨立資料庫') }}{% endif %} - BeakMask

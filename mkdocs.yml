@@ -67,6 +67,9 @@ nav:
           - 企業獨立資料庫管理: manual/02_platform_admin/org_databases.md
           - 集團資料庫總覽: manual/02_platform_admin/cg_databases.md
           - 系統管理員帳號: manual/02_platform_admin/sys_accounts.md
+          - 權限管理中心: manual/02_platform_admin/access_center_system.md
+          - 選單管理: manual/02_platform_admin/menu_manage.md
+          - 節點授權: manual/02_platform_admin/node_grants.md
           - 模組管理: manual/02_platform_admin/modules.md
           - 內部商場: manual/02_platform_admin/store.md
           - 主機設定: manual/02_platform_admin/server_settings.md
@@ -90,7 +93,6 @@ nav:
           - 基本班表: manual/03_org_setup/work_schedules.md
           - 編號設定: manual/03_org_setup/numbering.md
           - 權限管理中心: manual/03_org_setup/access_center.md
-          - 選單管理: manual/03_org_setup/menu_manage.md
           - 模組權限管理: manual/03_org_setup/module_permissions.md
           - 企業管理員: manual/03_org_setup/org_admins.md
           - 企業系統設定: manual/03_org_setup/system_settings.md

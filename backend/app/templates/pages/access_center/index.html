@@ -1,4 +1,5 @@
 {% extends 'layouts/base.html' %}
+{% block help_doc %}{% if is_system_admin %}manual/02_platform_admin/access_center_system{% endif %}{% endblock %}
 
 {% block title %}{{ _('權限管理中心') }} - BeakPlatform{% endblock %}
 
