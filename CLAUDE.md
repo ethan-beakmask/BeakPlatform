@@ -180,6 +180,9 @@ Generated with Claude Code"
 ./venv-docs/bin/python scripts/docs_impact.py --docs docs --base origin/main
 ```
 
+`--verify-covers` 只比對 **git 追蹤中**的檔案：新檔案 commit 前會被判成「失效的 covers」，
+不是路徑寫錯，先 `git add` 再驗（2026-09-02 踩到）。
+
 ### 使用者手冊有兩個出口，同一批來源（2026-08-13 起）
 
 `docs/manual/` 八章的 md 同時餵給兩個地方，**寫一次、兩邊生效**：
@@ -1661,6 +1664,16 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   # 不要憑 user_type 或帳號名假設——角色會合法改變授權結果，
   # 選錯樣本會得到假通過（2026-09-02 驗 ACL 場景踩過）
   ```
+- **範例企業（`scripts/seed_test_companies.py --run` 建的三家）**，2026-09-02 起有完整人資結構：
+  直屬主管鏈、6 核決類別 × 10 職等上限、兼任與代理職位、合約含 `form_workflow`。
+  **建好後預設 `admin@<domain>` 會被初始設定精靈擋住**（兩帳號制，PF-224 要自動化）；
+  GHTRAVEL 已過精靈：`admin-gh.admin@ghtravelexample.com.zz` / `GhAdmin2026#Test`
+  （quick-login user_id `S_m2bCV9HTkAKGbYzBaODr`），BRIGHTCODE／SHIELDEDGE 仍是
+  `admin@<domain>` / `Test1234!` 未過精靈。GHTRAVEL 與 BRIGHTCODE 已用
+  `scripts/examples/provision_hr_lookup_demo.py --org <code> --apply` 佈建「差旅費申請（人事取值示範）」：
+  領隊翎柏瑞（quick-login `oTBMqW0roaniN3UFhyKmZh`，L200）申請 30 萬 → 派直屬主管燁凱文（L500）、
+  500 萬 → 派處長霄雅慧（L700）。提交走 `POST /api/form-center/submit`，body 要 `published_secure_code`
+  （GHTRAVEL 是 `ANHfz8A6yeY8zl-k7uJ0XA`）+ `subject` + `form_data`
   **LION 的管理員不要自己用 SQL 撈**：`SELECT ... WHERE user_type='ORG_ADMIN'`
   在該企業會撈到不能登入的那一筆，quick-login 回 401（2026-08-31 踩過）。
   用上面寫死的 user_id。
@@ -1889,9 +1902,13 @@ sudo -u postgres psql -c "DROP DATABASE beakplatform_test;" \
 
 ```bash
 bash scripts/run_tests.sh                     # 全部，約 9 分鐘
+bash scripts/run_tests.sh tests/test_xxx.py -q     # 單檔：路徑寫 tests/…（相對 backend/）
 bash scripts/run_tests.sh -k menu -q
 bash scripts/run_e2e.sh                       # Playwright，需服務在跑
 ```
+
+**單檔路徑寫成 `backend/tests/xxx.py` 會 `collected 0 items` 且 exit 0**（2026-09-02 踩到）：
+看起來像全綠，實際上一個測試都沒跑。run_tests.sh 在 `backend/` 內執行，路徑要寫 `tests/xxx.py`。
 
 **基準不寫死數字**（會腐爛）：動工前先跑一次記下當時數字，改完再比對。
 以下三個非綠是長期已知、不列入退步：
@@ -2164,6 +2181,9 @@ SELECT node_type, node_id, started_at FROM fw_node_execution_queue WHERE status=
 脈絡見 `dev-notes/OS_EXECUTOR_SPEC.md` 第七節。
 
 - **正式管道是 systemd 服務**：`sudo systemctl restart beakplatform-dev.service`（重啟後 `systemctl is-active` 確認）
+  - **`is-active` 回 active 時 Flask 可能還沒開始 listen，nginx 這段約 5~10 秒回 502**（2026-09-02 連踩兩次）。
+    自動化驗收要先 `curl -s -o /dev/null -w '%{http_code}' $BASE/auth/login` 拿到 200 再開始，
+    quick-login 也要在那之後才做（重啟前後的 session 都作廢）
 - 開發服務以**非 debug 模式**跑，Python/模板變更**不會自動重載，必須重啟**
 - **重啟後所有登入 session 立即失效**（開發環境 `SESSION_TYPE='cachelib'` 存在進程記憶體）。
   症狀是重啟後 curl 拿到的頁面沒有 navbar、或 `/help/` 回 401——不是功能壞了，

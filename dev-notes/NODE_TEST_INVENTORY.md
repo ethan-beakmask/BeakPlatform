@@ -63,7 +63,7 @@
 | NT-28 | `OsExecutor` | OS 命令 | 系統 | 端到端 | `20260830-osnode.log`（四分法四條路徑、兩道授權閘門、cancel 協同兩種、併發上限、引號化對照） |
 | NT-29 | `OsFileRead` | 檔案讀取 | 系統 | 端到端 | `20260830-osnode.log`（四種模式、兩道授權閘門、symlink 與 `../` 逃逸各一次、regex／line_start／occurrence 三軸） |
 | NT-30 | `OsFileWrite` | OS 檔案寫入 | 系統 | 單元 | `20260831-filewrite.log` |
-| NT-31 | `OpHrLookup` | 人事資料取值 | 變數 | 單元 | `backend/tests/test_hr_lookup_node.py` |
+| NT-31 | `OpHrLookup` | 人事資料取值 | 變數 | 端到端 | `backend/tests/test_hr_lookup_node.py`（12 案例）＋ `20260902-hr-lookup-node.log`（GHTRAVEL 真跑：30 萬派 L500 直屬主管、500 萬派 L700 處長；設計器面板 chrome-devtools 實測） |
 
 進度：端到端 9 / 單元 2 / 部分 1 / 未驗證 15 / 已退役 1 / 已刪除 3。
 
