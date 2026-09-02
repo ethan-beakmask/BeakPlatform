@@ -1654,6 +1654,9 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   # ORG_ADMIN（LION）                   的 user_id 是 1W0Fkn7IK1RW1qwE8HkYQu
   # EMPLOYEE ethanyu@beluga.com（持 FLOW_DESIGNER + SECURITY_STAFF，測 Key2 場景用）
   #          的 user_id 是 FhsmtyPjsnXYotN-iz_Q-X
+  # 廠商登入頁（/auth/org/<domain>/public/login，POST JSON {"email","password"}）的測試帳號
+  # （2026-09-02 建）：gg@gmail.com 在 BELUGA / LION / SYSTEM 各一個、BELUGA 另有
+  # gg@other-vendor.com，密碼都是 VendorTest2026#Ok；在哪家的 URL 登入就落在哪家
   # 挑測試帳號的通則：對照「該帳號實際持有的角色」與場景所需權限來選，
   # 不要憑 user_type 或帳號名假設——角色會合法改變授權結果，
   # 選錯樣本會得到假通過（2026-09-02 驗 ACL 場景踩過）
