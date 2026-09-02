@@ -1545,6 +1545,8 @@ heredoc 建企業、`init_menus.py`、`init_permissions.py`、`flask module sync
 | migration 登記表 | 查 `schema_migrations` | **表已於 2026-09-01（PF-168）自 dev 庫刪除**，migration 制度廢止、model 即權威；查到引用它的舊文件一律過時 |
 | 編號規則的流水號 counter | `user_numbering_rules.current_counter` / `.code` | **兩個都不存在**；該表只有 `id / secure_code / org_secure_code / name / description / elements / is_active / usage_scope / default_for` 等，**流水號設定與計數藏在 `elements` 這個 jsonb 內**（`components` 陣列裡 `type='sequence'` 的項目）。要看「號碼有沒有被消耗」一律查 `used_user_numbers`，不要找 counter 欄位 |
 | 企業獨立資料庫登記表的必填欄位 | 只填 `org_secure_code` / `org_id` / `db_name` | 還要 **`secure_code`**、**`admin_user`**、**`admin_password_enc`**、**`sync_user`**、**`sync_password_enc`** 五個 NOT NULL（2026-08-29 造測試資料時逐一撞出來，錯誤訊息一次只報一個）。查全部必填：`SELECT column_name FROM information_schema.columns WHERE table_name='fw_org_databases' AND is_nullable='NO';` |
+| 代理授權是否生效 | `delegations.status='ACTIVE'` | **`status` 只是儲存時的快照，沒有排程更新**（2026-09-02 起畫面與簽核授權都改看日期）。SQL 查生效中一律用 `status<>'REVOKED' AND CURRENT_DATE BETWEEN effective_from AND effective_until`（嚴格說日界是企業時區，Python 端用 `Delegation.is_effective_on()` / `effective_status`） |
+| SMTP 設定組的主機欄位 | `smtp_configs.host` / `port` | **`smtp_host` / `smtp_port`**（另有 `use_tls` / `use_ssl` / `use_app_password` / `provider_type`；dev 只有 SYSTEM 一筆 `lionsecbot@gmail.com`，BELUGA／LION 沒有，統一設定見 PF-228） |
 | 用 SQL 造測試角色指派（mutation 驗證常用） | 只填 user/role/org 三個 secure_code | 還要 **`secure_code`**、**`assigned_at`** 兩個 NOT NULL（2026-09-01 逐一撞出來，錯誤一次只報一個）。`assigned_by` 填可辨識標記（如 `PF145-S5-TEST`），事後 `DELETE FROM user_role_assignments WHERE assigned_by='<標記>'` 一次撤乾淨；成功範例在 `/opt/tmp/verify/20260901-pf145-stage5.log` |
 
 ### 驗英文介面：沒有切換語系的 API，要改 DB 欄位（2026-08-29 試誤）

@@ -16,8 +16,8 @@ files:
     - backend/app/models/personal_schedule.py
     - backend/app/models/schedule_adjustment.py
   template:
-    - backend/app/templates/pages/admin/work_schedules/list.html
-    - backend/app/templates/pages/admin/work_schedules/holidays.html
+    - backend/app/templates/pages/admin/time/schedules.html
+    - backend/app/templates/pages/admin/time/holidays.html
   js:
     - backend/app/static/js/schedules.js
     - backend/app/static/js/holidays.js
