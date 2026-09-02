@@ -34,14 +34,6 @@
             <a href="{{ url_for('job_levels.view_job_level', secure_code=job_title.job_level.secure_code) }}">
                 {{ job_title.job_level.code }} - {{ job_title.job_level.name }}
             </a>
-            <br>
-            <span style="font-size: 0.9em; color: #666;">
-                {{ _('簽核上限:') }}
-                {% if job_title.job_level.approval_limit is none %}{{ _('無上限') }}
-                {% elif job_title.job_level.approval_limit == 0 %}{{ _('無權限') }}
-                {% else %}{{ '{:,.0f}'.format(job_title.job_level.approval_limit) }} {{ job_title.job_level.approval_currency }}
-                {% endif %}
-            </span>
             {% else %}
             -
             {% endif %}

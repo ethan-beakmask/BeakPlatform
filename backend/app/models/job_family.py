@@ -157,7 +157,15 @@ DEFAULT_JOB_FAMILIES = [
         'description': '不帶人的專業人員，專注於專業技能發展',
         'parent_code': None,
     },
-    # 專業職細分
+    # 專業職細分（職稱只能掛末端職系，不屬特定領域的專業職稱掛 GEN）
+    {
+        'code': 'GEN',
+        'name': '綜合專業職',
+        'name_en': 'General Professional',
+        'family_type': JobFamilyType.PROFESSIONAL,
+        'description': '不屬特定領域的專業人員',
+        'parent_code': 'PROF',
+    },
     {
         'code': 'SALES',
         'name': '業務職',

@@ -15,6 +15,8 @@ from flask_login import current_user
 from sqlalchemy import func
 from ..security.resource_gateway import ResourceGateway
 from ..models.job_family import JobFamily, JobFamilyType
+from ..models.job_title import JobTitle
+from ..models.employee_position import EmployeePosition
 from ..services.code_generator import get_code_generator
 from .. import db
 
@@ -24,6 +26,32 @@ job_families_bp = Blueprint('job_families', __name__)
 def _wants_json():
     """判斷請求是否期望 JSON 回應（AJAX 請求）"""
     return request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json
+
+
+def _parent_with_titles_error(parent_secure_code):
+    """上層職系已直接掛有職稱時回傳錯誤訊息，否則 None。
+
+    有子職系的職系不會出現在職稱設定與矩陣的欄位上，直掛在它上面的職稱會從畫面消失
+    （資料仍在）。所以要把已掛職稱的職系細分成子職系前，必須先把職稱移走。
+    """
+    if not parent_secure_code:
+        return None
+    parent = JobFamily.query.filter(
+        JobFamily.secure_code == parent_secure_code,
+        JobFamily.org_secure_code == current_user.org_secure_code,
+        JobFamily.is_deleted == False,
+    ).first()
+    if not parent:
+        return _('上層職系不存在')
+    count = JobTitle.query.filter(
+        JobTitle.job_family_secure_code == parent.secure_code,
+        JobTitle.org_secure_code == current_user.org_secure_code,
+        JobTitle.is_deleted == False,
+    ).count()
+    if count:
+        return _('上層職系「%(name)s」已直接掛有 %(count)s 個職稱，請先把職稱移到其他末端職系，再新增子職系',
+                 name=parent.name, count=count)
+    return None
 
 
 @job_families_bp.route('/')
@@ -164,6 +192,10 @@ def create_job_family():
         except ValueError:
             errors.append(_('排序順序須為整數'))
 
+        parent_error = _parent_with_titles_error(parent_secure_code)
+        if parent_error:
+            errors.append(parent_error)
+
         if errors:
             if _wants_json():
                 return jsonify({'success': False, 'errors': errors}), 400
@@ -260,6 +292,12 @@ def edit_job_family(secure_code: str):
         if parent_secure_code == secure_code:
             errors.append(_('不能將自己設為父職系'))
 
+        # 換到新的上層職系時，該上層不能已直接掛有職稱（原本就掛在它底下的不擋，避免舊資料無法編輯）
+        if parent_secure_code and parent_secure_code != job_family.parent_secure_code:
+            parent_error = _parent_with_titles_error(parent_secure_code)
+            if parent_error:
+                errors.append(parent_error)
+
         if errors:
             if _wants_json():
                 return jsonify({'success': False, 'errors': errors}), 400
@@ -342,6 +380,20 @@ def delete_job_family(secure_code: str):
             }), 409
         flash(msg, 'warning')
         return redirect(url_for('job_families.edit_job_family', secure_code=secure_code, confirm_cascade=len(active_titles)))
+
+    # 連動刪除的職稱若仍有成員職位指派就擋下（與單獨刪除職稱的檢查一致）
+    if active_titles and cascade_delete:
+        assigned = EmployeePosition.query.filter(
+            EmployeePosition.job_title_secure_code.in_([t.secure_code for t in active_titles]),
+            EmployeePosition.org_secure_code == current_user.org_secure_code,
+            EmployeePosition.is_deleted == False,
+        ).count()
+        if assigned:
+            msg = _('連動刪除的職稱中仍有 %(count)s 筆成員職位指派，請先到職位設定移除', count=assigned)
+            if _wants_json():
+                return jsonify({'success': False, 'errors': [msg]}), 400
+            flash(msg, 'error')
+            return redirect(url_for('job_families.edit_job_family', secure_code=secure_code))
 
     try:
         # 連動刪除職稱

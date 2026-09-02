@@ -65,7 +65,6 @@
                     <option value="{{ level.secure_code }}"
                             {% if request.form.get('job_level_secure_code') == level.secure_code %}selected{% endif %}>
                         {{ level.code }} - {{ level.name }}
-                        ({{ _('簽核:') }} {% if level.approval_limit is none %}{{ _('無上限') }}{% elif level.approval_limit == 0 %}{{ _('無') }}{% else %}{{ '{:,.0f}'.format(level.approval_limit) }}{% endif %})
                     </option>
                     {% endfor %}
                 </select>
