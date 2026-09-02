@@ -224,8 +224,9 @@ def create_external_user():
         elif not group_code:
             flash(_('必須選擇歸屬群組'), 'error')
         else:
-            # 從 email 提取 username
-            username = email.split('@')[0]
+            # 外部廠商的身分識別是完整 Email：同企業內 gg@a.com 與 gg@b.com 是兩個人，
+            # username 直接等於 Email（2026-09-02 起，之前取 @ 前段會互撞）
+            username = email
 
             # 檢查同企業內 email 是否已存在
             existing = User.query.filter_by(
@@ -430,7 +431,7 @@ def edit_external_user(secure_code: str):
                     old_notes = user.notes
 
                     user.email = new_email
-                    user.username = new_email.split('@')[0]
+                    user.username = new_email
                     user.backup_email_1 = new_email
                     user.notes = new_notes if new_notes else None
 

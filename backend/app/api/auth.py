@@ -21,6 +21,7 @@ from ..security.resource_gateway import ResourceGateway
 from ..services import file_service
 from ..services.password_policy_service import PasswordPolicyService
 from ..models import Organization, User
+from ..models.user import UserType
 from .. import limiter, csrf, db
 from ..services.rate_limit_service import RateLimitService, make_auth_key_func
 
@@ -155,9 +156,13 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
         return error_response(_('帳號或密碼錯誤'), 401)
 
     # 查詢用戶 (支援 username 和 email 登入)
+    # 外部廠商只能走廠商登入頁（org_public_login，以 Email 查）。
+    # 沒有這條時廠商用 username 從員工頁登得進來（2026-09-02 實測），
+    # 而 username 改成完整 Email 之後這個洞會變成「在企業專屬頁填 Email 就進得來」。
     user = User.query.filter(
         User.org_secure_code == org.secure_code,
         User.is_deleted == False,
+        User.user_type != UserType.EXTERNAL,
         db.or_(
             User.username == username,
             User.email == f'{username}@{domain_name}'

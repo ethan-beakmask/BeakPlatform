@@ -23629,3 +23629,9 @@ msgstr "Workflow tree diagram - BeakPlatform"
 #~ msgid "工作流模板 %(workflow_template_secure_code)s 不存在"
 #~ msgstr "Workflow template %(workflow_template_secure_code)s does not exist"
 
+
+msgid "外部廠商帳號需提供完整 Email"
+msgstr "External vendor accounts require a full email address"
+
+msgid "第 %(row)s 列: 外部廠商帳號請在「外部廠商帳號」頁面以完整 Email 建立"
+msgstr "Row %(row)s: create external vendor accounts on the External Vendors page with a full email address"

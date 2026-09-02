@@ -1359,8 +1359,11 @@ WHERE created_at > (now() AT TIME ZONE 'UTC') - interval '15 minutes'
   PF-150 已於 2026-09-01 依 2026-08-23 重評結論關單）：`role: "external"` 建
   EXTERNAL 並自動配 `EXTERNAL_USERS` 角色、`org_admin` 建 ORG_ADMIN、
   預設 `user`＝EMPLOYEE 配 `EMPLOYEE` 角色（`_get_user_type_from_role` /
-  `_assign_default_role`）。要 EXTERNAL 測試帳號直接傳 `role: "external"` 即可，
-  不必再用 SQL 改
+  `_assign_default_role`）。要 EXTERNAL 測試帳號傳 `role: "external"` **加 `email`
+  （完整 Email，如 `gg@gmail.com`；`username` 可省略，會等於 Email）**，
+  不必再用 SQL 改。2026-09-02 起外部廠商的 `username` 一律等於完整 Email
+  （之前取 `@` 前段，同企業兩個 gg 會撞唯一索引）；員工／共用登入頁的
+  `_do_login()` 同日起排除 EXTERNAL，廠商只能從廠商登入頁以 Email 登入
 - 硬刪一個測試帳號要**按 FK 順序清四張表**，少一張就被擋，
   而錯誤訊息只說 "still referenced" 不會一次列出全部：
 

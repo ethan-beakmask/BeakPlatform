@@ -947,6 +947,9 @@ def _import_single_user(row: dict, org, row_num: int):
 
     # 選填欄位
     role = row.get('role', '').strip() or 'user'
+    if role == 'external':
+        # 廠商 Email 不屬企業網域，這裡的 email 是 username@企業網域 組出來的，會建出錯的身分
+        return _('第 %(row)s 列: 外部廠商帳號請在「外部廠商帳號」頁面以完整 Email 建立', row=row_num)
     # 預設通知 Email：如果未填寫備用 Email 1，使用帳號 Email
     backup_email_1 = row.get('backup_email_1', '').strip() or email
     employee_id = row.get('employee_id', '').strip() or None

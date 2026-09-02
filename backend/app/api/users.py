@@ -90,7 +90,8 @@ def create_user():
         "english_name": "Da-Ming Wang",
         "username": "daming.wang",
         "password": "optional",
-        "role": "user",
+        "role": "user",                      # user / org_admin / external
+        "email": "vendor@example.com",       # role=external 時必填（完整 Email，username 可省略）
         "employee_id": "EMP001",
         "department_code": "DEPT_CODE",
         "nickname": "王○明",
@@ -110,9 +111,11 @@ def create_user():
     english_name = (data.get('english_name') or '').strip()
     username = (data.get('username') or '').replace(' ', '').lower()
     password = (data.get('password') or '').strip()
+    role = (data.get('role') or 'user').strip()
+    is_external = role == 'external'
 
     employee_id_raw = (data.get('employee_id') or '').strip()
-    if not native_name or not english_name or not username:
+    if not native_name or not english_name or (not username and not is_external):
         return jsonify({'error': _('本國姓名、英文姓名、帳號為必填')}), 400
     if not employee_id_raw:
         return jsonify({'error': _('用戶編號為必填')}), 400
@@ -121,12 +124,24 @@ def create_user():
     if not org:
         return jsonify({'error': _('找不到所屬企業')}), 400
 
-    email = f"{username}@{org.domain_name}"
+    if is_external:
+        # 外部廠商的 Email 不屬企業網域，身分識別就是完整 Email，username 直接等於它
+        # （與 web/external_users.py 的建立路徑一致，2026-09-02 起）
+        email = (data.get('email') or '').strip().lower()
+        if not email or '@' not in email:
+            return jsonify({'error': _('外部廠商帳號需提供完整 Email')}), 400
+        username = email
+        existing = User.query.filter_by(
+            email=email, org_secure_code=org.secure_code, is_deleted=False).first()
+        if existing:
+            return jsonify({'error': _('Email %(email)s 已存在', email=email)}), 409
+    else:
+        email = f"{username}@{org.domain_name}"
 
-    # 檢查帳號唯一性
-    existing = User.query.filter_by(email=email, is_deleted=False).first()
-    if existing:
-        return jsonify({'error': _('帳號 %(username)s 已存在', username=username)}), 409
+        # 檢查帳號唯一性
+        existing = User.query.filter_by(email=email, is_deleted=False).first()
+        if existing:
+            return jsonify({'error': _('帳號 %(username)s 已存在', username=username)}), 409
 
     # 檢查用戶編號唯一性
     employee_id = employee_id_raw
@@ -164,8 +179,7 @@ def create_user():
     }
     display_name = display_name_map.get(display_name_field, native_name)
 
-    # 角色
-    role = data.get('role', 'user')
+    # 角色（role 已在上方讀取）
     from ..web.users import _get_user_type_from_role
     user_type = _get_user_type_from_role(role, current_user.is_system_admin)
 

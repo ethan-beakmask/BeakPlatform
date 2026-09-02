@@ -42,7 +42,8 @@ class User(TenantBaseModel, UserMixin):
     )
 
     # 用戶名 (組織內唯一，用於登入)
-    username = Column(String(100), nullable=False, index=True)
+    # 外部廠商的 username 就是完整 Email（2026-09-02 起），長度與 email 欄一致
+    username = Column(String(255), nullable=False, index=True)
 
     # Email (組織內唯一)
     email = Column(String(255), nullable=False, index=True)
