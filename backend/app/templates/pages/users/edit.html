@@ -1,4 +1,5 @@
 {% extends 'layouts/base.html' %}
+{% block help_doc %}{% if is_self %}manual/01_getting_started/personal_settings{% else %}manual/03_org_setup/users{% endif %}{% endblock %}
 
 {% block title %}{% if is_self %}{{ _('個人設定') }}{% else %}{{ _('編輯用戶 - %(name)s', name=user.display_name) }}{% endif %} - BeakMask{% endblock %}
 

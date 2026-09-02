@@ -1,7 +1,7 @@
 ---
 title: 外部廠商帳號
 audience: ORG_ADMIN
-order: 100
+order: 110
 nav_menu: external_users
 requires:
   - manual/03_org_setup/numbering
