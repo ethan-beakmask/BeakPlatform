@@ -1384,7 +1384,7 @@ org 與 owner 一律取自登入身分、payload 給了也忽略。五件猜不�
 - **新增平台選單對既有環境不會自動出現**：`seed_platform_menus()` 非 force 模式見到任何選單就整批跳過。
   補種走 `venv/bin/python scripts/seed_missing_platform_menus.py --dry-run` → `--apply`（通用、冪等，含所有企業 Key2）。
   bpserv 這類已安裝環境 `--update` 後也要跑一次，否則選單不在、`page_keys_required` 對 EMPLOYEE 一律 403。
-  **第二期在 bpserv 還要補 `schedule_adjustments.calendar_event_secure_code` 欄位**（`--update` 的 create_all 只補新表不補欄位；bpserv 已於 2026-09-03 PF-232 補齊，連同該表的唯一約束）
+  **第二期在 bpserv 還要補 `schedule_adjustments.calendar_event_secure_code` 欄位**（`--update` 的 create_all 只補新表不補欄位；bpserv 已於 2026-09-03 PF-232 補齊，連同該表的唯一約束；其他既有環境的升級 SQL 在 `dev-notes/CALENDAR_SPEC.md` 第六節）
 
 投影規則表、時區處理、前端行為與已知取捨見 `dev-notes/CALENDAR_SPEC.md`。
 班表假日 API 2026-09-02 起收下 `COMP_OFF`（視同休假），`saveHoliday()` 改用 `result.imported` 回報。

@@ -104,7 +104,12 @@ EXTERNAL 沒有 Key1 → API 403、頁面被 PageRoleGuard 302。
 ```sql
 ALTER TABLE schedule_adjustments ADD COLUMN IF NOT EXISTS calendar_event_secure_code VARCHAR(32);
 CREATE INDEX IF NOT EXISTS ix_schedule_adjustments_calendar_event_secure_code ON schedule_adjustments (calendar_event_secure_code);
+-- 2026-09-02 之前 fresh 安裝的環境沒有這條唯一約束（model 第二期才宣告；bpserv 2026-09-03 PF-232 補過）
+ALTER TABLE schedule_adjustments ADD CONSTRAINT schedule_adjustments_user_secure_code_adjust_date_adjust_ty_key
+  UNIQUE (user_secure_code, adjust_date, adjust_type);
 ```
+
+bpserv 已於 2026-09-03（PF-232）補齊三者，之後新裝的環境由 `create_all()` 直接建出。
 
 ## 六之二、第三期入口
 
