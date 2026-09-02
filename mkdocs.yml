@@ -57,6 +57,7 @@ nav:
       - 開始使用:
           - manual/01_getting_started/index.md
           - 登入與登出: manual/01_getting_started/login.md
+          - 登入救助機制: manual/01_getting_started/duress_login.md
           - 介面導覽: manual/01_getting_started/interface_tour.md
           - 個人設定: manual/01_getting_started/personal_settings.md
           - 儀表板: manual/01_getting_started/dashboard.md
