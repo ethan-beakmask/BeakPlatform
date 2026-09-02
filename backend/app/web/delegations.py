@@ -6,7 +6,7 @@ BeakMask Delegation Management Web Routes
 - 主管休假/出差時的職務代理
 - 確保簽核流程不會卡住
 """
-from datetime import datetime, date
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
 from flask_babel import gettext as _
@@ -117,27 +117,20 @@ def create_delegation():
                 flash(err, 'error')
         else:
             try:
-                # 判斷狀態
-                today = date.today()
-                if effective_from > today:
-                    status = DelegationStatus.PENDING
-                elif effective_until < today:
-                    status = DelegationStatus.EXPIRED
-                else:
-                    status = DelegationStatus.ACTIVE
-
                 delegation = Delegation(
                     org_secure_code=current_user.org_secure_code,
                     delegator_secure_code=delegator_secure_code,
                     delegate_secure_code=delegate_secure_code,
                     delegation_type=delegation_type,
-                    status=status,
+                    status=DelegationStatus.PENDING,
                     effective_from=effective_from,
                     effective_until=effective_until,
                     approval_limit=approval_limit,
                     reason=reason,
                     created_by=current_user.display_name
                 )
+                # status 只是儲存當下的快照；生效與畫面顯示一律走 effective_status（依企業當地日期）
+                delegation.check_and_update_status()
                 db.session.add(delegation)
                 db.session.commit()
 
@@ -219,15 +212,8 @@ def edit_delegation(secure_code: str):
                 delegation.approval_limit = approval_limit
                 delegation.reason = reason
 
-                # 更新狀態
-                today = date.today()
-                if delegation.status != DelegationStatus.REVOKED:
-                    if effective_from > today:
-                        delegation.status = DelegationStatus.PENDING
-                    elif effective_until < today:
-                        delegation.status = DelegationStatus.EXPIRED
-                    else:
-                        delegation.status = DelegationStatus.ACTIVE
+                # 同步 status 快照（依企業當地日期；已撤銷不變更）
+                delegation.check_and_update_status()
 
                 db.session.commit()
                 flash(_('已更新代理授權'), 'success')

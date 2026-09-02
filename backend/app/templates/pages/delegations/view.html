@@ -8,7 +8,7 @@
 
 <p>
     <a href="{{ url_for('delegations.list_delegations') }}">{{ _('[返回列表]') }}</a>
-    {% if delegation.status != 'REVOKED' and delegation.status != 'EXPIRED' %}
+    {% if delegation.effective_status != 'REVOKED' and delegation.effective_status != 'EXPIRED' %}
     <a href="{{ url_for('delegations.edit_delegation', secure_code=delegation.secure_code) }}">{{ _('[編輯]') }}</a>
     {% endif %}
 </p>
@@ -62,16 +62,16 @@
     <tr>
         <th>{{ _('狀態') }}</th>
         <td>
-            {% if delegation.status == 'ACTIVE' %}
+            {% if delegation.effective_status == 'ACTIVE' %}
             <span class="text-success" style="font-weight: bold;">{{ _('生效中') }}</span>
-            {% elif delegation.status == 'PENDING' %}
+            {% elif delegation.effective_status == 'PENDING' %}
             <span class="text-warning" style="font-weight: bold;">{{ _('待生效') }}</span>
-            {% elif delegation.status == 'EXPIRED' %}
+            {% elif delegation.effective_status == 'EXPIRED' %}
             <span class="text-muted" style="font-weight: bold;">{{ _('已過期') }}</span>
-            {% elif delegation.status == 'REVOKED' %}
+            {% elif delegation.effective_status == 'REVOKED' %}
             <span class="text-danger" style="font-weight: bold;">{{ _('已撤銷') }}</span>
             {% else %}
-            {{ delegation.status }}
+            {{ delegation.effective_status }}
             {% endif %}
         </td>
     </tr>
@@ -95,7 +95,7 @@
         <th>{{ _('建立時間') }}</th>
         <td>{{ delegation.created_at|tz_format('%Y-%m-%d %H:%M') if delegation.created_at else '-' }}</td>
     </tr>
-    {% if delegation.status == 'REVOKED' %}
+    {% if delegation.effective_status == 'REVOKED' %}
     <tr>
         <th class="text-danger">{{ _('撤銷者') }}</th>
         <td>{{ delegation.revoked_by or '-' }}</td>
@@ -111,7 +111,7 @@
     {% endif %}
 </table>
 
-{% if delegation.status == 'ACTIVE' or delegation.status == 'PENDING' %}
+{% if delegation.effective_status == 'ACTIVE' or delegation.effective_status == 'PENDING' %}
 <hr style="margin-top: 40px;">
 <h3 class="text-danger">{{ _('撤銷授權') }}</h3>
 <form method="POST" action="{{ url_for('delegations.revoke_delegation', secure_code=delegation.secure_code) }}"

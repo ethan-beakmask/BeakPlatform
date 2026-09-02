@@ -79,13 +79,13 @@
         <tr>
             <th style="text-align: left;">{{ _('目前狀態') }}</th>
             <td>
-                {% if delegation.status == 'ACTIVE' %}
+                {% if delegation.effective_status == 'ACTIVE' %}
                 <span class="text-success">{{ _('生效中') }}</span>
-                {% elif delegation.status == 'PENDING' %}
+                {% elif delegation.effective_status == 'PENDING' %}
                 <span class="text-warning">{{ _('待生效') }}</span>
-                {% elif delegation.status == 'EXPIRED' %}
+                {% elif delegation.effective_status == 'EXPIRED' %}
                 <span class="text-muted">{{ _('已過期') }}</span>
-                {% elif delegation.status == 'REVOKED' %}
+                {% elif delegation.effective_status == 'REVOKED' %}
                 <span class="text-danger">{{ _('已撤銷') }}</span>
                 {% endif %}
                 <span class="text-muted" style="font-size: 0.9em;">{{ _('(依日期自動判定)') }}</span>

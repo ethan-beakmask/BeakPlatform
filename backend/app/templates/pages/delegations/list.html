@@ -54,15 +54,15 @@
                 {% endif %}
             </td>
             <td>
-                {% if d.status == 'ACTIVE' %}
+                {% if d.effective_status == 'ACTIVE' %}
                 <span class="text-success">{{ _('生效中') }}</span>
-                {% elif d.status == 'PENDING' %}
+                {% elif d.effective_status == 'PENDING' %}
                 <span class="text-warning">{{ _('待生效') }}</span>
-                {% elif d.status == 'EXPIRED' %}
+                {% elif d.effective_status == 'EXPIRED' %}
                 <span class="text-muted">{{ _('已過期') }}</span>
-                {% elif d.status == 'REVOKED' %}
+                {% elif d.effective_status == 'REVOKED' %}
                 <span class="text-danger">{{ _('已撤銷') }}</span>
-                {% else %}{{ d.status }}
+                {% else %}{{ d.effective_status }}
                 {% endif %}
             </td>
             <td>
@@ -72,7 +72,7 @@
             </td>
             <td>
                 <a href="{{ url_for('delegations.view_delegation', secure_code=d.secure_code) }}">{{ _('[查看]') }}</a>
-                {% if d.status != 'REVOKED' and d.status != 'EXPIRED' %}
+                {% if d.effective_status != 'REVOKED' and d.effective_status != 'EXPIRED' %}
                 <a href="{{ url_for('delegations.edit_delegation', secure_code=d.secure_code) }}">{{ _('[編輯]') }}</a>
                 {% endif %}
             </td>

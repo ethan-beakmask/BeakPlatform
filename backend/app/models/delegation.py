@@ -112,26 +112,59 @@ class Delegation(TenantBaseModel):
                             backref=db.backref('delegations_given', lazy='dynamic'))
     delegate = relationship('User', foreign_keys=[delegate_secure_code],
                            backref=db.backref('delegations_received', lazy='dynamic'))
+    organization = relationship('Organization', foreign_keys='Delegation.org_secure_code')
+
+    def _org_today(self) -> date:
+        """企業當地日曆日（TZ-01，與 Contract 相同做法）。"""
+        org = self.organization
+        if org is None and self.org_secure_code:
+            from .organization import Organization
+            org = Organization.query.filter_by(secure_code=self.org_secure_code).first()
+        if org is not None:
+            return org.local_today()
+        from app.utils.timezone import local_today
+        return local_today('Asia/Taipei')
+
+    def is_effective_on(self, today: date) -> bool:
+        """指定日期是否在生效期間內（撤銷、刪除一律 False）。
+
+        效期判定只看日期，不看 `status` 欄位——`status` 是儲存當下算出的快照，
+        沒有排程更新它，提前建立的授權到了開始日不會自己翻成 ACTIVE（2026-09-02 修）。
+        """
+        if self.status == DelegationStatus.REVOKED or self.is_deleted:
+            return False
+        if not self.effective_from or not self.effective_until:
+            return False
+        return self.effective_from <= today <= self.effective_until
+
+    @property
+    def effective_status(self) -> str:
+        """依企業當地今天推導的狀態；畫面與 API 一律用這個，不用 `status`。"""
+        if self.status == DelegationStatus.REVOKED:
+            return DelegationStatus.REVOKED
+        today = self._org_today()
+        if today < self.effective_from:
+            return DelegationStatus.PENDING
+        if today > self.effective_until:
+            return DelegationStatus.EXPIRED
+        return DelegationStatus.ACTIVE
 
     @property
     def is_active(self) -> bool:
-        """檢查代理授權是否生效中"""
-        if self.status != DelegationStatus.ACTIVE:
-            return False
-        today = date.today()
-        return self.effective_from <= today <= self.effective_until
+        """今天（企業當地日）是否生效中。簽核授權（task_authorizer）吃的就是這個。"""
+        return self.is_effective_on(self._org_today())
 
     @property
     def is_expired(self) -> bool:
         """檢查是否已過期"""
-        return date.today() > self.effective_until
+        return self._org_today() > self.effective_until
 
     @property
     def days_remaining(self) -> int:
         """剩餘天數"""
         if self.is_expired:
             return 0
-        return (self.effective_until - date.today()).days
+        return (self.effective_until - self._org_today()).days
 
     def can_approve_amount(self, amount: Decimal, currency: str = 'TWD') -> bool:
         """
@@ -191,18 +224,10 @@ class Delegation(TenantBaseModel):
         self.revoke_reason = reason
 
     def check_and_update_status(self) -> None:
-        """檢查並更新狀態"""
-        today = date.today()
-
+        """把 `status` 快照同步成目前推導值（儲存時呼叫；已撤銷不變更）。"""
         if self.status == DelegationStatus.REVOKED:
-            return  # 已撤銷不變更
-
-        if today < self.effective_from:
-            self.status = DelegationStatus.PENDING
-        elif today > self.effective_until:
-            self.status = DelegationStatus.EXPIRED
-        else:
-            self.status = DelegationStatus.ACTIVE
+            return
+        self.status = self.effective_status
 
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
@@ -210,7 +235,8 @@ class Delegation(TenantBaseModel):
             'delegator_id': self.delegator_secure_code,
             'delegate_id': self.delegate_secure_code,
             'delegation_type': self.delegation_type,
-            'status': self.status,
+            'status': self.effective_status,
+            'stored_status': self.status,
             'is_active': self.is_active,
             'effective_from': self.effective_from.isoformat() if self.effective_from else None,
             'effective_until': self.effective_until.isoformat() if self.effective_until else None,
