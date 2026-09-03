@@ -1728,6 +1728,9 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   `before_request`，比 decorator 早）。跑「哪種身分打得進去」的矩陣時若忘了帶
   token，會看到每一種身分都回 400，看起來像守門完全沒生效，實際上根本還沒走到
   守門那一步（2026-08-31 驗 PF-185 時踩過）。**測授權一律先取 token。**
+  **表單型 POST（非 API，如 `/delegations/create`）的 token 是頁面裡的 hidden input**，
+  `grep -o 'name="csrf_token" value="[^"]*'` 在有 modal 的頁面會命中**兩個**，不加 `head -1`
+  會把兩個 token 串成一個送出、回 400（2026-09-03 驗 PF-229 第三期時踩過）。
 
 ### bpserv 測試機（2026-09-01 建立，2026-09-02 PF-211 後重裝，install.sh 全新安裝的驗證環境）
 
