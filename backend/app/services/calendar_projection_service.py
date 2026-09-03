@@ -122,6 +122,10 @@ class CalendarProjectionService:
                 else:
                     periods = (schedule.weekly_hours or {}).get(WEEKDAY_KEYS[current.weekday()])
                     is_workday = bool(periods)
+            elif current.weekday() >= 5:
+                # 企業沒班表時六、日預設非工作日（Ethan 2026-09-03 定案）。
+                # 補班只能由班表的假日表標記，沒班表就沒有補班可言，所以這裡不需要例外。
+                is_workday = False
             days.append({
                 'date': current.isoformat(),
                 'weekday': (current.weekday() + 1) % 7,

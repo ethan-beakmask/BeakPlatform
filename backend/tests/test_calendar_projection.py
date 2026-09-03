@@ -185,7 +185,13 @@ def test_days_use_schedule_holidays_and_missing_schedule_is_unknown(test_org, te
     db.session.add(org2)
     db.session.commit()
     viewer = _user('no_sched_user_000001', org2, 'nosched', 'No Schedule')
-    assert CalendarProjectionService.build(org2, viewer, 'org', date(2026, 9, 1), date(2026, 9, 1))['days'][0]['is_workday'] is None
+    # 沒班表：平日 None（不知道），六、日預設非工作日（Ethan 2026-09-03 定案）
+    days2 = {d['date']: d for d in
+             CalendarProjectionService.build(org2, viewer, 'org', date(2026, 9, 1), date(2026, 9, 6))['days']}
+    assert days2['2026-09-01']['is_workday'] is None
+    assert days2['2026-09-04']['is_workday'] is None
+    assert days2['2026-09-05']['is_workday'] is False
+    assert days2['2026-09-06']['is_workday'] is False
 
 
 def test_comp_off_projects_as_holiday_event(test_org, test_user):

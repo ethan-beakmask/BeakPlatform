@@ -48,7 +48,7 @@ EXTERNAL 沒有 Key1 → API 403、頁面被 PageRoleGuard 302。
 沒有確定開始時間的是待辦不是行事曆，而且表單量大、已有表單中心。`fw_node_execution_queue` 只投影有到期時刻的
 `Delay`。日後不要以「順手」為由把 Approve／FormAdapter 加回來。
 
-`days[]`：每日 `is_workday`（`None`＝企業沒班表）、`holiday`、`is_today`。不逐日呼叫 `get_day_periods()`，
+`days[]`：每日 `is_workday`（`None`＝企業沒班表的平日；**沒班表的六、日一律 `False`**，Ethan 2026-09-03 定案「六日預設用假日底色，除非補班」，而補班只能由班表假日表標記）、`holiday`、`is_today`。不逐日呼叫 `get_day_periods()`，
 一次撈 range 內假日再用 `weekly_hours` 推。
 
 ## 四、時區（TZ-01）
