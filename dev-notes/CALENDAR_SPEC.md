@@ -145,7 +145,7 @@ bpserv 已於 2026-09-03（PF-232）補齊三者，之後新裝的環境由 `cre
 
 三件要知道的：
 
-- **`/delegations/` 雙鑰匙只開給 ORG_ADMIN**（Key1／Key2 三家企業都只有 ORG_ADMIN），所以員工端刻意只有文字提示、沒有連結——給員工連結會 302 到登入頁。要開放員工自助建代理是權限模型的獨立決策，未做
+- **`/delegations/` 雙鑰匙只開給 ORG_ADMIN**（Key1／Key2 三家企業都只有 ORG_ADMIN），所以員工端刻意只有文字提示、沒有連結——給員工連結會 302 到登入頁。Ethan 2026-09-03 21:50 定案**要開放**員工自助建立代理授權（授權人限本人），待辦 PF-236、尚未實作；做法見該卡選項 B（後端強制 `delegator_secure_code = current_user.secure_code`，`/delegations/` 管理頁維持 ORG_ADMIN，注意 PERM-03 與 DATA-01）
 - 判定是**提示等級**，誤報可接受：BELUGA 的 `user@beluga.com`（只有 EMPLOYEE 角色）也會 `needed=true`，因為有發行流程把簽核指派給 `EMPLOYEE` 角色。不要為了消除這種案例去改判定
 - `web/dev.py::_is_safe_relative_path()` 是另一份較寬鬆的同類判定（dev 工具專用）。日後第三處需要 `next` 防護時先抽成 `app/utils/` 共用，不要再複製第三份
 - 驗收憑證 `/opt/tmp/verify/20260903-pf229-p3-item1.log`（curl 10 步＋瀏覽器 B1～B4：員工 toast 無連結、員工面板無連結、管理員面板連結 href 正確、管理員 toast 連結 → 代理頁預填 → 送出回流 `/calendar/me`）；測試 `test_calendar_events_api.py` 新增 7 條、`test_delegations_prefill.py` 3 條
