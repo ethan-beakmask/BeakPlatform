@@ -122,6 +122,10 @@ def register_blueprints(app: Flask) -> None:
     from .my_api_keys import my_api_keys_bp
     app.register_blueprint(my_api_keys_bp)
 
+    # Personal delegation management (本人代理授權清單/建立/撤銷)
+    from .my_delegations import my_delegations_bp
+    app.register_blueprint(my_delegations_bp)
+
     # Broadcasts (廣播系統)
     from .broadcasts import broadcasts_bp
     app.register_blueprint(broadcasts_bp)

@@ -139,16 +139,33 @@ bpserv 已於 2026-09-03（PF-232）補齊三者，之後新裝的環境由 `cre
 | 層 | 實作 |
 |---|---|
 | 判定（唯一實作） | `backend/app/services/approver_exposure_service.py::ApproverExposureService.describe(org, user, start, end)` → `needed / already_delegated / pending_count / template_count`。a. WAITING 的 Approve／FormAdapter 任務逐筆 `task_authorizer.is_pending_assignee()`；b. `fw_published_form_workflows.status='Published'` 的 `workflow_snapshot.graph.nodes` 中 `assignee_type='USER'` 指名本人或 `'ROLE'` 為本人持有角色（其他型別不算）；c. 本人為授權人、未撤銷、效期涵蓋整段的 `delegations` 存在則 `needed=False`。form_workflow 在函式內 lazy import，`ImportError` 視為 0 |
-| 掛點 | `CalendarEventService.delegation_hint(org, actor, row)`：PERSONAL 且 LEAVE／TRIP 才有值；`POST/PUT /api/calendar/events` 回應多 `delegation_hint`（可為 null），API 層只在 `is_org_admin` 時補 `create_url`（`url_for('delegations.create_delegation', delegator=, effective_from=, effective_until=, reason=, next=url_for('calendar_web.my_calendar'))`） |
+| 掛點 | `CalendarEventService.delegation_hint(org, actor, row)`：PERSONAL 且 LEAVE／TRIP 才有值；`POST/PUT /api/calendar/events` 回應多 `delegation_hint`（可為 null），API 層依身分補 `create_url`：ORG_ADMIN → `url_for('delegations.create_delegation', delegator=, effective_from=, effective_until=, reason=, next=url_for('calendar_web.my_calendar'))`；EMPLOYEE → `url_for('main.personal_settings', delegation='new', effective_from=, effective_until=, reason=, next=, _anchor='my-delegations')`（PF-236，六之四）；其餘 `None` |
 | 前端 | `calendar.js::showHint()` 存檔後顯示 15 秒 toast（`common.css` 的 `.toast.warning` ＋ `calendar.css` 的 `.cal-toast`）；有 `create_url` 才有 [建立代理授權] 連結，否則句尾接「請通知管理員建立代理授權」。`delegationLinkFor(ev)`：ORG_ADMIN 在面板看**別人**未遮罩的 manual LEAVE／TRIP 才回 URL（`next=location.pathname`） |
 | 代理授權頁 | `web/delegations.py::create_delegation()` 以 `prefill` dict 餵模板（POST 值優先、其次 query string `delegator / effective_from / effective_until / reason / next`）；`_safe_next()` 只收單一 `/` 開頭、無 `//`、`\`、空白與控制字元；建立成功 `redirect(next)`，否則回列表 |
 
 三件要知道的：
 
-- **`/delegations/` 雙鑰匙只開給 ORG_ADMIN**（Key1／Key2 三家企業都只有 ORG_ADMIN），所以員工端刻意只有文字提示、沒有連結——給員工連結會 302 到登入頁。Ethan 2026-09-03 21:50 定案**要開放**員工自助建立代理授權（授權人限本人），待辦 PF-236、尚未實作；做法見該卡選項 B（後端強制 `delegator_secure_code = current_user.secure_code`，`/delegations/` 管理頁維持 ORG_ADMIN，注意 PERM-03 與 DATA-01）
+- **`/delegations/` 雙鑰匙只開給 ORG_ADMIN**（Key1／Key2 三家企業都只有 ORG_ADMIN），給員工那條連結會 302 到登入頁。第 1 項上線當天員工端只有文字提示；同日 Ethan 定案開放員工自助（PF-236），員工端的 `create_url` 改指向個人設定頁，見六之四
 - 判定是**提示等級**，誤報可接受：BELUGA 的 `user@beluga.com`（只有 EMPLOYEE 角色）也會 `needed=true`，因為有發行流程把簽核指派給 `EMPLOYEE` 角色。不要為了消除這種案例去改判定
 - `web/dev.py::_is_safe_relative_path()` 是另一份較寬鬆的同類判定（dev 工具專用）。日後第三處需要 `next` 防護時先抽成 `app/utils/` 共用，不要再複製第三份
 - 驗收憑證 `/opt/tmp/verify/20260903-pf229-p3-item1.log`（curl 10 步＋瀏覽器 B1～B4：員工 toast 無連結、員工面板無連結、管理員面板連結 href 正確、管理員 toast 連結 → 代理頁預填 → 送出回流 `/calendar/me`）；測試 `test_calendar_events_api.py` 新增 7 條、`test_delegations_prefill.py` 3 條
+
+## 六之四、PF-236：員工自助建立代理授權（授權人限本人，2026-09-03 完成）
+
+| 層 | 實作 |
+|---|---|
+| API（唯一寫入路徑） | `backend/app/api/my_delegations.py`（`/api/my-delegations`，全部 `@login_required` ＋ `_deny_non_member()`：只有 `is_employee` 或 `is_org_admin` 可用，EXTERNAL／SYSTEM_ADMIN 一律 403 `forbidden`）。`GET`（`given`＝我授權的、`received`＝我代理的、`today`）／`GET /candidates`／`POST`（建立）／`POST /<sc>/revoke`。走 `ResourceGateway`（`Delegation`、`User` 都在 `LIST_RBAC_ENFORCED_MODELS`，所以一律 `check_permission=False` 並註解理由），CSRF 不 exempt |
+| 建立規則 | `delegator_secure_code` **強制** `current_user.secure_code`（payload 的 `delegator_secure_code`／`delegation_type`／`org_secure_code` 一律忽略）；`delegation_type` 固定 `FULL`；被授權人必須在 `_candidate_users()` 集合內（同企業、`is_active`、未刪除、非服務帳號、`user_type` ∈ EMPLOYEE／ORG_ADMIN、非本人），否則 400 `invalid_delegate`（不區分原因）；`effective_until` 不得早於 `organization.local_today()`（400 `expired_range`）；建立後 `check_and_update_status()` |
+| 撤銷 | 只能撤 `delegator == 本人` 的未刪除記錄，其餘 404（含自己是被授權人的那筆）；已撤銷再撤 400 `already_revoked` |
+| 頁面 | `/personal-settings` 新區塊 `id="my-delegations"`（partial `pages/_my_delegations.html`，只在 `is_employee or is_org_admin` 時 include）＋ `static/js/my-delegations.js`／`css/my-delegations.css`（`mdl-` 前綴）。query string `?delegation=new&effective_from=&effective_until=&reason=&next=#my-delegations` 會開 modal 預填並捲到區塊；`next` 走與後端 `_safe_next()` 同規則的 `safeNext()`，建立成功後 `location.href = next` |
+| 行事曆 | `api/calendar.py::_delegation_hint()` 第二分支：EMPLOYEE 的 `create_url` 指向上述 query string；`calendar.js::showHint()` 不變（有 `create_url` 就顯示 [建立代理授權]） |
+| 守門宣告表 | 四條 `api_my_delegations.*` 標 `review: confirmed`、`max_audience: [EMPLOYEE, ORG_ADMIN]`；403 藏在 helper 內，掃描器的 `has_internal_check` 抓不到，note 有寫 |
+
+三件要知道的：
+
+- **`/delegations/` 管理頁與列表維持 ORG_ADMIN 不動**；員工自助只給「授權人＝本人」這一種，限額／特定代理仍由管理員建
+- 撤銷「自己授權出去的」是 Claude 加的（Ethan 定案只寫建立），理由是員工建錯只能找管理員收拾；不要的話拿掉 `revoke_my_delegation` 與模板的 [撤銷] 即可
+- 憑證 `/opt/tmp/verify/20260903-pf236-my-delegations.log`（curl 21 步：五種身分矩陣、冒用授權人、候選人排除、CSRF、hint URL；瀏覽器 B1～B2：toast 連結 → 預填 modal → 建立回流 `/calendar/me` → 行事曆投影出現 → 撤銷）；測試 `test_my_delegations_api.py` 13 條、`test_calendar_events_api.py` 員工 hint 斷言改為 personal-settings URL。codex 派工時把守門表的 `note`／`max_audience`／`confirmed` 寫到檔案開頭四條無關的 access_center 端點（「機制對、目標錯」），驗收時發現並改回
 
 ## 七、已知取捨
 

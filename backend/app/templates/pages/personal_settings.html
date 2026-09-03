@@ -4,6 +4,10 @@
 
 {% block title %}{{ _('個人設定') }} - BeakMask{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/my-delegations.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="mak-page">
 
@@ -179,6 +183,10 @@
 
 </form>
 
+{% if current_user.is_employee or current_user.is_org_admin %}
+{% include 'pages/_my_delegations.html' %}
+{% endif %}
+
 <div class="detail-card" x-data="myApiKeysManager()" x-init="init()">
     <div class="detail-card-header">
         <h3>{{ _('我的 API Key') }}</h3>
@@ -320,4 +328,5 @@ window.__PAGE_CONFIG = {apiTriggerBaseUrl: {{ api_trigger_base_url|tojson }}};
 </script>
 <script src="{{ app_prefix }}/static/js/app.js"></script>
 <script src="{{ app_prefix }}/static/js/my-api-keys.js"></script>
+<script src="{{ app_prefix }}/static/js/my-delegations.js"></script>
 {% endblock %}

@@ -1,0 +1,42 @@
+.mdl-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.mdl-help {
+    margin: 0 0 16px;
+    font-size: var(--font-size-sm);
+}
+
+.mdl-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 24px;
+}
+
+.mdl-table {
+    min-width: 760px;
+}
+
+.mdl-empty {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    padding: 12px 0 20px;
+}
+
+.mdl-status-pending {
+    color: var(--color-warning);
+}
+
+.mdl-modal-error {
+    margin-top: 8px;
+    font-size: var(--font-size-sm);
+}
+
+.mdl-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}

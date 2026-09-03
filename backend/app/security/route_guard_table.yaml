@@ -1860,6 +1860,74 @@ routes:
     rules:
     - /api/my-api-keys/<key_secure_code>/regenerate
     source: backend/app/api/my_api_keys.py
+  api_my_delegations.create_my_delegation:
+    answer_source: none
+    guard_args: {}
+    guards:
+    - login_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - EMPLOYEE
+    - ORG_ADMIN
+    methods:
+    - POST
+    note: 端點內 _deny_non_member() 限企業成員（EMPLOYEE/ORG_ADMIN），授權人強制為 current_user，候選人限同企業有效 EMPLOYEE/ORG_ADMIN 且排除本人；helper 內的 403 掃描器抓不到
+    review: confirmed
+    rules:
+    - /api/my-delegations
+    source: backend/app/api/my_delegations.py
+  api_my_delegations.list_my_delegation_candidates:
+    answer_source: none
+    guard_args: {}
+    guards:
+    - login_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - EMPLOYEE
+    - ORG_ADMIN
+    methods:
+    - GET
+    note: 端點內 _deny_non_member() 限企業成員，候選人限同企業有效 EMPLOYEE/ORG_ADMIN 且排除本人與服務帳號；helper 內的 403 掃描器抓不到
+    review: confirmed
+    rules:
+    - /api/my-delegations/candidates
+    source: backend/app/api/my_delegations.py
+  api_my_delegations.list_my_delegations:
+    answer_source: none
+    guard_args: {}
+    guards:
+    - login_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - EMPLOYEE
+    - ORG_ADMIN
+    methods:
+    - GET
+    note: 端點內 _deny_non_member() 限企業成員，清單以 delegator/delegate 等於 current_user 限縮；helper 內的 403 掃描器抓不到
+    review: confirmed
+    rules:
+    - /api/my-delegations
+    source: backend/app/api/my_delegations.py
+  api_my_delegations.revoke_my_delegation:
+    answer_source: none
+    guard_args: {}
+    guards:
+    - login_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - EMPLOYEE
+    - ORG_ADMIN
+    methods:
+    - POST
+    note: 端點內 _deny_non_member() 限企業成員，僅允許撤銷 delegator 等於 current_user 的未刪除授權，其餘 404；helper 內的 403 掃描器抓不到
+    review: confirmed
+    rules:
+    - /api/my-delegations/<secure_code>/revoke
+    source: backend/app/api/my_delegations.py
   api_numbering.check_number_available:
     answer_source: code
     guard_args: {}

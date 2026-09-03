@@ -242,7 +242,15 @@ def test_leave_hint_counts_pending_task_for_assignee(auth_client, test_org, test
     assert hint['needed'] is True
     assert hint['pending_count'] == 1
     assert hint['template_count'] == 0
-    assert hint['create_url'] is None
+    parsed = urlparse(hint['create_url'])
+    query = parse_qs(parsed.query)
+    assert parsed.path == '/beakplatform/personal-settings'
+    assert query['delegation'] == ['new']
+    assert query['effective_from'] == ['2026-10-01']
+    assert query['effective_until'] == ['2026-10-03']
+    assert query['reason'] == ['Annual leave']
+    assert query['next'] == ['/beakplatform/calendar/me']
+    assert parsed.fragment == 'my-delegations'
     assert (hint['start_date'], hint['end_date']) == ('2026-10-01', '2026-10-03')
 
 

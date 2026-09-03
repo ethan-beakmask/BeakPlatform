@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-03 06:34+0800\n"
+"POT-Creation-Date: 2026-09-03 22:15+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -640,28 +640,28 @@ msgstr "Confirmed"
 msgid "確認成功"
 msgstr "Confirmation successful"
 
-#: app/api/calendar.py:36 app/api/calendar.py:55
-#: app/services/calendar_event_service.py:181
+#: app/api/calendar.py:36 app/api/calendar.py:56
+#: app/services/calendar_event_service.py:211
 msgid "請求格式錯誤"
 msgstr "Invalid request format"
 
-#: app/api/calendar.py:47 app/api/calendar.py:66 app/api/calendar.py:82
+#: app/api/calendar.py:48 app/api/calendar.py:68 app/api/calendar.py:84
 msgid "儲存失敗"
 msgstr "Save failed"
 
-#: app/api/calendar.py:94
+#: app/api/calendar.py:96
 msgid "日期範圍不合法"
 msgstr "Invalid date range"
 
-#: app/api/calendar.py:97
+#: app/api/calendar.py:99
 msgid "行事曆載入失敗"
 msgstr "Failed to load calendar"
 
-#: app/api/calendar.py:114
+#: app/api/calendar.py:144
 msgid "請提供 start 與 end"
 msgstr "Both start and end are required"
 
-#: app/api/calendar.py:119 app/api/contracts.py:123
+#: app/api/calendar.py:149 app/api/contracts.py:123
 #: app/api/work_schedules.py:365
 msgid "日期格式錯誤，請使用 YYYY-MM-DD"
 msgstr "Invalid date format. Please use YYYY-MM-DD"
@@ -705,7 +705,7 @@ msgstr "At least two organizations must be selected"
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:836
 #: app/api/conglomerates.py:84 app/api/conglomerates.py:276
 #: app/api/users.py:247 app/web/approval_categories.py:189
-#: app/web/delegations.py:141 app/web/external_users.py:332
+#: app/web/delegations.py:161 app/web/external_users.py:332
 #: app/web/job_families.py:239 app/web/job_families.py:240
 #: app/web/job_levels.py:181 app/web/job_titles.py:266
 #: app/web/job_titles.py:267 app/web/menu.py:324 app/web/menu.py:391
@@ -730,7 +730,7 @@ msgstr "A conglomerate requires at least two organizations"
 #: ../modules/form_workflow/api/backgrounds.py:151
 #: ../modules/form_workflow/api/categories.py:314
 #: ../modules/form_workflow/api/form_themes.py:219 app/api/conglomerates.py:214
-#: app/web/approval_categories.py:269 app/web/delegations.py:223
+#: app/web/approval_categories.py:269 app/web/delegations.py:244
 #: app/web/external_users.py:452 app/web/job_families.py:324
 #: app/web/job_families.py:325 app/web/job_levels.py:267
 #: app/web/job_titles.py:344 app/web/job_titles.py:345 app/web/menu.py:483
@@ -973,7 +973,7 @@ msgstr "Logo deleted"
 #: ../modules/form_workflow/api/categories.py:360
 #: ../modules/form_workflow/api/form_themes.py:264
 #: app/api/enterprise_settings.py:383 app/api/files.py:474
-#: app/web/approval_categories.py:327 app/web/delegations.py:273
+#: app/web/approval_categories.py:327 app/web/delegations.py:294
 #: app/web/external_users.py:671 app/web/job_families.py:421
 #: app/web/job_families.py:422 app/web/job_levels.py:318
 #: app/web/job_titles.py:395 app/web/job_titles.py:396 app/web/menu.py:537
@@ -1051,7 +1051,7 @@ msgstr "You can only undo deletion of files you marked"
 msgid "已撤銷刪除"
 msgstr "Deletion undone"
 
-#: app/api/files.py:507 app/web/delegations.py:253
+#: app/api/files.py:507 app/web/delegations.py:274
 #, python-format
 msgid "撤銷失敗: %(error)s"
 msgstr "Undo failed: %(error)s"
@@ -1305,6 +1305,43 @@ msgstr "This claim token is invalid or has already been used"
 #: app/api/my_api_keys.py:179
 msgid "已停用的 API Key 不可重新產生金鑰"
 msgstr "Cannot regenerate the secret of a suspended API key"
+
+#: app/api/my_delegations.py:30
+msgid "此功能僅限企業成員使用"
+msgstr "This feature is only available to organization members."
+
+#: app/api/my_delegations.py:122
+msgid "被授權人無效"
+msgstr "The delegate is invalid."
+
+#: app/api/my_delegations.py:132
+msgid "日期格式錯誤"
+msgstr "Invalid date format."
+
+#: app/api/my_delegations.py:139 app/web/delegations.py:124
+#: app/web/delegations.py:216
+msgid "生效開始日期不能晚於結束日期"
+msgstr "Effective start date cannot be later than the end date"
+
+#: app/api/my_delegations.py:146
+msgid "生效結束日期不能早於今天"
+msgstr "The effective end date cannot be earlier than today."
+
+#: app/api/my_delegations.py:173
+msgid "建立失敗"
+msgstr "Creation failed."
+
+#: app/api/my_delegations.py:199
+msgid "找不到代理授權"
+msgstr "Delegation not found."
+
+#: app/api/my_delegations.py:206
+msgid "這筆代理授權已撤銷"
+msgstr "This delegation has already been revoked."
+
+#: app/api/my_delegations.py:221
+msgid "撤銷失敗"
+msgstr "Revocation failed."
 
 #: app/api/node_grants.py:39
 msgid "找不到指定的節點型別"
@@ -2173,111 +2210,111 @@ msgstr "beneficiary_user_secure_code is required"
 msgid "無法領取 API Key"
 msgstr "Cannot claim this API key"
 
-#: app/services/calendar_event_service.py:41
+#: app/services/calendar_event_service.py:53
 msgid "沒有權限建立企業事件"
 msgstr "You do not have permission to create company events"
 
-#: app/services/calendar_event_service.py:93
+#: app/services/calendar_event_service.py:122
 msgid "找不到事件擁有者"
 msgstr "Event owner not found"
 
-#: app/services/calendar_event_service.py:165
-#: app/services/calendar_event_service.py:170
+#: app/services/calendar_event_service.py:194
+#: app/services/calendar_event_service.py:198
 msgid "找不到事件"
 msgstr "Event not found"
 
-#: app/services/calendar_event_service.py:167
-#: app/services/calendar_event_service.py:175
-msgid "此事件不能編輯"
-msgstr "This event cannot be edited"
-
-#: app/services/calendar_event_service.py:173
+#: app/services/calendar_event_service.py:201
 msgid "沒有權限編輯企業事件"
 msgstr "You do not have permission to edit company events"
 
-#: app/services/calendar_event_service.py:184
+#: app/services/calendar_event_service.py:203
+#: app/services/calendar_event_service.py:205
+msgid "此事件不能編輯"
+msgstr "This event cannot be edited"
+
+#: app/services/calendar_event_service.py:214
 msgid "calendar_kind 欄位不合法"
 msgstr "The calendar_kind field is invalid"
 
-#: app/services/calendar_event_service.py:186
+#: app/services/calendar_event_service.py:216
 msgid "calendar_kind 欄位不能變更"
 msgstr "The calendar_kind field cannot be changed"
 
-#: app/services/calendar_event_service.py:191
+#: app/services/calendar_event_service.py:221
 msgid "event_type 欄位不合法"
 msgstr "The event_type field is invalid"
 
-#: app/services/calendar_event_service.py:195
+#: app/services/calendar_event_service.py:225
 msgid "title 欄位必填"
 msgstr "The title field is required"
 
-#: app/services/calendar_event_service.py:197
+#: app/services/calendar_event_service.py:227
 msgid "title 欄位最多 200 字"
 msgstr "The title field can be at most 200 characters"
 
-#: app/services/calendar_event_service.py:205
+#: app/services/calendar_event_service.py:235
 msgid "visibility 欄位不合法"
 msgstr "The visibility field is invalid"
 
-#: app/services/calendar_event_service.py:212
+#: app/services/calendar_event_service.py:242
 msgid "note 欄位最多 2000 字"
 msgstr "The note field can be at most 2,000 characters"
 
-#: app/services/calendar_event_service.py:228
+#: app/services/calendar_event_service.py:258
 msgid "start 與 end 欄位必填"
 msgstr "The start and end fields are required"
 
-#: app/services/calendar_event_service.py:235
+#: app/services/calendar_event_service.py:265
 msgid "start/end 欄位格式須為 YYYY-MM-DD"
 msgstr "The start/end fields must use YYYY-MM-DD"
 
-#: app/services/calendar_event_service.py:237
-#: app/services/calendar_event_service.py:250
+#: app/services/calendar_event_service.py:267
+#: app/services/calendar_event_service.py:280
 msgid "end 欄位不能早於 start"
 msgstr "The end field cannot be earlier than start"
 
-#: app/services/calendar_event_service.py:239
-#: app/services/calendar_event_service.py:252
+#: app/services/calendar_event_service.py:269
+#: app/services/calendar_event_service.py:282
 msgid "start/end 欄位跨度過長"
 msgstr "The start/end span is too long"
 
-#: app/services/calendar_event_service.py:248
+#: app/services/calendar_event_service.py:278
 msgid "start/end 欄位格式須為 YYYY-MM-DDTHH:MM"
 msgstr "The start/end fields must use YYYY-MM-DDTHH:MM"
 
-#: app/services/calendar_projection_service.py:253
+#: app/services/calendar_projection_service.py:257
 #, python-format
 msgid "補班：%(desc)s"
 msgstr "Make-up workday: %(desc)s"
 
-#: app/services/calendar_projection_service.py:253
+#: app/services/calendar_projection_service.py:257
 #: app/templates/pages/admin/time/holidays.html:48
 #: app/templates/pages/calendar/calendar.html:48
 msgid "補班"
 msgstr "Make-up Workday"
 
-#: app/services/calendar_projection_service.py:256
+#: app/services/calendar_projection_service.py:260
 #: app/templates/pages/admin/time/holidays.html:44
 msgid "補假"
 msgstr "Make-up Holiday"
 
-#: app/services/calendar_projection_service.py:256
+#: app/services/calendar_projection_service.py:260
 #: app/templates/pages/admin/time/holidays.html:40
 msgid "假日"
 msgstr "Holiday"
 
-#: app/services/calendar_projection_service.py:309
+#: app/services/calendar_projection_service.py:313
 #, python-format
 msgid "代理：%(a)s → %(b)s"
 msgstr "Delegation: %(a)s → %(b)s"
 
-#: app/services/calendar_projection_service.py:340
+#: app/services/calendar_projection_service.py:344
 #: app/templates/pages/positions/list.html:54
 #: app/templates/pages/users/view.html:84
 msgid "主要"
 msgstr "Primary"
 
-#: app/services/calendar_projection_service.py:341
+#: app/services/calendar_projection_service.py:345
 #: app/templates/pages/positions/list.html:55
 #: app/templates/pages/positions/view.html:60
 #: app/templates/pages/users/list.html:59
@@ -2285,7 +2322,7 @@ msgstr "Primary"
 msgid "兼任"
 msgstr "Concurrent"
 
-#: app/services/calendar_projection_service.py:342
+#: app/services/calendar_projection_service.py:346
 #: app/services/role_assignment_service.py:46
 #: app/services/role_assignment_service.py:47
 #: app/services/role_assignment_service.py:48
@@ -2297,7 +2334,7 @@ msgstr "Concurrent"
 msgid "代理"
 msgstr "Delegated"
 
-#: app/services/calendar_projection_service.py:343
+#: app/services/calendar_projection_service.py:347
 #: app/templates/pages/positions/list.html:57
 #: app/templates/pages/positions/view.html:62
 #: app/templates/pages/users/list.html:59
@@ -2305,27 +2342,22 @@ msgstr "Delegated"
 msgid "臨時"
 msgstr "Temporary"
 
-#: app/services/calendar_projection_service.py:362
+#: app/services/calendar_projection_service.py:366
 #, python-format
 msgid "職位：%(type)s %(title)s（%(unit)s）"
 msgstr "Position: %(type)s %(title)s (%(unit)s)"
 
-#: app/services/calendar_projection_service.py:408
+#: app/services/calendar_projection_service.py:412
 #, python-format
 msgid "公告：%(m)s"
 msgstr "Notice: %(m)s"
 
-#: app/services/calendar_projection_service.py:412
+#: app/services/calendar_projection_service.py:416
 #, python-format
 msgid "緊急廣播：%(t)s"
 msgstr "Alert broadcast: %(t)s"
 
-#: app/services/calendar_projection_service.py:490
-#, python-format
-msgid "待簽核：%(form)s（%(sn)s）"
-msgstr "Pending approval: %(form)s (%(sn)s)"
-
-#: app/services/calendar_projection_service.py:524
+#: app/services/calendar_projection_service.py:486
 #, python-format
 msgid "流程等待到期：%(node)s（%(code)s）"
 msgstr "Workflow delay due: %(node)s (%(code)s)"
@@ -2505,7 +2537,7 @@ msgstr ""
 #: app/templates/pages/change_password.html:54
 #: app/templates/pages/external-users/edit.html:74
 #: app/templates/pages/external-users/edit.html:116
-#: app/templates/pages/personal_settings.html:53
+#: app/templates/pages/personal_settings.html:57
 #: app/templates/pages/profile/password.html:3
 #: app/templates/pages/profile/password.html:11
 #: app/templates/pages/profile/password.html:42
@@ -2628,6 +2660,7 @@ msgstr "Passwords match"
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:636
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:75
 #: app/templates/auth/change_password.html:74
+#: app/templates/pages/_my_delegations.html:102
 #: app/templates/pages/access_center/_tab_accounts.html:170
 #: app/templates/pages/access_center/_tab_roles.html:219
 #: app/templates/pages/admin/_employee_create_form.html:152
@@ -2650,7 +2683,7 @@ msgstr "Passwords match"
 #: app/templates/pages/approval_categories/list.html:287
 #: app/templates/pages/calendar/_event_modal.html:75
 #: app/templates/pages/change_password.html:55
-#: app/templates/pages/delegations/create.html:98
+#: app/templates/pages/delegations/create.html:99
 #: app/templates/pages/delegations/edit.html:98
 #: app/templates/pages/external-users/create.html:116
 #: app/templates/pages/external-users/edit.html:67
@@ -2739,7 +2772,7 @@ msgstr ""
 #: app/templates/pages/external-users/list.html:34
 #: app/templates/pages/hostconfig/_system_settings_modals.html:56
 #: app/templates/pages/organizations/admins.html:48
-#: app/templates/pages/personal_settings.html:37
+#: app/templates/pages/personal_settings.html:41
 #: app/templates/pages/sys_accounts/create.html:32
 #: app/templates/pages/sys_accounts/edit.html:32
 #: app/templates/pages/sys_accounts/list.html:57
@@ -2965,6 +2998,7 @@ msgstr "Add"
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:41
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
 #: app/templates/pageir/_page_ir.html:62 app/templates/pageir/_page_ir.html:175
+#: app/templates/pages/_my_delegations.html:22
 #: app/templates/pages/access_center/_tab_roles.html:59
 #: app/templates/pages/admin/_settings_recipients_section.html:32
 #: app/templates/pages/admin/_settings_smtp_section.html:33
@@ -2983,7 +3017,7 @@ msgstr "Add"
 #: app/templates/pages/modules/list.html:87
 #: app/templates/pages/organizations/admins.html:53
 #: app/templates/pages/organizations/list.html:295
-#: app/templates/pages/personal_settings.html:206
+#: app/templates/pages/personal_settings.html:214
 #: app/templates/pages/positions/list.html:26
 #: app/templates/pages/security/api_keys.html:34
 #: app/templates/pages/units/list.html:29
@@ -2992,7 +3026,7 @@ msgid "操作"
 msgstr "Actions"
 
 #: app/templates/pageir/_page_ir.html:83
-#: app/templates/pages/calendar/calendar.html:134
+#: app/templates/pages/calendar/calendar.html:133
 msgid "開啟"
 msgstr "Open"
 
@@ -3183,298 +3217,27 @@ msgstr ""
 msgid "不限群組"
 msgstr "All groups"
 
-#: app/templates/pages/change_password.html:9
-msgid "返回個人設定"
-msgstr "Return to personal settings"
+#: app/templates/pages/_my_delegations.html:3
+msgid "我的代理授權"
+msgstr "My Delegations"
 
-#: app/templates/pages/dashboard.html:4 app/templates/pages/dashboard.html:7
-msgid "儀表板"
-msgstr "Dashboard"
+#: app/templates/pages/_my_delegations.html:4
+#: app/templates/pages/_my_delegations.html:73
+#: app/templates/pages/delegations/create.html:4
+#: app/templates/pages/delegations/create.html:12
+msgid "新增代理授權"
+msgstr "Add Delegation"
 
-#: app/templates/pages/dashboard.html:12
-msgid "安全提醒"
-msgstr "Security Warning"
-
-#: app/templates/pages/dashboard.html:14
-msgid "您目前使用的是預設 admin 帳號，此帳號容易被猜測攻擊。"
+#: app/templates/pages/_my_delegations.html:9
+msgid "請假、出差期間，把自己的簽核職責交給同事代理。這裡只能以自己為授權人；要替別人設定代理，請聯絡企業管理員。"
 msgstr ""
-"You are currently using the default admin account, which is vulnerable to"
-" brute-force attacks."
+"Delegate your approval duties to a coworker while you are on leave or "
+"traveling. Here, you can only create delegations from yourself; contact "
+"an organization administrator to configure delegations for someone else."
 
-#: app/templates/pages/dashboard.html:15
-msgid "建議步驟："
-msgstr "Recommended steps:"
-
-#: app/templates/pages/dashboard.html:18
-msgid "建立您的企業成員帳號（需設定企業成員編號）"
-msgstr "Create your employee account (employee ID required)"
-
-#: app/templates/pages/dashboard.html:19
-msgid "前往"
-msgstr "Go to"
-
-#: app/templates/pages/dashboard.html:19 app/templates/pages/dashboard.html:30
-msgid "系統管理 / 企業管理員"
-msgstr "System Administration / Organization Admin"
-
-#: app/templates/pages/dashboard.html:19
-msgid "新增管理帳號"
-msgstr "Add administrator account"
-
-#: app/templates/pages/dashboard.html:20
-msgid "使用新管理員帳號登入後，停用此預設帳號"
-msgstr "Log in with the new admin account, then disable this default account"
-
-#: app/templates/pages/dashboard.html:28
-msgid "提示"
-msgstr "Hint"
-
-#: app/templates/pages/dashboard.html:30
-msgid "預設 admin 帳號容易被猜測攻擊，建議前往"
-msgstr ""
-"The default admin account is vulnerable to guessing attacks. It is "
-"recommended to go to"
-
-#: app/templates/pages/dashboard.html:30
-msgid "將其停用。"
-msgstr "to disable it."
-
-#: app/templates/pages/dashboard.html:35
-#, python-format
-msgid "歡迎，%(name)s"
-msgstr "Welcome, %(name)s"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:20
-#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:84
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:33
-#: app/templates/pages/calendar/calendar.html:51
-#: app/templates/pages/dashboard.html:44
-msgid "待簽核"
-msgstr "Pending approval"
-
-#: app/templates/pages/admin/groups.html:3
-#: app/templates/pages/admin/groups.html:171
-#: app/templates/pages/dashboard.html:54
-msgid "我的社群"
-msgstr "My Groups"
-
-#: app/templates/pages/access_center/_tab_accounts.html:48
-#: app/templates/pages/dashboard.html:62
-msgid "社群參與"
-msgstr "Group Memberships"
-
-#: app/templates/pages/admin/groups.html:213
-#: app/templates/pages/admin/groups.html:251
-#: app/templates/pages/dashboard.html:66
-msgid "社群名稱"
-msgstr "Group name"
-
-#: app/templates/pages/dashboard.html:67
-msgid "位階"
-msgstr "Rank"
-
-#: app/templates/pages/personal_settings.html:5
-#: app/templates/pages/personal_settings.html:12
-#: app/templates/pages/users/edit.html:4 app/templates/pages/users/edit.html:16
-msgid "個人設定"
-msgstr "Personal Settings"
-
-#: app/templates/pages/external-users/edit.html:42
-#: app/templates/pages/personal_settings.html:32
-#: app/templates/pages/sys_accounts/edit.html:116
-#: app/templates/pages/sys_accounts/list.html:184
-#: app/templates/pages/users/edit.html:47
-#: app/templates/pages/users/view.html:28
-msgid "帳號資訊"
-msgstr "Account Information"
-
-#: app/templates/pages/personal_settings.html:41
-msgid "主要 Email"
-msgstr "Primary Email"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:133
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:38
-#: app/templates/pages/admin/settings.html:216
-#: app/templates/pages/dev/portal_quick_login.html:215
-#: app/templates/pages/organizations/create.html:53
-#: app/templates/pages/organizations/edit.html:61
-#: app/templates/pages/personal_settings.html:47
-#: app/templates/pages/sys_accounts/create.html:48
-#: app/templates/pages/sys_accounts/edit.html:40
-#: app/templates/pages/sys_accounts/list.html:58
-#: app/templates/pages/sys_accounts/list.html:114
-#: app/templates/pages/sys_accounts/list.html:247
-msgid "顯示名稱"
-msgstr "Display Name"
-
-#: app/templates/pages/admin/_employee_create_form.html:57
-#: app/templates/pages/admin/initial_setup.html:213
-#: app/templates/pages/admin/org-admins/create.html:81
-#: app/templates/pages/personal_settings.html:51
-#: app/templates/pages/sys_accounts/create.html:55
-#: app/templates/pages/sys_accounts/list.html:252
-#: app/templates/pages/users/create.html:90
-msgid "密碼"
-msgstr "Password"
-
-#: app/templates/pages/admin/_employee_create_form.html:105
-#: app/templates/pages/personal_settings.html:63
-#: app/templates/pages/profile/view.html:3
-#: app/templates/pages/profile/view.html:6
-#: app/templates/pages/users/create.html:179
-#: app/templates/pages/users/edit.html:220
-#: app/templates/pages/users/view.html:138
-msgid "個人資料"
-msgstr "Profile"
-
-#: app/templates/pages/admin/_employee_create_form.html:23
-#: app/templates/pages/admin/initial_setup.html:164
-#: app/templates/pages/admin/settings.html:221
-#: app/templates/pages/personal_settings.html:68
-#: app/templates/pages/users/create.html:52
-#: app/templates/pages/users/edit.html:66
-#: app/templates/pages/users/import.html:131
-#: app/templates/pages/users/view.html:141
-msgid "英文姓名"
-msgstr "English Name"
-
-#: app/templates/pages/admin/_employee_create_form.html:16
-#: app/templates/pages/admin/initial_setup.html:157
-#: app/templates/pages/admin/settings.html:220
-#: app/templates/pages/personal_settings.html:73
-#: app/templates/pages/users/create.html:43
-#: app/templates/pages/users/edit.html:56
-#: app/templates/pages/users/import.html:136
-#: app/templates/pages/users/view.html:145
-msgid "本國姓名"
-msgstr "Native Name"
-
-#: app/templates/pages/personal_settings.html:75
-msgid "本國語言姓名"
-msgstr "Name in native language"
-
-#: app/templates/pages/admin/_employee_create_form.html:108
-#: app/templates/pages/admin/initial_setup.html:260
-#: app/templates/pages/admin/settings.html:222
-#: app/templates/pages/personal_settings.html:80
-#: app/templates/pages/personal_settings.html:139
-#: app/templates/pages/users/create.html:182
-#: app/templates/pages/users/edit.html:223
-#: app/templates/pages/users/edit.html:239
-#: app/templates/pages/users/edit.html:246
-#: app/templates/pages/users/import.html:141
-#: app/templates/pages/users/view.html:149
-msgid "暱稱"
-msgstr "Nickname"
-
-#: app/templates/pages/personal_settings.html:84
-msgid "企業管理員可在此設定暱稱，否則 Navbar 只會顯示加上隱私保護的名稱（企業預設對管理員不適用）"
-msgstr ""
-"Organization admins can set a nickname here; otherwise the navbar shows "
-"only a privacy-protected name (the organization default does not apply to"
-" admins)"
-
-#: app/templates/pages/admin/_employee_create_form.html:127
-#: app/templates/pages/personal_settings.html:97
-#: app/templates/pages/users/create.html:223
-#: app/templates/pages/users/edit.html:292
-#: app/templates/pages/users/view.html:154
-msgid "聯絡方式"
-msgstr "Contact Information"
-
-#: app/templates/pages/admin/_employee_create_form.html:134
-#: app/templates/pages/personal_settings.html:102
-#: app/templates/pages/personal_settings.html:108
-#: app/templates/pages/users/edit.html:306
-msgid "備用 Email"
-msgstr "Backup email"
-
-#: app/templates/pages/personal_settings.html:105
-msgid "系統通知專用（空白時自動使用主要 Email）"
-msgstr "For system notifications (falls back to primary email if blank)"
-
-#: app/templates/pages/personal_settings.html:115
-#: app/templates/pages/personal_settings.html:120
-msgid "手機"
-msgstr "Mobile"
-
-#: app/templates/pages/personal_settings.html:131
-msgid "介面設定"
-msgstr "Interface Settings"
-
-#: app/templates/pages/personal_settings.html:136
-#: app/templates/pages/users/edit.html:234
-msgid "Navbar 顯示"
-msgstr "Navbar display"
-
-#: app/templates/pages/personal_settings.html:138
-#: app/templates/pages/users/create.html:196
-#: app/templates/pages/users/create.html:209
-#: app/templates/pages/users/edit.html:249
-#: app/templates/pages/users/edit.html:266
-#: app/templates/pages/users/edit.html:286
-msgid "跟隨企業設定"
-msgstr "Follow organization settings"
-
-#: app/templates/pages/access_center/_tab_accounts.html:46
-#: app/templates/pages/admin/_employee_create_form.html:81
-#: app/templates/pages/admin/initial_setup.html:200
-#: app/templates/pages/admin/settings.html:224
-#: app/templates/pages/personal_settings.html:140
-#: app/templates/pages/users/create.html:123
-#: app/templates/pages/users/edit.html:173
-#: app/templates/pages/users/edit.html:240
-#: app/templates/pages/users/edit.html:247
-#: app/templates/pages/users/list.html:41
-#: app/templates/pages/users/view.html:65
-msgid "用戶編號"
-msgstr "Employee ID"
-
-#: app/templates/pages/personal_settings.html:141
-#: app/templates/pages/users/edit.html:241
-#: app/templates/pages/users/edit.html:248
-msgid "用戶編號 + 部門"
-msgstr "User ID + Department"
-
-#: app/templates/pages/personal_settings.html:143
-#: app/templates/pages/users/edit.html:243
-msgid "在公開場所使用時，可改為不含真名的顯示方式"
-msgstr ""
-"When used in public places, you can switch to a display that hides your "
-"real name"
-
-#: app/templates/pages/personal_settings.html:146
-msgid "語言"
-msgstr "Language"
-
-#: app/templates/pages/admin/time/schedules.html:32
-#: app/templates/pages/admin/time/schedules.html:129
-#: app/templates/pages/personal_settings.html:156
-#: app/templates/pages/users/create.html:205
-#: app/templates/pages/users/edit.html:271
-msgid "時區"
-msgstr "Timezone"
-
-#: app/templates/pages/personal_settings.html:158
-#: app/templates/pages/users/edit.html:214
-msgid "使用企業預設"
-msgstr "Use organization default"
-
-#: app/templates/pages/hostconfig/_system_settings_section_emailrelay.html:78
-#: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:40
-#: app/templates/pages/personal_settings.html:177
-msgid "儲存設定"
-msgstr "Save Settings"
-
-#: app/templates/pages/personal_settings.html:184
-msgid "我的 API Key"
-msgstr "My API Keys"
-
-#: app/templates/pages/personal_settings.html:190
-msgid "目前沒有屬於你的 API Key。可到表單中心提出「API Key 申請單」。"
-msgstr ""
-"You do not have any API keys yet. Submit an \"API Key Request\" form in "
-"the Form Center."
+#: app/templates/pages/_my_delegations.html:11
+msgid "我授權的代理"
+msgstr "Delegations I Granted"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:135
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:182
@@ -3553,6 +3316,8 @@ msgstr ""
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:75
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:91
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:44
+#: app/templates/pages/_my_delegations.html:12
+#: app/templates/pages/_my_delegations.html:45
 #: app/templates/pages/admin/_settings_login_security_section.html:10
 #: app/templates/pages/admin/_settings_recipients_section.html:15
 #: app/templates/pages/admin/_settings_smtp_section.html:15
@@ -3569,7 +3334,7 @@ msgstr ""
 #: app/templates/pages/org_databases/monitor.html:75
 #: app/templates/pages/org_databases/monitor.html:245
 #: app/templates/pages/organizations/_org_hard_delete.html:17
-#: app/templates/pages/personal_settings.html:193
+#: app/templates/pages/personal_settings.html:201
 #: app/templates/pages/security/alert_broadcasts.html:114
 #: app/templates/pages/security/login_failures.html:78
 #: app/templates/pages/security/org_rate_limits.html:95
@@ -3579,49 +3344,18 @@ msgstr ""
 msgid "載入中..."
 msgstr "Loading..."
 
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:37
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:74
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:241
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_save_template.html:10
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:127
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:146
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:294
-#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:91
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:164
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:343
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:103
-#: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:15
-#: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:115
-#: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:14
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:37
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:182
-#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:26
-#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
-#: app/templates/pages/access_center/_tab_roles.html:51
-#: app/templates/pages/access_center/_tab_roles.html:139
-#: app/templates/pages/admin/_settings_smtp_section.html:28
-#: app/templates/pages/admin/_settings_telegram_section.html:28
-#: app/templates/pages/approval_categories/list.html:95
-#: app/templates/pages/approval_categories/list.html:156
-#: app/templates/pages/approval_categories/list.html:247
-#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:28
-#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:32
-#: app/templates/pages/hostconfig/data_maintenance.html:236
-#: app/templates/pages/job_levels/create.html:99
-#: app/templates/pages/job_levels/list.html:81
-#: app/templates/pages/modules/list.html:85
-#: app/templates/pages/organizations/_org_hard_delete.html:74
-#: app/templates/pages/organizations/_org_hard_delete.html:132
-#: app/templates/pages/personal_settings.html:199
-#: app/templates/pages/platform_help/org_admin.html:281
-#: app/templates/pages/security/_api_keys_modals.html:9
-#: app/templates/pages/units/list.html:25
-msgid "名稱"
-msgstr "Name"
+#: app/templates/pages/_my_delegations.html:13
+msgid "目前沒有你授權出去的代理。"
+msgstr "You have not delegated any approvals yet."
 
-#: app/templates/pages/personal_settings.html:201
-msgid "授權表單"
-msgstr "Authorized forms"
+#: app/templates/pages/_my_delegations.html:18
+#: app/templates/pages/_my_delegations.html:77
+#: app/templates/pages/delegations/create.html:39
+#: app/templates/pages/delegations/edit.html:29
+#: app/templates/pages/delegations/list.html:23
+#: app/templates/pages/delegations/view.html:31
+msgid "被授權人"
+msgstr "authorized person"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:242
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:292
@@ -3650,6 +3384,8 @@ msgstr "Authorized forms"
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:43
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:191
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:17
+#: app/templates/pages/_my_delegations.html:19
+#: app/templates/pages/_my_delegations.html:52
 #: app/templates/pages/admin/_settings_recipients_section.html:31
 #: app/templates/pages/admin/_settings_smtp_section.html:32
 #: app/templates/pages/admin/_settings_telegram_section.html:31
@@ -3686,7 +3422,7 @@ msgstr "Authorized forms"
 #: app/templates/pages/organizations/edit.html:87
 #: app/templates/pages/organizations/list.html:214
 #: app/templates/pages/organizations/list.html:294
-#: app/templates/pages/personal_settings.html:202
+#: app/templates/pages/personal_settings.html:210
 #: app/templates/pages/positions/edit.html:115
 #: app/templates/pages/positions/list.html:25
 #: app/templates/pages/positions/view.html:97
@@ -3704,37 +3440,440 @@ msgstr "Authorized forms"
 msgid "狀態"
 msgstr "Status"
 
-#: app/templates/pages/personal_settings.html:203
+#: app/templates/pages/_my_delegations.html:20
+#: app/templates/pages/_my_delegations.html:53
+#: app/templates/pages/delegations/list.html:26
+msgid "生效期間"
+msgstr "Effective period"
+
+#: app/templates/pages/_my_delegations.html:21
+#: app/templates/pages/_my_delegations.html:54
+#: app/templates/pages/_my_delegations.html:94
+#: app/templates/pages/delegations/create.html:90
+#: app/templates/pages/delegations/edit.html:74
+#: app/templates/pages/delegations/view.html:87
+msgid "授權原因"
+msgstr "Authorization reason"
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:231
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:61
+#: app/templates/pages/_my_delegations.html:34
+#: app/templates/pages/security/api_keys.html:66
+msgid "撤銷"
+msgstr "Revoke"
+
+#: app/templates/pages/_my_delegations.html:44
+msgid "我代理的"
+msgstr "Delegations I Cover"
+
+#: app/templates/pages/_my_delegations.html:46
+msgid "目前沒有人授權你代理。"
+msgstr "No one has delegated approvals to you yet."
+
+#: app/templates/pages/_my_delegations.html:51
+#: app/templates/pages/delegations/create.html:24
+#: app/templates/pages/delegations/edit.html:18
+#: app/templates/pages/delegations/list.html:22
+#: app/templates/pages/delegations/view.html:18
+msgid "授權人"
+msgstr "Authorizer"
+
+#: app/templates/pages/_my_delegations.html:79
+#: app/templates/pages/delegations/create.html:42
+msgid "-- 請選擇被授權人 --"
+msgstr "-- Please select the authorized person --"
+
+#: app/templates/pages/_my_delegations.html:86
+#: app/templates/pages/delegations/create.html:76
+#: app/templates/pages/delegations/view.html:79
+msgid "生效開始"
+msgstr "Effective start"
+
+#: app/templates/pages/_my_delegations.html:90
+#: app/templates/pages/delegations/create.html:83
+#: app/templates/pages/delegations/view.html:83
+msgid "生效結束"
+msgstr "Effective end"
+
+#: app/templates/pages/_my_delegations.html:98
+msgid "代理類型為全權代理：生效期間內，你能簽的單被授權人都能簽。"
+msgstr ""
+"Delegation type is full delegation: during the effective period, the "
+"delegate can approve anything you can approve."
+
+#: app/templates/pages/_my_delegations.html:101
+#: app/templates/pages/calendar/calendar.html:134
+#: app/templates/pages/delegations/create.html:98
+msgid "建立代理授權"
+msgstr "Create Delegation"
+
+#: app/templates/pages/change_password.html:9
+msgid "返回個人設定"
+msgstr "Return to personal settings"
+
+#: app/templates/pages/dashboard.html:4 app/templates/pages/dashboard.html:7
+msgid "儀表板"
+msgstr "Dashboard"
+
+#: app/templates/pages/dashboard.html:12
+msgid "安全提醒"
+msgstr "Security Warning"
+
+#: app/templates/pages/dashboard.html:14
+msgid "您目前使用的是預設 admin 帳號，此帳號容易被猜測攻擊。"
+msgstr ""
+"You are currently using the default admin account, which is vulnerable to"
+" brute-force attacks."
+
+#: app/templates/pages/dashboard.html:15
+msgid "建議步驟："
+msgstr "Recommended steps:"
+
+#: app/templates/pages/dashboard.html:18
+msgid "建立您的企業成員帳號（需設定企業成員編號）"
+msgstr "Create your employee account (employee ID required)"
+
+#: app/templates/pages/dashboard.html:19
+msgid "前往"
+msgstr "Go to"
+
+#: app/templates/pages/dashboard.html:19 app/templates/pages/dashboard.html:30
+msgid "系統管理 / 企業管理員"
+msgstr "System Administration / Organization Admin"
+
+#: app/templates/pages/dashboard.html:19
+msgid "新增管理帳號"
+msgstr "Add administrator account"
+
+#: app/templates/pages/dashboard.html:20
+msgid "使用新管理員帳號登入後，停用此預設帳號"
+msgstr "Log in with the new admin account, then disable this default account"
+
+#: app/templates/pages/dashboard.html:28
+msgid "提示"
+msgstr "Hint"
+
+#: app/templates/pages/dashboard.html:30
+msgid "預設 admin 帳號容易被猜測攻擊，建議前往"
+msgstr ""
+"The default admin account is vulnerable to guessing attacks. It is "
+"recommended to go to"
+
+#: app/templates/pages/dashboard.html:30
+msgid "將其停用。"
+msgstr "to disable it."
+
+#: app/templates/pages/dashboard.html:35
+#, python-format
+msgid "歡迎，%(name)s"
+msgstr "Welcome, %(name)s"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:20
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:84
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:33
+#: app/templates/pages/dashboard.html:44
+msgid "待簽核"
+msgstr "Pending approval"
+
+#: app/templates/pages/admin/groups.html:3
+#: app/templates/pages/admin/groups.html:171
+#: app/templates/pages/dashboard.html:54
+msgid "我的社群"
+msgstr "My Groups"
+
+#: app/templates/pages/access_center/_tab_accounts.html:48
+#: app/templates/pages/dashboard.html:62
+msgid "社群參與"
+msgstr "Group Memberships"
+
+#: app/templates/pages/admin/groups.html:213
+#: app/templates/pages/admin/groups.html:251
+#: app/templates/pages/dashboard.html:66
+msgid "社群名稱"
+msgstr "Group name"
+
+#: app/templates/pages/dashboard.html:67
+msgid "位階"
+msgstr "Rank"
+
+#: app/templates/pages/personal_settings.html:5
+#: app/templates/pages/personal_settings.html:16
+#: app/templates/pages/users/edit.html:4 app/templates/pages/users/edit.html:16
+msgid "個人設定"
+msgstr "Personal Settings"
+
+#: app/templates/pages/external-users/edit.html:42
+#: app/templates/pages/personal_settings.html:36
+#: app/templates/pages/sys_accounts/edit.html:116
+#: app/templates/pages/sys_accounts/list.html:184
+#: app/templates/pages/users/edit.html:47
+#: app/templates/pages/users/view.html:28
+msgid "帳號資訊"
+msgstr "Account Information"
+
+#: app/templates/pages/personal_settings.html:45
+msgid "主要 Email"
+msgstr "Primary Email"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:133
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:38
+#: app/templates/pages/admin/settings.html:216
+#: app/templates/pages/dev/portal_quick_login.html:215
+#: app/templates/pages/organizations/create.html:53
+#: app/templates/pages/organizations/edit.html:61
+#: app/templates/pages/personal_settings.html:51
+#: app/templates/pages/sys_accounts/create.html:48
+#: app/templates/pages/sys_accounts/edit.html:40
+#: app/templates/pages/sys_accounts/list.html:58
+#: app/templates/pages/sys_accounts/list.html:114
+#: app/templates/pages/sys_accounts/list.html:247
+msgid "顯示名稱"
+msgstr "Display Name"
+
+#: app/templates/pages/admin/_employee_create_form.html:57
+#: app/templates/pages/admin/initial_setup.html:213
+#: app/templates/pages/admin/org-admins/create.html:81
+#: app/templates/pages/personal_settings.html:55
+#: app/templates/pages/sys_accounts/create.html:55
+#: app/templates/pages/sys_accounts/list.html:252
+#: app/templates/pages/users/create.html:90
+msgid "密碼"
+msgstr "Password"
+
+#: app/templates/pages/admin/_employee_create_form.html:105
+#: app/templates/pages/personal_settings.html:67
+#: app/templates/pages/profile/view.html:3
+#: app/templates/pages/profile/view.html:6
+#: app/templates/pages/users/create.html:179
+#: app/templates/pages/users/edit.html:220
+#: app/templates/pages/users/view.html:138
+msgid "個人資料"
+msgstr "Profile"
+
+#: app/templates/pages/admin/_employee_create_form.html:23
+#: app/templates/pages/admin/initial_setup.html:164
+#: app/templates/pages/admin/settings.html:221
+#: app/templates/pages/personal_settings.html:72
+#: app/templates/pages/users/create.html:52
+#: app/templates/pages/users/edit.html:66
+#: app/templates/pages/users/import.html:131
+#: app/templates/pages/users/view.html:141
+msgid "英文姓名"
+msgstr "English Name"
+
+#: app/templates/pages/admin/_employee_create_form.html:16
+#: app/templates/pages/admin/initial_setup.html:157
+#: app/templates/pages/admin/settings.html:220
+#: app/templates/pages/personal_settings.html:77
+#: app/templates/pages/users/create.html:43
+#: app/templates/pages/users/edit.html:56
+#: app/templates/pages/users/import.html:136
+#: app/templates/pages/users/view.html:145
+msgid "本國姓名"
+msgstr "Native Name"
+
+#: app/templates/pages/personal_settings.html:79
+msgid "本國語言姓名"
+msgstr "Name in native language"
+
+#: app/templates/pages/admin/_employee_create_form.html:108
+#: app/templates/pages/admin/initial_setup.html:260
+#: app/templates/pages/admin/settings.html:222
+#: app/templates/pages/personal_settings.html:84
+#: app/templates/pages/personal_settings.html:143
+#: app/templates/pages/users/create.html:182
+#: app/templates/pages/users/edit.html:223
+#: app/templates/pages/users/edit.html:239
+#: app/templates/pages/users/edit.html:246
+#: app/templates/pages/users/import.html:141
+#: app/templates/pages/users/view.html:149
+msgid "暱稱"
+msgstr "Nickname"
+
+#: app/templates/pages/personal_settings.html:88
+msgid "企業管理員可在此設定暱稱，否則 Navbar 只會顯示加上隱私保護的名稱（企業預設對管理員不適用）"
+msgstr ""
+"Organization admins can set a nickname here; otherwise the navbar shows "
+"only a privacy-protected name (the organization default does not apply to"
+" admins)"
+
+#: app/templates/pages/admin/_employee_create_form.html:127
+#: app/templates/pages/personal_settings.html:101
+#: app/templates/pages/users/create.html:223
+#: app/templates/pages/users/edit.html:292
+#: app/templates/pages/users/view.html:154
+msgid "聯絡方式"
+msgstr "Contact Information"
+
+#: app/templates/pages/admin/_employee_create_form.html:134
+#: app/templates/pages/personal_settings.html:106
+#: app/templates/pages/personal_settings.html:112
+#: app/templates/pages/users/edit.html:306
+msgid "備用 Email"
+msgstr "Backup email"
+
+#: app/templates/pages/personal_settings.html:109
+msgid "系統通知專用（空白時自動使用主要 Email）"
+msgstr "For system notifications (falls back to primary email if blank)"
+
+#: app/templates/pages/personal_settings.html:119
+#: app/templates/pages/personal_settings.html:124
+msgid "手機"
+msgstr "Mobile"
+
+#: app/templates/pages/personal_settings.html:135
+msgid "介面設定"
+msgstr "Interface Settings"
+
+#: app/templates/pages/personal_settings.html:140
+#: app/templates/pages/users/edit.html:234
+msgid "Navbar 顯示"
+msgstr "Navbar display"
+
+#: app/templates/pages/personal_settings.html:142
+#: app/templates/pages/users/create.html:196
+#: app/templates/pages/users/create.html:209
+#: app/templates/pages/users/edit.html:249
+#: app/templates/pages/users/edit.html:266
+#: app/templates/pages/users/edit.html:286
+msgid "跟隨企業設定"
+msgstr "Follow organization settings"
+
+#: app/templates/pages/access_center/_tab_accounts.html:46
+#: app/templates/pages/admin/_employee_create_form.html:81
+#: app/templates/pages/admin/initial_setup.html:200
+#: app/templates/pages/admin/settings.html:224
+#: app/templates/pages/personal_settings.html:144
+#: app/templates/pages/users/create.html:123
+#: app/templates/pages/users/edit.html:173
+#: app/templates/pages/users/edit.html:240
+#: app/templates/pages/users/edit.html:247
+#: app/templates/pages/users/list.html:41
+#: app/templates/pages/users/view.html:65
+msgid "用戶編號"
+msgstr "Employee ID"
+
+#: app/templates/pages/personal_settings.html:145
+#: app/templates/pages/users/edit.html:241
+#: app/templates/pages/users/edit.html:248
+msgid "用戶編號 + 部門"
+msgstr "User ID + Department"
+
+#: app/templates/pages/personal_settings.html:147
+#: app/templates/pages/users/edit.html:243
+msgid "在公開場所使用時，可改為不含真名的顯示方式"
+msgstr ""
+"When used in public places, you can switch to a display that hides your "
+"real name"
+
+#: app/templates/pages/personal_settings.html:150
+msgid "語言"
+msgstr "Language"
+
+#: app/templates/pages/admin/time/schedules.html:32
+#: app/templates/pages/admin/time/schedules.html:129
+#: app/templates/pages/personal_settings.html:160
+#: app/templates/pages/users/create.html:205
+#: app/templates/pages/users/edit.html:271
+msgid "時區"
+msgstr "Timezone"
+
+#: app/templates/pages/personal_settings.html:162
+#: app/templates/pages/users/edit.html:214
+msgid "使用企業預設"
+msgstr "Use organization default"
+
+#: app/templates/pages/hostconfig/_system_settings_section_emailrelay.html:78
+#: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:40
+#: app/templates/pages/personal_settings.html:181
+msgid "儲存設定"
+msgstr "Save Settings"
+
+#: app/templates/pages/personal_settings.html:192
+msgid "我的 API Key"
+msgstr "My API Keys"
+
+#: app/templates/pages/personal_settings.html:198
+msgid "目前沒有屬於你的 API Key。可到表單中心提出「API Key 申請單」。"
+msgstr ""
+"You do not have any API keys yet. Submit an \"API Key Request\" form in "
+"the Form Center."
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:37
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:74
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:241
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_save_template.html:10
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:127
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:146
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:294
+#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:91
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:164
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:343
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:103
+#: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:15
+#: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:115
+#: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:14
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:37
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:182
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:26
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:55
+#: app/templates/pages/access_center/_tab_roles.html:51
+#: app/templates/pages/access_center/_tab_roles.html:139
+#: app/templates/pages/admin/_settings_smtp_section.html:28
+#: app/templates/pages/admin/_settings_telegram_section.html:28
+#: app/templates/pages/approval_categories/list.html:95
+#: app/templates/pages/approval_categories/list.html:156
+#: app/templates/pages/approval_categories/list.html:247
+#: app/templates/pages/hostconfig/_system_settings_section_smtp.html:28
+#: app/templates/pages/hostconfig/_system_settings_section_telegram.html:32
+#: app/templates/pages/hostconfig/data_maintenance.html:236
+#: app/templates/pages/job_levels/create.html:99
+#: app/templates/pages/job_levels/list.html:81
+#: app/templates/pages/modules/list.html:85
+#: app/templates/pages/organizations/_org_hard_delete.html:74
+#: app/templates/pages/organizations/_org_hard_delete.html:132
+#: app/templates/pages/personal_settings.html:207
+#: app/templates/pages/platform_help/org_admin.html:281
+#: app/templates/pages/security/_api_keys_modals.html:9
+#: app/templates/pages/units/list.html:25
+msgid "名稱"
+msgstr "Name"
+
+#: app/templates/pages/personal_settings.html:209
+msgid "授權表單"
+msgstr "Authorized forms"
+
+#: app/templates/pages/personal_settings.html:211
 #: app/templates/pages/security/api_keys.html:32
 msgid "最後使用"
 msgstr "last used"
 
-#: app/templates/pages/personal_settings.html:204
+#: app/templates/pages/personal_settings.html:212
 msgid "申請單"
 msgstr "Request form"
 
-#: app/templates/pages/personal_settings.html:205
-#: app/templates/pages/personal_settings.html:268
+#: app/templates/pages/personal_settings.html:213
+#: app/templates/pages/personal_settings.html:276
 msgid "金鑰"
 msgstr "Secret"
 
-#: app/templates/pages/personal_settings.html:225
+#: app/templates/pages/personal_settings.html:233
 msgid "（無）"
 msgstr "(none)"
 
-#: app/templates/pages/personal_settings.html:242
+#: app/templates/pages/personal_settings.html:250
 msgid "領取金鑰"
 msgstr "Claim secret"
 
-#: app/templates/pages/personal_settings.html:245
+#: app/templates/pages/personal_settings.html:253
 msgid "查看串接範例"
 msgstr "View integration examples"
 
-#: app/templates/pages/personal_settings.html:248
+#: app/templates/pages/personal_settings.html:256
 msgid "重新產生金鑰"
 msgstr "Regenerate secret"
 
-#: app/templates/pages/personal_settings.html:261
+#: app/templates/pages/personal_settings.html:269
 msgid "API Key 串接範例"
 msgstr "API key integration examples"
 
@@ -3757,7 +3896,7 @@ msgstr "API key integration examples"
 #: app/templates/pages/admin/_settings_recipients_section.html:267
 #: app/templates/pages/calendar/calendar.html:145
 #: app/templates/pages/organizations/list.html:386
-#: app/templates/pages/personal_settings.html:262
+#: app/templates/pages/personal_settings.html:270
 #: app/templates/pages/server_manage/redis_monitor.html:185
 msgid "關閉"
 msgstr "Close"
@@ -3769,7 +3908,7 @@ msgstr "Close"
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:344
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:39
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:114
-#: app/templates/pages/personal_settings.html:277
+#: app/templates/pages/personal_settings.html:285
 msgid "表單"
 msgstr "form"
 
@@ -3784,11 +3923,11 @@ msgstr "form"
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:230
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:299
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:345
-#: app/templates/pages/personal_settings.html:285
+#: app/templates/pages/personal_settings.html:293
 msgid "主旨"
 msgstr "Purpose"
 
-#: app/templates/pages/personal_settings.html:291
+#: app/templates/pages/personal_settings.html:299
 msgid "（尚未設定系統對外網址，請聯絡管理員）"
 msgstr ""
 "(The system external URL is not configured; please contact your "
@@ -6423,7 +6562,7 @@ msgstr "+ Added holidays"
 
 #: app/templates/pages/admin/time/holidays.html:51
 #: app/templates/pages/admin/time/holidays.html:68
-#: app/templates/pages/calendar/calendar.html:68
+#: app/templates/pages/calendar/calendar.html:67
 msgid "六"
 msgstr "Sat"
 
@@ -6432,32 +6571,32 @@ msgid "週末（依班表設定）"
 msgstr "Weekend (according to Schedule setting)"
 
 #: app/templates/pages/admin/time/holidays.html:62
-#: app/templates/pages/calendar/calendar.html:62
+#: app/templates/pages/calendar/calendar.html:61
 msgid "日"
 msgstr "Sun"
 
 #: app/templates/pages/admin/time/holidays.html:63
-#: app/templates/pages/calendar/calendar.html:63
+#: app/templates/pages/calendar/calendar.html:62
 msgid "一"
 msgstr "Mon"
 
 #: app/templates/pages/admin/time/holidays.html:64
-#: app/templates/pages/calendar/calendar.html:64
+#: app/templates/pages/calendar/calendar.html:63
 msgid "二"
 msgstr "Tue"
 
 #: app/templates/pages/admin/time/holidays.html:65
-#: app/templates/pages/calendar/calendar.html:65
+#: app/templates/pages/calendar/calendar.html:64
 msgid "三"
 msgstr "Wed"
 
 #: app/templates/pages/admin/time/holidays.html:66
-#: app/templates/pages/calendar/calendar.html:66
+#: app/templates/pages/calendar/calendar.html:65
 msgid "四"
 msgstr "Thu"
 
 #: app/templates/pages/admin/time/holidays.html:67
-#: app/templates/pages/calendar/calendar.html:67
+#: app/templates/pages/calendar/calendar.html:66
 msgid "五"
 msgstr "Fri"
 
@@ -7155,27 +7294,27 @@ msgstr "Delegation"
 msgid "限期職位"
 msgstr "Time-limited position"
 
-#: app/templates/pages/calendar/calendar.html:52
+#: app/templates/pages/calendar/calendar.html:51
 msgid "公告"
 msgstr "Notice"
 
-#: app/templates/pages/calendar/calendar.html:53
+#: app/templates/pages/calendar/calendar.html:52
 msgid "個人／企業事件"
 msgstr "Personal / company event"
 
-#: app/templates/pages/calendar/calendar.html:54
+#: app/templates/pages/calendar/calendar.html:53
 msgid "已排程（不公開內容）"
 msgstr "Scheduled (details hidden)"
 
-#: app/templates/pages/calendar/calendar.html:55
+#: app/templates/pages/calendar/calendar.html:54
 msgid "非工作日"
 msgstr "Non-working day"
 
-#: app/templates/pages/calendar/calendar.html:106
+#: app/templates/pages/calendar/calendar.html:105
 msgid "無事件"
 msgstr "No events"
 
-#: app/templates/pages/calendar/calendar.html:124
+#: app/templates/pages/calendar/calendar.html:123
 msgid "這天沒有事件"
 msgstr "No events on this day"
 
@@ -7314,11 +7453,6 @@ msgstr "operator"
 msgid "無異動記錄"
 msgstr "No abnormal records"
 
-#: app/templates/pages/delegations/create.html:4
-#: app/templates/pages/delegations/create.html:12
-msgid "新增代理授權"
-msgstr "Added Delegation"
-
 #: app/templates/pages/delegations/create.html:16
 #: app/templates/pages/delegations/list.html:14
 msgid "代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住"
@@ -7327,80 +7461,42 @@ msgstr ""
 "vacation/business trip to ensure that the sign-off process does not get "
 "stuck."
 
-#: app/templates/pages/delegations/create.html:23
-#: app/templates/pages/delegations/edit.html:18
-#: app/templates/pages/delegations/list.html:22
-#: app/templates/pages/delegations/view.html:18
-msgid "授權人"
-msgstr "Authorizer"
-
-#: app/templates/pages/delegations/create.html:26
+#: app/templates/pages/delegations/create.html:27
 msgid "-- 請選擇授權人 --"
 msgstr "-- Please select the authorizer --"
 
-#: app/templates/pages/delegations/create.html:34
+#: app/templates/pages/delegations/create.html:35
 msgid "原本負責簽核的人 (如: 休假的主管)"
 msgstr "The person originally responsible for sign-off (e.g. supervisor on leave)"
 
-#: app/templates/pages/delegations/create.html:38
-#: app/templates/pages/delegations/edit.html:29
-#: app/templates/pages/delegations/list.html:23
-#: app/templates/pages/delegations/view.html:31
-msgid "被授權人"
-msgstr "authorized person"
-
-#: app/templates/pages/delegations/create.html:41
-msgid "-- 請選擇被授權人 --"
-msgstr "-- Please select the authorized person --"
-
-#: app/templates/pages/delegations/create.html:49
+#: app/templates/pages/delegations/create.html:50
 msgid "代理簽核的人 (如: 代理主管)"
 msgstr "The person who signs off on behalf of the person (e.g. acting supervisor)"
 
-#: app/templates/pages/delegations/create.html:53
+#: app/templates/pages/delegations/create.html:54
 #: app/templates/pages/delegations/list.html:24
 #: app/templates/pages/delegations/view.html:44
 msgid "代理類型"
 msgstr "Agent type"
 
-#: app/templates/pages/delegations/create.html:66
+#: app/templates/pages/delegations/create.html:67
 #: app/templates/pages/delegations/edit.html:53
 msgid "簽核金額上限"
 msgstr "Maximum amount of approval"
 
-#: app/templates/pages/delegations/create.html:70
+#: app/templates/pages/delegations/create.html:71
 msgid "如: 100000"
 msgstr "Such as: 100000"
 
-#: app/templates/pages/delegations/create.html:71
+#: app/templates/pages/delegations/create.html:72
 msgid "超過此金額需要原授權人或更高層簽核"
 msgstr ""
 "Amounts exceeding this amount require approval from the original "
 "authorizer or higher level"
 
-#: app/templates/pages/delegations/create.html:75
-#: app/templates/pages/delegations/view.html:79
-msgid "生效開始"
-msgstr "Effective start"
-
-#: app/templates/pages/delegations/create.html:82
-#: app/templates/pages/delegations/view.html:83
-msgid "生效結束"
-msgstr "Effective end"
-
-#: app/templates/pages/delegations/create.html:89
-#: app/templates/pages/delegations/edit.html:74
-#: app/templates/pages/delegations/view.html:87
-msgid "授權原因"
-msgstr "Authorization reason"
-
-#: app/templates/pages/delegations/create.html:92
+#: app/templates/pages/delegations/create.html:93
 msgid "如: 休假出國 12/20-12/25"
 msgstr "For example: Going abroad on vacation 12/20-12/25"
-
-#: app/templates/pages/delegations/create.html:97
-msgid "建立代理授權"
-msgstr "Create Delegation"
 
 #: app/templates/pages/delegations/edit.html:4
 #: app/templates/pages/delegations/edit.html:7
@@ -7501,10 +7597,6 @@ msgstr "[New Delegation]"
 #, python-format
 msgid "共 %(count)s 筆代理授權"
 msgstr "%(count)s Delegations total"
-
-#: app/templates/pages/delegations/list.html:26
-msgid "生效期間"
-msgstr "Effective period"
 
 #: app/templates/pages/delegations/list.html:48
 #: app/templates/pages/delegations/view.html:47
@@ -12121,12 +12213,6 @@ msgstr "Suspend"
 msgid "復原"
 msgstr "Restore"
 
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:231
-#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:61
-#: app/templates/pages/security/api_keys.html:66
-msgid "撤銷"
-msgstr "Revoke"
-
 #: app/templates/pages/security/api_keys.html:72
 msgid "尚未建立任何 API Key"
 msgstr "No API Key has been created yet"
@@ -13004,61 +13090,57 @@ msgstr "Approval limits saved"
 msgid "(集團已刪除)"
 msgstr "(conglomerate deleted)"
 
-#: app/web/delegations.py:78
+#: app/web/delegations.py:98
 msgid "請選擇授權人"
 msgstr "Please select a delegator"
 
-#: app/web/delegations.py:80
+#: app/web/delegations.py:100
 msgid "請選擇被授權人"
 msgstr "Please select a delegate"
 
-#: app/web/delegations.py:82
+#: app/web/delegations.py:102
 msgid "授權人和被授權人不能相同"
 msgstr "Delegator and delegate cannot be the same"
 
-#: app/web/delegations.py:84
+#: app/web/delegations.py:104
 msgid "生效開始日期為必填"
 msgstr "Effective start date is required"
 
-#: app/web/delegations.py:86
+#: app/web/delegations.py:106
 msgid "生效結束日期為必填"
 msgstr "Effective end date is required"
 
-#: app/web/delegations.py:95 app/web/delegations.py:186
+#: app/web/delegations.py:115 app/web/delegations.py:207
 msgid "生效開始日期格式錯誤"
 msgstr "Invalid effective start date format"
 
-#: app/web/delegations.py:101 app/web/delegations.py:192
+#: app/web/delegations.py:121 app/web/delegations.py:213
 msgid "生效結束日期格式錯誤"
 msgstr "Invalid effective end date format"
 
-#: app/web/delegations.py:104 app/web/delegations.py:195
-msgid "生效開始日期不能晚於結束日期"
-msgstr "Effective start date cannot be later than the end date"
-
-#: app/web/delegations.py:111 app/web/job_levels.py:117
+#: app/web/delegations.py:131 app/web/job_levels.py:117
 #: app/web/job_levels.py:234
 msgid "簽核金額上限不可為負數"
 msgstr "Approval amount limit cannot be negative"
 
-#: app/web/delegations.py:113 app/web/delegations.py:202
+#: app/web/delegations.py:133 app/web/delegations.py:223
 #: app/web/job_levels.py:119 app/web/job_levels.py:236
 msgid "簽核金額上限格式錯誤"
 msgstr "Invalid approval amount limit format"
 
-#: app/web/delegations.py:137
+#: app/web/delegations.py:157
 msgid "已建立代理授權"
 msgstr "Delegation created"
 
-#: app/web/delegations.py:219
+#: app/web/delegations.py:240
 msgid "已更新代理授權"
 msgstr "Delegation updated"
 
-#: app/web/delegations.py:249
+#: app/web/delegations.py:270
 msgid "已撤銷代理授權"
 msgstr "Delegation revoked"
 
-#: app/web/delegations.py:269
+#: app/web/delegations.py:290
 msgid "已刪除代理授權"
 msgstr "Delegation deleted"
 
@@ -23971,4 +24053,7 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "簽核上限:"
 #~ msgstr "Sign-off limit:"
+
+#~ msgid "待簽核：%(form)s（%(sn)s）"
+#~ msgstr "Pending approval: %(form)s (%(sn)s)"
 

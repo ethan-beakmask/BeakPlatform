@@ -9,6 +9,7 @@ files:
   route:
     - backend/app/web/approval_categories.py
     - backend/app/web/delegations.py
+    - backend/app/api/my_delegations.py          # 員工自助，授權人限本人；頁面在 /personal-settings
   model:
     - backend/app/models/approval_category.py    # ApprovalCategory + JobLevelApprovalLimit
     - backend/app/models/delegation.py
@@ -29,6 +30,7 @@ files:
     - backend/app/static/css/approval-limits.css
   test:
     - backend/tests/test_delegations_prefill.py
+    - backend/tests/test_my_delegations_api.py
   vendor:
     - backend/app/static/vendor/beak-trellis/    # 核決類別樹
 

@@ -122,6 +122,16 @@ def _delegation_hint(row):
             reason=row.title,
             next=url_for('calendar_web.my_calendar'),
         )
+    elif current_user.is_employee:
+        hint['create_url'] = url_for(
+            'main.personal_settings',
+            delegation='new',
+            effective_from=hint['start_date'],
+            effective_until=hint['end_date'],
+            reason=row.title,
+            next=url_for('calendar_web.my_calendar'),
+            _anchor='my-delegations',
+        )
     else:
         hint['create_url'] = None
     return hint
