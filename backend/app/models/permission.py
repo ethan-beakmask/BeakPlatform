@@ -45,6 +45,33 @@ class ResourceType:
     # 商店
     STORE_TEMPLATE = 'STORE_TEMPLATE'  # 商店模板
 
+    # ResourceGateway 資源型（PF-241，2026-09-04 起）
+    # 與 security/resource_gateway.py 的 MODEL_RESOURCE_TYPE_MAP 一一對應，
+    # 全部在 LIST_RBAC_ENFORCED_MODELS 內：缺出廠定義時 PermissionService.check()
+    # 先查定義、查不到就回 False，ORG_ADMIN 的 bypass 輪不到（TENANT-02 雷二），
+    # 該資源的 API 對每一種身分都 403。tests/test_permission_defaults.py 會守這條。
+    # 人資架構
+    JOB_FAMILY = 'JOB_FAMILY'                              # 職系
+    DUTY_CATEGORY = 'DUTY_CATEGORY'                        # 職務類別
+    JOB_LEVEL = 'JOB_LEVEL'                                # 職等
+    JOB_TITLE = 'JOB_TITLE'                                # 職稱
+    DUTY = 'DUTY'                                          # 職務
+    WORK_SCHEDULE = 'WORK_SCHEDULE'                        # 班表
+    APPROVAL_CATEGORY = 'APPROVAL_CATEGORY'                # 核決類別
+    JOB_LEVEL_APPROVAL_LIMIT = 'JOB_LEVEL_APPROVAL_LIMIT'  # 職等核決上限
+    EMPLOYEE_POSITION = 'EMPLOYEE_POSITION'                # 員工職位
+    # 帳號與授權
+    USER_NUMBERING_RULE = 'USER_NUMBERING_RULE'            # 員工編號規則
+    USER_ROLE_ASSIGNMENT = 'USER_ROLE_ASSIGNMENT'          # 角色指派
+    DELEGATION = 'DELEGATION'                              # 代理授權
+    # 通知設定
+    SMTP_CONFIG = 'SMTP_CONFIG'                            # SMTP 設定組
+    TELEGRAM_CONFIG = 'TELEGRAM_CONFIG'                    # Telegram 設定組
+    RECIPIENT_GROUP = 'RECIPIENT_GROUP'                    # 收件群組
+    # NoCode Builder
+    DC_PAGE_TEMPLATE = 'DC_PAGE_TEMPLATE'                  # 頁面版面樣板
+    DC_SITE_MAP_NODE = 'DC_SITE_MAP_NODE'                  # 站台圖節點
+
 
 class ActionType:
     """
@@ -283,4 +310,57 @@ DEFAULT_PERMISSIONS = [
     {'resource_type': ResourceType.STORE_TEMPLATE, 'action': ActionType.READ, 'name': '瀏覽商店模板', 'level': PermissionLevel.ORG},
     {'resource_type': ResourceType.STORE_TEMPLATE, 'action': ActionType.APPROVE, 'name': '審核商店模板', 'level': PermissionLevel.SYSTEM},
     {'resource_type': ResourceType.STORE_TEMPLATE, 'action': ActionType.DELETE, 'name': '下架商店模板', 'level': PermissionLevel.SYSTEM},
+]
+
+
+# ResourceGateway 資源型 CRUD（PF-241，2026-09-04 起隨出廠定義建立）
+# dev 是 2026-07 用 scripts/migrations/legacy/075_seed_resource_crud_permissions.py
+# 種的，出廠定義一直沒跟上，fresh install（bpserv）的「基本班表」等管理頁
+# 因此對 ORG_ADMIN 也 403。code 集合以 dev 現況為準：這 17 種各 4 個、層級一律 ORG。
+_RESOURCE_CRUD_LABELS = [
+    # 人資架構
+    (ResourceType.JOB_FAMILY, '職系'),
+    (ResourceType.DUTY_CATEGORY, '職務類別'),
+    (ResourceType.JOB_LEVEL, '職等'),
+    (ResourceType.JOB_TITLE, '職稱'),
+    (ResourceType.DUTY, '職務'),
+    (ResourceType.WORK_SCHEDULE, '班表'),
+    (ResourceType.APPROVAL_CATEGORY, '核決類別'),
+    (ResourceType.JOB_LEVEL_APPROVAL_LIMIT, '職等核決上限'),
+    (ResourceType.EMPLOYEE_POSITION, '員工職位'),
+    # 帳號與授權
+    (ResourceType.USER_NUMBERING_RULE, '員工編號規則'),
+    (ResourceType.USER_ROLE_ASSIGNMENT, '角色指派'),
+    (ResourceType.DELEGATION, '代理授權'),
+    # 通知設定
+    (ResourceType.SMTP_CONFIG, 'SMTP 設定組'),
+    (ResourceType.TELEGRAM_CONFIG, 'Telegram 設定組'),
+    (ResourceType.RECIPIENT_GROUP, '收件群組'),
+    # NoCode Builder
+    (ResourceType.DC_PAGE_TEMPLATE, '頁面版面樣板'),
+    (ResourceType.DC_SITE_MAP_NODE, '站台圖節點'),
+]
+
+_CRUD_ACTIONS = [
+    (ActionType.CREATE, '新增'),
+    (ActionType.READ, '檢視'),
+    (ActionType.UPDATE, '編輯'),
+    (ActionType.DELETE, '刪除'),
+]
+
+
+def _crud_name(verb: str, label: str) -> str:
+    # 拉丁字開頭的名詞（SMTP、Telegram）與中文動詞之間留一個空格
+    return f'{verb} {label}' if label[:1].isascii() else f'{verb}{label}'
+
+
+DEFAULT_PERMISSIONS += [
+    {
+        'resource_type': resource_type,
+        'action': action,
+        'name': _crud_name(verb, label),
+        'level': PermissionLevel.ORG,
+    }
+    for resource_type, label in _RESOURCE_CRUD_LABELS
+    for action, verb in _CRUD_ACTIONS
 ]

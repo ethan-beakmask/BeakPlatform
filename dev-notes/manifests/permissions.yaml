@@ -16,6 +16,7 @@ files:
     - backend/app/services/page_permission_service.py
   model:
     - backend/app/models/permission.py
+    - backend/app/defaults/permission_defaults.py   # 出廠 seed（逐 code 補缺）
     - backend/app/models/role_permission.py
     - backend/app/models/permission_condition.py
     - backend/app/models/role.py

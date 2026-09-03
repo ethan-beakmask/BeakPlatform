@@ -24,3 +24,5 @@ files:
     - scripts/sql/seed_node_org_grants.sql
     - scripts/sql/seed_menu_defaults.sql
     - scripts/sql/seed_rbac_defaults.sql
+  test:
+    - backend/tests/test_permission_defaults.py   # PF-241：出廠權限守恆（map 每種四碼、逐 code 補缺）
