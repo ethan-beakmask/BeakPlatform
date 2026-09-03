@@ -186,7 +186,7 @@ user 簽 OD-20260903-0002「上班後複核」（選「維持觀察」）→ `fw
 兩件要知道的：
 
 - **OD 案件的待簽在表單中心清單是刻意不顯示的**（`fc_pending.list_pending_tasks` 的資安分類隔離），代理人要從資安案件處置中心接手；`can_act_on_task` 對代理人回 True 但清單看不到，不是代理判定壞了
-- `fc_monitor.get_workflow_progress()`（`/api/form-center/workflow-progress/<sc>`）序列化用的是 `approval.decision` / `approval.approved_at`，`FwApprovalRecord` 沒有這兩個屬性——**既有潛在 500**，本項只加了 `delegate_from_name` 沒動它（待辦另記）
+- `fc_monitor.get_workflow_progress()`（`/api/form-center/workflow-progress/<sc>`）序列化用的是 `approval.decision` / `approval.approved_at`，`FwApprovalRecord` 沒有這兩個屬性——**既有潛在 500**，本項只加了 `delegate_from_name` 沒動它（待辦另記 → PF-237，2026-09-04 確認全專案無人呼叫，端點已刪除）
 
 ## 六之六、第三期第 3 項：TimeContext 起步（2026-09-03 完成）
 

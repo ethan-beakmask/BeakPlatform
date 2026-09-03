@@ -355,7 +355,8 @@ routes:
     - SYSTEM_ADMIN
     methods:
     - GET
-    note: TimeContext 快照（who_on_duty／who_on_leave）；who_on_leave 揭露成員此刻在假中（含 PRIVATE 事件），刻意只給管理員，不走雙鑰匙
+    note: TimeContext 快照（who_on_duty／who_on_leave）；who_on_leave 揭露成員此刻在假中（含 PRIVATE
+      事件），刻意只給管理員，不走雙鑰匙
     review: confirmed
     rules:
     - /api/calendar/time-context
@@ -6135,24 +6136,6 @@ routes:
     rules:
     - /api/form-center/pending-tasks/<secure_code>
     source: modules/form_workflow/api/fc_pending.py
-  form_workflow_form_center.get_workflow_progress:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: false
-        module: form_workflow
-    guards:
-    - module_access_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/form-center/workflow-progress/<secure_code>
-    source: modules/form_workflow/api/fc_monitor.py
   form_workflow_form_center.list_available_forms:
     answer_source: db
     guard_args:

@@ -447,7 +447,6 @@ FLOW_DESIGNER 的欄位設定鈕 `offsetParent === null`、規格管理 2 筆、
 | `/api/form-center/pending-tasks/<secure_code>/lock` | `module_access_required('form_workflow', False)` | fc-approval.js,fc-batch-approval.js… | form_workflow.center;open_defense.security_cases |
 | `/api/form-center/pending-tasks/batch-approve` | `module_access_required('form_workflow', False)` | fc-batch-approval.js | form_workflow.center |
 | `/api/form-center/submit` | `module_access_required('form_workflow', False)` | fc-form-fill.js | form_workflow.center |
-| `/api/form-center/workflow-progress/<secure_code>` | `module_access_required('form_workflow', False)` | — | — |
 | `/api/nocode-builder/sub-systems/<secure_code>/portal` | `module_access_required('nocode_builder', False)` | ir-designer.js,page-template.js… | — |
 | `/api/nocode-builder/sub-systems/<ss_sc>/pages/<ssp_sc>/context` | `module_access_required('nocode_builder', False)` | ir-designer.js,page-template.js… | — |
 | `/api/nocode-builder/sub-systems/<ss_sc>/site-map/menu-tree` | `module_access_required('nocode_builder', False)` | ir-designer.js,page-template.js… | — |

@@ -1,5 +1,8 @@
 """
-表單中心 - 流程監控（進度、執行路徑、執行日誌、表單詳情）
+表單中心 - 流程監控（執行路徑、執行日誌、表單詳情）
+
+2026-09-04 PF-237：移除從未被任何前端呼叫的 /workflow-progress/<sc>
+（序列化用了 FwApprovalRecord 沒有的 decision／approved_at，有簽核紀錄即 500）。
 """
 import logging
 
@@ -14,71 +17,6 @@ from .form_center import form_center_bp
 from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
-
-
-@form_center_bp.route('/workflow-progress/<secure_code>')
-@module_access_required('form_workflow', False)
-def get_workflow_progress(secure_code):
-    """取得流程進度"""
-    from ..models import FwWorkflowInstance, FwNodeExecutionQueue, FwApprovalRecord
-
-    org = get_current_org()
-    if not org:
-        return jsonify({'success': False, 'error': 'Organization not found'}), 400
-
-    workflow = FwWorkflowInstance.query.filter_by(
-        secure_code=secure_code,
-        org_secure_code=org.secure_code,
-        is_deleted=False
-    ).first()
-
-    if not workflow:
-        return jsonify({'success': False, 'error': _('找不到指定的流程')}), 404
-
-    # 取得所有節點執行記錄（使用 secure_code）
-    queue_items = FwNodeExecutionQueue.query.filter_by(
-        workflow_instance_secure_code=workflow.secure_code
-    ).order_by(FwNodeExecutionQueue.scheduled_at.asc()).all()
-
-    # 取得所有簽核記錄（使用 secure_code）
-    approvals = FwApprovalRecord.query.filter_by(
-        workflow_instance_secure_code=workflow.secure_code
-    ).order_by(FwApprovalRecord.acted_at.asc()).all()
-
-    return jsonify({
-        'success': True,
-        'data': {
-            'workflow': {
-                'secure_code': workflow.secure_code,
-                'execution_code': workflow.execution_code,
-                'status': workflow.status,
-                'started_at': workflow.started_at.isoformat() if workflow.started_at else None,
-                'completed_at': workflow.completed_at.isoformat() if workflow.completed_at else None,
-            },
-            'nodes': [
-                {
-                    'node_id': item.node_id,
-                    'node_type': item.node_type,
-                    'node_name': item.node_name,
-                    'status': item.status,
-                    'scheduled_at': item.scheduled_at.isoformat() if item.scheduled_at else None,
-                    'completed_at': item.completed_at.isoformat() if item.completed_at else None,
-                }
-                for item in queue_items
-            ],
-            'approvals': [
-                {
-                    'node_id': approval.node_id,
-                    'approver_name': approval.approver_name,
-                    'delegate_from_name': approval.delegate_from_name,
-                    'decision': approval.decision,
-                    'comment': approval.comment,
-                    'approved_at': approval.approved_at.isoformat() if approval.approved_at else None,
-                }
-                for approval in approvals
-            ]
-        }
-    })
 
 
 @form_center_bp.route('/form-detail/<secure_code>')
