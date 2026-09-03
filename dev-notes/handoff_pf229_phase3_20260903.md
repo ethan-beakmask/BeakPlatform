@@ -113,13 +113,6 @@ modules/form_workflow/services/sql_sync/sync_service.py:459:                    
 272:            FwNodeExecutionQueue.node_type.in_(['Delay', 'End', 'ParallelJoin', 'OsExecutor']),
 ```
 （空行＝該符號不存在，第三期要自己建。）
-p='dev-notes/handoff_pf229_phase3_20260903.md'
-s=open(p,encoding='utf-8').read()
-old="`backend/app/services/schedule_service.py`（`calculate_working_seconds()` 已存在於第 142 行、`get_deadline_from_working_seconds()` 第 254 行，見下方掃描；`timeout_mode` 全專案尚無人用）"
-assert old in s, 'row2 not found'
-s=s.replace(old,"`backend/app/services/schedule_service.py`（`calculate_working_seconds()` 已存在於第 142 行、`get_deadline_from_working_seconds()` 第 254 行，見下方掃描；`timeout_mode` 全專案尚無人用）")
-open(p,'w',encoding='utf-8').write(s); print('row2 fixed')
-EOF
 
 
 ## 七、冷讀審核補洞（2026-09-03 codex 不帶對話記憶審出 12 點，已能回答的補在這裡）
@@ -127,10 +120,9 @@ EOF
 **commit 關係（審核第 12 點）**：bpserv 的 GitHub `70f5de6c` 是 dev `d7660a93` 經 `push_github.sh` 過濾後的對應 commit；
 dev 之後又多了 `bd152b13`（只改 CLAUDE.md 的 bpserv 狀態列）與本檔的 commit，程式碼與 bpserv 一致。從 dev HEAD 開工即可。
 
-**第 1 項的驗收樣本（審核第 10 點）**：`ethanyu@beluga.com` 是多個 open_defense 案件的簽核者。本 session 實測：
-quick-login 後 `GET /api/calendar/me/events?start=2026-08-30&end=2026-09-10` 的 `source_type='approval_task'` 事件
-有 10 筆以上（標題「待簽核：資安事件處置（小企業單人版）（OD-2026xxxx-xxxx）」），月曆 8/30～9/3 每格都有。
-要精確列出用 SQL：
+**第 1 項的驗收樣本（審核第 10 點）**：`ethanyu@beluga.com` 是多個 open_defense 案件的簽核者。
+**行事曆 API 已不再回 `approval_task`**（Ethan 2026-09-03 定案移除待簽核投影，見 `CALENDAR_SPEC.md` 第三節），
+所以「是不是簽核者」不能再從 `/api/calendar/me/events` 看，要用 SQL：
 
 ```sql
 SELECT q.secure_code, q.node_type, q.node_name, q.scheduled_at, wi.execution_code

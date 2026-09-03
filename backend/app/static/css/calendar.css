@@ -93,7 +93,6 @@
 .cal-ev--workday    { background: var(--color-info-light); }
 .cal-ev--delegation { background: var(--color-warning-light); }
 .cal-ev--position   { background: var(--color-primary-light); }
-.cal-ev--approval   { background: var(--color-success-light); }
 .cal-ev--flow       { background: var(--color-bg-header); }
 .cal-ev--broadcast  { background: var(--color-info-light); }
 .cal-ev--leave,

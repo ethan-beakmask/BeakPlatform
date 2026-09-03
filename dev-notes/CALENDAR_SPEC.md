@@ -9,7 +9,7 @@
 | 層 | 內容 | 規則 |
 |---|---|---|
 | 效期判定 | 合約、角色指派、職位、代理「今天有沒有效」 | **不走行事曆**。各自用 `Organization.local_today()` 即時判定（合約 PF-125、代理 2026-09-02、角色指派 `UserRoleAssignment.is_valid_on()` 同日對齊） |
-| 規劃時間 | 誰請假、誰出差、公司放假、公司活動、簽核期限 | 行事曆是唯一入口與來源 |
+| 規劃時間 | 誰請假、誰出差、公司放假、公司活動 | 行事曆是唯一入口與來源。**待簽核不算**（沒有確定時間的是待辦，看表單中心） |
 | 呈現與私密 | 月／週視圖、公開／僅顯示已排程／私人 | 行事曆 UI |
 
 ## 二、檔案
@@ -42,8 +42,11 @@ EXTERNAL 沒有 Key1 → API 403、頁面被 PageRoleGuard 302。
 | `delegation` | `delegations`（非 REVOKED，日期重疊；**不讀 `status`**） | PERSONAL(owner=授權人) | audience：授權人、被授權人、ORG_ADMIN；其他人**不顯示也不遮罩**。`link` 只給 ORG_ADMIN（員工開不了 `/delegations/<sc>`） |
 | `position` | `employee_positions`（只投影 `effective_until IS NOT NULL`） | PERSONAL | 本人、ORG_ADMIN |
 | `broadcast` | `lookup_items`（`category_code='broadcast'`，**要先 `set_config('app.current_org')`，該表有 RLS**） | ORG | navbar 型（有 `expires_at`）→ 期間；alert 型 → 發布日點事件並過 `_user_in_target()` |
-| `approval_task` | `fw_node_execution_queue` WAITING（Approve/FormAdapter）＋ `can_act_on_task()` | PERSONAL | **只在 me 視圖**、只給本人；`link` 到 `/forms/center` |
 | `flow_delay` | `fw_node_execution_queue` WAITING `Delay` | ORG | **只在 org 視圖、只給 ORG_ADMIN** |
+
+**待簽核任務刻意不投影**（Ethan 2026-09-03 定案，第一期曾有 `approval_task` 來源、同日移除）：
+沒有確定開始時間的是待辦不是行事曆，而且表單量大、已有表單中心。`fw_node_execution_queue` 只投影有到期時刻的
+`Delay`。日後不要以「順手」為由把 Approve／FormAdapter 加回來。
 
 `days[]`：每日 `is_workday`（`None`＝企業沒班表）、`holiday`、`is_today`。不逐日呼叫 `get_day_periods()`，
 一次撈 range 內假日再用 `weekly_hours` 推。

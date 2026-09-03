@@ -1363,7 +1363,9 @@ WHERE created_at > (now() AT TIME ZONE 'UTC') - interval '15 minutes'
 
 `/calendar/`（企業）與 `/calendar/me`（個人）畫面上的事件全是
 `backend/app/services/calendar_projection_service.py` 從六種來源投影出來的：`calendar_events`（手建）、
-班表假日、代理授權、限期職位、公告廣播、流程佇列（待簽核只在個人視圖、Delay 到期只給管理員）。
+班表假日、代理授權、限期職位、公告廣播、流程佇列（**只有** Delay 到期、只給管理員）。
+**待簽核任務刻意不投影**（Ethan 2026-09-03 定案：沒有確定開始時間的是待辦不是行事曆，表單量大且已有表單中心），
+第一期曾投影過、同日移除，不要加回來。
 受眾與遮罩**只在** `calendar_visibility.apply_visibility()` 判定——新增來源時產出正規化 dict 並填 `audience`，
 不要在外面另寫 if。寫入（第二期起）**只走** `calendar_event_service.CalendarEventService`
 （`POST/PUT/DELETE /api/calendar/events`，掛 `@page_keys_required('calendar_me')`），

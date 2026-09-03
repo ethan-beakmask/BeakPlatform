@@ -418,3 +418,47 @@ def test_comp_off_work_schedule_api_and_batch(admin_client, test_org):
     )
     assert batch.status_code == 200
     assert batch.get_json()['imported'] == 1
+
+
+def test_workflow_queue_projects_only_delay_never_approval(test_org, test_user, test_admin):
+    """待簽核任務刻意不投影（Ethan 2026-09-03 定案）：沒有確定時間的是待辦不是行事曆。
+    流程佇列只投影 Delay 到期，且只給 ORG_ADMIN 的 org 視圖。"""
+    from modules.form_workflow.models import FwNodeExecutionQueue
+
+    scheduled = datetime(2026, 9, 2, 2, 0, 0)  # UTC，落在 range 內
+    approve = FwNodeExecutionQueue(
+        secure_code='q_cal_approve_0000001',
+        org_secure_code=test_org.secure_code,
+        workflow_instance_secure_code='wi_cal_test_00000001',
+        node_id='approve-1',
+        node_type='Approve',
+        node_name='簽核',
+        status='WAITING',
+        scheduled_at=scheduled,
+        is_deleted=False,
+    )
+    delay = FwNodeExecutionQueue(
+        secure_code='q_cal_delay_00000001',
+        org_secure_code=test_org.secure_code,
+        workflow_instance_secure_code='wi_cal_test_00000001',
+        node_id='delay-1',
+        node_type='Delay',
+        node_name='等待',
+        status='WAITING',
+        scheduled_at=scheduled,
+        is_deleted=False,
+    )
+    db.session.add_all([approve, delay])
+    db.session.commit()
+
+    for viewer in (test_user, test_admin):
+        for scope in ('me', 'org'):
+            events = _build(test_org, viewer, scope=scope)['events']
+            assert all(e['source_type'] != 'approval_task' and e['event_type'] != 'APPROVAL'
+                       and e['source_secure_code'] != approve.secure_code for e in events), (viewer.secure_code, scope)
+
+    admin_org = _build(test_org, test_admin, scope='org')['events']
+    assert any(e['source_type'] == 'flow_delay' and e['source_secure_code'] == delay.secure_code
+               for e in admin_org)
+    for viewer, scope in ((test_admin, 'me'), (test_user, 'org'), (test_user, 'me')):
+        assert all(e['source_type'] != 'flow_delay' for e in _build(test_org, viewer, scope=scope)['events'])

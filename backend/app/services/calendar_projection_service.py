@@ -441,59 +441,17 @@ class CalendarProjectionService:
 
     @classmethod
     def _workflow_events(cls, org, viewer, scope, tz_name, start_utc, end_utc, prefix):
+        # 待簽核任務刻意不投影（Ethan 2026-09-03 定案）：沒有確定開始時間的是待辦不是行事曆，
+        # 而且表單量大、已有表單中心。流程佇列只投影有到期時刻的 Delay 節點。
         try:
             from modules.form_workflow.models import (
-                FwFormInstance,
                 FwNodeExecutionQueue,
                 FwWorkflowInstance,
-            )
-            from modules.form_workflow.services.task_authorizer import (
-                build_actor,
-                can_act_on_task,
             )
         except ImportError:
             return []
 
         events = []
-        if scope == 'me':
-            tasks = FwNodeExecutionQueue.query.filter(
-                FwNodeExecutionQueue.org_secure_code == org.secure_code,
-                FwNodeExecutionQueue.status == 'WAITING',
-                FwNodeExecutionQueue.node_type.in_(('Approve', 'FormAdapter', 'FORMADAPTER')),
-                FwNodeExecutionQueue.scheduled_at >= start_utc,
-                FwNodeExecutionQueue.scheduled_at < end_utc,
-                FwNodeExecutionQueue.is_deleted == False,  # noqa: E712
-            ).all()
-            form_codes = {t.form_instance_secure_code for t in tasks if t.form_instance_secure_code}
-            forms = FwFormInstance.query.filter(
-                FwFormInstance.org_secure_code == org.secure_code,
-                FwFormInstance.secure_code.in_(form_codes),
-                FwFormInstance.is_deleted == False,  # noqa: E712
-            ).all() if form_codes else []
-            form_map = {f.secure_code: f for f in forms}
-            actor = build_actor(viewer.secure_code, org.secure_code)
-            for task in tasks:
-                if not can_act_on_task(task, viewer.secure_code, org.secure_code, actor):
-                    continue
-                form = form_map.get(task.form_instance_secure_code)
-                local_dt = utc_to_local(tz_name, task.scheduled_at)
-                form_name = form.form_name if form else ''
-                serial_number = form.serial_number if form else ''
-                events.append(_point_event(
-                    key=f'approval:{task.secure_code}',
-                    source_type='approval_task',
-                    source_secure_code=task.secure_code,
-                    calendar_kind='PERSONAL',
-                    owner_user_secure_code=viewer.secure_code,
-                    owner_name=viewer.display_name,
-                    event_type='APPROVAL',
-                    title=_('待簽核：%(form)s（%(sn)s）', form=form_name or '', sn=serial_number or ''),
-                    local_dt=local_dt,
-                    visibility=CalendarVisibility.PRIVATE,
-                    link=f'{prefix}/forms/center',
-                    audience={'users': [viewer.secure_code]},
-                ))
-
         if scope == 'org' and viewer.is_org_admin:
             tasks = FwNodeExecutionQueue.query.filter(
                 FwNodeExecutionQueue.org_secure_code == org.secure_code,
