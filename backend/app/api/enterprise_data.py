@@ -2,7 +2,14 @@
 企業資料查詢 API（供流程設計器等模組使用）
 
 提供「可用設定」的唯讀查詢端點，與 enterprise_settings.py（管理用 CRUD）分離。
-權限層級：@admin_required（企業設定屬管理範疇；呼叫端為 workflow node 設計器，本身即管理員頁面）
+權限層級：與流程設計器同一組鑰匙——@module_access_required('form_workflow') +
+@page_keys_required('form_workflow.workflows')（PF-242，2026-09-04）。
+唯一呼叫端是設計器的節點面板（wf-node-email-adapter / wf-node-telegram /
+wf-node-sys-email-relay），持 FLOW_DESIGNER 的 EMPLOYEE 也要載得到；
+改版前掛 @admin_required，員工設計者的下拉一律 403。
+ResourceGateway.filter 一律 check_permission=False：FLOW_DESIGNER 不持
+smtp_config:read 等資源型權限碼，而這裡只回 secure_code／name 等挑選用欄位，
+租戶過濾仍由 gateway 依 g.current_org_secure_code 套用。
 
 端點：
 - GET /api/enterprise/data/settings/smtp/available        可用 SMTP 設定
@@ -13,7 +20,7 @@ from flask import Blueprint, jsonify
 from flask_login import current_user
 
 from ..models import SmtpConfig, TelegramConfig, RecipientGroup
-from ..security.decorators import admin_required
+from ..security.decorators import module_access_required, page_keys_required
 from ..security.resource_gateway import ResourceGateway
 from ..constants import SYSTEM_ORG_CODE
 
@@ -25,11 +32,13 @@ api_enterprise_data = Blueprint(
 
 
 @api_enterprise_data.route('/smtp/available', methods=['GET'])
-@admin_required
+@module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def available_smtp_configs():
     """列出當前企業可用的 SMTP 設定（啟用中）"""
     configs = ResourceGateway.filter(
         SmtpConfig,
+        check_permission=False,  # 呼叫者已過設計器雙鑰匙，見檔頭說明
         is_deleted=False,
         is_active=True,
         order_by='priority'
@@ -61,7 +70,8 @@ def available_smtp_configs():
 
 
 @api_enterprise_data.route('/email-groups/available', methods=['GET'])
-@admin_required
+@module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def available_email_groups():
     """列出可用的收件人群組（企業 + 系統級）"""
     org_code = current_user.org_secure_code
@@ -69,6 +79,7 @@ def available_email_groups():
     # 企業級群組
     org_groups = ResourceGateway.filter(
         RecipientGroup,
+        check_permission=False,  # 呼叫者已過設計器雙鑰匙，見檔頭說明
         is_deleted=False,
         is_active=True,
         order_by='priority'
@@ -111,11 +122,13 @@ def available_email_groups():
 
 
 @api_enterprise_data.route('/telegram/available', methods=['GET'])
-@admin_required
+@module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
 def available_telegram_configs():
     """列出當前企業可用的 Telegram 設定（啟用中）"""
     configs = ResourceGateway.filter(
         TelegramConfig,
+        check_permission=False,  # 呼叫者已過設計器雙鑰匙，見檔頭說明
         is_deleted=False,
         is_active=True,
         order_by='name'

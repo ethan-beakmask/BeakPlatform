@@ -919,10 +919,16 @@ routes:
     - /api/egress/thresholds
     source: backend/app/api/egress.py
   api_enterprise_data.available_email_groups:
-    answer_source: code
-    guard_args: {}
+    answer_source: db
+    guard_args:
+      module_access_required:
+        check_acl: true
+        module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
-    - admin_required
+    - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -934,10 +940,16 @@ routes:
     - /api/enterprise/data/settings/email-groups/available
     source: backend/app/api/enterprise_data.py
   api_enterprise_data.available_smtp_configs:
-    answer_source: code
-    guard_args: {}
+    answer_source: db
+    guard_args:
+      module_access_required:
+        check_acl: true
+        module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
-    - admin_required
+    - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
@@ -949,10 +961,16 @@ routes:
     - /api/enterprise/data/settings/smtp/available
     source: backend/app/api/enterprise_data.py
   api_enterprise_data.available_telegram_configs:
-    answer_source: code
-    guard_args: {}
+    answer_source: db
+    guard_args:
+      module_access_required:
+        check_acl: true
+        module: form_workflow
+      page_keys_required:
+        menu_code: form_workflow.workflows
     guards:
-    - admin_required
+    - module_access_required
+    - page_keys_required
     has_internal_check: false
     internal_identity_check: false
     max_audience: null
