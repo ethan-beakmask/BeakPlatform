@@ -14,6 +14,7 @@ files:
     - backend/app/models/calendar_event.py
     - backend/app/models/schedule_adjustment.py
   service:
+    - backend/app/services/approver_exposure_service.py
     - backend/app/services/calendar_event_service.py
     - backend/app/services/calendar_projection_service.py
     - backend/app/services/calendar_visibility.py

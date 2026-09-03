@@ -58,6 +58,24 @@
     margin: 0 0 8px;
     font-size: var(--font-size-sm);
 }
+.cal-toast {
+    max-width: 520px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cal-toast a {
+    color: inherit;
+    text-decoration: underline;
+}
+.cal-toast-close {
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
 
 /* 圖例 */
 .cal-legend {

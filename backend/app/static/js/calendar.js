@@ -54,6 +54,8 @@ function calendarApp() {
         error: '',
         panel: { open: false, date: null },
         modal: { open: false, saving: false, error: '' },
+        toast: { show: false, message: '', link: null, linkText: '' },
+        toastTimer: null,
         form: {
             secure_code: '',
             calendar_kind: 'PERSONAL',
@@ -257,6 +259,26 @@ function calendarApp() {
                 && ev.calendar_kind === 'PERSONAL' && !!ev.owner_name;
         },
 
+        delegationLinkFor(ev) {
+            if (!this.isOrgAdmin
+                || ev.source_type !== 'manual'
+                || ev.calendar_kind !== 'PERSONAL'
+                || ev.masked
+                || (ev.event_type !== 'LEAVE' && ev.event_type !== 'TRIP')
+                || !ev.owner_user_secure_code
+                || ev.owner_user_secure_code === this.userSecureCode) {
+                return null;
+            }
+            const params = new URLSearchParams({
+                delegator: ev.owner_user_secure_code,
+                effective_from: ev.start_date,
+                effective_until: ev.end_date,
+                reason: ev.title || '',
+                next: window.location.pathname
+            });
+            return `${window.__BP}/delegations/create?${params.toString()}`;
+        },
+
         ownerLabel(ev) {
             return ev.owner_name ? `（${ev.owner_name}）` : '';
         },
@@ -363,6 +385,42 @@ function calendarApp() {
             };
         },
 
+        showHint(hint) {
+            if (this.toastTimer) {
+                clearTimeout(this.toastTimer);
+                this.toastTimer = null;
+            }
+            if (!hint || !hint.needed) {
+                this.toast = { show: false, message: '', link: null, linkText: '' };
+                return;
+            }
+            const message = __('您在 {s} 至 {e} 期間有簽核職責（待簽核 {p} 件、可能派給您的流程 {t} 個）', {
+                s: hint.start_date,
+                e: hint.end_date,
+                p: hint.pending_count || 0,
+                t: hint.template_count || 0
+            });
+            if (hint.create_url) {
+                this.toast = {
+                    show: true,
+                    message,
+                    link: hint.create_url,
+                    linkText: __('建立代理授權')
+                };
+            } else {
+                this.toast = {
+                    show: true,
+                    message: message + __('，請通知管理員建立代理授權'),
+                    link: null,
+                    linkText: ''
+                };
+            }
+            this.toastTimer = setTimeout(() => {
+                this.toast.show = false;
+                this.toastTimer = null;
+            }, 15000);
+        },
+
         async submitForm() {
             this.modal.saving = true;
             this.modal.error = '';
@@ -387,6 +445,7 @@ function calendarApp() {
                     return;
                 }
                 this.modal = { open: false, saving: false, error: '' };
+                this.showHint(data.delegation_hint);
                 await this.load();
             } catch (e) {
                 this.modal.error = __('儲存失敗');

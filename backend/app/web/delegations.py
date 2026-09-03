@@ -20,6 +20,17 @@ from .. import db
 delegations_bp = Blueprint('delegations', __name__)
 
 
+def _safe_next(value):
+    if not value:
+        return None
+    value = str(value)
+    if not value.startswith('/') or len(value) > 1 and value[1] in ('/', '\\'):
+        return None
+    if any(ch.isspace() or ord(ch) < 32 or ord(ch) == 127 for ch in value):
+        return None
+    return value
+
+
 @delegations_bp.route('/')
 def list_delegations():
     """代理授權列表頁面"""
@@ -62,6 +73,15 @@ def create_delegation():
         (DelegationType.APPROVAL, '限額代理 - 設定簽核金額上限'),
         (DelegationType.SPECIFIC, '特定代理 - 限定特定流程類型'),
     ]
+    prefill = {
+        'delegator_secure_code': request.form.get('delegator_secure_code') or request.args.get('delegator', ''),
+        'delegate_secure_code': request.form.get('delegate_secure_code', ''),
+        'delegation_type': request.form.get('delegation_type', ''),
+        'effective_from': request.form.get('effective_from') or request.args.get('effective_from', ''),
+        'effective_until': request.form.get('effective_until') or request.args.get('effective_until', ''),
+        'reason': request.form.get('reason') or request.args.get('reason', ''),
+        'next': _safe_next(request.form.get('next') or request.args.get('next')),
+    }
 
     if request.method == 'POST':
         delegator_secure_code = request.form.get('delegator_secure_code', '').strip()
@@ -135,7 +155,7 @@ def create_delegation():
                 db.session.commit()
 
                 flash(_('已建立代理授權'), 'success')
-                return redirect(url_for('delegations.list_delegations'))
+                return redirect(prefill['next'] or url_for('delegations.list_delegations'))
             except Exception as e:
                 db.session.rollback()
                 flash(_('建立失敗: %(error)s', error=str(e)), 'error')
@@ -143,7 +163,8 @@ def create_delegation():
     return render_template(
         'pages/delegations/create.html',
         users=users,
-        delegation_types=delegation_types
+        delegation_types=delegation_types,
+        prefill=prefill
     )
 
 

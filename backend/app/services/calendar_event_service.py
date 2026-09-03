@@ -12,6 +12,7 @@ from app.models import (
     User,
 )
 from app.models.calendar_event import LEAVE_LIKE_TYPES, ORG_EVENT_TYPES, PERSONAL_EVENT_TYPES
+from app.services.approver_exposure_service import ApproverExposureService
 from app.services.schedule_service import ScheduleService
 from app.utils.calendar_time import (
     event_local_dates,
@@ -90,6 +91,23 @@ class CalendarEventService:
         if old_kind == CalendarKind.PERSONAL and old_type in LEAVE_LIKE_TYPES:
             cls.resync_leave_adjustments(org, row.owner_user_secure_code, old_dates)
         db.session.flush()
+
+    @classmethod
+    def delegation_hint(cls, org, actor, row) -> dict | None:
+        """PERSONAL leave-like events may need an approval-delegation hint."""
+        if row.calendar_kind != CalendarKind.PERSONAL or row.event_type not in LEAVE_LIKE_TYPES:
+            return None
+        dates = cls._local_dates(org, row)
+        if not dates:
+            return None
+        start_date = min(dates)
+        end_date = max(dates)
+        description = ApproverExposureService.describe(org, actor, start_date, end_date)
+        description.update({
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat(),
+        })
+        return description
 
     @classmethod
     def resync_leave_adjustments(cls, org, owner_user_secure_code: str, dates: set) -> None:

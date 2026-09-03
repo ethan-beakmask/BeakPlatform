@@ -13,7 +13,7 @@
 | 規格文件 | `dev-notes/CALENDAR_SPEC.md`（第六節＝第二期寫入規則與升級 SQL；六之二＝第三期入口） |
 | 測試 | `bash scripts/run_tests.sh tests/test_calendar_events_api.py tests/test_calendar_projection.py tests/test_calendar_pages.py -q` → 32 passed（第二期當時） |
 
-## 二、開工前必須先跟 Ethan 定案的兩件事（2026-09-03 提出，尚未回答）
+## 二、開工前必須先跟 Ethan 定案的兩件事（2026-09-03 提出，**同日 08:30 已全數定案**，見二之二）
 
 1. **請假同步的粒度**：第二期是**日粒度**（事件觸及的每個當地日都寫一筆 `schedule_adjustments`，半天假也讓
    `ScheduleService.get_work_periods()` 回空）。第三期「工作時間逾時」要用 `calculate_working_seconds()` 扣請假，
@@ -21,11 +21,25 @@
    `get_work_periods()` 的 LEAVE 分支要改成回 `adjusted_periods`）。
 2. **面板行為**：按 [在這天新增] 時當日面板不關閉（存檔後面板即時列出新事件）。要不要改成關閉？純 UX，不擋開工。
 
-## 三、第三期四項（摘自 #5380，動工順序建議 1 → 4 → 3 → 2）
+## 二之二、定案（2026-09-03 08:30，Ethan 逐題回答）
+
+| # | 定案 |
+|---|---|
+| Q1 粒度 | **B 改時段級**，排在第 3、2 項之前；細節見 `CALENDAR_SPEC.md` 六之二 |
+| Q2 | 聯集：WAITING 任務 `is_pending_assignee()` ∪ 快照 `USER` 指名 ∪ `ROLE` 持有；不解析主管鏈 |
+| Q3 | toast ＋ 連結；**`/delegations/` 僅 ORG_ADMIN**（Key1／Key2 三家都只有 ORG_ADMIN），員工只有文字提示 |
+| Q4 | 簽核節點 config；ABSOLUTE／WORKING，無班表退回 ABSOLUTE |
+| Q5 | 進 WAITING 算一次，喚醒時重算；注意 naive 本地時間 vs UTC |
+| Q6 | 原簽核者 user secure_code ＋ display_name |
+| Q7 | 面板維持不關閉 |
+
+第 1 項 spec：`/tmp/claude-1000/-opt-BeakPlatform-dev/*/scratchpad/spec_p3_item1.md`（session 暫存，正式記錄以 commit 為準）。
+
+## 三、第三期四項（摘自 #5380，動工順序 **1 → 4 → B（時段級請假）→ 3 → 2**）
 
 | # | 項目 | 牽涉檔案（本 session 確認存在） | 備註 |
 |---|---|---|---|
-| 1 | 建立 LEAVE／TRIP 事件時，若本人是任何流程的簽核者，提示建代理授權並帶入期間 | `backend/app/services/calendar_event_service.py`（掛 hook 的唯一位置）、`modules/form_workflow/services/task_authorizer.py`（判定「是不是簽核者」的唯一實作）、`backend/app/web/delegations.py`＋`templates/pages/delegations/create.html`（代理授權頁，可加 query string 預填期間） | 前端只提示，不自動建代理（Ethan 2026-09-02 定調代理效期不依賴行事曆） |
+| 1 | **已完成 2026-09-03**（見 `CALENDAR_SPEC.md` 六之三）建立 LEAVE／TRIP 事件時，若本人是任何流程的簽核者，提示建代理授權並帶入期間 | `backend/app/services/calendar_event_service.py`（掛 hook 的唯一位置）、`modules/form_workflow/services/task_authorizer.py`（判定「是不是簽核者」的唯一實作）、`backend/app/web/delegations.py`＋`templates/pages/delegations/create.html`（代理授權頁，可加 query string 預填期間） | 前端只提示，不自動建代理（Ethan 2026-09-02 定調代理效期不依賴行事曆） |
 | 2 | 簽核節點 `timeout_mode`（工作時間逾時） | `backend/app/services/schedule_service.py`（`calculate_working_seconds()` 已存在於第 142 行，見下方掃描；`timeout_mode` 全專案尚無人用）、`modules/form_workflow/services/workflow_executor.py`（**WAITING 喚醒清單兩處都要加**，CLAUDE.md「新增會回 waiting 的節點型別」） | 依賴第二點粒度決策 |
 | 3 | TimeContext 起步：`who_on_leave(instant)` / `who_on_duty(instant)` | 新檔，讀 `schedule_adjustments`（`calendar_event_secure_code` 有值＝行事曆來的）＋班表 | 設計在 `dev-notes/knowledge/time-context-architecture.md` |
 | 4 | 簽核紀錄補寫 `delegate_from_*` | `fw_approval_records` 欄位已存在但無人寫入；寫入點在 `task_authorizer.py` 判定代理成立的那條路徑 | 行事曆才能回溯「誰代誰簽了什麼」 |

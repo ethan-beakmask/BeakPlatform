@@ -131,6 +131,7 @@
                                 <span class="cal-panel-owner text-muted" x-show="showOwner(ev)" x-text="ownerLabel(ev)"></span>
                                 <div class="cal-panel-note text-muted" x-show="ev.note" x-text="ev.note"></div>
                                 <a class="cal-panel-link" x-show="ev.link" :href="ev.link || '#'">{{ _('開啟') }}</a>
+                                <a class="cal-panel-link" x-show="delegationLinkFor(ev)" :href="delegationLinkFor(ev) || '#'">{{ _('建立代理授權') }}</a>
                                 <div class="cal-panel-actions" x-show="ev.editable">
                                     <button type="button" class="btn btn-secondary btn-sm" @click="openEdit(ev)">{{ _('編輯') }}</button>
                                     <button type="button" class="btn btn-danger btn-sm" @click="deleteEvent(ev)">{{ _('刪除') }}</button>
@@ -146,6 +147,11 @@
             </div>
         </div>
     </template>
+    <div class="toast warning cal-toast" x-show="toast.show">
+        <span x-text="toast.message"></span>
+        <a x-show="toast.link" :href="toast.link || '#'" x-text="toast.linkText"></a>
+        <button type="button" class="cal-toast-close" @click="toast.show = false">×</button>
+    </div>
     {% include 'pages/calendar/_event_modal.html' %}
 </div>
 {% endblock %}

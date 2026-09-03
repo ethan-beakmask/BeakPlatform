@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from urllib.parse import parse_qs, urlparse
 
 from app import db
 from app.constants import SYSTEM_ORG_CODE
@@ -6,6 +7,9 @@ from app.models import (
     CalendarEvent,
     CalendarKind,
     CalendarVisibility,
+    Delegation,
+    DelegationStatus,
+    DelegationType,
     MenuItem,
     MenuPermission,
     MenuRoleRequirement,
@@ -165,6 +169,52 @@ def _personal_payload(**overrides):
     return payload
 
 
+def _waiting_task(org, user_sc, node_type='FormAdapter'):
+    from modules.form_workflow.models import FwNodeExecutionQueue
+
+    task = FwNodeExecutionQueue(
+        org_secure_code=org.secure_code,
+        workflow_instance_secure_code=f'wfi_{user_sc[-12:]}',
+        node_id=f'node_{user_sc[-8:]}',
+        node_type=node_type,
+        status='WAITING',
+        result={'data': {
+            'assignee_type': 'USER',
+            'assignee_value': user_sc,
+            'assignees': [user_sc],
+        }},
+    )
+    db.session.add(task)
+    db.session.commit()
+    return task
+
+
+def _published_workflow(org, suffix, workflow_snapshot):
+    from modules.form_workflow.models import FwPublishedFormWorkflow
+
+    row = FwPublishedFormWorkflow(
+        org_secure_code=org.secure_code,
+        source_mapping_id=1,
+        source_mapping_secure_code=f'map_{suffix}',
+        source_form_template_id=1,
+        source_form_template_secure_code=f'form_{suffix}',
+        source_form_version='1',
+        source_form_revision=1,
+        source_workflow_template_id=1,
+        source_workflow_template_secure_code=f'wf_{suffix}',
+        source_workflow_version='1',
+        source_workflow_revision=1,
+        publish_version=1,
+        name=f'Published {suffix}',
+        form_snapshot={'name': f'Form {suffix}'},
+        workflow_snapshot=workflow_snapshot,
+        status='Published',
+    )
+    db.session.add(row)
+    db.session.commit()
+    return row
+
+
 def test_employee_creates_personal_and_busy_masks_for_other_employee(auth_client, test_org, test_user):
     _grant_menu(test_user, test_org, 'calendar_me')
     resp = _post_event(auth_client, _personal_payload(title='Private sync'))
@@ -177,6 +227,166 @@ def test_employee_creates_personal_and_busy_masks_for_other_employee(auth_client
     org_view = CalendarProjectionService.build(test_org, other, 'org', date(2026, 9, 10), date(2026, 9, 10))
     masked = [e for e in org_view['events'] if e.get('masked')]
     assert len(masked) == 1 and masked[0]['editable'] is False and masked[0]['title'] is None
+
+
+def test_leave_hint_counts_pending_task_for_assignee(auth_client, test_org, test_user):
+    _grant_menu(test_user, test_org, 'calendar_me')
+    _waiting_task(test_org, test_user.secure_code)
+    payload = _personal_payload(event_type='LEAVE', title='Annual leave', all_day=True,
+                                start='2026-10-01', end='2026-10-03')
+
+    resp = _post_event(auth_client, payload)
+
+    hint = resp.get_json()['delegation_hint']
+    assert resp.status_code == 201
+    assert hint['needed'] is True
+    assert hint['pending_count'] == 1
+    assert hint['template_count'] == 0
+    assert hint['create_url'] is None
+    assert (hint['start_date'], hint['end_date']) == ('2026-10-01', '2026-10-03')
+
+
+def test_leave_hint_counts_published_role_assignee(client, test_org, test_user):
+    role = Role(
+        secure_code='cal_hint_role_sc',
+        org_secure_code=test_org.secure_code,
+        code='CAL_HINT_ROLE',
+        name='Calendar Hint Role',
+        role_type=RoleType.ROLE,
+        scope_type=ScopeType.GLOBAL,
+        role_level=RoleLevel.MEMBER,
+        is_active=True,
+    )
+    db.session.add(role)
+    db.session.flush()
+    db.session.add(UserRoleAssignment(
+        org_secure_code=test_org.secure_code,
+        user_secure_code=test_user.secure_code,
+        role_secure_code=role.secure_code,
+    ))
+    db.session.commit()
+    _published_workflow(test_org, 'role_hint', {'graph': {'nodes': [
+        {'id': 'n1', 'type': 'FormAdapter',
+         'config': {'assignee_type': 'ROLE', 'assignee_value': role.secure_code}},
+    ], 'edges': []}})
+    client = _client(client, test_user, test_org, 'calendar_me')
+
+    resp = _post_event(client, _personal_payload(event_type='TRIP', all_day=True,
+                                                 start='2026-10-04', end='2026-10-04'))
+    hint = resp.get_json()['delegation_hint']
+
+    assert hint['pending_count'] == 0
+    assert hint['template_count'] == 1
+    assert hint['needed'] is True
+
+
+def test_leave_hint_ignores_other_assignee_types_and_other_org(client, test_org, test_user):
+    _published_workflow(test_org, 'initiator_hint', {'graph': {'nodes': [
+        {'id': 'n1', 'type': 'Approve',
+         'config': {'assignee_type': 'INITIATOR', 'assignee_value': test_user.secure_code}},
+    ], 'edges': []}})
+    other_org = Organization(
+        secure_code='cal_hint_other_org',
+        code='CAL_HINT_OTHER',
+        name='Calendar Hint Other',
+        domain_name='cal-hint-other.local',
+        is_active=True,
+        is_deleted=False,
+    )
+    db.session.add(other_org)
+    db.session.commit()
+    _published_workflow(other_org, 'other_org_hint', {'graph': {'nodes': [
+        {'id': 'n2', 'type': 'FormAdapter',
+         'config': {'assignee_type': 'USER', 'assignee_value': test_user.secure_code}},
+    ], 'edges': []}})
+    client = _client(client, test_user, test_org, 'calendar_me')
+
+    hint = _post_event(client, _personal_payload(event_type='LEAVE', all_day=True,
+                                                start='2026-10-05', end='2026-10-06')).get_json()['delegation_hint']
+
+    assert hint['needed'] is False
+    assert hint['pending_count'] == 0
+    assert hint['template_count'] == 0
+
+
+def test_leave_hint_suppressed_by_covering_delegation(client, test_org, test_user, test_admin):
+    _waiting_task(test_org, test_user.secure_code)
+    db.session.add(Delegation(
+        org_secure_code=test_org.secure_code,
+        delegator_secure_code=test_user.secure_code,
+        delegate_secure_code=test_admin.secure_code,
+        delegation_type=DelegationType.FULL,
+        status=DelegationStatus.PENDING,
+        effective_from=date(2026, 10, 1),
+        effective_until=date(2026, 10, 10),
+    ))
+    db.session.commit()
+    client = _client(client, test_user, test_org, 'calendar_me')
+
+    covered = _post_event(client, _personal_payload(event_type='LEAVE', title='Covered leave',
+                                                   all_day=True, start='2026-10-02',
+                                                   end='2026-10-03')).get_json()['delegation_hint']
+    partial = _post_event(client, _personal_payload(event_type='LEAVE', title='Partial leave',
+                                                   all_day=True, start='2026-10-09',
+                                                   end='2026-10-12')).get_json()['delegation_hint']
+
+    assert covered['already_delegated'] is True
+    assert covered['needed'] is False
+    assert partial['already_delegated'] is False
+    assert partial['needed'] is True
+
+
+def test_non_leave_event_has_no_hint(client, admin_client, test_org, test_user):
+    org_event = _post_event(admin_client, {
+        'calendar_kind': 'ORG',
+        'event_type': 'ORG_EVENT',
+        'title': 'Company briefing',
+        'all_day': True,
+        'start': '2026-10-08',
+        'end': '2026-10-08',
+        'visibility': 'PUBLIC',
+    }).get_json()
+    client = _client(client, test_user, test_org, 'calendar_me')
+    meeting = _post_event(client, _personal_payload(event_type='MEETING')).get_json()
+
+    assert meeting['delegation_hint'] is None
+    assert org_event['delegation_hint'] is None
+
+
+def test_admin_leave_hint_has_prefilled_create_url(admin_client, test_org, test_admin):
+    _waiting_task(test_org, test_admin.secure_code)
+
+    resp = _post_event(admin_client, _personal_payload(event_type='LEAVE', title='Admin leave',
+                                                       all_day=True, start='2026-10-11',
+                                                       end='2026-10-12'))
+    hint = resp.get_json()['delegation_hint']
+    parsed = urlparse(hint['create_url'])
+    query = parse_qs(parsed.query)
+
+    assert hint['create_url'].startswith('/beakplatform/delegations/create?')
+    assert query['delegator'] == [test_admin.secure_code]
+    assert query['effective_from'] == ['2026-10-11']
+    assert query['effective_until'] == ['2026-10-12']
+    assert query['next'] == ['/beakplatform/calendar/me']
+
+
+def test_update_leave_returns_hint_too(client, test_org, test_user):
+    _waiting_task(test_org, test_user.secure_code)
+    client = _client(client, test_user, test_org, 'calendar_me')
+    secure_code = _post_event(client, _personal_payload(event_type='LEAVE', all_day=True,
+                                                       start='2026-10-13',
+                                                       end='2026-10-13')).get_json()['event']['secure_code']
+
+    resp = client.put(f'/beakplatform/api/calendar/events/{secure_code}',
+                      json=_personal_payload(event_type='LEAVE', title='Updated leave',
+                                             all_day=True, start='2026-10-13',
+                                             end='2026-10-14'))
+    hint = resp.get_json()['delegation_hint']
+
+    assert resp.status_code == 200
+    assert hint['needed'] is True
+    assert hint['start_date'] == '2026-10-13'
+    assert hint['end_date'] == '2026-10-14'
 
 
 def test_employee_cannot_create_org(auth_client, test_org, test_user):

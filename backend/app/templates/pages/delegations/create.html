@@ -18,6 +18,7 @@
 
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="next" value="{{ prefill.next or '' }}">
     <table class="info-table">
         <tr>
             <th style="text-align: left; width: 150px;">{{ _('授權人') }} *</th>
@@ -26,7 +27,7 @@
                     <option value="">{{ _('-- 請選擇授權人 --') }}</option>
                     {% for user in users %}
                     <option value="{{ user.secure_code }}"
-                            {% if request.form.get('delegator_secure_code') == user.secure_code %}selected{% endif %}>
+                            {% if (prefill.delegator_secure_code or '').strip() == user.secure_code %}selected{% endif %}>
                         {{ user.display_name }}
                     </option>
                     {% endfor %}
@@ -41,7 +42,7 @@
                     <option value="">{{ _('-- 請選擇被授權人 --') }}</option>
                     {% for user in users %}
                     <option value="{{ user.secure_code }}"
-                            {% if request.form.get('delegate_secure_code') == user.secure_code %}selected{% endif %}>
+                            {% if (prefill.delegate_secure_code or '').strip() == user.secure_code %}selected{% endif %}>
                         {{ user.display_name }}
                     </option>
                     {% endfor %}
@@ -55,7 +56,7 @@
                 <select name="delegation_type" required style="width: 100%;" onchange="toggleApprovalLimit(this)">
                     {% for type_val, type_desc in delegation_types %}
                     <option value="{{ type_val }}"
-                            {% if request.form.get('delegation_type') == type_val %}selected{% endif %}>
+                            {% if (prefill.delegation_type or '').strip() == type_val %}selected{% endif %}>
                         {{ type_desc }}
                     </option>
                     {% endfor %}
@@ -75,21 +76,21 @@
             <th style="text-align: left;">{{ _('生效開始') }} *</th>
             <td>
                 <input type="date" name="effective_from" required style="width: 100%;"
-                       value="{{ request.form.get('effective_from', '') }}">
+                       value="{{ (prefill.effective_from or '').strip() }}">
             </td>
         </tr>
         <tr>
             <th style="text-align: left;">{{ _('生效結束') }} *</th>
             <td>
                 <input type="date" name="effective_until" required style="width: 100%;"
-                       value="{{ request.form.get('effective_until', '') }}">
+                       value="{{ (prefill.effective_until or '').strip() }}">
             </td>
         </tr>
         <tr>
             <th style="text-align: left; vertical-align: top;">{{ _('授權原因') }}</th>
             <td>
                 <textarea name="reason" rows="3" style="width: 100%;"
-                          placeholder="{{ _('如: 休假出國 12/20-12/25') }}">{{ request.form.get('reason', '') }}</textarea>
+                          placeholder="{{ _('如: 休假出國 12/20-12/25') }}">{{ (prefill.reason or '').strip() }}</textarea>
             </td>
         </tr>
         <tr>

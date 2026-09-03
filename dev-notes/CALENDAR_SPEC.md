@@ -120,11 +120,41 @@ bpserv 已於 2026-09-03（PF-232）補齊三者，之後新裝的環境由 `cre
 動工前先讀本檔第三節的受眾表與第六節的寫入規則——衍生功能一律從 `CalendarEventService` 的寫入點掛 hook，
 不要另開寫入路徑。
 
+**2026-09-03 Ethan 定案**（全文 BBN #5385 / PF-233）：
+
+| # | 問題 | 定案 |
+|---|---|---|
+| Q1 | 請假同步粒度 | **改時段級（B）**：`adjusted_periods` 存剩餘工作時段，`schedule_service.get_work_periods()` 的 LEAVE 分支改回 `adjusted_periods or []`；resync 做同日多事件聯集與當地時間減法。是第 3 項與第 2 項的前置 |
+| Q2 | 「本人是簽核者」的判定 | 聯集：WAITING 任務 `is_pending_assignee()` ∪ 發行快照 Approve／FormAdapter 的 `USER` 指名本人 ∪ `ROLE` 為本人持有角色；不解析主管鏈 |
+| Q3 | 代理建議 UX | 存檔後 toast；`/delegations/` 雙鑰匙僅 ORG_ADMIN，所以員工只有文字提示、[建立代理授權] 連結只給 ORG_ADMIN（query string 預填 ＋ `next` 回流）；企業行事曆面板對別人未遮罩的 LEAVE／TRIP 也給 ORG_ADMIN 同款連結 |
+| Q4 | `timeout_mode` | 簽核節點 config；先做 ABSOLUTE（預設）／WORKING，BOTH 不做；簽核者無班表退回 ABSOLUTE |
+| Q5 | 計算時機 | 進 WAITING 算一次寫 `scheduled_at`；executor 喚醒時重算剩餘工作秒數，>0 就往後推。`schedule_service` 用 naive 本地時間，`scheduled_at` 是 UTC，呼叫前後要換算 |
+| Q6 | `delegate_from_*` | 原簽核者 user secure_code ＋ display_name |
+| Q7 | 面板 [在這天新增] 後 | 維持不關閉 |
+
+動工順序：**1（代理建議）→ 4（delegate_from_*）→ B（時段級請假）→ 3（TimeContext）→ 2（timeout_mode）**。
+
+## 六之三、第三期第 1 項：代理建議（2026-09-03 完成）
+
+| 層 | 實作 |
+|---|---|
+| 判定（唯一實作） | `backend/app/services/approver_exposure_service.py::ApproverExposureService.describe(org, user, start, end)` → `needed / already_delegated / pending_count / template_count`。a. WAITING 的 Approve／FormAdapter 任務逐筆 `task_authorizer.is_pending_assignee()`；b. `fw_published_form_workflows.status='Published'` 的 `workflow_snapshot.graph.nodes` 中 `assignee_type='USER'` 指名本人或 `'ROLE'` 為本人持有角色（其他型別不算）；c. 本人為授權人、未撤銷、效期涵蓋整段的 `delegations` 存在則 `needed=False`。form_workflow 在函式內 lazy import，`ImportError` 視為 0 |
+| 掛點 | `CalendarEventService.delegation_hint(org, actor, row)`：PERSONAL 且 LEAVE／TRIP 才有值；`POST/PUT /api/calendar/events` 回應多 `delegation_hint`（可為 null），API 層只在 `is_org_admin` 時補 `create_url`（`url_for('delegations.create_delegation', delegator=, effective_from=, effective_until=, reason=, next=url_for('calendar_web.my_calendar'))`） |
+| 前端 | `calendar.js::showHint()` 存檔後顯示 15 秒 toast（`common.css` 的 `.toast.warning` ＋ `calendar.css` 的 `.cal-toast`）；有 `create_url` 才有 [建立代理授權] 連結，否則句尾接「請通知管理員建立代理授權」。`delegationLinkFor(ev)`：ORG_ADMIN 在面板看**別人**未遮罩的 manual LEAVE／TRIP 才回 URL（`next=location.pathname`） |
+| 代理授權頁 | `web/delegations.py::create_delegation()` 以 `prefill` dict 餵模板（POST 值優先、其次 query string `delegator / effective_from / effective_until / reason / next`）；`_safe_next()` 只收單一 `/` 開頭、無 `//`、`\`、空白與控制字元；建立成功 `redirect(next)`，否則回列表 |
+
+三件要知道的：
+
+- **`/delegations/` 雙鑰匙只開給 ORG_ADMIN**（Key1／Key2 三家企業都只有 ORG_ADMIN），所以員工端刻意只有文字提示、沒有連結——給員工連結會 302 到登入頁。要開放員工自助建代理是權限模型的獨立決策，未做
+- 判定是**提示等級**，誤報可接受：BELUGA 的 `user@beluga.com`（只有 EMPLOYEE 角色）也會 `needed=true`，因為有發行流程把簽核指派給 `EMPLOYEE` 角色。不要為了消除這種案例去改判定
+- `web/dev.py::_is_safe_relative_path()` 是另一份較寬鬆的同類判定（dev 工具專用）。日後第三處需要 `next` 防護時先抽成 `app/utils/` 共用，不要再複製第三份
+- 驗收憑證 `/opt/tmp/verify/20260903-pf229-p3-item1.log`（curl 10 步＋瀏覽器 B1～B4：員工 toast 無連結、員工面板無連結、管理員面板連結 href 正確、管理員 toast 連結 → 代理頁預填 → 送出回流 `/calendar/me`）；測試 `test_calendar_events_api.py` 新增 7 條、`test_delegations_prefill.py` 3 條
+
 ## 七、已知取捨
 
 - ORG_ADMIN 的「我的行事曆」也會看到別人的代理授權（audience 規則不分 scope）。要改就在 `_delegation_events` 依 scope 收斂。
 - `alert` 型廣播只落在發布日，不做期間（它沒有結束時間）。
 - `calendar_events` 沒有 RLS policy（與 delegations／work_schedules 相同現況），隔離靠 service 層顯式 `org_secure_code` 過濾。
 - 第二期的 BUSY 合併只看 `start_local`／`end_local` 字串比較，全天 BUSY（`end_local` 是隔日 00:00）會與隔日 00:00 開始的事件「相接」而併入，這是刻意的（外人本來就只該看到一段「有安排」）。
-- 請假同步是日粒度：半天假也讓 `get_work_periods()` 回空。第三期做工作時間逾時前要決定是否改成時段級扣除。
+- 請假同步目前仍是日粒度：半天假也讓 `get_work_periods()` 回空。2026-09-03 已定案改時段級（六之二 Q1），排在第三期第 3、2 項之前實作；做完後刪掉這條。
 - `original_periods` 在企業沒有預設班表時是 `[]`（dev BELUGA 就是這樣），不影響功能。
