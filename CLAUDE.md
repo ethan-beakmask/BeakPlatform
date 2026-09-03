@@ -1855,7 +1855,8 @@ formadapter_handler.py:148     # 驗證 target_edges 合法性（空 target_edge
 | 並行分支各自走 End | End 是**流程級**結束，任一分支走到就整個流程 COMPLETED | 另一條的簽核任務會被 executor 視為流程已結束 |
 | **`End(cancel)` 記 CANCELLED（案件「已取消」）；`detach`／`strict` 記 COMPLETED（案件「已核准」）** | PF-200：`end_handler` 對 cancel 回報 `data.workflow_status='CANCELLED'`，`node_runner` 白名單採用；**Abandon 節點已刪除**（handler／factory／面板全拆，nodedef 軟刪除，migration 131） | 既有用 `End(cancel)` 當「正常完工＋清分支」的兩張資安處置範本已由 migration 132 連同 14 個發行快照改成 `detach`（`scripts/examples/od_workflow_graphs.py` 同步）。`complete_workflow()` 仍無條件 `enqueue_sync_safe()`，終態會 upsert 進企業獨立資料庫——所以終態記錯比以前更難回收，改 End 語意前先讀 `dev-notes/handoff_end_subflow_cancel_20260831.md` 第十節 |
 | `AlertBroadcast.broadcast_code` | **不做變數替換**（只有 title/message 有），同 code 覆蓋前一則並清掉已讀記錄 | 它是「最新一則橫幅」不是每案通知，別拿來當逐案稽核 |
-| 流程模板層級的逾時 | **不存在**（`timeout_minutes`／`timeout_at` 欄位與其唯一使用者 `WorkflowEngine.start_workflow` 死碼已於 2026-09-01 PF-168 刪除） | 逾時要用流程內 Delay 節點 |
+| 流程模板層級的逾時 | **不存在**（`timeout_minutes`／`timeout_at` 欄位與其唯一使用者 `WorkflowEngine.start_workflow` 死碼已於 2026-09-01 PF-168 刪除） | 逾時要用流程內 Delay 節點，或簽核節點自己的逾時（下一列） |
+| **簽核節點逾時**（2026-09-03 PF-229 第三期第 2 項起） | `FormAdapter` config `timeout_enabled`／`timeout_minutes`／`timeout_mode`（`ABSOLUTE`／`WORKING`：只在簽核者班表內倒數、無班表退回 ABSOLUTE）／`timeout_path_id`；期限存在 `result.data.timeout_at`，executor 以 `formadapter_timeout_due_clause()` 喚醒（**不是**加進 node_type 清單、**不動** `scheduled_at`），逾時寫 `fw_approval_records.action='timeout'` 並走指定決策；未配對出線的決策＝REJECTED 終態 | 規格 `dev-notes/CALENDAR_SPEC.md` 六之七 |
 | `DecisionWriter.decided_via` 自動推斷 | 看 `last_completed_node_type`，並行分支下不可靠 | 一律在節點 config 明確標 `human` / `auto` |
 | `DecisionWriter.target_value` 替換後為空 | 節點回 error、流程卡住 | 自動封鎖前必須先用 Branch 擋掉 `actor_ip` 為空的案件 |
 

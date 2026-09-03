@@ -5,13 +5,73 @@ FormAdapter 節點處理器
 負責簽核流程：等待指定人員選擇後續路徑。
 """
 import logging
-from typing import Dict, Any, List
-from datetime import datetime
+import secrets
+from typing import Dict, Any, List, Optional
+from datetime import datetime, timedelta
 from .base import BaseNodeHandler
 
 from app import db
 
 logger = logging.getLogger(__name__)
+
+TIMEOUT_MODES = ('ABSOLUTE', 'WORKING')
+TIMEOUT_MAX_MINUTES = 14400          # 10 天，與 ParallelJoin 一致
+TIMEOUT_ACTION = 'timeout'           # fw_approval_records.action（機器碼，不翻譯）
+TIMEOUT_APPROVER_NAME = '系統（逾時自動處理）'
+
+
+def _iso(dt: datetime) -> str:
+    return dt.replace(microsecond=0).isoformat(timespec='seconds')
+
+
+def _parse_iso(value) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value)).replace(tzinfo=None)
+    except ValueError:
+        return None
+
+
+def compute_timeout_deadline(user, now_utc: datetime, minutes: int, mode: str, tz_name: str):
+    """回 (效果模式, 期限 naive UTC)。
+
+    WORKING：只在簽核者班表內倒數（`ScheduleService.estimate_working_end_time()`，已含時段級請假）；
+    `user` 為 None 或沒有班表 → 退回 ABSOLUTE（Ethan 2026-09-03 Q4 定案，否則 `calculate_working_seconds()` 恆 0 永不逾時）。
+    schedule_service 吃 naive 當地時間、queue 存 UTC，換算只走 calendar_time。
+    """
+    from app.services.schedule_service import ScheduleService
+    from app.utils.calendar_time import local_naive_to_utc, utc_to_local
+
+    seconds = int(minutes) * 60
+    if mode == 'WORKING' and user is not None and ScheduleService.get_user_schedule(user) is not None:
+        local_now = utc_to_local(tz_name, now_utc).replace(tzinfo=None)
+        local_end = ScheduleService.estimate_working_end_time(user, local_now, seconds)
+        deadline = local_naive_to_utc(tz_name, local_end)
+        if deadline > now_utc:
+            return 'WORKING', deadline
+    return 'ABSOLUTE', now_utc + timedelta(seconds=seconds)
+
+
+def recompute_working_deadline(user, started_utc: datetime, now_utc: datetime, minutes: int, tz_name: str):
+    """WORKING 模式被喚醒時重算：回 (剩餘工作秒數, 新期限 naive UTC 或 None)。
+
+    剩餘 <= 0 表示真的逾時；> 0 表示班表／請假在等待期間變了（例如中途請假），往後推再等。
+    """
+    from app.services.schedule_service import ScheduleService
+    from app.utils.calendar_time import local_naive_to_utc, utc_to_local
+
+    local_started = utc_to_local(tz_name, started_utc).replace(tzinfo=None)
+    local_now = utc_to_local(tz_name, now_utc).replace(tzinfo=None)
+    elapsed = ScheduleService.calculate_working_seconds(user, local_started, local_now)
+    remaining = int(minutes) * 60 - int(elapsed)
+    if remaining <= 0:
+        return remaining, None
+    local_end = ScheduleService.estimate_working_end_time(user, local_now, remaining)
+    deadline = local_naive_to_utc(tz_name, local_end)
+    if deadline <= now_utc:
+        deadline = now_utc + timedelta(seconds=60)
+    return remaining, deadline
 
 
 class FormAdapterHandler(BaseNodeHandler):
@@ -40,6 +100,20 @@ class FormAdapterHandler(BaseNodeHandler):
         if not selection_mode:
             self.node_config['selection_mode'] = 'single'
 
+        if self.get_config_value('timeout_enabled', False):
+            try:
+                minutes = int(self.get_config_value('timeout_minutes', 0) or 0)
+            except (TypeError, ValueError):
+                raise ValueError('timeout_minutes 必須是整數')
+            if minutes <= 0 or minutes > TIMEOUT_MAX_MINUTES:
+                raise ValueError(f'timeout_minutes 必須介於 1 與 {TIMEOUT_MAX_MINUTES}，而非 {minutes}')
+            mode = str(self.get_config_value('timeout_mode', 'ABSOLUTE') or 'ABSOLUTE').upper()
+            if mode not in TIMEOUT_MODES:
+                raise ValueError(f'timeout_mode 必須是 ABSOLUTE 或 WORKING，而非 {mode}')
+            self.node_config['timeout_mode'] = mode
+            if not str(self.get_config_value('timeout_path_id', '') or '').strip():
+                raise ValueError('啟用簽核逾時時必須指定逾時去向 (timeout_path_id)')
+
         return True
 
     def handle(self) -> Dict[str, Any]:
@@ -56,6 +130,12 @@ class FormAdapterHandler(BaseNodeHandler):
             dict: 執行結果
         """
         self.report_running()
+
+        # 逾時喚醒（executor 依 result.data.timeout_at 把 WAITING 設回 PENDING 重跑本 handler）：
+        # 不重新解析簽核者、不重設 waiting_since，只判斷是不是真的逾時
+        existing = ((self.queue_item.result or {}).get('data') or {})
+        if existing.get('timeout_at'):
+            return self._handle_timeout_reentry(existing)
 
         # 取得配置
         assignee_type = self.get_config_value('assignee_type', 'INITIATOR')
@@ -96,25 +176,179 @@ class FormAdapterHandler(BaseNodeHandler):
             'available_paths': available_paths
         })
 
+        data = {
+            'assignee_type': assignee_type,
+            'assignee_value': assignee_value,
+            'assignees': assignees,
+            'selection_mode': selection_mode,
+            'allow_comment': allow_comment,
+            'require_comment': require_comment,
+            'min_comment_length': min_comment_length,
+            'use_custom_decisions': use_custom_decisions,
+            'output_variable': output_variable,
+            'available_paths': available_paths,
+            'input_variable_results': input_variable_results,
+            'waiting_since': datetime.utcnow().isoformat()
+        }
+
+        timeout_info = self._build_timeout_info(assignees, available_paths)
+        if timeout_info:
+            data.update(timeout_info)
+            self.log_info('簽核逾時倒數開始', {
+                k: timeout_info[k] for k in ('timeout_mode', 'timeout_mode_effective', 'timeout_minutes',
+                                             'timeout_at', 'timeout_path_id', 'timeout_reference_user')
+            })
+
         # 返回等待簽核狀態
         return {
             'status': 'waiting_form_action',
             'message': '等待簽核',
-            'data': {
-                'assignee_type': assignee_type,
-                'assignee_value': assignee_value,
-                'assignees': assignees,
-                'selection_mode': selection_mode,
-                'allow_comment': allow_comment,
-                'require_comment': require_comment,
-                'min_comment_length': min_comment_length,
-                'use_custom_decisions': use_custom_decisions,
-                'output_variable': output_variable,
-                'available_paths': available_paths,
-                'input_variable_results': input_variable_results,
-                'waiting_since': datetime.utcnow().isoformat()
-            }
+            'data': data
         }
+
+    # ------------------------------------------------------------------
+    # 簽核逾時（PF-229 第三期第 2 項）
+    # ------------------------------------------------------------------
+
+    def _org_tz_name(self) -> str:
+        from app.models.organization import Organization
+        org = Organization.query.filter_by(secure_code=self.queue_item.org_secure_code).first()
+        return org.get_setting('timezone', 'Asia/Taipei') if org else 'Asia/Taipei'
+
+    def _load_member(self, secure_code):
+        from app.models.user import User
+        if not secure_code:
+            return None
+        return User.query.filter(
+            User.org_secure_code == self.queue_item.org_secure_code,
+            User.secure_code == secure_code,
+            User.is_deleted == False,  # noqa: E712
+            User.is_active == True,  # noqa: E712
+        ).first()
+
+    def _working_reference_user(self, assignees: List[str]):
+        """WORKING 模式拿哪個人的班表倒數：依簽核者順序取第一個有共用班表的人。"""
+        from app.services.schedule_service import ScheduleService
+        for sc in assignees or []:
+            user = self._load_member(sc)
+            if user is not None and ScheduleService.get_user_schedule(user) is not None:
+                return user
+        return None
+
+    @staticmethod
+    def _find_timeout_path(available_paths, path_id):
+        for path in available_paths or []:
+            if path_id and path_id in (path.get('id'), path.get('edge_id')):
+                return path
+        return None
+
+    def _build_timeout_info(self, assignees: List[str], available_paths: List[Dict]) -> Optional[Dict[str, Any]]:
+        if not self.get_config_value('timeout_enabled', False):
+            return None
+        minutes = int(self.get_config_value('timeout_minutes', 0) or 0)
+        mode = str(self.get_config_value('timeout_mode', 'ABSOLUTE') or 'ABSOLUTE').upper()
+        path_id = str(self.get_config_value('timeout_path_id', '') or '').strip()
+        if self._find_timeout_path(available_paths, path_id) is None:
+            # validate() 只能檢查有沒有填；去向存不存在要等 available_paths 算出來才知道。
+            # fail-closed：不啟動一個逾時後走不出去的倒數，但也不擋簽核本身
+            self.log_error('逾時去向不在可選路徑內，本關卡不啟用逾時', {'timeout_path_id': path_id})
+            return None
+        now = datetime.utcnow().replace(microsecond=0)
+        tz_name = self._org_tz_name()
+        ref_user = self._working_reference_user(assignees) if mode == 'WORKING' else None
+        effective, deadline = compute_timeout_deadline(ref_user, now, minutes, mode, tz_name)
+        return {
+            'timeout_enabled': True,
+            'timeout_minutes': minutes,
+            'timeout_mode': mode,
+            'timeout_mode_effective': effective,
+            'timeout_reference_user': ref_user.secure_code if ref_user else None,
+            'timeout_path_id': path_id,
+            'timeout_started_at': _iso(now),
+            'timeout_at': _iso(deadline),
+        }
+
+    def _handle_timeout_reentry(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        now = datetime.utcnow().replace(microsecond=0)
+        timeout_at = _parse_iso(data.get('timeout_at'))
+        if timeout_at is None or now < timeout_at:
+            self.log_info('簽核節點被喚醒但尚未逾時，繼續等待', {'timeout_at': data.get('timeout_at')})
+            return {'status': 'waiting_form_action', 'message': '等待簽核', 'data': data}
+
+        minutes = int(data.get('timeout_minutes') or 0)
+        if data.get('timeout_mode_effective') == 'WORKING':
+            ref_user = self._load_member(data.get('timeout_reference_user'))
+            started = _parse_iso(data.get('timeout_started_at'))
+            if ref_user is not None and started is not None:
+                remaining, new_deadline = recompute_working_deadline(
+                    ref_user, started, now, minutes, self._org_tz_name())
+                if remaining > 0 and new_deadline is not None:
+                    self.log_info('工作時間逾時重算：仍有剩餘工作秒數，往後推', {
+                        'remaining_seconds': remaining, 'timeout_at': _iso(new_deadline)})
+                    return {
+                        'status': 'waiting_form_action',
+                        'message': '等待簽核',
+                        'data': {**data, 'timeout_at': _iso(new_deadline), 'timeout_recomputed_at': _iso(now)},
+                    }
+
+        path = self._find_timeout_path(data.get('available_paths'), data.get('timeout_path_id'))
+        if path is None:
+            self.log_error('簽核逾時，但逾時去向不存在', {'timeout_path_id': data.get('timeout_path_id')})
+            return {'status': 'error', 'message': '簽核逾時，但逾時去向不存在'}
+
+        label = path.get('label') or path.get('id') or path.get('edge_id') or ''
+        target_edges = list(path.get('target_edges') or [])
+        if not target_edges and path.get('edge_id'):
+            target_edges = [path['edge_id']]
+        mode_label = '工作時間' if data.get('timeout_mode_effective') == 'WORKING' else '絕對時間'
+        comment = f'簽核逾時（{mode_label} {minutes} 分鐘），系統自動採用「{label}」'
+
+        self._write_timeout_record(comment)
+
+        output_variable = data.get('output_variable')
+        if output_variable and path.get('value') is not None:
+            self.set_flow_var(output_variable, path.get('value'))
+
+        base = {
+            **data,
+            'decision': TIMEOUT_ACTION,
+            'timed_out': True,
+            'timeout_triggered_at': _iso(now),
+            'timeout_path_label': label,
+            'selected_option_value': path.get('value'),
+        }
+        self.log_info('簽核逾時，自動採用逾時去向', {
+            'timeout_path_id': data.get('timeout_path_id'), 'label': label, 'target_edges': target_edges})
+
+        if not target_edges:
+            # 未配對出線的決策＝REJECTED 終態（與人工簽核「駁回」同一語意）
+            return {
+                'status': 'complete_workflow',
+                'message': comment,
+                'data': {**base, 'workflow_status': 'REJECTED', 'finish_mode': 'detach'},
+            }
+        return {
+            'status': 'success',
+            'message': comment,
+            'data': {**base, 'selected_edges': target_edges},
+        }
+
+    def _write_timeout_record(self, comment: str) -> None:
+        from ...models import FwApprovalRecord
+        db.session.add(FwApprovalRecord(
+            secure_code=secrets.token_urlsafe(16),
+            org_secure_code=self.queue_item.org_secure_code,
+            workflow_instance_secure_code=self.queue_item.workflow_instance_secure_code,
+            form_instance_secure_code=self.queue_item.form_instance_secure_code or '',
+            node_id=self.queue_item.node_id,
+            node_name=self.queue_item.node_name,
+            node_queue_secure_code=self.queue_item.secure_code,
+            approver_secure_code=None,
+            approver_name=TIMEOUT_APPROVER_NAME,
+            action=TIMEOUT_ACTION,
+            comment=comment,
+            acted_at=datetime.utcnow(),
+        ))
 
     def _get_custom_decision_options(self) -> List[Dict[str, Any]]:
         """

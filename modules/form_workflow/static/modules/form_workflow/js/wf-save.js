@@ -128,6 +128,15 @@
                         if (selectionMode) config.selection_mode = selectionMode.value;
                         if (allowComment) config.allow_comment = allowComment.checked;
                         if (minCommentLen) config.min_comment_length = parseInt(minCommentLen.value) || 0;
+                        const faTimeoutEnabled = document.getElementById('faTimeoutEnabled');
+                        if (faTimeoutEnabled) {
+                            config.timeout_enabled = faTimeoutEnabled.checked;
+                            config.timeout_minutes = faTimeoutEnabled.checked
+                                ? (parseInt(document.getElementById('faTimeoutMinutes')?.value, 10) || 0) : 0;
+                            config.timeout_mode = document.getElementById('faTimeoutMode')?.value === 'WORKING' ? 'WORKING' : 'ABSOLUTE';
+                            config.timeout_path_id = faTimeoutEnabled.checked
+                                ? (document.getElementById('faTimeoutPathId')?.value || '') : '';
+                        }
                         changed = true;
                     }
                     break;

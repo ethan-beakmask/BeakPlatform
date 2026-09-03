@@ -7,6 +7,28 @@
         // ==================== FormAdapter 設定 Modal ====================
 
         // 開啟 FormAdapter 設定 Modal
+        function buildTimeoutPathOptions(nodeId, config, selectedId) {
+            const escape = (v) => String(v == null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            let items = [];
+            if (config.use_custom_decisions && Array.isArray(config.decision_options)) {
+                items = config.decision_options.map(opt => ({ id: opt.id, label: opt.label || opt.value || opt.id }));
+            } else if (window._faDecisions && typeof window._faDecisions.getOutgoingEdges === 'function') {
+                items = window._faDecisions.getOutgoingEdges(nodeId).map(e => {
+                    const tn = window.cy ? window.cy.getElementById(e.target) : null;
+                    const tnLabel = (tn && tn.length) ? (tn.data('label') || e.target) : e.target;
+                    return { id: e.id, label: e.label ? `${e.label} → ${tnLabel}` : tnLabel };
+                });
+            }
+            const options = ['<option value="">-- 請選擇逾時去向 --</option>'];
+            items.forEach(item => {
+                if (!item.id) return;
+                const sel = item.id === selectedId ? ' selected' : '';
+                options.push(`<option value="${escape(item.id)}"${sel}>${escape(item.label)}</option>`);
+            });
+            return options.join('');
+        }
+
         function openFormAdapterModal(nodeId) {
             const node = cy.getElementById(nodeId);
             if (!node || node.length === 0) return;
@@ -25,6 +47,12 @@
                 : (currentConfig.require_comment === true ? 1 : 0);
             const useCustomDecisions = currentConfig.use_custom_decisions || false;
             const outputVariable = currentConfig.output_variable || '';
+            // 簽核逾時（PF-229 第三期第 2 項）：去向清單在開啟時依「自定義決策／出線」算一次
+            const timeoutEnabled = currentConfig.timeout_enabled === true;
+            const timeoutMinutes = parseInt(currentConfig.timeout_minutes, 10) || 480;
+            const timeoutMode = currentConfig.timeout_mode === 'WORKING' ? 'WORKING' : 'ABSOLUTE';
+            const timeoutPathId = currentConfig.timeout_path_id || '';
+            const timeoutPathOptions = buildTimeoutPathOptions(nodeId, currentConfig, timeoutPathId);
 
             // 恢復已選擇的簽核者列表
             restoreSelectedAssignees(assigneeType, assigneeValue, assigneeLabel, assigneeListConfig);
@@ -131,6 +159,40 @@
                                     <input type="number" id="formAdapterMinCommentLength" value="${minCommentLength}" min="0" max="500" step="1"
                                            style="width: 80px; text-align: center;">
                                     <span style="font-size: 10px; color: #999;">0 = 不需留言</span>
+                                </div>
+                            </div>
+
+                            <div class="fa-modal-field" style="border-top: 1px solid #eee; padding-top: 12px;">
+                                <strong>簽核逾時</strong>
+                                <label style="display: flex; align-items: center; margin-top: 6px; cursor: pointer;">
+                                    <input type="checkbox" id="faTimeoutEnabled" ${timeoutEnabled ? 'checked' : ''} style="margin-right: 8px;"
+                                           onchange="document.getElementById('faTimeoutSettings').style.display = this.checked ? 'block' : 'none';">
+                                    啟用逾時自動處理
+                                </label>
+                                <div id="faTimeoutSettings" style="display: ${timeoutEnabled ? 'block' : 'none'}; margin-top: 6px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                        <span style="white-space: nowrap;">逾時時間（分鐘）：</span>
+                                        <input type="number" id="faTimeoutMinutes" value="${timeoutMinutes}" min="1" max="14400" step="1"
+                                               style="width: 90px; text-align: center;">
+                                        <span style="font-size: 10px; color: #999;">最大 14400（10 天）</span>
+                                    </div>
+                                    <div style="margin-bottom: 6px;">
+                                        <span>計時方式：</span>
+                                        <select id="faTimeoutMode" style="margin-top: 4px; width: 100%;">
+                                            <option value="ABSOLUTE" ${timeoutMode === 'ABSOLUTE' ? 'selected' : ''}>絕對時間（24/7 倒數）</option>
+                                            <option value="WORKING" ${timeoutMode === 'WORKING' ? 'selected' : ''}>工作時間（只在簽核者班表內倒數，扣掉請假；無班表退回絕對時間）</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <span>逾時去向：</span>
+                                        <select id="faTimeoutPathId" style="margin-top: 4px; width: 100%;">
+                                            ${timeoutPathOptions}
+                                        </select>
+                                        <div style="font-size: 10px; color: #888; margin-top: 3px;">
+                                            逾時後由系統自動採用這個決策（自定義決策）或走這條出線；未配對出線的決策視為駁回終態。
+                                            切換自定義決策或改了出線後，請重新開啟本設定更新清單。
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

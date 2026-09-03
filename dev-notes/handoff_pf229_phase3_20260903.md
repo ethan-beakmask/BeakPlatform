@@ -1,6 +1,6 @@
 # 交接：PF-229 第三期（行事曆衍生功能）— 2026-09-03
 
-> 寫給下一個 session。第一、二期已上線並部署到 bpserv；第三期**尚未開工，先討論再寫 spec**。
+> 寫給下一個 session。第一、二期已上線並部署到 bpserv；**第三期五項（1、PF-236、4、B、3、2）已於 2026-09-03 全部完成、dev 已 commit**（各項記錄在 `CALENDAR_SPEC.md` 六之三～六之七），**bpserv 尚未部署**（push github 後 `--update`，本期無 schema 變更、不需手動 ALTER）。本檔其餘段落是開工前的現況，保留供回溯。
 > 母原子 BBN #5380（`note_get(5380)`），第三期範圍在該原子「第三期」段；本檔只放本 session 驗證過的指令與待決事項。
 
 ## 一、現況（2026-09-03 07:50）
@@ -36,12 +36,12 @@
 
 第 1 項已於 2026-09-03 完成（commit `e25f0bd8`），spec 暫存檔已隨主機非正常關機遺失，實作記錄以 `CALENDAR_SPEC.md` 六之三為準。
 
-## 三、第三期四項（摘自 #5380，動工順序 **1 → PF-236 → 4 → B（時段級請假）→ 3 → 2**；1、PF-236、4、B、3 已完成，只剩 2）
+## 三、第三期四項（摘自 #5380，動工順序 **1 → PF-236 → 4 → B（時段級請假）→ 3 → 2**；**全部完成 2026-09-03**）
 
 | # | 項目 | 牽涉檔案（本 session 確認存在） | 備註 |
 |---|---|---|---|
 | 1 | **已完成 2026-09-03**（見 `CALENDAR_SPEC.md` 六之三）建立 LEAVE／TRIP 事件時，若本人是任何流程的簽核者，提示建代理授權並帶入期間 | `backend/app/services/calendar_event_service.py`（掛 hook 的唯一位置）、`modules/form_workflow/services/task_authorizer.py`（判定「是不是簽核者」的唯一實作）、`backend/app/web/delegations.py`＋`templates/pages/delegations/create.html`（代理授權頁，可加 query string 預填期間） | 前端只提示，不自動建代理（Ethan 2026-09-02 定調代理效期不依賴行事曆） |
-| 2 | 簽核節點 `timeout_mode`（工作時間逾時） | `backend/app/services/schedule_service.py`（`calculate_working_seconds()` 已存在於第 142 行，見下方掃描；`timeout_mode` 全專案尚無人用）、`modules/form_workflow/services/workflow_executor.py`（**WAITING 喚醒清單兩處都要加**，CLAUDE.md「新增會回 waiting 的節點型別」） | 依賴第二點粒度決策 |
+| 2 | **已完成 2026-09-03**（見 `CALENDAR_SPEC.md` 六之七）簽核節點 `timeout_mode`（工作時間逾時） | `formadapter_handler.py`（`compute_timeout_deadline` / `recompute_working_deadline` / `_handle_timeout_reentry`）、`workflow_executor.py::formadapter_timeout_due_clause()`（兩處查詢）、設計器 `wf-form-adapter.js`／`wf-node-form-adapter.js`／`wf-save.js` | codex 404，由 Claude 直接實作；憑證 `/opt/tmp/verify/20260903-pf229-item2-timeout.log` |
 | 3 | **已完成 2026-09-03**（見 `dev-notes/knowledge/time-context-architecture.md` 檔尾）TimeContext 起步：`who_on_leave(instant)` / `who_on_duty(instant)` | `backend/app/services/time_context_service.py`（唯一實作）＋ `GET /api/calendar/time-context`（`@admin_required`） | codex 兩次 404 失敗，由 Claude 直接實作；憑證 `/opt/tmp/verify/20260903-pf229-item3-time-context.log` |
 | 4 | **已完成 2026-09-03**（見 `CALENDAR_SPEC.md` 六之五）簽核紀錄補寫 `delegate_from_*` | `task_authorizer.py::resolve_acting_identity()` ＋ `delegate_from_fields()`；三個人工簽核寫入點；四個簽核歷程呈現點 | 憑證 `/opt/tmp/verify/20260903-pf229-item4-delegate-from.log` |
 

@@ -13,7 +13,7 @@ import time
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
-from sqlalchemy import and_, or_
+from sqlalchemy import DateTime, and_, cast, or_
 
 from app import db
 
@@ -102,6 +102,23 @@ class WorkflowExecutor:
 
                 time.sleep(self.poll_interval)
 
+    @staticmethod
+    def formadapter_timeout_due_clause(now):
+        """WAITING 的簽核節點若設了逾時且 result.data.timeout_at 已到期，就要被喚醒重跑 handler。
+
+        刻意用 JSON 裡的期限而不是 scheduled_at：FormAdapter 的 scheduled_at 是進關卡的時間，
+        表單中心待簽清單拿它當「送件時間」顯示，改掉會讓清單顯示錯；沒設逾時的簽核節點也因此
+        永遠不會被這條喚醒（PF-229 第三期第 2 項）。
+        """
+        from ..models import FwNodeExecutionQueue
+        timeout_at = FwNodeExecutionQueue.result['data']['timeout_at'].astext
+        return and_(
+            FwNodeExecutionQueue.status == 'WAITING',
+            FwNodeExecutionQueue.node_type == 'FormAdapter',
+            timeout_at.isnot(None),
+            cast(timeout_at, DateTime) <= now,
+        )
+
     def _poll_and_execute(self):
         """
         輪詢並執行待處理的節點
@@ -134,7 +151,9 @@ class WorkflowExecutor:
                     FwNodeExecutionQueue.node_type.in_(['Delay', 'End', 'ParallelJoin', 'OsExecutor']),
                     FwNodeExecutionQueue.scheduled_at.isnot(None),
                     FwNodeExecutionQueue.scheduled_at <= now
-                )
+                ),
+                # 設了逾時的簽核節點：期限在 result.data.timeout_at，不看 scheduled_at
+                self.formadapter_timeout_due_clause(now)
             )
         ).order_by(
             FwNodeExecutionQueue.scheduled_at.asc()
@@ -267,11 +286,18 @@ class WorkflowExecutor:
 
         # 處理 Delay / End (strict) / ParallelJoin / OsExecutor 類型的 WAITING 節點（作為備份）
         # FormAdapter 等需要用戶操作的節點不處理
+        now = datetime.utcnow()
         waiting_nodes = FwNodeExecutionQueue.query.filter(
-            FwNodeExecutionQueue.status == 'WAITING',
-            FwNodeExecutionQueue.node_type.in_(['Delay', 'End', 'ParallelJoin', 'OsExecutor']),
-            FwNodeExecutionQueue.scheduled_at.isnot(None),
-            FwNodeExecutionQueue.scheduled_at <= datetime.utcnow()
+            or_(
+                and_(
+                    FwNodeExecutionQueue.status == 'WAITING',
+                    FwNodeExecutionQueue.node_type.in_(['Delay', 'End', 'ParallelJoin', 'OsExecutor']),
+                    FwNodeExecutionQueue.scheduled_at.isnot(None),
+                    FwNodeExecutionQueue.scheduled_at <= now
+                ),
+                # 設了逾時的簽核節點（期限在 result.data.timeout_at）
+                self.formadapter_timeout_due_clause(now)
+            )
         ).limit(10).all()
 
         if not waiting_nodes:

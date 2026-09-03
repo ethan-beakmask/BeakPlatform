@@ -192,6 +192,23 @@ user 簽 OD-20260903-0002「上班後複核」（選「維持觀察」）→ `fw
 
 唯一實作 `backend/app/services/time_context_service.py::TimeContextService`（`who_on_duty` / `who_on_leave` / `snapshot`，naive UTC 進出）與 `GET /api/calendar/time-context?at=YYYY-MM-DDTHH:MM`（企業當地時間，**`@admin_required` 專用**——`who_on_leave` 會揭露成員此刻在假中，含 PRIVATE 事件）。`who_on_leave` 看行事曆 LEAVE／TRIP 事件是否涵蓋這一刻＋當地日的人工 LEAVE 列，**刻意不看** `schedule_adjustments.adjusted_periods`（沒有班表的企業判不出來）；`who_on_duty` 逐人 `ScheduleService.is_working_time()`（已含時段級請假）。設計與取捨全文在 `dev-notes/knowledge/time-context-architecture.md` 檔尾；尚未接任何消費端（OD 路由／簽核者解析另案）。憑證 `/opt/tmp/verify/20260903-pf229-item3-time-context.log`（GHTRAVEL 22 人值班、領隊半天假期間內外切換、下班／週末空、EMPLOYEE／EXTERNAL 403）。
 
+## 六之七、第三期第 2 項：簽核節點逾時 `timeout_mode`（2026-09-03 完成）
+
+| 層 | 實作 |
+|---|---|
+| 節點 config（`FormAdapter`） | `timeout_enabled`（bool）、`timeout_minutes`（1～14400）、`timeout_mode`（`ABSOLUTE`＝24/7 倒數／`WORKING`＝只在簽核者班表內倒數，含時段級請假）、`timeout_path_id`（自定義決策的 option id，或出線 edge id）。`validate()` 檢查三者；去向不在 `available_paths` 內時**不啟動倒數但不擋簽核**（log ERROR） |
+| 期限計算（唯一實作） | `formadapter_handler.compute_timeout_deadline(user, now_utc, minutes, mode, tz)`：WORKING 用 `ScheduleService.estimate_working_end_time()`（naive 當地時間，換算走 `calendar_time`）；簽核者順序取第一個有共用班表的人當參考（`timeout_reference_user`），沒有就退回 ABSOLUTE（Q4 定案）。結果寫進 `result.data`：`timeout_at`／`timeout_started_at`／`timeout_mode_effective` 等 |
+| 喚醒 | `WorkflowExecutor.formadapter_timeout_due_clause(now)`：WAITING 的 FormAdapter 且 `result->data->>timeout_at`（cast timestamp）到期。**刻意不動 `scheduled_at`**——表單中心待簽清單拿它當送件時間顯示。兩處輪詢查詢都加了這條（不是加進 node_type 清單） |
+| 重入（`_handle_timeout_reentry`） | 期限未到→原 data 原樣回 `waiting_form_action`（不重設 `waiting_since`、不重解析簽核者）；WORKING 用 `recompute_working_deadline()` 重算剩餘工作秒數（Q5 定案），>0 就往後推再等（等待期間請假／改班表都會反映）；真逾時→寫 `fw_approval_records`（`action='timeout'`、`approver_secure_code=NULL`、`approver_name='系統（逾時自動處理）'`）、設 `output_variable`、`selected_edges`＝去向的 target_edges；**未配對出線的決策＝REJECTED 終態**（回 `complete_workflow` + `workflow_status='REJECTED'`，與人工駁回同語意） |
+| 設計器 | `wf-form-adapter.js` 基本設定分頁新增「簽核逾時」區塊（去向清單依「自定義決策／出線」在開啟時算一次，改了要重開）；`wf-node-form-adapter.js::applyFormAdapterConfig()` 與 `wf-save.js` 都寫入四個 key |
+| 簽核歷程 | `fc-utils.js::getActionText` 認得 `timeout`（「逾時自動處理」）、model `ACTION_NAMES` 同步 |
+
+三件要知道的：
+
+- **競態**：期限到時若簽核者正在填寫（表單已鎖定），executor 仍會喚醒並自動處理，簽核者送出時會拿到「找不到任務或已處理」。逾時通常以小時／天計，暫不處理；要保護鎖定中的任務，在 `_handle_timeout_reentry` 開頭檢查 `queue_item.is_locked` 往後推即可
+- **既有 WAITING 簽核不受影響**：沒有 `timeout_at` 的列永遠不符合喚醒條件；也不需要資料回填
+- 憑證 `/opt/tmp/verify/20260903-pf229-item2-timeout.log`（拋棄式實例：executor 喚醒 → 走逾時出線 → 簽核紀錄 `timeout` → End 完成）；測試 `test_formadapter_timeout.py` 12 條（ABSOLUTE／WORKING／無班表退回／請假扣除／重算往後推／重入未逾時／出線與自定義決策／終態駁回／去向不存在／validate／executor 條件）。codex 當時 OpenAI 端 404，由 Claude 直接實作
+
 ## 七、已知取捨
 
 - ORG_ADMIN 的「我的行事曆」也會看到別人的代理授權（audience 規則不分 scope）。要改就在 `_delegation_events` 依 scope 收斂。

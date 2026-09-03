@@ -51,6 +51,7 @@ class FwApprovalRecord(ModuleBaseModel):
         'REJECTED': '退回',
         'TRANSFERRED': '轉交',
         'CANCELLED': '取消',
+        'timeout': '逾時自動處理',   # 簽核節點逾時由系統自動採用逾時去向（PF-229 第三期第 2 項）
     }
 
     def __repr__(self):

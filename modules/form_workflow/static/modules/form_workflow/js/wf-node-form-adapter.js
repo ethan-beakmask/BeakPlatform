@@ -365,6 +365,23 @@
                 return;
             }
 
+            // 簽核逾時（PF-229 第三期第 2 項）
+            const timeoutEnabled = document.getElementById('faTimeoutEnabled')?.checked || false;
+            const timeoutMinutes = parseInt(document.getElementById('faTimeoutMinutes')?.value, 10) || 0;
+            const timeoutMode = document.getElementById('faTimeoutMode')?.value === 'WORKING' ? 'WORKING' : 'ABSOLUTE';
+            const timeoutPathId = document.getElementById('faTimeoutPathId')?.value || '';
+            if (timeoutEnabled) {
+                const msg = document.getElementById('faModalMessage');
+                let timeoutError = '';
+                if (timeoutMinutes < 1 || timeoutMinutes > 14400) timeoutError = __('逾時時間必須是 1 到 14400 分鐘');
+                else if (!timeoutPathId) timeoutError = __('啟用簽核逾時時必須指定逾時去向');
+                if (timeoutError) {
+                    if (msg) { msg.textContent = timeoutError; msg.className = 'fa-modal-message warning'; }
+                    else { updateStatus(timeoutError, 'warning'); }
+                    return;
+                }
+            }
+
             // 自定義決策選項相關
             const useCustomDecisions = document.getElementById('faUseCustomDecisions')?.checked || false;
             const outputVariable = document.getElementById('faOutputVariable')?.value?.trim() || '';
@@ -391,7 +408,11 @@
                 use_custom_decisions: useCustomDecisions,
                 output_variable: outputVariable,
                 decision_options: decisionOptions,
-                input_variables: inputVariables
+                input_variables: inputVariables,
+                timeout_enabled: timeoutEnabled,
+                timeout_minutes: timeoutEnabled ? timeoutMinutes : 0,
+                timeout_mode: timeoutMode,
+                timeout_path_id: timeoutEnabled ? timeoutPathId : ''
             };
 
             node.data('config', updatedConfig);
