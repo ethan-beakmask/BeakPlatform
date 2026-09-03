@@ -59,6 +59,7 @@
 .fc-badge-running { background: #dbeafe; color: #1e40af; }
 .fc-badge-completed { background: #dcfce7; color: #166534; }
 .fc-badge-error { background: #fee2e2; color: #dc2626; }
+.fc-delegate-tag { font-size: 11px; color: var(--color-text-muted); margin-left: 4px; }
 
 /* 表格 */
 .fc-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }

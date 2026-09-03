@@ -70,6 +70,7 @@ def get_workflow_progress(secure_code):
                 {
                     'node_id': approval.node_id,
                     'approver_name': approval.approver_name,
+                    'delegate_from_name': approval.delegate_from_name,
                     'decision': approval.decision,
                     'comment': approval.comment,
                     'approved_at': approval.approved_at.isoformat() if approval.approved_at else None,
@@ -116,6 +117,7 @@ def get_form_detail(secure_code):
                 'node_id': approval.node_id,
                 'node_name': approval.node_name,
                 'approver_name': approval.approver_name,
+                'delegate_from_name': approval.delegate_from_name,
                 'action': approval.action,
                 'comment': approval.comment,
                 'acted_at': approval.acted_at.isoformat() if approval.acted_at else None,

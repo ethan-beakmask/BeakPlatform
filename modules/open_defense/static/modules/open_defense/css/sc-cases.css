@@ -250,6 +250,7 @@
     font-size: 13px;
 }
 .sc-approval-who { font-weight: 600; }
+.sc-approval-delegate { font-size: var(--font-size-xs); color: var(--color-text-muted); }
 .sc-approval-comment {
     margin-top: 2px;
     padding: 6px 10px;

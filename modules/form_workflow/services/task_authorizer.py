@@ -94,6 +94,65 @@ def _identity_matches(task_result_data: dict, user_secure_code: str,
     return False
 
 
+def resolve_acting_identity(
+    task,
+    user_secure_code: str,
+    org_secure_code: str,
+    actor: dict = None,
+) -> dict | None:
+    """回傳這次放行憑的是哪個身分；不能簽回 None。
+
+    回傳值：
+    - {'via': 'self', 'delegator_secure_code': None}
+    - {'via': 'delegation', 'delegator_secure_code': '<授權人 sc>'}
+    """
+    if not task:
+        return None
+
+    task_result_data = (task.result or {}).get('data', {})
+    if actor is None:
+        actor = build_actor(user_secure_code, org_secure_code)
+
+    if _identity_matches(task_result_data, user_secure_code, actor.get('role_codes')):
+        return {'via': 'self', 'delegator_secure_code': None}
+
+    # 代理授權：排序後取第一個符合者，避免 dict 順序影響記錄結果。
+    delegations = actor.get('delegations') or {}
+    for delegator_sc in sorted(delegations):
+        if _identity_matches(task_result_data, delegator_sc, delegations[delegator_sc]):
+            return {'via': 'delegation', 'delegator_secure_code': delegator_sc}
+
+    return None
+
+
+def delegate_from_fields(identity, org_secure_code) -> dict:
+    """換成 FwApprovalRecord 的 delegate_from_* 欄位值。
+
+    本人簽核回 {}。代理簽核會記錄授權人的 secure_code 與顯示名稱。
+    這裡刻意不加 User.is_active 條件：本函式只負責寫歷史記錄，不做授權判定；
+    授權是否成立已由 get_delegated_identities() 判斷，即使授權人事後停用也要保留姓名。
+    """
+    if not identity or identity.get('via') != 'delegation':
+        return {}
+
+    delegator_sc = identity.get('delegator_secure_code')
+    if not delegator_sc:
+        return {}
+
+    from app.models.user import User
+
+    user = User.query.filter(
+        User.org_secure_code == org_secure_code,
+        User.secure_code == delegator_sc,
+        User.is_deleted == False,  # noqa: E712
+    ).first()
+    name = (user.display_name or user.username) if user else delegator_sc
+    return {
+        'delegate_from_secure_code': delegator_sc,
+        'delegate_from_name': name,
+    }
+
+
 def can_act_on_task(
     task,
     user_secure_code: str,
@@ -105,22 +164,10 @@ def can_act_on_task(
     actor 可由呼叫端以 `build_actor()` 預先算好傳入（清單／批次 API 用，
     避免迴圈內重複查詢）；不傳則自行計算。
     """
-    if not task:
-        return False
+    return resolve_acting_identity(
+        task, user_secure_code, org_secure_code, actor
+    ) is not None
 
-    task_result_data = (task.result or {}).get('data', {})
-    if actor is None:
-        actor = build_actor(user_secure_code, org_secure_code)
-
-    if _identity_matches(task_result_data, user_secure_code, actor.get('role_codes')):
-        return True
-
-    # 代理授權：任一被代理人可簽，代理人就可簽
-    for delegator_sc, delegator_roles in (actor.get('delegations') or {}).items():
-        if _identity_matches(task_result_data, delegator_sc, delegator_roles):
-            return True
-
-    return False
 
 
 def is_pending_assignee(

@@ -129,7 +129,7 @@ bpserv 已於 2026-09-03（PF-232）補齊三者，之後新裝的環境由 `cre
 | Q3 | 代理建議 UX | 存檔後 toast；`/delegations/` 雙鑰匙僅 ORG_ADMIN，所以員工只有文字提示、[建立代理授權] 連結只給 ORG_ADMIN（query string 預填 ＋ `next` 回流）；企業行事曆面板對別人未遮罩的 LEAVE／TRIP 也給 ORG_ADMIN 同款連結 |
 | Q4 | `timeout_mode` | 簽核節點 config；先做 ABSOLUTE（預設）／WORKING，BOTH 不做；簽核者無班表退回 ABSOLUTE |
 | Q5 | 計算時機 | 進 WAITING 算一次寫 `scheduled_at`；executor 喚醒時重算剩餘工作秒數，>0 就往後推。`schedule_service` 用 naive 本地時間，`scheduled_at` 是 UTC，呼叫前後要換算 |
-| Q6 | `delegate_from_*` | 原簽核者 user secure_code ＋ display_name |
+| Q6 | `delegate_from_*` | 原簽核者 user secure_code ＋ display_name。**2026-09-03 完成**（六之五） |
 | Q7 | 面板 [在這天新增] 後 | 維持不關閉 |
 
 動工順序：**1（代理建議）→ 4（delegate_from_*）→ B（時段級請假）→ 3（TimeContext）→ 2（timeout_mode）**。
@@ -166,6 +166,25 @@ bpserv 已於 2026-09-03（PF-232）補齊三者，之後新裝的環境由 `cre
 - **`/delegations/` 管理頁與列表維持 ORG_ADMIN 不動**；員工自助只給「授權人＝本人」這一種，限額／特定代理仍由管理員建
 - 撤銷「自己授權出去的」是 Claude 加的（Ethan 定案只寫建立），理由是員工建錯只能找管理員收拾；不要的話拿掉 `revoke_my_delegation` 與模板的 [撤銷] 即可
 - 憑證 `/opt/tmp/verify/20260903-pf236-my-delegations.log`（curl 21 步：五種身分矩陣、冒用授權人、候選人排除、CSRF、hint URL；瀏覽器 B1～B2：toast 連結 → 預填 modal → 建立回流 `/calendar/me` → 行事曆投影出現 → 撤銷）；測試 `test_my_delegations_api.py` 13 條、`test_calendar_events_api.py` 員工 hint 斷言改為 personal-settings URL。codex 派工時把守門表的 `note`／`max_audience`／`confirmed` 寫到檔案開頭四條無關的 access_center 端點（「機制對、目標錯」），驗收時發現並改回
+
+## 六之五、第三期第 4 項：簽核紀錄補寫 `delegate_from_*`（2026-09-03 完成）
+
+| 層 | 實作 |
+|---|---|
+| 判定（唯一實作） | `modules/form_workflow/services/task_authorizer.py::resolve_acting_identity(task, user, org, actor=None)` → `{'via': 'self'}` 或 `{'via': 'delegation', 'delegator_secure_code': sc}`；本人優先，多位授權人依 secure_code 排序取第一個（決定性）。`can_act_on_task()` 改為它的薄包裝（`is not None`），清單／詳情／鎖定端點繼續用 bool 版 |
+| 欄位值 | `delegate_from_fields(identity, org)`：本人簽核回 `{}`；代理簽核回 `{'delegate_from_secure_code': 授權人 sc, 'delegate_from_name': display_name or username}`。查 `User` 刻意不加 `is_active`（記錄用，授權已在 `get_delegated_identities()` 判過），找不到就用 sc 當名字 |
+| 寫入點（三處人工簽核） | `fc_pending.py::approve_task()`、`fc_batch.py::batch_approve_tasks()`（沿用 actor，無 N+1）、`instance_routes.py::approve_task()`：`FwApprovalRecord(..., **delegate_from_fields(...))`，`task.result` 多 `delegate_from`。FORCE_END／portal 撤單／SqlExecutor／AiAgent 的自動紀錄不涉及代理，未動 |
+| 呈現 | `FwApprovalRecord.to_dict()`、`fc_pending.get_pending_task`、`fc_monitor` 兩處序列化多 `delegate_from_name`；`_read_form_modal` / `_form_center_approval_modal` / `_monitor_modal`（form_workflow）與 `security_cases.html`（open_defense，吃同一支 form-detail API）在簽核者後接「（代 X 簽核）」（`fc-delegate-tag` / `sc-approval-delegate`） |
+| SQL Sync | `converter.py` / `sync_service.py` 早已同步這兩欄，本項讓值不再恆為 NULL，不必改 |
+
+實測（`/opt/tmp/verify/20260903-pf229-item4-delegate-from.log`）：ethanyu 用 PF-236 的 API 建當日代理給 `user@beluga.com`（無 SECURITY_STAFF），
+user 簽 OD-20260903-0002「上班後複核」（選「維持觀察」）→ `fw_approval_records`：`approver=user`、`delegate_from_secure_code=ethanyu sc`、
+`delegate_from_name=ethanyu`；`fw_node_execution_queue.result.delegate_from` 同值。測試 `test_task_authorizer_delegate_from.py` 7 條（含本人優先、排序決定性、SPECIFIC／過期不放行、停用授權人仍記名）。
+
+兩件要知道的：
+
+- **OD 案件的待簽在表單中心清單是刻意不顯示的**（`fc_pending.list_pending_tasks` 的資安分類隔離），代理人要從資安案件處置中心接手；`can_act_on_task` 對代理人回 True 但清單看不到，不是代理判定壞了
+- `fc_monitor.get_workflow_progress()`（`/api/form-center/workflow-progress/<sc>`）序列化用的是 `approval.decision` / `approval.approved_at`，`FwApprovalRecord` 沒有這兩個屬性——**既有潛在 500**，本項只加了 `delegate_from_name` 沒動它（待辦另記）
 
 ## 七、已知取捨
 

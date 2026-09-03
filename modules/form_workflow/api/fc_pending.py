@@ -14,7 +14,12 @@ from app import db, csrf
 
 from .form_center import form_center_bp
 from .fc_utils import _apply_field_permissions_to_schema
-from ..services.task_authorizer import can_act_on_task, build_actor
+from ..services.task_authorizer import (
+    build_actor,
+    can_act_on_task,
+    delegate_from_fields,
+    resolve_acting_identity,
+)
 from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
@@ -220,6 +225,7 @@ def get_pending_task(secure_code):
                 'node_id': approval.node_id,
                 'node_name': approval.node_name,
                 'approver_name': approval.approver_name,
+                'delegate_from_name': approval.delegate_from_name,
                 'action': approval.action,
                 'comment': approval.comment,
                 'acted_at': approval.acted_at.isoformat() if approval.acted_at else None,
@@ -387,7 +393,10 @@ def approve_task(secure_code):
 
         # 檢查當前用戶是否為指定簽核人
         task_result_data = (task.result or {}).get('data', {})
-        if not can_act_on_task(task, current_user.secure_code, org.secure_code):
+        identity = resolve_acting_identity(
+            task, current_user.secure_code, org.secure_code
+        )
+        if identity is None:
             return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
         # 驗證鎖定持有者：必須是當前用戶且未逾時
@@ -507,6 +516,7 @@ def approve_task(secure_code):
             action=decision,
             comment=comment,
             acted_at=datetime.utcnow(),
+            **delegate_from_fields(identity, org.secure_code),
         )
         db.session.add(approval_record)
 
@@ -530,7 +540,8 @@ def approve_task(secure_code):
             'selected_edges': selected_edges,
             'selected_option_value': selected_option_value,
             'comment': comment,
-            'approver': current_user.secure_code
+            'approver': current_user.secure_code,
+            'delegate_from': identity['delegator_secure_code'],
         }
         task.release_lock()
 

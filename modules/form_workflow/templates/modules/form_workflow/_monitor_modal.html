@@ -329,7 +329,11 @@
                     <tbody>
                         <template x-for="(approval, idx) in sortedApprovals(formDetail?.approvals)" :key="idx">
                             <tr style="border-bottom: 1px solid #f3f4f6;">
-                                <td style="padding: 8px 10px; white-space: nowrap; font-weight: 500;" x-text="approval.approver_name"></td>
+                                <td style="padding: 8px 10px; white-space: nowrap; font-weight: 500;">
+                                    <span x-text="approval.approver_name"></span>
+                                    <span x-show="approval.delegate_from_name" class="fc-delegate-tag"
+                                          x-text="__('（代 {name} 簽核）', {name: approval.delegate_from_name || ''})"></span>
+                                </td>
                                 <td style="padding: 8px 10px; white-space: nowrap;">
                                     <span class="fc-badge" :class="getActionBadgeClass(approval.action)" x-text="getActionText(approval.action)"></span>
                                 </td>

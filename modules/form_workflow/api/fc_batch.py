@@ -13,7 +13,11 @@ from app.platform.data import get_current_org
 from app import db, csrf
 
 from .form_center import form_center_bp
-from ..services.task_authorizer import can_act_on_task, build_actor
+from ..services.task_authorizer import (
+    build_actor,
+    delegate_from_fields,
+    resolve_acting_identity,
+)
 from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
@@ -73,7 +77,8 @@ def batch_approve_tasks():
 
             # 檢查是否為指定簽核人
             task_result_data = (task.result or {}).get('data', {})
-            if not can_act_on_task(task, user_code, org.secure_code, actor):
+            identity = resolve_acting_identity(task, user_code, org.secure_code, actor)
+            if identity is None:
                 results.append({'queue_secure_code': qsc, 'success': False, 'error': _('非指定簽核人')})
                 fail_count += 1
                 db.session.rollback()
@@ -125,6 +130,7 @@ def batch_approve_tasks():
                 action=decision,
                 comment=comment,
                 acted_at=datetime.utcnow(),
+                **delegate_from_fields(identity, org.secure_code),
             )
             db.session.add(approval_record)
 
@@ -148,7 +154,8 @@ def batch_approve_tasks():
                 'selected_edges': selected_edges,
                 'selected_option_value': selected_option_value,
                 'comment': comment,
-                'approver': user_code
+                'approver': user_code,
+                'delegate_from': identity['delegator_secure_code'],
             }
             task.release_lock()
 

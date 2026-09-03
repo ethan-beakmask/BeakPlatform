@@ -1750,6 +1750,7 @@
  "高": "High",
  "黃點折線不支援新增中繼點，請先切換為其他樣式": "Yellow dot polylines do not support adding relay points. Please switch to other styles first.",
  "點陣": "Dot matrix",
+ "（代 {name} 簽核）": "(on behalf of {name})",
  "（命中 {network}，來源 {source}）": "(hit {network}, source {source})",
  "（命中 {source} 網段）": "(Matched {source} network)",
  "（尚未設定系統對外網址，請聯絡管理員）": "(The system external URL is not configured. Contact an administrator.)",

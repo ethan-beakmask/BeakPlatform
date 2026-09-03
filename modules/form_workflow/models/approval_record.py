@@ -65,6 +65,8 @@ class FwApprovalRecord(ModuleBaseModel):
             'node_name': self.node_name,
             'approver_name': self.approver_name,
             'approver_dept': self.approver_dept,
+            'delegate_from_secure_code': self.delegate_from_secure_code,
+            'delegate_from_name': self.delegate_from_name,
             'action': self.action,
             'action_name': self.ACTION_NAMES.get(self.action, self.action),
             'comment': self.comment,

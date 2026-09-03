@@ -14,7 +14,12 @@ from app.platform.auth import current_user, has_permission, require_permission
 from app.platform.data import get_current_org
 
 from . import api_bp
-from ..services.task_authorizer import can_act_on_task, build_actor
+from ..services.task_authorizer import (
+    build_actor,
+    can_act_on_task,
+    delegate_from_fields,
+    resolve_acting_identity,
+)
 from flask_babel import gettext as _
 
 
@@ -214,7 +219,8 @@ def approve_task(secure_code):
 
     # 檢查當前用戶是否為指定簽核人
     task_result_data = (task.result or {}).get('data', {})
-    if not can_act_on_task(task, current_user.secure_code, org.secure_code):
+    identity = resolve_acting_identity(task, current_user.secure_code, org.secure_code)
+    if identity is None:
         return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
     data = request.get_json() or {}
@@ -240,6 +246,7 @@ def approve_task(secure_code):
         action='approved',
         comment=comment,
         acted_at=datetime.utcnow(),
+        **delegate_from_fields(identity, org.secure_code),
     )
     db.session.add(approval_record)
 
@@ -249,7 +256,8 @@ def approve_task(secure_code):
         'decision': 'approved',
         'selected_path': selected_path,
         'comment': comment,
-        'approver': current_user.secure_code
+        'approver': current_user.secure_code,
+        'delegate_from': identity['delegator_secure_code'],
     }
 
     db.session.commit()
