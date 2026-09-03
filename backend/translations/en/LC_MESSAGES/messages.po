@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-03 22:15+0800\n"
+"POT-Creation-Date: 2026-09-03 23:03+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -640,28 +640,32 @@ msgstr "Confirmed"
 msgid "確認成功"
 msgstr "Confirmation successful"
 
-#: app/api/calendar.py:36 app/api/calendar.py:56
-#: app/services/calendar_event_service.py:211
+#: app/api/calendar.py:38 app/api/calendar.py:58
+#: app/services/calendar_event_service.py:224
 msgid "請求格式錯誤"
 msgstr "Invalid request format"
 
-#: app/api/calendar.py:48 app/api/calendar.py:68 app/api/calendar.py:84
+#: app/api/calendar.py:50 app/api/calendar.py:70 app/api/calendar.py:86
 msgid "儲存失敗"
 msgstr "Save failed"
 
-#: app/api/calendar.py:96
-msgid "日期範圍不合法"
-msgstr "Invalid date range"
+#: app/api/calendar.py:105
+msgid "at 參數格式錯誤"
+msgstr "Invalid \"at\" parameter format."
 
-#: app/api/calendar.py:99
+#: app/api/calendar.py:111 app/api/calendar.py:127
 msgid "行事曆載入失敗"
 msgstr "Failed to load calendar"
 
-#: app/api/calendar.py:144
+#: app/api/calendar.py:124
+msgid "日期範圍不合法"
+msgstr "Invalid date range"
+
+#: app/api/calendar.py:172
 msgid "請提供 start 與 end"
 msgstr "Both start and end are required"
 
-#: app/api/calendar.py:149 app/api/contracts.py:123
+#: app/api/calendar.py:177 app/api/contracts.py:123
 #: app/api/work_schedules.py:365
 msgid "日期格式錯誤，請使用 YYYY-MM-DD"
 msgstr "Invalid date format. Please use YYYY-MM-DD"
@@ -2210,75 +2214,75 @@ msgstr "beneficiary_user_secure_code is required"
 msgid "無法領取 API Key"
 msgstr "Cannot claim this API key"
 
-#: app/services/calendar_event_service.py:53
+#: app/services/calendar_event_service.py:54
 msgid "沒有權限建立企業事件"
 msgstr "You do not have permission to create company events"
 
-#: app/services/calendar_event_service.py:122
+#: app/services/calendar_event_service.py:123
 msgid "找不到事件擁有者"
 msgstr "Event owner not found"
 
-#: app/services/calendar_event_service.py:194
-#: app/services/calendar_event_service.py:198
+#: app/services/calendar_event_service.py:207
+#: app/services/calendar_event_service.py:211
 msgid "找不到事件"
 msgstr "Event not found"
 
-#: app/services/calendar_event_service.py:201
+#: app/services/calendar_event_service.py:214
 msgid "沒有權限編輯企業事件"
 msgstr "You do not have permission to edit company events"
 
-#: app/services/calendar_event_service.py:203
-#: app/services/calendar_event_service.py:205
+#: app/services/calendar_event_service.py:216
+#: app/services/calendar_event_service.py:218
 msgid "此事件不能編輯"
 msgstr "This event cannot be edited"
 
-#: app/services/calendar_event_service.py:214
+#: app/services/calendar_event_service.py:227
 msgid "calendar_kind 欄位不合法"
 msgstr "The calendar_kind field is invalid"
 
-#: app/services/calendar_event_service.py:216
+#: app/services/calendar_event_service.py:229
 msgid "calendar_kind 欄位不能變更"
 msgstr "The calendar_kind field cannot be changed"
 
-#: app/services/calendar_event_service.py:221
+#: app/services/calendar_event_service.py:234
 msgid "event_type 欄位不合法"
 msgstr "The event_type field is invalid"
 
-#: app/services/calendar_event_service.py:225
+#: app/services/calendar_event_service.py:238
 msgid "title 欄位必填"
 msgstr "The title field is required"
 
-#: app/services/calendar_event_service.py:227
+#: app/services/calendar_event_service.py:240
 msgid "title 欄位最多 200 字"
 msgstr "The title field can be at most 200 characters"
 
-#: app/services/calendar_event_service.py:235
+#: app/services/calendar_event_service.py:248
 msgid "visibility 欄位不合法"
 msgstr "The visibility field is invalid"
 
-#: app/services/calendar_event_service.py:242
+#: app/services/calendar_event_service.py:255
 msgid "note 欄位最多 2000 字"
 msgstr "The note field can be at most 2,000 characters"
 
-#: app/services/calendar_event_service.py:258
+#: app/services/calendar_event_service.py:271
 msgid "start 與 end 欄位必填"
 msgstr "The start and end fields are required"
 
-#: app/services/calendar_event_service.py:265
+#: app/services/calendar_event_service.py:278
 msgid "start/end 欄位格式須為 YYYY-MM-DD"
 msgstr "The start/end fields must use YYYY-MM-DD"
 
-#: app/services/calendar_event_service.py:267
 #: app/services/calendar_event_service.py:280
+#: app/services/calendar_event_service.py:293
 msgid "end 欄位不能早於 start"
 msgstr "The end field cannot be earlier than start"
 
-#: app/services/calendar_event_service.py:269
 #: app/services/calendar_event_service.py:282
+#: app/services/calendar_event_service.py:295
 msgid "start/end 欄位跨度過長"
 msgstr "The start/end span is too long"
 
-#: app/services/calendar_event_service.py:278
+#: app/services/calendar_event_service.py:291
 msgid "start/end 欄位格式須為 YYYY-MM-DDTHH:MM"
 msgstr "The start/end fields must use YYYY-MM-DDTHH:MM"
 
@@ -2608,7 +2612,7 @@ msgstr "Passwords match"
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:141
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:163
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:187
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:162
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:166
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:123
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:419
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:133
@@ -3379,7 +3383,7 @@ msgstr "authorized person"
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:193
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:38
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:186
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:236
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:238
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:29
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:43
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:191
@@ -3878,7 +3882,7 @@ msgid "API Key 串接範例"
 msgstr "API key integration examples"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:91
-#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:76
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:80
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:424
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:228
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:292
@@ -7178,8 +7182,8 @@ msgstr "Other"
 msgid "企業活動"
 msgstr "Company event"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:321
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:347
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:323
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:349
 #: app/templates/pages/calendar/_event_modal.html:35
 #: app/templates/pages/menu/list.html:84
 msgid "標題"
@@ -7422,9 +7426,9 @@ msgstr "Change process"
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:54
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:236
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:320
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:346
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:238
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:322
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:348
 #: app/templates/pages/cg_databases/overview.html:251
 #: app/templates/pages/server_manage/redis_monitor.html:217
 msgid "時間"
@@ -7440,7 +7444,7 @@ msgstr "Time"
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:102
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:165
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:188
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:235
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:237
 #: app/templates/pages/cg_databases/overview.html:251
 msgid "動作"
 msgstr "Action"
@@ -8091,7 +8095,7 @@ msgstr ""
 "The saved retention days are used; if you changed the field, press [Save "
 "audit settings] first."
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:166
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:170
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:127
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:90
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:136
@@ -14670,7 +14674,7 @@ msgstr "No data"
 
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:16
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:119
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:320
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:322
 msgid "來源系統"
 msgstr "Source System"
 
@@ -14893,7 +14897,7 @@ msgstr "Country"
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:47
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:191
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:135
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:346
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:348
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:27
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:24
 msgid "嚴重度"
@@ -14912,9 +14916,9 @@ msgstr "No pending decisions"
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:189
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:36
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:177
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:235
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:321
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:348
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:237
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:323
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:350
 msgid "目標"
 msgstr "Target"
 
@@ -15208,91 +15212,91 @@ msgstr "Response Workflow"
 msgid "簽核歷程（前手判斷）"
 msgstr "Approval Trail (previous decisions)"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:190
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:192
 msgid "事件詳情（出口政策已套用）"
 msgstr "Event Details (egress policy applied)"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:202
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:204
 msgid "處置（1-click，直接完成簽核）"
 msgstr "Response (1-click, completes approval)"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:205
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:207
 msgid "處置意見（依流程設定可能必填）"
 msgstr "Response comment (may be required by the workflow)"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:224
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:226
 msgid "目前卡在"
 msgstr "Currently at"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:225
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:227
 msgid "，您不是此節點的指定簽核人。"
 msgstr ", you are not the assigned approver for this node."
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:229
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:231
 msgid "關聯防禦決策"
 msgstr "Related Defense Decisions"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:231
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:233
 msgid "尚無決策"
 msgstr "No decisions yet"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:253
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:255
 msgid "事件明細"
 msgstr "Event Details"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:255
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:257
 msgid "明細超過 500 筆，已截斷顯示。"
 msgstr "More than 500 detail rows; the list is truncated."
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:280
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:282
 msgid "原始欄位"
 msgstr "Raw Fields"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:309
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:284
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:286
 msgid "欄位名"
 msgstr "Column name"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:495
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:284
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:286
 msgid "值"
 msgstr "Value"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:302
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:304
 msgid "跨系統關聯：同一攻擊者被幾個系統偵測到"
 msgstr "Cross-system correlation: how many systems detected the same attacker"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:304
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:306
 msgid "此時間窗涵蓋 2026-08-08 之前，該期間 ClickHouse 資料為歸檔回灌，筆數僅供參考，不代表當時真實全量。"
 msgstr ""
 "This time window includes dates before 2026-08-08. ClickHouse data for "
 "that period was archive backfill, so counts are for reference only and do"
 " not represent the true full volume at the time."
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:307
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:309
 msgid "相異來源數"
 msgstr "Distinct source count"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:309
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:311
 msgid "關聯事件數"
 msgstr "Correlated event count"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:311
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:313
 msgid "查詢時間窗"
 msgstr "Query time window"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:315
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:317
 msgid "事件數超過單次顯示上限，僅列出時間窗內最早的部分事件。"
 msgstr ""
 "The event count exceeds the per-request display limit; only the earliest "
 "events in the time window are shown."
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:321
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:347
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:323
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:349
 msgid "規則"
 msgstr "Rule"
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:348
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:350
 msgid "User-Agent"
 msgstr "User-Agent"
 
@@ -17026,7 +17030,7 @@ msgstr "Under review"
 msgid "處理中"
 msgstr "Workflowing"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:357
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:361
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:55
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:483
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:24
@@ -17034,7 +17038,7 @@ msgstr "Workflowing"
 msgid "已完成"
 msgstr "Completed"
 
-#: ../modules/form_workflow/api/fc_pending.py:586
+#: ../modules/form_workflow/api/fc_pending.py:597
 #: ../modules/nocode_builder/services/pageir_formflow_resources.py:333
 msgid "已退回"
 msgstr "Returned"
@@ -18658,7 +18662,7 @@ msgstr "The form has been sent and the workflow has been started"
 #: ../modules/form_workflow/api/fc_admin.py:46
 #: ../modules/form_workflow/api/fc_fill.py:56
 #: ../modules/form_workflow/api/fc_fill.py:243
-#: ../modules/form_workflow/api/fc_monitor.py:105
+#: ../modules/form_workflow/api/fc_monitor.py:106
 #: ../modules/form_workflow/api/fc_my_forms.py:197
 msgid "找不到指定的表單"
 msgstr "The specified form could not be found"
@@ -18698,40 +18702,40 @@ msgstr "External accounts cannot apply on behalf of others"
 msgid "指定的使用者不存在或已停用"
 msgstr "The specified user does not exist or is disabled"
 
-#: ../modules/form_workflow/api/fc_batch.py:49
+#: ../modules/form_workflow/api/fc_batch.py:53
 msgid "未選取任何待簽核項目"
 msgstr "No items selected for approval"
 
-#: ../modules/form_workflow/api/fc_batch.py:52
+#: ../modules/form_workflow/api/fc_batch.py:56
 msgid "單次批次簽核上限 100 筆"
 msgstr "The maximum number of approvals in a single batch is 100"
 
-#: ../modules/form_workflow/api/fc_batch.py:70
-#: ../modules/form_workflow/api/fc_pending.py:286
-#: ../modules/form_workflow/api/fc_pending.py:386
+#: ../modules/form_workflow/api/fc_batch.py:74
+#: ../modules/form_workflow/api/fc_pending.py:292
+#: ../modules/form_workflow/api/fc_pending.py:392
 msgid "找不到任務或已處理"
 msgstr "Task not found or already workflowed"
 
-#: ../modules/form_workflow/api/fc_batch.py:77
+#: ../modules/form_workflow/api/fc_batch.py:82
 msgid "非指定簽核人"
 msgstr "Non-designated signer"
 
-#: ../modules/form_workflow/api/fc_batch.py:84
+#: ../modules/form_workflow/api/fc_batch.py:89
 msgid "正由他人簽核中"
 msgstr "Being signed by someone else"
 
-#: ../modules/form_workflow/api/fc_batch.py:97
+#: ../modules/form_workflow/api/fc_batch.py:102
 msgid "已簽核過此節點"
 msgstr "This node has been approved"
 
-#: ../modules/form_workflow/api/fc_batch.py:106
-#: ../modules/form_workflow/api/fc_pending.py:437
-#: ../modules/form_workflow/api/instance_routes.py:227
+#: ../modules/form_workflow/api/fc_batch.py:111
+#: ../modules/form_workflow/api/fc_pending.py:446
+#: ../modules/form_workflow/api/instance_routes.py:233
 #, python-format
 msgid "簽核意見至少需要 %(count)s 字"
 msgstr "The approval opinion requires at least the word %(count)s"
 
-#: ../modules/form_workflow/api/fc_batch.py:201
+#: ../modules/form_workflow/api/fc_batch.py:208
 #, python-format
 msgid "批次簽核完成：成功 %(success_count)s 筆，失敗 %(fail_count)s 筆"
 msgstr ""
@@ -18787,73 +18791,73 @@ msgstr "The form has been sent and the workflow has been started (test mode)"
 msgid "找不到指定的流程"
 msgstr "The specified workflow cannot be found"
 
-#: ../modules/form_workflow/api/fc_monitor.py:171
-#: ../modules/form_workflow/api/fc_monitor.py:338
+#: ../modules/form_workflow/api/fc_monitor.py:173
+#: ../modules/form_workflow/api/fc_monitor.py:340
 #, python-format
 msgid "流程實例 %(instance_id)s 不存在"
 msgstr "Workflow instance %(instance_id)s does not exist"
 
-#: ../modules/form_workflow/api/fc_pending.py:155
+#: ../modules/form_workflow/api/fc_pending.py:160
 msgid "找不到指定的任務"
 msgstr "The specified task cannot be found"
 
-#: ../modules/form_workflow/api/fc_pending.py:160
-#: ../modules/form_workflow/api/fc_pending.py:290
-#: ../modules/form_workflow/api/fc_pending.py:391
-#: ../modules/form_workflow/api/instance_routes.py:166
-#: ../modules/form_workflow/api/instance_routes.py:218
+#: ../modules/form_workflow/api/fc_pending.py:165
+#: ../modules/form_workflow/api/fc_pending.py:296
+#: ../modules/form_workflow/api/fc_pending.py:400
+#: ../modules/form_workflow/api/instance_routes.py:171
+#: ../modules/form_workflow/api/instance_routes.py:224
 msgid "您不是此任務的指定簽核人"
 msgstr "You are not the designated signer for this task"
 
-#: ../modules/form_workflow/api/fc_pending.py:300
+#: ../modules/form_workflow/api/fc_pending.py:306
 msgid "鎖定已刷新"
 msgstr "Lock refreshed"
 
-#: ../modules/form_workflow/api/fc_pending.py:309
+#: ../modules/form_workflow/api/fc_pending.py:315
 #, python-format
 msgid "此表單由 %(locker)s 簽核中"
 msgstr "This form is being signed by %(locker)s"
 
-#: ../modules/form_workflow/api/fc_pending.py:320
+#: ../modules/form_workflow/api/fc_pending.py:326
 msgid "已取得簽核鎖定"
 msgstr "Obtained approval lock"
 
-#: ../modules/form_workflow/api/fc_pending.py:327
+#: ../modules/form_workflow/api/fc_pending.py:333
 #, python-format
 msgid "取得鎖定失敗: %(error)s"
 msgstr "Failed to obtain lock: %(error)s"
 
-#: ../modules/form_workflow/api/fc_pending.py:351
+#: ../modules/form_workflow/api/fc_pending.py:357
 msgid "找不到任務"
 msgstr "Task not found"
 
-#: ../modules/form_workflow/api/fc_pending.py:358
+#: ../modules/form_workflow/api/fc_pending.py:364
 msgid "鎖定已釋放"
 msgstr "lock publishd"
 
-#: ../modules/form_workflow/api/fc_pending.py:397
+#: ../modules/form_workflow/api/fc_pending.py:406
 msgid "此表單正由他人簽核中"
 msgstr "This form is being signed by someone else"
 
-#: ../modules/form_workflow/api/fc_pending.py:404
+#: ../modules/form_workflow/api/fc_pending.py:413
 msgid "簽核逾時，鎖定已失效，請重新開啟"
 msgstr "Sign-in timed out and the lock has expired. Please reopen it."
 
-#: ../modules/form_workflow/api/fc_pending.py:418
+#: ../modules/form_workflow/api/fc_pending.py:427
 msgid "您已簽核過此節點，無法重複簽核"
 msgstr "You have already approved on this node and cannot sign on again."
 
-#: ../modules/form_workflow/api/fc_pending.py:470
+#: ../modules/form_workflow/api/fc_pending.py:479
 #, python-format
 msgid "欄位 %(field_key)s 不允許修改"
 msgstr "Modification of field %(field_key)s is not allowed"
 
-#: ../modules/form_workflow/api/fc_pending.py:586
-#: ../modules/form_workflow/api/instance_routes.py:268
+#: ../modules/form_workflow/api/fc_pending.py:597
+#: ../modules/form_workflow/api/instance_routes.py:276
 msgid "簽核完成"
 msgstr "Approval completed"
 
-#: ../modules/form_workflow/api/fc_pending.py:591
+#: ../modules/form_workflow/api/fc_pending.py:602
 #, python-format
 msgid "簽核失敗: %(error)s"
 msgstr "Approval failed: %(error)s"
@@ -19651,47 +19655,47 @@ msgstr "Approval time"
 msgid "意見"
 msgstr "opinion"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:83
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:87
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:47
 msgid "請選擇決策"
 msgstr "Please select a decision"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:112
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:116
 msgid "已選擇："
 msgstr "Selected:"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:119
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:123
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:79
 msgid "請選擇後續動作"
 msgstr "Please select follow-up action"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:120
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:124
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:80
 msgid "（可複選）"
 msgstr "(can be selected)"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:143
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:147
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:107
 msgid "簽核意見"
 msgstr "Approval comments"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:152
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:156
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:112
 #: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:104
 msgid "輸入簽核意見..."
 msgstr "Enter approval comments..."
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:154
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:158
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:114
 msgid "最少"
 msgstr "least"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:154
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:158
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:114
 msgid "字"
 msgstr "characters"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:165
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:169
 msgid "送出簽核"
 msgstr "Send for approval"
 
@@ -20063,26 +20067,26 @@ msgstr "Loading approval history..."
 msgid "此表單尚無簽核記錄"
 msgstr "There is no approval record for this form yet"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:354
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:358
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:52
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:480
 msgid "系統node"
 msgstr "Systemnode"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:355
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:359
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:53
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:481
 msgid "子流程"
 msgstr "subworkflow"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:356
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:360
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:146
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:54
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:482
 msgid "執行中"
 msgstr "Executing"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:358
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:362
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:148
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:56
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:484

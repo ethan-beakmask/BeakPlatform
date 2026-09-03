@@ -7,9 +7,11 @@ from flask_babel import gettext as _
 from flask_login import current_user
 
 from app import db
-from app.security.decorators import page_keys_required
+from app.security.decorators import admin_required, page_keys_required
 from app.services.calendar_event_service import CalendarEventError, CalendarEventService
 from app.services.calendar_projection_service import CalendarProjectionService
+from app.services.time_context_service import TimeContextService
+from app.utils.calendar_time import local_naive_to_utc
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +84,32 @@ def delete_event(secure_code):
         db.session.rollback()
         logger.exception("Calendar event delete failed")
         return jsonify({'success': False, 'error': 'server_error', 'message': _('儲存失敗')}), 500
+
+
+@api_calendar.route('/time-context', methods=['GET'])
+@admin_required
+def time_context():
+    """TimeContext 快照（ORG_ADMIN 專用）。
+
+    `who_on_leave` 會揭露成員「此刻在假中」（含可見性 PRIVATE 的事件），這是給路由與簽核者解析用的
+    伺服器端能力，對一般成員開放會繞過行事曆的可見性規則，所以只掛 admin_required、不走雙鑰匙。
+    `at` 是企業當地時間 `YYYY-MM-DDTHH:MM`（與行事曆 API 的當地時間慣例一致），省略＝現在。
+    """
+    org = current_user.organization
+    instant = None
+    at = (request.args.get('at') or '').strip()
+    if at:
+        try:
+            local_naive = datetime.strptime(at, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            return jsonify({'success': False, 'error': 'invalid_at', 'message': _('at 參數格式錯誤')}), 400
+        instant = local_naive_to_utc(org.get_setting('timezone', 'Asia/Taipei'), local_naive)
+    try:
+        snapshot = TimeContextService.snapshot(org, instant)
+    except Exception:
+        logger.exception("TimeContext snapshot failed")
+        return jsonify({'success': False, 'error': 'server_error', 'message': _('行事曆載入失敗')}), 500
+    return jsonify({'success': True, **snapshot})
 
 
 def _events(scope: str):

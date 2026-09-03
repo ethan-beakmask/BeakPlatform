@@ -188,6 +188,10 @@ user 簽 OD-20260903-0002「上班後複核」（選「維持觀察」）→ `fw
 - **OD 案件的待簽在表單中心清單是刻意不顯示的**（`fc_pending.list_pending_tasks` 的資安分類隔離），代理人要從資安案件處置中心接手；`can_act_on_task` 對代理人回 True 但清單看不到，不是代理判定壞了
 - `fc_monitor.get_workflow_progress()`（`/api/form-center/workflow-progress/<sc>`）序列化用的是 `approval.decision` / `approval.approved_at`，`FwApprovalRecord` 沒有這兩個屬性——**既有潛在 500**，本項只加了 `delegate_from_name` 沒動它（待辦另記）
 
+## 六之六、第三期第 3 項：TimeContext 起步（2026-09-03 完成）
+
+唯一實作 `backend/app/services/time_context_service.py::TimeContextService`（`who_on_duty` / `who_on_leave` / `snapshot`，naive UTC 進出）與 `GET /api/calendar/time-context?at=YYYY-MM-DDTHH:MM`（企業當地時間，**`@admin_required` 專用**——`who_on_leave` 會揭露成員此刻在假中，含 PRIVATE 事件）。`who_on_leave` 看行事曆 LEAVE／TRIP 事件是否涵蓋這一刻＋當地日的人工 LEAVE 列，**刻意不看** `schedule_adjustments.adjusted_periods`（沒有班表的企業判不出來）；`who_on_duty` 逐人 `ScheduleService.is_working_time()`（已含時段級請假）。設計與取捨全文在 `dev-notes/knowledge/time-context-architecture.md` 檔尾；尚未接任何消費端（OD 路由／簽核者解析另案）。憑證 `/opt/tmp/verify/20260903-pf229-item3-time-context.log`（GHTRAVEL 22 人值班、領隊半天假期間內外切換、下班／週末空、EMPLOYEE／EXTERNAL 403）。
+
 ## 七、已知取捨
 
 - ORG_ADMIN 的「我的行事曆」也會看到別人的代理授權（audience 規則不分 scope）。要改就在 `_delegation_events` 依 scope 收斂。

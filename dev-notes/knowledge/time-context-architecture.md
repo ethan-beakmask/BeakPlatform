@@ -172,3 +172,22 @@ PostgreSQL 實例
 ---
 
 *下次對話繼續：從安裝 TimescaleDB 開始驗證*
+
+---
+
+## 2026-09-03 起步實作（PF-229 第三期第 3 項）
+
+上面的 TimescaleDB／Kafka 都還沒動，先把「給一個時間點 → 誰在值班、誰在假中」做成 Python service，
+供之後的 open_defense 事件路由與簽核者解析呼叫。**尚未接上任何消費端**（那是另案），目前只有一支查詢 API。
+
+| 項目 | 實作 |
+|---|---|
+| 唯一實作 | `backend/app/services/time_context_service.py::TimeContextService`：`who_on_duty(org, instant_utc)`、`who_on_leave(org, instant_utc)`、`snapshot(org, instant_utc)`。時間以 naive UTC 進出，當地換算只走 `app/utils/calendar_time.py` |
+| 成員集合 | 同企業、啟用中、未刪除、非服務帳號、`user_type` ∈ EMPLOYEE／ORG_ADMIN；EXTERNAL／SYSTEM_ADMIN 不在時間軸上 |
+| `who_on_duty` | 逐人 `ScheduleService.is_working_time()`（含時段級請假，所以在假中的人自然不在名單）。N+1，每人最多 3 個查詢；企業上限 50 人，起步可接受，要優化就批次化 `get_work_periods`，不要加快取 |
+| `who_on_leave` | 兩個集合查詢：行事曆 LEAVE／TRIP 個人事件涵蓋這一刻（`source='calendar'`，`until_local`＝事件當地結束）∪ 當地日的人工 LEAVE 調整列（`calendar_event_secure_code IS NULL`，整天，`source='manual'`，`until_local`＝隔天 00:00）。**刻意不看 `schedule_adjustments.adjusted_periods`**：那是剩餘工作時段，沒有班表的企業底是 `[]`，判不出此刻在不在假中 |
+| API | `GET /api/calendar/time-context?at=YYYY-MM-DDTHH:MM`（企業當地時間，省略＝現在），**`@admin_required` 專用**：`who_on_leave` 會揭露成員此刻在假中（含 PRIVATE 事件），對一般成員開放會繞過行事曆可見性規則 |
+| 測試 | `backend/tests/test_time_context_service.py`（8 條：成員集合、事件期間內外、人工整天列、下班／週末、企業時區換算、snapshot 欄位、API 身分與 `at` 解析） |
+
+實作脈絡：codex 派工兩次都因 OpenAI 端 404 失敗（無變更），由主 Claude 直接實作。
+

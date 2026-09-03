@@ -36,13 +36,13 @@
 
 第 1 項已於 2026-09-03 完成（commit `e25f0bd8`），spec 暫存檔已隨主機非正常關機遺失，實作記錄以 `CALENDAR_SPEC.md` 六之三為準。
 
-## 三、第三期四項（摘自 #5380，動工順序 **1 → PF-236 → 4 → B（時段級請假）→ 3 → 2**；1、PF-236、4、B 已完成，下一項 3）
+## 三、第三期四項（摘自 #5380，動工順序 **1 → PF-236 → 4 → B（時段級請假）→ 3 → 2**；1、PF-236、4、B、3 已完成，只剩 2）
 
 | # | 項目 | 牽涉檔案（本 session 確認存在） | 備註 |
 |---|---|---|---|
 | 1 | **已完成 2026-09-03**（見 `CALENDAR_SPEC.md` 六之三）建立 LEAVE／TRIP 事件時，若本人是任何流程的簽核者，提示建代理授權並帶入期間 | `backend/app/services/calendar_event_service.py`（掛 hook 的唯一位置）、`modules/form_workflow/services/task_authorizer.py`（判定「是不是簽核者」的唯一實作）、`backend/app/web/delegations.py`＋`templates/pages/delegations/create.html`（代理授權頁，可加 query string 預填期間） | 前端只提示，不自動建代理（Ethan 2026-09-02 定調代理效期不依賴行事曆） |
 | 2 | 簽核節點 `timeout_mode`（工作時間逾時） | `backend/app/services/schedule_service.py`（`calculate_working_seconds()` 已存在於第 142 行，見下方掃描；`timeout_mode` 全專案尚無人用）、`modules/form_workflow/services/workflow_executor.py`（**WAITING 喚醒清單兩處都要加**，CLAUDE.md「新增會回 waiting 的節點型別」） | 依賴第二點粒度決策 |
-| 3 | TimeContext 起步：`who_on_leave(instant)` / `who_on_duty(instant)` | 新檔，讀 `schedule_adjustments`（`calendar_event_secure_code` 有值＝行事曆來的）＋班表 | 設計在 `dev-notes/knowledge/time-context-architecture.md` |
+| 3 | **已完成 2026-09-03**（見 `dev-notes/knowledge/time-context-architecture.md` 檔尾）TimeContext 起步：`who_on_leave(instant)` / `who_on_duty(instant)` | `backend/app/services/time_context_service.py`（唯一實作）＋ `GET /api/calendar/time-context`（`@admin_required`） | codex 兩次 404 失敗，由 Claude 直接實作；憑證 `/opt/tmp/verify/20260903-pf229-item3-time-context.log` |
 | 4 | **已完成 2026-09-03**（見 `CALENDAR_SPEC.md` 六之五）簽核紀錄補寫 `delegate_from_*` | `task_authorizer.py::resolve_acting_identity()` ＋ `delegate_from_fields()`；三個人工簽核寫入點；四個簽核歷程呈現點 | 憑證 `/opt/tmp/verify/20260903-pf229-item4-delegate-from.log` |
 
 ## 四、本 session 實跑成功的指令（照抄即可）

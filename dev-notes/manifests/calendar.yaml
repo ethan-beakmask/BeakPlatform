@@ -18,6 +18,7 @@ files:
     - backend/app/services/calendar_event_service.py
     - backend/app/services/calendar_projection_service.py
     - backend/app/services/calendar_visibility.py
+    - backend/app/services/time_context_service.py    # TimeContext 起步：who_on_duty / who_on_leave（第三期第 3 項）
   utils:
     - backend/app/utils/calendar_time.py
     - backend/app/utils/work_periods.py
@@ -38,6 +39,7 @@ files:
   test:
     - backend/tests/test_calendar_events_api.py
     - backend/tests/test_work_periods_util.py
+    - backend/tests/test_time_context_service.py
     - backend/tests/test_calendar_projection.py
     - backend/tests/test_calendar_pages.py
 
@@ -57,5 +59,5 @@ tables:
     - menu_role_requirements
 
 security:
-  decorator: "@page_keys_required('calendar') / @page_keys_required('calendar_me')"
+  decorator: "@page_keys_required('calendar') / @page_keys_required('calendar_me')；/api/calendar/time-context 是 @admin_required"
   rls: false   # calendar_events 沒有 RLS policy（dev 庫僅 10 張表有 RLS），隔離靠 service 層顯式 org_secure_code 過濾
