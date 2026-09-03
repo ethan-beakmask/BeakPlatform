@@ -33,7 +33,7 @@
 | Q6 | 原簽核者 user secure_code ＋ display_name |
 | Q7 | 面板維持不關閉 |
 
-第 1 項 spec：`/tmp/claude-1000/-opt-BeakPlatform-dev/*/scratchpad/spec_p3_item1.md`（session 暫存，正式記錄以 commit 為準）。
+第 1 項已於 2026-09-03 完成（commit `e25f0bd8`），spec 暫存檔已隨主機非正常關機遺失，實作記錄以 `CALENDAR_SPEC.md` 六之三為準。
 
 ## 三、第三期四項（摘自 #5380，動工順序 **1 → 4 → B（時段級請假）→ 3 → 2**）
 
