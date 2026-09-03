@@ -84,9 +84,11 @@ EXTERNAL 沒有 Key1 → API 403、頁面被 PageRoleGuard 302。
 ### 請假同步（`resync_leave_adjustments(org, owner, dates)`）
 
 - 觸發：PERSONAL 且新或舊 `event_type` 在 `LEAVE_LIKE_TYPES`（LEAVE／TRIP）的 create／update／delete；`dates`＝舊日集合 ∪ 新日集合
-- **日粒度**：事件觸及的每個當地日都成為一筆 `schedule_adjustments`（`adjust_type='LEAVE'`、`status='APPROVED'`、
-  `approved_by`＝本人、`original_periods`＝當時 `get_work_periods()` 的值、`note`＝事件標題、`calendar_event_secure_code`＝事件）。
-  非全天 `09-10T14:00 ~ 09-11T10:00` 會產生 10 與 11 兩天（時段級扣除留給第三期）
+- **時段級**：事件觸及的每個當地日仍成為一筆 `schedule_adjustments`（`adjust_type='LEAVE'`、`status='APPROVED'`、
+  `approved_by`＝本人、`note`＝事件標題、`calendar_event_secure_code`＝事件）。`original_periods`＝同步當下排除 LEAVE 後的底，
+  `adjusted_periods`＝扣掉同日所有 LEAVE／TRIP 請假區間聯集後的剩餘工作時段。全天事件扣成 `[]`；既有資料
+  `adjusted_periods IS NULL` 仍視為整天請假。跨日事件依企業時區切成各當地日區間；跨日班別若被請假切開，午夜後剩餘段不保留。
+  `ScheduleService.get_work_periods()` 先看 LEAVE，LEAVE 列優先於同日其他調整。
 - 表有 `(user_secure_code, adjust_date, adjust_type)` 唯一約束（model 第二期才補宣告），所以回收一律**軟刪除**、
   再次覆蓋同日一律**復活既有列**（改指向新事件），不 INSERT
 - `calendar_event_secure_code IS NULL` 的列（表單／人工建的請假）**不建立、不改、不刪**
@@ -124,7 +126,7 @@ bpserv 已於 2026-09-03（PF-232）補齊三者，之後新裝的環境由 `cre
 
 | # | 問題 | 定案 |
 |---|---|---|
-| Q1 | 請假同步粒度 | **改時段級（B）**：`adjusted_periods` 存剩餘工作時段，`schedule_service.get_work_periods()` 的 LEAVE 分支改回 `adjusted_periods or []`；resync 做同日多事件聯集與當地時間減法。是第 3 項與第 2 項的前置 |
+| Q1 | 請假同步粒度 | **改時段級（B）**：`adjusted_periods` 存剩餘工作時段，`schedule_service.get_work_periods()` 的 LEAVE 分支改回 `adjusted_periods or []`；resync 做同日多事件聯集與當地時間減法。是第 3 項與第 2 項的前置。**2026-09-03 完成**：純函式 `app/utils/work_periods.py`（parse／format／merge／subtract，禁輸出 `24:00`）、`ScheduleService.get_base_work_periods()`（排除 LEAVE 的底，resync 算底專用）、`_event_leave_intervals()`；GHTRAVEL 實測半天假 → `["12:00-14:00","15:00-18:00"]`（與同日外出聯集）、跨日 → 前日 `["09:00-16:00"]`／次日 `["10:00-18:00"]`，憑證 `/opt/tmp/verify/20260903-pf229-itemB-leave-periods.log`；codex 交付時把「軟刪除列復活」多加了「限行事曆來的列」條件（人工列軟刪除那天會因唯一約束建不出請假列），驗收改回並補回歸測試 |
 | Q2 | 「本人是簽核者」的判定 | 聯集：WAITING 任務 `is_pending_assignee()` ∪ 發行快照 Approve／FormAdapter 的 `USER` 指名本人 ∪ `ROLE` 為本人持有角色；不解析主管鏈 |
 | Q3 | 代理建議 UX | 存檔後 toast；`/delegations/` 雙鑰匙僅 ORG_ADMIN，所以員工只有文字提示、[建立代理授權] 連結只給 ORG_ADMIN（query string 預填 ＋ `next` 回流）；企業行事曆面板對別人未遮罩的 LEAVE／TRIP 也給 ORG_ADMIN 同款連結 |
 | Q4 | `timeout_mode` | 簽核節點 config；先做 ABSOLUTE（預設）／WORKING，BOTH 不做；簽核者無班表退回 ABSOLUTE |
@@ -192,5 +194,6 @@ user 簽 OD-20260903-0002「上班後複核」（選「維持觀察」）→ `fw
 - `alert` 型廣播只落在發布日，不做期間（它沒有結束時間）。
 - `calendar_events` 沒有 RLS policy（與 delegations／work_schedules 相同現況），隔離靠 service 層顯式 `org_secure_code` 過濾。
 - 第二期的 BUSY 合併只看 `start_local`／`end_local` 字串比較，全天 BUSY（`end_local` 是隔日 00:00）會與隔日 00:00 開始的事件「相接」而併入，這是刻意的（外人本來就只該看到一段「有安排」）。
-- 請假同步目前仍是日粒度：半天假也讓 `get_work_periods()` 回空。2026-09-03 已定案改時段級（六之二 Q1），排在第三期第 3、2 項之前實作；做完後刪掉這條。
+- 請假同步的 `adjusted_periods` 是同步當下算出的快照；之後班表或假日改了不會自動重算，只有事件改動才重算。
+- 跨日班別被請假切開時，午夜後的剩餘段落不保留。
 - `original_periods` 在企業沒有預設班表時是 `[]`（dev BELUGA 就是這樣），不影響功能。

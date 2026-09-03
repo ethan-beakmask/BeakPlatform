@@ -1,5 +1,5 @@
 """行事曆事件寫入服務。"""
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 
 from flask_babel import gettext as _
 
@@ -20,6 +20,7 @@ from app.utils.calendar_time import (
     local_naive_to_utc,
     utc_to_local,
 )
+from app.utils.work_periods import merge_intervals, subtract_periods
 
 
 class CalendarEventError(Exception):
@@ -137,11 +138,16 @@ class CalendarEventService:
 
         covered = {}
         titles = {}
+        intervals = {}
         for event in rows:
-            for d in sorted(cls._local_dates(org, event) & dates):
+            event_dates = cls._local_dates(org, event) & dates
+            event_intervals = cls._event_leave_intervals(tz_name, event, event_dates)
+            for d in sorted(event_intervals):
                 if d not in covered:
                     covered[d] = event.secure_code
                     titles[d] = event.title
+                intervals.setdefault(d, []).extend(event_intervals[d])
+        intervals = {d: merge_intervals(values) for d, values in intervals.items()}
 
         adjustments = ScheduleAdjustment.query.filter(
             ScheduleAdjustment.org_secure_code == org.secure_code,
@@ -154,14 +160,16 @@ class CalendarEventService:
         for d in sorted(dates):
             row = by_date.get(d)
             if d in covered:
+                base = ScheduleService.get_base_work_periods(owner, d)
+                adjusted = subtract_periods(base, intervals.get(d, []))
                 if row is None:
                     db.session.add(ScheduleAdjustment(
                         org_secure_code=org.secure_code,
                         user_secure_code=owner_user_secure_code,
                         adjust_date=d,
                         adjust_type='LEAVE',
-                        original_periods=ScheduleService.get_work_periods(owner, d),
-                        adjusted_periods=None,
+                        original_periods=base,
+                        adjusted_periods=adjusted,
                         status='APPROVED',
                         approved_at=now,
                         approved_by=owner_user_secure_code,
@@ -169,6 +177,7 @@ class CalendarEventService:
                         note=titles[d],
                     ))
                 elif row.is_deleted:
+                    # 軟刪除列（含人工建的）一律復活並改指向新事件：唯一約束擋住 INSERT，這是唯一能記到這一天的路徑
                     row.is_deleted = False
                     row.deleted_at = None
                     row.status = 'APPROVED'
@@ -176,9 +185,13 @@ class CalendarEventService:
                     row.approved_by = owner_user_secure_code
                     row.calendar_event_secure_code = covered[d]
                     row.note = titles[d]
+                    row.original_periods = base
+                    row.adjusted_periods = adjusted
                 elif row.calendar_event_secure_code is not None:
                     row.calendar_event_secure_code = covered[d]
                     row.note = titles[d]
+                    row.original_periods = base
+                    row.adjusted_periods = adjusted
             elif row and not row.is_deleted and row.calendar_event_secure_code is not None:
                 row.is_deleted = True
                 row.deleted_at = now
@@ -294,3 +307,28 @@ class CalendarEventService:
             dates.add(current)
             current += timedelta(days=1)
         return dates
+
+    @staticmethod
+    def _event_leave_intervals(tz_name: str, event: CalendarEvent, dates: set) -> dict:
+        """Return leave intervals by local date as local-day minute offsets."""
+        if not dates:
+            return {}
+
+        if event.all_day:
+            return {d: [(0, 1440)] for d in dates}
+
+        start_local = utc_to_local(tz_name, event.starts_at)
+        end_local = utc_to_local(tz_name, event.ends_at)
+        by_date = {}
+        for d in dates:
+            day_start = datetime.combine(d, time.min).replace(tzinfo=start_local.tzinfo)
+            day_end = day_start + timedelta(days=1)
+            interval_start = max(start_local, day_start)
+            interval_end = min(end_local, day_end)
+            if interval_start >= interval_end:
+                continue
+            start_min = int((interval_start - day_start).total_seconds() // 60)
+            end_min = int((interval_end - day_start).total_seconds() // 60)
+            if start_min < end_min:
+                by_date[d] = [(start_min, end_min)]
+        return by_date

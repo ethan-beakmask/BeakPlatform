@@ -1377,7 +1377,7 @@ org 與 owner 一律取自登入身分、payload 給了也忽略。五件猜不�
 - **PERSONAL 只有本人能改，ORG_ADMIN 改別人的個人事件也是 404**；ORG 事件只有 ORG_ADMIN 能建改刪且一律 `PUBLIC`
   （payload 給 `PRIVATE` 會被靜默改成 PUBLIC，不報錯）。判定在 service 的 `_get_editable_event()`，不在 decorator
 - **`LEAVE`／`TRIP` 個人事件會同步寫 `schedule_adjustments`（`adjust_type='LEAVE'`、`status='APPROVED'`、
-  日粒度、`calendar_event_secure_code` 指回事件）**，`ScheduleService.get_work_periods()` 從此看得到請假。
+  **時段級**（2026-09-03 B 項起）：`original_periods`＝底、`adjusted_periods`＝扣掉當日請假聯集後的剩餘、全天＝`[]`、NULL＝整天請假的相容語意；`calendar_event_secure_code` 指回事件）**，`ScheduleService.get_work_periods()` 從此看得到請假（LEAVE 列優先於同日其他調整；resync 算底一律用 `get_base_work_periods()`）。
   改期／改型別／刪除時走同一支 `resync_leave_adjustments()` 軟刪除或復活（該表有
   `(user, date, type)` 唯一約束，硬刪再插會撞，所以一律復活）；`calendar_event_secure_code IS NULL` 的列是
   表單或人工建的，**行事曆絕不動它**

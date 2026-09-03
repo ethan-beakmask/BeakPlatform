@@ -546,6 +546,26 @@ def test_manual_adjustment_is_not_overwritten_or_deleted(client, test_org, test_
     assert manual.is_deleted is False and manual.calendar_event_secure_code is None
 
 
+def test_soft_deleted_manual_leave_row_is_revived_by_calendar_leave(client, test_org, test_user):
+    _default_schedule(test_org)
+    manual = ScheduleAdjustment(
+        org_secure_code=test_org.secure_code,
+        user_secure_code=test_user.secure_code,
+        adjust_date=date(2026, 9, 9),
+        adjust_type='LEAVE',
+        status='APPROVED',
+        calendar_event_secure_code=None,
+        is_deleted=True,
+    )
+    db.session.add(manual)
+    db.session.commit()
+    client = _client(client, test_user, test_org, 'calendar_me')
+    secure_code = _post_event(client, _personal_payload(event_type='LEAVE', all_day=True, start='2026-09-09', end='2026-09-09')).get_json()['event']['secure_code']
+    db.session.refresh(manual)
+    assert manual.is_deleted is False and manual.calendar_event_secure_code == secure_code
+    assert manual.adjusted_periods == [] and ScheduleAdjustment.query.filter_by(adjust_date=date(2026, 9, 9)).count() == 1
+
+
 def test_trip_syncs_leave_and_type_change_recovers_adjustments(client, test_org, test_user):
     _default_schedule(test_org)
     client = _client(client, test_user, test_org, 'calendar_me')
@@ -559,8 +579,94 @@ def test_partial_day_leave_spanning_midnight_creates_two_daily_adjustments(clien
     _default_schedule(test_org)
     client = _client(client, test_user, test_org, 'calendar_me')
     _post_event(client, _personal_payload(event_type='LEAVE', start='2026-09-10T14:00', end='2026-09-11T10:00'))
-    dates = {r.adjust_date for r in ScheduleAdjustment.query.filter_by(is_deleted=False).all()}
-    assert dates == {date(2026, 9, 10), date(2026, 9, 11)}
+    rows = {
+        r.adjust_date: r
+        for r in ScheduleAdjustment.query.filter_by(is_deleted=False).all()
+    }
+    assert set(rows) == {date(2026, 9, 10), date(2026, 9, 11)}
+    assert rows[date(2026, 9, 10)].adjusted_periods == ['09:00-12:00', '13:00-14:00']
+    assert rows[date(2026, 9, 11)].adjusted_periods == ['10:00-12:00', '13:00-18:00']
+    assert ScheduleService.get_work_periods(test_user, date(2026, 9, 10)) == ['09:00-12:00', '13:00-14:00']
+    assert ScheduleService.get_work_periods(test_user, date(2026, 9, 11)) == ['10:00-12:00', '13:00-18:00']
+
+
+def test_half_day_leave_keeps_remaining_periods_and_working_seconds(client, test_org, test_user):
+    _default_schedule(test_org)
+    client = _client(client, test_user, test_org, 'calendar_me')
+    _post_event(client, _personal_payload(event_type='LEAVE', start='2026-09-10T09:00', end='2026-09-10T12:00'))
+
+    row = ScheduleAdjustment.query.filter_by(adjust_date=date(2026, 9, 10), is_deleted=False).first()
+    assert row.adjusted_periods == ['13:00-18:00']
+    assert ScheduleService.get_work_periods(test_user, date(2026, 9, 10)) == ['13:00-18:00']
+    assert ScheduleService.calculate_working_seconds(
+        test_user,
+        datetime(2026, 9, 10, 0, 0),
+        datetime(2026, 9, 11, 0, 0),
+    ) == 5 * 60 * 60
+
+
+def test_same_day_leave_events_are_unioned_and_earliest_event_points_adjustment(client, test_org, test_user):
+    _default_schedule(test_org)
+    client = _client(client, test_user, test_org, 'calendar_me')
+    first_code = _post_event(client, _personal_payload(
+        event_type='LEAVE',
+        title='Morning leave',
+        start='2026-09-10T09:00',
+        end='2026-09-10T10:00',
+    )).get_json()['event']['secure_code']
+    _post_event(client, _personal_payload(
+        event_type='LEAVE',
+        title='Midday leave',
+        start='2026-09-10T11:00',
+        end='2026-09-10T14:00',
+    ))
+
+    row = ScheduleAdjustment.query.filter_by(adjust_date=date(2026, 9, 10), is_deleted=False).first()
+    assert row.adjusted_periods == ['10:00-11:00', '14:00-18:00']
+    assert row.calendar_event_secure_code == first_code
+
+
+def test_leave_update_recalculates_adjusted_periods(client, test_org, test_user):
+    _default_schedule(test_org)
+    client = _client(client, test_user, test_org, 'calendar_me')
+    secure_code = _post_event(client, _personal_payload(
+        event_type='LEAVE',
+        start='2026-09-10T09:00',
+        end='2026-09-10T12:00',
+    )).get_json()['event']['secure_code']
+
+    client.put(f'/beakplatform/api/calendar/events/{secure_code}', json=_personal_payload(
+        event_type='LEAVE',
+        all_day=True,
+        start='2026-09-10',
+        end='2026-09-10',
+    ))
+    row = ScheduleAdjustment.query.filter_by(adjust_date=date(2026, 9, 10)).first()
+    assert row.adjusted_periods == []
+
+    client.put(f'/beakplatform/api/calendar/events/{secure_code}', json=_personal_payload(
+        event_type='LEAVE',
+        start='2026-09-10T09:00',
+        end='2026-09-10T12:00',
+    ))
+    db.session.refresh(row)
+    assert row.adjusted_periods == ['13:00-18:00']
+
+
+def test_existing_leave_adjustment_with_null_adjusted_periods_stays_full_day_leave(test_org, test_user):
+    _default_schedule(test_org)
+    db.session.add(ScheduleAdjustment(
+        org_secure_code=test_org.secure_code,
+        user_secure_code=test_user.secure_code,
+        adjust_date=date(2026, 9, 10),
+        adjust_type='LEAVE',
+        status='APPROVED',
+        calendar_event_secure_code=None,
+        adjusted_periods=None,
+    ))
+    db.session.commit()
+
+    assert ScheduleService.get_work_periods(test_user, date(2026, 9, 10)) == []
 
 
 def test_busy_masks_merge_by_owner_only(client, test_org, test_user):

@@ -55,7 +55,9 @@ class ScheduleService:
         """
         取得某人某日的工作時段
 
-        計算優先級：排班調整 > 個人排班 > 共用班表
+        計算優先級：LEAVE 調整 > 非 LEAVE 調整 > 個人排班 > 共用班表。
+        舊行為在同日同時存在 LEAVE 與其他調整時依資料庫 first() 結果而定；
+        現在 LEAVE 一律優先，且 adjusted_periods 為 NULL 時仍視為整天請假。
 
         Args:
             user: 用戶實體
@@ -65,24 +67,49 @@ class ScheduleService:
             工作時段列表，如 ["09:00-12:00", "13:00-18:00"]
             休息日返回空列表
         """
-        # 1. 先查排班調整（請假/加班）- 最高優先
-        adjustment = ScheduleAdjustment.query.filter_by(
+        leave_adjustment = ScheduleAdjustment.query.filter_by(
+            org_secure_code=user.org_secure_code,
             user_secure_code=user.secure_code,
             adjust_date=target_date,
+            adjust_type='LEAVE',
             status='APPROVED',
             is_deleted=False
         ).first()
+        if leave_adjustment:
+            return leave_adjustment.adjusted_periods or []
 
+        return ScheduleService.get_base_work_periods(user, target_date)
+
+    @staticmethod
+    def get_base_work_periods(user: User, target_date: date) -> List[str]:
+        """
+        取得扣除請假前的基礎工作時段。
+
+        此函式排除 LEAVE 調整列，供請假同步重算剩餘時段；CANCEL、
+        OVERTIME、SWAP 仍依一般排班調整優先於個人排班與共用班表。
+        """
+        return ScheduleService._get_non_leave_work_periods(user, target_date)
+
+    @staticmethod
+    def _get_non_leave_work_periods(user: User, target_date: date) -> List[str]:
+        """Resolve work periods without applying LEAVE adjustments."""
+        adjustment = ScheduleAdjustment.query.filter(
+            ScheduleAdjustment.org_secure_code == user.org_secure_code,
+            ScheduleAdjustment.user_secure_code == user.secure_code,
+            ScheduleAdjustment.adjust_date == target_date,
+            ScheduleAdjustment.adjust_type != 'LEAVE',
+            ScheduleAdjustment.status == 'APPROVED',
+            ScheduleAdjustment.is_deleted == False,  # noqa: E712
+        ).first()
         if adjustment:
-            if adjustment.adjust_type == 'LEAVE':
-                return []  # 請假，無工時
-            elif adjustment.adjust_type == 'CANCEL':
+            if adjustment.adjust_type == 'CANCEL':
                 return []  # 取消班次
             elif adjustment.adjust_type in ('OVERTIME', 'SWAP'):
                 return adjustment.adjusted_periods or []
 
         # 2. 查個人排班
         personal = PersonalSchedule.query.filter_by(
+            org_secure_code=user.org_secure_code,
             user_secure_code=user.secure_code,
             schedule_date=target_date,
             is_deleted=False

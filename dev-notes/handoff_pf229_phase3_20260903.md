@@ -25,7 +25,7 @@
 
 | # | 定案 |
 |---|---|
-| Q1 粒度 | **B 改時段級**，排在第 3、2 項之前；細節見 `CALENDAR_SPEC.md` 六之二 |
+| Q1 粒度 | **B 改時段級**，排在第 3、2 項之前；細節見 `CALENDAR_SPEC.md` 六之二。**2026-09-03 已完成**（`app/utils/work_periods.py` ＋ `get_base_work_periods()`，憑證 `/opt/tmp/verify/20260903-pf229-itemB-leave-periods.log`） |
 | Q2 | 聯集：WAITING 任務 `is_pending_assignee()` ∪ 快照 `USER` 指名 ∪ `ROLE` 持有；不解析主管鏈 |
 | Q3 | toast ＋ 連結；**`/delegations/` 僅 ORG_ADMIN**（Key1／Key2 三家都只有 ORG_ADMIN），員工只有文字提示 |
 | Q4 | 簽核節點 config；ABSOLUTE／WORKING，無班表退回 ABSOLUTE |
@@ -36,7 +36,7 @@
 
 第 1 項已於 2026-09-03 完成（commit `e25f0bd8`），spec 暫存檔已隨主機非正常關機遺失，實作記錄以 `CALENDAR_SPEC.md` 六之三為準。
 
-## 三、第三期四項（摘自 #5380，動工順序 **1 → PF-236 → 4 → B（時段級請假）→ 3 → 2**；1、PF-236、4 已完成，下一項 B）
+## 三、第三期四項（摘自 #5380，動工順序 **1 → PF-236 → 4 → B（時段級請假）→ 3 → 2**；1、PF-236、4、B 已完成，下一項 3）
 
 | # | 項目 | 牽涉檔案（本 session 確認存在） | 備註 |
 |---|---|---|---|

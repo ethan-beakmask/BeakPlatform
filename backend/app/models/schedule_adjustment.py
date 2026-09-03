@@ -102,7 +102,7 @@ class ScheduleAdjustment(TenantBaseModel):
             工作時段列表
         """
         if self.adjust_type == 'LEAVE':
-            return []  # 請假無工時
+            return self.adjusted_periods or []  # NULL 相容既有整天請假
         elif self.adjust_type == 'CANCEL':
             return []  # 取消班次無工時
         elif self.adjust_type in ('OVERTIME', 'SWAP'):
