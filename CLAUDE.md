@@ -345,9 +345,15 @@ model／template／js 列齊了——比自己從零搜尋更快也更不會漏�
 
 平台基礎建設與模組化標準已完成。目前處於**功能完善階段**。
 
-待辦事項以 **BBN 待辦為主**（ref_code `PF-xx`，`project_tasks` 查詢、
-`note_search("PF-xx")` 取全文）。Forgejo Issues 已全數移回 BBN，若見殘留直接忽略，
-不需搬移或關閉（用戶會自行在 BBN 新增）。
+待辦事項以 **BBN 待辦為主**（ref_code `PF-xx`）。Forgejo Issues 已全數移回 BBN，
+若見殘留直接忽略，不需搬移或關閉（用戶會自行在 BBN 新增）。
+
+**用戶只丟一個 `PF-xx` 時，取全文的最省路徑是
+`note_task_update(ref="PF-xx")`（不帶任何欄位，只回狀態與 `atom_id`）→ `note_get(atom_id)`**
+（2026-09-04 試誤）。`note_search("PF-xx")` 常回 0 筆——它只搜標題與內文，
+ref_code 不在搜尋範圍，內文沒寫到自己代號的原子就搜不到；`project_tasks` 則已超過
+工具輸出上限（約 15 萬字元）、整包落地成檔案才能用 python 依 `ref_code` 篩。
+要列全部待辦才用 `project_tasks`。
 架構與模組化標準詳見 `dev-notes/PLATFORM_MODULARIZATION_PLAN.md`。
 
 ---
