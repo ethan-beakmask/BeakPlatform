@@ -2,7 +2,7 @@
 BeakMask Users API
 用戶管理路由
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, url_for, current_app
 from flask_babel import gettext as _
 from flask_login import current_user
 
@@ -11,6 +11,8 @@ from ..security.resource_gateway import ResourceGateway
 from ..models.user import User, UserType
 from ..models.organizational_unit import OrganizationalUnit
 from ..models.user_numbering_rule import UsedUserNumber
+from ..services.email_service import EmailService
+from app.utils.external_url import build_external_url
 from .. import db
 
 users_bp = Blueprint('api_users', __name__)
@@ -111,6 +113,7 @@ def create_user():
     english_name = (data.get('english_name') or '').strip()
     username = (data.get('username') or '').replace(' ', '').lower()
     password = (data.get('password') or '').strip()
+    auto_generated = not password
     role = (data.get('role') or 'user').strip()
     is_external = role == 'external'
 
@@ -208,6 +211,8 @@ def create_user():
             interface_language=(data.get('interface_language') or '').strip() or None,
             timezone=(data.get('timezone') or '').strip() or None,
         )
+        if auto_generated:
+            user.must_change_password = True
         user.set_password(password)
         db.session.add(user)
         db.session.flush()
@@ -238,9 +243,41 @@ def create_user():
 
         db.session.commit()
 
+        password_notification = None
+        if auto_generated:
+            notification_email = user.backup_email_1 or user.email
+            mail_sent = False
+            try:
+                login_url = build_external_url(
+                    url_for('auth.org_login', domain_name=org.domain_name)
+                )
+                mail_sent = EmailService.send_new_account_password(
+                    to_email=notification_email,
+                    org_name=org.name,
+                    account=f"{user.username}@{org.domain_name}",
+                    temp_password=password,
+                    login_url=login_url
+                )
+            except Exception as exc:  # 只記例外型別，不記密碼與內文
+                current_app.logger.warning('new account password mail failed: %s', type(exc).__name__)
+                mail_sent = False
+            password_notification = {
+                'sent': mail_sent,
+                'to': notification_email,
+            }
+            if mail_sent:
+                message = _('已建立用戶 %(name)s，密碼通知信已寄至 %(email)s',
+                            name=native_name, email=notification_email)
+            else:
+                message = _('已建立用戶 %(name)s，但密碼通知信寄送失敗（%(email)s），請到編輯頁重設密碼交給對方',
+                            name=native_name, email=notification_email)
+        else:
+            message = _('已建立用戶 %(name)s', name=native_name)
+
         return jsonify({
-            'message': _('已建立用戶 %(name)s', name=native_name),
-            'user': user.to_dict()
+            'message': message,
+            'user': user.to_dict(),
+            'password_notification': password_notification
         }), 201
     except Exception as e:
         db.session.rollback()

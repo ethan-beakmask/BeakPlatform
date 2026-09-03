@@ -10,6 +10,7 @@ files:
     - backend/app/services/auth_service.py          # 密碼驗證
     - backend/app/services/numbering_service.py      # 帳號編號
     - backend/app/services/password_policy_service.py # 密碼策略
+    - backend/app/services/email_service.py          # 帳號密碼通知信
     - backend/app/services/nocode_service_account.py # NoCode portal 送件公用帳號
   model:
     - backend/app/models/user.py

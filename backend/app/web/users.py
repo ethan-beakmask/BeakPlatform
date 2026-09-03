@@ -10,7 +10,7 @@ URL 安全設計：
 import csv
 import io
 from datetime import datetime
-from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, Response, jsonify
+from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, Response, jsonify, current_app
 from flask_babel import gettext as _
 from flask_login import current_user
 
@@ -24,6 +24,8 @@ from ..models.user_numbering_rule import UsedUserNumber
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
 from ..models.work_schedule import WorkSchedule
 from ..utils.timezone import get_timezone_choices
+from app.utils.external_url import build_external_url
+from ..services.email_service import EmailService
 from ..services.password_policy_service import PasswordPolicyService
 from .. import db
 
@@ -337,6 +339,7 @@ def create_user():
         username_raw = form_data['username']
         username = ''.join(username_raw.split()).lower()
         password = request.form.get('password', '').strip()
+        auto_generated = not password
         role = form_data['role']
 
         # 選填欄位
@@ -398,7 +401,8 @@ def create_user():
                                 'pages/users/create.html',
                                 form_data=form_data,
                                 org_settings=org_ctx.get_settings() if org_ctx else {},
-                                timezone_choices=get_timezone_choices()
+                                timezone_choices=get_timezone_choices(),
+                                system_mail_ready=EmailService.is_ready()
                             )
 
                     try:
@@ -437,6 +441,8 @@ def create_user():
                             interface_language=interface_language,
                             timezone=user_timezone,
                         )
+                        if auto_generated:
+                            user.must_change_password = True
                         user.set_password(password)
                         db.session.add(user)
                         db.session.flush()
@@ -454,7 +460,32 @@ def create_user():
 
                         db.session.commit()
 
-                        flash(_('已建立用戶 %(name)s', name=native_name), 'success')
+                        if auto_generated:
+                            notification_email = user.backup_email_1 or user.email
+                            mail_sent = False
+                            try:
+                                login_url = build_external_url(
+                                    url_for('auth.org_login', domain_name=org.domain_name)
+                                )
+                                mail_sent = EmailService.send_new_account_password(
+                                    to_email=notification_email,
+                                    org_name=org.name,
+                                    account=f"{user.username}@{org.domain_name}",
+                                    temp_password=password,
+                                    login_url=login_url
+                                )
+                            except Exception as exc:  # 只記例外型別，不記密碼與內文
+                                current_app.logger.warning('new account password mail failed: %s', type(exc).__name__)
+                                mail_sent = False
+
+                            if mail_sent:
+                                flash(_('已建立用戶 %(name)s，密碼通知信已寄至 %(email)s',
+                                        name=native_name, email=notification_email), 'success')
+                            else:
+                                flash(_('已建立用戶 %(name)s，但密碼通知信寄送失敗（%(email)s），請到編輯頁重設密碼交給對方',
+                                        name=native_name, email=notification_email), 'error')
+                        else:
+                            flash(_('已建立用戶 %(name)s', name=native_name), 'success')
                         return redirect(url_for('users.list_users'))
                     except Exception as e:
                         db.session.rollback()
@@ -465,7 +496,8 @@ def create_user():
         'pages/users/create.html',
         form_data=form_data,
         org_settings=org.get_settings() if org else {},
-        timezone_choices=get_timezone_choices()
+        timezone_choices=get_timezone_choices(),
+        system_mail_ready=EmailService.is_ready()
     )
 
 

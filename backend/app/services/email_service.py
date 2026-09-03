@@ -386,6 +386,32 @@ class EmailService:
         return EmailService.send_email_detailed(to_email, subject, body)
 
     @staticmethod
+    def send_new_account_password(
+        to_email: str,
+        org_name: str,
+        account: str,
+        temp_password: str,
+        login_url: Optional[str] = None,
+    ) -> bool:
+        """發送新帳號自動產生密碼通知，回傳 bool。"""
+        subject = f'[{org_name}] 新帳號密碼通知'
+        login_line = f'登入網址：{login_url}' if login_url else ''
+        body = f'''您好，
+
+您的 {org_name} 系統新帳號已建立，登入資訊如下：
+
+帳號：{account}
+暫時密碼：{temp_password}
+{login_line}
+
+首次登入後系統將要求您立即變更密碼。
+
+---
+{org_name} 系統
+'''
+        return EmailService.send_email(to_email, subject, body)
+
+    @staticmethod
     def send_admin_password_reset_notification(
         to_emails: List[str],
         target_admin_name: str,

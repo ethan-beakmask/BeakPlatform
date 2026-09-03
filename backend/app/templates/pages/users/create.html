@@ -105,7 +105,10 @@
                     </button>
                 </div>
                 <div class="help-text" x-text="passwordRequirements"></div>
-                <div class="help-text">{{ _('留空將自動產生強化密碼（後續透過通知信件寄送）') }}</div>
+                <div class="help-text">{{ _('留空將自動產生強化密碼，並寄到備用 Email 1（未填時寄到帳號 Email）；成員首次登入須變更密碼') }}</div>
+                {% if not system_mail_ready %}
+                <div class="help-text text-danger">{{ _('主機發信服務尚未就緒，密碼留空時通知信不會寄出，請改用 [使用建議密碼] 抄給對方') }}</div>
+                {% endif %}
                 <!-- 驗證錯誤 -->
                 <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
                     <template x-for="err in passwordErrors" :key="err">
