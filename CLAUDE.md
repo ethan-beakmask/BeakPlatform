@@ -1443,6 +1443,19 @@ org 與 owner 一律取自登入身分、payload 給了也忽略。五件猜不�
 
 `DEFAULT_TW_HOLIDAYS_2026` 與 `holidays.js::importTWHolidays()` 已刪除；看到舊文件寫「[匯入台灣假日] 只有 2026 年資料」一律過時。
 
+### 特定代理（PF-71，2026-09-04 起）：限定「表單模板 secure_code」，判定在 task_authorizer 的 scope 一層
+
+`delegations.allowed_process_types` 從此存 **JSON 陣列的 `fw_form_templates.secure_code`**（管理員頁多選下拉，員工自助 API 仍只建 FULL）。
+`build_actor()` 多回 `delegation_scopes`（授權人 → `None`＝不限表單／set＝限定表單），`resolve_acting_identity()` 在身分比對成立後
+再看 scope：任務的 `form_instance_secure_code` → `FwFormInstance.form_template_secure_code`，結果快取在 `actor['_form_template_cache']`，
+**只有 actor 有 SPECIFIC 授權人才查**。空清單、解析失敗、任務沒有表單實例一律不放行（fail-closed）；同一授權人另有 FULL 則不限。
+驗收憑證 `/opt/tmp/verify/20260904-pf71.log`（詳情端點 200／403 矩陣；OD 案件不進表單中心待簽清單，用詳情端點判定）。
+
+**平台層（`backend/app/web`、`api`）要用模組 model 一律在函式內 import**：`modules` 套件是 app 啟動時由 `module_loader` 才插進
+`sys.path`，寫在模組層級的 `from modules.form_workflow.models import ...` 會讓 **flask 起不來、systemd crash loop、nginx 恆 502**，
+而 `cd backend && python -c "import app"` 與 pytest 都測不出來（conftest 已把 repo root 放進 sys.path）。測試檔頂端要用
+`modules` 時照 `test_task_authorizer_delegate_from.py` 先 `sys.path.insert(0, repo_root)`。2026-09-04 PF-71 踩到。
+
 ### 造／清測試帳號（2026-08-23 試誤才弄對）
 
 - `POST /api/users/` 必填四項：`native_name` / `english_name` / `username` /

@@ -49,7 +49,11 @@
                 {% elif d.delegation_type == 'APPROVAL' %}
                     {{ _('限額代理') }}
                     {% if d.approval_limit %}({{ '{:,.0f}'.format(d.approval_limit) }}){% endif %}
-                {% elif d.delegation_type == 'SPECIFIC' %}{{ _('特定代理') }}
+                {% elif d.delegation_type == 'SPECIFIC' %}
+                    {{ _('特定代理') }}
+                    {% if d.allowed_form_names %}
+                    ({{ d.allowed_form_names|join('、') }})
+                    {% endif %}
                 {% else %}{{ d.delegation_type }}
                 {% endif %}
             </td>

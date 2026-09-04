@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-04 17:07+0800\n"
+"POT-Creation-Date: 2026-09-04 18:24+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,6 +26,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:392
 #: app/__init__.py:203 app/templates/pages/admin/numbering/list.html:149
 #: app/templates/pages/delegations/view.html:53
+#: app/templates/pages/delegations/view.html:60
 #: app/templates/pages/users/view.html:66
 #: app/templates/pages/users/view.html:74
 #: app/templates/pages/users/view.html:142
@@ -688,7 +689,7 @@ msgstr ""
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:836
 #: app/api/conglomerates.py:84 app/api/conglomerates.py:276
 #: app/api/users.py:284 app/web/approval_categories.py:189
-#: app/web/delegations.py:161 app/web/external_users.py:332
+#: app/web/delegations.py:230 app/web/external_users.py:332
 #: app/web/job_families.py:239 app/web/job_families.py:240
 #: app/web/job_levels.py:181 app/web/job_titles.py:266
 #: app/web/job_titles.py:267 app/web/menu.py:324 app/web/menu.py:391
@@ -713,7 +714,7 @@ msgstr ""
 #: ../modules/form_workflow/api/backgrounds.py:151
 #: ../modules/form_workflow/api/categories.py:314
 #: ../modules/form_workflow/api/form_themes.py:219 app/api/conglomerates.py:214
-#: app/web/approval_categories.py:269 app/web/delegations.py:244
+#: app/web/approval_categories.py:269 app/web/delegations.py:326
 #: app/web/external_users.py:452 app/web/job_families.py:324
 #: app/web/job_families.py:325 app/web/job_levels.py:267
 #: app/web/job_titles.py:344 app/web/job_titles.py:345 app/web/menu.py:483
@@ -952,7 +953,7 @@ msgstr ""
 #: ../modules/form_workflow/api/categories.py:360
 #: ../modules/form_workflow/api/form_themes.py:264
 #: app/api/enterprise_settings.py:387 app/api/files.py:474
-#: app/web/approval_categories.py:327 app/web/delegations.py:294
+#: app/web/approval_categories.py:327 app/web/delegations.py:377
 #: app/web/external_users.py:671 app/web/job_families.py:421
 #: app/web/job_families.py:422 app/web/job_levels.py:318
 #: app/web/job_titles.py:395 app/web/job_titles.py:396 app/web/menu.py:537
@@ -1030,7 +1031,7 @@ msgstr ""
 msgid "已撤銷刪除"
 msgstr ""
 
-#: app/api/files.py:507 app/web/delegations.py:274
+#: app/api/files.py:507 app/web/delegations.py:357
 #, python-format
 msgid "撤銷失敗: %(error)s"
 msgstr ""
@@ -1405,8 +1406,8 @@ msgstr ""
 msgid "被授權人無效"
 msgstr ""
 
-#: app/api/my_delegations.py:139 app/web/delegations.py:124
-#: app/web/delegations.py:216
+#: app/api/my_delegations.py:139 app/web/delegations.py:181
+#: app/web/delegations.py:287
 msgid "生效開始日期不能晚於結束日期"
 msgstr ""
 
@@ -2740,8 +2741,8 @@ msgstr ""
 #: app/templates/pages/approval_categories/list.html:287
 #: app/templates/pages/calendar/_event_modal.html:75
 #: app/templates/pages/change_password.html:55
-#: app/templates/pages/delegations/create.html:99
-#: app/templates/pages/delegations/edit.html:98
+#: app/templates/pages/delegations/create.html:123
+#: app/templates/pages/delegations/edit.html:123
 #: app/templates/pages/external-users/create.html:116
 #: app/templates/pages/external-users/edit.html:67
 #: app/templates/pages/hostconfig/_system_settings_modals.html:99
@@ -3403,8 +3404,8 @@ msgstr ""
 
 #: app/templates/pages/_my_delegations.html:18
 #: app/templates/pages/_my_delegations.html:77
-#: app/templates/pages/delegations/create.html:39
-#: app/templates/pages/delegations/edit.html:29
+#: app/templates/pages/delegations/create.html:49
+#: app/templates/pages/delegations/edit.html:39
 #: app/templates/pages/delegations/list.html:23
 #: app/templates/pages/delegations/view.html:31
 msgid "被授權人"
@@ -3452,7 +3453,7 @@ msgstr ""
 #: app/templates/pages/approval_categories/list.html:183
 #: app/templates/pages/cg_databases/overview.html:213
 #: app/templates/pages/delegations/list.html:25
-#: app/templates/pages/delegations/view.html:63
+#: app/templates/pages/delegations/view.html:68
 #: app/templates/pages/external-users/list.html:37
 #: app/templates/pages/external-users/view.html:57
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:95
@@ -3503,9 +3504,9 @@ msgstr ""
 #: app/templates/pages/_my_delegations.html:21
 #: app/templates/pages/_my_delegations.html:54
 #: app/templates/pages/_my_delegations.html:94
-#: app/templates/pages/delegations/create.html:90
-#: app/templates/pages/delegations/edit.html:74
-#: app/templates/pages/delegations/view.html:87
+#: app/templates/pages/delegations/create.html:114
+#: app/templates/pages/delegations/edit.html:99
+#: app/templates/pages/delegations/view.html:92
 msgid "授權原因"
 msgstr ""
 
@@ -3525,27 +3526,27 @@ msgid "目前沒有人授權你代理。"
 msgstr ""
 
 #: app/templates/pages/_my_delegations.html:51
-#: app/templates/pages/delegations/create.html:24
-#: app/templates/pages/delegations/edit.html:18
+#: app/templates/pages/delegations/create.html:34
+#: app/templates/pages/delegations/edit.html:28
 #: app/templates/pages/delegations/list.html:22
 #: app/templates/pages/delegations/view.html:18
 msgid "授權人"
 msgstr ""
 
 #: app/templates/pages/_my_delegations.html:79
-#: app/templates/pages/delegations/create.html:42
+#: app/templates/pages/delegations/create.html:52
 msgid "-- 請選擇被授權人 --"
 msgstr ""
 
 #: app/templates/pages/_my_delegations.html:86
-#: app/templates/pages/delegations/create.html:76
-#: app/templates/pages/delegations/view.html:79
+#: app/templates/pages/delegations/create.html:100
+#: app/templates/pages/delegations/view.html:84
 msgid "生效開始"
 msgstr ""
 
 #: app/templates/pages/_my_delegations.html:90
-#: app/templates/pages/delegations/create.html:83
-#: app/templates/pages/delegations/view.html:83
+#: app/templates/pages/delegations/create.html:107
+#: app/templates/pages/delegations/view.html:88
 msgid "生效結束"
 msgstr ""
 
@@ -3555,7 +3556,7 @@ msgstr ""
 
 #: app/templates/pages/_my_delegations.html:101
 #: app/templates/pages/calendar/calendar.html:134
-#: app/templates/pages/delegations/create.html:98
+#: app/templates/pages/delegations/create.html:122
 msgid "建立代理授權"
 msgstr ""
 
@@ -5646,9 +5647,9 @@ msgstr ""
 
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:20
 #: app/templates/pages/admin/module_list.html:126
-#: app/templates/pages/delegations/edit.html:87
-#: app/templates/pages/delegations/list.html:62
-#: app/templates/pages/delegations/view.html:70
+#: app/templates/pages/delegations/edit.html:112
+#: app/templates/pages/delegations/list.html:66
+#: app/templates/pages/delegations/view.html:75
 #: app/templates/pages/organizations/list.html:308 app/web/admin.py:27
 msgid "已過期"
 msgstr ""
@@ -6212,7 +6213,7 @@ msgstr ""
 #: app/templates/pages/approval_categories/edit.html:87
 #: app/templates/pages/approval_categories/limits.html:83
 #: app/templates/pages/approval_categories/list.html:196
-#: app/templates/pages/delegations/edit.html:96
+#: app/templates/pages/delegations/edit.html:121
 #: app/templates/pages/external-users/edit.html:64
 #: app/templates/pages/job_families/edit.html:91
 #: app/templates/pages/job_families/list.html:194
@@ -6421,7 +6422,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:32
 #: app/templates/pages/admin/org-admins/list.html:44
 #: app/templates/pages/cg_databases/overview.html:187
-#: app/templates/pages/delegations/view.html:95
+#: app/templates/pages/delegations/view.html:100
 #: app/templates/pages/external-users/view.html:85
 #: app/templates/pages/job_levels/view.html:51
 #: app/templates/pages/modules/list.html:86
@@ -7091,7 +7092,7 @@ msgid "不可修改"
 msgstr ""
 
 #: app/templates/pages/approval_categories/edit.html:96
-#: app/templates/pages/delegations/edit.html:105
+#: app/templates/pages/delegations/edit.html:130
 #: app/templates/pages/job_families/edit.html:101
 #: app/templates/pages/job_levels/edit.html:96
 #: app/templates/pages/job_titles/edit.html:121
@@ -7543,38 +7544,55 @@ msgstr ""
 msgid "代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住"
 msgstr ""
 
-#: app/templates/pages/delegations/create.html:27
+#: app/templates/pages/delegations/create.html:37
 msgid "-- 請選擇授權人 --"
 msgstr ""
 
-#: app/templates/pages/delegations/create.html:35
+#: app/templates/pages/delegations/create.html:45
 msgid "原本負責簽核的人 (如: 休假的主管)"
 msgstr ""
 
-#: app/templates/pages/delegations/create.html:50
+#: app/templates/pages/delegations/create.html:60
 msgid "代理簽核的人 (如: 代理主管)"
 msgstr ""
 
-#: app/templates/pages/delegations/create.html:54
+#: app/templates/pages/delegations/create.html:64
 #: app/templates/pages/delegations/list.html:24
 #: app/templates/pages/delegations/view.html:44
 msgid "代理類型"
 msgstr ""
 
-#: app/templates/pages/delegations/create.html:67
-#: app/templates/pages/delegations/edit.html:53
+#: app/templates/pages/delegations/create.html:77
+#: app/templates/pages/delegations/edit.html:63
 msgid "簽核金額上限"
 msgstr ""
 
-#: app/templates/pages/delegations/create.html:71
+#: app/templates/pages/delegations/create.html:81
 msgid "如: 100000"
 msgstr ""
 
-#: app/templates/pages/delegations/create.html:72
+#: app/templates/pages/delegations/create.html:82
 msgid "超過此金額需要原授權人或更高層簽核"
 msgstr ""
 
-#: app/templates/pages/delegations/create.html:93
+#: app/templates/pages/delegations/create.html:86
+#: app/templates/pages/delegations/edit.html:71
+#: app/templates/pages/delegations/view.html:56
+msgid "限定表單"
+msgstr ""
+
+#: app/templates/pages/delegations/create.html:92
+#: app/templates/pages/delegations/edit.html:77
+#, python-format
+msgid "%(name)s（%(code)s）"
+msgstr ""
+
+#: app/templates/pages/delegations/create.html:96
+#: app/templates/pages/delegations/edit.html:81
+msgid "只在這些表單的簽核關卡上代理；其他表單不放行"
+msgstr ""
+
+#: app/templates/pages/delegations/create.html:117
 msgid "如: 休假出國 12/20-12/25"
 msgstr ""
 
@@ -7601,8 +7619,8 @@ msgstr ""
 msgid "[查看詳情]"
 msgstr ""
 
-#: app/templates/pages/delegations/edit.html:25
-#: app/templates/pages/delegations/edit.html:36
+#: app/templates/pages/delegations/edit.html:35
+#: app/templates/pages/delegations/edit.html:46
 #: app/templates/pages/job_levels/edit.html:20
 #: app/templates/pages/job_levels/list.html:127
 #: app/templates/pages/job_titles/edit.html:20
@@ -7611,56 +7629,56 @@ msgstr ""
 msgid "(不可修改)"
 msgstr ""
 
-#: app/templates/pages/delegations/edit.html:40
+#: app/templates/pages/delegations/edit.html:50
 msgid "代理類型 *"
 msgstr ""
 
-#: app/templates/pages/delegations/edit.html:60
+#: app/templates/pages/delegations/edit.html:85
 msgid "生效開始 *"
 msgstr ""
 
-#: app/templates/pages/delegations/edit.html:67
+#: app/templates/pages/delegations/edit.html:92
 msgid "生效結束 *"
 msgstr ""
 
-#: app/templates/pages/delegations/edit.html:80
+#: app/templates/pages/delegations/edit.html:105
 msgid "目前狀態"
 msgstr ""
 
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:19
-#: app/templates/pages/delegations/edit.html:83
-#: app/templates/pages/delegations/list.html:58
-#: app/templates/pages/delegations/view.html:66
+#: app/templates/pages/delegations/edit.html:108
+#: app/templates/pages/delegations/list.html:62
+#: app/templates/pages/delegations/view.html:71
 msgid "生效中"
 msgstr ""
 
-#: app/templates/pages/delegations/edit.html:85
-#: app/templates/pages/delegations/list.html:60
-#: app/templates/pages/delegations/view.html:68
+#: app/templates/pages/delegations/edit.html:110
+#: app/templates/pages/delegations/list.html:64
+#: app/templates/pages/delegations/view.html:73
 msgid "待生效"
 msgstr ""
 
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:21
-#: app/templates/pages/delegations/edit.html:89
-#: app/templates/pages/delegations/list.html:64
-#: app/templates/pages/delegations/view.html:72
+#: app/templates/pages/delegations/edit.html:114
+#: app/templates/pages/delegations/list.html:68
+#: app/templates/pages/delegations/view.html:77
 msgid "已撤銷"
 msgstr ""
 
-#: app/templates/pages/delegations/edit.html:91
+#: app/templates/pages/delegations/edit.html:116
 msgid "(依日期自動判定)"
 msgstr ""
 
-#: app/templates/pages/delegations/edit.html:110
+#: app/templates/pages/delegations/edit.html:135
 msgid "由管理員手動撤銷"
 msgstr ""
 
-#: app/templates/pages/delegations/edit.html:112
-#: app/templates/pages/delegations/view.html:116
+#: app/templates/pages/delegations/edit.html:137
+#: app/templates/pages/delegations/view.html:121
 msgid "撤銷授權"
 msgstr ""
 
-#: app/templates/pages/delegations/edit.html:119
+#: app/templates/pages/delegations/edit.html:144
 msgid "刪除紀錄"
 msgstr ""
 
@@ -7679,27 +7697,27 @@ msgid "共 %(count)s 筆代理授權"
 msgstr ""
 
 #: app/templates/pages/delegations/list.html:48
-#: app/templates/pages/delegations/view.html:47
+#: app/templates/pages/delegations/view.html:47 app/web/delegations.py:256
 msgid "全權代理"
 msgstr ""
 
 #: app/templates/pages/delegations/list.html:50
-#: app/templates/pages/delegations/view.html:49
+#: app/templates/pages/delegations/view.html:49 app/web/delegations.py:257
 msgid "限額代理"
 msgstr ""
 
-#: app/templates/pages/delegations/list.html:52
-#: app/templates/pages/delegations/view.html:56
+#: app/templates/pages/delegations/list.html:53
+#: app/templates/pages/delegations/view.html:56 app/web/delegations.py:258
 msgid "特定代理"
 msgstr ""
 
-#: app/templates/pages/delegations/list.html:74
+#: app/templates/pages/delegations/list.html:78
 #: app/templates/pages/positions/list.html:72
 #: app/templates/pages/units/list.html:44
 msgid "[查看]"
 msgstr ""
 
-#: app/templates/pages/delegations/list.html:76
+#: app/templates/pages/delegations/list.html:80
 #: app/templates/pages/delegations/view.html:12
 #: app/templates/pages/job_levels/view.html:10
 #: app/templates/pages/job_titles/view.html:10
@@ -7711,7 +7729,7 @@ msgstr ""
 msgid "[編輯]"
 msgstr ""
 
-#: app/templates/pages/delegations/list.html:82
+#: app/templates/pages/delegations/list.html:86
 msgid "尚無代理授權"
 msgstr ""
 
@@ -7736,36 +7754,32 @@ msgstr ""
 msgid "簽核金額上限:"
 msgstr ""
 
-#: app/templates/pages/delegations/view.html:56
-msgid "限定特定流程類型"
-msgstr ""
-
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:49
-#: app/templates/pages/delegations/view.html:91
+#: app/templates/pages/delegations/view.html:96
 msgid "建立者"
 msgstr ""
 
-#: app/templates/pages/delegations/view.html:100
+#: app/templates/pages/delegations/view.html:105
 msgid "撤銷者"
 msgstr ""
 
-#: app/templates/pages/delegations/view.html:104
+#: app/templates/pages/delegations/view.html:109
 msgid "撤銷時間"
 msgstr ""
 
-#: app/templates/pages/delegations/view.html:108
+#: app/templates/pages/delegations/view.html:113
 msgid "撤銷原因"
 msgstr ""
 
-#: app/templates/pages/delegations/view.html:121
+#: app/templates/pages/delegations/view.html:126
 msgid "撤銷原因:"
 msgstr ""
 
-#: app/templates/pages/delegations/view.html:122
+#: app/templates/pages/delegations/view.html:127
 msgid "如: 授權人已返回"
 msgstr ""
 
-#: app/templates/pages/delegations/view.html:125
+#: app/templates/pages/delegations/view.html:130
 msgid "撤銷代理授權"
 msgstr ""
 
@@ -12830,57 +12844,73 @@ msgstr ""
 msgid "(集團已刪除)"
 msgstr ""
 
-#: app/web/delegations.py:98
+#: app/web/delegations.py:127
+msgid "全權代理 - 代理所有權限"
+msgstr ""
+
+#: app/web/delegations.py:128
+msgid "限額代理 - 設定簽核金額上限"
+msgstr ""
+
+#: app/web/delegations.py:129
+msgid "特定代理 - 限定表單模板"
+msgstr ""
+
+#: app/web/delegations.py:155
 msgid "請選擇授權人"
 msgstr ""
 
-#: app/web/delegations.py:100
+#: app/web/delegations.py:157
 msgid "請選擇被授權人"
 msgstr ""
 
-#: app/web/delegations.py:102
+#: app/web/delegations.py:159
 msgid "授權人和被授權人不能相同"
 msgstr ""
 
-#: app/web/delegations.py:104
+#: app/web/delegations.py:161
 msgid "生效開始日期為必填"
 msgstr ""
 
-#: app/web/delegations.py:106
+#: app/web/delegations.py:163
 msgid "生效結束日期為必填"
 msgstr ""
 
-#: app/web/delegations.py:115 app/web/delegations.py:207
+#: app/web/delegations.py:172 app/web/delegations.py:278
 msgid "生效開始日期格式錯誤"
 msgstr ""
 
-#: app/web/delegations.py:121 app/web/delegations.py:213
+#: app/web/delegations.py:178 app/web/delegations.py:284
 msgid "生效結束日期格式錯誤"
 msgstr ""
 
-#: app/web/delegations.py:131 app/web/job_levels.py:117
+#: app/web/delegations.py:188 app/web/job_levels.py:117
 #: app/web/job_levels.py:234
 msgid "簽核金額上限不可為負數"
 msgstr ""
 
-#: app/web/delegations.py:133 app/web/delegations.py:223
+#: app/web/delegations.py:190 app/web/delegations.py:294
 #: app/web/job_levels.py:119 app/web/job_levels.py:236
 msgid "簽核金額上限格式錯誤"
 msgstr ""
 
-#: app/web/delegations.py:157
+#: app/web/delegations.py:198 app/web/delegations.py:301
+msgid "特定代理至少要選一個表單"
+msgstr ""
+
+#: app/web/delegations.py:226
 msgid "已建立代理授權"
 msgstr ""
 
-#: app/web/delegations.py:240
+#: app/web/delegations.py:322
 msgid "已更新代理授權"
 msgstr ""
 
-#: app/web/delegations.py:270
+#: app/web/delegations.py:353
 msgid "已撤銷代理授權"
 msgstr ""
 
-#: app/web/delegations.py:290
+#: app/web/delegations.py:373
 msgid "已刪除代理授權"
 msgstr ""
 

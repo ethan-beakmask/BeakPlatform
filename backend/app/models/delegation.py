@@ -13,7 +13,8 @@ BeakMask Delegation Model
 """
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Dict, Any, Optional
+import json
+from typing import Dict, Any
 
 from sqlalchemy import Column, String, Boolean, Date, DateTime, Text, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
@@ -92,8 +93,7 @@ class Delegation(TenantBaseModel):
     approval_limit = Column(Numeric(15, 2), nullable=True)
     approval_currency = Column(String(3), default='TWD', nullable=False)
 
-    # 特定流程類型（JSON 陣列，如 ["請購單", "費用報銷"]）
-    # NULL = 所有流程
+    # 特定代理允許的表單模板 secure_code（JSON 陣列，如 ["abc...", "def..."]）
     allowed_process_types = Column(Text, nullable=True)
 
     # 授權原因
@@ -189,28 +189,29 @@ class Delegation(TenantBaseModel):
 
         return amount <= self.approval_limit
 
-    def can_handle_process(self, process_type: str) -> bool:
-        """
-        檢查代理人是否可處理指定流程類型
-
-        Args:
-            process_type: 流程類型
-
-        Returns:
-            是否可處理
-        """
-        if not self.is_active:
-            return False
-
-        if self.allowed_process_types is None:
-            return True  # 所有流程
-
-        import json
+    def get_allowed_form_templates(self) -> list[str]:
+        """取得特定代理允許的表單模板 secure_code 清單（解析失敗一律 fail-closed）。"""
+        if not self.allowed_process_types:
+            return []
         try:
-            allowed = json.loads(self.allowed_process_types)
-            return process_type in allowed
-        except:
-            return True
+            values = json.loads(self.allowed_process_types)
+        except (TypeError, ValueError):
+            return []
+        if not isinstance(values, list):
+            return []
+        return [str(v).strip() for v in values if str(v).strip()]
+
+    def set_allowed_form_templates(self, secure_codes: list[str]) -> None:
+        """設定特定代理允許的表單模板 secure_code 清單。"""
+        seen = set()
+        values = []
+        for secure_code in secure_codes or []:
+            value = str(secure_code).strip()
+            if not value or value in seen:
+                continue
+            seen.add(value)
+            values.append(value)
+        self.allowed_process_types = json.dumps(values) if values else None
 
     def activate(self) -> None:
         """啟動代理授權"""
@@ -244,6 +245,7 @@ class Delegation(TenantBaseModel):
             'approval_limit': float(self.approval_limit) if self.approval_limit else None,
             'approval_currency': self.approval_currency,
             'allowed_process_types': self.allowed_process_types,
+            'allowed_form_templates': self.get_allowed_form_templates(),
             'reason': self.reason,
         })
 

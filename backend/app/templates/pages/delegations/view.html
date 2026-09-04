@@ -53,7 +53,12 @@
             {{ _('未設定') }}
             {% endif %}
             {% elif delegation.delegation_type == 'SPECIFIC' %}
-            <strong>{{ _('特定代理') }}</strong> - {{ _('限定特定流程類型') }}
+            <strong>{{ _('特定代理') }}</strong> - {{ _('限定表單') }}
+            {% if delegation.allowed_form_names %}
+            {{ delegation.allowed_form_names|join('、') }}
+            {% else %}
+            {{ _('未設定') }}
+            {% endif %}
             {% else %}
             {{ delegation.delegation_type }}
             {% endif %}

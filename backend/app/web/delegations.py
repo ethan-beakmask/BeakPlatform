@@ -31,6 +31,58 @@ def _safe_next(value):
     return value
 
 
+
+def _fw_form_template_model():
+    """延後到函式內才 import 模組 model：`modules` 套件在 app 啟動後才進 sys.path，
+    模組層級 import 會讓 flask 啟動時 ModuleNotFoundError（2026-09-04 PF-71 踩到）。"""
+    from modules.form_workflow.models import FwFormTemplate
+    return FwFormTemplate
+
+def _form_template_options():
+    FwFormTemplate = _fw_form_template_model()
+    templates = FwFormTemplate.query.filter(
+        FwFormTemplate.org_secure_code == current_user.org_secure_code,
+        FwFormTemplate.is_deleted == False,  # noqa: E712
+    ).order_by(FwFormTemplate.name).all()
+    return [(t.secure_code, t.name, t.code) for t in templates]
+
+
+def _valid_form_template_codes(selected_codes):
+    selected = {str(sc).strip() for sc in selected_codes or [] if str(sc).strip()}
+    if not selected:
+        return []
+    FwFormTemplate = _fw_form_template_model()
+    rows = FwFormTemplate.query.filter(
+        FwFormTemplate.org_secure_code == current_user.org_secure_code,
+        FwFormTemplate.is_deleted == False,  # noqa: E712
+        FwFormTemplate.secure_code.in_(selected),
+    ).order_by(FwFormTemplate.name).all()
+    return [row.secure_code for row in rows]
+
+
+def _form_template_name_map(secure_codes):
+    codes = {str(sc).strip() for sc in secure_codes or [] if str(sc).strip()}
+    if not codes:
+        return {}
+    FwFormTemplate = _fw_form_template_model()
+    rows = FwFormTemplate.query.filter(
+        FwFormTemplate.org_secure_code == current_user.org_secure_code,
+        FwFormTemplate.is_deleted == False,  # noqa: E712
+        FwFormTemplate.secure_code.in_(codes),
+    ).all()
+    return {row.secure_code: row.name for row in rows}
+
+
+def _attach_allowed_form_names(delegation, name_map=None):
+    codes = delegation.get_allowed_form_templates()
+    names = []
+    for code in codes:
+        name = (name_map or {}).get(code)
+        if name:
+            names.append(name)
+    delegation.allowed_form_names = names
+
+
 @delegations_bp.route('/')
 def list_delegations():
     """代理授權列表頁面"""
@@ -40,6 +92,14 @@ def list_delegations():
         per_page=100,
         order_by='-created_at'
     )
+
+    specific_codes = []
+    for delegation in result['items']:
+        if delegation.delegation_type == DelegationType.SPECIFIC:
+            specific_codes.extend(delegation.get_allowed_form_templates())
+    name_map = _form_template_name_map(specific_codes)
+    for delegation in result['items']:
+        _attach_allowed_form_names(delegation, name_map)
 
     return render_template(
         'pages/delegations/list.html',
@@ -56,6 +116,10 @@ def view_delegation(secure_code: str):
     except Exception:
         abort(404)
 
+    _attach_allowed_form_names(
+        delegation,
+        _form_template_name_map(delegation.get_allowed_form_templates()),
+    )
     return render_template('pages/delegations/view.html', delegation=delegation)
 
 
@@ -69,9 +133,9 @@ def create_delegation():
     ).order_by(User.display_name).all()
 
     delegation_types = [
-        (DelegationType.FULL, '全權代理 - 代理所有權限'),
-        (DelegationType.APPROVAL, '限額代理 - 設定簽核金額上限'),
-        (DelegationType.SPECIFIC, '特定代理 - 限定特定流程類型'),
+        (DelegationType.FULL, _('全權代理 - 代理所有權限')),
+        (DelegationType.APPROVAL, _('限額代理 - 設定簽核金額上限')),
+        (DelegationType.SPECIFIC, _('特定代理 - 限定表單模板')),
     ]
     prefill = {
         'delegator_secure_code': request.form.get('delegator_secure_code') or request.args.get('delegator', ''),
@@ -81,7 +145,9 @@ def create_delegation():
         'effective_until': request.form.get('effective_until') or request.args.get('effective_until', ''),
         'reason': request.form.get('reason') or request.args.get('reason', ''),
         'next': _safe_next(request.form.get('next') or request.args.get('next')),
+        'allowed_form_templates': request.form.getlist('allowed_form_templates'),
     }
+    form_templates = _form_template_options()
 
     if request.method == 'POST':
         delegator_secure_code = request.form.get('delegator_secure_code', '').strip()
@@ -132,6 +198,14 @@ def create_delegation():
             except InvalidOperation:
                 errors.append(_('簽核金額上限格式錯誤'))
 
+        allowed_form_templates = []
+        if delegation_type == DelegationType.SPECIFIC:
+            allowed_form_templates = _valid_form_template_codes(
+                request.form.getlist('allowed_form_templates'))
+            prefill['allowed_form_templates'] = allowed_form_templates
+            if not allowed_form_templates:
+                errors.append(_('特定代理至少要選一個表單'))
+
         if errors:
             for err in errors:
                 flash(err, 'error')
@@ -149,6 +223,10 @@ def create_delegation():
                     reason=reason,
                     created_by=current_user.display_name
                 )
+                if delegation_type == DelegationType.SPECIFIC:
+                    delegation.set_allowed_form_templates(allowed_form_templates)
+                else:
+                    delegation.set_allowed_form_templates([])
                 # status 只是儲存當下的快照；生效與畫面顯示一律走 effective_status（依企業當地日期）
                 delegation.check_and_update_status()
                 db.session.add(delegation)
@@ -164,7 +242,8 @@ def create_delegation():
         'pages/delegations/create.html',
         users=users,
         delegation_types=delegation_types,
-        prefill=prefill
+        prefill=prefill,
+        form_templates=form_templates
     )
 
 
@@ -183,10 +262,11 @@ def edit_delegation(secure_code: str):
     ).order_by(User.display_name).all()
 
     delegation_types = [
-        (DelegationType.FULL, '全權代理'),
-        (DelegationType.APPROVAL, '限額代理'),
-        (DelegationType.SPECIFIC, '特定代理'),
+        (DelegationType.FULL, _('全權代理')),
+        (DelegationType.APPROVAL, _('限額代理')),
+        (DelegationType.SPECIFIC, _('特定代理')),
     ]
+    form_templates = _form_template_options()
 
     if request.method == 'POST':
         delegation_type = request.form.get('delegation_type', DelegationType.FULL)
@@ -222,6 +302,13 @@ def edit_delegation(secure_code: str):
             except InvalidOperation:
                 errors.append(_('簽核金額上限格式錯誤'))
 
+        allowed_form_templates = []
+        if delegation_type == DelegationType.SPECIFIC:
+            allowed_form_templates = _valid_form_template_codes(
+                request.form.getlist('allowed_form_templates'))
+            if not allowed_form_templates:
+                errors.append(_('特定代理至少要選一個表單'))
+
         if errors:
             for err in errors:
                 flash(err, 'error')
@@ -232,6 +319,10 @@ def edit_delegation(secure_code: str):
                 delegation.effective_until = effective_until
                 delegation.approval_limit = approval_limit
                 delegation.reason = reason
+                if delegation_type == DelegationType.SPECIFIC:
+                    delegation.set_allowed_form_templates(allowed_form_templates)
+                else:
+                    delegation.set_allowed_form_templates([])
 
                 # 同步 status 快照（依企業當地日期；已撤銷不變更）
                 delegation.check_and_update_status()
@@ -247,7 +338,8 @@ def edit_delegation(secure_code: str):
         'pages/delegations/edit.html',
         delegation=delegation,
         users=users,
-        delegation_types=delegation_types
+        delegation_types=delegation_types,
+        form_templates=form_templates
     )
 
 

@@ -11,6 +11,16 @@
     <a href="{{ url_for('delegations.view_delegation', secure_code=delegation.secure_code) }}">{{ _('[查看詳情]') }}</a>
 </p>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div style="margin-bottom: 16px;">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
@@ -39,7 +49,7 @@
         <tr>
             <th style="text-align: left;">{{ _('代理類型 *') }}</th>
             <td>
-                <select name="delegation_type" required style="width: 100%;" onchange="toggleApprovalLimit(this)">
+                <select name="delegation_type" required style="width: 100%;" onchange="toggleDelegationFields(this)">
                     {% for type_val, type_name in delegation_types %}
                     <option value="{{ type_val }}"
                             {% if delegation.delegation_type == type_val %}selected{% endif %}>
@@ -54,6 +64,21 @@
             <td>
                 <input type="number" name="approval_limit" min="0" step="1000" style="width: 100%;"
                        value="{{ delegation.approval_limit or '' }}">
+            </td>
+        </tr>
+        {% set selected_form_templates = request.form.getlist('allowed_form_templates') if request.method == 'POST' else delegation.get_allowed_form_templates() %}
+        <tr id="allowed_forms_row" style="{% if delegation.delegation_type != 'SPECIFIC' %}display: none;{% endif %}">
+            <th style="text-align: left; vertical-align: top;">{{ _('限定表單') }}</th>
+            <td>
+                <select name="allowed_form_templates" multiple size="8" style="width: 100%;">
+                    {% for secure_code, name, code in form_templates %}
+                    <option value="{{ secure_code }}"
+                            {% if secure_code in selected_form_templates %}selected{% endif %}>
+                        {{ _('%(name)s（%(code)s）', name=name, code=code) }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="text-muted" style="font-size: 0.8em;">{{ _('只在這些表單的簽核關卡上代理；其他表單不放行') }}</div>
             </td>
         </tr>
         <tr>
@@ -122,9 +147,15 @@
 </div>
 
 <script>
-function toggleApprovalLimit(select) {
-    var row = document.getElementById('approval_limit_row');
-    row.style.display = (select.value === 'APPROVAL') ? '' : 'none';
+function toggleDelegationFields(select) {
+    var approvalRow = document.getElementById('approval_limit_row');
+    var formsRow = document.getElementById('allowed_forms_row');
+    approvalRow.style.display = (select.value === 'APPROVAL') ? '' : 'none';
+    formsRow.style.display = (select.value === 'SPECIFIC') ? '' : 'none';
 }
+document.addEventListener('DOMContentLoaded', function() {
+    var select = document.querySelector('select[name="delegation_type"]');
+    if (select) toggleDelegationFields(select);
+});
 </script>
 {% endblock %}
