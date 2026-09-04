@@ -119,3 +119,50 @@
 /* 匯入 */
 .import-section { margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: var(--border-radius); }
 .import-section h4 { margin-top: 0; }
+
+/* 企業假日表底稿編輯 */
+.hc-subtitle {
+    color: var(--color-text-secondary);
+    margin: 5px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.hc-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.legend-box.hc-comp-off {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+}
+.hc-radio,
+.hc-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+}
+.hc-radio input[type="radio"],
+.hc-check input[type="checkbox"] { width: auto; }
+.hc-schedule-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+}
+.hc-modal-title {
+    margin: 0 0 10px;
+    font-weight: 600;
+}
+.hc-summary {
+    margin-top: 12px;
+    padding: 10px;
+    background: var(--color-info-light);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    display: grid;
+    gap: 4px;
+}

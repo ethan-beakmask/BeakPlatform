@@ -29,6 +29,7 @@ from .. import db
 from ..models import WorkSchedule, ScheduleHoliday
 from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
+from ..utils.work_periods import validate_time_period
 
 
 api_work_schedules = Blueprint('api_work_schedules', __name__, url_prefix='/api/admin')
@@ -314,10 +315,21 @@ def list_holidays(secure_code):
         ScheduleHoliday.is_deleted == False,
         db.extract('year', ScheduleHoliday.holiday_date) == year
     ).order_by(ScheduleHoliday.holiday_date).all()
+    calendar_scs = sorted({h.holiday_calendar_secure_code for h in holidays if h.holiday_calendar_secure_code})
+    calendar_names = {}
+    if calendar_scs:
+        from ..models import HolidayCalendar
+        calendars = HolidayCalendar.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
+            HolidayCalendar.org_secure_code == current_user.org_secure_code,
+            HolidayCalendar.secure_code.in_(calendar_scs),
+            HolidayCalendar.is_deleted == False,  # noqa: E712
+        ).all()
+        calendar_names = {row.secure_code: row.name for row in calendars}
 
     return jsonify({
         'success': True,
-        'data': [h.to_dict() for h in holidays]
+        'data': [h.to_dict() for h in holidays],
+        'calendar_names': calendar_names
     })
 
 
@@ -441,6 +453,7 @@ def update_holiday(secure_code, holiday_secure_code):
     if 'description' in data:
         holiday.description = data['description']
 
+    holiday.holiday_calendar_secure_code = None
     db.session.commit()
 
     return jsonify({
@@ -618,23 +631,10 @@ def _validate_weekly_hours(weekly_hours: dict) -> bool:
         for period in periods:
             if not isinstance(period, str):
                 return False
-            if not _validate_time_period(period):
+            if not validate_time_period(period):
                 return False
 
     return True
-
-
-def _validate_time_period(period: str) -> bool:
-    """
-    驗證時段格式 (HH:MM-HH:MM)
-    """
-    try:
-        start, end = period.split('-')
-        datetime.strptime(start.strip(), '%H:%M')
-        datetime.strptime(end.strip(), '%H:%M')
-        return True
-    except (ValueError, AttributeError):
-        return False
 
 
 def _clear_default_schedule():

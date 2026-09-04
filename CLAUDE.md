@@ -1425,6 +1425,24 @@ org 與 owner 一律取自登入身分、payload 給了也忽略。五件猜不�
 投影規則表、時區處理、前端行為與已知取捨見 `dev-notes/CALENDAR_SPEC.md`。
 班表假日 API 2026-09-02 起收下 `COMP_OFF`（視同休假），`saveHoliday()` 改用 `result.imported` 回報。
 
+### 假日表與預設班表（PF-235，2026-09-04）：發佈是「複製進班表」，不是讀取端多查一張表
+
+三層：客製班表（帳號指定，最優先）> 企業假日表（`holiday_calendars` 底稿，發佈後才生效）> 企業預設班表
+（建企業時 `ScheduleService.ensure_default_schedule()` 依企業設定 `country` 自動種，週休依 `regions.py` 對照）。
+**發佈＝把 PUBLISHED 條目寫進所選班表的 `schedule_holidays` 並標 `holiday_calendar_secure_code`**（NULL＝手動列），
+`WorkSchedule.get_day_periods()`／`ScheduleService`／行事曆投影一行未改。唯一實作
+`backend/app/services/holiday_calendar_service.py`，規則與已知取捨在 `dev-notes/CALENDAR_SPEC.md` 第八節。四件靜默的：
+
+- **手動列永遠贏**，自訂表 > 政府表；**下架較高優先的表不會恢復被它取代的列**，那天就沒假日，要重發佈政府表
+- 班表假日頁 PUT 任何欄位都會把來源清成 NULL（變手動列），之後發佈不再覆蓋它——這是設計，不是漏更新
+- 「從網路取得台灣行事曆」是伺服器端抓 jsDelivr 固定 URL（`TW_GOV_CALENDAR_URL`），封閉網路一律回 502 `fetch_failed`，改用上傳；
+  資料出處與授權寫在主機設定「套件版本」分類的「外部資料來源與授權」卡片（`_ss_packages.py::DATA_SOURCES`），不要複製 URL 到別處
+- **既有環境（bpserv）升級三步**：`--update` 的 create_all 只建兩張新表；`schedule_holidays.holiday_calendar_secure_code` 欄位＋索引要手動 ALTER
+  （SQL 在 CALENDAR_SPEC 第八節）；再跑 `venv/bin/python scripts/seed_default_work_schedules.py --apply` 補預設班表，
+  否則沒班表的企業發佈時沒有目標可勾、行事曆也永遠沒國定假日
+
+`DEFAULT_TW_HOLIDAYS_2026` 與 `holidays.js::importTWHolidays()` 已刪除；看到舊文件寫「[匯入台灣假日] 只有 2026 年資料」一律過時。
+
 ### 造／清測試帳號（2026-08-23 試誤才弄對）
 
 - `POST /api/users/` 必填四項：`native_name` / `english_name` / `username` /

@@ -244,6 +244,20 @@
                     </td>
                 </tr>
                 <tr>
+                    <th style="text-align: left;">{{ _('國家／地區') }}</th>
+                    <td>
+                        <select x-model="settings.country" @change="saveSettings()"
+                                style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 280px;">
+                            {% for country_code, country_name in country_choices %}
+                            <option value="{{ country_code }}">{{ country_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            {{ _('決定新企業預設班表的週休日，以及假日表「從網路取得」的資料來源（目前僅台灣提供）') }}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
                     <th style="text-align: left;">{{ _('企業主要時區') }}</th>
                     <td>
                         <select x-model="settings.timezone" @change="saveSettings()"

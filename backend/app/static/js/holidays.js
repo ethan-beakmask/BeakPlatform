@@ -9,6 +9,7 @@ function holidaysApp() {
         year: cfg.year || new Date().getFullYear(),
         holidays: [],
         holidayMap: {},
+        calendarNames: {},
         showModal: false,
         editingHoliday: null,
         saving: false,
@@ -45,11 +46,17 @@ function holidaysApp() {
                 const result = await response.json();
                 if (result.success) {
                     this.holidays = result.data;
+                    this.calendarNames = result.calendar_names || {};
                     this.buildHolidayMap();
                 }
             } catch (error) {
                 console.error('載入假日失敗:', error);
             }
+        },
+
+        calendarBadgeName(h) {
+            if (!h.holiday_calendar_secure_code) return '';
+            return this.calendarNames[h.holiday_calendar_secure_code] || h.holiday_calendar_secure_code;
         },
 
         buildHolidayMap() {
@@ -280,41 +287,6 @@ function holidaysApp() {
                 await this.loadHolidays();
             } catch (error) { this.showMessage(__('操作失敗: ') + error.message, 'error'); }
             finally { this.saving = false; }
-        },
-
-        async importTWHolidays() {
-            const twHolidays2026 = [
-                { date: '2026-01-01', type: 'HOLIDAY', description: __('中華民國開國紀念日') },
-                { date: '2026-01-02', type: 'HOLIDAY', description: __('彈性放假') },
-                { date: '2026-02-16', type: 'HOLIDAY', description: __('農曆除夕') },
-                { date: '2026-02-17', type: 'HOLIDAY', description: __('春節') },
-                { date: '2026-02-18', type: 'HOLIDAY', description: __('春節') },
-                { date: '2026-02-19', type: 'HOLIDAY', description: __('春節') },
-                { date: '2026-02-20', type: 'HOLIDAY', description: __('春節補假') },
-                { date: '2026-02-28', type: 'HOLIDAY', description: __('和平紀念日') },
-                { date: '2026-04-04', type: 'HOLIDAY', description: __('兒童節') },
-                { date: '2026-04-05', type: 'HOLIDAY', description: __('清明節') },
-                { date: '2026-04-06', type: 'HOLIDAY', description: __('彈性放假') },
-                { date: '2026-05-31', type: 'HOLIDAY', description: __('端午節') },
-                { date: '2026-10-04', type: 'HOLIDAY', description: __('中秋節') },
-                { date: '2026-10-05', type: 'HOLIDAY', description: __('中秋節補假') },
-                { date: '2026-10-10', type: 'HOLIDAY', description: __('國慶日') }
-            ];
-            if (this.year !== 2026) {
-                this.showMessage(__('目前僅支援 2026 年台灣假日資料'), 'error');
-                return;
-            }
-            if (!confirm(__('確定要匯入 2026 年台灣國定假日嗎？已存在的日期將略過。'))) return;
-            try {
-                const response = await fetch(`${window.__BP}/api/admin/work-schedules/${this.scheduleId}/holidays/batch`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ holidays: twHolidays2026, replace_year: false })
-                });
-                const result = await response.json();
-                if (result.success) { this.showMessage(result.message, 'success'); await this.loadHolidays(); }
-                else { this.showMessage(result.message, 'error'); }
-            } catch (error) { this.showMessage(__('匯入失敗: ') + error.message, 'error'); }
         },
 
         showMessage(msg, type) {

@@ -104,6 +104,7 @@ class Organization(BaseModel):
     DEFAULT_SETTINGS = {
         'allow_user_self_edit': True,  # 允許用戶修改自己的資料
         'locale': 'zh-TW',            # 企業常用語系
+        'country': 'TW',              # ISO 3166-1 alpha-2，決定預設班表週休日與假日表網路來源
         'timezone': 'Asia/Taipei',    # 企業主要時區
         'name_connector': '.',        # 帳號姓名連接符號 (., _, -, 或空字串)
         'display_name_field': 'native_name',  # 顯示名稱欄位 (native_name|english_name|nickname|username|employee_id)

@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div x-data="holidaysApp()">
+<div x-data='holidaysApp()'>
     <p>
         <a href="{{ url_for('work_schedules.list_schedules') }}">{{ _('&lt; 返回班表列表') }}</a>
     </p>
@@ -99,6 +99,9 @@
                             <td>
                                 <span :class="getTypeBadgeClass(h.holiday_type)"
                                       x-text="getTypeLabel(h.holiday_type)"></span>
+                                <template x-if="h.holiday_calendar_secure_code">
+                                    <span class="badge badge-info" x-text="__('假日表：{name}', {name: calendarBadgeName(h)})"></span>
+                                </template>
                             </td>
                             <td x-text="h.description || '-'"></td>
                             <td x-text="h.work_periods ? h.work_periods.join(', ') : '-'"></td>
@@ -116,13 +119,11 @@
         </template>
     </div>
 
-    <!-- Import Section -->
     <div class="import-section">
-        <h4>{{ _('批次匯入') }}</h4>
-        <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
-            {{ _('匯入') }} <span x-text="year"></span> {{ _('年台灣國定假日') }}
+        <p style="font-size: 13px; color: #666; margin: 0 0 10px;">
+            {{ _('國定假日請到「基本班表」頁的「假日表」區塊取得或上傳，發佈到本班表後會出現在這裡；來自假日表的日期手動修改後就不再被下次發佈覆蓋') }}
         </p>
-        <button class="btn btn-secondary" @click="importTWHolidays()">{{ _('匯入') }} <span x-text="year"></span> {{ _('年台灣假日') }}</button>
+        <a class="btn btn-secondary" href="{{ url_for('work_schedules.list_schedules') }}">{{ _('返回基本班表') }}</a>
     </div>
 
     <!-- Add/Edit Modal -->

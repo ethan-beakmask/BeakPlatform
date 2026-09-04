@@ -5,12 +5,15 @@
 - /admin/settings/work-schedules - 基本班表列表
 - /admin/settings/work-schedules/<code>/holidays - 共用月曆（假日管理）
 """
+from datetime import date
+
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..models import WorkSchedule, ScheduleHoliday
+from ..models import HolidayCalendar, WorkSchedule, ScheduleHoliday
 from .. import db
+from ..security.decorators import admin_required
 
 work_schedules_bp = Blueprint('work_schedules', __name__)
 
@@ -32,7 +35,8 @@ def list_schedules():
     return render_template(
         'pages/admin/time/schedules.html',
         schedules=schedules,
-        schedules_json=schedules_data
+        schedules_json=schedules_data,
+        current_year=date.today().year
     )
 
 
@@ -55,11 +59,38 @@ def schedule_holidays(secure_code):
         return redirect(url_for('work_schedules.list_schedules'))
 
     # 取得年份參數，預設當年
-    from datetime import date
     year = request.args.get('year', date.today().year, type=int)
 
     return render_template(
         'pages/admin/time/holidays.html',
         schedule=schedule,
         year=year
+    )
+
+
+@work_schedules_bp.route('/admin/settings/holiday-calendars/<secure_code>')
+@admin_required
+def holiday_calendar_edit(secure_code):
+    """企業假日表底稿編輯頁面"""
+    calendar = HolidayCalendar.query.filter_by(
+        org_secure_code=current_user.org_secure_code,
+        secure_code=secure_code,
+        is_deleted=False
+    ).first()
+    if not calendar:
+        flash(_('假日表不存在'), 'error')
+        return redirect(url_for('work_schedules.list_schedules'))
+    schedules = WorkSchedule.query.filter_by(
+        org_secure_code=current_user.org_secure_code,
+        is_deleted=False
+    ).order_by(
+        WorkSchedule.is_default.desc(),
+        WorkSchedule.name
+    ).all()
+    year = calendar.year or request.args.get('year', date.today().year, type=int)
+    return render_template(
+        'pages/admin/time/holiday_calendar_edit.html',
+        calendar=calendar,
+        year=year,
+        schedules_json=[s.to_dict() for s in schedules],
     )

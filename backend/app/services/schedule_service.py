@@ -16,10 +16,49 @@ from ..models import (
     PersonalSchedule, ScheduleAdjustment
 )
 from .. import db
+from ..utils.regions import build_default_weekly_hours
 
 
 class ScheduleService:
     """班表服務類"""
+
+    @staticmethod
+    def ensure_default_schedule(org) -> Optional[WorkSchedule]:
+        """企業沒有預設班表時建立一張；已有就原樣回傳。不 commit，由呼叫端決定。"""
+        if org.is_system_org:
+            return None
+
+        existing = WorkSchedule.query.filter_by(
+            org_secure_code=org.secure_code,
+            is_default=True,
+            is_deleted=False,
+        ).first()
+        if existing:
+            return existing
+
+        schedule_code = 'DEFAULT'
+        suffix = 2
+        while WorkSchedule.query.filter_by(
+            org_secure_code=org.secure_code,
+            schedule_code=schedule_code,
+            is_deleted=False,
+        ).first():
+            schedule_code = f'DEFAULT-{suffix}'
+            suffix += 1
+
+        schedule = WorkSchedule(
+            org_secure_code=org.secure_code,
+            schedule_code=schedule_code,
+            name='企業預設班表',
+            timezone=org.get_setting('timezone', 'Asia/Taipei'),
+            weekly_hours=build_default_weekly_hours(org.get_setting('country', 'TW')),
+            is_default=True,
+            is_active=True,
+            description='依企業國家／地區自動產生的週休預設，請依實際情況調整',
+        )
+        db.session.add(schedule)
+        db.session.flush()
+        return schedule
 
     @staticmethod
     def get_user_schedule(user: User) -> Optional[WorkSchedule]:

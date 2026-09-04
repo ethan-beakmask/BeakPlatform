@@ -25,6 +25,7 @@ class ScheduleHoliday(TenantBaseModel):
     - WORKDAY: 補班日
 
     優先級：假日設定 > 週間預設
+    holiday_calendar_secure_code 為 NULL 代表手動設定；有值代表由企業假日表發佈寫入。
     """
     __tablename__ = 'schedule_holidays'
 
@@ -48,6 +49,9 @@ class ScheduleHoliday(TenantBaseModel):
     # 說明 (如: 中秋節, 補班日)
     description = Column(String(200), nullable=True)
 
+    # 來源假日表；NULL 表示手動設定。不設 FK，避免刪除假日表時產生順序耦合。
+    holiday_calendar_secure_code = Column(String(32), nullable=True, index=True)
+
     # 關聯：所屬班表
     schedule = relationship('WorkSchedule', back_populates='holidays')
 
@@ -66,28 +70,9 @@ class ScheduleHoliday(TenantBaseModel):
             'holiday_type': self.holiday_type,
             'work_periods': self.work_periods,
             'description': self.description,
+            'holiday_calendar_secure_code': self.holiday_calendar_secure_code,
         })
         return base
 
     def __repr__(self):
         return f'<ScheduleHoliday {self.holiday_date}: {self.holiday_type}>'
-
-
-# 2026 年台灣國定假日 (供 seed 使用)
-DEFAULT_TW_HOLIDAYS_2026 = [
-    {'date': '2026-01-01', 'type': 'HOLIDAY', 'desc': '中華民國開國紀念日'},
-    {'date': '2026-01-02', 'type': 'HOLIDAY', 'desc': '彈性放假'},
-    {'date': '2026-02-16', 'type': 'HOLIDAY', 'desc': '農曆除夕'},
-    {'date': '2026-02-17', 'type': 'HOLIDAY', 'desc': '春節'},
-    {'date': '2026-02-18', 'type': 'HOLIDAY', 'desc': '春節'},
-    {'date': '2026-02-19', 'type': 'HOLIDAY', 'desc': '春節'},
-    {'date': '2026-02-20', 'type': 'HOLIDAY', 'desc': '春節補假'},
-    {'date': '2026-02-28', 'type': 'HOLIDAY', 'desc': '和平紀念日'},
-    {'date': '2026-04-04', 'type': 'HOLIDAY', 'desc': '兒童節'},
-    {'date': '2026-04-05', 'type': 'HOLIDAY', 'desc': '清明節'},
-    {'date': '2026-04-06', 'type': 'HOLIDAY', 'desc': '彈性放假'},
-    {'date': '2026-05-31', 'type': 'HOLIDAY', 'desc': '端午節'},
-    {'date': '2026-10-04', 'type': 'HOLIDAY', 'desc': '中秋節'},
-    {'date': '2026-10-05', 'type': 'HOLIDAY', 'desc': '中秋節補假'},
-    {'date': '2026-10-10', 'type': 'HOLIDAY', 'desc': '國慶日'},
-]

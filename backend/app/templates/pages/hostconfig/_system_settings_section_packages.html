@@ -47,6 +47,40 @@
         </div>
     </template>
 
+    <!-- 外部資料來源 -->
+    <template x-if="packages.dataSources.length > 0">
+        <div class="settings-card">
+            <h4>{{ _('外部資料來源與授權') }}</h4>
+            <div style="overflow-x: auto;">
+                <table class="config-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('資料') }}</th>
+                            <th>{{ _('提供者') }}</th>
+                            <th>{{ _('授權') }}</th>
+                            <th>{{ _('整理者') }}</th>
+                            <th>{{ _('取用端點') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="source in packages.dataSources" :key="source.key">
+                            <tr>
+                                <td><a :href="source.provider_url" target="_blank" rel="noopener" x-text="source.name"></a></td>
+                                <td x-text="source.provider"></td>
+                                <td x-text="source.license"></td>
+                                <td><a :href="source.curator_url" target="_blank" rel="noopener" x-text="source.curator"></a></td>
+                                <td x-text="source.endpoint" style="font-family: monospace;"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <p style="font-size: 13px; color: #666; margin: 10px 0 0;">
+                {{ _('用於「基本班表」的假日表「從網路取得台灣行事曆」功能；資料只在管理員按下按鈕時抓取，不會自動連線') }}
+            </p>
+        </div>
+    </template>
+
     <!-- 系統服務表格 -->
     <template x-if="packages.services.length > 0">
         <div class="settings-card">

@@ -1521,6 +1521,193 @@ routes:
     rules:
     - /api/admin/settings/password-policy/validate
     source: backend/app/api/enterprise_settings.py
+  api_holiday_calendars.add_entry:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - POST
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /api/admin/holiday-calendars/<secure_code>/draft-entries
+    source: backend/app/api/holiday_calendars.py
+  api_holiday_calendars.delete_calendar:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - DELETE
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /api/admin/holiday-calendars/<secure_code>
+    source: backend/app/api/holiday_calendars.py
+  api_holiday_calendars.delete_entry:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - DELETE
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /api/admin/holiday-calendars/<secure_code>/draft-entries/<entry_secure_code>
+    source: backend/app/api/holiday_calendars.py
+  api_holiday_calendars.fetch_taiwan:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - POST
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /api/admin/holiday-calendars/fetch-taiwan
+    source: backend/app/api/holiday_calendars.py
+  api_holiday_calendars.get_calendar:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - GET
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /api/admin/holiday-calendars/<secure_code>
+    source: backend/app/api/holiday_calendars.py
+  api_holiday_calendars.import_calendar:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - POST
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /api/admin/holiday-calendars/import
+    source: backend/app/api/holiday_calendars.py
+  api_holiday_calendars.list_calendars:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - GET
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /api/admin/holiday-calendars/
+    source: backend/app/api/holiday_calendars.py
+  api_holiday_calendars.publish_calendar:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - POST
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /api/admin/holiday-calendars/<secure_code>/publish
+    source: backend/app/api/holiday_calendars.py
+  api_holiday_calendars.unpublish_calendar:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - POST
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /api/admin/holiday-calendars/<secure_code>/unpublish
+    source: backend/app/api/holiday_calendars.py
+  api_holiday_calendars.update_calendar:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - PUT
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /api/admin/holiday-calendars/<secure_code>
+    source: backend/app/api/holiday_calendars.py
+  api_holiday_calendars.update_entry:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - PUT
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /api/admin/holiday-calendars/<secure_code>/draft-entries/<entry_secure_code>
+    source: backend/app/api/holiday_calendars.py
   api_menu.create_menu_item:
     answer_source: code
     guard_args: {}
@@ -14428,6 +14615,23 @@ routes:
     rules:
     - /vuln/risk
     source: modules/vuln_lifecycle/web/__init__.py
+  work_schedules.holiday_calendar_edit:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - SYSTEM_ADMIN
+    methods:
+    - GET
+    note: 'PF-235 holiday calendar admin route; tenant isolation is enforced by explicit org_secure_code filters in API/service.'
+    review: confirmed
+    rules:
+    - /admin/settings/holiday-calendars/<secure_code>
+    source: backend/app/web/work_schedules.py
   work_schedules.list_schedules:
     answer_source: none
     guard_args: {}

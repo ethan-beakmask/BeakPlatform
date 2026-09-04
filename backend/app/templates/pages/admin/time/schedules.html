@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div x-data="schedulesApp()">
+<div x-data='schedulesApp()'>
     <div style="margin-bottom:12px;">
         <a href="{{ url_for('admin.settings') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回系統設定') }}</a>
     </div>
@@ -93,6 +93,8 @@
             <button class="btn btn-primary" @click="openCreateModal()">{{ _('建立第一個班表') }}</button>
         </div>
     </template>
+
+    {% include 'pages/admin/time/_holiday_calendars_section.html' %}
 
     <!-- Help -->
     <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
@@ -223,6 +225,11 @@
 window.__SCHEDULES_CONFIG = {
     schedules: {{ schedules_json | tojson | safe }}
 };
+window.__HOLIDAY_CAL_CONFIG = {
+    schedules: {{ schedules_json | tojson | safe }},
+    year: {{ current_year }}
+};
 </script>
 <script src="{{ url_for('static', filename='js/schedules.js') }}"></script>
+<script src="{{ url_for('static', filename='js/holiday-calendars.js') }}"></script>
 {% endblock %}

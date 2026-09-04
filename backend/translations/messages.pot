@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-04 02:15+0800\n"
+"POT-Creation-Date: 2026-09-04 17:07+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -231,7 +231,7 @@ msgstr ""
 #: app/api/_ss_emailrelay.py:419 app/api/_ss_emailrelay.py:439
 #: app/web/external_users.py:531 app/web/external_users.py:584
 #: app/web/external_users.py:633 app/web/org_admin_rescue.py:100
-#: app/web/org_admins.py:502 app/web/users.py:798
+#: app/web/org_admins.py:502 app/web/users.py:799
 #, python-format
 msgid "操作失敗: %(error)s"
 msgstr ""
@@ -360,37 +360,37 @@ msgstr ""
 #: app/api/_ss_recipient_groups.py:58 app/api/_ss_recipient_groups.py:120
 #: app/api/_ss_smtp.py:65 app/api/_ss_smtp.py:145 app/api/_ss_smtp.py:221
 #: app/api/_ss_telegram.py:57 app/api/_ss_telegram.py:121
-#: app/api/_ss_telegram.py:185 app/api/enterprise_settings.py:72
-#: app/api/enterprise_settings.py:117 app/api/enterprise_settings.py:220
-#: app/api/enterprise_settings.py:428 app/api/enterprise_settings.py:510
-#: app/api/enterprise_settings.py:588 app/api/enterprise_settings.py:695
-#: app/api/enterprise_settings.py:761 app/api/enterprise_settings.py:827
-#: app/api/enterprise_settings.py:916 app/api/enterprise_settings.py:980
-#: app/api/work_schedules.py:91 app/api/work_schedules.py:181
-#: app/api/work_schedules.py:350 app/api/work_schedules.py:425
+#: app/api/_ss_telegram.py:185 app/api/enterprise_settings.py:73
+#: app/api/enterprise_settings.py:121 app/api/enterprise_settings.py:224
+#: app/api/enterprise_settings.py:432 app/api/enterprise_settings.py:514
+#: app/api/enterprise_settings.py:592 app/api/enterprise_settings.py:699
+#: app/api/enterprise_settings.py:765 app/api/enterprise_settings.py:831
+#: app/api/enterprise_settings.py:920 app/api/enterprise_settings.py:984
+#: app/api/work_schedules.py:92 app/api/work_schedules.py:182
+#: app/api/work_schedules.py:362 app/api/work_schedules.py:437
 msgid "請提供資料"
 msgstr ""
 
-#: app/api/_ss_recipient_groups.py:61 app/api/enterprise_settings.py:919
+#: app/api/_ss_recipient_groups.py:61 app/api/enterprise_settings.py:923
 msgid "請填寫群組名稱"
 msgstr ""
 
-#: app/api/_ss_recipient_groups.py:83 app/api/enterprise_settings.py:941
+#: app/api/_ss_recipient_groups.py:83 app/api/enterprise_settings.py:945
 msgid "收件人群組已建立"
 msgstr ""
 
 #: app/api/_ss_recipient_groups.py:98 app/api/_ss_recipient_groups.py:116
 #: app/api/_ss_recipient_groups.py:161 app/api/_ss_recipient_groups.py:187
-#: app/api/enterprise_settings.py:957 app/api/enterprise_settings.py:976
-#: app/api/enterprise_settings.py:1022 app/api/enterprise_settings.py:1050
+#: app/api/enterprise_settings.py:961 app/api/enterprise_settings.py:980
+#: app/api/enterprise_settings.py:1026 app/api/enterprise_settings.py:1054
 msgid "群組不存在"
 msgstr ""
 
-#: app/api/_ss_recipient_groups.py:146 app/api/enterprise_settings.py:1006
+#: app/api/_ss_recipient_groups.py:146 app/api/enterprise_settings.py:1010
 msgid "收件人群組已更新"
 msgstr ""
 
-#: app/api/_ss_recipient_groups.py:169 app/api/enterprise_settings.py:1030
+#: app/api/_ss_recipient_groups.py:169 app/api/enterprise_settings.py:1034
 msgid "收件人群組已刪除"
 msgstr ""
 
@@ -399,52 +399,52 @@ msgid "系統級群組需手動指定收件人"
 msgstr ""
 
 #: app/api/_ss_smtp.py:71 app/api/_ss_smtp.py:226
-#: app/api/enterprise_settings.py:434 app/api/enterprise_settings.py:593
+#: app/api/enterprise_settings.py:438 app/api/enterprise_settings.py:597
 #, python-format
 msgid "請填寫 %(field)s"
 msgstr ""
 
-#: app/api/_ss_smtp.py:108 app/api/enterprise_settings.py:471
+#: app/api/_ss_smtp.py:108 app/api/enterprise_settings.py:475
 msgid "SMTP 設定已建立"
 msgstr ""
 
 #: app/api/_ss_smtp.py:123 app/api/_ss_smtp.py:141 app/api/_ss_smtp.py:191
 #: app/api/_ss_smtp.py:255 app/api/_ss_telegram.py:99
 #: app/api/_ss_telegram.py:117 app/api/_ss_telegram.py:161
-#: app/api/_ss_telegram.py:213 app/api/enterprise_settings.py:487
-#: app/api/enterprise_settings.py:506 app/api/enterprise_settings.py:557
-#: app/api/enterprise_settings.py:623 app/api/enterprise_settings.py:738
-#: app/api/enterprise_settings.py:757 app/api/enterprise_settings.py:802
-#: app/api/enterprise_settings.py:856
+#: app/api/_ss_telegram.py:213 app/api/enterprise_settings.py:491
+#: app/api/enterprise_settings.py:510 app/api/enterprise_settings.py:561
+#: app/api/enterprise_settings.py:627 app/api/enterprise_settings.py:742
+#: app/api/enterprise_settings.py:761 app/api/enterprise_settings.py:806
+#: app/api/enterprise_settings.py:860
 msgid "設定不存在"
 msgstr ""
 
-#: app/api/_ss_smtp.py:176 app/api/enterprise_settings.py:541
+#: app/api/_ss_smtp.py:176 app/api/enterprise_settings.py:545
 msgid "SMTP 設定已更新"
 msgstr ""
 
-#: app/api/_ss_smtp.py:199 app/api/enterprise_settings.py:565
+#: app/api/_ss_smtp.py:199 app/api/enterprise_settings.py:569
 msgid "SMTP 設定已刪除"
 msgstr ""
 
-#: app/api/_ss_telegram.py:60 app/api/enterprise_settings.py:698
+#: app/api/_ss_telegram.py:60 app/api/enterprise_settings.py:702
 msgid "請填寫設定名稱"
 msgstr ""
 
 #: app/api/_ss_telegram.py:63 app/api/_ss_telegram.py:188
-#: app/api/enterprise_settings.py:701 app/api/enterprise_settings.py:830
+#: app/api/enterprise_settings.py:705 app/api/enterprise_settings.py:834
 msgid "請填寫 Bot Token"
 msgstr ""
 
-#: app/api/_ss_telegram.py:84 app/api/enterprise_settings.py:722
+#: app/api/_ss_telegram.py:84 app/api/enterprise_settings.py:726
 msgid "Telegram 設定已建立"
 msgstr ""
 
-#: app/api/_ss_telegram.py:146 app/api/enterprise_settings.py:786
+#: app/api/_ss_telegram.py:146 app/api/enterprise_settings.py:790
 msgid "Telegram 設定已更新"
 msgstr ""
 
-#: app/api/_ss_telegram.py:169 app/api/enterprise_settings.py:810
+#: app/api/_ss_telegram.py:169 app/api/enterprise_settings.py:814
 msgid "Telegram 設定已刪除"
 msgstr ""
 
@@ -592,18 +592,18 @@ msgid "找不到目標企業"
 msgstr ""
 
 #: ../modules/form_workflow/api/ai_usage.py:37 app/api/auth.py:1308
-#: app/api/enterprise_settings.py:54 app/api/enterprise_settings.py:68
-#: app/api/enterprise_settings.py:95 app/api/enterprise_settings.py:113
-#: app/api/enterprise_settings.py:193 app/api/enterprise_settings.py:216
-#: app/api/enterprise_settings.py:244 app/api/enterprise_settings.py:264
-#: app/api/enterprise_settings.py:303 app/api/enterprise_settings.py:328
-#: app/api/enterprise_settings.py:371 app/api/files.py:150 app/api/files.py:251
+#: app/api/enterprise_settings.py:55 app/api/enterprise_settings.py:69
+#: app/api/enterprise_settings.py:99 app/api/enterprise_settings.py:117
+#: app/api/enterprise_settings.py:197 app/api/enterprise_settings.py:220
+#: app/api/enterprise_settings.py:248 app/api/enterprise_settings.py:268
+#: app/api/enterprise_settings.py:307 app/api/enterprise_settings.py:332
+#: app/api/enterprise_settings.py:375 app/api/files.py:150 app/api/files.py:251
 #: app/api/files.py:419 app/api/files.py:455 app/api/files.py:489
 #: app/api/files.py:522 app/api/files.py:557
 msgid "找不到企業"
 msgstr ""
 
-#: app/api/auth.py:1384 app/api/enterprise_settings.py:268
+#: app/api/auth.py:1384 app/api/enterprise_settings.py:272
 msgid "請提供密碼"
 msgstr ""
 
@@ -645,7 +645,7 @@ msgid "請提供 start 與 end"
 msgstr ""
 
 #: app/api/calendar.py:177 app/api/contracts.py:123
-#: app/api/work_schedules.py:365
+#: app/api/work_schedules.py:377
 msgid "日期格式錯誤，請使用 YYYY-MM-DD"
 msgstr ""
 
@@ -687,7 +687,7 @@ msgstr ""
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:414
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:836
 #: app/api/conglomerates.py:84 app/api/conglomerates.py:276
-#: app/api/users.py:283 app/web/approval_categories.py:189
+#: app/api/users.py:284 app/web/approval_categories.py:189
 #: app/web/delegations.py:161 app/web/external_users.py:332
 #: app/web/job_families.py:239 app/web/job_families.py:240
 #: app/web/job_levels.py:181 app/web/job_titles.py:266
@@ -695,7 +695,7 @@ msgstr ""
 #: app/web/modules.py:123 app/web/org_admins.py:284 app/web/org_admins.py:451
 #: app/web/organizations.py:283 app/web/positions.py:145
 #: app/web/sys_accounts.py:171 app/web/sys_accounts.py:172 app/web/units.py:128
-#: app/web/users.py:491
+#: app/web/users.py:492
 #, python-format
 msgid "建立失敗: %(error)s"
 msgstr ""
@@ -719,7 +719,7 @@ msgstr ""
 #: app/web/job_titles.py:344 app/web/job_titles.py:345 app/web/menu.py:483
 #: app/web/modules.py:183 app/web/organizations.py:342 app/web/positions.py:239
 #: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:188
-#: app/web/users.py:698
+#: app/web/users.py:699
 #, python-format
 msgid "更新失敗: %(error)s"
 msgstr ""
@@ -904,50 +904,54 @@ msgstr ""
 msgid "tier、meter、threshold 為必填且格式需正確"
 msgstr ""
 
-#: app/api/enterprise_settings.py:80
+#: app/api/enterprise_settings.py:76
+msgid "國家／地區代碼無效"
+msgstr ""
+
+#: app/api/enterprise_settings.py:84
 msgid "設定已儲存"
 msgstr ""
 
-#: app/api/enterprise_settings.py:133
+#: app/api/enterprise_settings.py:137
 #, python-format
 msgid "%(field)s 無效，允許值: %(values)s"
 msgstr ""
 
-#: app/api/enterprise_settings.py:149
+#: app/api/enterprise_settings.py:153
 msgid "登入安全欄位設定已儲存"
 msgstr ""
 
-#: app/api/enterprise_settings.py:228
+#: app/api/enterprise_settings.py:232
 msgid "密碼政策已儲存"
 msgstr ""
 
-#: app/api/enterprise_settings.py:331
+#: app/api/enterprise_settings.py:335
 msgid "請選擇圖片檔案"
 msgstr ""
 
-#: app/api/enterprise_settings.py:352
+#: app/api/enterprise_settings.py:356
 msgid "Logo 上傳成功"
 msgstr ""
 
 #: ../modules/form_workflow/api/backgrounds.py:112
-#: app/api/enterprise_settings.py:362 app/api/files.py:182
+#: app/api/enterprise_settings.py:366 app/api/files.py:182
 #, python-format
 msgid "上傳失敗: %(error)s"
 msgstr ""
 
-#: app/api/enterprise_settings.py:375
+#: app/api/enterprise_settings.py:379
 #: app/templates/pages/admin/settings.html:92
 msgid "尚未上傳 Logo"
 msgstr ""
 
-#: app/api/enterprise_settings.py:380
+#: app/api/enterprise_settings.py:384
 msgid "Logo 已刪除"
 msgstr ""
 
 #: ../modules/form_workflow/api/backgrounds.py:194
 #: ../modules/form_workflow/api/categories.py:360
 #: ../modules/form_workflow/api/form_themes.py:264
-#: app/api/enterprise_settings.py:383 app/api/files.py:474
+#: app/api/enterprise_settings.py:387 app/api/files.py:474
 #: app/web/approval_categories.py:327 app/web/delegations.py:294
 #: app/web/external_users.py:671 app/web/job_families.py:421
 #: app/web/job_families.py:422 app/web/job_levels.py:318
@@ -955,7 +959,7 @@ msgstr ""
 #: app/web/modules.py:211 app/web/org_admins.py:539
 #: app/web/organizations.py:418 app/web/positions.py:267
 #: app/web/sys_accounts.py:315 app/web/sys_accounts.py:316 app/web/units.py:221
-#: app/web/users.py:759
+#: app/web/users.py:760
 #, python-format
 msgid "刪除失敗: %(error)s"
 msgstr ""
@@ -1033,6 +1037,120 @@ msgstr ""
 
 #: app/api/files.py:527
 msgid "未指定 context_id"
+msgstr ""
+
+#: app/api/holiday_calendars.py:124 app/api/holiday_calendars.py:162
+#: app/api/work_schedules.py:461
+msgid "已更新"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_phrases.py:176
+#: ../modules/form_workflow/api/template_routes.py:239
+#: ../modules/form_workflow/api/workflow_routes.py:745
+#: ../modules/nocode_builder/api/portal_file_api.py:257
+#: app/api/holiday_calendars.py:136 app/api/holiday_calendars.py:175
+#: app/api/work_schedules.py:494
+msgid "已刪除"
+msgstr ""
+
+#: app/api/holiday_calendars.py:148 app/api/work_schedules.py:408
+msgid "已新增"
+msgstr ""
+
+#: app/api/holiday_calendars.py:188
+msgid "已發佈"
+msgstr ""
+
+#: app/api/holiday_calendars.py:200
+msgid "已下架"
+msgstr ""
+
+#: app/api/holiday_calendars.py:239
+msgid "無法連線至資料來源，請改用上傳檔案"
+msgstr ""
+
+#: app/api/holiday_calendars.py:240
+msgid "檔案超過大小限制"
+msgstr ""
+
+#: app/api/holiday_calendars.py:241
+msgid "年度不合法"
+msgstr ""
+
+#: app/api/holiday_calendars.py:242
+msgid "資料來源不合法"
+msgstr ""
+
+#: app/api/holiday_calendars.py:243
+msgid "請輸入名稱"
+msgstr ""
+
+#: app/api/holiday_calendars.py:245
+msgid "日期已存在"
+msgstr ""
+
+#: app/api/holiday_calendars.py:246 app/api/my_delegations.py:132
+msgid "日期格式錯誤"
+msgstr ""
+
+#: app/api/holiday_calendars.py:247
+msgid "類型不合法"
+msgstr ""
+
+#: app/api/holiday_calendars.py:248
+msgid "工作時段格式錯誤"
+msgstr ""
+
+#: app/api/holiday_calendars.py:249
+msgid "請選擇發佈目標班表"
+msgstr ""
+
+#: app/api/holiday_calendars.py:250 app/api/work_schedules.py:150
+#: app/api/work_schedules.py:178 app/api/work_schedules.py:232
+#: app/api/work_schedules.py:272 app/api/work_schedules.py:308
+#: app/api/work_schedules.py:358 app/api/work_schedules.py:424
+#: app/api/work_schedules.py:477 app/api/work_schedules.py:523
+#: app/web/work_schedules.py:58
+msgid "班表不存在"
+msgstr ""
+
+#: app/api/holiday_calendars.py:251
+msgid "假日表尚未發佈"
+msgstr ""
+
+#: app/api/holiday_calendars.py:252
+msgid "已發佈的假日表需先下架才能刪除"
+msgstr ""
+
+#: app/api/holiday_calendars.py:253 app/web/work_schedules.py:81
+msgid "假日表不存在"
+msgstr ""
+
+#: app/api/holiday_calendars.py:263 app/api/node_grants.py:48
+msgid "操作失敗"
+msgstr ""
+
+#: app/api/holiday_calendars.py:270
+msgid "CSV 表頭必須是 date,type,description,work_periods"
+msgstr ""
+
+#: app/api/holiday_calendars.py:272
+#, python-format
+msgid "第 %(n)s 列欄位數錯誤"
+msgstr ""
+
+#: app/api/holiday_calendars.py:274
+#, python-format
+msgid "第 %(n)s 列日期重複"
+msgstr ""
+
+#: app/api/holiday_calendars.py:276
+#, python-format
+msgid "第 %(n)s 列格式錯誤"
+msgstr ""
+
+#: app/api/holiday_calendars.py:277
+msgid "檔案格式錯誤"
 msgstr ""
 
 #: app/api/lookup.py:56
@@ -1287,10 +1405,6 @@ msgstr ""
 msgid "被授權人無效"
 msgstr ""
 
-#: app/api/my_delegations.py:132
-msgid "日期格式錯誤"
-msgstr ""
-
 #: app/api/my_delegations.py:139 app/web/delegations.py:124
 #: app/web/delegations.py:216
 msgid "生效開始日期不能晚於結束日期"
@@ -1326,10 +1440,6 @@ msgstr ""
 
 #: app/api/node_grants.py:41
 msgid "找不到指定的企業"
-msgstr ""
-
-#: app/api/node_grants.py:48
-msgid "操作失敗"
 msgstr ""
 
 #: app/api/node_grants.py:72
@@ -1406,7 +1516,7 @@ msgstr ""
 #: ../modules/nocode_builder/api/template_api.py:425
 #: ../modules/nocode_builder/services/project_service.py:128
 #: ../modules/spec_formulate/api/_mf_specs_crud.py:46
-#: app/api/organizational_units.py:334 app/api/work_schedules.py:187
+#: app/api/organizational_units.py:334 app/api/work_schedules.py:188
 msgid "名稱不可為空"
 msgstr ""
 
@@ -2010,7 +2120,7 @@ msgstr ""
 
 #: app/api/users.py:128 app/web/external_users.py:184
 #: app/web/external_users.py:374 app/web/org_admins.py:70
-#: app/web/org_admins.py:382 app/web/users.py:373 app/web/users.py:935
+#: app/web/org_admins.py:382 app/web/users.py:373 app/web/users.py:936
 msgid "找不到所屬企業"
 msgstr ""
 
@@ -2039,134 +2149,110 @@ msgstr ""
 msgid "找不到部門代碼 %(department_code)s"
 msgstr ""
 
-#: app/api/users.py:190 app/api/users.py:308 app/web/external_users.py:258
-#: app/web/external_users.py:605 app/web/users.py:390 app/web/users.py:636
-#: app/web/users.py:785
+#: app/api/users.py:190 app/api/users.py:309 app/web/external_users.py:258
+#: app/web/external_users.py:605 app/web/users.py:390 app/web/users.py:637
+#: app/web/users.py:786
 #, python-format
 msgid "已達帳號上限（%(limit)s），目前已使用 %(used)s 個"
 msgstr ""
 
-#: app/api/users.py:268 app/web/users.py:481
+#: app/api/users.py:269 app/web/users.py:482
 #, python-format
 msgid "已建立用戶 %(name)s，密碼通知信已寄至 %(email)s"
 msgstr ""
 
-#: app/api/users.py:271 app/web/users.py:484
+#: app/api/users.py:272 app/web/users.py:485
 #, python-format
 msgid "已建立用戶 %(name)s，但密碼通知信寄送失敗（%(email)s），請到編輯頁重設密碼交給對方"
 msgstr ""
 
-#: app/api/users.py:274 app/web/users.py:487
+#: app/api/users.py:275 app/web/users.py:488
 #, python-format
 msgid "已建立用戶 %(name)s"
 msgstr ""
 
-#: app/api/users.py:333 app/web/org_admins.py:522 app/web/sys_accounts.py:277
-#: app/web/users.py:738
+#: app/api/users.py:334 app/web/org_admins.py:522 app/web/sys_accounts.py:277
+#: app/web/users.py:739
 msgid "不能刪除自己的帳號"
 msgstr ""
 
-#: app/api/users.py:337 app/web/users.py:743
+#: app/api/users.py:338 app/web/users.py:744
 msgid "不能刪除自己綁定的企業成員帳號"
 msgstr ""
 
-#: app/api/users.py:341 app/web/users.py:748
+#: app/api/users.py:342 app/web/users.py:749
 msgid "不能刪除企業原始管理員"
 msgstr ""
 
-#: app/api/work_schedules.py:97
+#: app/api/work_schedules.py:98
 msgid "請輸入班表代碼"
 msgstr ""
 
-#: app/api/work_schedules.py:100
+#: app/api/work_schedules.py:101
 msgid "請輸入班表名稱"
 msgstr ""
 
-#: app/api/work_schedules.py:105
+#: app/api/work_schedules.py:106
 #, python-format
 msgid "班表代碼 \"%(code)s\" 已存在"
 msgstr ""
 
-#: app/api/work_schedules.py:110 app/api/work_schedules.py:196
+#: app/api/work_schedules.py:111 app/api/work_schedules.py:197
 msgid "週間工時格式錯誤"
 msgstr ""
 
-#: app/api/work_schedules.py:133
+#: app/api/work_schedules.py:134
 msgid "班表已建立"
 msgstr ""
 
-#: app/api/work_schedules.py:149 app/api/work_schedules.py:177
-#: app/api/work_schedules.py:231 app/api/work_schedules.py:271
-#: app/api/work_schedules.py:307 app/api/work_schedules.py:346
-#: app/api/work_schedules.py:412 app/api/work_schedules.py:464
-#: app/api/work_schedules.py:510 app/web/work_schedules.py:54
-msgid "班表不存在"
-msgstr ""
-
-#: app/api/work_schedules.py:209
+#: app/api/work_schedules.py:210
 msgid "班表已更新"
 msgstr ""
 
-#: app/api/work_schedules.py:234
+#: app/api/work_schedules.py:235
 msgid "預設班表不可刪除"
 msgstr ""
 
-#: app/api/work_schedules.py:246
+#: app/api/work_schedules.py:247
 #, python-format
 msgid "此班表已指派給 %(count)s 位用戶，無法刪除"
 msgstr ""
 
-#: app/api/work_schedules.py:256
+#: app/api/work_schedules.py:257
 msgid "班表已刪除"
 msgstr ""
 
-#: app/api/work_schedules.py:282
+#: app/api/work_schedules.py:283
 #, python-format
 msgid "已將 \"%(name)s\" 設為預設班表"
 msgstr ""
 
-#: app/api/work_schedules.py:357
+#: app/api/work_schedules.py:369
 msgid "請選擇日期"
 msgstr ""
 
-#: app/api/work_schedules.py:360 app/api/work_schedules.py:430
+#: app/api/work_schedules.py:372 app/api/work_schedules.py:442
 msgid "類型必須是 HOLIDAY、COMP_OFF 或 WORKDAY"
 msgstr ""
 
-#: app/api/work_schedules.py:370
+#: app/api/work_schedules.py:382
 msgid "補班日請設定工作時段"
 msgstr ""
 
-#: app/api/work_schedules.py:380
+#: app/api/work_schedules.py:392
 #, python-format
 msgid "%(date)s 已設定過"
 msgstr ""
 
-#: app/api/work_schedules.py:396
-msgid "已新增"
-msgstr ""
-
-#: app/api/work_schedules.py:421 app/api/work_schedules.py:473
+#: app/api/work_schedules.py:433 app/api/work_schedules.py:486
 msgid "假日不存在"
 msgstr ""
 
-#: app/api/work_schedules.py:448
-msgid "已更新"
-msgstr ""
-
-#: ../modules/form_workflow/api/fc_phrases.py:176
-#: ../modules/form_workflow/api/template_routes.py:239
-#: ../modules/form_workflow/api/workflow_routes.py:745
-#: ../modules/nocode_builder/api/portal_file_api.py:257
-#: app/api/work_schedules.py:481
-msgid "已刪除"
-msgstr ""
-
-#: app/api/work_schedules.py:514
+#: app/api/work_schedules.py:527
 msgid "請提供假日資料"
 msgstr ""
 
-#: app/api/work_schedules.py:581
+#: app/api/work_schedules.py:594
 #, python-format
 msgid "已匯入 %(imported)s 筆，略過 %(skipped)s 筆"
 msgstr ""
@@ -2267,17 +2353,20 @@ msgid "補班：%(desc)s"
 msgstr ""
 
 #: app/services/calendar_projection_service.py:257
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:40
 #: app/templates/pages/admin/time/holidays.html:48
 #: app/templates/pages/calendar/calendar.html:48
 msgid "補班"
 msgstr ""
 
 #: app/services/calendar_projection_service.py:260
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:39
 #: app/templates/pages/admin/time/holidays.html:44
 msgid "補假"
 msgstr ""
 
 #: app/services/calendar_projection_service.py:260
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:38
 #: app/templates/pages/admin/time/holidays.html:40
 msgid "假日"
 msgstr ""
@@ -2640,8 +2729,11 @@ msgstr ""
 #: app/templates/pages/admin/numbering/edit.html:299
 #: app/templates/pages/admin/org-admins/create.html:112
 #: app/templates/pages/admin/org-admins/list.html:140
-#: app/templates/pages/admin/time/holidays.html:183
-#: app/templates/pages/admin/time/schedules.html:211
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:32
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:67
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:115
+#: app/templates/pages/admin/time/holidays.html:184
+#: app/templates/pages/admin/time/schedules.html:213
 #: app/templates/pages/approval_categories/create.html:84
 #: app/templates/pages/approval_categories/edit.html:88
 #: app/templates/pages/approval_categories/list.html:213
@@ -2969,6 +3061,8 @@ msgstr ""
 #: app/templates/pages/admin/module_list.html:86
 #: app/templates/pages/admin/numbering/list.html:123
 #: app/templates/pages/admin/org-admins/list.html:45
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:33
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:67
 #: app/templates/pages/admin/time/holidays.html:92
 #: app/templates/pages/admin/time/schedules.html:35
 #: app/templates/pages/delegations/list.html:27
@@ -3015,7 +3109,8 @@ msgstr ""
 #: app/templates/pages/admin/_settings_telegram_section.html:55
 #: app/templates/pages/admin/_settings_telegram_section.html:57
 #: app/templates/pages/admin/numbering/list.html:162
-#: app/templates/pages/admin/time/holidays.html:106
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:77
+#: app/templates/pages/admin/time/holidays.html:109
 #: app/templates/pages/admin/time/schedules.html:76
 #: app/templates/pages/calendar/calendar.html:136
 #: app/templates/pages/external-users/list.html:66
@@ -3072,7 +3167,9 @@ msgstr ""
 #: app/templates/pages/admin/numbering/list.html:168
 #: app/templates/pages/admin/org-admins/list.html:94
 #: app/templates/pages/admin/settings.html:87
-#: app/templates/pages/admin/time/holidays.html:107
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:58
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:78
+#: app/templates/pages/admin/time/holidays.html:110
 #: app/templates/pages/admin/time/schedules.html:81
 #: app/templates/pages/calendar/calendar.html:137
 #: app/templates/pages/external-users/list.html:77
@@ -3348,6 +3445,7 @@ msgstr ""
 #: app/templates/pages/admin/module_list.html:115
 #: app/templates/pages/admin/numbering/list.html:121
 #: app/templates/pages/admin/org-admins/list.html:43
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:30
 #: app/templates/pages/admin/time/schedules.html:34
 #: app/templates/pages/approval_categories/edit.html:76
 #: app/templates/pages/approval_categories/list.html:97
@@ -3357,9 +3455,9 @@ msgstr ""
 #: app/templates/pages/delegations/view.html:63
 #: app/templates/pages/external-users/list.html:37
 #: app/templates/pages/external-users/view.html:57
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:61
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:94
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:95
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:128
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:162
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:35
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:31
 #: app/templates/pages/hostconfig/_system_settings_section_telegram.html:35
@@ -3716,7 +3814,7 @@ msgid "語言"
 msgstr ""
 
 #: app/templates/pages/admin/time/schedules.html:32
-#: app/templates/pages/admin/time/schedules.html:129
+#: app/templates/pages/admin/time/schedules.html:131
 #: app/templates/pages/personal_settings.html:160
 #: app/templates/pages/users/create.html:208
 #: app/templates/pages/users/edit.html:271
@@ -3764,6 +3862,7 @@ msgstr ""
 #: app/templates/pages/access_center/_tab_roles.html:139
 #: app/templates/pages/admin/_settings_smtp_section.html:28
 #: app/templates/pages/admin/_settings_telegram_section.html:28
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:26
 #: app/templates/pages/approval_categories/list.html:95
 #: app/templates/pages/approval_categories/list.html:156
 #: app/templates/pages/approval_categories/list.html:247
@@ -4224,6 +4323,7 @@ msgstr ""
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:89
 #: app/templates/pages/access_center/_tab_roles.html:53
 #: app/templates/pages/access_center/_tab_roles.html:148
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:67
 #: app/templates/pages/admin/time/holidays.html:89
 #: app/templates/pages/calendar/_event_modal.html:15
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:18
@@ -4251,6 +4351,8 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:194
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:35
 #: app/templates/pages/access_center/_tab_roles.html:56
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:10
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:27
 msgid "來源"
 msgstr ""
 
@@ -4366,7 +4468,7 @@ msgstr ""
 #: app/templates/pages/admin/groups.html:255
 #: app/templates/pages/admin/numbering/edit.html:55
 #: app/templates/pages/admin/numbering/list.html:120
-#: app/templates/pages/admin/time/schedules.html:200
+#: app/templates/pages/admin/time/schedules.html:202
 #: app/templates/pages/approval_categories/create.html:75
 #: app/templates/pages/approval_categories/edit.html:70
 #: app/templates/pages/approval_categories/list.html:179
@@ -4739,13 +4841,15 @@ msgstr ""
 #: app/templates/pages/admin/_settings_recipients_section.html:86
 #: app/templates/pages/admin/numbering/list.html:184
 #: app/templates/pages/admin/org-admins/list.html:155
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:67
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:112
 #: app/templates/pages/admin/time/holidays.html:90
-#: app/templates/pages/admin/time/holidays.html:176
-#: app/templates/pages/admin/time/schedules.html:99
+#: app/templates/pages/admin/time/holidays.html:177
+#: app/templates/pages/admin/time/schedules.html:101
 #: app/templates/pages/cg_databases/overview.html:251
 #: app/templates/pages/external-users/list.html:92
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:63
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:152
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:186
 #: app/templates/pages/hostconfig/_system_settings_section_ratelimit.html:45
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:61
 #: app/templates/pages/menu/list.html:108
@@ -4944,6 +5048,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:91
 #: app/templates/pages/admin/_settings_smtp_section.html:31
 #: app/templates/pages/admin/_settings_telegram_section.html:130
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:53
 #: app/templates/pages/admin/time/schedules.html:44
 #: app/templates/pages/approval_categories/list.html:111
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:40
@@ -5544,7 +5649,7 @@ msgstr ""
 #: app/templates/pages/delegations/edit.html:87
 #: app/templates/pages/delegations/list.html:62
 #: app/templates/pages/delegations/view.html:70
-#: app/templates/pages/organizations/list.html:308 app/web/admin.py:26
+#: app/templates/pages/organizations/list.html:308 app/web/admin.py:27
 msgid "已過期"
 msgstr ""
 
@@ -5625,7 +5730,7 @@ msgid "一般設定"
 msgstr ""
 
 #: app/templates/pages/admin/settings.html:34
-#: app/templates/pages/admin/settings.html:273
+#: app/templates/pages/admin/settings.html:287
 msgid "密碼政策"
 msgstr ""
 
@@ -5750,93 +5855,101 @@ msgid "建立帳號時，姓名之間使用的連接符號（帳號統一小寫�
 msgstr ""
 
 #: app/templates/pages/admin/settings.html:247
+msgid "國家／地區"
+msgstr ""
+
+#: app/templates/pages/admin/settings.html:256
+msgid "決定新企業預設班表的週休日，以及假日表「從網路取得」的資料來源（目前僅台灣提供）"
+msgstr ""
+
+#: app/templates/pages/admin/settings.html:261
 msgid "企業主要時區"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:260
+#: app/templates/pages/admin/settings.html:274
 msgid "IANA 時區，影響系統時間顯示（管理員設定一次即可）"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:275
+#: app/templates/pages/admin/settings.html:289
 msgid "設定密碼複雜度要求、歷史限制和登入失敗鎖定"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:285
+#: app/templates/pages/admin/settings.html:299
 msgid "啟用密碼政策"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:286
+#: app/templates/pages/admin/settings.html:300
 msgid "（啟用後，所有密碼欄位將檢查複雜度要求）"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:293
+#: app/templates/pages/admin/settings.html:307
 msgid "注意"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:295
+#: app/templates/pages/admin/settings.html:309
 msgid ""
 "系統發信服務尚未就緒，忘記密碼驗證信與登入救助警報信目前寄不出去。這項設定由系統管理員在「主機設定 → 發信服務」完成，本頁的 SMTP "
 "設定組只給流程節點使用，不影響系統信。"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:305
+#: app/templates/pages/admin/settings.html:319
 msgid "最小長度"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:311
+#: app/templates/pages/admin/settings.html:325
 msgid "個字元（建議 12 以上）"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:317
+#: app/templates/pages/admin/settings.html:331
 msgid "複雜度要求"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:322
+#: app/templates/pages/admin/settings.html:336
 msgid "包含大寫字母 (A-Z)"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:326
+#: app/templates/pages/admin/settings.html:340
 msgid "包含小寫字母 (a-z)"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:330
+#: app/templates/pages/admin/settings.html:344
 msgid "包含數字 (0-9)"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:334
+#: app/templates/pages/admin/settings.html:348
 #, python-format
 msgid "包含特殊符號 (!@#$%%^&* 等)"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:342
+#: app/templates/pages/admin/settings.html:356
 msgid "密碼歷史限制"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:348
+#: app/templates/pages/admin/settings.html:362
 msgid "次內不可重複使用（0 = 不限制）"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:354
+#: app/templates/pages/admin/settings.html:368
 msgid "登入失敗鎖定"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:357
+#: app/templates/pages/admin/settings.html:371
 msgid "連續失敗"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:362
+#: app/templates/pages/admin/settings.html:376
 msgid "次後鎖定帳號"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:365
+#: app/templates/pages/admin/settings.html:379
 msgid "基礎鎖定時間"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:370
+#: app/templates/pages/admin/settings.html:384
 msgid "分鐘，每次鎖定時間 x"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:377
+#: app/templates/pages/admin/settings.html:391
 msgid "例：基礎 15 分鐘 x 2，第一次鎖 15 分鐘，第二次 30 分鐘，第三次 60 分鐘...（最多 24 小時）"
 msgstr ""
 
@@ -6395,13 +6508,223 @@ msgstr ""
 msgid "：新增的管理員必須綁定一個有企業成員編號的企業成員帳號，當該企業成員帳號停用或刪除時，對應的管理員帳號也無法登入"
 msgstr ""
 
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:5
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:14
+msgid "上傳假日表"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:11
+msgid "台灣政府行事曆 JSON"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:12
+msgid "自訂 CSV 或 JSON"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:105
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:150
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:345
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:77
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:16
+#: app/templates/pages/job_levels/list.html:131
+#: app/templates/pages/job_levels/list.html:215
+#: app/templates/pages/job_titles/list.html:73
+#: app/templates/pages/job_titles/list.html:157
+msgid "名稱 *"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:22
+msgid "年度 *"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:27
+msgid "檔案 *"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:124
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:154
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_menu.html:142
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:33
+msgid "上傳"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:43
+msgid "發佈假日表"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_modals.html:68
+msgid "發佈"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:4
+msgid "假日表（企業級）"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:5
+msgid "匯入國定假日或自訂假日作為底稿，調整後發佈到所選班表；班表上手動設定的假日優先於假日表"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:13
+msgid "從網路取得台灣行事曆"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:28
+msgid "年度"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:29
+msgid "條目（底稿／已發佈）"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:31
+msgid "發佈目標"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:32
+msgid "發佈時間"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:46
+msgid "有未發佈變更"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:52
+msgid "編輯底稿"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:53
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:29
+msgid "發佈…"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:55
+msgid "下架"
+msgstr ""
+
+#: app/templates/pages/admin/time/_holiday_calendars_section.html:67
+msgid "尚未建立任何假日表"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:4
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:16
+msgid "編輯假日表"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:12
+#: app/templates/pages/admin/time/holidays.html:13
+msgid "&lt; 返回班表列表"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:48
+#: app/templates/pages/admin/time/holidays.html:62
+#: app/templates/pages/calendar/calendar.html:61
+msgid "日"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:48
+#: app/templates/pages/admin/time/holidays.html:63
+#: app/templates/pages/calendar/calendar.html:62
+msgid "一"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:49
+#: app/templates/pages/admin/time/holidays.html:64
+#: app/templates/pages/calendar/calendar.html:63
+msgid "二"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:49
+#: app/templates/pages/admin/time/holidays.html:65
+#: app/templates/pages/calendar/calendar.html:64
+msgid "三"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:50
+#: app/templates/pages/admin/time/holidays.html:66
+#: app/templates/pages/calendar/calendar.html:65
+msgid "四"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:50
+#: app/templates/pages/admin/time/holidays.html:67
+#: app/templates/pages/calendar/calendar.html:66
+msgid "五"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:51
+#: app/templates/pages/admin/time/holidays.html:51
+#: app/templates/pages/admin/time/holidays.html:68
+#: app/templates/pages/calendar/calendar.html:67
+msgid "六"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:63
+msgid "底稿條目"
+msgstr ""
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:396
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:67
+#: app/templates/pages/admin/time/holidays.html:88
+msgid "日期"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:67
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:107
+#: app/templates/pages/admin/time/holidays.html:91
+msgid "工作時段"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:85
+msgid "本年度尚無底稿條目"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:96
+msgid "日期 *"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:98
+#: app/templates/pages/admin/time/holidays.html:161
+msgid "類型 *"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:100
+#: app/templates/pages/admin/time/holidays.html:163
+msgid "假日（休假）"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:101
+#: app/templates/pages/admin/time/holidays.html:164
+msgid "補假（休假）"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:102
+#: app/templates/pages/admin/time/holidays.html:165
+msgid "補班（上班）"
+msgstr ""
+
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:109
+msgid "可留空，發佈時依目標班表推導"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:421
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:89
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:62
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:101
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:8
+#: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:208
+#: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:172
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:201
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:64
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:76
+#: app/templates/pages/admin/time/holiday_calendar_edit.html:116
+#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:33
+#: app/templates/pages/security/org_rate_limits.html:89
+msgid "儲存"
+msgstr ""
+
 #: app/templates/pages/admin/time/holidays.html:4
 #, python-format
 msgid "共用月曆 - %(name)s"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:13
-msgid "&lt; 返回班表列表"
 msgstr ""
 
 #: app/templates/pages/admin/time/holidays.html:18
@@ -6412,131 +6735,59 @@ msgstr ""
 msgid "+ 新增假日"
 msgstr ""
 
-#: app/templates/pages/admin/time/holidays.html:51
-#: app/templates/pages/admin/time/holidays.html:68
-#: app/templates/pages/calendar/calendar.html:67
-msgid "六"
-msgstr ""
-
 #: app/templates/pages/admin/time/holidays.html:52
 msgid "週末（依班表設定）"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:62
-#: app/templates/pages/calendar/calendar.html:61
-msgid "日"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:63
-#: app/templates/pages/calendar/calendar.html:62
-msgid "一"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:64
-#: app/templates/pages/calendar/calendar.html:63
-msgid "二"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:65
-#: app/templates/pages/calendar/calendar.html:64
-msgid "三"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:66
-#: app/templates/pages/calendar/calendar.html:65
-msgid "四"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:67
-#: app/templates/pages/calendar/calendar.html:66
-msgid "五"
 msgstr ""
 
 #: app/templates/pages/admin/time/holidays.html:83
 msgid "假日/補班列表"
 msgstr ""
 
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:396
-#: app/templates/pages/admin/time/holidays.html:88
-msgid "日期"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:91
-msgid "工作時段"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:115
+#: app/templates/pages/admin/time/holidays.html:118
 msgid "本年度尚未設定任何假日/補班"
 msgstr ""
 
-#: app/templates/pages/admin/time/holidays.html:121
-msgid "批次匯入"
+#: app/templates/pages/admin/time/holidays.html:124
+msgid "國定假日請到「基本班表」頁的「假日表」區塊取得或上傳，發佈到本班表後會出現在這裡；來自假日表的日期手動修改後就不再被下次發佈覆蓋"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:32
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:182
-#: app/templates/pages/admin/time/holidays.html:123
-#: app/templates/pages/admin/time/holidays.html:125
-msgid "匯入"
+#: app/templates/pages/admin/time/holidays.html:126
+msgid "返回基本班表"
 msgstr ""
 
-#: app/templates/pages/admin/time/holidays.html:123
-msgid "年台灣國定假日"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:125
-msgid "年台灣假日"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:138
+#: app/templates/pages/admin/time/holidays.html:139
 #: app/templates/pages/organizations/list.html:407
 msgid "開始日期 *"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:157
-#: app/templates/pages/admin/time/holidays.html:143
+#: app/templates/pages/admin/time/holidays.html:144
 #: app/templates/pages/organizations/list.html:291
 #: app/templates/pages/organizations/list.html:369
 msgid "結束日期"
 msgstr ""
 
-#: app/templates/pages/admin/time/holidays.html:145
+#: app/templates/pages/admin/time/holidays.html:146
 msgid "留空表示僅設定單日"
 msgstr ""
 
-#: app/templates/pages/admin/time/holidays.html:152
+#: app/templates/pages/admin/time/holidays.html:153
 msgid "取消設定（回復班表預設值）"
 msgstr ""
 
-#: app/templates/pages/admin/time/holidays.html:154
+#: app/templates/pages/admin/time/holidays.html:155
 msgid "勾選後將刪除範圍內的假日/補班設定"
 msgstr ""
 
-#: app/templates/pages/admin/time/holidays.html:160
-msgid "類型 *"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:162
-msgid "假日（休假）"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:163
-msgid "補假（休假）"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:164
-msgid "補班（上班）"
-msgstr ""
-
-#: app/templates/pages/admin/time/holidays.html:169
+#: app/templates/pages/admin/time/holidays.html:170
 msgid "工作時段 *"
 msgstr ""
 
-#: app/templates/pages/admin/time/holidays.html:172
+#: app/templates/pages/admin/time/holidays.html:173
 msgid "多時段用逗號分隔"
 msgstr ""
 
-#: app/templates/pages/admin/time/holidays.html:177
+#: app/templates/pages/admin/time/holidays.html:178
 msgid "例：中秋節"
 msgstr ""
 
@@ -6558,12 +6809,12 @@ msgid "班表名稱"
 msgstr ""
 
 #: app/templates/pages/admin/time/schedules.html:33
-#: app/templates/pages/admin/time/schedules.html:141
+#: app/templates/pages/admin/time/schedules.html:143
 msgid "週間工時"
 msgstr ""
 
 #: app/templates/pages/admin/time/schedules.html:60
-#: app/templates/pages/admin/time/schedules.html:167
+#: app/templates/pages/admin/time/schedules.html:169
 msgid "休"
 msgstr ""
 
@@ -6579,91 +6830,91 @@ msgstr ""
 msgid "建立第一個班表"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:101
+#: app/templates/pages/admin/time/schedules.html:103
 msgid "班表定義企業成員的標準工作時間"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:102
+#: app/templates/pages/admin/time/schedules.html:104
 msgid "「預設」班表會自動套用給未指定班表的企業成員"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:103
+#: app/templates/pages/admin/time/schedules.html:105
 msgid "週間工時格式：HH:MM-HH:MM，可設定多個時段（如午休分隔）"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:104
+#: app/templates/pages/admin/time/schedules.html:106
 msgid "留空或設為休表示休息日"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:105
+#: app/templates/pages/admin/time/schedules.html:107
 msgid "點擊「假日設定」可設定國定假日與補班日"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:119
+#: app/templates/pages/admin/time/schedules.html:121
 msgid "班表代碼 *"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:120
+#: app/templates/pages/admin/time/schedules.html:122
 msgid "例：TW-STANDARD"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:122
+#: app/templates/pages/admin/time/schedules.html:124
 msgid "用於系統識別，建立後不可修改"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:125
+#: app/templates/pages/admin/time/schedules.html:127
 msgid "班表名稱 *"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:126
+#: app/templates/pages/admin/time/schedules.html:128
 msgid "例：台灣標準班表"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:131
+#: app/templates/pages/admin/time/schedules.html:133
 msgid "Asia/Taipei (台北)"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:132
+#: app/templates/pages/admin/time/schedules.html:134
 msgid "Asia/Tokyo (東京)"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:133
+#: app/templates/pages/admin/time/schedules.html:135
 msgid "Asia/Shanghai (上海)"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:134
+#: app/templates/pages/admin/time/schedules.html:136
 msgid "Asia/Singapore (新加坡)"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:135
+#: app/templates/pages/admin/time/schedules.html:137
 msgid "America/Los_Angeles (洛杉磯)"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:136
+#: app/templates/pages/admin/time/schedules.html:138
 msgid "America/New_York (紐約)"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:137
+#: app/templates/pages/admin/time/schedules.html:139
 msgid "Europe/London (倫敦)"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:149
+#: app/templates/pages/admin/time/schedules.html:151
 msgid "上班"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:150
+#: app/templates/pages/admin/time/schedules.html:152
 msgid "休息"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:185
+#: app/templates/pages/admin/time/schedules.html:187
 msgid "+ 休息"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:194
+#: app/templates/pages/admin/time/schedules.html:196
 msgid "將目前設定的第一個上班日時間複製到所有上班日"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:201
+#: app/templates/pages/admin/time/schedules.html:203
 #: app/templates/pages/external-users/edit.html:57
 #: app/templates/pages/hostconfig/_system_settings_modals.html:17
 #: app/templates/pages/hostconfig/_system_settings_modals.html:122
@@ -6678,7 +6929,7 @@ msgstr ""
 msgid "選填"
 msgstr ""
 
-#: app/templates/pages/admin/time/schedules.html:206
+#: app/templates/pages/admin/time/schedules.html:208
 msgid "設為企業預設班表"
 msgstr ""
 
@@ -7790,6 +8041,7 @@ msgid "例如: Gmail 主要"
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_modals.html:21
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:59
 msgid "提供者"
 msgstr ""
 
@@ -7993,21 +8245,6 @@ msgstr ""
 #: app/templates/pages/organizations/list.html:193
 #: app/templates/pages/organizations/list.html:208
 msgid "尚未設定"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:421
-#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:89
-#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:62
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:101
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_body.html:8
-#: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:208
-#: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:172
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:201
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:64
-#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:76
-#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:33
-#: app/templates/pages/security/org_rate_limits.html:89
-msgid "儲存"
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_emailrelay.html:9
@@ -8359,59 +8596,83 @@ msgid "正在查詢套件版本，可能需要數秒..."
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:53
-msgid "系統服務"
+msgid "外部資料來源與授權"
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:58
-msgid "服務名稱"
-msgstr ""
-
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:59
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:91
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:126
-msgid "安裝版本"
+msgid "資料"
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:60
+msgid "授權"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:61
+msgid "整理者"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:62
+msgid "取用端點"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:79
+msgid "用於「基本班表」的假日表「從網路取得台灣行事曆」功能；資料只在管理員按下按鈕時抓取，不會自動連線"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:87
+msgid "系統服務"
+msgstr ""
+
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:92
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:127
-msgid "最新版本"
-msgstr ""
-
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:85
-msgid "前端 Vendor 套件"
-msgstr ""
-
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:90
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:124
-msgid "套件名稱"
+msgid "服務名稱"
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:93
-msgid "來源檔案"
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:125
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:160
+msgid "安裝版本"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:94
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:126
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:161
+msgid "最新版本"
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:119
+msgid "前端 Vendor 套件"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:124
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:158
+msgid "套件名稱"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:127
+msgid "來源檔案"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:153
 msgid "Python 套件"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:125
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:159
 msgid "需求版本"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:154
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:188
 msgid "系統服務版本從 GitHub 取得，Python 套件從 PyPI 取得，前端套件從 npm Registry 取得"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:155
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:189
 msgid "查詢結果快取 30 分鐘，點擊「重新查詢」可強制刷新"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:156
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:190
 msgid "封閉網路環境下線上版本會顯示「無法檢查」，不影響系統運作"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:157
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:191
 msgid "此頁面僅供版本檢視，不提供線上升級功能"
 msgstr ""
 
@@ -9117,17 +9378,6 @@ msgstr ""
 
 #: app/templates/pages/job_levels/list.html:119
 msgid "編輯職等:"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:105
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:150
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:345
-#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:77
-#: app/templates/pages/job_levels/list.html:131
-#: app/templates/pages/job_levels/list.html:215
-#: app/templates/pages/job_titles/list.html:73
-#: app/templates/pages/job_titles/list.html:157
-msgid "名稱 *"
 msgstr ""
 
 #: app/templates/pages/job_levels/list.html:139
@@ -12526,17 +12776,17 @@ msgstr ""
 msgid "系統 (%(code)s)"
 msgstr ""
 
-#: app/web/admin.py:33
+#: app/web/admin.py:34
 #, python-format
 msgid "%(n)s 年"
 msgstr ""
 
-#: app/web/admin.py:35
+#: app/web/admin.py:36
 #, python-format
 msgid "%(n)s 月"
 msgstr ""
 
-#: app/web/admin.py:36
+#: app/web/admin.py:37
 #, python-format
 msgid "%(n)s 日"
 msgstr ""
@@ -12766,7 +13016,7 @@ msgstr ""
 
 #: app/web/external_users.py:691 app/web/main.py:231
 #: app/web/org_admin_rescue.py:136 app/web/org_admins.py:577
-#: app/web/users.py:839
+#: app/web/users.py:840
 msgid "請輸入新密碼"
 msgstr ""
 
@@ -13106,7 +13356,7 @@ msgstr ""
 
 #: app/web/org_admin_rescue.py:141 app/web/org_admins.py:130
 #: app/web/org_admins.py:582 app/web/sys_accounts.py:118
-#: app/web/sys_accounts.py:213 app/web/users.py:844
+#: app/web/sys_accounts.py:213 app/web/users.py:845
 msgid "兩次輸入的密碼不一致"
 msgstr ""
 
@@ -13122,7 +13372,7 @@ msgid "已重設 %(name)s 的密碼，並通知所有企業管理員"
 msgstr ""
 
 #: app/web/org_admin_rescue.py:183 app/web/org_admins.py:627
-#: app/web/users.py:855
+#: app/web/users.py:856
 #, python-format
 msgid "重設密碼失敗: %(error)s"
 msgstr ""
@@ -13178,7 +13428,7 @@ msgstr ""
 msgid "此帳號不是企業管理員"
 msgstr ""
 
-#: app/web/org_admins.py:478 app/web/sys_accounts.py:217 app/web/users.py:773
+#: app/web/org_admins.py:478 app/web/sys_accounts.py:217 app/web/users.py:774
 msgid "不能停用自己的帳號"
 msgstr ""
 
@@ -13201,7 +13451,7 @@ msgstr ""
 msgid "已刪除管理員 %(name)s"
 msgstr ""
 
-#: app/web/org_admins.py:562 app/web/users.py:819
+#: app/web/org_admins.py:562 app/web/users.py:820
 msgid "請使用「變更密碼」功能修改自己的密碼"
 msgstr ""
 
@@ -13470,124 +13720,124 @@ msgstr ""
 msgid "英文姓名、本國姓名、帳號為必填"
 msgstr ""
 
-#: app/web/users.py:398 app/web/users.py:644
+#: app/web/users.py:398 app/web/users.py:645
 #, python-format
 msgid "找不到部門代碼 %(code)s"
 msgstr ""
 
-#: app/web/users.py:577
+#: app/web/users.py:578
 msgid "您沒有編輯權限"
 msgstr ""
 
-#: app/web/users.py:629
+#: app/web/users.py:630
 msgid "本國姓名、英文姓名為必填"
 msgstr ""
 
-#: app/web/users.py:634
+#: app/web/users.py:635
 #, python-format
 msgid "企業成員編號 %(employee_id)s 已存在"
 msgstr ""
 
-#: app/web/users.py:689
+#: app/web/users.py:690
 msgid "已更新用戶資料"
 msgstr ""
 
-#: app/web/users.py:755
+#: app/web/users.py:756
 #, python-format
 msgid "已刪除用戶 %(name)s"
 msgstr ""
 
-#: app/web/users.py:778
+#: app/web/users.py:779
 msgid "不能停用自己綁定的企業成員帳號"
 msgstr ""
 
-#: app/web/users.py:793
+#: app/web/users.py:794
 #, python-format
 msgid "已啟用用戶 %(name)s"
 msgstr ""
 
-#: app/web/users.py:795
+#: app/web/users.py:796
 #, python-format
 msgid "已停用用戶 %(name)s"
 msgstr ""
 
-#: app/web/users.py:814
+#: app/web/users.py:815
 msgid "找不到該用戶"
 msgstr ""
 
-#: app/web/users.py:824
+#: app/web/users.py:825
 msgid "無權重設系統管理員的密碼"
 msgstr ""
 
-#: app/web/users.py:852
+#: app/web/users.py:853
 #, python-format
 msgid "已重設 %(name)s 的密碼"
 msgstr ""
 
-#: app/web/users.py:926
+#: app/web/users.py:927
 msgid "請選擇 CSV 檔案"
 msgstr ""
 
-#: app/web/users.py:930
+#: app/web/users.py:931
 msgid "請上傳 CSV 格式檔案"
 msgstr ""
 
-#: app/web/users.py:961
+#: app/web/users.py:962
 #, python-format
 msgid "第 %(row)s 列: %(error)s"
 msgstr ""
 
-#: app/web/users.py:967
+#: app/web/users.py:968
 #, python-format
 msgid "已達帳號上限（%(limit)s）：本次將新增 %(need)s 筆，剩餘名額 %(remain)s，未匯入任何資料"
 msgstr ""
 
-#: app/web/users.py:976
+#: app/web/users.py:977
 #, python-format
 msgid "成功匯入 %(count)s 位用戶"
 msgstr ""
 
-#: app/web/users.py:981
+#: app/web/users.py:982
 #, python-format
 msgid "... 還有 %(count)s 個錯誤"
 msgstr ""
 
-#: app/web/users.py:987
+#: app/web/users.py:988
 #, python-format
 msgid "匯入失敗: %(error)s"
 msgstr ""
 
-#: app/web/users.py:1005
+#: app/web/users.py:1006
 #, python-format
 msgid "第 %(row)s 列: 帳號為必填"
 msgstr ""
 
-#: app/web/users.py:1007
+#: app/web/users.py:1008
 #, python-format
 msgid "第 %(row)s 列: 密碼為必填"
 msgstr ""
 
-#: app/web/users.py:1009
+#: app/web/users.py:1010
 #, python-format
 msgid "第 %(row)s 列: 姓名為必填"
 msgstr ""
 
-#: app/web/users.py:1013
+#: app/web/users.py:1014
 #, python-format
 msgid "第 %(row)s 列: "
 msgstr ""
 
-#: app/web/users.py:1020
+#: app/web/users.py:1021
 #, python-format
 msgid "第 %(row)s 列: 帳號 %(username)s 已存在"
 msgstr ""
 
-#: app/web/users.py:1026
+#: app/web/users.py:1027
 #, python-format
 msgid "第 %(row)s 列: 外部廠商帳號請在「外部廠商帳號」頁面以完整 Email 建立"
 msgstr ""
 
-#: app/web/users.py:1034
+#: app/web/users.py:1035
 #, python-format
 msgid "第 %(row)s 列: 企業成員編號 %(employee_id)s 已存在"
 msgstr ""
@@ -16748,12 +16998,6 @@ msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_menu.html:135
 msgid "不使用底圖"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:124
-#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:154
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_menu.html:142
-msgid "上傳"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_menu.html:149
@@ -20818,6 +21062,11 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:27
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:177
 msgid "縮圖模式"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:32
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:182
+msgid "匯入"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:34

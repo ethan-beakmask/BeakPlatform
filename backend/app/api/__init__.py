@@ -77,6 +77,8 @@ def register_blueprints(app: Flask) -> None:
     # Time management (work schedules)
     from .work_schedules import api_work_schedules
     app.register_blueprint(api_work_schedules)
+    from .holiday_calendars import api_holiday_calendars
+    app.register_blueprint(api_holiday_calendars)
 
     # Calendar projection API
     from .calendar import api_calendar

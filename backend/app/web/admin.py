@@ -8,11 +8,12 @@ BeakMask Admin Routes
 import json
 from datetime import date
 
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
+from flask import Blueprint, g, render_template, request, flash, redirect, url_for, jsonify
 from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required, system_admin_required, login_required
+from ..utils.regions import country_choices
 from ..utils.timezone import get_timezone_choices, local_today
 from ..services.lookup_service import LookupService
 from .. import db
@@ -57,6 +58,7 @@ def settings():
     """
     return render_template(
         'pages/admin/settings.html',
+        country_choices=country_choices(getattr(g, 'locale', 'zh-TW')),
         timezone_choices=get_timezone_choices()
     )
 

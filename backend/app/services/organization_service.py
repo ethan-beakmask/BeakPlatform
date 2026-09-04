@@ -167,6 +167,9 @@ class OrganizationService:
             # 建立預設外部廠商群組
             OrganizationService._create_default_external_group(org)
 
+        from .schedule_service import ScheduleService
+        ScheduleService.ensure_default_schedule(org)
+
         from ..defaults.od_protected_defaults import seed_org_builtin_protected_targets
         seed_org_builtin_protected_targets(org.secure_code)
         from ..defaults.api_key_request_defaults import seed_org_api_key_request_flow

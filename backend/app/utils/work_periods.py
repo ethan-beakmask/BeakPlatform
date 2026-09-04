@@ -28,6 +28,20 @@ def parse_period(period: str) -> tuple[int, int] | None:
     return start_min, end_min
 
 
+def validate_time_period(period: str) -> bool:
+    """Validate a single ``HH:MM-HH:MM`` period string."""
+    return parse_period(period) is not None
+
+
+def validate_time_periods(periods) -> bool:
+    """Validate an optional list of ``HH:MM-HH:MM`` period strings."""
+    if periods in (None, []):
+        return True
+    if not isinstance(periods, list):
+        return False
+    return all(isinstance(period, str) and validate_time_period(period) for period in periods)
+
+
 def format_period(start_min: int, end_min: int) -> str:
     """Format minute offsets as ``HH:MM-HH:MM`` without emitting ``24:00``."""
     start = start_min % 1440

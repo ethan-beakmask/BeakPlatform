@@ -106,6 +106,7 @@ function generalSettings() {
         settings: {
             allow_user_self_edit: true,
             locale: 'zh-TW',
+            country: 'TW',
             timezone: 'Asia/Taipei',
             name_connector: '.',
             display_name_field: 'native_name'

@@ -113,24 +113,3 @@ class WorkSchedule(TenantBaseModel):
 
     def __repr__(self):
         return f'<WorkSchedule {self.schedule_code}: {self.name}>'
-
-
-# 預設班表資料 (供 seed 使用)
-DEFAULT_WORK_SCHEDULES = [
-    {
-        'schedule_code': 'TW-STANDARD',
-        'name': '台灣標準班表',
-        'timezone': 'Asia/Taipei',
-        'weekly_hours': {
-            'mon': ['09:00-12:00', '13:00-18:00'],
-            'tue': ['09:00-12:00', '13:00-18:00'],
-            'wed': ['09:00-12:00', '13:00-18:00'],
-            'thu': ['09:00-12:00', '13:00-18:00'],
-            'fri': ['09:00-12:00', '13:00-18:00'],
-            'sat': None,
-            'sun': None,
-        },
-        'is_default': True,
-        'description': '週一至週五 09:00-18:00，中午休息一小時',
-    },
-]

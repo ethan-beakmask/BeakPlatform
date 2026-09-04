@@ -120,8 +120,15 @@ from .api_key import ApiKey
 from .api_key_claim import ApiKeyClaim
 
 # 時間管理（班表、排班）
-from .work_schedule import WorkSchedule, DEFAULT_WORK_SCHEDULES
-from .schedule_holiday import ScheduleHoliday, DEFAULT_TW_HOLIDAYS_2026
+from .work_schedule import WorkSchedule
+from .schedule_holiday import ScheduleHoliday
+from .holiday_calendar import (
+    HolidayCalendar,
+    HolidayCalendarEntry,
+    HolidayCalendarSource,
+    HolidayCalendarStatus,
+    HolidayEntryStage,
+)
 from .shift_type import ShiftType, DEFAULT_SHIFT_TYPES
 from .personal_schedule import PersonalSchedule
 from .schedule_adjustment import ScheduleAdjustment
@@ -236,9 +243,12 @@ __all__ = [
     'StoreInstallation',
     # 時間管理
     'WorkSchedule',
-    'DEFAULT_WORK_SCHEDULES',
     'ScheduleHoliday',
-    'DEFAULT_TW_HOLIDAYS_2026',
+    'HolidayCalendar',
+    'HolidayCalendarEntry',
+    'HolidayCalendarSource',
+    'HolidayCalendarStatus',
+    'HolidayEntryStage',
     'ShiftType',
     'DEFAULT_SHIFT_TYPES',
     'PersonalSchedule',

@@ -1,0 +1,72 @@
+<template x-if="showImportModal">
+    <div class="modal-overlay">
+        <div class="modal-content modal-sm" style="width:500px;">
+            <div class="modal-header">
+                <h3>{{ _('上傳假日表') }}</h3>
+                <button class="close-btn" @click="closeImportModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>{{ _('來源') }}</label>
+                    <label class="hc-radio"><input type="radio" value="TW_GOV" x-model="importForm.source"> {{ _('台灣政府行事曆 JSON') }}</label>
+                    <label class="hc-radio"><input type="radio" value="CUSTOM" x-model="importForm.source"> {{ _('自訂 CSV 或 JSON') }}</label>
+                </div>
+                <template x-if="importForm.source === 'CUSTOM'">
+                    <div class="form-group">
+                        <label>{{ _('名稱 *') }}</label>
+                        <input type="text" x-model="importForm.name">
+                    </div>
+                </template>
+                <template x-if="importForm.source === 'TW_GOV'">
+                    <div class="form-group">
+                        <label>{{ _('年度 *') }}</label>
+                        <input type="number" x-model.number="importForm.year" min="2000" max="2100">
+                    </div>
+                </template>
+                <div class="form-group">
+                    <label>{{ _('檔案 *') }}</label>
+                    <input type="file" @change="importForm.file = $event.target.files[0]">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @click="closeImportModal()">{{ _('取消') }}</button>
+                <button class="btn btn-primary" @click="importCalendar()" :disabled="loading">{{ _('上傳') }}</button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template x-if="showPublishModal">
+    <div class="modal-overlay">
+        <div class="modal-content modal-sm" style="width:500px;">
+            <div class="modal-header">
+                <h3>{{ _('發佈假日表') }}</h3>
+                <button class="close-btn" @click="closePublishModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="hc-modal-title" x-text="publishingCalendar ? publishingCalendar.name : ''"></p>
+                <div class="hc-schedule-list">
+                    <template x-for="schedule in schedules" :key="schedule.id">
+                        <label class="hc-check">
+                            <input type="checkbox" :value="schedule.id" x-model="publishTargets">
+                            <span x-text="schedule.name"></span>
+                            <template x-if="schedule.is_default"><span class="badge badge-default">{{ _('預設') }}</span></template>
+                        </label>
+                    </template>
+                </div>
+                <template x-if="publishSummary">
+                    <div class="hc-summary">
+                        <template x-for="target in publishSummary.targets" :key="target.schedule_secure_code">
+                            <div x-text="summaryLine(target)"></div>
+                        </template>
+                        <div x-text="__('重算 {count} 人', {count: publishSummary.resynced_users || 0})"></div>
+                    </div>
+                </template>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @click="closePublishModal()">{{ _('取消') }}</button>
+                <button class="btn btn-primary" @click="publish()" :disabled="loading">{{ _('發佈') }}</button>
+            </div>
+        </div>
+    </div>
+</template>

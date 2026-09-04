@@ -15,7 +15,20 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from packaging.version import Version, InvalidVersion
 from flask import jsonify, request
 
+from app.services.holiday_calendar_service import TW_GOV_CALENDAR_URL, TW_GOV_CURATOR_URL, TW_GOV_DATASET_URL
 from ..security.decorators import system_admin_required
+
+
+DATA_SOURCES = [{
+    'key': 'tw_gov_calendar',
+    'name': '中華民國政府行政機關辦公日曆表',
+    'provider': '政府資料開放平台',
+    'provider_url': TW_GOV_DATASET_URL,
+    'license': '政府資料開放授權條款－第 1 版（相容 CC BY 4.0）',
+    'curator': 'ruyut/TaiwanCalendar',
+    'curator_url': TW_GOV_CURATOR_URL,
+    'endpoint': TW_GOV_CALENDAR_URL,
+}]
 
 
 # 記憶體快取
@@ -641,5 +654,6 @@ def _check_package_versions():
         'python_packages': python_packages,
         'frontend_packages': frontend_packages,
         'service_packages': service_packages,
+        'data_sources': DATA_SOURCES,
         'check_duration_ms': duration_ms,
     }

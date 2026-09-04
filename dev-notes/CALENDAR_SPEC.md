@@ -218,3 +218,68 @@ user 簽 OD-20260903-0002「上班後複核」（選「維持觀察」）→ `fw
 - 請假同步的 `adjusted_periods` 是同步當下算出的快照；之後班表或假日改了不會自動重算，只有事件改動才重算。
 - 跨日班別被請假切開時，午夜後的剩餘段落不保留。
 - `original_periods` 在企業沒有預設班表時是 `[]`（dev BELUGA 就是這樣），不影響功能。
+
+## 八、企業假日表（PF-235，2026-09-04）
+
+三層模型：
+
+1. `work_schedules` 是真正的上下班時間，帳號指定班表時最優先。
+2. `holiday_calendars` / `holiday_calendar_entries` 是企業假日表底稿；管理員可從台灣政府行事曆 URL 抓取，或上傳自訂 CSV/JSON。
+3. 企業預設班表仍由 `ScheduleService.ensure_default_schedule(org)` 提供，沒有指定班表的帳號走預設班表。
+
+發佈不是讀取端多查一張表，而是把 PUBLISHED 條目寫進目標班表的 `schedule_holidays`，並在 `schedule_holidays.holiday_calendar_secure_code` 標記來源；NULL 代表手動設定。`WorkSchedule.get_day_periods()`、`ScheduleService`、行事曆投影維持只讀 `schedule_holidays`。
+
+兩張新表：
+
+- `holiday_calendars`：`source` 為 `TW_GOV` / `CUSTOM`，`status` 為 `DRAFT` / `PUBLISHED`；同企業同年度未刪除的 `TW_GOV` 只有一份。
+- `holiday_calendar_entries`：同一假日表、同一 stage、同一天唯一；底稿重匯與發佈複製都是硬刪舊 entries 再插入。
+
+發佈規則：
+
+- 發佈時先把 DRAFT 複製成 PUBLISHED，再軟刪所有來自本假日表的 `schedule_holidays`，最後寫入本次目標班表。
+- 班表上同日若已有手動列（來源 NULL）一律保留並略過。
+- 同日若已有另一份假日表來源，自訂表優先於政府表；同級或本份較高時取代，較低時略過。
+- `WORKDAY` 條目若未帶 `work_periods`，發佈時用目標班表 `weekly_hours['mon']` 推導，沒有週一就取一週第一個非空工作時段；全週都空則略過。
+
+重算規則：
+
+- 發佈與下架後，受影響日期是舊 PUBLISHED 日期與新 PUBLISHED 日期聯集，受影響班表是舊目標與新目標聯集。
+- 受影響使用者限同企業、未刪除、啟用中；指定受影響班表的人，加上「未指定班表且企業預設班表受影響」的人。
+- 只有在受影響日期已有行事曆同步請假列（`calendar_event_secure_code IS NOT NULL`、`adjust_type='LEAVE'`、未刪除）的人，才呼叫 `CalendarEventService.resync_leave_adjustments(org, user_sc, dates)`。
+
+API 清單：
+
+- `GET /api/admin/holiday-calendars/`（列表）、`POST /api/admin/holiday-calendars/fetch-taiwan`（抓取台灣政府行事曆，只有年份可變）
+- `POST /api/admin/holiday-calendars/import`
+- `GET/PUT/DELETE /api/admin/holiday-calendars/<sc>`
+- `POST /api/admin/holiday-calendars/<sc>/draft-entries`
+- `PUT/DELETE /api/admin/holiday-calendars/<sc>/draft-entries/<esc>`
+- `POST /api/admin/holiday-calendars/<sc>/publish`
+- `POST /api/admin/holiday-calendars/<sc>/unpublish`
+
+既有環境升級：
+
+- 新表由 `install.sh --update` 觸發 ORM `db.create_all()` 建出。
+- 既有 `schedule_holidays` 欄位需手動補：
+
+```sql
+ALTER TABLE schedule_holidays ADD COLUMN IF NOT EXISTS holiday_calendar_secure_code VARCHAR(32);
+CREATE INDEX IF NOT EXISTS ix_schedule_holidays_holiday_calendar_secure_code ON schedule_holidays (holiday_calendar_secure_code);
+```
+
+第一批（同日）配套：企業設定新增 `country`（ISO 3166-1 alpha-2，預設 `TW`，`/admin/settings` 可改；唯一對照表
+`backend/app/utils/regions.py`），`ScheduleService.ensure_default_schedule(org)` 在 `create_organization()` 建企業時
+自動種一張 `DEFAULT` 預設班表（週休日依 `country`，工時 09-12／13-18），既有環境用
+`scripts/seed_default_work_schedules.py --dry-run` → `--apply` 補種（系統企業刻意跳過）。
+
+已知取捨（2026-09-04 驗收時確認，皆為刻意）：
+
+- **下架較高優先的假日表不會恢復被它取代的列**：自訂表在同日取代了政府表的列（那列被軟刪除），自訂表下架後那天就沒有假日，
+  要重新發佈政府表才會回來。驗收憑證 `/opt/tmp/verify/20260904-pf235.log`（01-01 案例）。
+- 重匯到既有假日表時 `source` 必須與該表相同，否則 `invalid_source`（避免把政府表底稿換成自訂內容）。
+- 解析錯誤的細節不在 service 組中文：`HolidayCalendarError.detail` 帶 `{'reason': 'bad_header'|'bad_columns'|'duplicate_date'|'bad_row', 'line': n}`，
+  API 層 `_parse_failed_message()` 才翻譯。
+- 班表頁的年度 select 只決定「從網路取得」抓哪一年，假日表列表一律列出全部（含跨年度的自訂表）。
+- 政府表匯入時落在週六日但有假名的日子（例如週六的春節）也收為 `HOLIDAY`，所以 2026 年是 22 筆（16 假日＋6 補假），不是平日的 16 筆；
+  週末且 `description` 空的 104 天一律跳過。
+- 舊的 `holidays.js::importTWHolidays()`（寫死且與官方不符的 2026 清單）與 model 內的 `DEFAULT_TW_HOLIDAYS_2026` 已刪除。

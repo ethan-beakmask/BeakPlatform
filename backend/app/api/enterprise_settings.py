@@ -34,6 +34,7 @@ from .. import db
 from ..models import SmtpConfig, TelegramConfig, RecipientGroup, OrganizationalUnit, User
 from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
+from ..utils.regions import is_valid_country
 
 
 api_enterprise_settings = Blueprint(
@@ -70,6 +71,9 @@ def update_general_settings():
     data = request.get_json()
     if not data:
         return jsonify({'success': False, 'message': _('請提供資料')}), 400
+
+    if 'country' in data and not is_valid_country(data['country']):
+        return jsonify({'success': False, 'message': _('國家／地區代碼無效')}), 400
 
     # 更新設定
     org.set_settings(data)
