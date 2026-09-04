@@ -4,10 +4,26 @@ Tests for Authentication Interceptor
 """
 import pytest
 
+from app import db
+
 # app 掛在 DispatcherMiddleware 的 APP_PREFIX（預設 /beakplatform）之下，
 # 測試 client 的路徑必須帶前綴，否則一律 404。
 # 這 9 個測試從前綴改造起就全數 404 假失敗，直到 2026-08-05 才修。
 PREFIX = '/beakplatform'
+
+
+def _login_user_directly(client, app, user, org):
+    """
+    直接模擬登入狀態，繞過 HTTP 登入流程。
+    這樣可以避免 Flask-Session 在 CI 容器環境中的問題。
+    """
+    with client.session_transaction() as sess:
+        # Flask-Login 使用 _user_id 來追蹤登入用戶
+        sess['_user_id'] = user.get_id()
+        sess['_fresh'] = True
+        # 應用程式自定義的 session 資料
+        sess['org_secure_code'] = org.secure_code
+        sess['org_domain'] = org.domain_name
 
 
 class TestAuthInterceptor:
@@ -64,3 +80,74 @@ class TestAuthDecorators:
         """@admin_required should allow admin users."""
         response = admin_client.get(f'{PREFIX}/api/users/')
         assert response.status_code == 200
+
+
+class TestForcedPasswordChange:
+    """Test AUTH-04 forced password change interception."""
+
+    def _force_password_change_and_login(self, client, app, test_user, test_org):
+        test_user.must_change_password = True
+        db.session.commit()
+        _login_user_directly(client, app, test_user, test_org)
+
+    def test_page_redirects_to_change_password(self, client, app, test_user, test_org):
+        self._force_password_change_and_login(client, app, test_user, test_org)
+
+        response = client.get(f'{PREFIX}/dashboard')
+
+        assert response.status_code == 302
+        assert '/auth/change-password' in response.headers['Location']
+
+    def test_api_returns_403_password_change_required(self, client, app, test_user, test_org):
+        self._force_password_change_and_login(client, app, test_user, test_org)
+
+        response = client.get(f'{PREFIX}/api/users/')
+
+        body = response.get_json()
+        assert response.status_code == 403
+        assert body['error'] == 'password_change_required'
+        assert '/auth/change-password' in body['redirect']
+
+    def test_change_password_page_allowed(self, client, app, test_user, test_org):
+        self._force_password_change_and_login(client, app, test_user, test_org)
+
+        response = client.get(f'{PREFIX}/auth/change-password')
+
+        assert response.status_code == 200
+
+    def test_logout_allowed(self, client, app, test_user, test_org):
+        self._force_password_change_and_login(client, app, test_user, test_org)
+
+        response = client.post(f'{PREFIX}/auth/logout')
+
+        assert response.status_code != 403
+
+    def test_cleared_flag_restores_access(self, client, app, test_user, test_org):
+        self._force_password_change_and_login(client, app, test_user, test_org)
+        test_user.must_change_password = False
+        db.session.commit()
+
+        response = client.get(f'{PREFIX}/dashboard')
+
+        assert not (
+            response.status_code == 302
+            and '/auth/change-password' in response.headers.get('Location', '')
+        )
+
+    def test_original_admin_setup_paths_allowed(self, client, app, test_user, test_org):
+        test_user.must_change_password = True
+        test_user.is_original_admin = True
+        db.session.commit()
+        _login_user_directly(client, app, test_user, test_org)
+
+        response = client.get(f'{PREFIX}/users/check-username')
+        body = response.get_json(silent=True) or {}
+
+        assert not (
+            response.status_code == 302
+            and '/auth/change-password' in response.headers.get('Location', '')
+        )
+        assert not (
+            response.status_code == 403
+            and body.get('error') == 'password_change_required'
+        )

@@ -8,9 +8,13 @@ BeakMask Global Authentication Interceptor
 [標準 AUTH-03] 原始管理員強制初始設定
 is_original_admin 帳號登入後，若該企業尚未建立綁定管理員，
 強制導向初始設定頁面，完成後停用原始管理員。
+
+[標準 AUTH-04] 強制變更密碼
+must_change_password 帳號只能開改密頁與登出；
+頁面請求導向改密頁，API 請求回 password_change_required。
 """
 import logging
-from flask import Flask, request, abort, g, redirect, url_for
+from flask import Flask, request, abort, g, redirect, url_for, jsonify
 from flask_login import current_user
 
 logger = logging.getLogger(__name__)
@@ -40,6 +44,25 @@ PUBLIC_ROUTE_PREFIXES = (
     '/static/',
     '/public/',
     '/dev/',  # 開發工具 - 僅內網 IP 可存取 (由 internal_network_only 控制)
+)
+
+# [AUTH-03] 原始管理員強制初始設定期間允許通過的路徑。
+ORIGINAL_ADMIN_SETUP_PREFIXES = (
+    '/admin/initial-setup',
+    '/auth/change-password',
+    '/auth/logout',
+    '/auth/password-policy',
+    '/users/check-username',
+    '/api/numbering/',
+    '/api/transliterate/',
+)
+
+# [AUTH-04] 強制變更密碼期間仍可通行的路徑（PF-243）。
+# 改密頁本身、登出、密碼政策查詢；靜態檔與 @public_route 在更前面已放行。
+PASSWORD_CHANGE_ALLOWED_PREFIXES = (
+    '/auth/change-password',
+    '/auth/logout',
+    '/auth/password-policy',
 )
 
 
@@ -127,15 +150,7 @@ def register_auth_interceptor(app: Flask) -> None:
         # PageRoleGuard 會因「無角色 = 擋下」而強制登出原始管理員
         if current_user.is_original_admin and current_user.is_active:
             # 允許通過的路徑: 初始設定頁面本身、變更密碼、登出、靜態資源、API
-            allowed_prefixes = (
-                '/admin/initial-setup',
-                '/auth/change-password',
-                '/auth/logout',
-                '/auth/password-policy',
-                '/users/check-username',
-                '/api/numbering/',
-                '/api/transliterate/',
-            )
+            allowed_prefixes = ORIGINAL_ADMIN_SETUP_PREFIXES
             if not request.path.startswith(allowed_prefixes):
                 from ..models.user import User, UserType
                 has_bound_admin = User.query.filter(
@@ -148,6 +163,19 @@ def register_auth_interceptor(app: Flask) -> None:
 
                 if not has_bound_admin:
                     return redirect(url_for('org_admins.initial_setup'))
+
+        # [AUTH-04] 強制變更密碼（PF-243）：持暫時密碼的帳號只能開改密頁與登出，
+        # 頁面請求 302 到改密頁、API 請求 403 password_change_required。
+        # 原始管理員走初始設定精靈時另外放行精靈所需路徑（精靈結束會停用該帳號，強迫先改密沒有意義）。
+        if getattr(current_user, 'must_change_password', False):
+            allowed = PASSWORD_CHANGE_ALLOWED_PREFIXES
+            if getattr(current_user, 'is_original_admin', False):
+                allowed = allowed + ORIGINAL_ADMIN_SETUP_PREFIXES
+            if not request.path.startswith(allowed):
+                change_url = url_for('auth.change_password')
+                if request.is_json or request.path.startswith('/api/'):
+                    return jsonify({'error': 'password_change_required', 'redirect': change_url}), 403
+                return redirect(change_url)
 
         # [SEC-01] 網頁角色守衛 (Page Role Guard)
         # 檢查用戶是否持有存取該頁面所需的角色

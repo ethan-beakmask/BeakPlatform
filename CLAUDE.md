@@ -372,6 +372,22 @@ ref_code 不在搜尋範圍，內文沒寫到自己代號的原子就搜不到�
 @system_admin_required # 需要系統管理員
 ```
 
+### AUTH-04: `must_change_password` 由攔截器強制（2026-09-04 PF-243 起）
+
+`users.must_change_password` 為真的帳號，`auth_interceptor` 只放行
+`/auth/change-password`、`/auth/logout`、`/auth/password-policy`（加上靜態檔與 `@public_route`）：
+**頁面請求 302 到改密頁，API 請求 403 `{"error":"password_change_required","redirect":...}`**。
+判定在 AUTH-03（原始管理員初始設定）之後、PageRoleGuard 之前；原始管理員走精靈時另放行精靈路徑。
+2026-09-04 之前只有登入回應帶 redirect、伺服器端不攔，拿暫時密碼的人可以不改密照用。
+
+三件會撞到的：
+
+- **自動化以暫時密碼帳號登入後打任何 API 都是 403**，先 `POST /auth/change-password`（JSON 帶
+  `current_password` / `new_password` / `confirm_password`，token 從改密頁的 hidden input 取，該頁沒有 meta token）
+- 任何會設 `must_change_password=True` 的路徑（新帳號通知信、忘記密碼暫時密碼、管理員重設）從此真的會擋人；
+  bpserv 出廠的 `enterprise@sys-...` 就是這種帳號，部署此版後首次登入會被強制改密
+- 改密頁的「強制模式」（無取消連結）同時看 session flag 與 DB 旗標，quick-login 進來也會是強制模式
+
 ### PERM-01: 權限模型（4+1）
 - 四層 user_type 硬界線（角色永不跨層）+ NoCode 公開資料隔離區
 - 選單/頁面 = 雙鑰匙（Key1 user_type 層界 + Key2 角色，僅 EMPLOYEE/EXTERNAL 吃 Key2）；欄位 = EGRESS-01

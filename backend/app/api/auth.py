@@ -824,7 +824,7 @@ def change_password():
     - 最少 12 碼
     - 無大小寫/數字/符號要求
     """
-    is_forced = session.get('must_change_password', False)
+    is_forced = session.get('must_change_password', False) or bool(getattr(current_user, 'must_change_password', False))
 
     if request.method == 'GET':
         return render_template(
