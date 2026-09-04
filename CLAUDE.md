@@ -128,7 +128,9 @@ Generated with Claude Code"
 - GitHub 的 history 與 origin 不同步是正常的（過濾 commit），不要 merge github/main 回 local
 
 ### 2. 更新追蹤
-- 完成 BBN 待辦（PF-xx）時，回寫該原子標註完成狀態
+- 完成 BBN 待辦（PF-xx）時，**必須呼叫 `note_task_status(ref="PF-xx", status="completed")`**——
+  只改標題成「[已解決]」、貼「已完成」標籤或追加內文，待辦狀態仍是 `planning`，
+  `project_tasks` 會繼續把它列在待辦（2026-09-04 PF-239／PF-240 就是這樣漏掉的）
 - 如果涉及架構變更，更新相關文件
 
 ---
@@ -2236,7 +2238,12 @@ PGPASSWORD=postgres123 pg_restore -h localhost -U beakplatform -d <新庫名> \
 - **dev 機沒指定時所有系統信都會失敗**——`mail_primary_service` 是新鍵，
   全新環境出廠是未指定，忘記密碼頁會直接顯示「系統發信服務尚未就緒」
   （bpserv 2026-09-02 已指定 SMTP，見上方 bpserv 表）。
-  dev 現況是 `emailrelay`、不併發。企業「密碼政策」分頁的黃色提示看的也是這個就緒狀態
+  dev 現況是 `emailrelay`、不併發。**dev 的 E-MailRelay 不是只進 spool**（2026-09-04 實測）：
+  `/opt/emailrelay/etc/emailrelay.conf` 是 `forward-to smtp.gmail.com:587` ＋ `poll 10`，
+  `emailrelay-submit` 寫進 `/opt/emailrelay/spool/` 的信最多 10 秒就被轉送到 Gmail 並從 spool 刪掉，
+  所以系統信在 dev 也會真的寄到收件者；想從 spool 撈信件內文（例如抓暫時密碼）幾乎來不及，
+  改看收件信箱。log 在 `/opt/emailrelay/logs/emailrelay-YYYYMMDD.log`，每封只留一行
+  `smtp connection to <ip>:587`，數行數即封數。企業「密碼政策」分頁的黃色提示看的也是這個就緒狀態
   （API 回 `system_mail_ready`，`has_smtp` 已移除）
 - 流程 `Email` 節點與受限節點 `SysEmailRelay` **不走**這個入口，那是流程設計者選的通道。
   dev 的系統級 SMTP 設定組 `lionsecbot@gmail.com` 密碼 2026-09-02 PF-218 收尾時已換成有效的
