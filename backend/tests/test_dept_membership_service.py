@@ -16,6 +16,8 @@ from app.models import (
 )
 from app.services.dept_membership_service import (
     ensure_dept_membership,
+    ensure_solid_membership,
+    reconcile_dept_manager,
     remove_dept_membership,
     set_dept_manager,
 )
@@ -196,3 +198,108 @@ def test_remove_membership_soft_deletes_rows_and_missing_manager_role_raises(tes
     db.session.flush()
     with pytest.raises(LookupError):
         set_dept_manager(user, unit, 'tester')
+
+
+def _row(user, role, unit):
+    return UserRoleAssignment.query.filter_by(
+        org_secure_code=user.org_secure_code,
+        user_secure_code=user.secure_code,
+        role_secure_code=role.secure_code,
+        unit_secure_code=unit.secure_code,
+    ).one()
+
+
+def test_reconcile_dept_manager_sets_manager_then_is_a_no_op(test_org):
+    user = _user('deptsvc_reconcile', test_org, 'deptsvcreconcile', 'Reconcile')
+    unit = _unit(test_org, 'RC', '同步部')
+    roles = _roles(test_org)
+
+    assert reconcile_dept_manager(user, unit, 'tester') is True
+    db.session.flush()
+
+    assert _active_assignment(user, roles['manager'], unit) is not None
+    assert _active_assignment(user, roles['member'], unit) is not None
+    assert _active_assignment(user, roles['employee'], unit) is None
+    employee_row = _row(user, roles['employee'], unit)
+    assert employee_row.is_deleted is True
+    assert employee_row.deleted_at is not None
+    assert UserUnitMembership.query.filter_by(
+        user_secure_code=user.secure_code,
+        unit_secure_code=unit.secure_code,
+        membership_type=MembershipType.SOLID,
+        is_deleted=False,
+    ).count() == 1
+    db.session.commit()
+
+    manager_row = _row(user, roles['manager'], unit)
+    before = (
+        employee_row.id,
+        employee_row.deleted_at,
+        employee_row.updated_at,
+        manager_row.updated_at,
+        UserUnitMembership.query.count(),
+        UserRoleAssignment.query.count(),
+    )
+
+    assert reconcile_dept_manager(user, unit, 'tester') is False
+    dirty_types = {type(obj) for obj in db.session.dirty}
+    assert UserRoleAssignment not in dirty_types
+    assert UserUnitMembership not in dirty_types
+    assert db.session.is_modified(employee_row) is False
+    assert db.session.is_modified(manager_row) is False
+    db.session.commit()
+
+    employee_row = _row(user, roles['employee'], unit)
+    manager_row = _row(user, roles['manager'], unit)
+    after = (
+        employee_row.id,
+        employee_row.deleted_at,
+        employee_row.updated_at,
+        manager_row.updated_at,
+        UserUnitMembership.query.count(),
+        UserRoleAssignment.query.count(),
+    )
+    assert after == before
+    assert employee_row.is_deleted is True
+
+
+def test_reconcile_dept_manager_replaces_previous_manager(test_org):
+    old = _user('deptsvc_rc_old', test_org, 'deptsvcrcold', 'Old Manager')
+    new = _user('deptsvc_rc_new', test_org, 'deptsvcrcnew', 'New Manager')
+    unit = _unit(test_org, 'RP', '交接部')
+    roles = _roles(test_org)
+
+    assert reconcile_dept_manager(old, unit, 'tester') is True
+    db.session.flush()
+    assert reconcile_dept_manager(new, unit, 'tester') is True
+    db.session.flush()
+
+    assert _active_assignment(old, roles['manager'], unit) is None
+    assert _active_assignment(old, roles['employee'], unit) is not None
+    assert _active_assignment(new, roles['manager'], unit) is not None
+    assert _active_assignment(new, roles['employee'], unit) is None
+    assert new.primary_unit_secure_code == unit.secure_code
+
+    roles['manager'].is_deleted = True
+    db.session.flush()
+    with pytest.raises(LookupError):
+        reconcile_dept_manager(new, unit, 'tester')
+
+
+def test_ensure_solid_membership_only_touches_membership(test_org):
+    user = _user('deptsvc_solid', test_org, 'deptsvcsolid', 'Solid')
+    unit = _unit(test_org, 'SL', '純成員部')
+    _roles(test_org)
+
+    ensure_solid_membership(user, unit)
+    db.session.flush()
+    ensure_solid_membership(user, unit)
+    db.session.flush()
+
+    assert UserUnitMembership.query.filter_by(
+        user_secure_code=user.secure_code,
+        unit_secure_code=unit.secure_code,
+        membership_type=MembershipType.SOLID,
+        is_deleted=False,
+    ).count() == 1
+    assert UserRoleAssignment.query.filter_by(user_secure_code=user.secure_code).count() == 0

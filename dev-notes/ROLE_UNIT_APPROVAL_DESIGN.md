@@ -507,3 +507,24 @@ S8（BELUGA `PF247_P2_A`）主管職缺快照 `[ethanyu, aaaa, ssss]` 三人 200
 3. 設計文件 3.5 第 2 條同步改寫為「單位指派優先、全企業指派僅職缺時候補」（原 session 已改，見下）
 
 4a 做完不必重跑全量，跑 `test_hr_lookup_node.py`＋`test_dept_membership_service.py`＋守恆檢查＋GHTRAVEL G1／G2 兩張單即可；憑證接在 phase4 log 尾。
+
+### 補丁 4a——完成（2026-09-05 23:20，執行 session；待原 session 複審）
+
+codex 做完兩支 service、seed 與 HR 測試後撞 ChatGPT 用量上限（exit=1，停用至 09-07；spec `/opt/tmp/codex/20260905-pf247-phase4a-spec.txt`），
+`test_dept_membership_service.py` 三案與 `HR_LOOKUP_NODE_SPEC.md` 改寫依 codex-first 例外由主 Claude 補齊。
+
+1. **差異 2 改掉**：`resolve_role_holders()` 加 keyword `unit_only=False`（預設行為一字不差，三個既有呼叫端未動）；
+   `iter_manager_chain()` 每站先取 `unit_only=True` 的單位指派持有者（排除 visited），沒有才從「單位 ∪ 全企業」中取不在單位集合內的全企業指派。
+   合成語意：本人是單位指派主管且另有全企業指派 G → 該站是 G（差異 3 保留）；職缺 → 在該站候補 G，不是往上。
+   測試：`test_direct_manager_uses_global_manager_assignment` 更名 `test_direct_manager_prefers_unit_assignment_over_global`（單位主管贏 → 軟刪後 G 在 RD 站候補），
+   新增 `test_direct_manager_global_fallback_when_applicant_heads_own_unit`、`test_resolve_role_holders_unit_only_excludes_global`。HR 規格第 4 條改成規則、「已知限制」該條刪除。
+2. **差異 6 收掉**：`dept_membership_service` 抽出 `ensure_solid_membership(user, unit)`、新增 `reconcile_dept_manager(manager, unit, operator) -> bool`
+   （active 持有者＝{manager} 時只做三個 no-op 安全操作：SOLID membership、`DEPT_MEMBER` ensure、`DEPT_EMPLOYEE` revoke-if-active，回 False；否則 `set_dept_manager()` 回 True）；
+   `sync_dept_roles()` 第二迴圈改呼叫它。測試 `test_reconcile_dept_manager_sets_manager_then_is_a_no_op`（第二次呼叫 `session.dirty` 無兩表物件、`deleted_at`／`updated_at`／count 不變）、
+   `test_reconcile_dept_manager_replaces_previous_manager`、`test_ensure_solid_membership_only_touches_membership`。
+3. CLAUDE.md 引擎行為表該句同步改寫。
+
+驗收（憑證接 `/opt/tmp/verify/20260905-role-unit-phase4.log` 尾）：四檔 78 passed（hr_lookup 22／dept 7／task_authorizer 25／formadapter 24）；守恆檢查綠（108 表／1816 欄）；
+GHTRAVEL 實流程 G1／G2 與第 4 期一字不差，**另加 G1x**：晧志遠（GM）插一筆全企業 `DEPT_MANAGER`、`assigned_at` 早 30 天，翎柏瑞 30 萬的直屬主管與核決人仍是燁凱文（修前會變成晧志遠），22/22 PASS；
+`--sync-dept-roles` 連跑兩次三家全 0，`user_role_assignments`／`user_unit_memberships` 的 `id|is_deleted|deleted_at|updated_at` 雜湊與 4a 前完全一致（修前每跑一次主管的 `DEPT_EMPLOYEE` 列 `deleted_at`／`updated_at` 都會變）。
+不重跑全量（複審裁示）。

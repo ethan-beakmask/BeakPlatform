@@ -167,8 +167,12 @@ def resolve_role_holders(
     unit_secure_code: str | None = None,
     include_descendant_units: bool = False,
     today: date | None = None,
+    unit_only: bool = False,
 ) -> list[str]:
-    """回傳當下有效持有指定 (role, unit) 的啟用使用者 secure_code。"""
+    """回傳當下有效持有指定 (role, unit) 的啟用使用者 secure_code。
+
+    unit_only=True 且有指定 unit 時，只取該單位範圍，不含全企業指派。
+    """
     if today is None:
         today = org_local_today(org_secure_code)
 
@@ -187,10 +191,13 @@ def resolve_role_holders(
         units = [unit_secure_code]
         if include_descendant_units:
             units.extend(get_unit_descendant_codes(unit_secure_code, org_secure_code))
-        query = query.filter(
-            (UserRoleAssignment.unit_secure_code.in_(units))
-            | (UserRoleAssignment.unit_secure_code == None)  # noqa: E711
-        )
+        if unit_only:
+            query = query.filter(UserRoleAssignment.unit_secure_code.in_(units))
+        else:
+            query = query.filter(
+                (UserRoleAssignment.unit_secure_code.in_(units))
+                | (UserRoleAssignment.unit_secure_code == None)  # noqa: E711
+            )
 
     assignments = query.order_by(
         UserRoleAssignment.assigned_at.asc(),
@@ -213,7 +220,10 @@ def iter_manager_chain(
     org_secure_code: str,
     today: date | None = None,
 ):
-    """由部門推導的主管鏈。"""
+    """由部門推導的主管鏈。
+
+    每站先取單位指派主管；沒有可用人選時才退回全企業指派。
+    """
     if today is None:
         today = org_local_today(org_secure_code)
 
@@ -232,14 +242,28 @@ def iter_manager_chain(
     units = [start] + get_unit_ancestor_codes(start, org_secure_code)
     visited = {user_secure_code}
     for level, unit_sc in enumerate(units):
-        holders = resolve_role_holders(
+        unit_holders = resolve_role_holders(
             role.secure_code,
             org_secure_code,
             unit_sc,
             include_descendant_units=False,
             today=today,
+            unit_only=True,
         )
-        holder = next((sc for sc in holders if sc not in visited), None)
+        holder = next((sc for sc in unit_holders if sc not in visited), None)
+        if holder is None:
+            all_holders = resolve_role_holders(
+                role.secure_code,
+                org_secure_code,
+                unit_sc,
+                include_descendant_units=False,
+                today=today,
+            )
+            unit_set = set(unit_holders)
+            holder = next(
+                (sc for sc in all_holders if sc not in visited and sc not in unit_set),
+                None,
+            )
         if not holder:
             continue
         visited.add(holder)

@@ -2,6 +2,7 @@
 部門成員關係與部門主管角色的共用服務。
 
 API 與 seed 腳本都從這裡維護 SOLID membership 與 DEPT_* 角色指派。
+reconcile_dept_manager() 是 seed 腳本使用的冪等同步入口。
 """
 from datetime import datetime
 
@@ -66,14 +67,8 @@ def revoke_role_assignment(org_sc: str, user_sc: str, role_sc: str,
         assignment.deleted_at = datetime.utcnow()
 
 
-def ensure_dept_membership(user, unit, operator: str) -> None:
-    """
-    確保部門成員關係與系統角色存在。
-
-    1. 建立或恢復 UserUnitMembership(SOLID)
-    2. 指派 DEPT_MEMBER (部門成員基底角色)
-    3. 指派 DEPT_EMPLOYEE (部門員工，預設非管理職)
-    """
+def ensure_solid_membership(user, unit) -> None:
+    """確保 SOLID 部門成員關係存在（建立或恢復軟刪除的記錄）。"""
     org_sc = unit.org_secure_code
     user_sc = user.secure_code
     unit_sc = unit.secure_code
@@ -89,15 +84,31 @@ def ensure_dept_membership(user, unit, operator: str) -> None:
         if existing.is_deleted:
             existing.is_deleted = False
             existing.deleted_at = None
-    else:
-        membership = UserUnitMembership(
-            org_secure_code=org_sc,
-            user_secure_code=user_sc,
-            unit_secure_code=unit_sc,
-            membership_type=MembershipType.SOLID,
-            role_type=MembershipRole.MEMBER,
-        )
-        db.session.add(membership)
+        return
+
+    membership = UserUnitMembership(
+        org_secure_code=org_sc,
+        user_secure_code=user_sc,
+        unit_secure_code=unit_sc,
+        membership_type=MembershipType.SOLID,
+        role_type=MembershipRole.MEMBER,
+    )
+    db.session.add(membership)
+
+
+def ensure_dept_membership(user, unit, operator: str) -> None:
+    """
+    確保部門成員關係與系統角色存在。
+
+    1. 建立或恢復 UserUnitMembership(SOLID)
+    2. 指派 DEPT_MEMBER (部門成員基底角色)
+    3. 指派 DEPT_EMPLOYEE (部門員工，預設非管理職)
+    """
+    org_sc = unit.org_secure_code
+    user_sc = user.secure_code
+    unit_sc = unit.secure_code
+
+    ensure_solid_membership(user, unit)
 
     dept_member = get_system_role(org_sc, 'DEPT_MEMBER')
     if dept_member:
@@ -191,3 +202,47 @@ def set_dept_manager(user, unit, operator: str) -> None:
         assigned_by=operator,
     )
     db.session.add(new_assignment)
+
+
+def reconcile_dept_manager(manager, unit, operator: str) -> bool:
+    """同步單位主管；已正確時只修必要狀態且回傳 False。"""
+    org_sc = unit.org_secure_code
+    unit_sc = unit.secure_code
+    dept_manager_role = get_system_role(org_sc, 'DEPT_MANAGER')
+    if not dept_manager_role:
+        raise LookupError('DEPT_MANAGER')
+
+    active_holders = {
+        assignment.user_secure_code
+        for assignment in UserRoleAssignment.query.filter(
+            UserRoleAssignment.org_secure_code == org_sc,
+            UserRoleAssignment.role_secure_code == dept_manager_role.secure_code,
+            UserRoleAssignment.unit_secure_code == unit_sc,
+            UserRoleAssignment.is_deleted == False,  # noqa: E712
+        ).all()
+    }
+    if active_holders == {manager.secure_code}:
+        ensure_solid_membership(manager, unit)
+
+        dept_member_role = get_system_role(org_sc, 'DEPT_MEMBER')
+        if dept_member_role:
+            ensure_role_assignment(
+                org_sc,
+                manager.secure_code,
+                dept_member_role.secure_code,
+                unit_sc,
+                operator,
+            )
+
+        dept_employee_role = get_system_role(org_sc, 'DEPT_EMPLOYEE')
+        if dept_employee_role:
+            revoke_role_assignment(
+                org_sc,
+                manager.secure_code,
+                dept_employee_role.secure_code,
+                unit_sc,
+            )
+        return False
+
+    set_dept_manager(manager, unit, operator)
+    return True

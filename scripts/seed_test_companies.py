@@ -815,8 +815,7 @@ def sync_dept_roles(org_sc, operator='seed_script'):
     from app.services.dept_membership_service import (
         ensure_dept_membership,
         get_system_role,
-        revoke_role_assignment,
-        set_dept_manager,
+        reconcile_dept_manager,
     )
 
     roles = {
@@ -877,26 +876,9 @@ def sync_dept_roles(org_sc, operator='seed_script'):
             position.user.primary_unit_secure_code = position.unit_secure_code
 
     managers_set = 0
-    manager_role = roles['DEPT_MANAGER']
     for unit_sc, (manager, unit) in expected_managers.items():
-        current = UserRoleAssignment.query.filter(
-            UserRoleAssignment.org_secure_code == org_sc,
-            UserRoleAssignment.role_secure_code == manager_role.secure_code,
-            UserRoleAssignment.unit_secure_code == unit_sc,
-            UserRoleAssignment.is_deleted == False,
-        ).all()
-        current_holders = {assignment.user_secure_code for assignment in current}
-        if current_holders == {manager.secure_code}:
-            ensure_dept_membership(manager, unit, operator)
-            revoke_role_assignment(
-                org_sc,
-                manager.secure_code,
-                roles['DEPT_EMPLOYEE'].secure_code,
-                unit_sc,
-            )
-            continue
-        set_dept_manager(manager, unit, operator)
-        managers_set += 1
+        if reconcile_dept_manager(manager, unit, operator):
+            managers_set += 1
 
     db.session.flush()
     after_memberships = UserUnitMembership.query.filter(

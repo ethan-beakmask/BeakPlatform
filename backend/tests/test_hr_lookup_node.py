@@ -34,7 +34,7 @@ from app.models import (  # noqa: E402
     MembershipType,
 )
 from app.models.contract import Contract, ContractStatus  # noqa: E402
-from app.services.unit_resolver import iter_manager_chain  # noqa: E402
+from app.services.unit_resolver import iter_manager_chain, resolve_role_holders  # noqa: E402
 from modules.form_workflow.services.node_handlers.hr_lookup_handler import HrLookupHandler  # noqa: E402
 
 
@@ -643,7 +643,7 @@ def test_direct_manager_ignores_deputy_and_expired_assignment(hr_env):
     assert vars_['hr_direct_manager_name'] == '主管 C'
 
 
-def test_direct_manager_uses_global_manager_assignment(hr_env):
+def test_direct_manager_prefers_unit_assignment_over_global(hr_env):
     global_manager = User(
         secure_code='hr_user_g_000000000000000001',
         org_secure_code=hr_env.org.secure_code,
@@ -662,8 +662,106 @@ def test_direct_manager_uses_global_manager_assignment(hr_env):
 
     _, vars_, _ = run_lookup({'var_prefix': 'hr'}, hr_env)
 
-    assert vars_['hr_direct_manager'] == global_manager.secure_code
-    assert vars_['hr_direct_manager_name'] == '全企業主管 G'
+    assert vars_['hr_direct_manager'] == hr_env.users['hr_user_b_000000000000000001'].secure_code
+    assert vars_['hr_direct_manager_unit'] == 'RD'
+
+    UserRoleAssignment.query.filter_by(
+        user_secure_code=hr_env.users['hr_user_b_000000000000000001'].secure_code,
+        role_secure_code=hr_env.roles['manager'].secure_code,
+        unit_secure_code=hr_env.units['rd'].secure_code,
+    ).first().is_deleted = True
+    db.session.commit()
+
+    _, fallback_vars, _ = run_lookup({'var_prefix': 'hr'}, hr_env)
+
+    assert fallback_vars['hr_direct_manager'] == global_manager.secure_code
+    assert fallback_vars['hr_direct_manager_name'] == global_manager.display_name
+    assert fallback_vars['hr_direct_manager_unit'] == 'RD'
+
+
+def test_direct_manager_global_fallback_when_applicant_heads_own_unit(hr_env):
+    global_manager = User(
+        secure_code='hr_user_g_self_000000000000001',
+        org_secure_code=hr_env.org.secure_code,
+        username='hr_user_g_self',
+        email='hr_user_g_self@example.test',
+        display_name='全企業主管 G',
+        is_active=True,
+        is_deleted=False,
+    )
+    global_manager.set_password(secrets.token_urlsafe(16))
+    db.session.add(global_manager)
+    db.session.flush()
+    assignment = hr_env.assign(global_manager, hr_env.roles['manager'], None)
+    db.session.commit()
+
+    _, vars_, _ = run_lookup(
+        {'target_source': 'variable', 'target_expr': '${v.target_user}', 'var_prefix': 'mgr'},
+        hr_env,
+        replacements={'${v.target_user}': hr_env.users['hr_user_b_000000000000000001'].secure_code},
+    )
+
+    assert vars_['mgr_direct_manager'] == global_manager.secure_code
+    assert vars_['mgr_direct_manager_unit'] == 'RD'
+
+    assignment.is_deleted = True
+    db.session.commit()
+    _, parent_vars, _ = run_lookup(
+        {'target_source': 'variable', 'target_expr': '${v.target_user}', 'var_prefix': 'mgr'},
+        hr_env,
+        replacements={'${v.target_user}': hr_env.users['hr_user_b_000000000000000001'].secure_code},
+    )
+
+    assert parent_vars['mgr_direct_manager'] == hr_env.users['hr_user_c_000000000000000001'].secure_code
+    assert parent_vars['mgr_direct_manager_unit'] == 'HQ'
+
+
+def test_resolve_role_holders_unit_only_excludes_global(hr_env):
+    global_manager = User(
+        secure_code='hr_user_g_unitonly_000000000001',
+        org_secure_code=hr_env.org.secure_code,
+        username='hr_user_g_unitonly',
+        email='hr_user_g_unitonly@example.test',
+        display_name='全企業主管 G',
+        is_active=True,
+        is_deleted=False,
+    )
+    global_manager.set_password(secrets.token_urlsafe(16))
+    db.session.add(global_manager)
+    db.session.flush()
+    assignment = hr_env.assign(global_manager, hr_env.roles['manager'], None)
+    assignment.assigned_at = datetime.combine(hr_env.today - timedelta(days=20), datetime.min.time())
+    db.session.commit()
+
+    default_holders = resolve_role_holders(
+        hr_env.roles['manager'].secure_code,
+        hr_env.org.secure_code,
+        hr_env.units['rd'].secure_code,
+        today=hr_env.today,
+    )
+    unit_holders = resolve_role_holders(
+        hr_env.roles['manager'].secure_code,
+        hr_env.org.secure_code,
+        hr_env.units['rd'].secure_code,
+        today=hr_env.today,
+        unit_only=True,
+    )
+    all_holders = resolve_role_holders(
+        hr_env.roles['manager'].secure_code,
+        hr_env.org.secure_code,
+        today=hr_env.today,
+    )
+    all_holders_unit_only = resolve_role_holders(
+        hr_env.roles['manager'].secure_code,
+        hr_env.org.secure_code,
+        today=hr_env.today,
+        unit_only=True,
+    )
+
+    assert global_manager.secure_code in default_holders
+    assert hr_env.users['hr_user_b_000000000000000001'].secure_code in default_holders
+    assert unit_holders == [hr_env.users['hr_user_b_000000000000000001'].secure_code]
+    assert all_holders_unit_only == all_holders
 
 
 def test_unit_resolved_from_primary_position_when_no_membership(hr_env):
