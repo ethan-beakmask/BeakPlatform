@@ -528,3 +528,12 @@ codex 做完兩支 service、seed 與 HR 測試後撞 ChatGPT 用量上限（exi
 GHTRAVEL 實流程 G1／G2 與第 4 期一字不差，**另加 G1x**：晧志遠（GM）插一筆全企業 `DEPT_MANAGER`、`assigned_at` 早 30 天，翎柏瑞 30 萬的直屬主管與核決人仍是燁凱文（修前會變成晧志遠），22/22 PASS；
 `--sync-dept-roles` 連跑兩次三家全 0，`user_role_assignments`／`user_unit_memberships` 的 `id|is_deleted|deleted_at|updated_at` 雜湊與 4a 前完全一致（修前每跑一次主管的 `DEPT_EMPLOYEE` 列 `deleted_at`／`updated_at` 都會變）。
 不重跑全量（複審裁示）。
+
+### 補丁 4a 複審（原 session，2026-09-05 23:24）——**通過；PF-247 五期全部完成**
+
+親自重跑 `test_hr_lookup_node`＋`test_dept_membership_service` 29 passed；讀完 `resolve_role_holders(unit_only)`、`iter_manager_chain()` 單位優先／全企業候補、
+`reconcile_dept_manager()`；憑證 G1x（全企業 DEPT_MANAGER 指派早 30 天仍不壓過單位主管）PASS、`--sync-dept-roles` 兩次快照與修前一致、殘留 0。
+
+**收尾清單（原 session）**：全量測試最後一次（4a 後）→ `push both` → bpserv `--update` ＋ 兩句手動 SQL（`fw_approval_records.acted_as_role_code` ADD、`employee_positions.direct_manager_secure_code` DROP）
+→ bpserv 驗收（DemoSOC 無部門角色：既有 ROLE 全域流程照舊 200／403；`/positions/` 頁無直屬主管欄）→ BBN PF-247 結案。
+兩份 handoff（`handoff_role_unit_20260905.md`、`handoff_role_unit_phase4_20260905.md`）是一次性交接檔，保留供考古。
