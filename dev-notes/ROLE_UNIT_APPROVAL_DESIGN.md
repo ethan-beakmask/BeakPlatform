@@ -190,7 +190,7 @@ def _identity_matches(data, user_sc, actor):
 | 1 授權核心 | `build_actor` 展開 (role, unit)＋祖先快取；`_identity_matches` 依第四節；舊佇列項相容；`unit_resolver.py` 新檔（3.2） | `modules/form_workflow/services/task_authorizer.py`、`backend/app/services/unit_resolver.py` | 新檔 `test_task_authorizer_role_unit.py`：直接持有／全域超集／套圈／POSITION 不套圈／副主管永遠／代理人僅缺席／舊 data 相容／代理授權疊加 |
 | 2 節點解析 | FormAdapter 讀 `unit_scope` 等 key，進關卡解析單位寫 `result.data`；DEPARTMENT 別名；解析失敗走 PF-226；逾時參考人用快照 | `formadapter_handler.py` | `test_formadapter_role_unit.py` |
 | 3 設計器與顯示 | 第五節 UI、i18n、手冊 `workflows.md` | `wf-form-adapter.js`、`wf-node-form-adapter.js`、`wf-save.js`、`fc-utils.js`、`en.json`、`docs/manual/04_form_workflow/workflows.md` | 主 Claude 瀏覽器實點 |
-| 4 主管來源統一 | 3.5（改寫版）：`resolve_direct_manager()` 新增；OpHrLookup 改用；任職卡指標退役（model、web、模板、hostconfig、seed）；dev 庫 DROP COLUMN；`HR_LOOKUP_NODE_SPEC.md` 規則 3～7 改寫 | `unit_resolver.py`、`hr_lookup_handler.py`、`employee_position.py`、`web/positions.py`、`positions/*.html`、`hostconfig.py`、`seed_test_companies.py`、手冊兩頁 | `test_hr_lookup_node.py` 增案（部門推導、本人是主管往上、職缺往上、無任職卡主管視為 0）；GHTRAVEL 重種後 30 萬／500 萬對照組一致、10 億走 PF-226 退回 |
+| 4 主管來源統一 | 3.5（改寫版）：`resolve_direct_manager()` 新增；OpHrLookup 改用；任職卡指標退役（model、web、模板、hostconfig、seed）；dev 庫 DROP COLUMN；`HR_LOOKUP_NODE_SPEC.md` 規則 3～7 改寫 | `unit_resolver.py`、`hr_lookup_handler.py`、`employee_position.py`、`web/positions.py`、`positions/*.html`、`hostconfig.py`、`seed_test_companies.py`、手冊兩頁 | `test_hr_lookup_node.py` 增案（部門推導、本人是主管往上、職缺往上、無任職卡主管視為 0）；GHTRAVEL 重種後 30 萬／500 萬對照組一致、10 億走 PF-226 退回；**另含決策點 8**：`_match_identity()` 帶 spec key 的 ROLE／DEPARTMENT 任務不看快照（`test_task_authorizer_role_unit.py` 增案） |
 | 5 請假缺席 | 缺席定義加入當日 LEAVE | `task_authorizer.py` | 增案 |
 
 每期派工 spec 都要貼：`dev-notes/codex_spec/_footer.md`（必）、`security.md`（TENANT-01：所有查詢帶 org）、
@@ -232,7 +232,7 @@ def _identity_matches(data, user_sc, actor):
 
    往上重解析時 POSITION 的缺席順位照舊（上層主管職缺→上層的副主管、代理人）。面板上做成一個 select「申請人本人就是簽核者時」三選一，`result.data` 寫 `self_target_action` 與實際發生的 `self_target_escalated_levels`（往上了幾層）。第 3 期一併做（handler＋測試＋面板）。
 
-8. **ROLE 型任務的「快照命中永遠放行」要不要收掉？**（第 5 期複審提出）現況：`_match_identity()` 對 ROLE／DEPARTMENT 先看角色@單位與缺席順位，都不成立時仍以進關卡當下的 `assignees` 快照放行（2026-08-09 L1 的「快照永不縮減」語意）。後果：單子在主管請假期間進關卡，代理人已在快照內，主管銷假後代理人**仍可簽**；同理主管卸任後、被撤角色的人若在快照內也仍可簽。與「角色是活的、人是快照」不一致。原 session 建議：**帶有效 spec（`assignee_unit_secure_code` key 存在）的 ROLE／DEPARTMENT 任務不再看快照**，快照只供顯示與逾時參考人；舊佇列項（無 spec key）與 USER／INITIATOR／DYNAMIC 維持快照放行。改動只在 `task_authorizer._match_identity()` 一處＋測試，可併第 4 期或獨立小期。——**待 Ethan 定案**。
+8. **ROLE 型任務的「快照命中永遠放行」要不要收掉？**（第 5 期複審提出）現況：`_match_identity()` 對 ROLE／DEPARTMENT 先看角色@單位與缺席順位，都不成立時仍以進關卡當下的 `assignees` 快照放行（2026-08-09 L1 的「快照永不縮減」語意）。後果：單子在主管請假期間進關卡，代理人已在快照內，主管銷假後代理人**仍可簽**；同理主管卸任後、被撤角色的人若在快照內也仍可簽。與「角色是活的、人是快照」不一致。原 session 建議：**帶有效 spec（`assignee_unit_secure_code` key 存在）的 ROLE／DEPARTMENT 任務不再看快照**，快照只供顯示與逾時參考人；舊佇列項（無 spec key）與 USER／INITIATOR／DYNAMIC 維持快照放行。改動只在 `task_authorizer._match_identity()` 一處＋測試，可併第 4 期或獨立小期。——**Ethan 2026-09-05 定案：收掉**。實作規則：`_match_identity()` 對 `assignee_type in (ROLE, DEPARTMENT)` 且 `assignee_unit_secure_code` key **存在**（含值為 null 的 GLOBAL 範圍，因為第 2 期起 handler 一律寫這個 key）時，只走角色@單位＋缺席順位，**不看 `assignees` 快照**；key 不存在（第 2 期前的舊佇列項）維持快照放行；USER／INITIATOR／DYNAMIC 不變。附帶效果：主管銷假、卸任、被撤角色即時失去簽核權；逾時參考人與待簽清單顯示仍用快照。測試：既有 `test_deputy_in_snapshot_still_records_acted_as` 要改成「快照有、角色沒有 → 不放行」；補「主管銷假後代理人 403」「舊佇列項無 key 仍放行」兩案。**併入第 4 期 spec**。
 
 ## 九、不在本設計內（已另存 PF-246）
 
