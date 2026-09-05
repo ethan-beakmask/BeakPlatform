@@ -368,3 +368,30 @@ codex 一次過（spec `/opt/tmp/codex/20260905-pf247-phase3-spec.txt`），主 
 儲存路徑寫進 DB（revision 4）、重新發行後 `escalate_or_self` 實流程本人簽（S1b，記錄 `acted_as=NULL`）、ethanyu 待簽清單列與簽核 modal 表頭顯示「部門主管@行銷部門」、
 申請人閱讀表單 modal 歷程顯示「ethanyu（以副主管身分）核准」、三頁 console error 0。全量測試見 BBN #5400 追記。
 BELUGA 的 `PF247_P2_A` 現在是 `APPLICANT_UNIT`＋`escalate_or_self`（published `Mf7MSqu4IsXrmJBWsbKBfg`），B／C 未動。
+
+### 第 3 期複審（原 session，2026-09-05 18:52）——**通過**
+
+親自重跑六個測試檔（含 `test_route_guard_table`）58 passed；`check_schema_drift.sh` 綠（108 表／1817 欄一致）；mkdocs strict 無 anchor 訊息；
+讀完 handler `_apply_self_target()`、`_match_identity()` 歸因順序調整（放行集合不變，只影響 `acted_as_role_code`）、新 API `/data/units` 守門、
+四支 JS diff（兩條儲存路徑都收集、`escapeHtml` 補上、`loadRolesList` 死碼已刪、層數 0 不再被吃掉）、13 條新測試名；憑證第二輪 FAIL=0，
+瀏覽器實點有 evaluate 輸出（modal 初值、四個 row 切換、單位下拉縮排與社群後綴、套用與儲存兩條路徑寫進 DB、待簽列與 modal 表頭「部門主管@行銷部門」、
+歷程「（以副主管身分）」、三頁 console error 0）。執行 session 自己抓到並修掉的兩個問題（acted_as 歸因順序、層數 0）是真問題，處理正確。
+第 1 條界定（本人＝在快照內、只對 POSITION）採納，已視同 3.1 補充。
+
+**帶進後續的事**：
+
+1. `fw_approval_records.acted_as_role_code` 是 schema 變更：**bpserv 部署時 `--update` 後要手動 `ALTER TABLE fw_approval_records ADD COLUMN acted_as_role_code VARCHAR(50);`**，
+   與第 4 期的 `DROP COLUMN direct_manager_secure_code` 一起列在部署清單
+2. `wf-save.js` 只在右側面板開著時收集 modal 值（既有設計，PF-226 同）——記進 `dev-notes/WORKFLOW_DESIGNER_NOTES.md`，不改
+3. BELUGA `PF247_P2_A` 已是 `APPLICANT_UNIT`＋`escalate_or_self`（published `Mf7MSqu4IsXrmJBWsbKBfg`），B／C 未動；第 4、5 期驗收可沿用，全部做完後決定留或軟刪
+
+### 執行 session 的接續安排（原 session 建議，2026-09-05 18:52）
+
+執行 session 已用 67% context。第 4 期（主管來源統一：`resolve_direct_manager()`、OpHrLookup 改寫、任職卡欄位退役含 model／web／模板／hostconfig／seed／DROP COLUMN、
+HR 規格與手冊、GHTRAVEL 重種驗收）是五期中最重的一期，估 20～30%，做到一半斷掉比現在換手更糟。**建議：**
+
+- 現在的執行 session **先做第 5 期**（主管請假算缺席，只動 `task_authorizer._unit_manager_present()`／快照的 `manager_vacant` 判定＋測試＋手冊一句，估 5～8%），
+  第 4、5 期彼此獨立，順序對調沒有依賴問題
+- 第 5 期複審通過後，該 session **寫交接補篇** `dev-notes/handoff_role_unit_phase4_20260905.md`（它累積的坑、`/opt/tmp/verify/pf247/` 工具清單與用法、
+  BELUGA／GHTRAVEL 現況、bpserv 待做的兩句 SQL、第 4 期 spec 要貼的檔案清單與現況行號），然後結束
+- **新 session 做第 4 期**，照本文件 3.5 改寫版＋第六節第 4 列＋交接補篇；原 session 照舊複審
