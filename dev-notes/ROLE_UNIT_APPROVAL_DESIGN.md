@@ -222,7 +222,15 @@ def _identity_matches(data, user_sc, actor):
 5. `DEPARTMENT` 型別退役為別名（3.1）——同意？**Ethan 2026-09-05 定案：同意**
 6. 第五期「主管請假算缺席」——**Ethan 2026-09-05 定案：要做**。「LEAVE」指 `schedule_adjustments.adjust_type='LEAVE'` 的班表調整列（語意：該人該日這些時段不工作；`status='APPROVED'`）。現況唯一寫入者是個人行事曆：員工建 LEAVE（請假）或 TRIP（出差）事件時由 `calendar_event_service` 同步寫入並帶 `calendar_event_secure_code`；`NULL` 來源（請假單流程、人工）目前**沒有任何程式會寫**、dev 庫 0 列。採用定義（除非 Ethan 反對）：**認全部 LEAVE 列不看來源、以時段判定**——判定當下（企業時區）落在該列請假時段內才算缺席（`adjusted_periods` 為 `[]` 或 NULL＝整天），出差同樣視為缺席。判定走 `ScheduleService.get_work_periods()` 既有優先序，不另寫查詢。
 
-7. **申請人本人持有目標角色@單位時（例：申請人就是自己部門的主管，節點是「部門主管@申請人所屬單位」）要不要自動往上一層？**第 2 期實作會派給自己簽（複審發現，設計 3.5 只對 OpHrLookup 規定往上）。原 session 建議：加 config `skip_self`（預設 **開**），`APPLICANT_UNIT`／`APPLICANT_ANCESTOR` 範圍下，申請人本人持有目標 (角色, 單位) 就以同一規則往上一層重解析，到根仍是本人則走 PF-226 退回；`UNIT`／`GLOBAL` 不受影響。自己簽自己是控制缺口，預設開比較符合防弊。——**待 Ethan 定案**，定案後併入第 3 期 spec（handler 端小改＋測試＋面板 checkbox）。
+7. **申請人本人持有目標角色@單位時怎麼辦**（例：申請人就是自己部門的主管，節點是「部門主管@申請人所屬單位」）。第 2 期實作會派給自己簽。**Ethan 2026-09-05 定案：交給流程設計師決定**，含「無上層主管時自己簽自己給不給過」。實作為單一 config `self_target_action`（只在 `APPLICANT_UNIT`／`APPLICANT_ANCESTOR` 範圍有效；`UNIT`／`GLOBAL` 不受影響）：
+
+   | 值 | 語意 |
+   |---|---|
+   | `escalate_or_return`（**預設**） | 本人持有目標 (角色, 單位) 就以同一規則往上一層重解析；到根仍是本人（或上層無人）→ 走 PF-226 `no_assignee_action`（預設退回申請人） |
+   | `escalate_or_self` | 同上往上找；到根仍是本人 → 派給本人簽 |
+   | `self` | 不往上，直接派給本人 |
+
+   往上重解析時 POSITION 的缺席順位照舊（上層主管職缺→上層的副主管、代理人）。面板上做成一個 select「申請人本人就是簽核者時」三選一，`result.data` 寫 `self_target_action` 與實際發生的 `self_target_escalated_levels`（往上了幾層）。第 3 期一併做（handler＋測試＋面板）。
 
 ## 九、不在本設計內（已另存 PF-246）
 
