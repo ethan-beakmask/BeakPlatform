@@ -211,3 +211,9 @@ not callable`。**軟刪除已經 commit 成功才炸**，所以症狀是
 - **queue 的 node_type 逐字複製 graph，設計器寫的是 `Subflow`（小寫 f）**——
   引擎端比對一律 `func.lower()`，寫死 `'SubFlow'` 會靜默 miss。
 - 完整定案：`dev-notes/handoff_end_subflow_cancel_20260831.md` 第十節。
+
+## 「直接儲存流程」只在右側節點面板開著時收集 modal 值（2026-09-05 PF-247 第 3 期確認，既有設計不改）
+
+`wf-save.js::autoApplyCurrentPanel()` 只在 `currentEditingNodeId` 有值（右側節點面板開著）時，才把 FormAdapter modal 裡的欄位收進 config。
+只開 modal、不開面板、改完直接按「儲存流程」，modal 的值**不會**存進去，而且不報錯。真實操作是「點節點（面板開）→ 開 modal → 改值 → 儲存」所以沒事；
+用 chrome-devtools 模擬時要先 `showNodeInfo(node)` 再 `openFormAdapterModal(id)`，否則會誤判成「儲存路徑沒收集」。PF-226 與 PF-247 兩次驗收都踩到。
