@@ -232,6 +232,8 @@ def _identity_matches(data, user_sc, actor):
 
    往上重解析時 POSITION 的缺席順位照舊（上層主管職缺→上層的副主管、代理人）。面板上做成一個 select「申請人本人就是簽核者時」三選一，`result.data` 寫 `self_target_action` 與實際發生的 `self_target_escalated_levels`（往上了幾層）。第 3 期一併做（handler＋測試＋面板）。
 
+8. **ROLE 型任務的「快照命中永遠放行」要不要收掉？**（第 5 期複審提出）現況：`_match_identity()` 對 ROLE／DEPARTMENT 先看角色@單位與缺席順位，都不成立時仍以進關卡當下的 `assignees` 快照放行（2026-08-09 L1 的「快照永不縮減」語意）。後果：單子在主管請假期間進關卡，代理人已在快照內，主管銷假後代理人**仍可簽**；同理主管卸任後、被撤角色的人若在快照內也仍可簽。與「角色是活的、人是快照」不一致。原 session 建議：**帶有效 spec（`assignee_unit_secure_code` key 存在）的 ROLE／DEPARTMENT 任務不再看快照**，快照只供顯示與逾時參考人；舊佇列項（無 spec key）與 USER／INITIATOR／DYNAMIC 維持快照放行。改動只在 `task_authorizer._match_identity()` 一處＋測試，可併第 4 期或獨立小期。——**待 Ethan 定案**。
+
 ## 九、不在本設計內（已另存 PF-246）
 
 會簽決議型式（全員／任意／人數／比例）、滑步、逾時升級到上層、USER 型別指定帳號停用後的處置。
@@ -426,3 +428,18 @@ codex 一次過（spec `/opt/tmp/codex/20260905-pf247-phase5-spec.txt`），主 
 代理人一核准記錄 `acted_as=DEPT_PROXY1`；S5c（第四輪）在職時進關卡 → 請假 200 → `DELETE /api/calendar/events/<sc>` 銷假（列軟刪除）→ 403 即時生效；
 S5d 人工列（不看來源）`original=['00:00-23:59']`、`adjusted` 挖掉涵蓋現在的一小時 → 200、改成不涵蓋 → 403。前三輪的 FAIL 都是驗收腳本（事件 sc 在回應的
 `event.secure_code` 不在 `data`；第三輪用了請假期間進關卡的單），已修正腳本並註明。全量測試見 BBN #5400 追記。測試指派／請假列／事件零殘留。
+
+### 第 5 期複審（原 session，2026-09-05 20:24）——**通過**
+
+親自重跑 `test_schedule_is_on_leave`＋授權＋handler 三檔 54 passed；讀完 `is_on_leave()`／`_subtract_period_intervals()`（跨午夜自做減法的理由成立）、
+`org_local_now()`、`_unit_manager_present()` 改「任一主管未請假才在職」、handler `_present_managers()` 鏡像；16 條新測試斷言各不相同；
+憑證最終輪 S5a～S5d 全 PASS（前三輪的 FAIL 是驗收腳本讀錯事件 sc 與情境順序，log 內註明），全量 1090 passed。
+第 1 條差異（不呼叫 `get_work_periods()`，改 `is_on_leave()`）理由成立，採納，視同第八節第 6 條的實作定義。
+
+**兩件事**：
+
+1. 第 4 條差異（快照永不縮減 → 代理人在主管銷假後仍可簽）不是第 5 期的 bug，是 L1 既有語意與本設計的衝突，已提為**第八節決策點 8**，等 Ethan 定案
+2. `is_on_leave()` 對跨午夜班（`22:00-06:00`）的「隔日凌晨」是用同一列＋1440 分鐘比對，等於把 D 日列的午夜後片段算在 D 日凌晨；夜班企業的請假列語意要與班表引擎一致，
+   目前 dev 沒有夜班班表，**不列缺陷、記在此**，日後做夜班時一併定
+
+第 1～3、5 期完成，dev HEAD `76ec9940`＋本複審 commit，**origin 落後 11 筆未 push**（執行 session 只 commit）。第 4 期換新 session，照交接補篇 `handoff_role_unit_phase4_20260905.md`。
