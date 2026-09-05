@@ -107,6 +107,7 @@ files:
     - backend/tests/test_formadapter_timeout.py                 # 簽核節點逾時（ABSOLUTE／WORKING、喚醒重算、逾時去向）
     - backend/tests/test_formadapter_no_assignee.py             # 簽核節點找不到簽核人時退回申請人或改派角色
     - backend/tests/test_formadapter_role_unit.py  # 簽核節點解析角色@單位範圍、快照、DEPARTMENT 別名、解析失敗走 PF-226
+    - backend/tests/test_approval_record_acted_as.py  # 簽核記錄 acted_as_role_code（以副主管／代理人身分放行）
   docs:
     - dev-notes/HR_LOOKUP_NODE_SPEC.md                         # NT-31 人事資料取值節點規格
   vendor_deps:

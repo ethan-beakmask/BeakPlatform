@@ -21,6 +21,9 @@
                 <div style="background: #f9fafb; padding: 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
                     <span>{{ _('申請人：') }}<strong x-text="currentApproval?.applicant_name || '-'"></strong></span>
                     <span style="margin-left: 16px;">{{ _('關卡：') }}<strong x-text="currentApproval?.node_name || '-'"></strong></span>
+                    <p x-show="getAssigneeDisplay(currentApproval || {})" style="margin: 6px 0 0;">
+                        {{ _('簽核者') }}：<span x-text="getAssigneeDisplay(currentApproval || {})"></span>
+                    </p>
                 </div>
 
                 <!-- 表單內容 -->
@@ -67,6 +70,8 @@
                                         <span x-text="approval.approver_name"></span>
                                         <span x-show="approval.delegate_from_name" class="fc-delegate-tag"
                                               x-text="__('（代 {name} 簽核）', {name: approval.delegate_from_name || ''})"></span>
+                                        <span x-show="approval.acted_as_role_code" class="fc-delegate-tag"
+                                              x-text="__('（以{role}身分）', {role: getActedAsText(approval.acted_as_role_code)})"></span>
                                     </td>
                                     <td style="padding: 6px 8px; white-space: nowrap;">
                                         <span class="fc-badge" :class="getActionBadgeClass(approval.action)" x-text="getActionText(approval.action)"></span>

@@ -130,6 +130,7 @@ def batch_approve_tasks():
                 action=decision,
                 comment=comment,
                 acted_at=datetime.utcnow(),
+                acted_as_role_code=identity.get('acted_as_role_code'),
                 **delegate_from_fields(identity, org.secure_code),
             )
             db.session.add(approval_record)

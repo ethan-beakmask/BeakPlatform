@@ -3,7 +3,7 @@ FormWorkflow task action authorization helpers.
 
 簽核授權判定的唯一實作。判定來源有四層，任一成立即放行：
 
-1. **快照**：節點啟動當下解析出的 `assignees`（原始行為，永不縮減）
+1. **快照**：節點啟動當下解析出的 `assignees`（原始行為，永不縮減；ROLE／DEPARTMENT 型別會先看第 2、3 層再看快照，只影響 `acted_as_role_code` 的歸因，不影響放不放行）
 2. **當前角色@單位**：`ROLE` 即時比對使用者現在持有的 `(role, unit)`，
    ROLE 型角色可由後代單位往祖先單位套圈，POSITION 型角色不套圈
 3. **主管缺席順位**：目標為 POSITION 且允許 fallback 時，依副主管、代理人一、
@@ -278,35 +278,38 @@ def _match_identity(task_result_data: dict, user_secure_code: str, identity, act
     if not assignee_type:
         return {'acted_as_role_code': None}
 
-    if user_secure_code in (task_result_data.get('assignees') or []):
-        return {'acted_as_role_code': None}
+    # 快照（assignees）命中永遠放行；但 ROLE／DEPARTMENT 先看角色@單位再看快照，
+    # 因為第 2 期起快照本身就含副主管／代理人，先看快照會讓 acted_as_role_code 永遠記不到
+    # （2026-09-05 第 3 期驗收踩到：副主管簽核記錄的 acted_as 一律 NULL）。
+    in_snapshot = user_secure_code in (task_result_data.get('assignees') or [])
 
     if assignee_type in ('ROLE', 'DEPARTMENT'):
         spec = _spec_from(task_result_data, actor)
-        if not spec:
-            return None
-        role_sc, unit_sc = spec
-        if _holds(actor, identity, role_sc, unit_sc):
-            return {'acted_as_role_code': None}
+        if spec:
+            role_sc, unit_sc = spec
+            if _holds(actor, identity, role_sc, unit_sc):
+                return {'acted_as_role_code': None}
 
-        if (
-            assignee_type == 'ROLE'
-            and task_result_data.get('assignee_role_type') == RoleType.POSITION
-            and task_result_data.get('absence_fallback', True)
-            and unit_sc is not None
-        ):
-            meta = _role_meta(actor, role_sc)
-            target_code = meta.get('code') if meta else None
-            for fallback_code in FALLBACK_ROLE_CODES.get(target_code, ()):
-                fallback_sc = _role_sc_by_code(actor, fallback_code)
-                if not fallback_sc or not _holds(actor, identity, fallback_sc, unit_sc):
-                    continue
-                if (
-                    fallback_code in ALWAYS_ALLOWED_FALLBACK_CODES
-                    or not _unit_manager_present(actor, role_sc, unit_sc)
-                ):
-                    return {'acted_as_role_code': fallback_code}
+            if (
+                assignee_type == 'ROLE'
+                and task_result_data.get('assignee_role_type') == RoleType.POSITION
+                and task_result_data.get('absence_fallback', True)
+                and unit_sc is not None
+            ):
+                meta = _role_meta(actor, role_sc)
+                target_code = meta.get('code') if meta else None
+                for fallback_code in FALLBACK_ROLE_CODES.get(target_code, ()):
+                    fallback_sc = _role_sc_by_code(actor, fallback_code)
+                    if not fallback_sc or not _holds(actor, identity, fallback_sc, unit_sc):
+                        continue
+                    if (
+                        fallback_code in ALWAYS_ALLOWED_FALLBACK_CODES
+                        or not _unit_manager_present(actor, role_sc, unit_sc)
+                    ):
+                        return {'acted_as_role_code': fallback_code}
 
+    if in_snapshot:
+        return {'acted_as_role_code': None}
     return None
 
 

@@ -1,6 +1,6 @@
 # 簽核者＝角色@單位：「部門也是一種角色」的落地設計（2026-09-05 草案，待 Ethan 審）
 
-> 狀態：**六個決策點已定案；第 1 期（授權核心）複審通過、第 2 期（節點解析）2026-09-05 完成並通過執行 session 驗收（見第十一節），第 3～5 期待派**。
+> 狀態：**七個決策點已定案；第 1、2 期複審通過、第 3 期（設計器與顯示、self_target_action、acted_as 記錄）2026-09-05 完成並通過執行 session 驗收（見第十一節），第 4、5 期待派**。
 > 起因：PF-226 收尾時 Ethan 指出歷來 session 忽略了「部門也是一種角色」這個核心概念；
 > 本文件盤點現況、定義目標模型、給出遷移與分期。BBN 待辦見本檔末尾。
 > 撰寫者是 PF-226／PF-71 的 session（保留中，負責審結果）；執行者是新 session，**照本檔做，不要自行詮釋**。
@@ -333,3 +333,38 @@ DEPARTMENT 正規化、失敗一律走 PF-226）、`unit_resolver` 新增三支�
 5. 設計器：`unit_scope` 四種、`UNIT` 的單位下拉要含社群（`/api/workflows/data/departments` 現只列部門，查 `workflows.py:1242`）、
    `APPLICANT_ANCESTOR` 的層數輸入、POSITION 角色才顯示 `absence_fallback`；舊 graph 的「指定部門」唯讀顯示；**套用與儲存流程兩條路徑都收集**（PF-226 的坑）。
    驗收直接用第 2 期留下的 `PF247_P2_A/B/C` 三條已發行流程，改設定→儲存→重發行→重送，憑證要有瀏覽器實點的 evaluate 輸出
+
+### 第 3 期 設計器與顯示、self_target_action、acted_as 記錄——完成（2026-09-05 18:20，執行 session 驗收通過，待原 session 複審）
+
+codex 一次過（spec `/opt/tmp/codex/20260905-pf247-phase3-spec.txt`），主 Claude 驗收時修了兩處（見下）。複審交辦五件事全部落地：決策點 7 的 `self_target_action`
+（handler＋測試＋面板）；`file_authorizer.py` docstring；`approver_exposure_service` 明文保留（加註解）；CLAUDE.md 三處（引擎行為表加列、PERM-03 指向本設計、欄位表加
+`user_role_assignments.unit_secure_code`）；設計器 UI 五個要點含兩條儲存路徑。改動 24 檔：handler（`SELF_TARGET_ACTIONS`、`_apply_self_target()`、`assignee_role_name`）、
+`FwApprovalRecord.acted_as_role_code`（**schema 變更**：dev 已 `ALTER TABLE fw_approval_records ADD COLUMN acted_as_role_code VARCHAR(50)`，守恆檢查綠；
+**bpserv 等既有環境 `--update` 後要手動下同一句**）、三支簽核 API 寫入、待簽清單／詳情／表單詳情 API 補顯示欄位、新 API `GET /api/workflows/data/units`
+（守門同 `/data/roles`，守門表已 `--update`）、`/data/roles` 加 `role_type`、設計器 modal 與 `wf-node-form-adapter.js`／`wf-save.js`、`fc-utils.js`、四個模板、en.json 25 條、
+手冊一節、新測試 `test_approval_record_acted_as.py`＋`test_formadapter_role_unit.py` 追加 12 案＋`test_task_authorizer_role_unit.py` 追加 1 案。
+
+**與設計文件的差異／補充（複審請看這段）**：
+
+1. **`self_target_action` 的兩個界定**（spec 時定的，寫進 3.1 附近請一併採納或退回）：「本人就是簽核者」＝申請人在該關卡**快照**內（含副主管、代理人）；
+   **只對 POSITION 型目標角色做**——成員類角色（`DEPT_MEMBER@申請人所屬單位`）申請人本來就在集合內且會套圈到根，做了等於永遠退回。`result.data` 對 APPLICANT 範圍
+   寫 `self_target_action`／`self_target_escalated_levels`，GLOBAL／UNIT／DEPARTMENT 別名不寫
+2. **`escalate_or_self` 到根仍是本人時採用原本那一層**（`self_target_escalated_levels=0`），不是根層
+3. **驗收抓到並修掉：副主管簽核記錄的 `acted_as_role_code` 一律 NULL**。成因是第 2 期起快照含副主管／代理人，而 `_match_identity()` 先看快照命中（回 `acted_as=None`）
+   才看角色@單位；改成 ROLE／DEPARTMENT 先看角色@單位再看快照——**放不放行完全不變，只影響 `acted_as_role_code` 歸因**。回歸測試
+   `test_deputy_in_snapshot_still_records_acted_as`；實流程 S3 第一輪 FAIL、修後 PASS（憑證有兩輪）
+4. 驗收抓到並修掉：設計器兩條路徑的 `parseInt(...) || 1` 把層數 0 吃成 1，「往上層數必須是 1 以上」的驗證永遠到不了；改成 `Number.isNaN` 判斷
+5. `wf-save.js` 的「直接儲存流程」收集只在右側節點面板開著（`currentEditingNodeId` 有值）時進行——這是既有設計，PF-226 也如此；只開 modal 不開面板的話儲存不會收集 modal 值。
+   實測照真實操作（點節點開面板 → 開 modal → 改值 → 儲存）DB 正確
+6. `/api/workflows/data/units` 的單位下拉依 `organizational_units.level` 縮排；BELUGA 有幾個舊單位 `level` 存錯（子單位也是 1，例如 BBBBB／cxzczx），縮排跟著錯，
+   **是資料不是程式**；資訊群底下的五個部門 level=2 縮排正確
+7. `loadRolesList()` 改版後無呼叫者，已刪（死碼）
+8. 舊「指定部門」型別：modal 只在現值是 DEPARTMENT 時渲染一個標成「（舊）」的 option，切走就消失；`wf-accordion` 摘要標籤同步改「指定部門（舊）」
+
+**驗收憑證** `/opt/tmp/verify/20260905-role-unit-phase3.log`：自跑七支測試 69 passed（修歸因後再跑四支 50 passed）→ 守恆檢查綠 → mkdocs strict 過 →
+實流程兩輪（第二輪 FAIL=0）：S1 本人是根單位主管預設退回（reason「申請人本人為簽核者，往上 0 層仍無其他簽核人」）、S2 軟體部主管送單派給資訊群主管 levels=1
+且清單／詳情帶 `assignee_role_name`／`assignee_unit_name`、S3 副主管核准記錄 `DEPT_DEPUTY` 且詳情 approvals 帶出、S4 `/data/units` 含社群且 EMPLOYEE 403、
+`/data/roles` 帶 `role_type` → chrome-devtools 實點：設計器 modal 初次渲染值、四個 row 的顯示切換、單位下拉縮排與社群後綴、套用路徑的驗證與 config、
+儲存路徑寫進 DB（revision 4）、重新發行後 `escalate_or_self` 實流程本人簽（S1b，記錄 `acted_as=NULL`）、ethanyu 待簽清單列與簽核 modal 表頭顯示「部門主管@行銷部門」、
+申請人閱讀表單 modal 歷程顯示「ethanyu（以副主管身分）核准」、三頁 console error 0。全量測試見 BBN #5400 追記。
+BELUGA 的 `PF247_P2_A` 現在是 `APPLICANT_UNIT`＋`escalate_or_self`（published `Mf7MSqu4IsXrmJBWsbKBfg`），B／C 未動。

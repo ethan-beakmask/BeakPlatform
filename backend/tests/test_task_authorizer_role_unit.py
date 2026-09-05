@@ -507,3 +507,25 @@ def test_unit_ancestor_lookup_is_cached_in_actor(test_org):
 
     assert first_count > 0
     assert calls['count'] == first_count
+
+
+def test_deputy_in_snapshot_still_records_acted_as(test_org):
+    """第 2 期起快照含副主管；快照命中不得蓋掉 acted_as_role_code（第 3 期驗收踩到）。"""
+    env = _role_unit_env(test_org)
+    manager = _user('ru_snap_mgr', test_org, 'rusnapmgr', 'Manager')
+    deputy = _user('ru_snap_deputy', test_org, 'rusnapdeputy', 'Deputy')
+    _assign(manager, env['manager'], env['mkt'])
+    _assign(deputy, env['deputy'], env['mkt'])
+    task = _task(test_org, {
+        'assignee_type': 'ROLE',
+        'assignee_value': env['manager'].secure_code,
+        'assignee_unit_secure_code': env['mkt'].secure_code,
+        'assignee_role_type': RoleType.POSITION,
+        'assignees': [manager.secure_code, deputy.secure_code],
+    })
+
+    manager_identity = resolve_acting_identity(task, manager.secure_code, test_org.secure_code)
+    deputy_identity = resolve_acting_identity(task, deputy.secure_code, test_org.secure_code)
+
+    assert manager_identity['acted_as_role_code'] is None
+    assert deputy_identity['acted_as_role_code'] == 'DEPT_DEPUTY'

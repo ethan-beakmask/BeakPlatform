@@ -55,6 +55,16 @@
             const timeoutPathOptions = buildTimeoutPathOptions(nodeId, currentConfig, timeoutPathId);
             const noAssigneeAction = currentConfig.no_assignee_action === 'fallback_role' ? 'fallback_role' : 'return';
             const noAssigneeRoleSecureCode = currentConfig.no_assignee_role_secure_code || '';
+            const rawUnitScope = currentConfig.unit_scope || 'GLOBAL';
+            const unitScope = ['GLOBAL', 'UNIT', 'APPLICANT_UNIT', 'APPLICANT_ANCESTOR'].includes(rawUnitScope) ? rawUnitScope : 'GLOBAL';
+            const unitSecureCode = currentConfig.unit_secure_code || '';
+            const unitLevelsUp = parseInt(currentConfig.unit_levels_up, 10) || 1;
+            const absenceFallback = currentConfig.absence_fallback !== false;
+            const rawSelfTargetAction = currentConfig.self_target_action || 'escalate_or_return';
+            const selfTargetAction = ['escalate_or_return', 'escalate_or_self', 'self'].includes(rawSelfTargetAction) ? rawSelfTargetAction : 'escalate_or_return';
+            const legacyDepartmentOption = assigneeType === 'DEPARTMENT'
+                ? `<option value="DEPARTMENT" selected>${__('指定部門（舊）＝該部門成員，請改用「指定角色」＋單位範圍')}</option>`
+                : '';
 
             // 恢復已選擇的簽核者列表
             restoreSelectedAssignees(assigneeType, assigneeValue, assigneeLabel, assigneeListConfig);
@@ -97,7 +107,7 @@
                                 <select id="formAdapterAssigneeType" onchange="toggleAssigneeValue()" style="margin-top: 4px;">
                                     <option value="INITIATOR" ${assigneeType === 'INITIATOR' ? 'selected' : ''}>發起人 (表單建立者)</option>
                                     <option value="USER" ${assigneeType === 'USER' ? 'selected' : ''}>指定用戶</option>
-                                    <option value="DEPARTMENT" ${assigneeType === 'DEPARTMENT' ? 'selected' : ''}>指定部門</option>
+                                    ${legacyDepartmentOption}
                                     <option value="ROLE" ${assigneeType === 'ROLE' ? 'selected' : ''}>指定角色</option>
                                     <option value="DYNAMIC" ${assigneeType === 'DYNAMIC' ? 'selected' : ''}>動態 (從變數取)</option>
                                 </select>
@@ -123,10 +133,45 @@
 
                             <div id="roleInputContainer" class="fa-modal-field" style="display: ${assigneeType === 'ROLE' ? 'block' : 'none'};">
                                 <strong>選擇角色</strong>
-                                <select id="formAdapterRoleValue" style="margin-top: 4px;">
+                                <select id="formAdapterRoleValue" onchange="toggleAbsenceRow()" style="margin-top: 4px;">
                                     <option value="">載入中...</option>
                                 </select>
-                                <div style="margin-top: 3px; font-size: 10px; color: #888;">此角色下的所有用戶都可簽核</div>
+                                <div style="margin-top: 3px; font-size: 10px; color: #888;">${__('依單位範圍決定誰能簽；不限單位時，全企業持有此角色的人都可簽核。')}</div>
+                                <div style="margin-top: 8px;">
+                                    <strong>${__('單位範圍')}</strong>
+                                    <select id="faUnitScope" onchange="toggleUnitScopeRows()" style="margin-top: 4px;">
+                                        <option value="GLOBAL" ${unitScope === 'GLOBAL' ? 'selected' : ''}>${__('不限單位（全企業持有此角色的人）')}</option>
+                                        <option value="UNIT" ${unitScope === 'UNIT' ? 'selected' : ''}>${__('指定單位')}</option>
+                                        <option value="APPLICANT_UNIT" ${unitScope === 'APPLICANT_UNIT' ? 'selected' : ''}>${__('申請人所屬單位')}</option>
+                                        <option value="APPLICANT_ANCESTOR" ${unitScope === 'APPLICANT_ANCESTOR' ? 'selected' : ''}>${__('申請人單位的上層')}</option>
+                                    </select>
+                                </div>
+                                <div id="faUnitRow" style="display: ${unitScope === 'UNIT' ? 'block' : 'none'}; margin-top: 6px;">
+                                    <select id="faUnitSecureCode" style="width: 100%;">
+                                        <option value="">${__('載入中...')}</option>
+                                    </select>
+                                </div>
+                                <div id="faUnitLevelsRow" style="display: ${unitScope === 'APPLICANT_ANCESTOR' ? 'flex' : 'none'}; align-items: center; gap: 8px; margin-top: 6px;">
+                                    <span>${__('往上')}</span>
+                                    <input type="number" id="faUnitLevelsUp" min="1" step="1" value="${unitLevelsUp}" style="width: 90px; text-align: center;">
+                                    <span>${__('層（超過根就取根）')}</span>
+                                </div>
+                                <div id="faSelfTargetRow" style="display: ${['APPLICANT_UNIT', 'APPLICANT_ANCESTOR'].includes(unitScope) ? 'block' : 'none'}; margin-top: 8px;">
+                                    <strong>${__('申請人本人就是簽核者時')}</strong>
+                                    <select id="faSelfTargetAction" style="margin-top: 4px;">
+                                        <option value="escalate_or_return" ${selfTargetAction === 'escalate_or_return' ? 'selected' : ''}>${__('往上一層找；到根仍是本人就退回申請人（預設）')}</option>
+                                        <option value="escalate_or_self" ${selfTargetAction === 'escalate_or_self' ? 'selected' : ''}>${__('往上一層找；到根仍是本人就由本人簽')}</option>
+                                        <option value="self" ${selfTargetAction === 'self' ? 'selected' : ''}>${__('不往上，直接由本人簽')}</option>
+                                    </select>
+                                    <div style="margin-top: 3px; font-size: 10px; color: #888;">${__('只有主管類（職位型）角色會做本人檢查；副主管、代理人也算「本人就是簽核者」。')}</div>
+                                </div>
+                                <div id="faAbsenceRow" style="display: none; margin-top: 8px;">
+                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" id="faAbsenceFallback" ${absenceFallback ? 'checked' : ''} style="margin-right: 8px;">
+                                        ${__('主管缺席時由副主管／代理人接手')}
+                                    </label>
+                                    <div style="margin-top: 3px; font-size: 10px; color: #888;">${__('副主管永遠可簽；代理人(一)(二)只在主管職缺時可簽。')}</div>
+                                </div>
                             </div>
 
                             <div id="dynamicInputContainer" class="fa-modal-field" style="display: ${assigneeType === 'DYNAMIC' ? 'block' : 'none'};">
@@ -292,7 +337,10 @@
             // DOM ready 後初始化子元件
             setTimeout(function() {
                 initOrgTree(assigneeType);
-                loadRolesList(assigneeValue);
+                loadUnitOptionsInto('faUnitSecureCode', unitSecureCode);
+                toggleUnitScopeRows();
+                toggleAbsenceRow();
+                loadRoleOptionsInto('formAdapterRoleValue', assigneeValue, function() { toggleAbsenceRow(); });
                 loadRoleOptionsInto('faNoAssigneeRole', noAssigneeRoleSecureCode);
                 if (window._faDecisions && useCustomDecisions) {
                     const outEdges = window._faDecisions.getOutgoingEdges(nodeId);

@@ -60,6 +60,19 @@ function fcUtils() {
             return map[action] || action;
         },
 
+        getActedAsText(code) {
+            const map = { 'DEPT_DEPUTY': __('副主管'), 'DEPT_PROXY1': __('代理人(一)'), 'DEPT_PROXY2': __('代理人(二)') };
+            return map[code] || code;
+        },
+
+        getAssigneeDisplay(item) {
+            if (!item) return '';
+            if (item.assignee_role_name) {
+                return item.assignee_unit_name ? `${item.assignee_role_name}@${item.assignee_unit_name}` : item.assignee_role_name;
+            }
+            return item.assignee_label || '';
+        },
+
         getActionBadgeClass(action) {
             if (action === 'approved') return 'fc-badge-completed';
             if (action === 'rejected' || action === 'FORCE_END' || action === 'no_assignee') return 'fc-badge-error';

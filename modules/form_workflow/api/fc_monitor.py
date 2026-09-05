@@ -56,6 +56,7 @@ def get_form_detail(secure_code):
                 'node_name': approval.node_name,
                 'approver_name': approval.approver_name,
                 'delegate_from_name': approval.delegate_from_name,
+                'acted_as_role_code': approval.acted_as_role_code,
                 'action': approval.action,
                 'comment': approval.comment,
                 'acted_at': approval.acted_at.isoformat() if approval.acted_at else None,

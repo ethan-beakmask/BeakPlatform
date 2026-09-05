@@ -79,6 +79,11 @@ class ApproverExposureService:
 
     @staticmethod
     def _snapshot_mentions_actor(snapshot, user_secure_code: str, role_codes: set) -> bool:
+        """PF-247 後 ROLE 有單位範圍，這裡刻意只比對角色 sc 不比對單位。
+
+        本函式只是「這個人可能是某些流程樣板的簽核者」的曝光提示，超集無害，
+        精確判定在 task_authorizer。
+        """
         if not isinstance(snapshot, dict):
             return False
         graph = snapshot.get('graph')

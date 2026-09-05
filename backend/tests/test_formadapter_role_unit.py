@@ -228,6 +228,178 @@ def test_global_role_snapshot_filters_expired_assignment(test_org):
     assert data['assignee_role_type'] == 'ROLE'
     assert data['assignee_unit_scope'] == 'GLOBAL'
     assert data['absence_fallback'] is True
+    assert data['assignee_role_name'] == env['member'].name
+
+
+def test_self_target_default_escalate_or_return_rejects_at_root(test_org):
+    env = _env(test_org)
+    applicant = _user('faru_self_root', test_org, 'faruselfroot', 'Self Root')
+    _membership(applicant, env['mkt'])
+    _assign(applicant, env['manager'], env['mkt'])
+    fi = _form_instance(test_org, applicant, 'selfroot')
+    item = _queue(test_org, _instance(test_org, 'selfroot', fi), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='APPLICANT_UNIT',
+    ), 'selfroot', fi)
+
+    _, result = _run(item)
+
+    assert result['status'] == 'complete_workflow'
+    assert result['data']['workflow_status'] == 'REJECTED'
+    assert result['data']['self_target_action'] == 'escalate_or_return'
+    assert '申請人本人為簽核者' in FwApprovalRecord.query.filter_by(node_queue_secure_code=item.secure_code).one().comment
+
+
+def test_self_target_escalate_or_self_keeps_applicant_when_root_has_no_other(test_org):
+    env = _env(test_org)
+    applicant = _user('faru_self_ok', test_org, 'faruselfok', 'Self Ok')
+    _membership(applicant, env['mkt'])
+    _assign(applicant, env['manager'], env['mkt'])
+    fi = _form_instance(test_org, applicant, 'selfok')
+    item = _queue(test_org, _instance(test_org, 'selfok', fi), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='APPLICANT_UNIT',
+        self_target_action='escalate_or_self',
+    ), 'selfok', fi)
+
+    _, result = _run(item)
+
+    assert result['status'] == 'waiting_form_action'
+    assert applicant.secure_code in result['data']['assignees']
+    assert result['data']['self_target_escalated_levels'] == 0
+
+
+def test_self_target_self_keeps_applicant_without_escalation(test_org):
+    env = _env(test_org)
+    applicant = _user('faru_self_direct', test_org, 'faruselfdirect', 'Self Direct')
+    _membership(applicant, env['mkt'])
+    _assign(applicant, env['manager'], env['mkt'])
+    fi = _form_instance(test_org, applicant, 'selfdirect')
+    item = _queue(test_org, _instance(test_org, 'selfdirect', fi), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='APPLICANT_UNIT',
+        self_target_action='self',
+    ), 'selfdirect', fi)
+
+    _, result = _run(item)
+
+    assert result['status'] == 'waiting_form_action'
+    assert applicant.secure_code in result['data']['assignees']
+    assert result['data']['self_target_escalated_levels'] == 0
+    assert result['data']['self_target_action'] == 'self'
+
+
+def test_self_target_escalates_one_level_to_other_manager(test_org):
+    env = _env(test_org)
+    applicant = _user('faru_self_sw_mgr', test_org, 'faruselfswmgr', 'Self SW Manager')
+    info_manager = _user('faru_info_mgr', test_org, 'faruinfomgr', 'Info Manager')
+    _membership(applicant, env['sw'])
+    _assign(applicant, env['manager'], env['sw'])
+    _assign(info_manager, env['manager'], env['info'])
+    fi = _form_instance(test_org, applicant, 'selfup1')
+    item = _queue(test_org, _instance(test_org, 'selfup1', fi), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='APPLICANT_UNIT',
+    ), 'selfup1', fi)
+
+    _, result = _run(item)
+
+    assert result['data']['assignee_unit_secure_code'] == env['info'].secure_code
+    assert result['data']['assignees'] == [info_manager.secure_code]
+    assert result['data']['self_target_escalated_levels'] == 1
+
+
+def test_self_target_escalation_uses_absence_fallback_on_parent(test_org):
+    env = _env(test_org)
+    applicant = _user('faru_self_sw_mgr2', test_org, 'faruselfswmgr2', 'Self SW Manager 2')
+    info_deputy = _user('faru_info_dep', test_org, 'faruinfodep', 'Info Deputy')
+    _membership(applicant, env['sw'])
+    _assign(applicant, env['manager'], env['sw'])
+    _assign(info_deputy, env['deputy'], env['info'])
+    fi = _form_instance(test_org, applicant, 'selfupdep')
+    item = _queue(test_org, _instance(test_org, 'selfupdep', fi), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='APPLICANT_UNIT',
+    ), 'selfupdep', fi)
+
+    _, result = _run(item)
+
+    assert result['data']['assignees'] == [info_deputy.secure_code]
+    assert result['data']['self_target_escalated_levels'] == 1
+
+
+def test_self_target_escalates_two_levels_when_parent_is_same_applicant(test_org):
+    env = _env(test_org)
+    applicant = _user('faru_self_sw1_mgr', test_org, 'faruselfsw1mgr', 'Self SW1 Manager')
+    info_manager = _user('faru_info_mgr2', test_org, 'faruinfomgr2', 'Info Manager 2')
+    _membership(applicant, env['sw1'])
+    _assign(applicant, env['manager'], env['sw1'])
+    _assign(applicant, env['manager'], env['sw'])
+    _assign(info_manager, env['manager'], env['info'])
+    fi = _form_instance(test_org, applicant, 'selfup2')
+    item = _queue(test_org, _instance(test_org, 'selfup2', fi), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='APPLICANT_UNIT',
+    ), 'selfup2', fi)
+
+    _, result = _run(item)
+
+    assert result['data']['self_target_escalated_levels'] == 2
+    assert result['data']['assignee_unit_secure_code'] == env['info'].secure_code
+    assert result['data']['assignees'] == [info_manager.secure_code]
+
+
+def test_self_target_deputy_snapshot_member_counts_as_self(test_org):
+    env = _env(test_org)
+    applicant = _user('faru_self_dep', test_org, 'faruselfdep', 'Self Deputy')
+    manager = _user('faru_self_dep_mgr', test_org, 'faruselfdepmgr', 'Self Deputy Manager')
+    _membership(applicant, env['mkt'])
+    _assign(applicant, env['deputy'], env['mkt'])
+    _assign(manager, env['manager'], env['mkt'])
+    fi = _form_instance(test_org, applicant, 'selfdep')
+    item = _queue(test_org, _instance(test_org, 'selfdep', fi), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='APPLICANT_UNIT',
+    ), 'selfdep', fi)
+
+    _, result = _run(item)
+
+    assert result['status'] == 'complete_workflow'
+    assert '申請人本人為簽核者' in FwApprovalRecord.query.filter_by(node_queue_secure_code=item.secure_code).one().comment
+
+
+def test_self_target_role_type_member_does_not_escalate(test_org):
+    env = _env(test_org)
+    applicant = _user('faru_self_member', test_org, 'faruselfmember', 'Self Member')
+    _membership(applicant, env['mkt'])
+    _assign(applicant, env['member'], env['mkt'])
+    fi = _form_instance(test_org, applicant, 'selfmember')
+    item = _queue(test_org, _instance(test_org, 'selfmember', fi), _config(
+        assignee_value=env['member'].secure_code,
+        unit_scope='APPLICANT_UNIT',
+    ), 'selfmember', fi)
+
+    _, result = _run(item)
+
+    assert result['status'] == 'waiting_form_action'
+    assert applicant.secure_code in result['data']['assignees']
+    assert result['data']['self_target_escalated_levels'] == 0
+
+
+def test_self_target_unit_scope_does_not_write_self_target_keys(test_org):
+    env = _env(test_org)
+    applicant = _user('faru_unit_self', test_org, 'faruunitself', 'Unit Self')
+    _assign(applicant, env['manager'], env['mkt'])
+    item = _queue(test_org, _instance(test_org, 'unitself'), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='UNIT',
+        unit_secure_code=env['mkt'].secure_code,
+    ), 'unitself')
+
+    _, result = _run(item)
+
+    assert applicant.secure_code in result['data']['assignees']
+    assert 'self_target_action' not in result['data']
 
 
 def test_unit_position_snapshot_tracks_manager_presence_and_absence_fallback(test_org):
@@ -480,6 +652,7 @@ def test_validate_role_unit_keys_only_apply_to_role(test_org):
         (_config(assignee_value=env['member'].secure_code, unit_scope='UNIT'), 'unit_secure_code'),
         (_config(assignee_value=env['member'].secure_code, unit_scope='APPLICANT_ANCESTOR', unit_levels_up=0), 'unit_levels_up'),
         (_config(assignee_value=env['member'].secure_code, unit_scope='APPLICANT_ANCESTOR', unit_levels_up='abc'), 'unit_levels_up'),
+        (_config(assignee_value=env['member'].secure_code, self_target_action='garbage'), 'self_target_action'),
     ]
     for idx, (config, message) in enumerate(cases):
         with pytest.raises(ValueError, match=message):
@@ -490,6 +663,7 @@ def test_validate_role_unit_keys_only_apply_to_role(test_org):
     assert handler.validate() is True
     assert handler.node_config['unit_scope'] == 'GLOBAL'
     assert handler.node_config['absence_fallback'] is True
+    assert handler.node_config['self_target_action'] == 'escalate_or_return'
 
     false_item = _queue(test_org, instance, _config(
         assignee_value=env['member'].secure_code,
@@ -506,6 +680,27 @@ def test_validate_role_unit_keys_only_apply_to_role(test_org):
         'selection_mode': 'single',
     }, 'valuser')
     assert FormAdapterHandler(user_item).validate() is True
+
+
+def test_self_target_escalate_or_return_can_fallback_to_role(test_org, test_user):
+    env = _env(test_org)
+    applicant = _user('faru_self_fb', test_org, 'faruselffb', 'Self Fallback')
+    _membership(applicant, env['mkt'])
+    _assign(applicant, env['manager'], env['mkt'])
+    _assign(test_user, env['member'])
+    fi = _form_instance(test_org, applicant, 'selffb')
+    item = _queue(test_org, _instance(test_org, 'selffb', fi), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='APPLICANT_UNIT',
+        no_assignee_action='fallback_role',
+        no_assignee_role_secure_code=env['member'].secure_code,
+    ), 'selffb', fi)
+
+    _, result = _run(item)
+
+    assert result['status'] == 'waiting_form_action'
+    assert result['data']['no_assignee_fallback_applied'] is True
+    assert result['data']['assignees'] == [test_user.secure_code]
 
 
 def test_timeout_reference_user_receives_role_unit_snapshot(test_org, monkeypatch):

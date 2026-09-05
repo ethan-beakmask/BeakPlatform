@@ -112,7 +112,10 @@
                                     <td x-show="colV('subject')" style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                     <td x-show="colV('applicant')" x-text="item.applicant_name || '-'"></td>
                                     <td x-show="colV('category')" style="color: #6b7280;" x-text="item.category || '-'"></td>
-                                    <td x-show="colV('current_node')"><span class="fc-badge fc-badge-pending" x-text="item.node_name || '-'"></span></td>
+                                    <td x-show="colV('current_node')">
+                                        <span class="fc-badge fc-badge-pending" x-text="item.node_name || '-'"></span>
+                                        <div style="font-size: 11px; color: #6b7280;" x-show="getAssigneeDisplay(item)" x-text="getAssigneeDisplay(item)"></div>
+                                    </td>
                                     <td x-show="colV('wait_time')" style="color: #92400e;" x-text="formatWaitTime(item.scheduled_at)"></td>
                                     <td x-show="colV('actions')" style="display: flex; gap: 4px; align-items: center;">
                                         <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" @click="openPendingReadForm(item)" title="{{ _('閱讀表單') }}">

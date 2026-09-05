@@ -75,14 +75,26 @@
 
         // 角色列表快取
         let rolesListData = null;
+        let unitsListData = null;
+
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
 
         // 載入角色列表到指定 select
-        async function loadRoleOptionsInto(selectId, selectedValue) {
+        async function loadRoleOptionsInto(selectId, selectedValue, afterRender) {
             if (rolesListData) {
                 // 已有快取，延遲渲染（等 DOM 準備好）
                 setTimeout(() => {
                     const sel = document.getElementById(selectId);
-                    if (sel) renderRolesSelect(sel, rolesListData, selectedValue);
+                    if (sel) {
+                        renderRolesSelect(sel, rolesListData, selectedValue);
+                        if (typeof afterRender === 'function') afterRender(sel);
+                    }
                 }, 50);
                 return;
             }
@@ -95,7 +107,10 @@
                     // 延遲渲染（等 DOM 準備好）
                     setTimeout(() => {
                         const sel = document.getElementById(selectId);
-                        if (sel) renderRolesSelect(sel, rolesListData, selectedValue);
+                        if (sel) {
+                            renderRolesSelect(sel, rolesListData, selectedValue);
+                            if (typeof afterRender === 'function') afterRender(sel);
+                        }
                     }, 50);
                 }
             } catch (error) {
@@ -108,20 +123,74 @@
         }
         window.loadRoleOptionsInto = loadRoleOptionsInto;
 
-        // 載入角色列表
-        async function loadRolesList(selectedValue) {
-            return loadRoleOptionsInto('formAdapterRoleValue', selectedValue);
-        }
-        window.loadRolesList = loadRolesList;
-
         function renderRolesSelect(select, roles, selectedValue) {
-            let html = '<option value="">-- 請選擇角色 --</option>';
+            let html = `<option value="">-- ${__('請選擇角色')} --</option>`;
             for (const role of roles) {
                 const selected = role.secure_code === selectedValue ? 'selected' : '';
-                html += `<option value="${role.secure_code}" ${selected}>${role.name}</option>`;
+                html += `<option value="${escapeHtml(role.secure_code)}" data-role-type="${escapeHtml(role.role_type || 'ROLE')}" ${selected}>${escapeHtml(role.name)}</option>`;
             }
             select.innerHTML = html;
         }
+
+        async function loadUnitOptionsInto(selectId, selectedValue) {
+            if (unitsListData) {
+                setTimeout(() => {
+                    const sel = document.getElementById(selectId);
+                    if (sel) renderUnitsSelect(sel, unitsListData, selectedValue);
+                }, 50);
+                return;
+            }
+
+            try {
+                const response = await fetch(window.__BP + '/api/workflows/data/units');
+                const result = await response.json();
+                if (result.success) {
+                    unitsListData = result.data;
+                    setTimeout(() => {
+                        const sel = document.getElementById(selectId);
+                        if (sel) renderUnitsSelect(sel, unitsListData, selectedValue);
+                    }, 50);
+                }
+            } catch (error) {
+                console.error('載入單位列表失敗:', error);
+                setTimeout(() => {
+                    const sel = document.getElementById(selectId);
+                    if (sel) sel.innerHTML = `<option value="">${__('載入失敗')}</option>`;
+                }, 50);
+            }
+        }
+        window.loadUnitOptionsInto = loadUnitOptionsInto;
+
+        function renderUnitsSelect(select, units, selectedValue) {
+            let html = `<option value="">-- ${__('請選擇單位')} --</option>`;
+            for (const unit of units) {
+                const selected = unit.secure_code === selectedValue ? 'selected' : '';
+                const indent = unit.unit_type === 'DEPARTMENT' ? '　'.repeat(Math.max((parseInt(unit.level, 10) || 1) - 1, 0)) : '';
+                const suffix = unit.unit_type === 'GROUP' ? `（${__('社群')}）` : '';
+                html += `<option value="${escapeHtml(unit.secure_code)}" data-unit-name="${escapeHtml(unit.name)}" ${selected}>${indent}${escapeHtml(unit.name)}${suffix}</option>`;
+            }
+            select.innerHTML = html;
+        }
+        window.renderUnitsSelect = renderUnitsSelect;
+
+        function toggleUnitScopeRows() {
+            const unitScope = document.getElementById('faUnitScope')?.value || 'GLOBAL';
+            const unitRow = document.getElementById('faUnitRow');
+            const levelsRow = document.getElementById('faUnitLevelsRow');
+            const selfTargetRow = document.getElementById('faSelfTargetRow');
+            if (unitRow) unitRow.style.display = unitScope === 'UNIT' ? 'block' : 'none';
+            if (levelsRow) levelsRow.style.display = unitScope === 'APPLICANT_ANCESTOR' ? 'flex' : 'none';
+            if (selfTargetRow) selfTargetRow.style.display = ['APPLICANT_UNIT', 'APPLICANT_ANCESTOR'].includes(unitScope) ? 'block' : 'none';
+        }
+        window.toggleUnitScopeRows = toggleUnitScopeRows;
+
+        function toggleAbsenceRow() {
+            const roleSelect = document.getElementById('formAdapterRoleValue');
+            const absenceRow = document.getElementById('faAbsenceRow');
+            const roleType = roleSelect?.selectedOptions[0]?.dataset.roleType || 'ROLE';
+            if (absenceRow) absenceRow.style.display = roleType === 'POSITION' ? 'block' : 'none';
+        }
+        window.toggleAbsenceRow = toggleAbsenceRow;
 
         // 載入組織樹（相容舊版）
         async function loadOrgTree() {
@@ -314,6 +383,8 @@
                 renderOrgTree();
             } else if (assigneeType === 'ROLE') {
                 if (roleInputContainer) roleInputContainer.style.display = 'block';
+                toggleUnitScopeRows();
+                toggleAbsenceRow();
             } else if (assigneeType === 'DYNAMIC') {
                 if (dynamicInputContainer) dynamicInputContainer.style.display = 'block';
             }
@@ -341,6 +412,7 @@
             let assigneeValue = '';
             let assigneeLabel = '';
             let assigneeList = [];  // 多用戶列表
+            let roleUnitConfig = {};
 
             // 根據類型取得對應的值
             if (assigneeType === 'USER') {
@@ -359,7 +431,43 @@
             } else if (assigneeType === 'ROLE') {
                 const roleSelect = document.getElementById('formAdapterRoleValue');
                 assigneeValue = roleSelect?.value || '';
-                assigneeLabel = roleSelect?.selectedOptions[0]?.text || assigneeValue;
+                const roleName = roleSelect?.selectedOptions[0]?.text || assigneeValue;
+                const unitScopeEl = document.getElementById('faUnitScope');
+                const rawUnitScope = unitScopeEl?.value || 'GLOBAL';
+                const unitScope = ['GLOBAL', 'UNIT', 'APPLICANT_UNIT', 'APPLICANT_ANCESTOR'].includes(rawUnitScope) ? rawUnitScope : 'GLOBAL';
+                const unitSelect = document.getElementById('faUnitSecureCode');
+                const unitSecureCode = unitScope === 'UNIT' ? (unitSelect?.value || '') : '';
+                const unitLabel = unitScope === 'UNIT' ? (unitSelect?.selectedOptions[0]?.dataset.unitName || unitSelect?.selectedOptions[0]?.text || '') : '';
+                const rawLevels = parseInt(document.getElementById('faUnitLevelsUp')?.value, 10);
+                const unitLevelsUp = Number.isNaN(rawLevels) ? 1 : rawLevels;  // 0 或負數要留給下方驗證擋，不能被 || 1 吃掉
+                const absenceFallback = document.getElementById('faAbsenceFallback')?.checked !== false;
+                const rawSelfTargetAction = document.getElementById('faSelfTargetAction')?.value || 'escalate_or_return';
+                const selfTargetAction = ['escalate_or_return', 'escalate_or_self', 'self'].includes(rawSelfTargetAction) ? rawSelfTargetAction : 'escalate_or_return';
+                const msg = document.getElementById('faModalMessage');
+                if (unitScope === 'UNIT' && !unitSecureCode) {
+                    const error = __('單位範圍為指定單位時必須選擇單位');
+                    if (msg) { msg.textContent = error; msg.className = 'fa-modal-message warning'; }
+                    else { updateStatus(error, 'warning'); }
+                    return false;
+                }
+                if (unitScope === 'APPLICANT_ANCESTOR' && unitLevelsUp < 1) {
+                    const error = __('往上層數必須是 1 以上的整數');
+                    if (msg) { msg.textContent = error; msg.className = 'fa-modal-message warning'; }
+                    else { updateStatus(error, 'warning'); }
+                    return false;
+                }
+                if (unitScope === 'GLOBAL') assigneeLabel = roleName;
+                else if (unitScope === 'UNIT') assigneeLabel = `${roleName}@${unitLabel}`;
+                else if (unitScope === 'APPLICANT_UNIT') assigneeLabel = `${roleName}@${__('申請人所屬單位')}`;
+                else assigneeLabel = `${roleName}@${__('申請人單位上 {n} 層', { n: unitLevelsUp })}`;
+                roleUnitConfig = {
+                    unit_scope: unitScope,
+                    unit_secure_code: unitSecureCode,
+                    unit_label: unitLabel,
+                    unit_levels_up: unitLevelsUp,
+                    absence_fallback: absenceFallback,
+                    self_target_action: selfTargetAction
+                };
             } else if (assigneeType === 'DYNAMIC') {
                 assigneeValue = document.getElementById('formAdapterDynamicValue')?.value || '';
                 assigneeLabel = assigneeValue;
@@ -445,7 +553,8 @@
                 timeout_path_id: timeoutEnabled ? timeoutPathId : '',
                 no_assignee_action: noAssigneeAction,
                 no_assignee_role_secure_code: noAssigneeRoleSecureCode,
-                no_assignee_role_label: noAssigneeRoleLabel
+                no_assignee_role_label: noAssigneeRoleLabel,
+                ...roleUnitConfig
             };
 
             node.data('config', updatedConfig);
@@ -454,7 +563,7 @@
                 'INITIATOR': __('發起人'),
                 'USER': __('指定用戶'),
                 'ROLE': __('指定角色'),
-                'DEPARTMENT': __('指定部門'),
+                'DEPARTMENT': __('指定部門（舊）'),
                 'DYNAMIC': __('動態')
             };
 

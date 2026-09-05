@@ -83,6 +83,8 @@ def list_pending_tasks():
     for task in my_tasks:
         fi = fi_map.get(task.form_instance_secure_code)
         serial_number = fi.serial_number if fi else None
+        result_data = (task.result or {}).get('data', {})
+        node_config = task.node_config or {}
 
         # 資安分類隔離：資安案件的待簽核改由資安案件處置中心呈現
         if fi and is_security_category(ft_cat_sc_map.get(fi.form_template_id)):
@@ -123,6 +125,11 @@ def list_pending_tasks():
             'category_secure_code': category_sc,
             'form_instance_secure_code': fi.secure_code if fi else None,
             'published_secure_code': fi.published_secure_code if fi else None,
+            'assignee_type': result_data.get('assignee_type'),
+            'assignee_role_name': result_data.get('assignee_role_name'),
+            'assignee_unit_name': result_data.get('assignee_unit_name'),
+            'assignee_unit_scope': result_data.get('assignee_unit_scope'),
+            'assignee_label': node_config.get('assignee_label'),
             **lock_info,
         })
 
@@ -226,6 +233,7 @@ def get_pending_task(secure_code):
                 'node_name': approval.node_name,
                 'approver_name': approval.approver_name,
                 'delegate_from_name': approval.delegate_from_name,
+                'acted_as_role_code': approval.acted_as_role_code,
                 'action': approval.action,
                 'comment': approval.comment,
                 'acted_at': approval.acted_at.isoformat() if approval.acted_at else None,
@@ -255,6 +263,11 @@ def get_pending_task(secure_code):
             'use_custom_decisions': use_custom_decisions,
             'output_variable': output_variable,
             'input_variable_results': input_variable_results,
+            'assignee_type': result_data.get('assignee_type'),
+            'assignee_role_name': result_data.get('assignee_role_name'),
+            'assignee_unit_name': result_data.get('assignee_unit_name'),
+            'assignee_unit_scope': result_data.get('assignee_unit_scope'),
+            'assignee_label': node_config.get('assignee_label'),
             'approvals': approvals,
             'field_permissions': role_permissions,
             'has_editable_fields': has_editable,
@@ -516,6 +529,7 @@ def approve_task(secure_code):
             action=decision,
             comment=comment,
             acted_at=datetime.utcnow(),
+            acted_as_role_code=identity.get('acted_as_role_code'),
             **delegate_from_fields(identity, org.secure_code),
         )
         db.session.add(approval_record)

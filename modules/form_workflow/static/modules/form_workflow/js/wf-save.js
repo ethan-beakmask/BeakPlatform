@@ -116,7 +116,39 @@
                             const roleSelect = document.getElementById('formAdapterRoleValue');
                             if (roleSelect && roleSelect.value) {
                                 config.assignee_value = roleSelect.value;
-                                config.assignee_label = roleSelect.options[roleSelect.selectedIndex]?.text || '';
+                                const roleName = roleSelect.options[roleSelect.selectedIndex]?.text || '';
+                                const rawUnitScope = document.getElementById('faUnitScope')?.value || 'GLOBAL';
+                                const unitScope = ['GLOBAL', 'UNIT', 'APPLICANT_UNIT', 'APPLICANT_ANCESTOR'].includes(rawUnitScope) ? rawUnitScope : 'GLOBAL';
+                                const unitSelect = document.getElementById('faUnitSecureCode');
+                                const unitSecureCode = unitScope === 'UNIT' ? (unitSelect?.value || '') : '';
+                                const unitLabel = unitScope === 'UNIT' ? (unitSelect?.selectedOptions[0]?.dataset.unitName || unitSelect?.selectedOptions[0]?.text || '') : '';
+                                const rawLevels = parseInt(document.getElementById('faUnitLevelsUp')?.value, 10);
+                const unitLevelsUp = Number.isNaN(rawLevels) ? 1 : rawLevels;  // 0 或負數要留給下方驗證擋，不能被 || 1 吃掉
+                                const rawSelfTargetAction = document.getElementById('faSelfTargetAction')?.value || 'escalate_or_return';
+                                const selfTargetAction = ['escalate_or_return', 'escalate_or_self', 'self'].includes(rawSelfTargetAction) ? rawSelfTargetAction : 'escalate_or_return';
+                                const msg = document.getElementById('faModalMessage');
+                                if (unitScope === 'UNIT' && !unitSecureCode) {
+                                    const error = __('單位範圍為指定單位時必須選擇單位');
+                                    if (msg) { msg.textContent = error; msg.className = 'fa-modal-message warning'; }
+                                    else { updateStatus(error, 'warning'); }
+                                    return false;
+                                }
+                                if (unitScope === 'APPLICANT_ANCESTOR' && unitLevelsUp < 1) {
+                                    const error = __('往上層數必須是 1 以上的整數');
+                                    if (msg) { msg.textContent = error; msg.className = 'fa-modal-message warning'; }
+                                    else { updateStatus(error, 'warning'); }
+                                    return false;
+                                }
+                                if (unitScope === 'GLOBAL') config.assignee_label = roleName;
+                                else if (unitScope === 'UNIT') config.assignee_label = `${roleName}@${unitLabel}`;
+                                else if (unitScope === 'APPLICANT_UNIT') config.assignee_label = `${roleName}@${__('申請人所屬單位')}`;
+                                else config.assignee_label = `${roleName}@${__('申請人單位上 {n} 層', { n: unitLevelsUp })}`;
+                                config.unit_scope = unitScope;
+                                config.unit_secure_code = unitSecureCode;
+                                config.unit_label = unitLabel;
+                                config.unit_levels_up = unitLevelsUp;
+                                config.absence_fallback = document.getElementById('faAbsenceFallback')?.checked !== false;
+                                config.self_target_action = selfTargetAction;
                             }
                         } else if (assigneeType.value === 'DYNAMIC') {
                             const dynInput = document.getElementById('formAdapterDynamicValue');

@@ -7,7 +7,7 @@ form_attachment 所屬簽核流程（context_id = FwFormInstance.secure_code）�
 參與者定義（與「我的表單」「待簽清單」既有查詢邏輯一致）：
 - 發起人：FwFormInstance.applicant_secure_code
 - 已簽核者：FwApprovalRecord.approver_secure_code
-- 當前待簽者：FwNodeExecutionQueue（WAITING）result['data']['assignees']
+- 當前待簽者：FwNodeExecutionQueue（WAITING）以 task_authorizer.is_pending_assignee() 即時判定（角色@單位、缺席順位、代理授權），不吃快照
 
 admin / 上傳者本人 / 租戶隔離已由 file_service.can_access_file() 上游處理，
 此處只判定「流程參與者」。

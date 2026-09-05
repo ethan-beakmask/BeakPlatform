@@ -8,6 +8,7 @@ import secrets
 from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
+from sqlalchemy import case
 
 from app.security.decorators import module_access_required, page_keys_required
 from app.platform.auth import (
@@ -1333,6 +1334,45 @@ def get_roles_list():
             'secure_code': role.secure_code,
             'code': role.code,
             'name': role.name,
+            'role_type': role.role_type,
+        })
+
+    return jsonify({
+        'success': True,
+        'data': result
+    })
+
+
+@workflows_bp.route('/data/units')
+@module_access_required('form_workflow')
+@page_keys_required('form_workflow.workflows')
+def get_units_list():
+    """取得單位列表（用於簽核人角色@單位選擇）"""
+    from app.models import OrganizationalUnit, UnitType
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    units = OrganizationalUnit.query.filter(
+        OrganizationalUnit.org_secure_code == org.secure_code,
+        OrganizationalUnit.is_deleted == False,  # noqa: E712
+        OrganizationalUnit.is_active == True,  # noqa: E712
+    ).order_by(
+        case((OrganizationalUnit.unit_type == UnitType.DEPARTMENT, 0), else_=1),
+        OrganizationalUnit.full_path,
+        OrganizationalUnit.sort_order,
+    ).all()
+
+    result = []
+    for unit in units:
+        result.append({
+            'secure_code': unit.secure_code,
+            'name': unit.name,
+            'unit_type': unit.unit_type,
+            'level': unit.level,
+            'full_path': unit.full_path,
+            'parent_secure_code': unit.parent_secure_code,
         })
 
     return jsonify({

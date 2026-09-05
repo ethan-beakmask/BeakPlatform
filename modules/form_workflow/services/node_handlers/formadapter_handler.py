@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 TIMEOUT_MODES = ('ABSOLUTE', 'WORKING')
 UNIT_SCOPES = ('GLOBAL', 'UNIT', 'APPLICANT_UNIT', 'APPLICANT_ANCESTOR')
+SELF_TARGET_ACTIONS = ('escalate_or_return', 'escalate_or_self', 'self')
 TIMEOUT_MAX_MINUTES = 14400          # 10 天，與 ParallelJoin 一致
 TIMEOUT_ACTION = 'timeout'           # fw_approval_records.action（機器碼，不翻譯）
 TIMEOUT_APPROVER_NAME = '系統（逾時自動處理）'
@@ -151,6 +152,13 @@ class FormAdapterHandler(BaseNodeHandler):
                 self.node_config['unit_levels_up'] = levels
 
             self.node_config['absence_fallback'] = self._normalized_absence_fallback()
+            raw_self_target_action = self.get_config_value('self_target_action', 'escalate_or_return')
+            self_target_action = str(raw_self_target_action or 'escalate_or_return').strip().lower()
+            if self_target_action not in SELF_TARGET_ACTIONS:
+                raise ValueError(
+                    f'self_target_action 必須是 escalate_or_return、escalate_or_self 或 self，而非 {raw_self_target_action}'
+                )
+            self.node_config['self_target_action'] = self_target_action
 
         return True
 
@@ -218,6 +226,8 @@ class FormAdapterHandler(BaseNodeHandler):
         if assignee_type in ('ROLE', 'DEPARTMENT'):
             spec_data, failure_reason = self._resolve_assignee_spec(assignee_type, assignee_value)
             if failure_reason:
+                if spec_data:
+                    data.update(spec_data)
                 data['assignees'] = []
                 no_assignee_result = self._handle_no_assignee(data, reason=failure_reason)
                 if no_assignee_result:
@@ -399,6 +409,7 @@ class FormAdapterHandler(BaseNodeHandler):
             'assignee_type': 'ROLE',
             'assignee_value': role_sc,
             'assignee_role_code': role.code,
+            'assignee_role_name': role.name,
             'assignee_role_type': role.role_type,
             'assignee_unit_scope': unit_scope,
             'assignee_unit_secure_code': unit_sc,
@@ -492,7 +503,48 @@ class FormAdapterHandler(BaseNodeHandler):
         unit, failure = self._resolve_role_unit(unit_scope)
         if failure:
             return {}, failure
-        return self._role_spec_data(role, unit, unit_scope, absence_fallback), None
+        data = self._role_spec_data(role, unit, unit_scope, absence_fallback)
+        if unit_scope in ('APPLICANT_UNIT', 'APPLICANT_ANCESTOR'):
+            return self._apply_self_target(data, unit, unit_scope, absence_fallback, role)
+        return data, None
+
+    def _normalized_self_target_action(self) -> str:
+        value = str(self.get_config_value('self_target_action', 'escalate_or_return') or 'escalate_or_return').strip().lower()
+        if value not in SELF_TARGET_ACTIONS:
+            return 'escalate_or_return'
+        return value
+
+    def _apply_self_target(self, spec_data: Dict[str, Any], unit, unit_scope: str,
+                           absence_fallback: bool, role) -> tuple[Dict[str, Any], str | None]:
+        from app.models.role import RoleType
+        from app.services.unit_resolver import get_unit, get_unit_ancestor_codes
+
+        action = self._normalized_self_target_action()
+        spec_data['self_target_action'] = action
+        spec_data['self_target_escalated_levels'] = 0
+
+        applicant = self.form_instance.applicant_secure_code
+        if role.role_type != RoleType.POSITION or applicant not in (spec_data.get('assignees') or []):
+            return spec_data, None
+        if action == 'self':
+            return spec_data, None
+
+        org_sc = self.queue_item.org_secure_code
+        ancestors = get_unit_ancestor_codes(unit.secure_code, org_sc) if unit else []
+        for level, ancestor_sc in enumerate(ancestors, start=1):
+            ancestor_unit = get_unit(ancestor_sc, org_sc)
+            if not ancestor_unit:
+                continue
+            candidate = self._role_spec_data(role, ancestor_unit, unit_scope, absence_fallback)
+            candidate_assignees = candidate.get('assignees') or []
+            if candidate_assignees and applicant not in candidate_assignees:
+                candidate['self_target_action'] = action
+                candidate['self_target_escalated_levels'] = level
+                return candidate, None
+
+        if action == 'escalate_or_self':
+            return spec_data, None
+        return spec_data, f'申請人本人為簽核者，往上 {len(ancestors)} 層仍無其他簽核人'
 
     def _org_tz_name(self) -> str:
         from app.models.organization import Organization
