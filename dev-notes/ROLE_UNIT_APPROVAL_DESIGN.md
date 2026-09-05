@@ -113,14 +113,33 @@ role_units = {(role_sc, unit_sc)}  # 來自 user_role_assignments，unit_sc 可�
 - 簽核記錄照實記簽的人（`approver_*`），另在 `fw_approval_records` 加 `acted_as_role_code`（記「以副主管身分」），
   `delegate_from_*` 維持代理授權專用
 
-### 3.5 直屬主管來源統一（OpHrLookup，第四期）
+### 3.5 直屬主管一律由部門推導，任職卡指標退役（OpHrLookup，第四期；2026-09-05 依決策點 4 改寫）
 
-`hr_direct_manager` 改為：`EmployeePosition.direct_manager_secure_code` **有值＝明示覆寫，維持**（矩陣組織要用）；
-**空值→由部門推導**：申請人單位 U 的 `DEPT_MANAGER@U` 持有者；申請人自己就是 U 的主管時往上一層取 parent 的主管；
-一路到根都沒有→空字串（`hr_direct_manager_found='false'`）。核決鏈（3～7 條規則）沿同一推導往上走。
-新增輸出 `hr_direct_manager_unit`／`hr_direct_manager_source`（`explicit`／`unit`）。
-`seed_test_companies.py` 同步改：`is_unit_head=True` 的人**也指派 `DEPT_MANAGER@unit`**、其他人 DEPT_MEMBER＋DEPT_EMPLOYEE@unit，
-讓兩套真相從此一致；既有三家範例企業用同一支腳本補（冪等）。
+> 原文「任職卡 `direct_manager_secure_code` 有值＝明示覆寫」已作廢。Ethan 定案：**一律由部門推導、欄位退役**。
+
+**推導規則**（唯一實作放 `backend/app/services/unit_resolver.py`，新增 `resolve_direct_manager(user_sc, org_sc, today)`）：
+
+1. 申請人單位 U ＝ `resolve_user_unit()`（3.2）；解析不到 → 空字串、`hr_direct_manager_found='false'`
+2. U 的主管 ＝ 持有 `DEPT_MANAGER@U` 且有效（`is_valid_on(today)`）、帳號啟用未刪的人；全企業持有 `DEPT_MANAGER`（unit NULL）者也算（與 3.3 規則 2 一致）。多人時取 `assigned_at` 最早（互斥群組本就該擋住多人）
+3. 申請人**本人就是** U 的主管，或 U **沒有**主管（職缺）→ 往上一層（`get_unit_ancestor_codes()` 順序）重複第 2 條；到根仍無 → 空字串、`found='false'`
+4. 副主管、代理人(一)(二)**不進**推導：那是簽核授權的缺席順位（第 1 期已在 `task_authorizer`），核決鏈只認主管
+5. 新增輸出：`hr_direct_manager_unit`／`hr_direct_manager_unit_name`（主管所屬單位）、`hr_approver_unit`／`hr_approver_unit_name`
+
+**核決鏈**（`HR_LOOKUP_NODE_SPEC.md` 規則 3～7 改寫）：從第 2～3 條找到的主管開始，沿祖先單位的主管往上；每站職等仍看該主管的有效任職卡
+（`EmployeePosition` 保留為職等／職稱／部門的來源，只退役 `direct_manager_secure_code`）。**主管沒有有效任職卡時視為該站上限 0、繼續往上**（不再中止），
+因為部門推導不保證每位主管都有任職卡。迴圈與 20 站上限維持。
+
+**欄位退役清單**（第四期 spec 逐項列）：
+
+| 位置 | 處置 |
+|---|---|
+| `modules/form_workflow/services/node_handlers/hr_lookup_handler.py:195, 292, 320` | 改呼叫 `resolve_direct_manager()`；不再讀指標 |
+| `backend/app/models/employee_position.py` | 移除 `direct_manager_secure_code` 欄位、`get_manager_chain()`（若無其他呼叫者）；**`dotted_line_manager_secure_code`（虛線主管）不動** |
+| `backend/app/web/positions.py:91-131, 197-228` 與 `templates/pages/positions/create.html`／`edit.html` | 移除直屬主管下拉與表單欄位 |
+| `backend/app/web/hostconfig.py:344` | 清理對照表移除該列 |
+| `scripts/seed_test_companies.py:844, 898, 927` | 不再寫指標；`is_unit_head=True` 者改指派 `DEPT_MANAGER@unit`＋`user_unit_memberships(SOLID)`，其他人 `DEPT_MEMBER`＋`DEPT_EMPLOYEE@unit`（走 `organizational_units.py` 既有的 `_ensure_dept_membership` 邏輯，不要另寫一份）；提供 `--sync-dept-roles` 冪等補種給既有三家範例企業 |
+| dev 庫 | 一次性 `ALTER TABLE employee_positions DROP COLUMN direct_manager_secure_code;`，`bash scripts/check_schema_drift.sh` 過 |
+| `docs/manual/03_org_setup/`（任職卡頁）與 `04_form_workflow/hr_lookup_node.md` | 移除「直屬主管」欄位說明；改寫「直屬主管由部門主管推導」 |
 
 ### 3.6 與 PF-226 的關係
 
@@ -171,7 +190,7 @@ def _identity_matches(data, user_sc, actor):
 | 1 授權核心 | `build_actor` 展開 (role, unit)＋祖先快取；`_identity_matches` 依第四節；舊佇列項相容；`unit_resolver.py` 新檔（3.2） | `modules/form_workflow/services/task_authorizer.py`、`backend/app/services/unit_resolver.py` | 新檔 `test_task_authorizer_role_unit.py`：直接持有／全域超集／套圈／POSITION 不套圈／副主管永遠／代理人僅缺席／舊 data 相容／代理授權疊加 |
 | 2 節點解析 | FormAdapter 讀 `unit_scope` 等 key，進關卡解析單位寫 `result.data`；DEPARTMENT 別名；解析失敗走 PF-226；逾時參考人用快照 | `formadapter_handler.py` | `test_formadapter_role_unit.py` |
 | 3 設計器與顯示 | 第五節 UI、i18n、手冊 `workflows.md` | `wf-form-adapter.js`、`wf-node-form-adapter.js`、`wf-save.js`、`fc-utils.js`、`en.json`、`docs/manual/04_form_workflow/workflows.md` | 主 Claude 瀏覽器實點 |
-| 4 主管來源統一 | 3.5：OpHrLookup 推導、seed 對齊、`HR_LOOKUP_NODE_SPEC.md` | `hr_lookup_handler.py`、`scripts/seed_test_companies.py`、`scripts/examples/provision_hr_lookup_demo.py`（若有寫死指標） | `test_hr_lookup_node.py` 增案；GHTRAVEL 重跑 30 萬／500 萬對照組 |
+| 4 主管來源統一 | 3.5（改寫版）：`resolve_direct_manager()` 新增；OpHrLookup 改用；任職卡指標退役（model、web、模板、hostconfig、seed）；dev 庫 DROP COLUMN；`HR_LOOKUP_NODE_SPEC.md` 規則 3～7 改寫 | `unit_resolver.py`、`hr_lookup_handler.py`、`employee_position.py`、`web/positions.py`、`positions/*.html`、`hostconfig.py`、`seed_test_companies.py`、手冊兩頁 | `test_hr_lookup_node.py` 增案（部門推導、本人是主管往上、職缺往上、無任職卡主管視為 0）；GHTRAVEL 重種後 30 萬／500 萬對照組一致、10 億走 PF-226 退回 |
 | 5 請假缺席 | 缺席定義加入當日 LEAVE | `task_authorizer.py` | 增案 |
 
 每期派工 spec 都要貼：`dev-notes/codex_spec/_footer.md`（必）、`security.md`（TENANT-01：所有查詢帶 org）、
@@ -237,3 +256,18 @@ codex 一次過（spec `/opt/tmp/codex/20260905-pf247-phase1-spec.txt`，結果 
 ＋ 帶標記的 SQL 角色指派，對 beluga 五個帳號跑第七節 #1～#7、#9、DEPARTMENT 別名、舊資料無單位，HTTP 200／403 共 43 項 PASS，
 直接呼叫矩陣印出 `via` / 授權人 / `acted_as_role_code`。第一輪 12 個 FAIL 是驗收工具的 INSERT 缺 `created_at`／`updated_at`（ORM 預設、DB 無預設），不是程式問題，log 內有註明。
 全量測試結果見 BBN #5400 追記。工具在 `/opt/tmp/verify/pf247/`（`phase1_http.sh` 可重跑，第 2 期驗收可沿用合成列的 key 形狀當 handler 輸出的對照）。
+
+### 第 1 期複審（原 session，2026-09-05 15:24）——**通過，派第 2 期**
+
+親自重跑 `test_task_authorizer_role_unit.py`＋`delegate_from`＋`formadapter_no_assignee` 32 passed；讀完 `task_authorizer.py` 全部 diff、
+`unit_resolver.py`、15 條測試的斷言主體（各不相同）、憑證第二輪 43 項 PASS＋階段 B／C 全 PASS。判定邏輯與第三、四節一致：
+直接持有／全域超集／非 POSITION 套圈方向正確（持有者在後代單位、目標在祖先）／POSITION 不套圈／副主管永遠／代理人僅職缺／
+DEPARTMENT 別名走 DEPT_MEMBER 並套圈／舊佇列項無 `assignee_unit_secure_code` 時退回扁平比對／代理授權人身分同樣展開。
+
+**要帶進第 2 期 spec 的三件事（不退回，併入下一期）**：
+
+1. `get_actor_role_codes()` 已無任何呼叫者（只剩定義）——死碼，第 2 期順手刪除；`get_delegated_identities()` 只剩 `test_delegation_effective_status.py` 在用，保留
+2. 缺席順位依賴佇列項 `assignee_role_type == 'POSITION'`，**第 2 期 handler 進關卡時必須從 `Role.role_type` 寫入這個 key**（不能寫死、不能省），
+   否則新流程永遠不會走順位；`absence_fallback` 也要照 config 寫進 `result.data`
+3. `_spec_from()` 對「角色 sc 在該企業查不到（含軟刪除）」回 None＝該任務無人可簽（fail-closed）——比修前嚴（修前只要指派還在就能簽）。可接受，
+   但第 2 期 handler 在進關卡時就要驗角色存在，存在才寫 spec，否則走 PF-226 的 `no_assignee_action`，不要讓死角色留到授權端才被擋
