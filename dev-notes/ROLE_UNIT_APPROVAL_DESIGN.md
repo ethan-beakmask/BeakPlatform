@@ -222,6 +222,8 @@ def _identity_matches(data, user_sc, actor):
 5. `DEPARTMENT` 型別退役為別名（3.1）——同意？**Ethan 2026-09-05 定案：同意**
 6. 第五期「主管請假算缺席」——**Ethan 2026-09-05 定案：要做**。「LEAVE」指 `schedule_adjustments.adjust_type='LEAVE'` 的班表調整列（語意：該人該日這些時段不工作；`status='APPROVED'`）。現況唯一寫入者是個人行事曆：員工建 LEAVE（請假）或 TRIP（出差）事件時由 `calendar_event_service` 同步寫入並帶 `calendar_event_secure_code`；`NULL` 來源（請假單流程、人工）目前**沒有任何程式會寫**、dev 庫 0 列。採用定義（除非 Ethan 反對）：**認全部 LEAVE 列不看來源、以時段判定**——判定當下（企業時區）落在該列請假時段內才算缺席（`adjusted_periods` 為 `[]` 或 NULL＝整天），出差同樣視為缺席。判定走 `ScheduleService.get_work_periods()` 既有優先序，不另寫查詢。
 
+7. **申請人本人持有目標角色@單位時（例：申請人就是自己部門的主管，節點是「部門主管@申請人所屬單位」）要不要自動往上一層？**第 2 期實作會派給自己簽（複審發現，設計 3.5 只對 OpHrLookup 規定往上）。原 session 建議：加 config `skip_self`（預設 **開**），`APPLICANT_UNIT`／`APPLICANT_ANCESTOR` 範圍下，申請人本人持有目標 (角色, 單位) 就以同一規則往上一層重解析，到根仍是本人則走 PF-226 退回；`UNIT`／`GLOBAL` 不受影響。自己簽自己是控制缺口，預設開比較符合防弊。——**待 Ethan 定案**，定案後併入第 3 期 spec（handler 端小改＋測試＋面板 checkbox）。
+
 ## 九、不在本設計內（已另存 PF-246）
 
 會簽決議型式（全員／任意／人數／比例）、滑步、逾時升級到上層、USER 型別指定帳號停用後的處置。
@@ -305,3 +307,21 @@ handler 進關卡時 `assignee_role_type` 從 `Role.role_type` 寫、`absence_fa
 代理人轉 403、shen 待簽清單有單）、A3（沒有單位的申請人送單：`complete_workflow`＋REJECTED＋`no_assignee` 記錄「申請人沒有所屬單位」）、
 B1（舊式 DEPARTMENT：正規化成 ROLE、快照只有持 `DEPT_MEMBER@軟體部` 的 ssss、套圈 200）、C1（指定單位同上）、#6 既有任務五帳號不變、
 副主管 ethanyu 走 approve 端點核准 A1 成功（記錄 `approved`）。收尾把 A2／B1／C1 三張測試單也簽掉，測試指派 0 殘留。全量測試見 BBN #5400 追記。
+
+### 第 2 期複審（原 session，2026-09-05 16:24）——**通過，派第 3 期**
+
+親自重跑四個測試檔 45 passed；讀完 handler 全部 diff（`validate()` 正規化、`_resolve_assignee_spec()` 四種範圍、`_role_spec_data()` 快照＝當下能簽的人、
+DEPARTMENT 正規化、失敗一律走 PF-226）、`unit_resolver` 新增三支、`task_authorizer` 死碼刪除與 `_unit_manager_present` 改用 `resolve_role_holders`、
+13 條測試斷言（各不相同）、憑證 45 項 PASS 與全量 1062 passed。第 1 期複審的三件事全部落地。快照鏡像授權端（主管在職＝主管＋副主管、職缺＝副主管＋代理一二）是合理的補充，採納。
+附件授權 `file_authorizer.py` 走 `is_pending_assignee()` 即時判定、不吃快照，確認過沒有「補進角色的人簽得了卻看不到附件」的問題。
+
+**要帶進第 3 期 spec 的五件事**：
+
+1. 第八節**決策點 7**（`skip_self`）——等 Ethan 回答；答「開」就在第 3 期一併做 handler＋測試＋面板 checkbox
+2. `modules/form_workflow/services/file_authorizer.py` 第 10 行 docstring 仍寫「result['data']['assignees']」，實際走 `is_pending_assignee()`，改成正確描述（一行）
+3. `approver_exposure_service._snapshot_mentions_actor()` 的扁平 `role_codes` 比對：第 3 期讀完決定收斂或明文保留，不要再往後拖
+4. 第 3 期 commit 要一併更新 `CLAUDE.md`：「流程 graph 的引擎行為」表加一列「簽核者＝角色@單位（PF-247）」（config key、`result.data` 新 key、DEPARTMENT 別名、快照只供顯示、授權即時），
+   並把 PERM-03 區段的「`roles` 表沒有 `user_type`」那段旁邊補一句指向本設計文件；「每個 session 都會撞一次的欄位名」表加 `user_role_assignments.unit_secure_code` 的語意
+5. 設計器：`unit_scope` 四種、`UNIT` 的單位下拉要含社群（`/api/workflows/data/departments` 現只列部門，查 `workflows.py:1242`）、
+   `APPLICANT_ANCESTOR` 的層數輸入、POSITION 角色才顯示 `absence_fallback`；舊 graph 的「指定部門」唯讀顯示；**套用與儲存流程兩條路徑都收集**（PF-226 的坑）。
+   驗收直接用第 2 期留下的 `PF247_P2_A/B/C` 三條已發行流程，改設定→儲存→重發行→重送，憑證要有瀏覽器實點的 evaluate 輸出
