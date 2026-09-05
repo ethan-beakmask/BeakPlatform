@@ -120,7 +120,7 @@ role_units = {(role_sc, unit_sc)}  # 來自 user_role_assignments，unit_sc 可�
 **推導規則**（唯一實作放 `backend/app/services/unit_resolver.py`，新增 `resolve_direct_manager(user_sc, org_sc, today)`）：
 
 1. 申請人單位 U ＝ `resolve_user_unit()`（3.2）；解析不到 → 空字串、`hr_direct_manager_found='false'`
-2. U 的主管 ＝ 持有 `DEPT_MANAGER@U` 且有效（`is_valid_on(today)`）、帳號啟用未刪的人；全企業持有 `DEPT_MANAGER`（unit NULL）者也算（與 3.3 規則 2 一致）。多人時取 `assigned_at` 最早（互斥群組本就該擋住多人）
+2. U 的主管 ＝ 持有 `DEPT_MANAGER@U`（**單位指派優先**）且有效（`is_valid_on(today)`）、帳號啟用未刪的人；單位指派沒有人時才退回全企業持有 `DEPT_MANAGER`（unit NULL）者。同類內多人取 `assigned_at` 最早（互斥群組本就該擋住多人）。（2026-09-05 第 4 期複審改寫：原文「全企業持有者也算」會讓全企業指派壓過每一層的單位主管）
 3. 申請人**本人就是** U 的主管，或 U **沒有**主管（職缺）→ 往上一層（`get_unit_ancestor_codes()` 順序）重複第 2 條；到根仍無 → 空字串、`found='false'`
 4. 副主管、代理人(一)(二)**不進**推導：那是簽核授權的缺席順位（第 1 期已在 `task_authorizer`），核決鏈只認主管
 5. 新增輸出：`hr_direct_manager_unit`／`hr_direct_manager_unit_name`（主管所屬單位）、`hr_approver_unit`／`hr_approver_unit_name`
@@ -489,3 +489,21 @@ S8（BELUGA `PF247_P2_A`）主管職缺快照 `[ethanyu, aaaa, ssss]` 三人 200
 #6 既有 SECURITY_STAFF 舊佇列項五帳號判定不變 → chrome-devtools 實點（職位詳情頁 evaluate 回 `href=/beakplatform/users/yIVOrZiT0ltlPjtBm6o8mQ`、點下去落在燁凱文用戶詳情、
 用戶詳情職位列無主管段、列表 8 欄表頭與儲存格一致、新增頁 select 只有四個；四頁 console error/warn 0）。自跑 12 檔 115 passed（含 12 檔既有回歸）；mkdocs strict 過、po `untranslated []`／`fuzzy []`；
 全量 1105 passed／1 failed（`test_admin_required_for_admin`，PF-34 已知）／2 skipped（第 5 期後基準 1090，+15 皆為本期新案，無回歸）。測試單全部簽掉、測試指派零殘留。
+
+### 第 4 期複審（原 session，2026-09-05 22:09）——**通過，附補丁 4a（小，同 session 做）**
+
+親自重跑五個測試檔 79 passed；守恆檢查綠（108 表／1816 欄）；殘留引用 `direct_manager_secure_code`／`get_manager_chain` 為空；
+讀完 `iter_manager_chain()`／`resolve_direct_manager()`、OpHrLookup 改寫、`_match_identity()` 決策點 8 一行、CLAUDE.md 三處與 HR 規格改寫；
+憑證：舊指標對照 60/60、實流程 FAIL=0（G1～G4、S8、#6）、瀏覽器實點四頁 console 0、全量 1105。執行 session 盤點出交接補篇漏列的三處並一併處理，正確。
+差異 3、4、5、7、8 採納。
+
+**補丁 4a（併一次派工，不另開期）**：
+
+1. **差異 2 改掉**：`iter_manager_chain()` 每一站**先取單位指派**（`unit_secure_code == U`）的 `DEPT_MANAGER` 持有者，**沒有才退回全企業指派**（unit NULL）；
+   同類內仍依 `assigned_at` 最早。理由：全企業指派是「什麼單位都算」的超集語意（3.3 規則 2），用在授權判定對；用在「誰是我的直屬主管」會讓一個全企業指派較早的人
+   壓過每一層的真正單位主管。`resolve_role_holders()` 不改簽章，在 `iter_manager_chain()` 內分兩次查（或加 `unit_only` 參數，spec 定）。
+   測試：`test_direct_manager_uses_global_manager_assignment` 改語意（單位主管優先，全企業只在職缺時上），HR 規格「已知限制」那條改成規則
+2. **差異 6 收掉**：`sync_dept_roles()` 對持有者集合已正確的單位不要再 `ensure`＋`revoke` 一輪（`updated_at` 不該動）；冪等以「第二次跑三家全 0 且無列被觸碰」驗
+3. 設計文件 3.5 第 2 條同步改寫為「單位指派優先、全企業指派僅職缺時候補」（原 session 已改，見下）
+
+4a 做完不必重跑全量，跑 `test_hr_lookup_node.py`＋`test_dept_membership_service.py`＋守恆檢查＋GHTRAVEL G1／G2 兩張單即可；憑證接在 phase4 log 尾。
