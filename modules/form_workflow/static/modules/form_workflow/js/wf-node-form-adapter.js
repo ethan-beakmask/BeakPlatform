@@ -76,12 +76,12 @@
         // 角色列表快取
         let rolesListData = null;
 
-        // 載入角色列表
-        async function loadRolesList(selectedValue) {
+        // 載入角色列表到指定 select
+        async function loadRoleOptionsInto(selectId, selectedValue) {
             if (rolesListData) {
                 // 已有快取，延遲渲染（等 DOM 準備好）
                 setTimeout(() => {
-                    const sel = document.getElementById('formAdapterRoleValue');
+                    const sel = document.getElementById(selectId);
                     if (sel) renderRolesSelect(sel, rolesListData, selectedValue);
                 }, 50);
                 return;
@@ -94,17 +94,23 @@
                     rolesListData = result.data;
                     // 延遲渲染（等 DOM 準備好）
                     setTimeout(() => {
-                        const sel = document.getElementById('formAdapterRoleValue');
+                        const sel = document.getElementById(selectId);
                         if (sel) renderRolesSelect(sel, rolesListData, selectedValue);
                     }, 50);
                 }
             } catch (error) {
                 console.error('載入角色列表失敗:', error);
                 setTimeout(() => {
-                    const sel = document.getElementById('formAdapterRoleValue');
+                    const sel = document.getElementById(selectId);
                     if (sel) sel.innerHTML = '<option value="">載入失敗</option>';
                 }, 50);
             }
+        }
+        window.loadRoleOptionsInto = loadRoleOptionsInto;
+
+        // 載入角色列表
+        async function loadRolesList(selectedValue) {
+            return loadRoleOptionsInto('formAdapterRoleValue', selectedValue);
         }
         window.loadRolesList = loadRolesList;
 
@@ -317,11 +323,18 @@
         }
         window.toggleAssigneeValue = toggleAssigneeValue;
 
+        function toggleNoAssigneeRoleRow() {
+            const action = document.getElementById('faNoAssigneeAction')?.value || 'return';
+            const roleRow = document.getElementById('faNoAssigneeRoleRow');
+            if (roleRow) roleRow.style.display = action === 'fallback_role' ? 'block' : 'none';
+        }
+        window.toggleNoAssigneeRoleRow = toggleNoAssigneeRoleRow;
+
         // 套用 FormAdapter 簽核節點配置
         function applyFormAdapterConfig(nodeId) {
             // 先儲存基本資訊（名稱與描述）
             const node = applyNodeBasicInfo(nodeId, true);
-            if (!node) return;
+            if (!node) return false;
 
             // 讀取表單值
             const assigneeType = document.getElementById('formAdapterAssigneeType')?.value || 'INITIATOR';
@@ -356,13 +369,14 @@
             const selectionMode = selectionModeRadio?.value || 'single';
             const allowComment = document.getElementById('formAdapterAllowComment')?.checked !== false;
             const minCommentLength = parseInt(document.getElementById('formAdapterMinCommentLength')?.value) || 0;
+            const currentConfig = node.data('config') || {};
 
             // 驗證
             if (assigneeType !== 'INITIATOR' && !assigneeValue.trim()) {
                 const msg = document.getElementById('faModalMessage');
                 if (msg) { msg.textContent = __('請選擇或填寫簽核者'); msg.className = 'fa-modal-message warning'; }
                 else { updateStatus(__('請選擇或填寫簽核者'), 'warning'); }
-                return;
+                return false;
             }
 
             // 簽核逾時（PF-229 第三期第 2 項）
@@ -378,8 +392,25 @@
                 if (timeoutError) {
                     if (msg) { msg.textContent = timeoutError; msg.className = 'fa-modal-message warning'; }
                     else { updateStatus(timeoutError, 'warning'); }
-                    return;
+                    return false;
                 }
+            }
+
+            const noAssigneeActionEl = document.getElementById('faNoAssigneeAction');
+            const noAssigneeAction = noAssigneeActionEl
+                ? (noAssigneeActionEl.value === 'fallback_role' ? 'fallback_role' : 'return')
+                : (currentConfig.no_assignee_action === 'fallback_role' ? 'fallback_role' : 'return');
+            const noAssigneeRoleSelect = document.getElementById('faNoAssigneeRole');
+            const noAssigneeRoleSecureCode = noAssigneeAction === 'fallback_role'
+                ? (noAssigneeRoleSelect ? (noAssigneeRoleSelect.value || '') : (currentConfig.no_assignee_role_secure_code || '')) : '';
+            const noAssigneeRoleLabel = noAssigneeAction === 'fallback_role'
+                ? (noAssigneeRoleSelect ? (noAssigneeRoleSelect.selectedOptions[0]?.text || '') : (currentConfig.no_assignee_role_label || '')) : '';
+            if (noAssigneeAction === 'fallback_role' && !noAssigneeRoleSecureCode) {
+                const msg = document.getElementById('faModalMessage');
+                const error = __('改派給角色時必須選擇角色');
+                if (msg) { msg.textContent = error; msg.className = 'fa-modal-message warning'; }
+                else { updateStatus(error, 'warning'); }
+                return false;
             }
 
             // 自定義決策選項相關
@@ -395,7 +426,6 @@
             }
 
             // 更新節點 config
-            const currentConfig = node.data('config') || {};
             const updatedConfig = {
                 ...currentConfig,
                 assignee_type: assigneeType,
@@ -412,7 +442,10 @@
                 timeout_enabled: timeoutEnabled,
                 timeout_minutes: timeoutEnabled ? timeoutMinutes : 0,
                 timeout_mode: timeoutMode,
-                timeout_path_id: timeoutEnabled ? timeoutPathId : ''
+                timeout_path_id: timeoutEnabled ? timeoutPathId : '',
+                no_assignee_action: noAssigneeAction,
+                no_assignee_role_secure_code: noAssigneeRoleSecureCode,
+                no_assignee_role_label: noAssigneeRoleLabel
             };
 
             node.data('config', updatedConfig);
@@ -436,5 +469,6 @@
 
             // 同步更新變數總覽
             if (typeof reloadAllVars === 'function') reloadAllVars();
+            return true;
         }
         window.applyFormAdapterConfig = applyFormAdapterConfig;

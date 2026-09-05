@@ -56,13 +56,13 @@ function fcUtils() {
         },
 
         getActionText(action) {
-            const map = { 'approved': __('核准'), 'rejected': __('退回'), 'PENDING': __('待簽'), 'FORCE_END': __('強制結束'), 'timeout': __('逾時自動處理') };
+            const map = { 'approved': __('核准'), 'rejected': __('退回'), 'PENDING': __('待簽'), 'FORCE_END': __('強制結束'), 'timeout': __('逾時自動處理'), 'no_assignee': __('找不到簽核人，退回') };
             return map[action] || action;
         },
 
         getActionBadgeClass(action) {
             if (action === 'approved') return 'fc-badge-completed';
-            if (action === 'rejected' || action === 'FORCE_END') return 'fc-badge-error';
+            if (action === 'rejected' || action === 'FORCE_END' || action === 'no_assignee') return 'fc-badge-error';
             if (action === 'timeout') return 'fc-badge-running';
             return 'fc-badge-pending';
         },

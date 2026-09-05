@@ -1,6 +1,7 @@
 # 交接：PF-235／PF-71 已完成，下一步 PF-226（2026-09-04 19:50）
 
 > **2026-09-04 20:05 進度**：第二節第 1 點（bpserv 部署 PF-71）已完成；第 2 點三種情境已實測完畢（憑證 `/opt/tmp/verify/20260904-pf226.log`），等 Ethan 定案。
+> **2026-09-05 09:10**：PF-226 定案並實作完成（不分表單類別：節點設改派角色就改派，否則退回；憑證 `/opt/tmp/verify/20260905-pf226.log`），延伸需求存 PF-246。GHTRAVEL published sc 已換成 `NfrmHdR6pVWLo2L2eCttCA`。剩 PF-69 DEPARTMENT 型等 Ethan 決定。
 
 > 寫給下一個 session。本檔是一次性的；每個 session 都會用到的事實已歸位到 `CLAUDE.md`
 > （假日表與預設班表段、特定代理段、bpserv 部署狀態列、平台層延後 import）。
@@ -49,9 +50,9 @@ BASE=http://192.168.0.16:7000/beakplatform
 curl -s -c cj.txt -X POST "$BASE/dev/quick-login" -H 'Content-Type: application/json' -d '{"user_id":"oTBMqW0roaniN3UFhyKmZh"}'
 TOKEN=$(curl -s -b cj.txt -c cj.txt "$BASE/dashboard" | grep -o 'csrf-token" content="[^"]*' | cut -d'"' -f3)
 # 金額 10 億 → hr_approver_found=false（規格 dev-notes/HR_LOOKUP_NODE_SPEC.md）；form_data 的欄位鍵先用
-#   curl -s -b cj.txt "$BASE/api/form-center/forms/ANHfz8A6yeY8zl-k7uJ0XA" 或直接查 fw_form_templates.schema 確認
+#   curl -s -b cj.txt "$BASE/api/form-center/forms/NfrmHdR6pVWLo2L2eCttCA" 或直接查 fw_form_templates.schema 確認
 curl -s -b cj.txt -X POST "$BASE/api/form-center/submit" -H 'Content-Type: application/json' -H "X-CSRFToken: $TOKEN" \
-  -d '{"published_secure_code":"ANHfz8A6yeY8zl-k7uJ0XA","subject":"PF-226 測試 10 億","form_data":{"amount":1000000000}}'
+  -d '{"published_secure_code":"NfrmHdR6pVWLo2L2eCttCA","subject":"PF-226 測試 10 億","form_data":{"amount":1000000000}}'
 ```
 
 送出後看佇列與變數（表名與欄位名見 CLAUDE.md「每個 session 都會撞一次的欄位名」）：

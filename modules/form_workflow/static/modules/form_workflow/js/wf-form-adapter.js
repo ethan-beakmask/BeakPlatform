@@ -53,6 +53,8 @@
             const timeoutMode = currentConfig.timeout_mode === 'WORKING' ? 'WORKING' : 'ABSOLUTE';
             const timeoutPathId = currentConfig.timeout_path_id || '';
             const timeoutPathOptions = buildTimeoutPathOptions(nodeId, currentConfig, timeoutPathId);
+            const noAssigneeAction = currentConfig.no_assignee_action === 'fallback_role' ? 'fallback_role' : 'return';
+            const noAssigneeRoleSecureCode = currentConfig.no_assignee_role_secure_code || '';
 
             // 恢復已選擇的簽核者列表
             restoreSelectedAssignees(assigneeType, assigneeValue, assigneeLabel, assigneeListConfig);
@@ -195,6 +197,23 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="fa-modal-field" style="border-top: 1px solid #eee; padding-top: 12px;">
+                                <strong>${__('找不到簽核人時')}</strong>
+                                <select id="faNoAssigneeAction" onchange="toggleNoAssigneeRoleRow()" style="margin-top: 6px; width: 100%;">
+                                    <option value="return" ${noAssigneeAction === 'return' ? 'selected' : ''}>${__('退回申請人重送（預設）')}</option>
+                                    <option value="fallback_role" ${noAssigneeAction === 'fallback_role' ? 'selected' : ''}>${__('改派給角色')}</option>
+                                </select>
+                                <div id="faNoAssigneeRoleRow" style="display: ${noAssigneeAction === 'fallback_role' ? 'block' : 'none'}; margin-top: 6px;">
+                                    <select id="faNoAssigneeRole" style="width: 100%;">
+                                        <option value="">${__('載入中...')}</option>
+                                    </select>
+                                </div>
+                                <div style="font-size: 10px; color: #888; margin-top: 3px; line-height: 1.5;">
+                                    ${__('簽核者清單解析為空時（例如動態變數沒有值、人事取值找不到核決人）依此處理。')}
+                                    ${__('改派給角色後，管理員把人加進該角色即可簽核；角色當下沒有成員也不會退回。')}
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Tab 1: 決策控制器 -->
@@ -274,6 +293,7 @@
             setTimeout(function() {
                 initOrgTree(assigneeType);
                 loadRolesList(assigneeValue);
+                loadRoleOptionsInto('faNoAssigneeRole', noAssigneeRoleSecureCode);
                 if (window._faDecisions && useCustomDecisions) {
                     const outEdges = window._faDecisions.getOutgoingEdges(nodeId);
                     window._faDecisions.renderDecisionConfigBlock(nodeId, currentConfig.decision_options || []);
@@ -516,7 +536,7 @@
             if (panelDesc) panelDesc.value = node.data('description') || '';
 
             // 3. 呼叫原本的 apply 函式（讀取 Modal 內的表單元素）
-            applyFormAdapterConfig(nodeId);
+            if (applyFormAdapterConfig(nodeId) === false) return;
 
             // 4. 若 Tab 2 已載入欄位權限，一併儲存
             if (_faTabFieldPermLoaded) {

@@ -11,10 +11,10 @@
          * 此函數靜默執行，不顯示驗證警告、不搶 focus
          */
         function autoApplyCurrentPanel() {
-            if (!currentEditingNodeId) return;
+            if (!currentEditingNodeId) return true;
 
             const node = cy.getElementById(currentEditingNodeId);
-            if (!node || node.length === 0) return;
+            if (!node || node.length === 0) return true;
 
             const type = currentEditingNodeType;
             const config = node.data('config') || {};
@@ -136,6 +136,23 @@
                             config.timeout_mode = document.getElementById('faTimeoutMode')?.value === 'WORKING' ? 'WORKING' : 'ABSOLUTE';
                             config.timeout_path_id = faTimeoutEnabled.checked
                                 ? (document.getElementById('faTimeoutPathId')?.value || '') : '';
+                        }
+                        const noAssigneeActionEl = document.getElementById('faNoAssigneeAction');
+                        if (noAssigneeActionEl) {
+                            const noAssigneeAction = noAssigneeActionEl.value === 'fallback_role' ? 'fallback_role' : 'return';
+                            const noAssigneeRoleSelect = document.getElementById('faNoAssigneeRole');
+                            const noAssigneeRoleSecureCode = noAssigneeAction === 'fallback_role' ? (noAssigneeRoleSelect?.value || '') : '';
+                            if (noAssigneeAction === 'fallback_role' && !noAssigneeRoleSecureCode) {
+                                const msg = document.getElementById('faModalMessage');
+                                const error = __('改派給角色時必須選擇角色');
+                                if (msg) { msg.textContent = error; msg.className = 'fa-modal-message warning'; }
+                                else { updateStatus(error, 'warning'); }
+                                return false;
+                            }
+                            config.no_assignee_action = noAssigneeAction;
+                            config.no_assignee_role_secure_code = noAssigneeRoleSecureCode;
+                            config.no_assignee_role_label = noAssigneeAction === 'fallback_role'
+                                ? (noAssigneeRoleSelect?.selectedOptions[0]?.text || '') : '';
                         }
                         changed = true;
                     }
@@ -457,6 +474,7 @@
                 node.data('config', config);
                 console.log('💾 autoApply: 自動套用面板設定到', currentEditingNodeId, type);
             }
+            return true;
         }
 
         // 儲存流程
@@ -467,7 +485,7 @@
                 return false;
             }
             // 儲存前自動套用當前面板的設定
-            autoApplyCurrentPanel();
+            if (autoApplyCurrentPanel() === false) return false;
 
             console.log('💾 saveWorkflow 被調用');
             console.log('  currentWorkflowId:', currentWorkflowId);

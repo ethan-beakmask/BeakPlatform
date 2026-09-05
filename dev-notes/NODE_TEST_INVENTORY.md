@@ -51,7 +51,7 @@
 | NT-16 | `SubSystemProvision` | 子系統配置 | 整合 | 未驗證 | — |
 | NT-17 | `Abandon` | 中止 | 系統 | 未驗證 | 與 NT-11 共用父流程喚醒邏輯，**同一個 `created_by` bug 的鄰居，要一併檢查** |
 | NT-18 | `SysTelegram` | 系統 Telegram | 系統 | 端到端 | 2026-08-31 PF-188 授權面同 NT-14；2026-09-01 PF-193 實際發送成功（`20260901-pf193-e2e.log`）：測試頻道 `-4645997172`、`message_id=51561`、內容含 `PROC-20260901-0001` |
-| NT-19 | `FormAdapter` | 簽核 | 表單 | 部分驗證 | 日常在用；**簽核逾時**（2026-09-03 PF-229 第三期第 2 項）有落地憑證 `20260903-pf229-item2-timeout.log`（executor 喚醒 → 逾時出線 → `action='timeout'` 紀錄 → End）＋ `test_formadapter_timeout.py` 12 條；代理簽核 `delegate_from_*` 憑證 `20260903-pf229-item4-delegate-from.log`。授權判定點共 12 處（`task_authorizer.py`） |
+| NT-19 | `FormAdapter` | 簽核 | 表單 | 部分驗證 | 日常在用；**簽核逾時**（2026-09-03 PF-229 第三期第 2 項）有落地憑證 `20260903-pf229-item2-timeout.log`（executor 喚醒 → 逾時出線 → `action='timeout'` 紀錄 → End）＋ `test_formadapter_timeout.py` 12 條；代理簽核 `delegate_from_*` 憑證 `20260903-pf229-item4-delegate-from.log`。授權判定點共 12 處（`task_authorizer.py`）；**簽核者解析為空**（2026-09-05 PF-226）預設退回申請人（`action='no_assignee'`）或依 config 改派角色，憑證 `20260905-pf226.log` ＋ `test_formadapter_no_assignee.py` 6 條 |
 | NT-20 | `OpFieldRead` | 讀取欄位 | 變數 | 未驗證 | — |
 | NT-21 | `OpFieldWrite` | 寫入欄位 | 變數 | 未驗證 | — |
 | NT-22 | `OpSet` | 設定變數 | 變數 | 未驗證 | — |

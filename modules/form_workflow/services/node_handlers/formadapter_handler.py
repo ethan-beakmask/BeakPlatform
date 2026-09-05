@@ -18,6 +18,8 @@ TIMEOUT_MODES = ('ABSOLUTE', 'WORKING')
 TIMEOUT_MAX_MINUTES = 14400          # 10 天，與 ParallelJoin 一致
 TIMEOUT_ACTION = 'timeout'           # fw_approval_records.action（機器碼，不翻譯）
 TIMEOUT_APPROVER_NAME = '系統（逾時自動處理）'
+NO_ASSIGNEE_ACTION = 'no_assignee'   # fw_approval_records.action（機器碼，不翻譯）
+NO_ASSIGNEE_APPROVER_NAME = '系統（找不到簽核人）'
 
 
 def _iso(dt: datetime) -> str:
@@ -114,6 +116,15 @@ class FormAdapterHandler(BaseNodeHandler):
             if not str(self.get_config_value('timeout_path_id', '') or '').strip():
                 raise ValueError('啟用簽核逾時時必須指定逾時去向 (timeout_path_id)')
 
+        no_assignee_action = self.get_config_value('no_assignee_action', 'return')
+        if no_assignee_action not in ('return', 'fallback_role'):
+            no_assignee_action = 'return'
+        self.node_config['no_assignee_action'] = no_assignee_action
+        if no_assignee_action == 'fallback_role':
+            role_sc = str(self.get_config_value('no_assignee_role_secure_code', '') or '').strip()
+            if not role_sc:
+                raise ValueError('改派給角色時必須指定角色 (no_assignee_role_secure_code)')
+
         return True
 
     def handle(self) -> Dict[str, Any]:
@@ -166,16 +177,6 @@ class FormAdapterHandler(BaseNodeHandler):
         # 解析簽核者
         assignees = self._resolve_assignees(assignee_type, assignee_value)
 
-        self.log_info('FormAdapter 節點等待簽核', {
-            'node_id': self.queue_item.node_id,
-            'assignee_type': assignee_type,
-            'assignee_value': assignee_value,
-            'assignees': assignees,
-            'selection_mode': selection_mode,
-            'use_custom_decisions': use_custom_decisions,
-            'available_paths': available_paths
-        })
-
         data = {
             'assignee_type': assignee_type,
             'assignee_value': assignee_value,
@@ -191,6 +192,12 @@ class FormAdapterHandler(BaseNodeHandler):
             'waiting_since': datetime.utcnow().isoformat()
         }
 
+        if assignees == [] and assignee_type != 'ROLE':
+            no_assignee_result = self._handle_no_assignee(data)
+            if no_assignee_result:
+                return no_assignee_result
+            assignees = data['assignees']
+
         timeout_info = self._build_timeout_info(assignees, available_paths)
         if timeout_info:
             data.update(timeout_info)
@@ -198,6 +205,16 @@ class FormAdapterHandler(BaseNodeHandler):
                 k: timeout_info[k] for k in ('timeout_mode', 'timeout_mode_effective', 'timeout_minutes',
                                              'timeout_at', 'timeout_path_id', 'timeout_reference_user')
             })
+
+        self.log_info('FormAdapter 節點等待簽核', {
+            'node_id': self.queue_item.node_id,
+            'assignee_type': data['assignee_type'],
+            'assignee_value': data['assignee_value'],
+            'assignees': data['assignees'],
+            'selection_mode': selection_mode,
+            'use_custom_decisions': use_custom_decisions,
+            'available_paths': available_paths
+        })
 
         # 返回等待簽核狀態
         return {
@@ -209,6 +226,80 @@ class FormAdapterHandler(BaseNodeHandler):
     # ------------------------------------------------------------------
     # 簽核逾時（PF-229 第三期第 2 項）
     # ------------------------------------------------------------------
+
+    def _no_assignee_reason(self, assignee_type: str, assignee_value: str) -> str:
+        if assignee_type == 'DYNAMIC':
+            return f'變數 {assignee_value} 為空'
+        if assignee_type == 'USER':
+            return '指定用戶為空'
+        if assignee_type == 'INITIATOR':
+            return '表單沒有申請人'
+        if assignee_type == 'DEPARTMENT':
+            return f'部門 {assignee_value} 下無在職成員'
+        return f'{assignee_type} 簽核者為空'
+
+    def _no_assignee_return_result(self, data: Dict[str, Any], reason: str) -> Dict[str, Any]:
+        comment = f'找不到簽核人（{reason}），退回申請人重送'
+        self._write_system_record(NO_ASSIGNEE_ACTION, NO_ASSIGNEE_APPROVER_NAME, comment)
+        self.log_error('FormAdapter 簽核者解析為空，退回申請人重送', {
+            'assignee_type': data.get('assignee_type'),
+            'assignee_value': data.get('assignee_value'),
+            'reason': reason,
+        })
+        return {
+            'status': 'complete_workflow',
+            'message': comment,
+            'data': {
+                **data,
+                'decision': NO_ASSIGNEE_ACTION,
+                'no_assignee': True,
+                'no_assignee_reason': reason,
+                'workflow_status': 'REJECTED',
+                'finish_mode': 'detach',
+            },
+        }
+
+    def _handle_no_assignee(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        assignee_type = data.get('assignee_type')
+        assignee_value = data.get('assignee_value') or ''
+        reason = self._no_assignee_reason(assignee_type, assignee_value)
+        action = self.get_config_value('no_assignee_action', 'return')
+        if action != 'fallback_role':
+            return self._no_assignee_return_result(data, reason)
+
+        role_sc = str(self.get_config_value('no_assignee_role_secure_code', '') or '').strip()
+        from app.models.role import Role
+        role = Role.query.filter(
+            Role.secure_code == role_sc,
+            Role.org_secure_code == self.queue_item.org_secure_code,
+            Role.is_deleted == False,  # noqa: E712
+            Role.is_active == True,  # noqa: E712
+        ).first()
+        if role is None:
+            self.log_error('FormAdapter 改派角色不存在或不可用', {
+                'no_assignee_role_secure_code': role_sc,
+                'reason': reason,
+            })
+            return self._no_assignee_return_result(data, reason)
+
+        fallback_assignees = self._resolve_role_users(role_sc)
+        data.update({
+            'assignee_type': 'ROLE',
+            'assignee_value': role_sc,
+            'assignees': fallback_assignees,
+            'no_assignee_fallback_applied': True,
+            'original_assignee_type': assignee_type,
+            'original_assignee_value': assignee_value,
+            'no_assignee_reason': reason,
+        })
+        self.log_warning('FormAdapter 簽核者解析為空，改派給角色', {
+            'original_assignee_type': assignee_type,
+            'original_assignee_value': assignee_value,
+            'no_assignee_role_secure_code': role_sc,
+            'assignees': fallback_assignees,
+            'reason': reason,
+        })
+        return None
 
     def _org_tz_name(self) -> str:
         from app.models.organization import Organization
@@ -303,7 +394,7 @@ class FormAdapterHandler(BaseNodeHandler):
         mode_label = '工作時間' if data.get('timeout_mode_effective') == 'WORKING' else '絕對時間'
         comment = f'簽核逾時（{mode_label} {minutes} 分鐘），系統自動採用「{label}」'
 
-        self._write_timeout_record(comment)
+        self._write_system_record(TIMEOUT_ACTION, TIMEOUT_APPROVER_NAME, comment)
 
         output_variable = data.get('output_variable')
         if output_variable and path.get('value') is not None:
@@ -333,7 +424,7 @@ class FormAdapterHandler(BaseNodeHandler):
             'data': {**base, 'selected_edges': target_edges},
         }
 
-    def _write_timeout_record(self, comment: str) -> None:
+    def _write_system_record(self, action: str, approver_name: str, comment: str) -> None:
         from ...models import FwApprovalRecord
         db.session.add(FwApprovalRecord(
             secure_code=secrets.token_urlsafe(16),
@@ -344,8 +435,8 @@ class FormAdapterHandler(BaseNodeHandler):
             node_name=self.queue_item.node_name,
             node_queue_secure_code=self.queue_item.secure_code,
             approver_secure_code=None,
-            approver_name=TIMEOUT_APPROVER_NAME,
-            action=TIMEOUT_ACTION,
+            approver_name=approver_name,
+            action=action,
             comment=comment,
             acted_at=datetime.utcnow(),
         ))

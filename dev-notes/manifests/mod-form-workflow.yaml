@@ -103,6 +103,7 @@ files:
     - backend/tests/test_hr_lookup_node.py                     # OpHrLookup 人事資料取值節點
     - backend/tests/test_task_authorizer_delegate_from.py       # 代理簽核身分解析與簽核紀錄欄位
     - backend/tests/test_formadapter_timeout.py                 # 簽核節點逾時（ABSOLUTE／WORKING、喚醒重算、逾時去向）
+    - backend/tests/test_formadapter_no_assignee.py             # 簽核節點找不到簽核人時退回申請人或改派角色
   docs:
     - dev-notes/HR_LOOKUP_NODE_SPEC.md                         # NT-31 人事資料取值節點規格
   vendor_deps:

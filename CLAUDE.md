@@ -1780,7 +1780,7 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   `scripts/examples/provision_hr_lookup_demo.py --org <code> --apply` 佈建「差旅費申請（人事取值示範）」：
   領隊翎柏瑞（quick-login `oTBMqW0roaniN3UFhyKmZh`，L200）申請 30 萬 → 派直屬主管燁凱文（L500）、
   500 萬 → 派處長霄雅慧（L700）。提交走 `POST /api/form-center/submit`，body 要 `published_secure_code`
-  （GHTRAVEL 是 `ANHfz8A6yeY8zl-k7uJ0XA`）+ `subject` + `form_data`
+  （GHTRAVEL 是 `NfrmHdR6pVWLo2L2eCttCA`）+ `subject` + `form_data`
   **LION 的管理員不要自己用 SQL 撈**：`SELECT ... WHERE user_type='ORG_ADMIN'`
   在該企業會撈到不能登入的那一筆，quick-login 回 401（2026-08-31 踩過）。
   用上面寫死的 user_id。
@@ -1923,6 +1923,7 @@ formadapter_handler.py:148     # 驗證 target_edges 合法性（空 target_edge
 | `AlertBroadcast.broadcast_code` | **不做變數替換**（只有 title/message 有），同 code 覆蓋前一則並清掉已讀記錄 | 它是「最新一則橫幅」不是每案通知，別拿來當逐案稽核 |
 | 流程模板層級的逾時 | **不存在**（`timeout_minutes`／`timeout_at` 欄位與其唯一使用者 `WorkflowEngine.start_workflow` 死碼已於 2026-09-01 PF-168 刪除） | 逾時要用流程內 Delay 節點，或簽核節點自己的逾時（下一列） |
 | **簽核節點逾時**（2026-09-03 PF-229 第三期第 2 項起） | `FormAdapter` config `timeout_enabled`／`timeout_minutes`／`timeout_mode`（`ABSOLUTE`／`WORKING`：只在簽核者班表內倒數、無班表退回 ABSOLUTE）／`timeout_path_id`；期限存在 `result.data.timeout_at`，executor 以 `formadapter_timeout_due_clause()` 喚醒（**不是**加進 node_type 清單、**不動** `scheduled_at`），逾時寫 `fw_approval_records.action='timeout'` 並走指定決策；未配對出線的決策＝REJECTED 終態 | 規格 `dev-notes/CALENDAR_SPEC.md` 六之七 |
+| **簽核者解析為空**（2026-09-05 PF-226 起） | `FormAdapter.handle()` 第一次進關卡時，`assignees==[]` 且型別非 `ROLE`（DYNAMIC 變數為空、USER／INITIATOR／DEPARTMENT 解析成空）就依 config `no_assignee_action` 處置：`return`（預設、缺 key 亦同）寫 `fw_approval_records.action='no_assignee'`（簽核者「系統（找不到簽核人）」）並以 `complete_workflow`／`workflow_status='REJECTED'` 結束，表單中心顯示「已退回」；`fallback_role` 改成 `assignee_type='ROLE'`＋`no_assignee_role_secure_code`（同企業、未刪、啟用，查不到 fail-closed 退回），角色沒成員也進 WAITING，管理員補人即可簽（ROLE 授權是執行時比對）。**ROLE 型別解析成空清單刻意不觸發**；USER 型別指定到已停用帳號時 `assignees` 非空也不觸發（已知缺口，PF-246）。2026-09-05 之前的行為是佇列永遠 WAITING、無人可簽、不報錯 | 設計器 modal「找不到簽核人時」區塊；測試 `test_formadapter_no_assignee.py`；憑證 `/opt/tmp/verify/20260905-pf226.log` |
 | `DecisionWriter.decided_via` 自動推斷 | 看 `last_completed_node_type`，並行分支下不可靠 | 一律在節點 config 明確標 `human` / `auto` |
 | `DecisionWriter.target_value` 替換後為空 | 節點回 error、流程卡住 | 自動封鎖前必須先用 Branch 擋掉 `actor_ip` 為空的案件 |
 
