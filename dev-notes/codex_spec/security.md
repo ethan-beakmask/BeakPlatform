@@ -24,7 +24,8 @@
   `ResourceGateway.list()` / `filter()` 會對 `LIST_RBAC_ENFORCED_MODELS` 內的 model
   自動檢查 `{resource_type}:read`，**不是等價替換**——EMPLOYEE／EXTERNAL 可達的端點
   改完會 403。呼叫端本來就不該持有該權限時用 `check_permission=False` 並寫明理由。
-  **這件事單元測試抓不到**（測試庫沒有 RBAC seed），要在回報中列為需人工實測項
+  **這件事單元測試抓不到**（測試庫只有出廠權限定義、沒有角色與指派，EMPLOYEE 的權限鏈
+  一律「no roles」），要在回報中列為需人工實測項
 - 看到非預期的 404，先查 `org_secure_code` 再懷疑邏輯（多半是租戶隔離擋掉）
 
 ### 帳號查詢（DATA-01）

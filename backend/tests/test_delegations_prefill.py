@@ -1,6 +1,5 @@
 from app import db
-from app.models import Delegation, Permission, User
-from app.services.permission_service import PermissionService
+from app.models import Delegation, User
 import sys
 from pathlib import Path
 
@@ -85,7 +84,6 @@ def test_create_specific_requires_at_least_one_form(admin_client, test_user):
 
 
 def test_create_specific_filters_forms_and_edit_clears_when_full(admin_client, test_user):
-    _ensure_delegation_read_permission()
     delegate = _other_user(test_user.org_secure_code)
     template = _form_template(test_user.org_secure_code, 'del_specific_form_0001',
                               'SPEC-1', 'Specific Form')
@@ -157,20 +155,3 @@ def _form_template(org_secure_code, secure_code, code, name):
     db.session.commit()
     return template
 
-
-def _ensure_delegation_read_permission():
-    PermissionService._permission_cache.pop('delegation:read', None)
-    if Permission.query.filter_by(code='delegation:read').first():
-        return
-    db.session.add(Permission(
-        secure_code='perm_delegation_read_test',
-        resource_type='delegation',
-        action='read',
-        code='delegation:read',
-        name='檢視代理授權',
-        permission_level='ORG',
-        is_system_permission=True,
-        is_active=True,
-        is_deleted=False,
-    ))
-    db.session.commit()

@@ -669,9 +669,11 @@ dev 上永遠重現不出來。**驗新 permission code 一律用拋棄式庫走
 
 #### 改完必須實測（單元測試抓不到）
 
-測試庫是 `db.create_all()` 建的空表、**沒有 RBAC seed**，權限鏈上的問題在測試裡
-一律表現為既有的那個 failed（`test_admin_required_for_admin`，PF-34），
-不會因為你改壞而多紅一條。**一定要用該端點的實際使用者身分實測**：
+測試庫是 `db.create_all()` 建的空表。2026-09-06（PF-34）起 `admin_client` 依賴的
+`rbac_seed` fixture 會種入**出廠權限定義**（`DEFAULT_PERMISSIONS`），ORG_ADMIN 的 bypass
+在測試裡走得通；但**沒有角色與 `user_role_assignments`**，EMPLOYEE／EXTERNAL 的權限鏈
+在測試裡一律是「User has no roles」，改壞了不會多紅一條。
+**一定要用該端點的實際使用者身分實測**：
 
 ```bash
 BASE=http://192.168.0.16:7000/beakplatform
@@ -2027,13 +2029,18 @@ bash scripts/run_e2e.sh                       # Playwright，需服務在跑
 看起來像全綠，實際上一個測試都沒跑。run_tests.sh 在 `backend/` 內執行，路徑要寫 `tests/xxx.py`。
 
 **基準不寫死數字**（會腐爛）：動工前先跑一次記下當時數字，改完再比對。
-以下三個非綠是長期已知、不列入退步：
+以下兩個非綠是長期已知、不列入退步（`test_admin_required_for_admin` 那個 failed
+已於 2026-09-06 PF-34 解決，看到舊文件列它一律過時）：
 
 | 項目 | 狀態 | 成因 |
 |---|---|---|
-| `test_auth_interceptor.py::...::test_admin_required_for_admin` | failed | 測試庫沒有 RBAC seed（PF-34） |
 | `test_od_protected_targets.py`（2 error） | error | 只在完整跑時出現，單獨跑該檔 56 passed＝測試間污染 |
 | `test_e2e_portal_cancel.py` | skipped | 寫死的驗收頁 2026-08-03 已消失，永久 skip |
+
+**測試裡需要 ORG_ADMIN 打 ResourceGateway 端點時用 `admin_client`**，它自帶出廠權限定義
+（`rbac_seed` fixture，PF-34）。**不要再在測試裡 `Permission(...)` 手種出廠碼**，
+會撞 `permissions.code` 唯一鍵（症狀 `UniqueViolation`，2026-09-06 清掉四個檔的五份複本）；
+細節與例外見 `dev-notes/TESTING_NOTES.md`。
 
 跑出基準外的失敗，歸因順序固定：**先重跑一次**（不同就是殘留/污染）→
 **再看 log 有沒有 `Unknown permission code` / `Modules already loaded`**（環境訊息）→

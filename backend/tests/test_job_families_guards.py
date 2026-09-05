@@ -12,29 +12,12 @@ from app.models import (
     JobLevel,
     JobTitle,
     OrganizationalUnit,
-    Permission,
-    PermissionLevel,
     PositionType,
     UnitType,
 )
 
 PREFIX = '/beakplatform'
 AJAX = {'X-Requested-With': 'XMLHttpRequest'}
-
-
-def _ensure_job_family_read_permission():
-    db.session.add(Permission(
-        secure_code='perm_job_family_read_jfg',
-        resource_type='job_family',
-        action='read',
-        code='job_family:read',
-        name='檢視職系',
-        permission_level=PermissionLevel.ORG,
-        is_system_permission=True,
-        is_active=True,
-        is_deleted=False,
-    ))
-    db.session.flush()
 
 
 def _family(org, code, parent=None):
@@ -113,7 +96,6 @@ def _position(org, user, title):
 
 
 def test_create_child_under_parent_with_titles_is_rejected(admin_client, test_org):
-    _ensure_job_family_read_permission()
     root = _family(test_org, 'ROOTA')
     _title(test_org, root, _level(test_org), 'T1')
     db.session.commit()
@@ -129,7 +111,6 @@ def test_create_child_under_parent_with_titles_is_rejected(admin_client, test_or
 
 
 def test_create_child_under_empty_parent_succeeds(admin_client, test_org):
-    _ensure_job_family_read_permission()
     root = _family(test_org, 'ROOTB')
     db.session.commit()
 
@@ -144,7 +125,6 @@ def test_create_child_under_empty_parent_succeeds(admin_client, test_org):
 
 
 def test_edit_only_rechecks_when_parent_changes(admin_client, test_org):
-    _ensure_job_family_read_permission()
     level = _level(test_org)
     root_a = _family(test_org, 'ROOTC')
     root_b = _family(test_org, 'ROOTD')
@@ -170,7 +150,6 @@ def test_edit_only_rechecks_when_parent_changes(admin_client, test_org):
 
 
 def test_cascade_delete_blocked_while_title_assigned(admin_client, test_org, test_user):
-    _ensure_job_family_read_permission()
     family = _family(test_org, 'ROOTE')
     title = _title(test_org, family, _level(test_org), 'TE')
     position = _position(test_org, test_user, title)

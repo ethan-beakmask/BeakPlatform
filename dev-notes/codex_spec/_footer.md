@@ -14,8 +14,10 @@ python3 -c "import json; json.load(open('<path>'))"
 bash scripts/run_tests.sh tests/test_pageir_*.py tests/test_portal_*.py -q   # 依任務挑相關檔
 # 全量基準：不寫死數字（測試會持續新增，寫死的通過數必然腐爛而誤導）。
 #   動工前自己先跑一次完整 tests/ 記下當時的 passed / failed / skipped，改完再跑一次比對。
-#   已知長期非綠、不列入退步：test_admin_required_for_admin（測試庫缺 RBAC seed）、
-#   test_e2e_portal_cancel.py（依賴的驗收頁已不存在，永久 skip）。
+#   已知長期非綠、不列入退步：test_e2e_portal_cancel.py（依賴的驗收頁已不存在，永久 skip）、
+#   test_od_protected_targets.py 完整跑時 2 error（測試間污染，單跑該檔全過）。
+# 測試裡要以 ORG_ADMIN 打 ResourceGateway 端點時用 conftest 的 admin_client（自帶出廠權限定義，
+#   rbac_seed fixture）。禁止在測試裡 Permission(...) 手種出廠碼，會撞 permissions.code 唯一鍵。
 ```
 
 **禁止自己 `source .env` 之後直接叫 pytest**——`.env` 的 DATABASE_URL 指向開發庫，

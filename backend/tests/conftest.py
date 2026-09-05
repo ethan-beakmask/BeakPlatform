@@ -184,9 +184,38 @@ def auth_client(client, app, test_user, test_org):
 
 
 @pytest.fixture
-def admin_client(client, app, test_admin, test_org):
+def rbac_seed(app):
+    """種入出廠權限定義（PF-34，2026-09-06）。
+
+    測試庫是 db.create_all() 建的空表，permissions 表沒有任何定義。
+    PermissionService.check() 第一步是查定義、查不到就 return False，
+    ORG_ADMIN 的 bypass 在第二步輪不到——所以 admin 打任何走 ResourceGateway
+    的端點都 403（症狀：Unknown permission code: user:read）。
+
+    權威清單是 app/models/permission.py 的 DEFAULT_PERMISSIONS（PF-241 起），
+    透過 seed_system_permissions() 種入，不另外手寫會漂移的清單。
+    刻意做成 opt-in、不掛在 app fixture：test_permission_defaults.py 斷言
+    「第一次 seed 建出全部筆數」，自動種入會讓它變 0。
+
+    PermissionService 的快取是類別層級、跨測試存活，而測試之間會 drop_all()，
+    前後都要清，否則上一個測試的 Permission 物件會漂進下一個測試。
+    """
+    from app.defaults.permission_defaults import seed_system_permissions
+    from app.services.permission_service import PermissionService
+
+    PermissionService.clear_cache()
+    seed_system_permissions()
+    yield
+    PermissionService.clear_cache()
+
+
+@pytest.fixture
+def admin_client(client, app, test_admin, test_org, rbac_seed):
     """
     Create authenticated admin test client.
+
+    依賴 rbac_seed：經 HTTP 以管理員身分測的端點，都該在有出廠權限的環境下跑，
+    這才是真實環境（開發庫與 fresh install 都有這批定義）。
     """
     _login_user_directly(client, app, test_admin, test_org)
     return client

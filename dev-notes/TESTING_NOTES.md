@@ -66,7 +66,7 @@ sudo -u postgres createdb -O beakplatform beakplatform_test
 1. 先看是不是**測試資料殘留**——`bash scripts/run_tests.sh -q` 重跑一次，
    結果不同就是殘留或測試間互相污染，不是功能回歸
 2. 再看 log 有沒有 `Unknown permission code` / `Modules already loaded`
-   這類**環境訊息**（前者是測試庫缺 seed，見 PF-34）
+   這類**環境訊息**（前者＝該測試沒經 `rbac_seed` 種出廠權限定義，見下方 PF-34 段）
 3. 都不是才當作功能回歸，用 `git stash` 比對改動前後
 
 **基準不寫死數字**（測試會持續新增，寫死的通過數必然腐爛而誤導）。
@@ -75,9 +75,26 @@ sudo -u postgres createdb -O beakplatform beakplatform_test
 
 | 項目 | 狀態 | 成因 |
 |---|---|---|
-| `test_auth_interceptor.py::TestAuthDecorators::test_admin_required_for_admin` | failed | 測試庫是 `db.create_all()` 建的空表、**沒有 RBAC seed**（log 印 `Unknown permission code: user:read`），拿到 403 而非 200。要修就補 permission → role → `user_role_assignments` 整條鏈，權威清單在 `scripts/migrations/legacy/075_seed_resource_crud_permissions.py`（待辦 **PF-34**） |
 | `test_od_protected_targets.py`（2 個 error） | error | **只在完整跑時出現，單獨跑該檔 56 passed** —— 是測試間污染，不是功能回歸。2026-08-20 實測確認（`/opt/tmp/verify/20260820-full-tests.log`）。看到它不要追功能，照上面歸因順序第 1 條處理即可 |
 | `test_e2e_portal_cancel.py` | skipped | **永久 skip，重啟服務也救不回來**。它寫死 `PAGE_SC = "FORMTEST00000000000001"`，該驗收頁 2026-08-03 隨全面清除消失，測試在 line 87 就 skip。它另外掛 `pytest.mark.e2e`、服務沒起來也會 skip（line 238），但目前**先卡在找不到頁面**。要恢復必須重建驗收頁並改寫死的常數 |
+
+**`admin_client` 自帶出廠權限定義（PF-34，2026-09-06 解決）**：conftest 的 `rbac_seed` fixture
+呼叫 `seed_system_permissions()` 種入 `DEFAULT_PERMISSIONS`，`admin_client` 依賴它。
+只種**定義**、不種角色與指派——ORG_ADMIN 的 bypass 只要定義存在就過（`PermissionService.check()`
+先查定義、查不到就 False，bypass 在下一步），EMPLOYEE 型測試要自己建 Role／RolePermission／
+UserRoleAssignment。2026-09-06 之前 `test_admin_required_for_admin` 因此長期 403，
+而另外四個檔各自手種一份 `Permission(...)` 繞過它，同一個問題被解了五次。四件事：
+
+- 測試裡**不要再 `Permission(...)` 手種出廠碼**（`user:read`、`work_schedule:read` 這類），
+  會撞 `permissions.code` 唯一鍵（`UniqueViolation`）。已清掉 `test_calendar_projection` /
+  `test_delegations_prefill` / `test_job_families_guards` / `test_users_position_display` 的複本。
+  模組專屬碼（如 `test_portal_file_stage_a` 的 `nocode_builder.manage`）不在
+  `DEFAULT_PERMISSIONS`，照舊手種
+- 沒用 `admin_client` 但需要定義存在的測試，自己把 `rbac_seed` 加進參數
+- 刻意不掛在 `app` fixture 自動種：`test_permission_defaults.py` 斷言「第一次 seed 建出全部筆數」，
+  自動種了它會變 0
+- `PermissionService._permission_cache` 是類別層級、跨測試存活，fixture 前後都 `clear_cache()`；
+  自己手種任何 Permission 的測試也要清，否則上一個測試的物件會漂進來
 
 寫「已知問題不要修」時務必連**成因與判別方式**一起寫，否則它會保護錯的東西——
 先前那句「13 個 error 是 SQLite JSONB 問題，不要修」只在無 `DATABASE_URL` 時成立，

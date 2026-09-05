@@ -22,7 +22,6 @@ from app.models import (
     MenuRoleRequirement,
     Organization,
     OrganizationalUnit,
-    Permission,
     PositionType,
     Role,
     RoleLevel,
@@ -98,21 +97,6 @@ def _default_schedule(org):
     db.session.add(schedule)
     db.session.commit()
     return schedule
-
-
-def _ensure_work_schedule_read_permission():
-    db.session.add(Permission(
-        secure_code='perm_work_schedule_read_calendar',
-        resource_type='work_schedule',
-        action='read',
-        code='work_schedule:read',
-        name='檢視班表',
-        permission_level='ORG',
-        is_system_permission=True,
-        is_active=True,
-        is_deleted=False,
-    ))
-    db.session.commit()
 
 
 def test_calendar_event_create_to_dict_and_range_constraint(test_org):
@@ -409,7 +393,6 @@ def test_user_role_assignment_valid_on_uses_org_local_day(test_org, test_user):
 
 
 def test_comp_off_work_schedule_api_and_batch(admin_client, test_org):
-    _ensure_work_schedule_read_permission()
     schedule = _default_schedule(test_org)
     single = admin_client.post(
         f'/beakplatform/api/admin/work-schedules/{schedule.secure_code}/holidays',

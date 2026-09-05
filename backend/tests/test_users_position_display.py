@@ -10,8 +10,6 @@ from app.models import (
     JobLevel,
     JobTitle,
     OrganizationalUnit,
-    Permission,
-    PermissionLevel,
     PositionType,
     Role,
     RoleType,
@@ -23,38 +21,6 @@ from app.models import (
 
 
 PREFIX = '/beakplatform'
-
-
-def _ensure_user_read_permission():
-    permission = Permission(
-        secure_code='perm_user_read_posdisp',
-        resource_type='user',
-        action='read',
-        code='user:read',
-        name='檢視用戶',
-        permission_level=PermissionLevel.ORG,
-        is_system_permission=True,
-        is_active=True,
-        is_deleted=False,
-    )
-    db.session.add(permission)
-    db.session.flush()
-
-
-def _ensure_employee_position_read_permission():
-    permission = Permission(
-        secure_code='perm_position_read_posdisp',
-        resource_type='employee_position',
-        action='read',
-        code='employee_position:read',
-        name='檢視職位',
-        permission_level=PermissionLevel.ORG,
-        is_system_permission=True,
-        is_active=True,
-        is_deleted=False,
-    )
-    db.session.add(permission)
-    db.session.flush()
 
 
 def _employee(org, username, display_name, is_active=True):
@@ -185,7 +151,6 @@ def _list_row(html, display_name):
 
 
 def test_primary_position_appears_in_list_and_detail_link(admin_client, test_org):
-    _ensure_user_read_permission()
     user = _employee(test_org, 'primary_member', 'Primary Member')
     title, unit = _position_context(test_org, 'primary')
     position = _assign_position(
@@ -221,7 +186,6 @@ def test_acting_position_adds_type_note_on_list(admin_client, test_org):
 
 
 def test_expired_position_is_ignored_on_list_and_detail(admin_client, test_org):
-    _ensure_user_read_permission()
     user = _employee(test_org, 'expired_member', 'Expired Member')
     title, unit = _position_context(test_org, 'expired')
     _assign_position(
@@ -245,8 +209,6 @@ def test_expired_position_is_ignored_on_list_and_detail(admin_client, test_org):
 
 
 def test_position_detail_shows_department_derived_manager(admin_client, test_org):
-    _ensure_user_read_permission()
-    _ensure_employee_position_read_permission()
     manager = _employee(test_org, 'derived_mgr', 'Derived Manager')
     user = _employee(test_org, 'managed_member', 'Managed Member')
     title, unit = _position_context(test_org, 'managed')
@@ -270,8 +232,6 @@ def test_position_detail_shows_department_derived_manager(admin_client, test_org
 
 
 def test_position_detail_without_manager_shows_placeholder(admin_client, test_org):
-    _ensure_user_read_permission()
-    _ensure_employee_position_read_permission()
     user = _employee(test_org, 'no_mgr_member', 'No Manager Member')
     title, unit = _position_context(test_org, 'nomgr')
     position = _assign_position(
@@ -291,7 +251,6 @@ def test_position_detail_without_manager_shows_placeholder(admin_client, test_or
 
 
 def test_user_detail_position_row_has_no_manager_segment(admin_client, test_org):
-    _ensure_user_read_permission()
     user = _employee(test_org, 'row_member', 'Row Member')
     title, unit = _position_context(test_org, 'row')
     _assign_position(
