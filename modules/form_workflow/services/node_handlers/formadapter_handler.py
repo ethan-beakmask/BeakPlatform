@@ -390,7 +390,7 @@ class FormAdapterHandler(BaseNodeHandler):
                 role_sc, org_sc, unit_sc, include_descendant_units=False)
             assignees = list(managers)
             if absence_fallback and role.code in FALLBACK_ROLE_CODES:
-                manager_vacant = not managers
+                manager_vacant = not self._present_managers(managers)
                 for fallback_code in FALLBACK_ROLE_CODES[role.code]:
                     fallback_role = self._active_role_by_code(fallback_code)
                     if not fallback_role:
@@ -428,6 +428,31 @@ class FormAdapterHandler(BaseNodeHandler):
             seen.add(value)
             result.append(value)
         return result
+
+    def _present_managers(self, user_secure_codes) -> List[str]:
+        from app.models.user import User
+        from app.services.schedule_service import ScheduleService
+
+        if not user_secure_codes:
+            return []
+
+        users = User.query.filter(
+            User.org_secure_code == self.queue_item.org_secure_code,
+            User.secure_code.in_(user_secure_codes),
+            User.is_deleted == False,  # noqa: E712
+            User.is_active == True,  # noqa: E712
+        ).all()
+        local_now = self._local_now()
+        return [
+            user.secure_code
+            for user in users
+            if not ScheduleService.is_on_leave(user, local_now)
+        ]
+
+    def _local_now(self) -> datetime:
+        from app.utils.calendar_time import utc_to_local
+
+        return utc_to_local(self._org_tz_name(), datetime.utcnow()).replace(tzinfo=None)
 
     def _resolve_applicant_unit(self):
         from app.services.unit_resolver import get_unit, resolve_user_unit

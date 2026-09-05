@@ -7,7 +7,8 @@ FormWorkflow task action authorization helpers.
 2. **當前角色@單位**：`ROLE` 即時比對使用者現在持有的 `(role, unit)`，
    ROLE 型角色可由後代單位往祖先單位套圈，POSITION 型角色不套圈
 3. **主管缺席順位**：目標為 POSITION 且允許 fallback 時，依副主管、代理人一、
-   代理人二判定；DEPARTMENT 已退役為 `DEPT_MEMBER@unit` 的別名
+   代理人二判定；缺席＝職缺或當下請假（LEAVE 列時段判定）；
+   DEPARTMENT 已退役為 `DEPT_MEMBER@unit` 的別名
 4. **代理授權**：使用者是某個「原本可簽的人」的生效中代理人
 
 呼叫端一律用 `build_actor()` 先把身分資訊算好再進迴圈，避免清單 API 的 N+1。
@@ -19,6 +20,7 @@ from app.models.user import User
 from app.models.associations import UserRoleAssignment
 from app.services.unit_resolver import (
     get_unit_ancestor_codes,
+    org_local_now,
     org_local_today,
     resolve_role_holders,
 )
@@ -147,6 +149,7 @@ def build_actor(user_secure_code: str, org_secure_code: str) -> dict:
         'delegation_scopes': delegation_scopes,
         '_form_template_cache': {},
         '_org_sc': org_secure_code,
+        '_local_now': org_local_now(org_secure_code),
         '_today': today,
         '_role_meta': {},
         '_role_sc_by_code': {},
@@ -165,6 +168,12 @@ def _actor_today(actor: dict, org_secure_code: str) -> date:
     if '_today' not in actor:
         actor['_today'] = org_local_today(org_secure_code)
     return actor['_today']
+
+
+def _actor_local_now(actor: dict, org_secure_code: str):
+    if '_local_now' not in actor:
+        actor['_local_now'] = org_local_now(org_secure_code)
+    return actor['_local_now']
 
 
 def _identity_role_units(identity) -> set[tuple[str, str | None]]:
@@ -257,18 +266,35 @@ def _holds(actor: dict, identity, role_secure_code: str, unit_secure_code: str |
 
 
 def _unit_manager_present(actor: dict, manager_role_sc: str, unit_secure_code: str) -> bool:
+    """指定單位至少一位主管未請假時，視為主管在職。"""
     cache = actor.setdefault('_unit_manager_present', {})
     key = (manager_role_sc, unit_secure_code)
     if key in cache:
         return cache[key]
 
-    cache[key] = bool(resolve_role_holders(
+    holders = resolve_role_holders(
         manager_role_sc,
         actor.get('_org_sc'),
         unit_secure_code,
         include_descendant_units=False,
         today=actor['_today'],
-    ))
+    )
+    if not holders:
+        cache[key] = False
+        return cache[key]
+
+    from app.services.schedule_service import ScheduleService
+
+    users = User.query.filter(
+        User.org_secure_code == actor.get('_org_sc'),
+        User.secure_code.in_(holders),
+        User.is_deleted == False,  # noqa: E712
+        User.is_active == True,  # noqa: E712
+    ).all()
+    cache[key] = any(
+        not ScheduleService.is_on_leave(user, actor['_local_now'])
+        for user in users
+    )
     return cache[key]
 
 
@@ -366,6 +392,7 @@ def resolve_acting_identity(
     else:
         _actor_org_sc(actor, org_secure_code)
         _actor_today(actor, org_secure_code)
+        _actor_local_now(actor, org_secure_code)
 
     self_match = _match_identity(task_result_data, user_secure_code, actor, actor)
     if self_match:

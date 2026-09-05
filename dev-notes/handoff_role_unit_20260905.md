@@ -4,7 +4,7 @@
 > **你的任務是照 `dev-notes/ROLE_UNIT_APPROVAL_DESIGN.md` 逐期派 codex 並驗收，不是重新設計。**
 > 文件裡任何一條看不懂或覺得有矛盾，停下來問 Ethan，不要自行詮釋後開工。
 
-> **進度（2026-09-05 18:20）**：第 1、2 期複審通過；第 3 期已完成並通過執行 session 驗收（設計文件第十一節），等原 session 複審後派第 4 期（照 3.5 改寫版）。
+> **進度（2026-09-05 19:35）**：第 1～3 期複審通過；第 5 期已完成並通過執行 session 驗收（設計文件第十一節）。**第 4 期由新 session 接手，先讀交接補篇 `dev-notes/handoff_role_unit_phase4_20260905.md`**。
 > 第 4 期要先讀 3.5 改寫版與第六節第 4 列的欄位退役清單；`unit_resolver.py` 已有 `resolve_role_holders()`（第 2 期）可直接拿來找 `DEPT_MANAGER@U` 持有者。
 > 第 3 期驗收設計器時直接用 BELUGA 已發行的 `PF247_P2_A/B/C` 三條流程（佈建腳本 `/opt/tmp/verify/pf247/provision_phase2_flow.py`），
 > 實流程腳本 `/opt/tmp/verify/pf247/phase2_flow.sh` 可重跑（會留下測試單，跑完自己簽掉）。

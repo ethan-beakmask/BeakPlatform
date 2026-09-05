@@ -1,6 +1,6 @@
 # 簽核者＝角色@單位：「部門也是一種角色」的落地設計（2026-09-05 草案，待 Ethan 審）
 
-> 狀態：**七個決策點已定案；第 1、2 期複審通過、第 3 期（設計器與顯示、self_target_action、acted_as 記錄）2026-09-05 完成並通過執行 session 驗收（見第十一節），第 4、5 期待派**。
+> 狀態：**七個決策點已定案；第 1～3 期複審通過、第 5 期（主管當日請假算缺席）2026-09-05 完成並通過執行 session 驗收（見第十一節），第 4 期由新 session 接手（交接補篇 `dev-notes/handoff_role_unit_phase4_20260905.md`）**。
 > 起因：PF-226 收尾時 Ethan 指出歷來 session 忽略了「部門也是一種角色」這個核心概念；
 > 本文件盤點現況、定義目標模型、給出遷移與分期。BBN 待辦見本檔末尾。
 > 撰寫者是 PF-226／PF-71 的 session（保留中，負責審結果）；執行者是新 session，**照本檔做，不要自行詮釋**。
@@ -395,3 +395,34 @@ HR 規格與手冊、GHTRAVEL 重種驗收）是五期中最重的一期，估 2
 - 第 5 期複審通過後，該 session **寫交接補篇** `dev-notes/handoff_role_unit_phase4_20260905.md`（它累積的坑、`/opt/tmp/verify/pf247/` 工具清單與用法、
   BELUGA／GHTRAVEL 現況、bpserv 待做的兩句 SQL、第 4 期 spec 要貼的檔案清單與現況行號），然後結束
 - **新 session 做第 4 期**，照本文件 3.5 改寫版＋第六節第 4 列＋交接補篇；原 session 照舊複審
+
+### 第 5 期 主管當日請假算缺席——完成（2026-09-05 19:35，執行 session 驗收通過，待原 session 複審）
+
+codex 一次過（spec `/opt/tmp/codex/20260905-pf247-phase5-spec.txt`），主 Claude 驗收時只刪了 `is_on_leave()` 內一段重複的區間減法（見第 2 點）。
+改動：`ScheduleService.is_on_leave(user, local_dt)`（新）、`unit_resolver.org_local_now()`（新）、`task_authorizer`（`build_actor` 多放 `_local_now`、
+`_unit_manager_present()` 改成「任一主管未請假才算在職」）、handler `_role_spec_data()` 的 `manager_vacant` 改看 `_present_managers()`（快照鏡像）、
+新測試 `test_schedule_is_on_leave.py`（8 案）＋授權 6 案＋handler 2 案、手冊一句、manifest 兩份。**不動 schema、不動 API、不動前端。**
+
+**與設計文件的差異／補充（複審請看這段）**：
+
+1. 第八節第 6 條寫「判定走 `ScheduleService.get_work_periods()` 既有優先序」——**沒有直接呼叫 `get_work_periods()`**，因為它回的是「剩餘工作時段」，
+   分不出「請假中」與「下班了」，而且沒班表的企業永遠回 `[]`。改成 `ScheduleService.is_on_leave()`：同一組 LEAVE 列查詢條件（APPROVED、未刪、當地日），
+   `adjusted_periods` 為 NULL／`[]`＝整天；否則請假時段＝`original_periods`（空時退回 `get_base_work_periods()`）− `adjusted_periods`，當下落在內才算。
+   決策的四個要點（不看來源、時段判定、`[]`／NULL＝整天、出差同樣算——行事曆 TRIP 也寫 LEAVE 列）全部成立
+2. 區間減法沒用 `work_periods.subtract_periods()`（它刻意丟掉跨午夜的午夜後片段，給 resync 存 `HH:MM` 字串用），`ScheduleService._subtract_period_intervals()`
+   自己做，跨午夜底（`22:00-06:00`）也判得對；codex 原本兩套都算再聯集，驗收時刪成一套
+3. **沒有班表的企業（dev BELUGA）時段級請假等於整天**：resync 寫出的 `original_periods=[]`、`adjusted_periods=[]`，落入「`[]`＝整天」。這是決策 6 定義的自然結果，
+   有班表的企業（GHTRAVEL）才有真正的時段級；人工列若自帶 `original_periods` 則不受班表影響（S5d 驗過）
+4. **快照永不縮減的既有語意在這裡會顯現**：單子在主管請假期間進關卡，代理人已寫進快照，主管銷假後代理人**仍可簽**；反過來（進關卡時主管在職）銷假即時生效。
+   驗收第三輪誤判過一次，第四輪按正確順序驗過（見憑證）。要不要改成「快照命中也要重驗缺席」是另一個決策，本期不動
+5. 主管本人請假中**仍可簽**（授權端不擋主管；請假只解鎖代理人），快照也保留主管；副主管不受影響
+6. `TimeContextService.who_on_leave()`（管理員視角、看行事曆事件、不看 `adjusted_periods`）與本期 `is_on_leave()` 是兩個消費端、兩套判法，**刻意不合併**
+7. 判定時刻＝企業時區當下（`org_local_now()`／handler `_local_now()`），授權端每個 actor 算一次快取在 `_local_now`；測試用 `actor['_local_now'] = datetime(...)` 或
+   monkeypatch `FormAdapterHandler._local_now` 固定時間
+
+**驗收憑證** `/opt/tmp/verify/20260905-role-unit-phase5.log`：自跑 `test_schedule_is_on_leave.py` 8 passed（codex 自跑六支 105 passed）→ mkdocs strict 過 →
+實流程（BELUGA，shen 暫任行銷主管）：S5a 在職＝快照 `[shen, ethanyu]`、代理人 403；S5b shen 走**真實路徑** `POST /api/calendar/events` 登記今天整天請假 →
+`schedule_adjustments` 出現 LEAVE 列（`adjusted=[]`、帶 `calendar_event_secure_code`）→ 同一張單代理人一二 200、主管本人 200、新單快照 `[shen, ethanyu, aaaa, ssss]`、
+代理人一核准記錄 `acted_as=DEPT_PROXY1`；S5c（第四輪）在職時進關卡 → 請假 200 → `DELETE /api/calendar/events/<sc>` 銷假（列軟刪除）→ 403 即時生效；
+S5d 人工列（不看來源）`original=['00:00-23:59']`、`adjusted` 挖掉涵蓋現在的一小時 → 200、改成不涵蓋 → 403。前三輪的 FAIL 都是驗收腳本（事件 sc 在回應的
+`event.secure_code` 不在 `data`；第三輪用了請假期間進關卡的單），已修正腳本並註明。全量測試見 BBN #5400 追記。測試指派／請假列／事件零殘留。

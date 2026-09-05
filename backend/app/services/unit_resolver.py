@@ -4,7 +4,7 @@
 簽核授權（task_authorizer）、FormAdapter 的申請人單位解析（第 2 期）
 與 OpHrLookup（第 4 期）都應使用本模組，避免各自重建不同規則。
 """
-from datetime import date
+from datetime import date, datetime
 
 from app.models.employee_position import EmployeePosition, PositionType
 from app.models.organization import Organization
@@ -25,6 +25,18 @@ def org_local_today(org_secure_code: str) -> date:
 
     from app.utils.timezone import local_today
     return local_today('Asia/Taipei')
+
+
+def org_local_now(org_secure_code: str, ref_utc: datetime | None = None) -> datetime:
+    """回傳企業當地現在時間（naive）；企業查不到時使用平台預設 Asia/Taipei。"""
+    org = Organization.query.filter_by(
+        secure_code=org_secure_code,
+        is_deleted=False,
+    ).first()
+    tz_name = org.get_setting('timezone', 'Asia/Taipei') if org else 'Asia/Taipei'
+
+    from app.utils.calendar_time import utc_to_local
+    return utc_to_local(tz_name, ref_utc or datetime.utcnow()).replace(tzinfo=None)
 
 
 def resolve_user_unit(

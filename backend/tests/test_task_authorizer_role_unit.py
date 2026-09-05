@@ -1,5 +1,5 @@
 import sys
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from sqlalchemy import event
@@ -16,6 +16,7 @@ from app.models import (  # noqa: E402
     OrganizationalUnit,
     Role,
     RoleType,
+    ScheduleAdjustment,
     UnitType,
     User,
     UserRoleAssignment,
@@ -107,6 +108,22 @@ def _assign(user, role, unit=None, valid_from=None, valid_until=None):
         unit_secure_code=unit.secure_code if unit else None,
         valid_from=valid_from,
         valid_until=valid_until,
+        is_deleted=False,
+    )
+    db.session.add(row)
+    db.session.commit()
+    return row
+
+
+def _leave(user, adjust_date, adjusted_periods, original_periods=None, status='APPROVED'):
+    row = ScheduleAdjustment(
+        org_secure_code=user.org_secure_code,
+        user_secure_code=user.secure_code,
+        adjust_date=adjust_date,
+        adjust_type='LEAVE',
+        original_periods=original_periods,
+        adjusted_periods=adjusted_periods,
+        status=status,
         is_deleted=False,
     )
     db.session.add(row)
@@ -529,3 +546,126 @@ def test_deputy_in_snapshot_still_records_acted_as(test_org):
 
     assert manager_identity['acted_as_role_code'] is None
     assert deputy_identity['acted_as_role_code'] == 'DEPT_DEPUTY'
+
+
+def test_manager_full_day_leave_allows_proxies_but_manager_and_deputy_still_act(test_org):
+    env = _role_unit_env(test_org)
+    manager = _user('ru_leave_mgr', test_org, 'ruleavemgr', 'Leave Manager')
+    deputy = _user('ru_leave_dep', test_org, 'ruleavedep', 'Leave Deputy')
+    proxy1 = _user('ru_leave_p1', test_org, 'ruleavep1', 'Leave Proxy 1')
+    proxy2 = _user('ru_leave_p2', test_org, 'ruleavep2', 'Leave Proxy 2')
+    _assign(manager, env['manager'], env['mkt'])
+    _assign(deputy, env['deputy'], env['mkt'])
+    _assign(proxy1, env['proxy1'], env['mkt'])
+    _assign(proxy2, env['proxy2'], env['mkt'])
+    _leave(manager, date(2026, 9, 5), [])
+    task = _role_task(test_org, env['manager'], env['mkt'], RoleType.POSITION)
+
+    for user in (manager, deputy, proxy1, proxy2):
+        actor = build_actor(user.secure_code, test_org.secure_code)
+        actor['_local_now'] = datetime(2026, 9, 5, 14, 0)
+        identity = resolve_acting_identity(task, user.secure_code, test_org.secure_code, actor)
+        if user == manager:
+            assert identity['acted_as_role_code'] is None
+        elif user == deputy:
+            assert identity['acted_as_role_code'] == 'DEPT_DEPUTY'
+        elif user == proxy1:
+            assert identity['acted_as_role_code'] == 'DEPT_PROXY1'
+        else:
+            assert identity['acted_as_role_code'] == 'DEPT_PROXY2'
+
+
+def test_proxy_permission_follows_manager_partial_leave_time(test_org):
+    env = _role_unit_env(test_org)
+    manager = _user('ru_part_mgr', test_org, 'rupartmgr', 'Partial Manager')
+    proxy1 = _user('ru_part_p1', test_org, 'rupartp1', 'Partial Proxy 1')
+    _assign(manager, env['manager'], env['mkt'])
+    _assign(proxy1, env['proxy1'], env['mkt'])
+    _leave(
+        manager,
+        date(2026, 9, 5),
+        ['09:00-12:00'],
+        ['09:00-12:00', '13:00-18:00'],
+    )
+    task = _role_task(test_org, env['manager'], env['mkt'], RoleType.POSITION)
+
+    afternoon_actor = build_actor(proxy1.secure_code, test_org.secure_code)
+    afternoon_actor['_local_now'] = datetime(2026, 9, 5, 14, 0)
+    assert resolve_acting_identity(
+        task, proxy1.secure_code, test_org.secure_code, afternoon_actor
+    )['acted_as_role_code'] == 'DEPT_PROXY1'
+
+    morning_actor = build_actor(proxy1.secure_code, test_org.secure_code)
+    morning_actor['_local_now'] = datetime(2026, 9, 5, 10, 0)
+    assert resolve_acting_identity(
+        task, proxy1.secure_code, test_org.secure_code, morning_actor
+    ) is None
+
+
+def test_any_present_manager_blocks_proxy_when_another_manager_is_on_leave(test_org):
+    env = _role_unit_env(test_org)
+    leave_manager = _user('ru_multi_leave_mgr', test_org, 'rumultileavemgr', 'Leave Manager')
+    present_manager = _user('ru_multi_present_mgr', test_org, 'rumultipresentmgr', 'Present Manager')
+    proxy1 = _user('ru_multi_p1', test_org, 'rumultip1', 'Multi Proxy 1')
+    _assign(leave_manager, env['manager'], env['mkt'])
+    _assign(present_manager, env['manager'], env['mkt'])
+    _assign(proxy1, env['proxy1'], env['mkt'])
+    _leave(leave_manager, date(2026, 9, 5), [])
+    task = _role_task(test_org, env['manager'], env['mkt'], RoleType.POSITION)
+    actor = build_actor(proxy1.secure_code, test_org.secure_code)
+    actor['_local_now'] = datetime(2026, 9, 5, 14, 0)
+
+    assert resolve_acting_identity(task, proxy1.secure_code, test_org.secure_code, actor) is None
+
+
+def test_leave_on_another_date_does_not_allow_proxy(test_org):
+    env = _role_unit_env(test_org)
+    manager = _user('ru_tomorrow_mgr', test_org, 'rutomorrowmgr', 'Tomorrow Manager')
+    proxy1 = _user('ru_tomorrow_p1', test_org, 'rutomorrowp1', 'Tomorrow Proxy 1')
+    _assign(manager, env['manager'], env['mkt'])
+    _assign(proxy1, env['proxy1'], env['mkt'])
+    _leave(manager, date(2026, 9, 6), [])
+    task = _role_task(test_org, env['manager'], env['mkt'], RoleType.POSITION)
+    actor = build_actor(proxy1.secure_code, test_org.secure_code)
+    actor['_local_now'] = datetime(2026, 9, 5, 14, 0)
+
+    assert resolve_acting_identity(task, proxy1.secure_code, test_org.secure_code, actor) is None
+
+
+def test_absence_fallback_false_ignores_manager_leave(test_org):
+    env = _role_unit_env(test_org)
+    manager = _user('ru_nofb_mgr', test_org, 'runofbmgr', 'No Fallback Manager')
+    deputy = _user('ru_nofb_dep', test_org, 'runofbdep', 'No Fallback Deputy')
+    proxy1 = _user('ru_nofb_p1', test_org, 'runofbp1', 'No Fallback Proxy 1')
+    _assign(manager, env['manager'], env['mkt'])
+    _assign(deputy, env['deputy'], env['mkt'])
+    _assign(proxy1, env['proxy1'], env['mkt'])
+    _leave(manager, date(2026, 9, 5), [])
+    task = _role_task(
+        test_org, env['manager'], env['mkt'], RoleType.POSITION, absence_fallback=False)
+
+    for user in (proxy1, deputy):
+        actor = build_actor(user.secure_code, test_org.secure_code)
+        actor['_local_now'] = datetime(2026, 9, 5, 14, 0)
+        assert resolve_acting_identity(task, user.secure_code, test_org.secure_code, actor) is None
+
+
+def test_legacy_actor_without_local_now_is_populated_for_leave_fallback(test_org, monkeypatch):
+    env = _role_unit_env(test_org)
+    manager = _user('ru_oldactor_mgr', test_org, 'ruoldactormgr', 'Old Actor Manager')
+    proxy1 = _user('ru_oldactor_p1', test_org, 'ruoldactorp1', 'Old Actor Proxy 1')
+    _assign(manager, env['manager'], env['mkt'])
+    _assign(proxy1, env['proxy1'], env['mkt'])
+    _leave(manager, date(2026, 9, 5), [])
+    task = _role_task(test_org, env['manager'], env['mkt'], RoleType.POSITION)
+    actor = build_actor(proxy1.secure_code, test_org.secure_code)
+    actor.pop('_local_now')
+
+    monkeypatch.setattr(
+        'modules.form_workflow.services.task_authorizer.org_local_now',
+        lambda org_sc: datetime(2026, 9, 5, 14, 0),
+    )
+
+    identity = resolve_acting_identity(task, proxy1.secure_code, test_org.secure_code, actor)
+
+    assert identity['acted_as_role_code'] == 'DEPT_PROXY1'

@@ -1,6 +1,6 @@
 """FormAdapter 角色@單位節點解析（PF-247 phase 2）。"""
 import sys
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -14,6 +14,7 @@ from app.models import (  # noqa: E402
     OrganizationalUnit,
     Role,
     RoleType,
+    ScheduleAdjustment,
     UnitType,
     User,
     UserRoleAssignment,
@@ -89,6 +90,22 @@ def _assign(user, role, unit=None, valid_from=None, valid_until=None, assigned_a
         valid_from=valid_from,
         valid_until=valid_until,
         assigned_at=assigned_at or datetime.utcnow(),
+        is_deleted=False,
+    )
+    db.session.add(row)
+    db.session.commit()
+    return row
+
+
+def _leave(user, adjust_date, adjusted_periods, original_periods=None, status='APPROVED'):
+    row = ScheduleAdjustment(
+        org_secure_code=user.org_secure_code,
+        user_secure_code=user.secure_code,
+        adjust_date=adjust_date,
+        adjust_type='LEAVE',
+        original_periods=original_periods,
+        adjusted_periods=adjusted_periods,
+        status=status,
         is_deleted=False,
     )
     db.session.add(row)
@@ -445,6 +462,87 @@ def test_unit_position_snapshot_tracks_manager_presence_and_absence_fallback(tes
     assert disabled_result['data']['assignees'] == []
     assert disabled_result['data']['absence_fallback'] is False
     assert FwApprovalRecord.query.filter_by(node_queue_secure_code=disabled.secure_code).count() == 0
+
+
+def test_unit_position_snapshot_adds_proxies_when_manager_is_on_full_day_leave(test_org, monkeypatch):
+    env = _env(test_org)
+    manager = _user('faru_leave_mgr', test_org, 'faruleavemgr', 'Leave Manager')
+    deputy = _user('faru_leave_dep', test_org, 'faruleavedep', 'Leave Deputy')
+    proxy1 = _user('faru_leave_p1', test_org, 'faruleavep1', 'Leave Proxy 1')
+    proxy2 = _user('faru_leave_p2', test_org, 'faruleavep2', 'Leave Proxy 2')
+    _assign(manager, env['manager'], env['mkt'])
+    _assign(deputy, env['deputy'], env['mkt'])
+    _assign(proxy1, env['proxy1'], env['mkt'])
+    _assign(proxy2, env['proxy2'], env['mkt'])
+    _leave(manager, date(2026, 9, 5), [])
+    monkeypatch.setattr(
+        FormAdapterHandler,
+        '_local_now',
+        lambda self: datetime(2026, 9, 5, 14, 0),
+    )
+    item = _queue(test_org, _instance(test_org, 'posleave'), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='UNIT',
+        unit_secure_code=env['mkt'].secure_code,
+    ), 'posleave')
+
+    _, result = _run(item)
+
+    assert result['data']['assignees'] == [
+        manager.secure_code,
+        deputy.secure_code,
+        proxy1.secure_code,
+        proxy2.secure_code,
+    ]
+
+
+def test_unit_position_snapshot_partial_leave_proxies_follow_current_time(test_org, monkeypatch):
+    env = _env(test_org)
+    manager = _user('faru_partial_mgr', test_org, 'farupartialmgr', 'Partial Manager')
+    deputy = _user('faru_partial_dep', test_org, 'farupartialdep', 'Partial Deputy')
+    proxy1 = _user('faru_partial_p1', test_org, 'farupartialp1', 'Partial Proxy 1')
+    proxy2 = _user('faru_partial_p2', test_org, 'farupartialp2', 'Partial Proxy 2')
+    _assign(manager, env['manager'], env['mkt'])
+    _assign(deputy, env['deputy'], env['mkt'])
+    _assign(proxy1, env['proxy1'], env['mkt'])
+    _assign(proxy2, env['proxy2'], env['mkt'])
+    _leave(
+        manager,
+        date(2026, 9, 5),
+        ['09:00-12:00'],
+        ['09:00-12:00', '13:00-18:00'],
+    )
+
+    monkeypatch.setattr(
+        FormAdapterHandler,
+        '_local_now',
+        lambda self: datetime(2026, 9, 5, 10, 0),
+    )
+    morning = _queue(test_org, _instance(test_org, 'posleaveam'), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='UNIT',
+        unit_secure_code=env['mkt'].secure_code,
+    ), 'posleaveam')
+    _, morning_result = _run(morning)
+    assert morning_result['data']['assignees'] == [manager.secure_code, deputy.secure_code]
+
+    monkeypatch.setattr(
+        FormAdapterHandler,
+        '_local_now',
+        lambda self: datetime(2026, 9, 5, 14, 0),
+    )
+    afternoon = _queue(test_org, _instance(test_org, 'posleavepm'), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='UNIT',
+        unit_secure_code=env['mkt'].secure_code,
+    ), 'posleavepm')
+    _, afternoon_result = _run(afternoon)
+    assert afternoon_result['data']['assignees'] == [
+        manager.secure_code,
+        deputy.secure_code,
+        proxy1.secure_code,
+        proxy2.secure_code,
+    ]
 
 
 def test_unit_role_snapshot_includes_descendant_and_global_holders(test_org):

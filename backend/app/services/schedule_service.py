@@ -17,6 +17,7 @@ from ..models import (
 )
 from .. import db
 from ..utils.regions import build_default_weekly_hours
+from ..utils.work_periods import merge_intervals, parse_period
 
 
 class ScheduleService:
@@ -128,6 +129,74 @@ class ScheduleService:
         OVERTIME、SWAP 仍依一般排班調整優先於個人排班與共用班表。
         """
         return ScheduleService._get_non_leave_work_periods(user, target_date)
+
+    @staticmethod
+    def is_on_leave(user: User, local_dt: datetime) -> bool:
+        """該人在企業當地時間 local_dt 這一刻是否請假（PF-247 第 5 期：主管當日請假算缺席）。
+
+        只看 schedule_adjustments 的 LEAVE 列（status APPROVED、未刪除、adjust_date == local_dt.date()），不看來源
+        （行事曆同步或人工都算）。adjusted_periods 為 NULL 或 [] ＝ 整天請假；否則請假時段 ＝ 底時段 − adjusted_periods，
+        底時段取該列 original_periods，original_periods 空時退回 get_base_work_periods()。當下落在請假時段內才算。
+        """
+        target_date = local_dt.date()
+        rows = ScheduleAdjustment.query.filter_by(
+            org_secure_code=user.org_secure_code,
+            user_secure_code=user.secure_code,
+            adjust_date=target_date,
+            adjust_type='LEAVE',
+            status='APPROVED',
+            is_deleted=False
+        ).all()
+
+        check_minutes = local_dt.hour * 60 + local_dt.minute
+        for row in rows:
+            adjusted = row.adjusted_periods
+            if adjusted is None or adjusted == []:
+                return True
+
+            base = row.original_periods or ScheduleService.get_base_work_periods(user, target_date)
+            if not base:
+                continue
+
+            adjusted_intervals = merge_intervals([
+                parsed
+                for parsed in (parse_period(period) for period in adjusted)
+                if parsed
+            ])
+            # 不用 work_periods.subtract_periods()：它刻意丟掉跨午夜的午夜後片段（給 resync 存 HH:MM 字串用），
+            # 這裡要的是完整的請假區間（含 24:00 之後），所以自己做區間減法。
+            leave_intervals = ScheduleService._subtract_period_intervals(base, adjusted_intervals)
+            for start_min, end_min in merge_intervals(leave_intervals):
+                if any(start_min <= candidate < end_min for candidate in (check_minutes, check_minutes + 1440)):
+                    return True
+
+        return False
+
+    @staticmethod
+    def _subtract_period_intervals(base_periods: List[str], work_intervals: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+        """Return base minus work intervals without dropping cross-midnight fragments."""
+        remaining = []
+        for period in base_periods or []:
+            parsed = parse_period(period)
+            if parsed is None:
+                continue
+
+            segments = [parsed]
+            for work_start, work_end in work_intervals:
+                next_segments = []
+                for start, end in segments:
+                    if work_end <= start or work_start >= end:
+                        next_segments.append((start, end))
+                        continue
+                    if start < work_start:
+                        next_segments.append((start, min(work_start, end)))
+                    if work_end < end:
+                        next_segments.append((max(work_end, start), end))
+                segments = next_segments
+                if not segments:
+                    break
+            remaining.extend((start, end) for start, end in segments if start < end)
+        return remaining
 
     @staticmethod
     def _get_non_leave_work_periods(user: User, target_date: date) -> List[str]:

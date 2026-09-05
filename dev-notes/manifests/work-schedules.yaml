@@ -44,6 +44,7 @@ files:
     - backend/tests/test_regions_util.py
     - backend/tests/test_default_schedule_seed.py
     - backend/tests/test_enterprise_settings_country.py
+    - backend/tests/test_schedule_is_on_leave.py  # 主管當日請假算缺席（LEAVE 列時段判定）
     - backend/tests/test_holiday_calendar_service.py
     - backend/tests/test_holiday_calendars_api.py
 
