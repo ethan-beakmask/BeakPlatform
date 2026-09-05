@@ -140,7 +140,11 @@ def test_self_wins_when_self_and_delegator_both_match(test_org, test_user):
         task, test_user.secure_code, test_org.secure_code
     )
 
-    assert identity == {'via': 'self', 'delegator_secure_code': None}
+    assert identity == {
+        'via': 'self',
+        'delegator_secure_code': None,
+        'acted_as_role_code': None,
+    }
 
 
 def test_expired_delegation_does_not_authorize(test_org, test_user):
@@ -316,5 +320,9 @@ def test_missing_assignee_type_allows_action_but_is_not_pending_assignee(test_or
         task, test_user.secure_code, test_org.secure_code
     )
 
-    assert identity == {'via': 'self', 'delegator_secure_code': None}
+    assert identity == {
+        'via': 'self',
+        'delegator_secure_code': None,
+        'acted_as_role_code': None,
+    }
     assert is_pending_assignee(task, test_user.secure_code, test_org.secure_code) is False

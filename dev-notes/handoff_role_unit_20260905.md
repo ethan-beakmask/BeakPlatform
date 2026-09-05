@@ -4,6 +4,10 @@
 > **你的任務是照 `dev-notes/ROLE_UNIT_APPROVAL_DESIGN.md` 逐期派 codex 並驗收，不是重新設計。**
 > 文件裡任何一條看不懂或覺得有矛盾，停下來問 Ethan，不要自行詮釋後開工。
 
+> **進度（2026-09-05 13:40）**：第 1 期已完成並通過執行 session 驗收（記錄在設計文件第十一節），等原 session 複審後派第 2 期。
+> 第 2 期 spec 要把第 1 期實作的實際介面餵給 codex：`task_authorizer._spec_from()` 讀的 key（`assignee_unit_secure_code` / `assignee_role_type` / `absence_fallback`）、
+> `unit_resolver.resolve_user_unit()` 的簽名，以及 `/opt/tmp/verify/pf247/phase1_seed.sql` 裡合成列的 `result.data` 形狀（就是 handler 該寫出的樣子）。
+
 ## 一、先讀（順序）
 
 1. `CLAUDE.md`（每個 session 必讀；特別是 PERM-03、TENANT-02、「流程 graph 的引擎行為」表、「跑測試」段）
@@ -30,7 +34,7 @@
 - **mkdocs 對中文標題產生的 anchor 是 `_9` 這種流水號**，手冊跨頁連結不要帶 `#中文` anchor（PF-226 的 codex 就寫壞一個）；每次改手冊後跑 `NO_MKDOCS_2_WARNING=1 ./venv-docs/bin/mkdocs build --strict` 看有沒有 anchor 的 INFO 行
 - **設計器儲存流程會 bump revision，但發行要另打 `POST /api/mappings/<mapping sc>/publish`**（CSRF token 從 `/dashboard` meta 取），發行後 published sc 會換、舊的變 Suspended；GHTRAVEL 目前 published sc 是 `NfrmHdR6pVWLo2L2eCttCA`（mapping `MTz1S7Kc_uFCCMcP4ibhrC`，流程模板 `q1lfu30j8rQW4xwT7AlbUp`）。實測完記得把示範流程還原成預設並重新發行，CLAUDE.md 範例企業段的 sc 要跟著改
 - 測身分判定的可執行小工具：`/tmp/claude-1000/.../scratchpad/pf226_check.sh` 會消失，寫法在 `/opt/tmp/verify/20260905-pf226.log` 開頭可重建（quick-login → `GET /api/form-center/pending-tasks` → `GET /api/form-center/pending-tasks/<佇列 sc>` 看 200／403）；直接呼叫 `task_authorizer.resolve_acting_identity()` 的 python 範本也在同一份 log
-- 用 SQL 造角色指派：`user_role_assignments` 的 `secure_code`、`assigned_at` 是 NOT NULL，`assigned_by` 填可辨識標記（如 `PF247-P1-TEST`），事後 `DELETE ... WHERE assigned_by='<標記>'`；**這次要造的是帶 `unit_secure_code` 的指派**
+- 用 SQL 造角色指派：`user_role_assignments` 的 `secure_code`、`assigned_at`、**`created_at`、`updated_at`** 四個都是 NOT NULL 且 DB 無預設（ORM 才有；2026-09-05 第 1 期驗收第一輪 12 個 FAIL 全是這個），`assigned_by` 填可辨識標記（如 `PF247-P1-TEST`），事後 `DELETE ... WHERE assigned_by='<標記>'`；**這次要造的是帶 `unit_secure_code` 的指派**
 - beluga 行銷部門的現成材料：ethanyu＝副主管、aaaa＝代理人(一)、ssss＝代理人(二)、user＝成員；主管職缺（沒有 DEPT_MANAGER 指派），正好是驗收矩陣 #2 的樣本，#3 要自己指派一位主管
 - OD 案件不進表單中心待簽清單，用詳情端點判定（CLAUDE.md 有）
 

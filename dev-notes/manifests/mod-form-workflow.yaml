@@ -42,11 +42,12 @@ files:
     # form_submit_service.py 送單核心（fc_fill 與外部發動閘道共用）
     # fill_permission_service.py 填寫權限解析（fc_available 與 fc_fill submit 共用）
     # egress_adapter.py EGRESS-01 form_node 語境（fc_pending 簽核詳情過濾 + 揭示通道）
-    # task_authorizer.py 簽核佇列授權判定（快照 + ROLE 當前角色即時比對）
+    # task_authorizer.py 簽核佇列授權判定（快照 + 角色@單位套圈 + 主管缺席順位 + 代理授權）
     - modules/form_workflow/services/ai_usage_service.py    # AiAgent 用量記錄與配額服務
     - modules/form_workflow/services/node_grant_service.py  # 流程節點型別企業授權判定
     - modules/form_workflow/services/trigger_scope_service.py # API Key 表單 scope 解析共用服務
     - modules/form_workflow/services/node_handlers/hr_lookup_handler.py # OpHrLookup 人事資料取值節點
+    - backend/app/services/unit_resolver.py  # 申請人單位／單位祖先鏈（task_authorizer 與 FormAdapter 共用）
     - backend/app/defaults/api_key_request_defaults.py      # API Key 申請單出廠預設（表單/流程/發行/填寫權限 seed）
   model:
     - modules/form_workflow/models/
@@ -102,6 +103,7 @@ files:
     - backend/tests/test_node_org_grants.py                    # 流程節點企業授權 service
     - backend/tests/test_hr_lookup_node.py                     # OpHrLookup 人事資料取值節點
     - backend/tests/test_task_authorizer_delegate_from.py       # 代理簽核身分解析與簽核紀錄欄位
+    - backend/tests/test_task_authorizer_role_unit.py           # 角色@單位授權：套圈、主管缺席順位、DEPARTMENT 別名、unit_resolver
     - backend/tests/test_formadapter_timeout.py                 # 簽核節點逾時（ABSOLUTE／WORKING、喚醒重算、逾時去向）
     - backend/tests/test_formadapter_no_assignee.py             # 簽核節點找不到簽核人時退回申請人或改派角色
   docs:

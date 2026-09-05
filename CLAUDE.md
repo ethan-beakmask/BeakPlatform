@@ -1650,7 +1650,7 @@ heredoc 建企業、`init_menus.py`、`init_permissions.py`、`flask module sync
 | 代理授權是否生效 | `delegations.status='ACTIVE'` | **`status` 只是儲存時的快照，沒有排程更新**（2026-09-02 起畫面與簽核授權都改看日期）。SQL 查生效中一律用 `status<>'REVOKED' AND CURRENT_DATE BETWEEN effective_from AND effective_until`（嚴格說日界是企業時區，Python 端用 `Delegation.is_effective_on()` / `effective_status`） |
 | 行事曆事件的擁有者／可見性 | `calendar_events.user_secure_code` / `is_public` | **`owner_user_secure_code`**（PERSONAL 必填，ORG 為 NULL）／**`visibility`**（`PUBLIC` / `BUSY` / `PRIVATE`）；`calendar_kind` 是 `ORG` / `PERSONAL`。時間欄位 `starts_at` / `ends_at` 存 naive UTC |
 | SMTP 設定組的主機欄位 | `smtp_configs.host` / `port` | **`smtp_host` / `smtp_port`**（另有 `use_tls` / `use_ssl` / `use_app_password` / `provider_type`；2026-09-04 PF-228 起 dev SYSTEM／BELUGA／LION 與 bpserv SYSTEM／DEMOSOC 各一筆 `lionsecbot@gmail.com`、皆 is_default 且實寄過。要給別的測試企業補同一組就跑 `venv/bin/python scripts/seed_smtp_test_config.py --orgs <CODE,...> --apply`——它在同一個 DB 內把系統企業的預設設定組複製過去，Fernet 鑰匙由 `SECRET_KEY` 派生、各企業共用，所以不經手明文、bpserv 也不必重打應用程式密碼） |
-| 用 SQL 造測試角色指派（mutation 驗證常用） | 只填 user/role/org 三個 secure_code | 還要 **`secure_code`**、**`assigned_at`** 兩個 NOT NULL（2026-09-01 逐一撞出來，錯誤一次只報一個）。`assigned_by` 填可辨識標記（如 `PF145-S5-TEST`），事後 `DELETE FROM user_role_assignments WHERE assigned_by='<標記>'` 一次撤乾淨；成功範例在 `/opt/tmp/verify/20260901-pf145-stage5.log` |
+| 用 SQL 造測試角色指派（mutation 驗證常用） | 只填 user/role/org 三個 secure_code | 還要 **`secure_code`**、**`assigned_at`**、**`created_at`**、**`updated_at`** 四個 NOT NULL（DB 無預設、只有 ORM 預設；2026-09-01 與 2026-09-05 各撞一次，錯誤一次只報一個）。`assigned_by` 填可辨識標記（如 `PF145-S5-TEST`），事後 `DELETE FROM user_role_assignments WHERE assigned_by='<標記>'` 一次撤乾淨；成功範例在 `/opt/tmp/verify/20260901-pf145-stage5.log` |
 
 ### 驗英文介面：沒有切換語系的 API，要改 DB 欄位（2026-08-29 試誤）
 

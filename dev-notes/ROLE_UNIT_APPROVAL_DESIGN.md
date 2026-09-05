@@ -1,6 +1,6 @@
 # 簽核者＝角色@單位：「部門也是一種角色」的落地設計（2026-09-05 草案，待 Ethan 審）
 
-> 狀態：**設計草案，未派工**。審過後依第六節分期派 codex。
+> 狀態：**六個決策點已定案；第 1 期（授權核心）2026-09-05 完成並通過執行 session 驗收（見第十一節），第 2～5 期待派**。
 > 起因：PF-226 收尾時 Ethan 指出歷來 session 忽略了「部門也是一種角色」這個核心概念；
 > 本文件盤點現況、定義目標模型、給出遷移與分期。BBN 待辦見本檔末尾。
 > 撰寫者是 PF-226／PF-71 的 session（保留中，負責審結果）；執行者是新 session，**照本檔做，不要自行詮釋**。
@@ -210,3 +210,30 @@ def _identity_matches(data, user_sc, actor):
 ## 十、BBN
 
 本設計待辦：PF-247（見本檔 commit 後由主 Claude 建卡並回填代號）。PF-245（DEPARTMENT 型）併入第 2 期，卡上兩個選項作廢。
+
+## 十一、執行記錄
+
+### 第 1 期 授權核心——完成（2026-09-05 13:40，執行 session 驗收通過，待原 session 複審）
+
+codex 一次過（spec `/opt/tmp/codex/20260905-pf247-phase1-spec.txt`，結果 `...-result.txt`），主 Claude 只還原了它順手砍掉的六段 docstring。
+改動：`modules/form_workflow/services/task_authorizer.py`（重寫為 (role, unit) identity＋套圈＋缺席順位）、
+新檔 `backend/app/services/unit_resolver.py`（`org_local_today` / `resolve_user_unit` / `get_unit_ancestor_codes`）、
+新測試 `backend/tests/test_task_authorizer_role_unit.py`（15 案）、既有 `test_task_authorizer_delegate_from.py` 兩個相等斷言補 key、三份 manifest。
+
+**與設計文件的差異／補充（複審請看這段）**：
+
+1. `resolve_acting_identity()` 回傳值多一個 key `acted_as_role_code`（`None` / `DEPT_DEPUTY` / `DEPT_PROXY1` / `DEPT_PROXY2`）。
+   3.4 說的 `fw_approval_records.acted_as_role_code` 欄位**本期沒加**（不動 schema），寫入與顯示留到第 3 期，屆時消費這個 key
+2. DEPARTMENT 別名在**授權端**本期已生效（`_spec_from()`：DEPARTMENT → `DEPT_MEMBER@unit`，含套圈；企業沒有 `DEPT_MEMBER` 系統角色時 fail-closed 只認快照）。
+   handler 端的解析（顯示用 `assignees` 快照）仍是第 2 期
+3. `_holds()` 對「角色在該 org 查不到」的情況只認直接持有與全域持有、不套圈；ROLE 型任務的角色 sc 在該 org 查不到時整個 spec 視為無效（fail-closed）——設計文件沒寫到這兩個邊界，是 spec 補的
+4. 缺席順位只在 `unit_sc` 不為 None 時做（無單位的 POSITION 任務沒有「該單位的主管」可言）
+5. 主管「在職」的判定含全企業（unit NULL）持有 `DEPT_MANAGER` 的人（與套圈規則 2 一致），驗收案 8 有測
+6. `unit_resolver.resolve_user_unit()` 的任職卡 fallback 路徑已實作但**測試留到第 4 期**（要建 JobFamily／JobLevel／JobTitle，codex 依 spec 允許先跳過並在測試註解說明）
+7. `backend/app/services/approver_exposure_service.py::_snapshot_mentions_actor()` 仍用扁平 `actor['role_codes']` 比對流程**樣板**的 ROLE 簽核者——那是曝光計數用的超集判定，多算無害；第 3 期做設計器 `unit_scope` 時一併決定要不要收斂
+8. **決策點 4（直屬主管一律由部門推導、任職卡 `direct_manager_secure_code` 退役）與 3.5 本文「有值＝明示覆寫，維持」相反**。第 1 期不受影響；**派第 4 期前必須先改寫 3.5 與第六節第 4 列**（含欄位退役的遷移：`hr_lookup_handler` 的 `direct_manager` 輸出、`EmployeePosition.get_manager_chain()`、任職卡 UI 的直屬主管欄位怎麼處置）
+
+**驗收憑證** `/opt/tmp/verify/20260905-role-unit-phase1.log`：修前基準（#6 五帳號）→ 自跑 26 passed → 合成佇列列（新 key 由第 2 期 handler 才會寫，本期以 SQL 種六筆帶新 key 的 WAITING 列，驗完刪除）
+＋ 帶標記的 SQL 角色指派，對 beluga 五個帳號跑第七節 #1～#7、#9、DEPARTMENT 別名、舊資料無單位，HTTP 200／403 共 43 項 PASS，
+直接呼叫矩陣印出 `via` / 授權人 / `acted_as_role_code`。第一輪 12 個 FAIL 是驗收工具的 INSERT 缺 `created_at`／`updated_at`（ORM 預設、DB 無預設），不是程式問題，log 內有註明。
+全量測試結果見 BBN #5400 追記。工具在 `/opt/tmp/verify/pf247/`（`phase1_http.sh` 可重跑，第 2 期驗收可沿用合成列的 key 形狀當 handler 輸出的對照）。

@@ -15,6 +15,8 @@ files:
     - backend/app/web/departments.py       # 重導向至 units
     - backend/app/web/groups.py
   api:      backend/app/api/organizational_units.py
+  service:
+    - backend/app/services/unit_resolver.py  # 使用者所屬單位與單位祖先鏈的唯一實作（PF-247）
   model:
     - backend/app/models/organizational_unit.py
     - backend/app/models/user_unit_membership.py
