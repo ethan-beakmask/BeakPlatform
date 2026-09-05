@@ -4,7 +4,9 @@
 > **你的任務是照 `dev-notes/ROLE_UNIT_APPROVAL_DESIGN.md` 逐期派 codex 並驗收，不是重新設計。**
 > 文件裡任何一條看不懂或覺得有矛盾，停下來問 Ethan，不要自行詮釋後開工。
 
-> **進度（2026-09-05 13:40）**：第 1 期已完成並通過執行 session 驗收（記錄在設計文件第十一節），等原 session 複審後派第 2 期。
+> **進度（2026-09-05 15:55）**：第 1 期複審通過；第 2 期已完成並通過執行 session 驗收（設計文件第十一節），等原 session 複審後派第 3 期。
+> 第 3 期驗收設計器時直接用 BELUGA 已發行的 `PF247_P2_A/B/C` 三條流程（佈建腳本 `/opt/tmp/verify/pf247/provision_phase2_flow.py`），
+> 實流程腳本 `/opt/tmp/verify/pf247/phase2_flow.sh` 可重跑（會留下測試單，跑完自己簽掉）。
 > 第 2 期 spec 要把第 1 期實作的實際介面餵給 codex：`task_authorizer._spec_from()` 讀的 key（`assignee_unit_secure_code` / `assignee_role_type` / `absence_fallback`）、
 > `unit_resolver.resolve_user_unit()` 的簽名，以及 `/opt/tmp/verify/pf247/phase1_seed.sql` 裡合成列的 `result.data` 形狀（就是 handler 該寫出的樣子）。
 
@@ -29,6 +31,7 @@
 ## 三、這個 session 踩過、你也會撞的
 
 - **Claude Code harness 會以「記憶體不足」中止背景 Bash／Monitor**：長工作一律 `nohup setsid ... &` 脫離 session，再用 Monitor 以 `until grep -q "^exit=" log; do sleep 20; done` 監看；Monitor 逾時要重掛
+- **`nohup setsid bash -c '...' &` 啟動後 shell 立刻印 `[1]+ Done`，那不是工作結束**——`setsid` 是 process group leader 時會 fork 再退出，子程序照跑。看到 Done 就再啟動一次會變成兩個全量測試撞同一個測試庫（2026-09-05 第 2 期踩到，出現一排 E）。判斷要看 `pgrep -af "[p]ytest -q"` 與 log 尾，不看 Done。撞了就 `pkill -f "[v]env/bin/python -m pytest"`（bracket trick，否則 pkill 會殺掉自己的 shell）、重建測試庫（CLAUDE.md 跑測試段的 DROP＋CREATE）再單獨重跑
 - **codex 撞 OpenAI capacity 時 exit 1、沒有 `-o` 結果檔，但工作區變更是完整的**：看 `git status` 與 stderr 尾判斷，不要重派
 - **平台層 web／api 要用模組 model 一律在函式內 import**，模組層級 import 會讓 flask 起不來而 pytest 測不出來（CLAUDE.md 特定代理段）
 - **mkdocs 對中文標題產生的 anchor 是 `_9` 這種流水號**，手冊跨頁連結不要帶 `#中文` anchor（PF-226 的 codex 就寫壞一個）；每次改手冊後跑 `NO_MKDOCS_2_WARNING=1 ./venv-docs/bin/mkdocs build --strict` 看有沒有 anchor 的 INFO 行

@@ -1,5 +1,5 @@
 """
-使用者所屬單位與單位祖先鏈的唯一實作。
+使用者所屬單位、單位祖先鏈與 (角色, 單位) 持有者的唯一實作。
 
 簽核授權（task_authorizer）、FormAdapter 的申請人單位解析（第 2 期）
 與 OpHrLookup（第 4 期）都應使用本模組，避免各自重建不同規則。
@@ -9,6 +9,7 @@ from datetime import date
 from app.models.employee_position import EmployeePosition, PositionType
 from app.models.organization import Organization
 from app.models.organizational_unit import OrganizationalUnit
+from app.models.associations import UserRoleAssignment
 from app.models.user import User
 from app.models.user_unit_membership import MembershipType, UserUnitMembership
 
@@ -107,3 +108,88 @@ def get_unit_ancestor_codes(unit_secure_code: str, org_secure_code: str) -> list
         parent_sc = parent.parent_secure_code
 
     return ancestors
+
+
+def get_unit(unit_secure_code: str, org_secure_code: str) -> OrganizationalUnit | None:
+    """取得同企業、未刪除的單位；找不到時回 None。"""
+    return OrganizationalUnit.query.filter(
+        OrganizationalUnit.org_secure_code == org_secure_code,
+        OrganizationalUnit.secure_code == unit_secure_code,
+        OrganizationalUnit.is_deleted == False,  # noqa: E712
+    ).first()
+
+
+def get_unit_descendant_codes(unit_secure_code: str, org_secure_code: str) -> list[str]:
+    """回傳所有未刪除後代單位 secure_code（不含自己），BFS 並防循環。"""
+    root = get_unit(unit_secure_code, org_secure_code)
+    if not root:
+        return []
+
+    descendants = []
+    visited = {root.secure_code}
+    frontier = [root.secure_code]
+    while frontier:
+        children = OrganizationalUnit.query.filter(
+            OrganizationalUnit.org_secure_code == org_secure_code,
+            OrganizationalUnit.parent_secure_code.in_(frontier),
+            OrganizationalUnit.is_deleted == False,  # noqa: E712
+        ).order_by(
+            OrganizationalUnit.id.asc(),
+        ).all()
+        next_frontier = []
+        for child in children:
+            if child.secure_code in visited:
+                continue
+            visited.add(child.secure_code)
+            descendants.append(child.secure_code)
+            next_frontier.append(child.secure_code)
+        frontier = next_frontier
+
+    return descendants
+
+
+def resolve_role_holders(
+    role_secure_code: str,
+    org_secure_code: str,
+    unit_secure_code: str | None = None,
+    include_descendant_units: bool = False,
+    today: date | None = None,
+) -> list[str]:
+    """回傳當下有效持有指定 (role, unit) 的啟用使用者 secure_code。"""
+    if today is None:
+        today = org_local_today(org_secure_code)
+
+    query = UserRoleAssignment.query.join(
+        User,
+        UserRoleAssignment.user_secure_code == User.secure_code,
+    ).filter(
+        UserRoleAssignment.org_secure_code == org_secure_code,
+        UserRoleAssignment.role_secure_code == role_secure_code,
+        UserRoleAssignment.is_deleted == False,  # noqa: E712
+        User.org_secure_code == org_secure_code,
+        User.is_active == True,  # noqa: E712
+        User.is_deleted == False,  # noqa: E712
+    )
+    if unit_secure_code is not None:
+        units = [unit_secure_code]
+        if include_descendant_units:
+            units.extend(get_unit_descendant_codes(unit_secure_code, org_secure_code))
+        query = query.filter(
+            (UserRoleAssignment.unit_secure_code.in_(units))
+            | (UserRoleAssignment.unit_secure_code == None)  # noqa: E711
+        )
+
+    assignments = query.order_by(
+        UserRoleAssignment.assigned_at.asc(),
+        UserRoleAssignment.id.asc(),
+    ).all()
+
+    holders = []
+    seen = set()
+    for assignment in assignments:
+        user_sc = assignment.user_secure_code
+        if not user_sc or user_sc in seen or not assignment.is_valid_on(today):
+            continue
+        seen.add(user_sc)
+        holders.append(user_sc)
+    return holders

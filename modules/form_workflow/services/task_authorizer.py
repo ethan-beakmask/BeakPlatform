@@ -14,10 +14,14 @@ FormWorkflow task action authorization helpers.
 """
 from datetime import date
 
-from app.models.associations import UserRoleAssignment
 from app.models.role import Role, RoleType
 from app.models.user import User
-from app.services.unit_resolver import get_unit_ancestor_codes, org_local_today
+from app.models.associations import UserRoleAssignment
+from app.services.unit_resolver import (
+    get_unit_ancestor_codes,
+    org_local_today,
+    resolve_role_holders,
+)
 
 
 FALLBACK_ROLE_CODES = {
@@ -44,18 +48,6 @@ def get_actor_role_units(
         (a.role_secure_code, a.unit_secure_code or None)
         for a in assignments
         if a.is_valid_on(today)
-    }
-
-
-def get_actor_role_codes(user_secure_code: str, org_secure_code: str) -> set:
-    """取得使用者在指定企業當前有效的角色 secure_code 集合。
-
-    平台另有 `UserRoleAssignment.get_active_role_secure_codes()`，但它不帶
-    org 條件，本模組一律自行查詢並補上（TENANT-01）。
-    """
-    return {
-        role_sc
-        for role_sc, _ in get_actor_role_units(user_secure_code, org_secure_code)
     }
 
 
@@ -270,22 +262,13 @@ def _unit_manager_present(actor: dict, manager_role_sc: str, unit_secure_code: s
     if key in cache:
         return cache[key]
 
-    org_secure_code = actor.get('_org_sc')
-    today = actor.get('_today') or org_local_today(org_secure_code)
-    rows = UserRoleAssignment.query.join(
-        User,
-        UserRoleAssignment.user_secure_code == User.secure_code,
-    ).filter(
-        UserRoleAssignment.org_secure_code == org_secure_code,
-        UserRoleAssignment.role_secure_code == manager_role_sc,
-        UserRoleAssignment.is_deleted == False,  # noqa: E712
-        (UserRoleAssignment.unit_secure_code == unit_secure_code)
-        | (UserRoleAssignment.unit_secure_code == None),  # noqa: E711
-        User.org_secure_code == org_secure_code,
-        User.is_active == True,  # noqa: E712
-        User.is_deleted == False,  # noqa: E712
-    ).all()
-    cache[key] = any(row.is_valid_on(today) for row in rows)
+    cache[key] = bool(resolve_role_holders(
+        manager_role_sc,
+        actor.get('_org_sc'),
+        unit_secure_code,
+        include_descendant_units=False,
+        today=actor['_today'],
+    ))
     return cache[key]
 
 

@@ -1,6 +1,6 @@
 # 簽核者＝角色@單位：「部門也是一種角色」的落地設計（2026-09-05 草案，待 Ethan 審）
 
-> 狀態：**六個決策點已定案；第 1 期（授權核心）2026-09-05 完成並通過執行 session 驗收（見第十一節），第 2～5 期待派**。
+> 狀態：**六個決策點已定案；第 1 期（授權核心）複審通過、第 2 期（節點解析）2026-09-05 完成並通過執行 session 驗收（見第十一節），第 3～5 期待派**。
 > 起因：PF-226 收尾時 Ethan 指出歷來 session 忽略了「部門也是一種角色」這個核心概念；
 > 本文件盤點現況、定義目標模型、給出遷移與分期。BBN 待辦見本檔末尾。
 > 撰寫者是 PF-226／PF-71 的 session（保留中，負責審結果）；執行者是新 session，**照本檔做，不要自行詮釋**。
@@ -271,3 +271,37 @@ DEPARTMENT 別名走 DEPT_MEMBER 並套圈／舊佇列項無 `assignee_unit_secu
    否則新流程永遠不會走順位；`absence_fallback` 也要照 config 寫進 `result.data`
 3. `_spec_from()` 對「角色 sc 在該企業查不到（含軟刪除）」回 None＝該任務無人可簽（fail-closed）——比修前嚴（修前只要指派還在就能簽）。可接受，
    但第 2 期 handler 在進關卡時就要驗角色存在，存在才寫 spec，否則走 PF-226 的 `no_assignee_action`，不要讓死角色留到授權端才被擋
+
+### 第 2 期 節點解析——完成（2026-09-05 15:55，執行 session 驗收通過，待原 session 複審）
+
+codex 一次過（spec `/opt/tmp/codex/20260905-pf247-phase2-spec.txt`）。複審的三件事都已落地：`get_actor_role_codes()` 刪除；
+handler 進關卡時 `assignee_role_type` 從 `Role.role_type` 寫、`absence_fallback` 照 config 正規化後寫；角色在該企業查不到（含軟刪除、別家企業）
+一律在進關卡時走 PF-226 `no_assignee_action`（原因 `角色 <sc> 不存在或已刪除`）。改動：`formadapter_handler.py`（`validate()` 正規化
+`unit_scope`／`unit_secure_code`／`unit_levels_up`／`absence_fallback`；`_resolve_assignee_spec()` 解析四種範圍；`_role_spec_data()` 組快照與 key，
+`fallback_role` 路徑共用）、`unit_resolver.py` 新增 `get_unit()`／`get_unit_descendant_codes()`／`resolve_role_holders()`、
+`task_authorizer._unit_manager_present()` 改用 `resolve_role_holders()`、新測試 `test_formadapter_role_unit.py`（13 案）、manifest 兩份。
+
+**與設計文件的差異／補充（複審請看這段）**：
+
+1. **快照＝「當下能簽的人」而不只是「持有者」**：POSITION 目標且 `absence_fallback` 為真時，主管在職＝主管＋副主管；職缺＝副主管＋代理一＋代理二
+   （順序即此，去重保序）；非 POSITION 目標含後代單位持有者；全企業持有者一律算。3.1 原文只寫「當下持有者快照」，主管職缺時會顯示空白但副主管其實能簽，
+   所以改成與授權端 `_match_identity()` 鏡像。逾時參考人（WORKING 模式）吃同一份快照，主管在前
+2. **DEPARTMENT 在 handler 端正規化成 ROLE**：`result.data.assignee_type` 變 `'ROLE'`、`assignee_value` 變該企業 `DEPT_MEMBER` 的 sc、
+   `assignee_unit_scope='DEPARTMENT'`、`original_assignee_type/value` 保留原值；快照＝持有 `DEPT_MEMBER@部門`（含子部門）的人，
+   **不再看 `users.primary_unit_secure_code`**（PF-245 至此關單條件成立，實流程 B1 驗過）。授權端第 1 期的 DEPARTMENT 別名分支只剩舊佇列項在用
+3. `resolve_role_holders()` 會過濾 `valid_from/valid_until`，被它取代的舊 `_resolve_role_users()` 不會——這是修正不是回歸；
+   `_resolve_department_users()` 一併刪除
+4. `APPLICANT_ANCESTOR` 且申請人單位已是根 → 目標＝該單位本身（「超過根就取根」的邊界）
+5. 快照為空（ROLE 語意）**不退回**，只有角色／單位／申請人單位解析失敗才走 PF-226；`fallback_role` 改派後的 data 也帶完整的 role spec key（unit None、`GLOBAL`）
+6. **設計器還不能設 `unit_scope`**（第 3 期），本期實流程驗收是用腳本直接寫 graph 並發行：BELUGA 留下三條已發行流程
+   `PF247_P2_A`（`DEPT_MANAGER@APPLICANT_UNIT`）／`PF247_P2_B`（舊式 `DEPARTMENT 資訊群`）／`PF247_P2_C`（`DEPT_MEMBER@資訊群` 指定單位），
+   佈建腳本 `/opt/tmp/verify/pf247/provision_phase2_flow.py`（冪等，可重跑）。**第 3 期驗設計器時直接開這三條**；驗完不要的話把 mapping／published 軟刪除即可
+7. **未處理、提給 Ethan**：`APPLICANT_UNIT`＋`DEPT_MANAGER` 時，**申請人自己就是該單位主管**會派給自己簽（3.5 只對 OpHrLookup 規定「本人是主管就往上一層」，
+   FormAdapter 端沒有這條）。要的話第 3 期加一個 config 開關（例如 `skip_self_manager`：申請人為目標單位主管時改取上一層），不要就維持
+8. `approver_exposure_service._snapshot_mentions_actor()` 仍用扁平 `role_codes` 比對**樣板**（第 1 期已註記），第 3 期做設計器 `unit_scope` 時一併看
+
+**驗收憑證** `/opt/tmp/verify/20260905-role-unit-phase2.log`：自跑六支測試 61 passed → 重啟 web（executor 以 subprocess 跑 handler，不必重啟，
+本期沒有 RUNNING 節點）→ 實流程 55 項全 PASS：A1（主管職缺：快照＝副主管、代理一、代理二；三人 200、成員與外人 403）、A2（shen 就任主管：快照＝主管、副主管；
+代理人轉 403、shen 待簽清單有單）、A3（沒有單位的申請人送單：`complete_workflow`＋REJECTED＋`no_assignee` 記錄「申請人沒有所屬單位」）、
+B1（舊式 DEPARTMENT：正規化成 ROLE、快照只有持 `DEPT_MEMBER@軟體部` 的 ssss、套圈 200）、C1（指定單位同上）、#6 既有任務五帳號不變、
+副主管 ethanyu 走 approve 端點核准 A1 成功（記錄 `approved`）。收尾把 A2／B1／C1 三張測試單也簽掉，測試指派 0 殘留。全量測試見 BBN #5400 追記。

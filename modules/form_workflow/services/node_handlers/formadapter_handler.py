@@ -15,6 +15,7 @@ from app import db
 logger = logging.getLogger(__name__)
 
 TIMEOUT_MODES = ('ABSOLUTE', 'WORKING')
+UNIT_SCOPES = ('GLOBAL', 'UNIT', 'APPLICANT_UNIT', 'APPLICANT_ANCESTOR')
 TIMEOUT_MAX_MINUTES = 14400          # 10 天，與 ParallelJoin 一致
 TIMEOUT_ACTION = 'timeout'           # fw_approval_records.action（機器碼，不翻譯）
 TIMEOUT_APPROVER_NAME = '系統（逾時自動處理）'
@@ -125,6 +126,32 @@ class FormAdapterHandler(BaseNodeHandler):
             if not role_sc:
                 raise ValueError('改派給角色時必須指定角色 (no_assignee_role_secure_code)')
 
+        assignee_type = self.get_config_value('assignee_type')
+        if assignee_type == 'ROLE':
+            raw_scope = self.get_config_value('unit_scope', 'GLOBAL')
+            unit_scope = str(raw_scope or 'GLOBAL').strip().upper()
+            if unit_scope not in UNIT_SCOPES:
+                raise ValueError(f'unit_scope 必須是 GLOBAL、UNIT、APPLICANT_UNIT 或 APPLICANT_ANCESTOR，而非 {unit_scope}')
+            self.node_config['unit_scope'] = unit_scope
+
+            if unit_scope == 'UNIT':
+                unit_sc = str(self.get_config_value('unit_secure_code', '') or '').strip()
+                if not unit_sc:
+                    raise ValueError('單位範圍為指定單位時必須指定單位 (unit_secure_code)')
+                self.node_config['unit_secure_code'] = unit_sc
+
+            if unit_scope == 'APPLICANT_ANCESTOR':
+                raw_levels = self.get_config_value('unit_levels_up', 1)
+                try:
+                    levels = int(raw_levels)
+                except (TypeError, ValueError):
+                    raise ValueError('unit_levels_up 必須是整數')
+                if levels < 1:
+                    raise ValueError(f'unit_levels_up 必須 >= 1，而非 {levels}')
+                self.node_config['unit_levels_up'] = levels
+
+            self.node_config['absence_fallback'] = self._normalized_absence_fallback()
+
         return True
 
     def handle(self) -> Dict[str, Any]:
@@ -174,13 +201,9 @@ class FormAdapterHandler(BaseNodeHandler):
         # 評估來向變數控制
         input_variable_results = self._resolve_input_variables()
 
-        # 解析簽核者
-        assignees = self._resolve_assignees(assignee_type, assignee_value)
-
         data = {
             'assignee_type': assignee_type,
             'assignee_value': assignee_value,
-            'assignees': assignees,
             'selection_mode': selection_mode,
             'allow_comment': allow_comment,
             'require_comment': require_comment,
@@ -192,7 +215,20 @@ class FormAdapterHandler(BaseNodeHandler):
             'waiting_since': datetime.utcnow().isoformat()
         }
 
-        if assignees == [] and assignee_type != 'ROLE':
+        if assignee_type in ('ROLE', 'DEPARTMENT'):
+            spec_data, failure_reason = self._resolve_assignee_spec(assignee_type, assignee_value)
+            if failure_reason:
+                data['assignees'] = []
+                no_assignee_result = self._handle_no_assignee(data, reason=failure_reason)
+                if no_assignee_result:
+                    return no_assignee_result
+            else:
+                data.update(spec_data)
+        else:
+            data['assignees'] = self._resolve_assignees(assignee_type, assignee_value)
+
+        assignees = data['assignees']
+        if assignees == [] and assignee_type not in ('ROLE', 'DEPARTMENT'):
             no_assignee_result = self._handle_no_assignee(data)
             if no_assignee_result:
                 return no_assignee_result
@@ -234,8 +270,6 @@ class FormAdapterHandler(BaseNodeHandler):
             return '指定用戶為空'
         if assignee_type == 'INITIATOR':
             return '表單沒有申請人'
-        if assignee_type == 'DEPARTMENT':
-            return f'部門 {assignee_value} 下無在職成員'
         return f'{assignee_type} 簽核者為空'
 
     def _no_assignee_return_result(self, data: Dict[str, Any], reason: str) -> Dict[str, Any]:
@@ -259,10 +293,11 @@ class FormAdapterHandler(BaseNodeHandler):
             },
         }
 
-    def _handle_no_assignee(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _handle_no_assignee(self, data: Dict[str, Any], reason: str | None = None) -> Optional[Dict[str, Any]]:
         assignee_type = data.get('assignee_type')
         assignee_value = data.get('assignee_value') or ''
-        reason = self._no_assignee_reason(assignee_type, assignee_value)
+        if reason is None:
+            reason = self._no_assignee_reason(assignee_type, assignee_value)
         action = self.get_config_value('no_assignee_action', 'return')
         if action != 'fallback_role':
             return self._no_assignee_return_result(data, reason)
@@ -282,11 +317,9 @@ class FormAdapterHandler(BaseNodeHandler):
             })
             return self._no_assignee_return_result(data, reason)
 
-        fallback_assignees = self._resolve_role_users(role_sc)
+        absence_fallback = self._normalized_absence_fallback()
+        data.update(self._role_spec_data(role, None, 'GLOBAL', absence_fallback))
         data.update({
-            'assignee_type': 'ROLE',
-            'assignee_value': role_sc,
-            'assignees': fallback_assignees,
             'no_assignee_fallback_applied': True,
             'original_assignee_type': assignee_type,
             'original_assignee_value': assignee_value,
@@ -296,10 +329,170 @@ class FormAdapterHandler(BaseNodeHandler):
             'original_assignee_type': assignee_type,
             'original_assignee_value': assignee_value,
             'no_assignee_role_secure_code': role_sc,
-            'assignees': fallback_assignees,
+            'assignees': data['assignees'],
             'reason': reason,
         })
         return None
+
+    def _normalized_absence_fallback(self) -> bool:
+        value = self.get_config_value('absence_fallback', True)
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str) and value.strip().lower() in ('false', '0', 'no'):
+            return False
+        return True
+
+    def _role_by_secure_code(self, role_sc: str):
+        from app.models.role import Role
+        return Role.query.filter(
+            Role.secure_code == role_sc,
+            Role.org_secure_code == self.queue_item.org_secure_code,
+            Role.is_deleted == False,  # noqa: E712
+        ).first()
+
+    def _active_role_by_code(self, code: str):
+        from app.models.role import Role
+        return Role.query.filter(
+            Role.code == code,
+            Role.org_secure_code == self.queue_item.org_secure_code,
+            Role.is_deleted == False,  # noqa: E712
+            Role.is_active == True,  # noqa: E712
+        ).first()
+
+    def _role_spec_data(self, role, unit, unit_scope: str, absence_fallback: bool) -> Dict[str, Any]:
+        from app.models.role import RoleType
+        from app.services.unit_resolver import resolve_role_holders
+        from modules.form_workflow.services.task_authorizer import (
+            ALWAYS_ALLOWED_FALLBACK_CODES,
+            FALLBACK_ROLE_CODES,
+        )
+
+        org_sc = self.queue_item.org_secure_code
+        role_sc = role.secure_code
+        unit_sc = unit.secure_code if unit else None
+        if unit is None:
+            assignees = resolve_role_holders(role_sc, org_sc)
+        elif role.role_type != RoleType.POSITION:
+            assignees = resolve_role_holders(
+                role_sc, org_sc, unit_sc, include_descendant_units=True)
+        else:
+            managers = resolve_role_holders(
+                role_sc, org_sc, unit_sc, include_descendant_units=False)
+            assignees = list(managers)
+            if absence_fallback and role.code in FALLBACK_ROLE_CODES:
+                manager_vacant = not managers
+                for fallback_code in FALLBACK_ROLE_CODES[role.code]:
+                    fallback_role = self._active_role_by_code(fallback_code)
+                    if not fallback_role:
+                        continue
+                    if fallback_code not in ALWAYS_ALLOWED_FALLBACK_CODES and not manager_vacant:
+                        continue
+                    assignees.extend(resolve_role_holders(
+                        fallback_role.secure_code,
+                        org_sc,
+                        unit_sc,
+                        include_descendant_units=False,
+                    ))
+            assignees = self._dedupe_preserve_order(assignees)
+
+        return {
+            'assignee_type': 'ROLE',
+            'assignee_value': role_sc,
+            'assignee_role_code': role.code,
+            'assignee_role_type': role.role_type,
+            'assignee_unit_scope': unit_scope,
+            'assignee_unit_secure_code': unit_sc,
+            'assignee_unit_name': unit.name if unit else None,
+            'absence_fallback': absence_fallback,
+            'assignees': assignees,
+        }
+
+    @staticmethod
+    def _dedupe_preserve_order(values: List[str]) -> List[str]:
+        result = []
+        seen = set()
+        for value in values:
+            if value in seen:
+                continue
+            seen.add(value)
+            result.append(value)
+        return result
+
+    def _resolve_applicant_unit(self):
+        from app.services.unit_resolver import get_unit, resolve_user_unit
+
+        if not self.form_instance or not self.form_instance.applicant_secure_code:
+            return None, '表單沒有申請人'
+        org_sc = self.queue_item.org_secure_code
+        unit_sc = resolve_user_unit(self.form_instance.applicant_secure_code, org_sc)
+        if not unit_sc:
+            return None, '申請人沒有所屬單位'
+        unit = get_unit(unit_sc, org_sc)
+        if not unit:
+            return None, f'單位 {unit_sc} 不存在或已刪除'
+        return unit, None
+
+    def _resolve_role_unit(self, unit_scope: str):
+        from app.services.unit_resolver import get_unit, get_unit_ancestor_codes
+
+        org_sc = self.queue_item.org_secure_code
+        if unit_scope == 'GLOBAL':
+            return None, None
+        if unit_scope == 'UNIT':
+            unit_sc = str(self.get_config_value('unit_secure_code', '') or '').strip()
+            unit = get_unit(unit_sc, org_sc)
+            if not unit:
+                return None, f'單位 {unit_sc} 不存在或已刪除'
+            return unit, None
+        if unit_scope == 'APPLICANT_UNIT':
+            return self._resolve_applicant_unit()
+        if unit_scope != 'APPLICANT_ANCESTOR':
+            return None, f'unit_scope 必須是 GLOBAL、UNIT、APPLICANT_UNIT 或 APPLICANT_ANCESTOR，而非 {unit_scope}'
+
+        applicant_unit, failure = self._resolve_applicant_unit()
+        if failure:
+            return None, failure
+        ancestors = get_unit_ancestor_codes(applicant_unit.secure_code, org_sc)
+        if not ancestors:
+            return applicant_unit, None
+        levels = int(self.get_config_value('unit_levels_up', 1) or 1)
+        target_sc = ancestors[min(levels, len(ancestors)) - 1]
+        unit = get_unit(target_sc, org_sc)
+        if not unit:
+            return None, f'單位 {target_sc} 不存在或已刪除'
+        return unit, None
+
+    def _resolve_assignee_spec(self, assignee_type: str, assignee_value: str) -> tuple[Dict[str, Any], str | None]:
+        from app.services.unit_resolver import get_unit
+
+        org_sc = self.queue_item.org_secure_code
+        absence_fallback = self._normalized_absence_fallback()
+
+        if assignee_type == 'DEPARTMENT':
+            role = self._active_role_by_code('DEPT_MEMBER')
+            if role is None:
+                return {}, '企業沒有部門成員角色（DEPT_MEMBER）'
+            unit = get_unit(assignee_value, org_sc)
+            if unit is None:
+                return {}, f'部門 {assignee_value} 不存在或已刪除'
+            data = self._role_spec_data(role, unit, 'DEPARTMENT', absence_fallback)
+            data.update({
+                'original_assignee_type': 'DEPARTMENT',
+                'original_assignee_value': assignee_value,
+            })
+            return data, None
+
+        role_sc = str(assignee_value or '').strip()
+        if not role_sc:
+            return {}, '未指定角色'
+        role = self._role_by_secure_code(role_sc)
+        if role is None:
+            return {}, f'角色 {role_sc} 不存在或已刪除'
+        unit_scope = str(self.get_config_value('unit_scope', 'GLOBAL') or 'GLOBAL').strip().upper()
+        unit, failure = self._resolve_role_unit(unit_scope)
+        if failure:
+            return {}, failure
+        return self._role_spec_data(role, unit, unit_scope, absence_fallback), None
 
     def _org_tz_name(self) -> str:
         from app.models.organization import Organization
@@ -693,57 +886,7 @@ class FormAdapterHandler(BaseNodeHandler):
                     return [str(value)]
             return []
 
-        elif assignee_type == 'ROLE':
-            # 查詢該角色下的所有用戶
-            if assignee_value:
-                return self._resolve_role_users(assignee_value)
-            return []
-
-        elif assignee_type == 'DEPARTMENT':
-            # 查詢該部門下的所有用戶
-            if assignee_value:
-                return self._resolve_department_users(assignee_value)
-            return []
-
         return []
-
-    def _resolve_role_users(self, role_secure_code: str) -> List[str]:
-        """查詢指定角色下的所有用戶 secure_code（排除已刪除和停用的帳號）"""
-        from app.models.associations import UserRoleAssignment
-        from app.models.user import User
-        org_code = self.queue_item.org_secure_code
-
-        assignments = UserRoleAssignment.query.join(
-            User, UserRoleAssignment.user_secure_code == User.secure_code
-        ).filter(
-            UserRoleAssignment.role_secure_code == role_secure_code,
-            UserRoleAssignment.org_secure_code == org_code,
-            UserRoleAssignment.is_deleted == False,
-            User.is_active == True,
-            User.is_deleted == False
-        ).all()
-
-        user_codes = [a.user_secure_code for a in assignments if a.user_secure_code]
-        if not user_codes:
-            logger.warning(f'角色 {role_secure_code} 下無用戶')
-        return user_codes
-
-    def _resolve_department_users(self, dept_secure_code: str) -> List[str]:
-        """查詢指定部門下的所有用戶 secure_code"""
-        from app.models.user import User
-        org_code = self.queue_item.org_secure_code
-
-        users = User.query.filter(
-            User.primary_unit_secure_code == dept_secure_code,
-            User.org_secure_code == org_code,
-            User.is_active == True,
-            User.is_deleted == False
-        ).all()
-
-        user_codes = [u.secure_code for u in users]
-        if not user_codes:
-            logger.warning(f'部門 {dept_secure_code} 下無用戶')
-        return user_codes
 
 
 def complete_form_action(queue_item_secure_code: str, selected_edges: List[str],
