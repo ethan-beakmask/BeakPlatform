@@ -2009,8 +2009,10 @@ run_tests.sh 會把庫覆寫成拋棄式的 `beakplatform_test`。
 **`beakplatform_test` 雖然叫「拋棄式」，但它是現役測試庫、而且 `run_tests.sh`
 不會自動建立它**——連不上就印出建立指令並 `exit 1`。所以刪掉它等於
 `bash scripts/run_tests.sh` 從此無法執行，直到有人手動 createdb。
-它的體積會因為 `db.drop_all()` 不 VACUUM 而膨脹（2026-08-31 是 70 MB / 0 張表），
-**要回收空間就 DROP 後立刻重建，不要只 DROP**：
+它的體積會因為 `db.drop_all()` 不 VACUUM 而膨脹，**而且一次全量就膨脹到底**
+（2026-09-06 實測：重建後 7.5 MB，跑完一次全量 71 MB / 0 張表）。膨脹的庫上跑全量
+慢將近一倍（同一份程式 1111 個測試：乾淨庫 24 分 40 秒、80 MB 的庫 41 分 51 秒），
+所以**全量前一律先重建**；要回收空間就 DROP 後立刻重建，不要只 DROP：
 
 ```bash
 sudo -u postgres psql -c "DROP DATABASE beakplatform_test;" \
@@ -2019,7 +2021,7 @@ sudo -u postgres psql -c "DROP DATABASE beakplatform_test;" \
 
 
 ```bash
-bash scripts/run_tests.sh                     # 全部，約 9 分鐘
+bash scripts/run_tests.sh                     # 全部，約 25 分鐘（乾淨測試庫；2026-09-06 1111 個測試實測，膨脹庫 42 分）
 bash scripts/run_tests.sh tests/test_xxx.py -q     # 單檔：路徑寫 tests/…（相對 backend/）
 bash scripts/run_tests.sh -k menu -q
 bash scripts/run_e2e.sh                       # Playwright，需服務在跑

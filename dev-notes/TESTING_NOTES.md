@@ -71,7 +71,20 @@ sudo -u postgres createdb -O beakplatform beakplatform_test
 
 **基準不寫死數字**（測試會持續新增，寫死的通過數必然腐爛而誤導）。
 判斷有無退步的做法：**動工前先跑一次完整 `tests/` 記下當時的數字**，改完再跑一次比對。
-完整跑約 9 分鐘（2026-08-28 實測 530 秒；舊文寫 4 分鐘已過時）。以下兩個非綠是**長期已知、成因明確**，不列入退步：
+完整跑約 25 分鐘（2026-09-06 實測 1481 秒，1111 個測試、乾淨測試庫；2026-08-28 的 530 秒
+是六百多個測試時的數字，已過時）。**全量前先重建測試庫**：`drop_all()` 不 VACUUM，
+跑完一次全量就從 7.5 MB 膨脹到 71 MB，膨脹的庫上再跑一次全量要 42 分鐘
+（2026-09-06 同一份程式對照，`/opt/tmp/verify/20260906-pf34.log`）。重建指令見上方。
+
+**全量在 Claude Code session 裡怎麼跑**（2026-09-06 定型）：harness 會以「記憶體不足」
+收掉背景等待迴圈（知識庫 #5397；實際可用記憶體 7 GB 也照收）。做法：
+`nohup bash scripts/run_tests.sh -q > /opt/tmp/verify/<日期>-<主題>.log 2>&1 &` 起 pytest
+（nohup 起的進程不受影響），再用 Monitor 工具跑
+`while kill -0 <PID> 2>/dev/null; do sleep 60; done; tail -3 <log>` 等結尾。
+判斷「有沒有 pytest 在跑」用 `ps -eo pid,etimes,args | grep "[v]env/bin/python -m pytest"`，
+不要 `pgrep -f pytest`——自己 echo 的訊息裡含 pytest 字樣就會自我匹配（2026-09-06 踩到）。
+
+以下兩個非綠是**長期已知、成因明確**，不列入退步：
 
 | 項目 | 狀態 | 成因 |
 |---|---|---|
