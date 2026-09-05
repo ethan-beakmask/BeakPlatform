@@ -17,6 +17,7 @@ from app.models import (
     PositionType,
     User,
 )
+from app.services.unit_resolver import get_unit, iter_manager_chain, resolve_direct_manager
 
 from .base import BaseNodeHandler
 
@@ -48,6 +49,8 @@ class HrLookupHandler(BaseNodeHandler):
         'is_unit_head',
         'direct_manager',
         'direct_manager_name',
+        'direct_manager_unit',
+        'direct_manager_unit_name',
     ]
 
     _APPROVAL_SUFFIX = 'approval_limit'
@@ -55,6 +58,8 @@ class HrLookupHandler(BaseNodeHandler):
         'approver',
         'approver_name',
         'approver_level_code',
+        'approver_unit',
+        'approver_unit_name',
         'approver_found',
     ]
 
@@ -67,10 +72,11 @@ class HrLookupHandler(BaseNodeHandler):
         prefix = self._normalized_prefix()
         category_code = (self.get_config_value('approval_category_code', '') or '').strip().upper()
         approver_mode = self._coerce_bool(self.get_config_value('approver_mode', False))
+        today = self._local_today()
 
         target_code = self._resolve_target_code()
         user = self._get_active_user(target_code) if target_code else None
-        position = self._get_effective_position(target_code) if user else None
+        position = self._get_effective_position(target_code, today) if user else None
 
         if not user or not position:
             self._write_empty_result(prefix, category_code, approver_mode)
@@ -85,7 +91,7 @@ class HrLookupHandler(BaseNodeHandler):
                 'data': {'found': False, 'prefix': prefix}
             }
 
-        variables = self._build_position_variables(prefix, user, position)
+        variables = self._build_position_variables(prefix, user, position, today)
         for name, value in variables.items():
             self.set_flow_var(name, value)
 
@@ -100,7 +106,8 @@ class HrLookupHandler(BaseNodeHandler):
             self.set_flow_var(f'{prefix}_{self._APPROVAL_SUFFIX}', approval_limit)
 
         if approver_mode:
-            approver_vars = self._resolve_approver_variables(prefix, position, category_code, category)
+            approver_vars = self._resolve_approver_variables(
+                prefix, user, category_code, category, today)
             for name, value in approver_vars.items():
                 self.set_flow_var(name, value)
 
@@ -166,8 +173,13 @@ class HrLookupHandler(BaseNodeHandler):
             User.is_deleted == False,
         ).first()
 
-    def _get_effective_position(self, user_secure_code: str) -> Optional[EmployeePosition]:
-        today = self._local_today()
+    def _get_effective_position(
+        self,
+        user_secure_code: str,
+        today=None,
+    ) -> Optional[EmployeePosition]:
+        if today is None:
+            today = self._local_today()
         return EmployeePosition.query.filter(
             EmployeePosition.user_secure_code == user_secure_code,
             EmployeePosition.org_secure_code == self.queue_item.org_secure_code,
@@ -186,13 +198,17 @@ class HrLookupHandler(BaseNodeHandler):
         prefix: str,
         user: User,
         position: EmployeePosition,
+        today,
     ) -> Dict[str, Any]:
         job_title = position.job_title
         job_level = job_title.job_level if job_title else None
         job_family = job_title.job_family if job_title else None
         root_family = self._get_root_family(job_family)
         unit = position.unit
-        manager = self._get_active_user(position.direct_manager_secure_code)
+        org = self.queue_item.org_secure_code
+        station = resolve_direct_manager(user.secure_code, org, today)
+        manager = self._get_active_user(station['manager_secure_code']) if station else None
+        manager_unit = get_unit(station['unit_secure_code'], org) if station else None
 
         return {
             f'{prefix}_found': 'true',
@@ -216,6 +232,8 @@ class HrLookupHandler(BaseNodeHandler):
             f'{prefix}_is_unit_head': self._bool_string(position.is_unit_head),
             f'{prefix}_direct_manager': manager.secure_code if manager else '',
             f'{prefix}_direct_manager_name': manager.display_name if manager else '',
+            f'{prefix}_direct_manager_unit': manager_unit.code if manager_unit else '',
+            f'{prefix}_direct_manager_unit_name': station['unit_name'] if station else '',
         }
 
     def _get_root_family(self, family: Optional[JobFamily]) -> Optional[JobFamily]:
@@ -265,9 +283,10 @@ class HrLookupHandler(BaseNodeHandler):
     def _resolve_approver_variables(
         self,
         prefix: str,
-        position: EmployeePosition,
+        user: User,
         category_code: str,
         category: Optional[ApprovalCategory],
+        today,
     ) -> Dict[str, Any]:
         empty = self._empty_approver_vars(prefix)
         amount_expr = self.get_config_value('amount_expr', '') or ''
@@ -288,36 +307,33 @@ class HrLookupHandler(BaseNodeHandler):
             self.log_warning('人事資料取值核決人模式金額解析失敗', {'amount_expr': amount_expr})
             return empty
 
-        visited = set()
-        manager_code = position.direct_manager_secure_code
-        steps = 0
-        while manager_code and steps < 20:
-            steps += 1
-            if manager_code in visited:
-                self.log_warning('人事資料取值核決人模式偵測到主管鏈迴圈', {
-                    'manager_code': manager_code,
+        org = self.queue_item.org_secure_code
+        for steps, station in enumerate(iter_manager_chain(user.secure_code, org, today), start=1):
+            if steps > 20:
+                self.log_warning('人事資料取值核決人模式超過 20 站', {
+                    'target_code': user.secure_code,
                 })
                 break
-            visited.add(manager_code)
-
-            manager = self._get_active_user(manager_code)
+            manager = self._get_active_user(station['manager_secure_code'])
             if not manager:
-                break
-            manager_position = self._get_effective_position(manager.secure_code)
-            if not manager_position:
-                break
+                continue
+            manager_position = self._get_effective_position(manager.secure_code, today)
 
-            limit = Decimal(str(self._approval_limit_for_position(manager_position, category)))
+            limit = Decimal(str(
+                self._approval_limit_for_position(manager_position, category)
+                if manager_position else 0
+            ))
             if limit >= amount:
-                level = manager_position.job_title.job_level if manager_position.job_title else None
+                level = manager_position.job_title.job_level if manager_position and manager_position.job_title else None
+                unit = get_unit(station['unit_secure_code'], org)
                 return {
                     f'{prefix}_approver': manager.secure_code,
                     f'{prefix}_approver_name': manager.display_name or '',
                     f'{prefix}_approver_level_code': level.code if level else '',
+                    f'{prefix}_approver_unit': unit.code if unit else '',
+                    f'{prefix}_approver_unit_name': station['unit_name'],
                     f'{prefix}_approver_found': 'true',
                 }
-
-            manager_code = manager_position.direct_manager_secure_code
 
         return empty
 
@@ -345,5 +361,7 @@ class HrLookupHandler(BaseNodeHandler):
             f'{prefix}_approver': '',
             f'{prefix}_approver_name': '',
             f'{prefix}_approver_level_code': '',
+            f'{prefix}_approver_unit': '',
+            f'{prefix}_approver_unit_name': '',
             f'{prefix}_approver_found': 'false',
         }

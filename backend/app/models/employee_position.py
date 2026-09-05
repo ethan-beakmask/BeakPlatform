@@ -12,9 +12,12 @@ BeakMask EmployeePosition Model
 - 職稱（決定職等和簽核權限）
 - 有效期限
 - 是否為主管
+
+直屬主管不在任職卡上：由所屬單位的 DEPT_MANAGER@單位 角色推導
+（app.services.unit_resolver.resolve_direct_manager）。
 """
 from datetime import date, datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 from sqlalchemy import Column, String, Integer, Boolean, Date, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
@@ -38,7 +41,9 @@ class EmployeePosition(TenantBaseModel):
     紀錄企業成員在組織中擔任的職位，支援：
     - 一人多職（主要職位 + 兼任）
     - 有效期限（兼任、代理通常有期限）
-    - 直屬主管關係
+
+    直屬主管不在任職卡上：由所屬單位的 DEPT_MANAGER@單位 角色推導
+    （app.services.unit_resolver.resolve_direct_manager）。
     """
     __tablename__ = 'employee_positions'
 
@@ -77,15 +82,6 @@ class EmployeePosition(TenantBaseModel):
     # 是否為該部門主管
     is_unit_head = Column(Boolean, default=False, nullable=False)
 
-    # 直屬主管 (企業成員 secure_code)
-    # 這是最重要的欄位！表單簽核會用到
-    direct_manager_secure_code = Column(
-        String(32),
-        ForeignKey('users.secure_code'),
-        nullable=True,
-        index=True
-    )
-
     # 虛線主管 (Matrix 組織用，如專案主管)
     dotted_line_manager_secure_code = Column(
         String(32),
@@ -113,7 +109,6 @@ class EmployeePosition(TenantBaseModel):
                        backref=db.backref('positions', lazy='dynamic'))
     job_title = relationship('JobTitle', back_populates='employees')
     unit = relationship('OrganizationalUnit', foreign_keys=[unit_secure_code])
-    direct_manager = relationship('User', foreign_keys=[direct_manager_secure_code])
     dotted_line_manager = relationship('User', foreign_keys=[dotted_line_manager_secure_code])
 
     @property
@@ -155,36 +150,6 @@ class EmployeePosition(TenantBaseModel):
             return self.job_title.job_level.approval_limit
         return None
 
-    def get_manager_chain(self) -> list:
-        """
-        取得主管鏈（往上追溯到最高主管）
-
-        Returns:
-            List[User]: 從直屬主管到最高主管的列表
-        """
-        chain = []
-        visited = set()
-        current_manager = self.direct_manager
-
-        while current_manager and current_manager.secure_code not in visited:
-            chain.append(current_manager)
-            visited.add(current_manager.secure_code)
-
-            # 找該主管的主要職位
-            manager_position = EmployeePosition.query.filter(
-                EmployeePosition.user_secure_code == current_manager.secure_code,
-                EmployeePosition.position_type == PositionType.PRIMARY,
-                EmployeePosition.is_active == True,
-                EmployeePosition.is_deleted == False
-            ).first()
-
-            if manager_position:
-                current_manager = manager_position.direct_manager
-            else:
-                break
-
-        return chain
-
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
@@ -195,7 +160,6 @@ class EmployeePosition(TenantBaseModel):
             'is_unit_head': self.is_unit_head,
             'is_primary': self.is_primary,
             'is_valid': self.is_valid,
-            'direct_manager_id': self.direct_manager_secure_code,
             'dotted_line_manager_id': self.dotted_line_manager_secure_code,
             'effective_from': self.effective_from.isoformat() if self.effective_from else None,
             'effective_until': self.effective_until.isoformat() if self.effective_until else None,
@@ -217,12 +181,6 @@ class EmployeePosition(TenantBaseModel):
                 'id': self.unit.secure_code,
                 'name': self.unit.name,
                 'full_path': self.unit.full_path,
-            }
-
-        if self.direct_manager:
-            base['direct_manager'] = {
-                'id': self.direct_manager.secure_code,
-                'name': self.direct_manager.display_name,
             }
 
         return base

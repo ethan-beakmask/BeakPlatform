@@ -5,7 +5,7 @@ BeakMask Employee Position Management Web Routes
 企業成員職位記錄：
 - 企業成員的職稱指派
 - 所屬部門
-- 直屬主管關係 (最重要！決定簽核流程)
+- 直屬主管由部門主管角色推導，任職卡不記錄（PF-247 第 4 期）
 """
 from datetime import datetime, date
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
@@ -17,6 +17,7 @@ from ..models.employee_position import EmployeePosition, PositionType
 from ..models.job_title import JobTitle
 from ..models.organizational_unit import OrganizationalUnit
 from ..models.user import User
+from ..services.unit_resolver import resolve_direct_manager
 from .. import db
 
 positions_bp = Blueprint('positions', __name__)
@@ -47,7 +48,17 @@ def view_position(secure_code: str):
     except Exception:
         abort(404)
 
-    return render_template('pages/positions/view.html', position=position)
+    station = resolve_direct_manager(position.user_secure_code, current_user.org_secure_code)
+    derived_manager = None
+    if station:
+        derived_manager = ResourceGateway.get(
+            User, station['manager_secure_code'], raise_on_not_found=False)
+    return render_template(
+        'pages/positions/view.html',
+        position=position,
+        derived_manager=derived_manager,
+        derived_unit_name=station['unit_name'] if station else None,
+    )
 
 
 @positions_bp.route('/create', methods=['GET', 'POST'])
@@ -88,7 +99,6 @@ def create_position():
         unit_secure_code = request.form.get('unit_secure_code', '').strip()
         position_type = request.form.get('position_type', PositionType.PRIMARY)
         is_unit_head = request.form.get('is_unit_head') == 'true'
-        direct_manager_secure_code = request.form.get('direct_manager_secure_code', '').strip() or None
         effective_from_str = request.form.get('effective_from', '').strip()
         effective_until_str = request.form.get('effective_until', '').strip()
         remarks = request.form.get('remarks', '').strip() or None
@@ -128,7 +138,6 @@ def create_position():
                     unit_secure_code=unit_secure_code,
                     position_type=position_type,
                     is_unit_head=is_unit_head,
-                    direct_manager_secure_code=direct_manager_secure_code,
                     effective_from=effective_from,
                     effective_until=effective_until,
                     remarks=remarks,
@@ -194,7 +203,6 @@ def edit_position(secure_code: str):
         unit_secure_code = request.form.get('unit_secure_code', '').strip()
         position_type = request.form.get('position_type', PositionType.PRIMARY)
         is_unit_head = request.form.get('is_unit_head') == 'true'
-        direct_manager_secure_code = request.form.get('direct_manager_secure_code', '').strip() or None
         effective_from_str = request.form.get('effective_from', '').strip()
         effective_until_str = request.form.get('effective_until', '').strip()
         remarks = request.form.get('remarks', '').strip() or None
@@ -225,7 +233,6 @@ def edit_position(secure_code: str):
                 position.unit_secure_code = unit_secure_code
                 position.position_type = position_type
                 position.is_unit_head = is_unit_head
-                position.direct_manager_secure_code = direct_manager_secure_code
                 position.effective_from = effective_from
                 position.effective_until = effective_until
                 position.remarks = remarks

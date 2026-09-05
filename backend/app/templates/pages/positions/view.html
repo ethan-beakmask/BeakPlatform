@@ -69,16 +69,15 @@
         <td>{% if position.is_unit_head %}{{ _('是 (此企業成員為該部門主管)') }}{% else %}{{ _('否') }}{% endif %}</td>
     </tr>
     <tr>
-        <th>{{ _('直屬主管') }}</th>
+        <th>{{ _('直屬主管（依部門推導）') }}</th>
         <td>
-            {% if position.direct_manager %}
-            <a href="{{ url_for('users.view_user', secure_code=position.direct_manager.secure_code) }}">
-                {{ position.direct_manager.display_name }}
-            </a>
-            <br><span class="text-muted" style="font-size: 0.9em;">{{ _('(簽核流程會送到此主管)') }}</span>
+            {% if derived_manager %}
+            <a href="{{ url_for('users.view_user', secure_code=derived_manager.secure_code) }}">{{ derived_manager.display_name }}</a>
+            <span class="text-muted">（{{ derived_unit_name }}）</span>
             {% else %}
-            <span class="text-muted">{{ _('未指定') }}</span>
+            <span class="text-muted">{{ _('無（所屬部門及其上層都沒有在職主管）') }}</span>
             {% endif %}
+            <br><span class="text-muted" style="font-size: 0.9em;">{{ _('由部門設定裡的部門主管推導，不在此設定') }}</span>
         </td>
     </tr>
     <tr>

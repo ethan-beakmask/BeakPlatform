@@ -4,6 +4,8 @@
 > 設計文件 `dev-notes/ROLE_UNIT_APPROVAL_DESIGN.md` 第十一節有每一期的差異清單與複審結論，**第 4 期照 3.5 改寫版＋第六節第 4 列派**，不要用 3.5 原版（已作廢）。
 > 原設計 session 照舊複審；每期完成後停下來回報 Ethan。
 
+> **進度（2026-09-05 21:35）**：第 4 期已由新 session 完成並通過執行 session 驗收（含決策點 8），記錄在設計文件第十一節「第 4 期」；本篇第三節的行號是動工前的盤點，現況以 git 為準。交接文件漏列的三處（`users/view.html` 職位列、`test_users_position_display.py`、`add_column_comments.sql`）已一併處理。
+
 ## 一、先讀（順序）
 
 1. `CLAUDE.md`（引擎行為表已有「簽核者＝角色@單位」一列；PERM-03、TENANT-02、「跑測試」、「特定代理」段的模組 import 規則）

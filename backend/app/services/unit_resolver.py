@@ -9,6 +9,7 @@ from datetime import date, datetime
 from app.models.employee_position import EmployeePosition, PositionType
 from app.models.organization import Organization
 from app.models.organizational_unit import OrganizationalUnit
+from app.models.role import Role
 from app.models.associations import UserRoleAssignment
 from app.models.user import User
 from app.models.user_unit_membership import MembershipType, UserUnitMembership
@@ -205,3 +206,56 @@ def resolve_role_holders(
         seen.add(user_sc)
         holders.append(user_sc)
     return holders
+
+
+def iter_manager_chain(
+    user_secure_code: str,
+    org_secure_code: str,
+    today: date | None = None,
+):
+    """由部門推導的主管鏈。"""
+    if today is None:
+        today = org_local_today(org_secure_code)
+
+    role = Role.query.filter(
+        Role.org_secure_code == org_secure_code,
+        Role.code == 'DEPT_MANAGER',
+        Role.is_deleted == False,  # noqa: E712
+    ).first()
+    if not role:
+        return
+
+    start = resolve_user_unit(user_secure_code, org_secure_code, today)
+    if not start:
+        return
+
+    units = [start] + get_unit_ancestor_codes(start, org_secure_code)
+    visited = {user_secure_code}
+    for level, unit_sc in enumerate(units):
+        holders = resolve_role_holders(
+            role.secure_code,
+            org_secure_code,
+            unit_sc,
+            include_descendant_units=False,
+            today=today,
+        )
+        holder = next((sc for sc in holders if sc not in visited), None)
+        if not holder:
+            continue
+        visited.add(holder)
+        unit = get_unit(unit_sc, org_secure_code)
+        yield {
+            'manager_secure_code': holder,
+            'unit_secure_code': unit_sc,
+            'unit_name': unit.name if unit else '',
+            'levels_up': level,
+        }
+
+
+def resolve_direct_manager(
+    user_secure_code: str,
+    org_secure_code: str,
+    today: date | None = None,
+) -> dict | None:
+    """直屬主管＝主管鏈第一站；沒有就 None。"""
+    return next(iter_manager_chain(user_secure_code, org_secure_code, today), None)

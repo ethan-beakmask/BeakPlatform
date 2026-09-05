@@ -13,8 +13,11 @@ from app.models import (
     Permission,
     PermissionLevel,
     PositionType,
+    Role,
+    RoleType,
     UnitType,
     User,
+    UserRoleAssignment,
     UserType,
 )
 
@@ -29,6 +32,22 @@ def _ensure_user_read_permission():
         action='read',
         code='user:read',
         name='檢視用戶',
+        permission_level=PermissionLevel.ORG,
+        is_system_permission=True,
+        is_active=True,
+        is_deleted=False,
+    )
+    db.session.add(permission)
+    db.session.flush()
+
+
+def _ensure_employee_position_read_permission():
+    permission = Permission(
+        secure_code='perm_position_read_posdisp',
+        resource_type='employee_position',
+        action='read',
+        code='employee_position:read',
+        name='檢視職位',
         permission_level=PermissionLevel.ORG,
         is_system_permission=True,
         is_active=True,
@@ -107,7 +126,6 @@ def _assign_position(
     unit,
     secure_code,
     position_type=PositionType.PRIMARY,
-    direct_manager=None,
     effective_until=None,
 ):
     position = EmployeePosition(
@@ -117,7 +135,6 @@ def _assign_position(
         job_title_secure_code=title.secure_code,
         unit_secure_code=unit.secure_code,
         position_type=position_type,
-        direct_manager_secure_code=direct_manager.secure_code if direct_manager else None,
         effective_from=org.local_today() - timedelta(days=10),
         effective_until=effective_until,
         is_active=True,
@@ -126,6 +143,35 @@ def _assign_position(
     db.session.add(position)
     db.session.flush()
     return position
+
+
+def _dept_manager_role(org):
+    role = Role(
+        secure_code='role_mgr_posdisp',
+        org_secure_code=org.secure_code,
+        code='DEPT_MANAGER',
+        name='部門主管',
+        role_type=RoleType.POSITION,
+        scope_type='DEPARTMENT',
+        is_active=True,
+        is_deleted=False,
+    )
+    db.session.add(role)
+    db.session.flush()
+    return role
+
+
+def _assign_role(user, role, unit):
+    assignment = UserRoleAssignment(
+        org_secure_code=user.org_secure_code,
+        user_secure_code=user.secure_code,
+        role_secure_code=role.secure_code,
+        unit_secure_code=unit.secure_code,
+        is_deleted=False,
+    )
+    db.session.add(assignment)
+    db.session.flush()
+    return assignment
 
 
 def _list_row(html, display_name):
@@ -198,21 +244,66 @@ def test_expired_position_is_ignored_on_list_and_detail(admin_client, test_org):
     assert '尚未指派' in detail_html
 
 
-def test_inactive_direct_manager_name_is_hidden(admin_client, test_org):
+def test_position_detail_shows_department_derived_manager(admin_client, test_org):
     _ensure_user_read_permission()
-    manager = _employee(test_org, 'inactive_mgr', 'Inactive Manager', is_active=False)
+    _ensure_employee_position_read_permission()
+    manager = _employee(test_org, 'derived_mgr', 'Derived Manager')
     user = _employee(test_org, 'managed_member', 'Managed Member')
     title, unit = _position_context(test_org, 'managed')
-    _assign_position(
+    position = _assign_position(
         test_org,
         user,
         title,
         unit,
         secure_code='pos_managed_posdisp',
-        direct_manager=manager,
+    )
+    role = _dept_manager_role(test_org)
+    _assign_role(manager, role, unit)
+    db.session.commit()
+
+    response = admin_client.get(f'{PREFIX}/positions/{position.secure_code}')
+    detail_html = response.get_data(as_text=True)
+    assert response.status_code == 200
+    assert 'Derived Manager' in detail_html
+    assert '直屬主管（依部門推導）' in detail_html
+    assert f'href="/beakplatform/users/{manager.secure_code}"' in detail_html
+
+
+def test_position_detail_without_manager_shows_placeholder(admin_client, test_org):
+    _ensure_user_read_permission()
+    _ensure_employee_position_read_permission()
+    user = _employee(test_org, 'no_mgr_member', 'No Manager Member')
+    title, unit = _position_context(test_org, 'nomgr')
+    position = _assign_position(
+        test_org,
+        user,
+        title,
+        unit,
+        secure_code='pos_nomgr_posdisp',
+    )
+    db.session.commit()
+
+    response = admin_client.get(f'{PREFIX}/positions/{position.secure_code}')
+    detail_html = response.get_data(as_text=True)
+    assert response.status_code == 200
+    assert '所屬部門及其上層都沒有在職主管' in detail_html
+    assert '（部門 ' not in detail_html
+
+
+def test_user_detail_position_row_has_no_manager_segment(admin_client, test_org):
+    _ensure_user_read_permission()
+    user = _employee(test_org, 'row_member', 'Row Member')
+    title, unit = _position_context(test_org, 'row')
+    _assign_position(
+        test_org,
+        user,
+        title,
+        unit,
+        secure_code='pos_row_posdisp',
     )
     db.session.commit()
 
     detail_html = admin_client.get(f'{PREFIX}/users/{user.secure_code}').get_data(as_text=True)
-    assert '職稱 managed' in detail_html
-    assert 'Inactive Manager' not in detail_html
+    row = re.search(r'主要\s*<a[^>]*>職稱 row</a>(.*?)</div>', detail_html, re.S)
+    assert row is not None
+    assert unescape(row.group(0)).count('／') == 2

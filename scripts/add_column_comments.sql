@@ -279,7 +279,6 @@ COMMENT ON COLUMN employee_positions.job_title_secure_code IS '職稱';
 COMMENT ON COLUMN employee_positions.unit_secure_code IS '所屬部門';
 COMMENT ON COLUMN employee_positions.position_type IS '職位類型: PRIMARY/CONCURRENT/ACTING/TEMPORARY';
 COMMENT ON COLUMN employee_positions.is_unit_head IS '是否為該部門主管';
-COMMENT ON COLUMN employee_positions.direct_manager_secure_code IS '直屬主管';
 COMMENT ON COLUMN employee_positions.dotted_line_manager_secure_code IS '虛線主管 (Matrix 組織用)';
 COMMENT ON COLUMN employee_positions.effective_from IS '生效日期';
 COMMENT ON COLUMN employee_positions.effective_until IS '失效日期 (NULL=無期限)';

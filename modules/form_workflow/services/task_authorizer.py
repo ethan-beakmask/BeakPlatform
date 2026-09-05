@@ -304,9 +304,9 @@ def _match_identity(task_result_data: dict, user_secure_code: str, identity, act
     if not assignee_type:
         return {'acted_as_role_code': None}
 
-    # 快照（assignees）命中永遠放行；但 ROLE／DEPARTMENT 先看角色@單位再看快照，
-    # 因為第 2 期起快照本身就含副主管／代理人，先看快照會讓 acted_as_role_code 永遠記不到
-    # （2026-09-05 第 3 期驗收踩到：副主管簽核記錄的 acted_as 一律 NULL）。
+    # ROLE／DEPARTMENT 若帶 assignee_unit_secure_code key，代表第 2 期後的角色@單位規格：
+    # 角色與缺席順位用即時狀態判定，不再用進關卡快照放行。舊佇列項沒有這個 key 時，
+    # 才維持快照相容行為。
     in_snapshot = user_secure_code in (task_result_data.get('assignees') or [])
 
     if assignee_type in ('ROLE', 'DEPARTMENT'):
@@ -333,6 +333,9 @@ def _match_identity(task_result_data: dict, user_secure_code: str, identity, act
                         or not _unit_manager_present(actor, role_sc, unit_sc)
                     ):
                         return {'acted_as_role_code': fallback_code}
+
+        if 'assignee_unit_secure_code' in task_result_data:
+            return None
 
     if in_snapshot:
         return {'acted_as_role_code': None}

@@ -33,7 +33,7 @@ files:
     - backend/app/static/css/user-form.css
     - backend/app/static/css/user-view.css
   test:
-    - backend/tests/test_users_position_display.py
+    - backend/tests/test_users_position_display.py  # 使用者職位顯示（含職位詳情頁推導主管）
 
 tables:
   primary: users

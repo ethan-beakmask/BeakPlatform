@@ -20,7 +20,6 @@
             <th data-sort="text">{{ _('部門') }}</th>
             <th data-sort="text">{{ _('類型') }}</th>
             <th data-sort="text">{{ _('部門主管') }}</th>
-            <th data-sort="text">{{ _('直屬主管') }}</th>
             <th data-sort="date">{{ _('生效日') }}</th>
             <th data-sort="text">{{ _('狀態') }}</th>
             <th>{{ _('操作') }}</th>
@@ -59,13 +58,6 @@
                 {% endif %}
             </td>
             <td>{% if pos.is_unit_head %}{{ _('是') }}{% else %}-{% endif %}</td>
-            <td>
-                {% if pos.direct_manager %}
-                {{ pos.direct_manager.display_name }}
-                {% else %}
-                <span class="text-muted">-</span>
-                {% endif %}
-            </td>
             <td>{{ pos.effective_from.strftime('%Y-%m-%d') if pos.effective_from else '-' }}</td>
             <td>{% if pos.is_active %}{{ _('啟用') }}{% else %}{{ _('停用') }}{% endif %}</td>
             <td>
@@ -75,7 +67,7 @@
         </tr>
         {% else %}
         <tr>
-            <td colspan="9" class="text-muted" style="text-align: center;">{{ _('尚無職位指派') }}</td>
+            <td colspan="8" class="text-muted" style="text-align: center;">{{ _('尚無職位指派') }}</td>
         </tr>
         {% endfor %}
     </tbody>

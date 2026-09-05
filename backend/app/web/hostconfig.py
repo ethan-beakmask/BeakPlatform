@@ -341,7 +341,6 @@ PURGE_ORPHAN_CLEANUP = {
         ('used_user_numbers', 'user_secure_code', 'set_null'),
         ('contracts', 'created_by_secure_code', 'set_null'),
         ('contracts', 'modified_by_secure_code', 'set_null'),
-        ('employee_positions', 'direct_manager_secure_code', 'set_null'),
         ('employee_positions', 'dotted_line_manager_secure_code', 'set_null'),
         ('schedule_adjustments', 'substitute_user_secure_code', 'set_null'),
         # 自引用 (nullable)

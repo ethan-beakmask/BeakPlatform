@@ -1,6 +1,6 @@
 # 簽核者＝角色@單位：「部門也是一種角色」的落地設計（2026-09-05 草案，待 Ethan 審）
 
-> 狀態：**七個決策點已定案；第 1～3 期複審通過、第 5 期（主管當日請假算缺席）2026-09-05 完成並通過執行 session 驗收（見第十一節），第 4 期由新 session 接手（交接補篇 `dev-notes/handoff_role_unit_phase4_20260905.md`）**。
+> 狀態：**八個決策點已定案；第 1～3、5 期複審通過，第 4 期（直屬主管來源統一＋任職卡指標退役＋決策點 8）2026-09-05 由新 session 完成並通過執行 session 驗收，待原 session 複審（見第十一節末段）**。
 > 起因：PF-226 收尾時 Ethan 指出歷來 session 忽略了「部門也是一種角色」這個核心概念；
 > 本文件盤點現況、定義目標模型、給出遷移與分期。BBN 待辦見本檔末尾。
 > 撰寫者是 PF-226／PF-71 的 session（保留中，負責審結果）；執行者是新 session，**照本檔做，不要自行詮釋**。
@@ -443,3 +443,49 @@ S5d 人工列（不看來源）`original=['00:00-23:59']`、`adjusted` 挖掉涵
    目前 dev 沒有夜班班表，**不列缺陷、記在此**，日後做夜班時一併定
 
 第 1～3、5 期完成，dev HEAD `76ec9940`＋本複審 commit，**origin 落後 11 筆未 push**（執行 session 只 commit）。第 4 期換新 session，照交接補篇 `handoff_role_unit_phase4_20260905.md`。
+
+### 第 4 期 直屬主管來源統一、任職卡指標退役、決策點 8——完成（2026-09-05 21:35，執行 session（新）驗收通過，待原 session 複審）
+
+codex 一次過（spec `/opt/tmp/codex/20260905-pf247-phase4-spec.txt`，結果 `...-result.txt`，40 分鐘上限內 36 分鐘完成），主 Claude **沒有改任何一行程式**。
+改動 28 檔＋2 新檔：`unit_resolver.py` 新增 `iter_manager_chain()`（generator，每站 `{manager_secure_code, unit_secure_code, unit_name, levels_up}`）與
+`resolve_direct_manager()`（＝第一站）；`hr_lookup_handler.py` 的 `hr_direct_manager*` 與核決鏈改吃它，新增 `hr_direct_manager_unit(_name)`／`hr_approver_unit(_name)`，
+主管沒有有效任職卡＝該站上限 0 繼續往上、迴圈偵測連同 `visited` 刪除（單位鏈不會迴圈，20 站上限維持）；`EmployeePosition` 刪 `direct_manager_secure_code`／relationship／
+`get_manager_chain()`／`to_dict` 兩個 key；`web/positions.py` 三個 handler 與四個模板、`users/view.html` 職位列、`hostconfig.PURGE_ORPHAN_CLEANUP`、`add_column_comments.sql` 同步退役；
+**新檔 `backend/app/services/dept_membership_service.py`**：`organizational_units.py` 五個私有 helper 原樣搬成公開函式＋新增 `set_dept_manager()`（＝原 `set_unit_manager` 端點 try 區塊），
+API 四個呼叫點改用、`set_unit_leadership()` 不動；`seed_test_companies.py` 刪 `assign_direct_managers()`、新增 `sync_dept_roles()`（依 PRIMARY 任職卡種 SOLID membership＋`DEPT_MEMBER`／
+`DEPT_EMPLOYEE`，head → `DEPT_MANAGER@unit`，持有者集合已等於預期就跳過）與 `--sync-dept-roles`；`task_authorizer._match_identity()` 一處（決策點 8）；
+測試四檔（`test_hr_lookup_node.py` fixture 改成兩層單位＋角色指派、+6 案、迴圈案改成「無任職卡主管視為 0」；`test_task_authorizer_role_unit.py` 改 1 案＋3 案；
+`test_users_position_display.py` 改 helper＋3 案；新檔 `test_dept_membership_service.py` 4 案）；`HR_LOOKUP_NODE_SPEC.md` 新增「直屬主管推導」節、規則 3～7 改寫；
+手冊 `hr_lookup_node.md`／`positions.md`／`job_matrix.md`；manifest 四份；po 三條新翻譯。dev 庫已 `DROP COLUMN direct_manager_secure_code`，守恆檢查綠（108 表／1816 欄一致，比第 3 期少 1 欄）。
+
+**與設計文件的差異／補充（複審請看這段）**：
+
+1. **交接補篇第三節「沒有其他地方引用」是錯的**，盤點多抓到三處並一併處理：`users/view.html` 職位列的 `／ 主管名` 片段（直接拿掉，該列只剩 類型／職稱／部門／期間）、
+   `test_users_position_display.py`（`_assign_position()` 的 `direct_manager` 參數與 `test_inactive_direct_manager_name_is_hidden`，後者改成職位詳情頁推導主管的三案）、
+   `scripts/add_column_comments.sql` 的 COMMENT 列
+2. **3.5 第 2 條「多人時取 `assigned_at` 最早」照字面實作**：`resolve_role_holders(DEPT_MANAGER, unit=U)` 回「單位 U 指派 ∪ 全企業指派」依 `assigned_at` 排序，取第一個不是本人、
+   也還沒在鏈上出現過的人。後果：**全企業持有 `DEPT_MANAGER`（unit NULL）的人會在每一層與單位主管競爭，指派較早者贏**（`test_direct_manager_uses_global_manager_assignment` 驗的就是這個）。
+   本期依「照本檔做，不要自行詮釋」沒有改成「單位指派優先」；要不要改請複審決定（改動只在 `iter_manager_chain()` 一處）。已寫進 `HR_LOOKUP_NODE_SPEC.md` 已知限制
+3. **「本人是主管往上」的實作是「跳過本人再看同單位其他持有者」**，不是「本人持有就整層跳過」：同單位若另有第二位主管（例如全企業指派），先取那一位；沒有才往上。
+   單一主管的情境兩種讀法結果相同
+4. `iter_manager_chain()` 用 `visited`（含申請人本人）去重：同一人身兼兩層單位主管只算一站——所以 3.5 說的「迴圈與 20 站上限維持」裡的迴圈偵測其實不再需要
+   （單位祖先鏈本身防循環），handler 只留 20 站上限
+5. 職位詳情頁（`/positions/<sc>`）改顯示「直屬主管（依部門推導）」＋連結＋單位名，沒有主管時顯示「無（所屬部門及其上層都沒有在職主管）」；列表頁直接拿掉該欄（9→8 欄）。
+   `view_position()` 取推導主管的 User 走 `ResourceGateway.get(User, ...)`（會查 `user:read`），所以測試要種 `user:read` 與 `employee_position:read` 兩個 permission
+6. `sync_dept_roles()` 對「持有者集合已等於預期主管」的單位仍呼叫 `ensure_dept_membership()` 再 `revoke_role_assignment(DEPT_EMPLOYEE)`，每次重跑會把該主管的 `DEPT_EMPLOYEE@unit` 列復活再軟刪一次
+   （列數不變、`updated_at` 會動）。冪等以「列數／持有者集合」為準成立（第二次跑三家全 0），這個小瑕疵不影響結果，記在此供複審判斷要不要收
+7. codex 順手做了兩件 spec 沒要求的事：seed 腳本加 `signal.signal(signal.SIGPIPE, signal.SIG_DFL)`（避免 `| head` 時 BrokenPipe）、把 `OrganizationService` import 移進 `seed_one_company()`。
+   兩者無害、未退回，記在此
+8. 決策點 8 的實作位置：`_match_identity()` 的 ROLE／DEPARTMENT 分支結尾加 `if 'assignee_unit_secure_code' in task_result_data: return None`——所以 `_spec_from()` 回 None（角色查不到）且 key 存在時也是 None（fail-closed），
+   無 key 的舊佇列項與 USER／INITIATOR／DYNAMIC 落到原本的 `in_snapshot` 判定。**S8 實流程證明「角色是活的」**：shen 就任行銷主管後快照不變、代理人一二即時 403，卸任後即時 200
+
+**驗收憑證** `/opt/tmp/verify/20260905-role-unit-phase4.log`：反向檢查殘留引用為空 → dev 庫 DROP COLUMN → 重啟 web＋executor →
+`--sync-dept-roles` 兩次（第一次 GHTRAVEL `positions 20 / memberships_created 20 / roles_created 52 / managers_set 12`，jason.ling 既有的 `DEPT_MANAGER@企業旅遊部` 沒重複；第二次三家全 0）→
+**舊指標對照 60/60 PASS**（DROP COLUMN 前存檔的三家範例企業 PRIMARY 任職卡指標 vs `resolve_direct_manager()`，含最頂層主管＝空；brian.ling 核決鏈 kevin.ye@團體旅遊部 → amy.xiao@業務處 → david.hao@總經理室）→
+實流程 FAIL=0：G1 翎柏瑞 30 萬 → 燁凱文（`hr_direct_manager_unit=GROUP_TOUR`、`hr_approver_level_code=L500`、`hr_approver_unit_name=團體旅遊部`，kevin 200／amy 403／brian 403）、
+G2 500 萬 → 霄雅慧（L700、`hr_approver_unit=SALES_DIV`）、G3 10 億 → `hr_approver_found=false`、`complete_workflow`＋REJECTED＋`no_assignee` 記錄（與 2026-09-02／09-05 對照組一字不差）、
+G4 七個頁面斷言（列表無直屬主管欄、詳情頁有推導主管＋單位、david.hao 詳情頁顯示無主管、新增／編輯頁無 `direct_manager_secure_code`、users 詳情頁職位列無主管名）、
+S8（BELUGA `PF247_P2_A`）主管職缺快照 `[ethanyu, aaaa, ssss]` 三人 200 → shen 就任後快照未變、aaaa／ssss 403、ethanyu／shen 200 → 卸任後 aaaa 200、shen 403、
+#6 既有 SECURITY_STAFF 舊佇列項五帳號判定不變 → chrome-devtools 實點（職位詳情頁 evaluate 回 `href=/beakplatform/users/yIVOrZiT0ltlPjtBm6o8mQ`、點下去落在燁凱文用戶詳情、
+用戶詳情職位列無主管段、列表 8 欄表頭與儲存格一致、新增頁 select 只有四個；四頁 console error/warn 0）。自跑 12 檔 115 passed（含 12 檔既有回歸）；mkdocs strict 過、po `untranslated []`／`fuzzy []`；
+全量 1105 passed／1 failed（`test_admin_required_for_admin`，PF-34 已知）／2 skipped（第 5 期後基準 1090，+15 皆為本期新案，無回歸）。測試單全部簽掉、測試指派零殘留。

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-04 18:24+0800\n"
+"POT-Creation-Date: 2026-09-05 21:17+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -29,9 +29,9 @@ msgstr ""
 #: app/templates/pages/delegations/view.html:60
 #: app/templates/pages/users/view.html:66
 #: app/templates/pages/users/view.html:74
-#: app/templates/pages/users/view.html:142
-#: app/templates/pages/users/view.html:146
-#: app/templates/pages/users/view.html:150
+#: app/templates/pages/users/view.html:139
+#: app/templates/pages/users/view.html:143
+#: app/templates/pages/users/view.html:147
 msgid "未設定"
 msgstr ""
 
@@ -689,12 +689,12 @@ msgstr ""
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:836
 #: app/api/conglomerates.py:84 app/api/conglomerates.py:276
 #: app/api/users.py:284 app/web/approval_categories.py:189
-#: app/web/delegations.py:230 app/web/external_users.py:332
+#: app/web/delegations.py:239 app/web/external_users.py:332
 #: app/web/job_families.py:239 app/web/job_families.py:240
 #: app/web/job_levels.py:181 app/web/job_titles.py:266
 #: app/web/job_titles.py:267 app/web/menu.py:324 app/web/menu.py:391
 #: app/web/modules.py:123 app/web/org_admins.py:284 app/web/org_admins.py:451
-#: app/web/organizations.py:283 app/web/positions.py:145
+#: app/web/organizations.py:283 app/web/positions.py:154
 #: app/web/sys_accounts.py:171 app/web/sys_accounts.py:172 app/web/units.py:128
 #: app/web/users.py:492
 #, python-format
@@ -714,11 +714,11 @@ msgstr ""
 #: ../modules/form_workflow/api/backgrounds.py:151
 #: ../modules/form_workflow/api/categories.py:314
 #: ../modules/form_workflow/api/form_themes.py:219 app/api/conglomerates.py:214
-#: app/web/approval_categories.py:269 app/web/delegations.py:326
+#: app/web/approval_categories.py:269 app/web/delegations.py:335
 #: app/web/external_users.py:452 app/web/job_families.py:324
 #: app/web/job_families.py:325 app/web/job_levels.py:267
 #: app/web/job_titles.py:344 app/web/job_titles.py:345 app/web/menu.py:483
-#: app/web/modules.py:183 app/web/organizations.py:342 app/web/positions.py:239
+#: app/web/modules.py:183 app/web/organizations.py:342 app/web/positions.py:246
 #: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:188
 #: app/web/users.py:699
 #, python-format
@@ -788,7 +788,7 @@ msgstr ""
 msgid "請提供分類資料"
 msgstr ""
 
-#: app/api/duties.py:107 app/api/organizational_units.py:343
+#: app/api/duties.py:107 app/api/organizational_units.py:211
 #: app/api/roles.py:299 app/web/units.py:107
 #, python-format
 msgid "代碼 %(code)s 已存在"
@@ -803,7 +803,7 @@ msgid "建立職務分類失敗"
 msgstr ""
 
 #: app/api/duties.py:153 app/api/duties.py:383
-#: app/api/organizational_units.py:405 app/api/organizational_units.py:1593
+#: app/api/organizational_units.py:273 app/api/organizational_units.py:1414
 #: app/api/organizations.py:223 app/api/roles.py:388
 msgid "請提供更新資料"
 msgstr ""
@@ -953,12 +953,12 @@ msgstr ""
 #: ../modules/form_workflow/api/categories.py:360
 #: ../modules/form_workflow/api/form_themes.py:264
 #: app/api/enterprise_settings.py:387 app/api/files.py:474
-#: app/web/approval_categories.py:327 app/web/delegations.py:377
+#: app/web/approval_categories.py:327 app/web/delegations.py:386
 #: app/web/external_users.py:671 app/web/job_families.py:421
 #: app/web/job_families.py:422 app/web/job_levels.py:318
 #: app/web/job_titles.py:395 app/web/job_titles.py:396 app/web/menu.py:537
 #: app/web/modules.py:211 app/web/org_admins.py:539
-#: app/web/organizations.py:418 app/web/positions.py:267
+#: app/web/organizations.py:418 app/web/positions.py:274
 #: app/web/sys_accounts.py:315 app/web/sys_accounts.py:316 app/web/units.py:221
 #: app/web/users.py:760
 #, python-format
@@ -1031,7 +1031,7 @@ msgstr ""
 msgid "已撤銷刪除"
 msgstr ""
 
-#: app/api/files.py:507 app/web/delegations.py:357
+#: app/api/files.py:507 app/web/delegations.py:366
 #, python-format
 msgid "撤銷失敗: %(error)s"
 msgstr ""
@@ -1215,7 +1215,7 @@ msgid "系統級類別不可修改"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_phrases.py:148 app/api/lookup.py:201
-#: app/api/lookup.py:381 app/api/organizational_units.py:1619
+#: app/api/lookup.py:381 app/api/organizational_units.py:1440
 msgid "更新失敗"
 msgstr ""
 
@@ -1406,8 +1406,8 @@ msgstr ""
 msgid "被授權人無效"
 msgstr ""
 
-#: app/api/my_delegations.py:139 app/web/delegations.py:181
-#: app/web/delegations.py:287
+#: app/api/my_delegations.py:139 app/web/delegations.py:190
+#: app/web/delegations.py:296
 msgid "生效開始日期不能晚於結束日期"
 msgstr ""
 
@@ -1467,44 +1467,44 @@ msgstr ""
 msgid "批次操作失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:274 app/api/organizational_units.py:401
-#: app/api/organizational_units.py:490 app/api/organizational_units.py:672
-#: app/api/organizational_units.py:755 app/api/organizational_units.py:815
-#: app/api/organizational_units.py:869 app/api/organizational_units.py:982
-#: app/api/organizational_units.py:1060 app/api/organizational_units.py:1121
-#: app/api/organizational_units.py:1195 app/api/organizational_units.py:1307
-#: app/api/organizational_units.py:1381 app/api/organizational_units.py:1444
-#: app/api/organizational_units.py:1579 app/api/organizational_units.py:1643
+#: app/api/organizational_units.py:142 app/api/organizational_units.py:269
+#: app/api/organizational_units.py:358 app/api/organizational_units.py:540
+#: app/api/organizational_units.py:623 app/api/organizational_units.py:683
+#: app/api/organizational_units.py:736 app/api/organizational_units.py:803
+#: app/api/organizational_units.py:881 app/api/organizational_units.py:942
+#: app/api/organizational_units.py:1016 app/api/organizational_units.py:1128
+#: app/api/organizational_units.py:1202 app/api/organizational_units.py:1265
+#: app/api/organizational_units.py:1400 app/api/organizational_units.py:1464
 msgid "組織單位不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:298
+#: app/api/organizational_units.py:166
 msgid "請提供單位資料"
 msgstr ""
 
-#: app/api/organizational_units.py:302 app/api/roles.py:273
+#: app/api/organizational_units.py:170 app/api/roles.py:273
 msgid "缺少必要欄位: name"
 msgstr ""
 
-#: app/api/organizational_units.py:319 app/api/roles.py:305
+#: app/api/organizational_units.py:187 app/api/roles.py:305
 #, python-format
 msgid "無法自動產生代碼: %(error)s"
 msgstr ""
 
-#: app/api/organizational_units.py:324
+#: app/api/organizational_units.py:192
 msgid "代碼只能包含英文字母、數字、底線(_)、連字號(-)，且開頭必須是英文"
 msgstr ""
 
-#: app/api/organizational_units.py:328
+#: app/api/organizational_units.py:196
 #, python-format
 msgid "代碼長度不可超過 50 字元（目前 %(length)s 字元）"
 msgstr ""
 
-#: app/api/organizational_units.py:330
+#: app/api/organizational_units.py:198
 msgid "代碼長度至少 2 字元"
 msgstr ""
 
-#: app/api/organizational_units.py:332
+#: app/api/organizational_units.py:200
 #, python-format
 msgid "名稱長度不可超過 255 字元（目前 %(length)s 字元）"
 msgstr ""
@@ -1517,165 +1517,165 @@ msgstr ""
 #: ../modules/nocode_builder/api/template_api.py:425
 #: ../modules/nocode_builder/services/project_service.py:128
 #: ../modules/spec_formulate/api/_mf_specs_crud.py:46
-#: app/api/organizational_units.py:334 app/api/work_schedules.py:188
+#: app/api/organizational_units.py:202 app/api/work_schedules.py:188
 msgid "名稱不可為空"
 msgstr ""
 
-#: app/api/organizational_units.py:355 app/api/organizational_units.py:438
+#: app/api/organizational_units.py:223 app/api/organizational_units.py:306
 msgid "父層單位不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:376
+#: app/api/organizational_units.py:244
 msgid "組織單位建立成功"
 msgstr ""
 
-#: app/api/organizational_units.py:383
+#: app/api/organizational_units.py:251
 msgid "建立組織單位失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:424 app/api/roles.py:416
+#: app/api/organizational_units.py:292 app/api/roles.py:416
 msgid "不能設定自己為父層"
 msgstr ""
 
-#: app/api/organizational_units.py:429 app/api/roles.py:420
+#: app/api/organizational_units.py:297 app/api/roles.py:420
 msgid "不能設定子層為父層"
 msgstr ""
 
-#: app/api/organizational_units.py:445
+#: app/api/organizational_units.py:313
 msgid "不可在企業群組與外部廠商群組之間移動"
 msgstr ""
 
-#: app/api/organizational_units.py:461
+#: app/api/organizational_units.py:329
 msgid "組織單位更新成功"
 msgstr ""
 
-#: app/api/organizational_units.py:468
+#: app/api/organizational_units.py:336
 msgid "更新組織單位失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:494
+#: app/api/organizational_units.py:362
 msgid "此為系統保留單位，不可刪除"
 msgstr ""
 
-#: app/api/organizational_units.py:534
+#: app/api/organizational_units.py:402
 #, python-format
 msgid "此單位有 %(count)s 個子單位"
 msgstr ""
 
-#: app/api/organizational_units.py:542
+#: app/api/organizational_units.py:410
 #, python-format
 msgid "此單位有 %(count)s 個成員"
 msgstr ""
 
-#: app/api/organizational_units.py:576
+#: app/api/organizational_units.py:444
 msgid "組織單位已刪除"
 msgstr ""
 
-#: app/api/organizational_units.py:578
+#: app/api/organizational_units.py:446
 #, python-format
 msgid "，%(count)s 位成員已移至未分配"
 msgstr ""
 
-#: app/api/organizational_units.py:587
+#: app/api/organizational_units.py:455
 msgid "刪除組織單位失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:759 app/api/organizational_units.py:873
-#: app/api/organizational_units.py:1199 app/api/organizational_units.py:1448
+#: app/api/organizational_units.py:627 app/api/organizational_units.py:740
+#: app/api/organizational_units.py:1020 app/api/organizational_units.py:1269
 msgid "請提供用戶 ID"
 msgstr ""
 
 #: ../modules/nocode_builder/services/project_service.py:362
-#: app/api/organizational_units.py:769 app/api/organizational_units.py:882
-#: app/api/organizational_units.py:991 app/api/organizational_units.py:1208
-#: app/api/organizational_units.py:1458 app/api/organizational_units.py:1692
+#: app/api/organizational_units.py:637 app/api/organizational_units.py:749
+#: app/api/organizational_units.py:812 app/api/organizational_units.py:1029
+#: app/api/organizational_units.py:1279 app/api/organizational_units.py:1513
 #: app/services/role_assignment_service.py:167
 msgid "用戶不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:774
+#: app/api/organizational_units.py:642
 msgid "只有企業成員帳號可加入部門"
 msgstr ""
 
-#: app/api/organizational_units.py:784 app/api/organizational_units.py:1504
-#: app/api/organizational_units.py:1540
+#: app/api/organizational_units.py:652 app/api/organizational_units.py:1325
+#: app/api/organizational_units.py:1361
 #, python-format
 msgid "已將 %(user)s 加入 %(unit)s"
 msgstr ""
 
-#: app/api/organizational_units.py:795
+#: app/api/organizational_units.py:663
 msgid "加入部門失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:826
+#: app/api/organizational_units.py:694
 msgid "用戶不存在或不屬於此部門"
 msgstr ""
 
-#: app/api/organizational_units.py:836
+#: app/api/organizational_units.py:704
 #, python-format
 msgid "已將 %(user)s 從 %(unit)s 移除"
 msgstr ""
 
-#: app/api/organizational_units.py:842
+#: app/api/organizational_units.py:710
 msgid "移除成員失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:886
+#: app/api/organizational_units.py:753
 msgid "只有企業成員帳號可設為部門主管"
 msgstr ""
 
-#: app/api/organizational_units.py:896
+#: app/api/organizational_units.py:757
 msgid "部門主管角色不存在，請聯繫系統管理員"
 msgstr ""
 
-#: app/api/organizational_units.py:945
+#: app/api/organizational_units.py:766
 #, python-format
 msgid "已設定 %(user)s 為 %(unit)s 主管"
 msgstr ""
 
-#: app/api/organizational_units.py:959
+#: app/api/organizational_units.py:780
 msgid "設定主管失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:1001
+#: app/api/organizational_units.py:822
 msgid "部門主管角色不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:1033
+#: app/api/organizational_units.py:854
 #, python-format
 msgid "已移除 %(user)s 的 %(unit)s 主管角色"
 msgstr ""
 
-#: app/api/organizational_units.py:1039
+#: app/api/organizational_units.py:860
 msgid "移除主管角色失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:1186 app/api/organizational_units.py:1298
+#: app/api/organizational_units.py:1007 app/api/organizational_units.py:1119
 msgid "無效的職位類型"
 msgstr ""
 
-#: app/api/organizational_units.py:1212
+#: app/api/organizational_units.py:1033
 msgid "只有企業成員帳號可擔任部門管理職"
 msgstr ""
 
-#: app/api/organizational_units.py:1222
+#: app/api/organizational_units.py:1043
 #, python-format
 msgid "%(position)s 角色不存在，請聯繫系統管理員"
 msgstr ""
 
-#: app/api/organizational_units.py:1253 app/api/organizational_units.py:1335
+#: app/api/organizational_units.py:1074 app/api/organizational_units.py:1156
 #: app/services/role_assignment_service.py:37
 #: app/templates/pages/admin/departments.html:363
 msgid "主管"
 msgstr ""
 
-#: app/api/organizational_units.py:1254 app/api/organizational_units.py:1336
+#: app/api/organizational_units.py:1075 app/api/organizational_units.py:1157
 #: app/services/role_assignment_service.py:38
 #: app/templates/pages/admin/departments.html:399
 msgid "副主管"
 msgstr ""
 
-#: app/api/organizational_units.py:1255 app/api/organizational_units.py:1337
+#: app/api/organizational_units.py:1076 app/api/organizational_units.py:1158
 #: app/services/role_assignment_service.py:28
 #: app/services/role_assignment_service.py:39
 #: app/templates/pages/admin/departments.html:380
@@ -1683,7 +1683,7 @@ msgstr ""
 msgid "代理人(一)"
 msgstr ""
 
-#: app/api/organizational_units.py:1256 app/api/organizational_units.py:1338
+#: app/api/organizational_units.py:1077 app/api/organizational_units.py:1159
 #: app/services/role_assignment_service.py:29
 #: app/services/role_assignment_service.py:40
 #: app/templates/pages/admin/departments.html:416
@@ -1691,63 +1691,63 @@ msgstr ""
 msgid "代理人(二)"
 msgstr ""
 
-#: app/api/organizational_units.py:1262
+#: app/api/organizational_units.py:1083
 #, python-format
 msgid "已設定 %(user)s 為 %(unit)s %(position)s"
 msgstr ""
 
-#: app/api/organizational_units.py:1276
+#: app/api/organizational_units.py:1097
 msgid "設定失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:1317
+#: app/api/organizational_units.py:1138
 #, python-format
 msgid "%(position)s 角色不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:1344
+#: app/api/organizational_units.py:1165
 #, python-format
 msgid "已移除 %(unit)s %(position)s"
 msgstr ""
 
-#: app/api/organizational_units.py:1350 app/api/organizational_units.py:1671
+#: app/api/organizational_units.py:1171 app/api/organizational_units.py:1492
 msgid "移除失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:1370
+#: app/api/organizational_units.py:1191
 msgid "無權限存取此社群"
 msgstr ""
 
-#: app/api/organizational_units.py:1432 app/api/organizational_units.py:1567
-#: app/api/organizational_units.py:1633
+#: app/api/organizational_units.py:1253 app/api/organizational_units.py:1388
+#: app/api/organizational_units.py:1454
 msgid "無權限管理此社群成員"
 msgstr ""
 
-#: app/api/organizational_units.py:1464
+#: app/api/organizational_units.py:1285
 msgid "外部人員不可加入企業群組"
 msgstr ""
 
-#: app/api/organizational_units.py:1474
+#: app/api/organizational_units.py:1295
 msgid "無效的成員類型"
 msgstr ""
 
-#: app/api/organizational_units.py:1486
+#: app/api/organizational_units.py:1307
 msgid "該用戶已是此單位的成員"
 msgstr ""
 
-#: app/api/organizational_units.py:1510 app/api/organizational_units.py:1547
+#: app/api/organizational_units.py:1331 app/api/organizational_units.py:1368
 msgid "新增失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:1589 app/api/organizational_units.py:1653
+#: app/api/organizational_units.py:1410 app/api/organizational_units.py:1474
 msgid "成員關係不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:1612
+#: app/api/organizational_units.py:1433
 msgid "更新成功"
 msgstr ""
 
-#: app/api/organizational_units.py:1665
+#: app/api/organizational_units.py:1486
 msgid "已移除成員關係"
 msgstr ""
 
@@ -1768,7 +1768,7 @@ msgstr ""
 #: ../modules/nocode_builder/api/project_api.py:132
 #: ../modules/nocode_builder/api/project_api.py:149
 #: ../modules/nocode_builder/api/project_api.py:171
-#: app/api/organizational_units.py:1727 app/api/organizations.py:218
+#: app/api/organizational_units.py:1548 app/api/organizations.py:218
 #: app/api/security_center.py:291
 msgid "無權限"
 msgstr ""
@@ -2378,13 +2378,13 @@ msgid "代理：%(a)s → %(b)s"
 msgstr ""
 
 #: app/services/calendar_projection_service.py:344
-#: app/templates/pages/positions/list.html:54
+#: app/templates/pages/positions/list.html:53
 #: app/templates/pages/users/view.html:84
 msgid "主要"
 msgstr ""
 
 #: app/services/calendar_projection_service.py:345
-#: app/templates/pages/positions/list.html:55
+#: app/templates/pages/positions/list.html:54
 #: app/templates/pages/positions/view.html:60
 #: app/templates/pages/users/list.html:59
 #: app/templates/pages/users/view.html:85
@@ -2396,7 +2396,7 @@ msgstr ""
 #: app/services/role_assignment_service.py:47
 #: app/services/role_assignment_service.py:48
 #: app/services/role_assignment_service.py:49
-#: app/templates/pages/positions/list.html:56
+#: app/templates/pages/positions/list.html:55
 #: app/templates/pages/positions/view.html:61
 #: app/templates/pages/users/list.html:59
 #: app/templates/pages/users/view.html:86
@@ -2404,7 +2404,7 @@ msgid "代理"
 msgstr ""
 
 #: app/services/calendar_projection_service.py:347
-#: app/templates/pages/positions/list.html:57
+#: app/templates/pages/positions/list.html:56
 #: app/templates/pages/positions/view.html:62
 #: app/templates/pages/users/list.html:59
 #: app/templates/pages/users/view.html:87
@@ -2621,7 +2621,7 @@ msgstr ""
 #: app/templates/pages/sys_accounts/edit.html:64
 #: app/templates/pages/sys_accounts/list.html:138
 #: app/templates/pages/users/edit.html:133
-#: app/templates/pages/users/view.html:212
+#: app/templates/pages/users/view.html:209
 msgid "新密碼"
 msgstr ""
 
@@ -2645,7 +2645,7 @@ msgstr ""
 #: app/templates/pages/sys_accounts/edit.html:91
 #: app/templates/pages/sys_accounts/list.html:169
 #: app/templates/pages/sys_accounts/list.html:280
-#: app/templates/pages/users/view.html:234
+#: app/templates/pages/users/view.html:231
 msgid "密碼不一致"
 msgstr ""
 
@@ -2654,7 +2654,7 @@ msgstr ""
 #: app/templates/pages/admin/org-admins/list.html:137
 #: app/templates/pages/change_password.html:48
 #: app/templates/pages/organizations/admins.html:141
-#: app/templates/pages/users/view.html:237
+#: app/templates/pages/users/view.html:234
 msgid "確認密碼一致"
 msgstr ""
 
@@ -2663,9 +2663,9 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:141
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:163
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:187
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:166
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:171
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:123
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:419
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:422
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:133
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:155
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:331
@@ -2772,8 +2772,8 @@ msgstr ""
 #: app/templates/pages/organizations/edit.html:149
 #: app/templates/pages/organizations/list.html:65
 #: app/templates/pages/organizations/list.html:451
-#: app/templates/pages/positions/create.html:124
-#: app/templates/pages/positions/edit.html:128
+#: app/templates/pages/positions/create.html:109
+#: app/templates/pages/positions/edit.html:114
 #: app/templates/pages/profile/edit.html:39
 #: app/templates/pages/profile/password.html:43
 #: app/templates/pages/security/_api_keys_modals.html:100
@@ -2787,7 +2787,7 @@ msgstr ""
 #: app/templates/pages/users/edit.html:341
 #: app/templates/pages/users/edit.html:343
 #: app/templates/pages/users/import.html:184
-#: app/templates/pages/users/view.html:240
+#: app/templates/pages/users/view.html:237
 msgid "取消"
 msgstr ""
 
@@ -3076,7 +3076,7 @@ msgstr ""
 #: app/templates/pages/organizations/admins.html:53
 #: app/templates/pages/organizations/list.html:295
 #: app/templates/pages/personal_settings.html:214
-#: app/templates/pages/positions/list.html:26
+#: app/templates/pages/positions/list.html:25
 #: app/templates/pages/security/api_keys.html:34
 #: app/templates/pages/units/list.html:29
 #: app/templates/pages/users/list.html:46
@@ -3208,7 +3208,7 @@ msgstr ""
 msgid "上一頁"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:344
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:347
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:226
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
@@ -3298,10 +3298,10 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:18
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:15
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:79
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:137
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:184
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:233
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:282
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:140
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:187
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:236
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:285
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:32
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:95
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:164
@@ -3411,8 +3411,8 @@ msgstr ""
 msgid "被授權人"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:242
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:292
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:245
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:295
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:135
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:143
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:174
@@ -3478,9 +3478,9 @@ msgstr ""
 #: app/templates/pages/organizations/list.html:214
 #: app/templates/pages/organizations/list.html:294
 #: app/templates/pages/personal_settings.html:210
-#: app/templates/pages/positions/edit.html:115
-#: app/templates/pages/positions/list.html:25
-#: app/templates/pages/positions/view.html:97
+#: app/templates/pages/positions/edit.html:101
+#: app/templates/pages/positions/list.html:24
+#: app/templates/pages/positions/view.html:96
 #: app/templates/pages/security/api_keys.html:33
 #: app/templates/pages/sys_accounts/edit.html:47
 #: app/templates/pages/sys_accounts/list.html:59
@@ -3695,7 +3695,7 @@ msgstr ""
 #: app/templates/pages/profile/view.html:6
 #: app/templates/pages/users/create.html:182
 #: app/templates/pages/users/edit.html:220
-#: app/templates/pages/users/view.html:138
+#: app/templates/pages/users/view.html:135
 msgid "個人資料"
 msgstr ""
 
@@ -3706,7 +3706,7 @@ msgstr ""
 #: app/templates/pages/users/create.html:52
 #: app/templates/pages/users/edit.html:66
 #: app/templates/pages/users/import.html:131
-#: app/templates/pages/users/view.html:141
+#: app/templates/pages/users/view.html:138
 msgid "英文姓名"
 msgstr ""
 
@@ -3717,7 +3717,7 @@ msgstr ""
 #: app/templates/pages/users/create.html:43
 #: app/templates/pages/users/edit.html:56
 #: app/templates/pages/users/import.html:136
-#: app/templates/pages/users/view.html:145
+#: app/templates/pages/users/view.html:142
 msgid "本國姓名"
 msgstr ""
 
@@ -3735,7 +3735,7 @@ msgstr ""
 #: app/templates/pages/users/edit.html:239
 #: app/templates/pages/users/edit.html:246
 #: app/templates/pages/users/import.html:141
-#: app/templates/pages/users/view.html:149
+#: app/templates/pages/users/view.html:146
 msgid "暱稱"
 msgstr ""
 
@@ -3747,7 +3747,7 @@ msgstr ""
 #: app/templates/pages/personal_settings.html:101
 #: app/templates/pages/users/create.html:226
 #: app/templates/pages/users/edit.html:292
-#: app/templates/pages/users/view.html:154
+#: app/templates/pages/users/view.html:151
 msgid "聯絡方式"
 msgstr ""
 
@@ -3921,7 +3921,7 @@ msgid "API Key 串接範例"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:91
-#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:80
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:82
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:424
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:228
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:292
@@ -3957,10 +3957,10 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:28
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:90
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:144
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:191
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:240
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:289
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:147
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:194
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:243
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:292
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:112
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:186
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:230
@@ -4074,8 +4074,8 @@ msgstr ""
 #: app/templates/pages/organizations/list.html:127
 #: app/templates/pages/organizations/list.html:218
 #: app/templates/pages/organizations/list.html:307
-#: app/templates/pages/positions/list.html:70
-#: app/templates/pages/positions/view.html:98
+#: app/templates/pages/positions/list.html:62
+#: app/templates/pages/positions/view.html:97
 #: app/templates/pages/sys_accounts/edit.html:55
 #: app/templates/pages/sys_accounts/list.html:127
 #: app/templates/pages/units/list.html:42
@@ -4114,8 +4114,8 @@ msgstr ""
 #: app/templates/pages/users/edit.html:89
 #: app/templates/pages/users/edit.html:103
 #: app/templates/pages/users/view.html:39
-#: app/templates/pages/users/view.html:112
-#: app/templates/pages/users/view.html:177
+#: app/templates/pages/users/view.html:109
+#: app/templates/pages/users/view.html:174
 msgid "角色"
 msgstr ""
 
@@ -4405,9 +4405,9 @@ msgstr ""
 #: app/templates/pages/organizations/admins.html:97
 #: app/templates/pages/organizations/edit.html:89
 #: app/templates/pages/organizations/list.html:217
-#: app/templates/pages/positions/edit.html:120
-#: app/templates/pages/positions/list.html:70
-#: app/templates/pages/positions/view.html:98
+#: app/templates/pages/positions/edit.html:106
+#: app/templates/pages/positions/list.html:62
+#: app/templates/pages/positions/view.html:97
 #: app/templates/pages/sys_accounts/edit.html:50
 #: app/templates/pages/sys_accounts/edit.html:54
 #: app/templates/pages/sys_accounts/list.html:122
@@ -4607,7 +4607,7 @@ msgstr ""
 #: app/templates/pages/sys_accounts/list.html:269
 #: app/templates/pages/users/create.html:121
 #: app/templates/pages/users/edit.html:160
-#: app/templates/pages/users/view.html:228
+#: app/templates/pages/users/view.html:225
 msgid "密碼符合要求"
 msgstr ""
 
@@ -4953,7 +4953,7 @@ msgid "收件人預覽 -"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:60
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:336
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:339
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:18
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:109
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:82
@@ -5521,7 +5521,7 @@ msgstr ""
 #: app/templates/pages/sys_accounts/create.html:77
 #: app/templates/pages/sys_accounts/list.html:161
 #: app/templates/pages/sys_accounts/list.html:274
-#: app/templates/pages/users/view.html:230
+#: app/templates/pages/users/view.html:227
 msgid "確認密碼"
 msgstr ""
 
@@ -6223,7 +6223,7 @@ msgstr ""
 #: app/templates/pages/menu/edit.html:108
 #: app/templates/pages/modules/edit.html:54
 #: app/templates/pages/organizations/edit.html:148
-#: app/templates/pages/positions/edit.html:126
+#: app/templates/pages/positions/edit.html:112
 #: app/templates/pages/profile/edit.html:38
 #: app/templates/pages/sys_accounts/edit.html:98
 #: app/templates/pages/units/edit.html:65
@@ -6365,7 +6365,7 @@ msgstr ""
 #: app/templates/pages/sys_accounts/list.html:147
 #: app/templates/pages/sys_accounts/list.html:260
 #: app/templates/pages/users/edit.html:147
-#: app/templates/pages/users/view.html:219
+#: app/templates/pages/users/view.html:216
 msgid "建議密碼"
 msgstr ""
 
@@ -6428,7 +6428,7 @@ msgstr ""
 #: app/templates/pages/modules/list.html:86
 #: app/templates/pages/organizations/admins.html:52
 #: app/templates/pages/organizations/list.html:243
-#: app/templates/pages/positions/view.html:105
+#: app/templates/pages/positions/view.html:104
 #: app/templates/pages/sys_accounts/edit.html:119
 #: app/templates/pages/sys_accounts/list.html:187
 #: app/templates/pages/units/view.html:60
@@ -6453,7 +6453,7 @@ msgstr ""
 #: app/templates/pages/organizations/admins.html:89
 #: app/templates/pages/organizations/admins.html:110
 #: app/templates/pages/users/view.html:23
-#: app/templates/pages/users/view.html:208
+#: app/templates/pages/users/view.html:205
 msgid "重設密碼"
 msgstr ""
 
@@ -6463,19 +6463,19 @@ msgstr ""
 
 #: app/templates/pages/admin/org-admins/list.html:109
 #: app/templates/pages/organizations/admins.html:113
-#: app/templates/pages/users/view.html:209
+#: app/templates/pages/users/view.html:206
 msgid "為"
 msgstr ""
 
 #: app/templates/pages/admin/org-admins/list.html:109
 #: app/templates/pages/organizations/admins.html:113
-#: app/templates/pages/users/view.html:209
+#: app/templates/pages/users/view.html:206
 msgid "設定新密碼"
 msgstr ""
 
 #: app/templates/pages/admin/org-admins/list.html:142
 #: app/templates/pages/organizations/admins.html:146
-#: app/templates/pages/users/view.html:242
+#: app/templates/pages/users/view.html:239
 msgid "確認重設"
 msgstr ""
 
@@ -6707,7 +6707,7 @@ msgstr ""
 msgid "可留空，發佈時依目標班表推導"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:421
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:424
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:89
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:62
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:101
@@ -7096,7 +7096,7 @@ msgstr ""
 #: app/templates/pages/job_families/edit.html:101
 #: app/templates/pages/job_levels/edit.html:96
 #: app/templates/pages/job_titles/edit.html:121
-#: app/templates/pages/positions/edit.html:135
+#: app/templates/pages/positions/edit.html:121
 #: app/templates/pages/users/edit.html:351
 msgid "危險區域"
 msgstr ""
@@ -7197,7 +7197,7 @@ msgstr ""
 msgid "請從左側選擇類別進行編輯"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:422
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:425
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:98
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:65
 #: app/templates/pages/approval_categories/list.html:197
@@ -7314,7 +7314,7 @@ msgstr ""
 msgid "企業事件對全企業公開"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:386
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:389
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:127
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:141
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:39
@@ -7325,9 +7325,9 @@ msgstr ""
 #: app/templates/pages/external-users/view.html:81
 #: app/templates/pages/organizations/list.html:372
 #: app/templates/pages/organizations/list.html:427
-#: app/templates/pages/positions/create.html:116
-#: app/templates/pages/positions/edit.html:109
-#: app/templates/pages/positions/view.html:93
+#: app/templates/pages/positions/create.html:101
+#: app/templates/pages/positions/edit.html:95
+#: app/templates/pages/positions/view.html:92
 msgid "備註"
 msgstr ""
 
@@ -7516,7 +7516,7 @@ msgstr ""
 msgid "時間"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:55
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:58
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:321
 #: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:49
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:49
@@ -7697,22 +7697,22 @@ msgid "共 %(count)s 筆代理授權"
 msgstr ""
 
 #: app/templates/pages/delegations/list.html:48
-#: app/templates/pages/delegations/view.html:47 app/web/delegations.py:256
+#: app/templates/pages/delegations/view.html:47 app/web/delegations.py:265
 msgid "全權代理"
 msgstr ""
 
 #: app/templates/pages/delegations/list.html:50
-#: app/templates/pages/delegations/view.html:49 app/web/delegations.py:257
+#: app/templates/pages/delegations/view.html:49 app/web/delegations.py:266
 msgid "限額代理"
 msgstr ""
 
 #: app/templates/pages/delegations/list.html:53
-#: app/templates/pages/delegations/view.html:56 app/web/delegations.py:258
+#: app/templates/pages/delegations/view.html:56 app/web/delegations.py:267
 msgid "特定代理"
 msgstr ""
 
 #: app/templates/pages/delegations/list.html:78
-#: app/templates/pages/positions/list.html:72
+#: app/templates/pages/positions/list.html:64
 #: app/templates/pages/units/list.html:44
 msgid "[查看]"
 msgstr ""
@@ -7721,7 +7721,7 @@ msgstr ""
 #: app/templates/pages/delegations/view.html:12
 #: app/templates/pages/job_levels/view.html:10
 #: app/templates/pages/job_titles/view.html:10
-#: app/templates/pages/positions/list.html:73
+#: app/templates/pages/positions/list.html:65
 #: app/templates/pages/positions/view.html:11
 #: app/templates/pages/units/list.html:45
 #: app/templates/pages/units/view.html:14
@@ -7952,7 +7952,7 @@ msgid "歸屬群組"
 msgstr ""
 
 #: app/templates/pages/external-users/edit.html:135
-#: app/templates/pages/users/view.html:178
+#: app/templates/pages/users/view.html:175
 msgid "加入日期"
 msgstr ""
 
@@ -8164,7 +8164,7 @@ msgstr ""
 msgid "採用的是已儲存的保留天數，改過欄位請先按 [儲存稽核設定]。"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:170
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:175
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:127
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:90
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:136
@@ -9466,7 +9466,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:116
 #: app/templates/pages/job_levels/view.html:32
 #: app/templates/pages/modules/view.html:51
-#: app/templates/pages/positions/list.html:61
+#: app/templates/pages/positions/list.html:60
 msgid "是"
 msgstr ""
 
@@ -10769,7 +10769,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:153
 #: app/templates/pages/organizations/list.html:289
 #: app/templates/pages/organizations/list.html:368
-#: app/templates/pages/users/view.html:113
+#: app/templates/pages/users/view.html:110
 msgid "開始日期"
 msgstr ""
 
@@ -11538,41 +11538,25 @@ msgstr ""
 
 #: app/templates/pages/positions/create.html:85
 #: app/templates/pages/positions/edit.html:81
-#: app/templates/pages/positions/list.html:23
-#: app/templates/pages/positions/view.html:72
-msgid "直屬主管"
-msgstr ""
-
-#: app/templates/pages/positions/create.html:88
-#: app/templates/pages/positions/edit.html:84
-msgid "-- 無直屬主管 --"
-msgstr ""
-
-#: app/templates/pages/positions/create.html:96
-msgid "簽核流程會送到直屬主管審核"
-msgstr ""
-
-#: app/templates/pages/positions/create.html:100
-#: app/templates/pages/positions/edit.html:95
-#: app/templates/pages/positions/view.html:85
+#: app/templates/pages/positions/view.html:84
 msgid "生效日期"
 msgstr ""
 
-#: app/templates/pages/positions/create.html:104
+#: app/templates/pages/positions/create.html:89
 msgid "未填則為今日生效"
 msgstr ""
 
-#: app/templates/pages/positions/create.html:108
-#: app/templates/pages/positions/edit.html:102
-#: app/templates/pages/positions/view.html:89
+#: app/templates/pages/positions/create.html:93
+#: app/templates/pages/positions/edit.html:88
+#: app/templates/pages/positions/view.html:88
 msgid "失效日期"
 msgstr ""
 
-#: app/templates/pages/positions/create.html:112
+#: app/templates/pages/positions/create.html:97
 msgid "未填則為長期有效"
 msgstr ""
 
-#: app/templates/pages/positions/create.html:123
+#: app/templates/pages/positions/create.html:108
 msgid "建立職位"
 msgstr ""
 
@@ -11581,7 +11565,7 @@ msgstr ""
 msgid "編輯職位"
 msgstr ""
 
-#: app/templates/pages/positions/edit.html:140
+#: app/templates/pages/positions/edit.html:126
 msgid "刪除此職位"
 msgstr ""
 
@@ -11591,7 +11575,7 @@ msgid "職位管理"
 msgstr ""
 
 #: app/templates/pages/positions/list.html:10
-#: app/templates/pages/users/view.html:101
+#: app/templates/pages/users/view.html:98
 msgid "[新增職位]"
 msgstr ""
 
@@ -11600,11 +11584,11 @@ msgstr ""
 msgid "共 %(positions)s 筆職位指派"
 msgstr ""
 
-#: app/templates/pages/positions/list.html:24
+#: app/templates/pages/positions/list.html:23
 msgid "生效日"
 msgstr ""
 
-#: app/templates/pages/positions/list.html:78
+#: app/templates/pages/positions/list.html:70
 msgid "尚無職位指派"
 msgstr ""
 
@@ -11630,19 +11614,23 @@ msgstr ""
 msgid "是 (此企業成員為該部門主管)"
 msgstr ""
 
+#: app/templates/pages/positions/view.html:72
+msgid "直屬主管（依部門推導）"
+msgstr ""
+
 #: app/templates/pages/positions/view.html:78
-msgid "(簽核流程會送到此主管)"
+msgid "無（所屬部門及其上層都沒有在職主管）"
 msgstr ""
 
 #: app/templates/pages/positions/view.html:80
-msgid "未指定"
+msgid "由部門設定裡的部門主管推導，不在此設定"
 msgstr ""
 
-#: app/templates/pages/positions/view.html:90
+#: app/templates/pages/positions/view.html:89
 msgid "無 (長期有效)"
 msgstr ""
 
-#: app/templates/pages/positions/view.html:101
+#: app/templates/pages/positions/view.html:100
 msgid "指派者"
 msgstr ""
 
@@ -12524,21 +12512,21 @@ msgstr ""
 
 #: app/templates/pages/users/create.html:236
 #: app/templates/pages/users/import.html:151
-#: app/templates/pages/users/view.html:158
+#: app/templates/pages/users/view.html:155
 msgid "備用 Email 2"
 msgstr ""
 
 #: app/templates/pages/users/create.html:240
 #: app/templates/pages/users/edit.html:316
 #: app/templates/pages/users/import.html:156
-#: app/templates/pages/users/view.html:159
+#: app/templates/pages/users/view.html:156
 msgid "手機號碼 1"
 msgstr ""
 
 #: app/templates/pages/users/create.html:244
 #: app/templates/pages/users/edit.html:326
 #: app/templates/pages/users/import.html:161
-#: app/templates/pages/users/view.html:160
+#: app/templates/pages/users/view.html:157
 msgid "手機號碼 2"
 msgstr ""
 
@@ -12652,7 +12640,7 @@ msgid "用戶編號 (組織內唯一)"
 msgstr ""
 
 #: app/templates/pages/users/import.html:146
-#: app/templates/pages/users/view.html:157
+#: app/templates/pages/users/view.html:154
 msgid "備用 Email 1"
 msgstr ""
 
@@ -12739,35 +12727,35 @@ msgstr ""
 msgid "職位"
 msgstr ""
 
-#: app/templates/pages/users/view.html:95
+#: app/templates/pages/users/view.html:92
 msgid "長期"
 msgstr ""
 
-#: app/templates/pages/users/view.html:99
+#: app/templates/pages/users/view.html:96
 msgid "尚未指派"
 msgstr ""
 
-#: app/templates/pages/users/view.html:106
+#: app/templates/pages/users/view.html:103
 msgid "跨部門支援"
 msgstr ""
 
-#: app/templates/pages/users/view.html:111
+#: app/templates/pages/users/view.html:108
 msgid "支援部門"
 msgstr ""
 
-#: app/templates/pages/users/view.html:135
+#: app/templates/pages/users/view.html:132
 msgid "無跨部門支援關係"
 msgstr ""
 
-#: app/templates/pages/users/view.html:171
+#: app/templates/pages/users/view.html:168
 msgid "參與社團"
 msgstr ""
 
-#: app/templates/pages/users/view.html:176
+#: app/templates/pages/users/view.html:173
 msgid "社團名稱"
 msgstr ""
 
-#: app/templates/pages/users/view.html:200
+#: app/templates/pages/users/view.html:197
 msgid "尚未參加任何社團"
 msgstr ""
 
@@ -12844,73 +12832,73 @@ msgstr ""
 msgid "(集團已刪除)"
 msgstr ""
 
-#: app/web/delegations.py:127
+#: app/web/delegations.py:136
 msgid "全權代理 - 代理所有權限"
 msgstr ""
 
-#: app/web/delegations.py:128
+#: app/web/delegations.py:137
 msgid "限額代理 - 設定簽核金額上限"
 msgstr ""
 
-#: app/web/delegations.py:129
+#: app/web/delegations.py:138
 msgid "特定代理 - 限定表單模板"
 msgstr ""
 
-#: app/web/delegations.py:155
+#: app/web/delegations.py:164
 msgid "請選擇授權人"
 msgstr ""
 
-#: app/web/delegations.py:157
+#: app/web/delegations.py:166
 msgid "請選擇被授權人"
 msgstr ""
 
-#: app/web/delegations.py:159
+#: app/web/delegations.py:168
 msgid "授權人和被授權人不能相同"
 msgstr ""
 
-#: app/web/delegations.py:161
+#: app/web/delegations.py:170
 msgid "生效開始日期為必填"
 msgstr ""
 
-#: app/web/delegations.py:163
+#: app/web/delegations.py:172
 msgid "生效結束日期為必填"
 msgstr ""
 
-#: app/web/delegations.py:172 app/web/delegations.py:278
+#: app/web/delegations.py:181 app/web/delegations.py:287
 msgid "生效開始日期格式錯誤"
 msgstr ""
 
-#: app/web/delegations.py:178 app/web/delegations.py:284
+#: app/web/delegations.py:187 app/web/delegations.py:293
 msgid "生效結束日期格式錯誤"
 msgstr ""
 
-#: app/web/delegations.py:188 app/web/job_levels.py:117
+#: app/web/delegations.py:197 app/web/job_levels.py:117
 #: app/web/job_levels.py:234
 msgid "簽核金額上限不可為負數"
 msgstr ""
 
-#: app/web/delegations.py:190 app/web/delegations.py:294
+#: app/web/delegations.py:199 app/web/delegations.py:303
 #: app/web/job_levels.py:119 app/web/job_levels.py:236
 msgid "簽核金額上限格式錯誤"
 msgstr ""
 
-#: app/web/delegations.py:198 app/web/delegations.py:301
+#: app/web/delegations.py:207 app/web/delegations.py:310
 msgid "特定代理至少要選一個表單"
 msgstr ""
 
-#: app/web/delegations.py:226
+#: app/web/delegations.py:235
 msgid "已建立代理授權"
 msgstr ""
 
-#: app/web/delegations.py:322
+#: app/web/delegations.py:331
 msgid "已更新代理授權"
 msgstr ""
 
-#: app/web/delegations.py:353
+#: app/web/delegations.py:362
 msgid "已撤銷代理授權"
 msgstr ""
 
-#: app/web/delegations.py:373
+#: app/web/delegations.py:382
 msgid "已刪除代理授權"
 msgstr ""
 
@@ -13078,12 +13066,12 @@ msgstr ""
 msgid "已清理實體層企業孤兒資源"
 msgstr ""
 
-#: app/web/hostconfig.py:742
+#: app/web/hostconfig.py:741
 #, python-format
 msgid "已清除 %(count)s 筆標記刪除的記錄"
 msgstr ""
 
-#: app/web/hostconfig.py:743
+#: app/web/hostconfig.py:742
 #, python-format
 msgid "，另清理 %(count)s 筆孤兒記錄"
 msgstr ""
@@ -13614,35 +13602,35 @@ msgstr ""
 msgid "此頁面尚未提供說明文件"
 msgstr ""
 
-#: app/web/positions.py:99
+#: app/web/positions.py:109
 msgid "請選擇企業成員"
 msgstr ""
 
-#: app/web/positions.py:101
+#: app/web/positions.py:111
 msgid "請選擇職稱"
 msgstr ""
 
-#: app/web/positions.py:103
+#: app/web/positions.py:113
 msgid "請選擇部門"
 msgstr ""
 
-#: app/web/positions.py:110 app/web/positions.py:210
+#: app/web/positions.py:120 app/web/positions.py:218
 msgid "生效日期格式錯誤"
 msgstr ""
 
-#: app/web/positions.py:117 app/web/positions.py:217
+#: app/web/positions.py:127 app/web/positions.py:225
 msgid "失效日期格式錯誤"
 msgstr ""
 
-#: app/web/positions.py:141
+#: app/web/positions.py:150
 msgid "已建立職位指派"
 msgstr ""
 
-#: app/web/positions.py:235
+#: app/web/positions.py:242
 msgid "已更新職位"
 msgstr ""
 
-#: app/web/positions.py:263
+#: app/web/positions.py:270
 msgid "已刪除職位指派"
 msgstr ""
 
@@ -15902,10 +15890,10 @@ msgid "建立 FormIO 表單"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:89
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:143
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:190
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:239
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:288
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:146
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:193
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:242
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:291
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:111
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:220
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:577
@@ -16688,7 +16676,7 @@ msgstr ""
 msgid "處理中"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:361
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:363
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:55
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:483
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:24
@@ -16696,7 +16684,7 @@ msgstr ""
 msgid "已完成"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:597
+#: ../modules/form_workflow/api/fc_pending.py:611
 #: ../modules/nocode_builder/services/pageir_formflow_resources.py:333
 msgid "已退回"
 msgstr ""
@@ -17186,7 +17174,7 @@ msgstr ""
 msgid "檢視（read）：未啟用時不額外限制；新增／編輯／刪除：未啟用時任何 portal 帳號都無法執行"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:383
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:386
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:138
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:207
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:265
@@ -17541,7 +17529,7 @@ msgstr ""
 msgid "取消隱藏"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:385
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:388
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_template_modal.html:42
 msgid "隱藏"
 msgstr ""
@@ -18293,8 +18281,8 @@ msgid "單次批次簽核上限 100 筆"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_batch.py:74
-#: ../modules/form_workflow/api/fc_pending.py:292
-#: ../modules/form_workflow/api/fc_pending.py:392
+#: ../modules/form_workflow/api/fc_pending.py:305
+#: ../modules/form_workflow/api/fc_pending.py:405
 msgid "找不到任務或已處理"
 msgstr ""
 
@@ -18311,13 +18299,13 @@ msgid "已簽核過此節點"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_batch.py:111
-#: ../modules/form_workflow/api/fc_pending.py:446
+#: ../modules/form_workflow/api/fc_pending.py:459
 #: ../modules/form_workflow/api/instance_routes.py:233
 #, python-format
 msgid "簽核意見至少需要 %(count)s 字"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_batch.py:208
+#: ../modules/form_workflow/api/fc_batch.py:209
 #, python-format
 msgid "批次簽核完成：成功 %(success_count)s 筆，失敗 %(fail_count)s 筆"
 msgstr ""
@@ -18367,73 +18355,73 @@ msgstr ""
 msgid "表單已送出，流程已啟動（測試模式）"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_monitor.py:111
-#: ../modules/form_workflow/api/fc_monitor.py:278
+#: ../modules/form_workflow/api/fc_monitor.py:112
+#: ../modules/form_workflow/api/fc_monitor.py:279
 #, python-format
 msgid "流程實例 %(instance_id)s 不存在"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:160
+#: ../modules/form_workflow/api/fc_pending.py:167
 msgid "找不到指定的任務"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:165
-#: ../modules/form_workflow/api/fc_pending.py:296
-#: ../modules/form_workflow/api/fc_pending.py:400
+#: ../modules/form_workflow/api/fc_pending.py:172
+#: ../modules/form_workflow/api/fc_pending.py:309
+#: ../modules/form_workflow/api/fc_pending.py:413
 #: ../modules/form_workflow/api/instance_routes.py:171
 #: ../modules/form_workflow/api/instance_routes.py:224
 msgid "您不是此任務的指定簽核人"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:306
+#: ../modules/form_workflow/api/fc_pending.py:319
 msgid "鎖定已刷新"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:315
+#: ../modules/form_workflow/api/fc_pending.py:328
 #, python-format
 msgid "此表單由 %(locker)s 簽核中"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:326
+#: ../modules/form_workflow/api/fc_pending.py:339
 msgid "已取得簽核鎖定"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:333
+#: ../modules/form_workflow/api/fc_pending.py:346
 #, python-format
 msgid "取得鎖定失敗: %(error)s"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:357
+#: ../modules/form_workflow/api/fc_pending.py:370
 msgid "找不到任務"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:364
+#: ../modules/form_workflow/api/fc_pending.py:377
 msgid "鎖定已釋放"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:406
+#: ../modules/form_workflow/api/fc_pending.py:419
 msgid "此表單正由他人簽核中"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:413
+#: ../modules/form_workflow/api/fc_pending.py:426
 msgid "簽核逾時，鎖定已失效，請重新開啟"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:427
+#: ../modules/form_workflow/api/fc_pending.py:440
 msgid "您已簽核過此節點，無法重複簽核"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:479
+#: ../modules/form_workflow/api/fc_pending.py:492
 #, python-format
 msgid "欄位 %(field_key)s 不允許修改"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:597
-#: ../modules/form_workflow/api/instance_routes.py:276
+#: ../modules/form_workflow/api/fc_pending.py:611
+#: ../modules/form_workflow/api/instance_routes.py:277
 msgid "簽核完成"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:602
+#: ../modules/form_workflow/api/fc_pending.py:616
 #, python-format
 msgid "簽核失敗: %(error)s"
 msgstr ""
@@ -18562,7 +18550,7 @@ msgid "表單模板已刪除"
 msgstr ""
 
 #: ../modules/form_workflow/api/forms.py:770
-#: ../modules/form_workflow/api/workflows.py:648
+#: ../modules/form_workflow/api/workflows.py:649
 #, python-format
 msgid "已另存新版本 %(version)s"
 msgstr ""
@@ -18847,7 +18835,7 @@ msgid "檔案類型不符：期望 workflows，實際為 %(export_type)s"
 msgstr ""
 
 #: ../modules/form_workflow/api/workflow_routes.py:1151
-#: ../modules/form_workflow/api/workflows.py:515
+#: ../modules/form_workflow/api/workflows.py:516
 #, python-format
 msgid "無法刪除：尚有 %(count)s 個運行中的流程實例"
 msgstr ""
@@ -18856,74 +18844,74 @@ msgstr ""
 msgid "工作流模板已刪除"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:100
+#: ../modules/form_workflow/api/workflows.py:101
 #, python-format
 msgid "同一主流程下已有名為「%(name)s」的子流程，請換一個名稱"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:102
+#: ../modules/form_workflow/api/workflows.py:103
 #, python-format
 msgid "已有名為「%(name)s」的通用子流程，請換一個名稱"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:252
+#: ../modules/form_workflow/api/workflows.py:253
 msgid "流程模板已建立"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:433
+#: ../modules/form_workflow/api/workflows.py:434
 msgid "流程模板已更新"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:448
+#: ../modules/form_workflow/api/workflows.py:449
 #, python-format
 msgid "流程模板已更新，並自動建立表單「%(name)s」及配對"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:546
+#: ../modules/form_workflow/api/workflows.py:547
 msgid "流程模板已刪除"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:990
+#: ../modules/form_workflow/api/workflows.py:991
 msgid "子流程已建立"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1018
+#: ../modules/form_workflow/api/workflows.py:1019
 msgid "找不到子流程"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1022
+#: ../modules/form_workflow/api/workflows.py:1023
 msgid "無法刪除通用子流程"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1074
+#: ../modules/form_workflow/api/workflows.py:1075
 #, python-format
 msgid "此子流程正被「%(name)s」引用，無法刪除"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1104
+#: ../modules/form_workflow/api/workflows.py:1105
 #, python-format
 msgid "已刪除 %(count)s 個子流程"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1230
+#: ../modules/form_workflow/api/workflows.py:1231
 #, python-format
 msgid "建立變數映射失敗: %(error)s"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1428
+#: ../modules/form_workflow/api/workflows.py:1468
 msgid "流程不存在"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1504
+#: ../modules/form_workflow/api/workflows.py:1544
 #, python-format
 msgid "取得配對表單失敗: %(error)s"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1565
+#: ../modules/form_workflow/api/workflows.py:1605
 msgid "表單不存在"
 msgstr ""
 
-#: ../modules/form_workflow/api/workflows.py:1619
+#: ../modules/form_workflow/api/workflows.py:1659
 #, python-format
 msgid "分析表單欄位失敗: %(error)s"
 msgstr ""
@@ -19160,90 +19148,91 @@ msgstr ""
 msgid "關卡："
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:29
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:76
-#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:76
-msgid "表單內容"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:30
-msgid "唯讀"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:31
-msgid "部分欄位可編輯"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:45
-#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:39
-msgid "簽核歷程"
-msgstr ""
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:54
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:25
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:57
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:320
 #: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:48
 msgid "簽核者"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:56
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:32
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:76
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:76
+msgid "表單內容"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:33
+msgid "唯讀"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:34
+msgid "部分欄位可編輯"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:48
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:39
+msgid "簽核歷程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:59
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:322
 #: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:50
 msgid "關卡"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:58
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:61
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:324
 #: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:52
 msgid "簽核時間"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:60
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:63
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:326
 #: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:54
 msgid "意見"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:87
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:92
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:47
 msgid "請選擇決策"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:116
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:121
 msgid "已選擇："
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:123
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:128
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:79
 msgid "請選擇後續動作"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:124
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:129
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:80
 msgid "（可複選）"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:147
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:152
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:107
 msgid "簽核意見"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:156
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:161
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:112
 #: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:104
 msgid "輸入簽核意見..."
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:158
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:163
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:114
 msgid "最少"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:158
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:163
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:114
 msgid "字"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:169
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:174
 msgid "送出簽核"
 msgstr ""
 
@@ -19263,10 +19252,10 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:27
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:88
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:142
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:189
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:238
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:287
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:145
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:192
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:241
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:290
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:110
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:184
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:228
@@ -19280,8 +19269,8 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:29
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:91
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:193
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:291
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:196
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:294
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:113
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:232
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:347
@@ -19343,10 +19332,10 @@ msgid "全選/取消全選（限同表單同節點同版本）"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:92
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:145
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:192
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:241
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:290
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:148
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:195
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:244
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:293
 msgid "表單類別"
 msgstr ""
 
@@ -19360,11 +19349,11 @@ msgstr ""
 msgid "等待時間"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:118
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:170
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:219
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:268
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:319
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:121
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:173
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:222
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:271
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:322
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:140
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:212
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:258
@@ -19373,38 +19362,38 @@ msgstr ""
 msgid "閱讀表單"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:123
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:126
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:145
 #: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:49
 msgid "簽核"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:124
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:127
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:146
 msgid "簽核中"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:138
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:141
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:180
 msgid "目前沒有執行中的流程"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:146
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:194
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:149
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:197
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:188
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:233
 msgid "待簽關卡"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:147
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:150
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:189
 msgid "送單時間"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:164
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:213
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:262
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:313
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:167
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:216
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:265
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:316
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:206
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:252
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:321
@@ -19412,10 +19401,10 @@ msgstr ""
 msgid "除錯"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:167
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:216
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:265
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:316
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:170
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:219
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:268
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:319
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:65
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:31
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:209
@@ -19427,75 +19416,75 @@ msgstr ""
 msgid "流程總圖"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:185
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:188
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:224
 msgid "沒有曾簽核過的執行中流程"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:195
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:198
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:234
 msgid "簽核後歷時"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:234
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:237
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:293
 msgid "沒有歷史記錄"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:243
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:293
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:246
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:296
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:302
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:349
 msgid "結束時間"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:244
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:294
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:247
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:297
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:303
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:350
 msgid "流程耗時"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:283
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:286
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:339
 msgid "沒有曾簽核過的已結束流程"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:336
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:339
 msgid "筆，第"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:336
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:339
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:116
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:310
 msgid "頁"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:339
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:342
 msgid "&lt; 上一頁"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:353
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:356
 msgid "表單中心 - 欄位顯示設定"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:359
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:362
 msgid "適用語系："
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:377
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:380
 msgid "使用者登入後依其語系載入對應設定，無精確語系時 fallback 到「通用」，無通用則用程式預設值。"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:384
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:387
 msgid "寬度 (px)"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:394
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:397
 msgid "(彈性)"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:411
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:414
 msgid "必顯示"
 msgstr ""
 
@@ -19610,26 +19599,26 @@ msgstr ""
 msgid "此表單尚無簽核記錄"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:358
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:360
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:52
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:480
 msgid "系統node"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:359
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:361
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:53
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:481
 msgid "子流程"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:360
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:362
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:146
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:54
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:482
 msgid "執行中"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:362
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:364
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:148
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:56
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:484

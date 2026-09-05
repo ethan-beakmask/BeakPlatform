@@ -14,6 +14,8 @@ files:
     - backend/app/web/job_families.py
     - backend/app/web/job_titles.py
     - backend/app/web/positions.py
+  service:
+    - backend/app/services/unit_resolver.py  # 直屬主管由部門主管推導（resolve_direct_manager，PF-247 第 4 期）
   model:
     - backend/app/models/job_level.py
     - backend/app/models/job_family.py
@@ -36,6 +38,8 @@ files:
     - backend/app/static/css/job-matrix.css
   vendor:
     - backend/app/static/vendor/beak-trellis/    # 職系/職稱樹
+  test:
+    - backend/tests/test_users_position_display.py  # 職位詳情頁的推導主管
 
 tables:
   primary:

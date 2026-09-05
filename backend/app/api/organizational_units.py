@@ -16,150 +16,18 @@ from ..models import OrganizationalUnit, UnitType, Role
 from ..services.code_generator import get_code_generator
 from ..models.user import User, UserType
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
+from ..services.dept_membership_service import (
+    ensure_dept_membership,
+    ensure_role_assignment,
+    get_system_role,
+    remove_dept_membership,
+    set_dept_manager,
+)
 from .. import db
 
 logger = logging.getLogger(__name__)
 
 units_bp = Blueprint('api_units', __name__, url_prefix='/api/units')
-
-
-def _get_system_role(org_sc: str, role_code: str) -> Role:
-    """取得企業的系統角色 (by code)"""
-    return Role.query.filter(
-        Role.org_secure_code == org_sc,
-        Role.code == role_code,
-        Role.is_deleted == False,
-    ).first()
-
-
-def _ensure_role_assignment(org_sc: str, user_sc: str, role_sc: str,
-                            unit_sc: str, operator: str):
-    """
-    確保角色指派存在（建立或恢復軟刪除的記錄）。
-    """
-    from ..models.associations import UserRoleAssignment
-
-    existing = UserRoleAssignment.query.filter(
-        UserRoleAssignment.org_secure_code == org_sc,
-        UserRoleAssignment.user_secure_code == user_sc,
-        UserRoleAssignment.role_secure_code == role_sc,
-        UserRoleAssignment.unit_secure_code == unit_sc,
-    ).first()
-
-    if existing:
-        if existing.is_deleted:
-            existing.is_deleted = False
-            existing.deleted_at = None
-        return
-
-    assignment = UserRoleAssignment(
-        org_secure_code=org_sc,
-        user_secure_code=user_sc,
-        role_secure_code=role_sc,
-        unit_secure_code=unit_sc,
-        assigned_by=operator,
-    )
-    db.session.add(assignment)
-
-
-def _revoke_role_assignment(org_sc: str, user_sc: str, role_sc: str,
-                            unit_sc: str):
-    """軟刪除指定角色指派"""
-    from ..models.associations import UserRoleAssignment
-
-    assignment = UserRoleAssignment.query.filter(
-        UserRoleAssignment.org_secure_code == org_sc,
-        UserRoleAssignment.user_secure_code == user_sc,
-        UserRoleAssignment.role_secure_code == role_sc,
-        UserRoleAssignment.unit_secure_code == unit_sc,
-        UserRoleAssignment.is_deleted == False,
-    ).first()
-
-    if assignment:
-        assignment.is_deleted = True
-        assignment.deleted_at = datetime.utcnow()
-
-
-def _ensure_dept_membership(user, unit, operator_email: str):
-    """
-    確保部門成員關係與系統角色存在。
-
-    1. 建立或恢復 UserUnitMembership(SOLID)
-    2. 指派 DEPT_MEMBER (部門成員基底角色)
-    3. 指派 DEPT_EMPLOYEE (部門員工，預設非管理職)
-    """
-    org_sc = unit.org_secure_code
-    user_sc = user.secure_code
-    unit_sc = unit.secure_code
-
-    # 1. SOLID 成員關係
-    existing = UserUnitMembership.query.filter(
-        UserUnitMembership.org_secure_code == org_sc,
-        UserUnitMembership.user_secure_code == user_sc,
-        UserUnitMembership.unit_secure_code == unit_sc,
-        UserUnitMembership.membership_type == MembershipType.SOLID,
-    ).first()
-
-    if existing:
-        if existing.is_deleted:
-            existing.is_deleted = False
-            existing.deleted_at = None
-    else:
-        membership = UserUnitMembership(
-            org_secure_code=org_sc,
-            user_secure_code=user_sc,
-            unit_secure_code=unit_sc,
-            membership_type=MembershipType.SOLID,
-            role_type=MembershipRole.MEMBER,
-        )
-        db.session.add(membership)
-
-    # 2. 指派 DEPT_MEMBER (基底角色，所有部門人員都有)
-    dept_member = _get_system_role(org_sc, 'DEPT_MEMBER')
-    if dept_member:
-        _ensure_role_assignment(
-            org_sc, user_sc, dept_member.secure_code, unit_sc, operator_email
-        )
-
-    # 3. 指派 DEPT_EMPLOYEE (預設非管理職)
-    dept_employee = _get_system_role(org_sc, 'DEPT_EMPLOYEE')
-    if dept_employee:
-        _ensure_role_assignment(
-            org_sc, user_sc, dept_employee.secure_code, unit_sc, operator_email
-        )
-
-
-def _remove_dept_membership(user, unit):
-    """
-    移除部門成員關係與所有部門角色。
-
-    1. 軟刪除 UserUnitMembership(SOLID)
-    2. 軟刪除該部門下的所有部門系統角色指派 (DEPT_MEMBER, DEPT_EMPLOYEE, DEPT_MANAGER)
-    """
-    from ..models.associations import UserRoleAssignment
-
-    org_sc = unit.org_secure_code
-    user_sc = user.secure_code
-    unit_sc = unit.secure_code
-
-    # 1. 軟刪除 SOLID 成員關係
-    membership = UserUnitMembership.query.filter(
-        UserUnitMembership.org_secure_code == org_sc,
-        UserUnitMembership.user_secure_code == user_sc,
-        UserUnitMembership.unit_secure_code == unit_sc,
-        UserUnitMembership.membership_type == MembershipType.SOLID,
-        UserUnitMembership.is_deleted == False,
-    ).first()
-
-    if membership:
-        membership.is_deleted = True
-        membership.deleted_at = datetime.utcnow()
-
-    # 2. 軟刪除此部門下的所有部門系統角色
-    for role_code in ('DEPT_MEMBER', 'DEPT_EMPLOYEE', 'DEPT_MANAGER'):
-        role = _get_system_role(org_sc, role_code)
-        if role:
-            _revoke_role_assignment(org_sc, user_sc, role.secure_code, unit_sc)
 
 
 def _is_admin(user) -> bool:
@@ -775,7 +643,7 @@ def add_member_to_unit(secure_code: str):
 
     try:
         user.primary_unit_secure_code = secure_code
-        _ensure_dept_membership(user, unit, current_user.email)
+        ensure_dept_membership(user, unit, current_user.email)
         db.session.commit()
 
         logger.info(f"User {user.email} added to unit {unit.code} by {current_user.email}")
@@ -827,7 +695,7 @@ def remove_member_from_unit(secure_code: str, user_secure_code: str):
 
     try:
         user.primary_unit_secure_code = None
-        _remove_dept_membership(user, unit)
+        remove_dept_membership(user, unit)
         db.session.commit()
 
         logger.info(f"User {user.email} removed from unit {unit.code} by {current_user.email}")
@@ -857,7 +725,6 @@ def set_unit_manager(secure_code: str):
     3. 賦予新主管 DEPT_MANAGER 角色
     """
     from ..models.user import User
-    from ..models.associations import UserRoleAssignment
 
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
@@ -885,58 +752,12 @@ def set_unit_manager(secure_code: str):
     if user.user_type != UserType.EMPLOYEE:
         return jsonify({'error': _('只有企業成員帳號可設為部門主管')}), 400
 
-    # 取得 DEPT_MANAGER 角色
-    dept_manager_role = Role.query.filter(
-        Role.org_secure_code == current_user.org_secure_code,
-        Role.code == 'DEPT_MANAGER',
-        Role.is_deleted == False
-    ).first()
-
+    dept_manager_role = get_system_role(current_user.org_secure_code, 'DEPT_MANAGER')
     if not dept_manager_role:
         return jsonify({'error': _('部門主管角色不存在，請聯繫系統管理員')}), 500
 
-    org_sc = current_user.org_secure_code
-    dept_employee_role = _get_system_role(org_sc, 'DEPT_EMPLOYEE')
-
     try:
-        # 1. 將用戶加入部門（設為主要部門）+ 成員關係與角色
-        user.primary_unit_secure_code = secure_code
-        _ensure_dept_membership(user, unit, current_user.email)
-
-        # 2. 移除此部門現有主管的角色，並將前主管改回 DEPT_EMPLOYEE
-        existing_manager_assignments = UserRoleAssignment.query.filter(
-            UserRoleAssignment.org_secure_code == org_sc,
-            UserRoleAssignment.role_secure_code == dept_manager_role.secure_code,
-            UserRoleAssignment.unit_secure_code == secure_code,
-            UserRoleAssignment.is_deleted == False
-        ).all()
-
-        for assignment in existing_manager_assignments:
-            assignment.is_deleted = True
-            assignment.deleted_at = datetime.utcnow()
-            # 前主管恢復為部門員工
-            if dept_employee_role:
-                _ensure_role_assignment(
-                    org_sc, assignment.user_secure_code,
-                    dept_employee_role.secure_code, secure_code,
-                    current_user.email
-                )
-
-        # 3. 新主管：移除 DEPT_EMPLOYEE，賦予 DEPT_MANAGER (互斥切換)
-        if dept_employee_role:
-            _revoke_role_assignment(
-                org_sc, user.secure_code,
-                dept_employee_role.secure_code, secure_code
-            )
-
-        new_assignment = UserRoleAssignment(
-            org_secure_code=org_sc,
-            user_secure_code=user.secure_code,
-            role_secure_code=dept_manager_role.secure_code,
-            unit_secure_code=secure_code,
-            assigned_by=current_user.email
-        )
-        db.session.add(new_assignment)
+        set_dept_manager(user, unit, current_user.email)
         db.session.commit()
 
         logger.info(f"User {user.email} set as manager of unit {unit.code} by {current_user.email}")
@@ -1017,9 +838,9 @@ def remove_unit_manager(secure_code: str, user_secure_code: str):
             assignment.deleted_at = datetime.utcnow()
 
             # 恢復為部門員工
-            dept_employee_role = _get_system_role(org_sc, 'DEPT_EMPLOYEE')
+            dept_employee_role = get_system_role(org_sc, 'DEPT_EMPLOYEE')
             if dept_employee_role:
-                _ensure_role_assignment(
+                ensure_role_assignment(
                     org_sc, user_secure_code,
                     dept_employee_role.secure_code, secure_code,
                     current_user.email

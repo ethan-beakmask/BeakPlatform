@@ -526,11 +526,12 @@ def test_unit_ancestor_lookup_is_cached_in_actor(test_org):
     assert calls['count'] == first_count
 
 
-def test_deputy_in_snapshot_still_records_acted_as(test_org):
-    """第 2 期起快照含副主管；快照命中不得蓋掉 acted_as_role_code（第 3 期驗收踩到）。"""
+def test_snapshot_only_user_is_denied_but_deputy_still_records_acted_as(test_org):
+    """新規格 ROLE@unit 不再用快照放行；副主管仍需記錄 acted_as_role_code。"""
     env = _role_unit_env(test_org)
     manager = _user('ru_snap_mgr', test_org, 'rusnapmgr', 'Manager')
     deputy = _user('ru_snap_deputy', test_org, 'rusnapdeputy', 'Deputy')
+    stranger = _user('ru_snap_stranger', test_org, 'rusnapstranger', 'Stranger')
     _assign(manager, env['manager'], env['mkt'])
     _assign(deputy, env['deputy'], env['mkt'])
     task = _task(test_org, {
@@ -538,14 +539,86 @@ def test_deputy_in_snapshot_still_records_acted_as(test_org):
         'assignee_value': env['manager'].secure_code,
         'assignee_unit_secure_code': env['mkt'].secure_code,
         'assignee_role_type': RoleType.POSITION,
-        'assignees': [manager.secure_code, deputy.secure_code],
+        'assignees': [manager.secure_code, deputy.secure_code, stranger.secure_code],
     })
 
     manager_identity = resolve_acting_identity(task, manager.secure_code, test_org.secure_code)
     deputy_identity = resolve_acting_identity(task, deputy.secure_code, test_org.secure_code)
+    stranger_identity = resolve_acting_identity(task, stranger.secure_code, test_org.secure_code)
 
     assert manager_identity['acted_as_role_code'] is None
     assert deputy_identity['acted_as_role_code'] == 'DEPT_DEPUTY'
+    assert stranger_identity is None
+    assert can_act_on_task(task, stranger.secure_code, test_org.secure_code) is False
+
+
+def test_proxy_in_snapshot_loses_access_when_manager_returns_from_leave(test_org):
+    env = _role_unit_env(test_org)
+    today = date(2026, 9, 5)
+    manager = _user('ru_return_mgr', test_org, 'rureturnmgr', 'Return Manager')
+    proxy1 = _user('ru_return_p1', test_org, 'rureturnp1', 'Return Proxy')
+    _assign(manager, env['manager'], env['mkt'])
+    _assign(proxy1, env['proxy1'], env['mkt'])
+    task = _task(test_org, {
+        'assignee_type': 'ROLE',
+        'assignee_value': env['manager'].secure_code,
+        'assignee_unit_secure_code': env['mkt'].secure_code,
+        'assignee_role_type': RoleType.POSITION,
+        'assignees': [manager.secure_code, proxy1.secure_code],
+    })
+
+    present_actor = build_actor(proxy1.secure_code, test_org.secure_code)
+    present_actor['_local_now'] = datetime(2026, 9, 5, 14, 0)
+    assert resolve_acting_identity(task, proxy1.secure_code, test_org.secure_code, present_actor) is None
+
+    leave = _leave(manager, today, [])
+    leave_actor = build_actor(proxy1.secure_code, test_org.secure_code)
+    leave_actor['_local_now'] = datetime(2026, 9, 5, 14, 0)
+    assert resolve_acting_identity(
+        task, proxy1.secure_code, test_org.secure_code, leave_actor
+    )['acted_as_role_code'] == 'DEPT_PROXY1'
+
+    leave.is_deleted = True
+    db.session.commit()
+    returned_actor = build_actor(proxy1.secure_code, test_org.secure_code)
+    returned_actor['_local_now'] = datetime(2026, 9, 5, 14, 0)
+    assert resolve_acting_identity(task, proxy1.secure_code, test_org.secure_code, returned_actor) is None
+
+
+def test_legacy_queue_without_unit_key_still_grants_snapshot(test_org):
+    env = _role_unit_env(test_org)
+    snapshot_user = _user('ru_old_snap', test_org, 'ruoldsnap', 'Old Snapshot')
+    task = _task(test_org, {
+        'assignee_type': 'ROLE',
+        'assignee_value': env['manager'].secure_code,
+        'assignee_role_type': RoleType.POSITION,
+        'assignees': [snapshot_user.secure_code],
+    })
+
+    identity = resolve_acting_identity(task, snapshot_user.secure_code, test_org.secure_code)
+
+    assert identity == {
+        'via': 'self',
+        'delegator_secure_code': None,
+        'acted_as_role_code': None,
+    }
+
+
+def test_global_spec_with_null_unit_key_ignores_snapshot(test_org):
+    env = _role_unit_env(test_org)
+    snapshot_user = _user('ru_global_snap', test_org, 'ruglobalsnap', 'Global Snapshot')
+    holder = _user('ru_global_holder', test_org, 'ruglobalholder', 'Global Holder')
+    _assign(holder, env['manager'], env['sw'])
+    task = _task(test_org, {
+        'assignee_type': 'ROLE',
+        'assignee_value': env['manager'].secure_code,
+        'assignee_unit_secure_code': None,
+        'assignee_role_type': RoleType.ROLE,
+        'assignees': [snapshot_user.secure_code, holder.secure_code],
+    })
+
+    assert resolve_acting_identity(task, snapshot_user.secure_code, test_org.secure_code) is None
+    assert can_act_on_task(task, holder.secure_code, test_org.secure_code) is True
 
 
 def test_manager_full_day_leave_allows_proxies_but_manager_and_deputy_still_act(test_org):

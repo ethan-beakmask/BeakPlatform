@@ -78,20 +78,6 @@
             </td>
         </tr>
         <tr>
-            <th>{{ _('直屬主管') }}</th>
-            <td>
-                <select name="direct_manager_secure_code" style="width: 100%;">
-                    <option value="">{{ _('-- 無直屬主管 --') }}</option>
-                    {% for user in users %}
-                    <option value="{{ user.secure_code }}"
-                            {% if position.direct_manager_secure_code == user.secure_code %}selected{% endif %}>
-                        {{ user.display_name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </td>
-        </tr>
-        <tr>
             <th>{{ _('生效日期') }}</th>
             <td>
                 <input type="date" name="effective_from" style="width: 100%;"

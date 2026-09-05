@@ -2,7 +2,7 @@
 """
 BeakMask 測試企業種子資料
 建立四家虛擬企業的完整資料：企業、合約、編號規則、職等、職系、職稱、部門、帳號、職位指派
-並補齊簽核展示需要的直屬主管鏈、核決類別與職等上限、兼任/代理職位樣本。
+並補齊簽核展示需要的部門成員關係與部門主管角色（直屬主管由此推導）、核決類別與職等上限、兼任/代理職位樣本。
 
 使用方式:
     cd /opt/BeakPlatform
@@ -22,8 +22,10 @@ import json
 import os
 import argparse
 import re
+import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -49,7 +51,6 @@ from app.models.user_numbering_rule import (
     UserNumberingCounter, UsedUserNumber,
     NumberingUsageScope, NumberingDefaultFor, NumberingElementType,
 )
-from app.services.organization_service import OrganizationService
 
 # ============================================================================
 # 常數
@@ -773,7 +774,8 @@ def _find_manager_username(username, dept_code, is_head, unit_heads, parent_by_d
     return None
 
 
-def _direct_manager_usernames(company_def):
+def _expected_manager_usernames(company_def):
+    """預覽：依部門主管推導預期會得到的直屬主管，不寫任何資料。"""
     emp_list = company_def.get('employees', [])
     unit_heads = _first_unit_heads(emp_list)
     parent_by_dept = _department_parent_map(company_def.get('departments', []))
@@ -794,13 +796,13 @@ def _direct_manager_usernames(company_def):
 
 def print_manager_chain_preview(company_def):
     """列印 dry-run 主管鏈預覽。"""
-    managers = _direct_manager_usernames(company_def)
+    managers = _expected_manager_usernames(company_def)
     names_by_username = {emp[0]: emp[1] for emp in company_def.get('employees', [])}
     dept_names = {code: name for name, code, parent_code in company_def.get('departments', [])}
     all_titles = STANDARD_JOB_TITLES + company_def.get('extra_titles', [])
     title_names = {code: name for code, name, name_en, level_code, family_code, is_supv in all_titles}
 
-    print(f"  直屬主管鏈:")
+    print(f"  預期直屬主管（由部門主管推導）:")
     for username, native_name, english_name, dept_code, title_code, is_head in company_def.get('employees', []):
         manager_username = managers.get(username)
         manager_name = names_by_username.get(manager_username, '無')
@@ -808,45 +810,109 @@ def print_manager_chain_preview(company_def):
         title_name = title_names.get(title_code, title_code)
         print(f"    {native_name} ({dept_name}/{title_name}) -> {manager_name}")
 
+def sync_dept_roles(org_sc, operator='seed_script'):
+    """依 PRIMARY 任職卡同步部門成員關係與部門主管角色；只 flush，不 commit。"""
+    from app.services.dept_membership_service import (
+        ensure_dept_membership,
+        get_system_role,
+        revoke_role_assignment,
+        set_dept_manager,
+    )
 
-def assign_direct_managers(org_sc, company_def, users):
-    """指派 PRIMARY 職位的直屬主管。
+    roles = {
+        code: get_system_role(org_sc, code)
+        for code in ('DEPT_MEMBER', 'DEPT_EMPLOYEE', 'DEPT_MANAGER')
+    }
+    missing = [code for code, role in roles.items() if not role]
+    if missing:
+        print(f"         (跳過部門角色同步：缺少 {', '.join(missing)})")
+        return {'skipped': True}
 
-    規則：
-    - 不是部門主管（is_unit_head=False）的人 -> 直屬主管＝自己部門的部門主管
-    - 是部門主管的人 -> 直屬主管＝上層部門的部門主管；上層沒有主管就再往上，直到找到為止
-    - 最頂層部門的主管（例如總經理）-> 沒有直屬主管（維持 NULL）
-    - 一個部門若定義了兩個以上 is_unit_head=True，取帳號清單裡先出現的那位當「部門主管」，其餘視為一般成員
-    - 自己不能是自己的主管
-    """
-    managers = _direct_manager_usernames(company_def)
-    emp_list = company_def.get('employees', [])
-    names_by_username = {emp[0]: emp[1] for emp in emp_list}
-    dept_names = {code: name for name, code, parent_code in company_def.get('departments', [])}
-    all_titles = STANDARD_JOB_TITLES + company_def.get('extra_titles', [])
-    title_names = {code: name for code, name, name_en, level_code, family_code, is_supv in all_titles}
+    positions = EmployeePosition.query.join(
+        User,
+        EmployeePosition.user_secure_code == User.secure_code,
+    ).filter(
+        EmployeePosition.org_secure_code == org_sc,
+        EmployeePosition.position_type == PositionType.PRIMARY,
+        EmployeePosition.is_deleted == False,
+        EmployeePosition.is_active == True,
+        User.org_secure_code == org_sc,
+        User.is_deleted == False,
+        User.is_active == True,
+    ).order_by(
+        EmployeePosition.unit_secure_code.asc(),
+        EmployeePosition.id.asc(),
+    ).all()
 
-    print(f"         主管鏈:")
-    for username, native_name, english_name, dept_code, title_code, is_head in emp_list:
-        user = users.get(username)
-        if not user:
+    expected_managers = {}
+    skipped_units = 0
+    for position in positions:
+        if not position.is_unit_head or position.unit_secure_code in expected_managers:
+            if position.is_unit_head:
+                skipped_units += 1
+                print(
+                    "         (同單位已有預期主管，第二位以上視為一般成員: "
+                    f"{position.user.display_name if position.user else position.user_secure_code})"
+                )
             continue
+        expected_managers[position.unit_secure_code] = (position.user, position.unit)
 
-        manager_username = managers.get(username)
-        manager = users.get(manager_username) if manager_username else None
-        position = EmployeePosition.query.filter(
-            EmployeePosition.org_secure_code == org_sc,
-            EmployeePosition.user_secure_code == user.secure_code,
-            EmployeePosition.position_type == PositionType.PRIMARY,
-            EmployeePosition.is_deleted == False,
-        ).first()
-        if position:
-            position.direct_manager_secure_code = manager.secure_code if manager else None
+    before_memberships = UserUnitMembership.query.filter(
+        UserUnitMembership.org_secure_code == org_sc,
+    ).count()
+    before_roles = UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == org_sc,
+    ).count()
 
-        dept_name = dept_names.get(dept_code, dept_code)
-        title_name = title_names.get(title_code, title_code)
-        manager_name = names_by_username.get(manager_username, '無')
-        print(f"           {native_name} ({dept_name}/{title_name}) -> {manager_name}")
+    for position in positions:
+        if not position.user or not position.unit:
+            continue
+        expected = expected_managers.get(position.unit_secure_code)
+        if expected and expected[0].secure_code == position.user_secure_code:
+            if position.user.primary_unit_secure_code is None:
+                position.user.primary_unit_secure_code = position.unit_secure_code
+            continue
+        ensure_dept_membership(position.user, position.unit, operator)
+        if position.user.primary_unit_secure_code is None:
+            position.user.primary_unit_secure_code = position.unit_secure_code
+
+    managers_set = 0
+    manager_role = roles['DEPT_MANAGER']
+    for unit_sc, (manager, unit) in expected_managers.items():
+        current = UserRoleAssignment.query.filter(
+            UserRoleAssignment.org_secure_code == org_sc,
+            UserRoleAssignment.role_secure_code == manager_role.secure_code,
+            UserRoleAssignment.unit_secure_code == unit_sc,
+            UserRoleAssignment.is_deleted == False,
+        ).all()
+        current_holders = {assignment.user_secure_code for assignment in current}
+        if current_holders == {manager.secure_code}:
+            ensure_dept_membership(manager, unit, operator)
+            revoke_role_assignment(
+                org_sc,
+                manager.secure_code,
+                roles['DEPT_EMPLOYEE'].secure_code,
+                unit_sc,
+            )
+            continue
+        set_dept_manager(manager, unit, operator)
+        managers_set += 1
+
+    db.session.flush()
+    after_memberships = UserUnitMembership.query.filter(
+        UserUnitMembership.org_secure_code == org_sc,
+    ).count()
+    after_roles = UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == org_sc,
+    ).count()
+
+    return {
+        'positions': len(positions),
+        'memberships_created': after_memberships - before_memberships,
+        'roles_created': after_roles - before_roles,
+        'managers_set': managers_set,
+        'skipped_units': skipped_units,
+    }
 
 
 def _first_leaf_department(dept_list, excluded_code):
@@ -882,12 +948,6 @@ def create_additional_positions(org_sc, company_def, users, depts, titles):
     if not second_user or not concurrent_dept_code or concurrent_dept_code not in depts or second_emp[4] not in titles:
         print("         (跳過兼任職位：找不到合適成員、葉部門或職稱)")
     else:
-        primary = EmployeePosition.query.filter(
-            EmployeePosition.org_secure_code == org_sc,
-            EmployeePosition.user_secure_code == second_user.secure_code,
-            EmployeePosition.position_type == PositionType.PRIMARY,
-            EmployeePosition.is_deleted == False,
-        ).first()
         position = EmployeePosition(
             org_secure_code=org_sc,
             user_secure_code=second_user.secure_code,
@@ -895,7 +955,6 @@ def create_additional_positions(org_sc, company_def, users, depts, titles):
             unit_secure_code=depts[concurrent_dept_code].secure_code,
             position_type=PositionType.CONCURRENT,
             is_unit_head=False,
-            direct_manager_secure_code=primary.direct_manager_secure_code if primary else None,
             effective_from=date(2026, 1, 1),
             effective_until=None,
             is_active=True,
@@ -911,12 +970,6 @@ def create_additional_positions(org_sc, company_def, users, depts, titles):
     if not third_user or not acting_title or third_emp[3] not in depts:
         print("         (跳過代理職位：找不到合適成員、主管職稱或部門)")
     else:
-        primary = EmployeePosition.query.filter(
-            EmployeePosition.org_secure_code == org_sc,
-            EmployeePosition.user_secure_code == third_user.secure_code,
-            EmployeePosition.position_type == PositionType.PRIMARY,
-            EmployeePosition.is_deleted == False,
-        ).first()
         position = EmployeePosition(
             org_secure_code=org_sc,
             user_secure_code=third_user.secure_code,
@@ -924,7 +977,6 @@ def create_additional_positions(org_sc, company_def, users, depts, titles):
             unit_secure_code=depts[third_emp[3]].secure_code,
             position_type=PositionType.ACTING,
             is_unit_head=False,
-            direct_manager_secure_code=primary.direct_manager_secure_code if primary else None,
             effective_from=today,
             effective_until=today + timedelta(days=90),
             remarks='代理職務（種子資料）',
@@ -1038,6 +1090,8 @@ def create_external_users(org, org_sc, ext_list, groups, numbering_rules):
 
 def seed_one_company(company_def):
     """建立一家企業的完整資料"""
+    from app.services.organization_service import OrganizationService
+
     code = company_def['code']
     name = company_def['name']
     domain = company_def['domain']
@@ -1125,9 +1179,10 @@ def seed_one_company(company_def):
     print(f"  [9/{total_steps}] 企業成員帳號 ({len(emp_list)} 人) + 職位指派 + 角色...")
     users = create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rules)
 
-    # 10. 直屬主管鏈
-    print(f"  [10/{total_steps}] 直屬主管鏈...")
-    assign_direct_managers(org_sc, company_def, users)
+    # 10. 部門成員與部門主管角色
+    print(f"  [10/{total_steps}] 部門成員與部門主管角色...")
+    role_counts = sync_dept_roles(org_sc)
+    print(f"         {role_counts}")
 
     # 11. 兼任與代理職位
     print(f"  [11/{total_steps}] 兼任/代理職位樣本...")
@@ -1345,6 +1400,7 @@ def main():
   python scripts/seed_test_companies.py --dry-run   預覽資料結構
   python scripts/seed_test_companies.py --run        執行建立
   python scripts/seed_test_companies.py --clean      清除測試企業
+  python scripts/seed_test_companies.py --sync-dept-roles  補齊既有範例企業的部門角色
 
 建立的企業:
   1. 傳統文化製造集團 (GHTRAVEL) - ghtravelexample.com.zz
@@ -1354,7 +1410,7 @@ def main():
 
 前三家企業包含:
   - 1 個管理員 (admin)
-  - 20 個企業成員帳號 (含 PRIMARY 職位與直屬主管鏈)
+  - 20 個企業成員帳號 (含 PRIMARY 職位、部門成員關係與部門主管角色)
   - 兼任 CONCURRENT 與代理 ACTING 職位樣本各 1 筆
   - 核決類別與各職等核決上限
   - 編號規則、職等、職系、職稱、部門
@@ -1364,10 +1420,11 @@ def main():
     parser.add_argument('--run', action='store_true', help='執行建立測試資料')
     parser.add_argument('--clean', action='store_true', help='清除本腳本建立的測試企業')
     parser.add_argument('--dry-run', action='store_true', help='預覽資料結構，不寫入')
+    parser.add_argument('--sync-dept-roles', action='store_true', help='補齊既有範例企業的部門成員關係與部門主管角色')
 
     args = parser.parse_args()
 
-    if not any([args.run, args.clean, args.dry_run]):
+    if not any([args.run, args.clean, args.dry_run, args.sync_dept_roles]):
         parser.print_help()
         return
 
@@ -1379,6 +1436,22 @@ def main():
     with app.app_context():
         if args.clean:
             clean_test_companies()
+            return
+
+        if args.sync_dept_roles:
+            for company in COMPANIES:
+                if company.get('admin_only'):
+                    continue
+                org = Organization.query.filter(
+                    Organization.domain_name == company['domain'],
+                    Organization.is_deleted == False,
+                ).first()
+                if not org:
+                    print(f"企業 {company['name']} ({company['domain']}) 不存在，跳過")
+                    continue
+                counts = sync_dept_roles(org.secure_code)
+                db.session.commit()
+                print(f"企業 {company['name']}: {counts}")
             return
 
         if args.run:
