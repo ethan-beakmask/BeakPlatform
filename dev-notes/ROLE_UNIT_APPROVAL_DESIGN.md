@@ -196,11 +196,11 @@ def _identity_matches(data, user_sc, actor):
 
 ## 八、待 Ethan 定案（審本檔時回答）
 
-1. 套圈只對非 POSITION 角色（3.3 第 3～4 條）——對嗎？
-2. 全企業指派（unit NULL）視為任何單位的超集（3.3 第 2 條）——對嗎？
-3. 副主管永遠可簽、代理人只在主管職缺時可簽（3.4）——或副主管也只在缺席時？
-4. 任職卡 `direct_manager_secure_code` 保留為明示覆寫（3.5）——或一律改由部門推導、把欄位退役？
-5. `DEPARTMENT` 型別退役為別名（3.1）——同意？
+1. 套圈只對非 POSITION 角色（3.3 第 3～4 條）——對嗎？**Ethan 2026-09-05 定案：對**
+2. 全企業指派（unit NULL）視為任何單位的超集（3.3 第 2 條）——對嗎？**Ethan 2026-09-05 定案：對**
+3. 副主管永遠可簽、代理人只在主管職缺時可簽（3.4）——或副主管也只在缺席時？**Ethan 2026-09-05 定案：對**
+4. 任職卡 `direct_manager_secure_code` 保留為明示覆寫（3.5）——或一律改由部門推導、把欄位退役？**Ethan 2026-09-05 定案：一律由部門推導、欄位退役**
+5. `DEPARTMENT` 型別退役為別名（3.1）——同意？**Ethan 2026-09-05 定案：同意**
 6. 第五期「主管請假算缺席」——**Ethan 2026-09-05 定案：要做**。「LEAVE」指 `schedule_adjustments.adjust_type='LEAVE'` 的班表調整列（語意：該人該日這些時段不工作；`status='APPROVED'`）。現況唯一寫入者是個人行事曆：員工建 LEAVE（請假）或 TRIP（出差）事件時由 `calendar_event_service` 同步寫入並帶 `calendar_event_secure_code`；`NULL` 來源（請假單流程、人工）目前**沒有任何程式會寫**、dev 庫 0 列。採用定義（除非 Ethan 反對）：**認全部 LEAVE 列不看來源、以時段判定**——判定當下（企業時區）落在該列請假時段內才算缺席（`adjusted_periods` 為 `[]` 或 NULL＝整天），出差同樣視為缺席。判定走 `ScheduleService.get_work_periods()` 既有優先序，不另寫查詢。
 
 ## 九、不在本設計內（已另存 PF-246）
