@@ -10,7 +10,7 @@ from app.models.employee_position import EmployeePosition, PositionType
 from app.models.organization import Organization
 from app.models.organizational_unit import OrganizationalUnit
 from app.models.role import Role
-from app.models.associations import UserRoleAssignment
+from app.models.associations import AssignmentKind, UserRoleAssignment
 from app.models.user import User
 from app.models.user_unit_membership import MembershipType, UserUnitMembership
 
@@ -168,10 +168,12 @@ def resolve_role_holders(
     include_descendant_units: bool = False,
     today: date | None = None,
     unit_only: bool = False,
+    kinds: tuple[str, ...] | None = AssignmentKind.HOLDING[:1],
 ) -> list[str]:
     """回傳當下有效持有指定 (role, unit) 的啟用使用者 secure_code。
 
     unit_only=True 且有指定 unit 時，只取該單位範圍，不含全企業指派。
+    kinds 預設只看 regular；None 表示三種指派性質全部採計。
     """
     if today is None:
         today = org_local_today(org_secure_code)
@@ -187,6 +189,8 @@ def resolve_role_holders(
         User.is_active == True,  # noqa: E712
         User.is_deleted == False,  # noqa: E712
     )
+    if kinds is not None:
+        query = query.filter(UserRoleAssignment.assignment_kind.in_(kinds))
     if unit_secure_code is not None:
         units = [unit_secure_code]
         if include_descendant_units:

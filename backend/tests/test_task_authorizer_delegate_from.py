@@ -144,6 +144,7 @@ def test_self_wins_when_self_and_delegator_both_match(test_org, test_user):
         'via': 'self',
         'delegator_secure_code': None,
         'acted_as_role_code': None,
+        'acted_as_kind': None,
     }
 
 
@@ -324,5 +325,6 @@ def test_missing_assignee_type_allows_action_but_is_not_pending_assignee(test_or
         'via': 'self',
         'delegator_secure_code': None,
         'acted_as_role_code': None,
+        'acted_as_kind': None,
     }
     assert is_pending_assignee(task, test_user.secure_code, test_org.secure_code) is False

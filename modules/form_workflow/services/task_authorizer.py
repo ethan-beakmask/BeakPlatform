@@ -1,64 +1,48 @@
-"""
-FormWorkflow task action authorization helpers.
+"""FormWorkflow task action authorization helpers.
 
-簽核授權判定的唯一實作。判定來源有四層，任一成立即放行：
+簽核授權判定的唯一實作。判定來源三層：
 
-1. **快照**：節點啟動當下解析出的 `assignees`（原始行為，永不縮減；ROLE／DEPARTMENT 型別會先看第 2、3 層再看快照，只影響 `acted_as_role_code` 的歸因，不影響放不放行）
-2. **當前角色@單位**：`ROLE` 即時比對使用者現在持有的 `(role, unit)`，
-   ROLE 型角色可由後代單位往祖先單位套圈，POSITION 型角色不套圈
-3. **主管缺席順位**：目標為 POSITION 且允許 fallback 時，依副主管、代理人一、
-   代理人二判定；缺席＝職缺或當下請假（LEAVE 列時段判定）；
-   DEPARTMENT 已退役為 `DEPT_MEMBER@unit` 的別名
-4. **代理授權**：使用者是某個「原本可簽的人」的生效中代理人
+1. 舊佇列項的快照相容。
+2. 角色@單位即時持有：regular/proxy/standby 三種指派性質，核心規則在
+   app.services.role_holding_service。
+3. 代理授權 delegations：PF-251 第 3 期退役前保留並存。
 
-呼叫端一律用 `build_actor()` 先把身分資訊算好再進迴圈，避免清單 API 的 N+1。
+呼叫端一律用 build_actor() 先把身分資訊算好再進迴圈，避免清單 API 的 N+1。
 """
 from datetime import date
 
 from app.models.role import Role, RoleType
 from app.models.user import User
-from app.models.associations import UserRoleAssignment
+from app.models.associations import AssignmentKind
+from app.services.role_holding_service import (
+    has_available_holder,
+    holds as assignment_holds,
+    load_actor_assignments,
+)
 from app.services.unit_resolver import (
     get_unit_ancestor_codes,
     org_local_now,
     org_local_today,
-    resolve_role_holders,
 )
 
 
-FALLBACK_ROLE_CODES = {
-    'DEPT_MANAGER': ('DEPT_DEPUTY', 'DEPT_PROXY1', 'DEPT_PROXY2'),
-}
-ALWAYS_ALLOWED_FALLBACK_CODES = frozenset({'DEPT_DEPUTY'})
-
-
-def get_actor_role_units(
-    user_secure_code: str,
-    org_secure_code: str,
-    today: date | None = None,
-) -> set[tuple[str, str | None]]:
-    """取得使用者在指定企業當前有效的 (role, unit) 集合。"""
-    if today is None:
-        today = org_local_today(org_secure_code)
-
-    assignments = UserRoleAssignment.query.filter(
-        UserRoleAssignment.user_secure_code == user_secure_code,
-        UserRoleAssignment.org_secure_code == org_secure_code,
-        UserRoleAssignment.is_deleted == False,  # noqa: E712
-    ).all()
-    return {
-        (a.role_secure_code, a.unit_secure_code or None)
-        for a in assignments
-        if a.is_valid_on(today)
-    }
 
 
 def _build_identity(user_secure_code: str, org_secure_code: str, today: date) -> dict:
-    role_units = get_actor_role_units(user_secure_code, org_secure_code, today)
+    assignments = load_actor_assignments(user_secure_code, org_secure_code, today)
+    holding_assignments = [
+        row for row in assignments
+        if row.get('kind') in AssignmentKind.HOLDING
+    ]
+    role_units = {
+        (row.get('role_sc'), row.get('unit_sc'))
+        for row in holding_assignments
+    }
     return {
         'user_sc': user_secure_code,
+        'assignments': assignments,
         'role_units': role_units,
-        'role_codes': {role_sc for role_sc, _ in role_units},
+        'role_codes': {row.get('role_sc') for row in holding_assignments},
     }
 
 
@@ -154,7 +138,7 @@ def build_actor(user_secure_code: str, org_secure_code: str) -> dict:
         '_role_meta': {},
         '_role_sc_by_code': {},
         '_unit_ancestors': {},
-        '_unit_manager_present': {},
+        '_available': {},
     }
 
 
@@ -184,6 +168,22 @@ def _identity_role_units(identity) -> set[tuple[str, str | None]]:
     if 'role_units' in identity:
         return set(identity.get('role_units') or set())
     return {(role_sc, None) for role_sc in (identity.get('role_codes') or set())}
+
+
+def _identity_assignments(identity) -> list[dict]:
+    """把新舊身分形狀都轉成 role_holding_service.holds() 可吃的列。"""
+    if isinstance(identity, dict) and 'assignments' in identity:
+        return list(identity.get('assignments') or [])
+    return [
+        {
+            'role_sc': role_sc,
+            'unit_sc': unit_sc,
+            'kind': AssignmentKind.REGULAR,
+            'scope': None,
+            'acting_for': None,
+        }
+        for role_sc, unit_sc in _identity_role_units(identity)
+    ]
 
 
 def _role_meta(actor: dict, role_secure_code: str) -> dict | None:
@@ -244,65 +244,52 @@ def _spec_from(task_result_data: dict, actor: dict) -> tuple[str, str | None] | 
     return None
 
 
-def _holds(actor: dict, identity, role_secure_code: str, unit_secure_code: str | None) -> bool:
-    role_units = _identity_role_units(identity)
-    if (role_secure_code, unit_secure_code) in role_units:
-        return True
-    if (role_secure_code, None) in role_units:
-        return True
-    if unit_secure_code is None:
-        return any(role_sc == role_secure_code for role_sc, _ in role_units)
-
-    meta = _role_meta(actor, role_secure_code)
-    if not meta or meta.get('role_type') == RoleType.POSITION:
-        return False
-
-    return any(
-        role_sc == role_secure_code
-        and held_unit_sc
-        and unit_secure_code in _unit_ancestors(actor, held_unit_sc)
-        for role_sc, held_unit_sc in role_units
-    )
-
-
-def _unit_manager_present(actor: dict, manager_role_sc: str, unit_secure_code: str) -> bool:
-    """指定單位至少一位主管未請假時，視為主管在職。"""
-    cache = actor.setdefault('_unit_manager_present', {})
-    key = (manager_role_sc, unit_secure_code)
+def _available(actor: dict, role_secure_code: str, unit_secure_code: str | None) -> bool:
+    """指定 R@U 是否有可用 regular/proxy 持有者。"""
+    cache = actor.setdefault('_available', {})
+    key = (role_secure_code, unit_secure_code)
     if key in cache:
         return cache[key]
-
-    holders = resolve_role_holders(
-        manager_role_sc,
+    cache[key] = has_available_holder(
+        role_secure_code,
         actor.get('_org_sc'),
         unit_secure_code,
-        include_descendant_units=False,
         today=actor['_today'],
-    )
-    if not holders:
-        cache[key] = False
-        return cache[key]
-
-    from app.services.schedule_service import ScheduleService
-
-    users = User.query.filter(
-        User.org_secure_code == actor.get('_org_sc'),
-        User.secure_code.in_(holders),
-        User.is_deleted == False,  # noqa: E712
-        User.is_active == True,  # noqa: E712
-    ).all()
-    cache[key] = any(
-        not ScheduleService.is_on_leave(user, actor['_local_now'])
-        for user in users
+        local_now=actor['_local_now'],
     )
     return cache[key]
 
 
-def _match_identity(task_result_data: dict, user_secure_code: str, identity, actor: dict) -> dict | None:
+def _holds(
+    actor: dict,
+    identity,
+    role_secure_code: str,
+    unit_secure_code: str | None,
+    task,
+) -> tuple[str, str | None] | None:
+    assignments = _identity_assignments(identity)
+    meta = _role_meta(actor, role_secure_code)
+    return assignment_holds(
+        assignments,
+        role_secure_code,
+        unit_secure_code,
+        is_position=bool(meta and meta.get('role_type') == RoleType.POSITION),
+        ancestors_of=lambda u: _unit_ancestors(actor, u),
+        is_available=lambda r, u: _available(actor, r, u),
+        form_template_sc_of=lambda: _task_form_template_secure_code(
+            task, actor['_org_sc'], actor),
+    )
+
+
+def _match_identity(task_result_data: dict, user_secure_code: str, identity, actor: dict, task) -> dict | None:
     """單一身分是否符合這個佇列項的指派條件。"""
     assignee_type = task_result_data.get('assignee_type')
     if not assignee_type:
-        return {'acted_as_role_code': None}
+        return {
+            'acted_as_kind': None,
+            'acting_for': None,
+            'acted_as_role_code': None,
+        }
 
     # ROLE／DEPARTMENT 若帶 assignee_unit_secure_code key，代表第 2 期後的角色@單位規格：
     # 角色與缺席順位用即時狀態判定，不再用進關卡快照放行。舊佇列項沒有這個 key 時，
@@ -313,32 +300,27 @@ def _match_identity(task_result_data: dict, user_secure_code: str, identity, act
         spec = _spec_from(task_result_data, actor)
         if spec:
             role_sc, unit_sc = spec
-            if _holds(actor, identity, role_sc, unit_sc):
-                return {'acted_as_role_code': None}
-
-            if (
-                assignee_type == 'ROLE'
-                and task_result_data.get('assignee_role_type') == RoleType.POSITION
-                and task_result_data.get('absence_fallback', True)
-                and unit_sc is not None
-            ):
+            hit = _holds(actor, identity, role_sc, unit_sc, task)
+            if hit:
+                kind, acting_for = hit
                 meta = _role_meta(actor, role_sc)
-                target_code = meta.get('code') if meta else None
-                for fallback_code in FALLBACK_ROLE_CODES.get(target_code, ()):
-                    fallback_sc = _role_sc_by_code(actor, fallback_code)
-                    if not fallback_sc or not _holds(actor, identity, fallback_sc, unit_sc):
-                        continue
-                    if (
-                        fallback_code in ALWAYS_ALLOWED_FALLBACK_CODES
-                        or not _unit_manager_present(actor, role_sc, unit_sc)
-                    ):
-                        return {'acted_as_role_code': fallback_code}
+                return {
+                    'acted_as_kind': kind,
+                    'acting_for': acting_for,
+                    'acted_as_role_code': (
+                        meta.get('code') if meta and kind != AssignmentKind.REGULAR else None
+                    ),
+                }
 
         if 'assignee_unit_secure_code' in task_result_data:
             return None
 
     if in_snapshot:
-        return {'acted_as_role_code': None}
+        return {
+            'acted_as_kind': None,
+            'acting_for': None,
+            'acted_as_role_code': None,
+        }
     return None
 
 
@@ -363,8 +345,8 @@ def _task_form_template_secure_code(task, org_secure_code: str, actor: dict) -> 
     return cache[form_instance_sc]
 
 
-def _delegation_scope_allows_task(scope, task, org_secure_code: str, actor: dict) -> bool:
-    """檢查代理 scope 是否允許處理該任務。"""
+def _scope_allows_task(scope, task, org_secure_code: str, actor: dict) -> bool:
+    """檢查 scope 是否允許處理該任務。"""
     if scope is None:
         return True
     form_template_sc = _task_form_template_secure_code(task, org_secure_code, actor)
@@ -380,11 +362,10 @@ def resolve_acting_identity(
     """回傳這次放行憑的是哪個身分；不能簽回 None。
 
     回傳值：
-    - {'via': 'self', 'delegator_secure_code': None, 'acted_as_role_code': ...}
-    - {'via': 'delegation', 'delegator_secure_code': '<授權人 sc>', 'acted_as_role_code': ...}
+    - {'via': 'self', 'delegator_secure_code': None, 'acted_as_role_code': ..., 'acted_as_kind': ...}
+    - {'via': 'delegation', 'delegator_secure_code': '<授權人 sc>', 'acted_as_role_code': ..., 'acted_as_kind': ...}
 
-    `acted_as_role_code` 是走主管缺席順位時放行的那個角色 code
-    （`DEPT_DEPUTY` / `DEPT_PROXY1` / `DEPT_PROXY2`），直接持有或快照命中時為 None。
+    proxy/standby 命中時 acted_as_role_code 為被命中的角色 code；regular 或快照命中為 None。
     """
     if not task:
         return None
@@ -397,12 +378,13 @@ def resolve_acting_identity(
         _actor_today(actor, org_secure_code)
         _actor_local_now(actor, org_secure_code)
 
-    self_match = _match_identity(task_result_data, user_secure_code, actor, actor)
+    self_match = _match_identity(task_result_data, user_secure_code, actor, actor, task)
     if self_match:
         return {
             'via': 'self',
-            'delegator_secure_code': None,
+            'delegator_secure_code': self_match.get('acting_for'),
             'acted_as_role_code': self_match.get('acted_as_role_code'),
+            'acted_as_kind': self_match.get('acted_as_kind'),
         }
 
     # 代理授權：排序後取第一個符合者，避免 dict 順序影響記錄結果。
@@ -411,14 +393,15 @@ def resolve_acting_identity(
     delegation_scopes = actor.get('delegation_scopes')
     for delegator_sc in sorted(delegations):
         match = _match_identity(
-            task_result_data, delegator_sc, delegations[delegator_sc], actor)
+            task_result_data, delegator_sc, delegations[delegator_sc], actor, task)
         if match:
             scope = None if delegation_scopes is None else delegation_scopes.get(delegator_sc)
-            if _delegation_scope_allows_task(scope, task, org_secure_code, actor):
+            if _scope_allows_task(scope, task, org_secure_code, actor):
                 return {
                     'via': 'delegation',
                     'delegator_secure_code': delegator_sc,
                     'acted_as_role_code': match.get('acted_as_role_code'),
+                    'acted_as_kind': match.get('acted_as_kind'),
                 }
 
     return None
@@ -427,11 +410,11 @@ def resolve_acting_identity(
 def delegate_from_fields(identity, org_secure_code) -> dict:
     """換成 FwApprovalRecord 的 delegate_from_* 欄位值。
 
-    本人簽核回 {}。代理簽核會記錄授權人的 secure_code 與顯示名稱。
+    本人簽核回 {}。delegator_secure_code 有值時會記錄授權人或被代理人的 secure_code 與顯示名稱。
     這裡刻意不加 User.is_active 條件：本函式只負責寫歷史記錄，不做授權判定；
     授權是否成立已由 resolve_acting_identity() 判斷，即使授權人事後停用也要保留姓名。
     """
-    if not identity or identity.get('via') != 'delegation':
+    if not identity:
         return {}
 
     delegator_sc = identity.get('delegator_secure_code')

@@ -10,7 +10,7 @@ from datetime import datetime
 
 from app import db
 from app.models import Role
-from app.models.associations import UserRoleAssignment
+from app.models.associations import AssignmentKind, UserRoleAssignment
 from app.models.user import User
 from app.models.user_unit_membership import (
     MembershipRole,
@@ -18,10 +18,10 @@ from app.models.user_unit_membership import (
     UserUnitMembership,
 )
 
-# 部門系統角色：兩個成員類（ROLE）＋四個職位類（POSITION）。
-# 移除成員或刪除單位時六個都要收，只收前三個會留下副主管／代理人殘留。
+# 部門系統角色：兩個成員類（ROLE）＋五個職位類（POSITION）。
+# 移除成員或刪除單位時七個都要收，只收前三個會留下副主管／代理人殘留。
 DEPT_MEMBER_ROLE_CODES = ('DEPT_MEMBER', 'DEPT_EMPLOYEE')
-DEPT_POSITION_ROLE_CODES = ('DEPT_MANAGER', 'DEPT_DEPUTY', 'DEPT_PROXY1', 'DEPT_PROXY2')
+DEPT_POSITION_ROLE_CODES = ('DEPT_HEAD', 'DEPT_MANAGER', 'DEPT_DEPUTY', 'DEPT_PROXY1', 'DEPT_PROXY2')
 DEPT_ROLE_CODES = DEPT_MEMBER_ROLE_CODES + DEPT_POSITION_ROLE_CODES
 
 
@@ -42,6 +42,7 @@ def ensure_role_assignment(org_sc: str, user_sc: str, role_sc: str,
         UserRoleAssignment.user_secure_code == user_sc,
         UserRoleAssignment.role_secure_code == role_sc,
         UserRoleAssignment.unit_secure_code == unit_sc,
+        UserRoleAssignment.assignment_kind == AssignmentKind.REGULAR,
     ).first()
 
     if existing:
@@ -68,6 +69,7 @@ def revoke_role_assignment(org_sc: str, user_sc: str, role_sc: str,
         UserRoleAssignment.user_secure_code == user_sc,
         UserRoleAssignment.role_secure_code == role_sc,
         UserRoleAssignment.unit_secure_code == unit_sc,
+        UserRoleAssignment.assignment_kind == AssignmentKind.REGULAR,
         UserRoleAssignment.is_deleted == False,  # noqa: E712
     ).first()
 
@@ -137,8 +139,8 @@ def remove_dept_membership(user, unit) -> None:
     移除部門成員關係與所有部門角色。
 
     1. 軟刪除 UserUnitMembership(SOLID)
-    2. 軟刪除該部門下的所有部門系統角色指派（DEPT_ROLE_CODES 六個：
-       成員類 DEPT_MEMBER／DEPT_EMPLOYEE，職位類 DEPT_MANAGER／DEPT_DEPUTY／DEPT_PROXY1／DEPT_PROXY2）
+    2. 軟刪除該部門下的所有部門系統角色指派（DEPT_ROLE_CODES 七個：
+       成員類 DEPT_MEMBER／DEPT_EMPLOYEE，職位類 DEPT_HEAD／DEPT_MANAGER／DEPT_DEPUTY／DEPT_PROXY1／DEPT_PROXY2）
     """
     org_sc = unit.org_secure_code
     user_sc = user.secure_code
@@ -267,6 +269,7 @@ def set_dept_manager(user, unit, operator: str) -> None:
         UserRoleAssignment.org_secure_code == org_sc,
         UserRoleAssignment.role_secure_code == dept_manager_role.secure_code,
         UserRoleAssignment.unit_secure_code == unit_sc,
+        UserRoleAssignment.assignment_kind == AssignmentKind.REGULAR,
         UserRoleAssignment.is_deleted == False,  # noqa: E712
     ).all()
 
@@ -310,6 +313,7 @@ def reconcile_dept_manager(manager, unit, operator: str) -> bool:
             UserRoleAssignment.org_secure_code == org_sc,
             UserRoleAssignment.role_secure_code == dept_manager_role.secure_code,
             UserRoleAssignment.unit_secure_code == unit_sc,
+            UserRoleAssignment.assignment_kind == AssignmentKind.REGULAR,
             UserRoleAssignment.is_deleted == False,  # noqa: E712
         ).all()
     }

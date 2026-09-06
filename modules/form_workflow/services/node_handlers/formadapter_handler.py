@@ -22,6 +22,11 @@ TIMEOUT_ACTION = 'timeout'           # fw_approval_records.action（機器碼，
 TIMEOUT_APPROVER_NAME = '系統（逾時自動處理）'
 NO_ASSIGNEE_ACTION = 'no_assignee'   # fw_approval_records.action（機器碼，不翻譯）
 NO_ASSIGNEE_APPROVER_NAME = '系統（找不到簽核人）'
+# PF-251 第 1 期自 task_authorizer 搬入；第 2 期 _role_spec_data 改走 role_holding_service.effective_holders() 時整段刪除
+FALLBACK_ROLE_CODES = {
+    'DEPT_MANAGER': ('DEPT_DEPUTY', 'DEPT_PROXY1', 'DEPT_PROXY2'),
+}
+ALWAYS_ALLOWED_FALLBACK_CODES = frozenset({'DEPT_DEPUTY'})
 
 
 def _iso(dt: datetime) -> str:
@@ -372,10 +377,6 @@ class FormAdapterHandler(BaseNodeHandler):
     def _role_spec_data(self, role, unit, unit_scope: str, absence_fallback: bool) -> Dict[str, Any]:
         from app.models.role import RoleType
         from app.services.unit_resolver import resolve_role_holders
-        from modules.form_workflow.services.task_authorizer import (
-            ALWAYS_ALLOWED_FALLBACK_CODES,
-            FALLBACK_ROLE_CODES,
-        )
 
         org_sc = self.queue_item.org_secure_code
         role_sc = role.secure_code

@@ -29,6 +29,30 @@ logger = logging.getLogger(__name__)
 MIN_PASSWORD_LENGTH = 12
 DEFAULT_ADMIN_PASSWORD = None  # 已棄用：建立企業時密碼為必填
 
+DEPT_MANAGER_ROLE_NAME = '部門正主管'
+DEPT_MANAGER_ROLE_DESCRIPTION = '部門正主管，與部門員工互斥(同一部門下擇一)；同時持有部門主管(DEPT_HEAD)'
+DEPT_DEPUTY_ROLE_NAME = '部門副主管'
+DEPT_DEPUTY_ROLE_DESCRIPTION = '部門副主管；同時持有部門主管(DEPT_HEAD)'
+DEPT_HEAD_ROLE_SPEC = {
+    'role_type': RoleType.POSITION,
+    'scope_type': ScopeType.DEPARTMENT,
+    'code': 'DEPT_HEAD',
+    'name': '部門主管',
+    'description': '部門主管（正、副主管皆持有）。關卡指定「正副任一即可」時使用；由設定正／副主管時連帶授予，不單獨指派',
+    'is_manager': True,
+    'is_system_role': True,
+    'is_active': True,
+}
+DEPT_ROLE_RENAMES = {
+    'DEPT_MANAGER': ('部門主管', DEPT_MANAGER_ROLE_NAME),
+    'DEPT_DEPUTY': ('副主管', DEPT_DEPUTY_ROLE_NAME),
+}
+
+
+def build_dept_head_role(org_secure_code: str) -> Role:
+    """建立 DEPT_HEAD 系統角色實例。"""
+    return Role(org_secure_code=org_secure_code, **DEPT_HEAD_ROLE_SPEC)
+
 
 class OrganizationService:
     """企業管理服務"""
@@ -263,8 +287,8 @@ class OrganizationService:
             role_type=RoleType.POSITION,
             scope_type=ScopeType.DEPARTMENT,
             code='DEPT_MANAGER',
-            name='部門主管',
-            description='部門管理者，與部門員工互斥(同一部門下擇一)',
+            name=DEPT_MANAGER_ROLE_NAME,
+            description=DEPT_MANAGER_ROLE_DESCRIPTION,
             exclusive_group=ExclusiveGroup.DEPT_POSITION,
             is_manager=True,
             is_system_role=True,
@@ -297,8 +321,8 @@ class OrganizationService:
             role_type=RoleType.POSITION,
             scope_type=ScopeType.DEPARTMENT,
             code='DEPT_DEPUTY',
-            name='副主管',
-            description='部門副主管',
+            name=DEPT_DEPUTY_ROLE_NAME,
+            description=DEPT_DEPUTY_ROLE_DESCRIPTION,
             is_manager=True,
             is_system_role=True,
             is_active=True
@@ -306,6 +330,12 @@ class OrganizationService:
         dept_deputy_role.update_full_path()
         db.session.add(dept_deputy_role)
         roles['dept_deputy'] = dept_deputy_role
+
+        # 部門主管角色（正、副主管皆持有；第 3 期寫入路徑連帶授予）
+        dept_head_role = build_dept_head_role(org.secure_code)
+        dept_head_role.update_full_path()
+        db.session.add(dept_head_role)
+        roles['dept_head'] = dept_head_role
 
         # 部門代理人1角色
         dept_proxy1_role = Role(

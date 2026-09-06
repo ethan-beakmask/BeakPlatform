@@ -51,7 +51,7 @@ from .approval_category import (
 from .duty import Duty, DutyCategory, DEFAULT_DUTY_CATEGORIES
 
 # 關聯表
-from .associations import UserUnitAssignment, UserRoleAssignment
+from .associations import AssignmentKind, UserUnitAssignment, UserRoleAssignment
 
 # 成員關係（跨部門/社群）
 from .user_unit_membership import (
@@ -194,6 +194,7 @@ __all__ = [
     'DutyCategory',
     'DEFAULT_DUTY_CATEGORIES',
     # 關聯表
+    'AssignmentKind',
     'UserUnitAssignment',
     'UserRoleAssignment',
     # 成員關係

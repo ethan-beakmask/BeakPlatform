@@ -246,7 +246,7 @@ def _match_identity(data, user_sc, actor):
 |---|---|---|---|
 | 1 資料層與判定核心 | 3.1 欄位（model＋dev ALTER＋守恆檢查）；新系統角色 `DEPT_HEAD`（`_create_default_roles` 種入＋既有企業補種＋回填給現有正副主管，遷移腳本第一段）；`DEPT_MANAGER` 顯示名改「部門正主管」；新檔 `role_holding_service.py`（`effective_holders`／`has_available_holder`／`holds`）；`task_authorizer` 刪順位表、`_holds` 依 3.3、`resolve_acting_identity` 多回 `acted_as_kind`；`delegations` 路徑**保留並存**；`resolve_role_holders` 加 `kinds` 參數；`api/organizational_units.py:418-422` 死賦值順手刪 | `models/associations.py`、`services/role_holding_service.py`（新）、`services/unit_resolver.py`、`modules/form_workflow/services/task_authorizer.py` | `test_task_authorizer_role_unit.py` 14 案改語意重寫＋新增（proxy 效期內外、proxy 限定表單、standby 在職／請假／職缺／銷假、standby 不套圈、proxy 套圈跟角色、regular＋proxy 並存）；新檔 `test_role_holding_service.py`；`test_task_authorizer_delegate_from.py` 不動仍綠 |
 | 2 節點解析、歸因、顯示 | `_role_spec_data()` 改走 `effective_holders()`；`absence_fallback` 失效、設計器勾選移除；既有 `DEPT_MANAGER`＋`absence_fallback=true` 關卡由遷移腳本改指 `DEPT_HEAD`（graph＋發行快照，決策點 H 定案）；`fw_approval_records.acted_as_kind`（model＋ALTER）；三處寫入點；`fc-utils.js` 顯示；設計器 modal 與 `wf-save.js` 兩條儲存路徑；i18n | `formadapter_handler.py`、`approval_record.py`、`fc_pending.py`／`fc_batch.py`／`instance_routes.py`、`fc-utils.js`、`wf-form-adapter.js`／`wf-node-form-adapter.js`／`wf-save.js`、三個 modal 模板、`en.json` | `test_formadapter_role_unit.py` 5 案改寫＋多角色關卡案；瀏覽器實點（設計器兩條儲存路徑、歷程文字） |
-| 3 寫入路徑收斂與遷移 | `dept_membership_service` 加 `grant_proxy()`／`grant_standby()`／`revoke_grant()`（含層界與「只能授出自己 regular 持有的角色」檢查）；`role_assignment_service.assign_role()` 收 kind 等欄位並輸出效期；`set_unit_leadership` 改走服務（**併 PF-250**）、設正副主管連帶授撤 `DEPT_HEAD@U`（副主管與正主管同樣撤 `DEPT_EMPLOYEE`，決策點 I 定案）；部門頁候補代理人；權限中心 UI；`DEPT_PROXY1/2` 退役（種入函式、常數、`role_map`）；遷移腳本（3.8）；`/delegations/`、`Delegation` model、`my-delegations` 依決策點 B 處置；行事曆投影與 `approver_exposure` 改讀 proxy 列；`task_authorizer` 刪 delegations 路徑；手冊六頁；`route_guard_inventory.py --update` | 見 2.3／2.4 清單 | `test_dept_membership_service.py`、`test_my_delegations_api.py`（改語意）、`test_delegations_prefill.py`（退役或改寫）、`test_calendar_projection.py`；dev 遷移前後矩陣（第七節 #8）；瀏覽器實點部門頁與權限中心 |
+| 3 寫入路徑收斂與遷移 | **決策點 J：`iter_manager_chain()`／`resolve_direct_manager()` 改看 `DEPT_HEAD@U` regular 持有者（第 1 期執行記錄第 3 點挪入）**；`dept_membership_service` 加 `grant_proxy()`／`grant_standby()`／`revoke_grant()`（含層界與「只能授出自己 regular 持有的角色」檢查）；`role_assignment_service.assign_role()` 收 kind 等欄位並輸出效期；`set_unit_leadership` 改走服務（**併 PF-250**）、設正副主管連帶授撤 `DEPT_HEAD@U`（副主管與正主管同樣撤 `DEPT_EMPLOYEE`，決策點 I 定案）；部門頁候補代理人；權限中心 UI；`DEPT_PROXY1/2` 退役（種入函式、常數、`role_map`）；遷移腳本（3.8）；`/delegations/`、`Delegation` model、`my-delegations` 依決策點 B 處置；行事曆投影與 `approver_exposure` 改讀 proxy 列；`task_authorizer` 刪 delegations 路徑；手冊六頁；`route_guard_inventory.py --update` | 見 2.3／2.4 清單 | `test_dept_membership_service.py`、`test_my_delegations_api.py`（改語意）、`test_delegations_prefill.py`（退役或改寫）、`test_calendar_projection.py`；dev 遷移前後矩陣（第七節 #8）；瀏覽器實點部門頁與權限中心 |
 | 4 代理指定同意流程 | 3.9：`formio-my-role-picker.js`、`OpProxyGrant` handler＋定義＋seed 匯出、出廠表單／流程／配對、個人設定入口、手冊 `my_delegation.md` 正文 | `backend/app/static/js/formio-my-role-picker.js`、`form_designer.html`／`form_center.html`、`node_handlers/op_proxy_grant_handler.py`（新）、`factory.py`、`defaults/proxy_request_defaults.py`（新）、`scripts/export_node_definitions_seed.py` 重跑 | 新檔 `test_op_proxy_grant.py`；實流程：送單→代理人同意→列出現／拒絕→無列／選了非持有角色→擋；bpserv 部署 |
 
 bpserv 部署清單（`--update` 的 create_all 不補欄位）：
@@ -309,3 +309,46 @@ BELUGA（行銷部門：ethanyu 副主管、aaaa／ssss 現為代理人一二、
 ## 十一、執行記錄
 
 （每期完成後由執行 session 在此追加「與設計的差異／補充」與憑證路徑；原 session 追加複審結論。）
+
+### 第 1 期（2026-09-06，執行 session；codex 實作、主 Claude 驗收）
+
+憑證：`/opt/tmp/verify/20260906-role-proxy-1.log`（矩陣 #1～#7）、`-baseline.log`（動工前 6 檔 94 passed）、`-related.log`（改後 8 檔 112 passed）、`-full-c1.log`～`-full-c5.log`（全量分七批：1127 passed／2 skipped／0 failed，harness 兩度以記憶體不足砍掉背景 pytest，改前景分批跑，`tests/security/` 子目錄要另列）。
+spec：`/opt/tmp/codex/20260906-pf251-phase1.txt`。codex 在跑全量到 45% 時被系統以記憶體不足砍掉（實作與自驗已完成、
+未寫回報），其餘驗收由主 Claude 接手。
+
+**與設計的差異／補充**（第 1～5 點在派工前決定並寫進 spec，第 6 點驗收時改）：
+
+1. `UserRoleAssignment.get_active_assignments()`／`get_active_role_secure_codes()` 加 `kinds` 參數，**預設 `('regular','proxy')` 排除 standby**——
+   permission_service／page_role_guard／_menu_tree／doc_catalog 全走這支，候補是否生效取決於他人當下可用與否，不能讓選單與權限隨請假翻動。
+   設計文件 3.2 沒寫到這支函式，此為補充。
+2. 順位常數 `FALLBACK_ROLE_CODES`／`ALWAYS_ALLOWED_FALLBACK_CODES` 從 `task_authorizer` 刪除，但 `formadapter_handler._role_spec_data()` 還在用，
+   第 1 期先搬成該檔模組區域常數（行為零變更），第 2 期改走 `effective_holders()` 時整段刪。
+3. **決策點 J（主管鏈改看 `DEPT_HEAD`）挪到第 3 期**，與部門頁連帶授撤 `DEPT_HEAD@U` 同期。第六節沒把 J 分到任何一期；若第 1 期就讓
+   `iter_manager_chain()` 讀 HEAD，而部門頁設新主管還沒連帶授予 HEAD，會出現「新主管不在核決鏈」的靜默斷層。本期 `iter_manager_chain` 只透過
+   `resolve_role_holders(kinds=('regular',))` 預設值變成「只認 regular」。
+4. `dept_membership_service` 的 `ensure_role_assignment`／`revoke_role_assignment`／`set_dept_manager`／`reconcile_dept_manager` 查詢加
+   `assignment_kind='regular'` 條件（換主管不得把主管的 proxy 列降成部門員工、不得復活 proxy 列）；設計把該檔整個排在第 3 期。
+5. `DEPT_DEPUTY` 顯示名同步改「部門副主管」（3.4 表已列，第六節只寫 MANAGER）；`DEPT_HEAD` 屬性單一來源 `organization_service.DEPT_HEAD_ROLE_SPEC`／
+   `build_dept_head_role()`，`_create_default_roles()` 與遷移腳本共用；舊→新名稱對照 `DEPT_ROLE_RENAMES`。
+6. codex 為了讓「不得修改」的 `test_task_authorizer_delegate_from.py` 兩個整包 dict 斷言仍綠，加了帶自訂 `__eq__` 的 `ActingIdentity(dict)`
+   ——生產碼配合測試斷言，驗收時移除，改回純 dict、兩個斷言補 `acted_as_kind: None`。
+
+**實作落點**：`backend/app/models/associations.py`（`AssignmentKind`、五欄位、部分索引、`get_allowed_form_templates()` fail-closed）、
+`backend/app/services/role_holding_service.py`（新；`load_actor_assignments`／`has_available_holder`／`effective_holders`／`holds` 純函式）、
+`task_authorizer.py`（`_holds` 回 `(kind, acting_for)`、`_match_identity` 依偽碼、`resolve_acting_identity` 多回 `acted_as_kind`、
+`delegate_from_fields` 只看 `delegator_secure_code`、delegations 路徑並存）、`unit_resolver.resolve_role_holders(kinds=)`、
+`organization_service`（DEPT_HEAD 種入、正副主管改名）、`dept_membership_service.DEPT_POSITION_ROLE_CODES` 加 HEAD、
+`scripts/migrate_proxy_assignments.py`（三段：補種角色／改名／回填 HEAD，`--dry-run`／`--apply`／`--org`，冪等）、
+`api/organizational_units.py` 死賦值刪除、manifests 三檔。
+
+**dev 資料現況**：7 個未刪除企業各補種 `DEPT_HEAD`（`TEST00` 已軟刪除，刻意跳過，其角色名仍是舊的）；回填 35 列 regular `DEPT_HEAD@U`
+（BELUGA 1、BRIGHTCODE 11、GHTRAVEL 13、SHIELDEDGE 10），第二次 `--apply` 全 0。
+
+**驗收**：矩陣 #1～#6 在 app context 對 dev 庫實跑（真實帳號與角色，暫時指派列在交易內、結束 rollback，殘留 0）全 PASS；
+矩陣 #7 六個真實 `SECURITY_STAFF` WAITING 任務 × 7 個 BELUGA 帳號經 `GET /api/form-center/pending-tasks/<sc>` 部署前後狀態碼一字不差；
+遷移腳本 `--help` exit 0、無參數 exit 1；`check_schema_drift.sh` 硬判定區零差異。
+
+**既定斷層（分期本身造成，dev 上可見、bpserv 四期完成才部署）**：第 1 期起 `task_authorizer` 沒有順位，
+`DEPT_PROXY1/2` 持有者（遷移成 standby 在第 3 期）與「`DEPT_MANAGER`＋`absence_fallback=true`」關卡的副主管（關卡改指 `DEPT_HEAD` 在第 2 期）
+在此之前失去簽核權；FormAdapter 快照仍含他們（顯示用），但帶 key 的任務不看快照。
+

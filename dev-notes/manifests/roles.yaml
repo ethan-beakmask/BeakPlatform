@@ -6,7 +6,11 @@ description: 角色管理（CRUD、繼承、綁定部門、批次刪除）
 files:
   route:    backend/app/web/roles.py
   api:      backend/app/api/roles.py
-  service:  backend/app/services/permission_service.py
+  service:
+    - backend/app/services/permission_service.py
+    - backend/app/services/role_holding_service.py
+  script:
+    - scripts/migrate_proxy_assignments.py
   model:
     - backend/app/models/role.py
     - backend/app/models/role_permission.py

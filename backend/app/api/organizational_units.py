@@ -415,12 +415,6 @@ def delete_unit(secure_code: str):
             # （PF-249：以前只清 primary_unit，DEPT_MANAGER@已刪單位這類指派會留下來）
             purge_unit_memberships(u)
 
-            # 清除舊的人對人主管/副主管/代理人欄位
-            u.manager_secure_code = None
-            u.deputy_manager_secure_code = None
-            u.proxy1_secure_code = None
-            u.proxy2_secure_code = None
-
             u.is_deleted = True
             u.deleted_at = datetime.utcnow()
 
