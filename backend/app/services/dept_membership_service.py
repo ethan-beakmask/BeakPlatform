@@ -18,10 +18,10 @@ from app.models.user_unit_membership import (
     UserUnitMembership,
 )
 
-# 部門系統角色：兩個成員類（ROLE）＋五個職位類（POSITION）。
-# 移除成員或刪除單位時七個都要收，只收前三個會留下副主管／代理人殘留。
+# 部門系統角色：兩個成員類（ROLE）＋三個職位類（POSITION）。
+# 移除成員或刪除單位時五個都要收，只收前三個會留下副主管殘留。
 DEPT_MEMBER_ROLE_CODES = ('DEPT_MEMBER', 'DEPT_EMPLOYEE')
-DEPT_POSITION_ROLE_CODES = ('DEPT_HEAD', 'DEPT_MANAGER', 'DEPT_DEPUTY', 'DEPT_PROXY1', 'DEPT_PROXY2')
+DEPT_POSITION_ROLE_CODES = ('DEPT_HEAD', 'DEPT_MANAGER', 'DEPT_DEPUTY')
 DEPT_ROLE_CODES = DEPT_MEMBER_ROLE_CODES + DEPT_POSITION_ROLE_CODES
 
 
@@ -139,8 +139,7 @@ def remove_dept_membership(user, unit) -> None:
     移除部門成員關係與所有部門角色。
 
     1. 軟刪除 UserUnitMembership(SOLID)
-    2. 軟刪除該部門下的所有部門系統角色指派（DEPT_ROLE_CODES 七個：
-       成員類 DEPT_MEMBER／DEPT_EMPLOYEE，職位類 DEPT_HEAD／DEPT_MANAGER／DEPT_DEPUTY／DEPT_PROXY1／DEPT_PROXY2）
+    2. 軟刪除該人在該單位下的所有角色指派（任何角色、任何性質）
     """
     org_sc = unit.org_secure_code
     user_sc = user.secure_code
@@ -158,10 +157,16 @@ def remove_dept_membership(user, unit) -> None:
         membership.is_deleted = True
         membership.deleted_at = datetime.utcnow()
 
-    for role_code in DEPT_ROLE_CODES:
-        role = get_system_role(org_sc, role_code)
-        if role:
-            revoke_role_assignment(org_sc, user_sc, role.secure_code, unit_sc)
+    now = datetime.utcnow()
+    assignments = UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == org_sc,
+        UserRoleAssignment.user_secure_code == user_sc,
+        UserRoleAssignment.unit_secure_code == unit_sc,
+        UserRoleAssignment.is_deleted == False,  # noqa: E712
+    ).all()
+    for assignment in assignments:
+        assignment.is_deleted = True
+        assignment.deleted_at = now
 
 
 def _unit_member_secure_codes(unit) -> set[str]:
@@ -246,6 +251,45 @@ def purge_unit_memberships(unit) -> dict:
     }
 
 
+def _has_regular_role(org_sc: str, user_sc: str, role_code: str, unit_sc: str) -> bool:
+    role = get_system_role(org_sc, role_code)
+    if not role:
+        return False
+    return UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == org_sc,
+        UserRoleAssignment.user_secure_code == user_sc,
+        UserRoleAssignment.role_secure_code == role.secure_code,
+        UserRoleAssignment.unit_secure_code == unit_sc,
+        UserRoleAssignment.assignment_kind == AssignmentKind.REGULAR,
+        UserRoleAssignment.is_deleted == False,  # noqa: E712
+    ).first() is not None
+
+
+def _holds_manager_or_deputy(org_sc: str, user_sc: str, unit_sc: str) -> bool:
+    return (
+        _has_regular_role(org_sc, user_sc, 'DEPT_MANAGER', unit_sc)
+        or _has_regular_role(org_sc, user_sc, 'DEPT_DEPUTY', unit_sc)
+    )
+
+
+def _restore_employee_if_not_leadership(org_sc: str, user_sc: str, unit_sc: str, operator: str) -> None:
+    if _holds_manager_or_deputy(org_sc, user_sc, unit_sc):
+        return
+    dept_employee_role = get_system_role(org_sc, 'DEPT_EMPLOYEE')
+    if dept_employee_role:
+        ensure_role_assignment(org_sc, user_sc, dept_employee_role.secure_code, unit_sc, operator)
+
+
+def _sync_head(org_sc: str, user_sc: str, unit_sc: str, operator: str) -> None:
+    head_role = get_system_role(org_sc, 'DEPT_HEAD')
+    if not head_role:
+        return
+    if _holds_manager_or_deputy(org_sc, user_sc, unit_sc):
+        ensure_role_assignment(org_sc, user_sc, head_role.secure_code, unit_sc, operator)
+    else:
+        revoke_role_assignment(org_sc, user_sc, head_role.secure_code, unit_sc)
+
+
 def set_dept_manager(user, unit, operator: str) -> None:
     """
     把 user 設為 unit 的部門主管。
@@ -259,8 +303,6 @@ def set_dept_manager(user, unit, operator: str) -> None:
     dept_manager_role = get_system_role(org_sc, 'DEPT_MANAGER')
     if not dept_manager_role:
         raise LookupError('DEPT_MANAGER')
-
-    dept_employee_role = get_system_role(org_sc, 'DEPT_EMPLOYEE')
 
     user.primary_unit_secure_code = unit_sc
     ensure_dept_membership(user, unit, operator)
@@ -276,13 +318,10 @@ def set_dept_manager(user, unit, operator: str) -> None:
     for assignment in existing_manager_assignments:
         assignment.is_deleted = True
         assignment.deleted_at = datetime.utcnow()
-        if dept_employee_role:
-            ensure_role_assignment(
-                org_sc, assignment.user_secure_code,
-                dept_employee_role.secure_code, unit_sc,
-                operator
-            )
+        _sync_head(org_sc, assignment.user_secure_code, unit_sc, operator)
+        _restore_employee_if_not_leadership(org_sc, assignment.user_secure_code, unit_sc, operator)
 
+    dept_employee_role = get_system_role(org_sc, 'DEPT_EMPLOYEE')
     if dept_employee_role:
         revoke_role_assignment(
             org_sc, user.secure_code,
@@ -297,6 +336,70 @@ def set_dept_manager(user, unit, operator: str) -> None:
         assigned_by=operator,
     )
     db.session.add(new_assignment)
+    _sync_head(org_sc, user.secure_code, unit_sc, operator)
+
+
+def set_dept_deputy(user, unit, operator: str) -> None:
+    """把 user 設為 unit 的部門副主管。"""
+    org_sc = unit.org_secure_code
+    unit_sc = unit.secure_code
+    dept_deputy_role = get_system_role(org_sc, 'DEPT_DEPUTY')
+    if not dept_deputy_role:
+        raise LookupError('DEPT_DEPUTY')
+
+    user.primary_unit_secure_code = user.primary_unit_secure_code or unit_sc
+    ensure_dept_membership(user, unit, operator)
+
+    existing_deputy_assignments = UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == org_sc,
+        UserRoleAssignment.role_secure_code == dept_deputy_role.secure_code,
+        UserRoleAssignment.unit_secure_code == unit_sc,
+        UserRoleAssignment.assignment_kind == AssignmentKind.REGULAR,
+        UserRoleAssignment.is_deleted == False,  # noqa: E712
+    ).all()
+
+    for assignment in existing_deputy_assignments:
+        assignment.is_deleted = True
+        assignment.deleted_at = datetime.utcnow()
+        _sync_head(org_sc, assignment.user_secure_code, unit_sc, operator)
+        _restore_employee_if_not_leadership(org_sc, assignment.user_secure_code, unit_sc, operator)
+
+    dept_employee_role = get_system_role(org_sc, 'DEPT_EMPLOYEE')
+    if dept_employee_role:
+        revoke_role_assignment(org_sc, user.secure_code, dept_employee_role.secure_code, unit_sc)
+
+    db.session.add(UserRoleAssignment(
+        org_secure_code=org_sc,
+        user_secure_code=user.secure_code,
+        role_secure_code=dept_deputy_role.secure_code,
+        unit_secure_code=unit_sc,
+        assigned_by=operator,
+    ))
+    _sync_head(org_sc, user.secure_code, unit_sc, operator)
+
+
+def remove_dept_manager(user, unit, operator: str) -> None:
+    """移除 user 在 unit 的正主管職位，不移出部門。"""
+    org_sc = unit.org_secure_code
+    unit_sc = unit.secure_code
+    dept_manager_role = get_system_role(org_sc, 'DEPT_MANAGER')
+    if not dept_manager_role:
+        raise LookupError('DEPT_MANAGER')
+    revoke_role_assignment(org_sc, user.secure_code, dept_manager_role.secure_code, unit_sc)
+    _sync_head(org_sc, user.secure_code, unit_sc, operator)
+    _restore_employee_if_not_leadership(org_sc, user.secure_code, unit_sc, operator)
+
+
+def remove_dept_deputy(user, unit, operator: str) -> None:
+    """移除 user 在 unit 的副主管職位，不移出部門。"""
+    org_sc = unit.org_secure_code
+    unit_sc = unit.secure_code
+    dept_deputy_role = get_system_role(org_sc, 'DEPT_DEPUTY')
+    if not dept_deputy_role:
+        raise LookupError('DEPT_DEPUTY')
+    revoke_role_assignment(org_sc, user.secure_code, dept_deputy_role.secure_code, unit_sc)
+    _sync_head(org_sc, user.secure_code, unit_sc, operator)
+    _restore_employee_if_not_leadership(org_sc, user.secure_code, unit_sc, operator)
 
 
 def reconcile_dept_manager(manager, unit, operator: str) -> bool:
@@ -338,6 +441,7 @@ def reconcile_dept_manager(manager, unit, operator: str) -> bool:
                 dept_employee_role.secure_code,
                 unit_sc,
             )
+        _sync_head(org_sc, manager.secure_code, unit_sc, operator)
         return False
 
     set_dept_manager(manager, unit, operator)

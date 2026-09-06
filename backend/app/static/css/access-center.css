@@ -599,10 +599,24 @@
     padding: 3px 7px;
 }
 
+.ac-role-chip.ac-kind-expired {
+    color: var(--color-text-muted);
+    opacity: 0.68;
+}
+
 .ac-role-chip span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.ac-kind-tag {
+    border: 1px solid var(--color-info);
+    color: var(--color-info);
+    flex: 0 0 auto;
+    font-size: var(--font-size-xs);
+    line-height: 1.15;
+    padding: 1px 5px;
 }
 
 .ac-chip-remove {
@@ -651,6 +665,17 @@
 
 .ac-account-modal-user span {
     color: var(--color-text-secondary);
+}
+
+.ac-grant-fields {
+    display: grid;
+    gap: 14px;
+}
+
+.ac-date-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .ac-health-actions,

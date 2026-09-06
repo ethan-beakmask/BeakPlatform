@@ -2,10 +2,29 @@
  * Access Center - Account roles tab
  */
 function acAccountsTab() {
+    const config = window.__AC_CONFIG || {};
+
+    function emptyForm() {
+        return {
+            kind: 'regular',
+            roleSecureCode: '',
+            unitSecureCode: '',
+            actingForSecureCode: '',
+            validFrom: '',
+            validUntil: '',
+            allowedFormTemplates: [],
+            grantReason: ''
+        };
+    }
+
     return {
         users: [],
         assignableRoles: [],
+        assignableRolesForGrant: [],
         units: [],
+        formTemplates: config.formTemplates || [],
+        roleHolders: [],
+        roleHoldersLoading: false,
         loading: false,
         saving: false,
         removingRoleCode: '',
@@ -25,31 +44,36 @@ function acAccountsTab() {
             has_next: false
         },
         selectedUser: null,
-        form: {
-            roleSecureCode: '',
-            unitSecureCode: ''
-        },
+        form: emptyForm(),
         accountTypeOptions: [
             { value: '', label: __('全部') },
             { value: 'ORG_ADMIN', label: __('企業管理員') },
             { value: 'EMPLOYEE', label: __('企業成員') },
             { value: 'EXTERNAL', label: __('外部廠商') }
         ],
+        assignmentKindOptions: [
+            { value: 'regular', label: __('正式') },
+            { value: 'proxy', label: __('代理') },
+            { value: 'standby', label: __('候補') }
+        ],
 
         async init() {
             await this.loadAccounts();
         },
 
-        get selectedRole() {
-            return this.assignableRoles.find(role => role.secure_code === this.form.roleSecureCode) || null;
+        get activeRoleSource() {
+            return this.form.kind === 'regular' ? this.assignableRoles : this.assignableRolesForGrant;
         },
 
-        // PERM-01 層界：EXTERNAL 帳號只列外部範圍角色，內部帳號不列外部範圍角色
-        // （後端 ensure_role_layer_compatible 才是防線，這裡只是不讓人選到必被退回的選項）
+        get selectedRole() {
+            return this.activeRoleSource.find(role => role.secure_code === this.form.roleSecureCode) || null;
+        },
+
+        // PERM-01 層界：EXTERNAL 帳號只列外部範圍角色，內部帳號不列外部範圍角色。
         get roleOptions() {
-            if (!this.selectedUser) return this.assignableRoles;
+            if (!this.selectedUser) return this.activeRoleSource;
             const isExternal = this.selectedUser.account_type === 'EXTERNAL';
-            return this.assignableRoles.filter(role => (role.scope_type === 'EXTERNAL') === isExternal);
+            return this.activeRoleSource.filter(role => (role.scope_type === 'EXTERNAL') === isExternal);
         },
 
         get selectedRoleNeedsUnit() {
@@ -62,9 +86,27 @@ function acAccountsTab() {
             return this.units.filter(unit => unit.unit_type === unitType);
         },
 
+        get canLoadRoleHolders() {
+            if (this.form.kind === 'regular' || !this.form.roleSecureCode) return false;
+            if (this.selectedRoleNeedsUnit && !this.form.unitSecureCode) return false;
+            return true;
+        },
+
+        get roleHoldersPlaceholder() {
+            if (this.roleHoldersLoading) return __('載入中');
+            if (!this.canLoadRoleHolders) return __('請先選擇角色與單位');
+            return this.form.kind === 'proxy' ? __('請選擇被代理人') : __('不指定');
+        },
+
         get canAssign() {
             if (this.saving || !this.form.roleSecureCode) return false;
             if (this.selectedRoleNeedsUnit && !this.form.unitSecureCode) return false;
+            if (this.form.kind === 'proxy') {
+                return !!(this.form.actingForSecureCode && this.form.validFrom && this.form.validUntil && this.form.grantReason);
+            }
+            if (this.form.kind === 'standby') {
+                return !!this.form.grantReason;
+            }
             return true;
         },
 
@@ -79,6 +121,7 @@ function acAccountsTab() {
                 const data = await window.acFetch('/api/access/account-roles?' + params.toString());
                 this.users = data.users || [];
                 this.assignableRoles = data.assignable_roles || [];
+                this.assignableRolesForGrant = data.assignable_roles_for_grant || [];
                 this.units = data.units || [];
                 this.pagination = data.pagination || this.pagination;
                 this.page = this.pagination.page || this.page;
@@ -108,10 +151,8 @@ function acAccountsTab() {
 
         openAssign(user) {
             this.selectedUser = user;
-            this.form = {
-                roleSecureCode: '',
-                unitSecureCode: ''
-            };
+            this.form = emptyForm();
+            this.roleHolders = [];
             this.modalError = '';
             this.modalOpen = true;
         },
@@ -123,9 +164,47 @@ function acAccountsTab() {
             this.saving = false;
         },
 
-        onRoleChange() {
+        onKindChange() {
+            this.form.roleSecureCode = '';
             this.form.unitSecureCode = '';
+            this.form.actingForSecureCode = '';
+            this.form.validFrom = '';
+            this.form.validUntil = '';
+            this.form.allowedFormTemplates = [];
+            this.form.grantReason = '';
+            this.roleHolders = [];
             this.modalError = '';
+        },
+
+        async onRoleChange() {
+            this.form.unitSecureCode = '';
+            this.form.actingForSecureCode = '';
+            this.roleHolders = [];
+            this.modalError = '';
+            await this.loadRoleHoldersIfReady();
+        },
+
+        async onUnitChange() {
+            this.form.actingForSecureCode = '';
+            this.roleHolders = [];
+            this.modalError = '';
+            await this.loadRoleHoldersIfReady();
+        },
+
+        async loadRoleHoldersIfReady() {
+            if (!this.canLoadRoleHolders) return;
+            this.roleHoldersLoading = true;
+            const params = new URLSearchParams();
+            params.set('role_secure_code', this.form.roleSecureCode);
+            if (this.form.unitSecureCode) params.set('unit_secure_code', this.form.unitSecureCode);
+            try {
+                const data = await window.acFetch('/api/access/role-holders?' + params.toString());
+                this.roleHolders = data.holders || [];
+            } catch (e) {
+                this.modalError = e.message || __('載入被代理人失敗');
+            } finally {
+                this.roleHoldersLoading = false;
+            }
         },
 
         async assignSelectedRole() {
@@ -135,10 +214,18 @@ function acAccountsTab() {
             try {
                 const body = {
                     user_secure_code: this.selectedUser.secure_code,
-                    role_secure_code: this.form.roleSecureCode
+                    role_secure_code: this.form.roleSecureCode,
+                    kind: this.form.kind
                 };
                 if (this.selectedRoleNeedsUnit) {
                     body.unit_secure_code = this.form.unitSecureCode;
+                }
+                if (this.form.kind !== 'regular') {
+                    body.acting_for_secure_code = this.form.actingForSecureCode || null;
+                    body.valid_from = this.form.validFrom || null;
+                    body.valid_until = this.form.validUntil || null;
+                    body.allowed_form_templates = this.form.allowedFormTemplates;
+                    body.grant_reason = this.form.grantReason;
                 }
                 const data = await window.acFetch('/api/access/assign', {
                     method: 'POST',
@@ -166,8 +253,7 @@ function acAccountsTab() {
                 const data = await window.acFetch('/api/access/revoke', {
                     method: 'POST',
                     body: {
-                        user_secure_code: user.secure_code,
-                        role_secure_code: role.secure_code
+                        assignment_secure_code: role.assignment_secure_code
                     }
                 });
                 this.showAlert(data.message || __('角色已移除'), 'success');
@@ -187,9 +273,47 @@ function acAccountsTab() {
             return label;
         },
 
+        roleKindLabel(role) {
+            const kind = role.assignment_kind || 'regular';
+            const range = this.roleDateRange(role);
+            if (kind === 'proxy') {
+                const name = role.acting_for_name || role.acting_for_secure_code || '';
+                return (name ? __('代理 {name}', { name }) : __('代理')) + (range ? ' ' + range : '');
+            }
+            if (kind === 'standby') {
+                return __('候補') + (range ? ' ' + range : '');
+            }
+            return '';
+        },
+
+        roleDateRange(role) {
+            const from = this.shortDate(role.valid_from);
+            const until = this.shortDate(role.valid_until);
+            if (from && until) return from + '～' + until;
+            if (from) return from + '～';
+            if (until) return '～' + until;
+            return '';
+        },
+
+        shortDate(value) {
+            if (!value || value.length < 10) return '';
+            return value.slice(5, 10);
+        },
+
         roleOptionLabel(role) {
             const scope = this.scopeLabel(role.scope_type);
             return role.name + ' ' + window.acRoleOriginSuffix(role) + ' - ' + scope;
+        },
+
+        holderLabel(holder) {
+            return holder.employee_id
+                ? holder.employee_id + ' ' + holder.display_name
+                : holder.display_name;
+        },
+
+        formTemplateLabel(template) {
+            const code = template.code ? '[' + template.code + '] ' : '';
+            return code + template.name;
         },
 
         roleOriginLabel(role) {

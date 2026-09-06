@@ -4,6 +4,7 @@ import pytest
 
 from app import db
 from app.models import (
+    AssignmentKind,
     OrganizationalUnit,
     Role,
     RoleType,
@@ -22,7 +23,10 @@ from app.services.dept_membership_service import (
     ensure_solid_membership,
     purge_unit_memberships,
     reconcile_dept_manager,
+    remove_dept_deputy,
+    remove_dept_manager,
     remove_dept_membership,
+    set_dept_deputy,
     set_dept_manager,
 )
 
@@ -81,6 +85,8 @@ def _roles(org, include_manager=True):
     roles = {
         'member': _role(org, 'DEPT_MEMBER'),
         'employee': _role(org, 'DEPT_EMPLOYEE', RoleType.POSITION),
+        'head': _role(org, 'DEPT_HEAD', RoleType.POSITION),
+        'deputy': _role(org, 'DEPT_DEPUTY', RoleType.POSITION),
     }
     if include_manager:
         roles['manager'] = _role(org, 'DEPT_MANAGER', RoleType.POSITION)
@@ -174,7 +180,44 @@ def test_set_dept_manager_switches_roles_and_primary_unit(test_org):
     assert _active_assignment(old, roles['employee'], unit) is not None
     assert _active_assignment(new, roles['employee'], unit) is None
     assert _active_assignment(new, roles['manager'], unit) is not None
+    assert _active_assignment(new, roles['head'], unit) is not None
     assert new.primary_unit_secure_code == unit.secure_code
+
+
+def test_set_dept_deputy_carries_head_and_drops_employee(test_org):
+    user = _user('deptsvc_deputy_set', test_org, 'deptsvcdeputyset', 'Deputy Set')
+    unit = _unit(test_org, 'DS', '副主管設定部')
+    roles = _roles(test_org)
+
+    set_dept_deputy(user, unit, 'tester')
+    db.session.flush()
+
+    assert _active_assignment(user, roles['deputy'], unit) is not None
+    assert _active_assignment(user, roles['head'], unit) is not None
+    assert _active_assignment(user, roles['employee'], unit) is None
+
+
+def test_removing_one_leadership_role_keeps_head_until_both_removed(test_org):
+    user = _user('deptsvc_both_lead', test_org, 'deptsvcbothlead', 'Both Lead')
+    unit = _unit(test_org, 'BL', '雙職部')
+    roles = _roles(test_org)
+
+    set_dept_manager(user, unit, 'tester')
+    set_dept_deputy(user, unit, 'tester')
+    db.session.flush()
+
+    remove_dept_manager(user, unit, 'tester')
+    db.session.flush()
+    assert _active_assignment(user, roles['manager'], unit) is None
+    assert _active_assignment(user, roles['deputy'], unit) is not None
+    assert _active_assignment(user, roles['head'], unit) is not None
+    assert _active_assignment(user, roles['employee'], unit) is None
+
+    remove_dept_deputy(user, unit, 'tester')
+    db.session.flush()
+    assert _active_assignment(user, roles['deputy'], unit) is None
+    assert _active_assignment(user, roles['head'], unit) is None
+    assert _active_assignment(user, roles['employee'], unit) is not None
 
 
 def test_remove_membership_soft_deletes_rows_and_missing_manager_role_raises(test_org):
@@ -223,9 +266,11 @@ def test_reconcile_dept_manager_sets_manager_then_is_a_no_op(test_org):
 
     assert _active_assignment(user, roles['manager'], unit) is not None
     assert _active_assignment(user, roles['member'], unit) is not None
+    assert _active_assignment(user, roles['head'], unit) is not None
     assert _active_assignment(user, roles['employee'], unit) is None
     employee_row = _row(user, roles['employee'], unit)
     assert employee_row.is_deleted is True
+    assert _active_assignment(user, roles['head'], unit) is not None
     assert employee_row.deleted_at is not None
     assert UserUnitMembership.query.filter_by(
         user_secure_code=user.secure_code,
@@ -315,29 +360,48 @@ def test_ensure_solid_membership_only_touches_membership(test_org):
 
 def _position_roles(org):
     return {
-        'deputy': _role(org, 'DEPT_DEPUTY', RoleType.POSITION),
-        'proxy1': _role(org, 'DEPT_PROXY1', RoleType.POSITION),
-        'proxy2': _role(org, 'DEPT_PROXY2', RoleType.POSITION),
+        'custom': _role(org, 'DEPT_CUSTOM_STANDBY', RoleType.POSITION),
     }
 
 
-def test_remove_membership_also_revokes_deputy_and_proxy_roles(test_org):
+def test_remove_membership_also_revokes_deputy_and_standby_roles(test_org):
     user = _user('deptsvc_deputy', test_org, 'deptsvcdeputy', 'Deputy')
     unit = _unit(test_org, 'DP', '副主管部')
     roles = _roles(test_org)
     positions = _position_roles(test_org)
     ensure_dept_membership(user, unit, 'tester')
+    ensure_role_assignment(test_org.secure_code, user.secure_code, roles['deputy'].secure_code,
+                           unit.secure_code, 'tester')
     for role in positions.values():
-        ensure_role_assignment(test_org.secure_code, user.secure_code, role.secure_code,
-                               unit.secure_code, 'tester')
+        db.session.add(UserRoleAssignment(
+            org_secure_code=test_org.secure_code,
+            user_secure_code=user.secure_code,
+            role_secure_code=role.secure_code,
+            unit_secure_code=unit.secure_code,
+            assignment_kind=AssignmentKind.STANDBY,
+            is_deleted=False,
+        ))
     db.session.flush()
-    assert all(_active_assignment(user, role, unit) for role in positions.values())
+    assert _active_assignment(user, roles['deputy'], unit) is not None
+    assert all(UserRoleAssignment.query.filter_by(
+        user_secure_code=user.secure_code,
+        role_secure_code=role.secure_code,
+        unit_secure_code=unit.secure_code,
+        assignment_kind=AssignmentKind.STANDBY,
+        is_deleted=False,
+    ).first() for role in positions.values())
 
     remove_dept_membership(user, unit)
     db.session.flush()
 
     for role in list(roles.values()) + list(positions.values()):
         assert _active_assignment(user, role, unit) is None
+    assert UserRoleAssignment.query.filter_by(
+        user_secure_code=user.secure_code,
+        unit_secure_code=unit.secure_code,
+        assignment_kind=AssignmentKind.STANDBY,
+        is_deleted=False,
+    ).count() == 0
 
 
 def test_count_unit_members_unions_membership_and_primary_unit(test_org):
@@ -367,8 +431,14 @@ def test_purge_unit_memberships_soft_deletes_rows_only_for_that_unit(test_org):
     member = _user('deptsvc_pg2', test_org, 'deptsvcpg2', 'Member')
     ensure_dept_membership(member, unit, 'tester')
     set_dept_manager(manager, unit, 'tester')
-    ensure_role_assignment(test_org.secure_code, member.secure_code, positions['deputy'].secure_code,
-                           unit.secure_code, 'tester')
+    db.session.add(UserRoleAssignment(
+        org_secure_code=test_org.secure_code,
+        user_secure_code=member.secure_code,
+        role_secure_code=positions['custom'].secure_code,
+        unit_secure_code=unit.secure_code,
+        assignment_kind=AssignmentKind.STANDBY,
+        is_deleted=False,
+    ))
     db.session.add(UserUnitMembership(
         org_secure_code=test_org.secure_code, user_secure_code=manager.secure_code,
         unit_secure_code=unit.secure_code, membership_type=MembershipType.DOTTED,
@@ -381,8 +451,8 @@ def test_purge_unit_memberships_soft_deletes_rows_only_for_that_unit(test_org):
     result = purge_unit_memberships(unit)
     db.session.flush()
 
-    # member：DEPT_MEMBER＋DEPT_EMPLOYEE＋DEPT_DEPUTY；manager：DEPT_MEMBER＋DEPT_MANAGER（DEPT_EMPLOYEE 已被 set_dept_manager 撤掉）
-    assert result == {'members': 2, 'memberships': 3, 'assignments': 5}
+    # member：DEPT_MEMBER＋DEPT_EMPLOYEE＋一列 standby；manager：DEPT_MEMBER＋DEPT_MANAGER＋DEPT_HEAD
+    assert result == {'members': 2, 'memberships': 3, 'assignments': 6}
     assert UserUnitMembership.query.filter_by(unit_secure_code=unit.secure_code, is_deleted=False).count() == 0
     assert UserRoleAssignment.query.filter_by(unit_secure_code=unit.secure_code, is_deleted=False).count() == 0
     assert manager.primary_unit_secure_code is None

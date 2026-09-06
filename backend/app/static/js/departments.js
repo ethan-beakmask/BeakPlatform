@@ -53,7 +53,7 @@
             } else if (nodeType === 'person') {
                 var tag = document.createElement('span');
                 tag.className = 'role-tag ' + (node.data.tagClass || 'employee');
-                var roleLabels = { manager: '\u4E3B', deputy: '\u526F', proxy1: '\u4EE3', proxy2: '\u4EE3', member: '\u54E1' };
+                var roleLabels = { manager: '\u4E3B', deputy: '\u526F', standby: '\u5019', member: '\u54E1' };
                 tag.textContent = roleLabels[node.data.role] || '\u54E1';
                 cell.appendChild(tag);
             }
@@ -96,7 +96,7 @@ function departmentManager() {
         unassignedUsers: [],
         selectedDept: null,
         members: [],
-        leadership: { manager: null, deputy: null, proxy1: null, proxy2: null },
+        leadership: { manager: null, deputy: null, standby: [] },
         crossMembers: [],
         showPeopleInTree: false,
         isCreating: false,
@@ -124,8 +124,10 @@ function departmentManager() {
         // ==================== 計算屬性 ====================
 
         get leaderIds() {
-            return [this.leadership.manager?.id, this.leadership.deputy?.id,
-                    this.leadership.proxy1?.id, this.leadership.proxy2?.id].filter(Boolean);
+            return [
+                this.leadership.manager?.id,
+                this.leadership.deputy?.id
+            ].concat((this.leadership.standby || []).map(s => s.id)).filter(Boolean);
         },
 
         get regularMembers() {
@@ -294,9 +296,15 @@ function departmentManager() {
             try {
                 var res = await fetch(`${window.__BP}/api/units/${deptId}/leadership`);
                 var data = await res.json();
-                if (res.ok) this.leadership = data;
+                if (res.ok) {
+                    this.leadership = {
+                        manager: data.manager || null,
+                        deputy: data.deputy || null,
+                        standby: data.standby || []
+                    };
+                }
             } catch (err) {
-                this.leadership = { manager: null, deputy: null, proxy1: null, proxy2: null };
+                this.leadership = { manager: null, deputy: null, standby: [] };
             }
         },
 
@@ -362,10 +370,13 @@ function departmentManager() {
                     var l = item._leadership;
                     if (l.manager) node.children.push(self._personNode(l.manager, item.id, 'manager', 'leader'));
                     if (l.deputy)  node.children.push(self._personNode(l.deputy,  item.id, 'deputy',  'leader'));
-                    if (l.proxy1)  node.children.push(self._personNode(l.proxy1,  item.id, 'proxy1',  'leader'));
-                    if (l.proxy2)  node.children.push(self._personNode(l.proxy2,  item.id, 'proxy2',  'leader'));
+                    (l.standby || []).forEach(s => {
+                        node.children.push(self._personNode(s, item.id, 'standby', 'leader'));
+                    });
                     if (item._members) {
-                        var lIds = [l.manager?.id, l.deputy?.id, l.proxy1?.id, l.proxy2?.id].filter(Boolean);
+                        var lIds = [l.manager?.id, l.deputy?.id]
+                            .concat((l.standby || []).map(s => s.id))
+                            .filter(Boolean);
                         item._members.filter(m => !lIds.includes(m.id)).forEach(m => {
                             node.children.push(self._personNode(m, item.id, 'member', 'employee'));
                         });
@@ -461,7 +472,7 @@ function departmentManager() {
             this.isCreating = false;
             this.isCreatingEmployee = false;
             this.members = [];
-            this.leadership = { manager: null, deputy: null, proxy1: null, proxy2: null };
+            this.leadership = { manager: null, deputy: null, standby: [] };
             this.crossMembers = [];
         },
 
@@ -478,7 +489,6 @@ function departmentManager() {
                 this.loadLeadership(id),
                 this.loadCrossMembers(id)
             ]);
-            this._mergeCrossToProxy();
         },
 
         startCreate() {
@@ -605,17 +615,6 @@ function departmentManager() {
             return 'employee';
         },
 
-        _mergeCrossToProxy() {
-            var crossMgr = this.crossMembers.find(cm => cm.role_type === 'MANAGER');
-            if (crossMgr && !this.leadership.proxy1 && crossMgr.user) {
-                this.leadership.proxy1 = { ...crossMgr.user, _isCross: true };
-            }
-            var crossDep = this.crossMembers.find(cm => cm.role_type === 'DEPUTY');
-            if (crossDep && !this.leadership.proxy2 && crossDep.user) {
-                this.leadership.proxy2 = { ...crossDep.user, _isCross: true };
-            }
-        },
-
         // ==================== 跨部門人員 ====================
 
         async removeCrossMember(cm) {
@@ -633,7 +632,6 @@ function departmentManager() {
                         this.loadLeadership(this.selectedDept.id),
                         this.loadCrossMembers(this.selectedDept.id)
                     ]);
-                    this._mergeCrossToProxy();
                 } else {
                     var data = await res.json();
                     this.showToast(data.error || __('移除失敗'), 'error');
@@ -721,6 +719,12 @@ function departmentManager() {
             }
             if (!person) return;
 
+            if (position === 'standby' && this._shouldCross(e)) {
+                this.showToast(__('候補代理人不支援跨部門'), 'error');
+                this.clearDrag();
+                return;
+            }
+
             // 跨部門代理人不可在部門內拖拉異動
             if (person._isCross) {
                 this.showToast('\u8DE8\u90E8\u9580\u4EE3\u7406\u4EBA\u4E0D\u53EF\u76F4\u63A5\u7570\u52D5\uFF0C\u8ACB\u5F9E\u8DE8\u90E8\u9580\u4EBA\u54E1\u5340\u7BA1\u7406', 'error');
@@ -730,18 +734,6 @@ function departmentManager() {
 
             // Ctrl + 非未分配來源 = 跨部門
             if (this._shouldCross(e)) {
-                // manager/proxy1 → 代理人(一)，deputy/proxy2 → 代理人(二)
-                // 對應代理席有人 → 阻擋
-                if ((position === 'manager' || position === 'proxy1') && this.leadership.proxy1) {
-                    this.showToast('\u4EE3\u7406\u4EBA(\u4E00)\u4F4D\u7F6E\u5DF2\u4F54\u4F4D\uFF0C\u8ACB\u5148\u79FB\u9664', 'error');
-                    this.clearDrag();
-                    return;
-                }
-                if ((position === 'deputy' || position === 'proxy2') && this.leadership.proxy2) {
-                    this.showToast('\u4EE3\u7406\u4EBA(\u4E8C)\u4F4D\u7F6E\u5DF2\u4F54\u4F4D\uFF0C\u8ACB\u5148\u79FB\u9664', 'error');
-                    this.clearDrag();
-                    return;
-                }
                 var roleType = this._crossRoleType(position);
                 await this._addCrossViaApi(this.selectedDept.id, person.id, roleType);
                 await this._refreshAll();
@@ -754,7 +746,7 @@ function departmentManager() {
                 var oldDeptId = this._dragData.deptId;
                 var oldRole = this._dragData.role;
                 if (oldRole && oldRole !== 'member') {
-                    await this._apiDelete(window.__BP + '/api/units/' + oldDeptId + '/leadership/' + oldRole);
+                    await this._deleteLeadershipRole(oldDeptId, oldRole, person.id);
                 }
                 if (oldDeptId !== this.selectedDept.id) {
                     // 404 表示非此部門主要成員，忽略即可
@@ -763,7 +755,7 @@ function departmentManager() {
             }
             // 管理層職位互換
             else if (this.draggedLeader && this.draggedLeaderType !== position) {
-                await this._apiDelete(window.__BP + '/api/units/' + this.selectedDept.id + '/leadership/' + this.draggedLeaderType);
+                await this._deleteLeadershipRole(this.selectedDept.id, this.draggedLeaderType, person.id);
             }
 
             var res = await this._apiPost(window.__BP + '/api/units/' + this.selectedDept.id + '/leadership/' + position, { user_id: person.id });
@@ -811,7 +803,7 @@ function departmentManager() {
                 var oldDeptId = this._dragData.deptId;
                 var oldRole = this._dragData.role;
                 if (oldRole && oldRole !== 'member') {
-                    await this._apiDelete(window.__BP + '/api/units/' + oldDeptId + '/leadership/' + oldRole);
+                    await this._deleteLeadershipRole(oldDeptId, oldRole, person.id);
                 }
                 if (oldDeptId !== this.selectedDept.id) {
                     await this._apiDelete(window.__BP + '/api/units/' + oldDeptId + '/members/' + person.id);
@@ -822,7 +814,7 @@ function departmentManager() {
                     this.showToast(__('已移除管理層角色'), 'success');
                 }
             } else if (this.draggedLeader) {
-                await this._apiDelete(window.__BP + '/api/units/' + this.selectedDept.id + '/leadership/' + this.draggedLeaderType);
+                await this._deleteLeadershipRole(this.selectedDept.id, this.draggedLeaderType, person.id);
                 this.showToast(__('已移除管理層角色'), 'success');
             } else if (this.draggedUser) {
                 await this._apiPost(window.__BP + '/api/units/' + this.selectedDept.id + '/members', { user_id: person.id });
@@ -850,9 +842,9 @@ function departmentManager() {
             if (!person || !deptId) return;
 
             if (fromTree && this._dragData?.role && this._dragData.role !== 'member') {
-                await this._apiDelete(window.__BP + '/api/units/' + deptId + '/leadership/' + this._dragData.role);
+                await this._deleteLeadershipRole(deptId, this._dragData.role, person.id);
             } else if (this.draggedLeader) {
-                await this._apiDelete(window.__BP + '/api/units/' + deptId + '/leadership/' + this.draggedLeaderType);
+                await this._deleteLeadershipRole(deptId, this.draggedLeaderType, person.id);
             }
 
             await this._apiDelete(window.__BP + '/api/units/' + deptId + '/members/' + person.id);
@@ -871,9 +863,8 @@ function departmentManager() {
         },
 
         _crossRoleType(position) {
-            // manager/proxy1 都對應代理人(一)，deputy/proxy2 都對應代理人(二)
-            if (position === 'manager' || position === 'proxy1') return 'MANAGER';
-            if (position === 'deputy' || position === 'proxy2') return 'DEPUTY';
+            if (position === 'manager') return 'MANAGER';
+            if (position === 'deputy') return 'DEPUTY';
             return 'MEMBER';
         },
 
@@ -980,7 +971,7 @@ function departmentManager() {
 
                 // 管理層先移除職位
                 if (self.draggedLeader && self.selectedDept) {
-                    await self._apiDelete(window.__BP + '/api/units/' + self.selectedDept.id + '/leadership/' + self.draggedLeaderType);
+                    await self._deleteLeadershipRole(self.selectedDept.id, self.draggedLeaderType, person.id);
                 }
                 // 從原部門移除再加入新部門
                 if (self.selectedDept) {
@@ -1015,7 +1006,7 @@ function departmentManager() {
         async _movePersonToDept(drag, targetDeptId) {
             var personId = drag.person?.id || drag.person;
             if (drag.role && drag.role !== 'member' && drag.deptId) {
-                await this._apiDelete(window.__BP + '/api/units/' + drag.deptId + '/leadership/' + drag.role);
+                await this._deleteLeadershipRole(drag.deptId, drag.role, personId);
             }
             if (drag.deptId && drag.deptId !== targetDeptId) {
                 await this._apiDelete(window.__BP + '/api/units/' + drag.deptId + '/members/' + personId);
@@ -1026,6 +1017,13 @@ function departmentManager() {
                 this.showToast(__('已調至 {name}', {name: (dept?.name || targetDeptId)}), 'success');
             }
             await this._refreshAll();
+        },
+
+        async _deleteLeadershipRole(deptId, role, userId) {
+            if (role === 'standby') {
+                return this._apiDelete(window.__BP + '/api/units/' + deptId + '/leadership/standby/' + userId);
+            }
+            return this._apiDelete(window.__BP + '/api/units/' + deptId + '/leadership/' + role);
         },
 
         async _apiPost(url, body) {
@@ -1052,7 +1050,6 @@ function departmentManager() {
                     this.loadLeadership(this.selectedDept.id),
                     this.loadCrossMembers(this.selectedDept.id)
                 ]);
-                this._mergeCrossToProxy();
             }
             this.buildTree();
             if (this.selectedDept) {

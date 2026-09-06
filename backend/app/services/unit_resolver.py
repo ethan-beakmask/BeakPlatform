@@ -219,24 +219,58 @@ def resolve_role_holders(
     return holders
 
 
+# PF-251 決策點 J：每站的「主管」看三個主管類角色的 regular 持有者，代表人依此優先序。
+# 正副主管都持有 DEPT_HEAD（dept_membership_service._sync_head 連帶授撤），三者取聯集是為了容忍
+# 尚未連帶授予 HEAD 的舊資料（bpserv 遷移前、權限中心直接指派的 DEPT_MANAGER）；資料一致時聯集＝HEAD。
+DEPT_HEAD_ROLE_PRIORITY = ('DEPT_MANAGER', 'DEPT_DEPUTY', 'DEPT_HEAD')
+
+
+def _dept_head_role_secure_codes(org_secure_code: str) -> list[str]:
+    """依 DEPT_HEAD_ROLE_PRIORITY 順序回傳該企業存在的主管類角色 secure_code。"""
+    roles = Role.query.filter(
+        Role.org_secure_code == org_secure_code,
+        Role.code.in_(DEPT_HEAD_ROLE_PRIORITY),
+        Role.is_deleted == False,  # noqa: E712
+    ).all()
+    by_code = {role.code: role.secure_code for role in roles}
+    return [by_code[code] for code in DEPT_HEAD_ROLE_PRIORITY if code in by_code]
+
+
+def _ordered_head_holders(role_secure_codes, org_secure_code, unit_secure_code, today, unit_only):
+    """三個主管類角色的 regular 持有者，依角色優先序再依 assigned_at 去重保序。"""
+    ordered = []
+    seen = set()
+    for role_sc in role_secure_codes:
+        for user_sc in resolve_role_holders(
+            role_sc,
+            org_secure_code,
+            unit_secure_code,
+            include_descendant_units=False,
+            today=today,
+            unit_only=unit_only,
+        ):
+            if user_sc in seen:
+                continue
+            seen.add(user_sc)
+            ordered.append(user_sc)
+    return ordered
+
+
 def iter_manager_chain(
     user_secure_code: str,
     org_secure_code: str,
     today: date | None = None,
 ):
-    """由部門推導的主管鏈。
+    """由部門推導的主管鏈（PF-251 決策點 J）。
 
-    每站先取單位指派主管；沒有可用人選時才退回全企業指派。
+    每站的主管＝該單位 DEPT_MANAGER／DEPT_DEPUTY／DEPT_HEAD 的 regular 持有者（代理不進核決鏈），
+    代表人正主管優先、再副主管、再只持 HEAD 者；每站先取單位指派，沒有可用人選才退回全企業指派。
     """
     if today is None:
         today = org_local_today(org_secure_code)
 
-    role = Role.query.filter(
-        Role.org_secure_code == org_secure_code,
-        Role.code == 'DEPT_MANAGER',
-        Role.is_deleted == False,  # noqa: E712
-    ).first()
-    if not role:
+    role_secure_codes = _dept_head_role_secure_codes(org_secure_code)
+    if not role_secure_codes:
         return
 
     start = resolve_user_unit(user_secure_code, org_secure_code, today)
@@ -246,23 +280,10 @@ def iter_manager_chain(
     units = [start] + get_unit_ancestor_codes(start, org_secure_code)
     visited = {user_secure_code}
     for level, unit_sc in enumerate(units):
-        unit_holders = resolve_role_holders(
-            role.secure_code,
-            org_secure_code,
-            unit_sc,
-            include_descendant_units=False,
-            today=today,
-            unit_only=True,
-        )
+        unit_holders = _ordered_head_holders(role_secure_codes, org_secure_code, unit_sc, today, True)
         holder = next((sc for sc in unit_holders if sc not in visited), None)
         if holder is None:
-            all_holders = resolve_role_holders(
-                role.secure_code,
-                org_secure_code,
-                unit_sc,
-                include_descendant_units=False,
-                today=today,
-            )
+            all_holders = _ordered_head_holders(role_secure_codes, org_secure_code, unit_sc, today, False)
             unit_set = set(unit_holders)
             holder = next(
                 (sc for sc in all_holders if sc not in visited and sc not in unit_set),

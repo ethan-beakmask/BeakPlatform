@@ -47,4 +47,17 @@ def index():
         organizations=organizations,
         user_org_secure_code=current_user.org_secure_code,
         user_org_label=user_org_label,
+        form_templates=[] if is_system_admin else _form_template_options(current_user.org_secure_code),
     )
+
+
+def _form_template_options(org_sc):
+    """代理／候補指派的「限定表單」多選來源（PF-251 第 3a 期）。
+    模組 model 一律函式內 import：`modules` 套件在 app 啟動後才進 sys.path（PF-71 踩過）。"""
+    from modules.form_workflow.models import FwFormTemplate
+
+    templates = FwFormTemplate.query.filter(
+        FwFormTemplate.org_secure_code == org_sc,
+        FwFormTemplate.is_deleted == False,  # noqa: E712
+    ).order_by(FwFormTemplate.name).all()
+    return [{'secure_code': t.secure_code, 'name': t.name, 'code': t.code} for t in templates]

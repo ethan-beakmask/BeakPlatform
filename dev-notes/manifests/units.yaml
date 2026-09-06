@@ -18,6 +18,7 @@ files:
   service:
     - backend/app/services/unit_resolver.py  # 使用者所屬單位、單位祖先／後代鏈、(角色, 單位) 持有者的唯一實作（PF-247）
     - backend/app/services/dept_membership_service.py  # 部門成員關係與部門主管角色的唯一實作（API 與 seed 共用）
+    - backend/app/services/proxy_role_migration.py
   model:
     - backend/app/models/organizational_unit.py
     - backend/app/models/user_unit_membership.py
@@ -43,6 +44,8 @@ files:
     - backend/app/static/vendor/beak-trellis/    # 樹狀元件
   test:
     - backend/tests/test_dept_membership_service.py
+    - backend/tests/test_unit_leadership_api.py
+    - backend/tests/test_proxy_role_migration.py
 
 tables:
   primary: organizational_units

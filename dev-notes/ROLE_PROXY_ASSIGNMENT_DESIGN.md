@@ -296,6 +296,7 @@ BELUGA（行銷部門：ethanyu 副主管、aaaa／ssss 現為代理人一二、
 | G | 性質中文 | 正式／代理／**候補**（Ethan 改用人類習慣的詞；程式碼仍 `standby`） |
 | H | 既有 `DEPT_MANAGER`＋`absence_fallback=true` 關卡 | 遷移腳本自動改指 `DEPT_HEAD` |
 | I | 全員角色與副主管 | 全員角色＝既有 `DEPT_MEMBER`（含正副主管，套圈），不新增；副主管與正主管同樣撤 `DEPT_EMPLOYEE` |
+| K | 部門頁「候補代理人」寫哪個角色的 standby（2026-09-06 19:1x） | **K2**：`DEPT_HEAD`／`DEPT_MANAGER`／`DEPT_DEPUTY`@U 各寫一列；既有 `DEPT_PROXY1/2` 指派遷移方向相同（一列 PROXY → 三列 standby） |
 | J | 直屬主管推導 | 每站主管＝`DEPT_HEAD@U` 持有者，代表人正主管優先、再副主管、都沒有才往上。關卡找不到人的處置全部交給既有設計師選項（PF-226 退回／改派、self_target、簽核逾時），**本設計不再加任何新的自動處置**（Ethan：設計太精細更容易卡住） |
 
 ## 九、不在本設計內
@@ -375,6 +376,47 @@ dev 庫五欄位＋部分索引在、7 企業 DEPT_HEAD 種入且正副主管改
 **帶進第 3 期的備忘**（不在第 2 期）：`remove_dept_membership()` 只撤 regular 列，成員被移出部門時其 proxy／standby@該單位列留著（刪整個單位時 PF-249 的 purge 會收）；
 `dept_membership_service` 連帶授撤 `DEPT_HEAD@U` 時要處理 unit 為 NULL 的全企業正副主管（dev 現況 0 列，bpserv 未查）。
 
+
+
+### 第 3a 期（2026-09-06，執行 session；codex＋主 Claude 分工實作、主 Claude 驗收）
+
+憑證：`/opt/tmp/verify/20260906-role-proxy-3a.log`（基準、遷移第五段、J 對照組、部門頁與權限中心瀏覽器、矩陣 #9）、`-related.log`（12 檔 128 passed）、`-full-c1.log`～`-full-c7.log`（全量分七批：1149 passed／2 skipped／0 failed）。
+spec：`/opt/tmp/codex/20260906-pf251-phase3a.txt`＋接續 `-resume.txt`。決策點 **K＝K2**（Ethan 19:1x）。
+
+**分工經過**：codex 改完 `role_assignment_service.py`／`dept_membership_service.py` 後撞到用量上限（20:38 重置）。依「配額耗盡例外」由主 Claude 直做後端隔離項
+（J、遷移第五段、出廠不種 PROXY、leadership API 走服務＋PF-250、`_department_to_dict`、權限中心 API 與 `role-holders`、守門表），20:39 以 `codex exec resume` 接回原 session 做
+部門頁與權限中心前端、`test_role_assignment_kinds`、dept_membership 增案、fixture 清理、i18n（pybabel 五模組、fuzzy 0、obsolete 數不變 1137）、manifests。
+
+**與設計／複審清單的差異（待複審）**：
+
+1. proxy／standby 的授撤放 `role_assignment_service.assign_role(kind=...)`（複審清單寫 `dept_membership_service.grant_proxy()` 等）：代理對象是任何角色不只部門角色，
+   權限中心與部門頁共用同一支；授權者檢查 `_assert_can_grant()`（ORG_ADMIN／SYSTEM_ADMIN，或該 R@U 的 regular 持有者且只能授出 proxy／standby；proxy 持有者不得再授出；非管理員不得指派 regular）。
+   撤銷改依 `assignment_secure_code`（同一人同角色可有 regular＋proxy 兩列，user＋role 不再唯一）。
+2. **J 的實作是三主管角色 regular 持有者的聯集**（`unit_resolver.DEPT_HEAD_ROLE_PRIORITY = MANAGER > DEPUTY > HEAD`），不是只看 `DEPT_HEAD`：資料一致時聯集＝HEAD，
+   但能容忍 bpserv 遷移前、或權限中心直接指派 `DEPT_MANAGER` 而沒連帶 HEAD 的列。GHTRAVEL 對照組不變（燁凱文→霄雅慧→晧志遠）；BELUGA 行銷正主管職缺時 user 的直屬主管＝副主管 ethanyu。
+3. 部門頁登記候補的事由固定為「部門頁登記候補代理人」（`source_ref=admin:<sc>`）：拖放 UX 不宜跳事由對話框，決策點 F 的「事由必填」落在權限中心表單。
+4. `_list_assignable_roles(kind)`：regular 仍只列 GLOBAL／EXTERNAL，proxy／standby 開放 DEPARTMENT／GROUP 範圍（否則權限中心建不了「代理部門正主管」）；
+   新增 `GET /api/access/role-holders` 供被代理人下拉；頁面注入 `window.__AC_CONFIG.formTemplates` 給限定表單多選。
+5. 跨部門主管／副主管不再借用代理人格顯示（原 `_mergeCrossToProxy()` 刪除），只在跨部門人員區列出。
+6. `remove_dept_membership()` 改為軟刪該人在該單位的**所有**指派列（任何角色、任何性質），不再逐一比對 `DEPT_ROLE_CODES`。
+7. 權限中心 chip 對「今天不在效期內」的列（含尚未生效的未來 proxy）套 `ac-kind-expired` 灰化，class 名稱偏窄但行為正確。
+8. `DEPT_MANAGER` 標籤在權限中心部門欄改顯示「正主管」、`DEPT_HEAD` 只在沒有正副身分時顯示「部門主管」（MANAGER／DEPUTY 優先於 HEAD）。
+
+**實作落點**：`role_assignment_service.py`（assign_role 三性質、`_assert_can_grant`、`_assert_regular_holder`、`_filter_overlapping`、`revoke_assignment(sc)`、`_build_user_roles` 新欄位、`_list_assignable_roles(kind)`）、
+`dept_membership_service.py`（`_sync_head`／`set_dept_deputy`／`remove_dept_manager`／`remove_dept_deputy`、`DEPT_POSITION_ROLE_CODES` 三個）、`unit_resolver.py`（J）、
+新檔 `services/proxy_role_migration.py`（第五段）、`scripts/migrate_proxy_assignments.py`（第五段掛接、第三段 unit NULL、輸出依 key）、`organization_service.py`（不種 PROXY）、
+`api/organizational_units.py`（leadership 全走服務、`STANDBY_ROLE_CODES`、`DELETE /leadership/standby/<user>`）、`platform/data.py`（`_department_manager_code`）、
+`api/access_center.py`＋`web/access_center.py`＋`index.html`、`_tab_accounts.html`／`accounts.js`／`access-center.css`、`departments.html`／`departments.js`、
+守門表（864 端點）、i18n（.po／.mo／en.json）、manifests（`units.yaml`、`permissions.yaml`）。
+
+**dev 資料現況**：遷移第五段已 `--apply`：BELUGA aaaa／ssss 各三列 standby（HEAD／MANAGER／DEPUTY@行銷，`source_ref=migration:pf251`）、原 PROXY 列軟刪，7 企業 14 個 PROXY 角色軟刪；第二次 `--apply` 全 0。
+
+**驗收**：部門頁（chrome-devtools，synthetic drag event 呼叫 `dropToLeadership`／`dropToEmployee`）候補格列出遷移來的兩人、user 拖入建三列／拖出軟刪、user 拖成正主管得 MANAGER＋HEAD／拖回恢復 EMPLOYEE；
+權限中心 chip「候補」標籤、指派 modal 代理流程（角色清單切換、被代理人下拉載入 regular 持有者、`:selected`、建立後 chip 顯示「代理 X 09-10～09-14」、撤銷依 sc）；
+矩陣 #9：EXTERNAL 當 proxy 400（層界）、acting_for 非持有者 400、EMPLOYEE 打 assign／standby API 403；J 對照組；12 檔相關測試與全量見 log。
+
+**帶進 3b 的備忘**：`test_task_authorizer_delegate_from.py` 仍用 `delegations`（3b 改寫）；`role_assignment_service._membership_role_labels()` 的 `MembershipRole.PROXY1/2`（跨部門／社群）刻意不動；
+`approver_exposure_service` 與行事曆投影仍讀 `delegations`；手冊 `departments.md`／`delegations.md` 等六頁在 3b。
 
 ### 第 2 期（2026-09-06，執行 session；codex 實作、主 Claude 驗收）
 

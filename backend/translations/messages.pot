@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-05 21:17+0800\n"
+"POT-Creation-Date: 2026-09-06 20:58+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -449,7 +449,8 @@ msgstr ""
 msgid "Telegram 設定已刪除"
 msgstr ""
 
-#: app/api/access_center.py:53 app/api/access_center.py:77 app/api/egress.py:46
+#: app/api/access_center.py:55 app/api/access_center.py:85
+#: app/api/access_center.py:102 app/api/egress.py:46
 msgid "缺少必要參數"
 msgstr ""
 
@@ -788,7 +789,7 @@ msgstr ""
 msgid "請提供分類資料"
 msgstr ""
 
-#: app/api/duties.py:107 app/api/organizational_units.py:211
+#: app/api/duties.py:107 app/api/organizational_units.py:218
 #: app/api/roles.py:299 app/web/units.py:107
 #, python-format
 msgid "代碼 %(code)s 已存在"
@@ -803,7 +804,7 @@ msgid "建立職務分類失敗"
 msgstr ""
 
 #: app/api/duties.py:153 app/api/duties.py:383
-#: app/api/organizational_units.py:273 app/api/organizational_units.py:1414
+#: app/api/organizational_units.py:280 app/api/organizational_units.py:1376
 #: app/api/organizations.py:223 app/api/roles.py:388
 msgid "請提供更新資料"
 msgstr ""
@@ -1215,7 +1216,7 @@ msgid "系統級類別不可修改"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_phrases.py:148 app/api/lookup.py:201
-#: app/api/lookup.py:381 app/api/organizational_units.py:1440
+#: app/api/lookup.py:381 app/api/organizational_units.py:1402
 msgid "更新失敗"
 msgstr ""
 
@@ -1467,44 +1468,45 @@ msgstr ""
 msgid "批次操作失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:142 app/api/organizational_units.py:269
-#: app/api/organizational_units.py:358 app/api/organizational_units.py:540
-#: app/api/organizational_units.py:623 app/api/organizational_units.py:683
-#: app/api/organizational_units.py:736 app/api/organizational_units.py:803
-#: app/api/organizational_units.py:881 app/api/organizational_units.py:942
-#: app/api/organizational_units.py:1016 app/api/organizational_units.py:1128
-#: app/api/organizational_units.py:1202 app/api/organizational_units.py:1265
-#: app/api/organizational_units.py:1400 app/api/organizational_units.py:1464
+#: app/api/organizational_units.py:149 app/api/organizational_units.py:276
+#: app/api/organizational_units.py:365 app/api/organizational_units.py:532
+#: app/api/organizational_units.py:615 app/api/organizational_units.py:675
+#: app/api/organizational_units.py:728 app/api/organizational_units.py:792
+#: app/api/organizational_units.py:919 app/api/organizational_units.py:941
+#: app/api/organizational_units.py:984 app/api/organizational_units.py:1065
+#: app/api/organizational_units.py:1106 app/api/organizational_units.py:1164
+#: app/api/organizational_units.py:1227 app/api/organizational_units.py:1362
+#: app/api/organizational_units.py:1426
 msgid "組織單位不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:166
+#: app/api/organizational_units.py:173
 msgid "請提供單位資料"
 msgstr ""
 
-#: app/api/organizational_units.py:170 app/api/roles.py:273
+#: app/api/organizational_units.py:177 app/api/roles.py:273
 msgid "缺少必要欄位: name"
 msgstr ""
 
-#: app/api/organizational_units.py:187 app/api/roles.py:305
+#: app/api/organizational_units.py:194 app/api/roles.py:305
 #, python-format
 msgid "無法自動產生代碼: %(error)s"
 msgstr ""
 
-#: app/api/organizational_units.py:192
+#: app/api/organizational_units.py:199
 msgid "代碼只能包含英文字母、數字、底線(_)、連字號(-)，且開頭必須是英文"
 msgstr ""
 
-#: app/api/organizational_units.py:196
+#: app/api/organizational_units.py:203
 #, python-format
 msgid "代碼長度不可超過 50 字元（目前 %(length)s 字元）"
 msgstr ""
 
-#: app/api/organizational_units.py:198
+#: app/api/organizational_units.py:205
 msgid "代碼長度至少 2 字元"
 msgstr ""
 
-#: app/api/organizational_units.py:200
+#: app/api/organizational_units.py:207
 #, python-format
 msgid "名稱長度不可超過 255 字元（目前 %(length)s 字元）"
 msgstr ""
@@ -1517,237 +1519,240 @@ msgstr ""
 #: ../modules/nocode_builder/api/template_api.py:425
 #: ../modules/nocode_builder/services/project_service.py:128
 #: ../modules/spec_formulate/api/_mf_specs_crud.py:46
-#: app/api/organizational_units.py:202 app/api/work_schedules.py:188
+#: app/api/organizational_units.py:209 app/api/work_schedules.py:188
 msgid "名稱不可為空"
 msgstr ""
 
-#: app/api/organizational_units.py:223 app/api/organizational_units.py:306
+#: app/api/organizational_units.py:230 app/api/organizational_units.py:313
 msgid "父層單位不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:244
+#: app/api/organizational_units.py:251
 msgid "組織單位建立成功"
 msgstr ""
 
-#: app/api/organizational_units.py:251
+#: app/api/organizational_units.py:258
 msgid "建立組織單位失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:292 app/api/roles.py:416
+#: app/api/organizational_units.py:299 app/api/roles.py:416
 msgid "不能設定自己為父層"
 msgstr ""
 
-#: app/api/organizational_units.py:297 app/api/roles.py:420
+#: app/api/organizational_units.py:304 app/api/roles.py:420
 msgid "不能設定子層為父層"
 msgstr ""
 
-#: app/api/organizational_units.py:313
+#: app/api/organizational_units.py:320
 msgid "不可在企業群組與外部廠商群組之間移動"
 msgstr ""
 
-#: app/api/organizational_units.py:329
+#: app/api/organizational_units.py:336
 msgid "組織單位更新成功"
 msgstr ""
 
-#: app/api/organizational_units.py:336
+#: app/api/organizational_units.py:343
 msgid "更新組織單位失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:362
+#: app/api/organizational_units.py:369
 msgid "此為系統保留單位，不可刪除"
 msgstr ""
 
-#: app/api/organizational_units.py:402
+#: app/api/organizational_units.py:404
 #, python-format
 msgid "此單位有 %(count)s 個子單位"
 msgstr ""
 
-#: app/api/organizational_units.py:410
+#: app/api/organizational_units.py:412
 #, python-format
 msgid "此單位有 %(count)s 個成員"
 msgstr ""
 
-#: app/api/organizational_units.py:444
+#: app/api/organizational_units.py:436
 msgid "組織單位已刪除"
 msgstr ""
 
-#: app/api/organizational_units.py:446
+#: app/api/organizational_units.py:438
 #, python-format
 msgid "，%(count)s 位成員已移至未分配"
 msgstr ""
 
-#: app/api/organizational_units.py:455
+#: app/api/organizational_units.py:447
 msgid "刪除組織單位失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:627 app/api/organizational_units.py:740
-#: app/api/organizational_units.py:1020 app/api/organizational_units.py:1269
+#: app/api/organizational_units.py:619 app/api/organizational_units.py:732
+#: app/api/organizational_units.py:988 app/api/organizational_units.py:1231
 msgid "請提供用戶 ID"
 msgstr ""
 
 #: ../modules/nocode_builder/services/project_service.py:362
-#: app/api/organizational_units.py:637 app/api/organizational_units.py:749
-#: app/api/organizational_units.py:812 app/api/organizational_units.py:1029
-#: app/api/organizational_units.py:1279 app/api/organizational_units.py:1513
-#: app/services/role_assignment_service.py:167
+#: app/api/organizational_units.py:629 app/api/organizational_units.py:741
+#: app/api/organizational_units.py:801 app/api/organizational_units.py:998
+#: app/api/organizational_units.py:1115 app/api/organizational_units.py:1241
+#: app/api/organizational_units.py:1475
+#: app/services/role_assignment_service.py:191
 msgid "用戶不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:642
+#: app/api/organizational_units.py:634
 msgid "只有企業成員帳號可加入部門"
 msgstr ""
 
-#: app/api/organizational_units.py:652 app/api/organizational_units.py:1325
-#: app/api/organizational_units.py:1361
+#: app/api/organizational_units.py:644 app/api/organizational_units.py:1287
+#: app/api/organizational_units.py:1323
 #, python-format
 msgid "已將 %(user)s 加入 %(unit)s"
 msgstr ""
 
-#: app/api/organizational_units.py:663
+#: app/api/organizational_units.py:655
 msgid "加入部門失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:694
+#: app/api/organizational_units.py:686
 msgid "用戶不存在或不屬於此部門"
 msgstr ""
 
-#: app/api/organizational_units.py:704
+#: app/api/organizational_units.py:696
 #, python-format
 msgid "已將 %(user)s 從 %(unit)s 移除"
 msgstr ""
 
-#: app/api/organizational_units.py:710
+#: app/api/organizational_units.py:702
 msgid "移除成員失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:753
+#: app/api/organizational_units.py:745
 msgid "只有企業成員帳號可設為部門主管"
 msgstr ""
 
-#: app/api/organizational_units.py:757
+#: app/api/organizational_units.py:749
 msgid "部門主管角色不存在，請聯繫系統管理員"
 msgstr ""
 
-#: app/api/organizational_units.py:766
+#: app/api/organizational_units.py:758
 #, python-format
 msgid "已設定 %(user)s 為 %(unit)s 主管"
 msgstr ""
 
-#: app/api/organizational_units.py:780
+#: app/api/organizational_units.py:772
 msgid "設定主管失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:822
+#: app/api/organizational_units.py:808
 msgid "部門主管角色不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:854
+#: app/api/organizational_units.py:812
+msgid "移除主管角色失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:816
 #, python-format
 msgid "已移除 %(user)s 的 %(unit)s 主管角色"
 msgstr ""
 
-#: app/api/organizational_units.py:860
-msgid "移除主管角色失敗"
+#: app/api/organizational_units.py:955
+#: app/services/role_assignment_service.py:38
+msgid "正主管"
 msgstr ""
 
-#: app/api/organizational_units.py:1007 app/api/organizational_units.py:1119
+#: app/api/organizational_units.py:956
+#: app/services/role_assignment_service.py:39
+#: app/templates/pages/admin/departments.html:386
+msgid "副主管"
+msgstr ""
+
+#: app/api/organizational_units.py:957
+#: app/templates/pages/admin/departments.html:404
+msgid "候補代理人"
+msgstr ""
+
+#: app/api/organizational_units.py:975 app/api/organizational_units.py:1056
 msgid "無效的職位類型"
 msgstr ""
 
-#: app/api/organizational_units.py:1033
+#: app/api/organizational_units.py:1002
 msgid "只有企業成員帳號可擔任部門管理職"
 msgstr ""
 
-#: app/api/organizational_units.py:1043
+#: app/api/organizational_units.py:1017 app/api/organizational_units.py:1031
 #, python-format
 msgid "%(position)s 角色不存在，請聯繫系統管理員"
 msgstr ""
 
-#: app/api/organizational_units.py:1074 app/api/organizational_units.py:1156
-#: app/services/role_assignment_service.py:37
-#: app/templates/pages/admin/departments.html:363
-msgid "主管"
+#: app/api/organizational_units.py:1021
+msgid "部門頁登記候補代理人"
 msgstr ""
 
-#: app/api/organizational_units.py:1075 app/api/organizational_units.py:1157
-#: app/services/role_assignment_service.py:38
-#: app/templates/pages/admin/departments.html:399
-msgid "副主管"
+#: app/api/organizational_units.py:1035
+msgid "設定失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:1076 app/api/organizational_units.py:1158
-#: app/services/role_assignment_service.py:28
-#: app/services/role_assignment_service.py:39
-#: app/templates/pages/admin/departments.html:380
-#: app/templates/pages/admin/groups.html:295
-msgid "代理人(一)"
-msgstr ""
-
-#: app/api/organizational_units.py:1077 app/api/organizational_units.py:1159
-#: app/services/role_assignment_service.py:29
-#: app/services/role_assignment_service.py:40
-#: app/templates/pages/admin/departments.html:416
-#: app/templates/pages/admin/groups.html:331
-msgid "代理人(二)"
-msgstr ""
-
-#: app/api/organizational_units.py:1083
+#: app/api/organizational_units.py:1039
 #, python-format
 msgid "已設定 %(user)s 為 %(unit)s %(position)s"
 msgstr ""
 
-#: app/api/organizational_units.py:1097
-msgid "設定失敗"
+#: app/api/organizational_units.py:1054
+msgid "移除候補代理人請指定使用者"
 msgstr ""
 
-#: app/api/organizational_units.py:1138
+#: app/api/organizational_units.py:1080
 #, python-format
 msgid "%(position)s 角色不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:1165
+#: app/api/organizational_units.py:1084 app/api/organizational_units.py:1127
+#: app/api/organizational_units.py:1454
+msgid "移除失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:1087
 #, python-format
 msgid "已移除 %(unit)s %(position)s"
 msgstr ""
 
-#: app/api/organizational_units.py:1171 app/api/organizational_units.py:1492
-msgid "移除失敗"
+#: app/api/organizational_units.py:1131
+#, python-format
+msgid "已移除 %(user)s 的 %(unit)s 候補代理人登記"
 msgstr ""
 
-#: app/api/organizational_units.py:1191
+#: app/api/organizational_units.py:1153
 msgid "無權限存取此社群"
 msgstr ""
 
-#: app/api/organizational_units.py:1253 app/api/organizational_units.py:1388
-#: app/api/organizational_units.py:1454
+#: app/api/organizational_units.py:1215 app/api/organizational_units.py:1350
+#: app/api/organizational_units.py:1416
 msgid "無權限管理此社群成員"
 msgstr ""
 
-#: app/api/organizational_units.py:1285
+#: app/api/organizational_units.py:1247
 msgid "外部人員不可加入企業群組"
 msgstr ""
 
-#: app/api/organizational_units.py:1295
+#: app/api/organizational_units.py:1257
 msgid "無效的成員類型"
 msgstr ""
 
-#: app/api/organizational_units.py:1307
+#: app/api/organizational_units.py:1269
 msgid "該用戶已是此單位的成員"
 msgstr ""
 
-#: app/api/organizational_units.py:1331 app/api/organizational_units.py:1368
+#: app/api/organizational_units.py:1293 app/api/organizational_units.py:1330
 msgid "新增失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:1410 app/api/organizational_units.py:1474
+#: app/api/organizational_units.py:1372 app/api/organizational_units.py:1436
 msgid "成員關係不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:1433
+#: app/api/organizational_units.py:1395
 msgid "更新成功"
 msgstr ""
 
-#: app/api/organizational_units.py:1486
+#: app/api/organizational_units.py:1448
 msgid "已移除成員關係"
 msgstr ""
 
@@ -1768,7 +1773,7 @@ msgstr ""
 #: ../modules/nocode_builder/api/project_api.py:132
 #: ../modules/nocode_builder/api/project_api.py:149
 #: ../modules/nocode_builder/api/project_api.py:171
-#: app/api/organizational_units.py:1548 app/api/organizations.py:218
+#: app/api/organizational_units.py:1510 app/api/organizations.py:218
 #: app/api/security_center.py:291
 msgid "無權限"
 msgstr ""
@@ -1858,7 +1863,7 @@ msgid "無法確定企業"
 msgstr ""
 
 #: app/api/roles.py:166 app/api/roles.py:378 app/api/roles.py:471
-#: app/api/roles.py:526 app/services/role_assignment_service.py:175
+#: app/api/roles.py:526 app/services/role_assignment_service.py:199
 msgid "角色不存在"
 msgstr ""
 
@@ -2392,10 +2397,10 @@ msgid "兼任"
 msgstr ""
 
 #: app/services/calendar_projection_service.py:346
+#: app/services/role_assignment_service.py:45
 #: app/services/role_assignment_service.py:46
 #: app/services/role_assignment_service.py:47
 #: app/services/role_assignment_service.py:48
-#: app/services/role_assignment_service.py:49
 #: app/templates/pages/positions/list.html:55
 #: app/templates/pages/positions/view.html:61
 #: app/templates/pages/users/list.html:59
@@ -2473,20 +2478,39 @@ msgstr ""
 msgid "副團長"
 msgstr ""
 
+#: app/services/role_assignment_service.py:28
+#: app/templates/pages/admin/groups.html:295
+msgid "代理人(一)"
+msgstr ""
+
+#: app/services/role_assignment_service.py:29
+#: app/templates/pages/admin/groups.html:331
+msgid "代理人(二)"
+msgstr ""
+
 #: app/services/role_assignment_service.py:30
 #: app/services/role_assignment_service.py:31
-#: app/services/role_assignment_service.py:333
+#: app/services/role_assignment_service.py:408
 #: app/templates/pages/admin/groups.html:351
 msgid "團員"
 msgstr ""
 
-#: app/services/role_assignment_service.py:50
-#: app/services/role_assignment_service.py:297
-#: app/services/role_assignment_service.py:299
+#: app/services/role_assignment_service.py:37
+#: app/templates/pages/platform_help/org_admin.html:138
+#: app/templates/pages/positions/create.html:75
+#: app/templates/pages/positions/edit.html:71
+#: app/templates/pages/positions/list.html:22
+#: app/templates/pages/positions/view.html:68
+msgid "部門主管"
+msgstr ""
+
+#: app/services/role_assignment_service.py:49
+#: app/services/role_assignment_service.py:372
+#: app/services/role_assignment_service.py:374
 msgid "員工"
 msgstr ""
 
-#: app/services/role_assignment_service.py:56
+#: app/services/role_assignment_service.py:55
 #: app/templates/layouts/manual_base.html:26
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:30
 #: app/templates/pages/menu/list.html:133
@@ -2500,10 +2524,10 @@ msgstr ""
 msgid "企業管理員"
 msgstr ""
 
-#: app/services/role_assignment_service.py:57
+#: app/services/role_assignment_service.py:56
 #: app/templates/layouts/manual_base.html:27
-#: app/templates/pages/admin/departments.html:257
-#: app/templates/pages/admin/departments.html:437
+#: app/templates/pages/admin/departments.html:262
+#: app/templates/pages/admin/departments.html:428
 #: app/templates/pages/menu/list.html:137
 #: app/templates/pages/platform_help/org_admin.html:57
 #: app/templates/pages/platform_help/org_admin.html:142
@@ -2513,7 +2537,7 @@ msgstr ""
 msgid "企業成員"
 msgstr ""
 
-#: app/services/role_assignment_service.py:58
+#: app/services/role_assignment_service.py:57
 #: app/templates/layouts/manual_base.html:28
 #: app/templates/pages/external-users/list.html:25
 #: app/templates/pages/external-users/view.html:23
@@ -2527,7 +2551,7 @@ msgstr ""
 msgid "外部廠商"
 msgstr ""
 
-#: app/services/role_assignment_service.py:59
+#: app/services/role_assignment_service.py:58
 #: app/templates/layouts/manual_base.html:25
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:25
 #: app/templates/pages/menu/list.html:129
@@ -2540,50 +2564,120 @@ msgstr ""
 msgid "系統管理員"
 msgstr ""
 
-#: app/services/role_assignment_service.py:79
+#: app/services/role_assignment_service.py:78
 #, python-format
 msgid "無法指派「%(role)s」：外部廠商帳號只能指派外部範圍的角色"
 msgstr ""
 
-#: app/services/role_assignment_service.py:84
+#: app/services/role_assignment_service.py:83
 #, python-format
 msgid "無法指派「%(role)s」：外部範圍角色只能指派給外部廠商帳號"
 msgstr ""
 
-#: app/services/role_assignment_service.py:194
+#: app/services/role_assignment_service.py:179
+msgid "缺少操作者資訊"
+msgstr ""
+
+#: app/services/role_assignment_service.py:183
+msgid "無效的指派性質"
+msgstr ""
+
+#: app/services/role_assignment_service.py:228
 #, python-format
 msgid "用戶已擁有「%(role)s」角色"
 msgstr ""
 
-#: app/services/role_assignment_service.py:215
+#: app/services/role_assignment_service.py:237
+msgid "代理指派必須選擇被代理人"
+msgstr ""
+
+#: app/services/role_assignment_service.py:239
+#: app/services/role_assignment_service.py:258
+msgid "代理人不可代理自己"
+msgstr ""
+
+#: app/services/role_assignment_service.py:241
+msgid "代理指派必須設定起迄日"
+msgstr ""
+
+#: app/services/role_assignment_service.py:243
+#: app/services/role_assignment_service.py:253
+msgid "起始日不可晚於結束日"
+msgstr ""
+
+#: app/services/role_assignment_service.py:245
+#: app/services/role_assignment_service.py:255
+msgid "請填寫指派事由"
+msgstr ""
+
+#: app/services/role_assignment_service.py:246
+#: app/services/role_assignment_service.py:259
+msgid "被代理人必須是此角色的正式持有者"
+msgstr ""
+
+#: app/services/role_assignment_service.py:250
+msgid "已有重疊效期的代理指派"
+msgstr ""
+
+#: app/services/role_assignment_service.py:261
+msgid "已是此角色的候補"
+msgstr ""
+
+#: app/services/role_assignment_service.py:287
 #, python-format
 msgid "已將「%(role)s」指派給 %(user)s"
 msgstr ""
 
-#: app/services/role_assignment_service.py:229
+#: app/services/role_assignment_service.py:301
 msgid "找不到此角色指派"
 msgstr ""
 
-#: app/services/role_assignment_service.py:248
+#: app/services/role_assignment_service.py:320
 #, python-format
 msgid "已移除 %(user)s 的「%(role)s」角色"
 msgstr ""
 
-#: app/services/role_assignment_service.py:434
+#: app/services/role_assignment_service.py:544
 msgid "此角色必須選擇單位"
 msgstr ""
 
-#: app/services/role_assignment_service.py:443
+#: app/services/role_assignment_service.py:553
 msgid "單位不存在或類型不符"
 msgstr ""
 
-#: app/services/role_assignment_service.py:447
+#: app/services/role_assignment_service.py:557
 msgid "此角色不可指定單位"
 msgstr ""
 
-#: app/services/role_assignment_service.py:475
+#: app/services/role_assignment_service.py:586
 #, python-format
 msgid "無法指派「%(role)s」：與現有角色「%(conflict)s」互斥，請先移除後再指派"
+msgstr ""
+
+#: ../modules/form_workflow/api/ai_usage.py:231
+#: app/services/role_assignment_service.py:608
+msgid "日期格式不正確"
+msgstr ""
+
+#: app/services/role_assignment_service.py:609
+#, python-format
+msgid "%(field)s 日期格式不正確"
+msgstr ""
+
+#: app/services/role_assignment_service.py:616
+msgid "限定表單格式不正確"
+msgstr ""
+
+#: app/services/role_assignment_service.py:645
+msgid "無權限指派此角色"
+msgstr ""
+
+#: app/services/role_assignment_service.py:647
+msgid "只有企業管理員可以指派正式角色"
+msgstr ""
+
+#: app/services/role_assignment_service.py:653
+msgid "只有此角色的正式持有者可以授出代理或候補"
 msgstr ""
 
 #: app/templates/auth/change_password.html:7
@@ -2663,7 +2757,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:141
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:163
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:187
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:171
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:173
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:123
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:422
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:133
@@ -2716,7 +2810,7 @@ msgstr ""
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:75
 #: app/templates/auth/change_password.html:74
 #: app/templates/pages/_my_delegations.html:102
-#: app/templates/pages/access_center/_tab_accounts.html:170
+#: app/templates/pages/access_center/_tab_accounts.html:217
 #: app/templates/pages/access_center/_tab_roles.html:219
 #: app/templates/pages/admin/_employee_create_form.html:152
 #: app/templates/pages/admin/_settings_recipients_section.html:226
@@ -2725,7 +2819,7 @@ msgstr ""
 #: app/templates/pages/admin/_settings_smtp_section.html:202
 #: app/templates/pages/admin/_settings_telegram_section.html:150
 #: app/templates/pages/admin/_settings_telegram_section.html:168
-#: app/templates/pages/admin/departments.html:313
+#: app/templates/pages/admin/departments.html:318
 #: app/templates/pages/admin/groups.html:243
 #: app/templates/pages/admin/numbering/edit.html:299
 #: app/templates/pages/admin/org-admins/create.html:112
@@ -3163,7 +3257,7 @@ msgstr ""
 #: app/templates/pages/admin/_settings_smtp_section.html:67
 #: app/templates/pages/admin/_settings_telegram_section.html:59
 #: app/templates/pages/admin/_settings_telegram_section.html:61
-#: app/templates/pages/admin/departments.html:314
+#: app/templates/pages/admin/departments.html:319
 #: app/templates/pages/admin/groups.html:244
 #: app/templates/pages/admin/numbering/list.html:168
 #: app/templates/pages/admin/org-admins/list.html:94
@@ -3202,7 +3296,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
 #: app/templates/pageir/_page_ir.html:102
 #: app/templates/pageir/_page_ir.html:217
-#: app/templates/pages/access_center/_tab_accounts.html:121
+#: app/templates/pages/access_center/_tab_accounts.html:122
 #: app/templates/pages/calendar/calendar.html:33
 #: app/templates/pages/users/list.html:99
 msgid "上一頁"
@@ -3215,7 +3309,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:314
 #: app/templates/pageir/_page_ir.html:104
 #: app/templates/pageir/_page_ir.html:219
-#: app/templates/pages/access_center/_tab_accounts.html:124
+#: app/templates/pages/access_center/_tab_accounts.html:125
 #: app/templates/pages/calendar/calendar.html:35
 #: app/templates/pages/users/list.html:103
 msgid "下一頁"
@@ -3433,7 +3527,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:193
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:38
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:186
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:238
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:240
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:29
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:43
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:191
@@ -3921,7 +4015,7 @@ msgid "API Key 串接範例"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:91
-#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:82
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:84
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:424
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:228
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:292
@@ -4027,7 +4121,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:329
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:254
 #: app/templates/pages/access_center/_tab_accounts.html:47
-#: app/templates/pages/admin/departments.html:256
+#: app/templates/pages/admin/departments.html:261
 #: app/templates/pages/modules/list.html:157
 #: app/templates/pages/positions/list.html:20
 #: app/templates/pages/positions/view.html:45
@@ -4089,17 +4183,21 @@ msgstr ""
 msgid "停用"
 msgstr ""
 
-#: app/templates/pages/access_center/_tab_accounts.html:103
+#: app/templates/pages/access_center/_tab_accounts.html:104
 msgid "移除角色"
 msgstr ""
 
-#: app/templates/pages/access_center/_tab_accounts.html:107
-#: app/templates/pages/access_center/_tab_accounts.html:132
+#: app/templates/pages/access_center/_tab_accounts.html:108
+#: app/templates/pages/access_center/_tab_accounts.html:133
 msgid "指派角色"
 msgstr ""
 
+#: app/templates/pages/access_center/_tab_accounts.html:145
+msgid "性質"
+msgstr ""
+
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:330
-#: app/templates/pages/access_center/_tab_accounts.html:144
+#: app/templates/pages/access_center/_tab_accounts.html:154
 #: app/templates/pages/access_center/_tab_health.html:108
 #: app/templates/pages/access_center/_tab_roles.html:4
 #: app/templates/pages/access_center/index.html:23
@@ -4119,12 +4217,31 @@ msgstr ""
 msgid "角色"
 msgstr ""
 
-#: app/templates/pages/access_center/_tab_accounts.html:146
+#: app/templates/pages/access_center/_tab_accounts.html:156
 msgid "請選擇角色"
 msgstr ""
 
-#: app/templates/pages/access_center/_tab_accounts.html:157
+#: app/templates/pages/access_center/_tab_accounts.html:167
 msgid "請選擇單位"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:188
+msgid "起始日"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:192
+msgid "結束日"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:198
+#: app/templates/pages/delegations/create.html:86
+#: app/templates/pages/delegations/edit.html:71
+#: app/templates/pages/delegations/view.html:56
+msgid "限定表單"
+msgstr ""
+
+#: app/templates/pages/access_center/_tab_accounts.html:207
+msgid "事由"
 msgstr ""
 
 #: app/templates/pages/access_center/_tab_functions.html:4
@@ -5200,111 +5317,110 @@ msgid "確定要刪除 Telegram 設定「"
 msgstr ""
 
 #: app/templates/pages/admin/departments.html:3
-#: app/templates/pages/admin/departments.html:230
+#: app/templates/pages/admin/departments.html:235
 msgid "部門設定"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:246
+#: app/templates/pages/admin/departments.html:251
 msgid "[跨] 跨部門模式 -- 放開後以跨部門身份加入，不離開原部門"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:253
+#: app/templates/pages/admin/departments.html:258
 msgid "組織架構"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:258
+#: app/templates/pages/admin/departments.html:263
 msgid "新增部門"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:259
+#: app/templates/pages/admin/departments.html:264
 msgid "新增企業成員"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:270
+#: app/templates/pages/admin/departments.html:275
 msgid "請從左側選擇部門"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:288
+#: app/templates/pages/admin/departments.html:293
 msgid "部門名稱"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:291
+#: app/templates/pages/admin/departments.html:296
 #: app/templates/pages/admin/groups.html:216
 msgid "最多 255 字元"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:294
+#: app/templates/pages/admin/departments.html:299
 #: app/templates/pages/users/import.html:126
 msgid "部門代碼"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:299
+#: app/templates/pages/admin/departments.html:304
 msgid "選填，留空自動產生"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:303
+#: app/templates/pages/admin/departments.html:308
 msgid "父部門"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:305
+#: app/templates/pages/admin/departments.html:310
 msgid "（根層級）"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:320
+#: app/templates/pages/admin/departments.html:325
 msgid "跨部門人員"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:336
+#: app/templates/pages/admin/departments.html:341
 msgid "Ctrl + 拖曳 = 跨部門"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:338
+#: app/templates/pages/admin/departments.html:343
 msgid "從左側組織樹按住 Ctrl 拖曳人員至下方區域："
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:339
+#: app/templates/pages/admin/departments.html:344
 msgid "拖入主管欄 → 跨部門主管"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:340
+#: app/templates/pages/admin/departments.html:345
 msgid "拖入副主管欄 → 跨部門副主管"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:341
+#: app/templates/pages/admin/departments.html:346
 msgid "拖入企業成員欄 → 跨部門成員"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:342
+#: app/templates/pages/admin/departments.html:347
 msgid "人員不會離開原部門。"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:351
+#: app/templates/pages/admin/departments.html:356
 #: app/templates/pages/platform_help/org_admin.html:139
 msgid "部門成員"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:383
-#: app/templates/pages/admin/departments.html:419
-#: app/templates/pages/admin/departments.html:442
+#: app/templates/pages/admin/departments.html:368
+msgid "主管"
+msgstr ""
+
+#: app/templates/pages/admin/departments.html:417
+msgid "拖入登記候補（正副主管都缺席時可代簽）"
+msgstr ""
+
+#: app/templates/pages/admin/departments.html:433
 msgid "[跨]"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:389
-#: app/templates/pages/admin/departments.html:425
-#: app/templates/pages/admin/groups.html:303
-#: app/templates/pages/admin/groups.html:339
-msgid "拖入設定"
-msgstr ""
-
-#: app/templates/pages/admin/departments.html:469
+#: app/templates/pages/admin/departments.html:460
 msgid "未分配企業成員"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:474
+#: app/templates/pages/admin/departments.html:465
 msgid "拖到此處移出部門"
 msgstr ""
 
-#: app/templates/pages/admin/departments.html:484
+#: app/templates/pages/admin/departments.html:475
 msgid "所有企業成員皆已分配"
 msgstr ""
 
@@ -5370,6 +5486,11 @@ msgstr ""
 
 #: app/templates/pages/admin/groups.html:287
 msgid "拖入設為團長"
+msgstr ""
+
+#: app/templates/pages/admin/groups.html:303
+#: app/templates/pages/admin/groups.html:339
+msgid "拖入設定"
 msgstr ""
 
 #: app/templates/pages/admin/groups.html:323
@@ -7268,8 +7389,8 @@ msgstr ""
 msgid "企業活動"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:323
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:349
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:325
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:351
 #: app/templates/pages/calendar/_event_modal.html:35
 #: app/templates/pages/menu/list.html:84
 msgid "標題"
@@ -7508,9 +7629,9 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:54
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:238
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:322
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:348
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:240
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:324
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:350
 #: app/templates/pages/cg_databases/overview.html:251
 #: app/templates/pages/server_manage/redis_monitor.html:217
 msgid "時間"
@@ -7526,7 +7647,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:102
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:165
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:188
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:237
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:239
 #: app/templates/pages/cg_databases/overview.html:251
 msgid "動作"
 msgstr ""
@@ -7573,12 +7694,6 @@ msgstr ""
 
 #: app/templates/pages/delegations/create.html:82
 msgid "超過此金額需要原授權人或更高層簽核"
-msgstr ""
-
-#: app/templates/pages/delegations/create.html:86
-#: app/templates/pages/delegations/edit.html:71
-#: app/templates/pages/delegations/view.html:56
-msgid "限定表單"
 msgstr ""
 
 #: app/templates/pages/delegations/create.html:92
@@ -8164,7 +8279,7 @@ msgstr ""
 msgid "採用的是已儲存的保留天數，改過欄位請先按 [儲存稽核設定]。"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:175
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:177
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:127
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:90
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:136
@@ -11004,14 +11119,6 @@ msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:129
 msgid "組織架構中的職務角色，用於流程簽核與組織管理。"
-msgstr ""
-
-#: app/templates/pages/platform_help/org_admin.html:138
-#: app/templates/pages/positions/create.html:75
-#: app/templates/pages/positions/edit.html:71
-#: app/templates/pages/positions/list.html:22
-#: app/templates/pages/positions/view.html:68
-msgid "部門主管"
 msgstr ""
 
 #: app/templates/pages/platform_help/org_admin.html:138
@@ -14370,7 +14477,7 @@ msgstr ""
 
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:16
 #: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:119
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:322
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:324
 msgid "來源系統"
 msgstr ""
 
@@ -14593,7 +14700,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:47
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:191
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:135
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:348
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:350
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:27
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:24
 msgid "嚴重度"
@@ -14612,9 +14719,9 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:189
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:36
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:177
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:237
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:323
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:350
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:239
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:325
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:352
 msgid "目標"
 msgstr ""
 
@@ -14891,86 +14998,86 @@ msgstr ""
 msgid "簽核歷程（前手判斷）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:192
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:194
 msgid "事件詳情（出口政策已套用）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:204
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:206
 msgid "處置（1-click，直接完成簽核）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:207
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:209
 msgid "處置意見（依流程設定可能必填）"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:226
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:228
 msgid "目前卡在"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:227
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:229
 msgid "，您不是此節點的指定簽核人。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:231
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:233
 msgid "關聯防禦決策"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:233
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:235
 msgid "尚無決策"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:255
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:257
 msgid "事件明細"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:257
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:259
 msgid "明細超過 500 筆，已截斷顯示。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:282
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:284
 msgid "原始欄位"
 msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:309
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:286
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:288
 msgid "欄位名"
 msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:495
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:286
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:288
 msgid "值"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:304
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:306
 msgid "跨系統關聯：同一攻擊者被幾個系統偵測到"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:306
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:308
 msgid "此時間窗涵蓋 2026-08-08 之前，該期間 ClickHouse 資料為歸檔回灌，筆數僅供參考，不代表當時真實全量。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:309
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:311
 msgid "相異來源數"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:311
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:313
 msgid "關聯事件數"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:313
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:315
 msgid "查詢時間窗"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:317
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:319
 msgid "事件數超過單次顯示上限，僅列出時間窗內最早的部分事件。"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:323
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:349
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:325
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:351
 msgid "規則"
 msgstr ""
 
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:350
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:352
 msgid "User-Agent"
 msgstr ""
 
@@ -16676,7 +16783,7 @@ msgstr ""
 msgid "處理中"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:363
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:365
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:55
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:483
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:24
@@ -16684,7 +16791,7 @@ msgstr ""
 msgid "已完成"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:611
+#: ../modules/form_workflow/api/fc_pending.py:603
 #: ../modules/nocode_builder/services/pageir_formflow_resources.py:333
 msgid "已退回"
 msgstr ""
@@ -18134,10 +18241,6 @@ msgstr ""
 msgid "分頁參數格式不正確"
 msgstr ""
 
-#: ../modules/form_workflow/api/ai_usage.py:231
-msgid "日期格式不正確"
-msgstr ""
-
 #: ../modules/form_workflow/api/ai_usage.py:237
 msgid "結束日期必須晚於開始日期"
 msgstr ""
@@ -18232,7 +18335,7 @@ msgstr ""
 #: ../modules/form_workflow/api/fc_admin.py:46
 #: ../modules/form_workflow/api/fc_fill.py:56
 #: ../modules/form_workflow/api/fc_fill.py:243
-#: ../modules/form_workflow/api/fc_monitor.py:44
+#: ../modules/form_workflow/api/fc_monitor.py:45
 #: ../modules/form_workflow/api/fc_my_forms.py:197
 msgid "找不到指定的表單"
 msgstr ""
@@ -18281,8 +18384,8 @@ msgid "單次批次簽核上限 100 筆"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_batch.py:74
-#: ../modules/form_workflow/api/fc_pending.py:305
-#: ../modules/form_workflow/api/fc_pending.py:405
+#: ../modules/form_workflow/api/fc_pending.py:296
+#: ../modules/form_workflow/api/fc_pending.py:396
 msgid "找不到任務或已處理"
 msgstr ""
 
@@ -18299,13 +18402,13 @@ msgid "已簽核過此節點"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_batch.py:111
-#: ../modules/form_workflow/api/fc_pending.py:459
+#: ../modules/form_workflow/api/fc_pending.py:450
 #: ../modules/form_workflow/api/instance_routes.py:233
 #, python-format
 msgid "簽核意見至少需要 %(count)s 字"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_batch.py:209
+#: ../modules/form_workflow/api/fc_batch.py:210
 #, python-format
 msgid "批次簽核完成：成功 %(success_count)s 筆，失敗 %(fail_count)s 筆"
 msgstr ""
@@ -18355,73 +18458,73 @@ msgstr ""
 msgid "表單已送出，流程已啟動（測試模式）"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_monitor.py:112
-#: ../modules/form_workflow/api/fc_monitor.py:279
+#: ../modules/form_workflow/api/fc_monitor.py:103
+#: ../modules/form_workflow/api/fc_monitor.py:270
 #, python-format
 msgid "流程實例 %(instance_id)s 不存在"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:167
+#: ../modules/form_workflow/api/fc_pending.py:168
 msgid "找不到指定的任務"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:172
-#: ../modules/form_workflow/api/fc_pending.py:309
-#: ../modules/form_workflow/api/fc_pending.py:413
+#: ../modules/form_workflow/api/fc_pending.py:173
+#: ../modules/form_workflow/api/fc_pending.py:300
+#: ../modules/form_workflow/api/fc_pending.py:404
 #: ../modules/form_workflow/api/instance_routes.py:171
 #: ../modules/form_workflow/api/instance_routes.py:224
 msgid "您不是此任務的指定簽核人"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:319
+#: ../modules/form_workflow/api/fc_pending.py:310
 msgid "鎖定已刷新"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:328
+#: ../modules/form_workflow/api/fc_pending.py:319
 #, python-format
 msgid "此表單由 %(locker)s 簽核中"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:339
+#: ../modules/form_workflow/api/fc_pending.py:330
 msgid "已取得簽核鎖定"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:346
+#: ../modules/form_workflow/api/fc_pending.py:337
 #, python-format
 msgid "取得鎖定失敗: %(error)s"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:370
+#: ../modules/form_workflow/api/fc_pending.py:361
 msgid "找不到任務"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:377
+#: ../modules/form_workflow/api/fc_pending.py:368
 msgid "鎖定已釋放"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:419
+#: ../modules/form_workflow/api/fc_pending.py:410
 msgid "此表單正由他人簽核中"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:426
+#: ../modules/form_workflow/api/fc_pending.py:417
 msgid "簽核逾時，鎖定已失效，請重新開啟"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:440
+#: ../modules/form_workflow/api/fc_pending.py:431
 msgid "您已簽核過此節點，無法重複簽核"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:492
+#: ../modules/form_workflow/api/fc_pending.py:483
 #, python-format
 msgid "欄位 %(field_key)s 不允許修改"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:611
-#: ../modules/form_workflow/api/instance_routes.py:277
+#: ../modules/form_workflow/api/fc_pending.py:603
+#: ../modules/form_workflow/api/instance_routes.py:278
 msgid "簽核完成"
 msgstr ""
 
-#: ../modules/form_workflow/api/fc_pending.py:616
+#: ../modules/form_workflow/api/fc_pending.py:608
 #, python-format
 msgid "簽核失敗: %(error)s"
 msgstr ""
@@ -19192,47 +19295,47 @@ msgstr ""
 msgid "意見"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:92
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:94
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:47
 msgid "請選擇決策"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:121
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:123
 msgid "已選擇："
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:128
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:130
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:79
 msgid "請選擇後續動作"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:129
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:131
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:80
 msgid "（可複選）"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:152
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:154
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:107
 msgid "簽核意見"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:161
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:163
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:112
 #: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:104
 msgid "輸入簽核意見..."
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:163
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:165
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:114
 msgid "最少"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:163
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:165
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:114
 msgid "字"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:174
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:176
 msgid "送出簽核"
 msgstr ""
 
@@ -19599,26 +19702,26 @@ msgstr ""
 msgid "此表單尚無簽核記錄"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:360
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:362
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:52
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:480
 msgid "系統node"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:361
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:363
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:53
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:481
 msgid "子流程"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:362
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:364
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:146
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:54
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:482
 msgid "執行中"
 msgstr ""
 
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:364
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:366
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:148
 #: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:56
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:484

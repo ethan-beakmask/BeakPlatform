@@ -207,6 +207,15 @@ def hr_env(app, test_org):
             is_active=True,
             is_deleted=False,
         ),
+        'head': Role(
+            org_secure_code=test_org.secure_code,
+            code='DEPT_HEAD',
+            name='部門主管',
+            role_type=RoleType.POSITION,
+            scope_type='DEPARTMENT',
+            is_active=True,
+            is_deleted=False,
+        ),
     }
     for role in roles.values():
         db.session.add(role)
@@ -605,42 +614,73 @@ def test_direct_manager_walks_up_on_vacancy(hr_env):
     assert vars_without_manager['hr_direct_manager_unit_name'] == ''
 
 
-def test_direct_manager_ignores_deputy_and_expired_assignment(hr_env):
-    UserRoleAssignment.query.filter_by(
-        user_secure_code=hr_env.users['hr_user_b_000000000000000001'].secure_code,
-        role_secure_code=hr_env.roles['manager'].secure_code,
-        unit_secure_code=hr_env.units['rd'].secure_code,
-    ).first().is_deleted = True
-    deputy = User(
-        secure_code='hr_user_d_000000000000000001',
+def _hr_user(hr_env, sc, username, name):
+    user = User(
+        secure_code=sc,
         org_secure_code=hr_env.org.secure_code,
-        username='hr_user_d',
-        email='hr_user_d@example.test',
-        display_name='副主管 D',
+        username=username,
+        email=f'{username}@example.test',
+        display_name=name,
         is_active=True,
         is_deleted=False,
     )
-    deputy.set_password(secrets.token_urlsafe(16))
-    expired = User(
-        secure_code='hr_user_e_000000000000000001',
-        org_secure_code=hr_env.org.secure_code,
-        username='hr_user_e',
-        email='hr_user_e@example.test',
-        display_name='過期主管 E',
-        is_active=True,
-        is_deleted=False,
-    )
-    expired.set_password(secrets.token_urlsafe(16))
-    db.session.add_all([deputy, expired])
+    user.set_password(secrets.token_urlsafe(16))
+    db.session.add(user)
     db.session.flush()
+    return user
+
+
+def _delete_assignment(hr_env, user_key, role_key, unit_key):
+    UserRoleAssignment.query.filter_by(
+        user_secure_code=hr_env.users[user_key].secure_code if user_key in hr_env.users else user_key,
+        role_secure_code=hr_env.roles[role_key].secure_code,
+        unit_secure_code=hr_env.units[unit_key].secure_code,
+    ).first().is_deleted = True
+    db.session.commit()
+
+
+def test_direct_manager_uses_deputy_when_manager_vacant_and_ignores_expired(hr_env):
+    """PF-251 決策點 J：正主管職缺時副主管就是這一站的主管；過期指派仍不算。"""
+    _delete_assignment(hr_env, 'hr_user_b_000000000000000001', 'manager', 'rd')
+    deputy = _hr_user(hr_env, 'hr_user_d_000000000000000001', 'hr_user_d', '副主管 D')
+    expired = _hr_user(hr_env, 'hr_user_e_000000000000000001', 'hr_user_e', '過期主管 E')
     hr_env.assign(deputy, hr_env.roles['deputy'], hr_env.units['rd'])
+    hr_env.assign(deputy, hr_env.roles['head'], hr_env.units['rd'])
     hr_env.assign(expired, hr_env.roles['manager'], hr_env.units['rd'], valid_until=hr_env.yesterday)
     db.session.commit()
 
     _, vars_, _ = run_lookup({'var_prefix': 'hr'}, hr_env)
+    assert vars_['hr_direct_manager'] == deputy.secure_code
+    assert vars_['hr_direct_manager_name'] == '副主管 D'
+    assert vars_['hr_direct_manager_unit'] == 'RD'
 
-    assert vars_['hr_direct_manager'] == hr_env.users['hr_user_c_000000000000000001'].secure_code
-    assert vars_['hr_direct_manager_name'] == '主管 C'
+    _delete_assignment(hr_env, deputy.secure_code, 'deputy', 'rd')
+    _delete_assignment(hr_env, deputy.secure_code, 'head', 'rd')
+    _, walked_up, _ = run_lookup({'var_prefix': 'hr'}, hr_env)
+    assert walked_up['hr_direct_manager'] == hr_env.users['hr_user_c_000000000000000001'].secure_code
+    assert walked_up['hr_direct_manager_name'] == '主管 C'
+
+
+def test_direct_manager_prefers_manager_then_deputy_then_head_only(hr_env):
+    """同一站正主管優先於副主管，副主管優先於只持 DEPT_HEAD 的人。"""
+    deputy = _hr_user(hr_env, 'hr_user_d2_00000000000000001', 'hr_user_d2', '副主管 D2')
+    head_only = _hr_user(hr_env, 'hr_user_h_000000000000000001', 'hr_user_h', '只持 HEAD 的 H')
+    hr_env.assign(deputy, hr_env.roles['deputy'], hr_env.units['rd'])
+    hr_env.assign(deputy, hr_env.roles['head'], hr_env.units['rd'])
+    hr_env.assign(head_only, hr_env.roles['head'], hr_env.units['rd'])
+    db.session.commit()
+
+    _, vars_, _ = run_lookup({'var_prefix': 'hr'}, hr_env)
+    assert vars_['hr_direct_manager'] == hr_env.users['hr_user_b_000000000000000001'].secure_code
+
+    _delete_assignment(hr_env, 'hr_user_b_000000000000000001', 'manager', 'rd')
+    _, no_manager, _ = run_lookup({'var_prefix': 'hr'}, hr_env)
+    assert no_manager['hr_direct_manager'] == deputy.secure_code
+
+    _delete_assignment(hr_env, deputy.secure_code, 'deputy', 'rd')
+    _delete_assignment(hr_env, deputy.secure_code, 'head', 'rd')
+    _, head_only_vars, _ = run_lookup({'var_prefix': 'hr'}, hr_env)
+    assert head_only_vars['hr_direct_manager'] == head_only.secure_code
 
 
 def test_direct_manager_prefers_unit_assignment_over_global(hr_env):

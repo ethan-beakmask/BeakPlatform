@@ -9,7 +9,7 @@
                 <span>{{ _('帳號類型') }}</span>
                 <select class="form-control" x-model="filters.accountType" @change="applyFilters()">
                     <template x-for="option in accountTypeOptions" :key="option.value">
-                        <option :value="option.value" x-text="option.label"></option>
+                        <option :value="option.value" :selected="option.value === filters.accountType" x-text="option.label"></option>
                     </template>
                 </select>
             </label>
@@ -94,8 +94,9 @@
                         <td>
                             <div class="ac-role-chip-list">
                                 <template x-for="role in user.roles" :key="role.assignment_secure_code">
-                                    <span class="ac-role-chip">
+                                    <span class="ac-role-chip" :class="{ 'ac-kind-expired': role.is_valid === false }">
                                         <span x-text="roleDisplayName(role)"></span>
+                                        <span class="ac-kind-tag" x-show="roleKindLabel(role)" x-text="roleKindLabel(role)"></span>
                                         <span class="ac-role-origin" :class="roleOriginClass(role)" x-text="roleOriginLabel(role)"></span>
                                         <button type="button" class="ac-chip-remove"
                                                 :disabled="removingRoleCode === (role.assignment_secure_code || role.secure_code)"
@@ -141,11 +142,20 @@
                 </template>
 
                 <label class="ac-field">
+                    <span>{{ _('性質') }}</span>
+                    <select class="form-control" x-model="form.kind" @change="onKindChange()">
+                        <template x-for="kind in assignmentKindOptions" :key="kind.value">
+                            <option :value="kind.value" :selected="kind.value === form.kind" x-text="kind.label"></option>
+                        </template>
+                    </select>
+                </label>
+
+                <label class="ac-field">
                     <span>{{ _('角色') }}</span>
                     <select class="form-control" x-model="form.roleSecureCode" @change="onRoleChange()">
                         <option value="">{{ _('請選擇角色') }}</option>
                         <template x-for="role in roleOptions" :key="role.secure_code">
-                            <option :value="role.secure_code" x-text="roleOptionLabel(role)"></option>
+                            <option :value="role.secure_code" :selected="role.secure_code === form.roleSecureCode" x-text="roleOptionLabel(role)"></option>
                         </template>
                     </select>
                 </label>
@@ -153,14 +163,51 @@
                 <template x-if="selectedRoleNeedsUnit">
                     <label class="ac-field">
                         <span x-text="selectedRole && selectedRole.scope_type === 'GROUP' ? __('社群') : __('部門')"></span>
-                        <select class="form-control" x-model="form.unitSecureCode">
+                        <select class="form-control" x-model="form.unitSecureCode" @change="onUnitChange()">
                             <option value="">{{ _('請選擇單位') }}</option>
                             <template x-for="unit in unitOptions" :key="unit.secure_code">
-                                <option :value="unit.secure_code" x-text="unit.name"></option>
+                                <option :value="unit.secure_code" :selected="unit.secure_code === form.unitSecureCode" x-text="unit.name"></option>
                             </template>
                         </select>
                     </label>
                 </template>
+
+                <div class="ac-grant-fields" x-show="form.kind !== 'regular'" x-cloak>
+                    <label class="ac-field">
+                        <span x-text="form.kind === 'proxy' ? __('被代理人') : __('被代理人（可選）')"></span>
+                        <select class="form-control" x-model="form.actingForSecureCode" :disabled="roleHoldersLoading || !canLoadRoleHolders">
+                            <option value="" x-text="roleHoldersPlaceholder"></option>
+                            <template x-for="holder in roleHolders" :key="holder.secure_code">
+                                <option :value="holder.secure_code" :selected="holder.secure_code === form.actingForSecureCode" x-text="holderLabel(holder)"></option>
+                            </template>
+                        </select>
+                    </label>
+
+                    <div class="ac-date-grid">
+                        <label class="ac-field">
+                            <span>{{ _('起始日') }}</span>
+                            <input type="date" class="form-control" x-model="form.validFrom">
+                        </label>
+                        <label class="ac-field">
+                            <span>{{ _('結束日') }}</span>
+                            <input type="date" class="form-control" x-model="form.validUntil">
+                        </label>
+                    </div>
+
+                    <label class="ac-field">
+                        <span>{{ _('限定表單') }}</span>
+                        <select class="form-control" multiple x-model="form.allowedFormTemplates">
+                            <template x-for="template in formTemplates" :key="template.secure_code">
+                                <option :value="template.secure_code" :selected="form.allowedFormTemplates.includes(template.secure_code)" x-text="formTemplateLabel(template)"></option>
+                            </template>
+                        </select>
+                    </label>
+
+                    <label class="ac-field">
+                        <span>{{ _('事由') }}</span>
+                        <textarea class="form-control" rows="3" x-model.trim="form.grantReason"></textarea>
+                    </label>
+                </div>
 
                 <div class="ac-alert ac-alert-error" x-show="modalError" x-cloak>
                     <span x-text="modalError"></span>

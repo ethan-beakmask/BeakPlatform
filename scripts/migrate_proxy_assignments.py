@@ -33,6 +33,7 @@ USAGE = """用法:
   2. 將出廠預設 DEPT_MANAGER/DEPT_DEPUTY 顯示名改成新名稱
   3. 回填 DEPT_HEAD@單位 給既有正、副主管正式指派
   4. 既有 DEPT_MANAGER＋缺席順位關卡改指 DEPT_HEAD
+  5. DEPT_PROXY1／DEPT_PROXY2 指派各遷成 DEPT_HEAD／DEPT_MANAGER／DEPT_DEPUTY 三列候補（standby），角色退役（決策點 K2）
 
   --dry-run 只顯示結果；--apply 才會寫入資料庫。
 """
@@ -105,6 +106,12 @@ def _empty_counts():
         'gate_template_nodes': 0,
         'gate_snapshots': 0,
         'gate_snapshot_nodes': 0,
+        'proxy_rows_migrated': 0,
+        'proxy_rows_dropped_no_unit': 0,
+        'standby_created': 0,
+        'standby_revived': 0,
+        'standby_skipped': 0,
+        'proxy_roles_deleted': 0,
     }
 
 
@@ -189,7 +196,6 @@ def backfill_dept_head(org, ctx):
         UserRoleAssignment.org_secure_code == org.secure_code,
         UserRoleAssignment.role_secure_code.in_(source_role_scs),
         UserRoleAssignment.assignment_kind == AssignmentKind.REGULAR,
-        UserRoleAssignment.unit_secure_code != None,  # noqa: E711
         UserRoleAssignment.is_deleted == False,  # noqa: E712
     ).order_by(
         UserRoleAssignment.role_secure_code.asc(),
@@ -280,7 +286,8 @@ def main():
     with app.app_context():
         from modules.form_workflow.models import FwPublishedFormWorkflow, FwWorkflowTemplate
         from modules.form_workflow.services.manager_gate_migration import migrate_org_manager_gates
-        steps = (*STEPS, migrate_org_manager_gates)
+        from app.services.proxy_role_migration import migrate_org_proxy_roles
+        steps = (*STEPS, migrate_org_manager_gates, migrate_org_proxy_roles)
 
         query = Organization.query.filter(Organization.is_deleted == False)  # noqa: E712
         if org_codes:
@@ -307,21 +314,7 @@ def main():
             for step in steps:
                 _merge_counts(counts, step(org, ctx))
             _merge_counts(total, counts)
-            print(
-                f"{org.code}: "
-                f"roles_created={counts['roles_created']}, "
-                f"roles_skipped={counts['roles_skipped']}, "
-                f"renamed={counts['renamed']}, "
-                f"rename_skipped={counts['rename_skipped']}, "
-                f"head_created={counts['head_created']}, "
-                f"head_revived={counts['head_revived']}, "
-                f"head_skipped={counts['head_skipped']}, "
-                f"gate_skipped_no_role={counts['gate_skipped_no_role']}, "
-                f"gate_templates={counts['gate_templates']}, "
-                f"gate_template_nodes={counts['gate_template_nodes']}, "
-                f"gate_snapshots={counts['gate_snapshots']}, "
-                f"gate_snapshot_nodes={counts['gate_snapshot_nodes']}"
-            )
+            print(f"{org.code}: " + ', '.join(f'{k}={v}' for k, v in counts.items()))
 
         if mode == '--apply':
             db.session.commit()
@@ -330,21 +323,7 @@ def main():
             db.session.rollback()
             print("預覽，未寫入")
 
-        print(
-            "總計: "
-            f"roles_created={total['roles_created']}, "
-            f"roles_skipped={total['roles_skipped']}, "
-            f"renamed={total['renamed']}, "
-            f"rename_skipped={total['rename_skipped']}, "
-            f"head_created={total['head_created']}, "
-            f"head_revived={total['head_revived']}, "
-            f"head_skipped={total['head_skipped']}, "
-            f"gate_skipped_no_role={total['gate_skipped_no_role']}, "
-            f"gate_templates={total['gate_templates']}, "
-            f"gate_template_nodes={total['gate_template_nodes']}, "
-            f"gate_snapshots={total['gate_snapshots']}, "
-            f"gate_snapshot_nodes={total['gate_snapshot_nodes']}"
-        )
+        print('總計: ' + ', '.join(f'{k}={v}' for k, v in total.items()))
 
     return 0
 

@@ -22,9 +22,14 @@ from ..services.dept_membership_service import (
     ensure_role_assignment,
     get_system_role,
     purge_unit_memberships,
+    remove_dept_deputy,
+    remove_dept_manager,
     remove_dept_membership,
+    set_dept_deputy,
     set_dept_manager,
 )
+from ..services.role_assignment_service import assign_role
+from ..services.unit_resolver import resolve_role_holders
 from .. import db
 
 logger = logging.getLogger(__name__)
@@ -775,11 +780,8 @@ def remove_unit_manager(secure_code: str, user_secure_code: str):
 
     DELETE /api/units/<secure_code>/manager/<user_secure_code>
 
-    只移除 DEPT_MANAGER 角色，不移出部門
+    只移除 DEPT_MANAGER 角色（連帶 DEPT_HEAD，仍是副主管則保留），不移出部門。PF-250 起走服務。
     """
-    from ..models.user import User
-    from ..models.associations import UserRoleAssignment
-
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
         secure_code=secure_code,
@@ -798,53 +800,105 @@ def remove_unit_manager(secure_code: str, user_secure_code: str):
     if not user:
         return jsonify({'error': _('用戶不存在')}), 404
 
-    # 取得 DEPT_MANAGER 角色
-    dept_manager_role = Role.query.filter(
-        Role.org_secure_code == current_user.org_secure_code,
-        Role.code == 'DEPT_MANAGER',
-        Role.is_deleted == False
-    ).first()
-
-    if not dept_manager_role:
-        return jsonify({'error': _('部門主管角色不存在')}), 500
-
-    org_sc = current_user.org_secure_code
-
     try:
-        # 移除該用戶在此部門的主管角色
-        assignment = UserRoleAssignment.query.filter(
-            UserRoleAssignment.org_secure_code == org_sc,
-            UserRoleAssignment.user_secure_code == user_secure_code,
-            UserRoleAssignment.role_secure_code == dept_manager_role.secure_code,
-            UserRoleAssignment.unit_secure_code == secure_code,
-            UserRoleAssignment.is_deleted == False
-        ).first()
-
-        if assignment:
-            assignment.is_deleted = True
-            assignment.deleted_at = datetime.utcnow()
-
-            # 恢復為部門員工
-            dept_employee_role = get_system_role(org_sc, 'DEPT_EMPLOYEE')
-            if dept_employee_role:
-                ensure_role_assignment(
-                    org_sc, user_secure_code,
-                    dept_employee_role.secure_code, secure_code,
-                    current_user.email
-                )
-
-            db.session.commit()
-
-        logger.info(f"User {user.email} removed as manager of unit {unit.code} by {current_user.email}")
-
-        return jsonify({
-            'message': _('已移除 %(user)s 的 %(unit)s 主管角色', user=user.display_name, unit=unit.name)
-        }), 200
-
+        remove_dept_manager(user, unit, current_user.email)
+        db.session.commit()
+    except LookupError:
+        db.session.rollback()
+        return jsonify({'error': _('部門主管角色不存在')}), 500
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to remove unit manager: {e}")
         return jsonify({'error': _('移除主管角色失敗')}), 500
+
+    logger.info(f"User {user.email} removed as manager of unit {unit.code} by {current_user.email}")
+    return jsonify({
+        'message': _('已移除 %(user)s 的 %(unit)s 主管角色', user=user.display_name, unit=unit.name)
+    }), 200
+
+
+def _user_brief(user) -> dict:
+    return {
+        'id': user.secure_code,
+        'display_name': user.display_name,
+        'native_name': user.native_name,
+        'english_name': user.english_name,
+        'employee_id': user.employee_id,
+        'email': user.email,
+    }
+
+
+def _load_active_user(org_sc: str, user_sc: str):
+    return User.query.filter(
+        User.secure_code == user_sc,
+        User.org_secure_code == org_sc,
+        User.is_deleted == False,
+        User.is_active == True,
+    ).first()
+
+
+def _regular_holder(org_sc: str, role_code: str, unit_sc: str):
+    """該單位某職位角色的第一位 regular 持有者（只看單位指派，不含全企業）。"""
+    role = get_system_role(org_sc, role_code)
+    if not role:
+        return None
+    holders = resolve_role_holders(role.secure_code, org_sc, unit_sc, unit_only=True)
+    for user_sc in holders:
+        user = _load_active_user(org_sc, user_sc)
+        if user:
+            return user
+    return None
+
+
+# PF-251 決策點 K2：部門頁登記的候補代理人對三個主管類角色各寫一列 standby
+STANDBY_ROLE_CODES = ('DEPT_HEAD', 'DEPT_MANAGER', 'DEPT_DEPUTY')
+LEADERSHIP_POSITIONS = ('manager', 'deputy', 'standby')
+
+
+def _standby_rows(org_sc: str, unit_sc: str, user_sc: str | None = None):
+    from ..models.associations import AssignmentKind, UserRoleAssignment
+
+    roles = {
+        role.code: role.secure_code
+        for role in Role.query.filter(
+            Role.org_secure_code == org_sc,
+            Role.code.in_(STANDBY_ROLE_CODES),
+            Role.is_deleted == False,
+        ).all()
+    }
+    if not roles:
+        return [], {}
+    query = UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == org_sc,
+        UserRoleAssignment.unit_secure_code == unit_sc,
+        UserRoleAssignment.role_secure_code.in_(list(roles.values())),
+        UserRoleAssignment.assignment_kind == AssignmentKind.STANDBY,
+        UserRoleAssignment.is_deleted == False,
+    )
+    if user_sc:
+        query = query.filter(UserRoleAssignment.user_secure_code == user_sc)
+    rows = query.order_by(UserRoleAssignment.assigned_at.asc(), UserRoleAssignment.id.asc()).all()
+    return rows, {sc: code for code, sc in roles.items()}
+
+
+def _standby_users(org_sc: str, unit_sc: str) -> list:
+    rows, code_by_sc = _standby_rows(org_sc, unit_sc)
+    ordered = []
+    by_user = {}
+    for row in rows:
+        entry = by_user.get(row.user_secure_code)
+        if entry is None:
+            user = _load_active_user(org_sc, row.user_secure_code)
+            if not user:
+                continue
+            entry = _user_brief(user)
+            entry['standby_roles'] = []
+            by_user[row.user_secure_code] = entry
+            ordered.append(entry)
+        code = code_by_sc.get(row.role_secure_code)
+        if code and code not in entry['standby_roles']:
+            entry['standby_roles'].append(code)
+    return ordered
 
 
 @units_bp.route('/<secure_code>/manager', methods=['GET'])
@@ -855,9 +909,6 @@ def get_unit_manager(secure_code: str):
 
     GET /api/units/<secure_code>/manager
     """
-    from ..models.user import User
-    from ..models.associations import UserRoleAssignment
-
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
         secure_code=secure_code,
@@ -867,58 +918,19 @@ def get_unit_manager(secure_code: str):
     if not unit:
         return jsonify({'error': _('組織單位不存在')}), 404
 
-    # 取得 DEPT_MANAGER 角色
-    dept_manager_role = Role.query.filter(
-        Role.org_secure_code == current_user.org_secure_code,
-        Role.code == 'DEPT_MANAGER',
-        Role.is_deleted == False
-    ).first()
-
-    if not dept_manager_role:
-        return jsonify({'manager': None}), 200
-
-    # 查找此部門的主管
-    assignment = UserRoleAssignment.query.filter(
-        UserRoleAssignment.org_secure_code == current_user.org_secure_code,
-        UserRoleAssignment.role_secure_code == dept_manager_role.secure_code,
-        UserRoleAssignment.unit_secure_code == secure_code,
-        UserRoleAssignment.is_deleted == False
-    ).first()
-
-    if not assignment:
-        return jsonify({'manager': None}), 200
-
-    user = User.query.filter(
-        User.secure_code == assignment.user_secure_code,
-        User.is_deleted == False
-    ).first()
-
-    if not user:
-        return jsonify({'manager': None}), 200
-
-    return jsonify({
-        'manager': {
-            'id': user.secure_code,
-            'display_name': user.display_name,
-            'native_name': user.native_name,
-            'english_name': user.english_name,
-            'employee_id': user.employee_id,
-            'email': user.email
-        }
-    }), 200
+    manager = _regular_holder(current_user.org_secure_code, 'DEPT_MANAGER', secure_code)
+    return jsonify({'manager': _user_brief(manager) if manager else None}), 200
 
 
 @units_bp.route('/<secure_code>/leadership', methods=['GET'])
 @admin_required
 def get_unit_leadership(secure_code: str):
     """
-    取得部門管理層（主管、副主管、代理人1、代理人2）
+    取得部門管理層（正主管、副主管、候補代理人）
 
     GET /api/units/<secure_code>/leadership
+    回 {'manager': {...}|None, 'deputy': {...}|None, 'standby': [{..., 'standby_roles': [...]}, ...]}
     """
-    from ..models.user import User
-    from ..models.associations import UserRoleAssignment
-
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
         secure_code=secure_code,
@@ -928,46 +940,22 @@ def get_unit_leadership(secure_code: str):
     if not unit:
         return jsonify({'error': _('組織單位不存在')}), 404
 
-    def get_user_by_role(role_code):
-        role = Role.query.filter(
-            Role.org_secure_code == current_user.org_secure_code,
-            Role.code == role_code,
-            Role.is_deleted == False
-        ).first()
-        if not role:
-            return None
-
-        assignment = UserRoleAssignment.query.filter(
-            UserRoleAssignment.org_secure_code == current_user.org_secure_code,
-            UserRoleAssignment.role_secure_code == role.secure_code,
-            UserRoleAssignment.unit_secure_code == secure_code,
-            UserRoleAssignment.is_deleted == False
-        ).first()
-        if not assignment:
-            return None
-
-        user = User.query.filter(
-            User.secure_code == assignment.user_secure_code,
-            User.is_deleted == False
-        ).first()
-        if not user:
-            return None
-
-        return {
-            'id': user.secure_code,
-            'display_name': user.display_name,
-            'native_name': user.native_name,
-            'english_name': user.english_name,
-            'employee_id': user.employee_id,
-            'email': user.email
-        }
-
+    org_sc = current_user.org_secure_code
+    manager = _regular_holder(org_sc, 'DEPT_MANAGER', secure_code)
+    deputy = _regular_holder(org_sc, 'DEPT_DEPUTY', secure_code)
     return jsonify({
-        'manager': get_user_by_role('DEPT_MANAGER'),
-        'deputy': get_user_by_role('DEPT_DEPUTY'),
-        'proxy1': get_user_by_role('DEPT_PROXY1'),
-        'proxy2': get_user_by_role('DEPT_PROXY2')
+        'manager': _user_brief(manager) if manager else None,
+        'deputy': _user_brief(deputy) if deputy else None,
+        'standby': _standby_users(org_sc, secure_code),
     }), 200
+
+
+def _position_name(position: str) -> str:
+    return {
+        'manager': _('正主管'),
+        'deputy': _('副主管'),
+        'standby': _('候補代理人'),
+    }.get(position, position)
 
 
 @units_bp.route('/<secure_code>/leadership/<position>', methods=['POST'])
@@ -977,20 +965,13 @@ def set_unit_leadership(secure_code: str, position: str):
     設定部門管理層
 
     POST /api/units/<secure_code>/leadership/<position>
-    position: manager / deputy / proxy1 / proxy2
+    position: manager / deputy / standby
     Body: { "user_id": "user_secure_code" }
+
+    manager／deputy 走 dept_membership_service（連帶 DEPT_HEAD 與 DEPT_EMPLOYEE 的授撤）；
+    standby 對 DEPT_HEAD／DEPT_MANAGER／DEPT_DEPUTY 各寫一列候補（決策點 K2），已有的那一列跳過。
     """
-    from ..models.user import User
-    from ..models.associations import UserRoleAssignment
-
-    role_map = {
-        'manager': 'DEPT_MANAGER',
-        'deputy': 'DEPT_DEPUTY',
-        'proxy1': 'DEPT_PROXY1',
-        'proxy2': 'DEPT_PROXY2'
-    }
-
-    if position not in role_map:
+    if position not in LEADERSHIP_POSITIONS:
         return jsonify({'error': _('無效的職位類型')}), 400
 
     unit = ResourceGateway.get_by(
@@ -1002,13 +983,14 @@ def set_unit_leadership(secure_code: str, position: str):
     if not unit:
         return jsonify({'error': _('組織單位不存在')}), 404
 
-    data = request.get_json()
+    data = request.get_json(silent=True)
     if not data or not data.get('user_id'):
         return jsonify({'error': _('請提供用戶 ID')}), 400
 
+    org_sc = current_user.org_secure_code
     user = User.query.filter(
         User.secure_code == data['user_id'],
-        User.org_secure_code == current_user.org_secure_code,
+        User.org_secure_code == org_sc,
         User.is_deleted == False
     ).first()
 
@@ -1019,90 +1001,58 @@ def set_unit_leadership(secure_code: str, position: str):
     if user.user_type != UserType.EMPLOYEE:
         return jsonify({'error': _('只有企業成員帳號可擔任部門管理職')}), 400
 
-    role_code = role_map[position]
-    role = Role.query.filter(
-        Role.org_secure_code == current_user.org_secure_code,
-        Role.code == role_code,
-        Role.is_deleted == False
-    ).first()
-
-    if not role:
-        return jsonify({'error': _('%(position)s 角色不存在，請聯繫系統管理員', position=position)}), 500
-
     try:
-        # 將用戶加入部門（如果尚未加入）
-        if not user.primary_unit_secure_code:
-            user.primary_unit_secure_code = secure_code
-
-        # 移除此部門現有的此角色（如果有）
-        existing = UserRoleAssignment.query.filter(
-            UserRoleAssignment.org_secure_code == current_user.org_secure_code,
-            UserRoleAssignment.role_secure_code == role.secure_code,
-            UserRoleAssignment.unit_secure_code == secure_code,
-            UserRoleAssignment.is_deleted == False
-        ).all()
-
-        for a in existing:
-            a.is_deleted = True
-            a.deleted_at = datetime.utcnow()
-
-        # 賦予新角色
-        new_assignment = UserRoleAssignment(
-            org_secure_code=current_user.org_secure_code,
-            user_secure_code=user.secure_code,
-            role_secure_code=role.secure_code,
-            unit_secure_code=secure_code,
-            assigned_by=current_user.email
-        )
-        db.session.add(new_assignment)
-        db.session.commit()
-
-        position_names = {
-            'manager': _('主管'),
-            'deputy': _('副主管'),
-            'proxy1': _('代理人(一)'),
-            'proxy2': _('代理人(二)')
-        }
-
-        logger.info(f"User {user.email} set as {position} of unit {unit.code} by {current_user.email}")
-
-        return jsonify({
-            'message': _('已設定 %(user)s 為 %(unit)s %(position)s', user=user.display_name, unit=unit.name, position=position_names[position]),
-            'user': {
-                'id': user.secure_code,
-                'display_name': user.display_name,
-                'native_name': user.native_name,
-                'english_name': user.english_name,
-                'employee_id': user.employee_id,
-                'email': user.email
-            }
-        }), 200
-
+        if position == 'manager':
+            set_dept_manager(user, unit, current_user.email)
+            db.session.commit()
+        elif position == 'deputy':
+            set_dept_deputy(user, unit, current_user.email)
+            db.session.commit()
+        else:
+            operator = current_user._get_current_object()
+            for role_code in STANDBY_ROLE_CODES:
+                role = get_system_role(org_sc, role_code)
+                if not role:
+                    db.session.rollback()
+                    return jsonify({'error': _('%(position)s 角色不存在，請聯繫系統管理員', position=role_code)}), 500
+                try:
+                    assign_role(
+                        org_sc, user.secure_code, role.secure_code, unit_sc=secure_code,
+                        kind='standby', grant_reason=_('部門頁登記候補代理人'), operator=operator,
+                    )
+                except ValueError as exc:
+                    # 已是此角色的候補 → 跳過那一列；其他錯誤（層界、單位型別）整組退回
+                    if '候補' in str(exc) and '已是' in str(exc):
+                        continue
+                    db.session.rollback()
+                    return jsonify({'error': str(exc)}), 400
+    except LookupError as exc:
+        db.session.rollback()
+        return jsonify({'error': _('%(position)s 角色不存在，請聯繫系統管理員', position=str(exc))}), 500
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to set unit leadership: {e}")
         return jsonify({'error': _('設定失敗')}), 500
+
+    logger.info(f"User {user.email} set as {position} of unit {unit.code} by {current_user.email}")
+    return jsonify({
+        'message': _('已設定 %(user)s 為 %(unit)s %(position)s', user=user.display_name, unit=unit.name, position=_position_name(position)),
+        'user': _user_brief(user),
+    }), 200
 
 
 @units_bp.route('/<secure_code>/leadership/<position>', methods=['DELETE'])
 @admin_required
 def remove_unit_leadership(secure_code: str, position: str):
     """
-    移除部門管理層
+    移除部門正主管／副主管（不移出部門）
 
     DELETE /api/units/<secure_code>/leadership/<position>
-    position: manager / deputy / proxy1 / proxy2
+    position: manager / deputy；standby 要帶使用者，走 /leadership/standby/<user_secure_code>
     """
-    from ..models.associations import UserRoleAssignment
-
-    role_map = {
-        'manager': 'DEPT_MANAGER',
-        'deputy': 'DEPT_DEPUTY',
-        'proxy1': 'DEPT_PROXY1',
-        'proxy2': 'DEPT_PROXY2'
-    }
-
-    if position not in role_map:
+    if position == 'standby':
+        return jsonify({'error': _('移除候補代理人請指定使用者')}), 400
+    if position not in LEADERSHIP_POSITIONS:
         return jsonify({'error': _('無效的職位類型')}), 400
 
     unit = ResourceGateway.get_by(
@@ -1114,48 +1064,73 @@ def remove_unit_leadership(secure_code: str, position: str):
     if not unit:
         return jsonify({'error': _('組織單位不存在')}), 404
 
-    role_code = role_map[position]
-    role = Role.query.filter(
-        Role.org_secure_code == current_user.org_secure_code,
-        Role.code == role_code,
-        Role.is_deleted == False
-    ).first()
-
-    if not role:
-        return jsonify({'error': _('%(position)s 角色不存在', position=position)}), 500
+    org_sc = current_user.org_secure_code
+    role_code = 'DEPT_MANAGER' if position == 'manager' else 'DEPT_DEPUTY'
+    holder = _regular_holder(org_sc, role_code, secure_code)
 
     try:
-        # 移除此部門的此角色
-        existing = UserRoleAssignment.query.filter(
-            UserRoleAssignment.org_secure_code == current_user.org_secure_code,
-            UserRoleAssignment.role_secure_code == role.secure_code,
-            UserRoleAssignment.unit_secure_code == secure_code,
-            UserRoleAssignment.is_deleted == False
-        ).all()
-
-        for a in existing:
-            a.is_deleted = True
-            a.deleted_at = datetime.utcnow()
-
-        db.session.commit()
-
-        position_names = {
-            'manager': _('主管'),
-            'deputy': _('副主管'),
-            'proxy1': _('代理人(一)'),
-            'proxy2': _('代理人(二)')
-        }
-
-        logger.info(f"Removed {position} from unit {unit.code} by {current_user.email}")
-
-        return jsonify({
-            'message': _('已移除 %(unit)s %(position)s', unit=unit.name, position=position_names[position])
-        }), 200
-
+        if holder:
+            if position == 'manager':
+                remove_dept_manager(holder, unit, current_user.email)
+            else:
+                remove_dept_deputy(holder, unit, current_user.email)
+            db.session.commit()
+    except LookupError:
+        db.session.rollback()
+        return jsonify({'error': _('%(position)s 角色不存在', position=_position_name(position))}), 500
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to remove unit leadership: {e}")
         return jsonify({'error': _('移除失敗')}), 500
+
+    return jsonify({
+        'message': _('已移除 %(unit)s %(position)s', unit=unit.name, position=_position_name(position))
+    }), 200
+
+
+@units_bp.route('/<secure_code>/leadership/standby/<user_secure_code>', methods=['DELETE'])
+@admin_required
+def remove_unit_standby(secure_code: str, user_secure_code: str):
+    """
+    移除某人在此部門的候補代理人登記（三個主管角色的 standby 列，有幾列刪幾列）
+
+    DELETE /api/units/<secure_code>/leadership/standby/<user_secure_code>
+    """
+    unit = ResourceGateway.get_by(
+        OrganizationalUnit,
+        secure_code=secure_code,
+        is_deleted=False
+    )
+
+    if not unit:
+        return jsonify({'error': _('組織單位不存在')}), 404
+
+    org_sc = current_user.org_secure_code
+    user = User.query.filter(
+        User.secure_code == user_secure_code,
+        User.org_secure_code == org_sc,
+        User.is_deleted == False
+    ).first()
+    if not user:
+        return jsonify({'error': _('用戶不存在')}), 404
+
+    rows, _codes = _standby_rows(org_sc, secure_code, user_secure_code)
+    try:
+        now = datetime.utcnow()
+        for row in rows:
+            row.is_deleted = True
+            row.deleted_at = now
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to remove unit standby: {e}")
+        return jsonify({'error': _('移除失敗')}), 500
+
+    logger.info(f"User {user.email} removed as standby of unit {unit.code} by {current_user.email} ({len(rows)} rows)")
+    return jsonify({
+        'message': _('已移除 %(user)s 的 %(unit)s 候補代理人登記', user=user.display_name, unit=unit.name),
+        'removed': len(rows),
+    }), 200
 
 
 # =====================================================

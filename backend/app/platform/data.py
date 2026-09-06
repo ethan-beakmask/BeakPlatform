@@ -312,8 +312,20 @@ def _department_to_dict(dept) -> Optional[Dict[str, Any]]:
         'parent_code': dept.parent_secure_code,
         'is_active': dept.is_active,
         'sort_order': dept.sort_order,
-        'manager_code': dept.manager_secure_code,
+        'manager_code': _department_manager_code(dept),
     }
+
+
+def _department_manager_code(dept) -> Optional[str]:
+    """部門正主管（DEPT_MANAGER@unit 的第一位 regular 持有者）；PF-250：organizational_units 沒有 manager_secure_code 欄位，改由角色指派推導。"""
+    from ..services.dept_membership_service import get_system_role
+    from ..services.unit_resolver import resolve_role_holders
+
+    role = get_system_role(dept.org_secure_code, 'DEPT_MANAGER')
+    if not role:
+        return None
+    holders = resolve_role_holders(role.secure_code, dept.org_secure_code, dept.secure_code, unit_only=True)
+    return holders[0] if holders else None
 
 
 def _role_to_dict(role) -> Optional[Dict[str, Any]]:

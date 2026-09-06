@@ -337,38 +337,6 @@ class OrganizationService:
         db.session.add(dept_head_role)
         roles['dept_head'] = dept_head_role
 
-        # 部門代理人1角色
-        dept_proxy1_role = Role(
-            org_secure_code=org.secure_code,
-            role_type=RoleType.POSITION,
-            scope_type=ScopeType.DEPARTMENT,
-            code='DEPT_PROXY1',
-            name='代理人(一)',
-            description='部門代理人，主管不在時代為簽核',
-            is_manager=False,
-            is_system_role=True,
-            is_active=True
-        )
-        dept_proxy1_role.update_full_path()
-        db.session.add(dept_proxy1_role)
-        roles['dept_proxy1'] = dept_proxy1_role
-
-        # 部門代理人2角色
-        dept_proxy2_role = Role(
-            org_secure_code=org.secure_code,
-            role_type=RoleType.POSITION,
-            scope_type=ScopeType.DEPARTMENT,
-            code='DEPT_PROXY2',
-            name='代理人(二)',
-            description='部門代理人，主管不在時代為簽核',
-            is_manager=False,
-            is_system_role=True,
-            is_active=True
-        )
-        dept_proxy2_role.update_full_path()
-        db.session.add(dept_proxy2_role)
-        roles['dept_proxy2'] = dept_proxy2_role
-
         # 社群成員角色 (基底，社群內所有人都有)
         group_member_role = Role(
             org_secure_code=org.secure_code,

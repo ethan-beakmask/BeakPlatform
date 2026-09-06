@@ -186,8 +186,6 @@ def _role_unit_env(org):
         'head': _role(org, 'DEPT_HEAD', RoleType.POSITION),
         'manager': _role(org, 'DEPT_MANAGER', RoleType.POSITION),
         'deputy': _role(org, 'DEPT_DEPUTY', RoleType.POSITION),
-        'proxy1': _role(org, 'DEPT_PROXY1', RoleType.POSITION),
-        'proxy2': _role(org, 'DEPT_PROXY2', RoleType.POSITION),
     }
     return {'info': info, 'sw': sw, 'sw1': sw1, 'mkt': mkt, **roles}
 

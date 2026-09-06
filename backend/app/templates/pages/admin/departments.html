@@ -138,11 +138,16 @@
     .deputy-col .column-label { color: #1565c0; }
     .employee-col .column-label { color: #0c5460; }
 
-    /* 代理人 */
-    .proxy-section {
-        margin-top: 8px; padding-top: 6px; border-top: 1px dashed #ddd;
+    /* 候補代理人 */
+    .standby-section {
+        border-color: #8b5cf6;
+        background: #f5f3ff;
     }
-    .proxy-label { font-size: 10px; color: #7b1fa2; margin-bottom: 3px; }
+    .standby-section.drag-over {
+        background: #ede9fe !important;
+        outline: 2px dashed #7c3aed;
+    }
+    .standby-label { color: #5b21b6; }
 
     /* 右側：未分配 */
     .dept-unassigned-panel {
@@ -200,7 +205,7 @@
         font-size: 12px;
     }
     .staff-column.ctrl-cross-mode,
-    .proxy-section.ctrl-cross-mode {
+    .standby-section.ctrl-cross-mode {
         outline: 2px dashed #c62828 !important;
         background: #ffebee !important;
     }
@@ -352,7 +357,7 @@ window.__DEPT_CONFIG = {
                             <span style="font-weight:normal;color:#888;font-size:11px;" x-text="__('共 {count} 人', {count: totalCount})"></span>
                         </div>
                         <div class="staff-layout-new">
-                            <!-- 左: 主管(含代理人一) + 副主管(含代理人二) -->
+                            <!-- 左: 主管 + 副主管 + 候補代理人 -->
                             <div class="staff-left-col">
                                 <!-- 主管 -->
                                 <div class="staff-column manager-col leadership-cell"
@@ -371,24 +376,6 @@ window.__DEPT_CONFIG = {
                                     <template x-if="!leadership.manager">
                                         <div class="staff-empty" x-text="isCtrlCrossMode ? __('[跨] 跨部門主管') : __('拖入設為主管')"></div>
                                     </template>
-                                    <!-- 代理人(一) -->
-                                    <div class="proxy-section leadership-cell"
-                                         :class="{'drag-over': dragOverZone==='proxy1', 'ctrl-cross-mode': isCtrlCrossMode}"
-                                         @dragover.prevent.stop="onZoneDragOver($event,'proxy1')"
-                                         @dragleave="dragOverZone=null"
-                                         @drop.stop="dropToLeadership($event,'proxy1')">
-                                        <div class="proxy-label">{{ _('代理人(一)') }}</div>
-                                        <template x-if="leadership.proxy1">
-                                            <div class="staff-person" :draggable="!leadership.proxy1._isCross" @dragstart="leadership.proxy1._isCross ? $event.preventDefault() : dragStartLeader($event, leadership.proxy1, 'proxy1')" @dragend="clearDrag()" :style="leadership.proxy1._isCross ? 'cursor:default;opacity:0.85' : ''">
-                                                <span x-show="leadership.proxy1._isCross" class="role-tag leader" style="font-size:10px;">{{ _('[跨]') }}</span>
-                                                <span class="emp-id" x-text="leadership.proxy1.employee_id||'-'"></span>
-                                                <span class="emp-native" x-text="leadership.proxy1.native_name||leadership.proxy1.display_name"></span>
-                                            </div>
-                                        </template>
-                                        <template x-if="!leadership.proxy1">
-                                            <div class="staff-empty">{{ _('拖入設定') }}</div>
-                                        </template>
-                                    </div>
                                 </div>
                                 <!-- 副主管 -->
                                 <div class="staff-column deputy-col leadership-cell"
@@ -407,24 +394,28 @@ window.__DEPT_CONFIG = {
                                     <template x-if="!leadership.deputy">
                                         <div class="staff-empty" x-text="isCtrlCrossMode ? __('[跨] 跨部門副主管') : __('拖入設為副主管')"></div>
                                     </template>
-                                    <!-- 代理人(二) -->
-                                    <div class="proxy-section leadership-cell"
-                                         :class="{'drag-over': dragOverZone==='proxy2', 'ctrl-cross-mode': isCtrlCrossMode}"
-                                         @dragover.prevent.stop="onZoneDragOver($event,'proxy2')"
-                                         @dragleave="dragOverZone=null"
-                                         @drop.stop="dropToLeadership($event,'proxy2')">
-                                        <div class="proxy-label">{{ _('代理人(二)') }}</div>
-                                        <template x-if="leadership.proxy2">
-                                            <div class="staff-person" :draggable="!leadership.proxy2._isCross" @dragstart="leadership.proxy2._isCross ? $event.preventDefault() : dragStartLeader($event, leadership.proxy2, 'proxy2')" @dragend="clearDrag()" :style="leadership.proxy2._isCross ? 'cursor:default;opacity:0.85' : ''">
-                                                <span x-show="leadership.proxy2._isCross" class="role-tag leader" style="font-size:10px;">{{ _('[跨]') }}</span>
-                                                <span class="emp-id" x-text="leadership.proxy2.employee_id||'-'"></span>
-                                                <span class="emp-native" x-text="leadership.proxy2.native_name||leadership.proxy2.display_name"></span>
-                                            </div>
-                                        </template>
-                                        <template x-if="!leadership.proxy2">
-                                            <div class="staff-empty">{{ _('拖入設定') }}</div>
-                                        </template>
-                                    </div>
+                                </div>
+                                <!-- 候補代理人 -->
+                                <div class="staff-column standby-section leadership-cell"
+                                     :class="{'drag-over': dragOverZone==='standby', 'ctrl-cross-mode': isCtrlCrossMode}"
+                                     @dragover.prevent="onZoneDragOver($event,'standby')"
+                                     @dragleave="dragOverZone=null"
+                                     @drop="dropToLeadership($event,'standby')">
+                                    <div class="column-label standby-label">{{ _('候補代理人') }}</div>
+                                    <template x-if="leadership.standby && leadership.standby.length > 0">
+                                        <div>
+                                            <template x-for="s in leadership.standby" :key="s.id">
+                                                <div class="staff-person" draggable="true" @dragstart="dragStartLeader($event, s, 'standby')" @dragend="clearDrag()">
+                                                    <span class="emp-id" x-text="s.employee_id||'-'"></span>
+                                                    <span class="emp-native" x-text="s.native_name||s.display_name"></span>
+                                                    <span class="emp-english" x-text="s.english_name||''"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="!leadership.standby || leadership.standby.length === 0">
+                                        <div class="staff-empty">{{ _('拖入登記候補（正副主管都缺席時可代簽）') }}</div>
+                                    </template>
                                 </div>
                             </div>
                             <!-- 右: 企業成員 -->
