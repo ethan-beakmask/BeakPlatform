@@ -38,9 +38,9 @@ def create_event():
         return jsonify({'success': False, 'error': 'validation', 'message': _('請求格式錯誤')}), 400
     try:
         row = CalendarEventService.create(current_user.organization, current_user, payload)
-        hint = _delegation_hint(row)
+        hint = _proxy_hint(row)
         db.session.commit()
-        return jsonify({'success': True, 'event': row.to_dict(), 'delegation_hint': hint}), 201
+        return jsonify({'success': True, 'event': row.to_dict(), 'proxy_hint': hint}), 201
     except CalendarEventError as exc:
         db.session.rollback()
         return jsonify({'success': False, 'error': exc.code, 'message': exc.message}), exc.status
@@ -58,9 +58,9 @@ def update_event(secure_code):
         return jsonify({'success': False, 'error': 'validation', 'message': _('請求格式錯誤')}), 400
     try:
         row = CalendarEventService.update(current_user.organization, current_user, secure_code, payload)
-        hint = _delegation_hint(row)
+        hint = _proxy_hint(row)
         db.session.commit()
-        return jsonify({'success': True, 'event': row.to_dict(), 'delegation_hint': hint})
+        return jsonify({'success': True, 'event': row.to_dict(), 'proxy_hint': hint})
     except CalendarEventError as exc:
         db.session.rollback()
         return jsonify({'success': False, 'error': exc.code, 'message': exc.message}), exc.status
@@ -137,28 +137,19 @@ def _events(scope: str):
     })
 
 
-def _delegation_hint(row):
-    hint = CalendarEventService.delegation_hint(current_user.organization, current_user, row)
+def _proxy_hint(row):
+    hint = CalendarEventService.proxy_hint(current_user.organization, current_user, row)
     if hint is None:
         return None
-    if current_user.is_org_admin:
-        hint['create_url'] = url_for(
-            'delegations.create_delegation',
-            delegator=current_user.secure_code,
-            effective_from=hint['start_date'],
-            effective_until=hint['end_date'],
-            reason=row.title,
-            next=url_for('calendar_web.my_calendar'),
-        )
-    elif current_user.is_employee:
+    if current_user.is_org_admin or current_user.is_employee:
         hint['create_url'] = url_for(
             'main.personal_settings',
-            delegation='new',
+            proxy='new',
             effective_from=hint['start_date'],
             effective_until=hint['end_date'],
             reason=row.title,
             next=url_for('calendar_web.my_calendar'),
-            _anchor='my-delegations',
+            _anchor='my-proxy-assignments',
         )
     else:
         hint['create_url'] = None

@@ -54,7 +54,6 @@ url_index:
 
   # === 核決與代理 ===
   /job-approval-categories/:     approval-delegation.yaml
-  /delegations/:                 approval-delegation.yaml
 
   # === 模組管理 ===
   /modules/:                     modules-mgmt.yaml
@@ -122,7 +121,7 @@ manifest_files:
   - platform-help.yaml           # 平台說明與使用者手冊
   - admin-accounts.yaml          # 管理員與特殊帳號
   - hr-structure.yaml            # 人資架構
-  - approval-delegation.yaml     # 核決+代理授權
+  - approval-delegation.yaml     # 核決+角色代理指派
   - duties.yaml                  # 職務管理
   - install-bootstrap.yaml       # 安裝／升級的 DB bootstrap（PF-211）
   - modules-mgmt.yaml            # 模組管理

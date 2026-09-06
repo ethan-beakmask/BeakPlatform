@@ -12,7 +12,7 @@ files:
     - backend/app/web/main.py              # personal_settings, change_password
   api:
     - backend/app/api/my_api_keys.py       # 本人 API Key 清單/領取/重產
-    - backend/app/api/my_delegations.py    # 本人代理授權清單/建立/撤銷
+    - backend/app/api/my_proxy_assignments.py    # 本人代理指派清單/建立/撤銷
   model:
     - backend/app/models/user.py
     - backend/app/models/password_history.py
@@ -21,15 +21,15 @@ files:
     - backend/app/templates/pages/profile/edit.html
     - backend/app/templates/pages/profile/password.html
     - backend/app/templates/pages/personal_settings.html
-    - backend/app/templates/pages/_my_delegations.html
+    - backend/app/templates/pages/_my_proxy_assignments.html
     - backend/app/templates/pages/change_password.html
   js:
     - backend/app/static/js/my-api-keys.js
-    - backend/app/static/js/my-delegations.js
+    - backend/app/static/js/my-proxy-assignments.js
   css:
-    - backend/app/static/css/my-delegations.css
+    - backend/app/static/css/my-proxy-assignments.css
   test:
-    - backend/tests/test_my_delegations_api.py
+    - backend/tests/test_my_proxy_assignments_api.py
 
 tables:
   primary: users

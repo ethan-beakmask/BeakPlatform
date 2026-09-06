@@ -283,3 +283,18 @@ CREATE INDEX IF NOT EXISTS ix_schedule_holidays_holiday_calendar_secure_code ON 
 - 政府表匯入時落在週六日但有假名的日子（例如週六的春節）也收為 `HOLIDAY`，所以 2026 年是 22 筆（16 假日＋6 補假），不是平日的 16 筆；
   週末且 `description` 空的 104 天一律跳過。
 - 舊的 `holidays.js::importTWHolidays()`（寫死且與官方不符的 2026 清單）與 model 內的 `DEFAULT_TW_HOLIDAYS_2026` 已刪除。
+
+## 九、PF-251 第 3b 期後的變更（2026-09-07）：`delegations` 退役，代理改讀 `user_role_assignments` 的 proxy 列
+
+第六節（六之一投影表的 `delegation` 列、六之三代理建議、六之四員工自助）描述的是 2026-09-03 的實作，**2026-09-07 起以本節為準**，那幾段僅供考古：
+
+| 舊（六之一～六之四） | 現在 |
+|---|---|
+| 投影 `source_type='delegation'`／`event_type='DELEGATION'`，讀 `delegations` | `calendar_projection_service._proxy_events()`：讀 `user_role_assignments` `assignment_kind='proxy'`、未刪、效期與區間相交；**同一 (代理人, 被代理人, valid_from, valid_until) 合併成一筆** `source_type='proxy'`／`event_type='PROXY'`（`key=proxy:<第一列 sc>`），title「X 代理 Y」、`note` 列出「角色名@單位名」以「、」串接；audience 仍是被代理人、代理人、ORG_ADMIN；`link` 只給 ORG_ADMIN 且指 `/access/`（權限中心無帳號 deep link） |
+| `CalendarEventService.delegation_hint()`、回應 key `delegation_hint`、`already_delegated` | `proxy_hint()`、`proxy_hint`、`already_covered`；涵蓋判定改 `proxy_assignment_service.has_covering_proxy()`：本人**每一列**可代理的 regular 角色（排除四個層界身分角色）都要有一列 `acting_for=本人` 的 proxy 效期涵蓋整段才算 True |
+| `create_url`：ORG_ADMIN → `/delegations/create?delegator=…`；EMPLOYEE → 個人設定 `?delegation=new…#my-delegations` | **兩種身分同一條**：`url_for('main.personal_settings', proxy='new', effective_from=, effective_until=, reason=, next=, _anchor='my-proxy-assignments')`；其餘身分 `None` |
+| `calendar.js::delegationLinkFor()`（管理員在面板對別人的 LEAVE／TRIP 給 [建立代理授權]） | **刪除**；toast 的連結文字改 [設定代理人]，無連結時句尾「請通知管理員建立代理指派」；圖例「代理指派」、CSS class `.cal-ev--proxy` |
+| `/api/my-delegations`、`_my_delegations.html`／`my-delegations.js`／`my-delegations.css`（`mdl-`） | `/api/my-proxy-assignments`（`GET` given／received／`today`、`GET /candidates`、`GET /my-roles`、`POST`、`POST /<assignment_sc>/revoke`）、`_my_proxy_assignments.html`／`my-proxy-assignments.js`／`my-proxy-assignments.css`（`mpa-`）；建立＝對本人每一列可代理的 regular 角色各建一列 proxy（`source_ref='self:<sc>'`，事由必填，重疊效期的列略過並回 `skipped`），撤銷 given／放棄 received 同一支 revoke；唯一實作 `backend/app/services/proxy_assignment_service.py` |
+| `/delegations/` 管理頁、`test_delegations_prefill.py`、`test_my_delegations_api.py`、`test_delegation_effective_status.py` | 頁面退役（404）；測試改 `test_my_proxy_assignments_api.py`、`test_delegation_migration.py`，行事曆兩檔改 proxy 語意 |
+
+設計與分期見 `dev-notes/ROLE_PROXY_ASSIGNMENT_DESIGN.md`（第十一節「第 3b 期」有驗收憑證與待決點）。

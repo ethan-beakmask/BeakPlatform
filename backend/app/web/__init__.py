@@ -33,7 +33,6 @@ def register_web_blueprints(app: Flask) -> None:
     from .job_families import job_families_bp
     from .job_titles import job_titles_bp
     from .positions import positions_bp
-    from .delegations import delegations_bp
     from .sys_accounts import sys_accounts_bp
     from .departments import departments_bp
     from .groups import groups_bp, my_groups_bp
@@ -112,9 +111,6 @@ def register_web_blueprints(app: Flask) -> None:
 
     # Employee position management pages (HR Structure)
     app.register_blueprint(positions_bp, url_prefix='/positions')
-
-    # Delegation management pages (代理授權)
-    app.register_blueprint(delegations_bp, url_prefix='/delegations')
 
     # User numbering rules (用戶編號規則)
     app.register_blueprint(numbering_bp)

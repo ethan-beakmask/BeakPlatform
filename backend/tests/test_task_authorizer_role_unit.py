@@ -8,9 +8,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app import db  # noqa: E402
 from app.models import (  # noqa: E402
-    Delegation,
-    DelegationStatus,
-    DelegationType,
     MembershipType,
     Organization,
     OrganizationalUnit,
@@ -49,24 +46,6 @@ def _user(sc, org, username, name):
     db.session.add(user)
     db.session.commit()
     return user
-
-
-def _delegation(org, delegator, delegate, start, end,
-                delegation_type=DelegationType.FULL, allowed_form_templates=None):
-    row = Delegation(
-        org_secure_code=org.secure_code,
-        delegator_secure_code=delegator.secure_code,
-        delegate_secure_code=delegate.secure_code,
-        delegation_type=delegation_type,
-        effective_from=start,
-        effective_until=end,
-        status=DelegationStatus.ACTIVE,
-        created_by='test',
-    )
-    row.set_allowed_form_templates(allowed_form_templates or [])
-    db.session.add(row)
-    db.session.commit()
-    return row
 
 
 def _role(org, code, role_type='ROLE', scope_type='DEPARTMENT', is_active=True):
@@ -282,7 +261,6 @@ def test_legacy_role_queue_keeps_flat_role_behavior(test_org):
     actor = {
         'user_sc': outsider.secure_code,
         'role_codes': {env['manager'].secure_code},
-        'delegations': {},
     }
     assert can_act_on_task(task, outsider.secure_code, test_org.secure_code, actor) is True
 
@@ -432,21 +410,29 @@ def test_standby_does_not_bubble_but_proxy_bubbles_like_role(test_org):
     assert resolve_acting_identity(position_task, position_proxy.secure_code, test_org.secure_code) is None
 
 
-def test_delegation_uses_role_unit_identity(test_org, test_user):
+def test_proxy_uses_role_unit_identity(test_org, test_user):
     env = _role_unit_env(test_org)
     today = test_org.local_today()
     delegator = _user('ru_delegator', test_org, 'rudelegator', 'Delegator')
     _assign(delegator, env['manager'], env['mkt'])
-    _delegation(test_org, delegator, test_user, today, today)
+    _assign(
+        test_user,
+        env['manager'],
+        env['mkt'],
+        valid_from=today,
+        valid_until=today,
+        kind=AssignmentKind.PROXY,
+        acting_for=delegator,
+    )
     task = _role_task(test_org, env['manager'], env['mkt'], RoleType.POSITION)
 
     manager_identity = resolve_acting_identity(
         task, test_user.secure_code, test_org.secure_code)
     assert manager_identity == {
-        'via': 'delegation',
+        'via': 'self',
         'delegator_secure_code': delegator.secure_code,
-        'acted_as_role_code': None,
-        'acted_as_kind': 'regular',
+        'acted_as_role_code': 'DEPT_MANAGER',
+        'acted_as_kind': 'proxy',
     }
 
 

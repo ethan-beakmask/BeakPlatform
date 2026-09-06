@@ -108,7 +108,7 @@
 }
 .cal-ev--holiday    { --cal-c: var(--color-danger);         --cal-c-tint: var(--color-danger-light); }
 .cal-ev--workday    { --cal-c: var(--color-info);           --cal-c-tint: var(--color-info-light); }
-.cal-ev--delegation { --cal-c: var(--color-warning);        --cal-c-tint: var(--color-warning-light); }
+.cal-ev--proxy      { --cal-c: var(--color-warning);        --cal-c-tint: var(--color-warning-light); }
 .cal-ev--position   { --cal-c: var(--color-primary-hover);  --cal-c-tint: var(--color-primary-light); }
 .cal-ev--flow       { --cal-c: var(--color-text-secondary); --cal-c-tint: var(--color-bg-header); }
 .cal-ev--broadcast  { --cal-c: var(--color-success);        --cal-c-tint: var(--color-success-light); }

@@ -1,0 +1,121 @@
+<div class="detail-card" id="my-proxy-assignments" x-data='myProxyAssignmentsManager()' x-init="init()">
+    <div class="detail-card-header mpa-card-header">
+        <h3>{{ _('我的代理指派') }}</h3>
+        <button type="button" class="btn btn-primary btn-sm" @click="openCreate()">{{ _('指定代理人') }}</button>
+    </div>
+    <div class="detail-card-body">
+        <div x-show="message" class="alert" :class="messageIsError ? 'alert-error' : 'alert-success'" x-text="message"></div>
+
+        <p class="text-muted mpa-help">{{ _('請假、出差期間，把自己的職務交給同事代理。代理人在效期內視同持有你的角色：能簽你能簽的單，也會看到這些角色的選單與功能。這裡只能以自己為被代理人；要替別人設定，請聯絡企業管理員。') }}</p>
+
+        <h4>{{ _('我授出的代理') }}</h4>
+        <div x-show="loading" class="mpa-empty">{{ _('載入中...') }}</div>
+        <div x-show="!loading && given.length === 0" class="mpa-empty">{{ _('目前沒有你授出的代理指派。') }}</div>
+        <div x-show="!loading && given.length > 0" class="mpa-table-wrap">
+            <table class="data-table mpa-table">
+                <thead>
+                    <tr>
+                        <th>{{ _('代理人') }}</th>
+                        <th>{{ _('角色') }}</th>
+                        <th>{{ _('狀態') }}</th>
+                        <th>{{ _('效期') }}</th>
+                        <th>{{ _('事由') }}</th>
+                        <th>{{ _('操作') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="row in given" :key="row.assignment_secure_code">
+                        <tr>
+                            <td x-text="row.counterpart.display_name || '-'"></td>
+                            <td x-text="roleLabel(row)"></td>
+                            <td><span :class="statusClass(row.status)" x-text="statusLabel(row.status)"></span></td>
+                            <td x-text="rangeLabel(row)"></td>
+                            <td x-text="row.grant_reason || '-'"></td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm" x-show="row.can_revoke" @click="revoke(row, 'given')">{{ _('撤銷') }}</button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <h4>{{ _('我代理的') }}</h4>
+        <div x-show="loading" class="mpa-empty">{{ _('載入中...') }}</div>
+        <div x-show="!loading && received.length === 0" class="mpa-empty">{{ _('目前沒有人指定你代理。') }}</div>
+        <div x-show="!loading && received.length > 0" class="mpa-table-wrap">
+            <table class="data-table mpa-table">
+                <thead>
+                    <tr>
+                        <th>{{ _('被代理人') }}</th>
+                        <th>{{ _('角色') }}</th>
+                        <th>{{ _('狀態') }}</th>
+                        <th>{{ _('效期') }}</th>
+                        <th>{{ _('事由') }}</th>
+                        <th>{{ _('操作') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="row in received" :key="row.assignment_secure_code">
+                        <tr>
+                            <td x-text="row.counterpart.display_name || '-'"></td>
+                            <td x-text="roleLabel(row)"></td>
+                            <td><span :class="statusClass(row.status)" x-text="statusLabel(row.status)"></span></td>
+                            <td x-text="rangeLabel(row)"></td>
+                            <td x-text="row.grant_reason || '-'"></td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm" x-show="row.can_revoke" @click="revoke(row, 'received')">{{ _('放棄') }}</button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="modal-overlay" x-show="modal.open" x-cloak @click.self="closeModal()">
+            <div class="modal-content modal-sm">
+                <div class="modal-header">
+                    <h3>{{ _('指定代理人') }}</h3>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">{{ _('代理人') }}</label>
+                    <select class="form-control" x-model="form.delegate_secure_code">
+                        <option value="">{{ _('-- 請選擇代理人 --') }}</option>
+                        <template x-for="c in candidates" :key="c.secure_code">
+                            <option :value="c.secure_code" :selected="c.secure_code === form.delegate_secure_code" x-text="candidateLabel(c)"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ _('生效開始') }}</label>
+                    <input type="date" class="form-control" x-model="form.effective_from">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ _('生效結束') }}</label>
+                    <input type="date" class="form-control" x-model="form.effective_until">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ _('事由') }}</label>
+                    <textarea rows="3" class="form-control" required x-model="form.reason"></textarea>
+                </div>
+
+                <div class="mpa-role-preview">
+                    <div class="form-label">{{ _('將代理以下角色') }}</div>
+                    <ul x-show="proxyableRoles.length > 0">
+                        <template x-for="role in proxyableRoles" :key="role.role_secure_code + ':' + (role.unit_secure_code || '')">
+                            <li x-text="roleLabel(role)"></li>
+                        </template>
+                    </ul>
+                    <p class="text-muted mpa-empty" x-show="proxyableRoles.length === 0">{{ _('你目前沒有可代理的角色，無法指定代理人') }}</p>
+                </div>
+
+                <div class="text-danger mpa-modal-error" x-show="modal.error" x-text="modal.error"></div>
+                <div class="mpa-modal-actions">
+                    <button type="button" class="btn btn-primary" :disabled="modal.saving || proxyableRoles.length === 0" @click="submitCreate()">{{ _('建立') }}</button>
+                    <button type="button" class="btn btn-secondary" @click="closeModal()">{{ _('取消') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

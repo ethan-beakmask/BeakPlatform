@@ -259,26 +259,6 @@ function calendarApp() {
                 && ev.calendar_kind === 'PERSONAL' && !!ev.owner_name;
         },
 
-        delegationLinkFor(ev) {
-            if (!this.isOrgAdmin
-                || ev.source_type !== 'manual'
-                || ev.calendar_kind !== 'PERSONAL'
-                || ev.masked
-                || (ev.event_type !== 'LEAVE' && ev.event_type !== 'TRIP')
-                || !ev.owner_user_secure_code
-                || ev.owner_user_secure_code === this.userSecureCode) {
-                return null;
-            }
-            const params = new URLSearchParams({
-                delegator: ev.owner_user_secure_code,
-                effective_from: ev.start_date,
-                effective_until: ev.end_date,
-                reason: ev.title || '',
-                next: window.location.pathname
-            });
-            return `${window.__BP}/delegations/create?${params.toString()}`;
-        },
-
         ownerLabel(ev) {
             return ev.owner_name ? `（${ev.owner_name}）` : '';
         },
@@ -405,12 +385,12 @@ function calendarApp() {
                     show: true,
                     message,
                     link: hint.create_url,
-                    linkText: __('建立代理授權')
+                    linkText: __('設定代理人')
                 };
             } else {
                 this.toast = {
                     show: true,
-                    message: message + __('，請通知管理員建立代理授權'),
+                    message: message + __('，請通知管理員建立代理指派'),
                     link: null,
                     linkText: ''
                 };
@@ -445,7 +425,7 @@ function calendarApp() {
                     return;
                 }
                 this.modal = { open: false, saving: false, error: '' };
-                this.showHint(data.delegation_hint);
+                this.showHint(data.proxy_hint);
                 await this.load();
             } catch (e) {
                 this.modal.error = __('儲存失敗');

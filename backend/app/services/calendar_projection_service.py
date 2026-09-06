@@ -10,14 +10,16 @@ from app.models import (
     CalendarEvent,
     CalendarKind,
     CalendarVisibility,
-    Delegation,
-    DelegationStatus,
     EmployeePosition,
     LookupItem,
+    OrganizationalUnit,
+    Role,
     ScheduleHoliday,
     User,
+    UserRoleAssignment,
     WorkSchedule,
 )
+from app.models.associations import AssignmentKind
 from app.models.employee_position import PositionType
 from app.services.calendar_visibility import apply_visibility
 from app.services.schedule_service import ScheduleService
@@ -58,7 +60,7 @@ class CalendarProjectionService:
         events = []
         events.extend(cls._manual_events(org, viewer, scope, tz_name, start_utc, end_utc))
         events.extend(cls._holiday_events(holidays))
-        events.extend(cls._delegation_events(org, viewer, start, end, prefix))
+        events.extend(cls._proxy_events(org, viewer, start, end, prefix))
         events.extend(cls._position_events(org, viewer, scope, start, end))
         events.extend(cls._broadcast_events(org, viewer, tz_name, start_utc, end_utc))
         events.extend(cls._workflow_events(org, viewer, scope, tz_name, start_utc, end_utc, prefix))
@@ -284,43 +286,86 @@ class CalendarProjectionService:
         return events
 
     @classmethod
-    def _delegation_events(cls, org, viewer, start, end, prefix):
-        rows = Delegation.query.filter(
-            Delegation.org_secure_code == org.secure_code,
-            Delegation.is_deleted == False,  # noqa: E712
-            Delegation.status != DelegationStatus.REVOKED,
-            Delegation.effective_from <= end,
-            Delegation.effective_until >= start,
+    def _proxy_events(cls, org, viewer, start, end, prefix):
+        rows = UserRoleAssignment.query.filter(
+            UserRoleAssignment.org_secure_code == org.secure_code,
+            UserRoleAssignment.assignment_kind == AssignmentKind.PROXY,
+            UserRoleAssignment.is_deleted == False,  # noqa: E712
+            UserRoleAssignment.valid_from.isnot(None),
+            UserRoleAssignment.valid_until.isnot(None),
+            UserRoleAssignment.valid_from <= end,
+            UserRoleAssignment.valid_until >= start,
+        ).order_by(
+            UserRoleAssignment.user_secure_code.asc(),
+            UserRoleAssignment.acting_for_user_secure_code.asc(),
+            UserRoleAssignment.valid_from.asc(),
+            UserRoleAssignment.valid_until.asc(),
+            UserRoleAssignment.id.asc(),
         ).all()
+        invalid_rows = UserRoleAssignment.query.filter(
+            UserRoleAssignment.org_secure_code == org.secure_code,
+            UserRoleAssignment.assignment_kind == AssignmentKind.PROXY,
+            UserRoleAssignment.is_deleted == False,  # noqa: E712
+            db.or_(
+                UserRoleAssignment.valid_from.is_(None),
+                UserRoleAssignment.valid_until.is_(None),
+            ),
+        ).all()
+        for row in invalid_rows:
+            logger.warning("Proxy assignment missing valid range: %s", row.secure_code)
+
         user_map = _active_user_map(
             org.secure_code,
-            {row.delegator_secure_code for row in rows} | {row.delegate_secure_code for row in rows},
+            {row.acting_for_user_secure_code for row in rows if row.acting_for_user_secure_code}
+            | {row.user_secure_code for row in rows},
         )
-        events = []
+        role_map = _role_name_map(org.secure_code, {row.role_secure_code for row in rows})
+        unit_map = _unit_name_map(org.secure_code, {row.unit_secure_code for row in rows if row.unit_secure_code})
+
+        grouped = {}
         for row in rows:
-            delegator = user_map.get(row.delegator_secure_code)
-            delegate = user_map.get(row.delegate_secure_code)
-            delegator_name = delegator.display_name if delegator else ''
-            delegate_name = delegate.display_name if delegate else ''
+            if not row.acting_for_user_secure_code:
+                logger.warning("Proxy assignment missing acting_for: %s", row.secure_code)
+                continue
+            key = (
+                row.user_secure_code,
+                row.acting_for_user_secure_code,
+                row.valid_from,
+                row.valid_until,
+            )
+            grouped.setdefault(key, []).append(row)
+
+        events = []
+        for (proxy_user_sc, acting_for_sc, valid_from, valid_until), group_rows in grouped.items():
+            first = group_rows[0]
+            acting_for = user_map.get(acting_for_sc)
+            proxy_user = user_map.get(proxy_user_sc)
+            acting_for_name = acting_for.display_name if acting_for else ''
+            proxy_name = proxy_user.display_name if proxy_user else ''
+            labels = []
+            for row in group_rows:
+                role_name = role_map.get(row.role_secure_code, row.role_secure_code)
+                unit_name = unit_map.get(row.unit_secure_code, '')
+                labels.append(f'{role_name}@{unit_name}' if unit_name else role_name)
             events.append({
-                'key': f'delegation:{row.secure_code}',
-                'source_type': 'delegation',
-                'source_secure_code': row.secure_code,
+                'key': f'proxy:{first.secure_code}',
+                'source_type': 'proxy',
+                'source_secure_code': first.secure_code,
                 'calendar_kind': 'PERSONAL',
-                'owner_user_secure_code': row.delegator_secure_code,
-                'owner_name': delegator_name or None,
-                'event_type': 'DELEGATION',
-                'title': _('代理：%(a)s → %(b)s', a=delegator_name, b=delegate_name),
-                'note': row.reason,
+                'owner_user_secure_code': acting_for_sc,
+                'owner_name': acting_for_name or None,
+                'event_type': 'PROXY',
+                'title': _('%(a)s 代理 %(b)s', a=proxy_name, b=acting_for_name),
+                'note': '、'.join(labels),
                 'all_day': True,
-                'start_local': format_local(datetime.combine(row.effective_from, time.min)),
-                'end_local': format_local(datetime.combine(row.effective_until, time.min)),
-                'start_date': row.effective_from.isoformat(),
-                'end_date': row.effective_until.isoformat(),
+                'start_local': format_local(datetime.combine(valid_from, time.min)),
+                'end_local': format_local(datetime.combine(valid_until, time.min)),
+                'start_date': valid_from.isoformat(),
+                'end_date': valid_until.isoformat(),
                 'visibility': CalendarVisibility.PRIVATE,
-                'link': f'{prefix}/delegations/{row.secure_code}' if viewer.is_org_admin else None,
+                'link': f'{prefix}/access/' if viewer.is_org_admin else None,
                 'audience': {
-                    'users': [row.delegator_secure_code, row.delegate_secure_code],
+                    'users': [acting_for_sc, proxy_user_sc],
                     'org_admin': True,
                 },
                 'editable': False,
@@ -523,3 +568,25 @@ def _active_user_map(org_secure_code: str, secure_codes: set[str]) -> dict:
         User.is_active == True,  # noqa: E712
     ).all()
     return {user.secure_code: user for user in users}
+
+
+def _role_name_map(org_secure_code: str, secure_codes: set[str]) -> dict:
+    if not secure_codes:
+        return {}
+    roles = Role.query.filter(
+        Role.org_secure_code == org_secure_code,
+        Role.secure_code.in_(secure_codes),
+        Role.is_deleted == False,  # noqa: E712
+    ).all()
+    return {role.secure_code: role.name for role in roles}
+
+
+def _unit_name_map(org_secure_code: str, secure_codes: set[str]) -> dict:
+    if not secure_codes:
+        return {}
+    units = OrganizationalUnit.query.filter(
+        OrganizationalUnit.org_secure_code == org_secure_code,
+        OrganizationalUnit.secure_code.in_(secure_codes),
+        OrganizationalUnit.is_deleted == False,  # noqa: E712
+    ).all()
+    return {unit.secure_code: unit.name for unit in units}

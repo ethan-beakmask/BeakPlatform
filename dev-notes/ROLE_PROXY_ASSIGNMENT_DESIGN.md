@@ -262,7 +262,7 @@ CREATE INDEX IF NOT EXISTS ix_user_role_assignments_role_unit_kind
 ALTER TABLE fw_approval_records ADD COLUMN IF NOT EXISTS acted_as_kind VARCHAR(10);
 ```
 
-之後跑 `scripts/migrate_proxy_assignments.py --apply`（bpserv 現況：無 PROXY 指派、1 筆已到期 delegation，預期 0 列遷入）。
+之後跑 `scripts/migrate_proxy_assignments.py --apply`（六段＋全域收尾一次做完；bpserv 現況：無 PROXY 指派、1 筆已到期 delegation，預期 proxy 0 列遷入、PROXY 角色退役 2 筆、`condition_retired=1`、無 `delegations` 選單所以 `menu_retired=0`）。
 
 ## 七、驗收矩陣（主 Claude 執行，憑證 `/opt/tmp/verify/<日期>-role-proxy-<期>.log`）
 
@@ -522,3 +522,43 @@ semgrep `beakplatform-direct-model-query-in-api`：`access_center.py` 1→0、`o
 (3) `set_unit_leadership()` 的 standby 分支先 `standby_role_codes_held()` 算缺哪幾列只補那幾列，刪掉訊息字串比對；`test_unit_leadership_api` 補「權限中心先建 HEAD 候補、部門頁再拖同一人 → 200 補齊三列、先建列不動」案。
 四檔 27 passed（`test_role_assignment_kinds` 8／`test_unit_leadership_api` 4／`test_access_center_assign_kinds` 2／`test_dept_membership_service` 13）；憑證接 `/opt/tmp/verify/20260906-role-proxy-3a.log` 尾。
 
+
+### 第 3b 期（2026-09-06 23:1x 派工、2026-09-07 00:0x～ 主 Claude 接手驗收；codex 實作、主 Claude 驗收）
+
+憑證：`/opt/tmp/verify/20260906-role-proxy-3b.log`（遷移 help／無參數／第二次 apply 全 0、quick-login API、矩陣 #8、瀏覽器四段、行事曆四身分受眾、越權 404、清理）、
+`-baseline.log`（派工前 12 檔 148 passed）、`-related-a.log`（改寫與新增 8 檔 109 passed）、`-related-b.log`（不得改語意 9 檔＋重構後 API 測試，10 檔 98 passed）、`-drift.log`（綠：108 表 1822 欄）、`-full-c1.log`～`-full-c7.log`（全量七批、乾淨測試庫：**1147 passed／2 skipped／0 failed**）。
+spec：`/opt/tmp/codex/20260906-pf251-phase3b.txt`（724 行）。派工前 HEAD `7c143d9f`。
+
+**經過**：codex 一次做完全部實作（含 dev 遷移 `--apply`、pybabel、守門表 `--update`、`git add -A`），在最終重跑相關測試時被 harness 以記憶體不足砍掉（stderr 最後一則「剩 HR lookup、route guard、permission defaults 與 manager gate」，未寫回報檔）。
+主 Claude 接手：讀完全部後端 diff 與前端三檔、靜態檢查、測試分兩批、dev 實跑、瀏覽器實點。**沒有退回**，只改一處（下列第 9 點）。
+
+**spec 層決定（Ethan／原 session 複審）**：
+
+1. `delegations` 表與 `Delegation` model 檔**都留**（守恆檢查以 model 為權威），只改 docstring 標退役；`org_data_purge_service`／`hostconfig`／seed 腳本的表名清單因此不動。全平台其餘讀寫全部移除，殘留 grep 0
+2. 新服務 `backend/app/services/proxy_assignment_service.py` 是「我的代理指派」＋請假涵蓋判定＋遷移來源列的唯一實作；`IDENTITY_ROLE_CODES=(SYSTEM_ADMIN, ORG_ADMIN, EMPLOYEE, EXTERNAL_USERS)` 三處共用——
+   **FULL 語法糖與遷移排除層界身分角色**：`get_active_assignments()` 的 HOLDING 含 proxy，代理 ORG_ADMIN 角色會把管理員選單與權限整包給代理人，舊 FULL 只影響簽核，不能擴權；EMPLOYEE 雙方都有、建了是雜訊
+3. `role_assignment_service.assign_role()`／`revoke_assignment()` 加 `commit=True` keyword（False 時 flush），供自助建立多列 all-or-nothing；`_filter_overlapping` 改公開名 `filter_overlapping` 給服務共用
+4. 自助建立**事由必填**（400 `reason_required`；`assign_role` 對 proxy 本來就要求）
+5. 行事曆請假提示：管理員與員工**同走**個人設定「我的代理指派」（`?proxy=new&…#my-proxy-assignments`）；企業行事曆面板上管理員替**別人**建代理的連結（`delegationLinkFor`）刪除——權限中心沒有帳號 deep link 可帶入
+6. 命名：`/api/my-delegations` → `/api/my-proxy-assignments`（多一支 `GET /my-roles` 給 modal 預覽「將代理以下角色」）；回應 key `delegation_hint` → `proxy_hint`、`already_delegated` → `already_covered`；投影 `source_type='proxy'`／`event_type='PROXY'`、同一 (代理人, 被代理人, 效期) 合併一筆、`note` 列出角色@單位、ORG_ADMIN 的 `link` 指 `/access/`
+7. 遷移第六段**不動 `delegations` 列**，冪等靠 `source_ref='migration:pf251:<delegation sc>'`；另加全域收尾 `retire_delegation_globals()` 軟刪 `menu_items.code='delegations'`（出廠 `menu_defaults.py` 本來沒種，只有 dev 那筆）與 `permission_conditions.code='DELEGATED'`；`resource_gateway` 兩處 `'Delegation'`、`ResourceType.DELEGATION`、`permission_service` 的 DELEGATE 分支一併移除
+8. codex 的兩個小取捨，接受：`delegation_migrated` 只計「有建或復活列」的筆（skipped 不計），第二次 `--apply` 全 0 更乾淨；`_proxy_events` 多一次查詢只為對 `valid_from`／`valid_until` 為 NULL 的 proxy 列印 warning
+9. 主 Claude 改一處：API 檔把「僅企業成員」檢查內聯了五次，收成 `_deny_non_member()`（舊檔本來就有這支 helper）
+
+**待 Ethan 決策（矩陣 #8 發現，不阻擋本期）**：人對人 FULL 代理曾涵蓋 **USER／DYNAMIC 指名到被代理人本人**的任務，角色代理不涵蓋。
+dev 實例：GHTRAVEL 差旅費流程的 `hr_approver`（OpHrLookup 解析成人）DYNAMIC 任務 `dNkJ35nmaK-bwsmyvWG2Ap` 指名燁凱文；燁凱文→翎柏瑞的 FULL（09-08～09-12）遷成三列 proxy 後，
+09-08 起翎柏瑞對 `DEPT_MANAGER@團體旅遊部` 的 ROLE 任務放行（`acted_as_kind='proxy'`），對那筆 DYNAMIC 任務**不放行**（舊路徑會放行）。今天（09-07，delegation PENDING、proxy 未生效）兩邊判定一字不差、全 None。
+選項：A 維持（代理的是角色不是人，指名到人的關卡本來就不該由代理接手；HR lookup 指名人是流程設計層的事）；B `_match_identity` 對非 ROLE 規格也認「proxy 列的 `acting_for` 在快照內」（回復人對人語意，但代理任一角色就能簽被代理人所有指名任務，比舊 FULL 還寬）；
+C OpHrLookup 多輸出核決人的角色@單位讓關卡改用 ROLE 規格。**建議 A，並在第 4 期同意流程的手冊寫清楚**；要 C 另開待辦。
+
+**驗收**（憑證 `20260906-role-proxy-3b.log`）：遷移 `--help` exit 0／無參數 exit 1／第二次 `--apply` 七企業全 0、全域 0；dev 現況 GHTRAVEL 翎柏瑞三列 proxy（HEAD／MANAGER／MEMBER@團體旅遊部、09-08～09-12、`migration:pf251:81b66f04…`）、`menu_items.delegations` 與 `permission_conditions.DELEGATED` 皆 `is_deleted=t`；
+quick-login：翎柏瑞 `GET /api/my-proxy-assignments` received 3 列 PENDING、ethanyu `/my-roles` 列 4 角色無 EMPLOYEE、`/delegations/`／`/delegations/create`／`/api/my-delegations`／`/candidates` 全 404、EXTERNAL gg@gmail.com 403；
+chrome-devtools（ethanyu）：區塊標題「我的代理指派」、[指定代理人] modal `display=flex`、候選 5 人 `:selected`、角色預覽 4 項無 EMPLOYEE、事由空白 → 「請填寫指派事由」、建立 → 「已建立 4 筆代理指派」given 4 列待生效（DB `source_ref=self:<sc>`）、
+行事曆 `POST /api/calendar/events` LEAVE 回 `proxy_hint.create_url=/beakplatform/personal-settings?proxy=new&effective_from=2026-09-23&…#my-proxy-assignments`、開該 URL modal 自動開啟且日期／事由預填、[撤銷] 4→3；（user）我代理的 3 列、[放棄] 3→2；
+行事曆 API 四身分：ethanyu／user 各看到 1 筆「user 代理 ethanyu」（note 四個角色）、aaaa 0 筆無遮罩、ORG_ADMIN 1 筆 `link=/beakplatform/access/`；越權：user／aaaa 撤銷 GHTRAVEL 的 proxy 列皆 404；測試列與請假事件已清理（self: 列 0）。
+靜態：node 兩支 ok、import ok、殘留 grep 0、semgrep `my_proxy_assignments.py` 0（`calendar.py` 5 筆與 HEAD 相同，是既有 `page_keys_required` 未被規則認得）、`mkdocs build --strict` 過、`docs_impact --verify-covers` 244 條全對、`.po` untranslated 0／fuzzy 0、en.json +9。
+
+**dev 資料現況**：`delegations` 4 筆原樣保留（2 REVOKED、1 SPECIFIC 已到期、1 FULL PENDING 已遷）；proxy 列 3（遷移）＋0（自助，驗收後撤銷）；standby 6 列不變。
+
+**帶進第 4 期**：自助建立入口（[指定代理人] 與 `POST /api/my-proxy-assignments`）第 4 期同意流程上線後移除（決策點 B 後半）；`OpProxyGrant` 以申請人身分呼叫 `assign_role` 前確認 3a-1 的 `_operator_holds_regular` 仍在；上面的待決點若選 C 要一併設計。
+bpserv 部署：`--update` 後跑 `scripts/migrate_proxy_assignments.py --apply`（六段＋全域收尾一次做完；DemoSOC 那筆 soc1→admin-soc1 已於 09-05 到期，預期 0 列；bpserv 沒有 `delegations` 選單，`menu_retired` 預期 0、`condition_retired` 1）。

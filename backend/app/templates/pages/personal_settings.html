@@ -5,7 +5,7 @@
 {% block title %}{{ _('個人設定') }} - BeakMask{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/my-delegations.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/my-proxy-assignments.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -184,7 +184,7 @@
 </form>
 
 {% if current_user.is_employee or current_user.is_org_admin %}
-{% include 'pages/_my_delegations.html' %}
+{% include 'pages/_my_proxy_assignments.html' %}
 {% endif %}
 
 <div class="detail-card" x-data="myApiKeysManager()" x-init="init()">
@@ -328,5 +328,5 @@ window.__PAGE_CONFIG = {apiTriggerBaseUrl: {{ api_trigger_base_url|tojson }}};
 </script>
 <script src="{{ app_prefix }}/static/js/app.js"></script>
 <script src="{{ app_prefix }}/static/js/my-api-keys.js"></script>
-<script src="{{ app_prefix }}/static/js/my-delegations.js"></script>
+<script src="{{ app_prefix }}/static/js/my-proxy-assignments.js"></script>
 {% endblock %}

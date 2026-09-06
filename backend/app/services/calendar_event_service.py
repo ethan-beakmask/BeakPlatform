@@ -94,8 +94,8 @@ class CalendarEventService:
         db.session.flush()
 
     @classmethod
-    def delegation_hint(cls, org, actor, row) -> dict | None:
-        """PERSONAL leave-like events may need an approval-delegation hint."""
+    def proxy_hint(cls, org, actor, row) -> dict | None:
+        """PERSONAL leave-like events may need a proxy assignment hint."""
         if row.calendar_kind != CalendarKind.PERSONAL or row.event_type not in LEAVE_LIKE_TYPES:
             return None
         dates = cls._local_dates(org, row)

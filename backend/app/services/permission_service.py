@@ -521,8 +521,6 @@ class PermissionService:
                 return cls._eval_time_condition(expression, context)
             elif condition.condition_type == 'STATUS':
                 return cls._eval_status_condition(expression, resource)
-            elif condition.condition_type == 'DELEGATE':
-                return cls._eval_delegate_condition(expression, user, context)
             else:
                 return False, f'Unknown condition type: {condition.condition_type}'
         except Exception as e:
@@ -709,18 +707,6 @@ class PermissionService:
             return False, f'Unknown operator: {operator}'
 
         return passed, f'{field} {operator} {compare_to}'
-
-    @classmethod
-    def _eval_delegate_condition(
-        cls,
-        expression: Dict,
-        user: User,
-        context: Dict[str, Any]
-    ) -> Tuple[bool, str]:
-        """評估代理條件 (DELEGATED)"""
-        # TODO: 需要整合 Delegation 模型
-        # 目前返回 False，待實作
-        return False, 'Delegate condition not implemented'
 
     @classmethod
     def _check_in_subtree(

@@ -46,7 +46,7 @@
     <div class="cal-legend">
         <span class="cal-legend-item"><i class="cal-ev cal-ev--holiday"></i>{{ _('假日／補假') }}</span>
         <span class="cal-legend-item"><i class="cal-ev cal-ev--workday"></i>{{ _('補班') }}</span>
-        <span class="cal-legend-item"><i class="cal-ev cal-ev--delegation"></i>{{ _('代理授權') }}</span>
+        <span class="cal-legend-item"><i class="cal-ev cal-ev--proxy"></i>{{ _('代理指派') }}</span>
         <span class="cal-legend-item"><i class="cal-ev cal-ev--position"></i>{{ _('限期職位') }}</span>
         <span class="cal-legend-item"><i class="cal-ev cal-ev--broadcast"></i>{{ _('公告') }}</span>
         <span class="cal-legend-item"><i class="cal-ev cal-ev--meeting"></i>{{ _('個人／企業事件') }}</span>
@@ -131,7 +131,6 @@
                                 <span class="cal-panel-owner text-muted" x-show="showOwner(ev)" x-text="ownerLabel(ev)"></span>
                                 <div class="cal-panel-note text-muted" x-show="ev.note" x-text="ev.note"></div>
                                 <a class="cal-panel-link" x-show="ev.link" :href="ev.link || '#'">{{ _('開啟') }}</a>
-                                <a class="cal-panel-link" x-show="delegationLinkFor(ev)" :href="delegationLinkFor(ev) || '#'">{{ _('建立代理授權') }}</a>
                                 <div class="cal-panel-actions" x-show="ev.editable">
                                     <button type="button" class="btn btn-secondary btn-sm" @click="openEdit(ev)">{{ _('編輯') }}</button>
                                     <button type="button" class="btn btn-danger btn-sm" @click="deleteEvent(ev)">{{ _('刪除') }}</button>

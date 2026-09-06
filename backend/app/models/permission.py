@@ -63,7 +63,6 @@ class ResourceType:
     # 帳號與授權
     USER_NUMBERING_RULE = 'USER_NUMBERING_RULE'            # 員工編號規則
     USER_ROLE_ASSIGNMENT = 'USER_ROLE_ASSIGNMENT'          # 角色指派
-    DELEGATION = 'DELEGATION'                              # 代理授權
     # 通知設定
     SMTP_CONFIG = 'SMTP_CONFIG'                            # SMTP 設定組
     TELEGRAM_CONFIG = 'TELEGRAM_CONFIG'                    # Telegram 設定組
@@ -331,7 +330,6 @@ _RESOURCE_CRUD_LABELS = [
     # 帳號與授權
     (ResourceType.USER_NUMBERING_RULE, '員工編號規則'),
     (ResourceType.USER_ROLE_ASSIGNMENT, '角色指派'),
-    (ResourceType.DELEGATION, '代理授權'),
     # 通知設定
     (ResourceType.SMTP_CONFIG, 'SMTP 設定組'),
     (ResourceType.TELEGRAM_CONFIG, 'Telegram 設定組'),

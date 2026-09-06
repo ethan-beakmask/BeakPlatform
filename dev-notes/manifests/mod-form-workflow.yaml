@@ -42,7 +42,7 @@ files:
     # form_submit_service.py 送單核心（fc_fill 與外部發動閘道共用）
     # fill_permission_service.py 填寫權限解析（fc_available 與 fc_fill submit 共用）
     # egress_adapter.py EGRESS-01 form_node 語境（fc_pending 簽核詳情過濾 + 揭示通道）
-    # task_authorizer.py 簽核佇列授權判定（快照 + 角色@單位套圈 + 三種指派性質 + 代理授權）
+    # task_authorizer.py 簽核佇列授權判定（快照 + 角色@單位套圈 + 三種指派性質）
     - modules/form_workflow/services/ai_usage_service.py    # AiAgent 用量記錄與配額服務
     - modules/form_workflow/services/approval_history.py    # 簽核歷程序列化與 acted_as 角色名稱解析
     - modules/form_workflow/services/manager_gate_migration.py # PF-251 既有主管缺席順位關卡改指 DEPT_HEAD

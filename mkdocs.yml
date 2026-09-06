@@ -90,7 +90,7 @@ nav:
           - 職位設定: manual/03_org_setup/positions.md
           - 企業成員帳號: manual/03_org_setup/users.md
           - 外部廠商帳號: manual/03_org_setup/external_users.md
-          - 代理授權: manual/03_org_setup/delegations.md
+          - 代理與候補: manual/03_org_setup/delegations.md
           - 基本班表: manual/03_org_setup/work_schedules.md
           - 編號設定: manual/03_org_setup/numbering.md
           - 權限管理中心: manual/03_org_setup/access_center.md

@@ -1,14 +1,14 @@
-"""Describe whether a user may need approval delegation during an absence."""
+"""Describe whether a user may need proxy assignment coverage during an absence."""
 from datetime import date
 
-from app.models.delegation import Delegation, DelegationStatus
+from app.services.proxy_assignment_service import has_covering_proxy
 
 
 class ApproverExposureService:
     @staticmethod
     def describe(org, user, start_date: date, end_date: date) -> dict:
-        """Return whether approval delegation should be suggested for a date range."""
-        already_delegated = ApproverExposureService._has_covering_delegation(
+        """Return whether proxy assignment coverage should be suggested for a date range."""
+        already_covered = has_covering_proxy(
             org.secure_code,
             user.secure_code,
             start_date,
@@ -17,30 +17,18 @@ class ApproverExposureService:
         pending_count = 0
         template_count = 0
 
-        if not already_delegated:
+        if not already_covered:
             pending_count, template_count = ApproverExposureService._approval_exposure_counts(
                 org.secure_code,
                 user.secure_code,
             )
 
         return {
-            'needed': (pending_count > 0 or template_count > 0) and not already_delegated,
-            'already_delegated': already_delegated,
+            'needed': (pending_count > 0 or template_count > 0) and not already_covered,
+            'already_covered': already_covered,
             'pending_count': pending_count,
             'template_count': template_count,
         }
-
-    @staticmethod
-    def _has_covering_delegation(org_secure_code: str, user_secure_code: str,
-                                 start_date: date, end_date: date) -> bool:
-        return Delegation.query.filter(
-            Delegation.org_secure_code == org_secure_code,
-            Delegation.delegator_secure_code == user_secure_code,
-            Delegation.is_deleted == False,  # noqa: E712
-            Delegation.status != DelegationStatus.REVOKED,
-            Delegation.effective_from <= start_date,
-            Delegation.effective_until >= end_date,
-        ).first() is not None
 
     @staticmethod
     def _approval_exposure_counts(org_secure_code: str, user_secure_code: str) -> tuple[int, int]:

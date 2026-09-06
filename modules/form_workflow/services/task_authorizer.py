@@ -1,11 +1,10 @@
 """FormWorkflow task action authorization helpers.
 
-簽核授權判定的唯一實作。判定來源三層：
+簽核授權判定的唯一實作。判定來源兩層：
 
 1. 舊佇列項的快照相容。
 2. 角色@單位即時持有：regular/proxy/standby 三種指派性質，核心規則在
    app.services.role_holding_service。
-3. 代理授權 delegations：PF-251 第 3 期退役前保留並存。
 
 呼叫端一律用 build_actor() 先把身分資訊算好再進迴圈，避免清單 API 的 N+1。
 """
@@ -46,91 +45,12 @@ def _build_identity(user_secure_code: str, org_secure_code: str, today: date) ->
     }
 
 
-def _merge_delegation_scope(current, incoming):
-    """合併同一授權人的代理範圍；None 表示不限表單。"""
-    if current is None or incoming is None:
-        return None
-    return set(current) | set(incoming)
-
-
-def _get_delegated_identity_data(
-    user_secure_code: str,
-    org_secure_code: str,
-    today: date | None = None,
-) -> tuple[dict, dict]:
-    """取得代理身分與表單 scope，供公開舊 API 與 build_actor 共用。"""
-    from app.models.delegation import Delegation, DelegationType
-
-    if today is None:
-        today = org_local_today(org_secure_code)
-
-    rows = Delegation.query.filter(
-        Delegation.delegate_secure_code == user_secure_code,
-        Delegation.org_secure_code == org_secure_code,
-        Delegation.is_deleted == False,  # noqa: E712
-    ).all()
-
-    identities_by_delegator = {}
-    scopes_by_delegator = {}
-    for d in rows:
-        if not d.is_effective_on(today):
-            continue
-
-        scope = None
-        if d.delegation_type == DelegationType.APPROVAL and d.approval_limit is not None:
-            continue
-        if d.delegation_type == DelegationType.SPECIFIC:
-            allowed = set(d.get_allowed_form_templates())
-            if not allowed:
-                continue
-            scope = allowed
-        elif d.delegation_type not in (DelegationType.FULL, DelegationType.APPROVAL):
-            continue
-
-        delegator_sc = d.delegator_secure_code
-        if delegator_sc not in identities_by_delegator:
-            identities_by_delegator[delegator_sc] = _build_identity(
-                delegator_sc, org_secure_code, today)
-            scopes_by_delegator[delegator_sc] = scope
-        else:
-            scopes_by_delegator[delegator_sc] = _merge_delegation_scope(
-                scopes_by_delegator[delegator_sc], scope)
-
-    return identities_by_delegator, scopes_by_delegator
-
-
-def get_delegated_identities(user_secure_code: str, org_secure_code: str) -> dict:
-    """取得「這個人目前代理了誰」，回傳 {授權人 secure_code: 授權人的角色集合}。
-
-    只採計對簽核任務有意義且判得準的代理型別：
-
-    | 型別 | 是否採計 | 理由 |
-    |------|---------|------|
-    | FULL     | 是 | 全權代理 |
-    | APPROVAL | 僅 `approval_limit` 為空時 | 有金額上限時，佇列項層拿不到單據金額，放行等於忽略上限 |
-    | SPECIFIC | 有選表單模板時 | 僅限任務所屬表單模板在 `allowed_process_types` JSON 陣列內 |
-
-    不採計者一律不放行（fail-closed）。代理筆數在實務上極少（通常 0），
-    因此逐筆查授權人角色不會造成效能問題。
-    """
-    identities_by_delegator, _ = _get_delegated_identity_data(
-        user_secure_code, org_secure_code)
-    return {
-        delegator_sc: identity['role_codes']
-        for delegator_sc, identity in identities_by_delegator.items()
-    }
-
-
 def build_actor(user_secure_code: str, org_secure_code: str) -> dict:
     """一次算好授權判定需要的身分資訊，供迴圈重複使用。"""
     today = org_local_today(org_secure_code)
     identity = _build_identity(user_secure_code, org_secure_code, today)
-    delegations, delegation_scopes = _get_delegated_identity_data(
-        user_secure_code, org_secure_code, today)
     return {
         **identity,
-        'delegations': delegations,
-        'delegation_scopes': delegation_scopes,
         '_form_template_cache': {},
         '_org_sc': org_secure_code,
         '_local_now': org_local_now(org_secure_code),
@@ -345,14 +265,6 @@ def _task_form_template_secure_code(task, org_secure_code: str, actor: dict) -> 
     return cache[form_instance_sc]
 
 
-def _scope_allows_task(scope, task, org_secure_code: str, actor: dict) -> bool:
-    """檢查 scope 是否允許處理該任務。"""
-    if scope is None:
-        return True
-    form_template_sc = _task_form_template_secure_code(task, org_secure_code, actor)
-    return bool(form_template_sc and form_template_sc in scope)
-
-
 def resolve_acting_identity(
     task,
     user_secure_code: str,
@@ -363,7 +275,6 @@ def resolve_acting_identity(
 
     回傳值：
     - {'via': 'self', 'delegator_secure_code': None, 'acted_as_role_code': ..., 'acted_as_kind': ...}
-    - {'via': 'delegation', 'delegator_secure_code': '<授權人 sc>', 'acted_as_role_code': ..., 'acted_as_kind': ...}
 
     proxy/standby 命中時 acted_as_role_code 為被命中的角色 code；regular 或快照命中為 None。
     """
@@ -386,23 +297,6 @@ def resolve_acting_identity(
             'acted_as_role_code': self_match.get('acted_as_role_code'),
             'acted_as_kind': self_match.get('acted_as_kind'),
         }
-
-    # 代理授權：排序後取第一個符合者，避免 dict 順序影響記錄結果。
-    delegations = actor.get('delegations') or {}
-    # 舊形狀 actor 沒有 delegation_scopes 時，維持既有語意：所有授權人不限表單。
-    delegation_scopes = actor.get('delegation_scopes')
-    for delegator_sc in sorted(delegations):
-        match = _match_identity(
-            task_result_data, delegator_sc, delegations[delegator_sc], actor, task)
-        if match:
-            scope = None if delegation_scopes is None else delegation_scopes.get(delegator_sc)
-            if _scope_allows_task(scope, task, org_secure_code, actor):
-                return {
-                    'via': 'delegation',
-                    'delegator_secure_code': delegator_sc,
-                    'acted_as_role_code': match.get('acted_as_role_code'),
-                    'acted_as_kind': match.get('acted_as_kind'),
-                }
 
     return None
 

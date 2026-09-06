@@ -7,18 +7,17 @@ from app.models import (
     CalendarEvent,
     CalendarKind,
     CalendarVisibility,
-    Delegation,
-    DelegationStatus,
-    DelegationType,
     MenuItem,
     MenuPermission,
     MenuRoleRequirement,
     Organization,
+    OrganizationalUnit,
     Role,
     RoleLevel,
     RoleType,
     ScheduleAdjustment,
     ScopeType,
+    UnitType,
     User,
     UserRoleAssignment,
     UserType,
@@ -237,7 +236,7 @@ def test_leave_hint_counts_pending_task_for_assignee(auth_client, test_org, test
 
     resp = _post_event(auth_client, payload)
 
-    hint = resp.get_json()['delegation_hint']
+    hint = resp.get_json()['proxy_hint']
     assert resp.status_code == 201
     assert hint['needed'] is True
     assert hint['pending_count'] == 1
@@ -245,12 +244,12 @@ def test_leave_hint_counts_pending_task_for_assignee(auth_client, test_org, test
     parsed = urlparse(hint['create_url'])
     query = parse_qs(parsed.query)
     assert parsed.path == '/beakplatform/personal-settings'
-    assert query['delegation'] == ['new']
+    assert query['proxy'] == ['new']
     assert query['effective_from'] == ['2026-10-01']
     assert query['effective_until'] == ['2026-10-03']
     assert query['reason'] == ['Annual leave']
     assert query['next'] == ['/beakplatform/calendar/me']
-    assert parsed.fragment == 'my-delegations'
+    assert parsed.fragment == 'my-proxy-assignments'
     assert (hint['start_date'], hint['end_date']) == ('2026-10-01', '2026-10-03')
 
 
@@ -281,7 +280,7 @@ def test_leave_hint_counts_published_role_assignee(client, test_org, test_user):
 
     resp = _post_event(client, _personal_payload(event_type='TRIP', all_day=True,
                                                  start='2026-10-04', end='2026-10-04'))
-    hint = resp.get_json()['delegation_hint']
+    hint = resp.get_json()['proxy_hint']
 
     assert hint['pending_count'] == 0
     assert hint['template_count'] == 1
@@ -310,38 +309,128 @@ def test_leave_hint_ignores_other_assignee_types_and_other_org(client, test_org,
     client = _client(client, test_user, test_org, 'calendar_me')
 
     hint = _post_event(client, _personal_payload(event_type='LEAVE', all_day=True,
-                                                start='2026-10-05', end='2026-10-06')).get_json()['delegation_hint']
+                                                start='2026-10-05', end='2026-10-06')).get_json()['proxy_hint']
 
     assert hint['needed'] is False
     assert hint['pending_count'] == 0
     assert hint['template_count'] == 0
 
 
-def test_leave_hint_suppressed_by_covering_delegation(client, test_org, test_user, test_admin):
+def test_leave_hint_suppressed_by_covering_proxy(client, test_org, test_user, test_admin):
     _waiting_task(test_org, test_user.secure_code)
-    db.session.add(Delegation(
-        org_secure_code=test_org.secure_code,
-        delegator_secure_code=test_user.secure_code,
-        delegate_secure_code=test_admin.secure_code,
-        delegation_type=DelegationType.FULL,
-        status=DelegationStatus.PENDING,
-        effective_from=date(2026, 10, 1),
-        effective_until=date(2026, 10, 10),
-    ))
-    db.session.commit()
     client = _client(client, test_user, test_org, 'calendar_me')
+    unit = OrganizationalUnit(
+        org_secure_code=test_org.secure_code,
+        code='COV',
+        name='Coverage Dept',
+        unit_type=UnitType.DEPARTMENT,
+        is_active=True,
+        is_deleted=False,
+    )
+    role = Role(
+        org_secure_code=test_org.secure_code,
+        code='DEPT_MANAGER',
+        name='部門正主管',
+        role_type=RoleType.POSITION,
+        scope_type=ScopeType.DEPARTMENT,
+        is_active=True,
+        is_deleted=False,
+    )
+    db.session.add_all([unit, role])
+    db.session.flush()
+    db.session.add_all([
+        UserRoleAssignment(
+            org_secure_code=test_org.secure_code,
+            user_secure_code=test_user.secure_code,
+            role_secure_code=role.secure_code,
+            unit_secure_code=unit.secure_code,
+            assignment_kind='regular',
+            is_deleted=False,
+        ),
+        UserRoleAssignment(
+            org_secure_code=test_org.secure_code,
+            user_secure_code=test_admin.secure_code,
+            role_secure_code=role.secure_code,
+            unit_secure_code=unit.secure_code,
+            assignment_kind='proxy',
+            acting_for_user_secure_code=test_user.secure_code,
+            valid_from=date(2026, 10, 1),
+            valid_until=date(2026, 10, 10),
+            is_deleted=False,
+        ),
+    ])
+    menu_roles = UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == test_org.secure_code,
+        UserRoleAssignment.user_secure_code == test_user.secure_code,
+        UserRoleAssignment.assignment_kind == 'regular',
+        UserRoleAssignment.role_secure_code != role.secure_code,
+        UserRoleAssignment.is_deleted == False,  # noqa: E712
+    ).all()
+    for source in menu_roles:
+        db.session.add(UserRoleAssignment(
+            org_secure_code=test_org.secure_code,
+            user_secure_code=test_admin.secure_code,
+            role_secure_code=source.role_secure_code,
+            unit_secure_code=source.unit_secure_code,
+            assignment_kind='proxy',
+            acting_for_user_secure_code=test_user.secure_code,
+            valid_from=date(2026, 10, 1),
+            valid_until=date(2026, 10, 10),
+            is_deleted=False,
+        ))
+    db.session.commit()
 
     covered = _post_event(client, _personal_payload(event_type='LEAVE', title='Covered leave',
                                                    all_day=True, start='2026-10-02',
-                                                   end='2026-10-03')).get_json()['delegation_hint']
+                                                   end='2026-10-03')).get_json()['proxy_hint']
     partial = _post_event(client, _personal_payload(event_type='LEAVE', title='Partial leave',
                                                    all_day=True, start='2026-10-09',
-                                                   end='2026-10-12')).get_json()['delegation_hint']
+                                                   end='2026-10-12')).get_json()['proxy_hint']
 
-    assert covered['already_delegated'] is True
+    assert covered['already_covered'] is True
     assert covered['needed'] is False
-    assert partial['already_delegated'] is False
+    assert partial['already_covered'] is False
     assert partial['needed'] is True
+
+
+def test_leave_hint_requires_all_regular_roles_covered(client, test_org, test_user, test_admin):
+    _waiting_task(test_org, test_user.secure_code)
+    unit = OrganizationalUnit(
+        org_secure_code=test_org.secure_code,
+        code='COV2',
+        name='Coverage Dept 2',
+        unit_type=UnitType.DEPARTMENT,
+        is_active=True,
+        is_deleted=False,
+    )
+    role_a = Role(org_secure_code=test_org.secure_code, code='DEPT_MANAGER', name='部門正主管',
+                  role_type=RoleType.POSITION, scope_type=ScopeType.DEPARTMENT, is_active=True)
+    role_b = Role(org_secure_code=test_org.secure_code, code='DEPT_HEAD', name='部門主管',
+                  role_type=RoleType.POSITION, scope_type=ScopeType.DEPARTMENT, is_active=True)
+    db.session.add_all([unit, role_a, role_b])
+    db.session.flush()
+    db.session.add_all([
+        UserRoleAssignment(org_secure_code=test_org.secure_code, user_secure_code=test_user.secure_code,
+                           role_secure_code=role_a.secure_code, unit_secure_code=unit.secure_code,
+                           assignment_kind='regular', is_deleted=False),
+        UserRoleAssignment(org_secure_code=test_org.secure_code, user_secure_code=test_user.secure_code,
+                           role_secure_code=role_b.secure_code, unit_secure_code=unit.secure_code,
+                           assignment_kind='regular', is_deleted=False),
+        UserRoleAssignment(org_secure_code=test_org.secure_code, user_secure_code=test_admin.secure_code,
+                           role_secure_code=role_a.secure_code, unit_secure_code=unit.secure_code,
+                           assignment_kind='proxy', acting_for_user_secure_code=test_user.secure_code,
+                           valid_from=date(2026, 10, 1), valid_until=date(2026, 10, 10),
+                           is_deleted=False),
+    ])
+    db.session.commit()
+    client = _client(client, test_user, test_org, 'calendar_me')
+
+    hint = _post_event(client, _personal_payload(event_type='LEAVE', title='Partial roles leave',
+                                                all_day=True, start='2026-10-02',
+                                                end='2026-10-03')).get_json()['proxy_hint']
+
+    assert hint['already_covered'] is False
+    assert hint['needed'] is True
 
 
 def test_non_leave_event_has_no_hint(client, admin_client, test_org, test_user):
@@ -357,8 +446,8 @@ def test_non_leave_event_has_no_hint(client, admin_client, test_org, test_user):
     client = _client(client, test_user, test_org, 'calendar_me')
     meeting = _post_event(client, _personal_payload(event_type='MEETING')).get_json()
 
-    assert meeting['delegation_hint'] is None
-    assert org_event['delegation_hint'] is None
+    assert meeting['proxy_hint'] is None
+    assert org_event['proxy_hint'] is None
 
 
 def test_admin_leave_hint_has_prefilled_create_url(admin_client, test_org, test_admin):
@@ -367,15 +456,16 @@ def test_admin_leave_hint_has_prefilled_create_url(admin_client, test_org, test_
     resp = _post_event(admin_client, _personal_payload(event_type='LEAVE', title='Admin leave',
                                                        all_day=True, start='2026-10-11',
                                                        end='2026-10-12'))
-    hint = resp.get_json()['delegation_hint']
+    hint = resp.get_json()['proxy_hint']
     parsed = urlparse(hint['create_url'])
     query = parse_qs(parsed.query)
 
-    assert hint['create_url'].startswith('/beakplatform/delegations/create?')
-    assert query['delegator'] == [test_admin.secure_code]
+    assert parsed.path == '/beakplatform/personal-settings'
+    assert query['proxy'] == ['new']
     assert query['effective_from'] == ['2026-10-11']
     assert query['effective_until'] == ['2026-10-12']
     assert query['next'] == ['/beakplatform/calendar/me']
+    assert parsed.fragment == 'my-proxy-assignments'
 
 
 def test_update_leave_returns_hint_too(client, test_org, test_user):
@@ -389,7 +479,7 @@ def test_update_leave_returns_hint_too(client, test_org, test_user):
                       json=_personal_payload(event_type='LEAVE', title='Updated leave',
                                              all_day=True, start='2026-10-13',
                                              end='2026-10-14'))
-    hint = resp.get_json()['delegation_hint']
+    hint = resp.get_json()['proxy_hint']
 
     assert resp.status_code == 200
     assert hint['needed'] is True

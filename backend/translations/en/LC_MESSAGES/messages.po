@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-06 20:58+0800\n"
+"POT-Creation-Date: 2026-09-06 23:47+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -24,8 +24,6 @@ msgstr "Hover to reveal"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:361
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:392
 #: app/__init__.py:203 app/templates/pages/admin/numbering/list.html:149
-#: app/templates/pages/delegations/view.html:53
-#: app/templates/pages/delegations/view.html:60
 #: app/templates/pages/users/view.html:66
 #: app/templates/pages/users/view.html:74
 #: app/templates/pages/users/view.html:139
@@ -456,8 +454,8 @@ msgstr "Telegram settings updated"
 msgid "Telegram 設定已刪除"
 msgstr "Telegram settings deleted"
 
-#: app/api/access_center.py:55 app/api/access_center.py:85
-#: app/api/access_center.py:102 app/api/egress.py:46
+#: app/api/access_center.py:54 app/api/access_center.py:84
+#: app/api/access_center.py:101 app/api/egress.py:46
 msgid "缺少必要參數"
 msgstr "Missing required parameters"
 
@@ -663,11 +661,11 @@ msgstr "Failed to load calendar"
 msgid "日期範圍不合法"
 msgstr "Invalid date range"
 
-#: app/api/calendar.py:172
+#: app/api/calendar.py:163
 msgid "請提供 start 與 end"
 msgstr "Both start and end are required"
 
-#: app/api/calendar.py:177 app/api/contracts.py:123
+#: app/api/calendar.py:168 app/api/contracts.py:123
 #: app/api/work_schedules.py:377
 msgid "日期格式錯誤，請使用 YYYY-MM-DD"
 msgstr "Invalid date format. Please use YYYY-MM-DD"
@@ -711,14 +709,13 @@ msgstr "At least two organizations must be selected"
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:836
 #: app/api/conglomerates.py:84 app/api/conglomerates.py:276
 #: app/api/users.py:284 app/web/approval_categories.py:189
-#: app/web/delegations.py:239 app/web/external_users.py:332
-#: app/web/job_families.py:239 app/web/job_families.py:240
-#: app/web/job_levels.py:181 app/web/job_titles.py:266
-#: app/web/job_titles.py:267 app/web/menu.py:324 app/web/menu.py:391
-#: app/web/modules.py:123 app/web/org_admins.py:284 app/web/org_admins.py:451
-#: app/web/organizations.py:283 app/web/positions.py:154
-#: app/web/sys_accounts.py:171 app/web/sys_accounts.py:172 app/web/units.py:128
-#: app/web/users.py:492
+#: app/web/external_users.py:332 app/web/job_families.py:239
+#: app/web/job_families.py:240 app/web/job_levels.py:181
+#: app/web/job_titles.py:266 app/web/job_titles.py:267 app/web/menu.py:324
+#: app/web/menu.py:391 app/web/modules.py:123 app/web/org_admins.py:284
+#: app/web/org_admins.py:451 app/web/organizations.py:283
+#: app/web/positions.py:154 app/web/sys_accounts.py:171
+#: app/web/sys_accounts.py:172 app/web/units.py:128 app/web/users.py:492
 #, python-format
 msgid "建立失敗: %(error)s"
 msgstr "Creation failed: %(error)s"
@@ -736,11 +733,11 @@ msgstr "A conglomerate requires at least two organizations"
 #: ../modules/form_workflow/api/backgrounds.py:151
 #: ../modules/form_workflow/api/categories.py:314
 #: ../modules/form_workflow/api/form_themes.py:219 app/api/conglomerates.py:214
-#: app/web/approval_categories.py:269 app/web/delegations.py:335
-#: app/web/external_users.py:452 app/web/job_families.py:324
-#: app/web/job_families.py:325 app/web/job_levels.py:267
-#: app/web/job_titles.py:344 app/web/job_titles.py:345 app/web/menu.py:483
-#: app/web/modules.py:183 app/web/organizations.py:342 app/web/positions.py:246
+#: app/web/approval_categories.py:269 app/web/external_users.py:452
+#: app/web/job_families.py:324 app/web/job_families.py:325
+#: app/web/job_levels.py:267 app/web/job_titles.py:344
+#: app/web/job_titles.py:345 app/web/menu.py:483 app/web/modules.py:183
+#: app/web/organizations.py:342 app/web/positions.py:246
 #: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:188
 #: app/web/users.py:699
 #, python-format
@@ -814,7 +811,7 @@ msgstr "Duty category not found"
 msgid "請提供分類資料"
 msgstr "Please provide category data"
 
-#: app/api/duties.py:107 app/api/organizational_units.py:218
+#: app/api/duties.py:107 app/api/organizational_units.py:223
 #: app/api/roles.py:299 app/web/units.py:107
 #, python-format
 msgid "代碼 %(code)s 已存在"
@@ -829,7 +826,7 @@ msgid "建立職務分類失敗"
 msgstr "Failed to create duty category"
 
 #: app/api/duties.py:153 app/api/duties.py:383
-#: app/api/organizational_units.py:280 app/api/organizational_units.py:1376
+#: app/api/organizational_units.py:285 app/api/organizational_units.py:1285
 #: app/api/organizations.py:223 app/api/roles.py:388
 msgid "請提供更新資料"
 msgstr "Please provide update data"
@@ -983,14 +980,13 @@ msgstr "Logo deleted"
 #: ../modules/form_workflow/api/categories.py:360
 #: ../modules/form_workflow/api/form_themes.py:264
 #: app/api/enterprise_settings.py:387 app/api/files.py:474
-#: app/web/approval_categories.py:327 app/web/delegations.py:386
-#: app/web/external_users.py:671 app/web/job_families.py:421
-#: app/web/job_families.py:422 app/web/job_levels.py:318
-#: app/web/job_titles.py:395 app/web/job_titles.py:396 app/web/menu.py:537
-#: app/web/modules.py:211 app/web/org_admins.py:539
-#: app/web/organizations.py:418 app/web/positions.py:274
-#: app/web/sys_accounts.py:315 app/web/sys_accounts.py:316 app/web/units.py:221
-#: app/web/users.py:760
+#: app/web/approval_categories.py:327 app/web/external_users.py:671
+#: app/web/job_families.py:421 app/web/job_families.py:422
+#: app/web/job_levels.py:318 app/web/job_titles.py:395
+#: app/web/job_titles.py:396 app/web/menu.py:537 app/web/modules.py:211
+#: app/web/org_admins.py:539 app/web/organizations.py:418
+#: app/web/positions.py:274 app/web/sys_accounts.py:315
+#: app/web/sys_accounts.py:316 app/web/units.py:221 app/web/users.py:760
 #, python-format
 msgid "刪除失敗: %(error)s"
 msgstr "Delete failed: %(error)s"
@@ -1061,7 +1057,7 @@ msgstr "You can only undo deletion of files you marked"
 msgid "已撤銷刪除"
 msgstr "Deletion undone"
 
-#: app/api/files.py:507 app/web/delegations.py:366
+#: app/api/files.py:507
 #, python-format
 msgid "撤銷失敗: %(error)s"
 msgstr "Undo failed: %(error)s"
@@ -1120,7 +1116,7 @@ msgstr "Enter a name."
 msgid "日期已存在"
 msgstr "The date already exists."
 
-#: app/api/holiday_calendars.py:246 app/api/my_delegations.py:132
+#: app/api/holiday_calendars.py:246 app/api/my_proxy_assignments.py:137
 msgid "日期格式錯誤"
 msgstr "Invalid date format."
 
@@ -1245,7 +1241,7 @@ msgid "系統級類別不可修改"
 msgstr "System-level categories cannot be modified"
 
 #: ../modules/form_workflow/api/fc_phrases.py:148 app/api/lookup.py:201
-#: app/api/lookup.py:381 app/api/organizational_units.py:1402
+#: app/api/lookup.py:381 app/api/organizational_units.py:1311
 msgid "更新失敗"
 msgstr "Update failed"
 
@@ -1430,36 +1426,38 @@ msgstr "This claim token is invalid or has already been used"
 msgid "已停用的 API Key 不可重新產生金鑰"
 msgstr "Cannot regenerate the secret of a suspended API key"
 
-#: app/api/my_delegations.py:30
+#: app/api/my_proxy_assignments.py:29
 msgid "此功能僅限企業成員使用"
 msgstr "This feature is only available to organization members."
 
-#: app/api/my_delegations.py:122
-msgid "被授權人無效"
-msgstr "The delegate is invalid."
+#: app/api/my_proxy_assignments.py:127
+#: app/services/proxy_assignment_service.py:108
+msgid "代理人無效"
+msgstr "Invalid proxy user"
 
-#: app/api/my_delegations.py:139 app/web/delegations.py:190
-#: app/web/delegations.py:296
+#: app/api/my_proxy_assignments.py:144
 msgid "生效開始日期不能晚於結束日期"
 msgstr "Effective start date cannot be later than the end date"
 
-#: app/api/my_delegations.py:146
+#: app/api/my_proxy_assignments.py:151
 msgid "生效結束日期不能早於今天"
 msgstr "The effective end date cannot be earlier than today."
 
-#: app/api/my_delegations.py:173
+#: app/api/my_proxy_assignments.py:159
+#: app/services/role_assignment_service.py:246
+#: app/services/role_assignment_service.py:256
+msgid "請填寫指派事由"
+msgstr "Please enter an assignment reason"
+
+#: app/api/my_proxy_assignments.py:186
 msgid "建立失敗"
 msgstr "Creation failed."
 
-#: app/api/my_delegations.py:199
-msgid "找不到代理授權"
-msgstr "Delegation not found."
+#: app/api/my_proxy_assignments.py:208
+msgid "找不到代理指派"
+msgstr "Proxy assignment not found"
 
-#: app/api/my_delegations.py:206
-msgid "這筆代理授權已撤銷"
-msgstr "This delegation has already been revoked."
-
-#: app/api/my_delegations.py:221
+#: app/api/my_proxy_assignments.py:215
 msgid "撤銷失敗"
 msgstr "Revocation failed."
 
@@ -1499,47 +1497,47 @@ msgstr "Please provide a valid node_type and action"
 msgid "批次操作失敗"
 msgstr "Bulk operation failed"
 
-#: app/api/organizational_units.py:149 app/api/organizational_units.py:276
-#: app/api/organizational_units.py:365 app/api/organizational_units.py:532
-#: app/api/organizational_units.py:615 app/api/organizational_units.py:675
-#: app/api/organizational_units.py:728 app/api/organizational_units.py:792
-#: app/api/organizational_units.py:919 app/api/organizational_units.py:941
-#: app/api/organizational_units.py:984 app/api/organizational_units.py:1065
-#: app/api/organizational_units.py:1106 app/api/organizational_units.py:1164
-#: app/api/organizational_units.py:1227 app/api/organizational_units.py:1362
-#: app/api/organizational_units.py:1426
+#: app/api/organizational_units.py:154 app/api/organizational_units.py:281
+#: app/api/organizational_units.py:370 app/api/organizational_units.py:537
+#: app/api/organizational_units.py:620 app/api/organizational_units.py:680
+#: app/api/organizational_units.py:733 app/api/organizational_units.py:797
+#: app/api/organizational_units.py:844 app/api/organizational_units.py:866
+#: app/api/organizational_units.py:902 app/api/organizational_units.py:984
+#: app/api/organizational_units.py:1025 app/api/organizational_units.py:1073
+#: app/api/organizational_units.py:1136 app/api/organizational_units.py:1271
+#: app/api/organizational_units.py:1335
 msgid "組織單位不存在"
 msgstr "Organizational unit not found"
 
-#: app/api/organizational_units.py:173
+#: app/api/organizational_units.py:178
 msgid "請提供單位資料"
 msgstr "Please provide unit data"
 
-#: app/api/organizational_units.py:177 app/api/roles.py:273
+#: app/api/organizational_units.py:182 app/api/roles.py:273
 msgid "缺少必要欄位: name"
 msgstr "Missing required field: name"
 
-#: app/api/organizational_units.py:194 app/api/roles.py:305
+#: app/api/organizational_units.py:199 app/api/roles.py:305
 #, python-format
 msgid "無法自動產生代碼: %(error)s"
 msgstr "Failed to auto-generate code: %(error)s"
 
-#: app/api/organizational_units.py:199
+#: app/api/organizational_units.py:204
 msgid "代碼只能包含英文字母、數字、底線(_)、連字號(-)，且開頭必須是英文"
 msgstr ""
 "Code may only contain letters, digits, underscores (_) and hyphens (-), "
 "and must start with a letter"
 
-#: app/api/organizational_units.py:203
+#: app/api/organizational_units.py:208
 #, python-format
 msgid "代碼長度不可超過 50 字元（目前 %(length)s 字元）"
 msgstr "Code cannot exceed 50 characters (currently %(length)s)"
 
-#: app/api/organizational_units.py:205
+#: app/api/organizational_units.py:210
 msgid "代碼長度至少 2 字元"
 msgstr "Code must be at least 2 characters"
 
-#: app/api/organizational_units.py:207
+#: app/api/organizational_units.py:212
 #, python-format
 msgid "名稱長度不可超過 255 字元（目前 %(length)s 字元）"
 msgstr "Name cannot exceed 255 characters (currently %(length)s)"
@@ -1552,240 +1550,240 @@ msgstr "Name cannot exceed 255 characters (currently %(length)s)"
 #: ../modules/nocode_builder/api/template_api.py:425
 #: ../modules/nocode_builder/services/project_service.py:128
 #: ../modules/spec_formulate/api/_mf_specs_crud.py:46
-#: app/api/organizational_units.py:209 app/api/work_schedules.py:188
+#: app/api/organizational_units.py:214 app/api/work_schedules.py:188
 msgid "名稱不可為空"
 msgstr "Name cannot be empty"
 
-#: app/api/organizational_units.py:230 app/api/organizational_units.py:313
+#: app/api/organizational_units.py:235 app/api/organizational_units.py:318
 msgid "父層單位不存在"
 msgstr "Parent unit not found"
 
-#: app/api/organizational_units.py:251
+#: app/api/organizational_units.py:256
 msgid "組織單位建立成功"
 msgstr "Organizational unit created successfully"
 
-#: app/api/organizational_units.py:258
+#: app/api/organizational_units.py:263
 msgid "建立組織單位失敗"
 msgstr "Failed to create organizational unit"
 
-#: app/api/organizational_units.py:299 app/api/roles.py:416
+#: app/api/organizational_units.py:304 app/api/roles.py:416
 msgid "不能設定自己為父層"
 msgstr "Cannot set itself as parent"
 
-#: app/api/organizational_units.py:304 app/api/roles.py:420
+#: app/api/organizational_units.py:309 app/api/roles.py:420
 msgid "不能設定子層為父層"
 msgstr "Cannot set a child unit as parent"
 
-#: app/api/organizational_units.py:320
+#: app/api/organizational_units.py:325
 msgid "不可在企業群組與外部廠商群組之間移動"
 msgstr "Cannot move between company groups and external vendor groups"
 
-#: app/api/organizational_units.py:336
+#: app/api/organizational_units.py:341
 msgid "組織單位更新成功"
 msgstr "Organizational unit updated successfully"
 
-#: app/api/organizational_units.py:343
+#: app/api/organizational_units.py:348
 msgid "更新組織單位失敗"
 msgstr "Failed to update organizational unit"
 
-#: app/api/organizational_units.py:369
+#: app/api/organizational_units.py:374
 msgid "此為系統保留單位，不可刪除"
 msgstr "This is a system-reserved unit and cannot be deleted"
 
-#: app/api/organizational_units.py:404
+#: app/api/organizational_units.py:409
 #, python-format
 msgid "此單位有 %(count)s 個子單位"
 msgstr "This unit has %(count)s child units"
 
-#: app/api/organizational_units.py:412
+#: app/api/organizational_units.py:417
 #, python-format
 msgid "此單位有 %(count)s 個成員"
 msgstr "This unit has %(count)s members"
 
-#: app/api/organizational_units.py:436
+#: app/api/organizational_units.py:441
 msgid "組織單位已刪除"
 msgstr "Organizational unit deleted"
 
-#: app/api/organizational_units.py:438
+#: app/api/organizational_units.py:443
 #, python-format
 msgid "，%(count)s 位成員已移至未分配"
 msgstr ", %(count)s members moved to Unassigned"
 
-#: app/api/organizational_units.py:447
+#: app/api/organizational_units.py:452
 msgid "刪除組織單位失敗"
 msgstr "Failed to delete organizational unit"
 
-#: app/api/organizational_units.py:619 app/api/organizational_units.py:732
-#: app/api/organizational_units.py:988 app/api/organizational_units.py:1231
+#: app/api/organizational_units.py:624 app/api/organizational_units.py:737
+#: app/api/organizational_units.py:906 app/api/organizational_units.py:1140
 msgid "請提供用戶 ID"
 msgstr "Please provide a user ID"
 
 #: ../modules/nocode_builder/services/project_service.py:362
-#: app/api/organizational_units.py:629 app/api/organizational_units.py:741
-#: app/api/organizational_units.py:801 app/api/organizational_units.py:998
-#: app/api/organizational_units.py:1115 app/api/organizational_units.py:1241
-#: app/api/organizational_units.py:1475
-#: app/services/role_assignment_service.py:191
+#: app/api/organizational_units.py:634 app/api/organizational_units.py:746
+#: app/api/organizational_units.py:806 app/api/organizational_units.py:916
+#: app/api/organizational_units.py:1031 app/api/organizational_units.py:1150
+#: app/api/organizational_units.py:1384
+#: app/services/role_assignment_service.py:192
 msgid "用戶不存在"
 msgstr "User not found"
 
-#: app/api/organizational_units.py:634
+#: app/api/organizational_units.py:639
 msgid "只有企業成員帳號可加入部門"
 msgstr "Only employee accounts can be added to a department"
 
-#: app/api/organizational_units.py:644 app/api/organizational_units.py:1287
-#: app/api/organizational_units.py:1323
+#: app/api/organizational_units.py:649 app/api/organizational_units.py:1196
+#: app/api/organizational_units.py:1232
 #, python-format
 msgid "已將 %(user)s 加入 %(unit)s"
 msgstr "%(user)s added to %(unit)s"
 
-#: app/api/organizational_units.py:655
+#: app/api/organizational_units.py:660
 msgid "加入部門失敗"
 msgstr "Failed to add to department"
 
-#: app/api/organizational_units.py:686
+#: app/api/organizational_units.py:691
 msgid "用戶不存在或不屬於此部門"
 msgstr "User does not exist or does not belong to this department"
 
-#: app/api/organizational_units.py:696
+#: app/api/organizational_units.py:701
 #, python-format
 msgid "已將 %(user)s 從 %(unit)s 移除"
 msgstr "%(user)s removed from %(unit)s"
 
-#: app/api/organizational_units.py:702
+#: app/api/organizational_units.py:707
 msgid "移除成員失敗"
 msgstr "Failed to remove member"
 
-#: app/api/organizational_units.py:745
+#: app/api/organizational_units.py:750
 msgid "只有企業成員帳號可設為部門主管"
 msgstr "Only employee accounts can be set as department manager"
 
-#: app/api/organizational_units.py:749
+#: app/api/organizational_units.py:754
 msgid "部門主管角色不存在，請聯繫系統管理員"
 msgstr "Department manager role not found. Please contact the system administrator"
 
-#: app/api/organizational_units.py:758
+#: app/api/organizational_units.py:763
 #, python-format
 msgid "已設定 %(user)s 為 %(unit)s 主管"
 msgstr "%(user)s set as manager of %(unit)s"
 
-#: app/api/organizational_units.py:772
+#: app/api/organizational_units.py:777
 msgid "設定主管失敗"
 msgstr "Failed to set manager"
 
-#: app/api/organizational_units.py:808
+#: app/api/organizational_units.py:813
 msgid "部門主管角色不存在"
 msgstr "Department manager role not found"
 
-#: app/api/organizational_units.py:812
+#: app/api/organizational_units.py:817
 msgid "移除主管角色失敗"
 msgstr "Failed to remove manager role"
 
-#: app/api/organizational_units.py:816
+#: app/api/organizational_units.py:821
 #, python-format
 msgid "已移除 %(user)s 的 %(unit)s 主管角色"
 msgstr "Manager role of %(unit)s removed from %(user)s"
 
-#: app/api/organizational_units.py:955
+#: app/api/organizational_units.py:873
 #: app/services/role_assignment_service.py:38
 msgid "正主管"
 msgstr "Manager"
 
-#: app/api/organizational_units.py:956
+#: app/api/organizational_units.py:874
 #: app/services/role_assignment_service.py:39
 #: app/templates/pages/admin/departments.html:386
 msgid "副主管"
 msgstr "Deputy Manager"
 
-#: app/api/organizational_units.py:957
+#: app/api/organizational_units.py:875
 #: app/templates/pages/admin/departments.html:404
 msgid "候補代理人"
 msgstr "Standby proxies"
 
-#: app/api/organizational_units.py:975 app/api/organizational_units.py:1056
+#: app/api/organizational_units.py:893 app/api/organizational_units.py:975
 msgid "無效的職位類型"
 msgstr "Invalid position type"
 
-#: app/api/organizational_units.py:1002
+#: app/api/organizational_units.py:920
 msgid "只有企業成員帳號可擔任部門管理職"
 msgstr "Only employee accounts can hold department leadership positions"
 
-#: app/api/organizational_units.py:1017 app/api/organizational_units.py:1031
+#: app/api/organizational_units.py:939 app/api/organizational_units.py:950
 #, python-format
 msgid "%(position)s 角色不存在，請聯繫系統管理員"
 msgstr "%(position)s role not found. Please contact the system administrator"
 
-#: app/api/organizational_units.py:1021
+#: app/api/organizational_units.py:943
 msgid "部門頁登記候補代理人"
 msgstr "Standby proxy registered from the department page"
 
-#: app/api/organizational_units.py:1035
+#: app/api/organizational_units.py:954
 msgid "設定失敗"
 msgstr "Operation failed"
 
-#: app/api/organizational_units.py:1039
+#: app/api/organizational_units.py:958
 #, python-format
 msgid "已設定 %(user)s 為 %(unit)s %(position)s"
 msgstr "%(user)s set as %(position)s of %(unit)s"
 
-#: app/api/organizational_units.py:1054
+#: app/api/organizational_units.py:973
 msgid "移除候補代理人請指定使用者"
 msgstr "Specify a user when removing a standby proxy"
 
-#: app/api/organizational_units.py:1080
+#: app/api/organizational_units.py:999
 #, python-format
 msgid "%(position)s 角色不存在"
 msgstr "%(position)s role not found"
 
-#: app/api/organizational_units.py:1084 app/api/organizational_units.py:1127
-#: app/api/organizational_units.py:1454
+#: app/api/organizational_units.py:1003 app/api/organizational_units.py:1036
+#: app/api/organizational_units.py:1363
 msgid "移除失敗"
 msgstr "Removal failed"
 
-#: app/api/organizational_units.py:1087
+#: app/api/organizational_units.py:1006
 #, python-format
 msgid "已移除 %(unit)s %(position)s"
 msgstr "%(position)s of %(unit)s removed"
 
-#: app/api/organizational_units.py:1131
+#: app/api/organizational_units.py:1040
 #, python-format
 msgid "已移除 %(user)s 的 %(unit)s 候補代理人登記"
 msgstr "Removed %(user)s as a standby proxy for %(unit)s"
 
-#: app/api/organizational_units.py:1153
+#: app/api/organizational_units.py:1062
 msgid "無權限存取此社群"
 msgstr "No permission to access this group"
 
-#: app/api/organizational_units.py:1215 app/api/organizational_units.py:1350
-#: app/api/organizational_units.py:1416
+#: app/api/organizational_units.py:1124 app/api/organizational_units.py:1259
+#: app/api/organizational_units.py:1325
 msgid "無權限管理此社群成員"
 msgstr "No permission to manage members of this group"
 
-#: app/api/organizational_units.py:1247
+#: app/api/organizational_units.py:1156
 msgid "外部人員不可加入企業群組"
 msgstr "External users cannot join company groups"
 
-#: app/api/organizational_units.py:1257
+#: app/api/organizational_units.py:1166
 msgid "無效的成員類型"
 msgstr "Invalid member type"
 
-#: app/api/organizational_units.py:1269
+#: app/api/organizational_units.py:1178
 msgid "該用戶已是此單位的成員"
 msgstr "This user is already a member of this unit"
 
-#: app/api/organizational_units.py:1293 app/api/organizational_units.py:1330
+#: app/api/organizational_units.py:1202 app/api/organizational_units.py:1239
 msgid "新增失敗"
 msgstr "Creation failed"
 
-#: app/api/organizational_units.py:1372 app/api/organizational_units.py:1436
+#: app/api/organizational_units.py:1281 app/api/organizational_units.py:1345
 msgid "成員關係不存在"
 msgstr "Membership not found"
 
-#: app/api/organizational_units.py:1395
+#: app/api/organizational_units.py:1304
 msgid "更新成功"
 msgstr "Updated successfully"
 
-#: app/api/organizational_units.py:1448
+#: app/api/organizational_units.py:1357
 msgid "已移除成員關係"
 msgstr "Membership removed"
 
@@ -1806,7 +1804,7 @@ msgstr "Membership removed"
 #: ../modules/nocode_builder/api/project_api.py:132
 #: ../modules/nocode_builder/api/project_api.py:149
 #: ../modules/nocode_builder/api/project_api.py:171
-#: app/api/organizational_units.py:1510 app/api/organizations.py:218
+#: app/api/organizational_units.py:1419 app/api/organizations.py:218
 #: app/api/security_center.py:291
 msgid "無權限"
 msgstr "No permission"
@@ -1814,7 +1812,7 @@ msgstr "No permission"
 #: app/api/organizations.py:93 app/api/organizations.py:114
 #: app/api/organizations.py:214 app/api/organizations.py:276
 #: app/api/organizations.py:327 app/api/security_center.py:399
-#: app/api/security_center.py:433
+#: app/api/security_center.py:433 app/services/proxy_assignment_service.py:27
 msgid "企業不存在"
 msgstr "Organization not found"
 
@@ -1896,7 +1894,7 @@ msgid "無法確定企業"
 msgstr "Unable to determine organization"
 
 #: app/api/roles.py:166 app/api/roles.py:378 app/api/roles.py:471
-#: app/api/roles.py:526 app/services/role_assignment_service.py:199
+#: app/api/roles.py:526 app/services/role_assignment_service.py:200
 msgid "角色不存在"
 msgstr "Role not found"
 
@@ -2393,42 +2391,42 @@ msgstr "The start/end span is too long"
 msgid "start/end 欄位格式須為 YYYY-MM-DDTHH:MM"
 msgstr "The start/end fields must use YYYY-MM-DDTHH:MM"
 
-#: app/services/calendar_projection_service.py:257
+#: app/services/calendar_projection_service.py:259
 #, python-format
 msgid "補班：%(desc)s"
 msgstr "Make-up workday: %(desc)s"
 
-#: app/services/calendar_projection_service.py:257
+#: app/services/calendar_projection_service.py:259
 #: app/templates/pages/admin/time/holiday_calendar_edit.html:40
 #: app/templates/pages/admin/time/holidays.html:48
 #: app/templates/pages/calendar/calendar.html:48
 msgid "補班"
 msgstr "Make-up Workday"
 
-#: app/services/calendar_projection_service.py:260
+#: app/services/calendar_projection_service.py:262
 #: app/templates/pages/admin/time/holiday_calendar_edit.html:39
 #: app/templates/pages/admin/time/holidays.html:44
 msgid "補假"
 msgstr "Make-up Holiday"
 
-#: app/services/calendar_projection_service.py:260
+#: app/services/calendar_projection_service.py:262
 #: app/templates/pages/admin/time/holiday_calendar_edit.html:38
 #: app/templates/pages/admin/time/holidays.html:40
 msgid "假日"
 msgstr "Holiday"
 
-#: app/services/calendar_projection_service.py:313
+#: app/services/calendar_projection_service.py:358
 #, python-format
-msgid "代理：%(a)s → %(b)s"
-msgstr "Delegation: %(a)s → %(b)s"
+msgid "%(a)s 代理 %(b)s"
+msgstr "%(a)s proxies for %(b)s"
 
-#: app/services/calendar_projection_service.py:344
+#: app/services/calendar_projection_service.py:389
 #: app/templates/pages/positions/list.html:53
 #: app/templates/pages/users/view.html:84
 msgid "主要"
 msgstr "Primary"
 
-#: app/services/calendar_projection_service.py:345
+#: app/services/calendar_projection_service.py:390
 #: app/templates/pages/positions/list.html:54
 #: app/templates/pages/positions/view.html:60
 #: app/templates/pages/users/list.html:59
@@ -2436,7 +2434,7 @@ msgstr "Primary"
 msgid "兼任"
 msgstr "Concurrent"
 
-#: app/services/calendar_projection_service.py:346
+#: app/services/calendar_projection_service.py:391
 #: app/services/role_assignment_service.py:45
 #: app/services/role_assignment_service.py:46
 #: app/services/role_assignment_service.py:47
@@ -2448,7 +2446,7 @@ msgstr "Concurrent"
 msgid "代理"
 msgstr "Delegated"
 
-#: app/services/calendar_projection_service.py:347
+#: app/services/calendar_projection_service.py:392
 #: app/templates/pages/positions/list.html:56
 #: app/templates/pages/positions/view.html:62
 #: app/templates/pages/users/list.html:59
@@ -2456,22 +2454,22 @@ msgstr "Delegated"
 msgid "臨時"
 msgstr "Temporary"
 
-#: app/services/calendar_projection_service.py:366
+#: app/services/calendar_projection_service.py:411
 #, python-format
 msgid "職位：%(type)s %(title)s（%(unit)s）"
 msgstr "Position: %(type)s %(title)s (%(unit)s)"
 
-#: app/services/calendar_projection_service.py:412
+#: app/services/calendar_projection_service.py:457
 #, python-format
 msgid "公告：%(m)s"
 msgstr "Notice: %(m)s"
 
-#: app/services/calendar_projection_service.py:416
+#: app/services/calendar_projection_service.py:461
 #, python-format
 msgid "緊急廣播：%(t)s"
 msgstr "Alert broadcast: %(t)s"
 
-#: app/services/calendar_projection_service.py:486
+#: app/services/calendar_projection_service.py:531
 #, python-format
 msgid "流程等待到期：%(node)s（%(code)s）"
 msgstr "Workflow delay due: %(node)s (%(code)s)"
@@ -2514,6 +2512,20 @@ msgstr ""
 "This database belongs to no existing organization; a system administrator"
 " must drop it manually via CLI"
 
+#: app/services/proxy_assignment_service.py:100
+#: app/services/role_assignment_service.py:240
+#: app/services/role_assignment_service.py:259
+msgid "代理人不可代理自己"
+msgstr "A proxy cannot act for themselves"
+
+#: app/services/proxy_assignment_service.py:113
+msgid "你目前沒有可代理的角色"
+msgstr "You currently have no proxyable roles"
+
+#: app/services/proxy_assignment_service.py:154
+msgid "這位代理人在這段期間已經代理你全部的角色"
+msgstr "This proxy already covers all your roles during this period"
+
 #: app/services/role_assignment_service.py:26
 #: app/templates/pages/admin/groups.html:277
 msgid "團長"
@@ -2536,7 +2548,7 @@ msgstr "Deputy (2)"
 
 #: app/services/role_assignment_service.py:30
 #: app/services/role_assignment_service.py:31
-#: app/services/role_assignment_service.py:408
+#: app/services/role_assignment_service.py:415
 #: app/templates/pages/admin/groups.html:351
 msgid "團員"
 msgstr "member"
@@ -2551,8 +2563,8 @@ msgid "部門主管"
 msgstr "Department Manager"
 
 #: app/services/role_assignment_service.py:49
-#: app/services/role_assignment_service.py:372
-#: app/services/role_assignment_service.py:374
+#: app/services/role_assignment_service.py:379
+#: app/services/role_assignment_service.py:381
 msgid "員工"
 msgstr "Employee"
 
@@ -2624,82 +2636,72 @@ msgstr ""
 "Cannot assign \"%(role)s\": external-scope roles can only be assigned to "
 "external vendor accounts"
 
-#: app/services/role_assignment_service.py:179
+#: app/services/role_assignment_service.py:180
 msgid "缺少操作者資訊"
 msgstr "Missing operator information"
 
-#: app/services/role_assignment_service.py:183
+#: app/services/role_assignment_service.py:184
 msgid "無效的指派性質"
 msgstr "Invalid assignment kind"
 
-#: app/services/role_assignment_service.py:228
+#: app/services/role_assignment_service.py:229
 #, python-format
 msgid "用戶已擁有「%(role)s」角色"
 msgstr "The user already has the \"%(role)s\" role"
 
-#: app/services/role_assignment_service.py:237
+#: app/services/role_assignment_service.py:238
 msgid "代理指派必須選擇被代理人"
 msgstr "Proxy assignments require an acting-for user"
 
-#: app/services/role_assignment_service.py:239
-#: app/services/role_assignment_service.py:258
-msgid "代理人不可代理自己"
-msgstr "A proxy cannot act for themselves"
-
-#: app/services/role_assignment_service.py:241
+#: app/services/role_assignment_service.py:242
 msgid "代理指派必須設定起迄日"
 msgstr "Proxy assignments require start and end dates"
 
-#: app/services/role_assignment_service.py:243
-#: app/services/role_assignment_service.py:253
+#: app/services/role_assignment_service.py:244
+#: app/services/role_assignment_service.py:254
 msgid "起始日不可晚於結束日"
 msgstr "The start date cannot be later than the end date"
 
-#: app/services/role_assignment_service.py:245
-#: app/services/role_assignment_service.py:255
-msgid "請填寫指派事由"
-msgstr "Enter an assignment reason"
-
-#: app/services/role_assignment_service.py:246
-#: app/services/role_assignment_service.py:259
+#: app/services/role_assignment_service.py:247
+#: app/services/role_assignment_service.py:260
 msgid "被代理人必須是此角色的正式持有者"
 msgstr "The acting-for user must be a regular holder of this role"
 
-#: app/services/role_assignment_service.py:250
+#: app/services/role_assignment_service.py:251
 msgid "已有重疊效期的代理指派"
 msgstr "A proxy assignment already exists for an overlapping period"
 
-#: app/services/role_assignment_service.py:261
+#: app/services/role_assignment_service.py:262
 msgid "已是此角色的候補"
 msgstr "Already a standby holder for this role"
 
-#: app/services/role_assignment_service.py:287
+#: app/services/role_assignment_service.py:291
 #, python-format
 msgid "已將「%(role)s」指派給 %(user)s"
 msgstr "\"%(role)s\" assigned to %(user)s"
 
-#: app/services/role_assignment_service.py:301
+#: app/services/role_assignment_service.py:305
 msgid "找不到此角色指派"
 msgstr "Role assignment not found"
 
-#: app/services/role_assignment_service.py:320
+#: app/services/role_assignment_service.py:327
 #, python-format
 msgid "已移除 %(user)s 的「%(role)s」角色"
 msgstr "\"%(role)s\" role removed from %(user)s"
 
-#: app/services/role_assignment_service.py:544
+#: app/services/role_assignment_service.py:551
 msgid "此角色必須選擇單位"
 msgstr "This role requires a unit"
 
-#: app/services/role_assignment_service.py:553
+#: app/services/role_assignment_service.py:560
 msgid "單位不存在或類型不符"
 msgstr "Unit does not exist or its type does not match"
 
-#: app/services/role_assignment_service.py:557
+#: app/services/role_assignment_service.py:564
 msgid "此角色不可指定單位"
 msgstr "This role cannot be bound to a unit"
 
-#: app/services/role_assignment_service.py:586
+#: app/services/role_assignment_service.py:593
 #, python-format
 msgid "無法指派「%(role)s」：與現有角色「%(conflict)s」互斥，請先移除後再指派"
 msgstr ""
@@ -2707,28 +2709,28 @@ msgstr ""
 "\"%(conflict)s\". Please remove it first"
 
 #: ../modules/form_workflow/api/ai_usage.py:231
-#: app/services/role_assignment_service.py:608
+#: app/services/role_assignment_service.py:615
 msgid "日期格式不正確"
 msgstr "Date format is invalid"
 
-#: app/services/role_assignment_service.py:609
+#: app/services/role_assignment_service.py:616
 #, python-format
 msgid "%(field)s 日期格式不正確"
 msgstr "Invalid date format for %(field)s"
 
-#: app/services/role_assignment_service.py:616
+#: app/services/role_assignment_service.py:623
 msgid "限定表單格式不正確"
 msgstr "Invalid allowed forms format"
 
-#: app/services/role_assignment_service.py:645
+#: app/services/role_assignment_service.py:652
 msgid "無權限指派此角色"
 msgstr "You do not have permission to assign this role"
 
-#: app/services/role_assignment_service.py:647
+#: app/services/role_assignment_service.py:654
 msgid "只有企業管理員可以指派正式角色"
 msgstr "Only organization admins can assign regular roles"
 
-#: app/services/role_assignment_service.py:653
+#: app/services/role_assignment_service.py:659
 msgid "只有此角色的正式持有者可以授出代理或候補"
 msgstr "Only a regular holder of this role can grant a proxy or standby assignment"
 
@@ -2863,7 +2865,7 @@ msgstr "Passwords match"
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:636
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:75
 #: app/templates/auth/change_password.html:74
-#: app/templates/pages/_my_delegations.html:102
+#: app/templates/pages/_my_proxy_assignments.html:116
 #: app/templates/pages/access_center/_tab_accounts.html:217
 #: app/templates/pages/access_center/_tab_roles.html:219
 #: app/templates/pages/admin/_employee_create_form.html:152
@@ -2889,8 +2891,6 @@ msgstr "Passwords match"
 #: app/templates/pages/approval_categories/list.html:287
 #: app/templates/pages/calendar/_event_modal.html:75
 #: app/templates/pages/change_password.html:55
-#: app/templates/pages/delegations/create.html:123
-#: app/templates/pages/delegations/edit.html:123
 #: app/templates/pages/external-users/create.html:116
 #: app/templates/pages/external-users/edit.html:67
 #: app/templates/pages/hostconfig/_system_settings_modals.html:99
@@ -3204,7 +3204,8 @@ msgstr "Add"
 #: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:41
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
 #: app/templates/pageir/_page_ir.html:62 app/templates/pageir/_page_ir.html:175
-#: app/templates/pages/_my_delegations.html:22
+#: app/templates/pages/_my_proxy_assignments.html:23
+#: app/templates/pages/_my_proxy_assignments.html:55
 #: app/templates/pages/access_center/_tab_roles.html:59
 #: app/templates/pages/admin/_settings_recipients_section.html:32
 #: app/templates/pages/admin/_settings_smtp_section.html:33
@@ -3216,7 +3217,6 @@ msgstr "Add"
 #: app/templates/pages/admin/time/holiday_calendar_edit.html:67
 #: app/templates/pages/admin/time/holidays.html:92
 #: app/templates/pages/admin/time/schedules.html:35
-#: app/templates/pages/delegations/list.html:27
 #: app/templates/pages/external-users/edit.html:136
 #: app/templates/pages/external-users/list.html:38
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:36
@@ -3263,7 +3263,7 @@ msgstr "Open"
 #: app/templates/pages/admin/time/holiday_calendar_edit.html:77
 #: app/templates/pages/admin/time/holidays.html:109
 #: app/templates/pages/admin/time/schedules.html:76
-#: app/templates/pages/calendar/calendar.html:136
+#: app/templates/pages/calendar/calendar.html:135
 #: app/templates/pages/external-users/list.html:66
 #: app/templates/pages/external-users/view.html:28
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:50
@@ -3322,7 +3322,7 @@ msgstr "Edit"
 #: app/templates/pages/admin/time/holiday_calendar_edit.html:78
 #: app/templates/pages/admin/time/holidays.html:110
 #: app/templates/pages/admin/time/schedules.html:81
-#: app/templates/pages/calendar/calendar.html:137
+#: app/templates/pages/calendar/calendar.html:136
 #: app/templates/pages/external-users/list.html:77
 #: app/templates/pages/external-users/view.html:41
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:51
@@ -3428,27 +3428,27 @@ msgstr ""
 msgid "不限群組"
 msgstr "All groups"
 
-#: app/templates/pages/_my_delegations.html:3
-msgid "我的代理授權"
-msgstr "My Delegations"
+#: app/templates/pages/_my_proxy_assignments.html:3
+msgid "我的代理指派"
+msgstr "My proxy assignments"
 
-#: app/templates/pages/_my_delegations.html:4
-#: app/templates/pages/_my_delegations.html:73
-#: app/templates/pages/delegations/create.html:4
-#: app/templates/pages/delegations/create.html:12
-msgid "新增代理授權"
-msgstr "Add Delegation"
+#: app/templates/pages/_my_proxy_assignments.html:4
+#: app/templates/pages/_my_proxy_assignments.html:78
+msgid "指定代理人"
+msgstr "Assign proxy"
 
-#: app/templates/pages/_my_delegations.html:9
-msgid "請假、出差期間，把自己的簽核職責交給同事代理。這裡只能以自己為授權人；要替別人設定代理，請聯絡企業管理員。"
+#: app/templates/pages/_my_proxy_assignments.html:9
+msgid "請假、出差期間，把自己的職務交給同事代理。代理人在效期內視同持有你的角色：能簽你能簽的單，也會看到這些角色的選單與功能。這裡只能以自己為被代理人；要替別人設定，請聯絡企業管理員。"
 msgstr ""
-"Delegate your approval duties to a coworker while you are on leave or "
-"traveling. Here, you can only create delegations from yourself; contact "
-"an organization administrator to configure delegations for someone else."
+"During leave or business trips, hand your duties to a coworker as proxy. "
+"During the effective period, the proxy is treated as holding your roles: "
+"they can approve what you can approve and will see those roles' menus and"
+" features. This section only lets you set yourself as the proxied person;"
+" contact an organization administrator to set this for someone else."
 
-#: app/templates/pages/_my_delegations.html:11
-msgid "我授權的代理"
-msgstr "Delegations I Granted"
+#: app/templates/pages/_my_proxy_assignments.html:11
+msgid "我授出的代理"
+msgstr "Proxy assignments I granted"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:135
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:182
@@ -3527,8 +3527,8 @@ msgstr "Delegations I Granted"
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:75
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:91
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:44
-#: app/templates/pages/_my_delegations.html:12
-#: app/templates/pages/_my_delegations.html:45
+#: app/templates/pages/_my_proxy_assignments.html:12
+#: app/templates/pages/_my_proxy_assignments.html:44
 #: app/templates/pages/admin/_settings_login_security_section.html:10
 #: app/templates/pages/admin/_settings_recipients_section.html:15
 #: app/templates/pages/admin/_settings_smtp_section.html:15
@@ -3555,18 +3555,37 @@ msgstr "Delegations I Granted"
 msgid "載入中..."
 msgstr "Loading..."
 
-#: app/templates/pages/_my_delegations.html:13
-msgid "目前沒有你授權出去的代理。"
-msgstr "You have not delegated any approvals yet."
+#: app/templates/pages/_my_proxy_assignments.html:13
+msgid "目前沒有你授出的代理指派。"
+msgstr "You have not granted any proxy assignments."
 
-#: app/templates/pages/_my_delegations.html:18
-#: app/templates/pages/_my_delegations.html:77
-#: app/templates/pages/delegations/create.html:49
-#: app/templates/pages/delegations/edit.html:39
-#: app/templates/pages/delegations/list.html:23
-#: app/templates/pages/delegations/view.html:31
-msgid "被授權人"
-msgstr "authorized person"
+#: app/templates/pages/_my_proxy_assignments.html:18
+#: app/templates/pages/_my_proxy_assignments.html:82
+msgid "代理人"
+msgstr "Proxy"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:330
+#: app/templates/pages/_my_proxy_assignments.html:19
+#: app/templates/pages/_my_proxy_assignments.html:51
+#: app/templates/pages/access_center/_tab_accounts.html:154
+#: app/templates/pages/access_center/_tab_health.html:108
+#: app/templates/pages/access_center/_tab_roles.html:4
+#: app/templates/pages/access_center/index.html:23
+#: app/templates/pages/dev/portal_quick_login.html:227
+#: app/templates/pages/external-users/edit.html:134
+#: app/templates/pages/modules/list.html:156
+#: app/templates/pages/platform_help/org_admin.html:83
+#: app/templates/pages/platform_help/org_admin.html:104
+#: app/templates/pages/platform_help/org_admin.html:133
+#: app/templates/pages/platform_help/org_admin.html:399
+#: app/templates/pages/profile/view.html:18
+#: app/templates/pages/users/edit.html:89
+#: app/templates/pages/users/edit.html:103
+#: app/templates/pages/users/view.html:39
+#: app/templates/pages/users/view.html:109
+#: app/templates/pages/users/view.html:174
+msgid "角色"
+msgstr "Role"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:245
 #: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:295
@@ -3595,8 +3614,8 @@ msgstr "authorized person"
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:43
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:191
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:17
-#: app/templates/pages/_my_delegations.html:19
-#: app/templates/pages/_my_delegations.html:52
+#: app/templates/pages/_my_proxy_assignments.html:20
+#: app/templates/pages/_my_proxy_assignments.html:52
 #: app/templates/pages/admin/_settings_recipients_section.html:31
 #: app/templates/pages/admin/_settings_smtp_section.html:32
 #: app/templates/pages/admin/_settings_telegram_section.html:31
@@ -3609,8 +3628,6 @@ msgstr "authorized person"
 #: app/templates/pages/approval_categories/list.html:97
 #: app/templates/pages/approval_categories/list.html:183
 #: app/templates/pages/cg_databases/overview.html:213
-#: app/templates/pages/delegations/list.html:25
-#: app/templates/pages/delegations/view.html:68
 #: app/templates/pages/external-users/list.html:37
 #: app/templates/pages/external-users/view.html:57
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:95
@@ -3652,72 +3669,75 @@ msgstr "authorized person"
 msgid "狀態"
 msgstr "Status"
 
-#: app/templates/pages/_my_delegations.html:20
-#: app/templates/pages/_my_delegations.html:53
-#: app/templates/pages/delegations/list.html:26
-msgid "生效期間"
+#: app/templates/pages/_my_proxy_assignments.html:21
+#: app/templates/pages/_my_proxy_assignments.html:53
+msgid "效期"
 msgstr "Effective period"
 
-#: app/templates/pages/_my_delegations.html:21
-#: app/templates/pages/_my_delegations.html:54
-#: app/templates/pages/_my_delegations.html:94
-#: app/templates/pages/delegations/create.html:114
-#: app/templates/pages/delegations/edit.html:99
-#: app/templates/pages/delegations/view.html:92
-msgid "授權原因"
-msgstr "Authorization reason"
+#: app/templates/pages/_my_proxy_assignments.html:22
+#: app/templates/pages/_my_proxy_assignments.html:54
+#: app/templates/pages/_my_proxy_assignments.html:99
+#: app/templates/pages/access_center/_tab_accounts.html:207
+msgid "事由"
+msgstr "Reason"
 
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:231
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:61
-#: app/templates/pages/_my_delegations.html:34
+#: app/templates/pages/_my_proxy_assignments.html:35
 #: app/templates/pages/security/api_keys.html:66
 msgid "撤銷"
 msgstr "Revoke"
 
-#: app/templates/pages/_my_delegations.html:44
+#: app/templates/pages/_my_proxy_assignments.html:43
 msgid "我代理的"
 msgstr "Delegations I Cover"
 
-#: app/templates/pages/_my_delegations.html:46
-msgid "目前沒有人授權你代理。"
-msgstr "No one has delegated approvals to you yet."
+#: app/templates/pages/_my_proxy_assignments.html:45
+msgid "目前沒有人指定你代理。"
+msgstr "No one has assigned you as proxy."
 
-#: app/templates/pages/_my_delegations.html:51
-#: app/templates/pages/delegations/create.html:34
-#: app/templates/pages/delegations/edit.html:28
-#: app/templates/pages/delegations/list.html:22
-#: app/templates/pages/delegations/view.html:18
-msgid "授權人"
-msgstr "Authorizer"
+#: app/templates/pages/_my_proxy_assignments.html:50
+msgid "被代理人"
+msgstr "Proxied person"
 
-#: app/templates/pages/_my_delegations.html:79
-#: app/templates/pages/delegations/create.html:52
-msgid "-- 請選擇被授權人 --"
-msgstr "-- Please select the authorized person --"
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:71
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:110
+#: app/templates/pages/_my_proxy_assignments.html:67
+msgid "放棄"
+msgstr "give up"
 
-#: app/templates/pages/_my_delegations.html:86
-#: app/templates/pages/delegations/create.html:100
-#: app/templates/pages/delegations/view.html:84
+#: app/templates/pages/_my_proxy_assignments.html:84
+msgid "-- 請選擇代理人 --"
+msgstr "-- Select proxy --"
+
+#: app/templates/pages/_my_proxy_assignments.html:91
 msgid "生效開始"
 msgstr "Effective start"
 
-#: app/templates/pages/_my_delegations.html:90
-#: app/templates/pages/delegations/create.html:107
-#: app/templates/pages/delegations/view.html:88
+#: app/templates/pages/_my_proxy_assignments.html:95
 msgid "生效結束"
 msgstr "Effective end"
 
-#: app/templates/pages/_my_delegations.html:98
-msgid "代理類型為全權代理：生效期間內，你能簽的單被授權人都能簽。"
-msgstr ""
-"Delegation type is full delegation: during the effective period, the "
-"delegate can approve anything you can approve."
+#: app/templates/pages/_my_proxy_assignments.html:104
+msgid "將代理以下角色"
+msgstr "Roles to be proxied"
 
-#: app/templates/pages/_my_delegations.html:101
-#: app/templates/pages/calendar/calendar.html:134
-#: app/templates/pages/delegations/create.html:122
-msgid "建立代理授權"
-msgstr "Create Delegation"
+#: app/templates/pages/_my_proxy_assignments.html:110
+msgid "你目前沒有可代理的角色，無法指定代理人"
+msgstr "You currently have no proxyable roles, so you cannot assign a proxy"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:594
+#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:120
+#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:113
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:332
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:109
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:120
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:554
+#: app/templates/pages/_my_proxy_assignments.html:115
+#: app/templates/pages/menu/list.html:91
+#: app/templates/pages/units/create.html:67
+msgid "建立"
+msgstr "Create"
 
 #: app/templates/pages/change_password.html:9
 msgid "返回個人設定"
@@ -4107,7 +4127,7 @@ msgstr "API key integration examples"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_issue_modal.html:20
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_template_modal.html:77
 #: app/templates/pages/admin/_settings_recipients_section.html:267
-#: app/templates/pages/calendar/calendar.html:145
+#: app/templates/pages/calendar/calendar.html:144
 #: app/templates/pages/organizations/list.html:386
 #: app/templates/pages/personal_settings.html:270
 #: app/templates/pages/server_manage/redis_monitor.html:185
@@ -4274,27 +4294,6 @@ msgstr "Assign Role"
 msgid "性質"
 msgstr "Kind"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:330
-#: app/templates/pages/access_center/_tab_accounts.html:154
-#: app/templates/pages/access_center/_tab_health.html:108
-#: app/templates/pages/access_center/_tab_roles.html:4
-#: app/templates/pages/access_center/index.html:23
-#: app/templates/pages/dev/portal_quick_login.html:227
-#: app/templates/pages/external-users/edit.html:134
-#: app/templates/pages/modules/list.html:156
-#: app/templates/pages/platform_help/org_admin.html:83
-#: app/templates/pages/platform_help/org_admin.html:104
-#: app/templates/pages/platform_help/org_admin.html:133
-#: app/templates/pages/platform_help/org_admin.html:399
-#: app/templates/pages/profile/view.html:18
-#: app/templates/pages/users/edit.html:89
-#: app/templates/pages/users/edit.html:103
-#: app/templates/pages/users/view.html:39
-#: app/templates/pages/users/view.html:109
-#: app/templates/pages/users/view.html:174
-msgid "角色"
-msgstr "Role"
-
 #: app/templates/pages/access_center/_tab_accounts.html:156
 msgid "請選擇角色"
 msgstr "Please select a role"
@@ -4312,15 +4311,8 @@ msgid "結束日"
 msgstr "End date"
 
 #: app/templates/pages/access_center/_tab_accounts.html:198
-#: app/templates/pages/delegations/create.html:86
-#: app/templates/pages/delegations/edit.html:71
-#: app/templates/pages/delegations/view.html:56
 msgid "限定表單"
 msgstr "Limited forms"
-
-#: app/templates/pages/access_center/_tab_accounts.html:207
-msgid "事由"
-msgstr "Reason"
 
 #: app/templates/pages/access_center/_tab_functions.html:4
 #: app/templates/pages/access_center/index.html:19
@@ -5881,9 +5873,6 @@ msgstr "Expiration Date"
 
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:20
 #: app/templates/pages/admin/module_list.html:126
-#: app/templates/pages/delegations/edit.html:112
-#: app/templates/pages/delegations/list.html:66
-#: app/templates/pages/delegations/view.html:75
 #: app/templates/pages/organizations/list.html:308 app/web/admin.py:27
 msgid "已過期"
 msgstr "Expired"
@@ -6485,7 +6474,6 @@ msgstr "Preview failed"
 #: app/templates/pages/approval_categories/edit.html:87
 #: app/templates/pages/approval_categories/limits.html:83
 #: app/templates/pages/approval_categories/list.html:196
-#: app/templates/pages/delegations/edit.html:121
 #: app/templates/pages/external-users/edit.html:64
 #: app/templates/pages/job_families/edit.html:91
 #: app/templates/pages/job_families/list.html:194
@@ -6708,7 +6696,6 @@ msgstr "(Must retain at least one enabled administrator)"
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:32
 #: app/templates/pages/admin/org-admins/list.html:44
 #: app/templates/pages/cg_databases/overview.html:187
-#: app/templates/pages/delegations/view.html:100
 #: app/templates/pages/external-users/view.html:85
 #: app/templates/pages/job_levels/view.html:51
 #: app/templates/pages/modules/list.html:86
@@ -7251,7 +7238,6 @@ msgstr "Added Approval Authority category"
 #: app/templates/pages/approval_categories/create.html:7
 #: app/templates/pages/approval_categories/edit.html:20
 #: app/templates/pages/approval_categories/limits.html:25
-#: app/templates/pages/delegations/create.html:8
 #: app/templates/pages/job_families/create.html:11
 #: app/templates/pages/job_families/edit.html:9
 #: app/templates/pages/job_families/view.html:9
@@ -7398,7 +7384,6 @@ msgid "不可修改"
 msgstr "Cannot be modified"
 
 #: app/templates/pages/approval_categories/edit.html:96
-#: app/templates/pages/delegations/edit.html:130
 #: app/templates/pages/job_families/edit.html:101
 #: app/templates/pages/job_levels/edit.html:96
 #: app/templates/pages/job_titles/edit.html:121
@@ -7691,8 +7676,8 @@ msgid "假日／補假"
 msgstr "Holiday / Comp off"
 
 #: app/templates/pages/calendar/calendar.html:49
-msgid "代理授權"
-msgstr "Delegation"
+msgid "代理指派"
+msgstr "Proxy assignment"
 
 #: app/templates/pages/calendar/calendar.html:50
 msgid "限期職位"
@@ -7722,7 +7707,7 @@ msgstr "No events"
 msgid "這天沒有事件"
 msgstr "No events on this day"
 
-#: app/templates/pages/calendar/calendar.html:144
+#: app/templates/pages/calendar/calendar.html:143
 msgid "在這天新增"
 msgstr "Add on this day"
 
@@ -7856,249 +7841,6 @@ msgstr "operator"
 #: app/templates/pages/cg_databases/overview.html:270
 msgid "無異動記錄"
 msgstr "No abnormal records"
-
-#: app/templates/pages/delegations/create.html:16
-#: app/templates/pages/delegations/list.html:14
-msgid "代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住"
-msgstr ""
-"Delegation is used as the Duty agent when the supervisor is on "
-"vacation/business trip to ensure that the sign-off process does not get "
-"stuck."
-
-#: app/templates/pages/delegations/create.html:37
-msgid "-- 請選擇授權人 --"
-msgstr "-- Please select the authorizer --"
-
-#: app/templates/pages/delegations/create.html:45
-msgid "原本負責簽核的人 (如: 休假的主管)"
-msgstr "The person originally responsible for sign-off (e.g. supervisor on leave)"
-
-#: app/templates/pages/delegations/create.html:60
-msgid "代理簽核的人 (如: 代理主管)"
-msgstr "The person who signs off on behalf of the person (e.g. acting supervisor)"
-
-#: app/templates/pages/delegations/create.html:64
-#: app/templates/pages/delegations/list.html:24
-#: app/templates/pages/delegations/view.html:44
-msgid "代理類型"
-msgstr "Agent type"
-
-#: app/templates/pages/delegations/create.html:77
-#: app/templates/pages/delegations/edit.html:63
-msgid "簽核金額上限"
-msgstr "Maximum amount of approval"
-
-#: app/templates/pages/delegations/create.html:81
-msgid "如: 100000"
-msgstr "Such as: 100000"
-
-#: app/templates/pages/delegations/create.html:82
-msgid "超過此金額需要原授權人或更高層簽核"
-msgstr ""
-"Amounts exceeding this amount require approval from the original "
-"authorizer or higher level"
-
-#: app/templates/pages/delegations/create.html:92
-#: app/templates/pages/delegations/edit.html:77
-#, python-format
-msgid "%(name)s（%(code)s）"
-msgstr "%(name)s (%(code)s)"
-
-#: app/templates/pages/delegations/create.html:96
-#: app/templates/pages/delegations/edit.html:81
-msgid "只在這些表單的簽核關卡上代理；其他表單不放行"
-msgstr "Delegate only approval steps for these forms; other forms are not allowed"
-
-#: app/templates/pages/delegations/create.html:117
-msgid "如: 休假出國 12/20-12/25"
-msgstr "For example: Going abroad on vacation 12/20-12/25"
-
-#: app/templates/pages/delegations/edit.html:4
-#: app/templates/pages/delegations/edit.html:7
-msgid "編輯代理授權"
-msgstr "Edit Delegation"
-
-#: app/templates/pages/delegations/edit.html:10
-#: app/templates/pages/delegations/view.html:10
-#: app/templates/pages/job_levels/edit.html:9
-#: app/templates/pages/job_levels/view.html:9
-#: app/templates/pages/job_titles/edit.html:9
-#: app/templates/pages/job_titles/view.html:9
-#: app/templates/pages/positions/edit.html:10
-#: app/templates/pages/positions/view.html:10
-msgid "[返回列表]"
-msgstr "[Return to list]"
-
-#: app/templates/pages/delegations/edit.html:11
-#: app/templates/pages/job_levels/edit.html:10
-#: app/templates/pages/job_titles/edit.html:10
-#: app/templates/pages/positions/edit.html:11
-msgid "[查看詳情]"
-msgstr "[View details]"
-
-#: app/templates/pages/delegations/edit.html:35
-#: app/templates/pages/delegations/edit.html:46
-#: app/templates/pages/job_levels/edit.html:20
-#: app/templates/pages/job_levels/list.html:127
-#: app/templates/pages/job_titles/edit.html:20
-#: app/templates/pages/job_titles/list.html:154
-#: app/templates/pages/positions/edit.html:22
-msgid "(不可修改)"
-msgstr "(cannot be modified)"
-
-#: app/templates/pages/delegations/edit.html:50
-msgid "代理類型 *"
-msgstr "Agent type *"
-
-#: app/templates/pages/delegations/edit.html:85
-msgid "生效開始 *"
-msgstr "Effective from *"
-
-#: app/templates/pages/delegations/edit.html:92
-msgid "生效結束 *"
-msgstr "Effective end *"
-
-#: app/templates/pages/delegations/edit.html:105
-msgid "目前狀態"
-msgstr "current status"
-
-#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:19
-#: app/templates/pages/delegations/edit.html:108
-#: app/templates/pages/delegations/list.html:62
-#: app/templates/pages/delegations/view.html:71
-msgid "生效中"
-msgstr "Active"
-
-#: app/templates/pages/delegations/edit.html:110
-#: app/templates/pages/delegations/list.html:64
-#: app/templates/pages/delegations/view.html:73
-msgid "待生效"
-msgstr "Pending"
-
-#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:21
-#: app/templates/pages/delegations/edit.html:114
-#: app/templates/pages/delegations/list.html:68
-#: app/templates/pages/delegations/view.html:77
-msgid "已撤銷"
-msgstr "Revoked"
-
-#: app/templates/pages/delegations/edit.html:116
-msgid "(依日期自動判定)"
-msgstr "(automatically determined based on date)"
-
-#: app/templates/pages/delegations/edit.html:135
-msgid "由管理員手動撤銷"
-msgstr "Revoked manually by administrator"
-
-#: app/templates/pages/delegations/edit.html:137
-#: app/templates/pages/delegations/view.html:121
-msgid "撤銷授權"
-msgstr "Revoke authorization"
-
-#: app/templates/pages/delegations/edit.html:144
-msgid "刪除紀錄"
-msgstr "Delete record"
-
-#: app/templates/pages/delegations/list.html:4
-#: app/templates/pages/delegations/list.html:7
-msgid "代理授權管理"
-msgstr "Delegation Management"
-
-#: app/templates/pages/delegations/list.html:10
-msgid "[新增代理授權]"
-msgstr "[New Delegation]"
-
-#: app/templates/pages/delegations/list.html:17
-#, python-format
-msgid "共 %(count)s 筆代理授權"
-msgstr "%(count)s Delegations total"
-
-#: app/templates/pages/delegations/list.html:48
-#: app/templates/pages/delegations/view.html:47 app/web/delegations.py:265
-msgid "全權代理"
-msgstr "Fully authorized agent"
-
-#: app/templates/pages/delegations/list.html:50
-#: app/templates/pages/delegations/view.html:49 app/web/delegations.py:266
-msgid "限額代理"
-msgstr "Quota Agent"
-
-#: app/templates/pages/delegations/list.html:53
-#: app/templates/pages/delegations/view.html:56 app/web/delegations.py:267
-msgid "特定代理"
-msgstr "specific agent"
-
-#: app/templates/pages/delegations/list.html:78
-#: app/templates/pages/positions/list.html:64
-#: app/templates/pages/units/list.html:44
-msgid "[查看]"
-msgstr "[View]"
-
-#: app/templates/pages/delegations/list.html:80
-#: app/templates/pages/delegations/view.html:12
-#: app/templates/pages/job_levels/view.html:10
-#: app/templates/pages/job_titles/view.html:10
-#: app/templates/pages/positions/list.html:65
-#: app/templates/pages/positions/view.html:11
-#: app/templates/pages/units/list.html:45
-#: app/templates/pages/units/view.html:14
-#: app/templates/pages/users/view.html:21
-msgid "[編輯]"
-msgstr "[edit]"
-
-#: app/templates/pages/delegations/list.html:86
-msgid "尚無代理授權"
-msgstr "No Delegation yet"
-
-#: app/templates/pages/delegations/view.html:4
-#: app/templates/pages/delegations/view.html:7
-msgid "代理授權詳情"
-msgstr "Delegation details"
-
-#: app/templates/pages/delegations/view.html:24
-msgid "(原本負責簽核的人)"
-msgstr "(The person originally responsible for signing)"
-
-#: app/templates/pages/delegations/view.html:37
-msgid "(代理簽核的人)"
-msgstr "(person signing on behalf of the person)"
-
-#: app/templates/pages/delegations/view.html:47
-msgid "代理所有權限"
-msgstr "Agent all rights"
-
-#: app/templates/pages/delegations/view.html:49
-msgid "簽核金額上限:"
-msgstr "Maximum amount of approval:"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:49
-#: app/templates/pages/delegations/view.html:96
-msgid "建立者"
-msgstr "founder"
-
-#: app/templates/pages/delegations/view.html:105
-msgid "撤銷者"
-msgstr "Undoer"
-
-#: app/templates/pages/delegations/view.html:109
-msgid "撤銷時間"
-msgstr "Undo time"
-
-#: app/templates/pages/delegations/view.html:113
-msgid "撤銷原因"
-msgstr "Reason for withdrawal"
-
-#: app/templates/pages/delegations/view.html:126
-msgid "撤銷原因:"
-msgstr "Reason for cancellation:"
-
-#: app/templates/pages/delegations/view.html:127
-msgid "如: 授權人已返回"
-msgstr "For example: The authorizer has returned"
-
-#: app/templates/pages/delegations/view.html:130
-msgid "撤銷代理授權"
-msgstr "Revoke Delegation"
 
 #: app/templates/pages/dev/portal_quick_login.html:6
 msgid "Portal 帳號快速切換 - BeakPlatform 開發工具"
@@ -9745,6 +9487,29 @@ msgstr "Edit Job Level - %(name)s"
 msgid "編輯職等: %(name)s"
 msgstr "Edit Job Level: %(name)s"
 
+#: app/templates/pages/job_levels/edit.html:9
+#: app/templates/pages/job_levels/view.html:9
+#: app/templates/pages/job_titles/edit.html:9
+#: app/templates/pages/job_titles/view.html:9
+#: app/templates/pages/positions/edit.html:10
+#: app/templates/pages/positions/view.html:10
+msgid "[返回列表]"
+msgstr "[Return to list]"
+
+#: app/templates/pages/job_levels/edit.html:10
+#: app/templates/pages/job_titles/edit.html:10
+#: app/templates/pages/positions/edit.html:11
+msgid "[查看詳情]"
+msgstr "[View details]"
+
+#: app/templates/pages/job_levels/edit.html:20
+#: app/templates/pages/job_levels/list.html:127
+#: app/templates/pages/job_titles/edit.html:20
+#: app/templates/pages/job_titles/list.html:154
+#: app/templates/pages/positions/edit.html:22
+msgid "(不可修改)"
+msgstr "(cannot be modified)"
+
 #: app/templates/pages/job_levels/edit.html:24
 msgid "職等名稱 *"
 msgstr "Job Level name *"
@@ -9883,6 +9648,16 @@ msgstr "Job Title"
 #, python-format
 msgid "%(name)s - 職等詳情"
 msgstr "%(name)s - Job Level Details"
+
+#: app/templates/pages/job_levels/view.html:10
+#: app/templates/pages/job_titles/view.html:10
+#: app/templates/pages/positions/list.html:65
+#: app/templates/pages/positions/view.html:11
+#: app/templates/pages/units/list.html:45
+#: app/templates/pages/units/view.html:14
+#: app/templates/pages/users/view.html:21
+msgid "[編輯]"
+msgstr "[edit]"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:106
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:111
@@ -10292,18 +10067,6 @@ msgstr ""
 #: app/templates/pages/menu/list.html:87
 msgid "例：監控管理"
 msgstr "e.g. Monitoring Management"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:594
-#: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:120
-#: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:113
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:332
-#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:109
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:120
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:554
-#: app/templates/pages/menu/list.html:91
-#: app/templates/pages/units/create.html:67
-msgid "建立"
-msgstr "Create"
 
 #: app/templates/pages/menu/list.html:105
 msgid "尚無選單項目。"
@@ -12185,6 +11948,11 @@ msgstr "%(positions)s Position assignments total"
 msgid "生效日"
 msgstr "Effective date"
 
+#: app/templates/pages/positions/list.html:64
+#: app/templates/pages/units/list.html:44
+msgid "[查看]"
+msgstr "[View]"
+
 #: app/templates/pages/positions/list.html:70
 msgid "尚無職位指派"
 msgstr "No job assignments yet"
@@ -13491,76 +13259,6 @@ msgstr "Approval limits saved"
 msgid "(集團已刪除)"
 msgstr "(conglomerate deleted)"
 
-#: app/web/delegations.py:136
-msgid "全權代理 - 代理所有權限"
-msgstr "Full delegation - delegate all permissions"
-
-#: app/web/delegations.py:137
-msgid "限額代理 - 設定簽核金額上限"
-msgstr "Limited approval delegation - set an approval amount limit"
-
-#: app/web/delegations.py:138
-msgid "特定代理 - 限定表單模板"
-msgstr "Specific delegation - limit to form templates"
-
-#: app/web/delegations.py:164
-msgid "請選擇授權人"
-msgstr "Please select a delegator"
-
-#: app/web/delegations.py:166
-msgid "請選擇被授權人"
-msgstr "Please select a delegate"
-
-#: app/web/delegations.py:168
-msgid "授權人和被授權人不能相同"
-msgstr "Delegator and delegate cannot be the same"
-
-#: app/web/delegations.py:170
-msgid "生效開始日期為必填"
-msgstr "Effective start date is required"
-
-#: app/web/delegations.py:172
-msgid "生效結束日期為必填"
-msgstr "Effective end date is required"
-
-#: app/web/delegations.py:181 app/web/delegations.py:287
-msgid "生效開始日期格式錯誤"
-msgstr "Invalid effective start date format"
-
-#: app/web/delegations.py:187 app/web/delegations.py:293
-msgid "生效結束日期格式錯誤"
-msgstr "Invalid effective end date format"
-
-#: app/web/delegations.py:197 app/web/job_levels.py:117
-#: app/web/job_levels.py:234
-msgid "簽核金額上限不可為負數"
-msgstr "Approval amount limit cannot be negative"
-
-#: app/web/delegations.py:199 app/web/delegations.py:303
-#: app/web/job_levels.py:119 app/web/job_levels.py:236
-msgid "簽核金額上限格式錯誤"
-msgstr "Invalid approval amount limit format"
-
-#: app/web/delegations.py:207 app/web/delegations.py:310
-msgid "特定代理至少要選一個表單"
-msgstr "Specific delegation requires at least one form"
-
-#: app/web/delegations.py:235
-msgid "已建立代理授權"
-msgstr "Delegation created"
-
-#: app/web/delegations.py:331
-msgid "已更新代理授權"
-msgstr "Delegation updated"
-
-#: app/web/delegations.py:362
-msgid "已撤銷代理授權"
-msgstr "Delegation revoked"
-
-#: app/web/delegations.py:382
-msgid "已刪除代理授權"
-msgstr "Delegation deleted"
-
 #: app/web/dev.py:267 app/web/dev.py:371
 msgid "找不到子系統，或此子系統沒有 portal.db"
 msgstr "Subsystem not found, or this subsystem has no portal.db"
@@ -13840,6 +13538,14 @@ msgstr "Job level sequence must be between 0 and 9999"
 #: app/web/job_levels.py:109 app/web/job_levels.py:226
 msgid "職等序號須為整數"
 msgstr "Job level sequence must be an integer"
+
+#: app/web/job_levels.py:117 app/web/job_levels.py:234
+msgid "簽核金額上限不可為負數"
+msgstr "Approval amount limit cannot be negative"
+
+#: app/web/job_levels.py:119 app/web/job_levels.py:236
+msgid "簽核金額上限格式錯誤"
+msgstr "Invalid approval amount limit format"
 
 #: app/web/job_levels.py:149
 #, python-format
@@ -15948,6 +15654,14 @@ msgstr "DEFERRED (deferred)"
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:12
 msgid "風險調整紀錄"
 msgstr "Risk Adjustment Records"
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:19
+msgid "生效中"
+msgstr "Active"
+
+#: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:21
+msgid "已撤銷"
+msgstr "Revoked"
 
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:22
 msgid "已取代"
@@ -20803,6 +20517,10 @@ msgstr "+ Added independent specifications"
 msgid "獨立規格 ("
 msgstr "independent specification ("
 
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:49
+msgid "建立者"
+msgstr "founder"
+
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:50
 msgid "最後更新"
 msgstr "last updated"
@@ -21299,11 +21017,6 @@ msgstr "Save and leave"
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:227
 msgid "另存新版"
 msgstr "Save new version as"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:71
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:110
-msgid "放棄"
-msgstr "give up"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:77
 msgid "從範本載入表單結構"
@@ -24504,4 +24217,212 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "未指定"
 #~ msgstr "unspecified"
+
+#~ msgid "被授權人無效"
+#~ msgstr "The delegate is invalid."
+
+#~ msgid "這筆代理授權已撤銷"
+#~ msgstr "This delegation has already been revoked."
+
+#~ msgid "新增代理授權"
+#~ msgstr "Add Delegation"
+
+#~ msgid "被授權人"
+#~ msgstr "authorized person"
+
+#~ msgid "授權原因"
+#~ msgstr "Authorization reason"
+
+#~ msgid "授權人"
+#~ msgstr "Authorizer"
+
+#~ msgid "-- 請選擇被授權人 --"
+#~ msgstr "-- Please select the authorized person --"
+
+#~ msgid "代理類型為全權代理：生效期間內，你能簽的單被授權人都能簽。"
+#~ msgstr ""
+#~ "Delegation type is full delegation: "
+#~ "during the effective period, the "
+#~ "delegate can approve anything you can"
+#~ " approve."
+
+#~ msgid "建立代理授權"
+#~ msgstr "Create Delegation"
+
+#~ msgid "代理授權"
+#~ msgstr "Delegation"
+
+#~ msgid "代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住"
+#~ msgstr ""
+#~ "Delegation is used as the Duty "
+#~ "agent when the supervisor is on "
+#~ "vacation/business trip to ensure that "
+#~ "the sign-off process does not get"
+#~ " stuck."
+
+#~ msgid "-- 請選擇授權人 --"
+#~ msgstr "-- Please select the authorizer --"
+
+#~ msgid "原本負責簽核的人 (如: 休假的主管)"
+#~ msgstr ""
+#~ "The person originally responsible for "
+#~ "sign-off (e.g. supervisor on leave)"
+
+#~ msgid "代理簽核的人 (如: 代理主管)"
+#~ msgstr ""
+#~ "The person who signs off on behalf"
+#~ " of the person (e.g. acting "
+#~ "supervisor)"
+
+#~ msgid "代理類型"
+#~ msgstr "Agent type"
+
+#~ msgid "簽核金額上限"
+#~ msgstr "Maximum amount of approval"
+
+#~ msgid "如: 100000"
+#~ msgstr "Such as: 100000"
+
+#~ msgid "超過此金額需要原授權人或更高層簽核"
+#~ msgstr ""
+#~ "Amounts exceeding this amount require "
+#~ "approval from the original authorizer or"
+#~ " higher level"
+
+#~ msgid "%(name)s（%(code)s）"
+#~ msgstr "%(name)s (%(code)s)"
+
+#~ msgid "只在這些表單的簽核關卡上代理；其他表單不放行"
+#~ msgstr ""
+#~ "Delegate only approval steps for these"
+#~ " forms; other forms are not allowed"
+
+#~ msgid "如: 休假出國 12/20-12/25"
+#~ msgstr "For example: Going abroad on vacation 12/20-12/25"
+
+#~ msgid "編輯代理授權"
+#~ msgstr "Edit Delegation"
+
+#~ msgid "代理類型 *"
+#~ msgstr "Agent type *"
+
+#~ msgid "生效開始 *"
+#~ msgstr "Effective from *"
+
+#~ msgid "生效結束 *"
+#~ msgstr "Effective end *"
+
+#~ msgid "目前狀態"
+#~ msgstr "current status"
+
+#~ msgid "待生效"
+#~ msgstr "Pending"
+
+#~ msgid "(依日期自動判定)"
+#~ msgstr "(automatically determined based on date)"
+
+#~ msgid "由管理員手動撤銷"
+#~ msgstr "Revoked manually by administrator"
+
+#~ msgid "撤銷授權"
+#~ msgstr "Revoke authorization"
+
+#~ msgid "刪除紀錄"
+#~ msgstr "Delete record"
+
+#~ msgid "代理授權管理"
+#~ msgstr "Delegation Management"
+
+#~ msgid "[新增代理授權]"
+#~ msgstr "[New Delegation]"
+
+#~ msgid "共 %(count)s 筆代理授權"
+#~ msgstr "%(count)s Delegations total"
+
+#~ msgid "全權代理"
+#~ msgstr "Fully authorized agent"
+
+#~ msgid "限額代理"
+#~ msgstr "Quota Agent"
+
+#~ msgid "尚無代理授權"
+#~ msgstr "No Delegation yet"
+
+#~ msgid "代理授權詳情"
+#~ msgstr "Delegation details"
+
+#~ msgid "(原本負責簽核的人)"
+#~ msgstr "(The person originally responsible for signing)"
+
+#~ msgid "(代理簽核的人)"
+#~ msgstr "(person signing on behalf of the person)"
+
+#~ msgid "代理所有權限"
+#~ msgstr "Agent all rights"
+
+#~ msgid "簽核金額上限:"
+#~ msgstr "Maximum amount of approval:"
+
+#~ msgid "撤銷者"
+#~ msgstr "Undoer"
+
+#~ msgid "撤銷時間"
+#~ msgstr "Undo time"
+
+#~ msgid "撤銷原因"
+#~ msgstr "Reason for withdrawal"
+
+#~ msgid "撤銷原因:"
+#~ msgstr "Reason for cancellation:"
+
+#~ msgid "如: 授權人已返回"
+#~ msgstr "For example: The authorizer has returned"
+
+#~ msgid "撤銷代理授權"
+#~ msgstr "Revoke Delegation"
+
+#~ msgid "全權代理 - 代理所有權限"
+#~ msgstr "Full delegation - delegate all permissions"
+
+#~ msgid "限額代理 - 設定簽核金額上限"
+#~ msgstr "Limited approval delegation - set an approval amount limit"
+
+#~ msgid "特定代理 - 限定表單模板"
+#~ msgstr "Specific delegation - limit to form templates"
+
+#~ msgid "請選擇授權人"
+#~ msgstr "Please select a delegator"
+
+#~ msgid "請選擇被授權人"
+#~ msgstr "Please select a delegate"
+
+#~ msgid "授權人和被授權人不能相同"
+#~ msgstr "Delegator and delegate cannot be the same"
+
+#~ msgid "生效開始日期為必填"
+#~ msgstr "Effective start date is required"
+
+#~ msgid "生效結束日期為必填"
+#~ msgstr "Effective end date is required"
+
+#~ msgid "生效開始日期格式錯誤"
+#~ msgstr "Invalid effective start date format"
+
+#~ msgid "生效結束日期格式錯誤"
+#~ msgstr "Invalid effective end date format"
+
+#~ msgid "特定代理至少要選一個表單"
+#~ msgstr "Specific delegation requires at least one form"
+
+#~ msgid "已建立代理授權"
+#~ msgstr "Delegation created"
+
+#~ msgid "已更新代理授權"
+#~ msgstr "Delegation updated"
+
+#~ msgid "已撤銷代理授權"
+#~ msgstr "Delegation revoked"
+
+#~ msgid "已刪除代理授權"
+#~ msgstr "Delegation deleted"
 

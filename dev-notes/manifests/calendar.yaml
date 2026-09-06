@@ -18,6 +18,7 @@ files:
     - backend/app/services/calendar_event_service.py
     - backend/app/services/calendar_projection_service.py
     - backend/app/services/calendar_visibility.py
+    - backend/app/services/proxy_assignment_service.py
     - backend/app/services/time_context_service.py    # TimeContext 起步：who_on_duty / who_on_leave（第三期第 3 項）
   utils:
     - backend/app/utils/calendar_time.py
@@ -49,7 +50,7 @@ tables:
   related:
     - work_schedules
     - schedule_holidays
-    - delegations
+    - user_role_assignments
     - employee_positions
     - lookup_items
     - fw_node_execution_queue

@@ -34,6 +34,7 @@ USAGE = """用法:
   3. 回填 DEPT_HEAD@單位 給既有正、副主管正式指派
   4. 既有 DEPT_MANAGER＋缺席順位關卡改指 DEPT_HEAD
   5. DEPT_PROXY1／DEPT_PROXY2 指派各遷成 DEPT_HEAD／DEPT_MANAGER／DEPT_DEPUTY 三列候補（standby），角色退役（決策點 K2）
+  6. 未到期且未撤銷的 delegations 遷成角色 proxy 指派列，並全域退役舊代理選單與 DELEGATED 條件
 
   --dry-run 只顯示結果；--apply 才會寫入資料庫。
 """
@@ -112,6 +113,18 @@ def _empty_counts():
         'standby_revived': 0,
         'standby_skipped': 0,
         'proxy_roles_deleted': 0,
+        'delegation_migrated': 0,
+        'delegation_skipped_empty_scope': 0,
+        'delegation_skipped_approval_limit': 0,
+        'delegation_skipped_type': 0,
+        'delegation_skipped_delegate_inactive': 0,
+        'delegation_skipped_no_roles': 0,
+        'proxy_rows_layer_skipped': 0,
+        'proxy_created': 0,
+        'proxy_revived': 0,
+        'proxy_skipped': 0,
+        'menu_retired': 0,
+        'condition_retired': 0,
     }
 
 
@@ -286,8 +299,9 @@ def main():
     with app.app_context():
         from modules.form_workflow.models import FwPublishedFormWorkflow, FwWorkflowTemplate
         from modules.form_workflow.services.manager_gate_migration import migrate_org_manager_gates
+        from app.services.delegation_migration import migrate_org_delegations, retire_delegation_globals
         from app.services.proxy_role_migration import migrate_org_proxy_roles
-        steps = (*STEPS, migrate_org_manager_gates, migrate_org_proxy_roles)
+        steps = (*STEPS, migrate_org_manager_gates, migrate_org_proxy_roles, migrate_org_delegations)
 
         query = Organization.query.filter(Organization.is_deleted == False)  # noqa: E712
         if org_codes:
@@ -315,6 +329,10 @@ def main():
                 _merge_counts(counts, step(org, ctx))
             _merge_counts(total, counts)
             print(f"{org.code}: " + ', '.join(f'{k}={v}' for k, v in counts.items()))
+
+        global_counts = retire_delegation_globals(ctx)
+        _merge_counts(total, global_counts)
+        print('全域: ' + ', '.join(f'{k}={v}' for k, v in global_counts.items()))
 
         if mode == '--apply':
             db.session.commit()

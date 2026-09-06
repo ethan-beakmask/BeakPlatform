@@ -24,7 +24,6 @@ class ConditionType:
     RANK = 'RANK'              # 職等條件 (MIN_RANK, LOWER_RANK)
     TIME = 'TIME'              # 時間條件 (WORK_HOURS, VALID_PERIOD)
     STATUS = 'STATUS'          # 狀態條件 (RESOURCE_STATUS, FLOW_STAGE)
-    DELEGATE = 'DELEGATE'      # 代理條件 (DELEGATED_BY)
 
 
 class PermissionCondition(BaseModel):
@@ -278,16 +277,4 @@ DEFAULT_CONDITIONS = [
         'requires_param': False,
     },
 
-    # 代理條件
-    {
-        'code': 'DELEGATED',
-        'name': '被代理',
-        'description': '透過代理機制取得的權限',
-        'condition_type': ConditionType.DELEGATE,
-        'expression': {
-            'check': 'has_valid_delegation',
-            'delegation_type': 'any'
-        },
-        'requires_param': False,
-    },
 ]

@@ -170,6 +170,7 @@ def assign_role(
     grant_reason=None,
     operator=None,
     source_ref=None,
+    commit=True,
 ):
     """Assign a role to a user with tenant, duplicate, and exclusivity checks."""
     if operator is None:
@@ -245,7 +246,7 @@ def assign_role(
             raise ValueError(_('請填寫指派事由'))
         _assert_regular_holder(org_sc, role_sc, unit_sc, acting_for_sc, _('被代理人必須是此角色的正式持有者'))
         dup_query = dup_query.filter(UserRoleAssignment.acting_for_user_secure_code == acting_for_sc)
-        dup_query = _filter_overlapping(dup_query, valid_from, valid_until)
+        dup_query = filter_overlapping(dup_query, valid_from, valid_until)
         if dup_query.first():
             raise ValueError(_('已有重疊效期的代理指派'))
     else:
@@ -275,7 +276,10 @@ def assign_role(
         grant_reason=reason,
     )
     db.session.add(assignment)
-    db.session.commit()
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
 
     logger.info(
         "Role assigned: %s <- %s by %s",
@@ -289,7 +293,7 @@ def assign_role(
     }
 
 
-def revoke_assignment(org_sc, assignment_sc):
+def revoke_assignment(org_sc, assignment_sc, *, commit=True):
     """Soft-delete a role assignment."""
     assignment = UserRoleAssignment.query.filter(
         UserRoleAssignment.org_secure_code == org_sc,
@@ -311,7 +315,10 @@ def revoke_assignment(org_sc, assignment_sc):
 
     assignment.is_deleted = True
     assignment.deleted_at = datetime.utcnow()
-    db.session.commit()
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
 
     role_name = role.name if role else assignment.role_secure_code
     user_name = user.display_name if user else assignment.user_secure_code
@@ -694,7 +701,7 @@ def list_regular_holders(org_sc, role_sc, unit_sc=None) -> list:
     ]
 
 
-def _filter_overlapping(query, valid_from, valid_until):
+def filter_overlapping(query, valid_from, valid_until):
     return query.filter(
         db.or_(
             UserRoleAssignment.valid_until.is_(None),

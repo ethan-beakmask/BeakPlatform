@@ -20,7 +20,7 @@ chapter_index: true
 - [職位設定](positions.md)
 - [企業成員帳號](users.md)
 - [外部廠商帳號](external_users.md)
-- [代理授權](delegations.md)
+- [代理與候補](delegations.md)
 - [基本班表](work_schedules.md)
 - [編號設定](numbering.md)
 - [權限管理中心](access_center.md)

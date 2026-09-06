@@ -9,9 +9,6 @@ from app.models import (
     CalendarEvent,
     CalendarKind,
     CalendarVisibility,
-    Delegation,
-    DelegationStatus,
-    DelegationType,
     EmployeePosition,
     JobFamily,
     JobFamilyType,
@@ -194,25 +191,74 @@ def test_comp_off_projects_as_holiday_event(test_org, test_user):
                and e['source_secure_code'] == holiday.secure_code for e in events)
 
 
-def test_delegation_audience_filters_without_mask(test_org, test_user, test_admin):
+def test_proxy_audience_filters_without_mask(test_org, test_user, test_admin):
     other = _user('other_user_000000001', test_org, 'other', 'Other')
     today = date(2026, 9, 2)
-    delegation = Delegation(
+    unit = OrganizationalUnit(
         org_secure_code=test_org.secure_code,
-        delegator_secure_code=test_admin.secure_code,
-        delegate_secure_code=test_user.secure_code,
-        delegation_type=DelegationType.FULL,
-        status=DelegationStatus.PENDING,
-        effective_from=today,
-        effective_until=today + timedelta(days=1),
+        code='PROXY',
+        name='Proxy Dept',
+        unit_type='DEPARTMENT',
+        is_active=True,
+        is_deleted=False,
     )
-    db.session.add(delegation)
+    role_a = Role(
+        org_secure_code=test_org.secure_code,
+        code='DEPT_MANAGER',
+        name='部門正主管',
+        role_type=RoleType.POSITION,
+        scope_type=ScopeType.DEPARTMENT,
+        is_active=True,
+        is_deleted=False,
+    )
+    role_b = Role(
+        org_secure_code=test_org.secure_code,
+        code='DEPT_HEAD',
+        name='部門主管',
+        role_type=RoleType.POSITION,
+        scope_type=ScopeType.DEPARTMENT,
+        is_active=True,
+        is_deleted=False,
+    )
+    db.session.add_all([unit, role_a, role_b])
+    db.session.flush()
+    db.session.add_all([
+        UserRoleAssignment(
+            org_secure_code=test_org.secure_code,
+            user_secure_code=test_user.secure_code,
+            role_secure_code=role_a.secure_code,
+            unit_secure_code=unit.secure_code,
+            assignment_kind='proxy',
+            acting_for_user_secure_code=test_admin.secure_code,
+            valid_from=today,
+            valid_until=today + timedelta(days=1),
+            is_deleted=False,
+        ),
+        UserRoleAssignment(
+            org_secure_code=test_org.secure_code,
+            user_secure_code=test_user.secure_code,
+            role_secure_code=role_b.secure_code,
+            unit_secure_code=unit.secure_code,
+            assignment_kind='proxy',
+            acting_for_user_secure_code=test_admin.secure_code,
+            valid_from=today,
+            valid_until=today + timedelta(days=1),
+            is_deleted=False,
+        ),
+    ])
     db.session.commit()
 
-    assert any(e['source_type'] == 'delegation' for e in _build(test_org, test_user)['events'])
-    assert any(e['source_type'] == 'delegation' for e in _build(test_org, test_admin)['events'])
-    assert all(e['source_type'] != 'delegation' and e['masked'] is not True
-               for e in _build(test_org, other)['events'])
+    user_events = [e for e in _build(test_org, test_user)['events'] if e['source_type'] == 'proxy']
+    admin_events = [e for e in _build(test_org, test_admin)['events'] if e['source_type'] == 'proxy']
+    other_events = _build(test_org, other)['events']
+
+    assert len(user_events) == 1
+    assert len(admin_events) == 1
+    assert user_events[0]['event_type'] == 'PROXY'
+    assert '部門正主管@Proxy Dept' in user_events[0]['note']
+    assert '部門主管@Proxy Dept' in user_events[0]['note']
+    assert admin_events[0]['link'].endswith('/access/')
+    assert all(e['source_type'] != 'proxy' and e['masked'] is not True for e in other_events)
 
 
 def test_position_audience_and_ignores_open_ended_positions(test_org, test_user, test_admin):

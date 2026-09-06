@@ -1,15 +1,7 @@
-"""
-BeakMask Delegation Model
-代理授權 Model - 職務代理機制
+"""PF-251 第 3b 期（2026-09-06）退役。
 
-當主管出差、請假時，可授權代理人：
-1. 全權代理 - 代理人可執行所有權限
-2. 限定代理 - 只能簽核特定金額或特定流程
-
-代理授權的重要性：
-- 避免流程卡住（主管不在時）
-- 符合稽核要求（有明確的授權紀錄）
-- 彈性的權限控制（可限定範圍）
+表與 model 留一版供考古；不得新增任何讀寫。有效資料已由
+scripts/migrate_proxy_assignments.py 第六段遷成 user_role_assignments 的 proxy 列。
 """
 from datetime import date, datetime
 from decimal import Decimal

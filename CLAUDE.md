@@ -1399,7 +1399,7 @@ WHERE created_at > (now() AT TIME ZONE 'UTC') - interval '15 minutes'
 
 `/calendar/`（企業）與 `/calendar/me`（個人）畫面上的事件全是
 `backend/app/services/calendar_projection_service.py` 從六種來源投影出來的：`calendar_events`（手建）、
-班表假日、代理授權、限期職位、公告廣播、流程佇列（**只有** Delay 到期、只給管理員）。
+班表假日、代理指派（`user_role_assignments` 的 proxy 列，同一對人同效期合併一筆，`source_type='proxy'`）、限期職位、公告廣播、流程佇列（**只有** Delay 到期、只給管理員）。
 **待簽核任務刻意不投影**（Ethan 2026-09-03 定案：沒有確定開始時間的是待辦不是行事曆，表單量大且已有表單中心），
 第一期曾投影過、同日移除，不要加回來。
 受眾與遮罩**只在** `calendar_visibility.apply_visibility()` 判定——新增來源時產出正規化 dict 並填 `audience`，
@@ -1446,6 +1446,8 @@ org 與 owner 一律取自登入身分、payload 給了也忽略。五件猜不�
 `DEFAULT_TW_HOLIDAYS_2026` 與 `holidays.js::importTWHolidays()` 已刪除；看到舊文件寫「[匯入台灣假日] 只有 2026 年資料」一律過時。
 
 ### 特定代理（PF-71，2026-09-04 起）：限定「表單模板 secure_code」，判定在 task_authorizer 的 scope 一層
+
+**2026-09-07 PF-251 第 3b 期起 `delegations` 整套退役**（`/delegations/` 頁、`Delegation` 讀寫、`/api/my-delegations`、gateway 登記、`DELEGATED` 權限條件全數移除；表與 model 檔留一版考古，程式不得再讀寫）。限定表單改存 `user_role_assignments.allowed_form_templates`（proxy／standby 列），判定在 `role_holding_service.holds()` 的 `form_template_sc_of` 回呼（仍走 `actor['_form_template_cache']`）。下面這段是 PF-71 當時對舊表的實作，僅供考古。
 
 `delegations.allowed_process_types` 從此存 **JSON 陣列的 `fw_form_templates.secure_code`**（管理員頁多選下拉，員工自助 API 仍只建 FULL）。
 `build_actor()` 多回 `delegation_scopes`（授權人 → `None`＝不限表單／set＝限定表單），`resolve_acting_identity()` 在身分比對成立後
@@ -1643,7 +1645,7 @@ heredoc 建企業、`init_menus.py`、`init_permissions.py`、`flask module sync
 | 節點執行 log 的欄位 | `fw_node_execution_logs.level` / `.message` / `.data` | **`log_level` / `log_message` / `log_data`**（2026-09-01 撞過）；Telegram 送達憑證在 `log_data` 的 `message_id` |
 | 角色指派是否生效 | `user_role_assignments.is_active` | **沒有這個欄位**；用 `is_deleted` ＋ `valid_from` / `valid_until`（date） |
 | 角色指派的單位維度 | 以為角色是全企業一個扁平集合 | **`user_role_assignments.unit_secure_code`**：NULL＝全企業（對任何單位都算持有），有值＝只在該單位持有（`DEPT_MANAGER@行銷部門`）。簽核授權（PF-247）依此判定：ROLE 型角色由後代單位往祖先套圈（軟體部成員也是資訊群成員），POSITION 型（主管、副主管、代理人）不套圈。查「誰是某部門主管」一律 `role_secure_code`＋`unit_secure_code` 一起下，只用 code 會把全公司的主管都撈進來 |
-| 角色指派的性質（正式／代理／候補） | 去查 `roles` 或 `delegations` | **`user_role_assignments.assignment_kind`**（`regular`／`proxy`／`standby`，2026-09-06 PF-251 第 1 期起；被代理人在 `acting_for_user_secure_code`、限定表單在 `allowed_form_templates` jsonb、來源在 `source_ref`）。`delegations` 表第 3 期才退役，之前兩套並存。用 SQL 直插指派列時 `assignment_kind` 有 DB 預設 `'regular'`，其餘四個 NOT NULL 欄位照下方那列補 |
+| 角色指派的性質（正式／代理／候補） | 去查 `roles` 或 `delegations` | **`user_role_assignments.assignment_kind`**（`regular`／`proxy`／`standby`，2026-09-06 PF-251 第 1 期起；被代理人在 `acting_for_user_secure_code`、限定表單在 `allowed_form_templates` jsonb、來源在 `source_ref`）。`delegations` 已於 2026-09-07（PF-251 第 3b 期）退役，表與 model 檔留考古、程式不再讀寫。用 SQL 直插指派列時 `assignment_kind` 有 DB 預設 `'regular'`，其餘四個 NOT NULL 欄位照下方那列補 |
 | 某人的直屬主管 | `employee_positions.direct_manager_secure_code` | **欄位已於 2026-09-05（PF-247 第 4 期）DROP**，人對人指標退役；直屬主管由 `app.services.unit_resolver.resolve_direct_manager()` 從 `DEPT_MANAGER@單位` 推導（本人是主管或職缺就往上一層，副主管代理人不算）。`dotted_line_manager_secure_code`（虛線主管）仍在。既有環境升級要手動 DROP，create_all 不刪欄位 |
 | 模組 ACL 的表 | `module_access_controls`（複數） | **`module_access_control`**（單數）；`target_type` 是 `ROLE` / `ACCOUNT`，值放 `target_secure_code` |
 | 表單模板的欄位定義 | `fw_form_templates.form_schema` | **`schema`**（jsonb）；另有 `builder_config` / `allowed_editors` |
@@ -1652,7 +1654,7 @@ heredoc 建企業、`init_menus.py`、`init_permissions.py`、`flask module sync
 | migration 登記表 | 查 `schema_migrations` | **表已於 2026-09-01（PF-168）自 dev 庫刪除**，migration 制度廢止、model 即權威；查到引用它的舊文件一律過時 |
 | 編號規則的流水號 counter | `user_numbering_rules.current_counter` / `.code` | **兩個都不存在**；該表只有 `id / secure_code / org_secure_code / name / description / elements / is_active / usage_scope / default_for` 等，**流水號設定與計數藏在 `elements` 這個 jsonb 內**（`components` 陣列裡 `type='sequence'` 的項目）。要看「號碼有沒有被消耗」一律查 `used_user_numbers`，不要找 counter 欄位 |
 | 企業獨立資料庫登記表的必填欄位 | 只填 `org_secure_code` / `org_id` / `db_name` | 還要 **`secure_code`**、**`admin_user`**、**`admin_password_enc`**、**`sync_user`**、**`sync_password_enc`** 五個 NOT NULL（2026-08-29 造測試資料時逐一撞出來，錯誤訊息一次只報一個）。查全部必填：`SELECT column_name FROM information_schema.columns WHERE table_name='fw_org_databases' AND is_nullable='NO';` |
-| 代理授權是否生效 | `delegations.status='ACTIVE'` | **`status` 只是儲存時的快照，沒有排程更新**（2026-09-02 起畫面與簽核授權都改看日期）。SQL 查生效中一律用 `status<>'REVOKED' AND CURRENT_DATE BETWEEN effective_from AND effective_until`（嚴格說日界是企業時區，Python 端用 `Delegation.is_effective_on()` / `effective_status`） |
+| 代理授權是否生效 | `delegations.status='ACTIVE'`（表已於 2026-09-07 PF-251 3b 退役，只剩考古資料） | **代理改看 `user_role_assignments`**：`assignment_kind='proxy' AND is_deleted=false AND CURRENT_DATE BETWEEN valid_from AND valid_until`（日界是企業時區，Python 端 `UserRoleAssignment.is_valid_on(org.local_today())`）；被代理人在 `acting_for_user_secure_code`，自助建立的 `source_ref='self:<sc>'`、遷移來的 `migration:pf251:<delegation sc>` |
 | 行事曆事件的擁有者／可見性 | `calendar_events.user_secure_code` / `is_public` | **`owner_user_secure_code`**（PERSONAL 必填，ORG 為 NULL）／**`visibility`**（`PUBLIC` / `BUSY` / `PRIVATE`）；`calendar_kind` 是 `ORG` / `PERSONAL`。時間欄位 `starts_at` / `ends_at` 存 naive UTC |
 | SMTP 設定組的主機欄位 | `smtp_configs.host` / `port` | **`smtp_host` / `smtp_port`**（另有 `use_tls` / `use_ssl` / `use_app_password` / `provider_type`；2026-09-04 PF-228 起 dev SYSTEM／BELUGA／LION 與 bpserv SYSTEM／DEMOSOC 各一筆 `lionsecbot@gmail.com`、皆 is_default 且實寄過。要給別的測試企業補同一組就跑 `venv/bin/python scripts/seed_smtp_test_config.py --orgs <CODE,...> --apply`——它在同一個 DB 內把系統企業的預設設定組複製過去，Fernet 鑰匙由 `SECRET_KEY` 派生、各企業共用，所以不經手明文、bpserv 也不必重打應用程式密碼） |
 | 用 SQL 造測試角色指派（mutation 驗證常用） | 只填 user/role/org 三個 secure_code | 還要 **`secure_code`**、**`assigned_at`**、**`created_at`**、**`updated_at`** 四個 NOT NULL（DB 無預設、只有 ORM 預設；2026-09-01 與 2026-09-05 各撞一次，錯誤一次只報一個）。`assigned_by` 填可辨識標記（如 `PF145-S5-TEST`），事後 `DELETE FROM user_role_assignments WHERE assigned_by='<標記>'` 一次撤乾淨；成功範例在 `/opt/tmp/verify/20260901-pf145-stage5.log` |
@@ -1692,7 +1694,7 @@ blueprint 的 `url_prefix` 與模組名不一致，照模組名猜必 404：
 | 流程設計器**底圖**清單 | `/api/form-workflow/backgrounds` | **`/api/workflows/backgrounds`**（上傳是同一前綴的 `/upload`；`backgrounds.py` 的 blueprint prefix 就是 `/api/workflows/backgrounds`） |
 | 企業 logo 的資訊與上傳 | `/api/enterprise-settings/logo` | **`/api/admin/settings/logo`**（`enterprise_settings.py` 的 blueprint prefix 是 `/api/admin/settings`，與檔名不一致） |
 | 本人領取自己的 API Key | `/security/api-keys`（那是管理員面） | **`/personal-settings`** 最下方「我的 API Key」區塊；API 是 `/api/my-api-keys`（清單／`<key_sc>/claim`／`<key_sc>/regenerate`），授權條件是**本人**（`applicant_user_secure_code` ＋ `org_secure_code` 雙條件）而不是 permission code |
-| 員工替**自己**建代理授權 | `/delegations/create`（雙鑰匙僅 ORG_ADMIN，員工點了 302 到登入頁） | **`/personal-settings`** 最下方「我的代理授權」區塊（PF-236，2026-09-03）；API `/api/my-delegations`（清單／`candidates`／建立／`<sc>/revoke`），授權人強制本人、類型固定 FULL、EXTERNAL 與 SYSTEM_ADMIN 一律 403。行事曆 toast 的員工連結指到這裡並帶 `?delegation=new&effective_from=…&next=…#my-delegations` 預填。`/delegations/` 管理頁仍是 ORG_ADMIN 專用，規格見 `dev-notes/CALENDAR_SPEC.md` 六之四 |
+| 員工替**自己**指定代理人 | `/delegations/create`（頁面已於 2026-09-07 PF-251 3b 退役，404） | **`/personal-settings`** 最下方「我的代理指派」區塊；API `/api/my-proxy-assignments`（清單 given／received／`candidates`／`my-roles`／建立／`<assignment_sc>/revoke`），被代理人強制本人、建立＝對本人每一列可代理的 regular 角色各建一列 proxy（排除 SYSTEM_ADMIN／ORG_ADMIN／EMPLOYEE／EXTERNAL_USERS 四個層界身分角色，`proxy_assignment_service.IDENTITY_ROLE_CODES`）、事由必填、EXTERNAL 與 SYSTEM_ADMIN 一律 403。行事曆 toast 的連結（管理員與員工同一條）指到這裡並帶 `?proxy=new&effective_from=…&next=…#my-proxy-assignments` 預填。管理員替別人建代理走權限中心「帳號配角色」（性質選代理），規格見 `dev-notes/ROLE_PROXY_ASSIGNMENT_DESIGN.md` |
 | 職級職稱／班表這批管理頁 | `/admin/job-levels/`、`/admin/positions/`、`/admin/work-schedules/` | **`/job-levels/`（`/job-levels/matrix` 是職級職稱矩陣）、`/positions/`、`/job-families/`、`/job-titles/`、`/job-approval-categories/`**，只有班表頁掛在 `/admin/settings/work-schedules`（API 才是 `/api/admin/work-schedules`）。不確定就查 `backend/app/security/route_guard_table.yaml` 該 blueprint 的 `- /` 列（2026-09-04 PF-241 驗收時猜錯三個） |
 | 職位（任職卡）新增頁 | `/positions/new` | **`/positions/create`**（`web/positions.py` 的 route 是 `/create`；`/new` 回 404 是路徑錯不是守門，2026-09-06 bpserv 驗收猜錯） |
 | 帳密登入端點（對非 dev 庫驗登入時，如 fresh install 驗收） | `/login`（回 401） | **`/auth/login`**——GET 登入頁；POST JSON 版 body 是 `account` + `password`（`account` 格式 `username@domain`，例 `admin@system.local`），`@csrf.exempt`。成功回 200，`must_change_password` 帳號會回改密碼 redirect（2026-09-01 PF-168 驗收實測）。dev 庫日常自動化仍一律走 quick-login |
@@ -1801,7 +1803,7 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   `before_request`，比 decorator 早）。跑「哪種身分打得進去」的矩陣時若忘了帶
   token，會看到每一種身分都回 400，看起來像守門完全沒生效，實際上根本還沒走到
   守門那一步（2026-08-31 驗 PF-185 時踩過）。**測授權一律先取 token。**
-  **表單型 POST（非 API，如 `/delegations/create`）的 token 是頁面裡的 hidden input**，
+  **表單型 POST（非 API，如 `/positions/create`）的 token 是頁面裡的 hidden input**，
   `grep -o 'name="csrf_token" value="[^"]*'` 在有 modal 的頁面會命中**兩個**，不加 `head -1`
   會把兩個 token 串成一個送出、回 400（2026-09-03 驗 PF-229 第三期時踩過）。
 

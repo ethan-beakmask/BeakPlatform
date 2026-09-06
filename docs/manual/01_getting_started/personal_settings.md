@@ -5,10 +5,10 @@ order: 30
 nav_menu: personal_settings
 covers:
   - backend/app/web/main.py
-  - backend/app/api/my_delegations.py
+  - backend/app/api/my_proxy_assignments.py
   - backend/app/templates/pages/personal_settings.html
-  - backend/app/templates/pages/_my_delegations.html
-  - backend/app/static/js/my-delegations.js
+  - backend/app/templates/pages/_my_proxy_assignments.html
+  - backend/app/static/js/my-proxy-assignments.js
   - backend/app/templates/pages/change_password.html
 ---
 
@@ -35,7 +35,7 @@ covers:
 | 個人資料 | 英文姓名、本國姓名、暱稱 | 可改 |
 | 聯絡方式 | 備用 Email 1／2、手機 1／2 | 可改 |
 | 介面設定 | Navbar 顯示、語言、時區 | 可改 |
-| 我的代理授權 | 自己授權出去的代理、別人授權給你的代理 | 可替自己新增或撤銷 |
+| 我的代理指派 | 自己授出的代理、自己正在代理的角色 | 可替自己指定代理人、撤銷或放棄 |
 
 ## 備用 Email 決定你收不收得到重設密碼的信
 
@@ -69,27 +69,29 @@ covers:
 時區只影響畫面上時間的顯示方式，不會改動已經存下來的資料；
 出差或外派時改這裡，就能看到當地時間的作業紀錄。
 
-## 我的代理授權
+## 我的代理指派
 
 !!! abstract "作業：替自己設定代理人"
-    **MENU**：個人設定 ／ 我的代理授權
+    **MENU**：個人設定 ／ 我的代理指派
 
-    1. 按 [新增代理授權]
-    2. 選被授權人
+    1. 按 [指定代理人]
+    2. 選代理人
     3. 填生效開始與生效結束
-    4. 授權原因選填
-    5. 按 [建立代理授權]
+    4. 填事由
+    5. 確認「將代理以下角色」清單
+    6. 按 [建立]
 
 !!! abstract "作業：提前結束"
-    **MENU**：個人設定 ／ 我的代理授權
+    **MENU**：個人設定 ／ 我的代理指派
 
-    1. 在該筆代理授權按 [撤銷]
-    2. 確認撤銷。撤銷後不能恢復，需要時請重建一筆
+    1. 在「我授出的代理」按 [撤銷]
+    2. 被別人指定為代理時，可在「我代理的」按 [放棄]
+    3. 確認操作。撤銷或放棄後不能恢復，需要時請重建一筆
 
-- 授權人固定是你自己。要替別人設定代理，請聯絡企業管理員。
-- 類型固定為全權代理：效果同「代理授權」頁的全權代理說明。
-- 狀態依生效期間自動判定：待生效、生效中、已過期、已撤銷；「今天」以企業時區計算。
-- 「我代理的」表格是唯讀；被授權的待簽單會出現在表單中心待簽清單。
+- 被代理人固定是你自己。要替別人設定代理，請聯絡企業管理員。
+- 效期內代理人視同持有你的角色，能簽你能簽的單，也看得到那些角色的選單與功能。
+- 只代理職務角色，企業成員這類身分角色不會被代理。
+- 狀態依效期判定：「待生效」、「生效中」、「已過期」；「今天」以企業時區計算。
 
 ## 變更密碼
 
