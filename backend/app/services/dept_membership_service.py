@@ -446,3 +446,124 @@ def reconcile_dept_manager(manager, unit, operator: str) -> bool:
 
     set_dept_manager(manager, unit, operator)
     return True
+
+
+# ==================== 部門管理層讀取／候補（PF-251 3a-1：API 檔不直接查 model） ====================
+
+# 決策點 K2：部門頁登記的候補代理人對三個主管類角色各寫一列 standby
+LEADERSHIP_STANDBY_ROLE_CODES = ('DEPT_HEAD', 'DEPT_MANAGER', 'DEPT_DEPUTY')
+
+
+def user_brief(user) -> dict:
+    return {
+        'id': user.secure_code,
+        'display_name': user.display_name,
+        'native_name': user.native_name,
+        'english_name': user.english_name,
+        'employee_id': user.employee_id,
+        'email': user.email,
+    }
+
+
+def load_active_user(org_sc: str, user_sc: str):
+    """同企業、未刪除、啟用的帳號（DATA-01）；找不到回 None。"""
+    return User.query.filter(
+        User.secure_code == user_sc,
+        User.org_secure_code == org_sc,
+        User.is_deleted == False,  # noqa: E712
+        User.is_active == True,  # noqa: E712
+    ).first()
+
+
+def regular_position_holder(org_sc: str, role_code: str, unit_sc: str):
+    """該單位某職位角色的第一位 regular 持有者（只看單位指派，不含全企業）；回 User 或 None。"""
+    from app.services.unit_resolver import resolve_role_holders
+
+    role = get_system_role(org_sc, role_code)
+    if not role:
+        return None
+    for user_sc in resolve_role_holders(role.secure_code, org_sc, unit_sc, unit_only=True):
+        user = load_active_user(org_sc, user_sc)
+        if user:
+            return user
+    return None
+
+
+def standby_rows(org_sc: str, unit_sc: str, user_sc: str | None = None):
+    """該單位三個主管角色的未刪除 standby 列（可限定某人）；回 (rows, {role_sc: code})。"""
+    roles = {
+        role.code: role.secure_code
+        for role in Role.query.filter(
+            Role.org_secure_code == org_sc,
+            Role.code.in_(LEADERSHIP_STANDBY_ROLE_CODES),
+            Role.is_deleted == False,  # noqa: E712
+        ).all()
+    }
+    if not roles:
+        return [], {}
+    query = UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == org_sc,
+        UserRoleAssignment.unit_secure_code == unit_sc,
+        UserRoleAssignment.role_secure_code.in_(list(roles.values())),
+        UserRoleAssignment.assignment_kind == AssignmentKind.STANDBY,
+        UserRoleAssignment.is_deleted == False,  # noqa: E712
+    )
+    if user_sc:
+        query = query.filter(UserRoleAssignment.user_secure_code == user_sc)
+    rows = query.order_by(UserRoleAssignment.assigned_at.asc(), UserRoleAssignment.id.asc()).all()
+    return rows, {sc: code for code, sc in roles.items()}
+
+
+def standby_role_codes_held(org_sc: str, unit_sc: str, user_sc: str) -> set[str]:
+    """某人在該單位已持有哪些主管角色的 standby 列（部門頁登記時只補缺的那幾列，不比對錯誤訊息）。"""
+    rows, code_by_sc = standby_rows(org_sc, unit_sc, user_sc)
+    return {code_by_sc[row.role_secure_code] for row in rows if row.role_secure_code in code_by_sc}
+
+
+def list_unit_leadership(org_sc: str, unit_sc: str) -> dict:
+    """部門管理層：{'manager': brief|None, 'deputy': brief|None, 'standby': [brief + standby_roles, ...]}。"""
+    manager = regular_position_holder(org_sc, 'DEPT_MANAGER', unit_sc)
+    deputy = regular_position_holder(org_sc, 'DEPT_DEPUTY', unit_sc)
+
+    rows, code_by_sc = standby_rows(org_sc, unit_sc)
+    ordered = []
+    by_user = {}
+    for row in rows:
+        entry = by_user.get(row.user_secure_code)
+        if entry is None:
+            user = load_active_user(org_sc, row.user_secure_code)
+            if not user:
+                continue
+            entry = user_brief(user)
+            entry['standby_roles'] = []
+            by_user[row.user_secure_code] = entry
+            ordered.append(entry)
+        code = code_by_sc.get(row.role_secure_code)
+        if code and code not in entry['standby_roles']:
+            entry['standby_roles'].append(code)
+
+    return {
+        'manager': user_brief(manager) if manager else None,
+        'deputy': user_brief(deputy) if deputy else None,
+        'standby': ordered,
+    }
+
+
+def remove_unit_standby(org_sc: str, unit_sc: str, user_sc: str):
+    """軟刪某人在該單位三個主管角色的 standby 列（有幾列刪幾列）。不 commit。
+
+    回 (user, removed_count)；帳號不在本企業或已刪除時回 (None, 0)。
+    """
+    user = User.query.filter(
+        User.secure_code == user_sc,
+        User.org_secure_code == org_sc,
+        User.is_deleted == False,  # noqa: E712
+    ).first()
+    if not user:
+        return None, 0
+    rows, _codes = standby_rows(org_sc, unit_sc, user_sc)
+    now = datetime.utcnow()
+    for row in rows:
+        row.is_deleted = True
+        row.deleted_at = now
+    return user, len(rows)

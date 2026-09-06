@@ -22,14 +22,19 @@ from ..services.dept_membership_service import (
     ensure_role_assignment,
     get_system_role,
     purge_unit_memberships,
+    LEADERSHIP_STANDBY_ROLE_CODES,
+    list_unit_leadership,
+    regular_position_holder,
     remove_dept_deputy,
     remove_dept_manager,
     remove_dept_membership,
+    remove_unit_standby as remove_unit_standby_rows,
     set_dept_deputy,
     set_dept_manager,
+    standby_role_codes_held,
+    user_brief,
 )
 from ..services.role_assignment_service import assign_role
-from ..services.unit_resolver import resolve_role_holders
 from .. import db
 
 logger = logging.getLogger(__name__)
@@ -817,88 +822,8 @@ def remove_unit_manager(secure_code: str, user_secure_code: str):
     }), 200
 
 
-def _user_brief(user) -> dict:
-    return {
-        'id': user.secure_code,
-        'display_name': user.display_name,
-        'native_name': user.native_name,
-        'english_name': user.english_name,
-        'employee_id': user.employee_id,
-        'email': user.email,
-    }
-
-
-def _load_active_user(org_sc: str, user_sc: str):
-    return User.query.filter(
-        User.secure_code == user_sc,
-        User.org_secure_code == org_sc,
-        User.is_deleted == False,
-        User.is_active == True,
-    ).first()
-
-
-def _regular_holder(org_sc: str, role_code: str, unit_sc: str):
-    """該單位某職位角色的第一位 regular 持有者（只看單位指派，不含全企業）。"""
-    role = get_system_role(org_sc, role_code)
-    if not role:
-        return None
-    holders = resolve_role_holders(role.secure_code, org_sc, unit_sc, unit_only=True)
-    for user_sc in holders:
-        user = _load_active_user(org_sc, user_sc)
-        if user:
-            return user
-    return None
-
-
-# PF-251 決策點 K2：部門頁登記的候補代理人對三個主管類角色各寫一列 standby
-STANDBY_ROLE_CODES = ('DEPT_HEAD', 'DEPT_MANAGER', 'DEPT_DEPUTY')
+STANDBY_ROLE_CODES = LEADERSHIP_STANDBY_ROLE_CODES   # 決策點 K2：三個主管角色各一列 standby（唯一定義在 dept_membership_service）
 LEADERSHIP_POSITIONS = ('manager', 'deputy', 'standby')
-
-
-def _standby_rows(org_sc: str, unit_sc: str, user_sc: str | None = None):
-    from ..models.associations import AssignmentKind, UserRoleAssignment
-
-    roles = {
-        role.code: role.secure_code
-        for role in Role.query.filter(
-            Role.org_secure_code == org_sc,
-            Role.code.in_(STANDBY_ROLE_CODES),
-            Role.is_deleted == False,
-        ).all()
-    }
-    if not roles:
-        return [], {}
-    query = UserRoleAssignment.query.filter(
-        UserRoleAssignment.org_secure_code == org_sc,
-        UserRoleAssignment.unit_secure_code == unit_sc,
-        UserRoleAssignment.role_secure_code.in_(list(roles.values())),
-        UserRoleAssignment.assignment_kind == AssignmentKind.STANDBY,
-        UserRoleAssignment.is_deleted == False,
-    )
-    if user_sc:
-        query = query.filter(UserRoleAssignment.user_secure_code == user_sc)
-    rows = query.order_by(UserRoleAssignment.assigned_at.asc(), UserRoleAssignment.id.asc()).all()
-    return rows, {sc: code for code, sc in roles.items()}
-
-
-def _standby_users(org_sc: str, unit_sc: str) -> list:
-    rows, code_by_sc = _standby_rows(org_sc, unit_sc)
-    ordered = []
-    by_user = {}
-    for row in rows:
-        entry = by_user.get(row.user_secure_code)
-        if entry is None:
-            user = _load_active_user(org_sc, row.user_secure_code)
-            if not user:
-                continue
-            entry = _user_brief(user)
-            entry['standby_roles'] = []
-            by_user[row.user_secure_code] = entry
-            ordered.append(entry)
-        code = code_by_sc.get(row.role_secure_code)
-        if code and code not in entry['standby_roles']:
-            entry['standby_roles'].append(code)
-    return ordered
 
 
 @units_bp.route('/<secure_code>/manager', methods=['GET'])
@@ -918,8 +843,8 @@ def get_unit_manager(secure_code: str):
     if not unit:
         return jsonify({'error': _('組織單位不存在')}), 404
 
-    manager = _regular_holder(current_user.org_secure_code, 'DEPT_MANAGER', secure_code)
-    return jsonify({'manager': _user_brief(manager) if manager else None}), 200
+    manager = regular_position_holder(current_user.org_secure_code, 'DEPT_MANAGER', secure_code)
+    return jsonify({'manager': user_brief(manager) if manager else None}), 200
 
 
 @units_bp.route('/<secure_code>/leadership', methods=['GET'])
@@ -940,14 +865,7 @@ def get_unit_leadership(secure_code: str):
     if not unit:
         return jsonify({'error': _('組織單位不存在')}), 404
 
-    org_sc = current_user.org_secure_code
-    manager = _regular_holder(org_sc, 'DEPT_MANAGER', secure_code)
-    deputy = _regular_holder(org_sc, 'DEPT_DEPUTY', secure_code)
-    return jsonify({
-        'manager': _user_brief(manager) if manager else None,
-        'deputy': _user_brief(deputy) if deputy else None,
-        'standby': _standby_users(org_sc, secure_code),
-    }), 200
+    return jsonify(list_unit_leadership(current_user.org_secure_code, secure_code)), 200
 
 
 def _position_name(position: str) -> str:
@@ -1010,7 +928,11 @@ def set_unit_leadership(secure_code: str, position: str):
             db.session.commit()
         else:
             operator = current_user._get_current_object()
+            # 3a-1：先算該人已持有哪些主管角色的 standby，只補缺的那幾列（不靠比對錯誤訊息，翻譯後也不會誤判）
+            held = standby_role_codes_held(org_sc, secure_code, user.secure_code)
             for role_code in STANDBY_ROLE_CODES:
+                if role_code in held:
+                    continue
                 role = get_system_role(org_sc, role_code)
                 if not role:
                     db.session.rollback()
@@ -1021,9 +943,6 @@ def set_unit_leadership(secure_code: str, position: str):
                         kind='standby', grant_reason=_('部門頁登記候補代理人'), operator=operator,
                     )
                 except ValueError as exc:
-                    # 已是此角色的候補 → 跳過那一列；其他錯誤（層界、單位型別）整組退回
-                    if '候補' in str(exc) and '已是' in str(exc):
-                        continue
                     db.session.rollback()
                     return jsonify({'error': str(exc)}), 400
     except LookupError as exc:
@@ -1037,7 +956,7 @@ def set_unit_leadership(secure_code: str, position: str):
     logger.info(f"User {user.email} set as {position} of unit {unit.code} by {current_user.email}")
     return jsonify({
         'message': _('已設定 %(user)s 為 %(unit)s %(position)s', user=user.display_name, unit=unit.name, position=_position_name(position)),
-        'user': _user_brief(user),
+        'user': user_brief(user),
     }), 200
 
 
@@ -1066,7 +985,7 @@ def remove_unit_leadership(secure_code: str, position: str):
 
     org_sc = current_user.org_secure_code
     role_code = 'DEPT_MANAGER' if position == 'manager' else 'DEPT_DEPUTY'
-    holder = _regular_holder(org_sc, role_code, secure_code)
+    holder = regular_position_holder(org_sc, role_code, secure_code)
 
     try:
         if holder:
@@ -1106,30 +1025,20 @@ def remove_unit_standby(secure_code: str, user_secure_code: str):
         return jsonify({'error': _('組織單位不存在')}), 404
 
     org_sc = current_user.org_secure_code
-    user = User.query.filter(
-        User.secure_code == user_secure_code,
-        User.org_secure_code == org_sc,
-        User.is_deleted == False
-    ).first()
-    if not user:
-        return jsonify({'error': _('用戶不存在')}), 404
-
-    rows, _codes = _standby_rows(org_sc, secure_code, user_secure_code)
     try:
-        now = datetime.utcnow()
-        for row in rows:
-            row.is_deleted = True
-            row.deleted_at = now
+        user, removed = remove_unit_standby_rows(org_sc, secure_code, user_secure_code)
+        if user is None:
+            return jsonify({'error': _('用戶不存在')}), 404
         db.session.commit()
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to remove unit standby: {e}")
         return jsonify({'error': _('移除失敗')}), 500
 
-    logger.info(f"User {user.email} removed as standby of unit {unit.code} by {current_user.email} ({len(rows)} rows)")
+    logger.info(f"User {user.email} removed as standby of unit {unit.code} by {current_user.email} ({removed} rows)")
     return jsonify({
         'message': _('已移除 %(user)s 的 %(unit)s 候補代理人登記', user=user.display_name, unit=unit.name),
-        'removed': len(rows),
+        'removed': removed,
     }), 200
 
 

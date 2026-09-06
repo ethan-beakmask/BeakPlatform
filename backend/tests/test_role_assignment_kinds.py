@@ -295,3 +295,68 @@ def test_build_user_roles_and_proxy_assignable_role_list(test_org, test_admin):
     assert global_role.code in codes
     assert dept_role.code in codes
     assert proxy_role.code not in codes
+
+
+def _dept_unit(org, sc, code):
+    unit = OrganizationalUnit(
+        secure_code=sc, org_secure_code=org.secure_code, code=code, name=code,
+        unit_type=UnitType.DEPARTMENT, is_active=True, is_deleted=False,
+    )
+    db.session.add(unit)
+    db.session.commit()
+    return unit
+
+
+def _regular_at(org, user, role, unit=None):
+    row = UserRoleAssignment(
+        org_secure_code=org.secure_code, user_secure_code=user.secure_code, role_secure_code=role.secure_code,
+        unit_secure_code=unit.secure_code if unit else None, assignment_kind=AssignmentKind.REGULAR, is_deleted=False,
+    )
+    db.session.add(row)
+    db.session.commit()
+    return row
+
+
+def test_grant_authorizer_unit_holder_cannot_grant_global_or_other_unit(test_org):
+    """3a-1：持有某單位 regular 的人只能授出該單位的代理，不能授出全企業範圍或別的單位。"""
+    role = _role(test_org, 'RAK_UNIT_SCOPED', scope=ScopeType.DEPARTMENT, role_type=RoleType.POSITION)
+    u1 = _dept_unit(test_org, 'rak_unit_u1_000000001', 'RAKU1')
+    u2 = _dept_unit(test_org, 'rak_unit_u2_000000001', 'RAKU2')
+    holder = _user(test_org, 'rak_unit_holder_00001', 'rakunitholder')
+    agent = _user(test_org, 'rak_unit_agent_000001', 'rakunitagent')
+    _regular_at(test_org, holder, role, u1)
+    today = test_org.local_today()
+    common = dict(kind='proxy', acting_for_sc=holder.secure_code, valid_from=today, valid_until=today, grant_reason='x', operator=holder)
+
+    ok = assign_role(test_org.secure_code, agent.secure_code, role.secure_code, unit_sc=u1.secure_code, **common)
+    assert ok['assignment_secure_code']
+    with pytest.raises(ValueError):
+        assign_role(test_org.secure_code, agent.secure_code, role.secure_code, unit_sc=u2.secure_code, **common)
+
+
+def test_grant_authorizer_global_holder_can_grant_global_and_any_unit(test_org):
+    """3a-1：全企業（unit NULL）regular 持有者可授出全企業與任一單位的代理；只持單位者不能授出全企業。"""
+    role = _role(test_org, 'RAK_GLOBAL_SCOPED')
+    holder_global = _user(test_org, 'rak_glob_holder_00001', 'rakglobholder')
+    holder_unit_only = _user(test_org, 'rak_glob_unit_000001', 'rakglobunit')
+    agent = _user(test_org, 'rak_glob_agent_000001', 'rakglobagent')
+    agent2 = _user(test_org, 'rak_glob_agent_000002', 'rakglobagent2')
+    _regular_at(test_org, holder_global, role, None)
+    today = test_org.local_today()
+
+    ok = assign_role(
+        test_org.secure_code, agent.secure_code, role.secure_code,
+        kind='proxy', acting_for_sc=holder_global.secure_code, valid_from=today, valid_until=today,
+        grant_reason='x', operator=holder_global,
+    )
+    assert ok['assignment_secure_code']
+
+    # 只持某單位 regular（用全企業角色也能掛單位列做測試）的人，授出全企業範圍 → 拒
+    unit = _dept_unit(test_org, 'rak_glob_unit_u_00001', 'RAKGU')
+    _regular_at(test_org, holder_unit_only, role, unit)
+    with pytest.raises(ValueError):
+        assign_role(
+            test_org.secure_code, agent2.secure_code, role.secure_code,
+            kind='proxy', acting_for_sc=holder_global.secure_code, valid_from=today, valid_until=today,
+            grant_reason='x', operator=holder_unit_only,
+        )

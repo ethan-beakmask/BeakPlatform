@@ -645,13 +645,53 @@ def _assert_can_grant(operator, org_sc, role, unit_sc, kind):
         raise ValueError(_('無權限指派此角色'))
     if kind == AssignmentKind.REGULAR:
         raise ValueError(_('只有企業管理員可以指派正式角色'))
-    _assert_regular_holder(
-        org_sc,
-        role.secure_code,
-        unit_sc,
-        operator.secure_code,
-        _('只有此角色的正式持有者可以授出代理或候補'),
+    # 3a-1：單位精確比對——授出「全企業範圍」的代理必須本人持有全企業（unit NULL）的 regular；
+    # 授出某單位的代理則本人持有該單位或全企業的 regular。不能用 resolve_role_holders(unit=None)
+    # （那會把任一單位的持有者都算成可授出全企業範圍）。
+    if not _operator_holds_regular(org_sc, operator.secure_code, role.secure_code, unit_sc):
+        raise ValueError(_('只有此角色的正式持有者可以授出代理或候補'))
+
+
+def _operator_holds_regular(org_sc, user_sc, role_sc, unit_sc) -> bool:
+    query = UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == org_sc,
+        UserRoleAssignment.user_secure_code == user_sc,
+        UserRoleAssignment.role_secure_code == role_sc,
+        UserRoleAssignment.assignment_kind == AssignmentKind.REGULAR,
+        UserRoleAssignment.is_deleted == False,
     )
+    if unit_sc:
+        query = query.filter(db.or_(
+            UserRoleAssignment.unit_secure_code == unit_sc,
+            UserRoleAssignment.unit_secure_code.is_(None),
+        ))
+    else:
+        query = query.filter(UserRoleAssignment.unit_secure_code.is_(None))
+    today = _org_today(org_sc)
+    return any(row.is_valid_on(today) for row in query.all())
+
+
+def list_regular_holders(org_sc, role_sc, unit_sc=None) -> list:
+    """該角色@單位今天有效的 regular 持有者（啟用帳號），供「被代理人」下拉；回 [{secure_code, display_name, employee_id}]。"""
+    from .unit_resolver import resolve_role_holders
+    holders = resolve_role_holders(role_sc, org_sc, unit_sc or None, kinds=(AssignmentKind.REGULAR,))
+    if not holders:
+        return []
+    rows = User.query.filter(
+        User.org_secure_code == org_sc,
+        User.secure_code.in_(holders),
+        User.is_deleted == False,
+        User.is_active == True,
+    ).all()
+    by_sc = {u.secure_code: u for u in rows}
+    return [
+        {
+            'secure_code': sc,
+            'display_name': by_sc[sc].display_name or by_sc[sc].username,
+            'employee_id': by_sc[sc].employee_id,
+        }
+        for sc in holders if sc in by_sc
+    ]
 
 
 def _filter_overlapping(query, valid_from, valid_until):

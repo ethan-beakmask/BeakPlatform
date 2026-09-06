@@ -132,3 +132,23 @@ def test_invalid_position_and_external_user_are_rejected(admin_client, test_org)
     assert admin_client.post(f'{BASE}/{unit.secure_code}/leadership/manager', json={}).status_code == 400
     db.session.expire_all()
     assert _codes(test_org, vendor, unit, AssignmentKind.STANDBY) == []
+
+
+def test_standby_registration_only_fills_missing_rows(admin_client, test_org, test_admin):
+    """3a-1：權限中心先建了某人 DEPT_HEAD@U 的候補，再到部門頁拖同一人 → 200 且補齊成三列（不靠比對錯誤訊息）。"""
+    from app.services.role_assignment_service import assign_role
+
+    roles, unit = _env(test_org)
+    backup = _user(test_org, 'ul_backup_00000000002', 'ulbackup2')
+    assign_role(test_org.secure_code, backup.secure_code, roles['head'].secure_code, unit_sc=unit.secure_code,
+                kind='standby', grant_reason='權限中心先建', operator=test_admin)
+    db.session.expire_all()
+    assert _codes(test_org, backup, unit, AssignmentKind.STANDBY) == ['DEPT_HEAD']
+
+    res = admin_client.post(f'{BASE}/{unit.secure_code}/leadership/standby', json={'user_id': backup.secure_code})
+    assert res.status_code == 200, res.get_json()
+    db.session.expire_all()
+    assert _codes(test_org, backup, unit, AssignmentKind.STANDBY) == ['DEPT_DEPUTY', 'DEPT_HEAD', 'DEPT_MANAGER']
+    # 先建的那一列沒被動到（事由仍是權限中心的）
+    head_row = UserRoleAssignment.query.filter_by(user_secure_code=backup.secure_code, role_secure_code=roles['head'].secure_code, is_deleted=False).one()
+    assert head_row.grant_reason == '權限中心先建'

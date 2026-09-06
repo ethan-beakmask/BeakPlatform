@@ -6,14 +6,13 @@ from flask import Blueprint, jsonify, request
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..models.user import User
 from ..security.decorators import admin_required
 from ..services.role_assignment_service import (
     assign_role,
     list_account_roles,
+    list_regular_holders,
     revoke_assignment,
 )
-from ..services.unit_resolver import resolve_role_holders
 
 
 access_center_api_bp = Blueprint(
@@ -101,23 +100,5 @@ def role_holders():
     if not role_sc:
         return jsonify({'success': False, 'error': _('缺少必要參數')}), 400
 
-    org_sc = current_user.org_secure_code
-    holders = resolve_role_holders(role_sc, org_sc, unit_sc, kinds=('regular',))
-    users = []
-    if holders:
-        rows = User.query.filter(
-            User.org_secure_code == org_sc,
-            User.secure_code.in_(holders),
-            User.is_deleted == False,  # noqa: E712
-            User.is_active == True,  # noqa: E712
-        ).all()
-        by_sc = {u.secure_code: u for u in rows}
-        users = [
-            {
-                'secure_code': sc,
-                'display_name': by_sc[sc].display_name or by_sc[sc].username,
-                'employee_id': by_sc[sc].employee_id,
-            }
-            for sc in holders if sc in by_sc
-        ]
+    users = list_regular_holders(current_user.org_secure_code, role_sc, unit_sc)
     return jsonify({'success': True, 'holders': users})

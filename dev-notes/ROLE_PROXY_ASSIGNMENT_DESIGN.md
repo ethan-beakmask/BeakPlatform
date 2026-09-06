@@ -512,3 +512,13 @@ K2 三個主管角色各寫一列——正主管一人請假、關卡指定正�
 
 **3b 照第 2 期複審的清單派**，另補三條：`role_assignment_service._membership_role_labels()` 的 `MembershipRole.PROXY1/2` 是社群跨部門成員的顯示標籤，不在範圍、不要動；
 手冊 `departments.md` 補正副主管與候補代理人一節時要寫「候補對三個主管角色都生效」（K2）；bpserv 部署清單加第五段遷移（DemoSOC 無 PROXY 指派，預期 0 列、角色退役 2 筆）。
+
+### 補丁 3a-1（2026-09-06 23:0x，執行 session，主 Claude 直做）
+
+三件都做：(1) `api/organizational_units.py` 的 `_load_active_user`／`_regular_holder`／`_standby_rows`／`_standby_users`／`remove_unit_standby` 內的 `User.query`，以及 `api/access_center.py::role_holders` 的 `User.query`，
+搬成 `dept_membership_service.list_unit_leadership()`／`regular_position_holder()`／`standby_rows()`／`standby_role_codes_held()`／`remove_unit_standby()`／`user_brief()` 與 `role_assignment_service.list_regular_holders()`，API 只呼叫；
+semgrep `beakplatform-direct-model-query-in-api`：`access_center.py` 1→0、`organizational_units.py` 6→5（剩下 191／217／739／799／909 是既有的目標帳號查詢樣式，不在補丁清單）。
+(2) `_assert_can_grant()` 非管理員路徑改 `_operator_holds_regular()`：`unit_sc` 有值須持 (R, unit) 或 (R, NULL) 的 regular，`unit_sc` 為 None 只認 (R, NULL)；`test_role_assignment_kinds` 補兩案（單位持有者不能授出全企業或別的單位、全企業持有者可授出任一單位）。
+(3) `set_unit_leadership()` 的 standby 分支先 `standby_role_codes_held()` 算缺哪幾列只補那幾列，刪掉訊息字串比對；`test_unit_leadership_api` 補「權限中心先建 HEAD 候補、部門頁再拖同一人 → 200 補齊三列、先建列不動」案。
+四檔 27 passed（`test_role_assignment_kinds` 8／`test_unit_leadership_api` 4／`test_access_center_assign_kinds` 2／`test_dept_membership_service` 13）；憑證接 `/opt/tmp/verify/20260906-role-proxy-3a.log` 尾。
+
