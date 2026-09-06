@@ -163,7 +163,7 @@ holds(actor, R, U, task):
 
 `allowed_form_templates` 存在指派列上，判定沿用 `task_authorizer._delegation_scope_allows_task()` 的比對與 `_task_form_template_secure_code()` 快取，改成對每一列指派做。
 `regular` 列一律 NULL；UI 上只有 proxy／standby 的建立表單提供「限定表單」多選（沿用 `web/delegations.py` 的 `allowed_form_templates[]` 與 PF-71 的模板清單來源）。
-決策點 C：standby 是否也吃這個維度（建議吃，規則通用、不多寫程式）。
+決策點 C 定案：standby 也吃。**範圍只限制簽核任務**：`get_active_assignments()` 給權限與選單用時不看 `allowed_form_templates`，限定表單的代理人在效期內仍拿到該角色的選單與 permission code（第 1 期複審確認，刻意接受——限定的是「能簽什麼」不是「能看什麼」）。
 
 ### 3.6 直屬主管推導、快照、投影不受代理影響的部分
 
@@ -352,3 +352,25 @@ spec：`/opt/tmp/codex/20260906-pf251-phase1.txt`。codex 在跑全量到 45% �
 `DEPT_PROXY1/2` 持有者（遷移成 standby 在第 3 期）與「`DEPT_MANAGER`＋`absence_fallback=true`」關卡的副主管（關卡改指 `DEPT_HEAD` 在第 2 期）
 在此之前失去簽核權；FormAdapter 快照仍含他們（顯示用），但帶 key 的任務不看快照。
 
+### 第 1 期複審（原 session，2026-09-06 17:39）——**通過，可派第 2 期**
+
+親自重跑 7 檔 108 passed（`test_role_holding_service`／`test_task_authorizer_role_unit`／`test_task_authorizer_delegate_from`／`test_formadapter_role_unit`／
+`test_dept_membership_service`／`test_hr_lookup_node`／`test_smoke`）、`check_schema_drift.sh` 綠（108 表／1821 欄）；讀完 `task_authorizer`、`associations`、
+`role_holding_service`、`dept_membership_service`、`organization_service`、`unit_resolver`、`formadapter_handler` 的 diff 與遷移腳本全文；
+憑證矩陣 26 PASS／0 FAIL（含三角色矩陣 #6a～#6i、HEAD standby 正副都請假才生效）、#7 六任務×七帳號部署前後一字不差、全量七批 1127 passed；
+dev 庫五欄位＋部分索引在、7 企業 DEPT_HEAD 種入且正副主管改名、HEAD 回填 35 列、`assignment_kind` 現況 270 列全 regular、殘留引用 0。
+六點差異全部採納：第 1 點（`get_active_assignments` 排除 standby）是對的，候補不能讓選單隨請假翻動；第 3 點（J 挪第 3 期）避免「新主管不在核決鏈」的斷層，正確；第 6 點移除配合測試的 `ActingIdentity` 是該做的。
+
+**帶進第 2 期 spec 的事**：
+
+1. 刪掉 `formadapter_handler.py` 頂端暫放的 `FALLBACK_ROLE_CODES`／`ALWAYS_ALLOWED_FALLBACK_CODES`，`_role_spec_data()` 改走 `role_holding_service.effective_holders()`
+   （第 1 期快照刻意只含 regular，proxy／standby 持有者要等這一步才出現在待簽清單與逾時參考人）
+2. 決策點 H 的遷移：graph 與發行快照中 `assignee_value=DEPT_MANAGER` 且 `absence_fallback` 缺 key 或為 true 的 FormAdapter 改指該企業的 `DEPT_HEAD`
+   （角色 sc 逐企業查），`absence_fallback=false` 的不動；併入 `scripts/migrate_proxy_assignments.py` 第四段，`--dry-run` 要列出受影響的模板與快照數
+3. `role_holding_service.has_available_holder()` 對非 POSITION 角色**不含後代單位持有者**（standby 給「位子」用，成員類角色不該掛 standby）——
+   第 2 期在 docstring 明寫，不改邏輯
+4. `fw_approval_records.acted_as_kind` 欄位＋三處寫入點；`fc-utils.js:63-66` 三個寫死的 code 刪除；歷程文字依 3.7
+5. 設計器 `faAbsenceFallback` 勾選移除、`wf-save.js` 兩條路徑都不再收集；`self_target_action`「本人在快照內」改由 `effective_holders()` 判
+
+**帶進第 3 期的備忘**（不在第 2 期）：`remove_dept_membership()` 只撤 regular 列，成員被移出部門時其 proxy／standby@該單位列留著（刪整個單位時 PF-249 的 purge 會收）；
+`dept_membership_service` 連帶授撤 `DEPT_HEAD@U` 時要處理 unit 為 NULL 的全企業正副主管（dev 現況 0 列，bpserv 未查）。
