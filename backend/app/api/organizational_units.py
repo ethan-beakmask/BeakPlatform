@@ -17,9 +17,11 @@ from ..services.code_generator import get_code_generator
 from ..models.user import User, UserType
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
 from ..services.dept_membership_service import (
+    count_unit_members,
     ensure_dept_membership,
     ensure_role_assignment,
     get_system_role,
+    purge_unit_memberships,
     remove_dept_membership,
     set_dept_manager,
 )
@@ -369,12 +371,10 @@ def delete_unit(secure_code: str):
     children = [c for c in unit.children if not c.is_deleted]
     children_count = len(children)
 
-    # 統計所有成員（含子單位）
+    # 統計所有成員（含子單位）。成員＝有效 SOLID membership ∪ primary_unit 快照，
+    # 只數 primary_unit 會漏掉 PF-247 之後以 membership 為權威的成員（PF-249）
     def count_members(u):
-        count = User.query.filter_by(
-            primary_unit_secure_code=u.secure_code,
-            is_deleted=False
-        ).count()
+        count = count_unit_members(u)
         for child in [c for c in u.children if not c.is_deleted]:
             count += count_members(child)
         return count
@@ -382,10 +382,7 @@ def delete_unit(secure_code: str):
     if cascade:
         members_count = count_members(unit)
     else:
-        members_count = User.query.filter_by(
-            primary_unit_secure_code=unit.secure_code,
-            is_deleted=False
-        ).count()
+        members_count = count_unit_members(unit)
 
     # 只檢查，不刪除
     if check_only:
@@ -414,15 +411,11 @@ def delete_unit(secure_code: str):
 
     try:
         def soft_delete_unit(u):
-            # 將成員移到未分配
-            members = User.query.filter_by(
-                primary_unit_secure_code=u.secure_code,
-                is_deleted=False
-            ).all()
-            for member in members:
-                member.primary_unit_secure_code = None
+            # 成員移到未分配，並軟刪除指向此單位的成員關係與所有角色@此單位
+            # （PF-249：以前只清 primary_unit，DEPT_MANAGER@已刪單位這類指派會留下來）
+            purge_unit_memberships(u)
 
-            # 清除主管/副主管/代理人
+            # 清除舊的人對人主管/副主管/代理人欄位
             u.manager_secure_code = None
             u.deputy_manager_secure_code = None
             u.proxy1_secure_code = None

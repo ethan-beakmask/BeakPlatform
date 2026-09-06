@@ -3,17 +3,26 @@
 
 API 與 seed 腳本都從這裡維護 SOLID membership 與 DEPT_* 角色指派。
 reconcile_dept_manager() 是 seed 腳本使用的冪等同步入口。
+purge_unit_memberships() 是刪除單位時的唯一清理入口（PF-249）：單位一旦軟刪除，
+指向它的成員關係與帶 unit_secure_code 的角色指派全部一起軟刪除，不留「角色@已刪單位」。
 """
 from datetime import datetime
 
 from app import db
 from app.models import Role
 from app.models.associations import UserRoleAssignment
+from app.models.user import User
 from app.models.user_unit_membership import (
     MembershipRole,
     MembershipType,
     UserUnitMembership,
 )
+
+# 部門系統角色：兩個成員類（ROLE）＋四個職位類（POSITION）。
+# 移除成員或刪除單位時六個都要收，只收前三個會留下副主管／代理人殘留。
+DEPT_MEMBER_ROLE_CODES = ('DEPT_MEMBER', 'DEPT_EMPLOYEE')
+DEPT_POSITION_ROLE_CODES = ('DEPT_MANAGER', 'DEPT_DEPUTY', 'DEPT_PROXY1', 'DEPT_PROXY2')
+DEPT_ROLE_CODES = DEPT_MEMBER_ROLE_CODES + DEPT_POSITION_ROLE_CODES
 
 
 def get_system_role(org_sc: str, role_code: str) -> Role | None:
@@ -128,7 +137,8 @@ def remove_dept_membership(user, unit) -> None:
     移除部門成員關係與所有部門角色。
 
     1. 軟刪除 UserUnitMembership(SOLID)
-    2. 軟刪除該部門下的所有部門系統角色指派 (DEPT_MEMBER, DEPT_EMPLOYEE, DEPT_MANAGER)
+    2. 軟刪除該部門下的所有部門系統角色指派（DEPT_ROLE_CODES 六個：
+       成員類 DEPT_MEMBER／DEPT_EMPLOYEE，職位類 DEPT_MANAGER／DEPT_DEPUTY／DEPT_PROXY1／DEPT_PROXY2）
     """
     org_sc = unit.org_secure_code
     user_sc = user.secure_code
@@ -146,10 +156,92 @@ def remove_dept_membership(user, unit) -> None:
         membership.is_deleted = True
         membership.deleted_at = datetime.utcnow()
 
-    for role_code in ('DEPT_MEMBER', 'DEPT_EMPLOYEE', 'DEPT_MANAGER'):
+    for role_code in DEPT_ROLE_CODES:
         role = get_system_role(org_sc, role_code)
         if role:
             revoke_role_assignment(org_sc, user_sc, role.secure_code, unit_sc)
+
+
+def _unit_member_secure_codes(unit) -> set[str]:
+    """單位的成員集合＝有效 SOLID membership 的人 ∪ primary_unit 指向此單位的人（未刪帳號）。"""
+    org_sc = unit.org_secure_code
+    unit_sc = unit.secure_code
+    from_memberships = {
+        row.user_secure_code
+        for row in db.session.query(UserUnitMembership.user_secure_code).join(
+            User, User.secure_code == UserUnitMembership.user_secure_code
+        ).filter(
+            UserUnitMembership.org_secure_code == org_sc,
+            UserUnitMembership.unit_secure_code == unit_sc,
+            UserUnitMembership.membership_type == MembershipType.SOLID,
+            UserUnitMembership.is_deleted == False,  # noqa: E712
+            User.is_deleted == False,  # noqa: E712
+        ).all()
+    }
+    from_primary = {
+        row.secure_code
+        for row in db.session.query(User.secure_code).filter(
+            User.org_secure_code == org_sc,
+            User.primary_unit_secure_code == unit_sc,
+            User.is_deleted == False,  # noqa: E712
+        ).all()
+    }
+    return from_memberships | from_primary
+
+
+def count_unit_members(unit) -> int:
+    """單位成員數（不含子單位）。刪除單位前的「此單位有 N 個成員」守門用這個，不要只數 primary_unit。"""
+    return len(_unit_member_secure_codes(unit))
+
+
+def purge_unit_memberships(unit) -> dict:
+    """
+    刪除單位時的清理（PF-249）。不 commit，不動 unit 本身的 is_deleted。
+
+    1. primary_unit 指向此單位的帳號改為未分配（NULL）
+    2. 軟刪除指向此單位的**所有** UserUnitMembership（SOLID／DOTTED／MEMBER 都收）
+    3. 軟刪除帶此 unit_secure_code 的**所有** UserRoleAssignment（不限 DEPT_*，
+       GROUP_* 或任何以此單位為範圍的指派一律作廢——單位沒了，角色@它就沒有意義）
+
+    回傳 {'members': 受影響帳號數, 'memberships': 軟刪列數, 'assignments': 軟刪列數}。
+    只針對「這一個單位」；cascade 刪子單位時呼叫端逐一呼叫。
+    """
+    org_sc = unit.org_secure_code
+    unit_sc = unit.secure_code
+    now = datetime.utcnow()
+    member_codes = _unit_member_secure_codes(unit)
+
+    primary_users = User.query.filter(
+        User.org_secure_code == org_sc,
+        User.primary_unit_secure_code == unit_sc,
+        User.is_deleted == False,  # noqa: E712
+    ).all()
+    for user in primary_users:
+        user.primary_unit_secure_code = None
+
+    memberships = UserUnitMembership.query.filter(
+        UserUnitMembership.org_secure_code == org_sc,
+        UserUnitMembership.unit_secure_code == unit_sc,
+        UserUnitMembership.is_deleted == False,  # noqa: E712
+    ).all()
+    for membership in memberships:
+        membership.is_deleted = True
+        membership.deleted_at = now
+
+    assignments = UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == org_sc,
+        UserRoleAssignment.unit_secure_code == unit_sc,
+        UserRoleAssignment.is_deleted == False,  # noqa: E712
+    ).all()
+    for assignment in assignments:
+        assignment.is_deleted = True
+        assignment.deleted_at = now
+
+    return {
+        'members': len(member_codes),
+        'memberships': len(memberships),
+        'assignments': len(assignments),
+    }
 
 
 def set_dept_manager(user, unit, operator: str) -> None:
