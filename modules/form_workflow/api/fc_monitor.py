@@ -14,6 +14,7 @@ from app.platform.data import get_current_org
 from app import db
 
 from .form_center import form_center_bp
+from ..services.approval_history import serialize_approval_history
 from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
@@ -50,17 +51,7 @@ def get_form_detail(secure_code):
             workflow_instance_secure_code=form_instance.workflow_instance_secure_code
         ).order_by(FwApprovalRecord.acted_at.asc()).all()
 
-        for approval in approval_records:
-            approvals.append({
-                'node_id': approval.node_id,
-                'node_name': approval.node_name,
-                'approver_name': approval.approver_name,
-                'delegate_from_name': approval.delegate_from_name,
-                'acted_as_role_code': approval.acted_as_role_code,
-                'action': approval.action,
-                'comment': approval.comment,
-                'acted_at': approval.acted_at.isoformat() if approval.acted_at else None,
-            })
+        approvals = serialize_approval_history(approval_records, org.secure_code)
 
     return jsonify({
         'success': True,

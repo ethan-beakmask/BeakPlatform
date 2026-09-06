@@ -22,11 +22,6 @@ TIMEOUT_ACTION = 'timeout'           # fw_approval_records.action（機器碼，
 TIMEOUT_APPROVER_NAME = '系統（逾時自動處理）'
 NO_ASSIGNEE_ACTION = 'no_assignee'   # fw_approval_records.action（機器碼，不翻譯）
 NO_ASSIGNEE_APPROVER_NAME = '系統（找不到簽核人）'
-# PF-251 第 1 期自 task_authorizer 搬入；第 2 期 _role_spec_data 改走 role_holding_service.effective_holders() 時整段刪除
-FALLBACK_ROLE_CODES = {
-    'DEPT_MANAGER': ('DEPT_DEPUTY', 'DEPT_PROXY1', 'DEPT_PROXY2'),
-}
-ALWAYS_ALLOWED_FALLBACK_CODES = frozenset({'DEPT_DEPUTY'})
 
 
 def _iso(dt: datetime) -> str:
@@ -156,7 +151,6 @@ class FormAdapterHandler(BaseNodeHandler):
                     raise ValueError(f'unit_levels_up 必須 >= 1，而非 {levels}')
                 self.node_config['unit_levels_up'] = levels
 
-            self.node_config['absence_fallback'] = self._normalized_absence_fallback()
             raw_self_target_action = self.get_config_value('self_target_action', 'escalate_or_return')
             self_target_action = str(raw_self_target_action or 'escalate_or_return').strip().lower()
             if self_target_action not in SELF_TARGET_ACTIONS:
@@ -332,8 +326,7 @@ class FormAdapterHandler(BaseNodeHandler):
             })
             return self._no_assignee_return_result(data, reason)
 
-        absence_fallback = self._normalized_absence_fallback()
-        data.update(self._role_spec_data(role, None, 'GLOBAL', absence_fallback))
+        data.update(self._role_spec_data(role, None, 'GLOBAL'))
         data.update({
             'no_assignee_fallback_applied': True,
             'original_assignee_type': assignee_type,
@@ -348,14 +341,6 @@ class FormAdapterHandler(BaseNodeHandler):
             'reason': reason,
         })
         return None
-
-    def _normalized_absence_fallback(self) -> bool:
-        value = self.get_config_value('absence_fallback', True)
-        if isinstance(value, bool):
-            return value
-        if isinstance(value, str) and value.strip().lower() in ('false', '0', 'no'):
-            return False
-        return True
 
     def _role_by_secure_code(self, role_sc: str):
         from app.models.role import Role
@@ -374,37 +359,21 @@ class FormAdapterHandler(BaseNodeHandler):
             Role.is_active == True,  # noqa: E712
         ).first()
 
-    def _role_spec_data(self, role, unit, unit_scope: str, absence_fallback: bool) -> Dict[str, Any]:
-        from app.models.role import RoleType
-        from app.services.unit_resolver import resolve_role_holders
+    def _role_spec_data(self, role, unit, unit_scope: str) -> Dict[str, Any]:
+        from app.services.role_holding_service import effective_holders
 
         org_sc = self.queue_item.org_secure_code
         role_sc = role.secure_code
         unit_sc = unit.secure_code if unit else None
-        if unit is None:
-            assignees = resolve_role_holders(role_sc, org_sc)
-        elif role.role_type != RoleType.POSITION:
-            assignees = resolve_role_holders(
-                role_sc, org_sc, unit_sc, include_descendant_units=True)
-        else:
-            managers = resolve_role_holders(
-                role_sc, org_sc, unit_sc, include_descendant_units=False)
-            assignees = list(managers)
-            if absence_fallback and role.code in FALLBACK_ROLE_CODES:
-                manager_vacant = not self._present_managers(managers)
-                for fallback_code in FALLBACK_ROLE_CODES[role.code]:
-                    fallback_role = self._active_role_by_code(fallback_code)
-                    if not fallback_role:
-                        continue
-                    if fallback_code not in ALWAYS_ALLOWED_FALLBACK_CODES and not manager_vacant:
-                        continue
-                    assignees.extend(resolve_role_holders(
-                        fallback_role.secure_code,
-                        org_sc,
-                        unit_sc,
-                        include_descendant_units=False,
-                    ))
-            assignees = self._dedupe_preserve_order(assignees)
+        local_now = self._local_now()
+        assignees = effective_holders(
+            role.secure_code,
+            org_sc,
+            unit_sc,
+            include_descendant_units=unit is not None,
+            today=local_now.date(),
+            local_now=local_now,
+        )
 
         return {
             'assignee_type': 'ROLE',
@@ -415,7 +384,6 @@ class FormAdapterHandler(BaseNodeHandler):
             'assignee_unit_scope': unit_scope,
             'assignee_unit_secure_code': unit_sc,
             'assignee_unit_name': unit.name if unit else None,
-            'absence_fallback': absence_fallback,
             'assignees': assignees,
         }
 
@@ -429,26 +397,6 @@ class FormAdapterHandler(BaseNodeHandler):
             seen.add(value)
             result.append(value)
         return result
-
-    def _present_managers(self, user_secure_codes) -> List[str]:
-        from app.models.user import User
-        from app.services.schedule_service import ScheduleService
-
-        if not user_secure_codes:
-            return []
-
-        users = User.query.filter(
-            User.org_secure_code == self.queue_item.org_secure_code,
-            User.secure_code.in_(user_secure_codes),
-            User.is_deleted == False,  # noqa: E712
-            User.is_active == True,  # noqa: E712
-        ).all()
-        local_now = self._local_now()
-        return [
-            user.secure_code
-            for user in users
-            if not ScheduleService.is_on_leave(user, local_now)
-        ]
 
     def _local_now(self) -> datetime:
         from app.utils.calendar_time import utc_to_local
@@ -503,8 +451,6 @@ class FormAdapterHandler(BaseNodeHandler):
         from app.services.unit_resolver import get_unit
 
         org_sc = self.queue_item.org_secure_code
-        absence_fallback = self._normalized_absence_fallback()
-
         if assignee_type == 'DEPARTMENT':
             role = self._active_role_by_code('DEPT_MEMBER')
             if role is None:
@@ -512,7 +458,7 @@ class FormAdapterHandler(BaseNodeHandler):
             unit = get_unit(assignee_value, org_sc)
             if unit is None:
                 return {}, f'部門 {assignee_value} 不存在或已刪除'
-            data = self._role_spec_data(role, unit, 'DEPARTMENT', absence_fallback)
+            data = self._role_spec_data(role, unit, 'DEPARTMENT')
             data.update({
                 'original_assignee_type': 'DEPARTMENT',
                 'original_assignee_value': assignee_value,
@@ -529,9 +475,9 @@ class FormAdapterHandler(BaseNodeHandler):
         unit, failure = self._resolve_role_unit(unit_scope)
         if failure:
             return {}, failure
-        data = self._role_spec_data(role, unit, unit_scope, absence_fallback)
+        data = self._role_spec_data(role, unit, unit_scope)
         if unit_scope in ('APPLICANT_UNIT', 'APPLICANT_ANCESTOR'):
-            return self._apply_self_target(data, unit, unit_scope, absence_fallback, role)
+            return self._apply_self_target(data, unit, unit_scope, role)
         return data, None
 
     def _normalized_self_target_action(self) -> str:
@@ -541,7 +487,7 @@ class FormAdapterHandler(BaseNodeHandler):
         return value
 
     def _apply_self_target(self, spec_data: Dict[str, Any], unit, unit_scope: str,
-                           absence_fallback: bool, role) -> tuple[Dict[str, Any], str | None]:
+                           role) -> tuple[Dict[str, Any], str | None]:
         from app.models.role import RoleType
         from app.services.unit_resolver import get_unit, get_unit_ancestor_codes
 
@@ -561,7 +507,7 @@ class FormAdapterHandler(BaseNodeHandler):
             ancestor_unit = get_unit(ancestor_sc, org_sc)
             if not ancestor_unit:
                 continue
-            candidate = self._role_spec_data(role, ancestor_unit, unit_scope, absence_fallback)
+            candidate = self._role_spec_data(role, ancestor_unit, unit_scope)
             candidate_assignees = candidate.get('assignees') or []
             if candidate_assignees and applicant not in candidate_assignees:
                 candidate['self_target_action'] = action

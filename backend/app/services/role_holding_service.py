@@ -59,7 +59,11 @@ def has_available_holder(
     today: date,
     local_now: datetime,
 ) -> bool:
-    """R@U 此刻是否有至少一位可用的 regular/proxy 持有者。"""
+    """R@U 此刻是否有至少一位可用的 regular/proxy 持有者。
+
+    刻意不含後代單位的持有者：standby 是給「位子」（POSITION 型）用的，成員類角色不該掛 standby；
+    成員類角色的 standby 也只看 U 本身與全企業指派。
+    """
     query = UserRoleAssignment.query.join(
         User,
         UserRoleAssignment.user_secure_code == User.secure_code,

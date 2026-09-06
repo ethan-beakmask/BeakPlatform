@@ -33,8 +33,9 @@ class FwApprovalRecord(ModuleBaseModel):
     # 代理人資訊
     delegate_from_secure_code = Column(String(32), nullable=True)
     delegate_from_name = Column(String(200), nullable=True)
-    # 以哪個缺席順位角色放行（DEPT_DEPUTY / DEPT_PROXY1 / DEPT_PROXY2；直接持有目標角色或快照命中時 NULL）——PF-247
+    # 以 proxy／standby 身分命中的角色 code（PF-251）；regular 或快照命中時 NULL。2026-09-06 之前的舊列存的是缺席順位角色（DEPT_DEPUTY／PROXY1／PROXY2）
     acted_as_role_code = Column(String(50), nullable=True)
+    acted_as_kind = Column(String(10), nullable=True)
 
     # 簽核動作：PENDING, APPROVED, REJECTED, TRANSFERRED, CANCELLED
     action = Column(String(50), nullable=False, index=True)
@@ -72,6 +73,7 @@ class FwApprovalRecord(ModuleBaseModel):
             'delegate_from_secure_code': self.delegate_from_secure_code,
             'delegate_from_name': self.delegate_from_name,
             'acted_as_role_code': self.acted_as_role_code,
+            'acted_as_kind': self.acted_as_kind,
             'action': self.action,
             'action_name': self.ACTION_NAMES.get(self.action, self.action),
             'comment': self.comment,

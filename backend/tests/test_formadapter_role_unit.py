@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app import db  # noqa: E402
 from app.models import (  # noqa: E402
+    AssignmentKind,
     MembershipType,
     Organization,
     OrganizationalUnit,
@@ -81,7 +82,8 @@ def _role(org, code, role_type='ROLE', scope_type='DEPARTMENT', is_active=True):
     return role
 
 
-def _assign(user, role, unit=None, valid_from=None, valid_until=None, assigned_at=None):
+def _assign(user, role, unit=None, valid_from=None, valid_until=None, assigned_at=None,
+            kind='regular', acting_for=None):
     row = UserRoleAssignment(
         user_secure_code=user.secure_code,
         role_secure_code=role.secure_code,
@@ -90,6 +92,8 @@ def _assign(user, role, unit=None, valid_from=None, valid_until=None, assigned_a
         valid_from=valid_from,
         valid_until=valid_until,
         assigned_at=assigned_at or datetime.utcnow(),
+        assignment_kind=kind,
+        acting_for_user_secure_code=acting_for,
         is_deleted=False,
     )
     db.session.add(row)
@@ -215,6 +219,7 @@ def _env(org):
     mkt = _unit(org, 'MKT', '行銷部門')
     roles = {
         'member': _role(org, 'DEPT_MEMBER'),
+        'head': _role(org, 'DEPT_HEAD', RoleType.POSITION),
         'manager': _role(org, 'DEPT_MANAGER', RoleType.POSITION),
         'deputy': _role(org, 'DEPT_DEPUTY', RoleType.POSITION),
         'proxy1': _role(org, 'DEPT_PROXY1', RoleType.POSITION),
@@ -244,7 +249,7 @@ def test_global_role_snapshot_filters_expired_assignment(test_org):
     assert data['assignee_role_code'] == 'DEPT_MEMBER'
     assert data['assignee_role_type'] == 'ROLE'
     assert data['assignee_unit_scope'] == 'GLOBAL'
-    assert data['absence_fallback'] is True
+    assert 'absence_fallback' not in data
     assert data['assignee_role_name'] == env['member'].name
 
 
@@ -326,13 +331,13 @@ def test_self_target_escalates_one_level_to_other_manager(test_org):
     assert result['data']['self_target_escalated_levels'] == 1
 
 
-def test_self_target_escalation_uses_absence_fallback_on_parent(test_org):
+def test_self_target_escalation_uses_effective_holders_on_parent(test_org):
     env = _env(test_org)
     applicant = _user('faru_self_sw_mgr2', test_org, 'faruselfswmgr2', 'Self SW Manager 2')
     info_deputy = _user('faru_info_dep', test_org, 'faruinfodep', 'Info Deputy')
     _membership(applicant, env['sw'])
     _assign(applicant, env['manager'], env['sw'])
-    _assign(info_deputy, env['deputy'], env['info'])
+    _assign(info_deputy, env['manager'], env['info'])
     fi = _form_instance(test_org, applicant, 'selfupdep')
     item = _queue(test_org, _instance(test_org, 'selfupdep', fi), _config(
         assignee_value=env['manager'].secure_code,
@@ -366,14 +371,14 @@ def test_self_target_escalates_two_levels_when_parent_is_same_applicant(test_org
     assert result['data']['assignees'] == [info_manager.secure_code]
 
 
-def test_self_target_deputy_snapshot_member_counts_as_self(test_org):
+def test_self_target_proxy_snapshot_member_counts_as_self(test_org):
     env = _env(test_org)
-    applicant = _user('faru_self_dep', test_org, 'faruselfdep', 'Self Deputy')
-    manager = _user('faru_self_dep_mgr', test_org, 'faruselfdepmgr', 'Self Deputy Manager')
+    applicant = _user('faru_self_proxy', test_org, 'faruselfproxy', 'Self Proxy')
+    manager = _user('faru_self_proxy_mgr', test_org, 'faruselfproxymgr', 'Self Proxy Manager')
     _membership(applicant, env['mkt'])
-    _assign(applicant, env['deputy'], env['mkt'])
     _assign(manager, env['manager'], env['mkt'])
-    fi = _form_instance(test_org, applicant, 'selfdep')
+    _assign(applicant, env['manager'], env['mkt'], kind=AssignmentKind.PROXY, acting_for=manager.secure_code)
+    fi = _form_instance(test_org, applicant, 'selfproxy')
     item = _queue(test_org, _instance(test_org, 'selfdep', fi), _config(
         assignee_value=env['manager'].secure_code,
         unit_scope='APPLICANT_UNIT',
@@ -419,16 +424,14 @@ def test_self_target_unit_scope_does_not_write_self_target_keys(test_org):
     assert 'self_target_action' not in result['data']
 
 
-def test_unit_position_snapshot_tracks_manager_presence_and_absence_fallback(test_org):
+def test_unit_position_snapshot_uses_effective_holders_and_ignores_absence_fallback(test_org):
     env = _env(test_org)
     manager = _user('faru_mkt_mgr', test_org, 'farumktmgr', 'Manager')
-    deputy = _user('faru_mkt_dep', test_org, 'farumktdep', 'Deputy')
-    proxy1 = _user('faru_mkt_p1', test_org, 'farumktp1', 'Proxy 1')
-    proxy2 = _user('faru_mkt_p2', test_org, 'farumktp2', 'Proxy 2')
+    standby1 = _user('faru_mkt_p1', test_org, 'farumktp1', 'Standby 1')
+    standby2 = _user('faru_mkt_p2', test_org, 'farumktp2', 'Standby 2')
     _assign(manager, env['manager'], env['mkt'])
-    _assign(deputy, env['deputy'], env['mkt'])
-    _assign(proxy1, env['proxy1'], env['mkt'])
-    _assign(proxy2, env['proxy2'], env['mkt'])
+    s1 = _assign(standby1, env['manager'], env['mkt'], kind=AssignmentKind.STANDBY)
+    s2 = _assign(standby2, env['manager'], env['mkt'], kind=AssignmentKind.STANDBY)
 
     present = _queue(test_org, _instance(test_org, 'pos1'), _config(
         assignee_value=env['manager'].secure_code,
@@ -436,12 +439,13 @@ def test_unit_position_snapshot_tracks_manager_presence_and_absence_fallback(tes
         unit_secure_code=env['mkt'].secure_code,
     ), 'pos1')
     _, present_result = _run(present)
-    assert present_result['data']['assignees'] == [manager.secure_code, deputy.secure_code]
+    assert present_result['data']['assignees'] == [manager.secure_code]
     assert present_result['data']['assignee_role_type'] == 'POSITION'
     assert present_result['data']['assignee_unit_name'] == '行銷部門'
     assert present_result['data']['assignee_unit_scope'] == 'UNIT'
 
-    manager.role_assignments.delete()
+    manager_assignment = UserRoleAssignment.query.filter_by(user_secure_code=manager.secure_code).one()
+    manager_assignment.is_deleted = True
     db.session.commit()
     vacant = _queue(test_org, _instance(test_org, 'pos2'), _config(
         assignee_value=env['manager'].secure_code,
@@ -449,7 +453,7 @@ def test_unit_position_snapshot_tracks_manager_presence_and_absence_fallback(tes
         unit_secure_code=env['mkt'].secure_code,
     ), 'pos2')
     _, vacant_result = _run(vacant)
-    assert vacant_result['data']['assignees'] == [deputy.secure_code, proxy1.secure_code, proxy2.secure_code]
+    assert vacant_result['data']['assignees'] == [standby1.secure_code, standby2.secure_code]
 
     disabled = _queue(test_org, _instance(test_org, 'pos3'), _config(
         assignee_value=env['manager'].secure_code,
@@ -459,21 +463,23 @@ def test_unit_position_snapshot_tracks_manager_presence_and_absence_fallback(tes
     ), 'pos3')
     _, disabled_result = _run(disabled)
     assert disabled_result['status'] == 'waiting_form_action'
-    assert disabled_result['data']['assignees'] == []
-    assert disabled_result['data']['absence_fallback'] is False
+    assert disabled_result['data']['assignees'] == [standby1.secure_code, standby2.secure_code]
+    assert 'absence_fallback' not in disabled_result['data']
     assert FwApprovalRecord.query.filter_by(node_queue_secure_code=disabled.secure_code).count() == 0
+    assert s1.assignment_kind == AssignmentKind.STANDBY
+    assert s2.assignment_kind == AssignmentKind.STANDBY
 
 
 def test_unit_position_snapshot_adds_proxies_when_manager_is_on_full_day_leave(test_org, monkeypatch):
     env = _env(test_org)
     manager = _user('faru_leave_mgr', test_org, 'faruleavemgr', 'Leave Manager')
-    deputy = _user('faru_leave_dep', test_org, 'faruleavedep', 'Leave Deputy')
-    proxy1 = _user('faru_leave_p1', test_org, 'faruleavep1', 'Leave Proxy 1')
-    proxy2 = _user('faru_leave_p2', test_org, 'faruleavep2', 'Leave Proxy 2')
+    standby1 = _user('faru_leave_s1', test_org, 'faruleaves1', 'Leave Standby 1')
+    standby2 = _user('faru_leave_s2', test_org, 'faruleaves2', 'Leave Standby 2')
+    proxy = _user('faru_leave_p', test_org, 'faruleavep', 'Leave Proxy')
     _assign(manager, env['manager'], env['mkt'])
-    _assign(deputy, env['deputy'], env['mkt'])
-    _assign(proxy1, env['proxy1'], env['mkt'])
-    _assign(proxy2, env['proxy2'], env['mkt'])
+    _assign(standby1, env['manager'], env['mkt'], kind=AssignmentKind.STANDBY)
+    _assign(standby2, env['manager'], env['mkt'], kind=AssignmentKind.STANDBY)
+    _assign(proxy, env['manager'], env['mkt'], kind=AssignmentKind.PROXY, acting_for=manager.secure_code)
     _leave(manager, date(2026, 9, 5), [])
     monkeypatch.setattr(
         FormAdapterHandler,
@@ -490,26 +496,22 @@ def test_unit_position_snapshot_adds_proxies_when_manager_is_on_full_day_leave(t
 
     assert result['data']['assignees'] == [
         manager.secure_code,
-        deputy.secure_code,
-        proxy1.secure_code,
-        proxy2.secure_code,
+        proxy.secure_code,
     ]
 
 
 def test_unit_position_snapshot_partial_leave_proxies_follow_current_time(test_org, monkeypatch):
     env = _env(test_org)
     manager = _user('faru_partial_mgr', test_org, 'farupartialmgr', 'Partial Manager')
-    deputy = _user('faru_partial_dep', test_org, 'farupartialdep', 'Partial Deputy')
-    proxy1 = _user('faru_partial_p1', test_org, 'farupartialp1', 'Partial Proxy 1')
-    proxy2 = _user('faru_partial_p2', test_org, 'farupartialp2', 'Partial Proxy 2')
+    standby1 = _user('faru_partial_s1', test_org, 'farupartials1', 'Partial Standby 1')
+    standby2 = _user('faru_partial_s2', test_org, 'farupartials2', 'Partial Standby 2')
     _assign(manager, env['manager'], env['mkt'])
-    _assign(deputy, env['deputy'], env['mkt'])
-    _assign(proxy1, env['proxy1'], env['mkt'])
-    _assign(proxy2, env['proxy2'], env['mkt'])
+    _assign(standby1, env['manager'], env['mkt'], kind=AssignmentKind.STANDBY)
+    _assign(standby2, env['manager'], env['mkt'], kind=AssignmentKind.STANDBY)
     _leave(
         manager,
         date(2026, 9, 5),
-        ['09:00-12:00'],
+        ['13:00-18:00'],
         ['09:00-12:00', '13:00-18:00'],
     )
 
@@ -524,7 +526,7 @@ def test_unit_position_snapshot_partial_leave_proxies_follow_current_time(test_o
         unit_secure_code=env['mkt'].secure_code,
     ), 'posleaveam')
     _, morning_result = _run(morning)
-    assert morning_result['data']['assignees'] == [manager.secure_code, deputy.secure_code]
+    assert morning_result['data']['assignees'] == [manager.secure_code, standby1.secure_code, standby2.secure_code]
 
     monkeypatch.setattr(
         FormAdapterHandler,
@@ -537,12 +539,7 @@ def test_unit_position_snapshot_partial_leave_proxies_follow_current_time(test_o
         unit_secure_code=env['mkt'].secure_code,
     ), 'posleavepm')
     _, afternoon_result = _run(afternoon)
-    assert afternoon_result['data']['assignees'] == [
-        manager.secure_code,
-        deputy.secure_code,
-        proxy1.secure_code,
-        proxy2.secure_code,
-    ]
+    assert afternoon_result['data']['assignees'] == [manager.secure_code]
 
 
 def test_unit_role_snapshot_includes_descendant_and_global_holders(test_org):
@@ -760,7 +757,6 @@ def test_validate_role_unit_keys_only_apply_to_role(test_org):
     handler = FormAdapterHandler(normal)
     assert handler.validate() is True
     assert handler.node_config['unit_scope'] == 'GLOBAL'
-    assert handler.node_config['absence_fallback'] is True
     assert handler.node_config['self_target_action'] == 'escalate_or_return'
 
     false_item = _queue(test_org, instance, _config(
@@ -769,7 +765,6 @@ def test_validate_role_unit_keys_only_apply_to_role(test_org):
     ), 'valfalse')
     false_handler = FormAdapterHandler(false_item)
     assert false_handler.validate() is True
-    assert false_handler.node_config['absence_fallback'] is False
 
     user_item = _queue(test_org, instance, {
         'assignee_type': 'USER',
@@ -805,8 +800,8 @@ def test_timeout_reference_user_receives_role_unit_snapshot(test_org, monkeypatc
     env = _env(test_org)
     manager = _user('faru_to_mgr', test_org, 'farutomgr', 'Timeout Manager')
     deputy = _user('faru_to_dep', test_org, 'farutodep', 'Timeout Deputy')
-    _assign(manager, env['manager'], env['mkt'], assigned_at=datetime(2026, 1, 1))
-    _assign(deputy, env['deputy'], env['mkt'], assigned_at=datetime(2026, 1, 2))
+    _assign(manager, env['head'], env['mkt'], assigned_at=datetime(2026, 1, 1))
+    _assign(deputy, env['head'], env['mkt'], assigned_at=datetime(2026, 1, 2))
     seen = {}
 
     def fake_reference(self, assignees):
@@ -815,7 +810,7 @@ def test_timeout_reference_user_receives_role_unit_snapshot(test_org, monkeypatc
 
     monkeypatch.setattr(FormAdapterHandler, '_working_reference_user', fake_reference)
     item = _queue(test_org, _instance(test_org, 'timeout'), _config(
-        assignee_value=env['manager'].secure_code,
+        assignee_value=env['head'].secure_code,
         unit_scope='UNIT',
         unit_secure_code=env['mkt'].secure_code,
         timeout_enabled=True,
@@ -828,6 +823,75 @@ def test_timeout_reference_user_receives_role_unit_snapshot(test_org, monkeypatc
 
     assert seen['assignees'] == result['data']['assignees']
     assert result['data']['assignees'] == [manager.secure_code, deputy.secure_code]
+
+
+def test_head_gate_snapshot_lists_manager_and_deputy(test_org):
+    env = _env(test_org)
+    manager = _user('faru_head_mgr', test_org, 'faruheadmgr', 'Head Manager')
+    deputy = _user('faru_head_dep', test_org, 'faruheaddep', 'Head Deputy')
+    _assign(manager, env['head'], env['mkt'], assigned_at=datetime(2026, 1, 1))
+    _assign(deputy, env['head'], env['mkt'], assigned_at=datetime(2026, 1, 2))
+    _assign(manager, env['manager'], env['mkt'], assigned_at=datetime(2026, 1, 3))
+    _assign(deputy, env['deputy'], env['mkt'], assigned_at=datetime(2026, 1, 4))
+
+    head_item = _queue(test_org, _instance(test_org, 'headsnap'), _config(
+        assignee_value=env['head'].secure_code,
+        unit_scope='UNIT',
+        unit_secure_code=env['mkt'].secure_code,
+    ), 'headsnap')
+    _, head_result = _run(head_item)
+    assert head_result['data']['assignees'] == [manager.secure_code, deputy.secure_code]
+
+    manager_item = _queue(test_org, _instance(test_org, 'mgrsnap'), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='UNIT',
+        unit_secure_code=env['mkt'].secure_code,
+    ), 'mgrsnap')
+    _, manager_result = _run(manager_item)
+    assert manager_result['data']['assignees'] == [manager.secure_code]
+
+
+def test_snapshot_standby_only_when_no_available_holder(test_org):
+    env = _env(test_org)
+    manager = _user('faru_standby_mgr', test_org, 'farustandbymgr', 'Standby Manager')
+    standby = _user('faru_standby', test_org, 'farustandby', 'Standby')
+    _assign(manager, env['manager'], env['mkt'])
+    _assign(standby, env['manager'], env['mkt'], kind=AssignmentKind.STANDBY)
+
+    present_item = _queue(test_org, _instance(test_org, 'standbyon'), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='UNIT',
+        unit_secure_code=env['mkt'].secure_code,
+    ), 'standbyon')
+    _, present_result = _run(present_item)
+    assert present_result['data']['assignees'] == [manager.secure_code]
+
+    manager.is_active = False
+    db.session.commit()
+    inactive_item = _queue(test_org, _instance(test_org, 'standbyoff'), _config(
+        assignee_value=env['manager'].secure_code,
+        unit_scope='UNIT',
+        unit_secure_code=env['mkt'].secure_code,
+    ), 'standbyoff')
+    _, inactive_result = _run(inactive_item)
+    assert inactive_result['data']['assignees'] == [standby.secure_code]
+
+
+def test_snapshot_never_writes_absence_fallback_key(test_org):
+    env = _env(test_org)
+    holder = _user('faru_no_absence_key', test_org, 'farunoabsencekey', 'No Absence Key')
+    _assign(holder, env['member'], env['mkt'])
+    item = _queue(test_org, _instance(test_org, 'noabsence'), _config(
+        assignee_value=env['member'].secure_code,
+        unit_scope='UNIT',
+        unit_secure_code=env['mkt'].secure_code,
+        absence_fallback=True,
+    ), 'noabsence')
+
+    _, result = _run(item)
+
+    assert result['status'] == 'waiting_form_action'
+    assert 'absence_fallback' not in result['data']
 
 
 def test_non_role_assignee_data_shape_is_unchanged(test_org):

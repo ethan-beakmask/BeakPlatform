@@ -184,14 +184,6 @@
         }
         window.toggleUnitScopeRows = toggleUnitScopeRows;
 
-        function toggleAbsenceRow() {
-            const roleSelect = document.getElementById('formAdapterRoleValue');
-            const absenceRow = document.getElementById('faAbsenceRow');
-            const roleType = roleSelect?.selectedOptions[0]?.dataset.roleType || 'ROLE';
-            if (absenceRow) absenceRow.style.display = roleType === 'POSITION' ? 'block' : 'none';
-        }
-        window.toggleAbsenceRow = toggleAbsenceRow;
-
         // 載入組織樹（相容舊版）
         async function loadOrgTree() {
             return initOrgTree();
@@ -384,7 +376,6 @@
             } else if (assigneeType === 'ROLE') {
                 if (roleInputContainer) roleInputContainer.style.display = 'block';
                 toggleUnitScopeRows();
-                toggleAbsenceRow();
             } else if (assigneeType === 'DYNAMIC') {
                 if (dynamicInputContainer) dynamicInputContainer.style.display = 'block';
             }
@@ -440,7 +431,6 @@
                 const unitLabel = unitScope === 'UNIT' ? (unitSelect?.selectedOptions[0]?.dataset.unitName || unitSelect?.selectedOptions[0]?.text || '') : '';
                 const rawLevels = parseInt(document.getElementById('faUnitLevelsUp')?.value, 10);
                 const unitLevelsUp = Number.isNaN(rawLevels) ? 1 : rawLevels;  // 0 或負數要留給下方驗證擋，不能被 || 1 吃掉
-                const absenceFallback = document.getElementById('faAbsenceFallback')?.checked !== false;
                 const rawSelfTargetAction = document.getElementById('faSelfTargetAction')?.value || 'escalate_or_return';
                 const selfTargetAction = ['escalate_or_return', 'escalate_or_self', 'self'].includes(rawSelfTargetAction) ? rawSelfTargetAction : 'escalate_or_return';
                 const msg = document.getElementById('faModalMessage');
@@ -465,7 +455,6 @@
                     unit_secure_code: unitSecureCode,
                     unit_label: unitLabel,
                     unit_levels_up: unitLevelsUp,
-                    absence_fallback: absenceFallback,
                     self_target_action: selfTargetAction
                 };
             } else if (assigneeType === 'DYNAMIC') {

@@ -20,6 +20,7 @@ from ..services.task_authorizer import (
     delegate_from_fields,
     resolve_acting_identity,
 )
+from ..services.approval_history import serialize_approval_history
 from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
@@ -227,17 +228,7 @@ def get_pending_task(secure_code):
             workflow_instance_secure_code=task.workflow_instance_secure_code
         ).order_by(FwApprovalRecord.acted_at.asc()).all()
 
-        for approval in approval_records:
-            approvals.append({
-                'node_id': approval.node_id,
-                'node_name': approval.node_name,
-                'approver_name': approval.approver_name,
-                'delegate_from_name': approval.delegate_from_name,
-                'acted_as_role_code': approval.acted_as_role_code,
-                'action': approval.action,
-                'comment': approval.comment,
-                'acted_at': approval.acted_at.isoformat() if approval.acted_at else None,
-            })
+        approvals = serialize_approval_history(approval_records, org.secure_code)
 
     return jsonify({
         'success': True,
@@ -530,6 +521,7 @@ def approve_task(secure_code):
             comment=comment,
             acted_at=datetime.utcnow(),
             acted_as_role_code=identity.get('acted_as_role_code'),
+            acted_as_kind=identity.get('acted_as_kind'),
             **delegate_from_fields(identity, org.secure_code),
         )
         db.session.add(approval_record)

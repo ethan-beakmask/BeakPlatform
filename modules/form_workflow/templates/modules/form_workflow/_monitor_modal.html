@@ -333,8 +333,10 @@
                                     <span x-text="approval.approver_name"></span>
                                     <span x-show="approval.delegate_from_name" class="fc-delegate-tag"
                                           x-text="__('（代 {name} 簽核）', {name: approval.delegate_from_name || ''})"></span>
-                                    <span x-show="approval.acted_as_role_code" class="fc-delegate-tag"
-                                          x-text="__('（以{role}身分）', {role: getActedAsText(approval.acted_as_role_code)})"></span>
+                                    <span x-show="approval.acted_as_kind === 'standby'" class="fc-delegate-tag"
+                                          x-text="__('（候補代理 {role}）', {role: approval.acted_as_role_name || approval.acted_as_role_code})"></span>
+                                    <span x-show="!approval.acted_as_kind && approval.acted_as_role_code" class="fc-delegate-tag"
+                                          x-text="__('（以{role}身分）', {role: approval.acted_as_role_name || approval.acted_as_role_code})"></span>
                                 </td>
                                 <td style="padding: 8px 10px; white-space: nowrap;">
                                     <span class="fc-badge" :class="getActionBadgeClass(approval.action)" x-text="getActionText(approval.action)"></span>

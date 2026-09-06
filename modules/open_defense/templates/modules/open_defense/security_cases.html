@@ -176,6 +176,8 @@
                                                         <span class="sc-approval-who" x-text="a.approver_name"></span>
                                                         <span class="sc-approval-delegate" x-show="a.delegate_from_name"
                                                               x-text="__('（代 {name} 簽核）', {name: a.delegate_from_name || ''})"></span>
+                                                        <span class="sc-approval-delegate" x-show="a.acted_as_kind === 'standby'"
+                                                              x-text="__('（候補代理 {role}）', {role: a.acted_as_role_name || a.acted_as_role_code})"></span>
                                                         <span class="od-badge"
                                                               :class="a.action === 'approved' ? 'od-badge-applied' : 'od-badge-failed'"
                                                               x-text="a.action"></span>

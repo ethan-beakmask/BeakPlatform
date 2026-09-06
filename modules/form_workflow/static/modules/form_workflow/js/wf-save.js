@@ -147,7 +147,6 @@
                                 config.unit_secure_code = unitSecureCode;
                                 config.unit_label = unitLabel;
                                 config.unit_levels_up = unitLevelsUp;
-                                config.absence_fallback = document.getElementById('faAbsenceFallback')?.checked !== false;
                                 config.self_target_action = selfTargetAction;
                             }
                         } else if (assigneeType.value === 'DYNAMIC') {

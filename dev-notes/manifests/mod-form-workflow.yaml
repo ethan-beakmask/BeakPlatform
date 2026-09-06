@@ -44,6 +44,8 @@ files:
     # egress_adapter.py EGRESS-01 form_node 語境（fc_pending 簽核詳情過濾 + 揭示通道）
     # task_authorizer.py 簽核佇列授權判定（快照 + 角色@單位套圈 + 三種指派性質 + 代理授權）
     - modules/form_workflow/services/ai_usage_service.py    # AiAgent 用量記錄與配額服務
+    - modules/form_workflow/services/approval_history.py    # 簽核歷程序列化與 acted_as 角色名稱解析
+    - modules/form_workflow/services/manager_gate_migration.py # PF-251 既有主管缺席順位關卡改指 DEPT_HEAD
     - modules/form_workflow/services/node_grant_service.py  # 流程節點型別企業授權判定
     - modules/form_workflow/services/trigger_scope_service.py # API Key 表單 scope 解析共用服務
     - modules/form_workflow/services/node_handlers/hr_lookup_handler.py # OpHrLookup 人事資料取值節點
@@ -111,6 +113,7 @@ files:
     - backend/tests/test_formadapter_no_assignee.py             # 簽核節點找不到簽核人時退回申請人或改派角色
     - backend/tests/test_formadapter_role_unit.py  # 簽核節點解析角色@單位範圍、快照、DEPARTMENT 別名、解析失敗走 PF-226
     - backend/tests/test_approval_record_acted_as.py  # 簽核記錄 acted_as_role_code（以副主管／代理人身分放行）
+    - backend/tests/test_manager_gate_migration.py              # PF-251 DEPT_MANAGER 缺席順位關卡遷移至 DEPT_HEAD
   docs:
     - dev-notes/HR_LOOKUP_NODE_SPEC.md                         # NT-31 人事資料取值節點規格
   vendor_deps:

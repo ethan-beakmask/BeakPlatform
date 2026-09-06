@@ -32,6 +32,7 @@ files:
     - backend/tests/test_task_authorizer_delegate_from.py
     - backend/tests/test_task_authorizer_role_unit.py      # 角色@單位授權：proxy／standby 性質
     - backend/tests/test_role_holding_service.py
+    - backend/tests/test_manager_gate_migration.py
     - backend/tests/test_delegation_effective_status.py
     - backend/tests/test_delegations_prefill.py
     - backend/tests/test_my_delegations_api.py

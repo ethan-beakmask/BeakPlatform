@@ -374,3 +374,39 @@ dev 庫五欄位＋部分索引在、7 企業 DEPT_HEAD 種入且正副主管改
 
 **帶進第 3 期的備忘**（不在第 2 期）：`remove_dept_membership()` 只撤 regular 列，成員被移出部門時其 proxy／standby@該單位列留著（刪整個單位時 PF-249 的 purge 會收）；
 `dept_membership_service` 連帶授撤 `DEPT_HEAD@U` 時要處理 unit 為 NULL 的全企業正副主管（dev 現況 0 列，bpserv 未查）。
+
+
+### 第 2 期（2026-09-06，執行 session；codex 實作、主 Claude 驗收）
+
+憑證：`/opt/tmp/verify/20260906-role-proxy-2.log`（遷移第四段核對、重啟、瀏覽器）、`-related.log`（9 檔 119 passed；Claude 改後 `test_formadapter_role_unit.py` 27 passed）、`-full-c1.log`～`-full-c5.log`（全量分七批：1131 passed／2 skipped／0 failed）。
+spec：`/opt/tmp/codex/20260906-pf251-phase2.txt`（複審五點全部併入）。codex 回報 `-result.txt`（9 檔 119 passed、drift 綠、遷移三次、executor 重啟前 RUNNING=0）。
+
+**與設計／spec 的差異（驗收時改）**：
+
+1. codex 在 `FormAdapterHandler.validate()` 加了「發現舊 config 有 `absence_fallback` 就 pop 掉並 `flag_modified(queue_item, 'node_config')`」——
+   驗證步驟裡對佇列項做寫入，是 spec 之外的清洗；已移除，handler 對該鍵完全不讀不寫，舊佇列項與舊 graph 殘留的鍵不動。三個對應的
+   `node_config` 斷言一併拿掉（`result.data` 不含該鍵的斷言保留）。
+2. 歷程第二個 span 的條件從 `acted_as_kind !== 'standby' && acted_as_role_code` 收成 `!acted_as_kind && acted_as_role_code`：
+   前者會讓 proxy 命中（kind='proxy'、code 有值）多印一句「（以部門正主管身分）」，設計 3.7 說 proxy 只沿用「（代 X 簽核）」。
+   現在四態：舊記錄（kind NULL、code 有值）→「（以{角色名}身分）」；standby →「（候補代理 {角色名}）」；proxy → 只有「（代 X 簽核）」；regular → 無標籤。
+3. 「（候補代理 部門主管@行銷）」的 `@單位` **沒做**：`fw_approval_records` 沒有單位欄位，只顯示角色名。要單位就得多一欄，留待有需求再加。
+4. 角色名由後端查（`approval_history.serialize_approval_history()` 多回 `acted_as_role_name`，同一請求內 code→name 一次查），
+   前端不再對 code 表；`fc-utils.getActedAsText()` 刪除。
+
+**實作落點**：`formadapter_handler.py`（`_role_spec_data` 改 `effective_holders(..., today=local_now.date(), local_now=self._local_now())`，
+順位常數／`_present_managers`／`_normalized_absence_fallback` 刪除，`result.data` 不再有 `absence_fallback`）、`approval_record.py`（`acted_as_kind`）、
+`fc_pending`／`fc_batch`／`instance_routes` 三處寫入、`services/approval_history.py`（新，`fc_pending`／`fc_monitor` 共用）、
+`services/manager_gate_migration.py`（新；`migrate_gate_nodes()` 純函式＋`migrate_org_manager_gates()`，graph／cytoscape_config／快照兩處四處都改、`flag_modified`）、
+`scripts/migrate_proxy_assignments.py` 第四段、三個 modal 模板＋`security_cases.html`、`wf-form-adapter.js`／`wf-node-form-adapter.js`／`wf-save.js`、
+`en.json`、`docs/manual/04_form_workflow/workflows.md`、manifests。
+
+**dev 資料現況**：決策點 H 只命中 BELUGA `b5YR6Qjj6fmyBAakkT1LbB`（`node-Approve`，APPLICANT_UNIT）與其兩個快照（Published fb=true、Suspended 缺 key），
+四處都改指 `DEPT_HEAD`、label 改「部門主管@…」、鍵已刪；第三次 `--apply` 四段全 0；全 dev 已無「DEPT_MANAGER＋非 false」關卡。
+BBN 卡片說「OD 三條處置流程在此列」不對——那些關卡是 SECURITY_STAFF／SOC_SUPERVISOR。
+
+**驗收**：設計器（admin-ethanyu，chrome-devtools）角色下拉列出部門主管／部門正主管／部門副主管（POSITION）、遷移後選中「部門主管」、
+`#faAbsenceFallback`／`#faAbsenceRow` 不存在、`toggleAbsenceRow` 為 undefined；modal「套用並關閉」後節點 config 無 `absence_fallback`，
+「儲存」攔到的 PUT body 內該節點亦無、DB revision 4→5 且 graph 仍指 DEPT_HEAD。表單中心 read modal 對舊記錄 Form-260900018 顯示「（以部門副主管身分）」，
+同筆資料在 Alpine 上切換 kind 驗四態文字全對。API `form-detail` 每筆帶 `acted_as_kind`／`acted_as_role_name`。
+
+**第 3 期之前的斷層更新**：關卡已改指 `DEPT_HEAD`，副主管恢復可簽；`DEPT_PROXY1/2` 持有者仍要等第 3 期遷成 standby。

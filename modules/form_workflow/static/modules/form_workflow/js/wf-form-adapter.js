@@ -59,7 +59,6 @@
             const unitScope = ['GLOBAL', 'UNIT', 'APPLICANT_UNIT', 'APPLICANT_ANCESTOR'].includes(rawUnitScope) ? rawUnitScope : 'GLOBAL';
             const unitSecureCode = currentConfig.unit_secure_code || '';
             const unitLevelsUp = parseInt(currentConfig.unit_levels_up, 10) || 1;
-            const absenceFallback = currentConfig.absence_fallback !== false;
             const rawSelfTargetAction = currentConfig.self_target_action || 'escalate_or_return';
             const selfTargetAction = ['escalate_or_return', 'escalate_or_self', 'self'].includes(rawSelfTargetAction) ? rawSelfTargetAction : 'escalate_or_return';
             const legacyDepartmentOption = assigneeType === 'DEPARTMENT'
@@ -133,7 +132,7 @@
 
                             <div id="roleInputContainer" class="fa-modal-field" style="display: ${assigneeType === 'ROLE' ? 'block' : 'none'};">
                                 <strong>選擇角色</strong>
-                                <select id="formAdapterRoleValue" onchange="toggleAbsenceRow()" style="margin-top: 4px;">
+                                <select id="formAdapterRoleValue" style="margin-top: 4px;">
                                     <option value="">載入中...</option>
                                 </select>
                                 <div style="margin-top: 3px; font-size: 10px; color: #888;">${__('依單位範圍決定誰能簽；不限單位時，全企業持有此角色的人都可簽核。')}</div>
@@ -163,14 +162,7 @@
                                         <option value="escalate_or_self" ${selfTargetAction === 'escalate_or_self' ? 'selected' : ''}>${__('往上一層找；到根仍是本人就由本人簽')}</option>
                                         <option value="self" ${selfTargetAction === 'self' ? 'selected' : ''}>${__('不往上，直接由本人簽')}</option>
                                     </select>
-                                    <div style="margin-top: 3px; font-size: 10px; color: #888;">${__('只有主管類（職位型）角色會做本人檢查；副主管、代理人也算「本人就是簽核者」。')}</div>
-                                </div>
-                                <div id="faAbsenceRow" style="display: none; margin-top: 8px;">
-                                    <label style="display: flex; align-items: center; cursor: pointer;">
-                                        <input type="checkbox" id="faAbsenceFallback" ${absenceFallback ? 'checked' : ''} style="margin-right: 8px;">
-                                        ${__('主管缺席時由副主管／代理人接手')}
-                                    </label>
-                                    <div style="margin-top: 3px; font-size: 10px; color: #888;">${__('副主管永遠可簽；代理人(一)(二)只在主管職缺時可簽。')}</div>
+                                    <div style="margin-top: 3px; font-size: 10px; color: #888;">${__('只有主管類（職位型）角色會做本人檢查；本人以代理或候補身分列在簽核者內也算。')}</div>
                                 </div>
                             </div>
 
@@ -339,8 +331,7 @@
                 initOrgTree(assigneeType);
                 loadUnitOptionsInto('faUnitSecureCode', unitSecureCode);
                 toggleUnitScopeRows();
-                toggleAbsenceRow();
-                loadRoleOptionsInto('formAdapterRoleValue', assigneeValue, function() { toggleAbsenceRow(); });
+                loadRoleOptionsInto('formAdapterRoleValue', assigneeValue);
                 loadRoleOptionsInto('faNoAssigneeRole', noAssigneeRoleSecureCode);
                 if (window._faDecisions && useCustomDecisions) {
                     const outEdges = window._faDecisions.getOutgoingEdges(nodeId);

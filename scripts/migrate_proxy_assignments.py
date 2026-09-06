@@ -8,6 +8,7 @@ ALTER TABLE user_role_assignments ADD COLUMN IF NOT EXISTS acting_for_user_secur
 ALTER TABLE user_role_assignments ADD COLUMN IF NOT EXISTS allowed_form_templates JSONB;
 ALTER TABLE user_role_assignments ADD COLUMN IF NOT EXISTS source_ref VARCHAR(100);
 ALTER TABLE user_role_assignments ADD COLUMN IF NOT EXISTS grant_reason TEXT;
+ALTER TABLE fw_approval_records ADD COLUMN IF NOT EXISTS acted_as_kind VARCHAR(10);
 CREATE INDEX IF NOT EXISTS ix_user_role_assignments_role_unit_kind
   ON user_role_assignments (org_secure_code, role_secure_code, unit_secure_code, assignment_kind) WHERE is_deleted = false;
 """
@@ -27,10 +28,11 @@ USAGE = """用法:
   scripts/migrate_proxy_assignments.py --apply --org ORG_CODE [--org ORG_CODE...]
 
 說明:
-  PF-251 第 1 期遷移：
+  PF-251 遷移：
   1. 補種 DEPT_HEAD 系統角色
   2. 將出廠預設 DEPT_MANAGER/DEPT_DEPUTY 顯示名改成新名稱
   3. 回填 DEPT_HEAD@單位 給既有正、副主管正式指派
+  4. 既有 DEPT_MANAGER＋缺席順位關卡改指 DEPT_HEAD
 
   --dry-run 只顯示結果；--apply 才會寫入資料庫。
 """
@@ -98,6 +100,11 @@ def _empty_counts():
         'head_created': 0,
         'head_revived': 0,
         'head_skipped': 0,
+        'gate_skipped_no_role': 0,
+        'gate_templates': 0,
+        'gate_template_nodes': 0,
+        'gate_snapshots': 0,
+        'gate_snapshot_nodes': 0,
     }
 
 
@@ -271,6 +278,10 @@ def main():
 
     app = create_app()
     with app.app_context():
+        from modules.form_workflow.models import FwPublishedFormWorkflow, FwWorkflowTemplate
+        from modules.form_workflow.services.manager_gate_migration import migrate_org_manager_gates
+        steps = (*STEPS, migrate_org_manager_gates)
+
         query = Organization.query.filter(Organization.is_deleted == False)  # noqa: E712
         if org_codes:
             query = query.filter(Organization.code.in_(org_codes))
@@ -281,6 +292,8 @@ def main():
             'Role': Role,
             'UserRoleAssignment': UserRoleAssignment,
             'AssignmentKind': AssignmentKind,
+            'FwWorkflowTemplate': FwWorkflowTemplate,
+            'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
             'build_dept_head_role': build_dept_head_role,
             'constants': {
                 'DEPT_ROLE_RENAMES': DEPT_ROLE_RENAMES,
@@ -291,7 +304,7 @@ def main():
         total = _empty_counts()
         for org in orgs:
             counts = _empty_counts()
-            for step in STEPS:
+            for step in steps:
                 _merge_counts(counts, step(org, ctx))
             _merge_counts(total, counts)
             print(
@@ -302,7 +315,12 @@ def main():
                 f"rename_skipped={counts['rename_skipped']}, "
                 f"head_created={counts['head_created']}, "
                 f"head_revived={counts['head_revived']}, "
-                f"head_skipped={counts['head_skipped']}"
+                f"head_skipped={counts['head_skipped']}, "
+                f"gate_skipped_no_role={counts['gate_skipped_no_role']}, "
+                f"gate_templates={counts['gate_templates']}, "
+                f"gate_template_nodes={counts['gate_template_nodes']}, "
+                f"gate_snapshots={counts['gate_snapshots']}, "
+                f"gate_snapshot_nodes={counts['gate_snapshot_nodes']}"
             )
 
         if mode == '--apply':
@@ -320,7 +338,12 @@ def main():
             f"rename_skipped={total['rename_skipped']}, "
             f"head_created={total['head_created']}, "
             f"head_revived={total['head_revived']}, "
-            f"head_skipped={total['head_skipped']}"
+            f"head_skipped={total['head_skipped']}, "
+            f"gate_skipped_no_role={total['gate_skipped_no_role']}, "
+            f"gate_templates={total['gate_templates']}, "
+            f"gate_template_nodes={total['gate_template_nodes']}, "
+            f"gate_snapshots={total['gate_snapshots']}, "
+            f"gate_snapshot_nodes={total['gate_snapshot_nodes']}"
         )
 
     return 0
