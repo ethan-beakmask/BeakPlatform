@@ -485,3 +485,30 @@ dev 庫自查：模板與發行快照都沒有殘留的「`DEPT_MANAGER`＋非 f
 K1（建議）只寫 `DEPT_HEAD@U`——對應「正副都休假才輪到候補」；指定「正主管本人」的關卡在正主管請假時沒有候補，由正主管事前授出 proxy 或走設計師的退回／逾時。
 K2 三個主管角色各寫一列——正主管一人請假、關卡指定正主管時候補就接手，範圍較寬。
 既有 `DEPT_PROXY1/2` 指派的遷移方向跟著 K 走。
+
+### 第 3a 期複審（原 session，2026-09-06 22:29）——**通過，附補丁 3a-1（小，派 3b 前同 session 做）**
+
+親自重跑 10 檔 115 passed（`test_role_assignment_kinds` 6／`test_unit_leadership_api` 3／`test_access_center_assign_kinds` 2／`test_proxy_role_migration` 2／
+`test_dept_membership_service` 13／`test_hr_lookup_node` 23／`test_task_authorizer_role_unit` 32／`test_formadapter_role_unit` 27／`test_route_guard_table` 2／`test_role_layer_guard` 5）、
+守恆檢查綠、守門表一致；讀完 `role_assignment_service`／`dept_membership_service`／`unit_resolver`／`organization_service`／`proxy_role_migration`／遷移腳本／
+`organizational_units` API／`platform/data.py`／權限中心 API 與 web 的 diff，前端摘讀 API 呼叫與性質分支；憑證：遷移第五段 dry-run→apply→第二次全 0、J 對照組三站一字不差、
+部門頁與權限中心瀏覽器實點、矩陣 #9 越權四項、全量 1149 passed。dev 自查：standby 6 列／regular 268 列、每一列 regular 正副主管都有對應 `DEPT_HEAD@U`（缺漏 0）、
+副主管仍持 `DEPT_EMPLOYEE` 0 列、PROXY 指派 active 0、PROXY 角色只剩已軟刪企業 TEST00 的兩筆（刻意跳過，正確）；殘留的 `proxy1／proxy2` 字串全在社群頁（membership role_type）與 `client_ip.py` 註解，不在範圍。
+八點差異全部採納：授撤放 `role_assignment_service.assign_role(kind=)` 比部門服務更對（代理對象不限部門角色）；J 取三角色聯集能容忍未連帶 HEAD 的舊資料，接受；`remove_dept_membership` 撤該人在該單位所有列符合 3a 清單第 3 條。
+
+**補丁 3a-1（三件，一次派工）**：
+
+1. **平台 API 檔內新增的直接查詢搬進服務層**（TENANT-02：新寫的平台 API 一律走 gateway 或不在 API 檔內查）：`api/organizational_units.py` 的 `_load_active_user`／`_regular_holder`／`_standby_rows`／`_standby_users`
+   與 `remove_unit_standby` 內的 `User.query`，`api/access_center.py::role_holders` 內的 `User.query`——搬成 `dept_membership_service.list_unit_leadership()`／`remove_unit_standby()` 與
+   `role_assignment_service.list_regular_holders()`，API 只呼叫。semgrep `beakplatform-direct-model-query-in-api` 對平台 API 的命中已從基準 91 降到 79（leadership 重寫淨減），
+   補丁後 `access_center.py` 應為 0、`organizational_units.py` 不得高於補丁前扣掉這 6 處
+2. **`_assert_can_grant()` 非管理員路徑的單位比對要精確**：現在對 `unit_sc=None` 呼叫 `resolve_role_holders(unit=None)` 會把「任一單位的 regular 持有者」都算成可授出全企業範圍的代理。
+   改成：`unit_sc` 有值→操作者須持 (R, unit_sc) 或 (R, None) 的 regular；`unit_sc` 為 None→操作者須持 (R, None) 的 regular。今天 API 層全是 `@admin_required` 所以碰不到，
+   **第 4 期 `OpProxyGrant` 以申請人身分呼叫時就會碰到**，一定要在那之前修；`test_role_assignment_kinds` 補兩案
+3. **部門頁登記候補的「已是候補」判定不要比對訊息字串**：`set_unit_leadership()` 用 `'候補' in str(exc) and '已是' in str(exc)` 判斷重複，訊息經 gettext 翻譯，英文介面下會變成整組 400 並 rollback
+   （例：權限中心先建了某人 `DEPT_HEAD@U` 的候補，再到部門頁拖同一人）。改成呼叫前用既有的 `_standby_rows(user_sc)` 算出缺哪幾列只補那幾列，或讓 `assign_role` 拋帶 `code` 的例外由呼叫端辨識；`test_unit_leadership_api` 補「三列已有一列」案
+
+補丁不必重跑全量：跑 `test_role_assignment_kinds`＋`test_unit_leadership_api`＋`test_access_center_assign_kinds`＋`test_dept_membership_service`＋semgrep 兩檔計數即可，憑證接 3a log 尾。
+
+**3b 照第 2 期複審的清單派**，另補三條：`role_assignment_service._membership_role_labels()` 的 `MembershipRole.PROXY1/2` 是社群跨部門成員的顯示標籤，不在範圍、不要動；
+手冊 `departments.md` 補正副主管與候補代理人一節時要寫「候補對三個主管角色都生效」（K2）；bpserv 部署清單加第五段遷移（DemoSOC 無 PROXY 指派，預期 0 列、角色退役 2 筆）。
