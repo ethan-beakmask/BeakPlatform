@@ -1,5 +1,9 @@
 # PF-248：bpserv 上實測角色@單位（一次性交接，2026-09-06 原 session 寫，codex 冷讀補洞後版本）
 
+> **已完成（2026-09-06 13:38）**：矩陣 #1／#7／#2、self_target 預設、`resolve_direct_manager()` 全 PASS，憑證 `/opt/tmp/verify/20260906-pf248-bpserv-roleunit.log`，腳本 `/opt/tmp/verify/pf248/`。
+> 與本檔的差異：建帳號 API 給 `password` 就不設 `must_change_password`（第二節的 password_hash 做法用不到）；表單模板建立回應無頂層 `secure_code`（從 DB 撈）；
+> 流程與配對全用 API 建，沒開設計器。收尾時發現刪單位不連帶軟刪除單位角色指派與成員關係，另開 **PF-249**。本檔保留供考古。
+
 > PF-247 已部署 bpserv（GitHub `056a052d`＝dev `09014ce7`），但 DemoSOC 沒有部門、沒有單位角色指派、沒有任職卡，
 > 部署驗收只跑了「無單位範圍的 ROLE 舊路徑」。本卡把角色@單位、缺席順位、直屬主管推導在 bpserv 跑一次。
 > bpserv 憑證與登入方式見 `CLAUDE.md`「bpserv 測試機」表；本檔只放本卡專用的識別碼與指令。

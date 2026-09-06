@@ -537,3 +537,8 @@ GHTRAVEL 實流程 G1／G2 與第 4 期一字不差，**另加 G1x**：晧志遠
 **收尾清單（原 session）**：全量測試最後一次（4a 後）→ `push both` → bpserv `--update` ＋ 兩句手動 SQL（`fw_approval_records.acted_as_role_code` ADD、`employee_positions.direct_manager_secure_code` DROP）
 → bpserv 驗收（DemoSOC 無部門角色：既有 ROLE 全域流程照舊 200／403；`/positions/` 頁無直屬主管欄）→ BBN PF-247 結案。
 兩份 handoff（`handoff_role_unit_20260905.md`、`handoff_role_unit_phase4_20260905.md`）是一次性交接檔，保留供考古。
+
+### PF-248 bpserv 實測——完成（2026-09-06 13:38）
+
+DemoSOC 臨時建部門與三帳號，矩陣 #1／#7／#2、`self_target_action` 預設退回、`resolve_direct_manager()` 全 PASS（憑證 `/opt/tmp/verify/20260906-pf248-bpserv-roleunit.log`），測資已清。
+收尾抓到 **PF-249**：`DELETE /api/units/<sc>` 只清 `primary_unit` 與舊的人對人欄位，不軟刪 `user_unit_memberships` 與帶 unit 的 `user_role_assignments`（PF-247 之前的寫法未跟上）。**PF-247 系列至此全部結案。**
