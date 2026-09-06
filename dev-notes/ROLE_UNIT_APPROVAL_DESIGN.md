@@ -541,4 +541,4 @@ GHTRAVEL 實流程 G1／G2 與第 4 期一字不差，**另加 G1x**：晧志遠
 ### PF-248 bpserv 實測——完成（2026-09-06 13:38）
 
 DemoSOC 臨時建部門與三帳號，矩陣 #1／#7／#2、`self_target_action` 預設退回、`resolve_direct_manager()` 全 PASS（憑證 `/opt/tmp/verify/20260906-pf248-bpserv-roleunit.log`），測資已清。
-收尾抓到 **PF-249**：`DELETE /api/units/<sc>` 只清 `primary_unit` 與舊的人對人欄位，不軟刪 `user_unit_memberships` 與帶 unit 的 `user_role_assignments`（PF-247 之前的寫法未跟上）。**PF-247 系列至此全部結案。**
+收尾抓到 **PF-249**：`DELETE /api/units/<sc>` 只清 `primary_unit` 與舊的人對人欄位，不軟刪 `user_unit_memberships` 與帶 unit 的 `user_role_assignments`（PF-247 之前的寫法未跟上）。**PF-249 已於同日 13:54 修畢（commit `04bb1645`）**：`dept_membership_service.purge_unit_memberships()` 成為刪單位時的唯一清理入口、成員數守門改以 membership 計、`remove_dept_membership()` 收齊六個 DEPT_*；dev 實測憑證 `/opt/tmp/verify/20260906-pf249.log`，bpserv 待 push 後 `--update`（無 schema 變更）。順帶觀察 `/leadership/<position>` 端點繞過服務自建指派，另開卡。**PF-247 系列至此全部結案。**
