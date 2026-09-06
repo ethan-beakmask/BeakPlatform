@@ -1,13 +1,13 @@
 # 角色級代理指派設計（PF-251）
 
 > 撰寫：2026-09-06 主 Claude，依 Ethan 同日定案的六點（BBN #5402 末段）。前作 `ROLE_UNIT_APPROVAL_DESIGN.md`（PF-247）
-> 把簽核者做成 (角色, 單位)，本文件把「代理」與「備位」也收進同一張表、同一條判定，退役兩個 PROXY 角色與人對人代理授權。
+> 把簽核者做成 (角色, 單位)，本文件把「代理」與「候補」也收進同一張表、同一條判定，退役兩個 PROXY 角色與人對人代理授權。
 > 執行方式沿用 PF-247：撰寫本文件的 session 留守審查，執行 session 依第六節逐期派 codex 並驗收，每期完成後在第十一節寫差異清單。
 
 ## 一、一句話
 
 代理人不是另一種角色，是**在一段期間內持有被代理的那個角色@單位**。`user_role_assignments` 每一列多一個「指派性質」：
-`regular`（正式持有）、`proxy`（有效期內視同持有，記被代理人）、`standby`（備位，只在該角色@單位沒有任何可用的正式或代理持有者時生效）。
+`regular`（正式持有）、`proxy`（有效期內視同持有，記被代理人）、`standby`（候補，只在該角色@單位沒有任何可用的正式或代理持有者時生效）。
 授權判定只剩一句話：**行為人今天持有有效的 (角色, 單位)**。任何角色都能被代理，主管只是關卡指定的角色之一；
 `DEPT_PROXY1`／`DEPT_PROXY2` 與 `task_authorizer` 只認識 `DEPT_MANAGER` 的缺席順位一起退役，人對人的 `delegations` 併入同一張表。
 PF-71 的「限定表單」維度保留，做在指派列上。
@@ -91,7 +91,7 @@ PF-71 的「限定表單」維度保留，做在指派列上。
 | 欄位 | 型別 | 語意 |
 |---|---|---|
 | `assignment_kind` | VARCHAR(10) NOT NULL DEFAULT `'regular'` | `regular`／`proxy`／`standby` |
-| `acting_for_user_secure_code` | VARCHAR(32) NULL，FK users | 被代理的人；`proxy` 必填，`standby` 可空（備位的是位子不是人），`regular` 一律 NULL |
+| `acting_for_user_secure_code` | VARCHAR(32) NULL，FK users | 被代理的人；`proxy` 必填，`standby` 可空（候補的是位子不是人），`regular` 一律 NULL |
 | `allowed_form_templates` | JSONB NULL | 表單模板 sc 陣列；NULL＝不限。`regular` 一律 NULL |
 | `source_ref` | VARCHAR(100) NULL | 來源：流程實例 `execution_code`、`admin:<user sc>`、`migration:<腳本>`、`self:<user sc>` |
 | `grant_reason` | TEXT NULL | 事由（自 `delegations.reason` 遷入） |
@@ -100,7 +100,7 @@ PF-71 的「限定表單」維度保留，做在指派列上。
 **不加 (user, role, unit) 唯一約束**：同一個人可以同時是某角色@單位的 `regular` 與另一列 `proxy`（副主管同時被指定代理主管），性質不同就是兩列。
 索引加 `(org_secure_code, role_secure_code, unit_secure_code, assignment_kind) WHERE is_deleted = false`。
 
-`fw_approval_records` 加 `acted_as_kind VARCHAR(10) NULL`（regular／proxy／standby）；`acted_as_role_code` 保留，改記「以代理／備位身分命中的角色碼」，regular 一律 NULL。
+`fw_approval_records` 加 `acted_as_kind VARCHAR(10) NULL`（regular／proxy／standby）；`acted_as_role_code` 保留，改記「以代理／候補身分命中的角色碼」，regular 一律 NULL。
 
 ### 3.2 三種性質的語意
 
@@ -108,7 +108,7 @@ PF-71 的「限定表單」維度保留，做在指派列上。
 |---|---|---|---|
 | `regular` | `is_valid_on(today)` | 既有路徑不變 | 既有路徑不變 |
 | `proxy` | `is_valid_on(today)`，與 regular 完全等價；另受 `allowed_form_templates` 限制 | R@U 的 `regular` 持有者本人（同意流程或自助）、ORG_ADMIN 直接指派 | 被代理人、代理人本人（放棄）、ORG_ADMIN；軟刪除 |
-| `standby` | `is_valid_on(today)` **且** R@U 此刻沒有任何「可用」的 regular／proxy 持有者 | ORG_ADMIN（部門頁備位代理人區塊）、R@U 的 regular 持有者 | 同上 |
+| `standby` | `is_valid_on(today)` **且** R@U 此刻沒有任何「可用」的 regular／proxy 持有者 | ORG_ADMIN（部門頁候補代理人區塊）、R@U 的 regular 持有者 | 同上 |
 
 「可用」＝帳號未刪除且啟用、指派今天有效、此刻不在請假時段（`ScheduleService.is_on_leave(user, org_local_now)`，第 5 期定義，不看來源）。
 多個 standby 同時生效，不分順位（現況 PROXY1／PROXY2 在職缺時本來就同時放行）。
@@ -138,11 +138,15 @@ holds(actor, R, U, task):
 前作把「副主管永遠可簽」寫進順位表，是因為只有一個 `DEPT_MANAGER` 角色。Ethan 定案：**部門有三個主管類角色**，
 關卡指哪一個由流程設計師決定，判定端不需要任何特判：
 
-| 角色碼 | 顯示名 | 誰持有 | 用途 |
-|---|---|---|---|
-| `DEPT_HEAD`（新） | 部門主管 | 正主管與副主管**都**持有 | 「正副任一即可」的關卡；正副互相代理，兩人都缺席才輪到 standby／proxy |
-| `DEPT_MANAGER`（既有，改顯示名） | 部門正主管 | 只有正主管 | 必須正主管本人（或其代理）的關卡；直屬主管推導、核決鏈 |
-| `DEPT_DEPUTY`（既有） | 部門副主管 | 只有副主管 | 必須副主管本人（或其代理）的關卡 |
+部門角色因此共五個，兩個成員類（ROLE，套圈）、三個主管類（POSITION，不套圈）：
+
+| 角色碼 | 顯示名 | 型別 | 誰持有 | 用途 |
+|---|---|---|---|---|
+| `DEPT_MEMBER`（既有） | 部門成員 | ROLE，套圈 | 部門內**所有人，含正副主管**（出廠說明：「部門通用成員角色，部門內所有人(主管+員工)皆擁有」） | 「資訊部全員」這類關卡（全員開會簽到）指它，不必主管一次員工一次；`DEPARTMENT` 舊型別的別名 |
+| `DEPT_EMPLOYEE`（既有） | 部門員工 | ROLE，套圈 | 非管理職；設為正主管或副主管時撤銷（決策點 I） | 只要員工不要主管的關卡 |
+| `DEPT_HEAD`（新） | 部門主管 | POSITION | 正主管與副主管**都**持有 | 「正副任一即可」的關卡；正副互相代理，兩人都缺席才輪到候補／代理 |
+| `DEPT_MANAGER`（既有，改顯示名） | 部門正主管 | POSITION | 只有正主管 | 必須正主管本人（或其代理）的關卡 |
+| `DEPT_DEPUTY`（既有） | 部門副主管 | POSITION | 只有副主管 | 必須副主管本人（或其代理）的關卡 |
 
 - 三個都是 POSITION 型、都不套圈，都以 (角色, 單位) 指派——「xx部門正主管」就是 `DEPT_MANAGER@xx`，**建立部門不需要新增角色列**，
   刪除部門時 PF-249 的 `purge_unit_memberships()` 會把三種指派一起收掉。若 Ethan 要的是每個部門一組獨立角色列，那是角色模型的變更
@@ -153,7 +157,7 @@ holds(actor, R, U, task):
   正副互相代理不需要任何指派，因為兩人本來就都持有 `DEPT_HEAD@U`。
 - 設計器的「主管缺席時由副主管／代理人接手」勾選**移除**；`absence_fallback` config 保留讀取但不再有作用。
   既有 graph 與發行快照中「`DEPT_MANAGER`＋`absence_fallback=true`」的關卡，語意是「正主管，副主管永遠可簽」，最接近 `DEPT_HEAD`——
-  是否由遷移腳本自動改指 `DEPT_HEAD`（保留今天的行為）見決策點 H。
+  由遷移腳本自動改指 `DEPT_HEAD`（保留今天的行為，決策點 H 定案）；`absence_fallback=false` 的維持 `DEPT_MANAGER`。
 
 ### 3.5 限定表單維度（Ethan 定案：保留）
 
@@ -163,7 +167,7 @@ holds(actor, R, U, task):
 
 ### 3.6 直屬主管推導、快照、投影不受代理影響的部分
 
-- `unit_resolver.iter_manager_chain()`／`resolve_direct_manager()` **只認 `regular`**：核決鏈找的是「誰的職等決定上限」，代理人簽核不改變上限。正主管職缺時是否先看副主管（`DEPT_DEPUTY@U`）再往上見決策點 J。`resolve_role_holders()` 加 `kinds=('regular',)` 參數，預設維持現行語意。
+- `unit_resolver.iter_manager_chain()`／`resolve_direct_manager()` **只認 `regular`**：核決鏈找的是「誰的職等決定上限」，代理人簽核不改變上限。每一站的「主管」＝`DEPT_HEAD@U` 的 regular 持有者（正副皆算），代表人取正主管、沒有才取副主管（職等上限用代表人的），一位都沒有才往上一層（決策點 J 定案）。`resolve_role_holders()` 加 `kinds=('regular',)` 參數，預設維持現行語意。
 - 快照 `assignees`（只供顯示與逾時參考人）＝此刻能簽的人：regular ∪ 有效 proxy ∪（無可用持有者時的 standby），由 `role_holding_service.effective_holders()` 產出；FormAdapter `_role_spec_data()` 改呼叫它，刪掉順位迴圈。`_apply_self_target()` 的「本人在快照內」語意不變。
 - 行事曆投影 `_delegation_events` 改投影 proxy 列（授權人與代理人各自看得到，ORG_ADMIN 看全部）；`approver_exposure_service._has_covering_delegation()` 改查「請假區間內是否有 proxy 列涵蓋本人所有 regular 角色」。
 
@@ -171,7 +175,7 @@ holds(actor, R, U, task):
 
 `resolve_acting_identity()` 回 `{'via', 'delegator_secure_code', 'acted_as_role_code', 'acted_as_kind'}`：
 `via='self'` 且 kind=regular → 三個 NULL；kind=proxy → `delegate_from_*`＝`acting_for`、`acted_as_kind='proxy'`、`acted_as_role_code`＝該角色碼；kind=standby → `acted_as_kind='standby'`、`acted_as_role_code`＝該角色碼、`delegate_from_*` 依 `acting_for` 有無。
-顯示文字：「（代 X 簽核）」沿用；「（備位代理 部門主管@行銷）」新增；「（以副主管身分）」這種文字**消失**——副主管簽 `DEPT_HEAD` 關卡就是正式持有者，不需要標示（`fc-utils.js:63-66` 三個寫死的 code 刪除，改查角色名）。
+顯示文字：「（代 X 簽核）」沿用；「（候補代理 部門主管@行銷）」新增；「（以副主管身分）」這種文字**消失**——副主管簽 `DEPT_HEAD` 關卡就是正式持有者，不需要標示（`fc-utils.js:63-66` 三個寫死的 code 刪除，改查角色名）。
 
 ### 3.8 `delegations` 表與相關 UI 的去留（決策點 B）
 
@@ -179,11 +183,11 @@ holds(actor, R, U, task):
 
 | 現況 | 去處 |
 |---|---|
-| `/delegations/` 管理員頁 | 退役。管理員在權限中心「帳號配角色」直接建 proxy／standby（表單多「性質、被代理人、效期、限定表單、事由」），或在部門頁備位代理人區塊建 standby |
-| `/api/my-delegations`＋個人設定「我的代理授權」 | 過渡期改寫成「我的代理指派」：`given`＝我授出的 proxy 列、`received`＝我持有的 proxy 列；建立＝FULL 語法糖（對本人所有 regular 角色各建一列 proxy，`source_ref='self:<sc>'`）。同意流程（第 4 期）上線後這條「無同意的自助」保留為緊急路徑或移除——Ethan 定 |
+| `/delegations/` 管理員頁 | 退役。管理員在權限中心「帳號配角色」直接建 proxy／standby（表單多「性質、被代理人、效期、限定表單、事由」），或在部門頁候補代理人區塊建 standby |
+| `/api/my-delegations`＋個人設定「我的代理授權」 | 過渡期改寫成「我的代理指派」：`given`＝我授出的 proxy 列、`received`＝我持有的 proxy 列；建立＝FULL 語法糖（對本人所有 regular 角色各建一列 proxy，`source_ref='self:<sc>'`）。第 4 期同意流程上線後這條無同意的自助路徑**移除**（Ethan 定案） |
 | `Delegation` model、`delegations` 表 | 遷移後軟刪 model；表留一版考古，`org_data_purge_service`／`hostconfig` 的表清單同步 |
 | `api/calendar.py:140-163` 的 `delegation_hint` | 導向改成「我的代理指派」或同意流程入口 |
-| 手冊 `delegations.md`、`personal_settings.md:72-93`、`calendar.md` 四段、`my_delegation.md` 佔位稿 | 第 3 期改寫成指派語意；`workflows.md:162-177` 順位敘述改成「備位代理人」 |
+| 手冊 `delegations.md`、`personal_settings.md:72-93`、`calendar.md` 四段、`my_delegation.md` 佔位稿 | 第 3 期改寫成指派語意；`workflows.md:162-177` 順位敘述改成「候補代理人」 |
 
 遷移規則（一次性腳本 `scripts/migrate_proxy_assignments.py --dry-run/--apply`，冪等）：
 1. 每筆 `DEPT_PROXY1`／`DEPT_PROXY2`@U 的有效指派 → 一列 `standby` 的 `DEPT_MANAGER`@U（`source_ref='migration:pf251'`），原列軟刪；兩個角色在各企業軟刪，`_create_default_roles` 不再種。
@@ -229,11 +233,11 @@ def _match_identity(data, user_sc, actor):
 
 ## 五、UI
 
-- 權限中心「帳號配角色」：指派列顯示性質標籤（正式／代理 X／備位）與效期；指派表單多「性質」select（預設正式）、性質非正式時展開被代理人（proxy 必填）、起迄日（proxy 必填）、限定表單多選、事由。
-- 部門頁：「代理人一」「代理人二」兩區合併成「備位代理人」（可多人拖放，寫 standby 的 DEPT_MANAGER@U）；主管、副主管區不變。
+- 權限中心「帳號配角色」：指派列顯示性質標籤（正式／代理 X／候補）與效期；指派表單多「性質」select（預設正式）、性質非正式時展開被代理人（proxy 必填）、起迄日（proxy 必填）、限定表單多選、事由。
+- 部門頁：「代理人一」「代理人二」兩區合併成「候補代理人」（可多人拖放，寫 standby 的 DEPT_MANAGER@U）；主管、副主管區不變。
 - 個人設定「我的代理指派」：我授出的（可撤銷）、我持有的（可放棄）、「指定代理人」按鈕（第 4 期接同意流程；第 3 期先接自助建立）。
 - 設計器 FormAdapter：`faAbsenceFallback` 勾選移除；角色下拉自然列出「部門主管／部門正主管／部門副主管」三個；`self_target_action` 不動（「本人在快照內」改由 `effective_holders()` 判）。
-- 表單中心／案件中心歷程：加「（備位代理）」；「（以…身分）」改查角色名。
+- 表單中心／案件中心歷程：加「（候補代理）」；「（以…身分）」改查角色名。
 - 行事曆：proxy 列投影，文案「X 代理 Y（角色@單位）」。
 
 ## 六、分期（每期一個 codex 任務，順序不可調；每期 spec 貼 `_footer.md`、`security.md`，第 2～4 期另貼 `frontend.md`＋`i18n.md`）
@@ -241,8 +245,8 @@ def _match_identity(data, user_sc, actor):
 | 期 | 內容 | 檔案 | 測試／驗收 |
 |---|---|---|---|
 | 1 資料層與判定核心 | 3.1 欄位（model＋dev ALTER＋守恆檢查）；新系統角色 `DEPT_HEAD`（`_create_default_roles` 種入＋既有企業補種＋回填給現有正副主管，遷移腳本第一段）；`DEPT_MANAGER` 顯示名改「部門正主管」；新檔 `role_holding_service.py`（`effective_holders`／`has_available_holder`／`holds`）；`task_authorizer` 刪順位表、`_holds` 依 3.3、`resolve_acting_identity` 多回 `acted_as_kind`；`delegations` 路徑**保留並存**；`resolve_role_holders` 加 `kinds` 參數；`api/organizational_units.py:418-422` 死賦值順手刪 | `models/associations.py`、`services/role_holding_service.py`（新）、`services/unit_resolver.py`、`modules/form_workflow/services/task_authorizer.py` | `test_task_authorizer_role_unit.py` 14 案改語意重寫＋新增（proxy 效期內外、proxy 限定表單、standby 在職／請假／職缺／銷假、standby 不套圈、proxy 套圈跟角色、regular＋proxy 並存）；新檔 `test_role_holding_service.py`；`test_task_authorizer_delegate_from.py` 不動仍綠 |
-| 2 節點解析、歸因、顯示 | `_role_spec_data()` 改走 `effective_holders()`；`absence_fallback` 失效、設計器勾選移除；既有關卡依決策點 H 遷移（graph＋發行快照）；`fw_approval_records.acted_as_kind`（model＋ALTER）；三處寫入點；`fc-utils.js` 顯示；設計器 modal 與 `wf-save.js` 兩條儲存路徑；i18n | `formadapter_handler.py`、`approval_record.py`、`fc_pending.py`／`fc_batch.py`／`instance_routes.py`、`fc-utils.js`、`wf-form-adapter.js`／`wf-node-form-adapter.js`／`wf-save.js`、三個 modal 模板、`en.json` | `test_formadapter_role_unit.py` 5 案改寫＋多角色關卡案；瀏覽器實點（設計器兩條儲存路徑、歷程文字） |
-| 3 寫入路徑收斂與遷移 | `dept_membership_service` 加 `grant_proxy()`／`grant_standby()`／`revoke_grant()`（含層界與「只能授出自己 regular 持有的角色」檢查）；`role_assignment_service.assign_role()` 收 kind 等欄位並輸出效期；`set_unit_leadership` 改走服務（**併 PF-250**）、設正副主管連帶授撤 `DEPT_HEAD@U`（副主管是否撤 `DEPT_EMPLOYEE` 見決策點 I）；部門頁備位代理人；權限中心 UI；`DEPT_PROXY1/2` 退役（種入函式、常數、`role_map`）；遷移腳本（3.8）；`/delegations/`、`Delegation` model、`my-delegations` 依決策點 B 處置；行事曆投影與 `approver_exposure` 改讀 proxy 列；`task_authorizer` 刪 delegations 路徑；手冊六頁；`route_guard_inventory.py --update` | 見 2.3／2.4 清單 | `test_dept_membership_service.py`、`test_my_delegations_api.py`（改語意）、`test_delegations_prefill.py`（退役或改寫）、`test_calendar_projection.py`；dev 遷移前後矩陣（第七節 #8）；瀏覽器實點部門頁與權限中心 |
+| 2 節點解析、歸因、顯示 | `_role_spec_data()` 改走 `effective_holders()`；`absence_fallback` 失效、設計器勾選移除；既有 `DEPT_MANAGER`＋`absence_fallback=true` 關卡由遷移腳本改指 `DEPT_HEAD`（graph＋發行快照，決策點 H 定案）；`fw_approval_records.acted_as_kind`（model＋ALTER）；三處寫入點；`fc-utils.js` 顯示；設計器 modal 與 `wf-save.js` 兩條儲存路徑；i18n | `formadapter_handler.py`、`approval_record.py`、`fc_pending.py`／`fc_batch.py`／`instance_routes.py`、`fc-utils.js`、`wf-form-adapter.js`／`wf-node-form-adapter.js`／`wf-save.js`、三個 modal 模板、`en.json` | `test_formadapter_role_unit.py` 5 案改寫＋多角色關卡案；瀏覽器實點（設計器兩條儲存路徑、歷程文字） |
+| 3 寫入路徑收斂與遷移 | `dept_membership_service` 加 `grant_proxy()`／`grant_standby()`／`revoke_grant()`（含層界與「只能授出自己 regular 持有的角色」檢查）；`role_assignment_service.assign_role()` 收 kind 等欄位並輸出效期；`set_unit_leadership` 改走服務（**併 PF-250**）、設正副主管連帶授撤 `DEPT_HEAD@U`（副主管與正主管同樣撤 `DEPT_EMPLOYEE`，決策點 I 定案）；部門頁候補代理人；權限中心 UI；`DEPT_PROXY1/2` 退役（種入函式、常數、`role_map`）；遷移腳本（3.8）；`/delegations/`、`Delegation` model、`my-delegations` 依決策點 B 處置；行事曆投影與 `approver_exposure` 改讀 proxy 列；`task_authorizer` 刪 delegations 路徑；手冊六頁；`route_guard_inventory.py --update` | 見 2.3／2.4 清單 | `test_dept_membership_service.py`、`test_my_delegations_api.py`（改語意）、`test_delegations_prefill.py`（退役或改寫）、`test_calendar_projection.py`；dev 遷移前後矩陣（第七節 #8）；瀏覽器實點部門頁與權限中心 |
 | 4 代理指定同意流程 | 3.9：`formio-my-role-picker.js`、`OpProxyGrant` handler＋定義＋seed 匯出、出廠表單／流程／配對、個人設定入口、手冊 `my_delegation.md` 正文 | `backend/app/static/js/formio-my-role-picker.js`、`form_designer.html`／`form_center.html`、`node_handlers/op_proxy_grant_handler.py`（新）、`factory.py`、`defaults/proxy_request_defaults.py`（新）、`scripts/export_node_definitions_seed.py` 重跑 | 新檔 `test_op_proxy_grant.py`；實流程：送單→代理人同意→列出現／拒絕→無列／選了非持有角色→擋；bpserv 部署 |
 
 bpserv 部署清單（`--update` 的 create_all 不補欄位）：
@@ -276,33 +280,27 @@ BELUGA（行銷部門：ethanyu 副主管、aaaa／ssss 現為代理人一二、
 | 8 | 遷移：dev 的 PROXY 指派與有效 delegations 跑 `--apply` 前後 | 同一批 WAITING 任務五帳號矩陣一致；`--apply` 連跑兩次第二次 0 列 |
 | 9 | 越權：user（非持有者）替自己建 proxy；EXTERNAL `gg@gmail.com` 當代理人；aaaa（proxy 持有者）再授出 | 全部 403／400，錯誤碼可辨識 |
 | 10 | 直屬主管：GHTRAVEL 30 萬／500 萬對照組，另在燁凱文的角色上插一列 proxy 給別人 | 核決人不變（proxy 不進推導） |
-| 11 | 部門頁備位代理人拖放、權限中心建 proxy 與顯示效期 | chrome-devtools 實點，`evaluate_script` 取 innerText |
+| 11 | 部門頁候補代理人拖放、權限中心建 proxy 與顯示效期 | chrome-devtools 實點，`evaluate_script` 取 innerText |
 | 12 | 第 4 期：shen 送「代理指定申請」給 aaaa → aaaa 同意／拒絕；shen 選了自己沒持有的角色 | 同意→proxy 列出現且 `source_ref=execution_code`；拒絕→無列；非持有→表單驗證擋 |
 
-## 八、待 Ethan 定案
+## 八、定案記錄（2026-09-06，全部定案，可派第 1 期）
 
-**2026-09-06 已定案（Ethan 依編號回覆）**：
-
-1. **A**：正副主管是三個角色（3.4），由流程設計師選；順位特判與設計器勾選移除。
-2. **B**：`delegations` 整套退役（3.8）。同意流程上線後的無同意自助路徑：**待答**（併入 H 之後一起回）。
-3. **C**：standby 也吃 `allowed_form_templates`。
-4. **D**：APPROVAL 限額型直接退役。
-5. **E**：效期理想是小時，但被代理人與管理員隨時可撤銷，維持**日**粒度（撤銷即時生效＝軟刪除當下）。
-6. **F**：管理員直接指派 proxy／standby 時 `grant_reason` 必填。
-7. **G**：性質中文「正式／代理／備位」；「備位」的定義見 3.2（standby：登記在先、只在該角色@單位沒有任何可用持有者時自動生效，對應今天的代理人一／二）。
-
-**待答（第 1 期開工前）**：
-
-- **H** 既有關卡的遷移：graph 與發行快照中 `assignee_value=DEPT_MANAGER` 且 `absence_fallback=true`（出廠預設）的 FormAdapter，
-  今天的行為是「正主管與副主管都能簽」。建議遷移腳本自動改指 `DEPT_HEAD`（保留行為，`absence_fallback=false` 的維持 `DEPT_MANAGER`）；
-  不遷移則這些關卡從此只有正主管能簽，設計師要逐一改。OD 三條處置流程與 GHTRAVEL 示範流程都在此列。
-- **I** 副主管是否算管理職：設為副主管時撤 `DEPT_EMPLOYEE@U`（與正主管同）。建議撤。
-- **J** 直屬主管推導（OpHrLookup、核決鏈）在正主管職缺時：建議先看 `DEPT_DEPUTY@U` 持有者再往上一層，副主管有任職卡就用其職等上限。
-- **B 後半** 同意流程上線後，個人設定頁「無同意的自助建立 proxy」留作緊急路徑或移除。
+| # | 問題 | Ethan 定案 |
+|---|---|---|
+| A | 正副主管怎麼表達 | 三個角色（3.4），關卡指哪個由設計師選；順位特判與設計器勾選移除 |
+| B | `delegations` 去留；同意流程上線後的無同意自助路徑 | 整套退役；自助路徑第 4 期上線後**移除** |
+| C | standby 也吃限定表單 | 是 |
+| D | APPROVAL 限額型 | 直接退役 |
+| E | 效期粒度 | 維持日；撤銷＝軟刪除當下生效 |
+| F | 管理員直接指派時事由 | 必填 |
+| G | 性質中文 | 正式／代理／**候補**（Ethan 改用人類習慣的詞；程式碼仍 `standby`） |
+| H | 既有 `DEPT_MANAGER`＋`absence_fallback=true` 關卡 | 遷移腳本自動改指 `DEPT_HEAD` |
+| I | 全員角色與副主管 | 全員角色＝既有 `DEPT_MEMBER`（含正副主管，套圈），不新增；副主管與正主管同樣撤 `DEPT_EMPLOYEE` |
+| J | 直屬主管推導 | 每站主管＝`DEPT_HEAD@U` 持有者，代表人正主管優先、再副主管、都沒有才往上。關卡找不到人的處置全部交給既有設計師選項（PF-226 退回／改派、self_target、簽核逾時），**本設計不再加任何新的自動處置**（Ethan：設計太精細更容易卡住） |
 
 ## 九、不在本設計內
 
-會簽決議型式、逾時升級到上層、USER 型指定帳號停用後的處置（PF-246）；社群的團長／副團長／代理人（走 `user_unit_memberships.role_type`，不經角色指派，日後若要備位語意再套本模型）；`permission_condition.has_valid_delegation` 死定義的清理（併 B 退役時順手刪）。
+會簽決議型式、逾時升級到上層、USER 型指定帳號停用後的處置（PF-246）；社群的團長／副團長／代理人（走 `user_unit_memberships.role_type`，不經角色指派，日後若要候補語意再套本模型）；`permission_condition.has_valid_delegation` 死定義的清理（併 B 退役時順手刪）。
 
 ## 十、BBN
 
