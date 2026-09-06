@@ -175,7 +175,7 @@ holds(actor, R, U, task):
 
 `resolve_acting_identity()` 回 `{'via', 'delegator_secure_code', 'acted_as_role_code', 'acted_as_kind'}`：
 `via='self'` 且 kind=regular → 三個 NULL；kind=proxy → `delegate_from_*`＝`acting_for`、`acted_as_kind='proxy'`、`acted_as_role_code`＝該角色碼；kind=standby → `acted_as_kind='standby'`、`acted_as_role_code`＝該角色碼、`delegate_from_*` 依 `acting_for` 有無。
-顯示文字：「（代 X 簽核）」沿用；「（候補代理 部門主管@行銷）」新增；「（以副主管身分）」這種文字**消失**——副主管簽 `DEPT_HEAD` 關卡就是正式持有者，不需要標示（`fc-utils.js:63-66` 三個寫死的 code 刪除，改查角色名）。
+顯示文字：「（代 X 簽核）」沿用；「（候補代理 部門主管）」新增（第 2 期定案只印角色名，`fw_approval_records` 沒有單位欄位）；「（以副主管身分）」這種文字**消失**——副主管簽 `DEPT_HEAD` 關卡就是正式持有者，不需要標示（`fc-utils.js:63-66` 三個寫死的 code 刪除，改查角色名）。
 
 ### 3.8 `delegations` 表與相關 UI 的去留（決策點 B）
 
@@ -410,3 +410,36 @@ BBN 卡片說「OD 三條處置流程在此列」不對——那些關卡是 SEC
 同筆資料在 Alpine 上切換 kind 驗四態文字全對。API `form-detail` 每筆帶 `acted_as_kind`／`acted_as_role_name`。
 
 **第 3 期之前的斷層更新**：關卡已改指 `DEPT_HEAD`，副主管恢復可簽；`DEPT_PROXY1/2` 持有者仍要等第 3 期遷成 standby。
+
+### 第 2 期複審（原 session，2026-09-06 19:05）——**通過，可派第 3 期（建議拆 3a／3b）**
+
+親自重跑 8 檔 88 passed（`test_formadapter_role_unit` 27／`test_manager_gate_migration` 2／`test_approval_record_acted_as` 2／`test_task_authorizer_role_unit` 32／
+`test_role_holding_service` 5／`test_formadapter_no_assignee` 6／`test_formadapter_timeout` 12／`test_route_guard_table` 2）、守恆檢查綠（108 表／1822 欄）、
+`mkdocs build --strict` 過；讀完 handler／model／`approval_history`／`manager_gate_migration`／遷移腳本第四段／三處寫入點／三個 modal＋案件中心／三支設計器 JS／i18n／手冊的 diff；
+憑證：遷移第四段四處改指 `DEPT_HEAD` 且第三次 `--apply` 全 0、瀏覽器實點（角色下拉三主管角色、勾選消失、兩條儲存路徑 config 無 `absence_fallback`、revision 5）、歷程四態文字、全量 1131 passed。
+dev 庫自查：模板與發行快照都沒有殘留的「`DEPT_MANAGER`＋非 false」關卡、graph 內 `absence_fallback` 鍵 0、**進關卡中的 260 筆 WAITING FormAdapter 沒有一筆 spec 指向 `DEPT_MANAGER`**（遷移前進關卡的任務不會卡在舊規格）。
+四點差異全部採納：移除 codex 在 `validate()` 內對佇列項的清洗寫入是對的；proxy 只印「（代 X 簽核）」符合 3.7；`@單位` 不做（3.7 文字據此修正為只印角色名）；角色名後端查是正確的收斂。
+
+**第 3 期範圍太大，建議拆兩期各一個 codex 任務**（PF-247 的教訓：最重的一期不要超過執行 session 三成 context）：
+
+**3a 寫入路徑收斂、部門頁、PROXY 退役**：
+1. `dept_membership_service` 新增 `grant_proxy()`／`grant_standby()`／`revoke_grant()`：層界檢查 `ensure_role_layer_compatible()`；只有該角色@單位的 `regular` 持有者本人或 ORG_ADMIN 能授出；proxy 不得再授出；`acting_for` 必填（proxy）；`grant_reason` 管理員路徑必填（F）；`allowed_form_templates` 可選
+2. 設正主管＝`DEPT_MANAGER@U`＋`DEPT_HEAD@U`、設副主管＝`DEPT_DEPUTY@U`＋`DEPT_HEAD@U`，卸任連帶撤；副主管與正主管同樣撤 `DEPT_EMPLOYEE`（I）；unit 為 NULL 的全企業正副主管同樣處理（dev 現況 0 列）
+3. `set_unit_leadership`／`remove_unit_leadership` 改走服務（**PF-250 併入**），`role_map` 去掉 proxy1／proxy2；`remove_dept_membership()` 連同該成員在該單位的 proxy／standby 列一起撤（人離開部門就不該再代理或候補該部門的位子）
+4. 部門頁「代理人一／二」合併成「候補代理人」（多人）；**寫哪個角色的 standby 見決策點 K**
+5. 權限中心帳號配角色：列表顯示性質標籤與效期；指派表單多「性質、被代理人、起迄日、限定表單、事由」；`role_assignment_service.assign_role()` 收新欄位並走上面的 grant 函式
+6. `DEPT_PROXY1`／`DEPT_PROXY2` 退役：既有指派遷成 standby（遷移腳本第五段，依決策點 K），角色逐企業軟刪，`_create_default_roles`／`DEPT_POSITION_ROLE_CODES`／`role_assignment_service.py:38-40,266` 同步
+7. J：`iter_manager_chain()` 每站看 `DEPT_HEAD@U` 的 regular 持有者，代表人正主管優先、再副主管，都沒有才往上；`test_hr_lookup_node` 增案，GHTRAVEL 30 萬／500 萬對照組不變
+
+**3b delegations 退役與遷移**：
+1. 遷移腳本第六段：未到期、未撤銷的 delegation → 對授權人每一列 regular 指派各建一列 proxy（SPECIFIC 清單進 `allowed_form_templates`、`acting_for`＝授權人、`grant_reason`＝reason、`source_ref='migration:pf251:<delegation sc>'`），冪等；dev 現況有效 1 筆、bpserv 0 筆
+2. `task_authorizer` 刪 delegations 路徑（`_get_delegated_identity_data`、`actor['delegations']`）；`test_task_authorizer_delegate_from.py` 改寫成 proxy 語意
+3. `calendar_projection_service._delegation_events` 與 `approver_exposure_service._has_covering_delegation` 改讀 proxy 列；`api/calendar.py` 的 `delegation_hint` 導向改成個人設定「我的代理指派」
+4. `/delegations/` 管理頁、`Delegation` model、`permission_condition.has_valid_delegation` 死定義、`org_data_purge_service`／`hostconfig` 表清單、`resource_gateway` 的 `delegation` 資源型登記，全部退役；`route_guard_inventory.py --update`
+5. `/api/my-delegations`＋個人設定區塊改寫成「我的代理指派」（given／received／建立＝對本人所有 regular 角色各建 proxy／撤銷）；第 4 期上線後移除建立入口
+6. 手冊：`delegations.md` 改寫成「代理與候補」（ORG_ADMIN，在權限中心與部門頁操作）、`personal_settings.md:72-93`、`calendar.md` 四段、`my_delegation.md` 正文、`departments.md` 由佔位稿補正副主管與候補代理人一節；`docs_impact.py` 過
+
+**決策點 K（3a 開工前 Ethan 定）**：部門頁登記的「候補代理人」寫哪個角色的 standby？
+K1（建議）只寫 `DEPT_HEAD@U`——對應「正副都休假才輪到候補」；指定「正主管本人」的關卡在正主管請假時沒有候補，由正主管事前授出 proxy 或走設計師的退回／逾時。
+K2 三個主管角色各寫一列——正主管一人請假、關卡指定正主管時候補就接手，範圍較寬。
+既有 `DEPT_PROXY1/2` 指派的遷移方向跟著 K 走。
