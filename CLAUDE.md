@@ -1203,6 +1203,7 @@ prefix = request.script_root if has_request_context() else ''
 | `formio-user-picker.js` | `userPicker` | `users.secure_code`（字串） |
 | `formio-form-picker.js` | `formPicker` | `fw_form_templates.secure_code` **陣列**（PF-160 授權表單） |
 | `formio-form-title.js` | — | 表單名稱 |
+| `formio-my-role-picker.js` | `myRolePicker` | `[{role_secure_code, unit_secure_code, role_name, unit_name}]`（PF-251 代理指定申請單，後兩個是顯示快照） |
 
 **新增元件時 `form_designer.html` 與 `form_center.html` 兩處都要加 `<script>`**——
 兩邊的 script 清單各自維護（與 `_ir_designer_body.html` 的雙宿主同一個坑）。
@@ -1219,6 +1220,21 @@ prefix = request.script_root if has_request_context() else ''
 （含時間與時區偏移），後端凡是拿 `strptime('%Y-%m-%d')` 解的都會失敗。
 **送出後查一次 `fw_form_instances.form_data` 的實際值再接流程**，
 畫面上顯示的日期看不出這個差別。
+
+**自訂元件的唯讀檢視（簽核頁、已完成單）有兩個症狀靜默的坑**（2026-09-08 PF-251 第 4 期實測）：
+
+1. **選項清單依「登入者」載入的元件，簽核者永遠解析不出申請人選的東西**。
+   `myRolePicker` 的來源是 `/api/my-proxy-assignments/my-roles`（本人的角色），簽核者開單時載入的是
+   自己的清單，比對不到申請人的 role sc → 只能顯示 secure_code，等於要對方盲簽。
+   **解法是送出時把顯示名稱一起快照進值裡**（`role_name`／`unit_name`），唯讀時優先用快照、
+   再退回選項比對、最後才印 sc；後端只讀 secure_code，多出來的顯示欄位一律忽略。
+   `formPicker` 用 `beneficiaryKey` 指向表單內的對象欄位重新載入選項，是同一個問題的另一種解法。
+2. **元件沒有覆寫 `setValue` 就不會重繪**。Form.io 先 `attach()` 再由 submission 設值，
+   `attach` 當下 `dataValue` 還是空的，畫面就停在空狀態——實測簽核者看到「已選 0 個角色」而值其實有兩筆。
+   覆寫 `setValue` 後呼叫自己的重繪函式即可，**但只在唯讀時重繪**：可編輯時每次勾選都重建整個清單，
+   會讓捲動位置與焦點跳掉（實測連續勾第二項會失敗）。
+
+兩者**單元測試都抓不到**，要在表單中心用另一個帳號開簽核頁才看得出來。
 
 ### VERIFY-01: 驗收規範（瀏覽器實測 + 留證，主 Claude 專屬職責）
 
