@@ -19,7 +19,20 @@
 {% endif %}
 {% endwith %}
 
-<div class="outlook-layout" x-data="orgManager()" x-cloak>
+<div class="org-page" x-data="orgManager()" x-cloak>
+    <nav class="org-tabs" aria-label="{{ _('企業管理分頁') }}">
+        <button type="button" class="org-tab" :class="{ 'is-active': activeTab === 'list' }"
+                @click="switchTab('list')">
+            {{ _('企業清單') }}
+        </button>
+        <button type="button" class="org-tab org-tab-danger" :class="{ 'is-active': activeTab === 'harddelete' }"
+                @click="switchTab('harddelete')">
+            {{ _('永久刪除已軟刪除的企業') }}
+        </button>
+    </nav>
+
+    <section class="org-tab-panel" x-show="activeTab === 'list'">
+    <div class="outlook-layout">
     <!-- 左側面板 - 企業列表 -->
     <div class="left-panel">
         <div class="panel-header">
@@ -344,6 +357,13 @@
         </div>
         {% endif %}
     </div>
+    </div>
+
+    </section>
+
+    <section class="org-tab-panel" x-show="activeTab === 'harddelete'">
+        {% include "pages/organizations/_org_hard_delete.html" %}
+    </section>
 
     <!-- 合約新增/編輯 Modal -->
     <div x-show="contractModal.show" x-cloak class="modal-overlay">
@@ -456,8 +476,6 @@
         </div>
     </div>
 </div>
-
-{% include "pages/organizations/_org_hard_delete.html" %}
 
 <script>
 window.__ORG_PAGE_CONFIG = {

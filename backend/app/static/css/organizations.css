@@ -1,6 +1,61 @@
 /* organizations.css — 企業管理頁面
    btn/modal/form-group/form-row/badge/alert 由 common.css 提供 */
 
+/* Tab（企業清單 / 永久刪除已軟刪除的企業，2026-09-07）
+   樣式沿用 access-center.css 的 .ac-tabs / .ac-tab / .ac-tab-panel 互動模式，
+   改用 org- 前綴（FRONT-07：模組 class 加前綴），不直接載入 access-center.css
+   避免耦合到與本頁無關的其餘規則。 */
+.org-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 4px;
+}
+
+.org-tab {
+    appearance: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 10px 14px;
+    font: inherit;
+    font-size: var(--font-size-base);
+}
+
+.org-tab:hover,
+.org-tab:focus {
+    color: var(--color-text);
+}
+
+.org-tab.is-active {
+    border-bottom-color: var(--color-primary);
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+/* 危險操作分頁刻意用警示色常駐標示，這是 Ethan 反映「功能藏太深、自己都忘了」的解法：
+   分頁本身一律可見且用顏色標出，不再需要點開才知道有這個功能 */
+.org-tab-danger {
+    color: var(--color-danger);
+}
+
+.org-tab-danger:hover,
+.org-tab-danger:focus {
+    color: var(--color-danger-hover);
+}
+
+.org-tab-danger.is-active {
+    border-bottom-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.org-tab-panel {
+    min-width: 0;
+}
+
 /* Outlook 風格左右佈局 */
 .outlook-layout {
     display: flex;
@@ -339,9 +394,9 @@
     background: var(--color-danger-light);
 }
 
-/* 企業硬刪除區塊（PF-170：由 /hostconfig/data-maintenance 搬來）
-   預設收合的危險操作區，不使用 hostconfig-index.css 的 .tool-card，
-   避免企業管理頁相依主機設定頁的樣式表 */
+/* 企業硬刪除區塊（PF-170：由 /hostconfig/data-maintenance 搬來；2026-09-07 從頁尾摺疊區
+   改成獨立 Tab 內容，不再是 <details>，改用 .org-hard-delete-intro 呈現標題與警語）
+   不使用 hostconfig-index.css 的 .tool-card，避免企業管理頁相依主機設定頁的樣式表 */
 .org-hard-delete {
     margin: 16px 0;
     border: 1px solid var(--color-border);
@@ -349,11 +404,13 @@
     background: var(--color-bg-white);
 }
 
-.org-hard-delete > summary {
-    cursor: pointer;
+.org-hard-delete-intro {
     padding: 10px 14px;
-    font-weight: 600;
-    color: var(--color-danger);
+}
+
+.org-hard-delete-intro strong {
+    display: block;
+    margin-bottom: 4px;
 }
 
 .org-hard-delete-body {

@@ -21,6 +21,17 @@ function hardDeleteManager() {
         resultMessage: '',
         resultSuccess: false,
 
+        // 2026-09-07：改成獨立 Tab 後不再有 <details> 的 @toggle 事件可用，
+        // 改聽 organizations.js switchTab() 送出的事件，第一次切進此 Tab 才打預覽 API
+        // （loading 仍是初始值 true 時才觸發，效果與原本「展開才載入」一致）
+        init() {
+            window.addEventListener('org:hard-delete-tab-activated', () => {
+                if (this.loading) {
+                    this.loadPreview();
+                }
+            });
+        },
+
         async loadPreview() {
             try {
                 var res = await fetch(__ORG_HARD_DELETE.previewUrl);

@@ -6,6 +6,9 @@ const selectedOrgCode = config.selectedOrgCode || '';
 
 function orgManager() {
     return {
+        // Tab（企業清單 / 永久刪除已軟刪除的企業，2026-09-07 由頁面最下方摺疊區改成獨立分頁）
+        activeTab: 'list',
+
         searchText: config.search || '',
         conglomerateFilter: config.conglomerateFilter || '',
         selectedOrgCode: selectedOrgCode,
@@ -38,6 +41,15 @@ function orgManager() {
                 description: '',
                 notes: '',
                 modules: []
+            }
+        },
+
+        switchTab(tab) {
+            this.activeTab = tab;
+            if (tab === 'harddelete') {
+                // hardDeleteManager() 是獨立的 x-data scope（_org_hard_delete.html），
+                // 用事件通知它第一次切進來時觸發 loadPreview()，取代原本 <details> 的 @toggle
+                window.dispatchEvent(new CustomEvent('org:hard-delete-tab-activated'));
             }
         },
 

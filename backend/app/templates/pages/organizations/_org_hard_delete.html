@@ -1,17 +1,22 @@
 {#
-  企業硬刪除區塊（PF-170：由 /hostconfig/data-maintenance 搬來）
+  企業硬刪除區塊（PF-170：由 /hostconfig/data-maintenance 搬來；
+  2026-09-07 由頁面最下方的摺疊區塊改為獨立 Tab 呈現，見 pages/organizations/list.html）
 
   這裡的對象是「還存在於 organizations 表、已軟刪除」的企業 —— 企業層面。
   對象是「已不存在企業」的殘留（孤兒資料、無主檔案、孤兒目錄）屬主機層面，
   在 /hostconfig/data-maintenance「主機資料清理」，不要把兩者搬到一起。
 
-  預設收合：這是不可復原的操作，不應該在企業列表一載入就展開並自動掃描。
+  這是不可復原的操作，原本用 <details> 預設收合來避免一進企業列表頁就自動打預覽 API；
+  改成 Tab 後改用「切到此 Tab 才觸發第一次 loadPreview()」達到同樣效果——
+  hardDeleteManager() 的 init() 監聽 list.html 的 switchTab() 送出的
+  'org:hard-delete-tab-activated' 事件，只在 loading 仍為 true（尚未載過）時才打預覽。
 #}
-<details class="org-hard-delete" x-data="hardDeleteManager()"
-         @toggle="if ($el.open && loading) loadPreview()">
-    <summary>{{ _('永久刪除已軟刪除的企業') }}</summary>
+<div class="org-hard-delete" x-data="hardDeleteManager()">
+    <div class="org-hard-delete-intro">
+        <strong class="text-danger">{{ _('永久刪除已軟刪除的企業') }}</strong>
+        <p>{{ _('永久刪除所有已軟刪除的企業及其相關資料（無法復原）') }}</p>
+    </div>
     <div class="org-hard-delete-body">
-        <p style="margin-bottom: 12px;">{{ _('永久刪除所有已軟刪除的企業及其相關資料（無法復原）') }}</p>
 
         <!-- 載入中 -->
         <div x-show="loading" style="color: #666;">{{ _('載入中...') }}</div>
@@ -166,4 +171,4 @@
             </ul>
         </div>
     </div>
-</details>
+</div>
