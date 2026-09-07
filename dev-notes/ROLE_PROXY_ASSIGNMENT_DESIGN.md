@@ -562,3 +562,40 @@ chrome-devtools（ethanyu）：區塊標題「我的代理指派」、[指定代
 
 **帶進第 4 期**：自助建立入口（[指定代理人] 與 `POST /api/my-proxy-assignments`）第 4 期同意流程上線後移除（決策點 B 後半）；`OpProxyGrant` 以申請人身分呼叫 `assign_role` 前確認 3a-1 的 `_operator_holds_regular` 仍在；上面的待決點若選 C 要一併設計。
 bpserv 部署：`--update` 後跑 `scripts/migrate_proxy_assignments.py --apply`（六段＋全域收尾一次做完；DemoSOC 那筆 soc1→admin-soc1 已於 09-05 到期，預期 0 列；bpserv 沒有 `delegations` 選單，`menu_retired` 預期 0、`condition_retired` 1）。
+
+### 第 3b 期複審（原 session，2026-09-07 01:00 起，中途 session 中斷，2026-09-08 00:00 完成）——**通過，可派第 4 期**
+
+親自重跑 14 檔 143 passed（`test_delegation_migration` 6／`test_my_proxy_assignments_api` 12／`test_task_authorizer_delegate_from` 10／`test_task_authorizer_role_unit` 32／
+`test_calendar_events_api` 29／`test_calendar_projection` 13／`test_role_assignment_kinds` 8／`test_unit_leadership_api` 4／`test_access_center_assign_kinds` 2／`test_route_guard_table` 2／
+`test_permission_defaults` 5／`test_role_layer_guard` 5／`test_dept_membership_service` 13／`test_proxy_role_migration` 2）、守恆檢查綠（108 表／1822 欄）、`mkdocs --strict` 過、
+`docs_impact --verify-covers` 50 份文件 244 條全對、守門表 859／859 一致、semgrep 平台 API 79→**77**（`my_proxy_assignments.py` 0）、`.po` fuzzy 0；
+讀完 `task_authorizer`／`proxy_assignment_service`／`delegation_migration`／`my_proxy_assignments`／`calendar` 三處／`approver_exposure`／`resource_gateway`／`permission_service`／
+`permission_condition`／`permission`／遷移腳本／`role_assignment_service` 的 diff 與前端摘讀、手冊五頁與 CLAUDE.md／CALENDAR_SPEC 第九節。
+憑證：遷移第二次 `--apply` 七企業＋全域全 0、退役路由四條 404、EXTERNAL 403、矩陣 #8 今昔對照、瀏覽器四段（建立／預填／撤銷／放棄）、行事曆四身分受眾、越權兩筆 404、清理後殘留 0、全量 1147 passed。
+dev 自查：`delegations` 4 筆原樣（未被遷移動過）、proxy 3 列皆帶 `migration:pf251:<sc>`、`menu_items.delegations` 與 `permission_conditions.DELEGATED` 皆 `is_deleted=t`、
+指派現況 regular 268／standby 6／proxy 3；殘留 `Delegation` 引用只剩 `models/__init__.py` 的 export 與三支腳本的**表名字串**清單（符合「表與 model 留考古」的決定）。
+
+**額外自驗（憑證沒有、CLAUDE.md 點名必查）**：`delegations.md` 的 `nav_menu` 由 `delegations`（已軟刪）改綁 `access_center_org`，這條綁錯會「整頁誰都看不到且不報錯」。
+實測 ORG_ADMIN 的 `/help/` 列出「代理與候補」「部門設定」、單頁 200；EMPLOYEE 對這兩頁 404（`audience: ORG_ADMIN` 的預期）、其 `/help/` 列出「設定代理人」且單頁 200、ORG_ADMIN 對該頁 404。三頁可見性正確。
+
+九點 spec 層決定全部採納。三點值得記：`IDENTITY_ROLE_CODES` 排除四個層界身分角色是本期最重要的一個判斷——`get_active_assignments()` 的 HOLDING 含 proxy，
+代理 ORG_ADMIN 會把管理員選單與權限整包給代理人，比舊 FULL 的簽核語意寬得多；`has_covering_proxy()` 從「有任一涵蓋的 delegation」收緊成「每一個可代理角色都要有涵蓋的 proxy」，
+方向安全（提示更容易出現而非更少）；行事曆 `link` 指 `/access/` 而非帳號 deep link 是現況限制，不是遺漏。
+
+**待 Ethan 決策（矩陣 #8，不阻擋本期、第 4 期前要答）**：舊人對人 FULL 代理會涵蓋「USER／DYNAMIC 指名到被代理人本人」的任務，角色代理不涵蓋。
+dev 實例已在第 3b 期記錄（GHTRAVEL `hr_approver` 指名燁凱文的 DYNAMIC 任務，翎柏瑞 09-08 起對 ROLE 任務放行、對該 DYNAMIC 任務不放行）。
+**複審同意執行 session 的建議 A（維持現狀）**：代理的是角色不是人；OpHrLookup 把核決人解析成「人」再指名，是流程設計層把角色壓成人的結果，不該由授權層回補。
+選 A 要在第 4 期手冊寫明「代理只涵蓋以角色指定的簽核關卡」。若 Ethan 要 C（OpHrLookup 多輸出角色@單位讓關卡改用 ROLE 規格）另開待辦，不併第 4 期。
+
+**第 4 期 spec 要帶的事**：
+
+1. 3.9 全部（`myRolePicker` 元件依 FRONT-12 兩個模板都掛、`OpProxyGrant` handler＋nodedef＋`export_node_definitions_seed.py` 重跑、出廠表單／流程／配對、個人設定入口）
+2. **`OpProxyGrant` 以申請人身分呼叫 `assign_role` 時會走到 3a-1 的 `_operator_holds_regular()`**（管理員路徑之外的第一個真實使用者），送單當下與節點執行當下各驗一次、fail-closed
+3. 決策點 B 後半：同意流程上線後移除自助建立入口（`[指定代理人]` 按鈕與 `POST /api/my-proxy-assignments`），`GET`／`revoke` 保留
+4. 手冊 `my_delegation.md` 改寫成同意流程；`delegations.md` 的「成員能不能自己設」一段跟著改
+5. 憑證回到 expect／got 的 PASS／FAIL 逐項格式（本期改成敘述式，內容具體可覆核但不易一眼看出漏項）
+
+**小備忘（不必單獨修）**：`test_task_authorizer_delegate_from.py` 檔名沿用舊語意（內容已全改 proxy，`delegate_from_fields` 函式仍在，尚算有據），第 4 期若動到該檔可順手更名；
+`_proxy_events()` 每次行事曆請求會多一次「無效期 proxy 列」的全企業查詢，因 `assign_role` 強制 proxy 有起迄日，實務上恆 0 列，可留。
+
+**四期完成後才部署 bpserv**：`--update` → 兩句 ALTER（第 1／2 期欄位）→ `scripts/migrate_proxy_assignments.py --apply`（六段＋全域收尾一次做完）。
