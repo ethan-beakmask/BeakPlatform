@@ -193,11 +193,37 @@ BeakPlatform 的資料庫連線在 `/opt/BeakPlatform-dev/.env`。
 .16 (BeakPlatform)  管線接收端，dev 實例 :7000（systemd beakplatform-dev.service）
 .20 (sec-vm)        Suricata / Coraza WAF / Vector / ClickHouse / CrowdSec / od-bridge
                      ssh -i ~/.ssh/company-wsl ethan@192.168.0.20（ethan 有 sudo NOPASSWD）
-.100 (Proxmox 母機)  **無法用同一把金鑰登入**（2026-08-16 實測 root/ethan 皆
-                     Permission denied）。需要「非白名單來源」做驗證時不要指望它，
+.100 (Proxmox 母機)  `ssh root@192.168.0.100`（2026-09-08 起 .16 的
+                     ~/.ssh/id_ed25519 已佈署，免密碼）。密碼登入仍開著但
+                     **22 埠只放行 .10 與 .16**，其餘來源連不到——見下方
+                     「網路隔離：Proxmox 防火牆」。2026-08-16 記的「無法登入」
+                     是當時用 company-wsl 那把金鑰的結果，已過時。
+                     需要「非白名單來源」做驗證時仍不要指望它，
                      改在 .16 臨時借一個 secondary IP（見 CONFIGURATION.md 的
                      ingest 面來源管制段）
 ```
+
+### 網路隔離：Proxmox 防火牆（2026-09-08 建立）
+
+`.16` / `.20` / `.66` 都是同一台 Proxmox（`.100`）上的 VM，掛在單一 `vmbr0`
+直接橋接實體網卡，**與 `.10`（Ethan 的 Windows 工作機）同一個 L2 廣播域**。
+Proxmox 預設不隔離 VM，加固前實測從 `.66` 可直接連 `.100:8006`、`.100:22`、
+`.10:445`、`.10:3389`、`.20:8123`。
+
+現在由 Proxmox 防火牆（host 端 tap 介面，VM 內部繞不過）阻斷：
+
+| 對象 | 規則 |
+|---|---|
+| `.100` 入站 | 只有 `.10` 全開、`.16` 僅 22；管理埠（8006/22/3128/5900-5999/60000-60050）其餘來源一律 DROP |
+| `.20`、`.66` 出站 | DROP 到 `.100` 與 `.10`；`.66` 另外 DROP 到 `.20` |
+
+**完整規範、三個踩過的坑（`host.fw` 不吃 policy_in、management ipset 自動含整個網段
+且無法用 `[IPSET management]` 覆蓋、VM 需要 `firewall=1` 旗標）寫在全域
+`~/.claude/knowledge_base/configurations/system_configs/network_architecture.md`
+的「Layer 0」一節**——那是系統層事實，本檔不留會漂移的副本。
+
+`.20` 的 nft `ingest_guard` 仍然是 `.20` 自己那一層，兩者不重疊：
+Proxmox 那層管「VM 之間」，nft 管「誰能連進 `.20` 的服務」。
 
 **脫敏原則**：IP / port / 帳號 / 範例密碼**只要不 push 到 GitHub 都無妨**（教材
 用途，測試環境）。發布到對外管道（如技術文章）前需人工過濾。本檔與
@@ -339,7 +365,7 @@ WHERE q.workflow_instance_secure_code='<wi_secure_code>' ORDER BY q.id;"
 | `.20:8500` | **od-bridge**（`/stats` `/forwards` `/decisions` `/edl` `/edl/allow` `/state/nft` `/health`） |
 | `.20:8688` | Vector 的合成事件注入口 |
 | `.20:8686` | Vector GraphQL API |
-| `.20:8080` | WAF（反向代理到 `http://192.168.0.16:80`） |
+| `.20:8080` | WAF（**2026-09-08 起**反向代理到 `http://192.168.0.66:8000`＝BP-EndUser 客戶模擬環境；`.66` 的 80 埠是 nginx default site 回 404，平台在 8000，所以埠號不能省。舊值 `.16:80` 的對外服務已於 2026-08-05 退役） |
 | `.20:8123` | ClickHouse HTTP（帳號層白名單，見下方「ClickHouse 存取」） |
 | `.20:9000` | ClickHouse native |
 | `.20:3000` | Grafana |

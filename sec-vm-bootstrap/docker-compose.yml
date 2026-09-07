@@ -128,9 +128,12 @@ services:
     image: owasp/modsecurity-crs:nginx
     restart: unless-stopped
     environment:
-      # backend — single nginx upstream on .16 that does Host-based dispatch to
-      # the per-app gunicorn/flask processes (app→8000, dev→7000, kb→8875).
-      BACKEND: "http://192.168.0.16:80"
+      # backend — 2026-09-08 起指向 .66（BP-EndUser，模擬客戶環境）的平台埠。
+      # .66 的 80 埠是 nginx default site（回 404），平台在 8000 且帶 /beakplatform
+      # 前綴，所以這裡一定要寫 :8000。舊值是 http://192.168.0.16:80（.16 的對外
+      # 服務已於 2026-08-05 退役，那條 backend 早就是死的）。
+      # .66 的 iptables 只放行 192.168.0.20 → 8000，換 backend 埠要一併改那邊。
+      BACKEND: "http://192.168.0.66:8000"
       MODSEC_AUDIT_ENGINE: "RelevantOnly"
       MODSEC_AUDIT_LOG: "/var/log/modsec/audit.log"
       MODSEC_AUDIT_LOG_FORMAT: "JSON"
@@ -145,8 +148,15 @@ services:
       # nginx listen on 8080 internally; published below
       SSL_PORT: 8443
       PORT: 8080
-      # real_ip: trust only cloudflared@.16 (the production tunnel host); use
-      # Cloudflare's authoritative header. Forward to backend as X-Real-IP.
+      # real_ip:【刻意維持不生效，不要「修正」成 172.18.0.1】
+      # 容器的 ports 是 8080:8080（docker-proxy），所以不論從 LAN 打 .20:8080 還是
+      # .20 本機打 127.0.0.1:8080，ModSec 看到的 client_ip 恆為 172.18.0.1，
+      # 永遠不會匹配下面這個值 —— real_ip 模組因此從未生效，而這正是要的：
+      # actor.ip 的歸因由 vector 的 ocsf_from_modsec 用 trusted_ingress
+      # （["192.168.0.16","172.18.0.1"]）比對 client_ip 後才決定要不要採信
+      # CF-Connecting-IP。若把這裡改成 172.18.0.1，nginx 會先把 $remote_addr 換成
+      # header 值，ModSec 記下的 client_ip 就不再是 172.18.0.1，vector 的信任判定
+      # 直接失效 —— 任何能打到 8080 的來源都能把 actor.ip 填成任意第三方 IP。
       SET_REAL_IP_FROM: "192.168.0.16"
       REAL_IP_HEADER: "CF-Connecting-IP"
       REAL_IP_RECURSIVE: "on"
