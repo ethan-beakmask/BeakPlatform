@@ -119,6 +119,18 @@ Generated with Claude Code"
 
 **注意：commit 和 push 是兩件事。只 commit，不主動 push。用戶說 push 才 push。**
 
+**多個 session 併行同一個 repo 時，`git commit` 會夾帶別人的變更。**
+`git commit` 不帶路徑時提交的是**整個 staged 區**，不是你剛 `add` 的那幾個檔案；
+上面的 `git add -A` 更是連別人改到一半的檔案一起收。
+2026-09-08 實例：留守審查的 session 只 `git add` 一份設計文件就 commit，
+把執行 session 先前已 staged 的兩個無關檔案刪除一併提交，
+使另一件工作（canary 廢除）被拆散在兩個不相關的 commit ＋ 一半留在工作區——
+**症狀靜默，不看 diffstat 不會發現**，而且那半件工作 push 出去就是「腳本被刪卻沒有任何說明」。
+
+- commit 前先 `git status --short`，第一欄有標記的就是已 staged（本 session 沒動過的也算）
+- 只想提交特定檔案時用 `git commit <path>...`，不要 `git add <path> && git commit`
+- 回報「工作區乾淨」之前，真的跑一次 `git status --short`
+
 **GitHub 推送必須使用過濾腳本：**
 - **push** → `git push origin main` (Forgejo，直接推)
 - **push github** → `bash scripts/push_github.sh` (GitHub，過濾推送)
@@ -1290,6 +1302,16 @@ addEventListener('click', ...) 計數  +  包一層 document.execCommand 記錄�
 
 （平台跑在 http，`navigator.clipboard` 是 undefined，複製一律走
 `Utils.copyToClipboard()`；它內部 fallback 到 `execCommand`。）
+
+**`resize_page` 只對「當下選中的分頁」生效**（2026-09-08 踩到）：
+指定了 `pageId` 也一樣，若那個分頁不是 selected，回傳看起來成功但
+`window.innerWidth` 完全沒變，於是窄畫面測試在測一個根本沒縮小的視窗。
+先把多餘分頁 `close_page` 掉、確認目標分頁是 selected 再 resize，
+或量完 `window.innerWidth` 確認真的變了才採信結果。
+
+**企業管理頁（`/organizations/`）的清單是前端渲染，curl 抓不到**（2026-09-07 踩到）：
+`curl` 拿到的 HTML 裡一家企業代碼都沒有，容易誤判成「清單是空的」或「權限有問題」。
+這頁一律用 chrome-devtools 驗收。同理，任何 Alpine 渲染的清單頁都要這樣驗。
 
 **2026-08-04 起 `take_screenshot` 在本機一律逾時**（`Page.captureScreenshot timed out`，
 png / jpeg 皆然，各卡滿 120s 才失敗，試過三次）——**修好之前不要再浪費 120s 去試**。
