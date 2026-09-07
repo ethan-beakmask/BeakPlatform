@@ -3,6 +3,40 @@
 本檔記錄 secstack 整體部署變更,涵蓋 sec-vm(192.168.0.20)及其相依的 Proxmox host(192.168.0.100)上跟 stack 運維有關的設定。
 格式參考 [Keep a Changelog](https://keepachangelog.com/),日期 ISO 8601。
 
+## [2026-09-07]
+
+### Removed
+- **合成演習(canary)整套廢除** — Ethan 決定廢除,兩端的排程、腳本、heartbeat 全部移除:
+
+  | 位置 | 移除項目 |
+  |---|---|
+  | `.20` | `/etc/cron.hourly/secstack-canary`、`/opt/tmp/sec-vm-canary.log`、`/opt/tmp/heartbeat/secstack-canary` |
+  | `.16` | `/etc/crontab` 的每小時檢查排程、`scripts/cron/od_canary_check.py`、log 與 state 檔 |
+  | repo | `sec-vm-bootstrap/host-cron/secstack-canary` |
+
+  備份在兩台的 `/opt/tmp/backup/od-canary-retire-20260907/`。
+  DB 內既有 183 張演習案件刻意保留不清。
+
+  **廢除理由**:路徑 A 從 `.20` 本機打 `127.0.0.1:8080` 走 lo,而四條 nft chain
+  都以 `iifname != "ens18" accept` 開頭——防火牆判定與真實入口鏈
+  (CF edge → cloudflared `.16` → nginx `.20:8080`)完全沒被覆蓋,
+  只驗得到「WAF 容器還活著」。**正確的演習應該從 internet 發動掃描。**
+  另外每小時的頻率換不到偵測能力(靜默斷流以天為單位),只換來每天 24 張
+  無人消費的演習單與告警疲勞。
+
+  **vector 的 `intake_canary_route` 結構刻意保留**(條件寫死 TEST-NET-3 的
+  `203.0.113.1`,不會命中真實流量;拆掉要改三處 input 連接,改錯即斷流)。
+  未來新演習只需換 route 條件。
+
+### Fixed (documentation)
+- `host-cron/README.md` 原稱 copy + truncate「沒有重新發現新檔的空窗」——
+  **實測不符**。Vector 每小時 :17 固定出現 `Stopped watching file` →
+  3~4 秒後 `Found new file to watch`,truncate 當下未讀走的行永久遺失。
+  這正是 canary 通過率只有 13%(近 7 天 336 次僅 43 次到 ClickHouse)的根因:
+  run-parts 按字母序先跑 `secstack-canary`、不到一秒後跑 `secstack-rotate-logs`。
+  **競態本身未修**(canary 已廢除,Ethan 決定不修);
+  日後若仍在 `.20` 上發動演習,要把發動時間與輪替錯開。
+
 ## [2026-08-16]
 
 ### Security

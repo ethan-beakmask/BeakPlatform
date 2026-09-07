@@ -10,6 +10,7 @@ from app import db
 from app.security.decorators import admin_required, page_keys_required
 from app.services.calendar_event_service import CalendarEventError, CalendarEventService
 from app.services.calendar_projection_service import CalendarProjectionService
+from app.services import proxy_assignment_service
 from app.services.time_context_service import TimeContextService
 from app.utils.calendar_time import local_naive_to_utc
 
@@ -142,15 +143,8 @@ def _proxy_hint(row):
     if hint is None:
         return None
     if current_user.is_org_admin or current_user.is_employee:
-        hint['create_url'] = url_for(
-            'main.personal_settings',
-            proxy='new',
-            effective_from=hint['start_date'],
-            effective_until=hint['end_date'],
-            reason=row.title,
-            next=url_for('calendar_web.my_calendar'),
-            _anchor='my-proxy-assignments',
-        )
+        hint['create_url'] = proxy_assignment_service.proxy_request_fill_url(
+            current_user.org_secure_code)
     else:
         hint['create_url'] = None
     return hint

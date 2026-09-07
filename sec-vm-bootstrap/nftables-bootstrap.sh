@@ -75,7 +75,8 @@ table inet secstack {
     #   input   — od-bridge 是 network_mode: host，流量直接進 host input hook
     #
     # 兩條都以 `iifname != "ens18" accept` 開頭，所以這兩條必要路徑完全不受影響：
-    #   .20 自己打 127.0.0.1:8080（hourly canary 走這條，經 docker-proxy 走 lo）
+    #   .20 自己打 127.0.0.1:8080（經 docker-proxy 走 lo；已廢除的 hourly canary 走這條，
+    #   也因此它完全繞過本層判定——新的演習要從 ens18 進來才驗得到防火牆）
     #   vector container → host.docker.internal:8500（走 docker bridge 介面）
     # 只有從實體網卡進來的流量才比對來源。ens18 是 .20 唯一的實體介面，
     # suricata 的 af-packet 也綁它——換網卡名時這裡要一起改。

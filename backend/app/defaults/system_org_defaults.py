@@ -80,6 +80,7 @@ def seed_system_org_defaults(admin_password=None) -> dict:
             'mrr_created': 0,
             'protected_targets_created': 0,
             'api_key_request': None,
+            'proxy_request': None,
         }
 
         from app.services.organization_service import OrganizationService
@@ -205,6 +206,15 @@ def seed_system_org_defaults(admin_password=None) -> dict:
         if isinstance(api_key_result, dict) and not api_key_result.get('ok', True):
             raise RuntimeError(
                 f"API Key 申請單鏈路種入失敗: {api_key_result}")
+
+        from app.defaults.proxy_request_defaults import (
+            seed_org_proxy_request_flow,
+        )
+        proxy_result = seed_org_proxy_request_flow(org.secure_code)
+        summary['proxy_request'] = proxy_result
+        if isinstance(proxy_result, dict) and not proxy_result.get('ok', True):
+            raise RuntimeError(
+                f"代理指定申請單鏈路種入失敗: {proxy_result}")
 
         logger.info(
             'System org defaults seeded org=%s summary=%s',

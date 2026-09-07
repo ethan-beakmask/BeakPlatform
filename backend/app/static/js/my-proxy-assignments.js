@@ -16,40 +16,16 @@
         return res.json();
     }
 
-    function safeNext(value) {
-        if (typeof value !== 'string' || !value.startsWith('/')) return null;
-        if (value.length > 1 && (value[1] === '/' || value[1] === '\\')) return null;
-        if (/[\s\x00-\x1F\x7F]/.test(value)) return null;
-        return value;
-    }
-
     window.myProxyAssignmentsManager = function () {
         return {
             given: [],
             received: [],
-            candidates: [],
-            proxyableRoles: [],
             loading: true,
             message: '',
             messageIsError: false,
-            modal: { open: false, saving: false, error: '' },
-            form: { delegate_secure_code: '', effective_from: '', effective_until: '', reason: '' },
-            next: null,
 
             async init() {
-                await Promise.all([this.load(), this.loadCandidates(), this.loadRoles()]);
-                this.applyQueryPrefill();
-            },
-
-            applyQueryPrefill() {
-                const q = new URLSearchParams(window.location.search);
-                if (q.get('proxy') !== 'new') return;
-                this.form.effective_from = q.get('effective_from') || '';
-                this.form.effective_until = q.get('effective_until') || '';
-                this.form.reason = q.get('reason') || '';
-                this.next = safeNext(q.get('next'));
-                this.modal.open = true;
-                document.getElementById('my-proxy-assignments')?.scrollIntoView({ block: 'start' });
+                await this.load();
             },
 
             async load() {
@@ -66,82 +42,6 @@
                     this.flash(__('載入失敗: {message}', { message: e.message }), true);
                 }
                 this.loading = false;
-            },
-
-            async loadCandidates() {
-                try {
-                    const data = await api('/api/my-proxy-assignments/candidates');
-                    if (data.success) {
-                        this.candidates = data.data || [];
-                    } else {
-                        this.flash(data.message || __('載入失敗'), true);
-                    }
-                } catch (e) {
-                    this.flash(__('載入失敗: {message}', { message: e.message }), true);
-                }
-            },
-
-            async loadRoles() {
-                try {
-                    const data = await api('/api/my-proxy-assignments/my-roles');
-                    if (data.success) {
-                        this.proxyableRoles = data.data || [];
-                    } else {
-                        this.flash(data.message || __('載入失敗'), true);
-                    }
-                } catch (e) {
-                    this.flash(__('載入失敗: {message}', { message: e.message }), true);
-                }
-            },
-
-            openCreate() {
-                this.form = { delegate_secure_code: '', effective_from: '', effective_until: '', reason: '' };
-                this.next = null;
-                this.modal = { open: true, saving: false, error: '' };
-            },
-
-            closeModal() {
-                this.modal = { open: false, saving: false, error: '' };
-            },
-
-            async submitCreate() {
-                this.modal.error = '';
-                if (!String(this.form.reason || '').trim()) {
-                    this.modal.error = __('請填寫指派事由');
-                    return;
-                }
-                this.modal.saving = true;
-                try {
-                    const data = await api('/api/my-proxy-assignments', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            delegate_secure_code: this.form.delegate_secure_code,
-                            effective_from: this.form.effective_from,
-                            effective_until: this.form.effective_until,
-                            reason: this.form.reason,
-                        }),
-                    });
-                    if (!data.success) {
-                        this.modal.error = data.message || __('建立失敗');
-                        return;
-                    }
-                    if (this.next) {
-                        window.location.href = this.next;
-                        return;
-                    }
-                    this.closeModal();
-                    const result = data.data || {};
-                    let message = __('已建立 {n} 筆代理指派', { n: result.created || 0 });
-                    if ((result.skipped || 0) > 0) {
-                        message += __('，{m} 筆已有重疊效期而略過', { m: result.skipped });
-                    }
-                    this.flash(message);
-                    await this.load();
-                } catch (e) {
-                    this.modal.error = __('建立失敗: {message}', { message: e.message });
-                } finally {
-                    this.modal.saving = false;
-                }
             },
 
             async revoke(row, side) {
@@ -188,11 +88,6 @@
                     ACTIVE: 'text-success',
                     EXPIRED: 'text-muted',
                 }[status] || '';
-            },
-
-            candidateLabel(candidate) {
-                if (!candidate.employee_id) return candidate.display_name;
-                return candidate.display_name + '（' + candidate.employee_id + '）';
             },
 
             flash(text, isError) {

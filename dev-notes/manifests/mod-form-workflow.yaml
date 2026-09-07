@@ -49,9 +49,11 @@ files:
     - modules/form_workflow/services/node_grant_service.py  # 流程節點型別企業授權判定
     - modules/form_workflow/services/trigger_scope_service.py # API Key 表單 scope 解析共用服務
     - modules/form_workflow/services/node_handlers/hr_lookup_handler.py # OpHrLookup 人事資料取值節點
+    - modules/form_workflow/services/node_handlers/op_proxy_grant_handler.py # OpProxyGrant 代理指定授出節點
     - backend/app/services/unit_resolver.py  # 申請人單位／單位祖先鏈／直屬主管推導（task_authorizer、FormAdapter、OpHrLookup 共用）
     - backend/app/services/role_holding_service.py  # 角色@單位持有判定（regular／proxy／standby、可用性、有效持有者；task_authorizer 與 FormAdapter 共用）
     - backend/app/defaults/api_key_request_defaults.py      # API Key 申請單出廠預設（表單/流程/發行/填寫權限 seed）
+    - backend/app/defaults/proxy_request_defaults.py         # 代理指定申請單出廠預設（表單/流程/發行/填寫權限 seed）
   model:
     - modules/form_workflow/models/
     - modules/form_workflow/models/node_org_grant.py        # 流程節點型別企業授權
@@ -75,6 +77,7 @@ files:
     # 新增時 form_designer.html 與 form_center.html 兩處都要掛 <script>
     - backend/app/static/js/formio-user-picker.js                     # 人員選擇（值=user secure_code）
     - backend/app/static/js/formio-form-picker.js                     # 表單選擇（值=form_template SC 陣列，PF-160 授權表單）
+    - backend/app/static/js/formio-my-role-picker.js                  # 我的可委任角色選擇（值=role/unit 物件陣列）
     - backend/app/static/js/formio-form-title.js                      # 表單名稱
   css:
     - modules/form_workflow/static/modules/form_workflow/css/fw-dashboard.css
@@ -85,6 +88,7 @@ files:
     - modules/form_workflow/static/modules/form_workflow/css/ai-usage.css
   icons:
     - modules/form_workflow/static/modules/form_workflow/icons/workflow/ophrlookup.svg
+    - modules/form_workflow/static/modules/form_workflow/icons/workflow/opproxygrant.svg
   migration:
     - scripts/migrations/101_execution_code_per_org_unique.py  # PF-116 execution_code per-org unique index
     - scripts/migrations/102_form_serial_per_org_unique.py     # serial_number per-org unique index
@@ -95,6 +99,7 @@ files:
     - scripts/migrations/122_node_org_grants.sql           # 流程節點型別企業授權通用化
   provisioning: # 建置表單工作流範例與標準配對
     - scripts/examples/provision_api_key_request_flow.py       # PF-160 API Key 申請單/流程/填寫權限
+    - scripts/examples/provision_proxy_request_flow.py         # PF-251 代理指定申請單/流程/填寫權限
   scripts:
     - scripts/node_grant.py                                # restricted 節點企業授權維運工具
   tests:
@@ -105,6 +110,8 @@ files:
     - backend/tests/test_workflow_cancel_mode.py               # End cancel 模式流程樹取消與 process 終止
     - backend/tests/test_node_org_grants.py                    # 流程節點企業授權 service
     - backend/tests/test_hr_lookup_node.py                     # OpHrLookup 人事資料取值節點（含部門推導主管鏈）
+    - backend/tests/test_op_proxy_grant.py                     # OpProxyGrant 代理指定授出節點
+    - backend/tests/test_proxy_request_defaults.py             # 代理指定申請單出廠流程 seed
     - backend/tests/test_schedule_is_on_leave.py  # 主管當日請假算缺席（LEAVE 列時段判定）
     - backend/tests/test_task_authorizer_delegate_from.py       # 代理簽核身分解析與簽核紀錄欄位
     - backend/tests/test_task_authorizer_role_unit.py           # 角色@單位授權：套圈、proxy／standby 性質、DEPARTMENT 別名、unit_resolver

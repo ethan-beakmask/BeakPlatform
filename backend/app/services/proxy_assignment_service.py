@@ -1,4 +1,4 @@
-"""Self-service proxy assignment helpers.
+"""Proxy assignment helpers.
 
 代理指派只代理職務角色，不代理 user_type 對應的層界身分角色。EMPLOYEE
 雙方通常都有，代理它是雜訊；ORG_ADMIN 若被代理會把管理員選單與權限整包交給代理人，
@@ -12,8 +12,6 @@ from app import db
 from app.models import Organization, Role, User
 from app.models.associations import AssignmentKind, UserRoleAssignment
 from app.models.organizational_unit import OrganizationalUnit
-from app.models.user import UserType
-from app.services import role_assignment_service
 
 IDENTITY_ROLE_CODES = ('SYSTEM_ADMIN', 'ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS')
 
@@ -94,72 +92,9 @@ def list_proxy_assignments(org_sc, user_sc) -> dict:
     return {'given': given, 'received': received, 'today': today.isoformat()}
 
 
-def create_full_proxy(org_sc, operator_user, delegate_sc, valid_from, valid_until, reason) -> dict:
-    operator_sc = operator_user.secure_code
-    if delegate_sc == operator_sc:
-        raise ValueError(_('代理人不可代理自己'))
-    delegate = User.query.filter(
-        User.org_secure_code == org_sc,
-        User.secure_code == delegate_sc,
-        User.is_deleted == False,  # noqa: E712
-        User.is_active == True,  # noqa: E712
-    ).first()
-    if not delegate or delegate.user_type not in (UserType.EMPLOYEE, UserType.ORG_ADMIN):
-        raise ValueError(_('代理人無效'))
-
-    today = _org_today(org_sc)
-    sources = proxyable_regular_assignments(org_sc, operator_sc, today)
-    if not sources:
-        raise ValueError(_('你目前沒有可代理的角色'))
-
-    created = 0
-    skipped = 0
-    assignment_scs = []
-    try:
-        for source in sources:
-            overlap = UserRoleAssignment.query.filter(
-                UserRoleAssignment.org_secure_code == org_sc,
-                UserRoleAssignment.user_secure_code == delegate_sc,
-                UserRoleAssignment.role_secure_code == source.role_secure_code,
-                UserRoleAssignment.assignment_kind == AssignmentKind.PROXY,
-                UserRoleAssignment.acting_for_user_secure_code == operator_sc,
-                UserRoleAssignment.is_deleted == False,  # noqa: E712
-            )
-            if source.unit_secure_code:
-                overlap = overlap.filter(UserRoleAssignment.unit_secure_code == source.unit_secure_code)
-            else:
-                overlap = overlap.filter(UserRoleAssignment.unit_secure_code.is_(None))
-            if role_assignment_service.filter_overlapping(overlap, valid_from, valid_until).first():
-                skipped += 1
-                continue
-
-            result = role_assignment_service.assign_role(
-                org_sc,
-                delegate_sc,
-                source.role_secure_code,
-                source.unit_secure_code,
-                kind=AssignmentKind.PROXY,
-                acting_for_sc=operator_sc,
-                valid_from=valid_from,
-                valid_until=valid_until,
-                grant_reason=reason,
-                operator=operator_user,
-                source_ref=f'self:{operator_sc}',
-                commit=False,
-            )
-            created += 1
-            assignment_scs.append(result['assignment_secure_code'])
-        if created == 0:
-            db.session.rollback()
-            raise ValueError(_('這位代理人在這段期間已經代理你全部的角色'))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
-    return {'created': created, 'skipped': skipped, 'assignment_secure_codes': assignment_scs}
-
-
 def revoke_own_proxy(org_sc, user_sc, assignment_sc) -> dict:
+    from app.services import role_assignment_service
+
     row = UserRoleAssignment.query.filter(
         UserRoleAssignment.org_secure_code == org_sc,
         UserRoleAssignment.secure_code == assignment_sc,
@@ -212,6 +147,64 @@ def has_covering_proxy(org_sc, user_sc, start_date, end_date) -> bool:
         if not query.first():
             return False
     return True
+
+
+def proxy_request_published_code(org_secure_code):
+    """出廠「代理指定申請單」目前發行版本的 secure_code；查不到回 None。
+
+    呼叫端自己組網址（url_for('form_workflow_web.center') + '?fill=' + sc），
+    這裡不回路徑字串——回路徑會讓每個呼叫端都要再拆一次 query。
+    """
+    if not org_secure_code:
+        return None
+    try:
+        from modules.form_workflow.models import (
+            FwFormTemplate, FwFormWorkflowMapping, FwPublishedFormWorkflow,
+        )
+    except ImportError:
+        return None
+
+    form_tpl = FwFormTemplate.query.filter_by(
+        org_secure_code=org_secure_code,
+        code='PROXY_REQUEST',
+        is_deleted=False,
+    ).first()
+    if not form_tpl:
+        return None
+    mapping = FwFormWorkflowMapping.query.filter_by(
+        org_secure_code=org_secure_code,
+        form_template_secure_code=form_tpl.secure_code,
+        is_deleted=False,
+    ).first()
+    if not mapping:
+        return None
+    published = FwPublishedFormWorkflow.query.filter_by(
+        org_secure_code=org_secure_code,
+        source_mapping_secure_code=mapping.secure_code,
+        status='Published',
+        is_deleted=False,
+    ).order_by(FwPublishedFormWorkflow.publish_version.desc()).first()
+    if not published:
+        return None
+    return published.secure_code
+
+
+def proxy_request_fill_url(org_secure_code):
+    """出廠「代理指定申請單」填寫頁的網址（含 nginx 前綴）；查不到回 None。"""
+    published_sc = proxy_request_published_code(org_secure_code)
+    if not published_sc:
+        return None
+
+    from flask import current_app, request, url_for
+
+    if 'form_workflow_web.center' in current_app.view_functions:
+        base = url_for('form_workflow_web.center')
+    else:
+        # 模組 blueprint 只註冊在進程內第一個 app（測試會建多個），沒註冊時
+        # url_for 會拋 BuildError。手動補 script_root 是等價結果，仍帶得到
+        # nginx 的 /beakplatform 前綴（FRONT-10）。
+        base = (request.script_root or '') + '/forms/center'
+    return base + '?fill=' + published_sc
 
 
 def _assignment_payload(row, role_map, unit_map, counterpart, today) -> dict:

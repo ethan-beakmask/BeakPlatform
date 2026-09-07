@@ -70,9 +70,10 @@
 | 8688 | docker ports 綁 `127.0.0.1` + 上述 chain 雙保險 | `docker-compose.yml` |
 | 8500 | nftables `ingest_guard_input`(只允許 `.16`) | `nftables-bootstrap.sh` |
 
-兩條 chain 都以 `iifname != "ens18" accept` 開頭,所以 hourly canary
-(`127.0.0.1:8080`,走 lo)與 vector→`host.docker.internal:8500`(走 docker bridge)
-不受影響。**`.10` 的瀏覽器連不到 od-bridge stats UI 是刻意的**,要看得先 SSH 進 `.20`。
+兩條 chain 都以 `iifname != "ens18" accept` 開頭,所以本機打 `127.0.0.1:8080`
+(走 lo)與 vector→`host.docker.internal:8500`(走 docker bridge)不受影響。
+**反過來說,從 `.20` 本機發動的探測完全繞過這層判定**——2026-09-07 廢除的
+hourly canary 就是因此只驗得到「WAF 容器還活著」。**`.10` 的瀏覽器連不到 od-bridge stats UI 是刻意的**,要看得先 SSH 進 `.20`。
 
 驗證務必從被拒的一側測(只測「該通的通」不算驗證):
 

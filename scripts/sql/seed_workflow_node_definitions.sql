@@ -64,6 +64,10 @@ VALUES ('33e07c052fb00d303aaf7fbfcdb5c730', 'OpHrLookup', 'SYSTEM', NULL, '變�
 ON CONFLICT (node_type) DO NOTHING;
 
 INSERT INTO workflow_node_definitions (secure_code, node_type, scope, org_secure_code, category, display_name, description, icon, execution_handler, config_schema, canvas_shape, canvas_color, canvas_width, canvas_height, max_input_connections, max_output_connections, default_timeout_seconds, max_timeout_seconds, require_system_admin, is_active, is_deleted, org_restricted, created_at, updated_at)
+VALUES ('wtL8e0fQL8nB9b8UtQ5I5Y', 'OpProxyGrant', 'SYSTEM', NULL, '變數', '代理指定授出', '代理人同意後，依申請單內容建立 proxy 角色指派。', '/static/modules/form_workflow/icons/workflow/opproxygrant.svg', 'modules.form_workflow.services.node_handlers.op_proxy_grant_handler.OpProxyGrantHandler', '{"from_field": "string", "result_var": "string", "forms_field": "string", "roles_field": "string", "until_field": "string", "reason_field": "string", "delegate_field": "string"}'::jsonb, 'roundrectangle', '#3B82F6', 130, 60, 1, 1, 60, 600, FALSE, TRUE, FALSE, FALSE, now() AT TIME ZONE 'UTC', now() AT TIME ZONE 'UTC')
+ON CONFLICT (node_type) DO NOTHING;
+
+INSERT INTO workflow_node_definitions (secure_code, node_type, scope, org_secure_code, category, display_name, description, icon, execution_handler, config_schema, canvas_shape, canvas_color, canvas_width, canvas_height, max_input_connections, max_output_connections, default_timeout_seconds, max_timeout_seconds, require_system_admin, is_active, is_deleted, org_restricted, created_at, updated_at)
 VALUES ('GtzjtXtTiJPnuhOGYrIKmA==', 'OpSet', 'SYSTEM', NULL, '變數', '設定變數', '設定流程變數值', '/static/modules/form_workflow/icons/workflow/opset.svg', 'modules.form_workflow.services.node_handlers.opset_handler.OpSetHandler', '{"variables": "array"}'::jsonb, 'roundrectangle', '#3B82F6', 120, 60, 1, 1, 60, 3600, FALSE, TRUE, FALSE, FALSE, now() AT TIME ZONE 'UTC', now() AT TIME ZONE 'UTC')
 ON CONFLICT (node_type) DO NOTHING;
 

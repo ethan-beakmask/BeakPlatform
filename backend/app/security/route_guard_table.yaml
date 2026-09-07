@@ -2109,43 +2109,13 @@ routes:
     rules:
     - /api/my-api-keys/<key_secure_code>/regenerate
     source: backend/app/api/my_api_keys.py
-  api_my_proxy_assignments.create_my_proxy_assignment:
-    answer_source: none
-    guard_args: {}
-    guards:
-    - login_required
-    has_internal_check: true
-    internal_identity_check: true
-    max_audience: null
-    methods:
-    - POST
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/my-proxy-assignments
-    source: backend/app/api/my_proxy_assignments.py
-  api_my_proxy_assignments.list_my_proxy_assignment_candidates:
-    answer_source: none
-    guard_args: {}
-    guards:
-    - login_required
-    has_internal_check: true
-    internal_identity_check: true
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/my-proxy-assignments/candidates
-    source: backend/app/api/my_proxy_assignments.py
   api_my_proxy_assignments.list_my_proxy_assignments:
     answer_source: none
     guard_args: {}
     guards:
     - login_required
-    has_internal_check: true
-    internal_identity_check: true
+    has_internal_check: false
+    internal_identity_check: false
     max_audience: null
     methods:
     - GET
@@ -2159,8 +2129,8 @@ routes:
     guard_args: {}
     guards:
     - login_required
-    has_internal_check: true
-    internal_identity_check: true
+    has_internal_check: false
+    internal_identity_check: false
     max_audience: null
     methods:
     - GET
@@ -2174,8 +2144,8 @@ routes:
     guard_args: {}
     guards:
     - login_required
-    has_internal_check: true
-    internal_identity_check: true
+    has_internal_check: false
+    internal_identity_check: false
     max_audience: null
     methods:
     - POST
@@ -8838,7 +8808,7 @@ routes:
     guards:
     - login_required
     has_internal_check: false
-    internal_identity_check: false
+    internal_identity_check: true
     max_audience: null
     methods:
     - GET

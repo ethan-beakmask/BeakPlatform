@@ -331,6 +331,7 @@
                 input: true,
                 tableView: true,
                 persistent: true,
+                defaultToCurrentUser: true,
             }, ...extend);
         }
 
@@ -352,6 +353,15 @@
                         { key: 'label', type: 'textfield', label: __('欄位標籤'), input: true, weight: 0 },
                         { key: 'key', type: 'textfield', label: __('欄位 Key'), input: true, weight: 10 },
                         { key: 'description', type: 'textfield', label: __('說明文字'), input: true, weight: 20 },
+                        {
+                            key: 'defaultToCurrentUser',
+                            type: 'checkbox',
+                            label: __('預設帶入登入者'),
+                            tooltip: __('關閉時欄位留空，使用者必須自己選人。'),
+                            defaultValue: true,
+                            input: true,
+                            weight: 25,
+                        },
                     ],
                 },
                 {
@@ -439,7 +449,8 @@
                 var curVal = self.dataValue || '';
                 if (curVal) {
                     self._ensureDisplayResolved();
-                } else if (!self._defaultLoaded && !curVal && !self.options.readOnly) {
+                } else if (!self._defaultLoaded && !curVal && !self.options.readOnly
+                        && self.component.defaultToCurrentUser !== false) {
                     self._defaultLoaded = true;
                     fetchCurrentUser().then(function (user) {
                         if (!self.dataValue) {

@@ -599,3 +599,48 @@ dev 實例已在第 3b 期記錄（GHTRAVEL `hr_approver` 指名燁凱文的 DYN
 `_proxy_events()` 每次行事曆請求會多一次「無效期 proxy 列」的全企業查詢，因 `assign_role` 強制 proxy 有起迄日，實務上恆 0 列，可留。
 
 **四期完成後才部署 bpserv**：`--update` → 兩句 ALTER（第 1／2 期欄位）→ `scripts/migrate_proxy_assignments.py --apply`（六段＋全域收尾一次做完）。
+
+### 第 4 期（2026-09-08，執行 session；codex 實作、主 Claude 驗收）
+
+憑證：`/opt/tmp/verify/20260908-role-proxy-4.log`（CLI 預演／apply／冪等）、`-related-a.log`（首輪，2 failed）、`-related-a2.log`（修正後 4 檔 47 passed）、
+`-full-c1.log`～`-full-c7.log`（全量七批、乾淨測試庫：**1153 passed／2 skipped／0 failed**）。spec：`/opt/tmp/codex/20260908-pf251-phase4.txt`（868 行）。派工前 HEAD `3201a0e5`。
+矩陣 #8 依複審定案 **A（維持現狀）**，只寫進手冊、授權層未動。
+
+**經過**：codex 一次做完全部實作（含節點定義種入、seed 重匯出、i18n、守門表），在最終驗證階段被 harness 以記憶體不足砍掉（與 3b 同一個現象），主 Claude 接手驗證與驗收。**沒有退回**，改了四處（下列）。
+
+**主 Claude 改的四處**：
+
+1. **`assignee_value` 從 `'PROXY_REQUEST_delegate'` 改成 `'delegate'`（spec 寫錯，會整條流程靜默失效）**：
+   `OpFieldRead` 的變數前綴取的是 `form_instance.form_template_secure_code`（`fieldread_handler.py:38` 的 `form_code = form_instance.form_template_secure_code or form_instance.form_code`），
+   **不是表單模板的 code**，所以帶前綴的名字是 `<模板 sc>_delegate`、每個企業都不一樣，出廠 graph 寫不出來。用不帶前綴的簡單名，作用域是單一流程實例、不會撞名。
+   沒改的話 DYNAMIC 解析為空 → 走 PF-226 的 `no_assignee` → 每一張申請單都被退回申請人，**單元測試抓不到**（不跑整條流程）
+2. **`myRolePicker` 的值加 `role_name`／`unit_name` 名稱快照**：元件的選項來源是 `/api/my-proxy-assignments/my-roles`（**登入者本人**的角色），簽核者開單時載入的是自己的角色清單，
+   永遠解析不出申請人的角色名 → 只能顯示 secure_code，等於要對方盲簽。快照存在值裡，顯示優先用它、退回 `_findOption`、再退回 sc；後端 handler 只讀兩個 secure_code 欄位（`_normalize_roles` 忽略其他 key）
+3. **`myRolePicker` 覆寫 `setValue` 在唯讀時重繪**：Form.io 先 attach 再由 submission 設值，元件沒有重繪就停在 attach 當下的空狀態，實測簽核者看到「已選 0 個角色」而 `dataValue` 其實有兩筆。
+   **重繪限定唯讀模式**——可編輯時每次勾選都重建整個清單會讓捲動位置與焦點跳掉（實測連續勾選第二項會失敗）
+4. **組填寫頁網址收進 `proxy_assignment_service.proxy_request_fill_url()` 一處**：codex 原本讓 service 回 `'/forms/center?fill=<sc>'` 路徑字串，`main.py` 與 `calendar.py` 各自 `split('?', 1)[1]` 再重組。
+   改成 service 直接回完整網址；**保留 `current_app.view_functions` 的 endpoint 存在性檢查**——模組 blueprint 只註冊在進程內第一個 app，測試 app 沒有它時 `url_for` 會拋 `BuildError`
+   （我一度移除這個檢查，`test_calendar_events_api` 兩案立刻紅，是移除造成的）
+
+**與 spec 的差異（codex 的判斷，接受）**：`_normalize_forms` 已回 None 或非空 list，handler 仍寫 `forms or None`（冗餘但無害）；`describe_org_state` 不回 `org_admin_role_secure_code`（本流程簽核者是 DYNAMIC，不綁角色，spec 已說明）。
+
+**驗收（端到端實跑，chrome-devtools）**：
+BELUGA 跑 CLI 種入（表單 `xvIG_i5kAFZxtD5S4vhMQu` / 流程 `PRhkpB1_lIdkoWJFGHvAYb` / 配對 `eYN7CnmiCyeNNQrXc8RU4w` / 發行 `R81cDdRMDWdDzOFSnJN5fQ`，第二次 apply 全部 exists）→
+個人設定 [指定代理人] 是 `<a href="/beakplatform/forms/center?fill=R81cDdRMDWdDzOFSnJN5fQ">`、建立 modal 已移除 →
+開該網址填寫 modal 自動開啟、六個欄位渲染（`userPicker`／`myRolePicker`／`datetime`×2／`formPicker`／`textarea`）、代理人欄位**沒有**帶入本人（`defaultToCurrentUser: False` 生效）、
+myRolePicker 列出 ethanyu 四個角色且**不含 EMPLOYEE 身分角色** →
+送出後 `form_data.proxy_roles` 是物件陣列含名稱快照、`node-FieldRead-delegate` SUCCESS、`node-FormAdapter-consent` WAITING 且 **`assignees=["<user sc>"]`（DYNAMIC 解析成功）** →
+代理人開簽核看到「流程設計師、部門主管@行銷部門，已選 2 個角色」→ [同意代理] → 全節點 SUCCESS、**建立 2 列 proxy**（`flow:PROC-20260908-0002`、`acting_for=ethanyu`、效期 11-02～11-06、事由正確）、
+表單「處理結果」寫回「user 已同意代理，共建立 2 筆代理指派：流程設計師、部門主管@行銷部門，效期 2026-11-02 至 2026-11-06。」→
+另一張單 [拒絕] → 走 `node-FieldWrite-rejected` → End，**proxy 列沒有增加**、結果欄位寫「代理人未同意這次委任，沒有建立任何代理指派。」→
+流程設計器（ethanyu／FLOW_DESIGNER）節點面板出現「代理指定授出」。
+靜態：node 四支 ok、import ok、en.json 合法、殘留 grep 0、semgrep 兩檔 0、守恆檢查綠（108 表 1822 欄）、守門表 857 一致、`mkdocs --strict` 過、`docs_impact --verify-covers` 246 條全對、`.po` untranslated 0／fuzzy 0。
+**驗收建立的 2 列 proxy 已軟刪清理**；兩張申請單實例（Form-260900019 拒絕／260900020 同意）刻意保留當樣本；BELUGA 的出廠鏈路保留。
+
+**帶進複審／後續的備忘**：
+
+- **`myRolePicker` 的名稱快照是顯示用，不是判定用**。`OpProxyGrant` 只信 secure_code，執行當下再用 `proxyable_regular_assignments()` fail-closed 重驗一次（實測撤角色後整筆 error 且一列都沒建）
+- **`/api/my-proxy-assignments/my-roles` 現在有兩個消費者**（元件與個人設定），它回的是**登入者本人**的角色。若日後要讓管理員代填申請單，需要像 formPicker 的 `beneficiaryKey` 那樣加對象參數並重新評估授權
+- 個人設定的 `[指定代理人]` 在企業還沒種出廠表單時**不渲染**（fail-closed），改顯示「目前沒有可用的代理指定申請單，請聯絡企業管理員。」
+- 既有企業補種走 `venv/bin/python scripts/examples/provision_proxy_request_flow.py --org <org> --apply`（冪等）；新企業由 `create_organization`／`init_system_organization`／`seed_system_org_defaults` 三個觸發點自動種
+- bpserv 部署：`--update` → 第 1／2 期的兩句 ALTER → `scripts/migrate_proxy_assignments.py --apply` → **本期另加** `provision_proxy_request_flow.py --org <DemoSOC> --apply`（`--update` 不會回填既有企業的出廠表單）

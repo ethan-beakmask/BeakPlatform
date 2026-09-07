@@ -96,119 +96,25 @@ def _assign(org, user, role, unit=None, *, kind=AssignmentKind.REGULAR, acting_f
     return row
 
 
-def _post_create(client, **payload):
-    data = {
-        'delegate_secure_code': payload.pop('delegate_secure_code'),
-        'effective_from': payload.pop('effective_from', '2026-10-01'),
-        'effective_until': payload.pop('effective_until', '2026-10-03'),
-        'reason': payload.pop('reason', 'Annual leave'),
-    }
-    data.update(payload)
-    return client.post('/beakplatform/api/my-proxy-assignments', json=data)
+def test_create_and_candidates_routes_are_not_available(auth_client):
+    post_resp = auth_client.post('/beakplatform/api/my-proxy-assignments', json={})
+    candidates_resp = auth_client.get('/beakplatform/api/my-proxy-assignments/candidates')
 
-
-def test_employee_create_full_proxy_excludes_identity_role(auth_client, test_org, test_user):
-    delegate = _user('mpa_delegate_000001', test_org, 'mpa_delegate', 'Delegate User')
-    unit = _unit(test_org)
-    manager = _role(test_org, 'DEPT_MANAGER', '部門正主管')
-    employee = _role(test_org, 'EMPLOYEE', '企業成員', ScopeType.GLOBAL)
-    _assign(test_org, test_user, manager, unit)
-    _assign(test_org, test_user, employee)
-
-    resp = _post_create(auth_client, delegate_secure_code=delegate.secure_code)
-
-    rows = UserRoleAssignment.query.filter_by(
-        org_secure_code=test_org.secure_code,
-        user_secure_code=delegate.secure_code,
-        assignment_kind=AssignmentKind.PROXY,
-        is_deleted=False,
-    ).all()
-    assert resp.status_code == 201
-    assert resp.get_json()['data'] == {'created': 1, 'skipped': 0}
-    assert len(rows) == 1
-    row = rows[0]
-    assert row.acting_for_user_secure_code == test_user.secure_code
-    assert row.role_secure_code == manager.secure_code
-    assert row.unit_secure_code == unit.secure_code
-    assert row.valid_from == date(2026, 10, 1)
-    assert row.valid_until == date(2026, 10, 3)
-    assert row.source_ref == f'self:{test_user.secure_code}'
-    assert row.grant_reason == 'Annual leave'
-
-
-def test_create_without_proxyable_roles_is_invalid_request(auth_client, test_org, test_user):
-    delegate = _user('mpa_norole_del001', test_org, 'mpa_norole_del', 'No Role Delegate')
-    employee = _role(test_org, 'EMPLOYEE', '企業成員', ScopeType.GLOBAL)
-    _assign(test_org, test_user, employee)
-
-    resp = _post_create(auth_client, delegate_secure_code=delegate.secure_code)
-
-    assert resp.status_code == 400
-    assert resp.get_json()['error'] == 'invalid_request'
-
-
-def test_create_rejects_invalid_delegate_candidates(auth_client, test_org, test_user):
-    external = _user('mpa_external_00001', test_org, 'mpa_external', 'External User', UserType.EXTERNAL)
-    inactive = _user('mpa_inactive_0001', test_org, 'mpa_inactive', 'Inactive User', is_active=False)
-    other_org = _org()
-    other_user = _user('mpa_otherorg_0001', other_org, 'mpa_otherorg', 'Other Org User')
-
-    for sc in (test_user.secure_code, external.secure_code, inactive.secure_code, other_user.secure_code):
-        resp = _post_create(auth_client, delegate_secure_code=sc)
-        assert resp.status_code == 400
-        assert resp.get_json()['error'] == 'invalid_delegate'
-
-
-def test_create_rejects_invalid_date_ranges_and_blank_reason(auth_client, test_org):
-    delegate = _user('mpa_dates_0000001', test_org, 'mpa_dates', 'Dates User')
-
-    cases = [
-        ({'effective_from': '2026/10/01'}, 'invalid_date'),
-        ({'effective_from': '2026-10-04', 'effective_until': '2026-10-03'}, 'invalid_range'),
-        ({'effective_from': '2020-01-01', 'effective_until': '2020-01-02'}, 'expired_range'),
-        ({'reason': '   '}, 'reason_required'),
-    ]
-    for payload, code in cases:
-        resp = _post_create(auth_client, delegate_secure_code=delegate.secure_code, **payload)
-        assert resp.status_code == 400
-        assert resp.get_json()['error'] == code
+    assert post_resp.status_code in (404, 405)
+    assert candidates_resp.status_code == 404
 
 
 def test_external_and_system_admin_are_forbidden(client, test_org, system_admin):
     external = _user('mpa_ext_login0001', test_org, 'mpa_ext_login', 'External Login', UserType.EXTERNAL)
     _login_user_directly(client, external, test_org)
     get_resp = client.get('/beakplatform/api/my-proxy-assignments')
-    post_resp = client.post('/beakplatform/api/my-proxy-assignments', json={})
 
     _login_user_directly(client, system_admin, test_org)
     system_resp = client.get('/beakplatform/api/my-proxy-assignments')
 
     assert get_resp.status_code == 403
     assert get_resp.get_json()['error'] == 'forbidden'
-    assert post_resp.status_code == 403
-    assert post_resp.get_json()['error'] == 'forbidden'
     assert system_resp.status_code == 403
-
-
-def test_duplicate_overlap_all_skipped_is_invalid_but_partial_creates(auth_client, test_org, test_user):
-    delegate = _user('mpa_dup_delegate01', test_org, 'mpa_dup_delegate', 'Duplicate Delegate')
-    unit = _unit(test_org)
-    role_a = _role(test_org, 'DEPT_MANAGER', '部門正主管')
-    _assign(test_org, test_user, role_a, unit)
-
-    first = _post_create(auth_client, delegate_secure_code=delegate.secure_code)
-    duplicate = _post_create(auth_client, delegate_secure_code=delegate.secure_code)
-
-    role_b = _role(test_org, 'DEPT_HEAD', '部門主管')
-    _assign(test_org, test_user, role_b, unit)
-    partial = _post_create(auth_client, delegate_secure_code=delegate.secure_code)
-
-    assert first.status_code == 201
-    assert duplicate.status_code == 400
-    assert duplicate.get_json()['error'] == 'invalid_request'
-    assert '已經代理你全部的角色' in duplicate.get_json()['message']
-    assert partial.status_code == 201
-    assert partial.get_json()['data'] == {'created': 1, 'skipped': 1}
 
 
 def test_list_only_returns_related_proxy_rows(auth_client, test_org, test_user):
@@ -301,4 +207,4 @@ def test_personal_settings_hides_block_for_external(client, test_org):
 def test_unauthenticated_post_is_rejected(client):
     resp = client.post('/beakplatform/api/my-proxy-assignments', json={})
 
-    assert resp.status_code in (302, 401)
+    assert resp.status_code in (302, 401, 404, 405)

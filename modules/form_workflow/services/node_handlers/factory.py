@@ -119,6 +119,7 @@ def register_builtin_handlers():
     from .os_file_read_handler import OsFileReadHandler
     from .os_file_write_handler import OsFileWriteHandler
     from .hr_lookup_handler import HrLookupHandler
+    from .op_proxy_grant_handler import OpProxyGrantHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
@@ -155,6 +156,7 @@ def register_builtin_handlers():
     NodeHandlerFactory.register('OpFieldRead', FieldReadHandler)
     NodeHandlerFactory.register('OpFieldWrite', FieldWriteHandler)
     NodeHandlerFactory.register('OpHrLookup', HrLookupHandler)
+    NodeHandlerFactory.register('OpProxyGrant', OpProxyGrantHandler)
 
     # 整合（系統動作）
     NodeHandlerFactory.register('SubSystemProvision', SubSystemProvisionHandler)

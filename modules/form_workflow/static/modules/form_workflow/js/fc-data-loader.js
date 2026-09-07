@@ -60,6 +60,7 @@ function fcDataLoader() {
                 const res = await fetch(window.__BP + '/api/form-center/available-forms');
                 const data = await res.json();
                 if (data.success) this.availableForms = data.data || [];
+                return data;
             } catch (e) { console.error('載入可填寫表單失敗:', e); }
             finally { this.loadingForms = false; }
         },

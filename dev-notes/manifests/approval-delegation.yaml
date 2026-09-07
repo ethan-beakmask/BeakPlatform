@@ -13,6 +13,7 @@ files:
     - backend/app/models/associations.py         # UserRoleAssignment
     - backend/app/models/job_level.py
   service:
+    - backend/app/defaults/proxy_request_defaults.py
     - backend/app/services/proxy_assignment_service.py
     - backend/app/services/delegation_migration.py
   template:
@@ -23,6 +24,7 @@ files:
   js:
     - backend/app/static/js/approval-limits.js
     - backend/app/static/js/approval-categories.js
+    - backend/app/static/js/formio-my-role-picker.js
   css:
     - backend/app/static/css/approval-limits.css
   test:
@@ -31,6 +33,8 @@ files:
     - backend/tests/test_role_holding_service.py
     - backend/tests/test_manager_gate_migration.py
     - backend/tests/test_my_proxy_assignments_api.py
+    - backend/tests/test_op_proxy_grant.py
+    - backend/tests/test_proxy_request_defaults.py
     - backend/tests/test_delegation_migration.py
     - backend/tests/test_calendar_projection.py
   vendor:

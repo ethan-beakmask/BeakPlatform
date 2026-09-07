@@ -356,7 +356,19 @@ transforms:
   # 用 60 秒短窗而不是 3600 秒長窗，是為了擋瞬間爆量（長窗允許一秒內湧入 500 筆）。
 
   # 合成演習的事件先分流出來，繞過全域封頂——否則真被攻擊時監控訊號會被攻擊流量
-  # 擠掉，變成「系統出事時監控剛好也瞎了」。canary 每小時只有 2 筆，影響可忽略。
+  # 擠掉，變成「系統出事時監控剛好也瞎了」。
+  #
+  # 【2026-09-07 起這條分流不會命中任何事件】舊的 hourly canary（`.20` 的
+  # /etc/cron.hourly/secstack-canary ＋ `.16` 的 od_canary_check.py）已由 Ethan
+  # 決定廢除：它從 `.20` 本機打 127.0.0.1:8080，繞過整條真實入口鏈與 nft 判定，
+  # 只驗得到「WAF 容器還活著」。廢除脈絡見 .16 的
+  # dev-notes/SEC_STACK_ARCHITECTURE.md「合成演習（canary）已於 2026-09-07 廢除」。
+  #
+  # 【結構刻意保留、條件刻意不動】203.0.113.0/24 是 TEST-NET-3，不會出現在真實
+  # 網際網路路由，所以留著這兩個條件零風險；而拆掉它要改三處 input 連接
+  # （intake_global_throttle 與 intake_throttled_clean），改錯即斷流。
+  # 未來若改成「從 internet 發動掃描」的演習，只需把下面的 route 條件換成新的
+  # 識別特徵，不必動結構。
   intake_canary_route:
     type: route
     inputs:

@@ -3,6 +3,7 @@ from urllib.parse import parse_qs, urlparse
 
 from app import db
 from app.constants import SYSTEM_ORG_CODE
+from app.defaults.proxy_request_defaults import seed_org_proxy_request_flow
 from app.models import (
     CalendarEvent,
     CalendarKind,
@@ -230,6 +231,8 @@ def test_employee_creates_personal_and_busy_masks_for_other_employee(auth_client
 
 def test_leave_hint_counts_pending_task_for_assignee(auth_client, test_org, test_user):
     _grant_menu(test_user, test_org, 'calendar_me')
+    seeded = seed_org_proxy_request_flow(test_org.secure_code)
+    db.session.commit()
     _waiting_task(test_org, test_user.secure_code)
     payload = _personal_payload(event_type='LEAVE', title='Annual leave', all_day=True,
                                 start='2026-10-01', end='2026-10-03')
@@ -243,14 +246,24 @@ def test_leave_hint_counts_pending_task_for_assignee(auth_client, test_org, test
     assert hint['template_count'] == 0
     parsed = urlparse(hint['create_url'])
     query = parse_qs(parsed.query)
-    assert parsed.path == '/beakplatform/personal-settings'
-    assert query['proxy'] == ['new']
-    assert query['effective_from'] == ['2026-10-01']
-    assert query['effective_until'] == ['2026-10-03']
-    assert query['reason'] == ['Annual leave']
-    assert query['next'] == ['/beakplatform/calendar/me']
-    assert parsed.fragment == 'my-proxy-assignments'
+    assert parsed.path == '/beakplatform/forms/center'
+    assert query['fill'] == [seeded['published_secure_code']]
+    assert parsed.fragment == ''
     assert (hint['start_date'], hint['end_date']) == ('2026-10-01', '2026-10-03')
+
+
+def test_leave_hint_create_url_is_none_without_proxy_request_form(auth_client, test_org, test_user):
+    _grant_menu(test_user, test_org, 'calendar_me')
+    _waiting_task(test_org, test_user.secure_code)
+
+    resp = _post_event(auth_client, _personal_payload(event_type='LEAVE', title='Annual leave',
+                                                      all_day=True, start='2026-10-21',
+                                                      end='2026-10-22'))
+
+    hint = resp.get_json()['proxy_hint']
+    assert resp.status_code == 201
+    assert hint['needed'] is True
+    assert hint['create_url'] is None
 
 
 def test_leave_hint_counts_published_role_assignee(client, test_org, test_user):
@@ -450,7 +463,9 @@ def test_non_leave_event_has_no_hint(client, admin_client, test_org, test_user):
     assert org_event['proxy_hint'] is None
 
 
-def test_admin_leave_hint_has_prefilled_create_url(admin_client, test_org, test_admin):
+def test_admin_leave_hint_has_proxy_request_create_url(admin_client, test_org, test_admin):
+    seeded = seed_org_proxy_request_flow(test_org.secure_code)
+    db.session.commit()
     _waiting_task(test_org, test_admin.secure_code)
 
     resp = _post_event(admin_client, _personal_payload(event_type='LEAVE', title='Admin leave',
@@ -460,12 +475,9 @@ def test_admin_leave_hint_has_prefilled_create_url(admin_client, test_org, test_
     parsed = urlparse(hint['create_url'])
     query = parse_qs(parsed.query)
 
-    assert parsed.path == '/beakplatform/personal-settings'
-    assert query['proxy'] == ['new']
-    assert query['effective_from'] == ['2026-10-11']
-    assert query['effective_until'] == ['2026-10-12']
-    assert query['next'] == ['/beakplatform/calendar/me']
-    assert parsed.fragment == 'my-proxy-assignments'
+    assert parsed.path == '/beakplatform/forms/center'
+    assert query['fill'] == [seeded['published_secure_code']]
+    assert parsed.fragment == ''
 
 
 def test_update_leave_returns_hint_too(client, test_org, test_user):

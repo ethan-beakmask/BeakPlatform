@@ -195,6 +195,10 @@ def personal_settings():
             flash(_('儲存失敗: %(error)s', error=str(e)), 'error')
 
     from app.utils.external_url import build_external_url
+    proxy_request_fill_url = None
+    if current_user.is_employee or current_user.is_org_admin:
+        from app.services.proxy_assignment_service import proxy_request_fill_url as _fill_url
+        proxy_request_fill_url = _fill_url(current_user.org_secure_code)
 
     return render_template(
         'pages/personal_settings.html',
@@ -204,6 +208,7 @@ def personal_settings():
         # .../beakplatform//api/... 的雙斜線。本機 nginx 容忍（實測 201），
         # 但使用者複製出去的指令不該長這樣，經過嚴格的反代或 WAF 也可能被擋。
         api_trigger_base_url=(build_external_url('/') or '').rstrip('/') or None,
+        proxy_request_fill_url=proxy_request_fill_url,
     )
 
 

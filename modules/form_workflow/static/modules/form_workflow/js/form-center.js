@@ -204,7 +204,7 @@ function formCenterManager() {
 
         init() {
             this.loadColumnConfig();
-            this.loadAvailableForms();
+            this.loadAvailableForms().then(() => this._openFillFromQuery());
             this.loadCategories();
             this.loadPendingApprovals();
             this.loadTracking();
@@ -226,6 +226,17 @@ function formCenterManager() {
                 }
             };
             document.addEventListener('visibilitychange', this._visibilityHandler);
+        },
+
+        _openFillFromQuery() {
+            const fill = new URLSearchParams(window.location.search).get('fill');
+            if (!fill) return;
+            const item = this.availableForms.find(form => form.secure_code === fill);
+            if (item) {
+                this.openFormFill(item);
+                return;
+            }
+            this.showToast(__('找不到這張表單，或你目前沒有填寫權限'), 'error');
         },
 
         destroy() {
