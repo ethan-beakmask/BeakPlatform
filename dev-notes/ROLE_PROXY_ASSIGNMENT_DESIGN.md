@@ -690,9 +690,19 @@ all-or-nothing（`commit=False` 逐列、最後一次 commit、任何例外 roll
 
 **剩下的收尾（依序）**：
 
-1. 工作區三個 canary 文件的處置（見上）
-2. `push both`
-3. bpserv 部署：`--update` → 兩句 ALTER（第 1 期五欄位＋索引、第 2 期 `fw_approval_records.acted_as_kind`，SQL 在第六節）→
-   `scripts/migrate_proxy_assignments.py --apply`（六段＋全域收尾一次做完）→
-   **`venv/bin/python scripts/examples/provision_proxy_request_flow.py --org DEMOSOC --apply`**（`--update` 不回填既有企業的出廠表單）
-4. bpserv 驗收：DemoSOC 無部門角色，重點是既有 ROLE 任務判定不變、個人設定 [指定代理人] 連結可開、跑一張申請單走完同意流程
+1. ~~工作區三個 canary 文件的處置~~ — **已完成（原 session，2026-09-08 02:5x，commit `0ce80959`）**：
+   三份文件另提一個獨立 commit，不改寫歷史。提交前逐份核對：`SEC_STACK_ARCHITECTURE.md` 的廢除一節與 `OPEN_DEFENSE_ARCHITECTURE.md` 的引用互相對得上；
+   cron 腳本表改列的 `od_render_edl.py` 與 `od_expire_decisions.py` 確實都支援 `--dry-run` 且寫 heartbeat，與 `/etc/crontab` 現況一致（canary 兩行已不在）。工作區現在乾淨。
+
+**以下三項交由開發 session 執行**（原 session 只做規格與複審，不碰部署）：
+
+2. **`push both`**：`git push origin main` → `bash scripts/push_github.sh`（過濾腳本要求工作區乾淨，現況已乾淨）。共 23 個 commit，含 PF-251 四期＋補丁 3a-1＋六個複審／設計 commit＋canary 文件收尾，以及三個與本案無關的既有 commit（企業管理頁 Tabs、CLAUDE.md 修訂、node 展覽館 PF-252）
+3. **bpserv 部署**：`--update` → **兩句 ALTER**（完整 SQL 在 `scripts/migrate_proxy_assignments.py` 的檔頭 docstring，共七行：`user_role_assignments` 五欄位＋部分索引、`fw_approval_records.acted_as_kind`）→
+   `venv/bin/python scripts/migrate_proxy_assignments.py --dry-run` 看預期筆數 → `--apply`（六段＋全域收尾一次做完）→
+   **`venv/bin/python scripts/examples/provision_proxy_request_flow.py --org DEMOSOC --apply`**（`--update` 不回填既有企業的出廠表單，漏跑會讓個人設定的 [指定代理人] 不渲染）
+4. **bpserv 驗收**（DemoSOC 沒有部門、沒有單位角色，所以重點不是角色@單位）：
+   - 既有 `OD-20260903-0002` 的 WAITING 任務 soc1 200／admin-soc1 403 與部署前一致（每期都驗的回歸基準）
+   - 遷移預期：DemoSOC 那筆 soc1→admin-soc1 的 delegation 已於 09-05 到期，`delegation_migrated` 應為 0；無 PROXY 指派，`proxy_rows_migrated` 0、`proxy_roles_deleted` 2；`menu_retired` 0（bpserv 沒種過該選單）、`condition_retired` 1
+   - `/delegations/` 與 `/api/my-delegations` 應 404；個人設定的 [指定代理人] 是連到 `/forms/center?fill=<sc>` 的連結
+   - 跑一張代理指定申請單走完同意流程，確認建出 proxy 列且 `source_ref='flow:<execution_code>'`；驗完清掉
+   - 憑證 `/opt/tmp/verify/<日期>-pf251-bpserv.log`，回到 expect／got 的 PASS／FAIL 逐項格式
