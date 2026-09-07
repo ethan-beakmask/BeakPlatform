@@ -355,9 +355,16 @@ OCSF 案件沒有 profile 也沒有明細陣列，只會看到兩個分頁——
 | 腳本 | 做什麼 |
 |---|---|
 | `scripts/cron/od_expire_decisions.py` | 掃過期的 applied 決策 → 自動產生 unblock |
-| `scripts/cron/od_canary_check.py` | 確認 `.20` 每小時打的 canary 有變成案件，沒有就發 Telegram |
+| `scripts/cron/od_render_edl.py` | 每分鐘渲染各企業 EDL 黑名單檔 |
 
-兩支都支援 `--dry-run`，正常完成會寫 heartbeat。
+支援 `--dry-run`，正常完成會寫 heartbeat。
+
+**`scripts/cron/od_canary_check.py` 與 `.20` 的合成演習（canary）已於 2026-09-07 廢除**
+（腳本、排程、heartbeat 兩端全移除，備份 `/opt/tmp/backup/od-canary-retire-20260907/`）。
+廢除理由與實測數據見 `dev-notes/SEC_STACK_ARCHITECTURE.md`
+「合成演習（canary）已於 2026-09-07 廢除」一節——**簡言之：從 `.20` 本機打
+`127.0.0.1:8080` 繞過了整條真實入口鏈，驗不到該驗的東西**。
+未來的演習方向是從 internet 發動掃描。
 
 ## 9. 資料表一覽
 

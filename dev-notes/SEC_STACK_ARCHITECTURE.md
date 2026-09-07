@@ -1,6 +1,6 @@
 # sec-vm（`.20`）架構與運維手冊
 
-**最後更新：2026-08-16（補「多租戶佈署架構定案」章節；2026-08-15 PF-104 建立）**
+**最後更新：2026-09-07（合成演習 canary 廢除；2026-08-15 PF-104 建立）**
 **權威範圍**：本檔記錄跑在 `.20`（sec-vm）上、BeakPlatform-dev **之外**的 Open Defense
 安全棧（Vector、Suricata、Coraza WAF、CrowdSec、ClickHouse、Grafana、EveBox、
 od-bridge）。平台側（`.16`，`/opt/BeakPlatform-dev` 內）的程式架構在
@@ -368,8 +368,10 @@ od-bridge `/events` 需 `Authorization: Bearer`；`/health` 免驗。
 - 上表「Vector 的合成事件注入口」那條在 `.16` 上已經**打不進去**，
   要灌合成事件得先 `ssh .20` 再打 `127.0.0.1:8688`
 - **od-bridge 的 stats UI 從 `.10` 的瀏覽器連不到是刻意的**，不是壞了
-- 四條 nft chain 都以 `iifname != "ens18" accept` 開頭，所以 canary（`127.0.0.1:8080`）
-  與 vector→`host.docker.internal:8500` 這兩條內部路徑不受影響
+- 四條 nft chain 都以 `iifname != "ens18" accept` 開頭，所以本機打
+  `127.0.0.1:8080`（走 lo）與 vector→`host.docker.internal:8500` 這兩條內部路徑
+  不受影響。**反過來說，從本機打 8080 的探測完全繞過防火牆判定**——
+  已廢除的 canary 就是這樣只驗到 WAF 容器活著（見下方廢除說明）
 - **hook 選錯的症狀是 counter 恆為 0，不會報錯**：docker 發布的埠（3000/5636/8080/
   8686/8688/9443）走 DNAT 後進 **forward**；host network 的服務（sshd 22、
   od-bridge 8500）進 **input**。加新埠時先看它是不是 docker 發布的
@@ -494,12 +496,13 @@ Coraza 那條線另外在 vector 端補了信任代理比對（`ocsf_from_modsec
 3. **throttle 會吃掉測試流量**：同 `source|rule_id|actor_ip` 在窗內有配額
    （suricata 1 筆/3600 秒、coraza 5 筆/300 秒），另有**全域 8 筆/60 秒**封頂。
    要連續測就換不同來源 IP。
-4. **`203.0.113.1` 是 canary 專用來源 IP**：`host-cron/secstack-canary` 每小時
-   自動打一次，有豁免全域 throttle。
-   **不要排除它**——2026-08-16 用戶定案「演習視同作戰」，canary 案件照常進處置中心，
-   由 SOC L1 簽「資安演練」結案，每天 24 張演習單是刻意的訓練負載。
-   本文件原本寫「SOC 看板與報表要排除它」，該指示**已作廢**
-   （權威說明在 `/etc/cron.hourly/secstack-canary` 的檔頭註解）。
+4. **`203.0.113.1` 曾是合成演習（canary）專用來源 IP，該機制已於 2026-09-07 廢除**。
+   兩端的排程與腳本都已移除，這個 IP 從此不會再有新事件；
+   DB 內既有 183 張演習案件刻意保留不清。廢除理由與實測數據見下方
+   「合成演習（canary）已於 2026-09-07 廢除」一節。
+   2026-08-16 的「演習視同作戰、每天 24 張演習單是刻意的訓練負載」定案
+   **隨機制一併作廢**，不要照著做。
+   vector 的 `intake_canary_route`（豁免全域 throttle）結構保留但不再命中任何事件。
 
 5. **`POST /events` 需要 bearer token**（PF-112，2026-08-16 起）：
    手動灌事件進 od-bridge 少帶 header 一律 401，而 401 與「服務掛了」
@@ -519,15 +522,68 @@ Coraza 那條線另外在 vector 端補了信任代理比對（`ocsf_from_modsec
    - 事件到得了 bridge 不代表平台會建案：欄位不合 intake 契約時
      bridge log 會顯示 `forwarded ... status=400`（那是平台回的，不是 bridge 的錯）
 
-**驗真實路徑最快的一招是手動觸發 canary**（比自製合成事件可靠，
-因為它走的就是每小時在跑的那條）：
+**驗真實路徑最快的一招是手動打一次兩條探測**（原 canary 腳本的內容，
+機制已廢除但指令本身仍是驗管線最省事的方式）：
 
 ```bash
-ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'sudo /etc/cron.hourly/secstack-canary'
+# 路徑 A：Coraza / WAF（期望 HTTP 403）
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 \
+  'curl -s -o /dev/null -w "%{http_code}\n" -m 10 -H "Host: beakmask.org" \
+     -H "Cf-Connecting-Ip: 203.0.113.1" -A "OD-Probe/1.0" \
+     "http://127.0.0.1:8080/?id=1%27%20OR%201=1--"'
+# 路徑 B：Suricata（必須是 HOME→EXTERNAL 出站，觸發 sid 2013224）
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 \
+  'curl -s -o /dev/null -m 10 -A "Mozilla/5.0 probe.exe" http://example.com/'
 # 約 20 秒後看 bridge 有沒有把兩條路徑都送上去（期望 status=200）
 ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 \
   'docker logs secstack-od-bridge-1 --since 3m 2>&1 | grep -E "forwarded|401"'
 ```
+
+**這兩條探測的驗證範圍有限，不要把它當成端到端驗證**：路徑 A 打
+`127.0.0.1:8080` 走 lo，四條 nft chain 都以 `iifname != "ens18" accept` 開頭，
+等於防火牆判定與真實入口鏈（CF edge → cloudflared `.16` → nginx `.20:8080`）
+全部繞過，只驗得到「WAF 容器還活著」。這正是原 canary 被廢除的主因之一。
+
+### 合成演習（canary）已於 2026-09-07 廢除
+
+**現況：兩端的排程、腳本、heartbeat 全部移除**，備份在
+`/opt/tmp/backup/od-canary-retire-20260907/`（含兩支腳本、`.16` crontab 原檔、
+歷史 log；`.20` 上另有一份同名目錄）。DB 內既有 183 張演習案件
+（`actor_ip=203.0.113.1` 或 `rule_id=2013224`，2026-05-09 ~ 2026-09-07）
+刻意保留不清。
+
+**廢除理由**（Ethan 2026-09-07 定調）：
+
+1. **驗證範圍不對**。路徑 A 打 `127.0.0.1:8080` 走 lo，防火牆判定與整條真實入口鏈
+   完全沒被覆蓋，只驗到「WAF 容器還活著」。**正確的演習應該從 internet 發動掃描**，
+   驗的是真實入口鏈到案件產生的端到端。
+2. **每小時的頻率換不到偵測能力**。它防的失效（靜默斷流）以天甚至月為單位，
+   每天一次照樣抓得到；每小時只換來每天 24 張無人消費的演習單與告警疲勞——
+   收到告警的人問的是「這正常嗎」而不是「去排查」，這時候監控價值已經是負的。
+3. **發動端與被檢查對象同生共死**。檢查器在 `.16`（對），發動端卻在 `.20` 自己身上。
+   2026-09-07 實測到的失效正是這個後果：`.20` 上與偵測完全無關的 log 輪替
+   把 canary 那一行 truncate 掉，告警卻長成「2/2 條偵測路徑沒有產生案件」，
+   訊息裡的四步排查全部會回報正常，排查方向被帶偏。
+
+**廢除當下的實測數據**（留給日後設計新演習時當基準）：
+
+| 項目 | 數值 |
+|---|---|
+| 近 7 天 canary 應到筆數 | 336（168 小時 × 2 路徑） |
+| ClickHouse 實收 | 43（通過率 13%） |
+| `.16` `od_intake_events` 實收 | 42（od-bridge → `.16` 這段零損耗） |
+| 同期 ClickHouse 全部事件 | 46（其中 43 筆落在第 17 分＝canary，真實攻擊流量近乎為零） |
+
+**根因（未修，Ethan 決定不修）**：`/etc/cron.hourly/` 下 `secstack-canary`（先跑）
+與 `secstack-rotate-logs`（後跑，相隔不到 1 秒）由 run-parts 在同一分鐘執行，
+而 rotate 是 `cp` + `: > file`。Vector log 每小時 :17 固定出現
+`Stopped watching file` → 3~4 秒後 `Found new file to watch`，
+canary 在 :17:01 寫入的那行在被讀走之前就被清空。
+**canary 廢除後這個競態仍在**，它一樣會吃掉每小時 :17 分那一秒寫入的真實事件
+（目前該時段幾乎沒有真實流量，所以實際損失為零）。
+
+`sec-vm-bootstrap/host-cron/README.md` 原本寫 copy + truncate「沒有『重新發現新檔』
+的空窗，也不會重讀整個舊檔」——**前半與 2026-09-07 實測不符**，已在該檔更正。
 
 ### `.16` 服務的執行方式（會影響能不能重啟、改了程式碼何時生效）
 
@@ -548,7 +604,7 @@ sudo kill -STOP <PID> ; sudo kill -CONT <PID>
 
 **清理測試案件的陷阱**：聚合生效後（同 `actor_ip` + `rule_id`、60 分鐘窗），
 一張案件可能同時關聯測試事件與真實事件。
-用「事件 correlation_id 反查 case_secure_code 再刪案件」會誤傷——已誤刪過 canary 案件。
+用「事件 correlation_id 反查 case_secure_code 再刪案件」會誤傷——已誤刪過演習（canary）案件。
 
 ## 要改行為時，改哪個檔案
 
@@ -557,11 +613,9 @@ sudo kill -STOP <PID> ; sudo kill -CONT <PID>
 
 | 要改的行為 | 檔案 | 改完怎麼生效 |
 |---|---|---|
-| 事件過濾、throttle（含全域封頂）、canary 豁免、OCSF 映射 | `.20:~/sec-vm-bootstrap/vector/vector.production.yaml`（`vector.yaml` 是它的 symlink） | `docker exec secstack-vector-1 vector validate /etc/vector/vector.yaml` 通過後 `docker kill -s HUP secstack-vector-1`，不必重啟容器 |
+| 事件過濾、throttle（含全域封頂與 `intake_canary_route` 豁免分流，該分流已無事件命中）、OCSF 映射 | `.20:~/sec-vm-bootstrap/vector/vector.production.yaml`（`vector.yaml` 是它的 symlink） | `docker exec secstack-vector-1 vector validate /etc/vector/vector.yaml` 通過後 `docker kill -s HUP secstack-vector-1`，不必重啟容器 |
 | Suricata 規則啟用/停用 | `.20:~/sec-vm-bootstrap/suricata/rules/suricata.rules`（停用是行首加 `# DISABLED <日期> <原因>: `，此檔不進版控） | `docker kill -s USR2 secstack-suricata-1`，用 `docker exec secstack-suricata-1 tail /var/log/suricata/suricata.log` 確認 `rules successfully loaded` 的數字有變 |
 | eve.json / modsec log 輪替 | `.20:/etc/cron.hourly/secstack-rotate-logs`（權威副本 `sec-vm-bootstrap/host-cron/`） | 每小時自動跑；手動 `sudo /etc/cron.hourly/secstack-rotate-logs`，看 `/opt/tmp/sec-vm-rotate-logs.log` |
-| canary 打什麼 | `.20:/etc/cron.hourly/secstack-canary`（權威副本 `sec-vm-bootstrap/host-cron/`；**`.20` 上沒有 `~/sec-vm-bootstrap/host-cron/` 這個目錄**，同步時只 cp 到 `/etc/cron.hourly/`） | 同上，log 在 `/opt/tmp/sec-vm-canary.log` |
-| canary 怎麼檢查、告警 | `.16:/opt/BeakPlatform-dev/scripts/cron/od_canary_check.py` | `/etc/crontab` 每小時；手動加 `--dry-run` 測 |
 | 案件聚合窗、白名單、案件流程 | `.16:/opt/BeakPlatform-dev/modules/open_defense/services/intake_service.py` | **要手動重啟 dev 實例**（見上） |
 | EDL 內容／格式、封鎖落地行為 | `.20:~/sec-vm-bootstrap/od-bridge/od_bridge/enforcers/`（權威副本 `sec-vm-bootstrap/od-bridge/`） | `docker compose up -d --build od-bridge`，用 `curl -s http://192.168.0.20:8500/edl \| od -c` 驗實際位元組 |
 | nftables 封鎖表結構、自鎖 allowlist、**ingest 埠**（`ingest_guard_forward` / `ingest_guard_input`）、**SSH 與管理面**（`ssh_guard_input` / `mgmt_guard_forward`）的來源管制 | `sec-vm-bootstrap/nftables-bootstrap.sh` → 產生 `.20:/etc/nftables.conf` | 推上 `.20` 後 `sudo bash ~/sec-vm-bootstrap/nftables-bootstrap.sh`（寫檔＋套用）。**副作用：它 `delete table` + `create table`，會清空 `blocklist` 現有元素**——執行前先 `nft -j list set inet secstack blocklist` 記下來，之後 `nft add element` 補回。**不可加 `flush ruleset`**（會清掉 docker 的 nat/filter）。只想改規則不想清 blocklist 時：用 heredoc 餵 `nft -f -` 單獨重建那一條 chain（PF-107 用的手法），改完再把新版 heredoc 同步進本檔的腳本，否則重開機會退回舊規則 |
