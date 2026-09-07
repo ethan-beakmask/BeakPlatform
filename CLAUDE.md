@@ -198,8 +198,9 @@ Generated with Claude Code"
 **站內可見性直接複用選單雙鑰匙**——frontmatter 寫
 `nav_menu: <menu_items.code>`，該選單對此帳號可見則文件可見。
 不要另建權限判定，也不要自己查 `MenuPermission` / `MenuRoleRequirement`。
-跨階角色、企業間差異、模組合約授權全部自動生效（實測 lion 企業的管理員
-比 beluga 少 4 篇，因為 lion 沒有弱點管理模組授權）。
+跨階角色、企業間差異、模組合約授權全部自動生效（2026-08 實測：沒有弱點管理模組授權的
+企業，其管理員看到的篇數比有授權的少 4 篇。當時的對照企業已刪除，要重現請自己找兩家
+模組授權不同的企業比對）。
 
 **但這個可見性不是保密機制，唯一目的是降噪**（用戶 2026-08-14 定調）：
 `docs/` 全是操作說明、沒有機密，全部公開到 Internet 都可接受；
@@ -1656,7 +1657,7 @@ heredoc 建企業、`init_menus.py`、`init_permissions.py`、`flask module sync
 | 企業獨立資料庫登記表的必填欄位 | 只填 `org_secure_code` / `org_id` / `db_name` | 還要 **`secure_code`**、**`admin_user`**、**`admin_password_enc`**、**`sync_user`**、**`sync_password_enc`** 五個 NOT NULL（2026-08-29 造測試資料時逐一撞出來，錯誤訊息一次只報一個）。查全部必填：`SELECT column_name FROM information_schema.columns WHERE table_name='fw_org_databases' AND is_nullable='NO';` |
 | 代理授權是否生效 | `delegations.status='ACTIVE'`（表已於 2026-09-07 PF-251 3b 退役，只剩考古資料） | **代理改看 `user_role_assignments`**：`assignment_kind='proxy' AND is_deleted=false AND CURRENT_DATE BETWEEN valid_from AND valid_until`（日界是企業時區，Python 端 `UserRoleAssignment.is_valid_on(org.local_today())`）；被代理人在 `acting_for_user_secure_code`，自助建立的 `source_ref='self:<sc>'`、遷移來的 `migration:pf251:<delegation sc>` |
 | 行事曆事件的擁有者／可見性 | `calendar_events.user_secure_code` / `is_public` | **`owner_user_secure_code`**（PERSONAL 必填，ORG 為 NULL）／**`visibility`**（`PUBLIC` / `BUSY` / `PRIVATE`）；`calendar_kind` 是 `ORG` / `PERSONAL`。時間欄位 `starts_at` / `ends_at` 存 naive UTC |
-| SMTP 設定組的主機欄位 | `smtp_configs.host` / `port` | **`smtp_host` / `smtp_port`**（另有 `use_tls` / `use_ssl` / `use_app_password` / `provider_type`；2026-09-04 PF-228 起 dev SYSTEM／BELUGA／LION 與 bpserv SYSTEM／DEMOSOC 各一筆 `lionsecbot@gmail.com`、皆 is_default 且實寄過。要給別的測試企業補同一組就跑 `venv/bin/python scripts/seed_smtp_test_config.py --orgs <CODE,...> --apply`——它在同一個 DB 內把系統企業的預設設定組複製過去，Fernet 鑰匙由 `SECRET_KEY` 派生、各企業共用，所以不經手明文、bpserv 也不必重打應用程式密碼） |
+| SMTP 設定組的主機欄位 | `smtp_configs.host` / `port` | **`smtp_host` / `smtp_port`**（另有 `use_tls` / `use_ssl` / `use_app_password` / `provider_type`；2026-09-04 PF-228 起 dev SYSTEM／BELUGA 與 bpserv SYSTEM／DEMOSOC 各一筆 `lionsecbot@gmail.com`、皆 is_default 且實寄過。要給別的測試企業補同一組就跑 `venv/bin/python scripts/seed_smtp_test_config.py --orgs <CODE,...> --apply`——它在同一個 DB 內把系統企業的預設設定組複製過去，Fernet 鑰匙由 `SECRET_KEY` 派生、各企業共用，所以不經手明文、bpserv 也不必重打應用程式密碼） |
 | 用 SQL 造測試角色指派（mutation 驗證常用） | 只填 user/role/org 三個 secure_code | 還要 **`secure_code`**、**`assigned_at`**、**`created_at`**、**`updated_at`** 四個 NOT NULL（DB 無預設、只有 ORM 預設；2026-09-01 與 2026-09-05 各撞一次，錯誤一次只報一個）。`assigned_by` 填可辨識標記（如 `PF145-S5-TEST`），事後 `DELETE FROM user_role_assignments WHERE assigned_by='<標記>'` 一次撤乾淨；成功範例在 `/opt/tmp/verify/20260901-pf145-stage5.log` |
 | 系統設定的鍵值 | `system_settings.setting_key` / `setting_value` | **`key` / `value`**（另有 `value_type` / `category` / `secure_code`）。2026-09-07 撞過 |
 | SqlExecutor 白名單的程序名 | `fw_sql_procedures.procedure_name` / `sp_name` | **`code`（流程 config 引用的鍵）與 `function_name`（實際 PG 函式名）是兩個欄位**；另有 `result_mode`（`scalar`／`row`／`rows`）／`result_columns`／`max_rows`。2026-09-07 連撞兩次 |
@@ -1770,16 +1771,15 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   ```bash
   BASE=http://192.168.0.16:7000/beakplatform
   USC=$(psql -h localhost -U beakplatform -d beakplatform_dev -t -A \
-    -c "SELECT secure_code FROM users WHERE email='ethan@lion.com' AND is_deleted=false;")
+    -c "SELECT secure_code FROM users WHERE email='ethanyu@beluga.com' AND is_deleted=false;")
   curl -s -c cj.txt -X POST "$BASE/dev/quick-login" \
     -H 'Content-Type: application/json' -d "{\"user_id\":\"$USC\"}"
   # SYSTEM_ADMIN admin@system.local     的 user_id 是 nH5liUKQikH1NM2osVVXuF
   # ORG_ADMIN admin-ethanyu@beluga.com 的 user_id 是 jIYEQ-_lZMZNBkVy-hijal
-  # ORG_ADMIN（LION）                   的 user_id 是 1W0Fkn7IK1RW1qwE8HkYQu
   # EMPLOYEE ethanyu@beluga.com（持 FLOW_DESIGNER + SECURITY_STAFF，測 Key2 場景用）
   #          的 user_id 是 FhsmtyPjsnXYotN-iz_Q-X
   # 廠商登入頁（/auth/org/<domain>/public/login，POST JSON {"email","password"}）的測試帳號
-  # （2026-09-02 建）：gg@gmail.com 在 BELUGA / LION / SYSTEM 各一個、BELUGA 另有
+  # （2026-09-02 建）：gg@gmail.com 在 BELUGA / SYSTEM 各一個、BELUGA 另有
   # gg@other-vendor.com，密碼都是 VendorTest2026#Ok；在哪家的 URL 登入就落在哪家
   # 挑測試帳號的通則：對照「該帳號實際持有的角色」與場景所需權限來選，
   # 不要憑 user_type 或帳號名假設——角色會合法改變授權結果，
@@ -1795,9 +1795,9 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   領隊翎柏瑞（quick-login `oTBMqW0roaniN3UFhyKmZh`，L200）申請 30 萬 → 派直屬主管燁凱文（L500）、
   500 萬 → 派處長霄雅慧（L700）。提交走 `POST /api/form-center/submit`，body 要 `published_secure_code`
   （GHTRAVEL 是 `NfrmHdR6pVWLo2L2eCttCA`）+ `subject` + `form_data`
-  **LION 的管理員不要自己用 SQL 撈**：`SELECT ... WHERE user_type='ORG_ADMIN'`
-  在該企業會撈到不能登入的那一筆，quick-login 回 401（2026-08-31 踩過）。
-  用上面寫死的 user_id。
+  **管理員帳號不要自己用 SQL 撈**：兩帳號制的企業裡
+  `SELECT ... WHERE user_type='ORG_ADMIN'` 可能撈到不能登入的那一筆（原始 admin），
+  quick-login 回 401（2026-08-31 在已刪除的 LION 企業踩過）。用上面寫死的 user_id。
 - 常用 API 回應格式備忘：`GET /api/menu` 回 `{menu:[...]}`（樹狀，key 是 `menu` 不是 items）；
   權限中央 API（/api/permissions/*）的企業參數名是 `org_code`（不是 org）
 - curl 打非 exempt 的 POST API 需要 CSRF token，從任一登入後頁面的 meta 取（登入回應不含 token）：
