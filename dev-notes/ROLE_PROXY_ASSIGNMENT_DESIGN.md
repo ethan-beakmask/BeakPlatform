@@ -644,3 +644,55 @@ myRolePicker 列出 ethanyu 四個角色且**不含 EMPLOYEE 身分角色** →
 - 個人設定的 `[指定代理人]` 在企業還沒種出廠表單時**不渲染**（fail-closed），改顯示「目前沒有可用的代理指定申請單，請聯絡企業管理員。」
 - 既有企業補種走 `venv/bin/python scripts/examples/provision_proxy_request_flow.py --org <org> --apply`（冪等）；新企業由 `create_organization`／`init_system_organization`／`seed_system_org_defaults` 三個觸發點自動種
 - bpserv 部署：`--update` → 第 1／2 期的兩句 ALTER → `scripts/migrate_proxy_assignments.py --apply` → **本期另加** `provision_proxy_request_flow.py --org <DemoSOC> --apply`（`--update` 不會回填既有企業的出廠表單）
+
+### 第 4 期複審（原 session，2026-09-08 02:47）——**通過。PF-251 四期全部完成、全部複審通過。**
+
+親自重跑 8 檔 95 passed（`test_op_proxy_grant` 7／`test_proxy_request_defaults` 2／`test_my_proxy_assignments_api` 8／`test_calendar_events_api` 30／
+`test_task_authorizer_role_unit` 32／`test_role_assignment_kinds` 8／`test_route_guard_table` 2／`test_delegation_migration` 6）、守恆檢查綠（108 表／1822 欄）、
+`mkdocs --strict` 過、`docs_impact --verify-covers` 246 條全對、守門表 857／857 一致、semgrep 平台 API 77（新檔 `my_proxy_assignments`／`proxy_request_defaults` 皆 0，與 3b 持平沒有新技術債）；
+讀完 `op_proxy_grant_handler` 全文、`proxy_assignment_service`／`my_proxy_assignments`／`calendar`／`main.py` 的 diff、`myRolePicker` 與 `userPicker` 關鍵段、
+出廠 graph 的節點與 `assignee_value`、三個觸發點、節點註冊與 seed、`?fill=` 深連結、FRONT-12 兩個模板都掛。
+dev 自查：`workflow_node_definitions` 有 `OpProxyGrant`（active、非受限）、BELUGA 出廠表單在、兩張驗收單 COMPLETED（樣本保留）、
+proxy 列只剩 3 列遷移來的（驗收建立的 2 列確已清理）、自助建立入口殘留 grep 0。
+
+**四處驗收改動全部採納，其中兩處是必修**：
+
+1. `assignee_value` 改 `'delegate'`：`OpFieldRead` 的變數前綴取的是 `form_instance.form_template_secure_code` 而非表單 code，出廠 graph 寫不出帶前綴的名字。
+   spec 的原值會讓 DYNAMIC 解析為空 → 每張申請單都走 PF-226 退回，而**單元測試不跑整條流程、抓不到**。這是本期最重要的一次驗收攔截
+2. `myRolePicker` 的名稱快照：元件選項來源是**登入者本人**的角色，簽核者開單時解析不出申請人的角色名，只會看到 secure_code，等於要對方盲簽。
+   快照只進顯示層、handler 只信 secure_code（`_normalize_roles` 忽略其他 key），分層正確
+3. `setValue` 唯讀重繪且**限定唯讀**：可編輯時重繪會讓焦點與捲動跳掉，這個限定條件是對的
+4. 網址收斂到 `proxy_request_fill_url()` 一處，且保留 `current_app.view_functions` 的存在性檢查——模組 blueprint 只註冊在進程內第一個 app，移除該檢查會讓 `test_calendar_events_api` 兩案紅（執行 session 實測過）
+
+**授權面**：`OpProxyGrant` 是雙重防線——handler 進場先用 `proxyable_regular_assignments()` 對執行當下的 regular 持有狀態 fail-closed 重驗（送單到同意之間角色被撤就整筆 error、一列都不建），
+`assign_role(operator=applicant_user)` 再走一次 3a-1 的 `_operator_holds_regular()`。這正是 3b 複審點名要注意的地方，處理正確。
+all-or-nothing（`commit=False` 逐列、最後一次 commit、任何例外 rollback）與 RLS context 設定都在。
+
+**提交衛生問題（不影響功能，但要處理）**：canary 廢除（2026-09-07，與 PF-251 無關）這件工作被切成三段：
+
+| 段 | 位置 |
+|---|---|
+| 刪 `scripts/cron/od_canary_check.py`、`sec-vm-bootstrap/host-cron/secstack-canary` | **`916a5528`（本 session 的第 3b 期複審 commit）** |
+| `sec-vm-bootstrap/` 五個檔案的文件更新 | `23121f77`（第 4 期） |
+| `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md`、`SEC_STACK_ARCHITECTURE.md`、`manifests/mod-open-defense.yaml` | **尚未提交，留在工作區** |
+
+第一段是**原 session 自己的疏失**：`git add <單一檔案> && git commit` 不帶路徑時，會把工作區當時**已 staged** 的內容一併提交，別人 staged 的兩個刪除因此進了複審 commit。
+第二段是執行 session 的 `git add -A`。結果是「程式與設定的刪除已提交、說明文件還在工作區」——現在 push 的話，遠端會看到 canary 腳本被刪卻沒有任何說明。
+執行 session 回報的「工作區乾淨」與實況不符（三個 M）。
+
+**處置建議（交 Ethan 決定，本 session 不擅自提交他人工作）**：不改寫歷史（21 個 commit 未 push，rebase 的風險大於收益），
+把工作區那三個文件檔案提交成一個獨立的 canary 廢除 commit，讓那件事在文件上完整，再一起 push。
+**流程教訓**：`git commit` 前先 `git status --short` 確認 staged 內容；只想提交特定檔案時用 `git commit <path>` 而不是 `git add <path> && git commit`。
+
+## 十二、全案狀態（2026-09-08）
+
+**dev 端四期全部完成並複審通過。** 判定核心、節點解析、寫入路徑、代理與候補、`DEPT_PROXY` 與 `delegations` 退役、同意流程都已落地。
+
+**剩下的收尾（依序）**：
+
+1. 工作區三個 canary 文件的處置（見上）
+2. `push both`
+3. bpserv 部署：`--update` → 兩句 ALTER（第 1 期五欄位＋索引、第 2 期 `fw_approval_records.acted_as_kind`，SQL 在第六節）→
+   `scripts/migrate_proxy_assignments.py --apply`（六段＋全域收尾一次做完）→
+   **`venv/bin/python scripts/examples/provision_proxy_request_flow.py --org DEMOSOC --apply`**（`--update` 不回填既有企業的出廠表單）
+4. bpserv 驗收：DemoSOC 無部門角色，重點是既有 ROLE 任務判定不變、個人設定 [指定代理人] 連結可開、跑一張申請單走完同意流程
