@@ -1232,8 +1232,8 @@ curl 對「連結、按鈕、select 初次渲染值」有結構性盲區：
 - `BkCaps.can()` 漏注入（FRONT-09）的症狀是「按鈕點了沒反應、console 不報錯」
 
 **二、AI 產出的自我檢查表不算驗收。**
-codex／subagent 開不了瀏覽器（chrome-devtools MCP **只有主 Claude 有**），
-它的「自我檢查七項全過」只證明程式碼有寫，不證明串得起來——
+codex 開不了瀏覽器；**subagent 其實有 chrome-devtools**（2026-09-07 實測確認，本檔原本寫「只有主 Claude 有」已不符實），但全機共用同一個 Chrome 實例，所以瀏覽器工作必須序列派工。
+無論誰跑的，AI 自己的「自我檢查七項全過」只證明程式碼有寫，不證明串得起來——
 而且**讀起來像已驗收，比「沒測」更危險**。
 2026-08-04 menu 設計器面板那批 codex 自述七項全過，實測抓到兩個 P1：底圖下拉存錯 sc
 （選了完全沒反應也不報錯）、「不使用底圖」寫空字串違反 schema pattern（整頁存不了，
@@ -1658,6 +1658,12 @@ heredoc 建企業、`init_menus.py`、`init_permissions.py`、`flask module sync
 | 行事曆事件的擁有者／可見性 | `calendar_events.user_secure_code` / `is_public` | **`owner_user_secure_code`**（PERSONAL 必填，ORG 為 NULL）／**`visibility`**（`PUBLIC` / `BUSY` / `PRIVATE`）；`calendar_kind` 是 `ORG` / `PERSONAL`。時間欄位 `starts_at` / `ends_at` 存 naive UTC |
 | SMTP 設定組的主機欄位 | `smtp_configs.host` / `port` | **`smtp_host` / `smtp_port`**（另有 `use_tls` / `use_ssl` / `use_app_password` / `provider_type`；2026-09-04 PF-228 起 dev SYSTEM／BELUGA／LION 與 bpserv SYSTEM／DEMOSOC 各一筆 `lionsecbot@gmail.com`、皆 is_default 且實寄過。要給別的測試企業補同一組就跑 `venv/bin/python scripts/seed_smtp_test_config.py --orgs <CODE,...> --apply`——它在同一個 DB 內把系統企業的預設設定組複製過去，Fernet 鑰匙由 `SECRET_KEY` 派生、各企業共用，所以不經手明文、bpserv 也不必重打應用程式密碼） |
 | 用 SQL 造測試角色指派（mutation 驗證常用） | 只填 user/role/org 三個 secure_code | 還要 **`secure_code`**、**`assigned_at`**、**`created_at`**、**`updated_at`** 四個 NOT NULL（DB 無預設、只有 ORM 預設；2026-09-01 與 2026-09-05 各撞一次，錯誤一次只報一個）。`assigned_by` 填可辨識標記（如 `PF145-S5-TEST`），事後 `DELETE FROM user_role_assignments WHERE assigned_by='<標記>'` 一次撤乾淨；成功範例在 `/opt/tmp/verify/20260901-pf145-stage5.log` |
+| 系統設定的鍵值 | `system_settings.setting_key` / `setting_value` | **`key` / `value`**（另有 `value_type` / `category` / `secure_code`）。2026-09-07 撞過 |
+| SqlExecutor 白名單的程序名 | `fw_sql_procedures.procedure_name` / `sp_name` | **`code`（流程 config 引用的鍵）與 `function_name`（實際 PG 函式名）是兩個欄位**；另有 `result_mode`（`scalar`／`row`／`rows`）／`result_columns`／`max_rows`。2026-09-07 連撞兩次 |
+| 表單／流程的分類 | `fw_categories.code` / `category_type` | **兩個都不存在**。只有 `secure_code` / `name` / `parent_secure_code`，可見範圍靠三個布林 `show_in_form_design` / `show_in_workflow_design` / `show_in_form_center`。2026-09-07 撞過 |
+| 流程變數的欄位 | `fw_workflow_variables.variable_name` / `variable_value` | **`var_name` / `var_value`**。2026-09-07 PF-252 撞過 |
+| 誰能改 `fw_sp` 裡的預存程序 | 以為 `beakplatform` 可以 | **不行**，該 schema 的 owner 是 `fw_sp_owner`，平台帳號連 DROP 自己不擁有的函式都會被拒（`must be owner of function`）。要 `sudo -u postgres psql -d beakplatform_dev`。這是刻意的權限隔離，不是設定錯誤 |
+| 企業專屬資料庫何時建立 | 以為建企業時或建子系統時 | **兩者都不是**（NoCode 子系統用的是 SQLite）。目前是按需建立，兩個觸發點：表單配對啟用 SQL Sync（`modules/form_workflow/api/mappings.py`）、規格制定模組建實體表（`modules/spec_formulate/services/schema/pg_table_manager.py::ensure_org_database()`）。兩者都走 `sql_sync/org_db_manager.py::provision_org_database()`。**PF-256 已定案要改成建企業時就建**，改完本列要更新 |
 
 ### 驗英文介面：沒有切換語系的 API，要改 DB 欄位（2026-08-29 試誤）
 
