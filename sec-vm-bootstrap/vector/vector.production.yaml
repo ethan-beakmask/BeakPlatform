@@ -367,8 +367,7 @@ transforms:
   # 【結構刻意保留、條件刻意不動】203.0.113.0/24 是 TEST-NET-3，不會出現在真實
   # 網際網路路由，所以留著這兩個條件零風險；而拆掉它要改三處 input 連接
   # （intake_global_throttle 與 intake_throttled_clean），改錯即斷流。
-  # 未來若改成「從 internet 發動掃描」的演習，只需把下面的 route 條件換成新的
-  # 識別特徵，不必動結構。
+  # 未來若有新的合成監控需求，只需把下面的 route 條件換成新的識別特徵，不必動結構。
   intake_canary_route:
     type: route
     inputs:
