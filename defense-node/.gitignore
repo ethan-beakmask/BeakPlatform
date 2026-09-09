@@ -1,0 +1,12 @@
+# 安裝時產生的檔案與秘密，不進版控
+.env
+generated/
+od-bridge/state/
+suricata/rules/*
+!suricata/rules/.gitkeep
+waf/log/
+*.log
+__pycache__/
+*.pyc
+*.bak
+*.bak.*

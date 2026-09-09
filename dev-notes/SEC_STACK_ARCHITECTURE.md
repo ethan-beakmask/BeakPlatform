@@ -1,6 +1,6 @@
 # sec-vm（`.20`）架構與運維手冊
 
-**最後更新：2026-09-07（合成演習 canary 廢除；2026-08-15 PF-104 建立）**
+**最後更新：2026-09-10（defense-node 讀者版一鍵安裝、dmz-web tunnel 上線；2026-08-15 PF-104 建立）**
 **權威範圍**：本檔記錄跑在 `.20`（sec-vm）上、BeakPlatform-dev **之外**的 Open Defense
 安全棧（Vector、Suricata、Coraza WAF、CrowdSec、ClickHouse、Grafana、EveBox、
 od-bridge）。平台側（`.16`，`/opt/BeakPlatform-dev` 內）的程式架構在
@@ -822,3 +822,83 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 不要提議在平台內實作主機加固。要動 PF-112 就照工單做那一件事。
 真的發現新的獨立風險，先問用戶，不要自己接著往下修。
 
+---
+
+## 12. 讀者版一鍵安裝 `defense-node/`（2026-09-10 建立，會推上 GitHub）
+
+**`sec-vm-bootstrap/` 是 `.20` 這台的部署副本（含內部 IP，不推 GitHub）；
+`defense-node/` 是它的參數化產品版（不含任何內部 IP，推 GitHub 給 ITHome 讀者）。**
+兩者結構相同、設定檔內容相同，差別只在「值來自 `.env`」與「安裝流程自動化」。
+新功能先寫進 `defense-node/`，`.20` 要跟上時把 `.20` 換成 defense-node 安裝
+（尚未做，見下方待辦）。
+
+| 檔案 | 說明 |
+|---|---|
+| `defense-node/install.sh` | 一鍵安裝／`--reconfigure`／`--verify`／`--test-event`／`--update`／`--uninstall`。從 GitHub 用 sparse-checkout 只抓 `defense-node/` |
+| `defense-node/cf_tunnel.py` | Cloudflare API：建 tunnel、PUT ingress（`hostname → http://waf-nginx:8080`）、CNAME、取 connector token。只需 Zone: Read／DNS: Edit／Tunnel: Edit，account 由 zone 反查（Token 列不出 `/accounts` 也能用） |
+| `defense-node/nftables.sh` | 依 `.env` 產生 `/etc/nftables.conf`（allowlist／blocklist／ingest／mgmt／SSH guard），重建前保存 blocklist 元素再補回 |
+| `scripts/od_node_pairing.py`（平台端） | 一行建 API Key（od_intake scope）＋ service account，打包成 `ODN1.<base64url json>` 開通字串；`--provision` 時先呼叫 `provision_od_intake_for_org.py` |
+| `docs/install/defense_node.md` | 讀者文件（公開，不含內部 IP） |
+
+**與 `.20` 現況的三個差異（刻意的）**：
+
+1. **cloudflared 是 compose 服務、固定 IP `172.18.0.250`**（`profiles: [tunnel]`），ingress 直接指
+   docker 服務名 `waf-nginx:8080`。Vector 的 `trusted_ingress` 因此只信這個 IP
+   （`.20` 那份信的是 `192.168.0.16` 與 `172.18.0.1`）。想從管理機帶假 header 測試要在 `.env`
+   加 `TRUSTED_INGRESS_EXTRA=172.18.0.1`
+2. **ClickHouse 綁 0.0.0.0 不綁本機 IP**，來源限制只靠帳號層白名單——這樣換 IP 不必重建容器
+   （驗收流程「`.13` 改成 `.20` 的 IP」只需 `--reconfigure`，實測連 reconfigure 都不必，服務照常）
+3. **`CROWDSEC_LAPI_URL=http://127.0.0.1:8081`**。`.20` 的 `.env` 寫 `http://crowdsec:8080`，但 od-bridge
+   是 host network，那個名稱解析不到——`.20` 的 CrowdSec enforcer 其實從未成功過（沒有決策帶
+   crowdsec EP 時看不出來）。`.20` 要修就改 `.env` 這一行
+4. `intake_canary_route` 已拆掉（結構直接 throttle → clean），內網判定改用 `ip_cidr_contains` 精確比對 RFC1918
+
+### Cloudflare 現況（2026-09-10）
+
+| 項目 | 值 |
+|---|---|
+| tunnel | `dmz-web`（`7431403b-cdac-4b4c-97de-9f77b976168c`，remote-managed，2026-09-08 建） |
+| ingress | `app.beakmask.org → http://waf-nginx:8080`（httpHostHeader=app.beakmask.org），其餘 404 |
+| DNS | `app.beakmask.org` CNAME → `<tunnel id>.cfargotunnel.com`（zone `beakmask.org`，proxied） |
+| connector | **目前只有 `.13` 上有**（`secstack-cloudflared-1`，2026-09-10 驗收預演後手動 `compose stop`）。**`.20` 沒有 cloudflared**，所以 `app.beakmask.org` 現在是 530（tunnel 無連線） |
+| API Token | 沿用 `/opt/CFTunnel/config-ho-gate.ini` 的 `api_token`（權限夠用，不必另建） |
+
+hostname 是本 session 自行選的（沿用退役前 production 的 `app.beakmask.org`），
+要換名字：`python3 defense-node/cf_tunnel.py setup --hostname <新名> --tunnel-name dmz-web`，
+舊 CNAME 手動刪。`.66` 的 `system_base_url` 仍是 `http://192.168.0.66:8000`，
+要讓平台寄出的連結指向對外網址時改成 `https://app.beakmask.org`（未動，Ethan 決定）。
+
+### `.13` 現況與 Ethan 的驗收步驟
+
+`.13`（ubuntu24，`ethan` / `P@ssw0rd`、sudo NOPASSWD，`.16` 的 `~/.ssh/company-wsl.pub` 已放進去）
+已用 defense-node 裝好，綁 BELUGA（intake key `ak_824b6daff3b494ff`、SA `sa_defense_node_13_22baa3`，
+開通字串在 `/opt/tmp/verify/20260910-defense-node-pairing.log`），backend `http://192.168.0.66:8000`。
+安裝目錄 `/opt/beak-defense`，密碼在它的 `.env`。
+
+2026-09-10 已完整預演過一次（憑證 `/opt/tmp/verify/20260910-defense-node-13-install.log`）：
+`.20` 關機 → `.13` 改 `192.168.0.20` → Internet 打 `https://app.beakmask.org/beakplatform/` 302 到
+`.66` 登入頁、SQLi 探測 403 → `.16` 建案 `OD-20260909-0001`／`0002`（保留，是驗收證據）→
+還原（`.13` 回 DHCP、`qm start 110`）。**兩個踩到的**：`.66` 對 `192.168.0.20` 有舊 MAC 的 ARP
+快取，IP 剛換過去的前一兩分鐘 WAF → `.66` 會逾時，`sudo ip neigh flush to 192.168.0.20` 即好；
+`.13` 的 netplan 是 cloud-init DHCP，換 IP 要整檔改成 static（備份在 `.13:/root/netplan-50-cloud-init.yaml.bak-defense`，
+static 版在 `/root/netplan-as-20.yaml`），改完 `systemd-run --on-active=2 netplan apply` 免斷線。
+
+Ethan 自己跑驗收時：
+
+```bash
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'sudo poweroff'        # 1. 關 .20
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.13 \
+  'sudo cp /root/netplan-as-20.yaml /etc/netplan/50-cloud-init.yaml && sudo systemd-run --on-active=2 netplan apply'
+ssh -i ~/.ssh/company-wsl -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ethan@192.168.0.20 \
+  'sudo bash /opt/beak-defense/install.sh --reconfigure --yes'     # 3. 帶起 cloudflared、重生防火牆
+# 4. 從 Internet 掃 https://app.beakmask.org/ ；案件在 .16 資安案件處置中心（企業 beluga）
+```
+
+還原：`.13` 蓋回 `/root/netplan-50-cloud-init.yaml.bak-defense` 再 `netplan apply`、`ssh root@192.168.0.100 qm start 110`、
+`.13` 上 `docker compose --profile tunnel stop cloudflared`（否則 app.beakmask.org 會被 `.13` 接走而 `.66` 擋它）。
+
+### 待辦（未開單，Ethan 決定）
+
+- `.20` 換成 defense-node 安裝（或至少修 `CROWDSEC_LAPI_URL`、補 cloudflared）；換完 `sec-vm-bootstrap/` 可退役
+- WAF 對 5xx 回應也會產生事件且 `rule_id` 空（無法聚合，後端掛掉時一小時最多 8 張案件）。要不要在 vector 過濾掉 `rule_id==""` 的 coraza 事件是政策問題
+- `.66` 的 `system_base_url` → `https://app.beakmask.org`

@@ -3,6 +3,21 @@
 本檔記錄 secstack 整體部署變更,涵蓋 sec-vm(192.168.0.20)及其相依的 Proxmox host(192.168.0.100)上跟 stack 運維有關的設定。
 格式參考 [Keep a Changelog](https://keepachangelog.com/),日期 ISO 8601。
 
+## [2026-09-10]
+
+### Added
+- **讀者版一鍵安裝 `defense-node/`**（repo 頂層，會推 GitHub）：本目錄的參數化產品版，
+  所有 IP／金鑰／throttle 值外部化到 `.env`，`install.sh` 一鍵裝完；平台端配對腳本
+  `scripts/od_node_pairing.py`。已在 `.13` 實裝並做過「`.20` 關機、`.13` 頂替」的端到端預演。
+  與本目錄的三個刻意差異（cloudflared 進 compose 且固定 IP、ClickHouse 綁 0.0.0.0、
+  `CROWDSEC_LAPI_URL=127.0.0.1:8081`）見 `dev-notes/SEC_STACK_ARCHITECTURE.md` 第 12 節。
+- Cloudflare tunnel `dmz-web` 完成設定：`app.beakmask.org → waf-nginx:8080`。
+  **connector 目前只在 `.13`（已停）**，`.20` 仍無 cloudflared。
+
+### Known
+- 本目錄 `.env` 的 `CROWDSEC_LAPI_URL=http://crowdsec:8080` 在 host network 的 od-bridge
+  內解析不到，CrowdSec enforcer 從未成功；改 `http://127.0.0.1:8081` 即可（尚未改）。
+
 ## [2026-09-07]
 
 ### Removed

@@ -1,0 +1,13 @@
+<!-- secstack 帳號的來源白名單，由 install.sh 從 .env 的 ADMIN_IPS / BEAK 平台 IP 產生 -->
+<clickhouse>
+  <users>
+    <secstack>
+      <networks replace="replace">
+        <ip>127.0.0.1</ip>
+        <ip>::1</ip>
+        <ip>@@DOCKER_SUBNET@@</ip>
+@@ALLOWLIST_IPS@@
+      </networks>
+    </secstack>
+  </users>
+</clickhouse>

@@ -1887,6 +1887,12 @@ Ethan 提供的 Proxmox VM，用途是驗證「讀者照裝」路徑與 fresh �
 | `.20` 主機（Vector / Suricata / CrowdSec / od-bridge / ClickHouse）與埠、SSH、風險定調 | `dev-notes/SEC_STACK_ARCHITECTURE.md`（第 11 節同上） |
 | `.20` 設定檔權威副本 | `sec-vm-bootstrap/`（**兩邊都要改**，repo 副本不是快照） |
 
+**讀者版一鍵安裝在 repo 頂層 `defense-node/`（2026-09-10 起，會推 GitHub）**：
+`sec-vm-bootstrap/` 的參數化產品版，平台端配對腳本 `scripts/od_node_pairing.py`，
+讀者文件 `docs/install/defense_node.md`。**兩份設定要改就先改 `defense-node/`**；
+`.20` 仍跑 `sec-vm-bootstrap/`（尚未換裝）。Cloudflare `dmz-web` tunnel 現況、`.13`
+測試節點、Ethan 的驗收步驟與還原都在 `dev-notes/SEC_STACK_ARCHITECTURE.md` 第 12 節。
+
 **留在本檔的只有這條**：以下六個檔案是各自領域的**唯一實作**，
 新增功能一律加在這裡，**不要各自重寫**（繞過的後果寫在上面兩份文件裡）：
 

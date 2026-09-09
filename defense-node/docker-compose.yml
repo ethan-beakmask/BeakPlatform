@@ -1,0 +1,212 @@
+# =============================================================================
+# BeakPlatform 防禦節點（defense-node）
+# =============================================================================
+# 資料流：
+#   Internet → Cloudflare → cloudflared(容器) → waf-nginx:8080 → ${WAF_BACKEND_URL}
+#                                                  │ ModSec audit log
+#   suricata 監聽 ${NODE_IFACE}（被動 IDS）         ▼
+#   vector: 讀 eve.json + audit.log → 轉 OCSF → clickhouse（全量）+ od-bridge（過濾/封頂）
+#   od-bridge: 簽章轉送到 BeakPlatform intake；輪詢平台決策 → nftables / CrowdSec / EDL
+#
+# 所有可調參數都在 .env（由 install.sh 產生），本檔不需手改。
+# =============================================================================
+
+name: secstack
+
+networks:
+  default:
+    name: secstack
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${DOCKER_SUBNET:-172.18.0.0/16}
+          gateway: ${DOCKER_GATEWAY:-172.18.0.1}
+
+volumes:
+  clickhouse-data:
+  clickhouse-logs:
+  crowdsec-config:
+  crowdsec-data:
+  suricata-logs:
+  vector-data:
+  portainer-data:
+  evebox-data:
+  grafana-data:
+
+services:
+
+  # ---------------- ClickHouse（事件儲存）----------------
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+      - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./generated/clickhouse-network-allowlist.xml:/etc/clickhouse-server/users.d/zz-network-allowlist.xml:ro
+    ports:
+      # 綁 0.0.0.0 而不是本機 IP：換 IP 時才不必重建容器。來源限制在帳號層
+      # （generated/clickhouse-network-allowlist.xml：本機、docker 網段、ADMIN_IPS、平台）
+      - "8123:8123"   # HTTP SQL
+      - "9000:9000"   # native
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  # ---------------- od-bridge（事件轉送 + 決策執行）----------------
+  od-bridge:
+    build: ./od-bridge
+    restart: unless-stopped
+    env_file: .env
+    cap_add:
+      - NET_ADMIN          # nftables enforcer 要操作主機的 nft set
+    network_mode: host     # nft 命令要打在主機 netns；其他服務走 127.0.0.1
+    volumes:
+      - ./od-bridge/state:/state
+
+  # ---------------- Vector（收集 → 正規化 → 分送）----------------
+  vector:
+    image: timberio/vector:0.41.1-alpine
+    restart: unless-stopped
+    env_file: .env      # vector.yaml 內的 ${VAR}（throttle 值、TRUSTED_INGRESS_LIST）由此讀取
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # vector → od-bridge（host network）
+    ports:
+      - "127.0.0.1:8688:8688"   # 合成事件注入口，只開本機（可直接注入任意事件，不可對外）
+      - "8686:8686"             # GraphQL / metrics（唯讀；來源由 nftables 管制）
+    volumes:
+      - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - vector-data:/var/lib/vector
+      - suricata-logs:/var/log/suricata:ro
+      - ./waf/log:/var/log/modsec:ro
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+
+  # ---------------- Suricata（被動網路 IDS）----------------
+  suricata:
+    image: jasonish/suricata:7.0
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - SYS_NICE
+      - NET_RAW
+    command: ["-i", "${NODE_IFACE}", "--set", "default-rule-path=/var/lib/suricata/rules"]
+    volumes:
+      - ./generated/suricata.yaml:/etc/suricata/suricata.yaml
+      # 不能放 /etc/suricata：映像檔的 entrypoint 會 chown 該目錄，唯讀掛載會讓容器起不來
+      - ./suricata/disable.conf:/etc/suricata-update/disable.conf:ro
+      - suricata-logs:/var/log/suricata
+      - ./suricata/rules:/var/lib/suricata/rules
+
+  # ---------------- CrowdSec（行為偵測 + LAPI）----------------
+  crowdsec:
+    image: crowdsecurity/crowdsec:v1.6.4
+    restart: unless-stopped
+    environment:
+      COLLECTIONS: "crowdsecurity/linux crowdsecurity/sshd crowdsecurity/http-cve crowdsecurity/base-http-scenarios"
+      DISABLE_LOCAL_API: "false"
+    volumes:
+      - crowdsec-config:/etc/crowdsec
+      - crowdsec-data:/var/lib/crowdsec/data
+      - suricata-logs:/var/log/suricata:ro
+      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+    ports:
+      - "127.0.0.1:8081:8080"   # LAPI，只開本機（od-bridge 走 host network 用 127.0.0.1:8081）
+
+  # ---------------- WAF：nginx + ModSecurity v3 + OWASP CRS ----------------
+  waf-nginx:
+    image: owasp/modsecurity-crs:nginx
+    restart: unless-stopped
+    environment:
+      BACKEND: ${WAF_BACKEND_URL}
+      MODSEC_AUDIT_ENGINE: "RelevantOnly"
+      MODSEC_AUDIT_LOG: "/var/log/modsec/audit.log"
+      MODSEC_AUDIT_LOG_FORMAT: "JSON"
+      MODSEC_AUDIT_LOG_PARTS: "ABCFHJZ"
+      MODSEC_RULE_ENGINE: ${WAF_RULE_ENGINE:-On}
+      PARANOIA: ${WAF_PARANOIA:-1}
+      ANOMALY_INBOUND: 5
+      ANOMALY_OUTBOUND: 4
+      BLOCKING_LOG_LEVEL: warn
+      ERRORLOG_LEVEL: warn
+      SERVER_NAME: "_"
+      SSL_PORT: 8443
+      PORT: 8080
+      # real_ip 模組刻意設成永遠不會匹配的值：ModSecurity 記下的 client_ip 必須是
+      # 「直連 WAF 的對象」（cloudflared 容器或 docker 網關），Vector 才能據此判斷
+      # Cf-Connecting-Ip 可不可信。把它改成 cloudflared 的 IP 會讓任何能打到 8080
+      # 的來源都能把攻擊者 IP 填成任意第三方位址。
+      SET_REAL_IP_FROM: "127.0.0.2"
+      REAL_IP_HEADER: "CF-Connecting-IP"
+      REAL_IP_RECURSIVE: "on"
+      REAL_IP_PROXY_HEADER: "X-Real-IP"
+    ports:
+      - "8080:8080"   # 內網驗證用；正式流量由 cloudflared 容器直接走 docker 網段
+    volumes:
+      - ./waf/log:/var/log/modsec
+      - ./waf/nginx-templates/logging.conf.template:/etc/nginx/templates/conf.d/logging.conf.template:ro
+      - ./waf/modsec-overrides/modsecurity-override.conf:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template:ro
+
+  # ---------------- cloudflared（對外入口；profile: tunnel）----------------
+  cloudflared:
+    image: cloudflare/cloudflared:2026.8.3
+    restart: unless-stopped
+    profiles: ["tunnel"]
+    command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
+    networks:
+      default:
+        ipv4_address: ${CLOUDFLARED_IP:-172.18.0.250}
+    depends_on:
+      - waf-nginx
+
+  # ---------------- 選用 UI（profile: ui）----------------
+  portainer:
+    image: portainer/portainer-ce:2.21.4
+    restart: unless-stopped
+    profiles: ["ui"]
+    ports:
+      - "9443:9443"   # HTTPS，自簽憑證
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+
+  evebox:
+    image: jasonish/evebox:0.18.2
+    restart: unless-stopped
+    profiles: ["ui"]
+    entrypoint: ["/usr/bin/evebox"]
+    command: ["server", "--no-auth", "--datastore=sqlite",
+              "--data-directory=/data", "--input=/var/log/suricata/eve.json",
+              "--host=0.0.0.0", "--port=5636"]
+    volumes:
+      - suricata-logs:/var/log/suricata:ro
+      - evebox-data:/data
+    ports:
+      - "5636:5636"
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    restart: unless-stopped
+    profiles: ["ui"]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?請在 .env 設定 GRAFANA_ADMIN_PASSWORD}
+      GF_INSTALL_PLUGINS: "grafana-clickhouse-datasource"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
