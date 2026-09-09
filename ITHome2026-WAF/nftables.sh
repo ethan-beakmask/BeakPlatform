@@ -80,7 +80,7 @@ fi
 cat > "$CONF" <<NFT
 #!/usr/sbin/nft -f
 #
-# 防禦節點主機防火牆（由 defense-node/nftables.sh 產生，勿手改；改 .env 後重跑）
+# 防禦節點主機防火牆（由 ITHome2026-WAF/nftables.sh 產生，勿手改；改 .env 後重跑）
 #
 # 不使用 flush ruleset：docker 的 ip nat / ip filter 由 docker 管理。
 # 只以 delete + create 重建 inet secstack 一張表。
@@ -123,8 +123,8 @@ table inet secstack {
     chain ingest_guard_forward {
         type filter hook forward priority -150; policy accept;
         iifname != "$NODE_IFACE" accept
-        tcp dport { 8080, 8688 } ip saddr { $INGEST_SET } accept
-        tcp dport { 8080, 8688 } drop
+        tcp dport { 8080, 8082, 8688 } ip saddr { $INGEST_SET } accept
+        tcp dport { 8080, 8082, 8688 } drop
     }
 
     chain ingest_guard_input {

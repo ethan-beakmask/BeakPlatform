@@ -1885,10 +1885,10 @@ Ethan 提供的 Proxmox VM，用途是驗證「讀者照裝」路徑與 fresh �
 |---|---|
 | 平台側架構、intake、路由、案件、處置中心 | `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md`（第 13 節是從本檔移入的操作備忘：ClickHouse 查詢、三種處置流程、protected targets、intake HMAC 金鑰、EDL 黑名單） |
 | `.20` 主機（Vector / Suricata / CrowdSec / od-bridge / ClickHouse）與埠、SSH、風險定調 | `dev-notes/SEC_STACK_ARCHITECTURE.md`（第 11 節同上） |
-| `.20` 設定檔權威 | **`defense-node/`**（2026-09-10 起；`.20` 的部署在 `.20:/opt/beak-defense`，只有 `.env` 與 `generated/` 是主機專屬）。改設定＝改 `defense-node/` → rsync 到 `.20:/opt/beak-defense` → `sudo bash install.sh --reconfigure`。舊的 `sec-vm-bootstrap/` 已退役封存在 `dev-notes/archive/sec-vm-bootstrap-retired-20260910/`（`.20` 本機是 `~/sec-vm-bootstrap_RETIRED_20260910`） |
+| `.20` 設定檔權威 | **`ITHome2026-WAF/`**（2026-09-10 起；`.20` 的部署在 `.20:/opt/ithome2026-waf`，只有 `.env` 與 `generated/` 是主機專屬）。改設定＝改 `ITHome2026-WAF/` → rsync 到 `.20:/opt/ithome2026-waf` → `sudo bash install.sh --reconfigure`。舊的 `sec-vm-bootstrap/` 已退役封存在 `dev-notes/archive/sec-vm-bootstrap-retired-20260910/`（`.20` 本機是 `~/sec-vm-bootstrap_RETIRED_20260910`） |
 
-**讀者版一鍵安裝在 repo 頂層 `defense-node/`（2026-09-10 起，會推 GitHub）**：
-平台端配對腳本 `scripts/od_node_pairing.py`，讀者文件 `docs/install/defense_node.md`。
+**讀者版一鍵安裝在 repo 頂層 `ITHome2026-WAF/`（2026-09-10 起，會推 GitHub）**：
+平台端配對腳本 `scripts/od_node_pairing.py`，讀者文件 `docs/install/ithome2026_waf.md`。
 **`.20` 已於 2026-09-10 換裝成 defense-node**（cloudflared 也在 `.20` 上跑、
 `app.beakmask.org` 對外），tunnel 現況、`.13` 測試節點、驗收步驟都在
 `dev-notes/SEC_STACK_ARCHITECTURE.md` 第 12 節。

@@ -1,4 +1,4 @@
-# 防禦節點（defense-node）一鍵安裝
+# ITHome2026-WAF：防禦節點一鍵安裝
 
 **這是選用元件。** 要讓 BeakPlatform 自動收到網站與網路層的攻擊事件、建立資安案件、
 再把核可的封鎖決策落地到防火牆，需要第二台主機當「防禦端」。本頁說明如何用一支
@@ -58,7 +58,7 @@ venv/bin/python scripts/od_node_pairing.py \
 ## 四、步驟二：在防禦端執行安裝
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/defense-node/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/ITHome2026-WAF/install.sh -o install.sh
 sudo bash install.sh \
     --pair 'ODN1....' \
     --backend http://<被保護網站IP>:<埠> \
@@ -66,7 +66,7 @@ sudo bash install.sh \
     --admin-ips <你的工作機IP>
 ```
 
-腳本會自動：裝 docker 與 nftables → 從 GitHub 取得 `defense-node/` → 寫 `.env` →
+腳本會自動：裝 docker 與 nftables → 從 GitHub 取得 `ITHome2026-WAF/` → 寫 `.env` →
 產生 Suricata / ClickHouse / 防火牆設定 → 下載 Suricata 規則（約 40 MB）→
 啟動全部容器 → 建 ClickHouse 表 → 註冊 CrowdSec → 印出各服務網址與密碼 → 跑健康檢查。
 全程約 3～6 分鐘，多數時間在抓映像檔。
@@ -78,12 +78,13 @@ sudo bash install.sh \
 | `--pair` | 步驟一的開通字串。不用它時改給 `--base-url` / `--intake-key-id` / `--intake-secret` / `--sa-id` / `--sa-secret` |
 | `--backend` | 【必填】被保護網站在內網的位址，例 `http://192.168.1.30:8000` |
 | `--cf-api-token` + `--cf-hostname` | 用 Cloudflare API 自動建 tunnel、ingress、DNS。Token 權限：Account → Cloudflare Tunnel: Edit、Zone → DNS: Edit、Zone → Zone: Read |
+| `--welcome-hostname www.example.com` | 多開一個對外 hostname 當「歡迎頁」（一行歡迎詞的靜態頁），有自己的 WAF 容器，刺探它同樣會產生事件。搭配 `--cf-api-token` 自動加 ingress 與 DNS；手動建 tunnel 時 Service 填 `http://waf-welcome:8080` |
 | `--tunnel-token` | 不想給 API Token 時，自己到 Zero Trust 後台建 tunnel、把 connector token 貼進來（見第七節） |
 | `--admin-ips` | 允許管理防禦端的來源 IP（逗號分隔）。預設自動加入平台主機與「你 SSH 進來的那台」 |
 | `--home-net` | Suricata 的內網範圍，預設 `[192.168.0.0/16,10.0.0.0/8,172.16.0.0/12]` |
 | `--no-ui` | 不裝 Grafana / EveBox / Portainer |
 | `--ssh-guard` | SSH 也只准 `--admin-ips` 連。**確定清單無誤再開**，鎖到自己只能從主機 console 救 |
-| `--dir` | 安裝目錄，預設 `/opt/beak-defense` |
+| `--dir` | 安裝目錄，預設 `/opt/ithome2026-waf` |
 | `--yes` | 非互動；缺必填參數直接報錯 |
 
 所有值都存在 `<安裝目錄>/.env`，之後改檔案再執行 `--reconfigure` 即可，不必重裝。
@@ -91,7 +92,7 @@ sudo bash install.sh \
 ## 五、驗證
 
 ```bash
-sudo bash /opt/beak-defense/install.sh --verify
+sudo bash /opt/ithome2026-waf/install.sh --verify
 ```
 
 會列出容器狀態、ClickHouse / od-bridge / WAF 健康、Vector 設定檔、平台是否連得到、
@@ -101,7 +102,7 @@ sudo bash /opt/beak-defense/install.sh --verify
 要看整條鏈到平台建案：
 
 ```bash
-sudo bash /opt/beak-defense/install.sh --test-event
+sudo bash /opt/ithome2026-waf/install.sh --test-event
 ```
 
 它送一筆來源 `vector`、攻擊者 `203.0.113.42` 的測試事件進 Vector，幾秒後 od-bridge
@@ -114,7 +115,7 @@ sudo bash /opt/beak-defense/install.sh --test-event
 ## 六、日常操作
 
 ```bash
-cd /opt/beak-defense
+cd /opt/ithome2026-waf
 sudo bash install.sh --status          # 容器、封鎖中的 IP、tunnel 狀態
 sudo bash install.sh --reconfigure     # 改了 .env 之後
 sudo bash install.sh --update          # 從 GitHub 更新程式後重新套用
@@ -155,12 +156,18 @@ sudo docker compose restart suricata
 用 `--cf-api-token` 時上述三步由 `cf_tunnel.py` 自動完成；`python3 cf_tunnel.py status`
 可查連線狀態。
 
+## 七之一、內容物與授權
+
+本安裝包幾乎全是別人的開源專案，只有 od-bridge 與幾支整合腳本是自己寫的。
+每個元件的版本、授權、上游位址與單獨安裝指令，以及著作權聲明（中英對照），
+見安裝目錄內的 `COMPONENTS.md`。
+
 ## 八、換 IP 或搬家
 
 防禦端的設定不綁自己的 IP（服務綁 0.0.0.0，來源限制看的是對方的 IP），所以換 IP 只要：
 
 1. 改主機 IP
-2. `sudo bash /opt/beak-defense/install.sh --reconfigure`（重新偵測網卡與 IP、重生防火牆、確認 tunnel 連上）
+2. `sudo bash /opt/ithome2026-waf/install.sh --reconfigure`（重新偵測網卡與 IP、重生防火牆、確認 tunnel 連上）
 3. 管制端與被保護網站的防火牆若有來源 IP 白名單，改成新 IP
 
 Cloudflare Tunnel 認的是 token 不是 IP，會自己重新連上。

@@ -1,6 +1,6 @@
 # sec-vm（`.20`）架構與運維手冊
 
-**最後更新：2026-09-10（defense-node 讀者版一鍵安裝、dmz-web tunnel 上線；2026-08-15 PF-104 建立）**
+**最後更新：2026-09-10（ITHome2026-WAF 讀者版一鍵安裝、`.20` 換裝、dmz-web tunnel 與 www 歡迎頁上線；2026-08-15 PF-104 建立）**
 **權威範圍**：本檔記錄跑在 `.20`（sec-vm）上、BeakPlatform-dev **之外**的 Open Defense
 安全棧（Vector、Suricata、Coraza WAF、CrowdSec、ClickHouse、Grafana、EveBox、
 od-bridge）。平台側（`.16`，`/opt/BeakPlatform-dev` 內）的程式架構在
@@ -14,12 +14,12 @@ od-bridge）。平台側（`.16`，`/opt/BeakPlatform-dev` 內）的程式架構
 
 **為什麼要分兩份**：`.16` 與 `.20` 各自會改，混在一份必定漂移。
 
-> **2026-09-10 起 `.20` 已換裝成 `defense-node/`（`/opt/beak-defense`），`sec-vm-bootstrap/` 退役封存在
+> **2026-09-10 起 `.20` 已換裝成 `ITHome2026-WAF/`（`/opt/ithome2026-waf`），`sec-vm-bootstrap/` 退役封存在
 > `dev-notes/archive/sec-vm-bootstrap-retired-20260910/`。** 本檔第 12 節之前凡提到
 > `sec-vm-bootstrap/`、`~/sec-vm-bootstrap`、`vector.production.yaml`、`nftables-bootstrap.sh`、
-> 「scp 後 md5 比對」的段落都是歷史，現在的對應是：設定檔權威 `defense-node/`；
-> `.20` 部署目錄 `/opt/beak-defense`（`.env` 與 `generated/` 為主機專屬）；
-> 改設定流程 = 改 `defense-node/` → rsync 到 `.20:/opt/beak-defense` → `sudo bash install.sh --reconfigure`；
+> 「scp 後 md5 比對」的段落都是歷史，現在的對應是：設定檔權威 `ITHome2026-WAF/`；
+> `.20` 部署目錄 `/opt/ithome2026-waf`（`.env` 與 `generated/` 為主機專屬）；
+> 改設定流程 = 改 `ITHome2026-WAF/` → rsync 到 `.20:/opt/ithome2026-waf` → `sudo bash install.sh --reconfigure`；
 > 防火牆由 `nftables.sh` 依 `.env` 產生（不再手改 heredoc）；vector 設定是 `vector/vector.yaml`
 > 一份（值來自 `.env`）。埠、來源管制、ClickHouse 白名單、時區等環境事實不變。
 > 遷移憑證 `/opt/tmp/verify/20260910-dot20-migrate.log`（ClickHouse 8206 筆歷史資料保留、
@@ -835,20 +835,20 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 
 ---
 
-## 12. 讀者版一鍵安裝 `defense-node/`（2026-09-10 建立，會推上 GitHub）
+## 12. 讀者版一鍵安裝 `ITHome2026-WAF/`（2026-09-10 建立，會推上 GitHub；當日先叫 defense-node，Ethan 裁示改名：內容幾乎都是別人的專案，不冠 Beak）
 
 **`sec-vm-bootstrap/` 是 `.20` 這台的部署副本（含內部 IP，不推 GitHub）；
-`defense-node/` 是它的參數化產品版（不含任何內部 IP，推 GitHub 給 ITHome 讀者）。**
+`ITHome2026-WAF/` 是它的參數化產品版（不含任何內部 IP，推 GitHub 給 ITHome 讀者）。**
 兩者結構相同、設定檔內容相同，差別只在「值來自 `.env`」與「安裝流程自動化」。
 **`.20` 已於 2026-09-10 換裝完成**（Ethan 裁示），`sec-vm-bootstrap/` 同日退役。
 
 | 檔案 | 說明 |
 |---|---|
-| `defense-node/install.sh` | 一鍵安裝／`--reconfigure`／`--verify`／`--test-event`／`--update`／`--uninstall`。從 GitHub 用 sparse-checkout 只抓 `defense-node/` |
-| `defense-node/cf_tunnel.py` | Cloudflare API：建 tunnel、PUT ingress（`hostname → http://waf-nginx:8080`）、CNAME、取 connector token。只需 Zone: Read／DNS: Edit／Tunnel: Edit，account 由 zone 反查（Token 列不出 `/accounts` 也能用） |
-| `defense-node/nftables.sh` | 依 `.env` 產生 `/etc/nftables.conf`（allowlist／blocklist／ingest／mgmt／SSH guard），重建前保存 blocklist 元素再補回 |
+| `ITHome2026-WAF/install.sh` | 一鍵安裝／`--reconfigure`／`--verify`／`--test-event`／`--update`／`--uninstall`。從 GitHub 用 sparse-checkout 只抓 `ITHome2026-WAF/` |
+| `ITHome2026-WAF/cf_tunnel.py` | Cloudflare API：建 tunnel、PUT ingress（`hostname → http://waf-nginx:8080`）、CNAME、取 connector token。只需 Zone: Read／DNS: Edit／Tunnel: Edit，account 由 zone 反查（Token 列不出 `/accounts` 也能用） |
+| `ITHome2026-WAF/nftables.sh` | 依 `.env` 產生 `/etc/nftables.conf`（allowlist／blocklist／ingest／mgmt／SSH guard），重建前保存 blocklist 元素再補回 |
 | `scripts/od_node_pairing.py`（平台端） | 一行建 API Key（od_intake scope）＋ service account，打包成 `ODN1.<base64url json>` 開通字串；`--provision` 時先呼叫 `provision_od_intake_for_org.py` |
-| `docs/install/defense_node.md` | 讀者文件（公開，不含內部 IP） |
+| `docs/install/ithome2026_waf.md` | 讀者文件（公開，不含內部 IP） |
 
 **與 `.20` 現況的三個差異（刻意的）**：
 
@@ -868,13 +868,13 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 | 項目 | 值 |
 |---|---|
 | tunnel | `dmz-web`（`7431403b-cdac-4b4c-97de-9f77b976168c`，remote-managed，2026-09-08 建） |
-| ingress | `app.beakmask.org → http://waf-nginx:8080`（httpHostHeader=app.beakmask.org），其餘 404 |
-| DNS | `app.beakmask.org` CNAME → `<tunnel id>.cfargotunnel.com`（zone `beakmask.org`，proxied） |
+| ingress | `app.beakmask.org → http://waf-nginx:8080`、`www.beakmask.org → http://waf-welcome:8080`（歡迎頁，`WELCOME_HOSTNAME`，內容只有「歡迎到 www.beakmask.org」；有自己的 WAF 容器，audit log 是 `audit-welcome.log`，vector 用 glob 一起收，事件 `target.service=waf-welcome`），其餘 404 |
+| DNS | `app.beakmask.org`、`www.beakmask.org` CNAME → `<tunnel id>.cfargotunnel.com`（zone `beakmask.org`，proxied）。**`.16` 本機解析 www 只拿到 IPv6、curl 會 000**（`.16` 沒有 IPv6 出口），從 `.16` 測要 `--resolve www.beakmask.org:443:$(dig @1.1.1.1 +short www.beakmask.org \| head -1)` |
 | connector | **`.20`** 的 `secstack-cloudflared-1`（換裝後上線，`app.beakmask.org` 對外服務中）；`.13` 那個已 `compose stop`，做頂替驗收時 `--reconfigure` 會帶起來 |
 | API Token | 沿用 `/opt/CFTunnel/config-ho-gate.ini` 的 `api_token`（權限夠用，不必另建） |
 
 hostname 是本 session 自行選的（沿用退役前 production 的 `app.beakmask.org`），
-要換名字：`python3 defense-node/cf_tunnel.py setup --hostname <新名> --tunnel-name dmz-web`，
+要換名字：`python3 ITHome2026-WAF/cf_tunnel.py setup --hostname <新名> --tunnel-name dmz-web`，
 舊 CNAME 手動刪。`.66` 的 `system_base_url` 仍是 `http://192.168.0.66:8000`，
 要讓平台寄出的連結指向對外網址時改成 `https://app.beakmask.org`（未動，Ethan 決定）。
 
@@ -883,7 +883,7 @@ hostname 是本 session 自行選的（沿用退役前 production 的 `app.beakm
 `.13`（ubuntu24，`ethan` / `P@ssw0rd`、sudo NOPASSWD，`.16` 的 `~/.ssh/company-wsl.pub` 已放進去）
 已用 defense-node 裝好，綁 BELUGA（intake key `ak_824b6daff3b494ff`、SA `sa_defense_node_13_22baa3`，
 開通字串在 `/opt/tmp/verify/20260910-defense-node-pairing.log`），backend `http://192.168.0.66:8000`。
-安裝目錄 `/opt/beak-defense`，密碼在它的 `.env`。
+安裝目錄 `/opt/ithome2026-waf`，密碼在它的 `.env`。
 
 2026-09-10 已完整預演過一次（憑證 `/opt/tmp/verify/20260910-defense-node-13-install.log`）：
 `.20` 關機 → `.13` 改 `192.168.0.20` → Internet 打 `https://app.beakmask.org/beakplatform/` 302 到
@@ -900,12 +900,20 @@ ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'sudo poweroff'        # 1. 關 .20
 ssh -i ~/.ssh/company-wsl ethan@192.168.0.13 \
   'sudo cp /root/netplan-as-20.yaml /etc/netplan/50-cloud-init.yaml && sudo systemd-run --on-active=2 netplan apply'
 ssh -i ~/.ssh/company-wsl -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ethan@192.168.0.20 \
-  'sudo bash /opt/beak-defense/install.sh --reconfigure --yes'     # 3. 帶起 cloudflared、重生防火牆
+  'sudo bash /opt/ithome2026-waf/install.sh --reconfigure --yes'     # 3. 帶起 cloudflared、重生防火牆
 # 4. 從 Internet 掃 https://app.beakmask.org/ ；案件在 .16 資安案件處置中心（企業 beluga）
 ```
 
 還原：`.13` 蓋回 `/root/netplan-50-cloud-init.yaml.bak-defense` 再 `netplan apply`、`ssh root@192.168.0.100 qm start 110`、
 `.13` 上 `docker compose --profile tunnel stop cloudflared`（否則 app.beakmask.org 會被 `.13` 接走而 `.66` 擋它）。
+
+### 封鎖→到期→解封 的完整閉環也順帶驗過（2026-09-10）
+
+小企業單人版流程對案件的 actor 自動下 24h block：`od_defense_decisions` 175／176 → `.20` nft blocklist
+出現 `123.192.234.208`（Ethan 家的公網 IP，因為探測都是從 `.16` 出去的）。把兩筆 `expires_at` 改成過去
+→ 每分鐘的 `od_expire_decisions.py` 產 unblock 177／178 → executor 落地 → blocklist 清空，全程沒碰 nft。
+**測試探測會把自己的公網 IP 封 24h**，只影響直連 `.20` 的路徑（LAN 與 tunnel 都不受影響），
+但驗收完記得看一眼 blocklist。
 
 ### Ethan 2026-09-10 裁示
 

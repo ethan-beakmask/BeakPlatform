@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# BeakPlatform 防禦節點（defense-node）一鍵安裝
+# ITHome2026-WAF 防禦節點一鍵安裝
 # 適用於 Ubuntu 22.04 / 24.04 LTS（amd64），需要 sudo 與可連 Internet
 # =============================================================================
 # 這台主機會裝上：
@@ -27,12 +27,15 @@
 #   --tunnel-token TOKEN      Cloudflare Zero Trust 後台複製的 connector token
 #   --cf-api-token T --cf-hostname app.example.com [--cf-tunnel-name NAME]
 #                             改用 Cloudflare API 自動建 tunnel / DNS / ingress
+#   --welcome-hostname www.example.com
+#                             多開一個「歡迎頁」hostname（示意首頁），有自己的 WAF；
+#                             搭配 --cf-api-token 會自動加 ingress 與 DNS
 #   --admin-ips a.b.c.d,...   允許管理本機的來源 IP（預設：平台主機 + 你 SSH 進來的那台）
 #   --ip / --iface            本機 IP 與網卡（預設由預設路由自動偵測）
 #   --home-net '[..]'         Suricata HOME_NET（預設三段私有網段）
 #   --no-ui                   不啟動 Grafana / EveBox / Portainer
 #   --ssh-guard               SSH 也限制成只有 ADMIN_IPS 能連（確定清單無誤再開）
-#   --dir DIR                 安裝目錄（預設 /opt/beak-defense）
+#   --dir DIR                 安裝目錄（預設 /opt/ithome2026-waf）
 #   --yes                     非互動，缺值直接報錯
 #
 # 環境變數（只在需要從 GitHub 抓程式時用到）：
@@ -42,7 +45,7 @@
 # =============================================================================
 set -euo pipefail
 
-INSTALL_DIR="${INSTALL_DIR:-/opt/beak-defense}"
+INSTALL_DIR="${INSTALL_DIR:-/opt/ithome2026-waf}"
 GITHUB_REPO="${GITHUB_REPO:-https://github.com/ethan-beakmask/BeakPlatform.git}"
 GIT_REF="${GIT_REF:-main}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -59,8 +62,8 @@ die()       { log_error "$1"; exit 1; }
 # ----------------------------------------------------------------------------
 MODE="install"
 OPT_PAIR=""; OPT_BASE_URL=""; OPT_KEY_ID=""; OPT_SECRET=""; OPT_SA_ID=""; OPT_SA_SECRET=""
-OPT_BACKEND=""; OPT_TUNNEL_TOKEN=""; OPT_CF_TOKEN=""; OPT_CF_HOST=""; OPT_CF_TUNNEL="defense-node"
-OPT_ADMIN_IPS=""; OPT_IP=""; OPT_IFACE=""; OPT_HOME_NET=""; OPT_NO_UI=0; OPT_SSH_GUARD=""
+OPT_BACKEND=""; OPT_TUNNEL_TOKEN=""; OPT_CF_TOKEN=""; OPT_CF_HOST=""; OPT_CF_TUNNEL="ithome2026-waf"
+OPT_ADMIN_IPS=""; OPT_IP=""; OPT_IFACE=""; OPT_HOME_NET=""; OPT_NO_UI=0; OPT_SSH_GUARD=""; OPT_WELCOME=""
 OPT_YES=0; OPT_PURGE=0
 
 usage() { sed -n '2,45p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
@@ -78,6 +81,7 @@ while [[ $# -gt 0 ]]; do
         --cf-api-token)   OPT_CF_TOKEN="$2"; shift 2 ;;
         --cf-hostname)    OPT_CF_HOST="$2"; shift 2 ;;
         --cf-tunnel-name) OPT_CF_TUNNEL="$2"; shift 2 ;;
+        --welcome-hostname) OPT_WELCOME="$2"; shift 2 ;;
         --admin-ips)      OPT_ADMIN_IPS="$2"; shift 2 ;;
         --ip)             OPT_IP="$2"; shift 2 ;;
         --iface)          OPT_IFACE="$2"; shift 2 ;;
@@ -195,12 +199,12 @@ fetch_source() {
         if [[ -n "${GITHUB_TOKEN:-}" && "$url" == https://github.com/* ]]; then
             url="https://${GITHUB_TOKEN}@github.com/${url#https://github.com/}"
         fi
-        log_info "從 $GITHUB_REPO（$GIT_REF）取得 defense-node/"
+        log_info "從 $GITHUB_REPO（$GIT_REF）取得 ITHome2026-WAF/"
         git clone --quiet --depth 1 --branch "$GIT_REF" --filter=blob:none --sparse "$url" "$tmp/repo" \
             || die "git clone 失敗（私有 repo 請設 GITHUB_TOKEN）"
-        (cd "$tmp/repo" && git sparse-checkout set defense-node --quiet)
-        [[ -f "$tmp/repo/defense-node/docker-compose.yml" ]] || die "repo 內找不到 defense-node/"
-        src="$tmp/repo/defense-node"
+        (cd "$tmp/repo" && git sparse-checkout set ITHome2026-WAF --quiet)
+        [[ -f "$tmp/repo/ITHome2026-WAF/docker-compose.yml" ]] || die "repo 內找不到 ITHome2026-WAF/"
+        src="$tmp/repo/ITHome2026-WAF"
     fi
     mkdir -p "$INSTALL_DIR"
     if [[ "$(cd "$src" && pwd)" != "$(cd "$INSTALL_DIR" && pwd)" ]]; then
@@ -253,13 +257,22 @@ build_env() {
     [[ -n "$ip" ]] || die "偵測不到 $iface 的 IPv4，請用 --ip 指定"
     set_env NODE_IFACE "$iface"; set_env NODE_IP "$ip"
 
-    # Cloudflare API 自動建 tunnel
+    [[ -n "$OPT_WELCOME" ]] && set_env WELCOME_HOSTNAME "$OPT_WELCOME"
+
+    # Cloudflare API 自動建 tunnel（主站 + 歡迎頁）
     if [[ -n "$OPT_CF_TOKEN" ]]; then
         [[ -n "$OPT_CF_HOST" ]] || die "--cf-api-token 要搭配 --cf-hostname"
         CF_API_TOKEN="$OPT_CF_TOKEN" python3 "$INSTALL_DIR/cf_tunnel.py" setup \
             --hostname "$OPT_CF_HOST" --tunnel-name "$OPT_CF_TUNNEL" --write-env "$ENV_FILE" \
             || die "Cloudflare tunnel 建置失敗"
         set_env CF_HOSTNAME "$OPT_CF_HOST"
+        set_env CF_TUNNEL_NAME "$OPT_CF_TUNNEL"
+        if [[ -n "$(get_env WELCOME_HOSTNAME)" ]]; then
+            CF_API_TOKEN="$OPT_CF_TOKEN" python3 "$INSTALL_DIR/cf_tunnel.py" setup \
+                --hostname "$(get_env WELCOME_HOSTNAME)" --tunnel-name "$OPT_CF_TUNNEL" \
+                --service http://waf-welcome:8080 --write-env "$ENV_FILE" \
+                || die "Cloudflare 歡迎頁 ingress 建置失敗"
+        fi
     fi
 
     # 管理來源：既有 + 參數 + 平台主機 + SSH 來源
@@ -286,6 +299,7 @@ build_env() {
     [[ $OPT_NO_UI -eq 1 ]] && profiles=""
     if [[ $OPT_NO_UI -eq 0 && "$(get_env COMPOSE_PROFILES)" != *ui* && -n "$(get_env COMPOSE_PROFILES)" ]]; then profiles=""; fi
     [[ -n "$(get_env CLOUDFLARE_TUNNEL_TOKEN)" ]] && profiles="${profiles:+$profiles,}tunnel"
+    [[ -n "$(get_env WELCOME_HOSTNAME)" ]] && profiles="${profiles:+$profiles,}welcome"
     set_env COMPOSE_PROFILES "$profiles"
 
     # 必填檢查
@@ -328,6 +342,10 @@ t = open(src, encoding="utf-8").read()
 t = t.replace("@@DOCKER_SUBNET@@", subnet).replace("@@ALLOWLIST_IPS@@", ips.replace("\\n", "\n").rstrip("\n"))
 open(dst, "w", encoding="utf-8").write(t)
 PY
+
+    mkdir -p "$g/welcome"
+    sed -e "s|@@WELCOME_HOSTNAME@@|$(get_env WELCOME_HOSTNAME)|g" \
+        "$INSTALL_DIR/welcome/index.html.tmpl" > "$g/welcome/index.html"
 
     sed -e "s|@@INSTALL_DIR@@|$INSTALL_DIR|" \
         "$INSTALL_DIR/host-cron/secstack-rotate-logs.tmpl" > "$g/secstack-rotate-logs"
@@ -436,9 +454,10 @@ do_verify() {
     echo
     echo "== 對外入口 =="
     if [[ -n "$(get_env CLOUDFLARE_TUNNEL_TOKEN)" ]]; then
-        if compose logs --since 30m cloudflared 2>/dev/null | grep -q "Registered tunnel connection"; then
+        if compose logs cloudflared 2>/dev/null | grep -q "Registered tunnel connection"; then
             echo "  cloudflared             已連上 Cloudflare（Registered tunnel connection）"
             [[ -n "$(get_env CF_HOSTNAME)" ]] && printf '  對外網址                https://%s/\n' "$(get_env CF_HOSTNAME)"
+            [[ -n "$(get_env WELCOME_HOSTNAME)" ]] && printf '  歡迎頁                  https://%s/\n' "$(get_env WELCOME_HOSTNAME)"
         else
             echo "  cloudflared             尚未註冊連線（docker compose logs cloudflared）"; ok=0
         fi
@@ -469,7 +488,7 @@ print(json.dumps({
   'severity_id': 3,
   'finding': {'title': '防禦節點安裝測試事件 $rid', 'rule_id': '$rid', 'rule_set': 'manual'},
   'actor': {'ip': '203.0.113.42'},
-  'target': {'host': 'defense-node-test.example', 'url': '/install-test'}
+  'target': {'host': 'ithome2026-waf-test.example', 'url': '/install-test'}
 }))")"
     log_info "送一筆測試事件進 Vector（來源 vector、規則 $rid、攻擊者 203.0.113.42）"
     curl -s -X POST -H 'Content-Type: application/json' --data "$body" http://127.0.0.1:8688/ >/dev/null \
@@ -490,6 +509,7 @@ print_summary() {
 安裝目錄：$INSTALL_DIR（設定在 .env，改完跑 sudo bash $INSTALL_DIR/install.sh --reconfigure）
 
   對外入口   $( [[ -n "$(get_env CF_HOSTNAME)" ]] && echo "https://$(get_env CF_HOSTNAME)/" || echo "（未設 tunnel）" )
+  歡迎頁     $( [[ -n "$(get_env WELCOME_HOSTNAME)" ]] && echo "https://$(get_env WELCOME_HOSTNAME)/  （內網驗證 http://$ip:8082/）" || echo "（未啟用）" )
   被保護網站 $(get_env WAF_BACKEND_URL)
   平台       $(get_env BEAK_BASE_URL)
   管理來源   $(get_env ADMIN_IPS)
@@ -526,7 +546,7 @@ do_uninstall() {
     fi
     if [[ $OPT_PURGE -eq 1 ]]; then compose down -v --remove-orphans || true; else compose down --remove-orphans || true; fi
     nft delete table inet secstack 2>/dev/null || true
-    if [[ -f /etc/nftables.conf ]] && grep -q "defense-node/nftables.sh" /etc/nftables.conf; then
+    if [[ -f /etc/nftables.conf ]] && grep -q "ITHome2026-WAF/nftables.sh" /etc/nftables.conf; then
         printf '#!/usr/sbin/nft -f\n' > /etc/nftables.conf
     fi
     rm -f /etc/cron.hourly/secstack-rotate-logs
@@ -552,6 +572,10 @@ case "$MODE" in
     reconfigure)
         [[ -f "$ENV_FILE" ]] || die "找不到 $ENV_FILE，請先執行安裝"
         install_packages
+        # 從另一份原始碼目錄執行時（例如 git checkout），順便把程式同步進安裝目錄
+        if [[ -f "$HERE/docker-compose.yml" && "$(cd "$HERE" && pwd)" != "$(cd "$INSTALL_DIR" && pwd)" ]]; then
+            fetch_source
+        fi
         build_env
         render_templates
         apply_firewall

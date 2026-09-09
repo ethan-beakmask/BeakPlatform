@@ -1,4 +1,4 @@
-# BeakPlatform 防禦節點（defense-node）
+# ITHome2026-WAF 防禦節點
 
 把一台 Ubuntu 主機變成 BeakPlatform 的「防禦端」：WAF、網路 IDS、事件正規化、
 封鎖落地，並透過 Cloudflare Tunnel 對外提供被保護的網站。偵測到的事件送進
@@ -13,7 +13,7 @@ Internet → Cloudflare → cloudflared → WAF(nginx+ModSecurity+CRS) → 你�
                                     ClickHouse   nftables / CrowdSec / EDL ◄──┘
 ```
 
-**安裝與操作說明：`docs/install/defense_node.md`**（在 BeakPlatform repo 內）。
+**安裝與操作說明：`docs/install/ithome2026_waf.md`**（在 BeakPlatform repo 內）。
 
 最短路徑：
 
@@ -23,14 +23,17 @@ cd /opt/BeakPlatform && set -a && source .env && set +a
 venv/bin/python scripts/od_node_pairing.py --org <企業網域> --base-url http://<平台IP>:<埠>/beakplatform --provision --apply
 
 # 防禦端（另一台 Ubuntu）
-curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/defense-node/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/ITHome2026-WAF/install.sh -o install.sh
 sudo bash install.sh --pair '<開通字串>' --backend http://<被保護網站IP>:<埠> \
-     --cf-api-token <Cloudflare API Token> --cf-hostname app.example.com
+     --cf-api-token <Cloudflare API Token> --cf-hostname app.example.com \
+     --welcome-hostname www.example.com
 ```
 
 | 檔案 | 用途 |
 |---|---|
 | `install.sh` | 一鍵安裝／重新設定／驗證／更新／移除 |
+| `COMPONENTS.md` | 內容物清單、各元件版本與授權、單獨安裝指令、著作權聲明（中英） |
+| `welcome/` | 歡迎頁樣板（`--welcome-hostname` 啟用，有獨立 WAF） |
 | `cf_tunnel.py` | 用 Cloudflare API 自動建 tunnel、ingress、DNS（選用，不用 API 也能在後台手動做） |
 | `nftables.sh` | 產生主機防火牆（封鎖 set、自鎖保險、來源管制） |
 | `docker-compose.yml` | 全部服務；參數都在 `.env` |

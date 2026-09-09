@@ -25,7 +25,10 @@ sources:
   modsec_audit:
     type: file
     include:
-      - /var/log/modsec/audit.log
+      - /var/log/modsec/audit*.log     # audit.log（主站 WAF）與 audit-welcome.log（歡迎頁 WAF）
+    exclude:
+      - /var/log/modsec/*.gz
+      - /var/log/modsec/audit*.log.*
     read_from: end
     ignore_older_secs: 600
 
@@ -96,7 +99,9 @@ transforms:
     type: remap
     inputs: [modsec_audit]
     source: |
+      src_file = to_string(.file) ?? ""
       . = parse_json!(.message)
+      .source_file = src_file
 
   modsec_with_alerts_only:
     type: filter
@@ -161,6 +166,7 @@ transforms:
       } else {
         tcp_src
       }
+      waf_service = if contains(to_string(.source_file) ?? "", "welcome") { "waf-welcome" } else { "waf-nginx" }
       cf_country = string(hdrs."Cf-Ipcountry") ?? string(hdrs."CF-IPCountry") ?? string(hdrs."cf-ipcountry") ?? ""
       actor_country = if ingress_trusted { cf_country } else { "" }
 
@@ -185,7 +191,7 @@ transforms:
         "target": {
           "host": to_string(.transaction.request.headers.Host) ?? "",
           "url": to_string(.transaction.request.uri) ?? "",
-          "service": "waf-nginx"
+          "service": waf_service
         },
         "evidence": {
           "raw_log_ref": { "type": "modsec", "locator": to_string(.transaction.id) ?? "" },

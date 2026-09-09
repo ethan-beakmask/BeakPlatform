@@ -16,10 +16,10 @@ API Token 需要的權限：
   Zone    → Zone：Read
 
 用法：
-  python3 cf_tunnel.py setup  --api-token <T> --hostname app.example.com [--tunnel-name defense-node]
+  python3 cf_tunnel.py setup  --api-token <T> --hostname app.example.com [--tunnel-name ithome2026-waf]
                               [--service http://waf-nginx:8080] [--account-id <id>] [--write-env <.env 路徑>]
-  python3 cf_tunnel.py status --api-token <T> --tunnel-name defense-node
-  python3 cf_tunnel.py token  --api-token <T> --tunnel-name defense-node
+  python3 cf_tunnel.py status --api-token <T> --tunnel-name ithome2026-waf
+  python3 cf_tunnel.py token  --api-token <T> --tunnel-name ithome2026-waf
 
 API Token 也可以用環境變數 CF_API_TOKEN 傳入，避免進入 shell history。
 本程式只用 Python 標準函式庫，不需要安裝任何套件。
@@ -119,7 +119,7 @@ def upsert_dns(token, zone_id, hostname, tunnel_id):
     target = f"{tunnel_id}.cfargotunnel.com"
     recs = _req(token, "GET", f"/zones/{zone_id}/dns_records?name={hostname}") or []
     body = {"type": "CNAME", "name": hostname, "content": target, "proxied": True, "ttl": 1,
-            "comment": "defense-node tunnel"}
+            "comment": "ITHome2026-WAF tunnel"}
     for r in recs:
         if r["type"] == "CNAME":
             if r["content"] == target and r.get("proxied"):
@@ -210,7 +210,7 @@ def main(argv=None):
         sp.add_argument("--api-token", default=os.environ.get("CF_API_TOKEN", ""),
                         help="Cloudflare API Token（或環境變數 CF_API_TOKEN）")
         sp.add_argument("--account-id", default="", help="Token 可見多個 account 時指定")
-        sp.add_argument("--tunnel-name", default="defense-node", help="tunnel 名稱（預設 defense-node）")
+        sp.add_argument("--tunnel-name", default="ithome2026-waf", help="tunnel 名稱（預設 ithome2026-waf）")
 
     s = sub.add_parser("setup", help="建立 tunnel + ingress + DNS，印出 connector token")
     common(s)

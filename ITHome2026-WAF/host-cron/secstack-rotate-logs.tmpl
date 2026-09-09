@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# /etc/cron.hourly/secstack-rotate-logs（由 defense-node/install.sh 產生）
+# /etc/cron.hourly/secstack-rotate-logs（由 ITHome2026-WAF/install.sh 產生）
 # 防禦節點主機端 log 輪替：Suricata eve.json 與 WAF audit.log。
 # 兩段互相獨立，任一段失敗不影響另一段。
 #
@@ -39,6 +39,7 @@ rotate_one() {
 rc=0
 rotate_one "$SURI_DIR/eve.json" "$RETAIN_EVE_MIN" || rc=1
 rotate_one "$MODSEC" "$RETAIN_MODSEC_MIN" || rc=1
+rotate_one "$(dirname "$MODSEC")/audit-welcome.log" "$RETAIN_MODSEC_MIN" || rc=1
 if [[ $rc -eq 0 ]]; then
   log "OK"
   mkdir -p /opt/tmp/heartbeat 2>/dev/null

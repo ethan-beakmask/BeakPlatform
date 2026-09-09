@@ -3,7 +3,7 @@
 發放「防禦節點」憑證並產生開通字串（平台端）。
 
 用途
-    防禦節點（defense-node，另一台主機上的 WAF / IDS / od-bridge）要連回平台需要三樣東西：
+    防禦節點（ITHome2026-WAF，另一台主機上的 WAF / IDS / od-bridge）要連回平台需要三樣東西：
       1. 平台網址
       2. 事件受理金鑰（API Key，scope 含 od_intake）——節點把偵測到的事件簽章後送進來
       3. 執行帳號（service account）——節點定期拉取平台核可的封鎖決策去落地
@@ -28,7 +28,7 @@
     --org <值>              必填。企業 secure_code 或 domain_name
     --base-url <URL>        防禦節點連回平台用的網址，含 /beakplatform 前綴。
                             省略時取「主機設定 / 系統對外網址」加上前綴
-    --name <名稱>           節點名稱，用於金鑰與帳號的顯示名稱（預設 defense-node）
+    --name <名稱>           節點名稱，用於金鑰與帳號的顯示名稱（預設 ithome2026-waf）
     --source-system <值>    可重複。事件來源白名單，預設 coraza suricata vector
     --enforcement-points    逗號分隔，執行帳號可落地的封鎖點，預設 nftables,crowdsec,edl,cloudflare
     --provision             企業尚無事件路由時先建立最小受理鏈路
@@ -95,7 +95,7 @@ def parse_args(argv):
                                 formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     p.add_argument('--org', required=True)
     p.add_argument('--base-url', default=None)
-    p.add_argument('--name', default='defense-node')
+    p.add_argument('--name', default='ithome2026-waf')
     p.add_argument('--source-system', action='append', default=None)
     p.add_argument('--enforcement-points', default=DEFAULT_EPS)
     p.add_argument('--provision', action='store_true')
@@ -155,7 +155,7 @@ def main(argv=None):
         key, key_secret = api_key_service.create_api_key(
             org_secure_code=org.secure_code,
             name=f'{args.name} intake',
-            consumer_label='defense-node',
+            consumer_label='ithome2026-waf',
             description='由 scripts/od_node_pairing.py 建立，防禦節點事件受理用',
             scopes={'od_intake': {'source_systems': source_systems}},
             created_by_secure_code=creator_sc,

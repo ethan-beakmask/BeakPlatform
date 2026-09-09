@@ -1,5 +1,5 @@
 # =============================================================================
-# BeakPlatform 防禦節點（defense-node）
+# ITHome2026-WAF 防禦節點
 # =============================================================================
 # 資料流：
 #   Internet → Cloudflare → cloudflared(容器) → waf-nginx:8080 → ${WAF_BACKEND_URL}
@@ -157,6 +157,48 @@ services:
       - ./waf/log:/var/log/modsec
       - ./waf/nginx-templates/logging.conf.template:/etc/nginx/templates/conf.d/logging.conf.template:ro
       - ./waf/modsec-overrides/modsecurity-override.conf:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template:ro
+
+  # ---------------- 歡迎頁（profile: welcome）----------------
+  # 第二個對外 hostname（WELCOME_HOSTNAME）的示意首頁，同樣走一個獨立的 WAF 容器，
+  # 刺探它一樣會產生事件。cloudflared ingress：WELCOME_HOSTNAME → http://waf-welcome:8080
+  welcome:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    profiles: ["welcome"]
+    volumes:
+      - ./generated/welcome:/usr/share/nginx/html:ro
+
+  waf-welcome:
+    image: owasp/modsecurity-crs:nginx
+    restart: unless-stopped
+    profiles: ["welcome"]
+    environment:
+      BACKEND: http://welcome:80
+      MODSEC_AUDIT_ENGINE: "RelevantOnly"
+      MODSEC_AUDIT_LOG: "/var/log/modsec/audit-welcome.log"
+      MODSEC_AUDIT_LOG_FORMAT: "JSON"
+      MODSEC_AUDIT_LOG_PARTS: "ABCFHJZ"
+      MODSEC_RULE_ENGINE: ${WAF_RULE_ENGINE:-On}
+      PARANOIA: ${WAF_PARANOIA:-1}
+      ANOMALY_INBOUND: 5
+      ANOMALY_OUTBOUND: 4
+      BLOCKING_LOG_LEVEL: warn
+      ERRORLOG_LEVEL: warn
+      SERVER_NAME: "_"
+      SSL_PORT: 8443
+      PORT: 8080
+      SET_REAL_IP_FROM: "127.0.0.2"
+      REAL_IP_HEADER: "CF-Connecting-IP"
+      REAL_IP_RECURSIVE: "on"
+      REAL_IP_PROXY_HEADER: "X-Real-IP"
+    ports:
+      - "8082:8080"   # 內網驗證用
+    volumes:
+      - ./waf/log:/var/log/modsec
+      - ./waf/nginx-templates/logging.conf.template:/etc/nginx/templates/conf.d/logging.conf.template:ro
+      - ./waf/modsec-overrides/modsecurity-override.conf:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template:ro
+    depends_on:
+      - welcome
 
   # ---------------- cloudflared（對外入口；profile: tunnel）----------------
   cloudflared:
