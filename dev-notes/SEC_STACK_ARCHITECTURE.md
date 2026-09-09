@@ -14,6 +14,17 @@ od-bridge）。平台側（`.16`，`/opt/BeakPlatform-dev` 內）的程式架構
 
 **為什麼要分兩份**：`.16` 與 `.20` 各自會改，混在一份必定漂移。
 
+> **2026-09-10 起 `.20` 已換裝成 `defense-node/`（`/opt/beak-defense`），`sec-vm-bootstrap/` 退役封存在
+> `dev-notes/archive/sec-vm-bootstrap-retired-20260910/`。** 本檔第 12 節之前凡提到
+> `sec-vm-bootstrap/`、`~/sec-vm-bootstrap`、`vector.production.yaml`、`nftables-bootstrap.sh`、
+> 「scp 後 md5 比對」的段落都是歷史，現在的對應是：設定檔權威 `defense-node/`；
+> `.20` 部署目錄 `/opt/beak-defense`（`.env` 與 `generated/` 為主機專屬）；
+> 改設定流程 = 改 `defense-node/` → rsync 到 `.20:/opt/beak-defense` → `sudo bash install.sh --reconfigure`；
+> 防火牆由 `nftables.sh` 依 `.env` 產生（不再手改 heredoc）；vector 設定是 `vector/vector.yaml`
+> 一份（值來自 `.env`）。埠、來源管制、ClickHouse 白名單、時區等環境事實不變。
+> 遷移憑證 `/opt/tmp/verify/20260910-dot20-migrate.log`（ClickHouse 8206 筆歷史資料保留、
+> 既有 intake key／SA／CrowdSec machine／EDL state 沿用，Internet 端 SQLi 403 → `.16` 建案）。
+
 ---
 
 ## 多租戶佈署架構定案（2026-08-16，Ethan 拍板）
@@ -829,8 +840,7 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 **`sec-vm-bootstrap/` 是 `.20` 這台的部署副本（含內部 IP，不推 GitHub）；
 `defense-node/` 是它的參數化產品版（不含任何內部 IP，推 GitHub 給 ITHome 讀者）。**
 兩者結構相同、設定檔內容相同，差別只在「值來自 `.env`」與「安裝流程自動化」。
-新功能先寫進 `defense-node/`，`.20` 要跟上時把 `.20` 換成 defense-node 安裝
-（尚未做，見下方待辦）。
+**`.20` 已於 2026-09-10 換裝完成**（Ethan 裁示），`sec-vm-bootstrap/` 同日退役。
 
 | 檔案 | 說明 |
 |---|---|
@@ -860,7 +870,7 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 | tunnel | `dmz-web`（`7431403b-cdac-4b4c-97de-9f77b976168c`，remote-managed，2026-09-08 建） |
 | ingress | `app.beakmask.org → http://waf-nginx:8080`（httpHostHeader=app.beakmask.org），其餘 404 |
 | DNS | `app.beakmask.org` CNAME → `<tunnel id>.cfargotunnel.com`（zone `beakmask.org`，proxied） |
-| connector | **目前只有 `.13` 上有**（`secstack-cloudflared-1`，2026-09-10 驗收預演後手動 `compose stop`）。**`.20` 沒有 cloudflared**，所以 `app.beakmask.org` 現在是 530（tunnel 無連線） |
+| connector | **`.20`** 的 `secstack-cloudflared-1`（換裝後上線，`app.beakmask.org` 對外服務中）；`.13` 那個已 `compose stop`，做頂替驗收時 `--reconfigure` 會帶起來 |
 | API Token | 沿用 `/opt/CFTunnel/config-ho-gate.ini` 的 `api_token`（權限夠用，不必另建） |
 
 hostname 是本 session 自行選的（沿用退役前 production 的 `app.beakmask.org`），
@@ -897,8 +907,9 @@ ssh -i ~/.ssh/company-wsl -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecki
 還原：`.13` 蓋回 `/root/netplan-50-cloud-init.yaml.bak-defense` 再 `netplan apply`、`ssh root@192.168.0.100 qm start 110`、
 `.13` 上 `docker compose --profile tunnel stop cloudflared`（否則 app.beakmask.org 會被 `.13` 接走而 `.66` 擋它）。
 
-### 待辦（未開單，Ethan 決定）
+### Ethan 2026-09-10 裁示
 
-- `.20` 換成 defense-node 安裝（或至少修 `CROWDSEC_LAPI_URL`、補 cloudflared）；換完 `sec-vm-bootstrap/` 可退役
-- WAF 對 5xx 回應也會產生事件且 `rule_id` 空（無法聚合，後端掛掉時一小時最多 8 張案件）。要不要在 vector 過濾掉 `rule_id==""` 的 coraza 事件是政策問題
-- `.66` 的 `system_base_url` → `https://app.beakmask.org`
+- `.20` 換裝 defense-node：**已完成**（本節上方）
+- WAF 對 5xx 回應產生的無規則編號事件：**保留不濾**，維運可用性也是 C.I.A. 的一環
+- `.66` 的 `system_base_url`：在 `.66` 平台的「主機設定 → 伺服器設定 → 系統對外網址」填 `https://app.beakmask.org`（不含前綴），Ethan 自己決定何時改
+- 換裝時順帶產生的案件 `OD-20260909-0004`：Suricata sid 2049202（od-bridge 映像檔 build 時 pip 連 files.pythonhosted.org 的 ET INFO），一次性，不是 cloudflared 噪音

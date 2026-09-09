@@ -29,10 +29,9 @@ EXCLUDE_DIRS=(
     # 排除清單、正式部署不存在）。推上公開 repo 只會得到一組必然跑不起來的測試，
     # 而且等於公開描述開發後門的用法。
     "tests/e2e"
-    # sec-vm-bootstrap（PF-104）：.20 上 Open Defense 安全棧（Vector/Suricata/
-    # Coraza WAF/CrowdSec/ClickHouse/Grafana/od-bridge）的設定檔權威副本，
-    # 含內部 IP、主機設定、埠號。已去機密化（.env 只留 .env.example、
-    # CREDENTIALS.md 不進版控），但目錄本身仍不對外，不會推上 GitHub。
+    # sec-vm-bootstrap 已於 2026-09-10 退役並移入 dev-notes/archive/（本來就被
+    # dev-notes 擋住）。留這一條是保險：日後若有人把它搬回頂層，仍不會推上 GitHub。
+    # 讀者版在頂層 defense-node/，刻意「不」排除。
     "sec-vm-bootstrap"
 )
 
