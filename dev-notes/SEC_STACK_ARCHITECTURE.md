@@ -893,19 +893,59 @@ hostname 是本 session 自行選的（沿用退役前 production 的 `app.beakm
 `.13` 的 netplan 是 cloud-init DHCP，換 IP 要整檔改成 static（備份在 `.13:/root/netplan-50-cloud-init.yaml.bak-defense`，
 static 版在 `/root/netplan-as-20.yaml`），改完 `systemd-run --on-active=2 netplan apply` 免斷線。
 
-Ethan 自己跑驗收時：
+Ethan 自己跑驗收時（每一條都是 2026-09-10 本 session 實跑過的指令，照抄）：
 
 ```bash
-ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'sudo poweroff'        # 1. 關 .20
+# 1. 關 .20（真正的防禦節點）
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'sudo poweroff'
+until ! ping -c1 -W1 192.168.0.20 >/dev/null 2>&1; do sleep 1; done
+
+# 2. .13 換成 192.168.0.20（static 檔早已放在 .13:/root/netplan-as-20.yaml；systemd-run 延遲 2 秒套用，SSH 不會卡死）
 ssh -i ~/.ssh/company-wsl ethan@192.168.0.13 \
-  'sudo cp /root/netplan-as-20.yaml /etc/netplan/50-cloud-init.yaml && sudo systemd-run --on-active=2 netplan apply'
-ssh -i ~/.ssh/company-wsl -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ethan@192.168.0.20 \
-  'sudo bash /opt/ithome2026-waf/install.sh --reconfigure --yes'     # 3. 帶起 cloudflared、重生防火牆
-# 4. 從 Internet 掃 https://app.beakmask.org/ ；案件在 .16 資安案件處置中心（企業 beluga）
+  'sudo cp /root/netplan-as-20.yaml /etc/netplan/50-cloud-init.yaml && sudo chmod 600 /etc/netplan/50-cloud-init.yaml && sudo systemd-run --on-active=2 --unit=defense-ipswap /usr/sbin/netplan apply'
+sleep 12
+# 從此以後 .13 要用 192.168.0.20 連，host key 跟真 .20 不同，一律帶這兩個參數
+S20="ssh -i $HOME/.ssh/company-wsl -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ethan@192.168.0.20"
+$S20 'hostname'                      # 應印 ubuntu24（不是 sec-vm）
+
+# 3. 把 cloudflared 帶起來、重生防火牆（.13 平常刻意停著 cloudflared）
+$S20 'sudo bash /opt/ithome2026-waf/install.sh --reconfigure --yes'
+sshpass -p 'P@ssw0rd' ssh ethan@192.168.0.66 'sudo ip neigh flush to 192.168.0.20'   # .66 的 ARP 還記著真 .20 的 MAC，不清會逾時一兩分鐘
+
+# 4. 從 Internet 打（在 .16 上跑就算：出口是家裡的公網 IP，CF-Connecting-IP 會是它）
+#    .16 解析 www 只拿到 IPv6、沒有 IPv6 出口，所以 www 那條要 --resolve 指 IPv4
+curl -s -o /dev/null -w "%{http_code}\n" https://app.beakmask.org/beakplatform/            # 期望 302（到 .66 登入頁）
+curl -s -o /dev/null -w "%{http_code}\n" "https://app.beakmask.org/beakplatform/?q=1%27%20UNION%20SELECT%201,2--"   # 期望 403
+CFIP=$(dig @1.1.1.1 +short www.beakmask.org | grep -E '^[0-9.]+$' | head -1)
+curl -s --resolve "www.beakmask.org:443:$CFIP" https://www.beakmask.org/ | grep -o '<h1>[^<]*</h1>'   # 期望「歡迎到 www.beakmask.org」
+curl -s -o /dev/null -w "%{http_code}\n" --resolve "www.beakmask.org:443:$CFIP" "https://www.beakmask.org/?id=1%27%20OR%20%271%27=%271"   # 期望 403
+sleep 15
+# 通過標準：下面最新兩筆的 actor 是家裡的公網 IP、host 分別是 app/www、rule 942100、execution_code 非空
+sudo -n -u postgres psql -d beakplatform_dev -tA -c "SELECT e.id, e.received_at, e.raw_body->'actor'->>'ip', e.raw_body->'finding'->>'rule_id', e.raw_body->'target'->>'host', e.raw_body->'target'->>'service', wi.execution_code FROM od_intake_events e LEFT JOIN fw_workflow_instances wi ON wi.secure_code=e.case_secure_code ORDER BY e.id DESC LIMIT 4;"
+# UI 看案件：quick-login 用 ethanyu@beluga.com（user_id FhsmtyPjsnXYotN-iz_Q-X，持 SECURITY_STAFF）
+#   → http://192.168.0.16:7000/beakplatform/open-defense/security-cases  （選單「開放防禦 → 資安案件處置中心」）
+#   同 actor+rule 60 分鐘內會併進既有案件（例如 OD-20260909-0001），看 od_intake_events 的新列比看案件數可靠
 ```
 
-還原：`.13` 蓋回 `/root/netplan-50-cloud-init.yaml.bak-defense` 再 `netplan apply`、`ssh root@192.168.0.100 qm start 110`、
-`.13` 上 `docker compose --profile tunnel stop cloudflared`（否則 app.beakmask.org 會被 `.13` 接走而 `.66` 擋它）。
+還原（順序固定：先停 .13 的 cloudflared，再換回 IP，最後才開真 .20，避免兩台同時搶 tunnel 與 IP）：
+
+```bash
+$S20 'cd /opt/ithome2026-waf && sudo docker compose --profile tunnel stop cloudflared'
+$S20 'sudo cp /root/netplan-50-cloud-init.yaml.bak-defense /etc/netplan/50-cloud-init.yaml && sudo chmod 600 /etc/netplan/50-cloud-init.yaml && sudo systemd-run --on-active=2 --unit=defense-iprestore /usr/sbin/netplan apply'
+sleep 12; ssh -i ~/.ssh/company-wsl ethan@192.168.0.13 'ip -4 -br a show ens18'      # 應回到 192.168.0.13
+sshpass -p 'P@ssw0rd' ssh ethan@192.168.0.66 'sudo ip neigh flush to 192.168.0.20'
+ssh root@192.168.0.100 'qm start 110'
+until ssh -i ~/.ssh/company-wsl -o ConnectTimeout=3 -o BatchMode=yes ethan@192.168.0.20 hostname 2>/dev/null; do sleep 3; done   # 應印 sec-vm
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'cd /opt/ithome2026-waf && sudo bash install.sh --verify'
+```
+
+探測會讓小企業單人版流程對家裡的公網 IP 下 24h block（只影響直連 .20，LAN 與 tunnel 不受影響）。要提前解封走機制、不要手動 nft：
+
+```bash
+sudo -n -u postgres psql -d beakplatform_dev -tA -c "UPDATE od_defense_decisions SET expires_at = (now() at time zone 'utc') - interval '1 minute' WHERE action='block' AND status='applied' AND target_value='123.192.234.208' RETURNING id;"
+# 等 1～2 分鐘，cron 的 od_expire_decisions.py 會產 unblock，executor 落地後：
+ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'sudo nft list set inet secstack blocklist'
+```
 
 ### 封鎖→到期→解封 的完整閉環也順帶驗過（2026-09-10）
 
