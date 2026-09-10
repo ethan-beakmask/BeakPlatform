@@ -868,15 +868,14 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 | 項目 | 值 |
 |---|---|
 | tunnel | `dmz-web`（`7431403b-cdac-4b4c-97de-9f77b976168c`，remote-managed，2026-09-08 建） |
-| ingress | `app.beakmask.org → http://waf-nginx:8080`、`www.beakmask.org → http://waf-welcome:8080`（歡迎頁，`WELCOME_HOSTNAME`，內容只有「歡迎到 www.beakmask.org」；有自己的 WAF 容器，audit log 是 `audit-welcome.log`，vector 用 glob 一起收，事件 `target.service=waf-welcome`），其餘 404 |
-| DNS | `app.beakmask.org`、`www.beakmask.org` CNAME → `<tunnel id>.cfargotunnel.com`（zone `beakmask.org`，proxied）。**`.16` 本機解析 www 只拿到 IPv6、curl 會 000**（`.16` 沒有 IPv6 出口），從 `.16` 測要 `--resolve www.beakmask.org:443:$(dig @1.1.1.1 +short www.beakmask.org \| head -1)` |
-| connector | **`.20`** 的 `secstack-cloudflared-1`（換裝後上線，`app.beakmask.org` 對外服務中）；`.13` 那個已 `compose stop`，做頂替驗收時 `--reconfigure` 會帶起來 |
+| ingress | **只有 `www.beakmask.org` 一個 hostname（Ethan 2026-09-10 定調：`.66` 的對外是 www，`app.beakmask.org` 已移除含 CNAME）**，兩條規則依序比對：`path ^/beakplatform(/\|$)` → `http://waf-nginx:8080`（→ `.66:8000`）；其餘路徑 → `http://waf-welcome:8080`（歡迎頁，內容只有「歡迎到 www.beakmask.org」，獨立 WAF 容器，audit log `audit-welcome.log`，事件 `target.service=waf-welcome`）；其餘 hostname 404。`.env`：`CF_HOSTNAME=WELCOME_HOSTNAME=www.beakmask.org`、`WAF_BACKEND_PATH=/beakplatform` |
+| DNS | `www.beakmask.org` CNAME → `<tunnel id>.cfargotunnel.com`（zone `beakmask.org`，proxied）。**`.16` 本機解析 www 只拿到 IPv6、curl 會 000**（`.16` 沒有 IPv6 出口），從 `.16` 測要 `--resolve www.beakmask.org:443:$(dig @1.1.1.1 +short www.beakmask.org \| head -1)` |
+| connector | **`.20`** 的 `secstack-cloudflared-1`（換裝後上線，`www.beakmask.org` 對外服務中）；`.13` 那個已 `compose stop`，做頂替驗收時 `--reconfigure` 會帶起來 |
 | API Token | 沿用 `/opt/CFTunnel/config-ho-gate.ini` 的 `api_token`（權限夠用，不必另建） |
 
-hostname 是本 session 自行選的（沿用退役前 production 的 `app.beakmask.org`），
-要換名字：`python3 ITHome2026-WAF/cf_tunnel.py setup --hostname <新名> --tunnel-name dmz-web`，
-舊 CNAME 手動刪。`.66` 的 `system_base_url` 仍是 `http://192.168.0.66:8000`，
-要讓平台寄出的連結指向對外網址時改成 `https://app.beakmask.org`（未動，Ethan 決定）。
+換 hostname：`python3 ITHome2026-WAF/cf_tunnel.py setup --hostname <新名> --tunnel-name dmz-web`，
+舊的 `cf_tunnel.py remove --hostname <舊名>`（連 CNAME 一起刪）。`.66` 的 `system_base_url` 仍是
+`http://192.168.0.66:8000`，要讓平台寄出的連結指向對外網址時改成 `https://www.beakmask.org`（未動，Ethan 決定）。
 
 ### `.13` 現況與 Ethan 的驗收步驟
 
@@ -914,13 +913,13 @@ sshpass -p 'P@ssw0rd' ssh ethan@192.168.0.66 'sudo ip neigh flush to 192.168.0.2
 
 # 4. 從 Internet 打（在 .16 上跑就算：出口是家裡的公網 IP，CF-Connecting-IP 會是它）
 #    .16 解析 www 只拿到 IPv6、沒有 IPv6 出口，所以 www 那條要 --resolve 指 IPv4
-curl -s -o /dev/null -w "%{http_code}\n" https://app.beakmask.org/beakplatform/            # 期望 302（到 .66 登入頁）
-curl -s -o /dev/null -w "%{http_code}\n" "https://app.beakmask.org/beakplatform/?q=1%27%20UNION%20SELECT%201,2--"   # 期望 403
-CFIP=$(dig @1.1.1.1 +short www.beakmask.org | grep -E '^[0-9.]+$' | head -1)
-curl -s --resolve "www.beakmask.org:443:$CFIP" https://www.beakmask.org/ | grep -o '<h1>[^<]*</h1>'   # 期望「歡迎到 www.beakmask.org」
-curl -s -o /dev/null -w "%{http_code}\n" --resolve "www.beakmask.org:443:$CFIP" "https://www.beakmask.org/?id=1%27%20OR%20%271%27=%271"   # 期望 403
+CFIP=$(dig @1.1.1.1 +short www.beakmask.org | grep -E '^[0-9.]+$' | head -1); R="--resolve www.beakmask.org:443:$CFIP"
+curl -s $R https://www.beakmask.org/ | grep -o '<h1>[^<]*</h1>'                                  # 期望「歡迎到 www.beakmask.org」
+curl -s -o /dev/null -w "%{http_code}\n" $R https://www.beakmask.org/beakplatform/               # 期望 302（到 .66 登入頁）
+curl -s -o /dev/null -w "%{http_code}\n" $R "https://www.beakmask.org/?id=1%27%20OR%20%271%27=%271"                     # 期望 403（waf-welcome）
+curl -s -o /dev/null -w "%{http_code}\n" $R "https://www.beakmask.org/beakplatform/?q=1%27%20UNION%20SELECT%201,2--"   # 期望 403（waf-nginx）
 sleep 15
-# 通過標準：下面最新兩筆的 actor 是家裡的公網 IP、host 分別是 app/www、rule 942100、execution_code 非空
+# 通過標準：下面最新兩筆的 actor 是家裡的公網 IP、host 都是 www、service 分別是 waf-welcome/waf-nginx、rule 942100、execution_code 非空
 sudo -n -u postgres psql -d beakplatform_dev -tA -c "SELECT e.id, e.received_at, e.raw_body->'actor'->>'ip', e.raw_body->'finding'->>'rule_id', e.raw_body->'target'->>'host', e.raw_body->'target'->>'service', wi.execution_code FROM od_intake_events e LEFT JOIN fw_workflow_instances wi ON wi.secure_code=e.case_secure_code ORDER BY e.id DESC LIMIT 4;"
 # UI 看案件：quick-login 用 ethanyu@beluga.com（user_id FhsmtyPjsnXYotN-iz_Q-X，持 SECURITY_STAFF）
 #   → http://192.168.0.16:7000/beakplatform/open-defense/security-cases  （選單「開放防禦 → 資安案件處置中心」）
@@ -959,5 +958,8 @@ ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'sudo nft list set inet secstack bl
 
 - `.20` 換裝 defense-node：**已完成**（本節上方）
 - WAF 對 5xx 回應產生的無規則編號事件：**保留不濾**，維運可用性也是 C.I.A. 的一環
-- `.66` 的 `system_base_url`：在 `.66` 平台的「主機設定 → 伺服器設定 → 系統對外網址」填 `https://app.beakmask.org`（不含前綴），Ethan 自己決定何時改
-- 換裝時順帶產生的案件 `OD-20260909-0004`：Suricata sid 2049202（od-bridge 映像檔 build 時 pip 連 files.pythonhosted.org 的 ET INFO），一次性，不是 cloudflared 噪音
+- `.66` 的 `system_base_url`：在 `.66` 平台的「主機設定 → 伺服器設定 → 系統對外網址」填 `https://www.beakmask.org`（不含前綴），Ethan 自己決定何時改
+- `.20:~/sec-vm-bootstrap_RETIRED_20260910` 已於 2026-09-10 依 Ethan 指示刪除；`~/sec-vm-bootstrap-20260815.tar.gz`（PF-104 時的最終備份，同樣含 CREDENTIALS.md）仍在，另一份在 `.16:/opt/tmp/backup/ITHome-2026-final-20260815.tar.gz`
+- bpserv 的 GitHub PAT 已失效（2026-09-10 API 401），Ethan 表示先不動作
+- 換裝時順帶產生的案件 `OD-20260909-0004`：Suricata sid 2049202（od-bridge 映像檔 build 時 pip 連 files.pythonhosted.org 的 ET INFO），一次性
+- **cloudflared 真正的噪音是 sid 2047122**「ET INFO DNS Query to Cloudflare Tunneling Domain」：本機 cloudflared 每次重連查 `<tunnel id>.argotunnel.com` 就建一張案件（`OD-20260910-0005`，actor 192.168.0.20 → 1.1.1.1）。2026-09-10 加進 `suricata/disable.conf`，`install.sh --update-rules` 重載後不再觸發

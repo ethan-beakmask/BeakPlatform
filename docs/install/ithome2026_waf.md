@@ -78,6 +78,7 @@ sudo bash install.sh \
 | `--pair` | 步驟一的開通字串。不用它時改給 `--base-url` / `--intake-key-id` / `--intake-secret` / `--sa-id` / `--sa-secret` |
 | `--backend` | 【必填】被保護網站在內網的位址，例 `http://192.168.1.30:8000` |
 | `--cf-api-token` + `--cf-hostname` | 用 Cloudflare API 自動建 tunnel、ingress、DNS。Token 權限：Account → Cloudflare Tunnel: Edit、Zone → DNS: Edit、Zone → Zone: Read |
+| `--backend-path /app` | 歡迎頁與主站用同一個 hostname 時必填：只有這個路徑前綴導到被保護網站，根路徑與其他路徑是歡迎頁（例：`--cf-hostname www.example.com --welcome-hostname www.example.com --backend-path /beakplatform`） |
 | `--welcome-hostname www.example.com` | 多開一個對外 hostname 當「歡迎頁」（一行歡迎詞的靜態頁），有自己的 WAF 容器，刺探它同樣會產生事件。搭配 `--cf-api-token` 自動加 ingress 與 DNS；手動建 tunnel 時 Service 填 `http://waf-welcome:8080` |
 | `--tunnel-token` | 不想給 API Token 時，自己到 Zero Trust 後台建 tunnel、把 connector token 貼進來（見第七節） |
 | `--admin-ips` | 允許管理防禦端的來源 IP（逗號分隔）。預設自動加入平台主機與「你 SSH 進來的那台」 |
@@ -125,11 +126,11 @@ sudo nft list set inet secstack blocklist        # 目前被封的 IP（帶剩�
 curl http://<防禦端IP>:8500/edl                   # 給防火牆抓的黑名單（純 IP 一行一個）
 ```
 
-Suricata 規則更新：
+Suricata 規則更新（會套用 `suricata/disable.conf` 的停用清單，裡面有三條誤判率極高的 TCP stream 規則，
+以及一條會把本機 cloudflared 自己的 tunnel DNS 查詢當事件的 ET INFO 規則）：
 
 ```bash
-sudo docker compose run --rm --no-deps suricata suricata-update --no-test --disable-conf /etc/suricata-update/disable.conf
-sudo docker compose restart suricata
+sudo bash install.sh --update-rules
 ```
 
 各服務入口（安裝完成時會印出密碼，也在 `.env` 裡）：
@@ -154,7 +155,9 @@ sudo docker compose restart suricata
    （這是 docker 內的服務名稱，cloudflared 容器與 WAF 在同一個網段）
 
 用 `--cf-api-token` 時上述三步由 `cf_tunnel.py` 自動完成；`python3 cf_tunnel.py status`
-可查連線狀態。
+可查連線狀態，`python3 cf_tunnel.py remove --hostname 舊名稱` 可移除不要的 hostname（含 DNS）。
+同一個 hostname 要同時放歡迎頁與被保護網站時，手動設定要建兩條 Public Hostname：
+先建 Path 填 `beakplatform`（或你的前綴）指 `http://waf-nginx:8080`，再建不填 Path 的指 `http://waf-welcome:8080`。
 
 ## 七之一、內容物與授權
 

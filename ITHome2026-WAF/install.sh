@@ -16,6 +16,7 @@
 #   sudo bash install.sh --verify               健康檢查（不產生事件）
 #   sudo bash install.sh --test-event           送一筆測試事件到平台，驗證整條鏈
 #   sudo bash install.sh --update               從 GitHub 更新程式後重新套用
+#   sudo bash install.sh --update-rules         重新下載 Suricata 規則（套用 suricata/disable.conf）並重載
 #   sudo bash install.sh --uninstall            停止並移除（資料卷保留，加 --purge 才刪）
 #
 # 選項（都可以之後在 <安裝目錄>/.env 改，再跑 --reconfigure）：
@@ -28,8 +29,10 @@
 #   --cf-api-token T --cf-hostname app.example.com [--cf-tunnel-name NAME]
 #                             改用 Cloudflare API 自動建 tunnel / DNS / ingress
 #   --welcome-hostname www.example.com
-#                             多開一個「歡迎頁」hostname（示意首頁），有自己的 WAF；
-#                             搭配 --cf-api-token 會自動加 ingress 與 DNS
+#                             「歡迎頁」（示意首頁），有自己的 WAF；搭配 --cf-api-token 會自動加
+#                             ingress 與 DNS。可以和 --cf-hostname 同名：此時根路徑是歡迎頁，
+#                             只有 --backend-path 的路徑導到被保護網站
+#   --backend-path /app       被保護網站在對外 hostname 下的路徑前綴（與歡迎頁同名時必填）
 #   --admin-ips a.b.c.d,...   允許管理本機的來源 IP（預設：平台主機 + 你 SSH 進來的那台）
 #   --ip / --iface            本機 IP 與網卡（預設由預設路由自動偵測）
 #   --home-net '[..]'         Suricata HOME_NET（預設三段私有網段）
@@ -63,7 +66,7 @@ die()       { log_error "$1"; exit 1; }
 MODE="install"
 OPT_PAIR=""; OPT_BASE_URL=""; OPT_KEY_ID=""; OPT_SECRET=""; OPT_SA_ID=""; OPT_SA_SECRET=""
 OPT_BACKEND=""; OPT_TUNNEL_TOKEN=""; OPT_CF_TOKEN=""; OPT_CF_HOST=""; OPT_CF_TUNNEL="ithome2026-waf"
-OPT_ADMIN_IPS=""; OPT_IP=""; OPT_IFACE=""; OPT_HOME_NET=""; OPT_NO_UI=0; OPT_SSH_GUARD=""; OPT_WELCOME=""
+OPT_ADMIN_IPS=""; OPT_IP=""; OPT_IFACE=""; OPT_HOME_NET=""; OPT_NO_UI=0; OPT_SSH_GUARD=""; OPT_WELCOME=""; OPT_BACKEND_PATH=""
 OPT_YES=0; OPT_PURGE=0
 
 usage() { sed -n '2,45p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
@@ -82,6 +85,7 @@ while [[ $# -gt 0 ]]; do
         --cf-hostname)    OPT_CF_HOST="$2"; shift 2 ;;
         --cf-tunnel-name) OPT_CF_TUNNEL="$2"; shift 2 ;;
         --welcome-hostname) OPT_WELCOME="$2"; shift 2 ;;
+        --backend-path)   OPT_BACKEND_PATH="$2"; shift 2 ;;
         --admin-ips)      OPT_ADMIN_IPS="$2"; shift 2 ;;
         --ip)             OPT_IP="$2"; shift 2 ;;
         --iface)          OPT_IFACE="$2"; shift 2 ;;
@@ -96,6 +100,7 @@ while [[ $# -gt 0 ]]; do
         --verify)         MODE="verify"; shift ;;
         --test-event)     MODE="test-event"; shift ;;
         --update)         MODE="update"; shift ;;
+        --update-rules)   MODE="update-rules"; shift ;;
         --uninstall)      MODE="uninstall"; shift ;;
         -h|--help)        usage; exit 0 ;;
         *) die "未知參數：$1（--help 看用法）" ;;
@@ -258,12 +263,19 @@ build_env() {
     set_env NODE_IFACE "$iface"; set_env NODE_IP "$ip"
 
     [[ -n "$OPT_WELCOME" ]] && set_env WELCOME_HOSTNAME "$OPT_WELCOME"
+    [[ -n "$OPT_BACKEND_PATH" ]] && set_env WAF_BACKEND_PATH "$OPT_BACKEND_PATH"
 
     # Cloudflare API 自動建 tunnel（主站 + 歡迎頁）
     if [[ -n "$OPT_CF_TOKEN" ]]; then
         [[ -n "$OPT_CF_HOST" ]] || die "--cf-api-token 要搭配 --cf-hostname"
+        local main_path=""
+        if [[ -n "$(get_env WELCOME_HOSTNAME)" && "$(get_env WELCOME_HOSTNAME)" == "$OPT_CF_HOST" ]]; then
+            [[ -n "$(get_env WAF_BACKEND_PATH)" ]] || die "歡迎頁與主站同名時要給 --backend-path（被保護網站的路徑前綴，例 /beakplatform）"
+            main_path="^$(get_env WAF_BACKEND_PATH)(/|\$)"
+        fi
         CF_API_TOKEN="$OPT_CF_TOKEN" python3 "$INSTALL_DIR/cf_tunnel.py" setup \
             --hostname "$OPT_CF_HOST" --tunnel-name "$OPT_CF_TUNNEL" --write-env "$ENV_FILE" \
+            ${main_path:+--path "$main_path"} \
             || die "Cloudflare tunnel 建置失敗"
         set_env CF_HOSTNAME "$OPT_CF_HOST"
         set_env CF_TUNNEL_NAME "$OPT_CF_TUNNEL"
@@ -374,7 +386,7 @@ apply_firewall() {
 update_rules() {
     log_step "6/8" "Suricata 規則集（Emerging Threats Open）"
     if [[ -s "$INSTALL_DIR/suricata/rules/suricata.rules" && "${1:-}" != "force" ]]; then
-        log_info "規則檔已存在，略過（要更新：docker compose run --rm suricata suricata-update --no-test --disable-conf /etc/suricata-update/disable.conf）"
+        log_info "規則檔已存在，略過（要更新：sudo bash $INSTALL_DIR/install.sh --update-rules）"
         return 0
     fi
     log_info "下載規則集（約 40MB，視網路 1~3 分鐘）"
@@ -508,7 +520,7 @@ print_summary() {
 
 安裝目錄：$INSTALL_DIR（設定在 .env，改完跑 sudo bash $INSTALL_DIR/install.sh --reconfigure）
 
-  對外入口   $( [[ -n "$(get_env CF_HOSTNAME)" ]] && echo "https://$(get_env CF_HOSTNAME)/" || echo "（未設 tunnel）" )
+  對外入口   $( [[ -n "$(get_env CF_HOSTNAME)" ]] && echo "https://$(get_env CF_HOSTNAME)$(get_env WAF_BACKEND_PATH)/" || echo "（未設 tunnel）" )
   歡迎頁     $( [[ -n "$(get_env WELCOME_HOSTNAME)" ]] && echo "https://$(get_env WELCOME_HOSTNAME)/  （內網驗證 http://$ip:8082/）" || echo "（未啟用）" )
   被保護網站 $(get_env WAF_BACKEND_URL)
   平台       $(get_env BEAK_BASE_URL)
@@ -594,6 +606,11 @@ case "$MODE" in
         update_rules
         bring_up
         print_summary
+        ;;
+    update-rules)
+        [[ -f "$ENV_FILE" ]] || die "找不到 $ENV_FILE，請先執行安裝"
+        update_rules force
+        compose restart suricata >/dev/null && log_info "Suricata 已重啟"
         ;;
     status)     do_status ;;
     verify)     do_verify ;;

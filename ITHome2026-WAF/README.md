@@ -25,9 +25,11 @@ venv/bin/python scripts/od_node_pairing.py --org <企業網域> --base-url http:
 # 防禦端（另一台 Ubuntu）
 curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/ITHome2026-WAF/install.sh -o install.sh
 sudo bash install.sh --pair '<開通字串>' --backend http://<被保護網站IP>:<埠> \
-     --cf-api-token <Cloudflare API Token> --cf-hostname app.example.com \
-     --welcome-hostname www.example.com
+     --cf-api-token <Cloudflare API Token> --cf-hostname www.example.com \
+     --welcome-hostname www.example.com --backend-path /beakplatform
 ```
+
+上面這組參數的結果：`https://www.example.com/` 是歡迎頁，`https://www.example.com/beakplatform/` 是被保護的網站，兩者都經過 WAF。
 
 | 檔案 | 用途 |
 |---|---|
