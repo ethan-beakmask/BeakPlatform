@@ -50,10 +50,12 @@ transforms:
       . = parse_json!(.message)
       .timestamp = parse_timestamp!(.timestamp, "%+")
 
+  # 只留 alert，且要有 src_ip：解碼類告警（truncated packet 之類）沒有來源與目的 IP，
+  # 平台一律 400 拒收，留在 ClickHouse 就好，不要送出節點
   suricata_alerts_only:
     type: filter
     inputs: [suricata_parsed]
-    condition: '.event_type == "alert"'
+    condition: '.event_type == "alert" && exists(.src_ip) && exists(.dest_ip)'
 
   # Suricata alert → OCSF network_activity
   # actor.ip 直接讀 .src_ip：suricata.yaml 的 xff 模組（mode: overwrite,

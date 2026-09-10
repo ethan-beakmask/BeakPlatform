@@ -180,6 +180,7 @@ install_packages() {
     command -v python3 >/dev/null || need+=(python3)
     command -v curl >/dev/null || need+=(curl)
     command -v rsync >/dev/null || need+=(rsync)
+    command -v ethtool >/dev/null || need+=(ethtool)
     if [[ ${#need[@]} -gt 0 ]]; then
         export DEBIAN_FRONTEND=noninteractive
         apt-get update -qq
@@ -358,6 +359,7 @@ PY
     mkdir -p "$g/welcome"
     sed -e "s|@@WELCOME_HOSTNAME@@|$(get_env WELCOME_HOSTNAME)|g" \
         "$INSTALL_DIR/welcome/index.html.tmpl" > "$g/welcome/index.html"
+    cp "$INSTALL_DIR/welcome/favicon.ico" "$g/welcome/favicon.ico"
 
     sed -e "s|@@INSTALL_DIR@@|$INSTALL_DIR|" \
         "$INSTALL_DIR/host-cron/secstack-rotate-logs.tmpl" > "$g/secstack-rotate-logs"
@@ -366,10 +368,37 @@ PY
 }
 
 # ----------------------------------------------------------------------------
-# 5. 主機防火牆
+# 5. 主機防火牆 + 監聽網卡卸載
 # ----------------------------------------------------------------------------
+# Suricata 用 AF_PACKET 監聽實體網卡。網卡的 GRO/LRO/TSO/GSO 卸載會把超過 MTU 的
+# 大封包交給它，症狀是每次有大檔案傳輸就出現「IPv4 truncated packet」解碼告警。
+# 官方建議監聽介面關掉卸載；用 systemd oneshot 讓開機後也維持。
+disable_nic_offload() {
+    local iface; iface="$(get_env NODE_IFACE)"
+    command -v ethtool >/dev/null || { log_warn "沒有 ethtool，略過網卡卸載設定"; return 0; }
+    cat > /etc/systemd/system/ithome2026-waf-offload.service <<EOT
+[Unit]
+Description=ITHome2026-WAF: disable NIC offload on $iface for Suricata capture
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/ethtool -K $iface gro off lro off tso off gso off
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOT
+    systemctl daemon-reload
+    systemctl enable --now ithome2026-waf-offload.service >/dev/null 2>&1 \
+        && log_info "網卡 $iface 已關閉 gro/lro/tso/gso 卸載（ithome2026-waf-offload.service）" \
+        || log_warn "網卡卸載設定失敗（虛擬網卡可能不支援，不影響其他功能）"
+}
+
 apply_firewall() {
-    log_step "5/8" "套用主機防火牆（nftables）"
+    log_step "5/8" "套用主機防火牆（nftables）與網卡卸載"
+    disable_nic_offload
     bash "$INSTALL_DIR/nftables.sh" "$INSTALL_DIR"
     if command -v ufw >/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
         log_warn "ufw 啟用中：補上 od-bridge 8500 與管理埠的放行規則"
@@ -562,6 +591,8 @@ do_uninstall() {
         printf '#!/usr/sbin/nft -f\n' > /etc/nftables.conf
     fi
     rm -f /etc/cron.hourly/secstack-rotate-logs
+    systemctl disable --now ithome2026-waf-offload.service >/dev/null 2>&1 || true
+    rm -f /etc/systemd/system/ithome2026-waf-offload.service; systemctl daemon-reload
     log_info "已停止。$INSTALL_DIR 與 .env 保留；要徹底清除：rm -rf $INSTALL_DIR"
 }
 

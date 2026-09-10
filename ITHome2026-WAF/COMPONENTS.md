@@ -33,6 +33,7 @@ Please read and comply with each component's license before use.
 | Portainer CE（選用 optional） | 容器管理介面 / container UI | `portainer/portainer-ce:2.21.4` | zlib | https://www.portainer.io |
 | Docker Engine + Compose plugin | 容器執行環境 / runtime（apt `docker.io`、`docker-compose-v2`） | Ubuntu 套件庫版本 / distro packages | Apache 2.0 | https://www.docker.com |
 | nftables | 主機防火牆與封鎖集合 / host firewall & block sets | Ubuntu 套件庫 / distro package | GPLv2 | https://netfilter.org |
+| ethtool | 關閉監聽網卡的 GRO/LRO/TSO/GSO 卸載，避免 Suricata 收到截斷封包 / NIC offload control for clean capture | Ubuntu 套件庫 / distro package | GPLv2 | https://www.kernel.org/pub/software/network/ethtool/ |
 | od-bridge（本專案 this project） | 事件簽章轉送到 BeakPlatform、輪詢決策落地到 nftables / CrowdSec / EDL | 隨本 repo / this repo | Apache 2.0 | 本目錄 `od-bridge/` |
 
 Grafana 為 AGPLv3：本安裝包僅以容器方式執行未修改的官方映像檔，未散布修改版本。
