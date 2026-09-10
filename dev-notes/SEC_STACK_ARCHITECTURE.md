@@ -875,8 +875,8 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 | API Token | 沿用 `/opt/CFTunnel/config-ho-gate.ini` 的 `api_token`（權限夠用，不必另建） |
 
 換 hostname：`python3 ITHome2026-WAF/cf_tunnel.py setup --hostname <新名> --tunnel-name dmz-web`，
-舊的 `cf_tunnel.py remove --hostname <舊名>`（連 CNAME 一起刪）。`.66` 的 `system_base_url` 仍是
-`http://192.168.0.66:8000`，要讓平台寄出的連結指向對外網址時改成 `https://www.beakmask.org`（未動，Ethan 決定）。
+舊的 `cf_tunnel.py remove --hostname <舊名>`（連 CNAME 一起刪）。`.66` 的 `system_base_url` 維持
+`http://192.168.0.66:8000`——**這是讀者依自己環境設定的值，不是 Ethan 環境的待辦**（Ethan 2026-09-11 定調）；讀者要讓平台寄出的連結指向對外網址時，自己在「主機設定 → 伺服器設定 → 系統對外網址」填自己的 hostname。
 
 ### `.13` 現況與 Ethan 的驗收步驟
 
@@ -959,7 +959,7 @@ ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'sudo nft list set inet secstack bl
 
 - `.20` 換裝 defense-node：**已完成**（本節上方）
 - WAF 對 5xx 回應產生的無規則編號事件：**保留不濾**，維運可用性也是 C.I.A. 的一環
-- `.66` 的 `system_base_url`：在 `.66` 平台的「主機設定 → 伺服器設定 → 系統對外網址」填 `https://www.beakmask.org`（不含前綴），Ethan 自己決定何時改
+- `.66` 的 `system_base_url`：**不是待辦**。那是讀者依自己環境設定的值（2026-09-11 定調），`.66` 維持 `http://192.168.0.66:8000` 即可
 - `.20:~/sec-vm-bootstrap_RETIRED_20260910` 已於 2026-09-10 依 Ethan 指示刪除；`~/sec-vm-bootstrap-20260815.tar.gz`（PF-104 時的最終備份，同樣含 CREDENTIALS.md）仍在，另一份在 `.16:/opt/tmp/backup/ITHome-2026-final-20260815.tar.gz`
 - bpserv 的 GitHub PAT 已失效（2026-09-10 API 401），Ethan 表示先不動作
 - 換裝時順帶產生的案件 `OD-20260909-0004`：Suricata sid 2049202（od-bridge 映像檔 build 時 pip 連 files.pythonhosted.org 的 ET INFO），一次性
