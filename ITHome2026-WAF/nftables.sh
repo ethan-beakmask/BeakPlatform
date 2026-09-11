@@ -155,22 +155,7 @@ systemctl start nftables 2>/dev/null || true
 restore_set() {
     local json="$1" setname="$2" elems elem
     [[ -n "$json" ]] || return 0
-    elems="$(python3 -c '
-import json, sys
-data = json.loads(sys.argv[1])
-for item in data.get("nftables", []):
-    s = item.get("set")
-    if not s or not s.get("elem"):
-        continue
-    for e in s["elem"]:
-        if isinstance(e, dict) and "elem" in e:
-            v = e["elem"]; val = v.get("val"); exp = v.get("expires")
-            if isinstance(val, dict):
-                val = "%s/%s" % (val["prefix"]["addr"], val["prefix"]["len"])
-            print("%s timeout %ds" % (val, int(exp)) if exp else val)
-        else:
-            print(e)
-' "$json" 2>/dev/null || true)"
+    elems="$(python3 "$(dirname "${BASH_SOURCE[0]}")/nftset_elems.py" <<< "$json" 2>/dev/null || true)"
     while IFS= read -r elem; do
         [[ -n "$elem" ]] || continue
         nft add element inet secstack "$setname" "{ $elem }" 2>/dev/null || true

@@ -38,6 +38,9 @@ sudo bash install.sh --pair '<開通字串>' --backend http://<被保護網站IP
 | `welcome/` | 歡迎頁樣板（`--welcome-hostname` 啟用，有獨立 WAF） |
 | `cf_tunnel.py` | 用 Cloudflare API 自動建 tunnel、ingress、DNS（選用，不用 API 也能在後台手動做） |
 | `nftables.sh` | 產生主機防火牆（封鎖 set、自鎖保險、來源管制） |
+| `standby.sh` | 防禦端熱備狀態、接手、釋放與封鎖狀態匯入匯出 |
+| `failover.sh` | 管理機執行的兩節點切換協調工具 |
+| `nftset_elems.py` | 將 nftables set JSON 轉回可匯入的元素行 |
 | `docker-compose.yml` | 全部服務；參數都在 `.env` |
 | `.env.example` | 參數說明 |
 | `vector/vector.yaml` | 事件正規化與封頂規則 |

@@ -18,6 +18,7 @@
 #   sudo bash install.sh --update               從 GitHub 更新程式後重新套用
 #   sudo bash install.sh --update-rules         重新下載 Suricata 規則（套用 suricata/disable.conf）並重載
 #   sudo bash install.sh --uninstall            停止並移除（資料卷保留，加 --purge 才刪）
+#   熱備切換見 standby.sh / failover.sh 與 docs/install/ithome2026_waf_standby.md
 #
 # 選項（都可以之後在 <安裝目錄>/.env 改，再跑 --reconfigure）：
 #   --pair '<ODN1...>'        平台端 scripts/od_node_pairing.py 產生的開通字串
@@ -181,6 +182,7 @@ install_packages() {
     command -v curl >/dev/null || need+=(curl)
     command -v rsync >/dev/null || need+=(rsync)
     command -v ethtool >/dev/null || need+=(ethtool)
+    command -v arping >/dev/null || need+=(iputils-arping)   # 熱備切換時向鄰居宣告服務 IP
     if [[ ${#need[@]} -gt 0 ]]; then
         export DEBIAN_FRONTEND=noninteractive
         apt-get update -qq

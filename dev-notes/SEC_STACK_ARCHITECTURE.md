@@ -878,74 +878,56 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 舊的 `cf_tunnel.py remove --hostname <舊名>`（連 CNAME 一起刪）。`.66` 的 `system_base_url` 維持
 `http://192.168.0.66:8000`——**這是讀者依自己環境設定的值，不是 Ethan 環境的待辦**（Ethan 2026-09-11 定調）；讀者要讓平台寄出的連結指向對外網址時，自己在「主機設定 → 伺服器設定 → 系統對外網址」填自己的 hostname。
 
-### `.13` 現況與 Ethan 的驗收步驟
+### 熱備（warm standby）切換：`.21`＋`.13` 共用服務 IP `.20`（2026-09-11 起，取代「關機換 IP」）
 
-`.13`（ubuntu24，`ethan` / `P@ssw0rd`、sudo NOPASSWD，`.16` 的 `~/.ssh/company-wsl.pub` 已放進去）
-已用 defense-node 裝好，綁 BELUGA（intake key `ak_824b6daff3b494ff`、SA `sa_defense_node_13_22baa3`，
-開通字串在 `/opt/tmp/verify/20260910-defense-node-pairing.log`），backend `http://192.168.0.66:8000`。
-安裝目錄 `/opt/ithome2026-waf`，密碼在它的 `.env`。
+**現況**：真 sec-vm（VM 110）管理 IP **`192.168.0.21`**（netplan `01-static.yaml` 只綁 `.21`，備份
+`/root/netplan-01-static.yaml.bak-20260911`），`.13`（VM 109 `ubuntu24`）改成固定 IP
+（`50-cloud-init.yaml`，DHCP 版備份 `/root/netplan-50-cloud-init.yaml.bak-20260911-dhcp`）。
+服務 IP **`.20` 不在任何 netplan 裡**，由 `standby.sh takeover` 綁上、`waf-service-ip.service` 開機重做。
+兩台程式一致（`rsync` 自 `ITHome2026-WAF/`），`.13` 的 `.env` 已對齊 www 分流並跑過 `--reconfigure`。
+`.12` 被一台不回 ping 的裝置占用（MAC `a6:bf:3a:c3:3d:6a`），選管理 IP 前一律看 `ip neigh` 不要只 ping。
 
-2026-09-10 已完整預演過一次（憑證 `/opt/tmp/verify/20260910-defense-node-13-install.log`）：
-`.20` 關機 → `.13` 改 `192.168.0.20` → Internet 打 `https://app.beakmask.org/beakplatform/` 302 到
-`.66` 登入頁、SQLi 探測 403 → `.16` 建案 `OD-20260909-0001`／`0002`（保留，是驗收證據）→
-還原（`.13` 回 DHCP、`qm start 110`）。**兩個踩到的**：`.66` 對 `192.168.0.20` 有舊 MAC 的 ARP
-快取，IP 剛換過去的前一兩分鐘 WAF → `.66` 會逾時，`sudo ip neigh flush to 192.168.0.20` 即好；
-`.13` 的 netplan 是 cloud-init DHCP，換 IP 要整檔改成 static（備份在 `.13:/root/netplan-50-cloud-init.yaml.bak-defense`，
-static 版在 `/root/netplan-as-20.yaml`），改完 `systemd-run --on-active=2 netplan apply` 免斷線。
-
-Ethan 自己跑驗收時（每一條都是 2026-09-10 本 session 實跑過的指令，照抄）：
+工具：`ITHome2026-WAF/standby.sh`（節點端）、`failover.sh`（`.16` 端）、讀者文件
+`docs/install/ithome2026_waf_standby.md`。**從 `.16` 切換與看狀態**（`--ssh-opt` 的 `~` 由腳本自己展開）：
 
 ```bash
-# 1. 關 .20（真正的防禦節點）
-ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'sudo poweroff'
-until ! ping -c1 -W1 192.168.0.20 >/dev/null 2>&1; do sleep 1; done
-
-# 2. .13 換成 192.168.0.20（static 檔早已放在 .13:/root/netplan-as-20.yaml；systemd-run 延遲 2 秒套用，SSH 不會卡死）
-ssh -i ~/.ssh/company-wsl ethan@192.168.0.13 \
-  'sudo cp /root/netplan-as-20.yaml /etc/netplan/50-cloud-init.yaml && sudo chmod 600 /etc/netplan/50-cloud-init.yaml && sudo systemd-run --on-active=2 --unit=defense-ipswap /usr/sbin/netplan apply'
-sleep 12
-# 從此以後 .13 要用 192.168.0.20 連，host key 跟真 .20 不同，一律帶這兩個參數
-S20="ssh -i $HOME/.ssh/company-wsl -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ethan@192.168.0.20"
-$S20 'hostname'                      # 應印 ubuntu24（不是 sec-vm）
-
-# 3. 把 cloudflared 帶起來、重生防火牆（.13 平常刻意停著 cloudflared）
-$S20 'sudo bash /opt/ithome2026-waf/install.sh --reconfigure --yes'
-sshpass -p 'P@ssw0rd' ssh ethan@192.168.0.66 'sudo ip neigh flush to 192.168.0.20'   # .66 的 ARP 還記著真 .20 的 MAC，不清會逾時一兩分鐘
-
-# 4. 從 Internet 打（在 .16 上跑就算：出口是家裡的公網 IP，CF-Connecting-IP 會是它）
-#    .16 解析 www 只拿到 IPv6、沒有 IPv6 出口，所以 www 那條要 --resolve 指 IPv4
-CFIP=$(dig @1.1.1.1 +short www.beakmask.org | grep -E '^[0-9.]+$' | head -1); R="--resolve www.beakmask.org:443:$CFIP"
-curl -s $R https://www.beakmask.org/ | grep -o '<h1>[^<]*</h1>'                                  # 期望「歡迎到 www.beakmask.org」
-curl -s -o /dev/null -w "%{http_code}\n" $R https://www.beakmask.org/beakplatform/               # 期望 302（到 .66 登入頁）
-curl -s -o /dev/null -w "%{http_code}\n" $R "https://www.beakmask.org/?id=1%27%20OR%20%271%27=%271"                     # 期望 403（waf-welcome）
-curl -s -o /dev/null -w "%{http_code}\n" $R "https://www.beakmask.org/beakplatform/?q=1%27%20UNION%20SELECT%201,2--"   # 期望 403（waf-nginx）
-sleep 15
-# 通過標準：下面最新兩筆的 actor 是家裡的公網 IP、host 都是 www、service 分別是 waf-welcome/waf-nginx、rule 942100、execution_code 非空
-sudo -n -u postgres psql -d beakplatform_dev -tA -c "SELECT e.id, e.received_at, e.raw_body->'actor'->>'ip', e.raw_body->'finding'->>'rule_id', e.raw_body->'target'->>'host', e.raw_body->'target'->>'service', wi.execution_code FROM od_intake_events e LEFT JOIN fw_workflow_instances wi ON wi.secure_code=e.case_secure_code ORDER BY e.id DESC LIMIT 4;"
-# UI 看案件：quick-login 用 ethanyu@beluga.com（user_id FhsmtyPjsnXYotN-iz_Q-X，持 SECURITY_STAFF）
-#   → http://192.168.0.16:7000/beakplatform/open-defense/security-cases  （選單「開放防禦 → 資安案件處置中心」）
-#   同 actor+rule 60 分鐘內會併進既有案件（例如 OD-20260909-0001），看 od_intake_events 的新列比看案件數可靠
+cd /opt/BeakPlatform-dev/ITHome2026-WAF
+F="bash failover.sh --service-ip 192.168.0.20 --nodes 192.168.0.21,192.168.0.13 --ssh-user ethan --ssh-opt '-i ~/.ssh/company-wsl'"
+eval $F --status                                   # 誰持有 .20、SNAT、cloudflared／od-bridge、blocklist
+eval $F --to 192.168.0.13 --dry-run                # 只做前置檢查
+eval $F --to 192.168.0.13 --yes --log /opt/tmp/verify/$(date +%Y%m%d)-failover.log   # 切到 .13
+eval $F --to 192.168.0.21 --yes                    # 切回 sec-vm
+# 從 Internet 驗證（.16 解析 www 只有 IPv6，要 --resolve）
+CFIP=$(dig @1.1.1.1 +short www.beakmask.org | grep -E '^[0-9.]+$' | head -1)
+curl -s -o /dev/null -w '%{http_code}\n' --resolve www.beakmask.org:443:$CFIP https://www.beakmask.org/beakplatform/   # 302
+curl -s --resolve www.beakmask.org:443:$CFIP https://www.beakmask.org/ | grep -o '<h1>[^<]*</h1>'                     # 歡迎頁
 ```
 
-還原（順序固定：先停 .13 的 cloudflared，再換回 IP，最後才開真 .20，避免兩台同時搶 tunnel 與 IP）：
+2026-09-11 實測五輪來回全部成功（憑證 `/opt/tmp/verify/20260911-failover-real.log`），
+中斷「舊台開始釋放 → 新台 cloudflared 註冊」約 **14～20 秒**，其中 cloudflared 註冊 2～4 秒。
+blocklist 帶剩餘 timeout 複製（用 TEST-NET `203.0.113.99 timeout 900s` 驗的）。開機 unit 在 `.13` 用
+`.29` 實測重開機後位址／路由 src／SNAT 自動回來（`/opt/tmp/verify/20260911-standby-13-reboot.log`）。
 
-```bash
-$S20 'cd /opt/ithome2026-waf && sudo docker compose --profile tunnel stop cloudflared'
-$S20 'sudo cp /root/netplan-50-cloud-init.yaml.bak-defense /etc/netplan/50-cloud-init.yaml && sudo chmod 600 /etc/netplan/50-cloud-init.yaml && sudo systemd-run --on-active=2 --unit=defense-iprestore /usr/sbin/netplan apply'
-sleep 12; ssh -i ~/.ssh/company-wsl ethan@192.168.0.13 'ip -4 -br a show ens18'      # 應回到 192.168.0.13
-sshpass -p 'P@ssw0rd' ssh ethan@192.168.0.66 'sudo ip neigh flush to 192.168.0.20'
-ssh root@192.168.0.100 'qm start 110'
-until ssh -i ~/.ssh/company-wsl -o ConnectTimeout=3 -o BatchMode=yes ethan@192.168.0.20 hostname 2>/dev/null; do sleep 3; done   # 應印 sec-vm
-ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'cd /opt/ithome2026-waf && sudo bash install.sh --verify'
-```
+**今天踩到的五個，全部已寫進 standby.sh 或讀者文件**：
 
-探測會讓小企業單人版流程對家裡的公網 IP 下 24h block（只影響直連 .20，LAN 與 tunnel 不受影響）。要提前解封走機制、不要手動 nft：
+1. **容器出站 MASQUERADE 選網卡 primary 位址，不看路由 `src`**。sec-vm 加 `.21` 後改 netplan，
+   只修路由 src → 主機自己連得到 `.66`、waf-nginx 容器連不到，`/beakplatform` 從 Internet 斷了約 13 分鐘
+   （00:28～00:41Z），歡迎頁卻正常。解法是獨立表 `ip wafsvc` 一條 SNAT（docker 網段 → 服務 IP）
+2. **`ip addr del` 會連帶刪掉 prefsrc 指向該位址的路由**（子網＋default 一起消失，主機連 ARP 都不回）。
+   codex 第一版 release 先刪位址再改路由 → `.13` 失聯，只能 `qm reset 109`。現在先改 src 再刪，並有重建保險
+3. **路由器忽略 gratuitous ARP**：第二次切回 sec-vm 時 cloudflared 精靈報 DNS `server misbehaving`、CF 回 530，
+   85 秒後自己好（路由器 ARP 快取老化）。現在 takeover 以服務 IP 為 sender 對閘道／`.66`／`.16` 各發 arping 請求，
+   兩台已裝 `iputils-arping`，install.sh 也列進套件
+4. **`.13` 的 `.env` 改了卻沒 `--reconfigure`**：切過去後歡迎頁沒有（缺 welcome 容器、nginx 舊設定）。
+   `failover.sh` 只比對 `.env` 五個鍵；而在待命台跑 `--reconfigure` 會把 cloudflared 帶起來，做完要立刻 `release`
+5. **開機 unit 排在 docker.service 之前，裡面呼叫 `docker compose ps` 會死鎖**（socket activation 等
+   docker.service，docker.service 等本 unit）。第一次重開機測試 `.13` 的 unit 卡在 activating、docker inactive，
+   `systemctl stop waf-service-ip` 才解開。現在 `service_state()` 先看 `systemctl is-active docker`，unit 加 `TimeoutStartSec=90`
+6. **`.13` 的 od-bridge 從 2026-09-10 裝好起一直在跑**，與 sec-vm 同綁 BELUGA、先搶先贏，這幾天的封鎖決策有一部分
+   只落地在 `.13`（它 blocklist 裡的 `123.192.234.208` 就是這樣來的）。現在待命台 od-bridge／cloudflared 一律停
 
-```bash
-sudo -n -u postgres psql -d beakplatform_dev -tA -c "UPDATE od_defense_decisions SET expires_at = (now() at time zone 'utc') - interval '1 minute' WHERE action='block' AND status='applied' AND target_value='123.192.234.208' RETURNING id;"
-# 等 1～2 分鐘，cron 的 od_expire_decisions.py 會產 unblock，executor 落地後：
-ssh -i ~/.ssh/company-wsl ethan@192.168.0.20 'sudo nft list set inet secstack blocklist'
-```
+舊的「關 `.20`、`.13` 改成 `.20`、`qm start 110` 還原」流程已不再需要；`.13:/root/netplan-as-20.yaml`
+留著只是考古，**不要再用**（它會把 `.13` 整台改成 `.20` 單 IP，與現在的 3 IP 架構衝突）。
 
 ### 封鎖→到期→解封 的完整閉環也順帶驗過（2026-09-10）
 

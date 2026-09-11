@@ -175,6 +175,8 @@ sudo bash install.sh --update-rules
 
 Cloudflare Tunnel 認的是 token 不是 IP，會自己重新連上。
 
+若要做兩台防禦端共用一個服務 IP 的熱備切換，見 `docs/install/ithome2026_waf_standby.md`。
+
 ## 九、安全邊界（安裝完請讀）
 
 - **能直連防禦端 8080 的人可以偽造攻擊者 IP**（自帶 `Cf-Connecting-Ip` header）。
