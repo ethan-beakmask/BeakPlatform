@@ -8,8 +8,10 @@ description: 企業資料庫監視（表預覽、參照檢查、表清除）
 files:
   route:    backend/app/web/org_databases.py
   template:
-    - backend/app/templates/pages/org_databases/system_view.html
-    - backend/app/templates/pages/org_databases/org_view.html
+    - backend/app/templates/pages/org_databases/monitor.html
+    - backend/app/templates/pages/hostconfig/system_settings.html
+    - backend/app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html
+    - backend/app/templates/pages/hostconfig/_system_settings_orgdatabases_methods.html
   js:
     - backend/app/static/js/org-databases.js
   css:

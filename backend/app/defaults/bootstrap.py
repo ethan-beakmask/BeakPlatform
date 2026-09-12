@@ -207,6 +207,57 @@ def sync_modules(force=False) -> dict:
     return result
 
 
+def ensure_org_databases() -> dict:
+    if not os.environ.get('SYNC_PG_ADMIN_URL'):
+        logger.warning(
+            '企業專屬資料庫佈建已跳過：SYNC_PG_ADMIN_URL 未設定，'
+            '企業級對照表與簽核片語等功能將無法使用'
+        )
+        return {
+            'checked': 0,
+            'ok': 0,
+            'failed': 0,
+            'skipped': True,
+            'reason': 'SYNC_PG_ADMIN_URL 未設定',
+        }
+
+    from app.models import Organization
+    from app.services.org_database_service import ensure_org_database
+
+    summary = {
+        'checked': 0,
+        'ok': 0,
+        'failed': 0,
+        'skipped': False,
+        'reason': None,
+    }
+    orgs = Organization.query.filter_by(is_deleted=False).order_by(Organization.id).all()
+    for org in orgs:
+        summary['checked'] += 1
+        try:
+            result = ensure_org_database(org)
+            if result['status'] == 'ok':
+                summary['ok'] += 1
+            else:
+                summary['failed'] += 1
+                logger.warning(
+                    '企業專屬資料庫佈建失敗 code=%s org_code=%s reason=%s',
+                    org.code,
+                    org.secure_code,
+                    result.get('message'),
+                )
+        except Exception as exc:
+            db.session.rollback()
+            summary['failed'] += 1
+            logger.warning(
+                '企業專屬資料庫佈建發生例外 code=%s org_code=%s reason=%s',
+                org.code,
+                org.secure_code,
+                exc,
+            )
+    return summary
+
+
 def _run_step(summary, step_name, func):
     logger.info(step_name)
     try:
@@ -245,6 +296,7 @@ def run_bootstrap(mode, admin_password=None, sql_dir=None) -> dict:
     _run_step(summary, 'seed_system_permissions',
               lambda: seed_system_permissions(force=False))
     _run_step(summary, 'sync_modules', lambda: sync_modules(force=fresh))
+    _run_step(summary, 'ensure_org_databases', ensure_org_databases)
     if fresh:
         _run_step(summary, 'seed_system_org_defaults',
                   lambda: _seed_system_org_defaults(admin_password))

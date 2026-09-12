@@ -53,7 +53,7 @@ fw_sync_queue (主庫)  ──────►  SyncWorker
 2. **啟用 SQL Sync** — 勾選 SQL 開關（必須已發行，啟用後不可關閉）
    - 自動建立企業 DB（如不存在）
    - 自動建立同步表（主表 + datagrid 子表）
-   - 自動安裝 pgcrypto extension
+   - 由資料庫 owner（`bfadmin_<id>`）自動安裝 pgcrypto extension（trusted extension，不需要 superuser）
 3. **新發行版本** — 每次新發行自動建立新表 (`form_{id}_v{n+1}`)
 4. **表單流程結束** — Worker 自動將終態資料寫入對應表
 
@@ -168,7 +168,7 @@ python scripts/backfill_sync.py --batch-size 200
 
 | 變數 | 說明 |
 |------|------|
-| `SYNC_PG_ADMIN_URL` | PostgreSQL 管理員連線 URL（需有 CREATEDB + CREATEROLE） |
+| `SYNC_PG_ADMIN_URL` | PostgreSQL 佈建連線 URL（需 LOGIN + CREATEDB + CREATEROLE 的非 superuser 角色） |
 | `SYNC_CREDENTIAL_KEY` | Fernet 加密金鑰（用於加密 DB 帳號密碼） |
 | `SYNC_PII_PASSPHRASE` | PII 欄位加密密鑰（pgcrypto 對稱加密用） |
 

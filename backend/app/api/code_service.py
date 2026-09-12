@@ -33,8 +33,16 @@ def _build_lookup_category_exists_checker():
         from flask_login import current_user
         from ..services.lookup_org_service import LookupOrgService
         org_sc = current_user.org_secure_code
-        cat = LookupOrgService.get_category_by_code(org_sc, code)
-        return cat is not None
+        try:
+            cat = LookupOrgService.get_category_by_code(org_sc, code)
+            return cat is not None
+        except Exception as exc:
+            logger.warning(
+                '[CodeService] lookup_category 重複檢查失敗，視為未重複 org=%s: %s',
+                org_sc,
+                exc,
+            )
+            return False
     return exists_checker
 
 

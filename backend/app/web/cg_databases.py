@@ -13,13 +13,11 @@ BeakPlatform Conglomerate Database Overview
 - 表數量需連入個別 DB，此頁不做（避免憑證相依）
 """
 import logging
-import os
 
-import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from flask_babel import gettext as _
 from flask import Blueprint, render_template, jsonify, abort
 
+from .. import db
 from ..security.decorators import system_admin_required
 from ..models.conglomerate import Conglomerate
 from ..models.conglomerate_log import ConglomerateLog
@@ -46,30 +44,23 @@ def _format_bytes(size_bytes):
 
 def _scan_cg_databases_with_size():
     """
-    用 superuser 掃描所有 cg_* 資料庫及其大小
+    掃描所有 cg_* 資料庫及其大小
+
+    用平台自己的主庫連線即可——`pg_database` 對任何角色都可讀，不需要特權連線。
+    `pg_database_size()` 需要該庫的 CONNECT 權限（建庫時已 REVOKE ... FROM PUBLIC），
+    所以用 `has_database_privilege()` 擋掉，拿不到大小就回 0（顯示端本來就會處理）。
 
     Returns:
         dict: {db_name: size_bytes, ...}
     """
-    # superuser 憑證沿用 sql_sync 的 SYNC_PG_ADMIN_URL（.env），不硬編碼（PF-199）。
-    # 未設定時降級為「查不到大小」，與連線失敗同一種表現。
-    dsn = os.environ.get('SYNC_PG_ADMIN_URL')
-    if not dsn:
-        logger.warning('CgDB overview: SYNC_PG_ADMIN_URL 未設定，無法掃描 pg_database')
-        return {}
     try:
-        conn = psycopg2.connect(dsn, connect_timeout=5)
-        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-        try:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT datname, pg_database_size(datname) "
-                    "FROM pg_database "
-                    "WHERE datname LIKE 'cg_%' ORDER BY datname"
-                )
-                return {row[0]: row[1] for row in cur.fetchall()}
-        finally:
-            conn.close()
+        rows = db.session.execute(db.text(
+            "SELECT datname, "
+            "CASE WHEN has_database_privilege(datname, 'CONNECT') "
+            "     THEN pg_database_size(datname) ELSE 0 END "
+            "FROM pg_database WHERE datname LIKE 'cg\\_%' ORDER BY datname"
+        ))
+        return {row[0]: row[1] for row in rows}
     except Exception as e:
         logger.warning(f'CgDB overview: 掃描 pg_database 失敗: {e}')
         return {}

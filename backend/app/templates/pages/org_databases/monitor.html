@@ -14,6 +14,156 @@
 {# ========== 系統級：master-detail 佈局 ========== #}
 <script>window.__ODB_ORGS = {{ org_list|tojson }};</script>
 
+<div class="odb-health" x-data="odbHealthPanel()" x-init="load()">
+    <div class="odb-health-header">
+        <h2>{{ _('資料庫健康狀態') }}</h2>
+        <button class="btn btn-primary" @click="load()" :disabled="loading"
+                x-text="loading ? __('檢查中...') : __('重新檢查')"></button>
+    </div>
+
+    <template x-if="error">
+        <div class="odb-health-error" x-text="error"></div>
+    </template>
+
+    <div class="odb-health-grid">
+        <div class="odb-health-card" :class="{'odb-health-card-danger': data.provisioning && data.provisioning.ok === false}">
+            <div class="odb-health-card-head">
+                <h3>{{ _('佈建連線') }}</h3>
+                <span class="odb-health-status"
+                      :class="data.provisioning && data.provisioning.ok ? 'odb-health-status-ok' : 'odb-health-status-bad'"
+                      x-text="data.provisioning && data.provisioning.ok ? __('正常') : __('異常')"></span>
+            </div>
+            <div class="odb-health-checks">
+                <div><span x-text="data.provisioning && data.provisioning.configured ? '✓' : '✗'"></span> {{ _('SYNC_PG_ADMIN_URL 已設定') }}</div>
+                <div><span x-text="data.provisioning && data.provisioning.credential_key ? '✓' : '✗'"></span> {{ _('SYNC_CREDENTIAL_KEY 已設定') }}</div>
+                <div><span x-text="data.provisioning && data.provisioning.reachable ? '✓' : '✗'"></span> {{ _('連線成功') }}</div>
+                <div><span x-text="data.provisioning && data.provisioning.can_create_db ? '✓' : '✗'"></span> {{ _('具備 CREATEDB 權限') }}</div>
+                <div><span x-text="data.provisioning && data.provisioning.can_create_role ? '✓' : '✗'"></span> {{ _('具備 CREATEROLE 權限') }}</div>
+            </div>
+            <template x-if="data.provisioning && data.provisioning.role">
+                <div class="odb-health-detail">{{ _('角色') }}: <code x-text="data.provisioning.role"></code></div>
+            </template>
+            <template x-if="data.provisioning && data.provisioning.error">
+                <div class="odb-health-detail odb-health-detail-error" x-text="data.provisioning.error"></div>
+            </template>
+            <template x-if="data.provisioning && data.provisioning.ok === false">
+                <div class="odb-health-warning">{{ _('佈建連線異常時，新建企業不會有專屬資料庫，企業級對照表與簽核片語將無法使用。') }}</div>
+            </template>
+        </div>
+
+        <div class="odb-health-card">
+            <div class="odb-health-card-head">
+                <h3>{{ _('異常企業') }}</h3>
+                <span class="odb-health-muted" x-text="__('{count} 筆', {count: abnormalOrgs.length})"></span>
+            </div>
+            <template x-if="abnormalOrgs.length > 0">
+                <div class="odb-health-table-wrap">
+                    <table class="odb-health-table">
+                        <thead>
+                            <tr>
+                                <th>{{ _('企業代碼') }}</th>
+                                <th>{{ _('企業名稱') }}</th>
+                                <th>{{ _('資料庫') }}</th>
+                                <th>{{ _('狀態') }}</th>
+                                <th>{{ _('說明') }}</th>
+                                <th>{{ _('動作') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="org in abnormalOrgs" :key="org.org_secure_code">
+                                <tr>
+                                    <td><code x-text="org.org_code || org.org_secure_code"></code></td>
+                                    <td x-text="org.org_name"></td>
+                                    <td><code x-text="org.db_name || '-'"></code></td>
+                                    <td><span class="odb-health-status odb-health-status-bad" x-text="statusLabel(org.status)"></span></td>
+                                    <td x-text="org.detail || '-'"></td>
+                                    <td>
+                                        <button class="btn btn-secondary" @click="provision(org.org_secure_code)">{{ _('補建') }}</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+            <template x-if="!loading && abnormalOrgs.length === 0">
+                <div class="odb-health-ok-line" x-text="__('全部 {count} 家企業的專屬資料庫正常', {count: data.summary.total})"></div>
+            </template>
+        </div>
+    </div>
+
+    <template x-if="degradedOrgs.length > 0">
+        <div class="odb-health-card">
+            <div class="odb-health-card-head">
+                <h3>{{ _('降級紀錄') }}</h3>
+                <span class="odb-health-muted" x-text="__('{count} 筆', {count: degradedOrgs.length})"></span>
+            </div>
+            <div class="odb-health-table-wrap">
+                <table class="odb-health-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('企業') }}</th>
+                            <th>{{ _('最近時間') }}</th>
+                            <th>{{ _('次數') }}</th>
+                            <th>{{ _('原因') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="row in degradedOrgs" :key="'degrade-' + row.org_secure_code">
+                            <tr>
+                                <td x-text="row.org_name"></td>
+                                <td x-text="formatAt(row.degrade.at)"></td>
+                                <td x-text="row.degrade.count"></td>
+                                <td x-text="row.degrade.error"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <div class="odb-health-note">{{ _('降級紀錄只記錄本進程，重啟服務或多工作程序時會低估。') }}</div>
+        </div>
+    </template>
+
+    <template x-if="data.orphan_databases && data.orphan_databases.length > 0">
+        <div class="odb-health-card">
+            <div class="odb-health-card-head">
+                <h3>{{ _('孤兒資料庫') }}</h3>
+                <span class="odb-health-muted" x-text="__('{count} 個', {count: data.orphan_databases.length})"></span>
+            </div>
+            <div class="odb-health-table-wrap">
+                <table class="odb-health-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('資料庫名稱') }}</th>
+                            <th>{{ _('大小') }}</th>
+                            <th>{{ _('動作') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="db in data.orphan_databases" :key="db.db_name">
+                            <tr>
+                                <td><code x-text="db.db_name"></code></td>
+                                <td x-text="db.size_bytes === null || db.size_bytes === undefined ? '—' : formatBytes(db.size_bytes)"></td>
+                                <td><button class="btn btn-danger" @click="deleteOrphanDb(db.db_name)">{{ _('刪除') }}</button></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <template x-if="data.orphan_roles && data.orphan_roles.length > 0">
+        <div class="odb-health-card">
+            <div class="odb-health-card-head">
+                <h3>{{ _('孤兒角色') }}</h3>
+                <button class="btn btn-danger" @click="deleteOrphanRoles()">{{ _('全部刪除') }}</button>
+            </div>
+            <div class="odb-health-roles" x-text="data.orphan_roles.join(', ')"></div>
+        </div>
+    </template>
+</div>
+
 <div class="odb-layout" x-data="odbSystemView()">
     {# 左側：企業清單 #}
     <div class="odb-sidebar">

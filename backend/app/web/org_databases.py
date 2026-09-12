@@ -18,6 +18,13 @@ from flask_login import current_user
 from .. import db
 from ..security.decorators import system_admin_required
 from ..models.organization import Organization
+from ..services.lookup_org_service import get_degrade_log
+from ..services.org_database_service import (
+    drop_orphan_database,
+    drop_orphan_roles,
+    ensure_org_database,
+    scan_org_database_health,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -203,6 +210,114 @@ def system_view():
         org_list=org_list,
         is_system_view=True,
     )
+
+
+@org_databases_bp.route('/organizations/databases/health')
+@system_admin_required
+def system_health():
+    """AJAX endpoint：企業專屬資料庫健康檢查"""
+    try:
+        data = scan_org_database_health()
+        degrade_log = get_degrade_log()
+        for row in data.get('orgs', []):
+            degrade = degrade_log.get(row.get('org_secure_code'))
+            if degrade:
+                at = degrade.get('at')
+                row['degrade'] = {
+                    'at': at.isoformat() if at else None,
+                    'error': degrade.get('error'),
+                    'count': degrade.get('count'),
+                }
+            else:
+                row['degrade'] = None
+        return jsonify(data)
+    except Exception:
+        logger.exception('Org database health scan failed')
+        return jsonify({'error': _('企業資料庫健康檢查失敗，請稍後再試')}), 500
+
+
+@org_databases_bp.route('/organizations/databases/<org_secure_code>/provision', methods=['POST'])
+@system_admin_required
+def provision_org_database(org_secure_code):
+    """補建或修復指定企業的專屬資料庫"""
+    org = Organization.query.filter_by(
+        secure_code=org_secure_code,
+        is_deleted=False,
+    ).first()
+    if not org:
+        abort(404)
+
+    try:
+        result = ensure_org_database(org)
+    except Exception:
+        logger.exception('Org database provision failed')
+        return jsonify({
+            'success': False,
+            'error': _('補建企業資料庫失敗，請稍後再試'),
+        }), 500
+
+    if result.get('status') == 'ok':
+        return jsonify({
+            'success': True,
+            'db_name': result.get('db_name'),
+        })
+
+    return jsonify({
+        'success': False,
+        'error': result.get('message') or _('補建企業資料庫失敗'),
+    }), 500
+
+
+@org_databases_bp.route('/organizations/databases/orphans/delete-database', methods=['POST'])
+@system_admin_required
+def delete_orphan_database():
+    """刪除孤兒企業資料庫"""
+    data = request.get_json(silent=True) or {}
+    db_name = data.get('db_name')
+    if not isinstance(db_name, str) or not db_name:
+        abort(400)
+
+    try:
+        result = drop_orphan_database(db_name)
+    except Exception:
+        logger.exception('Delete orphan org database failed')
+        return jsonify({
+            'success': False,
+            'error': _('刪除孤兒資料庫失敗，請稍後再試'),
+        }), 500
+
+    if result.get('ok'):
+        return jsonify({'success': True})
+
+    return jsonify({
+        'success': False,
+        'error': result.get('error') or _('刪除孤兒資料庫失敗'),
+    }), 400
+
+
+@org_databases_bp.route('/organizations/databases/orphans/delete-roles', methods=['POST'])
+@system_admin_required
+def delete_orphan_roles():
+    """刪除孤兒企業資料庫角色"""
+    data = request.get_json(silent=True) or {}
+    roles = data.get('roles')
+    if not isinstance(roles, list):
+        abort(400)
+
+    try:
+        result = drop_orphan_roles(roles)
+    except Exception:
+        logger.exception('Delete orphan org database roles failed')
+        return jsonify({
+            'success': False,
+            'error': _('刪除孤兒角色失敗，請稍後再試'),
+        }), 500
+
+    return jsonify({
+        'success': True,
+        'roles_dropped': result.get('roles_dropped', []),
+        'errors': result.get('errors', []),
+    })
 
 
 @org_databases_bp.route('/organizations/databases/<org_secure_code>/stats')

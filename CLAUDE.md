@@ -22,6 +22,7 @@
 | 測試（pytest 環境、`test_client` 坑、Playwright） | `dev-notes/TESTING_NOTES.md` |
 | 流程設計器、graph 操作、publish | `dev-notes/WORKFLOW_DESIGNER_NOTES.md` |
 | 企業行事曆（投影來源、受眾規則、二三期入口） | `dev-notes/CALENDAR_SPEC.md`（PF-229） |
+| 企業專屬資料庫（建立／刪除／健康／佈建憑證） | `dev-notes/ORG_DATABASE_LIFECYCLE.md`（PF-256） |
 | 節點型別規格（AiAgent / SqlExecutor / OsExecutor / 盤點） | `dev-notes/AI_NODE_SECURITY.md`、`dev-notes/SQL_EXECUTOR_SPEC.md`、`dev-notes/OS_EXECUTOR_SPEC.md`、`dev-notes/NODE_TEST_INVENTORY.md` |
 
 **維護原則**：新的踩坑先問「這是 codex 猜不到的專案特有事實，還是通用工程常識？」
@@ -1562,7 +1563,7 @@ endpoint 本身仍被 `portal_base.html` 與 `dev/index.html` 引用，所以**�
   看到 `org_secure_code='SYSTEM'` 的記錄一律是把 code 誤當 secure_code 寫入的孤兒，
   不是刻意的系統級資料（本機 `fw_node_execution_logs` 有過 9 筆）
 
-### 實體層清理：檔案與目錄會跟著刪，資料庫刻意不刪（2026-08-28 PF-166 起）
+### 實體層清理：檔案、目錄與企業專屬資料庫都會跟著刪（2026-08-28 PF-166、2026-09-12 PF-256）
 
 唯一實作是 `backend/app/services/org_physical_cleanup_service.py`，
 **路由層不自己組路徑、不自己刪檔**。「清理企業孤兒資料」卡片下半有「實體資源」區塊
@@ -1574,9 +1575,13 @@ endpoint 本身仍被 `portal_base.html` 與 `dev/index.html` 引用，所以**�
   （`platform_files.storage_ref` 一旦硬刪就查不到該刪哪些檔），
   而 `encrypted_storage/<sc>` 與 EDL 目錄必須在 **commit 之後**才刪——
   企業還在 DB 時，每分鐘一次的 `scripts/cron/od_render_edl.py` 會把 EDL 目錄寫回來
-- **企業獨立資料庫（`org_<數字>`）一律不由 web 端刪**（Ethan 2026-08-28 定調），
-  只回 `manual_required` 附一行 `sudo -u postgres dropdb <name>` 讓管理員自己執行。
-  不要「順手」給它加執行按鈕
+- **企業專屬資料庫（`org_<數字>`）2026-09-12 起由 web 端連帶刪除**
+  （硬刪除時連同 `bfadmin_*` / `bfsync_*` 一起）。2026-08-28「一律不由 web 端刪、
+  只回 `manual_required` 讓管理員自己 `dropdb`」的決定已推翻——當時的技術理由
+  「刪庫需要 superuser」是錯的（`org_<id>` 的 owner 就是 `bfadmin_<id>`）。
+  `manual_required` 現在只剩「登記在、實體庫不存在」這種不一致，不再列待刪項。
+  **順序**：收集 db_name ＋ owner 憑證在刪表之前，實際 DROP 在 commit 之後，
+  庫沒刪成功就絕對不刪角色。細節見 `dev-notes/ORG_DATABASE_LIFECYCLE.md`
 - **孤兒目錄的判定是「目錄名不在 `organizations.secure_code` 全集內」，
   刻意不加 `is_deleted` 條件**——軟刪除的企業還沒硬刪，它的檔案不是孤兒。
   也因為判定依賴這個查詢，**新增的端點必須跟既有四個一樣先下
@@ -1703,7 +1708,7 @@ heredoc 建企業、`init_menus.py`、`init_permissions.py`、`flask module sync
 | 表單／流程的分類 | `fw_categories.code` / `category_type` | **兩個都不存在**。只有 `secure_code` / `name` / `parent_secure_code`，可見範圍靠三個布林 `show_in_form_design` / `show_in_workflow_design` / `show_in_form_center`。2026-09-07 撞過 |
 | 流程變數的欄位 | `fw_workflow_variables.variable_name` / `variable_value` | **`var_name` / `var_value`**。2026-09-07 PF-252 撞過 |
 | 誰能改 `fw_sp` 裡的預存程序 | 以為 `beakplatform` 可以 | **不行**，該 schema 的 owner 是 `fw_sp_owner`，平台帳號連 DROP 自己不擁有的函式都會被拒（`must be owner of function`）。要 `sudo -u postgres psql -d beakplatform_dev`。這是刻意的權限隔離，不是設定錯誤 |
-| 企業專屬資料庫何時建立 | 以為建企業時或建子系統時 | **兩者都不是**（NoCode 子系統用的是 SQLite）。目前是按需建立，兩個觸發點：表單配對啟用 SQL Sync（`modules/form_workflow/api/mappings.py`）、規格制定模組建實體表（`modules/spec_formulate/services/schema/pg_table_manager.py::ensure_org_database()`）。兩者都走 `sql_sync/org_db_manager.py::provision_org_database()`。**PF-256 已定案要改成建企業時就建**，改完本列要更新。**2026-09-12 起本機每家未刪除企業都已有庫**（`scripts/provision_missing_org_databases.py --dry-run｜--apply`，冪等，比對登記與 `pg_database` 兩邊）——在此之前 SYSTEM 的 `org_14` 是「登記在 `is_ready=true`、實體庫不存在」，症狀是**只有簽核片語那一支 API 500、其餘全站正常**（`FATAL: database "org_14" does not exist`，連線階段就失敗；其他呼叫點在 `lookup_service.py` 有 try/except 而靜默 degrade）。**`provision_org_database()` 的冪等檢查只看登記不看實體庫**（`if existing and existing.is_ready: return existing`），所以這種狀態重跑佈建修不好，要先清 `is_ready` 才繞得過去 |
+| 企業專屬資料庫何時建立 | 以為只有按需建立 | **2026-09-12（PF-256）起建立企業時就建**（`org_database_service.ensure_org_database()`，在 org commit 之後；建庫失敗不擋企業建立但一定回報）。按需的兩個舊觸發點仍在（表單配對啟用 SQL Sync、規格制定建實體表）。NoCode 子系統用的是 SQLite，不走這裡。**佈建憑證不需要 superuser**（`SYNC_PG_ADMIN_URL` 指向 `<db_user>_prov`，只要 LOGIN+CREATEDB+CREATEROLE），健康狀態看 `/organizations/databases` 頂端的「資料庫健康狀態」——登記與實體庫不一致、孤兒庫、孤兒角色、佈建連線異常都在那裡，也在那裡修。完整規則見 `dev-notes/ORG_DATABASE_LIFECYCLE.md` |
 
 ### 驗英文介面：沒有切換語系的 API，要改 DB 欄位（2026-08-29 試誤）
 

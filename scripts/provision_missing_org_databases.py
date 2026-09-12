@@ -24,13 +24,13 @@ USAGE = """用法:
   會同時檢查「fw_org_databases 登記」與「PostgreSQL 實體庫」兩邊：
 
     ok          登記在、實體庫也在          -> 不動
-    missing_db  登記在 is_ready=true、庫不在 -> 先清 is_ready 再補建（重新產生密碼）
+    missing_db  登記在 is_ready=true、庫不在 -> 重新佈建（重新產生密碼）
     not_ready   登記在但 is_ready=false      -> 補建
     none        沒有登記                     -> 建庫與登記
 
   --apply 完成後會以 sync 角色實際連一次每個庫（SELECT 1）作為驗收。
   預設含系統企業；--skip-system 可略過。
-  需要 .env 的 SYNC_PG_ADMIN_URL（superuser，用來建庫與角色）。
+  需要 .env 的 SYNC_PG_ADMIN_URL（LOGIN + CREATEDB + CREATEROLE，不需要 superuser）。
 """
 
 
@@ -133,12 +133,8 @@ def main():
             if mode != '--apply':
                 continue
 
-            # provision_org_database 的冪等檢查只看登記、不看實體庫，
-            # is_ready=true 但庫不在時會直接 return。先清旗標讓它真的執行。
-            if reg and reg.is_ready and not db_live:
-                reg.is_ready = False
-                db.session.flush()
-
+            # provision_org_database 的冪等檢查自 PF-256 起會同時看登記與實體庫，
+            # is_ready=true 但庫不在時它自己就會重新佈建，這裡不必再清旗標。
             provision_org_database(org.id, org.secure_code)
             provisioned.append(org)
 

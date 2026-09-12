@@ -191,6 +191,31 @@ apply_superuser_db_objects() {
         -q -f "$INSTALL_DIR/scripts/sql/fw_sp_setup.sql"
 }
 
+# 企業專屬資料庫佈建角色：只要 CREATEDB + CREATEROLE，刻意不給 superuser。
+# superuser 可以 COPY ... TO PROGRAM（等同 OS 命令執行），不該放進交付給客戶的 .env。
+ensure_provisioner_role() {
+    PROV_USER="${DB_USER}_prov"
+    PROV_PASS=$(python3 -c "import secrets,string;print(''.join(secrets.choice(string.ascii_letters+string.digits) for _ in range(28)))")
+    sudo -u postgres psql -c "CREATE ROLE \"$PROV_USER\" WITH LOGIN PASSWORD '$PROV_PASS' CREATEDB CREATEROLE;" >/dev/null 2>&1 || true
+    # ALTER 是唯一權威（角色已存在時要確保密碼與屬性正確）。失敗就是真的壞了，
+    # 不能靜默略過——沒有這個角色，新建企業一律沒有專屬資料庫。
+    if ! prov_err=$(sudo -u postgres psql -v ON_ERROR_STOP=1 \
+            -c "ALTER ROLE \"$PROV_USER\" WITH LOGIN PASSWORD '$PROV_PASS' CREATEDB CREATEROLE;" 2>&1 >/dev/null); then
+        log_error "無法建立企業資料庫佈建角色 $PROV_USER：$prov_err"
+        exit 1
+    fi
+}
+
+# PG15 以下的 CREATEROLE 可以奪取任何非 superuser 角色，
+# 「非 superuser 的佈建角色」這個隔離假設在那些版本不成立。
+check_pg_version() {
+    local pg_ver
+    pg_ver=$(sudo -u postgres psql -tAc "SHOW server_version_num" 2>/dev/null || echo 0)
+    if [ "${pg_ver:-0}" -lt 160000 ]; then
+        log_warn "PostgreSQL 版本低於 16，CREATEROLE 角色可奪取任何非 superuser 角色，企業資料庫佈建帳號的權限隔離在此版本不成立"
+    fi
+}
+
 # 單一 DB bootstrap 入口（PF-211）。$1 為 --fresh 或 --update。
 # 管理員密碼只經環境變數傳遞，不進命令列字串（避免引號問題與 ps 洩漏）。
 run_bootstrap() {
@@ -326,6 +351,7 @@ if [ "$ACTION" = "uninstall" ]; then
     echo "  - Nginx 設定"
     echo "  - 安裝目錄 ($INSTALL_DIR)"
     echo "  - 資料庫 ($DB_NAME)"
+    echo "  - 企業專屬資料庫 (org_*) 與集團資料庫 (cg_*)"
     echo ""
     read -p "確定要移除嗎？(輸入 YES 確認): " CONFIRM
     if [ "$CONFIRM" != "YES" ]; then
@@ -345,8 +371,15 @@ if [ "$ACTION" = "uninstall" ]; then
     systemctl reload nginx 2>/dev/null || true
 
     # 移除資料庫
-    sudo -u postgres psql -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null || true
-
+    # 企業／集團專屬資料庫與其專用角色
+    for dbn in $(sudo -u postgres psql -tAc "SELECT datname FROM pg_database WHERE datname ~ '^(org|cg)_[0-9]+$'" 2>/dev/null || true); do
+        sudo -u postgres psql -c "DROP DATABASE IF EXISTS \"$dbn\" WITH (FORCE);" >/dev/null 2>&1 || true
+    done
+    for rol in $(sudo -u postgres psql -tAc "SELECT rolname FROM pg_roles WHERE rolname ~ '^(bfadmin|bfsync|cgadmin|cgmember)_[0-9]+$'" 2>/dev/null || true); do
+        sudo -u postgres psql -c "DROP ROLE IF EXISTS \"$rol\";" >/dev/null 2>&1 || true
+    done
+    sudo -u postgres psql -c "DROP ROLE IF EXISTS \"${DB_USER}_prov\";" >/dev/null 2>&1 || true
+    sudo -u postgres psql -c "DROP DATABASE IF EXISTS \"$DB_NAME\";" 2>/dev/null || true
 
     # 移除安裝目錄
     rm -rf "$INSTALL_DIR"
@@ -435,6 +468,28 @@ if [ "$ACTION" = "update" ]; then
     if ! grep -q '^ENCRYPTED_STORAGE_DIR=' "$INSTALL_DIR/.env" 2>/dev/null; then
         echo "ENCRYPTED_STORAGE_DIR=$INSTALL_DIR/backend/encrypted_storage" >> "$INSTALL_DIR/.env"
     fi
+    if ! grep -q '^SYNC_PG_ADMIN_URL=' "$INSTALL_DIR/.env" 2>/dev/null; then
+        log_warn ".env 缺少 SYNC_PG_ADMIN_URL（企業專屬資料庫佈建），自動建立佈建角色..."
+        check_pg_version
+        ensure_provisioner_role
+        {
+            echo ""
+            echo "# 企業專屬資料庫佈建（非 superuser：LOGIN + CREATEDB + CREATEROLE）"
+            echo "SYNC_PG_ADMIN_URL=postgresql://$PROV_USER:$PROV_PASS@localhost/postgres"
+        } >> "$INSTALL_DIR/.env"
+    fi
+    if ! grep -q '^SYNC_CREDENTIAL_KEY=' "$INSTALL_DIR/.env" 2>/dev/null; then
+        log_warn ".env 缺少 SYNC_CREDENTIAL_KEY，自動產生..."
+        log_warn "若此環境先前已有企業專屬資料庫，舊的加密帳密將無法解密，"
+        log_warn "請到「企業獨立資料庫管理」頁對顯示異常的企業按【補建】重新產生帳密"
+        NEW_SYNC_CRED_KEY=$(python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
+        {
+            echo ""
+            echo "# 企業專屬資料庫憑證加密金鑰 (Fernet)，遺失將無法解密既有企業庫帳密"
+            echo "SYNC_CREDENTIAL_KEY=$NEW_SYNC_CRED_KEY"
+        } >> "$INSTALL_DIR/.env"
+    fi
+    chmod 600 "$INSTALL_DIR/.env"
     mkdir -p "$INSTALL_DIR/backend/encrypted_storage"
     chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/backend/encrypted_storage"
     chmod 700 "$INSTALL_DIR/backend/encrypted_storage"
@@ -555,6 +610,19 @@ fi
 sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null
 
+# 全新安裝一併清掉前一次安裝留下的企業／集團專屬資料庫與其專用角色。
+# 不清的話，新環境的 org_1 會直接沿用舊環境的 org_1（provision 看到庫已存在就不重建），
+# 等於把前一套的企業資料接到新企業身上。順序不可顛倒：角色是資料庫 owner。
+for dbn in $(sudo -u postgres psql -tAc "SELECT datname FROM pg_database WHERE datname ~ '^(org|cg)_[0-9]+$'" 2>/dev/null || true); do
+    sudo -u postgres psql -c "DROP DATABASE IF EXISTS \"$dbn\" WITH (FORCE);" >/dev/null 2>&1 || true
+done
+for rol in $(sudo -u postgres psql -tAc "SELECT rolname FROM pg_roles WHERE rolname ~ '^(bfadmin|bfsync|cgadmin|cgmember)_[0-9]+$'" 2>/dev/null || true); do
+    sudo -u postgres psql -c "DROP ROLE IF EXISTS \"$rol\";" >/dev/null 2>&1 || true
+done
+
+check_pg_version
+ensure_provisioner_role
+
 log_info "PostgreSQL 設定完成 (DB: $DB_NAME)"
 
 
@@ -622,6 +690,7 @@ log_step "5/9" "設定環境變數..."
 SYS_ORG_CODE=$(python3 -c "import secrets; print('sys-' + secrets.token_hex(6))")
 SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 ENCRYPTION_MASTER_KEY=$(python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
+SYNC_CRED_KEY=$(python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
 
 cat > "$INSTALL_DIR/.env" << ENVEOF
 # BeakPlatform 環境設定
@@ -667,6 +736,13 @@ SESSION_COOKIE_SECURE=false
 # 檔案加密 (FILE-01) - AES-256-GCM Master Key，遺失將無法解密既有加密附件
 ENCRYPTION_MASTER_KEY=$ENCRYPTION_MASTER_KEY
 ENCRYPTED_STORAGE_DIR=$INSTALL_DIR/backend/encrypted_storage
+
+# 企業專屬資料庫佈建（非 superuser：LOGIN + CREATEDB + CREATEROLE）
+# 缺少此設定時，新建企業不會有專屬資料庫，企業級對照表與簽核片語將無法使用
+SYNC_PG_ADMIN_URL=postgresql://$PROV_USER:$PROV_PASS@localhost/postgres
+
+# 企業專屬資料庫憑證加密金鑰 (Fernet)，遺失將無法解密既有企業庫帳密
+SYNC_CREDENTIAL_KEY=$SYNC_CRED_KEY
 ENVEOF
 
 mkdir -p "$INSTALL_DIR/backend/encrypted_storage"

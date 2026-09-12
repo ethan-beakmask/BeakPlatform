@@ -21,6 +21,155 @@
     color: #888;
 }
 
+/* ========== 系統級健康檢查 ========== */
+
+.odb-health {
+    margin: 0 0 16px;
+    padding: 16px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+}
+.odb-health-header,
+.odb-health-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.odb-health-header {
+    margin-bottom: 14px;
+}
+.odb-health-header h2,
+.odb-health-card h3 {
+    margin: 0;
+    color: var(--color-text);
+}
+.odb-health-header h2 {
+    font-size: 18px;
+}
+.odb-health-card h3 {
+    font-size: var(--font-size-base);
+}
+.odb-health-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+    gap: 12px;
+}
+.odb-health-card {
+    margin-top: 12px;
+    padding: 14px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius);
+}
+.odb-health-grid .odb-health-card {
+    margin-top: 0;
+}
+.odb-health-card-danger {
+    border-color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+.odb-health-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+}
+.odb-health-status-ok {
+    color: var(--color-success);
+    background: var(--color-success-light);
+}
+.odb-health-status-bad {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+.odb-health-muted,
+.odb-health-note,
+.odb-health-detail {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+.odb-health-checks {
+    display: grid;
+    gap: 6px;
+    margin-top: 12px;
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+}
+.odb-health-checks span {
+    display: inline-block;
+    width: 16px;
+    font-family: monospace;
+}
+.odb-health-detail,
+.odb-health-warning,
+.odb-health-note,
+.odb-health-roles,
+.odb-health-ok-line {
+    margin-top: 10px;
+}
+.odb-health-detail-error,
+.odb-health-warning,
+.odb-health-error {
+    color: var(--color-danger);
+}
+.odb-health-warning,
+.odb-health-error {
+    padding: 8px 10px;
+    background: var(--color-danger-light);
+    border: 1px solid var(--color-danger);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+}
+.odb-health-ok-line {
+    color: var(--color-success);
+    font-size: var(--font-size-sm);
+}
+.odb-health-table-wrap {
+    margin-top: 12px;
+    overflow-x: auto;
+}
+.odb-health-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+.odb-health-table th,
+.odb-health-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-light);
+    vertical-align: top;
+}
+.odb-health-table th {
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+}
+.odb-health-table code,
+.odb-health-detail code {
+    padding: 1px 4px;
+    background: var(--color-bg-light);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-xs);
+}
+.odb-health-roles {
+    color: var(--color-text);
+    font-family: monospace;
+    font-size: var(--font-size-sm);
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+    .odb-health-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* 空狀態 */
 .odb-empty {
     text-align: center;

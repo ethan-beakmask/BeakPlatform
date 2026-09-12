@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-08 00:35+0800\n"
+"POT-Creation-Date: 2026-09-12 23:34+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -661,35 +661,35 @@ msgstr "Failed to load calendar"
 msgid "日期範圍不合法"
 msgstr "Invalid date range"
 
-#: app/api/calendar.py:167
+#: app/api/calendar.py:157
 msgid "請提供 start 與 end"
 msgstr "Both start and end are required"
 
-#: app/api/calendar.py:172 app/api/contracts.py:123
+#: app/api/calendar.py:162 app/api/contracts.py:123
 #: app/api/work_schedules.py:377
 msgid "日期格式錯誤，請使用 YYYY-MM-DD"
 msgstr "Invalid date format. Please use YYYY-MM-DD"
 
-#: app/api/code_service.py:143 app/api/code_service.py:187
+#: app/api/code_service.py:151 app/api/code_service.py:195
 #: app/api/transliteration.py:38 app/api/transliteration.py:77
 #: app/api/transliteration.py:123
 msgid "請提供 JSON 資料"
 msgstr "Please provide JSON data"
 
-#: app/api/code_service.py:150 app/api/code_service.py:194
+#: app/api/code_service.py:158 app/api/code_service.py:202
 #, python-format
 msgid "不支援的實體類型: %(entity_type)s"
 msgstr "Unsupported entity type: %(entity_type)s"
 
-#: app/api/code_service.py:155 app/api/roles.py:186
+#: app/api/code_service.py:163 app/api/roles.py:186
 msgid "請提供名稱"
 msgstr "Please provide a name"
 
-#: app/api/code_service.py:199 app/api/roles.py:225
+#: app/api/code_service.py:207 app/api/roles.py:225
 msgid "請提供代碼"
 msgstr "Please provide a code"
 
-#: app/api/code_service.py:212
+#: app/api/code_service.py:220
 #, python-format
 msgid "代碼 \"%(code)s\" 已存在（不區分大小寫）"
 msgstr "Code \"%(code)s\" already exists (case-insensitive)"
@@ -713,7 +713,7 @@ msgstr "At least two organizations must be selected"
 #: app/web/job_families.py:240 app/web/job_levels.py:181
 #: app/web/job_titles.py:266 app/web/job_titles.py:267 app/web/menu.py:324
 #: app/web/menu.py:391 app/web/modules.py:123 app/web/org_admins.py:284
-#: app/web/org_admins.py:451 app/web/organizations.py:283
+#: app/web/org_admins.py:451 app/web/organizations.py:295
 #: app/web/positions.py:154 app/web/sys_accounts.py:171
 #: app/web/sys_accounts.py:172 app/web/units.py:128 app/web/users.py:492
 #, python-format
@@ -737,7 +737,7 @@ msgstr "A conglomerate requires at least two organizations"
 #: app/web/job_families.py:324 app/web/job_families.py:325
 #: app/web/job_levels.py:267 app/web/job_titles.py:344
 #: app/web/job_titles.py:345 app/web/menu.py:483 app/web/modules.py:183
-#: app/web/organizations.py:342 app/web/positions.py:246
+#: app/web/organizations.py:354 app/web/positions.py:246
 #: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:188
 #: app/web/users.py:699
 #, python-format
@@ -757,7 +757,7 @@ msgid "請提供合約資料"
 msgstr "Please provide contract data"
 
 #: app/api/contracts.py:117 app/api/duties.py:99 app/api/duties.py:305
-#: app/api/organizations.py:145
+#: app/api/organizations.py:146
 #, python-format
 msgid "缺少必要欄位: %(field)s"
 msgstr "Missing required field: %(field)s"
@@ -827,7 +827,7 @@ msgstr "Failed to create duty category"
 
 #: app/api/duties.py:153 app/api/duties.py:383
 #: app/api/organizational_units.py:285 app/api/organizational_units.py:1285
-#: app/api/organizations.py:223 app/api/roles.py:388
+#: app/api/organizations.py:235 app/api/roles.py:388
 msgid "請提供更新資料"
 msgstr "Please provide update data"
 
@@ -984,7 +984,7 @@ msgstr "Logo deleted"
 #: app/web/job_families.py:421 app/web/job_families.py:422
 #: app/web/job_levels.py:318 app/web/job_titles.py:395
 #: app/web/job_titles.py:396 app/web/menu.py:537 app/web/modules.py:211
-#: app/web/org_admins.py:539 app/web/organizations.py:418
+#: app/web/org_admins.py:539 app/web/organizations.py:430
 #: app/web/positions.py:274 app/web/sys_accounts.py:315
 #: app/web/sys_accounts.py:316 app/web/units.py:221 app/web/users.py:760
 #, python-format
@@ -1071,7 +1071,7 @@ msgstr "context_id not specified"
 msgid "已更新"
 msgstr "Updated"
 
-#: ../modules/form_workflow/api/fc_phrases.py:176
+#: ../modules/form_workflow/api/fc_phrases.py:224
 #: ../modules/form_workflow/api/template_routes.py:239
 #: ../modules/form_workflow/api/workflow_routes.py:745
 #: ../modules/nocode_builder/api/portal_file_api.py:257
@@ -1204,7 +1204,7 @@ msgstr "Invalid time format. Expected HH:MM"
 msgid "日期時間格式錯誤，應為 YYYY-MM-DD HH:MM"
 msgstr "Invalid datetime format. Expected YYYY-MM-DD HH:MM"
 
-#: app/api/lookup.py:112 app/api/lookup.py:311
+#: app/api/lookup.py:112 app/api/lookup.py:354
 msgid "缺少 code"
 msgstr "Missing code"
 
@@ -1226,107 +1226,122 @@ msgstr "Category code %(code)s already exists"
 msgid "已建立類別"
 msgstr "Category created"
 
-#: app/api/lookup.py:168 app/api/lookup.py:176 app/api/lookup.py:190
-#: app/api/lookup.py:226 app/api/lookup.py:232 app/api/lookup.py:269
-#: app/api/lookup.py:277 app/api/lookup.py:297 app/api/lookup.py:304
-#: app/api/lookup.py:442 app/api/lookup.py:446
+#: ../modules/form_workflow/api/fc_phrases.py:113
+#: ../modules/form_workflow/api/fc_phrases.py:136
+#: ../modules/form_workflow/api/fc_phrases.py:158
+#: ../modules/form_workflow/api/fc_phrases.py:183
+#: ../modules/form_workflow/api/fc_phrases.py:205
+#: ../modules/form_workflow/api/fc_phrases.py:221 app/api/lookup.py:153
+#: app/api/lookup.py:202 app/api/lookup.py:228 app/api/lookup.py:252
+#: app/api/lookup.py:276 app/api/lookup.py:342 app/api/lookup.py:395
+#: app/api/lookup.py:419 app/api/lookup.py:449 app/api/lookup.py:473
+#: app/api/lookup.py:497 app/api/lookup.py:525 app/api/lookup.py:548
+msgid "企業專屬資料庫目前無法使用，請聯絡系統管理員"
+msgstr ""
+"The organization database is currently unavailable; please contact the "
+"system administrator"
+
+#: app/api/lookup.py:174 app/api/lookup.py:182 app/api/lookup.py:204
+#: app/api/lookup.py:254 app/api/lookup.py:260 app/api/lookup.py:303
+#: app/api/lookup.py:311 app/api/lookup.py:331 app/api/lookup.py:347
+#: app/api/lookup.py:527 app/api/lookup.py:531
 #: app/web/approval_categories.py:210 app/web/approval_categories.py:211
 #: app/web/approval_categories.py:306 app/web/approval_categories.py:307
 #: app/web/approval_categories.py:344 app/web/approval_categories.py:413
 msgid "類別不存在"
 msgstr "Category not found"
 
-#: app/api/lookup.py:188
+#: app/api/lookup.py:194
 msgid "系統級類別不可修改"
 msgstr "System-level categories cannot be modified"
 
-#: ../modules/form_workflow/api/fc_phrases.py:148 app/api/lookup.py:201
-#: app/api/lookup.py:381 app/api/organizational_units.py:1311
+#: ../modules/form_workflow/api/fc_phrases.py:178 app/api/lookup.py:215
+#: app/api/lookup.py:438 app/api/organizational_units.py:1311
 msgid "更新失敗"
 msgstr "Update failed"
 
-#: app/api/lookup.py:208 app/web/approval_categories.py:251
+#: app/api/lookup.py:222 app/web/approval_categories.py:251
 #: app/web/approval_categories.py:265
 msgid "已更新類別"
 msgstr "Category updated"
 
-#: app/api/lookup.py:224
+#: app/api/lookup.py:244
 msgid "系統級類別不可刪除"
 msgstr "System-level categories cannot be deleted"
 
-#: app/api/lookup.py:237
+#: app/api/lookup.py:265
 msgid "請先停用類別後再刪除"
 msgstr "Please disable the category before deleting"
 
-#: ../modules/form_workflow/api/fc_phrases.py:174 app/api/lookup.py:241
-#: app/api/lookup.py:419
+#: ../modules/form_workflow/api/fc_phrases.py:216 app/api/lookup.py:269
+#: app/api/lookup.py:490
 msgid "刪除失敗"
 msgstr "Delete failed"
 
-#: app/api/lookup.py:243
+#: app/api/lookup.py:271
 msgid "已刪除類別"
 msgstr "Category deleted"
 
-#: app/api/lookup.py:295
+#: app/api/lookup.py:329
 msgid "系統級類別不可新增選項"
 msgstr "Options cannot be added to system-level categories"
 
-#: app/api/lookup.py:300
+#: app/api/lookup.py:334
 msgid "此類別不允許新增選項"
 msgstr "This category does not allow adding options"
 
-#: app/api/lookup.py:313
+#: app/api/lookup.py:356
 msgid "缺少 label"
 msgstr "Missing label"
 
-#: app/api/lookup.py:317
+#: app/api/lookup.py:360
 msgid "代碼格式錯誤：只能包含英文、數字和底線，且必須以英文開頭"
 msgstr ""
 "Invalid code format: only letters, digits and underscores are allowed, "
 "and it must start with a letter"
 
-#: app/api/lookup.py:323
+#: app/api/lookup.py:366
 #, python-format
 msgid "選項代碼 %(code)s 已存在"
 msgstr "Option code %(code)s already exists"
 
-#: app/api/lookup.py:346
+#: app/api/lookup.py:389
 msgid "已新增選項"
 msgstr "Option added"
 
-#: app/api/lookup.py:362
+#: app/api/lookup.py:411
 msgid "系統級選項不可修改"
 msgstr "System-level options cannot be modified"
 
-#: app/api/lookup.py:364 app/api/lookup.py:404 app/api/lookup.py:410
+#: app/api/lookup.py:421 app/api/lookup.py:475 app/api/lookup.py:481
 msgid "選項不存在"
 msgstr "Option not found"
 
-#: app/api/lookup.py:386
+#: app/api/lookup.py:443
 msgid "已更新選項"
 msgstr "Option updated"
 
-#: app/api/lookup.py:402
+#: app/api/lookup.py:465
 msgid "系統級選項不可刪除"
 msgstr "System-level options cannot be deleted"
 
-#: app/api/lookup.py:415
+#: app/api/lookup.py:486
 msgid "請先停用選項後再刪除"
 msgstr "Please disable the option before deleting"
 
-#: app/api/lookup.py:421
+#: app/api/lookup.py:492
 msgid "已刪除選項"
 msgstr "Option deleted"
 
-#: app/api/lookup.py:440
+#: app/api/lookup.py:517
 msgid "系統級類別不可排序"
 msgstr "System-level categories cannot be reordered"
 
-#: app/api/lookup.py:451
+#: app/api/lookup.py:536
 msgid "缺少 order 陣列"
 msgstr "Missing order array"
 
-#: ../modules/form_workflow/api/categories.py:408 app/api/lookup.py:458
+#: ../modules/form_workflow/api/categories.py:408 app/api/lookup.py:543
 msgid "排序已更新"
 msgstr "Order updated"
 
@@ -1781,52 +1796,59 @@ msgstr "Membership removed"
 #: ../modules/nocode_builder/api/project_api.py:132
 #: ../modules/nocode_builder/api/project_api.py:149
 #: ../modules/nocode_builder/api/project_api.py:171
-#: app/api/organizational_units.py:1419 app/api/organizations.py:218
+#: app/api/organizational_units.py:1419 app/api/organizations.py:230
 #: app/api/security_center.py:291
 msgid "無權限"
 msgstr "No permission"
 
 #: ../modules/form_workflow/services/node_handlers/op_proxy_grant_handler.py:205
-#: app/api/organizations.py:93 app/api/organizations.py:114
-#: app/api/organizations.py:214 app/api/organizations.py:276
-#: app/api/organizations.py:327 app/api/security_center.py:399
+#: app/api/organizations.py:94 app/api/organizations.py:115
+#: app/api/organizations.py:226 app/api/organizations.py:288
+#: app/api/organizations.py:339 app/api/security_center.py:399
 #: app/api/security_center.py:433 app/services/proxy_assignment_service.py:25
 msgid "企業不存在"
 msgstr "Organization not found"
 
-#: app/api/organizations.py:140
+#: app/api/organizations.py:141
 msgid "請提供企業資料"
 msgstr "Please provide organization data"
 
-#: app/api/organizations.py:177
+#: app/api/organizations.py:178
 msgid "企業建立成功"
 msgstr "Organization created successfully"
 
-#: app/api/organizations.py:185
+#: app/api/organizations.py:189
+#, python-format
+msgid "企業已建立，但專屬資料庫建立失敗：%(msg)s"
+msgstr ""
+"The organization was created, but its database could not be provisioned: "
+"%(msg)s"
+
+#: app/api/organizations.py:197
 msgid "預設密碼為 ChangeMe123! (如未指定)"
 msgstr "Default password is ChangeMe123! (if not specified)"
 
-#: app/api/organizations.py:195
+#: app/api/organizations.py:207
 msgid "建立企業失敗"
 msgstr "Failed to create organization"
 
-#: app/api/organizations.py:250
+#: app/api/organizations.py:262
 msgid "企業更新成功"
 msgstr "Organization updated successfully"
 
-#: app/api/organizations.py:257
+#: app/api/organizations.py:269
 msgid "更新企業失敗"
 msgstr "Failed to update organization"
 
-#: app/api/organizations.py:280 app/web/organizations.py:379
+#: app/api/organizations.py:292 app/web/organizations.py:391
 msgid "系統企業不可刪除"
 msgstr "The system organization cannot be deleted"
 
-#: app/api/organizations.py:301
+#: app/api/organizations.py:313
 msgid "企業已刪除"
 msgstr "Organization deleted"
 
-#: app/api/organizations.py:308
+#: app/api/organizations.py:320
 msgid "刪除企業失敗"
 msgstr "Failed to delete organization"
 
@@ -1872,7 +1894,8 @@ msgid "無法確定企業"
 msgstr "Unable to determine organization"
 
 #: app/api/roles.py:166 app/api/roles.py:378 app/api/roles.py:471
-#: app/api/roles.py:526 app/services/role_assignment_service.py:200
+#: app/api/roles.py:526 app/services/org_database_service.py:225
+#: app/services/role_assignment_service.py:200
 msgid "角色不存在"
 msgstr "Role not found"
 
@@ -2465,30 +2488,56 @@ msgstr "This chapter covers:"
 msgid "本節包含以下主題："
 msgstr "This section covers:"
 
+#: app/services/org_database_service.py:176
+msgid "不合法的資料庫名稱"
+msgstr "Invalid database name"
+
+#: app/services/org_database_service.py:181
+#: app/templates/pages/cg_databases/overview.html:116
+msgid "資料庫不存在"
+msgstr "Database does not exist"
+
+#: app/services/org_database_service.py:183
+#: app/services/org_database_service.py:231
+msgid "企業仍存在，拒絕刪除"
+msgstr "The organization still exists; deletion refused"
+
+#: app/services/org_database_service.py:185
+msgid "企業資料庫登記仍存在，拒絕刪除"
+msgstr "Organization database registration still exists; deletion refused"
+
+#: app/services/org_database_service.py:212
+msgid "不合法的角色名稱"
+msgstr "Invalid role name"
+
+#: app/services/org_database_service.py:237
+msgid "企業資料庫仍存在，拒絕刪除角色"
+msgstr "Organization database still exists; role deletion refused"
+
 #: app/services/org_physical_cleanup_service.py:114
-#: app/services/org_physical_cleanup_service.py:367
-#: app/services/org_physical_cleanup_service.py:394
+#: app/services/org_physical_cleanup_service.py:380
+#: app/services/org_physical_cleanup_service.py:407
 msgid "拒絕不安全的清理路徑"
 msgstr "Unsafe cleanup path rejected"
 
-#: app/services/org_physical_cleanup_service.py:213
-msgid "企業獨立資料庫需由系統管理員在 CLI 手動刪除"
-msgstr ""
-"The dedicated organization database must be dropped manually by a system "
-"administrator via CLI"
-
-#: app/services/org_physical_cleanup_service.py:214
-#: app/services/org_physical_cleanup_service.py:324
+#: app/services/org_physical_cleanup_service.py:233
 msgid "企業資料庫登記存在，但 PostgreSQL 實體資料庫不存在，請人工確認資料一致性"
 msgstr ""
 "A database registration exists but the PostgreSQL database itself does "
 "not; verify data consistency manually"
 
-#: app/services/org_physical_cleanup_service.py:315
-msgid "企業資料庫不屬於任何現存企業，需由系統管理員在 CLI 手動刪除"
+#: app/services/org_physical_cleanup_service.py:328
+msgid "企業資料庫不屬於任何現存企業，請在「企業獨立資料庫管理」頁清理"
 msgstr ""
-"This database belongs to no existing organization; a system administrator"
-" must drop it manually via CLI"
+"This database does not belong to any existing organization; clean it up "
+"on the Organization Database Management page"
+
+#: app/services/org_physical_cleanup_service.py:337
+msgid "企業資料庫登記存在，但 PostgreSQL 實體資料庫不存在，請在「企業獨立資料庫管理」頁補建或清理"
+msgstr ""
+"A database registration exists but the PostgreSQL database itself does "
+"not; provision or clean it up on the Organization Database Management "
+"page"
 
 #: app/services/role_assignment_service.py:26
 #: app/templates/pages/admin/groups.html:277
@@ -2887,7 +2936,7 @@ msgstr "Passwords match"
 #: app/templates/pages/modules/create.html:65
 #: app/templates/pages/modules/edit.html:55
 #: app/templates/pages/modules/list.html:182
-#: app/templates/pages/org_databases/monitor.html:366
+#: app/templates/pages/org_databases/monitor.html:516
 #: app/templates/pages/organizations/admins.html:144
 #: app/templates/pages/organizations/create.html:120
 #: app/templates/pages/organizations/edit.html:149
@@ -3304,6 +3353,7 @@ msgstr "Edit"
 #: app/templates/pages/job_families/list.html:191
 #: app/templates/pages/job_levels/list.html:187
 #: app/templates/pages/job_titles/list.html:214
+#: app/templates/pages/org_databases/monitor.html:147
 #: app/templates/pages/users/list.html:84
 msgid "刪除"
 msgstr "Delete"
@@ -3522,8 +3572,8 @@ msgstr "Proxy assignments I granted"
 #: app/templates/pages/hostconfig/_system_settings_section_telegram.html:18
 #: app/templates/pages/modules/list.html:80
 #: app/templates/pages/node_grants/index.html:37
-#: app/templates/pages/org_databases/monitor.html:75
-#: app/templates/pages/org_databases/monitor.html:245
+#: app/templates/pages/org_databases/monitor.html:225
+#: app/templates/pages/org_databases/monitor.html:395
 #: app/templates/pages/organizations/_org_hard_delete.html:22
 #: app/templates/pages/personal_settings.html:201
 #: app/templates/pages/security/alert_broadcasts.html:114
@@ -3552,7 +3602,9 @@ msgstr "Proxy"
 #: app/templates/pages/access_center/index.html:23
 #: app/templates/pages/dev/portal_quick_login.html:227
 #: app/templates/pages/external-users/edit.html:134
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:48
 #: app/templates/pages/modules/list.html:156
+#: app/templates/pages/org_databases/monitor.html:44
 #: app/templates/pages/platform_help/org_admin.html:83
 #: app/templates/pages/platform_help/org_admin.html:104
 #: app/templates/pages/platform_help/org_admin.html:133
@@ -3626,6 +3678,7 @@ msgstr "Role"
 #: app/templates/pages/job_titles/view.html:64
 #: app/templates/pages/modules/view.html:54
 #: app/templates/pages/modules/view.html:72
+#: app/templates/pages/org_databases/monitor.html:67
 #: app/templates/pages/organizations/admins.html:51
 #: app/templates/pages/organizations/edit.html:87
 #: app/templates/pages/organizations/list.html:227
@@ -4203,8 +4256,8 @@ msgstr "Role Assignments"
 #: app/templates/pages/modules/view.html:55
 #: app/templates/pages/modules/view.html:82
 #: app/templates/pages/node_grants/index.html:85
-#: app/templates/pages/org_databases/monitor.html:44
-#: app/templates/pages/org_databases/monitor.html:69
+#: app/templates/pages/org_databases/monitor.html:194
+#: app/templates/pages/org_databases/monitor.html:219
 #: app/templates/pages/organizations/admins.html:82
 #: app/templates/pages/organizations/admins.html:97
 #: app/templates/pages/organizations/edit.html:90
@@ -4276,6 +4329,7 @@ msgstr "Manage menu Key 1 visible identities and Key 2 role thresholds"
 #: app/templates/pages/access_center/_tab_roles.html:21
 #: app/templates/pages/cg_databases/overview.html:251
 #: app/templates/pages/node_grants/index.html:44
+#: app/templates/pages/org_databases/monitor.html:105
 msgid "企業"
 msgstr "Organization"
 
@@ -4405,6 +4459,7 @@ msgid "偵測中"
 msgstr "Detecting"
 
 #: app/templates/pages/access_center/_tab_health.html:78
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:54
 msgid "錯誤"
 msgstr "Errors"
 
@@ -4996,6 +5051,7 @@ msgstr "Group name"
 #: app/templates/pages/menu/list.html:108
 #: app/templates/pages/menu/list.html:124
 #: app/templates/pages/modules/create.html:71
+#: app/templates/pages/org_databases/monitor.html:68
 #: app/templates/pages/organizations/admins.html:164
 #: app/templates/pages/platform_help/org_admin.html:42
 #: app/templates/pages/platform_help/org_admin.html:134
@@ -5799,6 +5855,7 @@ msgstr "None"
 #: app/templates/pages/admin/module_list.html:112
 #: app/templates/pages/admin/settings.html:65
 #: app/templates/pages/cg_databases/overview.html:213
+#: app/templates/pages/org_databases/monitor.html:65
 #: app/templates/pages/organizations/create.html:34
 #: app/templates/pages/organizations/edit.html:56
 #: app/templates/pages/organizations/list.html:101
@@ -7666,12 +7723,10 @@ msgid "尚無任何集團資料庫"
 msgstr "There are no Conglomerate databases yet"
 
 #: app/templates/pages/cg_databases/overview.html:113
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:69
+#: app/templates/pages/org_databases/monitor.html:130
 msgid "孤兒資料庫"
 msgstr "Orphan database"
-
-#: app/templates/pages/cg_databases/overview.html:116
-msgid "資料庫不存在"
-msgstr "Database does not exist"
 
 #: app/templates/pages/cg_databases/overview.html:119
 msgid "未就緒"
@@ -7679,6 +7734,7 @@ msgstr "Not ready"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:30
 #: app/templates/pages/cg_databases/overview.html:122
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:67
 msgid "正常"
 msgstr "Normal"
 
@@ -7715,8 +7771,8 @@ msgid "集團 ID"
 msgstr "Conglomerate ID"
 
 #: app/templates/pages/cg_databases/overview.html:175
-#: app/templates/pages/org_databases/monitor.html:91
-#: app/templates/pages/org_databases/monitor.html:184
+#: app/templates/pages/org_databases/monitor.html:241
+#: app/templates/pages/org_databases/monitor.html:334
 msgid "主機"
 msgstr "Host"
 
@@ -7733,7 +7789,7 @@ msgid "資料庫統計"
 msgstr "Database Statistics"
 
 #: app/templates/pages/cg_databases/overview.html:200
-#: app/templates/pages/org_databases/monitor.html:29
+#: app/templates/pages/org_databases/monitor.html:179
 msgid "容量"
 msgstr "Capacity"
 
@@ -7776,6 +7832,8 @@ msgstr "Time"
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:188
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:239
 #: app/templates/pages/cg_databases/overview.html:251
+#: app/templates/pages/org_databases/monitor.html:69
+#: app/templates/pages/org_databases/monitor.html:139
 msgid "動作"
 msgstr "Action"
 
@@ -7922,7 +7980,7 @@ msgstr "External Vendor must belong to at least one group"
 #: app/templates/pages/external-users/edit.html:36
 #: app/templates/pages/external-users/list.html:33
 #: app/templates/pages/external-users/view.html:49
-#: app/templates/pages/org_databases/monitor.html:27
+#: app/templates/pages/org_databases/monitor.html:177
 msgid "編號"
 msgstr "No."
 
@@ -8640,8 +8698,79 @@ msgstr "Save color matching"
 msgid "重置為預設"
 msgstr "reset to default"
 
-#: app/templates/pages/hostconfig/_system_settings_section_packages.html:3
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:3
 #: app/templates/pages/hostconfig/system_settings.html:65
+msgid "企業專屬資料庫"
+msgstr "Organization databases"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:4
+msgid "檢視企業專屬 PostgreSQL 資料庫的佈建連線、企業狀態與孤兒資源。"
+msgstr ""
+"Review the provisioning connection, per-organization status and orphan "
+"resources of the organization PostgreSQL databases."
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:13
+msgid "正在檢查企業專屬資料庫..."
+msgstr "Checking organization databases..."
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:18
+msgid "佈建連線自檢"
+msgstr "Provisioning connection self-check"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:27
+#: app/templates/pages/org_databases/monitor.html:37
+msgid "SYNC_PG_ADMIN_URL 已設定"
+msgstr "SYNC_PG_ADMIN_URL is set"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:31
+#: app/templates/pages/org_databases/monitor.html:38
+msgid "SYNC_CREDENTIAL_KEY 已設定"
+msgstr "SYNC_CREDENTIAL_KEY is set"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:35
+#: app/templates/pages/org_databases/monitor.html:39
+msgid "連線成功"
+msgstr "Connected"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:39
+#: app/templates/pages/org_databases/monitor.html:40
+msgid "具備 CREATEDB 權限"
+msgstr "Has CREATEDB privilege"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:43
+#: app/templates/pages/org_databases/monitor.html:41
+msgid "具備 CREATEROLE 權限"
+msgstr "Has CREATEROLE privilege"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:63
+msgid "摘要"
+msgstr "Summary"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:66
+msgid "企業總數"
+msgstr "Organizations"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:68
+msgid "異常"
+msgstr "Problems"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:70
+#: app/templates/pages/org_databases/monitor.html:159
+msgid "孤兒角色"
+msgstr "Orphan roles"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:77
+msgid "偵測到企業專屬資料庫異常，請到「企業獨立資料庫管理」頁處理。"
+msgstr ""
+"Organization database problems detected; handle them on the Organization "
+"Database Management page."
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:82
+msgid "前往企業獨立資料庫管理"
+msgstr "Go to Organization Database Management"
+
+#: app/templates/pages/hostconfig/_system_settings_section_packages.html:3
+#: app/templates/pages/hostconfig/system_settings.html:70
 msgid "套件版本"
 msgstr "Kit version"
 
@@ -8935,7 +9064,7 @@ msgstr "No records marked for deletion"
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:39
 #: app/templates/pages/hostconfig/data_maintenance.html:45
 #: app/templates/pages/hostconfig/data_maintenance.html:115
-#: app/templates/pages/org_databases/monitor.html:28
+#: app/templates/pages/org_databases/monitor.html:178
 #: app/templates/pages/organizations/_org_hard_delete.html:45
 msgid "資料表"
 msgstr "Table"
@@ -9033,6 +9162,7 @@ msgstr "File name"
 
 #: app/templates/pages/hostconfig/data_maintenance.html:175
 #: app/templates/pages/hostconfig/data_maintenance.html:198
+#: app/templates/pages/org_databases/monitor.html:138
 msgid "大小"
 msgstr "Size"
 
@@ -9059,6 +9189,7 @@ msgid "需自行以 CLI 處理"
 msgstr "Handle manually via CLI"
 
 #: app/templates/pages/hostconfig/data_maintenance.html:237
+#: app/templates/pages/org_databases/monitor.html:108
 #: app/templates/pages/organizations/_org_hard_delete.html:80
 #: app/templates/pages/organizations/_org_hard_delete.html:138
 msgid "原因"
@@ -10419,83 +10550,141 @@ msgid "系統預設企業"
 msgstr "System default organization"
 
 #: app/templates/pages/org_databases/monitor.html:5
-#: app/templates/pages/org_databases/monitor.html:21
+#: app/templates/pages/org_databases/monitor.html:171
 msgid "企業獨立資料庫管理"
 msgstr "Organization independent database management"
 
 #: app/templates/pages/org_databases/monitor.html:5
-#: app/templates/pages/org_databases/monitor.html:169
-#: app/templates/pages/org_databases/monitor.html:179
+#: app/templates/pages/org_databases/monitor.html:319
+#: app/templates/pages/org_databases/monitor.html:329
 msgid "獨立資料庫"
 msgstr "independent database"
 
-#: app/templates/pages/org_databases/monitor.html:24
-msgid "搜尋企業名稱或 domain..."
-msgstr "Search for Organization name or domain..."
+#: app/templates/pages/org_databases/monitor.html:19
+msgid "資料庫健康狀態"
+msgstr "Database health"
 
-#: app/templates/pages/org_databases/monitor.html:26
-#: app/templates/pages/org_databases/monitor.html:213
-msgid "排序:"
-msgstr "Sort by:"
-
-#: app/templates/pages/org_databases/monitor.html:34
-msgid "尚無任何企業建立獨立資料庫"
-msgstr "There is no independent database established for Organization yet"
+#: app/templates/pages/org_databases/monitor.html:31
+msgid "佈建連線"
+msgstr "Provisioning connection"
 
 #: app/templates/pages/org_databases/monitor.html:50
-msgid "無符合條件的企業"
-msgstr "No eligible Organization"
+msgid "佈建連線異常時，新建企業不會有專屬資料庫，企業級對照表與簽核片語將無法使用。"
+msgstr ""
+"While the provisioning connection is broken, newly created organizations "
+"get no database, and organization lookup tables and approval phrases will"
+" not work."
 
-#: app/templates/pages/org_databases/monitor.html:59
-msgid "請從左側選取企業"
-msgstr "Please select Organization from the left"
+#: app/templates/pages/org_databases/monitor.html:56
+msgid "異常企業"
+msgstr "Organizations with problems"
 
-#: app/templates/pages/org_databases/monitor.html:89
-#: app/templates/pages/org_databases/monitor.html:182
+#: app/templates/pages/org_databases/monitor.html:64
+#: app/templates/pages/organizations/create.html:42
+#: app/templates/pages/organizations/edit.html:44
+#: app/templates/pages/organizations/list.html:181
+msgid "企業代碼"
+msgstr "Organization code"
+
+#: app/templates/pages/org_databases/monitor.html:66
+#: app/templates/pages/org_databases/monitor.html:239
+#: app/templates/pages/org_databases/monitor.html:332
 msgid "資料庫"
 msgstr "Database"
 
-#: app/templates/pages/org_databases/monitor.html:95
-#: app/templates/pages/org_databases/monitor.html:188
+#: app/templates/pages/org_databases/monitor.html:81
+msgid "補建"
+msgstr "Provision"
+
+#: app/templates/pages/org_databases/monitor.html:98
+msgid "降級紀錄"
+msgstr "Degradation log"
+
+#: app/templates/pages/org_databases/monitor.html:106
+msgid "最近時間"
+msgstr "Last occurrence"
+
+#: app/templates/pages/org_databases/monitor.html:107
+msgid "次數"
+msgstr "Count"
+
+#: app/templates/pages/org_databases/monitor.html:123
+msgid "降級紀錄只記錄本進程，重啟服務或多工作程序時會低估。"
+msgstr ""
+"The degradation log is per process; it undercounts after a restart or "
+"with multiple workers."
+
+#: app/templates/pages/org_databases/monitor.html:137
+msgid "資料庫名稱"
+msgstr "Database name"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:53
+#: app/templates/pages/org_databases/monitor.html:160
+msgid "全部刪除"
+msgstr "Delete all"
+
+#: app/templates/pages/org_databases/monitor.html:174
+msgid "搜尋企業名稱或 domain..."
+msgstr "Search for Organization name or domain..."
+
+#: app/templates/pages/org_databases/monitor.html:176
+#: app/templates/pages/org_databases/monitor.html:363
+msgid "排序:"
+msgstr "Sort by:"
+
+#: app/templates/pages/org_databases/monitor.html:184
+msgid "尚無任何企業建立獨立資料庫"
+msgstr "There is no independent database established for Organization yet"
+
+#: app/templates/pages/org_databases/monitor.html:200
+msgid "無符合條件的企業"
+msgstr "No eligible Organization"
+
+#: app/templates/pages/org_databases/monitor.html:209
+msgid "請從左側選取企業"
+msgstr "Please select Organization from the left"
+
+#: app/templates/pages/org_databases/monitor.html:245
+#: app/templates/pages/org_databases/monitor.html:338
 msgid "DDL 帳號"
 msgstr "DDL account"
 
-#: app/templates/pages/org_databases/monitor.html:97
-#: app/templates/pages/org_databases/monitor.html:190
+#: app/templates/pages/org_databases/monitor.html:247
+#: app/templates/pages/org_databases/monitor.html:340
 msgid "DML 帳號"
 msgstr "DML account"
 
-#: app/templates/pages/org_databases/monitor.html:101
-#: app/templates/pages/org_databases/monitor.html:194
+#: app/templates/pages/org_databases/monitor.html:251
+#: app/templates/pages/org_databases/monitor.html:344
 msgid "總大小"
 msgstr "total size"
 
-#: app/templates/pages/org_databases/monitor.html:103
-#: app/templates/pages/org_databases/monitor.html:196
+#: app/templates/pages/org_databases/monitor.html:253
+#: app/templates/pages/org_databases/monitor.html:346
 msgid "密碼輪換"
 msgstr "Password rotation"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:211
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:97
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:531
-#: app/templates/pages/org_databases/monitor.html:120
+#: app/templates/pages/org_databases/monitor.html:270
 msgid "資料表名稱"
 msgstr "Data table name"
 
-#: app/templates/pages/org_databases/monitor.html:123
+#: app/templates/pages/org_databases/monitor.html:273
 msgid "索引大小"
 msgstr "Index size"
 
-#: app/templates/pages/org_databases/monitor.html:151
-#: app/templates/pages/org_databases/monitor.html:226
+#: app/templates/pages/org_databases/monitor.html:301
+#: app/templates/pages/org_databases/monitor.html:376
 msgid "資料庫中尚無資料表"
 msgstr "There is no table in the database yet"
 
-#: app/templates/pages/org_databases/monitor.html:158
+#: app/templates/pages/org_databases/monitor.html:308
 msgid "尚未建立獨立資料庫"
 msgstr "No independent database has been established yet"
 
-#: app/templates/pages/org_databases/monitor.html:170
+#: app/templates/pages/org_databases/monitor.html:320
 msgid "您的企業尚未建立獨立資料庫。請在表單版本管理中啟用 SQL 同步。"
 msgstr ""
 "Your Organization has not yet established an independent database. Please"
@@ -10505,50 +10694,50 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:89
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:60
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:225
-#: app/templates/pages/org_databases/monitor.html:208
+#: app/templates/pages/org_databases/monitor.html:358
 msgid "反選"
 msgstr "Counter-election"
 
-#: app/templates/pages/org_databases/monitor.html:242
+#: app/templates/pages/org_databases/monitor.html:392
 msgid "點擊表名預覽資料內容"
 msgstr "Click on the table name to preview the data content"
 
-#: app/templates/pages/org_databases/monitor.html:283
+#: app/templates/pages/org_databases/monitor.html:433
 msgid "表中無資料"
 msgstr "No data in the table"
 
-#: app/templates/pages/org_databases/monitor.html:295
+#: app/templates/pages/org_databases/monitor.html:445
 msgid "點擊列號檢視單筆明細"
 msgstr "Click on the column number to view single transaction details"
 
-#: app/templates/pages/org_databases/monitor.html:300
+#: app/templates/pages/org_databases/monitor.html:450
 msgid "第"
 msgstr "No."
 
-#: app/templates/pages/org_databases/monitor.html:300
+#: app/templates/pages/org_databases/monitor.html:450
 msgid "筆明細"
 msgstr "pen details"
 
-#: app/templates/pages/org_databases/monitor.html:329
+#: app/templates/pages/org_databases/monitor.html:479
 msgid "檢查引用中..."
 msgstr "Checking references..."
 
-#: app/templates/pages/org_databases/monitor.html:343
+#: app/templates/pages/org_databases/monitor.html:493
 msgid "以下稽核記錄將被標記："
 msgstr "The following audit records will be marked:"
 
-#: app/templates/pages/org_databases/monitor.html:349
+#: app/templates/pages/org_databases/monitor.html:499
 msgid "-- 狀態更新為 table_dropped"
 msgstr "--The status is updated to table_dropped"
 
-#: app/templates/pages/org_databases/monitor.html:354
+#: app/templates/pages/org_databases/monitor.html:504
 msgid "\" -- 停用"
 msgstr "\" -- deactivate"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:152
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:234
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:421
-#: app/templates/pages/org_databases/monitor.html:361
+#: app/templates/pages/org_databases/monitor.html:511
 msgid "此操作無法復原。"
 msgstr "This operation cannot be undone."
 
@@ -10669,12 +10858,6 @@ msgstr "Added Organization"
 #: app/templates/pages/organizations/create.html:14
 msgid "返回企業列表"
 msgstr "Return to Organization list"
-
-#: app/templates/pages/organizations/create.html:42
-#: app/templates/pages/organizations/edit.html:44
-#: app/templates/pages/organizations/list.html:181
-msgid "企業代碼"
-msgstr "Organization code"
 
 #: app/templates/pages/organizations/create.html:48
 msgid "選填，留空自動產生。如 ACME、DEMO_CORP"
@@ -13221,7 +13404,7 @@ msgstr "Category %(name)s deleted"
 msgid "已儲存核決上限"
 msgstr "Approval limits saved"
 
-#: app/web/cg_databases.py:148
+#: app/web/cg_databases.py:139
 msgid "(集團已刪除)"
 msgstr "(conglomerate deleted)"
 
@@ -13359,7 +13542,7 @@ msgstr "External vendor %(name)s %(status)s%(detail)s"
 msgid "已刪除外部廠商 %(name)s"
 msgstr "External vendor %(name)s deleted"
 
-#: app/web/external_users.py:691 app/web/main.py:240
+#: app/web/external_users.py:691 app/web/main.py:236
 #: app/web/org_admin_rescue.py:136 app/web/org_admins.py:577
 #: app/web/users.py:840
 msgid "請輸入新密碼"
@@ -13604,19 +13787,19 @@ msgstr "Job title %(name)s deleted"
 msgid "個人設定已儲存"
 msgstr "Personal settings saved"
 
-#: app/web/main.py:238
+#: app/web/main.py:234
 msgid "目前密碼不正確"
 msgstr "Current password is incorrect"
 
-#: app/web/main.py:245
+#: app/web/main.py:241
 msgid "新密碼與確認密碼不一致"
 msgstr "New password and confirmation do not match"
 
-#: app/web/main.py:253
+#: app/web/main.py:249
 msgid "密碼已變更成功"
 msgstr "Password changed successfully"
 
-#: app/web/main.py:258 app/web/profile.py:66
+#: app/web/main.py:254 app/web/profile.py:66
 #, python-format
 msgid "變更失敗: %(error)s"
 msgstr "Change failed: %(error)s"
@@ -13830,135 +14013,167 @@ msgstr "Administrator %(name)s deleted"
 msgid "請使用「變更密碼」功能修改自己的密碼"
 msgstr "Please use the \"Change Password\" function to change your own password"
 
-#: app/web/org_databases.py:138 app/web/org_databases.py:244
-#: app/web/org_databases.py:292
+#: app/web/org_databases.py:145 app/web/org_databases.py:359
+#: app/web/org_databases.py:407
 msgid "憑證解密失敗，請檢查伺服器環境設定"
 msgstr ""
 "Credential decryption failed. Please check the server environment "
 "configuration"
 
-#: app/web/org_databases.py:342
+#: app/web/org_databases.py:236
+msgid "企業資料庫健康檢查失敗，請稍後再試"
+msgstr "Organization database health check failed, please try again later"
+
+#: app/web/org_databases.py:256
+msgid "補建企業資料庫失敗，請稍後再試"
+msgstr "Failed to provision the organization database, please try again later"
+
+#: app/web/org_databases.py:267
+msgid "補建企業資料庫失敗"
+msgstr "Failed to provision the organization database"
+
+#: app/web/org_databases.py:286
+msgid "刪除孤兒資料庫失敗，請稍後再試"
+msgstr "Failed to delete the orphan database, please try again later"
+
+#: app/web/org_databases.py:294
+msgid "刪除孤兒資料庫失敗"
+msgstr "Failed to delete the orphan database"
+
+#: app/web/org_databases.py:313
+msgid "刪除孤兒角色失敗，請稍後再試"
+msgstr "Failed to delete orphan roles, please try again later"
+
+#: app/web/org_databases.py:457
 msgid "企業資料庫不存在"
 msgstr "Organization database not found"
 
-#: app/web/org_databases.py:380
+#: app/web/org_databases.py:495
 msgid "無效的表名格式"
 msgstr "Invalid table name format"
 
-#: app/web/org_databases.py:390
+#: app/web/org_databases.py:505
 msgid "企業資料庫不存在，可能尚未建立或已被移除"
 msgstr ""
 "Organization database not found; it may not have been created or has been"
 " removed"
 
-#: app/web/org_databases.py:391
+#: app/web/org_databases.py:506
 #, python-format
 msgid "資料庫連線失敗: %(error)s"
 msgstr "Database connection failed: %(error)s"
 
-#: app/web/org_databases.py:398
+#: app/web/org_databases.py:513
 #, python-format
 msgid "資料表 %(table)s 不存在"
 msgstr "Table %(table)s does not exist"
 
-#: app/web/org_databases.py:430
+#: app/web/org_databases.py:545
 #, python-format
 msgid "查詢失敗: %(error)s"
 msgstr "Query failed: %(error)s"
 
-#: app/web/org_databases.py:519
+#: app/web/org_databases.py:634
 msgid "無效表名"
 msgstr "Invalid table name"
 
-#: app/web/org_databases.py:523
+#: app/web/org_databases.py:638
 msgid "表不存在"
 msgstr "Table does not exist"
 
-#: app/web/organizations.py:158
+#: app/web/organizations.py:164
 #, python-format
 msgid "%(y)s年%(m)s個月"
 msgstr "%(y)s years %(m)s months"
 
-#: app/web/organizations.py:158
+#: app/web/organizations.py:164
 #, python-format
 msgid "%(m)s個月%(d)s天"
 msgstr "%(m)s months %(d)s days"
 
-#: app/web/organizations.py:161
+#: app/web/organizations.py:167
 #, python-format
 msgid "已過期 %(y)s年%(m)s個月"
 msgstr "Expired %(y)s years %(m)s months ago"
 
-#: app/web/organizations.py:161
+#: app/web/organizations.py:167
 #, python-format
 msgid "已過期 %(m)s個月%(d)s天"
 msgstr "Expired %(m)s months %(d)s days ago"
 
-#: app/web/organizations.py:234
+#: app/web/organizations.py:240
 msgid "無法自動產生企業代碼，請手動輸入"
 msgstr "Failed to auto-generate organization code. Please enter it manually"
 
-#: app/web/organizations.py:237
+#: app/web/organizations.py:243
 msgid "企業代碼、企業名稱、網域名稱為必填"
 msgstr "Organization code, name and domain are required"
 
-#: app/web/organizations.py:239
+#: app/web/organizations.py:245
 msgid "網域名稱只能包含字母、數字、連字號和點"
 msgstr "Domain name may only contain letters, digits, hyphens and dots"
 
-#: app/web/organizations.py:241
+#: app/web/organizations.py:247
 msgid "管理員密碼為必填"
 msgstr "Administrator password is required"
 
-#: app/web/organizations.py:243
+#: app/web/organizations.py:249
 msgid "管理員密碼長度至少 12 碼"
 msgstr "Administrator password must be at least 12 characters"
 
-#: app/web/organizations.py:245 app/web/organizations.py:339
+#: app/web/organizations.py:251 app/web/organizations.py:351
 msgid "帳號上限必須為正整數"
 msgstr "Account limit must be a positive integer"
 
-#: app/web/organizations.py:275
+#: app/web/organizations.py:281
 #, python-format
 msgid "已建立企業 %(name)s（含 10 天試用合約），管理員帳號: %(admin_info)s"
 msgstr ""
 "Organization %(name)s created (with a 10-day trial contract). "
 "Administrator account: %(admin_info)s"
 
-#: app/web/organizations.py:317
+#: app/web/organizations.py:286
+#, python-format
+msgid "企業已建立，但專屬資料庫建立失敗：%(msg)s。可在「企業獨立資料庫管理」頁補建。"
+msgstr ""
+"The organization was created, but its database could not be provisioned: "
+"%(msg)s. You can provision it on the Organization Database Management "
+"page."
+
+#: app/web/organizations.py:329
 msgid "企業名稱為必填"
 msgstr "Organization name is required"
 
-#: app/web/organizations.py:335
+#: app/web/organizations.py:347
 msgid "已更新企業資料"
 msgstr "Organization data updated"
 
-#: app/web/organizations.py:410
+#: app/web/organizations.py:422
 #, python-format
 msgid "已刪除企業 %(name)s（含 %(count)s 份合約）"
 msgstr "Organization %(name)s deleted (including %(count)s contracts)"
 
-#: app/web/organizations.py:413
+#: app/web/organizations.py:425
 #, python-format
 msgid "已刪除企業 %(name)s"
 msgstr "Organization %(name)s deleted"
 
-#: app/web/organizations.py:466
+#: app/web/organizations.py:479
 msgid "沒有已軟刪除的企業"
 msgstr "No soft-deleted organizations"
 
-#: app/web/organizations.py:531
+#: app/web/organizations.py:545
 msgid "沒有需要刪除的資料"
 msgstr "No data to delete"
 
-#: app/web/organizations.py:586
+#: app/web/organizations.py:607
 #, python-format
 msgid "刪除過程有 %(n)s 項失敗，企業可能未完全刪除"
 msgstr ""
 "Deletion failed on %(n)s item(s); the organization may not be fully "
 "deleted"
 
-#: app/web/organizations.py:587
+#: app/web/organizations.py:608
 #, python-format
 msgid "已刪除 %(count)s 個企業及其相關資料"
 msgstr "%(count)s organizations and their related data deleted"
@@ -18941,24 +19156,24 @@ msgstr "Approval completed"
 msgid "簽核失敗: %(error)s"
 msgstr "Approval failed: %(error)s"
 
-#: ../modules/form_workflow/api/fc_phrases.py:93
-#: ../modules/form_workflow/api/fc_phrases.py:140
+#: ../modules/form_workflow/api/fc_phrases.py:104
+#: ../modules/form_workflow/api/fc_phrases.py:170
 msgid "片語內容不可為空"
 msgstr "Phrase content cannot be empty"
 
-#: ../modules/form_workflow/api/fc_phrases.py:95
-#: ../modules/form_workflow/api/fc_phrases.py:142
+#: ../modules/form_workflow/api/fc_phrases.py:106
+#: ../modules/form_workflow/api/fc_phrases.py:172
 msgid "片語內容不可超過 200 字"
 msgstr "Phrase content cannot exceed 200 words"
 
-#: ../modules/form_workflow/api/fc_phrases.py:98
-#: ../modules/form_workflow/api/fc_phrases.py:130
-#: ../modules/form_workflow/api/fc_phrases.py:165
+#: ../modules/form_workflow/api/fc_phrases.py:115
+#: ../modules/form_workflow/api/fc_phrases.py:154
+#: ../modules/form_workflow/api/fc_phrases.py:201
 msgid "企業尚未建立專屬資料庫"
 msgstr "The company has not yet established a dedicated database"
 
-#: ../modules/form_workflow/api/fc_phrases.py:135
-#: ../modules/form_workflow/api/fc_phrases.py:170
+#: ../modules/form_workflow/api/fc_phrases.py:165
+#: ../modules/form_workflow/api/fc_phrases.py:212
 msgid "找不到此片語"
 msgstr "This phrase cannot be found"
 
@@ -22547,10 +22762,6 @@ msgstr "Not used"
 msgid "適應畫面"
 msgstr "Adapt to the picture"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:53
-msgid "全部刪除"
-msgstr "Delete all"
-
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:76
 msgid "其他節點"
 msgstr "Other nodes"
@@ -24476,4 +24687,16 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "你目前沒有可代理的角色，無法指定代理人"
 #~ msgstr "You currently have no proxyable roles, so you cannot assign a proxy"
+
+#~ msgid "企業獨立資料庫需由系統管理員在 CLI 手動刪除"
+#~ msgstr ""
+#~ "The dedicated organization database must "
+#~ "be dropped manually by a system "
+#~ "administrator via CLI"
+
+#~ msgid "企業資料庫不屬於任何現存企業，需由系統管理員在 CLI 手動刪除"
+#~ msgstr ""
+#~ "This database belongs to no existing "
+#~ "organization; a system administrator must "
+#~ "drop it manually via CLI"
 

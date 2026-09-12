@@ -59,6 +59,11 @@
             <span class="settings-menu-icon">[F]</span>
             <span>{{ _('檔案儲存') }}</span>
         </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'orgdatabases' }"
+             @click="activeSection = 'orgdatabases'; loadOrgDatabasesHealth()">
+            <span class="settings-menu-icon">[D]</span>
+            <span>{{ _('企業專屬資料庫') }}</span>
+        </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'packages' }"
              @click="activeSection = 'packages'; loadPackageVersions()">
             <span class="settings-menu-icon">[V]</span>
@@ -77,6 +82,7 @@
         {% include "pages/hostconfig/_system_settings_section_ratelimit.html" %}
         {% include "pages/hostconfig/_system_settings_section_loginsecurity.html" %}
         {% include "pages/hostconfig/_system_settings_section_filestorage.html" %}
+        {% include "pages/hostconfig/_system_settings_section_orgdatabases.html" %}
         {% include "pages/hostconfig/_system_settings_section_packages.html" %}
     </div>
 
@@ -117,6 +123,8 @@ function serverSettings() {
             ratelimitError: false,
             fileStorage: '',
             fileStorageError: false,
+            orgdatabases: '',
+            orgdatabasesError: false,
             loginSecurity: '',
             loginSecurityError: false
         },
@@ -136,7 +144,8 @@ function serverSettings() {
             smtp: false,
             telegram: false,
             recipients: false,
-            packages: false
+            packages: false,
+            orgdatabases: false
         },
 
         // E-MailRelay
@@ -235,6 +244,15 @@ function serverSettings() {
             dirFileLimit: 100000
         },
 
+        // 企業專屬資料庫
+        orgdatabases: {
+            provisioning: {},
+            orgs: [],
+            orphan_databases: [],
+            orphan_roles: [],
+            summary: {}
+        },
+
         // 登入安全欄位
         loginSecurity: {
             employee: { password_field: 'sv_2', mine_field: 'sv_1', rescue_field: 'sv_3', rescue_keyword: '' },
@@ -273,6 +291,7 @@ function serverSettings() {
 {% include "pages/hostconfig/_system_settings_emailrelay_methods.html" %}
 {% include "pages/hostconfig/_system_settings_mailservice_methods.html" %}
 {% include "pages/hostconfig/_system_settings_notification_methods.html" %}
+{% include "pages/hostconfig/_system_settings_orgdatabases_methods.html" %}
 {% include "pages/hostconfig/_system_settings_packages_methods.html" %}
 {% include "pages/hostconfig/_system_settings_menucolors_methods.html" %}
 {% include "pages/hostconfig/_system_settings_general_methods.html" %}

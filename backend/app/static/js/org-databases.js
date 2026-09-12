@@ -2,6 +2,171 @@
  * org-databases.js - 企業獨立資料庫監視頁面
  */
 
+function _emptyHealthData() {
+    return {
+        provisioning: {},
+        orgs: [],
+        orphan_databases: [],
+        orphan_roles: [],
+        summary: {}
+    };
+}
+
+/**
+ * 系統級健康檢查面板
+ */
+function odbHealthPanel() {
+    return {
+        loading: false,
+        error: '',
+        data: _emptyHealthData(),
+
+        get abnormalOrgs() {
+            return (this.data.orgs || []).filter(function(org) {
+                return org.status !== 'ok';
+            });
+        },
+
+        get degradedOrgs() {
+            return (this.data.orgs || []).filter(function(org) {
+                return !!org.degrade;
+            });
+        },
+
+        load() {
+            var self = this;
+            this.loading = true;
+            this.error = '';
+
+            fetch(window.__BP + '/organizations/databases/health')
+                .then(function(resp) {
+                    return resp.json().then(function(data) {
+                        if (!resp.ok) {
+                            throw new Error(data.error || __('健康檢查失敗'));
+                        }
+                        return data;
+                    });
+                })
+                .then(function(data) {
+                    self.data = data || _emptyHealthData();
+                    self.data.provisioning = self.data.provisioning || {};
+                    self.data.orgs = self.data.orgs || [];
+                    self.data.orphan_databases = self.data.orphan_databases || [];
+                    self.data.orphan_roles = self.data.orphan_roles || [];
+                    self.data.summary = self.data.summary || {};
+                })
+                .catch(function(err) {
+                    self.error = err.message || __('健康檢查失敗');
+                })
+                .finally(function() {
+                    self.loading = false;
+                });
+        },
+
+        provision(orgSecureCode) {
+            var self = this;
+            if (!confirm(__('補建會重新產生資料庫帳號密碼。確定要繼續？'))) return;
+
+            var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            fetch(window.__BP + '/organizations/databases/' + encodeURIComponent(orgSecureCode) + '/provision', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({})
+            })
+            .then(function(resp) {
+                return resp.json().then(function(data) {
+                    if (!resp.ok || !data.success) {
+                        throw new Error(data.error || __('補建失敗'));
+                    }
+                    return data;
+                });
+            })
+            .then(function() {
+                self.load();
+            })
+            .catch(function(err) {
+                alert(__('補建失敗: ') + err.message);
+            });
+        },
+
+        deleteOrphanDb(dbName) {
+            var self = this;
+            if (!confirm(__('確定要刪除資料庫 {name}？此操作無法復原。', {name: dbName}))) return;
+
+            var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            fetch(window.__BP + '/organizations/databases/orphans/delete-database', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({db_name: dbName})
+            })
+            .then(function(resp) {
+                return resp.json().then(function(data) {
+                    if (!resp.ok || !data.success) {
+                        throw new Error(data.error || __('刪除失敗'));
+                    }
+                    return data;
+                });
+            })
+            .then(function() {
+                self.load();
+            })
+            .catch(function(err) {
+                alert(__('刪除失敗: ') + err.message);
+            });
+        },
+
+        deleteOrphanRoles() {
+            var self = this;
+            if (!confirm(__('確定要刪除全部孤兒角色？此操作無法復原。'))) return;
+
+            var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            fetch(window.__BP + '/organizations/databases/orphans/delete-roles', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({roles: this.data.orphan_roles || []})
+            })
+            .then(function(resp) {
+                return resp.json().then(function(data) {
+                    if (!resp.ok || !data.success) {
+                        throw new Error(data.error || __('刪除失敗'));
+                    }
+                    return data;
+                });
+            })
+            .then(function(data) {
+                if (data.errors && data.errors.length > 0) {
+                    // errors 是 [{resource, error}, ...]，直接 join 會變成 [object Object]
+                    alert(__('部分角色刪除失敗: ') + data.errors.map(function(e) {
+                        return (e.resource || '') + ': ' + (e.error || '');
+                    }).join('\n'));
+                }
+                self.load();
+            })
+            .catch(function(err) {
+                alert(__('刪除失敗: ') + err.message);
+            });
+        },
+
+        statusLabel(status) {
+            var map = {
+                missing_registration: __('尚未建立'),
+                not_ready: __('登記未就緒'),
+                missing_database: __('登記存在但實體庫不存在'),
+                unreachable: __('連線失敗')
+            };
+            return map[status] || status || __('未知');
+        },
+
+        formatAt(iso) {
+            if (!iso) return '-';
+            if (typeof BkTime !== 'undefined') {
+                return BkTime.format(iso, 'short');
+            }
+            return iso;
+        }
+    };
+}
+
 /**
  * 系統級 master-detail 元件
  * 左側企業清單（搜尋/排序），右側 DB 統計

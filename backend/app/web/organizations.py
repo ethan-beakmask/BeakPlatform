@@ -23,6 +23,11 @@ from ..services.organization_service import OrganizationService
 from ..services.conglomerate_service import ConglomerateService
 from ..services.code_generator import get_code_generator
 from ..services.lookup_service import LookupService
+from ..services.org_database_service import (
+    collect_org_databases,
+    drop_collected_databases,
+    ensure_org_database,
+)
 from ..services.org_data_purge_service import (
     HARD_DELETE_DISPLAY_NAMES,
     ORG_DISPLAY_NAME,
@@ -34,6 +39,7 @@ from ..services.org_data_purge_service import (
 from ..services.org_physical_cleanup_service import (
     collect_org_file_records,
     delete_org_files,
+    list_org_databases_for_orgs,
     list_org_database_manual_items,
     list_org_existing_directories,
     remove_org_directories,
@@ -274,6 +280,12 @@ def create_org():
                 admin_info = f'{admin_username}@{domain_name}'
                 flash(_('已建立企業 %(name)s（含 10 天試用合約），管理員帳號: %(admin_info)s',
                         name=name, admin_info=admin_info), 'success')
+                db_result = ensure_org_database(org)
+                if db_result['status'] == 'failed':
+                    flash(_(
+                        '企業已建立，但專屬資料庫建立失敗：%(msg)s。可在「企業獨立資料庫管理」頁補建。',
+                        msg=db_result['message'],
+                    ), 'warning')
                 return redirect(url_for('organizations.list_orgs', org=org.secure_code))
             except ValueError as e:
                 db.session.rollback()
@@ -461,6 +473,7 @@ def hard_delete_preview():
                 'physical': {
                     'file_count': 0,
                     'directories': [],
+                    'databases': [],
                     'manual_required': [],
                 },
                 'message': _('沒有已軟刪除的企業')
@@ -494,6 +507,7 @@ def hard_delete_preview():
         physical = {
             'file_count': len(collect_org_file_records(org_codes)),
             'directories': list_org_existing_directories(org_codes),
+            'databases': list_org_databases_for_orgs(org_codes),
             'manual_required': list_org_database_manual_items(org_codes),
         }
 
@@ -536,13 +550,18 @@ def hard_delete_execute():
                     'files_deleted': 0,
                     'files_missing': 0,
                     'dirs_removed': [],
+                    'databases_dropped': [],
+                    'roles_dropped': [],
                     'manual_required': [],
                 },
             })
 
         deleted_counts = {}
         errors = []
-        manual_items = list_org_database_manual_items(org_codes)
+        # 收集要刪的專屬資料庫必須在刪表之前（fw_org_databases 的登記列會被一起刪掉，
+        # 刪掉就查不到該刪哪個庫、也拿不到 owner 憑證），
+        # 但實際 DROP 要等主交易 commit 之後（交易若回滾，企業還在而庫已刪就回不來）。
+        pending_databases = collect_org_databases(org_codes)
         file_result = delete_org_files(org_codes)
         ordered_tables, all_tables = build_hard_delete_sequence()
 
@@ -574,9 +593,11 @@ def hard_delete_execute():
             })
 
         db.session.commit()
+        db_result = drop_collected_databases(pending_databases)
         dir_result = remove_org_directories(org_codes)
         errors.extend(physical_error_entry(error) for error in file_result['errors'])
         errors.extend(physical_error_entry(error) for error in dir_result['errors'])
+        errors.extend(physical_error_entry(error) for error in db_result['errors'])
         for error in errors:
             deleted_counts[f"{error['display_name']} (錯誤)"] = error['error']
 
@@ -593,7 +614,9 @@ def hard_delete_execute():
                 'files_deleted': file_result['files_deleted'],
                 'files_missing': file_result['files_missing'],
                 'dirs_removed': dir_result['dirs_removed'],
-                'manual_required': manual_items,
+                'databases_dropped': db_result['databases_dropped'],
+                'roles_dropped': db_result['roles_dropped'],
+                'manual_required': db_result['manual_required'],
             },
         })
     except Exception as e:

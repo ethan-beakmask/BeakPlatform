@@ -1846,5 +1846,16 @@
  "：本節點在同一流程中只會往下推進一次。取消勾選的話，": ": this node advances downstream only once in the same workflow. If unchecked,",
  "🔄 拖動垂直線段（只能左右移動）": "🔄 Drag the vertical line segment (can only move left and right)",
  "🔄 拖動水平線段（只能上下移動）": "🔄 Drag the horizontal line segment (can only move up and down)",
- "🛡️ 後退已被阻擋（請使用上方的「放棄」按鈕返回目錄）": "🛡️ Back is blocked (please use the \"abandon\" button above to return to the directory)"
+ "🛡️ 後退已被阻擋（請使用上方的「放棄」按鈕返回目錄）": "🛡️ Back is blocked (please use the \"abandon\" button above to return to the directory)",
+ "健康檢查失敗": "Health check failed",
+ "尚未建立": "Not created",
+ "登記存在但實體庫不存在": "Registered but physical database missing",
+ "登記未就緒": "Registration not ready",
+ "確定要刪除全部孤兒角色？此操作無法復原。": "Delete all orphan roles? This cannot be undone.",
+ "確定要刪除資料庫 {name}？此操作無法復原。": "Delete database {name}? This cannot be undone.",
+ "補建失敗": "Provisioning failed",
+ "補建失敗: ": "Provisioning failed: ",
+ "補建會重新產生資料庫帳號密碼。確定要繼續？": "Provisioning regenerates the database account password. Continue?",
+ "連線失敗": "Connection failed",
+ "部分角色刪除失敗: ": "Some roles could not be deleted: "
 }

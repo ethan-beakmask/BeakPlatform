@@ -14,6 +14,7 @@ from ..security.decorators import login_required, admin_required, system_admin_r
 from ..security.resource_gateway import ResourceGateway
 from ..models import Organization, CustomerType, Contract
 from ..models.organization import DEFAULT_ORG_USER_LIMIT
+from ..services.org_database_service import ensure_org_database
 from ..services.organization_service import OrganizationService
 from .. import db
 
@@ -177,6 +178,17 @@ def create_organization():
             'message': _('企業建立成功'),
             'organization': org.to_dict()
         }
+        db_result = ensure_org_database(org)
+        result['database'] = {
+            'status': db_result['status'],
+            'db_name': db_result['db_name'],
+        }
+        if db_result['status'] == 'failed':
+            result['database']['message'] = db_result['message']
+            result['warning'] = _(
+                '企業已建立，但專屬資料庫建立失敗：%(msg)s',
+                msg=db_result['message'],
+            )
 
         if admin_user:
             result['admin'] = {

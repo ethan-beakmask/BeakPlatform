@@ -28,7 +28,7 @@ from flask_login import current_user
 
 from ..security.decorators import login_required, admin_required
 from ..services.lookup_service import LookupService
-from ..services.lookup_org_service import LookupOrgService
+from ..services.lookup_org_service import LookupOrgService, OrgDatabaseUnavailable
 from ..services.code_generator import get_code_generator
 from .. import csrf
 
@@ -146,6 +146,12 @@ def create_category():
             'data': category,
             'message': _('已建立類別')
         }), 201
+    except OrgDatabaseUnavailable:
+        logger.warning('[Lookup] create_category: 企業專屬資料庫不可用 org=%s', org_sc)
+        return jsonify({
+            'success': False,
+            'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+        }), 503
     except RuntimeError as e:
         logger.warning(f'[Lookup] create_category: {e}')
         return jsonify({'success': False, 'error': str(e)}), 400
@@ -187,6 +193,14 @@ def update_category(secure_code):
     if location == 'system':
         return jsonify({'success': False, 'error': _('系統級類別不可修改')}), 403
     if location is None:
+        try:
+            LookupOrgService.ensure_tables(org_sc)
+        except OrgDatabaseUnavailable:
+            logger.warning('[Lookup] update_category: 企業專屬資料庫不可用 org=%s', org_sc)
+            return jsonify({
+                'success': False,
+                'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+            }), 503
         return jsonify({'success': False, 'error': _('類別不存在')}), 404
 
     # 企業級 -> org DB
@@ -207,6 +221,12 @@ def update_category(secure_code):
             'data': updated,
             'message': _('已更新類別')
         })
+    except OrgDatabaseUnavailable:
+        logger.warning('[Lookup] update_category: 企業專屬資料庫不可用 org=%s', org_sc)
+        return jsonify({
+            'success': False,
+            'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+        }), 503
     except Exception as e:
         logger.exception('[Lookup] update_category error')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -223,6 +243,14 @@ def delete_category(secure_code):
     if location == 'system':
         return jsonify({'success': False, 'error': _('系統級類別不可刪除')}), 403
     if location is None:
+        try:
+            LookupOrgService.ensure_tables(org_sc)
+        except OrgDatabaseUnavailable:
+            logger.warning('[Lookup] delete_category: 企業專屬資料庫不可用 org=%s', org_sc)
+            return jsonify({
+                'success': False,
+                'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+            }), 503
         return jsonify({'success': False, 'error': _('類別不存在')}), 404
 
     try:
@@ -241,6 +269,12 @@ def delete_category(secure_code):
             return jsonify({'success': False, 'error': _('刪除失敗')}), 400
         LookupService._invalidate_cache(cat_code, org_sc)
         return jsonify({'success': True, 'message': _('已刪除類別')})
+    except OrgDatabaseUnavailable:
+        logger.warning('[Lookup] delete_category: 企業專屬資料庫不可用 org=%s', org_sc)
+        return jsonify({
+            'success': False,
+            'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+        }), 503
     except Exception as e:
         logger.exception('[Lookup] delete_category error')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -299,6 +333,15 @@ def create_item(secure_code):
         # 但為安全起見仍處理: 拒絕寫入
         return jsonify({'success': False, 'error': _('此類別不允許新增選項')}), 403
 
+    try:
+        LookupOrgService.ensure_tables(org_sc)
+    except OrgDatabaseUnavailable:
+        logger.warning('[Lookup] create_item: 企業專屬資料庫不可用 org=%s', org_sc)
+        return jsonify({
+            'success': False,
+            'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+        }), 503
+
     org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
     if not org_cat:
         return jsonify({'success': False, 'error': _('類別不存在')}), 404
@@ -345,6 +388,12 @@ def create_item(secure_code):
             'data': item,
             'message': _('已新增選項')
         }), 201
+    except OrgDatabaseUnavailable:
+        logger.warning('[Lookup] create_item: 企業專屬資料庫不可用 org=%s', org_sc)
+        return jsonify({
+            'success': False,
+            'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+        }), 503
     except Exception as e:
         logger.exception('[Lookup] create_item error')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -361,6 +410,14 @@ def update_item(secure_code):
     if location == 'system':
         return jsonify({'success': False, 'error': _('系統級選項不可修改')}), 403
     if location is None:
+        try:
+            LookupOrgService.ensure_tables(org_sc)
+        except OrgDatabaseUnavailable:
+            logger.warning('[Lookup] update_item: 企業專屬資料庫不可用 org=%s', org_sc)
+            return jsonify({
+                'success': False,
+                'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+            }), 503
         return jsonify({'success': False, 'error': _('選項不存在')}), 404
 
     # 企業級 -> org DB
@@ -385,6 +442,12 @@ def update_item(secure_code):
             'data': updated,
             'message': _('已更新選項')
         })
+    except OrgDatabaseUnavailable:
+        logger.warning('[Lookup] update_item: 企業專屬資料庫不可用 org=%s', org_sc)
+        return jsonify({
+            'success': False,
+            'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+        }), 503
     except Exception as e:
         logger.exception('[Lookup] update_item error')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -401,6 +464,14 @@ def delete_item(secure_code):
     if location == 'system':
         return jsonify({'success': False, 'error': _('系統級選項不可刪除')}), 403
     if location is None:
+        try:
+            LookupOrgService.ensure_tables(org_sc)
+        except OrgDatabaseUnavailable:
+            logger.warning('[Lookup] delete_item: 企業專屬資料庫不可用 org=%s', org_sc)
+            return jsonify({
+                'success': False,
+                'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+            }), 503
         return jsonify({'success': False, 'error': _('選項不存在')}), 404
 
     try:
@@ -419,6 +490,12 @@ def delete_item(secure_code):
             return jsonify({'success': False, 'error': _('刪除失敗')}), 400
         LookupService._invalidate_cache(cat_code, org_sc)
         return jsonify({'success': True, 'message': _('已刪除選項')})
+    except OrgDatabaseUnavailable:
+        logger.warning('[Lookup] delete_item: 企業專屬資料庫不可用 org=%s', org_sc)
+        return jsonify({
+            'success': False,
+            'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+        }), 503
     except RuntimeError as e:
         # 子選項仍啟用中等業務錯誤
         return jsonify({'success': False, 'error': str(e)}), 400
@@ -439,6 +516,14 @@ def reorder_items(secure_code):
     if location == 'system':
         return jsonify({'success': False, 'error': _('系統級類別不可排序')}), 403
     if location is None:
+        try:
+            LookupOrgService.ensure_tables(org_sc)
+        except OrgDatabaseUnavailable:
+            logger.warning('[Lookup] reorder_items: 企業專屬資料庫不可用 org=%s', org_sc)
+            return jsonify({
+                'success': False,
+                'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+            }), 503
         return jsonify({'success': False, 'error': _('類別不存在')}), 404
 
     org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
@@ -456,6 +541,12 @@ def reorder_items(secure_code):
         LookupOrgService.reorder_items(org_sc, cat_code, order_list)
         LookupService._invalidate_cache(cat_code, org_sc)
         return jsonify({'success': True, 'message': _('排序已更新')})
+    except OrgDatabaseUnavailable:
+        logger.warning('[Lookup] reorder_items: 企業專屬資料庫不可用 org=%s', org_sc)
+        return jsonify({
+            'success': False,
+            'error': _('企業專屬資料庫目前無法使用，請聯絡系統管理員'),
+        }), 503
     except Exception as e:
         logger.exception('[Lookup] reorder_items error')
         return jsonify({'success': False, 'error': str(e)}), 500

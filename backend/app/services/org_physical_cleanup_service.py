@@ -201,6 +201,21 @@ def _manual_database_item(db_name: str, org_secure_code: str, exists: bool, reas
     }
 
 
+def list_org_databases_for_orgs(org_codes: list[str]) -> list[dict]:
+    if not org_codes:
+        return []
+
+    pg_names = _pg_database_names()
+    return [
+        {
+            'db_name': row['db_name'],
+            'org_secure_code': row['org_secure_code'],
+            'exists': row['db_name'] in pg_names,
+        }
+        for row in _fw_org_database_rows(org_codes)
+    ]
+
+
 def list_org_database_manual_items(org_codes: list[str]) -> list[dict]:
     if not org_codes:
         return []
@@ -209,15 +224,13 @@ def list_org_database_manual_items(org_codes: list[str]) -> list[dict]:
     items = []
     for row in _fw_org_database_rows(org_codes):
         exists = row['db_name'] in pg_names
-        reason = (
-            _('企業獨立資料庫需由系統管理員在 CLI 手動刪除')
-            if exists else _('企業資料庫登記存在，但 PostgreSQL 實體資料庫不存在，請人工確認資料一致性')
-        )
+        if exists:
+            continue
         items.append(_manual_database_item(
             row['db_name'],
             row['org_secure_code'],
             exists,
-            reason,
+            _('企業資料庫登記存在，但 PostgreSQL 實體資料庫不存在，請人工確認資料一致性'),
         ))
     return items
 
@@ -312,7 +325,7 @@ def _scan_manual_database_items() -> list[dict]:
             db_name,
             '',
             True,
-            _('企業資料庫不屬於任何現存企業，需由系統管理員在 CLI 手動刪除'),
+            _('企業資料庫不屬於任何現存企業，請在「企業獨立資料庫管理」頁清理'),
         ))
 
     for row in sorted(fw_rows, key=lambda item: item['db_name']):
@@ -321,7 +334,7 @@ def _scan_manual_database_items() -> list[dict]:
                 row['db_name'],
                 row['org_secure_code'],
                 False,
-                _('企業資料庫登記存在，但 PostgreSQL 實體資料庫不存在，請人工確認資料一致性'),
+                _('企業資料庫登記存在，但 PostgreSQL 實體資料庫不存在，請在「企業獨立資料庫管理」頁補建或清理'),
             ))
 
     return items

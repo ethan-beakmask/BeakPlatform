@@ -23,8 +23,6 @@ import psycopg2
 from psycopg2 import sql as psql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-from .org_db_manager import _get_su_dsn
-
 logger = logging.getLogger(__name__)
 
 
@@ -167,17 +165,7 @@ def provision_conglomerate_database(
     finally:
         conn.close()
 
-    # 3. 用 superuser 連入集團 DB 安裝 pgcrypto
-    su_conn = psycopg2.connect(_get_su_dsn(db_name))
-    su_conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-    try:
-        with su_conn.cursor() as cur:
-            cur.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
-            logger.info(f'CgDB: 已在 {db_name} 安裝 pgcrypto')
-    finally:
-        su_conn.close()
-
-    # 4. 連入集團 DB 設定 member 權限 + RLS 基礎設施
+    # 3. 連入集團 DB 設定 member 權限 + RLS 基礎設施
     admin_dsn = (
         f'postgresql://{admin_user}:{admin_pwd}'
         f'@{db_host}:{db_port}/{db_name}'
@@ -186,6 +174,9 @@ def provision_conglomerate_database(
     cg_conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     try:
         with cg_conn.cursor() as cur:
+            # pgcrypto 是 trusted extension，資料庫 owner 即可安裝，不需要 superuser。
+            cur.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
+            logger.info(f'CgDB: 已在 {db_name} 安裝 pgcrypto')
             # 允許 member_user 連入
             cur.execute(
                 psql.SQL("GRANT CONNECT ON DATABASE {} TO {}").format(
