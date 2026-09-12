@@ -102,7 +102,10 @@ function odbHealthPanel() {
             .then(function(resp) {
                 return resp.json().then(function(data) {
                     if (!resp.ok || !data.success) {
-                        throw new Error(data.error || __('刪除失敗'));
+                        var err = new Error(data.error || __('刪除失敗'));
+                        // manual_command 有值＝平台佈建角色無權 DROP，要把指令顯示出來
+                        err.manualCommand = data.manual_command || '';
+                        throw err;
                     }
                     return data;
                 });
@@ -111,7 +114,11 @@ function odbHealthPanel() {
                 self.load();
             })
             .catch(function(err) {
-                alert(__('刪除失敗: ') + err.message);
+                var msg = __('刪除失敗: ') + err.message;
+                if (err.manualCommand) {
+                    msg += '\n\n' + __('此資料庫的擁有者不是平台佈建角色（多為歷史上以主機管理員手動建立），平台無權刪除。請在資料庫主機上執行：') + '\n' + err.manualCommand;
+                }
+                alert(msg);
             });
         },
 

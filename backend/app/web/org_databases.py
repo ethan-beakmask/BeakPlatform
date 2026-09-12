@@ -289,9 +289,12 @@ def delete_orphan_database():
     if result.get('ok'):
         return jsonify({'success': True})
 
+    # manual_command 有值代表平台佈建角色無權 DROP（owner 不是 bfadmin_<id>），
+    # 要把可複製的指令一起帶回去，不能只回一句「失敗」（PF-265）
     return jsonify({
         'success': False,
         'error': result.get('error') or _('刪除孤兒資料庫失敗'),
+        'manual_command': result.get('manual_command'),
     }), 400
 
 

@@ -116,3 +116,60 @@ class TestScanHealth:
         # 但軟刪除的企業仍然「存在」，所以它的庫不會被算成孤兒
         orphan_names = {item['db_name'] for item in result['orphan_databases']}
         assert f'org_{orphan_free_org.id}' not in orphan_names
+
+
+class TestDropOrphanDatabaseFailureReporting:
+    """刪不掉時要把「為什麼」送出去（PF-265）。
+
+    `drop_org_database()` 早就把權限訊息放進 `errors` 並算好 `manual_command`，
+    但 façade 舊版只回 `ok` 與原 dict，沒有 `error` 這個鍵，端點於是必然
+    落到通用的「刪除孤兒資料庫失敗」，使用者看不出要找 superuser 手動刪。
+    """
+
+    @staticmethod
+    def _pass_orphan_guards(monkeypatch):
+        monkeypatch.setattr(svc, '_pg_database_exists', lambda name: True)
+        monkeypatch.setattr(svc, '_registered_org_db_exists', lambda name: False)
+
+    def test_surfaces_permission_error_and_manual_command(self, app, monkeypatch):
+        self._pass_orphan_guards(monkeypatch)
+
+        def fake_drop(db_name, admin_dsn=None, drop_roles=True, org_id=None):
+            return {
+                'db_name': db_name,
+                'db_dropped': False,
+                'db_existed': True,
+                'roles_dropped': [],
+                'errors': [{'resource': db_name, 'error': 'must be owner of database org_999999996'}],
+                'manual_command': f'sudo -u postgres dropdb {db_name}',
+            }
+
+        monkeypatch.setattr(
+            'modules.form_workflow.services.sql_sync.org_db_manager.drop_org_database',
+            fake_drop,
+        )
+        result = svc.drop_orphan_database('org_999999996')
+        assert result['ok'] is False
+        assert 'must be owner of database' in result['error']
+        assert result['manual_command'] == 'sudo -u postgres dropdb org_999999996'
+
+    def test_success_path_keeps_ok(self, app, monkeypatch):
+        self._pass_orphan_guards(monkeypatch)
+
+        def fake_drop(db_name, admin_dsn=None, drop_roles=True, org_id=None):
+            return {
+                'db_name': db_name,
+                'db_dropped': True,
+                'db_existed': True,
+                'roles_dropped': ['bfadmin_999999995', 'bfsync_999999995'],
+                'errors': [],
+                'manual_command': None,
+            }
+
+        monkeypatch.setattr(
+            'modules.form_workflow.services.sql_sync.org_db_manager.drop_org_database',
+            fake_drop,
+        )
+        result = svc.drop_orphan_database('org_999999995')
+        assert result['ok'] is True
+        assert result.get('error') is None

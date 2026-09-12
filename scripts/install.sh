@@ -419,10 +419,20 @@ if [ "$ACTION" = "update" ]; then
     # 允許 root 操作非 root 擁有的 repo
     git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true
 
-    # 檢查 remote URL 是否帶有 token（能自動認證）
+    # 檢查 remote URL 是否為可自動認證的格式
+    # 必須是 https://x-access-token:<PAT>@github.com/...：token 放在 username 位置
+    # 而沒有 password 部分時，git 會轉去問 credential helper，無 tty 環境（cron、
+    # 腳本、非互動 ssh）必定失敗並回 "could not read Password"。
     current_url=$(git remote get-url origin 2>/dev/null)
-    if ! echo "$current_url" | grep -q '@github.com'; then
-        # remote URL 不含 token，需要取得
+    if ! echo "$current_url" | grep -q '^https://x-access-token:[^@]*@'; then
+        # 舊格式 https://<PAT>@github.com/... 直接把 token 取出來重組，不必再問使用者
+        if [ -z "${GITHUB_TOKEN:-}" ]; then
+            embedded_token=$(echo "$current_url" | sed -n 's#^https://\([^:@/]\{1,\}\)@github\.com/.*#\1#p')
+            if [ -n "$embedded_token" ]; then
+                GITHUB_TOKEN="$embedded_token"
+                log_info "remote URL 為舊格式（缺 x-access-token: 前綴），自動修正"
+            fi
+        fi
         if [ -z "${GITHUB_TOKEN:-}" ]; then
             read -s -p "請輸入 GitHub Personal Access Token: " GITHUB_TOKEN
             echo ""
@@ -431,7 +441,7 @@ if [ "$ACTION" = "update" ]; then
                 exit 1
             fi
         fi
-        git remote set-url origin "https://${GITHUB_TOKEN}@${GITHUB_REPO#https://}"
+        git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@${GITHUB_REPO#https://}"
     fi
 
     git fetch origin main
@@ -645,7 +655,9 @@ if [ -z "${GITHUB_TOKEN:-}" ]; then
 fi
 
 # 組成帶 token 的 clone URL
-GITHUB_CLONE_URL="https://${GITHUB_TOKEN}@${GITHUB_REPO#https://}"
+# x-access-token: 前綴不可省——token 只放 username 位置時 git 會另外索取 password，
+# 無 tty 環境會直接失敗（fatal: could not read Password）
+GITHUB_CLONE_URL="https://x-access-token:${GITHUB_TOKEN}@${GITHUB_REPO#https://}"
 
 # 允許 root 操作非 root 擁有的 repo（覆蓋安裝時目錄已 chown 給 service user）
 git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true

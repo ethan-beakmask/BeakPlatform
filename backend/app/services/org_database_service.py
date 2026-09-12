@@ -207,7 +207,17 @@ def drop_orphan_database(db_name: str) -> dict:
     )
 
     result = drop_org_database(db_name, admin_dsn=None, drop_roles=True)
-    return {'ok': bool(result.get('db_dropped')), **result}
+    ok = bool(result.get('db_dropped'))
+    if not ok and not result.get('error'):
+        # `drop_org_database()` 把拒絕原因放進 `errors`（多半是「必須是資料庫擁有者」
+        # 這類權限訊息）並算好 `manual_command`。這裡要把它攤成 `error`，
+        # 否則端點只送得出通用的「刪除孤兒資料庫失敗」，使用者看不出要找 superuser。
+        result['error'] = '; '.join(
+            (err.get('error') or '').strip()
+            for err in result.get('errors', [])
+            if (err.get('error') or '').strip()
+        ) or None
+    return {'ok': ok, **result}
 
 
 def drop_orphan_roles(role_names: list[str]) -> dict:
