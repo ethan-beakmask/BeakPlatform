@@ -1703,7 +1703,7 @@ heredoc 建企業、`init_menus.py`、`init_permissions.py`、`flask module sync
 | 表單／流程的分類 | `fw_categories.code` / `category_type` | **兩個都不存在**。只有 `secure_code` / `name` / `parent_secure_code`，可見範圍靠三個布林 `show_in_form_design` / `show_in_workflow_design` / `show_in_form_center`。2026-09-07 撞過 |
 | 流程變數的欄位 | `fw_workflow_variables.variable_name` / `variable_value` | **`var_name` / `var_value`**。2026-09-07 PF-252 撞過 |
 | 誰能改 `fw_sp` 裡的預存程序 | 以為 `beakplatform` 可以 | **不行**，該 schema 的 owner 是 `fw_sp_owner`，平台帳號連 DROP 自己不擁有的函式都會被拒（`must be owner of function`）。要 `sudo -u postgres psql -d beakplatform_dev`。這是刻意的權限隔離，不是設定錯誤 |
-| 企業專屬資料庫何時建立 | 以為建企業時或建子系統時 | **兩者都不是**（NoCode 子系統用的是 SQLite）。目前是按需建立，兩個觸發點：表單配對啟用 SQL Sync（`modules/form_workflow/api/mappings.py`）、規格制定模組建實體表（`modules/spec_formulate/services/schema/pg_table_manager.py::ensure_org_database()`）。兩者都走 `sql_sync/org_db_manager.py::provision_org_database()`。**PF-256 已定案要改成建企業時就建**，改完本列要更新 |
+| 企業專屬資料庫何時建立 | 以為建企業時或建子系統時 | **兩者都不是**（NoCode 子系統用的是 SQLite）。目前是按需建立，兩個觸發點：表單配對啟用 SQL Sync（`modules/form_workflow/api/mappings.py`）、規格制定模組建實體表（`modules/spec_formulate/services/schema/pg_table_manager.py::ensure_org_database()`）。兩者都走 `sql_sync/org_db_manager.py::provision_org_database()`。**PF-256 已定案要改成建企業時就建**，改完本列要更新。**2026-09-12 起本機每家未刪除企業都已有庫**（`scripts/provision_missing_org_databases.py --dry-run｜--apply`，冪等，比對登記與 `pg_database` 兩邊）——在此之前 SYSTEM 的 `org_14` 是「登記在 `is_ready=true`、實體庫不存在」，症狀是**只有簽核片語那一支 API 500、其餘全站正常**（`FATAL: database "org_14" does not exist`，連線階段就失敗；其他呼叫點在 `lookup_service.py` 有 try/except 而靜默 degrade）。**`provision_org_database()` 的冪等檢查只看登記不看實體庫**（`if existing and existing.is_ready: return existing`），所以這種狀態重跑佈建修不好，要先清 `is_ready` 才繞得過去 |
 
 ### 驗英文介面：沒有切換語系的 API，要改 DB 欄位（2026-08-29 試誤）
 
