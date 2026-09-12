@@ -72,6 +72,30 @@ http://192.168.0.16:7000/beakplatform/forms/workflows/7LJRvpSPUYcmK1M1wcOTzY
 檔名與型別名不是一對一（AiAgent 原本借用 `sqlexecutor.svg`，2026-08-20 才補
 `aiagent.svg`）。一律從 `workflow_node_definitions.icon` 讀該型別登記的圖示。
 
+**四、節點更名時，icon 路徑不會跟著 node_type 一起換。**
+建立節點時 icon 是**複製一份存進該節點自己的 `icon` 欄位**的
+（`graph.nodes[].icon`、`cytoscape_config.nodes[].icon`、發行快照裡兩者都有），
+所以只換 node_type 字串、或只改 `workflow_node_definitions.icon`，
+既有流程的節點仍指向舊檔名。圖檔若隨更名 `git mv` 走了，
+**症狀是設計器畫布上該節點破圖，畫面沒有任何錯誤訊息、console 也只有一行 404**。
+
+- 2026-08-31 `FileWrite -> OsFileWrite`（migration 129）漏了這段，
+  留下 4 個指向 `filewrite.svg` 的節點，直到 2026-09-13 才被掃出來修掉
+- 2026-09-13 `SqlExecutor -> SysSqlExecutor`（PF-254）的第一版遷移腳本同樣漏了，
+  是瀏覽器實測才發現，補在 `scripts/migrate_sqlexecutor_to_sys.py::_fix_node_icons()`
+
+替換**要依 node type 分流，不要無差別字串取代**——舊 graph 裡別的型別可能也借用
+同一個圖檔（AiAgent 就借用過 `sqlexecutor.svg`），無差別替換會把它導到錯的檔案。
+
+掃全庫有沒有破圖節點（改完名一定要跑一次）：
+
+```python
+# 走訪 graph / cytoscape_config / workflow_snapshot 的每個 dict，
+# 比對 icon 檔名是否存在於
+# modules/form_workflow/static/modules/form_workflow/icons/workflow/
+# 現成寫法見 /opt/tmp/verify/20260913-pf254.log 末段
+```
+
 範例腳本：`scripts/examples/provision_node_demo_flows.py`（兩個節點示範流程）。
 
 ## form_workflow 發行（publish）陷阱
