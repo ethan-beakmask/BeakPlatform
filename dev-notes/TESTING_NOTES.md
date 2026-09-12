@@ -204,3 +204,16 @@ chrome-devtools MCP 連不上（VM 重開後常見）時，**不必放棄 VERIFY
 
 範本腳本留存：session scratchpad 的 `repro_approval.mjs` / `.tmp-fill.mjs`
 （拋棄式，邏輯照上面要點重寫即可）。
+
+### 用 chrome-devtools 填 form.io 的 select（2026-09-12 踩到）
+
+對 choices.js 的下拉用 `click` 選項，畫面會顯示選中，但 form.io 的 `submission.data` 不會更新，
+送出後該欄位是空的（`fw_form_instances.form_data->>'target_node'` 為空），而且 `validate.required`
+擋不住。可靠做法是走 form.io API：
+
+```js
+const form = Object.values(Formio.forms).at(-1);
+await form.getComponent('target_node').setValue('ubuntu24');
+```
+
+表單中心的「表單主旨」在 form.io 之外（Alpine），設 `input.value` 後要 `dispatchEvent(new Event('input',{bubbles:true}))`。
