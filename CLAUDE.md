@@ -2091,6 +2091,12 @@ bash scripts/run_e2e.sh                       # Playwright，需服務在跑
 **單檔路徑寫成 `backend/tests/xxx.py` 會 `collected 0 items` 且 exit 0**（2026-09-02 踩到）：
 看起來像全綠，實際上一個測試都沒跑。run_tests.sh 在 `backend/` 內執行，路徑要寫 `tests/xxx.py`。
 
+**全量在跑的時候絕對不要併行跑單檔**（2026-09-12 踩到）：兩邊共用同一個
+`beakplatform_test`，而多個 app fixture 收尾會 `db.drop_all()`，
+於是**兩邊都會冒出與本次變更無關的 F／E**（當時是 `test_ai_usage_api` /
+`test_ai_usage_quota` 各爆數筆）。症狀長得像功能回歸，實際上是互相把表刪掉，
+而且全量那一輪整個作廢、要重跑 30 分鐘。要在全量期間確認某支測試，就等它跑完。
+
 **基準不寫死數字**（會腐爛）：動工前先跑一次記下當時數字，改完再比對。
 以下兩個非綠是長期已知、不列入退步（`test_admin_required_for_admin` 那個 failed
 已於 2026-09-06 PF-34 解決，看到舊文件列它一律過時）：
