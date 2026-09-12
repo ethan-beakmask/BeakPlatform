@@ -132,6 +132,7 @@ nav:
           - 資產清冊: manual/05_security_ops/vuln_assets.md
           - 風險調整: manual/05_security_ops/vuln_risk.md
           - KYND 弱點情報: manual/05_security_ops/vuln_kynd.md
+          - WAF 節點熱備切換: manual/05_security_ops/waf_failover.md
       - 子系統開發:
           - manual/06_subsystem/index.md
           - 子系統開發總覽: manual/06_subsystem/overview.md

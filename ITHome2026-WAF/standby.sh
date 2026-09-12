@@ -4,7 +4,8 @@
 # =============================================================================
 # 用法：
 #   sudo bash standby.sh status        --service-ip IP
-#   sudo bash standby.sh takeover      --service-ip IP [--state-file FILE|-] [--no-tunnel] [--no-services]
+#   sudo bash standby.sh takeover      --service-ip IP [--state-file FILE|-] [--no-tunnel] [--no-services] [--force]
+#   sudo bash standby.sh fence-check   --service-ip IP        （開機第二階段：被 fence 時停 cloudflared / od-bridge）
 #   sudo bash standby.sh release       --service-ip IP [--keep-services]
 #   sudo bash standby.sh export-state
 #   sudo bash standby.sh import-state  [--state-file FILE|-]
@@ -20,6 +21,10 @@
 #   不認路由 src），啟用開機重做網路設定的 systemd unit，必要時匯入舊節點狀態，
 #   最後啟動 od-bridge 與 cloudflared。release 反向做一遍：停只能單機跑的服務、
 #   刪 SNAT、釋放服務 IP、路由 src 改回管理 IP。
+#   腦裂防護：takeover 先做 ARP 重複位址偵測（DAD），服務 IP 已被別台持有就拒絕接手
+#   （--force 可跳過）；開機時的 unit 走同一道檢查，被拒絕就標記 fence，docker 起來後
+#   由 waf-service-fence.service 把 cloudflared / od-bridge 停掉，避免「掛掉的舊現役
+#   修好重開後把服務搶回來」。
 # =============================================================================
 set -euo pipefail
 
@@ -31,6 +36,9 @@ STATE_FILE=""
 NO_TUNNEL=0
 NO_SERVICES=0
 KEEP_SERVICES=0
+BOOT_MODE=0
+FORCE=0
+FENCE_FLAG=/run/waf-service-ip.fenced
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
@@ -52,6 +60,8 @@ while [[ $# -gt 0 ]]; do
         --no-tunnel) NO_TUNNEL=1; shift ;;
         --no-services) NO_SERVICES=1; shift ;;
         --keep-services) KEEP_SERVICES=1; shift ;;
+        --boot) BOOT_MODE=1; shift ;;
+        --force) FORCE=1; shift ;;
         --dir) INSTALL_DIR="$2"; shift 2 ;;
         --iface) OPT_IFACE="$2"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
@@ -212,6 +222,32 @@ announce_arp() {
     fi
 }
 
+# ARP 重複位址偵測：服務 IP 若已有別台在回應，回 0（衝突）並印出對方 MAC
+service_ip_taken() {
+    local iface="$1" out
+    service_ip_bound "$iface" && return 1        # 自己已持有就不算衝突（冪等重跑）
+    command -v arping >/dev/null || return 1     # 沒有 arping 只能略過
+    if out="$(arping -D -c 2 -w 2 -I "$iface" "$SERVICE_IP" 2>&1)"; then
+        return 1
+    fi
+    printf '%s\n' "$out" | grep -o '\[[0-9A-Fa-f:]*\]' | head -1 | tr -d '[]'
+    return 0
+}
+
+fence_check() {
+    need_env
+    [[ -n "$SERVICE_IP" ]] || die "fence-check 需要 --service-ip"
+    if [[ -f "$FENCE_FLAG" ]]; then
+        log_warn "開機時偵測到服務 IP $SERVICE_IP 已被別台持有（$(cat "$FENCE_FLAG")），本機退為待命：停 cloudflared / od-bridge"
+        compose --profile tunnel stop -t 3 cloudflared >/dev/null 2>&1 || true
+        compose stop -t 3 od-bridge >/dev/null 2>&1 || true
+        logger -t waf-standby "fenced: service ip $SERVICE_IP held by $(cat "$FENCE_FLAG"); cloudflared/od-bridge stopped"
+        log_warn "要讓本機回到現役，先在對方執行 release，再於本機執行 takeover；或用 failover.sh"
+    else
+        log_info "未被 fence，維持現役"
+    fi
+}
+
 service_ip_bound() {
     local iface="$1"
     ip -4 addr show dev "$iface" | grep -Eq "inet ${SERVICE_IP//./\\.}/"
@@ -271,9 +307,11 @@ status_json() {
     holds=false; service_ip_bound "$iface" && holds=true
     unit=false; [[ -f /etc/systemd/system/waf-service-ip.service ]] && unit=true
     snat=false; snat_present && snat=true
-    python3 - "$iface" "$mgmt" "$SERVICE_IP" "$holds" "$rsrc" "$(service_state cloudflared)" "$(service_state od-bridge)" "$(count_set blocklist)" "$(count_set blocklist6)" "$unit" "$ENV_FILE" "$snat" <<'PY'
+    local fenced=false; [[ -f "$FENCE_FLAG" ]] && fenced=true
+    local cf_ready=false; cloudflared_ready && cf_ready=true
+    python3 - "$iface" "$mgmt" "$SERVICE_IP" "$holds" "$rsrc" "$(service_state cloudflared)" "$(service_state od-bridge)" "$(count_set blocklist)" "$(count_set blocklist6)" "$unit" "$ENV_FILE" "$snat" "$fenced" "$cf_ready" <<'PY'
 import json, socket, sys
-iface, mgmt, service_ip, holds, route_src, cf, od, bl, bl6, unit, env_file, snat = sys.argv[1:13]
+iface, mgmt, service_ip, holds, route_src, cf, od, bl, bl6, unit, env_file, snat, fenced, cf_ready = sys.argv[1:15]
 keys = ["CF_HOSTNAME", "WELCOME_HOSTNAME", "WAF_BACKEND_PATH", "WAF_BACKEND_URL", "BEAK_BASE_URL"]
 env = {k: "" for k in keys}
 try:
@@ -298,6 +336,8 @@ print(json.dumps({
     "blocklist6_count": int(bl6),
     "unit_installed": unit == "true",
     "snat_rule": snat == "true",
+    "fenced": fenced == "true",
+    "cloudflared_ready": cf_ready == "true",
     "env": env,
 }, ensure_ascii=False, separators=(",", ":")))
 PY
@@ -314,20 +354,36 @@ Before=docker.service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash $INSTALL_DIR/standby.sh takeover --service-ip $ip --no-services
+ExecStart=/bin/bash $INSTALL_DIR/standby.sh takeover --service-ip $ip --no-services --boot
 RemainAfterExit=yes
 TimeoutStartSec=90
 
 [Install]
 WantedBy=multi-user.target
 EOT
+    # 第二階段：docker 起來之後，被 fence 的話把只能單機跑的容器停掉
+    cat > /etc/systemd/system/waf-service-fence.service <<EOT
+[Unit]
+Description=ITHome2026-WAF warm standby fence (stop cloudflared/od-bridge if service IP is held elsewhere)
+After=docker.service waf-service-ip.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash $INSTALL_DIR/standby.sh fence-check --service-ip $ip
+RemainAfterExit=yes
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target
+EOT
     systemctl daemon-reload
-    systemctl enable waf-service-ip.service >/dev/null
+    systemctl enable waf-service-ip.service waf-service-fence.service >/dev/null
 }
 
 disable_unit() {
-    systemctl disable waf-service-ip.service >/dev/null 2>&1 || true
-    rm -f /etc/systemd/system/waf-service-ip.service
+    systemctl disable waf-service-ip.service waf-service-fence.service >/dev/null 2>&1 || true
+    rm -f /etc/systemd/system/waf-service-ip.service /etc/systemd/system/waf-service-fence.service "$FENCE_FLAG"
     systemctl daemon-reload
 }
 
@@ -438,18 +494,32 @@ do_import_state() {
     import_state_payload "$(read_state_payload "$file")"
 }
 
+# cloudflared 有沒有連上，以它自己的 /ready 端點為準（readyConnections > 0）。
+# 不要靠 docker logs：實測主機硬重置後 json-file log 會停止更新，容器明明已註冊、log 卻停在 precheck，
+# 用 log 判定會誤報「120 秒內尚未註冊」。/ready 的 metrics 埠預設從 20241 起找五個。
+cloudflared_ready() {
+    local ip port
+    ip="$(get_env CLOUDFLARED_IP)"; ip="${ip:-172.18.0.250}"
+    for port in 20241 20242 20243 20244 20245; do
+        if curl -s -m 2 "http://$ip:$port/ready" 2>/dev/null | grep -Eq '"readyConnections":[1-9]'; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 wait_cloudflared() {
-    local start_epoch="$1" elapsed
+    local start_epoch="$1" elapsed now
     for elapsed in $(seq 0 120); do
-        if compose logs --since "${start_epoch}" cloudflared 2>/dev/null | grep -q "Registered tunnel connection"; then
-            local now; now="$(date +%s)"
-            log_info "cloudflared 已註冊，耗時 $((now - start_epoch)) 秒"
+        if cloudflared_ready; then
+            now="$(date +%s)"
+            log_info "cloudflared 已註冊（/ready），耗時 $((now - start_epoch)) 秒"
             echo "CLOUDFLARED_REGISTERED_AT=$now"
             return 0
         fi
         sleep 1
     done
-    log_warn "cloudflared 120 秒內尚未註冊"
+    log_warn "cloudflared 120 秒內尚未就緒（/ready 無連線）；請用 status 與 curl 確認實況再決定是否回退"
     return 1
 }
 
@@ -474,6 +544,19 @@ takeover() {
     [[ -n "$(mgmt_ip "$iface")" ]] || die "$iface 上除了服務 IP 沒有其他位址；管理 IP 必須先綁好（固定 IP）"
     prefix="$(subnet_prefix "$cidr")"
     sysctl -w "net.ipv4.conf.$iface.arp_notify=1" >/dev/null
+    rm -f "$FENCE_FLAG"
+    local holder
+    if holder="$(service_ip_taken "$iface")"; then
+        if [[ $FORCE -eq 1 ]]; then
+            log_warn "服務 IP $SERVICE_IP 已有別台在回應（$holder），--force 強制接手"
+        elif [[ $BOOT_MODE -eq 1 ]]; then
+            printf '%s' "${holder:-unknown}" > "$FENCE_FLAG"
+            log_warn "服務 IP $SERVICE_IP 已被別台持有（$holder），本機不接手（fence）"
+            exit 0
+        else
+            die "服務 IP $SERVICE_IP 已有別台在回應（$holder）。先在對方執行 release，或確定對方已死再加 --force"
+        fi
+    fi
     if service_ip_bound "$iface"; then
         log_info "服務 IP 已綁定：$SERVICE_IP"
     else
@@ -539,6 +622,7 @@ case "$MODE" in
     takeover) takeover ;;
     release) release ;;
     export-state) export_state ;;
+    fence-check) fence_check ;;
     import-state) do_import_state ;;
     *) die "未知子命令：$MODE（--help 看用法）" ;;
 esac

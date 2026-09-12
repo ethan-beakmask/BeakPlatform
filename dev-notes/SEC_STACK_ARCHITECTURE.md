@@ -887,21 +887,39 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 兩台程式一致（`rsync` 自 `ITHome2026-WAF/`），`.13` 的 `.env` 已對齊 www 分流並跑過 `--reconfigure`。
 `.12` 被一台不回 ping 的裝置占用（MAC `a6:bf:3a:c3:3d:6a`），選管理 IP 前一律看 `ip neigh` 不要只 ping。
 
-工具：`ITHome2026-WAF/standby.sh`（節點端）、`failover.sh`（`.16` 端）、讀者文件
-`docs/install/ithome2026_waf_standby.md`。**從 `.16` 切換與看狀態**（`--ssh-opt` 的 `~` 由腳本自己展開）：
+工具：`ITHome2026-WAF/standby.sh`（節點端）、`failover.sh`（`.16` 端，**2026-09-12 起參數放組態檔**
+`ITHome2026-WAF/failover.conf`，已 gitignore；範例 `failover.conf.example`），讀者文件
+`docs/install/ithome2026_waf_standby.md`。**從 `.16` 切換與看狀態**：
 
 ```bash
 cd /opt/BeakPlatform-dev/ITHome2026-WAF
-F="bash failover.sh --service-ip 192.168.0.20 --nodes 192.168.0.21,192.168.0.13 --ssh-user ethan --ssh-opt '-i ~/.ssh/company-wsl'"
-eval $F --status                                   # 誰持有 .20、SNAT、cloudflared／od-bridge、blocklist
-eval $F --to 192.168.0.13 --dry-run                # 只做前置檢查
-eval $F --to 192.168.0.13 --yes --log /opt/tmp/verify/$(date +%Y%m%d)-failover.log   # 切到 .13
-eval $F --to 192.168.0.21 --yes                    # 切回 sec-vm
+bash failover.sh status                 # 誰持有 .20、SNAT、cloudflared／od-bridge／blocklist；失聯的會標「失聯」
+bash failover.sh dry-run                # 只做前置檢查
+bash failover.sh switch --yes           # 切到沒持有 .20 的那台；現役整台失聯時也用這條（活著的那台自動成目標）
+bash failover.sh to ubuntu24 --yes      # 指定節點：sec-vm / ubuntu24 / A / B / IP
+# 每次切換的完整輸出自動落地 /opt/tmp/verify/waf-failover/failover-<日期>.log（組態檔 LOG_DIR）
 # 從 Internet 驗證（.16 解析 www 只有 IPv6，要 --resolve）
 CFIP=$(dig @1.1.1.1 +short www.beakmask.org | grep -E '^[0-9.]+$' | head -1)
 curl -s -o /dev/null -w '%{http_code}\n' --resolve www.beakmask.org:443:$CFIP https://www.beakmask.org/beakplatform/   # 302
 curl -s --resolve www.beakmask.org:443:$CFIP https://www.beakmask.org/ | grep -o '<h1>[^<]*</h1>'                     # 歡迎頁
 ```
+
+**平台側入口（2026-09-12）**：系統企業 node展覽館「WAF 節點熱備切換申請」（表單 `NODEDEMO_WAF_FAILOVER`、
+流程 `NODEDEMO_WAF_FAILOVER_FLOW`，佈建腳本 `scripts/examples/provision_nodedemo_waf_failover.py --apply
+--node "現役主機=sec-vm" --node "備援主機=ubuntu24"`）：送單 → 決策關卡（簽核意見＝人員決策記錄）→ OsExecutor
+在 `.16` 以 `ethan` 跑 `failover.sh --config ... to <節點> --yes` → 結果寫回表單 → ok 結束／否則人工確認關卡。
+手冊頁 `docs/manual/05_security_ops/waf_failover.md`。E2E 憑證 `/opt/tmp/verify/20260912-nodedemo-waf-failover.log`。
+
+**2026-09-12 真實事故＋腦裂演練**（憑證 `20260912-secvm-outage.log`、`20260912-fence.log`）：sec-vm 於 05:00Z
+整台網路靜默死亡（console 是登入畫面、guest 活著、不回 ARP、kernel 無訊息、cloudflared quic dial timeout），
+**沒人發現，對外 530 了約 12 小時**（16:53 才看到）。`failover.sh switch --yes` 走失聯路徑 15 秒切到 `.13` 復原；
+`qm reset 110` 後 sec-vm 以舊版 unit 把 `.20` 搶回造成短暫衝突（手動 release 解掉）→ 促成腦裂防護：takeover 先做
+ARP DAD，開機 unit 被拒就標 fence、docker 起來後 `waf-service-fence.service` 停掉 cloudflared／od-bridge。
+同日演練：正常切到 sec-vm → `qm reset 110` → `switch --yes` 10 秒接手 → sec-vm 開機自動 fenced（status `fenced=true`）。
+**根因未明**（journal 只有 dockerd DNS timeout 與 resolved degraded，無 link 事件）；後續要做**對外健康監看**
+（cron 打 CF 的 `/beakplatform/`，失敗就 LINE 通知，甚至自動 `switch --yes`），否則熱備只是「有人在看時才有用」。
+另一個副產品：硬重置後 sec-vm 的 docker json-file log 停止更新（cloudflared 明明已註冊、`docker logs` 停在 precheck），
+所以 `wait_cloudflared` 改用 cloudflared 自己的 `http://172.18.0.250:20241/ready`（`readyConnections`）判定，不再 grep log。
 
 2026-09-11 實測五輪來回全部成功（憑證 `/opt/tmp/verify/20260911-failover-real.log`），
 中斷「舊台開始釋放 → 新台 cloudflared 註冊」約 **14～20 秒**，其中 cloudflared 註冊 2～4 秒。
@@ -910,7 +928,7 @@ blocklist 帶剩餘 timeout 複製（用 TEST-NET `203.0.113.99 timeout 900s` �
 
 **今天踩到的五個，全部已寫進 standby.sh 或讀者文件**：
 
-1. **容器出站 MASQUERADE 選網卡 primary 位址，不看路由 `src`**。sec-vm 加 `.21` 後改 netplan，
+1. **容器出站 MASQUERADE 選網卡 primary 位址，不看路由 `src`**（下面六條是 09-11 的）。sec-vm 加 `.21` 後改 netplan，
    只修路由 src → 主機自己連得到 `.66`、waf-nginx 容器連不到，`/beakplatform` 從 Internet 斷了約 13 分鐘
    （00:28～00:41Z），歡迎頁卻正常。解法是獨立表 `ip wafsvc` 一條 SNAT（docker 網段 → 服務 IP）
 2. **`ip addr del` 會連帶刪掉 prefsrc 指向該位址的路由**（子網＋default 一起消失，主機連 ARP 都不回）。

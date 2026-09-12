@@ -100,51 +100,76 @@ sudo bash install.sh \
 sudo bash /opt/ithome2026-waf/standby.sh release --service-ip 192.168.1.20
 ```
 
-被保護網站與管制端防火牆只需要放行服務 IP。兩台管理 IP 只要管理機能 SSH 進去即可。
+被保護網站與管制端防火牆只需要放行服務 IP。兩台管理 IP 只要管理機能 SSH 進去即可
+（SSH 帳號要能 `sudo -n`）。**兩台的管理 IP 都用固定 IP**，理由見第六節。
+
+### 管理機的組態檔
+
+`failover.sh` 的參數全部放組態檔，命令列只說「做什麼」。把 `failover.conf.example` 複製成
+`failover.conf` 放在 `failover.sh` 旁邊（或 `/etc/ithome2026-waf/failover.conf`）：
+
+```bash
+SERVICE_IP="192.168.1.20"          # 服務 IP
+NODE_A="192.168.1.11"; NODE_A_NAME="primary"    # 節點 A 的管理 IP 與你要叫它的名字
+NODE_B="192.168.1.12"; NODE_B_NAME="standby"
+SSH_USER="ubuntu"                  # 兩台防禦端的 SSH 帳號
+SSH_OPTS_STR="-i ~/.ssh/waf-node"  # 額外 ssh 參數
+INSTALL_DIR="/opt/ithome2026-waf"
+LOG_DIR="/var/log/ithome2026-waf"  # 每次切換的完整輸出落地在這裡（failover-<日期>.log）
+```
+
+`failover.conf` 含內網 IP，不要進版控（repo 的 `.gitignore` 已排除）。
 
 ## 四、切換與切回
 
-在管理機執行：
+在管理機執行（組態檔放好之後，四個動作就是全部）：
 
 ```bash
-bash /opt/ithome2026-waf/failover.sh \
-    --service-ip 192.168.1.20 \
-    --nodes 192.168.1.11,192.168.1.12 \
-    --to 192.168.1.12
+bash /opt/ithome2026-waf/failover.sh status          # 兩台誰持有服務 IP、cloudflared / od-bridge / blocklist
+bash /opt/ithome2026-waf/failover.sh dry-run         # 只做前置檢查，不切換
+bash /opt/ithome2026-waf/failover.sh switch          # 切到「現在沒持有服務 IP」的那台
+bash /opt/ithome2026-waf/failover.sh to standby      # 切到指定節點（組態檔的名字、A/B、或 IP）
 ```
 
-確認計畫後輸入 `yes`，工具會：
+確認計畫後輸入 `yes`（排程或流程節點用 `--yes` 跳過詢問），工具會：
 
-1. 檢查兩台狀態、只允許一台持有服務 IP
-2. 比對兩台 `.env` 的公開服務設定
-3. 從舊節點匯出 blocklist 與 EDL 狀態
-4. 停舊節點 cloudflared / od-bridge，釋放服務 IP
-5. 新節點綁定服務 IP、調整路由 src、匯入狀態、啟動 od-bridge / cloudflared
+1. 取得兩台狀態，只允許一台持有服務 IP；目標的 cloudflared 必須是停的
+2. 比對兩台 `.env` 的公開服務設定（`--force` 可跳過）
+3. 從舊節點匯出 blocklist（含剩餘 timeout）與 EDL 狀態
+4. 停舊節點 cloudflared / od-bridge，釋放服務 IP、刪 SNAT、路由 src 改回管理 IP
+5. 新節點做 ARP 重複位址偵測、綁服務 IP、改路由 src、加 SNAT、對鄰居宣告 MAC、匯入狀態、
+   啟動 od-bridge / cloudflared
 6. 在管理機用 curl 驗證 WAF 與 SQLi 403
 
-非互動切換：
+輸出最後會印出「服務中斷約 N 秒」，量的是「舊節點開始釋放」到「新節點 cloudflared 向 Cloudflare
+註冊完成」。實測一次來回約 15～20 秒：cloudflared 註冊本身只要 2～4 秒，其餘是停容器、SSH 往返與 ARP 宣告。
+切回只要把 `to` 換成另一台，或再跑一次 `switch`。
+
+### 現役節點整台失聯時
+
+這才是熱備真正要處理的情境。`failover.sh` 對連不上的節點不會中止，會標成「失聯」並視為沒人持有
+服務 IP，然後把活著的那台當目標：
 
 ```bash
-bash /opt/ithome2026-waf/failover.sh \
-    --service-ip 192.168.1.20 \
-    --nodes 192.168.1.11,192.168.1.12 \
-    --to 192.168.1.12 \
-    --yes
+bash /opt/ithome2026-waf/failover.sh switch --yes
 ```
 
-切回只要把 `--to` 換成另一台。輸出最後會印出「服務中斷約 N 秒」，量的是「舊節點開始釋放」到
-「新節點 cloudflared 向 Cloudflare 註冊完成」。實測一次來回約 15～20 秒：cloudflared 註冊本身只要 2～3 秒，
-其餘是停容器、SSH 往返與 ARP 宣告。
+失聯節點上的封鎖清單複製不到，新節點從空清單開始（24 小時封鎖本來就會到期，平台的決策紀錄仍在）。
+實測從下指令到 cloudflared 註冊完成約 10～15 秒。
+
+### 腦裂防護：掛掉的舊現役修好重開之後
+
+舊現役重開機時，它的開機 unit 會先做 ARP 重複位址偵測：服務 IP 已經有別台在回應，就**不接手**、
+標記 fence，等 docker 起來後把自己的 cloudflared / od-bridge 停掉，乖乖當待命（`status` 會顯示
+`fenced`）。要讓它回到現役，照常 `failover.sh to <它>` 即可。同樣的偵測也在手動 `standby.sh takeover`
+時生效，確定對方真的死了才用 `--force` 硬接。
 
 ## 五、驗證
 
 看兩台目前誰是現役：
 
 ```bash
-bash /opt/ithome2026-waf/failover.sh \
-    --status \
-    --service-ip 192.168.1.20 \
-    --nodes 192.168.1.11,192.168.1.12
+bash /opt/ithome2026-waf/failover.sh status
 ```
 
 從管理機打服務 IP（管理機要在防禦端的 `--admin-ips` 內，否則 8080 會被來源管制擋下而逾時）：
@@ -204,6 +229,8 @@ takeover 是冪等的；服務 IP 已存在時會顯示已綁定並繼續確認�
 | `.env` 不一致 | `CF_HOSTNAME`、`WELCOME_HOSTNAME`、`WAF_BACKEND_PATH`、`WAF_BACKEND_URL`、`BEAK_BASE_URL` 必須一致。修正後再切換；確定要略過可加 `--force` |
 | ARP 沒更新 | takeover 會先開 `arp_notify`，加服務 IP 時 kernel 會送 gratuitous ARP；若有 `arping` 會再補送。管理機可用 `ip neigh show 192.168.1.20` 看 MAC 是否改到新節點 |
 | 切換後 Cloudflare 回 530、cloudflared log 出現 DNS `server misbehaving` | 新節點出站被路由器的舊 ARP 快取吃掉，等它老化（約 60～90 秒）就會自己好。新版 takeover 會用 arping 主動宣告，若仍發生，到新節點 `sudo arping -c 2 -I <網卡> -s <服務 IP> <閘道>` |
-| 冷啟動沒人持有服務 IP | 明確指定 `--to` 並加 `--yes`，工具才會允許從無現役狀態啟動 |
+| 冷啟動沒人持有服務 IP | 用 `switch --yes`（一台失聯時自動選活著的那台）或 `to <節點> --yes` |
+| 一台 `status` 顯示 `fenced` | 它開機時發現服務 IP 已被別台持有，已自動退為待命。這是腦裂防護正常運作，不是故障 |
+| 切換工具回報失敗，但對外服務其實正常 | 多半是「新節點 cloudflared 120 秒內沒看到註冊訊息」——先跑 `status` 與 curl 確認實況再決定要不要回退，不要照著回退指令反射動作 |
 | 歡迎頁正常、被保護網站的路徑逾時 | 容器出站來源不是服務 IP。到現役節點看 `sudo nft list table ip wafsvc` 是否有 `snat to <服務 IP>`；沒有就重跑 `standby.sh takeover` |
 | SQLi 驗證不是 403 | 先確認打的是服務 IP 的 `8080`，再看現役節點 `docker compose logs waf-nginx` 與 `WAF_RULE_ENGINE` 是否為 `On` |
