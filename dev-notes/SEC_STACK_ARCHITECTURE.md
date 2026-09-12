@@ -964,3 +964,62 @@ blocklist 帶剩餘 timeout 複製（用 TEST-NET `203.0.113.99 timeout 900s` �
 - bpserv 的 GitHub PAT 已失效（2026-09-10 API 401），Ethan 表示先不動作
 - 換裝時順帶產生的案件 `OD-20260909-0004`：Suricata sid 2049202（od-bridge 映像檔 build 時 pip 連 files.pythonhosted.org 的 ET INFO），一次性
 - **cloudflared 真正的噪音是 sid 2047122**「ET INFO DNS Query to Cloudflare Tunneling Domain」：本機 cloudflared 每次重連查 `<tunnel id>.argotunnel.com` 就建一張案件（`OD-20260910-0005`，actor 192.168.0.20 → 1.1.1.1）。2026-09-10 加進 `suricata/disable.conf`，`install.sh --update-rules` 重載後不再觸發
+
+---
+
+## 13. 熱備健康監看（PF-260，2026-09-12）
+
+**起因**：2026-09-12 sec-vm 網路靜默死亡，對外 530 約 12 小時無人發現，切換本身只花 15 秒。
+偵測的價值遠大於切換速度。**Ethan 定調不用 crontab 巡檢，做成系統級表單流程範例**
+（每輪檢查都留在流程記錄裡，可視覺、可稽核）。讀者文件
+`docs/install/ithome2026_waf_monitor.md`。
+
+### 三個元件與本機識別碼
+
+| 元件 | 位置 |
+|---|---|
+| 探測 | `ITHome2026-WAF/monitor_probe.sh`（讀 `failover.conf`，新增 4 個鍵） |
+| 流程 | 系統企業 node展覽館「WAF 熱備健康監看」<br>form `NODEDEMO_WAF_MONITOR` / flow `NODEDEMO_WAF_MONITOR_FLOW`<br>佈建 `scripts/examples/provision_nodedemo_waf_monitor.py`（冪等） |
+| 看門狗 | `scripts/cron/waf_monitor_watchdog.py`，`/etc/crontab` 每 5 分鐘（2026-09-12 加入） |
+
+### 五件猜不到的
+
+- **迴圈 graph 是刻意的，引擎支援**：`idx_fw_queue_active_node` 是 partial unique，
+  只涵蓋 `PENDING/RUNNING/WAITING`，所以同一個 `node_id` 可以留多筆 COMPLETED 並重新進入。
+  看到「一個流程實例裡同一節點好幾筆記錄」不是重複執行的 bug。
+- **間隔與逾時只能寫在節點 config，不能做成表單欄位**：`get_config_value()` 不做變數替換，
+  只有 OsExecutor 的 `command`、SysTelegram 的 `message`、OpFieldWrite 的 `content`、
+  Branch 條件兩端會過 `replace_variables()`。所以「等多久」是佈建參數（`--interval-minutes` /
+  `--decision-timeout-minutes`），**「等不到人時做什麼」才是表單欄位**（Branch 讀得到）。
+- **`timeout_path_id` 要填決策選項的 `id`（`opt-auto`），不是 edge id**：
+  `_find_timeout_path()` 是在 `decision_options` 裡找 `id` 或 `edge_id`，
+  指到裸出邊會**靜默不啟用逾時**，只在節點 log 留一行「逾時去向不在可選路徑內」。
+  因此第三顆按鈕「依本單預設設定處置」是必要的（人也可以主動按，語意一致）。
+- **決策關卡開著時巡檢暫停**（迴圈被關卡擋住）。刻意的取捨：避免關卡未處理又發下一輪告警。
+  代價是這段期間服務自己恢復了流程也不知道，要等人回應或逾時。
+- **逾時實際觸發會比設定值晚最多 2 分鐘**：喚醒逾時簽核節點的是
+  `workflow_executor._poll_waiting_nodes()`，它每 `PENDING_POLL_INTERVAL_SECONDS`（120 秒）
+  才跑一次（一般 PENDING 與 Delay 是每 5 秒的那條路徑）。實測 1 分鐘逾時在 69 秒後觸發。
+  設 15 分鐘時這個誤差無所謂，但拿 1 分鐘做驗收時會以為機制沒生效。
+- **`STATE=ISOLATED` 不告警也不切換**：管理機（`.16`）自己斷網時什麼都 ping 不到，
+  這時亂切服務 IP 最危險。判定是「閘道 + 兩台管理 IP 全部 ping 不到」。
+
+### 監看流程自己會靜默死掉，所以看門狗不可省
+
+重啟 `beakplatform-dev-executor` 若剛好撞上節點 RUNNING，該節點永遠卡住
+（全 repo 無 stale RUNNING 回收機制），流程就此靜止且不報錯——症狀與「一切正常」相同。
+`monitor_probe.sh` 每輪寫 `/opt/tmp/heartbeat/waf_monitor.ok`，看門狗每 5 分鐘檢查它，
+超過 12 分鐘沒更新就發 Telegram（系統企業設定組 `c9WeYKveCBWxbn0t8kl6yn`「系統TG」，
+頻道「測試頻道」；60 分鐘去抖，恢復時發一則恢復通知）。
+**Telegram token 不落地**，執行時才查 `TelegramConfig`；也因此看門狗要載入 Flask app
+——已改成只有真的要發送時才 `create_app()`，正常路徑不付這個成本。
+
+停止監看：`touch /opt/tmp/waf-monitor.stop`（下一輪 `STATE=STOP` → 流程走 End detach 正常結束；
+看門狗看到旗標也會安靜）。重開就刪旗標再送一張新單。
+
+### 送單的兩個坑（驗收時踩過）
+
+- 表單中心的**送出按鈕是「送出表單」**（`fc-btn fc-btn-primary`，`@click=submitForm()`），
+  不是 form.io schema 裡那顆「送出」。點錯那顆不會有任何網路請求。
+- `submitForm()` 第一件事是**驗證主旨**（`#form-subject-input`），空的就 return，
+  **畫面上也不一定看得到錯誤**。自動化送單一定要先填主旨。
