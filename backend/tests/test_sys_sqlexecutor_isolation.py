@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-SqlExecutor 節點 — 租戶隔離紅隊測試（2026-08-31, Session B）
+SysSqlExecutor 節點 — 租戶隔離紅隊測試（2026-08-31, Session B）
 
-與 test_sqlexecutor_node.py 互補：那個檔案驗「七道防線各自存在」，
+與 test_sys_sqlexecutor_node.py 互補：那個檔案驗「七道防線各自存在」，
 這個檔案站在攻擊者立場，補既有測試沒覆蓋到的**變體與繞道**：
 
 - org 覆寫的大小寫／空白變體（不是只有精確的 p_org_secure_code）
@@ -30,8 +30,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app import db  # noqa: E402
 from modules.form_workflow.models import FwSqlProcedure  # noqa: E402
-from modules.form_workflow.services.node_handlers.sqlexecutor_handler import (  # noqa: E402
-    ORG_PARAM, SqlExecutorHandler, SqlProcedureRejected, coerce_param,
+from modules.form_workflow.services.node_handlers.sys_sqlexecutor_handler import (  # noqa: E402
+    ORG_PARAM, SysSqlExecutorHandler, SqlProcedureRejected, coerce_param,
 )
 
 ORG_A = 'ORG_AAAAAAAAAAAAAAAAAAAA'
@@ -49,7 +49,7 @@ def _handler(config, org=ORG_A):
         status='PENDING',
         id=1,
     )
-    handler = SqlExecutorHandler(queue_item)
+    handler = SysSqlExecutorHandler(queue_item)
     # 變數替換獨立測試，這裡只驗把關；原樣回傳即可
     handler.replace_variables = lambda raw, **kwargs: raw
     return handler

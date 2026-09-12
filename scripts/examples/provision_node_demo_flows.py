@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-把兩個空白流程改造成「看得懂、跑得動」的節點示範（SqlExecutor / AiAgent）。
+把兩個空白流程改造成「看得懂、跑得動」的節點示範（SysSqlExecutor / AiAgent）。
 
-    A. SqlExecutor 範例：請料單
+    A. SysSqlExecutor 範例：請料單
        送單 -> 查庫存(SP) -> 依庫存分流 -> 主管核可
        示範 Ethan 定的場景：核可前先查庫存，不足就在表單加提醒、
        並把查詢結果寫成簽核意見。
@@ -22,7 +22,7 @@
 
 冪等：重跑會覆寫 schema/graph 並重新發行（版本有變才建新快照）。
 
-前置：SqlExecutor 的白名單與範例 SP 由
+前置：SysSqlExecutor 的白名單與範例 SP 由
 `scripts/migrations/106_sqlexecutor_whitelist.sql` 建立，先跑過那支。
 """
 from __future__ import annotations
@@ -66,7 +66,7 @@ def log(msg):
 
 # node_type -> icon 路徑，由 workflow_node_definitions 決定（見 load_node_icons）。
 # 不要用 f'{ICON_BASE}/{node_type.lower()}.svg' 硬推：檔名與型別名不是一對一
-# （AiAgent 一度借用 sqlexecutor.svg，2026-08-20 才補上 aiagent.svg），
+# （AiAgent 一度借用 syssqlexecutor.svg，2026-08-20 才補上 aiagent.svg），
 # 硬推遲早會指到不存在的檔案。
 _NODE_ICONS: dict = {}
 
@@ -171,10 +171,10 @@ def _approve_node(node_id, label, x, y, output_var, ok_label, ok_edge,
 
 
 # ---------------------------------------------------------------------------
-# A. SqlExecutor 範例：請料單
+# A. SysSqlExecutor 範例：請料單
 # ---------------------------------------------------------------------------
 
-FORM_A_NAME = '請料單（SqlExecutor 範例）'
+FORM_A_NAME = '請料單（SysSqlExecutor 範例）'
 FORM_A_SCHEMA = {
     'display': 'form',
     'components': [
@@ -182,7 +182,7 @@ FORM_A_SCHEMA = {
             'key': 'formTitle', 'tag': 'h3', 'type': 'htmlelement',
             'input': False, 'label': 'HTML', 'tableView': False,
             'attrs': [{'attr': 'style', 'value': 'text-align:center; margin:0 0 0.5rem 0;'}],
-            'content': '請料單（SqlExecutor 範例）',
+            'content': '請料單（SysSqlExecutor 範例）',
         },
         {
             'key': 'formHint', 'tag': 'p', 'type': 'htmlelement',
@@ -217,7 +217,7 @@ def build_sql_demo_graph():
     nodes = [
         _node('node-Start', 'Start', 'Start', {}, 340, 200),
         _node(
-            'node-Sql-stock', 'SqlExecutor', '查庫存',
+            'node-Sql-stock', 'SysSqlExecutor', '查庫存',
             {
                 'procedure_code': 'check_stock',
                 'params': {'p_item_code': '${f.item_code}'},
@@ -231,7 +231,7 @@ def build_sql_demo_graph():
                 'note_template': ('[庫存查詢] 料號 ${f.item_code}，本次請領 '
                                   '${f.request_qty}，查得 ${v.stock_count} 筆。'
                                   '詳細結果見表單「庫存查詢結果」欄位。'
-                                  '（本則由 SqlExecutor 節點自動寫入）'),
+                                  '（本則由 SysSqlExecutor 節點自動寫入）'),
                 'on_error': 'continue',
             },
             480, 200,
@@ -427,7 +427,7 @@ def build_ai_demo_graph():
 DEMOS = [
     {
         'workflow_code': 'WF2610385E',
-        'workflow_name': '請料單流程（SqlExecutor 範例）',
+        'workflow_name': '請料單流程（SysSqlExecutor 範例）',
         'form_name': FORM_A_NAME,
         'form_schema': FORM_A_SCHEMA,
         'graph': build_sql_demo_graph,
@@ -577,7 +577,7 @@ def apply_demo(db, models, demo, publisher, apply):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='把兩個空白流程改造成 SqlExecutor / AiAgent 的可用示範')
+        description='把兩個空白流程改造成 SysSqlExecutor / AiAgent 的可用示範')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入')
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')

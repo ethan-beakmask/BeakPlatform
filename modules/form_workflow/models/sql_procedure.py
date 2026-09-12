@@ -1,10 +1,9 @@
 """
 FormWorkflow Module - SQL Procedure Whitelist Model
-SqlExecutor 節點的預存程序白名單
+SysSqlExecutor 節點的預存程序白名單
 
 一筆記錄 ＝ 允許流程設計者呼叫 `fw_sp` schema 內的某支函式。
-**登錄一筆等同授權**，所以維護走 migration（scripts/migrations/106_sqlexecutor_whitelist.sql），
-不開放 Web UI 新增。
+**登錄一筆等同授權**，目前沒有 Web UI 也沒有 API，只能由主機管理員直接下 SQL 登記。
 
 org_secure_code 為 NULL 表示全平台共用；有值時只有該企業的流程選得到。
 """
@@ -15,7 +14,7 @@ from app.models.base import BaseModel
 
 
 class FwSqlProcedure(BaseModel):
-    """SqlExecutor 可呼叫的預存程序白名單"""
+    """SysSqlExecutor 可呼叫的預存程序白名單"""
 
     __tablename__ = 'fw_sql_procedures'
 

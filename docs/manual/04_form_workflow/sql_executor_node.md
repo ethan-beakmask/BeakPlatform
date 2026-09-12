@@ -9,8 +9,8 @@ produces:
   - 查詢結果流程變數
   - 簽核參考註記
 covers:
-  - modules/form_workflow/services/node_handlers/sqlexecutor_handler.py
-  - modules/form_workflow/static/modules/form_workflow/js/wf-node-sql-executor.js
+  - modules/form_workflow/services/node_handlers/sys_sqlexecutor_handler.py
+  - modules/form_workflow/static/modules/form_workflow/js/wf-node-sys-sql-executor.js
   - scripts/sql/fw_sp_setup.sql
 ---
 
@@ -19,10 +19,12 @@ covers:
 在流程中途查一筆資料回來（庫存、額度、既有紀錄），用它決定後面要走哪條路，
 或把結果寫成註記給簽核者看。
 
-!!! abstract "作業：在流程加入查詢"
-    **MENU**：表單流程 ／ 流程設計 → 編輯 → 左欄「系統整合」
+本節點為系統級受限節點，需由平台管理員授權貴企業後才會出現在設計器的「系統」分類中。
 
-    1. 把「SQL 執行 (SqlExecutor)」拖進畫布
+!!! abstract "作業：在流程加入查詢"
+    **MENU**：表單流程 ／ 流程設計 → 編輯 → 左欄「系統」
+
+    1. 把「系統 SQL 執行 (SysSqlExecutor)」拖進畫布
     2. 「預存程序」下拉選要用的查詢——選好之後，下方會依這支查詢**自動出現它要的參數欄位**
     3. 參數填值，可用 `${f.欄位}` 帶入表單內容
     4. 「結果寫入變數」取一個名字

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-PF-252 B8 批次：node展覽館 —— SqlExecutor（NT-15）示範。
+PF-252 B8 批次：node展覽館 —— SysSqlExecutor（NT-15）示範。
 
 本檔佈建兩個流程：
 
-    NT-15 SqlExecutor 示範（呼叫預存程序取值）
+    NT-15 SysSqlExecutor 示範（呼叫預存程序取值）
         入門：呼叫白名單登記的 stock_qty（scalar 模式）拿一個庫存數字進流程
         變數，寫回表單讓人直接看到。第一次呼叫的參數來自表單欄位
         ${f.item_code}，第二次呼叫先用 OpSet 把一個刻意不存在的料號設進流程
@@ -13,8 +13,8 @@ PF-252 B8 批次：node展覽館 —— SqlExecutor（NT-15）示範。
         模式的行為（資料庫函式用 COALESCE 保底回 0，但 _found 旗標會是
         false）。
 
-    NT-15 SqlExecutor 示範（三種結果模式的差別）
-        用三個簽核關卡串接三個 SqlExecutor，依序呼叫 stock_qty（scalar）／
+    NT-15 SysSqlExecutor 示範（三種結果模式的差別）
+        用三個簽核關卡串接三個 SysSqlExecutor，依序呼叫 stock_qty（scalar）／
         check_stock（row）／low_stock_items（rows），對照三種 result_mode
         實際拿到的流程變數長什麼樣。另外從 Start 拉一條平行分支，呼叫一個
         刻意沒有登記在白名單裡的函式名，示範白名單擋下未登記呼叫的行為
@@ -23,8 +23,8 @@ PF-252 B8 批次：node展覽館 —— SqlExecutor（NT-15）示範。
         驗證「回傳列數上限」的截斷行為。
 
 目標企業固定是系統預設企業（Organization.code='SYSTEM'），分類固定是「node展覽館」
-（fw_categories.secure_code='J1ygL6zexauKlLM0_Ktoaw'）。SqlExecutor **不是**受限
-節點（org_restricted=false），不需要企業授權、不需要 grant。
+（fw_categories.secure_code='J1ygL6zexauKlLM0_Ktoaw'）。SysSqlExecutor 是受限節點
+（org_restricted），出廠只授權系統預設企業。
 
 冪等：重跑會沿用既有表單／流程（依 code 找），bump revision 並重新發行（會停用
 舊的已發行版本並建立新版）。填寫權限授予企業內所有非 EXTERNAL 的在職帳號。
@@ -40,7 +40,7 @@ PF-252 B8 批次：node展覽館 —— SqlExecutor（NT-15）示範。
     venv/bin/python scripts/examples/provision_nodedemo_sqlexecutor.py --apply
 
 節點 config 欄位依 handler 原始碼確認：
-    modules/form_workflow/services/node_handlers/sqlexecutor_handler.py
+    modules/form_workflow/services/node_handlers/sys_sqlexecutor_handler.py
     modules/form_workflow/services/node_handlers/opset_handler.py
     modules/form_workflow/services/node_handlers/fieldwrite_handler.py
     modules/form_workflow/services/node_handlers/formadapter_handler.py
@@ -259,7 +259,7 @@ def ensure_demo_inventory(db, org_secure_code, apply):
 
 
 # ---------------------------------------------------------------------------
-# 流程一：NT-15 SqlExecutor 示範（呼叫預存程序取值）
+# 流程一：NT-15 SysSqlExecutor 示範（呼叫預存程序取值）
 # ---------------------------------------------------------------------------
 
 def build_intro_graph():
@@ -267,7 +267,7 @@ def build_intro_graph():
         _node('node-Start', 'Start', 'Start', {}, 100, 200,
               '流程入口，不需要任何前置設定。'),
 
-        _node('node-SqlByForm', 'SqlExecutor', '查詢庫存（參數來自表單欄位）', {
+        _node('node-SqlByForm', 'SysSqlExecutor', '查詢庫存（參數來自表單欄位）', {
             'procedure_code': 'stock_qty',
             'params': {'p_item_code': '${f.item_code}'},
             'result_var': 'qty_from_form',
@@ -286,9 +286,9 @@ def build_intro_graph():
             ],
         }, 660, 200,
             '用 OpSet 把一個刻意不存在的料號寫進流程變數 probe_item_code，'
-            '供下一個 SqlExecutor 示範「查無資料」時的行為。'),
+            '供下一個 SysSqlExecutor 示範「查無資料」時的行為。'),
 
-        _node('node-SqlByVar', 'SqlExecutor', '查詢庫存（參數來自流程變數，示範查無資料）', {
+        _node('node-SqlByVar', 'SysSqlExecutor', '查詢庫存（參數來自流程變數，示範查無資料）', {
             'procedure_code': 'check_stock',
             'params': {'p_item_code': '${v.probe_item_code}'},
             'result_var': 'stock_from_var',
@@ -305,7 +305,7 @@ def build_intro_graph():
             '），因為聚合查詢不論有沒有符合資料，SQL 都固定回傳一列（保底'
             '值 0），_found 會恆為 true，並不能反映真正有沒有資料——'
             '_found 旗標的可靠度取決於 SP 本身的 SQL 是不是聚合查詢，不是'
-            ' SqlExecutor 通用保證的行為，設計流程時要留意這一點。'),
+            ' SysSqlExecutor 通用保證的行為，設計流程時要留意這一點。'),
 
         _node('node-Write', 'OpFieldWrite', '寫回查詢結果', {
             'target_field': 'query_result_display',
@@ -346,7 +346,7 @@ def build_intro_graph():
 
 NT15_INTRO_DESCRIPTION = (
     '【這個節點做什麼】\n'
-    'SqlExecutor 讓流程呼叫平台主庫裡「事先登錄過」的預存程序（stored'
+    'SysSqlExecutor 讓流程呼叫平台主庫裡「事先登錄過」的預存程序（stored'
     ' procedure），把查詢結果寫進流程變數。它不能自由下 SQL，只能呼叫白'
     '名單（fw_sql_procedures 表）登記過的函式——這是它與「直接執行 SQL」'
     '最大的差別，也是這個節點存在的核心價值：流程 config 存在'
@@ -362,7 +362,7 @@ NT15_INTRO_DESCRIPTION = (
     ' p_org_secure_code 由系統自動帶入，config 裡如果出現這個名字會被整次'
     '拒絕——這是租戶隔離的最後一道防線，不讓流程設計者有機會指定別家企業'
     '的識別碼。\n'
-    '- 第一個 SqlExecutor 的 p_item_code 值是 ${f.item_code}，來自表單'
+    '- 第一個 SysSqlExecutor 的 p_item_code 值是 ${f.item_code}，來自表單'
     '欄位；第二個則是 ${v.probe_item_code}，來自前一個 OpSet 節點設定的'
     '流程變數——兩種來源都合法，差別只在 ${...} 引用的前綴（f. 是表單'
     '欄位、v. 是流程變數）。\n'
@@ -374,7 +374,7 @@ NT15_INTRO_DESCRIPTION = (
     '這種內部用 MAX+COALESCE 聚合的 SP，即使查無資料，聚合查詢仍會固定'
     '回傳一列（保底值 0），此時 _found 會恆為 true，並不能反映真正有沒有'
     '資料。**_found 旗標的可靠度取決於 SP 本身的 SQL 是不是聚合查詢，'
-    '不是 SqlExecutor 通用保證的行為**，設計流程時要注意。\n\n'
+    '不是 SysSqlExecutor 通用保證的行為**，設計流程時要注意。\n\n'
     '【怎麼看結果】\n'
     '送單後回到「填寫表單」重新打開這張單，query_result_display 欄位會'
     '同時顯示兩次查詢的結果與 _found 旗標。也可以直接查流程變數'
@@ -385,16 +385,16 @@ NT15_INTRO_DESCRIPTION = (
 FORM_INTRO_SCHEMA = {
     'display': 'form',
     'components': [
-        _title('NT-15 SqlExecutor 示範表單（呼叫預存程序取值）'),
+        _title('NT-15 SysSqlExecutor 示範表單（呼叫預存程序取值）'),
         _hint('送出後流程會呼叫白名單登記的 stock_qty 兩次：第一次查詢下方'
               '「料號」欄位的值，第二次改查一個流程內部設定的不存在料號。'
               '送出當下結果欄位還是空的，流程跑完（通常幾秒內）後重新整理'
               '本頁才看得到內容。'),
         _text('item_code', '要查詢的料號',
               f'預設值 {ITEM_STOCK_OK} 是示範資料裡庫存充足的料號，'
-              '會直接當成 SqlExecutor 的 p_item_code 參數，不修改也可以。'),
+              '會直接當成 SysSqlExecutor 的 p_item_code 參數，不修改也可以。'),
         _textarea('query_result_display', '查詢結果（由流程自動填入）',
-                   '此欄位由 SqlExecutor + OpFieldWrite 自動寫入。', rows=10),
+                   '此欄位由 SysSqlExecutor + OpFieldWrite 自動寫入。', rows=10),
         _submit_button(),
     ],
 }
@@ -402,7 +402,7 @@ FORM_INTRO_SCHEMA['components'][2]['defaultValue'] = ITEM_STOCK_OK
 
 
 # ---------------------------------------------------------------------------
-# 流程二：NT-15 SqlExecutor 示範（三種結果模式的差別）
+# 流程二：NT-15 SysSqlExecutor 示範（三種結果模式的差別）
 # ---------------------------------------------------------------------------
 
 def build_modes_graph():
@@ -413,7 +413,7 @@ def build_modes_graph():
               '出線＝並行」，不需要 ParallelFork。'),
 
         # --- 主線：三種 result_mode 對照 ---
-        _node('node-SqlScalar', 'SqlExecutor', '呼叫 stock_qty（scalar）', {
+        _node('node-SqlScalar', 'SysSqlExecutor', '呼叫 stock_qty（scalar）', {
             'procedure_code': 'stock_qty',
             'params': {'p_item_code': ITEM_STOCK_OK},
             'result_var': 'mode_scalar',
@@ -438,7 +438,7 @@ def build_modes_graph():
               _approve_config('ack_scalar', '已檢視 scalar 結果，繼續看 row 模式', 'edge-gate1-row'),
               940, 100, '停下來讓送單者先看 scalar 模式的結果，確認後才推進到 row 模式。'),
 
-        _node('node-SqlRow', 'SqlExecutor', '呼叫 check_stock（row）', {
+        _node('node-SqlRow', 'SysSqlExecutor', '呼叫 check_stock（row）', {
             'procedure_code': 'check_stock',
             'params': {'p_item_code': ITEM_LOW_FOR_ROW},
             'result_var': 'mode_row',
@@ -470,7 +470,7 @@ def build_modes_graph():
               _approve_config('ack_row', '已檢視 row 結果，繼續看 rows 模式', 'edge-gate2-rows'),
               1780, 100, '停下來讓送單者對照 row 模式與 scalar 模式的差異，確認後才推進到 rows 模式。'),
 
-        _node('node-SqlRows', 'SqlExecutor', '呼叫 low_stock_items（rows）', {
+        _node('node-SqlRows', 'SysSqlExecutor', '呼叫 low_stock_items（rows）', {
             'procedure_code': 'low_stock_items',
             'params': {},
             'result_var': 'mode_rows',
@@ -505,7 +505,7 @@ def build_modes_graph():
               '流程正常結束（finish_mode=detach）。'),
 
         # --- 平行分支：白名單擋人示範 ---
-        _node('node-SqlBlocked', 'SqlExecutor', '呼叫白名單外的函式（示範被擋下）', {
+        _node('node-SqlBlocked', 'SysSqlExecutor', '呼叫白名單外的函式（示範被擋下）', {
             'procedure_code': WHITELIST_BLOCK_CODE,
             'params': {},
             'result_var': 'mode_blocked',
@@ -518,7 +518,7 @@ def build_modes_graph():
             '節點本身失敗（on_error 用預設值「error」，不是「continue」，'
             '所以查詢失敗會讓節點真的失敗，重試最多 3 次後變成 FAILED，'
             '這與 Os 系列節點刻意讓失敗也回報 success 的「四分法」是不同的'
-            '設計——SqlExecutor 失敗就是真的失敗，在流程管理頁看得出來）。'),
+            '設計——SysSqlExecutor 失敗就是真的失敗，在流程管理頁看得出來）。'),
     ]
     edges = [
         _edge('edge-start-scalar', 'node-Start', 'node-SqlScalar'),
@@ -538,7 +538,7 @@ def build_modes_graph():
 
 NT15_MODES_DESCRIPTION = (
     '【這個節點做什麼】\n'
-    'SqlExecutor 讓流程呼叫平台主庫裡「事先登錄過」的預存程序，把查詢結果'
+    'SysSqlExecutor 讓流程呼叫平台主庫裡「事先登錄過」的預存程序，把查詢結果'
     '依登記的 result_mode（scalar／row／rows）寫成不同形狀的流程變數。它'
     '刻意不支援自由下 SQL——流程 config 存在 fw_workflow_templates.graph'
     '裡，而 graph 可以透過 API 直接改寫，如果流程可以自己組 SQL 字串，'
@@ -575,17 +575,17 @@ NT15_MODES_DESCRIPTION = (
     '證明「回傳列數上限」是登記值與資料庫實際筆數兩者取小，不會因為資料'
     '變多就跟著變多。\n'
     '- 另外有一個平行分支，呼叫一個刻意沒有登記在白名單裡的函式名'
-    f'（{WHITELIST_BLOCK_CODE}）。這是 SqlExecutor 安全設計的核心：即使'
+    f'（{WHITELIST_BLOCK_CODE}）。這是 SysSqlExecutor 安全設計的核心：即使'
     '流程設計者在 config 裡填了任意函式名，handler 執行時一定會拿'
     ' procedure_code 重新查一次 fw_sql_procedures 白名單表，查不到就整次'
     '拒絕——設計器的下拉選單只是輔助，不是防線。\n'
     '- 這個節點的 on_error 用預設值「error」（不是「continue」），所以查詢'
     '失敗會讓這個節點本身變成失敗，而不是靜默放行——這與 Os 系列節點刻意'
-    '讓失敗也回報 success（四分法）是不同的設計：SqlExecutor 失敗時是真的'
+    '讓失敗也回報 success（四分法）是不同的設計：SysSqlExecutor 失敗時是真的'
     '失敗，會重試最多 3 次，3 次都失敗才變成 FAILED，行為在流程管理頁看'
     '得出來，不需要額外看流程變數才能發現。\n\n'
     '【怎麼看結果】\n'
-    '主線每跑完一次 SqlExecutor 就用一個自簽關卡（assignee_type='
+    '主線每跑完一次 SysSqlExecutor 就用一個自簽關卡（assignee_type='
     'INITIATOR）停下來，回「填寫表單」重新打開這張單，可以依序看到'
     ' scalar_result_display／row_result_display／rows_result_display 三個'
     '欄位。也可以直接查流程變數 mode_scalar／mode_row／'
@@ -600,7 +600,7 @@ NT15_MODES_DESCRIPTION = (
 FORM_MODES_SCHEMA = {
     'display': 'form',
     'components': [
-        _title('NT-15 SqlExecutor 示範表單（三種結果模式的差別）'),
+        _title('NT-15 SysSqlExecutor 示範表單（三種結果模式的差別）'),
         _hint('送出後會依序執行 scalar／row／rows 三種 result_mode 的'
               '查詢，中間插 3 個待簽任務（指派給你自己）。請到「表單中心」'
               '的待簽清單依序點開簽核，每次簽核前先重新整理本頁看對應的'
@@ -622,19 +622,19 @@ FORM_MODES_SCHEMA = {
 FULL_DEMOS_STATIC = [
     {
         'form_code': 'NODEDEMO_NT15_INTRO_FORM',
-        'form_name': 'NT-15 SqlExecutor 示範表單（呼叫預存程序取值）',
+        'form_name': 'NT-15 SysSqlExecutor 示範表單（呼叫預存程序取值）',
         'form_schema': FORM_INTRO_SCHEMA,
         'workflow_code': 'NODEDEMO_NT15_INTRO_FLOW',
-        'workflow_name': 'NT-15 SqlExecutor 示範（呼叫預存程序取值）',
+        'workflow_name': 'NT-15 SysSqlExecutor 示範（呼叫預存程序取值）',
         'description': NT15_INTRO_DESCRIPTION,
         'graph': lambda: build_intro_graph(),
     },
     {
         'form_code': 'NODEDEMO_NT15_MODES_FORM',
-        'form_name': 'NT-15 SqlExecutor 示範表單（三種結果模式的差別）',
+        'form_name': 'NT-15 SysSqlExecutor 示範表單（三種結果模式的差別）',
         'form_schema': FORM_MODES_SCHEMA,
         'workflow_code': 'NODEDEMO_NT15_MODES_FLOW',
-        'workflow_name': 'NT-15 SqlExecutor 示範（三種結果模式的差別）',
+        'workflow_name': 'NT-15 SysSqlExecutor 示範（三種結果模式的差別）',
         'description': NT15_MODES_DESCRIPTION,
         'graph': lambda: build_modes_graph(),
     },
@@ -790,7 +790,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='佈建 node展覽館的 SqlExecutor 示範（B8）')
+        description='佈建 node展覽館的 SysSqlExecutor 示範（B8）')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入')
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
@@ -834,7 +834,7 @@ def main():
         log('\n=== 示範用庫存資料（fw_demo_inventory） ===')
         ensure_demo_inventory(db, osc, args.apply)
 
-        log('\n=== SqlExecutor 示範（表單／流程／配對／發行） ===')
+        log('\n=== SysSqlExecutor 示範（表單／流程／配對／發行） ===')
         full_results = {}
         for demo in FULL_DEMOS_STATIC:
             log(f"\n--- {demo['workflow_name']} ---")

@@ -95,7 +95,7 @@ ${f.address.city}    → form_data['address']['city']  (巢狀欄位)
 
 ### 4.3 `v.` — 流程變數
 
-使用者透過 OpSet、SqlExecutor、FormAdapter 等節點自行定義的變數。
+使用者透過 OpSet、SysSqlExecutor、FormAdapter 等節點自行定義的變數。
 
 ```
 ${v.approval_result}     → 簽核決策
@@ -203,7 +203,7 @@ NODE > FLOW > TREE
 | 父子流程間共享 | TREE | 跨流程變數傳遞 |
 | OpSet 預設 | FLOW | 保持現有行為 |
 | FormAdapter output | FLOW | 決策結果供後續節點使用 |
-| SqlExecutor result | FLOW | 查詢結果供後續節點使用 |
+| SysSqlExecutor result | FLOW | 查詢結果供後續節點使用 |
 | SubFlow paramMapping | TREE | 取代 TODO 的 input/output 映射 |
 
 ---
@@ -339,7 +339,7 @@ ${請假申請單::姓名}  →  設計器顯示格式，不是引擎語法
 |---------|-----------|------------|-----------|
 | OpSet | `v.xxx` (可選 scope) | value 中的 `${...}` | FLOW |
 | FormAdapter | `v.xxx` (output_variable) | input_variables 中的 `${...}` | FLOW |
-| SqlExecutor | `v.xxx` (result_var) | SQL 中的 `${...}` | FLOW |
+| SysSqlExecutor | `v.xxx` (result_var) | SQL 中的 `${...}` | FLOW |
 | OpFieldWrite | — | 寫入值中的 `${...}` | — |
 | Branch | — | 條件中的 `${...}` | — |
 | SubFlow | — | — | TREE (共享) |

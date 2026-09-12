@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-SqlExecutor 節點的安全防護測試
+SysSqlExecutor 節點的安全防護測試
 
 這個節點的風險是「洩密」與「破壞」，所以測的重點不是查詢跑不跑得動，
 而是：**config 被竄改之後會不會出事**。流程 graph 可以透過 API 直接 PUT 改寫，
@@ -24,9 +24,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app import db  # noqa: E402
 from modules.form_workflow.models import FwSqlProcedure  # noqa: E402
-from modules.form_workflow.services.node_handlers.sqlexecutor_handler import (  # noqa: E402
+from modules.form_workflow.services.node_handlers.sys_sqlexecutor_handler import (  # noqa: E402
     MAX_CELL_CHARS, MAX_TOTAL_CHARS, ORG_PARAM,
-    SqlExecutorHandler, SqlProcedureRejected,
+    SysSqlExecutorHandler, SqlProcedureRejected,
     coerce_param, normalize_cell, normalize_rows, sanitize_for_comment,
 )
 
@@ -151,7 +151,7 @@ def _handler(config, org=ORG_A):
         status='PENDING',
         id=1,
     )
-    handler = SqlExecutorHandler(queue_item)
+    handler = SysSqlExecutorHandler(queue_item)
     # 變數替換獨立測試，這裡只驗參數把關；原樣回傳即可
     handler.replace_variables = lambda raw, **kwargs: raw
     return handler
@@ -425,8 +425,8 @@ def test_sql_note_is_not_counted_as_approval(app):
     這條測的是「有人把 action 改成別的值」時會不會破功。
     """
     from modules.form_workflow.models import FwApprovalRecord
-    from modules.form_workflow.services.node_handlers.sqlexecutor_handler import (
-        SqlExecutorHandler as _H)
+    from modules.form_workflow.services.node_handlers.sys_sqlexecutor_handler import (
+        SysSqlExecutorHandler as _H)
 
     rec = FwApprovalRecord(
         org_secure_code=ORG_A, form_instance_secure_code='FI_TEST',

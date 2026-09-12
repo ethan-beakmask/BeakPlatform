@@ -11,7 +11,7 @@
 # Schema 權威是 ORM model（db.create_all），不跑任何 migration（PF-168 起
 # migration 制度廢止，歷史封存在 scripts/migrations/legacy/）。
 # Shell 只負責需要 postgres superuser 的物件：pgcrypto extension 與
-# fw_sp_setup.sql（SqlExecutor 白名單 schema 與擁有權分離）。其餘流程集中在
+# fw_sp_setup.sql（SysSqlExecutor 白名單 schema 與擁有權分離）。其餘流程集中在
 # scripts/bootstrap_db.py：create_all、系統企業、節點 seed、選單、權限、
 # 模組同步、系統企業出廠資料。
 #

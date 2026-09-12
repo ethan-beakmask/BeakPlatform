@@ -7,7 +7,7 @@
  *     wf-dnd-nodes.js, wf-workflow-ui.js, wf-workflow-crud.js, wf-render.js,
  *   wf-accordion.js, wf-node-configs.js (索引),
  *     wf-node-parallel-join.js, wf-node-field-write.js, wf-node-opset.js,
- *     wf-node-sql-executor.js, wf-node-telegram.js, wf-node-sys-email-relay.js,
+ *     wf-node-sys-sql-executor.js, wf-node-telegram.js, wf-node-sys-email-relay.js,
  *     wf-node-navbar-broadcast.js, wf-node-alert-broadcast.js,
  *     wf-node-email-adapter.js, wf-node-branch.js, wf-node-form-adapter.js,
  *   wf-form-adapter.js, wf-save.js, wf-canvas.js, wf-polyline.js,

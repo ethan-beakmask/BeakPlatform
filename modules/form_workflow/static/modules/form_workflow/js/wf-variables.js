@@ -703,7 +703,7 @@
         const _varNodeTypeLabels = {
             'OpSet': { label: '設定變數', icon: 'fa-calculator' },
             'FormAdapter': { label: '簽核', icon: 'fa-file-signature' },
-            'SqlExecutor': { label: 'SQL', icon: 'fa-database' },
+            'SysSqlExecutor': { label: 'SQL', icon: 'fa-database' },
             'Branch': { label: '分支', icon: 'fa-code-branch' },
             'Subflow': { label: '子流程', icon: 'fa-project-diagram' },
             'Telegram': { label: 'TG通知', icon: 'fa-paper-plane' },
@@ -817,7 +817,7 @@
                         });
                         break;
                     }
-                    case 'SqlExecutor': {
+                    case 'SysSqlExecutor': {
                         if (config.result_var) {
                             allVars.push({
                                 category: 'SET', nodeId, displayName, type,

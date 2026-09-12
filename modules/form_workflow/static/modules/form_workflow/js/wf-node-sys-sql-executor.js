@@ -1,5 +1,5 @@
 /**
- * wf-node-sql-executor.js -- SqlExecutor（SQL 執行器）節點屬性面板
+ * wf-node-sys-sql-executor.js -- SysSqlExecutor（系統 SQL 執行器）節點屬性面板
  *
  * 面板只允許選擇後端白名單內的 stored procedure，不能自由輸入 SQL。
  */
@@ -60,7 +60,7 @@ function _renderSqlProcedureDescription(proc) {
 }
 
 // eslint-disable-next-line no-unused-vars
-function renderSqlExecutorPanel(node, nodeId) {
+function renderSysSqlExecutorPanel(node, nodeId) {
     const cfg = node.data('config') || {};
     _sqlExecutorConfig = cfg;
     _sqlParamValues = { ...(cfg.params || {}) };
@@ -131,7 +131,7 @@ function renderSqlExecutorPanel(node, nodeId) {
 }
 
 // eslint-disable-next-line no-unused-vars
-async function initSqlExecutorPanel(nodeId) {
+async function initSysSqlExecutorPanel(nodeId) {
     const select = document.getElementById('sqlProcedureCode');
     const desc = document.getElementById('sqlProcedureDesc');
     if (!select || !desc) return;
@@ -230,7 +230,7 @@ function renderSqlParamFields() {
 
 /** 收集面板設定，回傳要合併進 node config 的物件；面板不存在時回傳 null */
 // eslint-disable-next-line no-unused-vars
-function collectSqlExecutorConfig() {
+function collectSysSqlExecutorConfig() {
     const resultVar = document.getElementById('sqlResultVar');
     const procedureCode = document.getElementById('sqlProcedureCode');
     if (!resultVar || !procedureCode) return null;

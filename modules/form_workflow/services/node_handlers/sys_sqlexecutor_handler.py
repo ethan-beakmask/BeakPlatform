@@ -1,6 +1,6 @@
 """
-FormWorkflow Module - SqlExecutor Handler
-預存程序執行節點處理器
+FormWorkflow Module - SysSqlExecutor Handler
+系統級預存程序執行節點處理器
 
 讓流程呼叫平台主庫裡「事先登錄過」的 stored procedure，把結果寫進流程變數，
 可選擇再插一筆簽核註記給人類參考（與 AiAgent 節點共用同一個出口）。
@@ -12,6 +12,9 @@ FormWorkflow Module - SqlExecutor Handler
 PUT 改寫 —— **設計器的下拉選單不是防線**。所以這裡的每一道都假設 config 是
 攻擊者可控的：
 
+0. **受限節點（org_restricted）**。本節點只有取得授權的企業看得到、用得到，
+   出廠只授權系統預設企業。執行期由 node_runner 統一擋，handler 內另有一道
+   fail-closed 最後防線（見 handle() 開頭的 is_node_allowed）。
 1. **schema 寫死**。SQL 只組得出 `fw_sp.<函式名>(...)`，`fw_sp` 是本檔的字面常數。
    即使白名單表被寫入奇怪內容，可觸及範圍仍鎖在那個 schema 內。
 2. **執行期重查白名單**。config 給的是 `procedure_code`，handler 拿它去
@@ -52,6 +55,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+
+from modules.form_workflow.services.node_grant_service import is_node_allowed
 
 from .base import BaseNodeHandler
 
@@ -182,7 +187,7 @@ def sanitize_for_comment(text_value: str, max_len: int = MAX_CELL_CHARS) -> str:
 # Handler
 # --------------------------------------------------------------------------
 
-class SqlExecutorHandler(BaseNodeHandler):
+class SysSqlExecutorHandler(BaseNodeHandler):
     """
     預存程序執行節點
 
@@ -200,14 +205,14 @@ class SqlExecutorHandler(BaseNodeHandler):
 
     def validate(self) -> bool:
         if not self.get_config_value('procedure_code'):
-            self.log_error('SqlExecutor 節點缺少 procedure_code 設定')
+            self.log_error('SysSqlExecutor 節點缺少 procedure_code 設定')
             return False
         result_var = self.get_config_value('result_var')
         if not result_var:
-            self.log_error('SqlExecutor 節點缺少 result_var 設定')
+            self.log_error('SysSqlExecutor 節點缺少 result_var 設定')
             return False
         if not VAR_NAME_RE.match(str(result_var)):
-            self.log_error(f'SqlExecutor 的 result_var 格式不合法: {result_var}')
+            self.log_error(f'SysSqlExecutor 的 result_var 格式不合法: {result_var}')
             return False
         return True
 
@@ -409,7 +414,7 @@ class SqlExecutorHandler(BaseNodeHandler):
 
         fi = self.form_instance
         if not fi:
-            self.log_warning('SqlExecutor: 找不到 form_instance，略過簽核註記')
+            self.log_warning('SysSqlExecutor: 找不到 form_instance，略過簽核註記')
             return False
         try:
             rec = FwApprovalRecord(
@@ -430,7 +435,7 @@ class SqlExecutorHandler(BaseNodeHandler):
             db.session.flush()
             return True
         except Exception as e:
-            self.log_warning(f'SqlExecutor: 寫入簽核註記失敗: {e}')
+            self.log_warning(f'SysSqlExecutor: 寫入簽核註記失敗: {e}')
             return False
 
     def _maybe_write_note(self, ok: bool) -> bool:
@@ -454,8 +459,16 @@ class SqlExecutorHandler(BaseNodeHandler):
     def handle(self) -> Dict[str, Any]:
         self.report_running()
 
+        node_type = self.queue_item.node_type
+        if not is_node_allowed(node_type, self.queue_item.org_secure_code):
+            self.log_error('企業未取得節點授權', {
+                'node_type': node_type,
+                'org_secure_code': self.queue_item.org_secure_code,
+            })
+            return {'status': 'error', 'message': f'企業未取得 {node_type} 節點授權'}
+
         if not self.validate():
-            return {'status': 'error', 'message': 'SqlExecutor 節點設定不完整', 'data': {}}
+            return {'status': 'error', 'message': 'SysSqlExecutor 節點設定不完整', 'data': {}}
 
         on_error = self.get_config_value('on_error') or 'error'
         result_var = self.get_config_value('result_var')
@@ -472,14 +485,14 @@ class SqlExecutorHandler(BaseNodeHandler):
             summary['procedure_code'] = entry.code
         except SqlProcedureRejected as e:
             error_message = str(e)
-            self.log_error(f'SqlExecutor 拒絕執行: {error_message}')
+            self.log_error(f'SysSqlExecutor 拒絕執行: {error_message}')
         except SQLAlchemyError as e:
             # DB 層錯誤（含 statement_timeout 取消）。原文只進 log，不進註記。
             error_message = f'預存程序執行失敗: {type(e).__name__}'
-            self.log_error(f'SqlExecutor 執行失敗: {e}')
+            self.log_error(f'SysSqlExecutor 執行失敗: {e}')
         except Exception as e:  # noqa: BLE001 - 節點不可以把未預期例外丟給 runner
             error_message = f'預存程序執行失敗: {type(e).__name__}'
-            self.log_error(f'SqlExecutor 未預期錯誤: {e}')
+            self.log_error(f'SysSqlExecutor 未預期錯誤: {e}')
 
         ok = error_message is None
         if not ok:
@@ -496,7 +509,7 @@ class SqlExecutorHandler(BaseNodeHandler):
         payload['wrote_note'] = wrote_note
 
         self.log_info(
-            f'SqlExecutor 完成: ok={ok} '
+            f'SysSqlExecutor 完成: ok={ok} '
             f'procedure={self.get_config_value("procedure_code")}',
             {'result_var': result_var, 'row_count': summary.get('row_count'),
              'truncated': summary.get('truncated'), 'error': error_message})

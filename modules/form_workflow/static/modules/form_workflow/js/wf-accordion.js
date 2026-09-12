@@ -70,7 +70,7 @@
             const nodesWithSettings = [
                 'Subflow', 'Delay', 'OpFieldWrite', 'OpSet', 'Telegram',
                 'SysTelegram', 'SysEmailRelay', 'EmailAdapter', 'Branch',
-                'FormAdapter', 'End', 'SqlExecutor', 'OsExecutor', 'OsFileRead',
+                'FormAdapter', 'End', 'SysSqlExecutor', 'OsExecutor', 'OsFileRead',
                 'ParallelJoin',
                 'NavbarBroadcast', 'AlertBroadcast',
                 'SubSystemProvision', 'ApiKeyAction',
@@ -104,7 +104,7 @@
             // ---- 分派到子模組 render 函式 ----
             if (type === 'Subflow')              info += renderSubflowPanel(node, nodeId);
             if (type === 'Delay')                info += renderDelayPanel(node, nodeId);
-            if (type === 'SqlExecutor')          info += renderSqlExecutorPanel(node, nodeId);
+            if (type === 'SysSqlExecutor')       info += renderSysSqlExecutorPanel(node, nodeId);
             if (type === 'OsExecutor')           info += renderOsExecutorPanel(node, nodeId);
             if (type === 'OsFileRead')             info += renderOsFileReadPanel(node, nodeId);
             if (type === 'OsFileWrite')            info += renderOsFileWritePanel(node, nodeId);
@@ -131,7 +131,7 @@
 
             // ---- Post-render hooks（需要 DOM 已存在才能執行） ----
             if (type === 'Subflow')         loadAvailableSubflows(nodeId);
-            if (type === 'SqlExecutor')     setTimeout(() => initSqlExecutorPanel(nodeId), 50);
+            if (type === 'SysSqlExecutor')  setTimeout(() => initSysSqlExecutorPanel(nodeId), 50);
             if (type === 'OpSet') {
                 const operations = (node.data('config') || {}).operations || [];
                 setTimeout(() => renderOpsetOperations(operations), 50);

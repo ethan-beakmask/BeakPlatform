@@ -114,7 +114,7 @@ def register_builtin_handlers():
     from .api_key_action_handler import ApiKeyActionHandler
     from .api_key_issue_handler import ApiKeyIssueHandler
     from .ai_agent_handler import AiAgentHandler
-    from .sqlexecutor_handler import SqlExecutorHandler
+    from .sys_sqlexecutor_handler import SysSqlExecutorHandler
     from .os_executor_handler import OsExecutorHandler
     from .os_file_read_handler import OsFileReadHandler
     from .os_file_write_handler import OsFileWriteHandler
@@ -176,7 +176,7 @@ def register_builtin_handlers():
     NodeHandlerFactory.register('AiAgent', AiAgentHandler)
 
     # 預存程序（白名單、唯讀）
-    NodeHandlerFactory.register('SqlExecutor', SqlExecutorHandler)
+    NodeHandlerFactory.register('SysSqlExecutor', SysSqlExecutorHandler)
 
     # 系統（OS 命令執行，兩道授權閘門，見 dev-notes/OS_EXECUTOR_SPEC.md）
     NodeHandlerFactory.register('OsExecutor', OsExecutorHandler)

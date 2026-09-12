@@ -242,8 +242,8 @@
                     }
                     break;
                 }
-                case 'SqlExecutor': {
-                    const sqlCfg = collectSqlExecutorConfig();
+                case 'SysSqlExecutor': {
+                    const sqlCfg = collectSysSqlExecutorConfig();
                     if (sqlCfg) {
                         Object.assign(config, sqlCfg);
                         changed = true;

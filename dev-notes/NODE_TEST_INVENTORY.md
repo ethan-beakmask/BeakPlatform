@@ -47,7 +47,7 @@
 | NT-12 | `Switch` | 條件分支 | 控制 | 已刪除 | 2026-08-30 刪除，行為與 ParallelFork 一字不差 |
 | NT-13 | `AiAgent` | AI 分析 | 整合 | 端到端 | 2026-08-20 經 executor 實跑（發現 `AI_NODE_CLI_PATH` 問題）；單元測試 `test_ai_agent_node.py` |
 | NT-14 | `SysEmailRelay` | 系統 Email 轉發 | 系統 | 端到端 | 2026-08-31 PF-188 四層授權面實測（`20260831-pf188.log`）；2026-09-01 PF-193 實際寄信成功（`20260901-pf193-e2e.log`）：收件私人測試信箱（值見 `scripts/.secrets-scan-extra` 末行或 BBN #5353，不進版控）、主旨 `[BeakPlatform 測試] PF-193 端對端驗證 PROC-20260901-0001`。**Ethan 已確認收到（進了 Gmail 垃圾信匣）**——日後重跑要去垃圾信匣找，收不到不等於沒寄達 |
-| NT-15 | `SqlExecutor` | SQL 執行 | 整合 | 端到端 | `20260830-end-cancel-mode.log`；單元測試 `test_sqlexecutor_node.py`（47 項） |
+| NT-15 | `SysSqlExecutor` | 系統 SQL 執行 | 系統（受限節點） | 端到端 | `20260830-end-cancel-mode.log`；單元測試 `test_sys_sqlexecutor_node.py`（47 項） |
 | NT-16 | `SubSystemProvision` | 子系統配置 | 整合 | 未驗證 | — |
 | NT-17 | `Abandon` | 中止 | 系統 | 未驗證 | 與 NT-11 共用父流程喚醒邏輯，**同一個 `created_by` bug 的鄰居，要一併檢查** |
 | NT-18 | `SysTelegram` | 系統 Telegram | 系統 | 端到端 | 2026-08-31 PF-188 授權面同 NT-14；2026-09-01 PF-193 實際發送成功（`20260901-pf193-e2e.log`）：測試頻道 `-4645997172`、`message_id=51561`、內容含 `PROC-20260901-0001` |
@@ -167,7 +167,7 @@ Branch fallback 修正（非 route 一律不推進出邊）、新增 `skip_advan
 
 ## 本次完成（2026-08-30，憑證 `/opt/tmp/verify/20260830-end-cancel-mode.log`）
 
-測試場景：主流程 `Start → ParallelFork →〔SubFlow → 子流程(SqlExecutor 45 秒查詢)〕／〔Delay 30s → End〕`，
+測試場景：主流程 `Start → ParallelFork →〔SubFlow → 子流程(SysSqlExecutor 45 秒查詢)〕／〔Delay 30s → End〕`，
 真實經由 executor 執行，逐 3 秒取樣 OS 進程、PostgreSQL backend、DB 狀態三者。
 
 | 編號 | 驗證內容 | 結果 |
@@ -179,7 +179,7 @@ Branch fallback 修正（非 route 一律不推進出邊）、新增 `skip_advan
 | NT-08 | `Delay` | 正常。30 秒等待精確，`scheduled_at` 自行 commit 落地 |
 | NT-09 | `ParallelFork` | 正常。兩支同時推進、互不干擾 |
 | NT-11 | `SubFlow` | **修復後**正常。建立子流程實例、執行、回頭喚醒父流程 SubFlow 節點 |
-| NT-15 | `SqlExecutor` | 正常。白名單重查、唯讀交易、`statement_timeout` 均生效 |
+| NT-15 | `SysSqlExecutor` | 正常。白名單重查、唯讀交易、`statement_timeout` 均生效 |
 
 單元測試：`backend/tests/test_workflow_cancel_mode.py`（5 項，全部做過 mutation 驗證）。
 
@@ -201,7 +201,7 @@ Branch fallback 修正（非 route 一律不推進出邊）、新增 `skip_advan
 `pg_sleep(45)` 的 PostgreSQL backend 仍活到查詢自然結束——PostgreSQL 只有在
 要寫回 socket 時才發現 client 斷線。同理適用於已送出的 HTTP 請求。
 要連 DB 查詢一起斷，需在殺 process 前對該連線發 `pg_cancel_backend()`。
-**Ethan 2026-08-30 定案不做**（BBN `PF-173` 已結案）：SqlExecutor 有
+**Ethan 2026-08-30 定案不做**（BBN `PF-173` 已結案）：SysSqlExecutor 有
 `statement_timeout`（上限 60 秒）兜底，多佔用連線幾秒到幾分鐘沒有實質影響，
 且 PostgreSQL 本身另有連線與資源的維護機制，不需要由本專案補這一層。
 **這不是延後，是決定不做——未來 session 不要重新把它當成待辦。**
@@ -226,7 +226,7 @@ Branch fallback 修正（非 route 一律不推進出邊）、新增 `skip_advan
 **各節點的成功判準（第 4 項）在驗證該節點時補進本表對應列的「憑證」欄**，
 不要另開文件。節點的 config key 一律看 handler class 的 docstring
 （`modules/form_workflow/services/node_handlers/<型別>_handler.py`，
-`sqlexecutor_handler.py` 與 `ai_agent_handler.py` 是寫得最完整的範例）——
+`sys_sqlexecutor_handler.py` 與 `ai_agent_handler.py` 是寫得最完整的範例）——
 `workflow_node_definitions.config_schema` **沒有任何消費者，不能當權威**。
 
 ## 環境操作（每次驗證都會用到）
@@ -280,10 +280,10 @@ DELETE FROM fw_workflow_templates   WHERE code LIKE 'OSPROBE\_%';
 COMMIT;
 ```
 
-以下是更早期（End cancel 那批）的手法，涉及 SqlExecutor 的臨時 SP，仍可參考：
+以下是更早期（End cancel 那批）的手法，涉及 SysSqlExecutor 的臨時 SP，仍可參考：
 
 ```bash
-# 1. 造一個會佔住 subprocess 的節點：註冊臨時 SP 給 SqlExecutor 用
+# 1. 造一個會佔住 subprocess 的節點：註冊臨時 SP 給 SysSqlExecutor 用
 PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev <<'SQL'
 CREATE OR REPLACE FUNCTION fw_sp.test_sleep(p_org_secure_code text, p_seconds integer)
 RETURNS TABLE(slept integer) LANGUAGE plpgsql AS $$

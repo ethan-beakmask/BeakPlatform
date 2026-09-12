@@ -85,7 +85,7 @@ systemd unit 的 PATH 與你的 shell 不同。凡是節點會呼叫外部程式
 **流程變數是扁平的，`${v.ai.verdict}` 取不到值**。AiAgent 除了 `result_var`
 本身（物件）之外，另外攤平寫出 `<result_var>_verdict` / `_score` / `_ok` /
 `_rule_hits` / `_note`，Branch 條件要判 verdict 只能用這些
-（與 SqlExecutor 的 `<result_var>_<欄位>` 同一套命名）。
+（與 SysSqlExecutor 的 `<result_var>_<欄位>` 同一套命名）。
 
 **AI 一律沒有寫入權**：它只出文字，所有寫入由 handler 做。規則層的
 injection 偵測不經過 AI、直接生效，系統警示由 handler 在 AI 輸出**之後**拼接，

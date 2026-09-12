@@ -88,7 +88,7 @@
                 if (type === 'FormAdapter' && config.output_variable) {
                     varItems.push({ key: config.output_variable, label: nodeName });
                 }
-                if (type === 'SqlExecutor' && config.result_var) {
+                if (type === 'SysSqlExecutor' && config.result_var) {
                     varItems.push({ key: config.result_var, label: nodeName });
                 }
             });

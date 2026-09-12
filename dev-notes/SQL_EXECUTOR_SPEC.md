@@ -1,17 +1,46 @@
-# SqlExecutor 節點規格與安全設計（2026-08-20 第一版）
+# SysSqlExecutor 節點規格與安全設計（2026-08-20 第一版）
 
-流程節點型別 `SqlExecutor`：讓流程呼叫**平台主庫裡事先登錄過**的 stored procedure，
+## 2026-09-13 更名（PF-254 第一階段）
+
+原 `SqlExecutor` 節點已更名為 `SysSqlExecutor`，成為系統級受限節點
+（`org_restricted=true`），設計器分類從「整合」移到「系統」。出廠只授權系統預設企業，
+一般企業未取得授權時在設計器看不到這個節點——**這是預期狀態，不是缺陷**。
+連的仍是平台主庫，這對系統級節點是正確的。
+
+未獲授權企業的行為：`/api/workflows/data/sql-procedures` 回 403；
+graph 帶該節點寫入回 403「流程中含有本企業未獲授權的節點型別」
+（`api/graph_authz.py`）；執行期由 `node_runner` 統一擋，
+handler 的 `handle()` 開頭另有一道 `is_node_allowed()` fail-closed 最後防線。
+
+**既有環境升級**：`venv/bin/python scripts/migrate_sqlexecutor_to_sys.py --apply`
+（`--dry-run` 是預設，冪等，重跑全 0）。它做七件事：節點定義、企業授權紀錄、
+`graph` 與 `cytoscape_config`、發行快照、執行佇列與執行紀錄的 node_type 字串、
+系統企業出廠授權，以及**節點 icon 路徑**。
+
+> **icon 那段不能省。** 更名時 `sqlexecutor.svg` 已 `git mv` 成 `syssqlexecutor.svg`，
+> 而 icon 路徑是**存在每個節點自己的 `icon` 欄位裡**、不會隨 node_type 一起換。
+> 漏了就是設計器畫布上該節點破圖，而畫面沒有任何錯誤訊息（2026-09-13 實際踩到，
+> 第一版遷移腳本漏了這段，是瀏覽器實測才發現的）。
+> 替換**依 node type 分流、不做無差別字串取代**：SQL 節點導到 `syssqlexecutor.svg`，
+> `AiAgent` 導到 `aiagent.svg`（舊 graph 裡 AiAgent 借用過 `sqlexecutor.svg`，
+> 見 `dev-notes/WORKFLOW_DESIGNER_NOTES.md`），其餘型別不動。
+
+**企業級 SQL 節點（連企業專屬庫 `org_<id>`）是第二階段，鐵人賽之後再評估，現在不做。**
+延後的理由不是「現在有洞」而是風險耦合（PostgreSQL 的提權途徑目前全關，
+但那是可能為了別的需求被打開的外部變數）——完整脈絡與七項殘餘攻擊面見 BBN `PF-254`。
+
+流程節點型別 `SysSqlExecutor`：讓流程呼叫**平台主庫裡事先登錄過**的 stored procedure，
 把結果寫進流程變數，可再插一筆簽核註記給人類參考。
 典型場景：請料單在核可前先查庫存夠不夠，不夠就在簽核意見提醒。
 
 | 檔案 | 角色 |
 |---|---|
-| `modules/form_workflow/services/node_handlers/sqlexecutor_handler.py` | handler（安全核心，檔頭有完整設計說明） |
+| `modules/form_workflow/services/node_handlers/sys_sqlexecutor_handler.py` | handler（安全核心，檔頭有完整設計說明） |
 | `modules/form_workflow/models/sql_procedure.py` | 白名單 model `FwSqlProcedure` |
 | `scripts/migrations/legacy/106_sqlexecutor_whitelist.sql` | schema `fw_sp`、白名單表、範例 SP 與範例資料 |
 | `modules/form_workflow/api/workflows.py::get_sql_procedures` | 設計器下拉用的清單 API |
-| `modules/form_workflow/static/.../js/wf-node-sql-executor.js` | 屬性面板 |
-| `backend/tests/test_sqlexecutor_node.py` | 47 個測試（含四道防線的 mutation 驗證） |
+| `modules/form_workflow/static/.../js/wf-node-sys-sql-executor.js` | 屬性面板 |
+| `backend/tests/test_sys_sqlexecutor_node.py` | 47 個測試（含四道防線的 mutation 驗證） |
 
 ## 七道防線（每一道都假設 config 是攻擊者可控的）
 
@@ -160,7 +189,7 @@ beluga 1200 / lion 5。用它驗跨企業隔離最直接。
 
 | 流程 code | 表單 | 示範內容 |
 |---|---|---|
-| `WF2610385E` | 請料單（SqlExecutor 範例） | 送單 → 查庫存 SP → 依「足夠／不足／查無料號」三分流 → 主管核可 |
+| `WF2610385E` | 請料單（SysSqlExecutor 範例） | 送單 → 查庫存 SP → 依「足夠／不足／查無料號」三分流 → 主管核可 |
 | `WF052334D2` | 可疑內容送審（AI 分析範例） | 送單 → AI 分析 → 依 verdict 分流 → 人工確認 |
 
 兩者的簽核者都是 `assignee_type='INITIATOR'`（發起人自己），
@@ -175,7 +204,7 @@ beluga 1200 / lion 5。用它驗跨企業隔離最直接。
    腳本會逐一授權給企業內非 EXTERNAL 的在職帳號
 2. **改 graph 要 bump revision**：publish 靠 version+revision 判斷有無變更，
    直接改 `graph` 不會自動 bump，不 bump 就會沿用舊快照
-3. **變數樣板沒有條件語法**：把庫存數字放進 SqlExecutor 的 `note_template`，
+3. **變數樣板沒有條件語法**：把庫存數字放進 SysSqlExecutor 的 `note_template`，
    查無料號那條會印出「現有庫存  ，安全存量 」。條件性的措辭要交給
    分流之後的 OpFieldWrite 節點，註記只放三條路都成立的事實
 4. **`graph` 與 `cytoscape_config` 兩個欄位都要寫**：引擎讀前者、設計器讀後者
@@ -201,7 +230,7 @@ beluga 1200 / lion 5。用它驗跨企業隔離最直接。
 
 ## 驗收紀錄
 
-- 單元／整合測試：47 passed（`bash scripts/run_tests.sh tests/test_sqlexecutor_node.py -q`）
+- 單元／整合測試：47 passed（`bash scripts/run_tests.sh tests/test_sys_sqlexecutor_node.py -q`）
 - **mutation 驗證**（`/opt/tmp/verify/20260820-sqlexecutor-mutation.log`）：
   拿掉「org 覆寫拒絕」「SECURITY DEFINER 檢查」「READ ONLY 交易」「跨企業過濾」
   四道防線，對應測試各自變紅 —— 測試不是恆真斷言
@@ -209,15 +238,15 @@ beluga 1200 / lion 5。用它驗跨企業隔離最直接。
   跨企業拿到不同資料、竄改 config 帶 org 被拒、白名單外的 code 被拒、
   未宣告參數被拒、SQL 片段當值不當語法、唯讀交易擋下 INSERT、statement_timeout 生效
 - 瀏覽器實測（VERIFY-01）：設計器面板載入白名單、已存的 `procedure_code`
-  正確 selected、參數欄位依 SP 動態重畫、`collectSqlExecutorConfig()` 原樣回收設定、
+  正確 selected、參數欄位依 SP 動態重畫、`collectSysSqlExecutorConfig()` 原樣回收設定、
   console 無錯誤
 
 ---
 
 ## 附：從 CLAUDE.md 移入的三條硬規則（2026-08-30）
 
-節點型別 `SqlExecutor`，handler
-`modules/form_workflow/services/node_handlers/sqlexecutor_handler.py`。
+節點型別 `SysSqlExecutor`，handler
+`modules/form_workflow/services/node_handlers/sys_sqlexecutor_handler.py`。
 **完整規格與「怎麼加一支新 SP」看 `dev-notes/SQL_EXECUTOR_SPEC.md`，動這個模組前整份讀完。**
 
 留在本檔的是三件猜不到、猜錯就是漏洞的：
@@ -250,9 +279,9 @@ beluga 1200 / lion 5。用它驗跨企業隔離最直接。
 Session B 對「企業只能讀自己的資料庫、讀不到別企業與其他系統的庫」做了紅隊測試。
 **結論：無 P1（無可跨企業/跨系統讀資料的路徑），租戶隔離結構性成立。**
 完整輸出 `/opt/tmp/verify/20260831-sqlexecutor-isolation.log`，
-自動化測試 `backend/tests/test_sqlexecutor_isolation.py`（34 條，與 `test_sqlexecutor_node.py` 互補）。
+自動化測試 `backend/tests/test_sys_sqlexecutor_isolation.py`（34 條，與 `test_sys_sqlexecutor_node.py` 互補）。
 
-### 為什麼 SqlExecutor 碰不到別的資料庫（結構性，非靠自律）
+### 為什麼 SysSqlExecutor 碰不到別的資料庫（結構性，非靠自律）
 
 四件疊在一起，缺任何一件都不會有跨庫路徑：
 
@@ -295,8 +324,8 @@ $PS -c "SELECT code,org_secure_code,parameters->0->>'name' first_param,
   EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='fw_sp' AND p.proname=s.function_name) fn_exists
   FROM fw_sql_procedures s WHERE is_deleted=false;"
 
-# 4) 自動化測試（互補於 test_sqlexecutor_node.py）
-bash scripts/run_tests.sh tests/test_sqlexecutor_isolation.py -q
+# 4) 自動化測試（互補於 test_sys_sqlexecutor_node.py）
+bash scripts/run_tests.sh tests/test_sys_sqlexecutor_isolation.py -q
 
 # 5) 叢集內其他庫的實際暴露面（P2 用；不要只看 CONNECT，要看有幾張表真的讀得到）
 for d in $(PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -t -A \
@@ -310,10 +339,10 @@ for d in $(PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatf
 done
 ```
 
-### 待決策（非 SqlExecutor 本身，但直接關乎「讀到別的系統的庫」）
+### 待決策（非 SysSqlExecutor 本身，但直接關乎「讀到別的系統的庫」）
 
 - **P2**：`beakplatform` role 對同一個 PostgreSQL 叢集上的其他資料庫有 CONNECT 權限
-  （PUBLIC 預設）。SqlExecutor **用不到**（跨庫不支援，見上方四點），但這是主機層的
+  （PUBLIC 預設）。SysSqlExecutor **用不到**（跨庫不支援，見上方四點），但這是主機層的
   資料暴露面，而且**不是空的**——2026-08-31 主 Claude 用 `has_table_privilege` 實測：
 
   | 庫 | 以 `beakplatform` 身分實際可 SELECT 的表數 |

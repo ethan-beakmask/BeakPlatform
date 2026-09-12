@@ -23,7 +23,7 @@
 | 流程設計器、graph 操作、publish | `dev-notes/WORKFLOW_DESIGNER_NOTES.md` |
 | 企業行事曆（投影來源、受眾規則、二三期入口） | `dev-notes/CALENDAR_SPEC.md`（PF-229） |
 | 企業專屬資料庫（建立／刪除／健康／佈建憑證） | `dev-notes/ORG_DATABASE_LIFECYCLE.md`（PF-256） |
-| 節點型別規格（AiAgent / SqlExecutor / OsExecutor / 盤點） | `dev-notes/AI_NODE_SECURITY.md`、`dev-notes/SQL_EXECUTOR_SPEC.md`、`dev-notes/OS_EXECUTOR_SPEC.md`、`dev-notes/NODE_TEST_INVENTORY.md` |
+| 節點型別規格（AiAgent / SysSqlExecutor / OsExecutor / 盤點） | `dev-notes/AI_NODE_SECURITY.md`、`dev-notes/SQL_EXECUTOR_SPEC.md`、`dev-notes/OS_EXECUTOR_SPEC.md`、`dev-notes/NODE_TEST_INVENTORY.md` |
 
 **維護原則**：新的踩坑先問「這是 codex 猜不到的專案特有事實，還是通用工程常識？」
 前者才寫進來；屬於「派工時要貼給 codex」的，寫進 `dev-notes/codex_spec/` 並在本檔留指針。
@@ -1704,7 +1704,7 @@ heredoc 建企業、`init_menus.py`、`init_permissions.py`、`flask module sync
 | SMTP 設定組的主機欄位 | `smtp_configs.host` / `port` | **`smtp_host` / `smtp_port`**（另有 `use_tls` / `use_ssl` / `use_app_password` / `provider_type`；2026-09-04 PF-228 起 dev SYSTEM／BELUGA 與 bpserv SYSTEM／DEMOSOC 各一筆 `lionsecbot@gmail.com`、皆 is_default 且實寄過。要給別的測試企業補同一組就跑 `venv/bin/python scripts/seed_smtp_test_config.py --orgs <CODE,...> --apply`——它在同一個 DB 內把系統企業的預設設定組複製過去，Fernet 鑰匙由 `SECRET_KEY` 派生、各企業共用，所以不經手明文、bpserv 也不必重打應用程式密碼） |
 | 用 SQL 造測試角色指派（mutation 驗證常用） | 只填 user/role/org 三個 secure_code | 還要 **`secure_code`**、**`assigned_at`**、**`created_at`**、**`updated_at`** 四個 NOT NULL（DB 無預設、只有 ORM 預設；2026-09-01 與 2026-09-05 各撞一次，錯誤一次只報一個）。`assigned_by` 填可辨識標記（如 `PF145-S5-TEST`），事後 `DELETE FROM user_role_assignments WHERE assigned_by='<標記>'` 一次撤乾淨；成功範例在 `/opt/tmp/verify/20260901-pf145-stage5.log` |
 | 系統設定的鍵值 | `system_settings.setting_key` / `setting_value` | **`key` / `value`**（另有 `value_type` / `category` / `secure_code`）。2026-09-07 撞過 |
-| SqlExecutor 白名單的程序名 | `fw_sql_procedures.procedure_name` / `sp_name` | **`code`（流程 config 引用的鍵）與 `function_name`（實際 PG 函式名）是兩個欄位**；另有 `result_mode`（`scalar`／`row`／`rows`）／`result_columns`／`max_rows`。2026-09-07 連撞兩次 |
+| SysSqlExecutor 白名單的程序名 | `fw_sql_procedures.procedure_name` / `sp_name` | **`code`（流程 config 引用的鍵）與 `function_name`（實際 PG 函式名）是兩個欄位**；另有 `result_mode`（`scalar`／`row`／`rows`）／`result_columns`／`max_rows`。2026-09-07 連撞兩次 |
 | 表單／流程的分類 | `fw_categories.code` / `category_type` | **兩個都不存在**。只有 `secure_code` / `name` / `parent_secure_code`，可見範圍靠三個布林 `show_in_form_design` / `show_in_workflow_design` / `show_in_form_center`。2026-09-07 撞過 |
 | 流程變數的欄位 | `fw_workflow_variables.variable_name` / `variable_value` | **`var_name` / `var_value`**。2026-09-07 PF-252 撞過 |
 | 誰能改 `fw_sp` 裡的預存程序 | 以為 `beakplatform` 可以 | **不行**，該 schema 的 owner 是 `fw_sp_owner`，平台帳號連 DROP 自己不擁有的函式都會被拒（`must be owner of function`）。要 `sudo -u postgres psql -d beakplatform_dev`。這是刻意的權限隔離，不是設定錯誤 |
@@ -2147,7 +2147,7 @@ Playwright E2E 的三條硬規則與 mutation 驗證。
 | 各節點驗證狀態、NT-xx 編號、End 三模式與取消語意 | `dev-notes/NODE_TEST_INVENTORY.md` |
 | AiAgent 的隔離設計（`--safe-mode` / `--tools ""`）與移植性 | `dev-notes/AI_NODE_SECURITY.md` |
 | AiAgent 用量與配額 | `dev-notes/AI_NODE_USAGE_QUOTA_SPEC.md` |
-| SqlExecutor 白名單（執行時重查、唯讀交易、schema 常數） | `dev-notes/SQL_EXECUTOR_SPEC.md` |
+| SysSqlExecutor 白名單（執行時重查、唯讀交易、schema 常數） | `dev-notes/SQL_EXECUTOR_SPEC.md` |
 | OpHrLookup 人事資料取值（NT-31，職位→流程變數、依金額沿主管鏈找核決人） | `dev-notes/HR_LOOKUP_NODE_SPEC.md`；示範流程可用 `scripts/seed_test_companies.py --run` 建的範例企業跑 |
 | OsExecutor / OsFileRead | `dev-notes/OS_EXECUTOR_SPEC.md`（第十四節是實作後記，與規格本文有六處差異，以後記為準） |
 
@@ -2242,8 +2242,9 @@ API 也**必須放平台層**（`backend/app/api/node_grants.py`）——SYSTEM_
 「OS 命令」/「OS 檔案讀取」/「OS 檔案寫入」，`.env` 開關與 `system_settings`
 的目錄白名單鍵也同步帶前綴（`OS_FILE_READ_NODE_ENABLED`、
 `os_file_read_base_dirs` 等）。**新增碰觸作業系統的節點時沿用這個前綴。**
-判準是「碰不碰作業系統」而不是「是不是管理員專用」——所以 `SysTelegram` 與
-`SysEmailRelay` 不在此列（碰的是外部服務不是 OS，用 `Sys` 前綴）。
+判準是「碰不碰作業系統」而不是「是不是管理員專用」——所以 `SysTelegram`、
+`SysEmailRelay` 與 `SysSqlExecutor` 不在此列（碰的是外部服務或平台自己的資料庫，
+不是 OS，用 `Sys` 前綴）。
 `EmailRelay` 於 2026-08-31（PF-188）改名為 `SysEmailRelay`，
 走 `scripts/migrations/legacy/130_sys_nodes_org_restricted.sql`。
 **小寫的 `emailrelay` 一律不動**——那是外部服務 E-MailRelay 本身
@@ -2260,10 +2261,23 @@ base_dir 用**獨立**的 `os_file_write_base_dirs` / `os_file_write_org_base_di
 （**不與 `os_file_read_*` 共用**——可讀不等於可寫）。規格
 `dev-notes/OS_FILE_WRITE_SPEC.md`，部署 `docs/install/os_file_write_node.md`。
 
-**受限節點現況共 5 個**（2026-08-31 PF-188 後）：`OsExecutor` / `OsFileRead` /
-`OsFileWrite` / `SysTelegram` / `SysEmailRelay`。後兩者**沒有 `.env` 開關**
-（不碰 OS，只有企業授權這一道），出廠 `is_active=true`，
+**受限節點現況共 6 個**（2026-09-13 PF-254 後）：`OsExecutor` / `OsFileRead` /
+`OsFileWrite` / `SysTelegram` / `SysEmailRelay` / `SysSqlExecutor`。後三者
+**沒有 `.env` 開關**（不碰 OS，只有企業授權這一道），出廠 `is_active=true`，
 所以「未獲授權的企業看不到」是它們唯一的閘門。
+
+**`SqlExecutor` 已於 2026-09-13（PF-254 第一階段）更名為 `SysSqlExecutor`**
+並改成受限節點，分類從「整合」移到「系統」，連的仍是平台主庫。
+**一般企業從此在設計器裡看不到任何 SQL 節點，這是預期狀態、不是缺陷**——
+未獲授權的企業打 `/api/workflows/data/sql-procedures` 回 403、
+graph 帶該節點寫入回 403「流程中含有本企業未獲授權的節點型別」。
+既有環境升級要跑 `venv/bin/python scripts/migrate_sqlexecutor_to_sys.py --apply`
+（`--dry-run` 預設、冪等），它同時換掉 graph／cytoscape_config／發行快照／
+執行紀錄裡的舊 node_type 字串，並修正節點 icon 路徑——**icon 那段不能省**，
+更名 `git mv` 了圖檔，漏了就是設計器畫布破圖而畫面不報錯。
+（連 `AiAgent` 借用舊 `sqlexecutor.svg` 的歷史節點也一併導到 `aiagent.svg`。）
+**企業級 SQL 節點（連企業專屬庫 `org_<id>`）是第二階段，鐵人賽後再評估，現在不做**
+（決策脈絡見 BBN `PF-254`）。
 
 **`SysTelegram` 的設定組下拉曾經恆為「無法載入設定」**：前端寫死
 `/api/system/data/settings/telegram`，那支端點**從來不存在**（實測 404）。
@@ -2422,7 +2436,7 @@ cd backend && flask run --host=127.0.0.1 --port=7000
 | 測試細節、`test_client` 三坑、Playwright（147 行） | `dev-notes/TESTING_NOTES.md`（新建） |
 | AiAgent 隔離設計與移植性（106 行） | `dev-notes/AI_NODE_SECURITY.md`（新建） |
 | 設計器節點分類、腳本產 graph、publish 陷阱（90 行） | `dev-notes/WORKFLOW_DESIGNER_NOTES.md`（新建） |
-| SqlExecutor 三條硬規則、節點執行與 End 三模式（77 行） | `SQL_EXECUTOR_SPEC.md`、`NODE_TEST_INVENTORY.md` 附錄 |
+| SysSqlExecutor 三條硬規則、節點執行與 End 三模式（77 行） | `SQL_EXECUTOR_SPEC.md`、`NODE_TEST_INVENTORY.md` 附錄 |
 
 **留下的判準是「不讀到會不會做錯，而做錯時症狀認不認得出來」**——
 症狀靜默的（流程變數寫錯地方、重啟 executor 卡死節點、撞開發庫跑測試）留在本檔；

@@ -6,7 +6,7 @@
  *   wf-node-field-write.js     - OP_FIELDWRITE 表單寫值
  *   wf-node-opset.js           - OPSET 變數設定
  *   wf-node-hr-lookup.js       - OpHrLookup 人事資料取值
- *   wf-node-sql-executor.js    - SQLExecutor SQL 查詢
+ *   wf-node-sys-sql-executor.js - SysSqlExecutor SQL 查詢
  *   wf-node-telegram.js        - Telegram + SYS_Telegram
  *   wf-node-sys-email-relay.js - SysEmailRelay 系統郵件
  *   wf-node-navbar-broadcast.js - NavbarBroadcast 跑馬燈廣播

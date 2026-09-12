@@ -692,7 +692,8 @@
                 'opfieldwrite': 'OpFieldWrite',
                 'op_fieldwrite': 'OpFieldWrite',
                 'sysemailrelay': 'SysEmailRelay',
-                'sqlexecutor': 'SqlExecutor',
+                'syssqlexecutor': 'SysSqlExecutor',
+                'sqlexecutor': 'SysSqlExecutor',   // 舊名殘留仍導向新型別
                 'osexecutor': 'OsExecutor',
                 'os_executor': 'OsExecutor',
                 'fileread': 'OsFileRead',

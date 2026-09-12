@@ -1,10 +1,10 @@
--- fw_sp_setup.sql — SqlExecutor 白名單 schema 與擁有權分離（安裝用）
+-- fw_sp_setup.sql — SysSqlExecutor 白名單 schema 與擁有權分離（安裝用）
 --
 -- 來源：整併退役的 migration 106（schema 部分）與 133（owner 分離），
 -- demo 表 / demo SP / 白名單資料不在此檔（那些是資料，不是 schema）。
 --
 -- 安全設計（背景見 dev-notes/SQL_EXECUTOR_SPEC.md）：
---   - SqlExecutor 節點只能呼叫 fw_sp schema 內的函式
+--   - SysSqlExecutor 節點只能呼叫 fw_sp schema 內的函式
 --   - schema 與函式由 NOLOGIN 角色 fw_sp_owner 擁有，app 角色只有 USAGE+EXECUTE，
 --     平台他處的 SQL 寫入漏洞無法在白名單 schema 種後門 SP
 --
@@ -17,7 +17,7 @@ BEGIN;
 -- 1. 專用 schema
 CREATE SCHEMA IF NOT EXISTS fw_sp;
 COMMENT ON SCHEMA fw_sp IS
-    'SqlExecutor 流程節點唯一可呼叫的 schema。放進來的函式等同開放給流程設計者呼叫，'
+    'SysSqlExecutor 流程節點唯一可呼叫的 schema。放進來的函式等同開放給流程設計者呼叫，'
     '每支的第一個參數必須是 p_org_secure_code 且必須拿它做租戶過濾。';
 
 -- 2. 專用 NOLOGIN 角色（只當 owner，不能登入）
@@ -29,7 +29,7 @@ BEGIN
 END $$;
 
 COMMENT ON ROLE fw_sp_owner IS
-    'SqlExecutor 白名單 schema fw_sp 的專用 owner（NOLOGIN）。'
+    'SysSqlExecutor 白名單 schema fw_sp 的專用 owner（NOLOGIN）。'
     'app role 只有 USAGE+EXECUTE，不能在 fw_sp 建立或改寫函式（PF-190 P3-1）';
 
 -- 3. schema ownership

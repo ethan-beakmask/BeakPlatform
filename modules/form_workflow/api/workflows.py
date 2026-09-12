@@ -727,7 +727,7 @@ def get_node_definitions():
 @page_keys_required('form_workflow.workflows')
 def get_sql_procedures():
     """
-    取得 SqlExecutor 節點可用的預存程序白名單（設計器下拉用）
+    取得 SysSqlExecutor 節點可用的預存程序白名單（設計器下拉用）
 
     只回傳全平台共用（org_secure_code 為 NULL）與本企業專屬的登錄項目。
     回應刻意不含 function_name —— 那是內部細節，設計器用穩定識別碼 code 就夠；
@@ -738,8 +738,11 @@ def get_sql_procedures():
     """
     from sqlalchemy import or_
     from ..models import FwSqlProcedure
+    from modules.form_workflow.services.node_grant_service import is_node_allowed
 
     org_code = get_current_org_code()
+    if not is_node_allowed('SysSqlExecutor', org_code):
+        return jsonify({'success': False, 'error': '企業未取得 SysSqlExecutor 節點授權'}), 403
 
     procedures = FwSqlProcedure.query.filter(
         FwSqlProcedure.is_active.is_(True),

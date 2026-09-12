@@ -175,7 +175,7 @@ bpserv 已於 2026-09-03（PF-232）補齊三者，之後新裝的環境由 `cre
 |---|---|
 | 判定（唯一實作） | `modules/form_workflow/services/task_authorizer.py::resolve_acting_identity(task, user, org, actor=None)` → `{'via': 'self'}` 或 `{'via': 'delegation', 'delegator_secure_code': sc}`；本人優先，多位授權人依 secure_code 排序取第一個（決定性）。`can_act_on_task()` 改為它的薄包裝（`is not None`），清單／詳情／鎖定端點繼續用 bool 版 |
 | 欄位值 | `delegate_from_fields(identity, org)`：本人簽核回 `{}`；代理簽核回 `{'delegate_from_secure_code': 授權人 sc, 'delegate_from_name': display_name or username}`。查 `User` 刻意不加 `is_active`（記錄用，授權已在 `get_delegated_identities()` 判過），找不到就用 sc 當名字 |
-| 寫入點（三處人工簽核） | `fc_pending.py::approve_task()`、`fc_batch.py::batch_approve_tasks()`（沿用 actor，無 N+1）、`instance_routes.py::approve_task()`：`FwApprovalRecord(..., **delegate_from_fields(...))`，`task.result` 多 `delegate_from`。FORCE_END／portal 撤單／SqlExecutor／AiAgent 的自動紀錄不涉及代理，未動 |
+| 寫入點（三處人工簽核） | `fc_pending.py::approve_task()`、`fc_batch.py::batch_approve_tasks()`（沿用 actor，無 N+1）、`instance_routes.py::approve_task()`：`FwApprovalRecord(..., **delegate_from_fields(...))`，`task.result` 多 `delegate_from`。FORCE_END／portal 撤單／SysSqlExecutor／AiAgent 的自動紀錄不涉及代理，未動 |
 | 呈現 | `FwApprovalRecord.to_dict()`、`fc_pending.get_pending_task`、`fc_monitor` 兩處序列化多 `delegate_from_name`；`_read_form_modal` / `_form_center_approval_modal` / `_monitor_modal`（form_workflow）與 `security_cases.html`（open_defense，吃同一支 form-detail API）在簽核者後接「（代 X 簽核）」（`fc-delegate-tag` / `sc-approval-delegate`） |
 | SQL Sync | `converter.py` / `sync_service.py` 早已同步這兩欄，本項讓值不再恆為 NULL，不必改 |
 
