@@ -10,7 +10,7 @@
 > `PAGE_IR_SPEC.md` / `PAGE_IR_LAYOUT_ENGINES.md`（IR schema 與版面引擎）、
 > `SHARED_COMPONENTS_SPEC.md`（共用元件）、`PAGE_TEMPLATE_SPEC.md`（樣板庫）、
 > `codex_spec/portal.md`（派工片段與 API 實測陷阱）、
-> `NOCODE_MENU_HIDE.md`（選單隱藏的復原步驟）。
+> `NOCODE_MENU_HIDE.md`（選單隱藏機制與 2026-09-13 解除隱藏的過程記錄）。
 
 ---
 
@@ -314,13 +314,16 @@ sqlite3 /opt/BeakPlatform-dev/data/nocode_portals/<sub_system_sc>/portal.db \
   `_canvas_widgets` 對未放置者靜默略過（只記 info log），
   症狀是「存了、DB 裡也有、畫面就是沒有」。用 API 直接改 IR 時最容易踩到。
 
-## NoCode 選單目前刻意隱藏中（2026-08-07 起，鐵人賽期間）
+## NoCode 選單已於 2026-09-13 解除隱藏
 
-**看不到「子系統開發模組」選單是預期狀態，不是壞了，不要去修。**
-`MODULE_INFO['menu_items']` 由環境變數 `NOCODE_BUILDER_MENU` 控制（不等於 `on` 即為空），
-既有三筆 `menu_items` 已設 `is_deleted=true`。模組本身照常載入——路由、API、portal
-全部可用，直接輸入網址進得去。復原步驟與「為什麼用 is_deleted 而非 is_active」
-見 `dev-notes/NOCODE_MENU_HIDE.md`。
+2026-08-07 起曾用環境變數 `NOCODE_BUILDER_MENU`（不等於 `on` 即 `MODULE_INFO['menu_items']`
+為空）將「子系統開發模組」選單藏起，避免出現在鐵人賽期間的手冊截圖裡；機制原理與解除
+過程見 `dev-notes/NOCODE_MENU_HIDE.md`。
+
+**鐵人賽期間（至 2026-10）不修改 `modules/nocode_builder/` 程式碼**——已知的 P1/P2
+資安缺口見 BBN 待辦 **PF-271** 與 `dev-notes/NOCODE_UNHIDE_SECURITY_AUDIT_20260913.md`，
+賽後才處置，看到不要當新發現回報。使用者面已用公告告知模組尚未完工、正在評估是否
+移出本專案、請勿使用或存放真實資料（擬稿見 `dev-notes/NOCODE_UNHIDE_NOTICE_20260913.md`）。
 
 ## 用 API 操作 NoCode 子系統
 

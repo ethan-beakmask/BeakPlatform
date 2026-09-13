@@ -1,5 +1,31 @@
 # NoCode_Builder 選單隱藏（2026-08-07 起，PCHOME 鐵人賽期間）
 
+## 狀態：2026-09-13 已解除
+
+Ethan 定案：現在解除隱藏；鐵人賽（至 2026-10）期間不修改 nocode 程式；
+以公告告知使用者「尚未完工、考慮移出本專案、請勿使用」。
+
+- **解除方式**：只做了下方「賽後復原」的**第 1 步（`.env` 加 `NOCODE_BUILDER_MENU=on`）
+  與第 3 步（重啟）**，**沒有執行第 2 步的 SQL UPDATE**——當日查證
+  `menu_items.code ILIKE 'nocode%'` 已是 **0 筆**（不是本檔原寫的「is_deleted=true 的三筆」），
+  原因未查（可能是先前某次清理或 module sync 連同刪除，而非本檔記載的隱藏機制本身所為）。
+  重啟後模組同步（force=False）發現選單不存在便自動新建，行為與本檔「只想在新環境開啟」
+  段落描述的路徑一致。
+- 驗收結果（SQL、四種身分 API/頁面測試、chrome-devtools 導覽列實測）留證：
+  `/opt/tmp/verify/20260913-nocode-unhide-exec.log`
+- **bpserv（讀者安裝驗證機）解凍時要做的事**：見專案根 `CLAUDE.md`「bpserv 部署凍結」
+  累積待做表新增列（`.env` 加 `NOCODE_BUILDER_MENU=on` 後重啟；bpserv 本身沒有這三筆
+  選單殘留，重啟時模組同步會自建；DemoSOC 無 nocode 合約，選單不出現是預期）。
+- **賽後（含比賽期間）的資安處置**：已知 P1/P2 缺口見 BBN 待辦 **PF-271** 與
+  `dev-notes/NOCODE_UNHIDE_SECURITY_AUDIT_20260913.md`，比賽期間不修改
+  `modules/nocode_builder/` 程式碼。
+
+以下內容（隱藏機制原理、「賽後復原」步驟原文、隱藏前後各身分可見性）保留作歷史紀錄。
+「賽後復原」第 2 步的 SQL 已不適用（該三筆選單當時已不存在），實際只採用了第 1、3 步。
+
+---
+
+
 ## 這是什麼
 
 比賽期間（約 2026-08 ~ 2026-10）NoCode_Builder 尚未完成，**只把它從介面上藏起來**，

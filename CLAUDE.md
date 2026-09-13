@@ -1870,6 +1870,7 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
 | 退役集團共用 DB：軟刪選單、DROP 兩表、DROP 六欄 | PF-269（2026-09-13） | `venv/bin/python scripts/retire_cg_shared_db.py --dry-run` → `--apply`；細節 `dev-notes/CONGLOMERATE_SHARED_DB_RETIRED.md` |
 | SqlExecutor → SysSqlExecutor：節點定義、graph／發行快照／執行紀錄字串、系統企業授權、節點 icon 路徑 | PF-254 第一階段（2026-09-13） | `venv/bin/python scripts/migrate_sqlexecutor_to_sys.py --dry-run` → `--apply`（冪等，第二次全 0）；bpserv 沒有 node展覽館 示範流程，預期只有 node_definitions 1／系統企業授權 1 |
 | 驗 PF-266（origin URL 自我修復）：**這批改了 `install.sh` 本身，`--update` 要跑兩次** | PF-266（2026-09-13） | 第一次 `--update` 前先把 bpserv 的 origin 改回舊格式重現：`git -C /opt/BeakPlatform remote set-url origin "https://<PAT>@github.com/ethan-beakmask/BeakPlatform.git"`，第二次 `--update` 應印「remote URL 為舊格式（缺 x-access-token: 前綴），自動修正」且不再要密碼；驗完 `note_task_status(ref="PF-266", status="completed")` |
+| NoCode 解除隱藏 | PF-271（2026-09-13） | bpserv `.env` 加 `NOCODE_BUILDER_MENU=on` 後 `sudo systemctl restart beakplatform`；bpserv 沒有那三筆選單，重啟時模組同步會自建；DemoSOC 無 nocode 合約，選單不會出現是預期 |
 
 （下表「部署狀態」欄記的是凍結前最後一次 `--update` 的狀態，凍結期間不會再往前推。）
 
@@ -1942,7 +1943,8 @@ wf-dnd-nodes.js::resolveNodeIconUrl()                   流程設計器節點圖
 （子系統資料自給自足、跨界解析一律 fail-closed）、兩個帳號世界的分離、
 現有示範子系統與 portal 測試帳號、`portal.db` schema 版本、
 頁面存活的雙路徑 OR 判定、三個版面引擎、共用元件的展開點，
-以及「NoCode 選單刻意隱藏中」的現況（看不到選單不是壞了）。
+以及 NoCode 選單已於 2026-09-13 解除隱藏的現況與過程。
+**已知資安缺口見 PF-271，鐵人賽期間（至 2026-10）不修 nocode 程式碼，看到不要當新發現回報。**
 
 規格另見 `dev-notes/PORTAL_ACCOUNT_SPEC.md`、`dev-notes/PAGE_IR_SPEC.md`、
 `dev-notes/SHARED_COMPONENTS_SPEC.md`、`dev-notes/codex_spec/portal.md`。

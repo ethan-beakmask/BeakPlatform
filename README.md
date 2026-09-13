@@ -2,6 +2,15 @@
 
 Multi-tenant RBAC platform with dynamic menu system, organization isolation, and module architecture.
 
+## Module Status
+
+| Module | Status |
+|---|---|
+| form_workflow | Stable |
+| open_defense | Stable |
+| spec_formulate | Stable |
+| nocode_builder | Experimental, incomplete, may be removed. Do not use in production. |
+
 ## Requirements
 
 - Ubuntu 22.04 / 24.04 LTS
