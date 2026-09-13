@@ -584,8 +584,10 @@ def create_numbering_rules(org_sc, numbering_config):
     """建立編號規則 (公司特定，非預設)"""
     rules = {}
     for key, cfg in numbering_config.items():
-        # 公司特定規則不設為預設 (預設規則由 create_default_numbering_rule 建立)
-        default_for = NumberingDefaultFor.EXTERNAL if key == 'external' else None
+        # 公司特定規則一律不標預設：出廠 6 組（含 EMPLOYEE／EXTERNAL／FORM／ORG_ADMIN 預設）
+        # 已由 OrganizationService.create_organization_with_contract() 種入，
+        # 再標預設會與平台預設撞成兩個（2026-09-13 bpserv DemoSOC 踩到）
+        default_for = None
         usage_scope = NumberingUsageScope.INTERNAL_ONLY if key == 'employee' else NumberingUsageScope.EXTERNAL_ONLY
         rule = UserNumberingRule(
             org_secure_code=org_sc,
@@ -600,53 +602,6 @@ def create_numbering_rules(org_sc, numbering_config):
         db.session.flush()
         rules[key] = rule
     return rules
-
-
-def create_default_numbering_rule(org_sc, org_code=''):
-    """建立預設企業成員編號規則 + 表單編號規則
-
-    此規則模擬新企業建立時自動產生的預設編號規則。
-    """
-    # 企業成員編號：4 位數序號 (0001, 0002, ...)
-    rule = UserNumberingRule(
-        org_secure_code=org_sc,
-        name='預設企業成員編號',
-        description='4 位數序號 (新企業預設)',
-        elements={
-            'components': [
-                {'type': 'sequence', 'order': 1, 'start': 1, 'digits': 4, 'reset_period': 'never'},
-            ],
-            'total_length': 4,
-        },
-        usage_scope=NumberingUsageScope.INTERNAL_ONLY,
-        default_for=NumberingDefaultFor.EMPLOYEE,
-        is_active=True,
-    )
-    db.session.add(rule)
-
-    # 表單編號：前綴 + 年月 + 5 位序號（每月重置）
-    prefix = (org_code[:3].upper() + '-') if org_code else 'FRM-'
-    form_rule = UserNumberingRule(
-        org_secure_code=org_sc,
-        name='預設表單編號',
-        description='前綴 + 年月 + 5 位序號（每月重置）',
-        elements={
-            'components': [
-                {'type': 'prefix', 'order': 1, 'values': [prefix]},
-                {'type': 'year', 'order': 2, 'format': 'yy'},
-                {'type': 'month', 'order': 3, 'format': 'mm'},
-                {'type': 'prefix', 'order': 4, 'values': ['-']},
-                {'type': 'sequence', 'order': 5, 'start': 1, 'digits': 5, 'reset_period': 'monthly'},
-            ],
-            'total_length': 0,
-        },
-        usage_scope=NumberingUsageScope.INTERNAL_ONLY,
-        default_for=NumberingDefaultFor.FORM,
-        is_active=True,
-    )
-    db.session.add(form_rule)
-    db.session.flush()
-    return rule
 
 
 def create_departments(org_sc, dept_list):
@@ -1146,7 +1101,7 @@ def seed_one_company(company_def, *, password=TEST_PASSWORD, commit=True, emit_s
     domain = company_def['domain']
     admin_only = company_def.get('admin_only', False)
 
-    total_steps = 2 if admin_only else 13
+    total_steps = 2 if admin_only else 12
 
     print(f"\n{'='*60}")
     print(f"  建立企業: {name} ({code})")
@@ -1181,8 +1136,7 @@ def seed_one_company(company_def, *, password=TEST_PASSWORD, commit=True, emit_s
     print(f"         admin: admin@{domain}")
 
     if admin_only:
-        print(f"  [2/2] 預設編號規則 + 初始設定...")
-        create_default_numbering_rule(org_sc, org_code=code)
+        print(f"  [2/2] 初始設定...")
         _complete_admin_initial_setup(org, admin_user, company_def, password)
         if commit:
             db.session.commit()
@@ -1192,43 +1146,39 @@ def seed_one_company(company_def, *, password=TEST_PASSWORD, commit=True, emit_s
             print(f"    密碼: {password}")
         return org
 
-    # 2. 編號規則
-    print(f"  [2/{total_steps}] 預設編號規則...")
-    default_rule = create_default_numbering_rule(org_sc, org_code=code)
-    print(f"         default: {default_rule.name} (0001, 0002, ...)")
-
-    print(f"  [3/{total_steps}] 公司編號規則...")
+    # 2. 公司編號規則（出廠 6 組預設規則已由 create_organization_with_contract 種入）
+    print(f"  [2/{total_steps}] 公司編號規則...")
     numbering_rules = create_numbering_rules(org_sc, company_def['numbering'])
     for key, rule in numbering_rules.items():
         print(f"         {key}: {rule.name}")
 
     # 4. 職等
-    print(f"  [4/{total_steps}] 職等 (10 級)...")
+    print(f"  [3/{total_steps}] 職等 (10 級)...")
     levels = create_job_levels(org_sc)
 
     # 5. 核決類別與上限
-    print(f"  [5/{total_steps}] 核決類別 ({len(DEFAULT_APPROVAL_CATEGORIES)} 類) + 職等上限...")
+    print(f"  [4/{total_steps}] 核決類別 ({len(DEFAULT_APPROVAL_CATEGORIES)} 類) + 職等上限...")
     approval_categories = create_approval_categories(org_sc, levels)
     print(f"         {len(approval_categories)} 類，{len(approval_categories) * len(levels)} 筆上限")
 
     # 6. 職系
     extra_fam = company_def.get('extra_families', [])
-    print(f"  [6/{total_steps}] 職系 ({len(STANDARD_JOB_FAMILIES) + len(extra_fam)} 個)...")
+    print(f"  [5/{total_steps}] 職系 ({len(STANDARD_JOB_FAMILIES) + len(extra_fam)} 個)...")
     families = create_job_families(org_sc, extra_fam)
 
     # 7. 職稱
     extra_titles = company_def.get('extra_titles', [])
-    print(f"  [7/{total_steps}] 職稱 ({len(STANDARD_JOB_TITLES) + len(extra_titles)} 個)...")
+    print(f"  [6/{total_steps}] 職稱 ({len(STANDARD_JOB_TITLES) + len(extra_titles)} 個)...")
     titles = create_job_titles(org_sc, levels, families, extra_titles)
 
     # 8. 部門
     dept_list = company_def['departments']
-    print(f"  [8/{total_steps}] 部門 ({len(dept_list)} 個)...")
+    print(f"  [7/{total_steps}] 部門 ({len(dept_list)} 個)...")
     depts = create_departments(org_sc, dept_list)
 
     # 9. 企業成員帳號 + 職位 + EMPLOYEE 角色
     emp_list = company_def['employees']
-    print(f"  [9/{total_steps}] 企業成員帳號 ({len(emp_list)} 人) + 職位指派 + 角色...")
+    print(f"  [8/{total_steps}] 企業成員帳號 ({len(emp_list)} 人) + 職位指派 + 角色...")
     users = create_employees(
         org, org_sc, domain, emp_list, depts, titles, numbering_rules,
         password=password, operator=admin_user,
@@ -1238,22 +1188,22 @@ def seed_one_company(company_def, *, password=TEST_PASSWORD, commit=True, emit_s
     _complete_admin_initial_setup(org, admin_user, company_def, password, depts, titles)
 
     # 10. 部門成員與部門主管角色
-    print(f"  [10/{total_steps}] 部門成員與部門主管角色...")
+    print(f"  [9/{total_steps}] 部門成員與部門主管角色...")
     role_counts = sync_dept_roles(org_sc)
     print(f"         {role_counts}")
 
     # 11. 兼任與代理職位
-    print(f"  [11/{total_steps}] 兼任/代理職位樣本...")
+    print(f"  [10/{total_steps}] 兼任/代理職位樣本...")
     create_additional_positions(org_sc, company_def, users, depts, titles)
 
     # 12. 群組
     group_list = company_def.get('groups', [])
-    print(f"  [12/{total_steps}] 群組 ({len(group_list)} 個)...")
+    print(f"  [11/{total_steps}] 群組 ({len(group_list)} 個)...")
     groups = create_groups(org_sc, group_list) if group_list else {}
 
     # 13. 外部廠商帳號 + EXTERNAL_USERS 角色
     ext_list = company_def.get('external_users', [])
-    print(f"  [13/{total_steps}] 外部廠商 ({len(ext_list)} 人) + 角色...")
+    print(f"  [12/{total_steps}] 外部廠商 ({len(ext_list)} 人) + 角色...")
     ext_users = (
         create_external_users(
             org, org_sc, ext_list, groups, numbering_rules,
