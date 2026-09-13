@@ -65,9 +65,10 @@ graph 由 `PUT /api/workflows/data/templates/<sc>` 改寫，門檻是
 
 ### 兩道閘門（都是「誰能用」，不是「能用什麼命令」）
 
-1. **`OS_NODE_ENABLED` 環境變數**。未啟用時：
-   - `workflow_node_definitions.is_active = false`（設計器面板看不到）
-   - **且 handler 執行期直接拒絕** —— graph 裡已寫死的節點不得靠關開關繞過
+1. **`OS_NODE_ENABLED` 環境變數**。未啟用時 **handler 執行期直接拒絕**——
+   graph 裡已寫死的節點不得靠關開關繞過。
+   （2026-09-13 修訂：`workflow_node_definitions.is_active` 與此無關，出廠即為
+   `true`，不隨這個環境變數變動——見本節末修訂註記。）
 2. **企業授權**：`workflow_node_org_grants` 表（2026-08-31 起；原本是系統設定
    `os_node_allowed_orgs`，已刪除）。受限節點由
    `workflow_node_definitions.org_restricted = true` 標示，安裝後只有系統企業
@@ -80,6 +81,10 @@ graph 由 `PUT /api/workflows/data/templates/<sc>` 改寫，門檻是
 設計器的可見性從來不是防線，graph 可被 PUT 改寫。
 2026-08-31 起可見性與 graph 寫入也吃同一份判定（`node_grant_service.py`），
 但那是降噪與早期攔截，**執行期重查仍是唯一的防線**。
+
+> **2026-09-13 起出廠 `is_active=true`（Ethan 裁示）**，此前文件寫的「三道全關」
+> （env 開關／企業授權／`is_active`）已改為上面這兩道；`docs/install/os_node.md`
+> 已同步移除手動 `UPDATE ... is_active = true` 的步驟。
 
 `require_system_admin` **不要用**，但原因與本檔第一版寫的不同（2026-08-31 實測更正）：
 
@@ -602,7 +607,8 @@ OsExecutor 數量」，超過上限就回 `status: 'waiting'` 並帶 `retry_afte
 `workflow-designer-init.js:71` 的 `CATEGORY_NAMES`、同檔 `:101` 的 `categoryOrder`、
 CSS），**不必改前端分類**。
 
-`require_system_admin` 一律 `false`（理由見第二節），可見性靠 env 開關控制 `is_active`。
+`require_system_admin` 一律 `false`（理由見第二節），可見性靠 `is_active`
+（2026-09-13 起出廠 `true`）與企業授權控制，env 開關只擋執行期。
 
 屬性面板要新寫 `wf-node-os-executor.js` / `wf-node-os-file-read.js`
 ——`workflow_node_definitions.config_schema` **沒有任何前端消費者**，
@@ -758,7 +764,7 @@ sudo systemctl restart beakplatform-dev-executor
 | `modules/form_workflow/services/node_handlers/os_file_read_handler.py` | OsFileRead handler |
 | `modules/form_workflow/services/workflow_engine.py` | `_stop_os_dispatched_units()`，cancel 時停 unit |
 | `modules/form_workflow/services/workflow_executor.py` | **WAITING 喚醒清單加 `OsExecutor`**（見下方差異 2） |
-| `scripts/migrations/legacy/120_seed_os_executor_node.sql` / `121_seed_file_read_node.sql` | 節點定義與 system_settings，`is_active=FALSE` 出廠 |
+| `scripts/migrations/legacy/120_seed_os_executor_node.sql` / `121_seed_file_read_node.sql` | 節點定義與 system_settings，`is_active=FALSE` 出廠（僅為當時記錄，這兩支已封存；現行 `scripts/sql/seed_workflow_node_definitions.sql` 2026-09-13 起是 `TRUE`，見第二節修訂註記） |
 | `scripts/cron/os_node_cleanup.py` | 輸出檔清理 + `systemctl reset-failed 'bp-*'` |
 | `wf-node-os-executor.js` / `wf-node-os-file-read.js` | 設計器面板 |
 | `docs/install/os_node.md` | 部署與授權說明（會推 GitHub） |

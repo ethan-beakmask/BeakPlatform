@@ -107,13 +107,17 @@ prefix（不論來自 `newline_smart` 或 `newline_before`）在「檔案為空�
 
 ---
 
-## 三、三道護欄
+## 三、兩道護欄
+
+> **2026-09-13 修訂**：`workflow_node_definitions.is_active` 出廠改為 **true**（Ethan 裁示），
+> 不再是第三道護欄——最終用戶的系統管理員本來就該在設計器看得到這個節點。
+> 此前寫的「三道全關」已改為下表這兩道；`docs/install/os_file_write_node.md`
+> 已同步移除手動開啟 `is_active` 的步驟。
 
 | # | 護欄 | 失效時的行為 |
 |---|---|---|
 | 1 | `.env` 的 `OS_FILE_WRITE_NODE_ENABLED` | `not_authorized` |
 | 2 | 企業授權 `workflow_node_org_grants`（經 `node_grant_service.is_node_allowed`） | `not_authorized` |
-| 3 | `workflow_node_definitions.is_active`（出廠 **FALSE**） | 節點不出現在設計器 |
 
 護欄 2 走的是 2026-08-31 通用化後的節點授權機制（PF-185），
 **三個消費點自動涵蓋**，本節點不需要自己寫任何企業判斷：

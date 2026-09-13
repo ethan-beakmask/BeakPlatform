@@ -2195,10 +2195,14 @@ Playwright E2E 的三條硬規則與 mutation 驗證。
 | OpHrLookup 人事資料取值（NT-31，職位→流程變數、依金額沿主管鏈找核決人） | `dev-notes/HR_LOOKUP_NODE_SPEC.md`；示範流程可用 `scripts/seed_test_companies.py --run` 建的範例企業跑 |
 | OsExecutor / OsFileRead | `dev-notes/OS_EXECUTOR_SPEC.md`（第十四節是實作後記，與規格本文有六處差異，以後記為準） |
 
-**OsExecutor（NT-28）與 OsFileRead（NT-29）2026-08-30 上線，出廠三道全關**：
+**OsExecutor（NT-28）與 OsFileRead（NT-29）2026-08-30 上線，出廠兩道全關**
+（2026-09-13 修訂，Ethan 裁示：`workflow_node_definitions.is_active` 出廠維持
+`true`——最終用戶的系統管理員本來就該在設計器看得到，此前寫的「三道全關」已改為
+兩道，dev 與 fresh install 從此一致）：
 `.env` 開關（`OS_NODE_ENABLED` / `OS_FILE_READ_NODE_ENABLED`，**兩者刻意獨立**）、
-企業授權（見下條）、`workflow_node_definitions.is_active=false`。
-部署說明在 `docs/install/os_node.md`（會推 GitHub）。
+企業授權（見下條）。
+部署說明在 `docs/install/os_node.md`（會推 GitHub），已同步移除手動開啟
+`is_active` 的步驟。
 
 ### 【測系統級 node 前必讀】邊界單位是「企業」，不是帳號身分
 
@@ -2319,8 +2323,8 @@ API 也**必須放平台層**（`backend/app/api/node_grants.py`）——SYSTEM_
 執行紀錄、system_settings 鍵一起換——**node_type 是 factory 查 handler 的鍵，
 graph 裡的舊字串沒換掉的話該流程執行時會拋 `ValueError`**）。
 
-**OsFileWrite（NT-30）2026-08-31 上線，第三個受限節點**，同樣三道全關
-（`OS_FILE_WRITE_NODE_ENABLED`、企業授權、`is_active=false`），
+**OsFileWrite（NT-30）2026-08-31 上線，第三個受限節點**，同樣兩道全關
+（`OS_FILE_WRITE_NODE_ENABLED`、企業授權；出廠 `is_active=true`，見上條 2026-09-13 修訂），
 base_dir 用**獨立**的 `os_file_write_base_dirs` / `os_file_write_org_base_dirs`
 （**不與 `os_file_read_*` 共用**——可讀不等於可寫）。規格
 `dev-notes/OS_FILE_WRITE_SPEC.md`，部署 `docs/install/os_file_write_node.md`。

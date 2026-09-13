@@ -33,7 +33,9 @@
 
 ## 二、啟用「OS 命令」節點
 
-四個步驟，缺一不可。少任何一步，節點都不會執行（而且是明確拒絕、不是靜默失敗）。
+三個步驟，缺一不可。少任何一步，節點都不會執行（而且是明確拒絕、不是靜默失敗）。
+
+節點定義出廠即為啟用狀態（`is_active = true`），不需要另外用 SQL 開啟——設計器看不看得到，只看下面第 2 步的企業授權。
 
 ### 1. 設定 `.env`
 
@@ -48,15 +50,7 @@ OS_NODE_MAX_CONCURRENT_PER_ORG=3
 
 改完必須**重新啟動流程執行服務**才會生效。
 
-### 2. 讓節點在設計器裡出現
-
-出廠時節點定義是停用狀態：
-
-```sql
-UPDATE workflow_node_definitions SET is_active = true WHERE node_type = 'OsExecutor';
-```
-
-### 3. 指定允許的企業
+### 2. 指定允許的企業
 
 企業授權統一存在 `workflow_node_org_grants`。安裝後預設只有系統企業獲得授權；
 客戶企業即使有流程設計權限，也看不到、存不了、發行不了未授權節點。
@@ -105,7 +99,7 @@ WHERE NOT EXISTS (
 **這兩道閘門在每次執行時都會重新檢查。** 把開關關掉或撤銷企業授權之後，
 流程圖裡已經存在的節點會立刻停止執行；同時設計器可見性、graph 儲存與發行也會拒絕未授權企業。
 
-### 4. sudoers（只有「交給 OS 執行」模式需要）
+### 3. sudoers（只有「交給 OS 執行」模式需要）
 
 節點有兩種執行方式，只有後者需要 sudoers：
 
@@ -138,7 +132,8 @@ WHERE NOT EXISTS (
 
 ## 三、啟用「檔案讀取」節點
 
-同樣是四步，但**開關與企業授權與「OS 命令」完全分開**。
+同樣是三步，但**開關與企業授權與「OS 命令」完全分開**。節點定義同樣出廠即為
+啟用狀態，不需要另外開啟。
 
 ```bash
 # <安裝目錄>/.env
@@ -146,8 +141,6 @@ OS_FILE_READ_NODE_ENABLED=1
 ```
 
 ```sql
-UPDATE workflow_node_definitions SET is_active = true WHERE node_type = 'OsFileRead';
-
 -- 允許使用此節點的企業；安裝後預設只有系統企業獲得授權
 INSERT INTO workflow_node_org_grants (
     secure_code, node_type, org_secure_code, granted_by_name,
@@ -297,7 +290,7 @@ systemctl show bp-<節點執行識別碼> -p Result -p ExecMainStatus -p ActiveS
 
 | 症狀 | 原因 |
 |---|---|
-| 設計器左側工具列找不到這兩個節點 | 節點定義還是停用狀態（第二節第 2 步） |
+| 設計器左側工具列找不到這兩個節點 | 該企業尚未取得節點授權（第二節、第三節） |
 | 節點執行完是「成功」，但結果變數寫著 `exception` / `not_authorized` | 開關未啟用，或該企業沒有節點授權。這是刻意的：授權拒絕不重試 |
 | 結果變數寫著 `exception` / `path_denied` | 檔案不在允許目錄內，或路徑解開符號連結後跑到允許範圍外 |
 | 節點卡在等待很久才執行 | 同企業同時執行的數量到達上限，正在排隊（見第二節的併發設定） |
