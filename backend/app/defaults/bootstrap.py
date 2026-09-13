@@ -300,6 +300,8 @@ def run_bootstrap(mode, admin_password=None, sql_dir=None) -> dict:
     if fresh:
         _run_step(summary, 'seed_system_org_defaults',
                   lambda: _seed_system_org_defaults(admin_password))
+        _run_step(summary, 'seed_node_showcase',
+                  lambda: _seed_node_showcase(admin_password))
 
     return summary
 
@@ -322,3 +324,30 @@ def _seed_system_org_defaults(admin_password=None) -> dict:
     result = seed_system_org_defaults(admin_password=admin_password)
     db.session.commit()
     return result
+
+
+def _seed_node_showcase(admin_password=None) -> dict:
+    import os
+    import sys
+
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+
+    from app.models import Organization
+    from scripts.examples.node_showcase import seed_node_showcase
+
+    org = Organization.query.filter_by(code='SYSTEM', is_deleted=False).first()
+    if not org:
+        raise BootstrapError('系統企業不存在，無法種入 node展覽館')
+
+    result = seed_node_showcase(org, apply=True, password=admin_password)
+    if result.get('failed'):
+        detail = '；'.join(f'{name}: {err}' for name, err in result['failed'])
+        raise BootstrapError(f'node展覽館: {detail}')
+    db.session.commit()
+    return {
+        'done': len(result.get('done', [])),
+        'failed': len(result.get('failed', [])),
+        'category_secure_code': result.get('category_secure_code'),
+    }

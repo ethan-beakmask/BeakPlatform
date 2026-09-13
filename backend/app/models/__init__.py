@@ -72,6 +72,7 @@ from .page import Page
 from .lookup_category import LookupCategory
 from .lookup_item import LookupItem
 from .broadcast_acknowledgment import BroadcastAcknowledgment
+from .fw_demo_inventory import FwDemoInventory
 
 # 系統設定
 from .system_setting import SystemSetting
@@ -150,6 +151,7 @@ __all__ = [
     'Contract',
     'ContractStatus',
     'BlockedEmailDomain',
+    'FwDemoInventory',
     # 組織架構
     'OrganizationalUnit',
     'UnitType',

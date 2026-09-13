@@ -24,7 +24,7 @@ NavbarBroadcast 是低干擾的背景提示，適合「大家看到就好、不�
 工作」的場景。
 
 目標企業固定是系統預設企業（Organization.code='SYSTEM'），分類固定是「node展覽館」
-（fw_categories.secure_code='J1ygL6zexauKlLM0_Ktoaw'）。兩個節點都不是受限節點
+。。兩個節點都不是受限節點
 （org_restricted=false），不需要企業授權、不需要 grant。
 
 **注意（Ethan 派工要求）**：這兩個節點觸發的廣播會影響系統企業所有使用者的畫面。
@@ -39,7 +39,7 @@ NavbarBroadcast 是低干擾的背景提示，適合「大家看到就好、不�
 舊的已發行版本並建立新版）。填寫權限授予企業內所有非 EXTERNAL 的在職帳號。
 
 用法：
-    cd /opt/BeakPlatform-dev
+    cd <repo>
     set -a && source .env && set +a
     venv/bin/python scripts/examples/provision_nodedemo_broadcast.py --dry-run
     venv/bin/python scripts/examples/provision_nodedemo_broadcast.py --apply
@@ -50,7 +50,6 @@ NavbarBroadcast 是低干擾的背景提示，適合「大家看到就好、不�
     modules/form_workflow/services/node_handlers/delay_handler.py
     modules/form_workflow/services/node_handlers/fieldwrite_handler.py
     modules/form_workflow/services/node_handlers/formadapter_handler.py
-權威對照表：/opt/tmp/verify/20260907-node-config-reference.md
 前端顯示：backend/app/static/js/broadcast-poller.js、backend/app/api/broadcasts.py
 """
 from __future__ import annotations
@@ -59,11 +58,16 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'backend'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+BACKEND_DIR = os.path.join(REPO_ROOT, 'backend')
+sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, REPO_ROOT)
+
+from scripts.examples.node_showcase import ensure_showcase_category
 
 ORG_CODE = 'SYSTEM'
 CATEGORY_NAME = 'node展覽館'
-CATEGORY_SECURE_CODE = 'J1ygL6zexauKlLM0_Ktoaw'
+SHOWCASE_CATEGORY_SECURE_CODE = None
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 
 _EDGE_STYLE = {
@@ -557,7 +561,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['form_code'],
             version='AA', revision=1, name=demo['form_name'],
             description=demo['form_name'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE, schema=demo['form_schema'],
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE, schema=demo['form_schema'],
             builder_config={}, is_published=False, is_active=True,
             is_protected=False, permission_type='org')
     else:
@@ -574,7 +578,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['workflow_code'],
             version='AA', revision=1, name=demo['workflow_name'],
             description=demo['description'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE,
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE,
             graph=graph, cytoscape_config=graph, is_published=False, is_active=True,
             is_protected=False, permission_type='org', is_subprocess=False)
     else:
@@ -636,9 +640,47 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             'published_sc': published.secure_code}
 
 
+def _workflow_models():
+    from modules.form_workflow.models import (
+        FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
+        FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
+    )
+    return {
+        'FwFormTemplate': FwFormTemplate,
+        'FwFormWorkflowMapping': FwFormWorkflowMapping,
+        'FwMappingPermission': FwMappingPermission,
+        'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
+        'FwWorkflowTemplate': FwWorkflowTemplate,
+        'WorkflowNodeDefinition': WorkflowNodeDefinition,
+    }
+
+def provision(org, apply=True, **opts):
+    from app import db
+    from app.models import User
+
+    del opts
+    db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+    global SHOWCASE_CATEGORY_SECURE_CODE
+    SHOWCASE_CATEGORY_SECURE_CODE = ensure_showcase_category(org).secure_code
+
+    models = _workflow_models()
+    osc = org.secure_code
+    log(f'企業：{org.name}（{osc}）')
+    load_node_icons(models)
+
+    publisher = User.query.filter_by(
+        org_secure_code=osc, user_type='ORG_ADMIN',
+        is_deleted=False, is_active=True).first()
+
+    results = {}
+    for demo in FULL_DEMOS_STATIC:
+        log(f"\n--- {demo['workflow_name']} ---")
+        results[demo['workflow_code']] = apply_full_demo(
+            db, models, org, demo, publisher, apply)
+    return {'results': results, 'category_secure_code': SHOWCASE_CATEGORY_SECURE_CODE}
+
 def main():
-    parser = argparse.ArgumentParser(
-        description='佈建 node展覽館的 AlertBroadcast／NavbarBroadcast 示範（B10）')
+    parser = argparse.ArgumentParser(description='佈建 node展覽館的 AlertBroadcast／NavbarBroadcast 示範（B10）')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入')
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
@@ -647,50 +689,21 @@ def main():
 
     from app import create_app, db
 
-    # modules 套件要等 create_app() 跑過 module_loader 才會被插進 sys.path。
     app = create_app('development')
     with app.app_context():
-        from app.models import Organization, User
-        from modules.form_workflow.models import (
-            FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
-            FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
-        )
-
-        models = {
-            'FwFormTemplate': FwFormTemplate,
-            'FwFormWorkflowMapping': FwFormWorkflowMapping,
-            'FwMappingPermission': FwMappingPermission,
-            'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
-            'FwWorkflowTemplate': FwWorkflowTemplate,
-            'WorkflowNodeDefinition': WorkflowNodeDefinition,
-        }
-
-        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+        from app.models import Organization
 
         org = Organization.query.filter_by(code=args.org, is_deleted=False).first()
         if not org:
             log(f'找不到企業：{args.org}')
             return 1
-        osc = org.secure_code
-        log(f'企業：{org.name}（{osc}）')
-        load_node_icons(models)
 
-        publisher = User.query.filter_by(
-            org_secure_code=osc, user_type='ORG_ADMIN',
-            is_deleted=False, is_active=True).first()
-
-        log('\n=== AlertBroadcast／NavbarBroadcast 示範（表單／流程／配對／發行） ===')
-        full_results = {}
-        for demo in FULL_DEMOS_STATIC:
-            log(f"\n--- {demo['workflow_name']} ---")
-            full_results[demo['workflow_code']] = apply_full_demo(
-                db, models, org, demo, publisher, args.apply)
-
+        result = provision(org, apply=args.apply)
         if args.apply:
             db.session.commit()
             log('\n已寫入。到 /forms/center 的「填寫表單」就看得到這兩張單。')
             log('\n完整示範：')
-            for code, r in full_results.items():
+            for code, r in result['results'].items():
                 if r:
                     log(f"  {code}: form_sc={r['form_sc']} wf_sc={r['wf_sc']} "
                         f"published_sc={r['published_sc']}")
@@ -698,7 +711,6 @@ def main():
             db.session.rollback()
             log('\n[預演] 未寫入任何資料')
     return 0
-
 
 if __name__ == '__main__':
     sys.exit(main())

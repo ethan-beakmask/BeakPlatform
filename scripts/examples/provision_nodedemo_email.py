@@ -33,18 +33,16 @@ PF-252 B12 批次：node展覽館 —— EmailAdapter（NT-25）／SysEmailRelay
       `beakmask@beakplatform.local`，沒有「找不到設定組」這件事可言。
     - **真正的分界線在設計器面板可見性**：呼叫
       `GET /api/workflows/data/node-definitions` 實測比對——
-      系統企業（SYSTEM，quick-login `UC1oK01uDeKbG2MDwBflGD`）回應同時含
+      以系統預設企業的管理員登入時，回應同時含
       `notification` 分類的 EmailAdapter **與** `system_admin` 分類的
-      SysEmailRelay；BELUGA 企業（quick-login
-      `jIYEQ-_lZMZNBkVy-hijal`，一般企業、未取得 SysEmailRelay 授權）
+      SysEmailRelay；一般未授權企業的管理員登入時（未取得 SysEmailRelay 授權）
       回應只有 EmailAdapter，連 `system_admin` 這個分類本身都不存在。
       也就是說，一般企業的流程設計者根本不會在節點面板上看到
       SysEmailRelay 這個選項存在。
 
 目標企業固定是系統預設企業（Organization.code='SYSTEM'），分類固定是
-「node展覽館」（fw_categories.secure_code='J1ygL6zexauKlLM0_Ktoaw'）。
-EmailAdapter 流程引用系統企業 SMTP 設定組「lionsecbot@gmail.com」
-（secure_code=9V_rPCngCX-q65mbSbICJa，唯一一組、is_default=True）；
+「node展覽館」。。
+EmailAdapter 流程引用系統企業佔位 SMTP 設定組（預設停用，需填入真實值後啟用）；
 SysEmailRelay 流程完全不需要任何 SmtpConfig。
 
 **EmailAdapter 流程刻意示範自動降級**：流程裡放兩個 EmailAdapter 節點，
@@ -52,23 +50,16 @@ SysEmailRelay 流程完全不需要任何 SmtpConfig。
 secure_code（`NODEDEMO-INVALID-SMTP-CONFIG-SC`）——如果第二個節點仍然
 成功送出，就證明「找不到設定組不會直接報錯，而是靜默降級選用別的
 設定組」這件事真的發生了。因為本流程本身掛在系統企業底下，降級後
-選到的其實是同一組 lionsecbot@gmail.com（系統企業目前只有這一組
-SmtpConfig），這正好呼應描述裡要強調的重點：**設計者以為指定了某個
-設定組，實際上可能用的是別的**——這裡「別的」剛好與原本那組相同，
-純粹是因為系統企業只有一組可用；換成有多組 SmtpConfig 的企業，降級
-後寄出的信可能來自完全不同的寄件位址，卻不會有任何錯誤訊息提示這件事。
-
-**注意（Ethan 明確同意）**：這兩個流程會真的呼叫外部 SMTP／emailrelay
-daemon 把信寄到 `lionsecbot@gmail.com`（就是 SMTP 設定組自己的信箱，
-自寄自收，不會打擾別人）。主旨一律以「[node展覽館示範]」開頭，避免被
-誤認為真實通知。
+選到的會是同企業已啟用的設定組，這正好呼應描述裡要強調的重點：
+**設計者以為指定了某個設定組，實際上可能用的是別的**。佔位設定組要到
+企業設定填入真實值並啟用才寄得出去。
 
 冪等：重跑會沿用既有表單／流程（依 code 找），bump revision 並重新發行
 （會停用舊的已發行版本並建立新版）。填寫權限授予企業內所有非 EXTERNAL
-的在職帳號。**重跑會再送出一次真實的 Email**，不是只改資料庫。
+的在職帳號。
 
 用法：
-    cd /opt/BeakPlatform-dev
+    cd <repo>
     set -a && source .env && set +a
     venv/bin/python scripts/examples/provision_nodedemo_email.py --dry-run
     venv/bin/python scripts/examples/provision_nodedemo_email.py --apply
@@ -78,7 +69,6 @@ daemon 把信寄到 `lionsecbot@gmail.com`（就是 SMTP 設定組自己的信�
     modules/form_workflow/services/node_handlers/sys_emailrelay_handler.py
     modules/form_workflow/services/node_handlers/fieldwrite_handler.py
     modules/form_workflow/services/node_handlers/formadapter_handler.py
-權威對照表：/opt/tmp/verify/20260907-node-config-reference.md
 """
 from __future__ import annotations
 
@@ -86,16 +76,22 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'backend'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+BACKEND_DIR = os.path.join(REPO_ROOT, 'backend')
+sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, REPO_ROOT)
+
+from scripts.examples.node_showcase import ensure_showcase_category
 
 ORG_CODE = 'SYSTEM'
 CATEGORY_NAME = 'node展覽館'
-CATEGORY_SECURE_CODE = 'J1ygL6zexauKlLM0_Ktoaw'
+SHOWCASE_CATEGORY_SECURE_CODE = None
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 
-SMTP_CONFIG_SC = '9V_rPCngCX-q65mbSbICJa'  # 系統企業 SmtpConfig「lionsecbot@gmail.com」（is_default）
+SMTP_CONFIG_NAME = 'node展覽館示範（請填入真實 SMTP 設定）'
+SMTP_CONFIG_SC = None
 INVALID_SMTP_CONFIG_SC = 'NODEDEMO-INVALID-SMTP-CONFIG-SC'  # 刻意造的假 secure_code，用來觸發降級
-RECIPIENT_EMAIL = 'lionsecbot@gmail.com'  # 設定組自己的信箱，自寄自收
+RECIPIENT_EMAIL = None
 
 _EDGE_STYLE = {
     'width': 2,
@@ -197,6 +193,41 @@ def _submit_button():
             'action': 'submit', 'disableOnInvalid': True}
 
 
+def ensure_smtp_config(org, apply=True):
+    from app import db
+    from app.models import SmtpConfig
+
+    config = SmtpConfig.query.filter_by(
+        org_secure_code=org.secure_code,
+        name=SMTP_CONFIG_NAME,
+        is_deleted=False,
+    ).first()
+    if config:
+        return config
+    sender = f'demo-smtp@{org.domain_name}'
+    config = SmtpConfig(
+        org_secure_code=org.secure_code,
+        name=SMTP_CONFIG_NAME,
+        description='node展覽館示範用佔位設定組；請填入真實 SMTP 主機、帳號、密碼後再啟用。',
+        smtp_host='smtp.example.invalid',
+        smtp_port=587,
+        use_tls=True,
+        use_ssl=False,
+        username=sender,
+        from_email=sender,
+        from_name='node展覽館示範',
+        provider_type='generic',
+        priority=100,
+        is_default=False,
+        is_active=False,
+    )
+    config.set_password('REPLACE_ME')
+    if apply:
+        db.session.add(config)
+        db.session.flush()
+    return config
+
+
 def _approve_config(output_variable, label, target_edge):
     """單一決策的自簽關卡：assignee_type=INITIATOR，一個人就能走完全程。"""
     return {
@@ -230,7 +261,7 @@ def build_email_graph():
                 '${f.email_body}\n\n'
                 '流程執行代碼：${wi.exec_code}\n\n'
                 '本封信的 smtp_config_id 明確指向系統企業的 SmtpConfig'
-                '「lionsecbot@gmail.com」，走 smtplib 直接連線'
+                '「示範收件人」，走 smtplib 直接連線'
                 ' smtp.gmail.com:587 寄出，沒有經過任何降級判斷。'
             ),
             'body_type': 'plain',
@@ -256,7 +287,7 @@ def build_email_graph():
                 ' is_default」→「本企業任一啟用中依 priority」→「系統'
                 '企業依 priority」。如果您收到這封信，就代表降級生效了'
                 '——本流程掛在系統企業底下，系統企業目前只有'
-                ' lionsecbot@gmail.com 這一組 SmtpConfig，所以降級後用'
+                ' 示範收件人 這一組 SmtpConfig，所以降級後用'
                 '到的剛好與上一封信相同；如果企業本身有多組設定組，降級'
                 '後寄出的信可能來自完全不同的寄件位址，而流程設計者不會'
                 '收到任何錯誤或警告提示。'
@@ -274,7 +305,7 @@ def build_email_graph():
                 '[兩封郵件已依序送出]\n'
                 '本次流程執行代碼：${wi.exec_code}\n\n'
                 '第一封使用明確指定的設定組，第二封刻意填錯設定組觸發'
-                '自動降級——兩封都應該送達 lionsecbot@gmail.com。\n\n'
+                '自動降級——啟用真實設定組後兩封都應該送達示範收件人。\n\n'
                 'EmailAdapter 節點本身不會把外部送達憑證（例如 SMTP 的'
                 ' Message-ID）寫進流程變數，也不會寫回表單——這段文字是'
                 '由後面這個 OpFieldWrite 節點手動寫的，只能記錄「流程'
@@ -283,7 +314,7 @@ def build_email_graph():
                 "SELECT log_level, log_message, log_data FROM "
                 "fw_node_execution_logs WHERE log_message LIKE '郵件%' "
                 "ORDER BY id DESC LIMIT 5;\n\n"
-                '真正的送達要到 lionsecbot@gmail.com 的信箱確認。'
+                '真正的送達要到實際收件匣確認。'
             ),
         }, 660, 220,
             '把流程執行代碼寫回表單欄位，方便事後回顧本次示範跑了哪一次。'),
@@ -320,8 +351,7 @@ NT25_DESCRIPTION = (
     '本流程刻意放了**兩個** EmailAdapter 節點依序執行，示範同一件事的'
     '正常用法與一個容易被忽略的行為：\n'
     '- 第一個節點（寄送郵件（明確指定正確設定組））：smtp_config_id 明確'
-    '填系統企業 SmtpConfig「lionsecbot@gmail.com」的 secure_code'
-    '（9V_rPCngCX-q65mbSbICJa）。這是建議的正常用法——填一個你確定'
+    '填系統企業佔位 SmtpConfig 的 secure_code。這是建議的正常用法——填一個你確定'
     '存在、啟用中的設定組。\n'
     '- 第二個節點（寄送郵件（刻意填錯設定組，示範自動降級））：'
     'smtp_config_id 刻意填一個不存在的 secure_code。`email_handler.py'
@@ -331,8 +361,7 @@ NT25_DESCRIPTION = (
     '都沒有才會報「沒有可用的 SMTP 設定」。這代表：**如果你在節點裡填錯'
     '了 secure_code（或那筆設定組後來被刪除／停用），節點不會失敗、也'
     '不會有任何警告，會靜默改用別的設定組寄信**——收件人收到的信可能來自'
-    '完全不同的寄件位址，而流程設計者對此毫無察覺。本流程因為系統企業'
-    '目前只有一組 SmtpConfig，兩封信的寄件位址剛好相同；换成有多組'
+    '完全不同的寄件位址，而流程設計者對此毫無察覺。换成有多組'
     '設定組的企業，這個差異就會直接反映在收件人看到的寄件人上。\n'
     '- recipient_type=manual：兩個節點都直接填 Email 地址'
     '（${...} 之外的固定字串），也支援 recipient_type=group 引用'
@@ -341,8 +370,8 @@ NT25_DESCRIPTION = (
     '${f.email_body}）與流程執行代碼（${wi.exec_code}）組進內容，證明'
     '這兩個欄位支援完整的變數替換語法。\n\n'
     '【怎麼看結果】\n'
-    '流程送出後應該收到**兩封**以「[node展覽館示範]」開頭的信'
-    '（收件匣是 lionsecbot@gmail.com 自己），主旨分別標「正確設定組」'
+    '佔位設定組要到企業設定填入真實值並啟用才寄得出去。啟用後，流程送出應收到**兩封**以「[node展覽館示範]」開頭的信'
+    '，主旨分別標「正確設定組」'
     '與「自動降級」，內容都含本次流程執行代碼可互相對照。也可以到'
     '「填寫表單」重新打開這張單看 email_result_display 欄位，或直接查：\n'
     "SELECT log_level, log_message, log_data FROM fw_node_execution_logs "
@@ -357,10 +386,9 @@ FORM_EMAIL_SCHEMA = {
     'display': 'form',
     'components': [
         _title('NT-25 EmailAdapter 示範表單（一般 Email 通知）'),
-        _hint('送出後流程會連續呼叫兩次 EmailAdapter 節點，各自寄出一封信'
-              '到「lionsecbot@gmail.com」。第一封使用正確設定組，第二封'
-              '刻意填錯設定組觸發自動降級，兩封都應該送達。內容已固定以'
-              '「[node展覽館示範]」開頭，避免被誤認為真的通知。'),
+        _hint('送出後流程會連續呼叫兩次 EmailAdapter 節點。第一封使用正確設定組，第二封'
+              '刻意填錯設定組觸發自動降級。佔位設定組要到企業設定填入真實值並啟用才寄得出去。'
+              '內容已固定以「[node展覽館示範]」開頭。'),
         _text('email_subject_suffix', '通知主旨補充',
               '這段文字會經過變數替換直接組進兩封信的主旨結尾。'),
         _textarea('email_body', '通知內容',
@@ -428,7 +456,7 @@ def build_sysemailrelay_graph():
                 'tail /opt/emailrelay/logs/emailrelay-$(date +%Y%m%d).log\n\n'
                 '看到一行 "smtp connection to smtp.gmail.com:587" 就代表'
                 ' daemon 已經把這封信轉送出去了。也可以直接到'
-                ' lionsecbot@gmail.com 的收件匣確認。'
+                ' 示範收件人 的收件匣確認。'
             ),
         }, 660, 200,
             '把流程執行代碼寫回表單欄位，方便事後回顧本次示範跑了哪一次。'),
@@ -481,10 +509,8 @@ NT14_DESCRIPTION = (
     '節點」機制存在的理由，也是本批次刻意示範的另一個節點型別'
     '（前一批 B11 用 SysTelegram／Telegram 示範過同一個機制）。\n'
     '- 本批次已用 API 實測驗證這個差異：`GET /api/workflows/data/'
-    'node-definitions` 對系統企業（quick-login'
-    ' UC1oK01uDeKbG2MDwBflGD）回應同時含 EmailAdapter（分類'
-    ' notification）與 SysEmailRelay（分類 system_admin）；對 BELUGA'
-    '企業（quick-login jIYEQ-_lZMZNBkVy-hijal，一般企業、未取得'
+    'node-definitions` 對系統預設企業回應同時含 EmailAdapter（分類'
+    ' notification）與 SysEmailRelay（分類 system_admin）；對一般未授權企業（未取得'
     ' SysEmailRelay 授權）回應只有 EmailAdapter，連 system_admin 這個'
     '分類本身都不存在——不是有回傳但被前端隱藏，是 API 回應本身就沒有'
     '這一項。\n\n'
@@ -500,8 +526,8 @@ NT14_DESCRIPTION = (
     'smtp.gmail.com:587" 就代表這封信已經被轉送出去。\n'
     '3) 到「填寫表單」重新打開這張單看 sysmail_result_display 欄位'
     '（只能證明「流程走到這裡」，不能證明送達，送達要看前兩項）。\n'
-    '4) 最終要以 lionsecbot@gmail.com 的收件匣實際收到信為準。\n'
-    '想親自驗證「一般企業看不到這個節點」，可以用 BELUGA 企業的帳號'
+    '4) 最終要以實際收件匣收到信為準。\n'
+    '想親自驗證「一般企業看不到這個節點」，可以用一般未授權企業的帳號'
     '登入設計器，打開任一流程的節點面板，會看到 EmailAdapter 存在但'
     ' SysEmailRelay 不存在（連分類都不存在）。'
 )
@@ -511,8 +537,8 @@ FORM_SYSEMAILRELAY_SCHEMA = {
     'components': [
         _title('NT-14 SysEmailRelay 示範表單（系統級 Email 轉發）'),
         _hint('送出後流程會呼叫本機 emailrelay-submit，把下面填的內容'
-              '透過 spool 轉送到「lionsecbot@gmail.com」。內容已固定以'
-              '「[node展覽館示範]」開頭，避免被誤認為真的通知。這個節點'
+              '透過 spool 轉送到示範收件人。內容已固定以'
+              '「[node展覽館示範]」開頭。這個節點'
               '型別只有取得授權的企業才會在設計器看到，系統預設企業'
               '出廠即已授權。'),
         _text('sysmail_subject_suffix', '通知主旨補充',
@@ -528,7 +554,7 @@ FORM_SYSEMAILRELAY_SCHEMA = {
 FORM_SYSEMAILRELAY_SCHEMA['components'][2]['defaultValue'] = '系統級 SysEmailRelay 節點示範'
 FORM_SYSEMAILRELAY_SCHEMA['components'][3]['defaultValue'] = (
     '這是 node展覽館 SysEmailRelay 節點的示範送單。這個節點是受限節點，'
-    '只有取得授權的企業才能在流程設計器裡使用，一般企業（例如 BELUGA）'
+    '只有取得授權的企業才能在流程設計器裡使用，一般未授權企業'
     '看不到這個節點選項。它走本機 emailrelay-submit，不使用任何'
     ' SmtpConfig。僅供教學使用，非真實通知。'
 )
@@ -624,7 +650,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['form_code'],
             version='AA', revision=1, name=demo['form_name'],
             description=demo['form_name'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE, schema=demo['form_schema'],
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE, schema=demo['form_schema'],
             builder_config={}, is_published=False, is_active=True,
             is_protected=False, permission_type='org')
     else:
@@ -641,7 +667,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['workflow_code'],
             version='AA', revision=1, name=demo['workflow_name'],
             description=demo['description'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE,
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE,
             graph=graph, cytoscape_config=graph, is_published=False, is_active=True,
             is_protected=False, permission_type='org', is_subprocess=False)
     else:
@@ -703,9 +729,52 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             'published_sc': published.secure_code}
 
 
+def _workflow_models():
+    from modules.form_workflow.models import (
+        FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
+        FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
+    )
+    return {
+        'FwFormTemplate': FwFormTemplate,
+        'FwFormWorkflowMapping': FwFormWorkflowMapping,
+        'FwMappingPermission': FwMappingPermission,
+        'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
+        'FwWorkflowTemplate': FwWorkflowTemplate,
+        'WorkflowNodeDefinition': WorkflowNodeDefinition,
+    }
+
+def provision(org, apply=True, **opts):
+    from app import db
+    from app.models import User
+
+    del opts
+    db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+    global SHOWCASE_CATEGORY_SECURE_CODE
+    SHOWCASE_CATEGORY_SECURE_CODE = ensure_showcase_category(org).secure_code
+    if not org.domain_name:
+        raise ValueError('系統企業缺少 domain_name，無法建立示範收件人')
+    global SMTP_CONFIG_SC, RECIPIENT_EMAIL
+    SMTP_CONFIG_SC = ensure_smtp_config(org, apply=apply).secure_code
+    RECIPIENT_EMAIL = f'demo-staff@{org.domain_name}'
+
+    models = _workflow_models()
+    osc = org.secure_code
+    log(f'企業：{org.name}（{osc}）')
+    load_node_icons(models)
+
+    publisher = User.query.filter_by(
+        org_secure_code=osc, user_type='ORG_ADMIN',
+        is_deleted=False, is_active=True).first()
+
+    results = {}
+    for demo in FULL_DEMOS_STATIC:
+        log(f"\n--- {demo['workflow_name']} ---")
+        results[demo['workflow_code']] = apply_full_demo(
+            db, models, org, demo, publisher, apply)
+    return {'results': results, 'category_secure_code': SHOWCASE_CATEGORY_SECURE_CODE}
+
 def main():
-    parser = argparse.ArgumentParser(
-        description='佈建 node展覽館的 EmailAdapter／SysEmailRelay 示範（B12）')
+    parser = argparse.ArgumentParser(description='佈建 node展覽館的 EmailAdapter／SysEmailRelay 示範（B12）')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入')
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
@@ -714,50 +783,21 @@ def main():
 
     from app import create_app, db
 
-    # modules 套件要等 create_app() 跑過 module_loader 才會被插進 sys.path。
     app = create_app('development')
     with app.app_context():
-        from app.models import Organization, User
-        from modules.form_workflow.models import (
-            FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
-            FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
-        )
-
-        models = {
-            'FwFormTemplate': FwFormTemplate,
-            'FwFormWorkflowMapping': FwFormWorkflowMapping,
-            'FwMappingPermission': FwMappingPermission,
-            'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
-            'FwWorkflowTemplate': FwWorkflowTemplate,
-            'WorkflowNodeDefinition': WorkflowNodeDefinition,
-        }
-
-        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+        from app.models import Organization
 
         org = Organization.query.filter_by(code=args.org, is_deleted=False).first()
         if not org:
             log(f'找不到企業：{args.org}')
             return 1
-        osc = org.secure_code
-        log(f'企業：{org.name}（{osc}）')
-        load_node_icons(models)
 
-        publisher = User.query.filter_by(
-            org_secure_code=osc, user_type='ORG_ADMIN',
-            is_deleted=False, is_active=True).first()
-
-        log('\n=== EmailAdapter／SysEmailRelay 示範（表單／流程／配對／發行） ===')
-        full_results = {}
-        for demo in FULL_DEMOS_STATIC:
-            log(f"\n--- {demo['workflow_name']} ---")
-            full_results[demo['workflow_code']] = apply_full_demo(
-                db, models, org, demo, publisher, args.apply)
-
+        result = provision(org, apply=args.apply)
         if args.apply:
             db.session.commit()
             log('\n已寫入。到 /forms/center 的「填寫表單」就看得到這兩張單。')
             log('\n完整示範：')
-            for code, r in full_results.items():
+            for code, r in result['results'].items():
                 if r:
                     log(f"  {code}: form_sc={r['form_sc']} wf_sc={r['wf_sc']} "
                         f"published_sc={r['published_sc']}")
@@ -765,7 +805,6 @@ def main():
             db.session.rollback()
             log('\n[預演] 未寫入任何資料')
     return 0
-
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -27,29 +27,21 @@ PF-252 B11 批次：node展覽館 —— Telegram（NT-27）／SysTelegram（NT-
       `{'status': 'error', 'message': '企業未取得 SysTelegram 節點授權'}`。
     - **真正的分界線在設計器面板可見性**：呼叫
       `GET /api/workflows/data/node-definitions` 實測比對——
-      系統企業（SYSTEM，quick-login `UC1oK01uDeKbG2MDwBflGD`）回應含
-      Telegram **與** SysTelegram 兩者；BELUGA 企業
-      （quick-login `jIYEQ-_lZMZNBkVy-hijal`，一般企業、未取得 SysTelegram
-      授權）回應**只有** Telegram，SysTelegram 完全不在清單內。
+      以系統預設企業的管理員登入時，回應含 Telegram **與** SysTelegram 兩者；
+      一般未授權企業的管理員登入時，回應**只有** Telegram，SysTelegram
+      完全不在清單內。
       也就是說，一般企業的流程設計者根本不會在節點面板上看到 SysTelegram
       這個選項存在，不是點了被擋，而是連選項都不會出現。
 
 目標企業固定是系統預設企業（Organization.code='SYSTEM'），分類固定是「node展覽館」
-（fw_categories.secure_code='J1ygL6zexauKlLM0_Ktoaw'）。兩個流程共用同一組
-Telegram 設定組「系統TG」（secure_code=c9WeYKveCBWxbn0t8kl6yn，頻道「測試頻道」，
-chat_id -4645997172）——因為兩個流程都跑在系統企業底下，「本企業」與「系統企業」
-在這裡剛好是同一家，這正好呼應上面的重點：**兩種節點在「能用哪個設定組」上
-完全對等**，差別只在「這個節點類型本身在你的企業看不看得到」。
-
-**注意（Ethan 明確同意）**：這兩個流程會真的呼叫 Telegram API 把訊息發到
-「系統TG」設定組的「測試頻道」（Ethan 的私人測試帳號可收到）。訊息內容一律以
-「[node展覽館示範]」開頭，避免被誤認為真的告警。
+。兩個流程共用一組佔位 Telegram 設定組，預設停用；請到企業設定填入真實
+Bot Token 與頻道並啟用後，流程才會真的送出 Telegram 訊息。
 
 冪等：重跑會沿用既有表單／流程（依 code 找），bump revision 並重新發行（會停用
 舊的已發行版本並建立新版）。填寫權限授予企業內所有非 EXTERNAL 的在職帳號。
 
 用法：
-    cd /opt/BeakPlatform-dev
+    cd <repo>
     set -a && source .env && set +a
     venv/bin/python scripts/examples/provision_nodedemo_telegram.py --dry-run
     venv/bin/python scripts/examples/provision_nodedemo_telegram.py --apply
@@ -59,7 +51,6 @@ chat_id -4645997172）——因為兩個流程都跑在系統企業底下，「�
     modules/form_workflow/services/node_handlers/fieldwrite_handler.py
     modules/form_workflow/services/node_handlers/formadapter_handler.py
     modules/form_workflow/services/node_grant_service.py（is_node_allowed）
-權威對照表：/opt/tmp/verify/20260907-node-config-reference.md
 """
 from __future__ import annotations
 
@@ -67,15 +58,21 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'backend'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+BACKEND_DIR = os.path.join(REPO_ROOT, 'backend')
+sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, REPO_ROOT)
+
+from scripts.examples.node_showcase import ensure_showcase_category
 
 ORG_CODE = 'SYSTEM'
 CATEGORY_NAME = 'node展覽館'
-CATEGORY_SECURE_CODE = 'J1ygL6zexauKlLM0_Ktoaw'
+SHOWCASE_CATEGORY_SECURE_CODE = None
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 
-TELEGRAM_CONFIG_SC = 'c9WeYKveCBWxbn0t8kl6yn'  # 系統企業 TelegramConfig「系統TG」
-TELEGRAM_CHANNEL = '測試頻道'
+TELEGRAM_CONFIG_NAME = 'node展覽館示範（請填入真實 Bot Token）'
+TELEGRAM_CONFIG_SC = None
+TELEGRAM_CHANNEL = '示範頻道'
 
 _EDGE_STYLE = {
     'width': 2,
@@ -177,6 +174,33 @@ def _submit_button():
             'action': 'submit', 'disableOnInvalid': True}
 
 
+def ensure_telegram_config(org, apply=True):
+    import json
+    from app import db
+    from app.models import TelegramConfig
+
+    config = TelegramConfig.query.filter_by(
+        org_secure_code=org.secure_code,
+        name=TELEGRAM_CONFIG_NAME,
+        is_deleted=False,
+    ).first()
+    if config:
+        return config
+    config = TelegramConfig(
+        org_secure_code=org.secure_code,
+        name=TELEGRAM_CONFIG_NAME,
+        description='node展覽館示範用佔位設定組；請填入真實 Bot Token 與頻道後再啟用。',
+        bot_token='REPLACE_ME',
+        channels=json.dumps({TELEGRAM_CHANNEL: 'REPLACE_ME'}, ensure_ascii=False),
+        default_channel=TELEGRAM_CHANNEL,
+        is_active=False,
+    )
+    if apply:
+        db.session.add(config)
+        db.session.flush()
+    return config
+
+
 def _approve_config(output_variable, label, target_edge):
     """單一決策的自簽關卡：assignee_type=INITIATOR，一個人就能走完全程。"""
     return {
@@ -214,10 +238,8 @@ def build_telegram_graph():
         }, 380, 200,
             'Telegram 是**非受限**節點（org_restricted=false），任何企業'
             '只要自己有一組 TelegramConfig（或引用系統企業的設定組）就能'
-            '使用。這裡引用的是系統企業的「系統TG」設定組／「測試頻道」——'
-            '因為本流程本身就掛在系統企業底下，所以「本企業」與「系統'
-            '企業」剛好是同一家；如果是一般企業自己的流程，通常會填自己'
-            '企業的 TelegramConfig secure_code。message 內容示範把表單'
+            '使用。這裡引用的是系統預設企業的佔位 Telegram 設定組／「示範頻道」；'
+            '佔位設定組要到企業設定填入真實值並啟用才寄得出去。message 內容示範把表單'
             '欄位（${f.tg_headline}／${f.tg_body}）與流程執行代碼'
             '（${wi.exec_code}）一起組成訊息文字，都會被實際替換。'),
 
@@ -234,7 +256,7 @@ def build_telegram_graph():
                 "AS chat_id FROM fw_node_execution_logs "
                 "WHERE log_message='Telegram 訊息發送成功' "
                 "ORDER BY id DESC LIMIT 1;\n\n"
-                '也可以直接到 Telegram「測試頻道」查看訊息本身是否送達。'
+                '也可以直接到 Telegram「示範頻道」查看訊息本身是否送達。'
             ),
         }, 660, 200,
             '把流程執行代碼寫回表單欄位，方便事後回顧本次示範跑了哪一次。'),
@@ -268,8 +290,8 @@ NT27_DESCRIPTION = (
     '管理員申請任何額外授權。\n\n'
     '【本流程的設定重點】\n'
     '- config_id／channel_name 分別指向 TelegramConfig 的 secure_code'
-    '與該設定組 channels 字典裡的頻道名稱（本流程用系統企業的「系統TG」'
-    '設定組、「測試頻道」）。handler 端解析設定組時允許引用「本企業或'
+    '與該設定組 channels 字典裡的頻道名稱（本流程用系統企業的「佔位 Telegram 設定組」'
+    '設定組、「示範頻道」）。handler 端解析設定組時允許引用「本企業或'
     '系統企業」的設定組，所以即使不是系統企業，一般企業的流程也能填'
     '系統企業的 TelegramConfig secure_code 借用它（前提是知道那組'
     ' secure_code；跨到別家一般企業的設定組則會被擋，見下方 SysTelegram'
@@ -283,7 +305,7 @@ NT27_DESCRIPTION = (
     '- disable_notification=false：正常推播提醒音；設成 true 則是'
     '「靜音發送」，適合非急迫的通知。\n\n'
     '【怎麼看結果】\n'
-    '流程送出後應立即在 Telegram「測試頻道」看到一則以'
+    '佔位設定組要到企業設定填入真實值並啟用才寄得出去。啟用後，流程送出應在 Telegram「示範頻道」看到一則以'
     '「[node展覽館示範]」開頭的訊息，內容含本次流程執行代碼。也可以到'
     '「填寫表單」重新打開這張單看 tg_result_display 欄位，或直接查：\n'
     "SELECT log_level, log_message, log_data FROM fw_node_execution_logs "
@@ -297,7 +319,7 @@ FORM_TELEGRAM_SCHEMA = {
     'components': [
         _title('NT-27 Telegram 示範表單（一般 Telegram 通知）'),
         _hint('送出後流程會立即呼叫 Telegram API，把下面填的內容送到'
-              '「系統TG」設定組的「測試頻道」。內容已固定以'
+              '佔位 Telegram 設定組的「示範頻道」。內容已固定以'
               '「[node展覽館示範]」開頭，避免被誤認為真的告警。'),
         _text('tg_headline', '通知標題',
               '這段文字會經過變數替換直接組進 Telegram 訊息開頭。'),
@@ -343,7 +365,7 @@ def build_systelegram_graph():
             ' workflow_node_definitions.org_restricted=true：這個節點'
             '型別本身只有取得授權的企業（workflow_node_org_grants 有'
             '記錄）才會在流程設計器的節點面板上看到它。系統預設企業'
-            '出廠即已授權，一般企業（例如 BELUGA）預設看不到這個節點'
+            '出廠即已授權，一般企業（例如 一般未授權企業）預設看不到這個節點'
             '選項——不是點了被擋，是設計器面板上根本不會出現。'),
 
         _node('node-Write', 'OpFieldWrite', '寫回送出結果', {
@@ -356,7 +378,7 @@ def build_systelegram_graph():
                 "AS chat_id FROM fw_node_execution_logs "
                 "WHERE log_message='Telegram 訊息發送成功' "
                 "ORDER BY id DESC LIMIT 1;\n\n"
-                '也可以直接到 Telegram「測試頻道」查看訊息本身是否送達。'
+                '也可以直接到 Telegram「示範頻道」查看訊息本身是否送達。'
             ),
         }, 660, 200,
             '把流程執行代碼寫回表單欄位，方便事後回顧本次示範跑了哪一次。'),
@@ -392,7 +414,7 @@ NT18_DESCRIPTION = (
     '被擋。系統預設企業出廠即已取得授權。\n\n'
     '【本流程的設定重點】\n'
     '- config／message 欄位與一般 Telegram 節點完全一樣，本流程刻意'
-    '沿用同一組系統企業「系統TG」設定組／「測試頻道」，證明兩種節點'
+    '沿用同一組系統企業佔位 Telegram 設定組／「示範頻道」，證明兩種節點'
     '在「執行期能用哪個設定組」上沒有任何差異——`_resolve_telegram_'
     'config()` 對 Telegram／SysTelegram 兩者都是查「本企業或系統企業」'
     '的 TelegramConfig，程式碼裡完全沒有針對 SysTelegram 另外放寬或'
@@ -407,20 +429,20 @@ NT18_DESCRIPTION = (
     '本身反而常因模組 ACL 而打不進模組 API，詳見專案 CLAUDE.md'
     ' PERM-04）。這正是本專案「受限節點」機制存在的理由。\n'
     '- 本批次已用 API 實測驗證這個差異：`GET /api/workflows/data/'
-    'node-definitions` 對系統企業（quick-login'
-    ' UC1oK01uDeKbG2MDwBflGD）回應含 Telegram 與 SysTelegram 兩者；'
-    '對 BELUGA 企業（quick-login jIYEQ-_lZMZNBkVy-hijal，一般企業、'
+    'node-definitions` 對系統企業（登入'
+    ' 系統預設企業管理員）回應含 Telegram 與 SysTelegram 兩者；'
+    '對 一般未授權企業（以一般未授權企業的管理員登入，一般企業、'
     '未取得 SysTelegram 授權）回應**只有** Telegram，SysTelegram'
     '完全不在清單內——不是有回傳但被前端隱藏，是 API 回應本身就沒有'
     '這一項。\n\n'
     '【怎麼看結果】\n'
-    '流程送出後應立即在 Telegram「測試頻道」看到一則以'
+    '流程送出後應立即在 Telegram「示範頻道」看到一則以'
     '「[node展覽館示範]」開頭的訊息（與一般 Telegram 流程送的訊息'
     '交錯出現，靠內文的流程執行代碼分辨是哪一次）。也可以到「填寫表單」'
     '重新打開這張單看 systg_result_display 欄位，或直接查：\n'
     "SELECT log_level, log_message, log_data FROM fw_node_execution_logs "
     "WHERE log_message LIKE 'Telegram%' ORDER BY id DESC LIMIT 5;\n"
-    '想親自驗證「一般企業看不到這個節點」，可以用 BELUGA 企業的帳號'
+    '想親自驗證「一般企業看不到這個節點」，可以用 一般未授權企業的帳號'
     '登入設計器，打開任一流程的節點面板，會看到 Telegram 存在但'
     ' SysTelegram 不存在。'
 )
@@ -430,8 +452,8 @@ FORM_SYSTELEGRAM_SCHEMA = {
     'components': [
         _title('NT-18 SysTelegram 示範表單（系統級 Telegram）'),
         _hint('送出後流程會立即呼叫 Telegram API，把下面填的內容送到'
-              '「系統TG」設定組的「測試頻道」。內容已固定以'
-              '「[node展覽館示範]」開頭，避免被誤認為真的告警。這個節點'
+              '佔位設定組的「示範頻道」。佔位設定組要到企業設定填入真實值並啟用才寄得出去。'
+              '內容已固定以「[node展覽館示範]」開頭。這個節點'
               '型別只有取得授權的企業才會在設計器看到，系統預設企業'
               '出廠即已授權。'),
         _text('systg_headline', '通知標題',
@@ -446,7 +468,7 @@ FORM_SYSTELEGRAM_SCHEMA = {
 FORM_SYSTELEGRAM_SCHEMA['components'][2]['defaultValue'] = '系統級 Telegram 通知節點示範'
 FORM_SYSTELEGRAM_SCHEMA['components'][3]['defaultValue'] = (
     '這是 node展覽館 SysTelegram 節點的示範送單。這個節點是受限節點，'
-    '只有取得授權的企業才能在流程設計器裡使用，一般企業（例如 BELUGA）'
+    '只有取得授權的企業才能在流程設計器裡使用，一般企業（例如 一般未授權企業）'
     '看不到這個節點選項。僅供教學使用，非真實告警。'
 )
 
@@ -541,7 +563,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['form_code'],
             version='AA', revision=1, name=demo['form_name'],
             description=demo['form_name'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE, schema=demo['form_schema'],
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE, schema=demo['form_schema'],
             builder_config={}, is_published=False, is_active=True,
             is_protected=False, permission_type='org')
     else:
@@ -558,7 +580,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['workflow_code'],
             version='AA', revision=1, name=demo['workflow_name'],
             description=demo['description'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE,
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE,
             graph=graph, cytoscape_config=graph, is_published=False, is_active=True,
             is_protected=False, permission_type='org', is_subprocess=False)
     else:
@@ -620,9 +642,49 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             'published_sc': published.secure_code}
 
 
+def _workflow_models():
+    from modules.form_workflow.models import (
+        FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
+        FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
+    )
+    return {
+        'FwFormTemplate': FwFormTemplate,
+        'FwFormWorkflowMapping': FwFormWorkflowMapping,
+        'FwMappingPermission': FwMappingPermission,
+        'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
+        'FwWorkflowTemplate': FwWorkflowTemplate,
+        'WorkflowNodeDefinition': WorkflowNodeDefinition,
+    }
+
+def provision(org, apply=True, **opts):
+    from app import db
+    from app.models import User
+
+    del opts
+    db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+    global SHOWCASE_CATEGORY_SECURE_CODE
+    SHOWCASE_CATEGORY_SECURE_CODE = ensure_showcase_category(org).secure_code
+    global TELEGRAM_CONFIG_SC
+    TELEGRAM_CONFIG_SC = ensure_telegram_config(org, apply=apply).secure_code
+
+    models = _workflow_models()
+    osc = org.secure_code
+    log(f'企業：{org.name}（{osc}）')
+    load_node_icons(models)
+
+    publisher = User.query.filter_by(
+        org_secure_code=osc, user_type='ORG_ADMIN',
+        is_deleted=False, is_active=True).first()
+
+    results = {}
+    for demo in FULL_DEMOS_STATIC:
+        log(f"\n--- {demo['workflow_name']} ---")
+        results[demo['workflow_code']] = apply_full_demo(
+            db, models, org, demo, publisher, apply)
+    return {'results': results, 'category_secure_code': SHOWCASE_CATEGORY_SECURE_CODE}
+
 def main():
-    parser = argparse.ArgumentParser(
-        description='佈建 node展覽館的 Telegram／SysTelegram 示範（B11）')
+    parser = argparse.ArgumentParser(description='佈建 node展覽館的 Telegram／SysTelegram 示範（B11）')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入')
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
@@ -631,50 +693,21 @@ def main():
 
     from app import create_app, db
 
-    # modules 套件要等 create_app() 跑過 module_loader 才會被插進 sys.path。
     app = create_app('development')
     with app.app_context():
-        from app.models import Organization, User
-        from modules.form_workflow.models import (
-            FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
-            FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
-        )
-
-        models = {
-            'FwFormTemplate': FwFormTemplate,
-            'FwFormWorkflowMapping': FwFormWorkflowMapping,
-            'FwMappingPermission': FwMappingPermission,
-            'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
-            'FwWorkflowTemplate': FwWorkflowTemplate,
-            'WorkflowNodeDefinition': WorkflowNodeDefinition,
-        }
-
-        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+        from app.models import Organization
 
         org = Organization.query.filter_by(code=args.org, is_deleted=False).first()
         if not org:
             log(f'找不到企業：{args.org}')
             return 1
-        osc = org.secure_code
-        log(f'企業：{org.name}（{osc}）')
-        load_node_icons(models)
 
-        publisher = User.query.filter_by(
-            org_secure_code=osc, user_type='ORG_ADMIN',
-            is_deleted=False, is_active=True).first()
-
-        log('\n=== Telegram／SysTelegram 示範（表單／流程／配對／發行） ===')
-        full_results = {}
-        for demo in FULL_DEMOS_STATIC:
-            log(f"\n--- {demo['workflow_name']} ---")
-            full_results[demo['workflow_code']] = apply_full_demo(
-                db, models, org, demo, publisher, args.apply)
-
+        result = provision(org, apply=args.apply)
         if args.apply:
             db.session.commit()
             log('\n已寫入。到 /forms/center 的「填寫表單」就看得到這兩張單。')
             log('\n完整示範：')
-            for code, r in full_results.items():
+            for code, r in result['results'].items():
                 if r:
                     log(f"  {code}: form_sc={r['form_sc']} wf_sc={r['wf_sc']} "
                         f"published_sc={r['published_sc']}")
@@ -682,7 +715,6 @@ def main():
             db.session.rollback()
             log('\n[預演] 未寫入任何資料')
     return 0
-
 
 if __name__ == '__main__':
     sys.exit(main())

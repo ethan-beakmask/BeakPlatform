@@ -36,7 +36,7 @@ modules.open_defense.services.decision_service.create_decision()，
 這與流程節點呼叫的是同一支函式，驗證的是同一套判定邏輯。
 
 目標企業固定是系統預設企業（Organization.code='SYSTEM'），分類固定是
-「node展覽館」（fw_categories.secure_code='J1ygL6zexauKlLM0_Ktoaw'）。
+「node展覽館」。。
 DecisionWriter 不是受限節點（org_restricted=false），不需要企業授權，
 但需要 open_defense 模組已載入（handler 內部 import
 modules.open_defense.services.decision_service）。
@@ -46,7 +46,7 @@ modules.open_defense.services.decision_service）。
 的在職帳號。
 
 用法：
-    cd /opt/BeakPlatform-dev
+    cd <repo>
     set -a && source .env && set +a
     venv/bin/python scripts/examples/provision_nodedemo_decisionwriter.py --dry-run
     venv/bin/python scripts/examples/provision_nodedemo_decisionwriter.py --apply
@@ -59,7 +59,6 @@ modules.open_defense.services.decision_service）。
     modules/open_defense/services/decision_service.py
     modules/open_defense/services/protected_target_service.py
     modules/open_defense/models/defense_decision.py（VALID_ACTIONS／VALID_TARGET_TYPES／VALID_SEVERITIES）
-權威對照表：/opt/tmp/verify/20260907-node-config-reference.md
 """
 from __future__ import annotations
 
@@ -67,11 +66,16 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'backend'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+BACKEND_DIR = os.path.join(REPO_ROOT, 'backend')
+sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, REPO_ROOT)
+
+from scripts.examples.node_showcase import ensure_showcase_category
 
 ORG_CODE = 'SYSTEM'
 CATEGORY_NAME = 'node展覽館'
-CATEGORY_SECURE_CODE = 'J1ygL6zexauKlLM0_Ktoaw'
+SHOWCASE_CATEGORY_SECURE_CODE = None
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 
 # 安全測試網段（Ethan 指定）：阻擋目標一律落在這個範圍，不用任何真實或內網 IP。
@@ -402,7 +406,7 @@ NT23_DESCRIPTION = (
     '4) EDL 黑名單：若這筆決策仍在有效期內（ttl_seconds 未過期）且'
     '狀態允許，下一次手動或排程執行'
     ' scripts/cron/od_render_edl.py 會把它渲染進'
-    ' /srv/beakshare/edl/system.local/blocklist.txt（.env 的'
+    ' /srv/beakshare/edl/系統預設企業網域/blocklist.txt（.env 的'
     ' OD_EDL_OUTPUT_DIR）。這份黑名單收的是「該企業所有有效 block」，'
     '不看 enforcement_points 有沒有列 edl。'
 )
@@ -510,7 +514,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['form_code'],
             version='AA', revision=1, name=demo['form_name'],
             description=demo['form_name'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE, schema=demo['form_schema'],
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE, schema=demo['form_schema'],
             builder_config={}, is_published=False, is_active=True,
             is_protected=False, permission_type='org')
     else:
@@ -527,7 +531,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['workflow_code'],
             version='AA', revision=1, name=demo['workflow_name'],
             description=demo['description'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE,
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE,
             graph=graph, cytoscape_config=graph, is_published=False, is_active=True,
             is_protected=False, permission_type='org', is_subprocess=False)
     else:
@@ -589,9 +593,47 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             'published_sc': published.secure_code}
 
 
+def _workflow_models():
+    from modules.form_workflow.models import (
+        FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
+        FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
+    )
+    return {
+        'FwFormTemplate': FwFormTemplate,
+        'FwFormWorkflowMapping': FwFormWorkflowMapping,
+        'FwMappingPermission': FwMappingPermission,
+        'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
+        'FwWorkflowTemplate': FwWorkflowTemplate,
+        'WorkflowNodeDefinition': WorkflowNodeDefinition,
+    }
+
+def provision(org, apply=True, **opts):
+    from app import db
+    from app.models import User
+
+    del opts
+    db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+    global SHOWCASE_CATEGORY_SECURE_CODE
+    SHOWCASE_CATEGORY_SECURE_CODE = ensure_showcase_category(org).secure_code
+
+    models = _workflow_models()
+    osc = org.secure_code
+    log(f'企業：{org.name}（{osc}）')
+    load_node_icons(models)
+
+    publisher = User.query.filter_by(
+        org_secure_code=osc, user_type='ORG_ADMIN',
+        is_deleted=False, is_active=True).first()
+
+    results = {}
+    for demo in FULL_DEMOS_STATIC:
+        log(f"\n--- {demo['workflow_name']} ---")
+        results[demo['workflow_code']] = apply_full_demo(
+            db, models, org, demo, publisher, apply)
+    return {'results': results, 'category_secure_code': SHOWCASE_CATEGORY_SECURE_CODE}
+
 def main():
-    parser = argparse.ArgumentParser(
-        description='佈建 node展覽館的 DecisionWriter 示範（B14）')
+    parser = argparse.ArgumentParser(description='佈建 node展覽館的 DecisionWriter 示範（B14）')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入')
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
@@ -600,50 +642,21 @@ def main():
 
     from app import create_app, db
 
-    # modules 套件要等 create_app() 跑過 module_loader 才會被插進 sys.path。
     app = create_app('development')
     with app.app_context():
-        from app.models import Organization, User
-        from modules.form_workflow.models import (
-            FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
-            FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
-        )
-
-        models = {
-            'FwFormTemplate': FwFormTemplate,
-            'FwFormWorkflowMapping': FwFormWorkflowMapping,
-            'FwMappingPermission': FwMappingPermission,
-            'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
-            'FwWorkflowTemplate': FwWorkflowTemplate,
-            'WorkflowNodeDefinition': WorkflowNodeDefinition,
-        }
-
-        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+        from app.models import Organization
 
         org = Organization.query.filter_by(code=args.org, is_deleted=False).first()
         if not org:
             log(f'找不到企業：{args.org}')
             return 1
-        osc = org.secure_code
-        log(f'企業：{org.name}（{osc}）')
-        load_node_icons(models)
 
-        publisher = User.query.filter_by(
-            org_secure_code=osc, user_type='ORG_ADMIN',
-            is_deleted=False, is_active=True).first()
-
-        log('\n=== DecisionWriter 示範（表單／流程／配對／發行） ===')
-        full_results = {}
-        for demo in FULL_DEMOS_STATIC:
-            log(f"\n--- {demo['workflow_name']} ---")
-            full_results[demo['workflow_code']] = apply_full_demo(
-                db, models, org, demo, publisher, args.apply)
-
+        result = provision(org, apply=args.apply)
         if args.apply:
             db.session.commit()
-            log('\n已寫入。到 /forms/center 的「填寫表單」就看得到這張單。')
+            log('\n已寫入。到 /forms/center 的「填寫表單」就看得到這些單。')
             log('\n完整示範：')
-            for code, r in full_results.items():
+            for code, r in result['results'].items():
                 if r:
                     log(f"  {code}: form_sc={r['form_sc']} wf_sc={r['wf_sc']} "
                         f"published_sc={r['published_sc']}")
@@ -651,7 +664,6 @@ def main():
             db.session.rollback()
             log('\n[預演] 未寫入任何資料')
     return 0
-
 
 if __name__ == '__main__':
     sys.exit(main())

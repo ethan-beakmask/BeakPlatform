@@ -20,9 +20,9 @@ PF-252 B15 批次：node展覽館 —— OpHrLookup（NT-31）示範（人事資
 
     示範處 IxAGtnFKrUrXTi4s8okjE8（根）
       └ 示範部 nZhemfe5upQ38diRJ3tKsO（子）
-    demo-staff@system.local    L200 示範專員級（申請人，示範部一般成員）
-    demo-manager@system.local  L500 示範經理級（示範部正主管，直屬主管）
-    demo-director@system.local L700 示範處長級（示範處正主管）
+    demo-staff@系統預設企業網域    L200 示範專員級（申請人，示範部一般成員）
+    demo-manager@系統預設企業網域  L500 示範經理級（示範部正主管，直屬主管）
+    demo-director@系統預設企業網域 L700 示範處長級（示範處正主管）
     核決類別 TRAVEL 差旅費 Gjx6BVgZVB4t_RBePJreSv：
       L200 上限 0 ／ L500 上限 300,000 ／ L700 上限 999,999,999
     判定規則「第一個 approval_limit >= amount 的主管即為核決人」，
@@ -36,14 +36,14 @@ OpHrLookup 找核決人時只依主管鏈與核決上限比對金額，不檢查
 absence_fallback 機制，這裡完全沒有這層邏輯，兩者不要混淆）。
 
 目標企業固定是系統預設企業（Organization.code='SYSTEM'），分類固定是
-「node展覽館」（fw_categories.secure_code='J1ygL6zexauKlLM0_Ktoaw'）。
+「node展覽館」。。
 
 冪等：重跑會沿用既有表單／流程（依 code 找），bump revision 並重新發行
 （會停用舊的已發行版本並建立新版）。填寫權限授予企業內所有非 EXTERNAL
 的在職帳號。
 
 用法：
-    cd /opt/BeakPlatform-dev
+    cd <repo>
     set -a && source .env && set +a
     venv/bin/python scripts/examples/provision_nodedemo_hrlookup.py --dry-run
     venv/bin/python scripts/examples/provision_nodedemo_hrlookup.py --apply
@@ -53,7 +53,6 @@ absence_fallback 機制，這裡完全沒有這層邏輯，兩者不要混淆）
     modules/form_workflow/services/node_handlers/formadapter_handler.py（見 fc_pending.py::approve_task()）
     modules/form_workflow/services/node_handlers/fieldwrite_handler.py
 規格：dev-notes/HR_LOOKUP_NODE_SPEC.md
-權威對照表：/opt/tmp/verify/20260907-node-config-reference.md
 範本：scripts/examples/provision_hr_lookup_demo.py（GHTRAVEL 版）、
       scripts/examples/provision_nodedemo_decisionwriter.py（B14，最新腳本模式）
 """
@@ -63,11 +62,16 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'backend'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+BACKEND_DIR = os.path.join(REPO_ROOT, 'backend')
+sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, REPO_ROOT)
+
+from scripts.examples.node_showcase import ensure_showcase_category
 
 ORG_CODE = 'SYSTEM'
 CATEGORY_NAME = 'node展覽館'
-CATEGORY_SECURE_CODE = 'J1ygL6zexauKlLM0_Ktoaw'
+SHOWCASE_CATEGORY_SECURE_CODE = None
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 APPROVAL_CATEGORY_CODE = 'TRAVEL'
 
@@ -550,7 +554,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['form_code'],
             version='AA', revision=1, name=demo['form_name'],
             description=demo['form_name'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE, schema=demo['form_schema'],
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE, schema=demo['form_schema'],
             builder_config={}, is_published=False, is_active=True,
             is_protected=False, permission_type='org')
     else:
@@ -567,7 +571,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['workflow_code'],
             version='AA', revision=1, name=demo['workflow_name'],
             description=demo['description'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE,
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE,
             graph=graph, cytoscape_config=graph, is_published=False, is_active=True,
             is_protected=False, permission_type='org', is_subprocess=False)
     else:
@@ -629,9 +633,62 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             'published_sc': published.secure_code}
 
 
+def _workflow_models():
+    from modules.form_workflow.models import (
+        FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
+        FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
+    )
+    return {
+        'FwFormTemplate': FwFormTemplate,
+        'FwFormWorkflowMapping': FwFormWorkflowMapping,
+        'FwMappingPermission': FwMappingPermission,
+        'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
+        'FwWorkflowTemplate': FwWorkflowTemplate,
+        'WorkflowNodeDefinition': WorkflowNodeDefinition,
+    }
+
+def provision(org, apply=True, **opts):
+    from app import db
+    from app.models import User
+
+    del opts
+    db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+    global SHOWCASE_CATEGORY_SECURE_CODE
+    SHOWCASE_CATEGORY_SECURE_CODE = ensure_showcase_category(org).secure_code
+
+    models = _workflow_models()
+    osc = org.secure_code
+    log(f'企業：{org.name}（{osc}）')
+    load_node_icons(models)
+
+    if not org.domain_name:
+        raise ValueError('系統企業缺少 domain_name，無法查詢示範帳號')
+    missing = []
+    for username in ('demo-staff', 'demo-manager', 'demo-director'):
+        email = f'{username}@{org.domain_name}'
+        if not User.query.filter_by(
+            org_secure_code=osc,
+            email=email,
+            is_deleted=False,
+            is_active=True,
+        ).first():
+            missing.append(email)
+    if missing:
+        raise ValueError(f'找不到示範帳號：{", ".join(missing)}（B0 應已建立）')
+
+    publisher = User.query.filter_by(
+        org_secure_code=osc, user_type='ORG_ADMIN',
+        is_deleted=False, is_active=True).first()
+
+    results = {}
+    for demo in FULL_DEMOS_STATIC:
+        log(f"\n--- {demo['workflow_name']} ---")
+        results[demo['workflow_code']] = apply_full_demo(
+            db, models, org, demo, publisher, apply)
+    return {'results': results, 'category_secure_code': SHOWCASE_CATEGORY_SECURE_CODE}
+
 def main():
-    parser = argparse.ArgumentParser(
-        description='佈建 node展覽館的 OpHrLookup 示範（B15）')
+    parser = argparse.ArgumentParser(description='佈建 node展覽館的 OpHrLookup 示範（B15）')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入')
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
@@ -640,50 +697,21 @@ def main():
 
     from app import create_app, db
 
-    # modules 套件要等 create_app() 跑過 module_loader 才會被插進 sys.path。
     app = create_app('development')
     with app.app_context():
-        from app.models import Organization, User
-        from modules.form_workflow.models import (
-            FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
-            FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
-        )
-
-        models = {
-            'FwFormTemplate': FwFormTemplate,
-            'FwFormWorkflowMapping': FwFormWorkflowMapping,
-            'FwMappingPermission': FwMappingPermission,
-            'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
-            'FwWorkflowTemplate': FwWorkflowTemplate,
-            'WorkflowNodeDefinition': WorkflowNodeDefinition,
-        }
-
-        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+        from app.models import Organization
 
         org = Organization.query.filter_by(code=args.org, is_deleted=False).first()
         if not org:
             log(f'找不到企業：{args.org}')
             return 1
-        osc = org.secure_code
-        log(f'企業：{org.name}（{osc}）')
-        load_node_icons(models)
 
-        publisher = User.query.filter_by(
-            org_secure_code=osc, user_type='ORG_ADMIN',
-            is_deleted=False, is_active=True).first()
-
-        log('\n=== OpHrLookup 示範（表單／流程／配對／發行） ===')
-        full_results = {}
-        for demo in FULL_DEMOS_STATIC:
-            log(f"\n--- {demo['workflow_name']} ---")
-            full_results[demo['workflow_code']] = apply_full_demo(
-                db, models, org, demo, publisher, args.apply)
-
+        result = provision(org, apply=args.apply)
         if args.apply:
             db.session.commit()
-            log('\n已寫入。到 /forms/center 的「填寫表單」就看得到這兩張單。')
+            log('\n已寫入。到 /forms/center 的「填寫表單」就看得到這些單。')
             log('\n完整示範：')
-            for code, r in full_results.items():
+            for code, r in result['results'].items():
                 if r:
                     log(f"  {code}: form_sc={r['form_sc']} wf_sc={r['wf_sc']} "
                         f"published_sc={r['published_sc']}")
@@ -691,7 +719,6 @@ def main():
             db.session.rollback()
             log('\n[預演] 未寫入任何資料')
     return 0
-
 
 if __name__ == '__main__':
     sys.exit(main())

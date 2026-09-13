@@ -35,14 +35,13 @@ beneficiary），藉此證明這些 config 值只是「要去 form_data 讀哪�
 fill_permission_service.list_fillable_published_templates() 重新確認
 「授權表單」裡列的每一個表單模板，領取人自己都填得到——不是前端下拉
 選單過濾一下就能繞過。本示範的 authorized_forms 填的是系統企業既有的
-「API Key 申請單」（fw_form_templates.secure_code=Y5Hjkm4vbo4KCOMJPNUg87，
+「API Key 申請單」（fw_form_templates.secure_code=執行時查得的 API Key 申請單，
 `scripts/examples/provision_api_key_request_flow.py` 佈建的既有資產，
 本腳本只讀取它的 secure_code，不改動它），該表單的填寫權限已授予角色
-ORG_ADMIN，示範帳號（系統企業 ORG_ADMIN，quick-login
-UC1oK01uDeKbG2MDwBflGD）持有這個角色，重驗會通過。
+ORG_ADMIN，示範帳號（系統企業 ORG_ADMIN，以系統預設企業的管理員登入）持有這個角色，重驗會通過。
 
 目標企業固定是系統預設企業（Organization.code='SYSTEM'），分類固定是
-「node展覽館」（fw_categories.secure_code='J1ygL6zexauKlLM0_Ktoaw'）。
+「node展覽館」。。
 這兩個節點都**不是**受限節點（org_restricted=false），不需要企業授權。
 
 **注意**：實際送單會真的呼叫 api_key_service.create_api_key()，在
@@ -56,7 +55,7 @@ name／description 都刻意帶 NODEDEMO 字樣，方便日後辨識與清理；
 EXTERNAL 的在職帳號。**重跑會再核發一把新的 Key**，不是只改資料庫。
 
 用法：
-    cd /opt/BeakPlatform-dev
+    cd <repo>
     set -a && source .env && set +a
     venv/bin/python scripts/examples/provision_nodedemo_apikey.py --dry-run
     venv/bin/python scripts/examples/provision_nodedemo_apikey.py --apply
@@ -68,7 +67,6 @@ EXTERNAL 的在職帳號。**重跑會再核發一把新的 Key**，不是只改
     modules/form_workflow/services/node_handlers/formadapter_handler.py
     backend/app/services/api_key_service.py
     backend/app/services/api_key_claim_service.py
-權威對照表：/opt/tmp/verify/20260907-node-config-reference.md
 """
 from __future__ import annotations
 
@@ -76,16 +74,19 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'backend'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+BACKEND_DIR = os.path.join(REPO_ROOT, 'backend')
+sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, REPO_ROOT)
+
+from scripts.examples.node_showcase import ensure_showcase_category
 
 ORG_CODE = 'SYSTEM'
 CATEGORY_NAME = 'node展覽館'
-CATEGORY_SECURE_CODE = 'J1ygL6zexauKlLM0_Ktoaw'
+SHOWCASE_CATEGORY_SECURE_CODE = None
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 
-# 既有資產：API Key 申請單（provision_api_key_request_flow.py 佈建），只讀取其
-# 表單模板 secure_code 作為「授權表單」範例，不改動它。
-API_KEY_REQUEST_FORM_TEMPLATE_SC = 'Y5Hjkm4vbo4KCOMJPNUg87'
+API_KEY_REQUEST_FORM_CODE = 'API_KEY_REQUEST'
 
 _EDGE_STYLE = {
     'width': 2,
@@ -303,7 +304,7 @@ NT04_DESCRIPTION = (
     '表單已發行。這是核發前的強制重驗，擋的是「F12 塞進任意 template'
     ' secure_code 讓別人拿到他原本沒有的能力」這種提權——前端下拉選單'
     '只過濾一次是不夠的。本示範填的是系統企業既有的「API Key 申請單」'
-    '（fw_form_templates.secure_code=Y5Hjkm4vbo4KCOMJPNUg87），示範帳號'
+    '（fw_form_templates.secure_code=執行時查得的 API Key 申請單），示範帳號'
     '持有 ORG_ADMIN 角色、該表單已對這個角色開放填寫權限，所以會通過。\n'
     '- **valid_until（expires_field）與 claim_ttl_hours 是兩個不同的'
     '「有效期」，不要混淆**：valid_until 是 Key 本身的到期日'
@@ -647,7 +648,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['form_code'],
             version='AA', revision=1, name=demo['form_name'],
             description=demo['form_name'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE, schema=demo['form_schema'],
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE, schema=demo['form_schema'],
             builder_config={}, is_published=False, is_active=True,
             is_protected=False, permission_type='org')
     else:
@@ -664,7 +665,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['workflow_code'],
             version='AA', revision=1, name=demo['workflow_name'],
             description=demo['description'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE,
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE,
             graph=graph, cytoscape_config=graph, is_published=False, is_active=True,
             is_protected=False, permission_type='org', is_subprocess=False)
     else:
@@ -726,9 +727,57 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             'published_sc': published.secure_code}
 
 
+def _workflow_models():
+    from modules.form_workflow.models import (
+        FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
+        FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
+    )
+    return {
+        'FwFormTemplate': FwFormTemplate,
+        'FwFormWorkflowMapping': FwFormWorkflowMapping,
+        'FwMappingPermission': FwMappingPermission,
+        'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
+        'FwWorkflowTemplate': FwWorkflowTemplate,
+        'WorkflowNodeDefinition': WorkflowNodeDefinition,
+    }
+
+def provision(org, apply=True, **opts):
+    from app import db
+    from app.models import User
+    from modules.form_workflow.models import FwFormTemplate
+
+    del opts
+    db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+    global SHOWCASE_CATEGORY_SECURE_CODE
+    SHOWCASE_CATEGORY_SECURE_CODE = ensure_showcase_category(org).secure_code
+
+    models = _workflow_models()
+    osc = org.secure_code
+    log(f'企業：{org.name}（{osc}）')
+    load_node_icons(models)
+
+    api_key_request_form = FwFormTemplate.query.filter_by(
+        org_secure_code=osc,
+        code=API_KEY_REQUEST_FORM_CODE,
+        is_deleted=False,
+    ).first()
+    if not api_key_request_form:
+        raise ValueError('找不到 API Key 申請單（code=API_KEY_REQUEST），請先確認 fresh defaults 已種入')
+    log(f'  API Key 申請單：{api_key_request_form.secure_code}')
+
+    publisher = User.query.filter_by(
+        org_secure_code=osc, user_type='ORG_ADMIN',
+        is_deleted=False, is_active=True).first()
+
+    results = {}
+    for demo in FULL_DEMOS_STATIC:
+        log(f"\n--- {demo['workflow_name']} ---")
+        results[demo['workflow_code']] = apply_full_demo(
+            db, models, org, demo, publisher, apply)
+    return {'results': results, 'category_secure_code': SHOWCASE_CATEGORY_SECURE_CODE}
+
 def main():
-    parser = argparse.ArgumentParser(
-        description='佈建 node展覽館的 ApiKeyIssue／ApiKeyAction 示範（B13）')
+    parser = argparse.ArgumentParser(description='佈建 node展覽館的 ApiKeyIssue／ApiKeyAction 示範（B13）')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入')
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
@@ -737,61 +786,28 @@ def main():
 
     from app import create_app, db
 
-    # modules 套件要等 create_app() 跑過 module_loader 才會被插進 sys.path。
     app = create_app('development')
     with app.app_context():
-        from app.models import Organization, User
-        from modules.form_workflow.models import (
-            FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
-            FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
-        )
-
-        models = {
-            'FwFormTemplate': FwFormTemplate,
-            'FwFormWorkflowMapping': FwFormWorkflowMapping,
-            'FwMappingPermission': FwMappingPermission,
-            'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
-            'FwWorkflowTemplate': FwWorkflowTemplate,
-            'WorkflowNodeDefinition': WorkflowNodeDefinition,
-        }
-
-        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+        from app.models import Organization
 
         org = Organization.query.filter_by(code=args.org, is_deleted=False).first()
         if not org:
             log(f'找不到企業：{args.org}')
             return 1
-        osc = org.secure_code
-        log(f'企業：{org.name}（{osc}）')
-        load_node_icons(models)
 
-        publisher = User.query.filter_by(
-            org_secure_code=osc, user_type='ORG_ADMIN',
-            is_deleted=False, is_active=True).first()
-
-        log('\n=== ApiKeyIssue／ApiKeyAction 示範（表單／流程／配對／發行） ===')
-        full_results = {}
-        for demo in FULL_DEMOS_STATIC:
-            log(f"\n--- {demo['workflow_name']} ---")
-            full_results[demo['workflow_code']] = apply_full_demo(
-                db, models, org, demo, publisher, args.apply)
-
+        result = provision(org, apply=args.apply)
         if args.apply:
             db.session.commit()
             log('\n已寫入。到 /forms/center 的「填寫表單」就看得到這兩張單。')
             log('\n完整示範：')
-            for code, r in full_results.items():
+            for code, r in result['results'].items():
                 if r:
                     log(f"  {code}: form_sc={r['form_sc']} wf_sc={r['wf_sc']} "
                         f"published_sc={r['published_sc']}")
-            log(f'\n提醒：NT-04 表單的授權表單欄位（scope_forms）可用既有的'
-                f' API Key 申請單（form_template_sc={API_KEY_REQUEST_FORM_TEMPLATE_SC}）'
-                f'作為範例值。')
         else:
             db.session.rollback()
             log('\n[預演] 未寫入任何資料')
     return 0
-
 
 if __name__ == '__main__':
     sys.exit(main())

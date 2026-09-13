@@ -9,14 +9,14 @@ ITHome2026-WAF/monitor_probe.sh 判定 WAF 對外與對內服務是否仍通；�
 預設值自動切換或繼續監看。
 
 目標企業預設是系統預設企業（Organization.code='SYSTEM'），分類固定是
-「node展覽館」（fw_categories.secure_code='J1ygL6zexauKlLM0_Ktoaw'）。
+「node展覽館」。。
 
 冪等：重跑會沿用既有表單／流程（依 code 找），bump revision 並重新發行
 （會停用舊的已發行版本並建立新版）。填寫權限授予企業內所有非 EXTERNAL
 的在職帳號。
 
 用法：
-    cd /opt/BeakPlatform-dev
+    cd <repo>
     set -a && source .env && set +a
     venv/bin/python scripts/examples/provision_nodedemo_waf_monitor.py --dry-run
     venv/bin/python scripts/examples/provision_nodedemo_waf_monitor.py --apply
@@ -34,17 +34,24 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'backend'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+BACKEND_DIR = os.path.join(REPO_ROOT, 'backend')
+sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, REPO_ROOT)
+
+from scripts.examples.node_showcase import ensure_showcase_category
 
 ORG_CODE = 'SYSTEM'
 CATEGORY_NAME = 'node展覽館'
-CATEGORY_SECURE_CODE = 'J1ygL6zexauKlLM0_Ktoaw'
+SHOWCASE_CATEGORY_SECURE_CODE = None
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 
 FORM_CODE = 'NODEDEMO_WAF_MONITOR'
 FORM_NAME = 'WAF 熱備健康監看'
 WORKFLOW_CODE = 'NODEDEMO_WAF_MONITOR_FLOW'
 WORKFLOW_NAME = 'WAF 熱備健康監看（常駐迴圈 + 逾時自動處置）'
+TELEGRAM_CONFIG_NAME = 'node展覽館示範（請填入真實 Bot Token）'
+TELEGRAM_CHANNEL = '測試頻道'
 
 _EDGE_STYLE = {
     'width': 2,
@@ -163,6 +170,33 @@ def _disabled(comp):
     return comp
 
 
+def ensure_telegram_config(org, apply=True):
+    import json
+    from app import db
+    from app.models import TelegramConfig
+
+    config = TelegramConfig.query.filter_by(
+        org_secure_code=org.secure_code,
+        name=TELEGRAM_CONFIG_NAME,
+        is_deleted=False,
+    ).first()
+    if config:
+        return config
+    config = TelegramConfig(
+        org_secure_code=org.secure_code,
+        name=TELEGRAM_CONFIG_NAME,
+        description='node展覽館示範用佔位設定組；請填入真實 Bot Token 與頻道後再啟用。',
+        bot_token='REPLACE_ME',
+        channels=json.dumps({TELEGRAM_CHANNEL: 'REPLACE_ME'}, ensure_ascii=False),
+        default_channel=TELEGRAM_CHANNEL,
+        is_active=False,
+    )
+    if apply:
+        db.session.add(config)
+        db.session.flush()
+    return config
+
+
 def build_monitor_schema(interval_minutes):
     fail_threshold = _select(
         'fail_threshold', '連續失敗幾次才告警',
@@ -181,8 +215,9 @@ def build_monitor_schema(interval_minutes):
         'components': [
             _title(FORM_NAME),
             _hint(f'這張單送出後流程就常駐在背景，每 {interval_minutes} 分鐘檢查一次；'
-                  '正常時不寫表單、只留流程記錄（目前狀態請看流程管理頁）；要停止監看就 touch '
-                  '/opt/tmp/waf-monitor.stop，下一圈流程會自己正常結束。'),
+                  '正常時不寫表單、只留流程記錄（目前狀態請看流程管理頁）。請先依 '
+                  'ITHome2026-WAF/failover.conf.example 建立 failover.conf。Telegram 佔位設定組'
+                  '要到企業設定填入真實值並啟用才寄得出去。'),
             fail_threshold,
             timeout_default_action,
             _disabled(_textarea('event_log', '事件記錄（由流程寫回）', rows=16)),
@@ -465,7 +500,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['form_code'],
             version='AA', revision=1, name=demo['form_name'],
             description=demo['form_name'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE, schema=demo['form_schema'],
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE, schema=demo['form_schema'],
             builder_config={}, is_published=False, is_active=True,
             is_protected=False, permission_type='org')
     else:
@@ -482,7 +517,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['workflow_code'],
             version='AA', revision=1, name=demo['workflow_name'],
             description=demo['description'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE,
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE,
             graph=graph, cytoscape_config=graph, is_published=False, is_active=True,
             is_protected=False, permission_type='org', is_subprocess=False)
     else:
@@ -576,9 +611,9 @@ def build_parser():
                         help='熱備切換 OsExecutor timeout_seconds（預設 240）')
     parser.add_argument('--approver-role', default=None,
                         help='決策關卡角色 code；未給則指派送單者自己決策')
-    parser.add_argument('--telegram-config', default='c9WeYKveCBWxbn0t8kl6yn',
-                        help='TelegramConfig secure_code（預設系統企業「系統TG」）')
-    parser.add_argument('--telegram-channel', default='測試頻道',
+    parser.add_argument('--telegram-config', default=None,
+                        help='TelegramConfig secure_code（預設為 node展覽館佔位設定組）')
+    parser.add_argument('--telegram-channel', default=TELEGRAM_CHANNEL,
                         help='Telegram 頻道名稱（預設 測試頻道）')
     return parser
 
@@ -589,97 +624,141 @@ def resolve_role_secure_code(Role, org_sc, role_code):
     role = Role.query.filter_by(
         org_secure_code=org_sc, code=role_code, is_deleted=False, is_active=True).first()
     if not role:
-        raise SystemExit(f'找不到角色：{role_code}（企業內 roles.code）')
+        raise ValueError(f'找不到角色：{role_code}（企業內 roles.code）')
     return role.secure_code
+
+
+def _workflow_models():
+    from modules.form_workflow.models import (
+        FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
+        FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
+    )
+    return {
+        'FwFormTemplate': FwFormTemplate,
+        'FwFormWorkflowMapping': FwFormWorkflowMapping,
+        'FwMappingPermission': FwMappingPermission,
+        'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
+        'FwWorkflowTemplate': FwWorkflowTemplate,
+        'WorkflowNodeDefinition': WorkflowNodeDefinition,
+    }
+
+
+def _validate_opts(args):
+    if args.interval_minutes < 1 or args.interval_minutes > 60:
+        raise ValueError('--interval-minutes 必須介於 1 到 60')
+    if args.decision_timeout_minutes < 1 or args.decision_timeout_minutes > 1440:
+        raise ValueError('--decision-timeout-minutes 必須介於 1 到 1440')
+    if args.probe_timeout_seconds < 1 or args.probe_timeout_seconds > 3600:
+        raise ValueError('--probe-timeout-seconds 必須介於 1 到 3600')
+    if args.switch_timeout_seconds < 1 or args.switch_timeout_seconds > 3600:
+        raise ValueError('--switch-timeout-seconds 必須介於 1 到 3600')
+
+
+def provision(org, apply=True, **opts):
+    from argparse import Namespace
+    from app import db
+    from app.models import Role, User
+    from app.utils.external_url import get_system_base_url
+
+    db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+    global SHOWCASE_CATEGORY_SECURE_CODE
+    SHOWCASE_CATEGORY_SECURE_CODE = ensure_showcase_category(org).secure_code
+
+    telegram_config = opts.get('telegram_config')
+    if not telegram_config:
+        telegram_config = ensure_telegram_config(org, apply=apply).secure_code
+
+    args = Namespace(
+        interval_minutes=int(opts.get('interval_minutes') or 3),
+        decision_timeout_minutes=int(opts.get('decision_timeout_minutes') or 15),
+        probe_timeout_seconds=int(opts.get('probe_timeout_seconds') or 60),
+        switch_timeout_seconds=int(opts.get('switch_timeout_seconds') or 240),
+        approver_role=opts.get('approver_role'),
+        telegram_config=telegram_config,
+        telegram_channel=opts.get('telegram_channel') or TELEGRAM_CHANNEL,
+    )
+    _validate_opts(args)
+
+    failover_dir = os.path.abspath(opts.get('failover_dir') or default_failover_dir())
+    config_path = os.path.abspath(opts.get('config') or os.path.join(failover_dir, 'failover.conf'))
+
+    models = _workflow_models()
+    osc = org.secure_code
+    log(f'企業：{org.name}（{osc}）')
+    load_node_icons(models)
+
+    role_sc = resolve_role_secure_code(Role, osc, args.approver_role)
+    if role_sc:
+        assignee_config = {'assignee_type': 'ROLE', 'assignee_value': role_sc,
+                           'unit_scope': 'GLOBAL'}
+        log(f'決策關卡角色：{args.approver_role}（{role_sc}）')
+    else:
+        assignee_config = {'assignee_type': 'INITIATOR'}
+        log('決策關卡：INITIATOR（送單者自己決策）')
+
+    publisher = User.query.filter_by(
+        org_secure_code=osc, user_type='ORG_ADMIN',
+        is_deleted=False, is_active=True).first()
+
+    log(f'failover-dir：{failover_dir}')
+    log(f'config：{config_path}')
+    log(f'每圈間隔：{args.interval_minutes} 分鐘')
+    log(f'決策逾時：{args.decision_timeout_minutes} 分鐘')
+    log(f'Telegram：config={args.telegram_config} channel={args.telegram_channel}')
+
+    base_url = get_system_base_url()
+    if base_url:
+        center_url = f"{base_url}{os.getenv('APP_PREFIX', '/beakplatform').rstrip('/')}/forms/center"
+        log(f'表單中心連結：{center_url}')
+    else:
+        center_url = None
+        log('系統對外網址（system_base_url）未設定，告警訊息不附連結')
+
+    demo = build_demo(args, failover_dir, config_path, assignee_config, center_url)
+
+    log('\n=== WAF 熱備健康監看（表單／流程／配對／發行） ===')
+    result = apply_full_demo(db, models, org, demo, publisher, apply)
+    return {'results': {WORKFLOW_CODE: result}, 'category_secure_code': SHOWCASE_CATEGORY_SECURE_CODE}
 
 
 def main():
     parser = build_parser()
     args = parser.parse_args()
 
-    if args.interval_minutes < 1 or args.interval_minutes > 60:
-        parser.error('--interval-minutes 必須介於 1 到 60')
-    if args.decision_timeout_minutes < 1 or args.decision_timeout_minutes > 1440:
-        parser.error('--decision-timeout-minutes 必須介於 1 到 1440')
-    if args.probe_timeout_seconds < 1 or args.probe_timeout_seconds > 3600:
-        parser.error('--probe-timeout-seconds 必須介於 1 到 3600')
-    if args.switch_timeout_seconds < 1 or args.switch_timeout_seconds > 3600:
-        parser.error('--switch-timeout-seconds 必須介於 1 到 3600')
-
-    failover_dir = os.path.abspath(args.failover_dir)
-    config_path = os.path.abspath(args.config or os.path.join(failover_dir, 'failover.conf'))
-
     from app import create_app, db
 
     app = create_app('development')
     with app.app_context():
-        from app.models import Organization, Role, User
-        from modules.form_workflow.models import (
-            FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
-            FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
-        )
-
-        models = {
-            'FwFormTemplate': FwFormTemplate,
-            'FwFormWorkflowMapping': FwFormWorkflowMapping,
-            'FwMappingPermission': FwMappingPermission,
-            'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
-            'FwWorkflowTemplate': FwWorkflowTemplate,
-            'WorkflowNodeDefinition': WorkflowNodeDefinition,
-        }
-
-        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+        from app.models import Organization
 
         org = Organization.query.filter_by(code=args.org, is_deleted=False).first()
         if not org:
             log(f'找不到企業：{args.org}')
             return 1
-        osc = org.secure_code
-        log(f'企業：{org.name}（{osc}）')
-        load_node_icons(models)
-
-        role_sc = resolve_role_secure_code(Role, osc, args.approver_role)
-        if role_sc:
-            assignee_config = {'assignee_type': 'ROLE', 'assignee_value': role_sc,
-                               'unit_scope': 'GLOBAL'}
-            log(f'決策關卡角色：{args.approver_role}（{role_sc}）')
-        else:
-            assignee_config = {'assignee_type': 'INITIATOR'}
-            log('決策關卡：INITIATOR（送單者自己決策）')
-
-        publisher = User.query.filter_by(
-            org_secure_code=osc, user_type='ORG_ADMIN',
-            is_deleted=False, is_active=True).first()
-
-        log(f'failover-dir：{failover_dir}')
-        log(f'config：{config_path}')
-        log(f'每圈間隔：{args.interval_minutes} 分鐘')
-        log(f'決策逾時：{args.decision_timeout_minutes} 分鐘')
-        log(f'Telegram：config={args.telegram_config} channel={args.telegram_channel}')
-
-        # 告警訊息裡的表單中心連結：一律取自系統設定（URL-02），未設定就不放連結。
-        # 前綴由 APP_PREFIX 決定（DispatcherMiddleware），這支腳本沒有 request context，
-        # build_external_url() 拿不到 script_root，所以自己接。
-        from app.utils.external_url import get_system_base_url
-        base_url = get_system_base_url()
-        if base_url:
-            center_url = f"{base_url}{os.getenv('APP_PREFIX', '/beakplatform').rstrip('/')}/forms/center"
-            log(f'表單中心連結：{center_url}')
-        else:
-            center_url = None
-            log('系統對外網址（system_base_url）未設定，告警訊息不附連結')
-
-        demo = build_demo(args, failover_dir, config_path, assignee_config, center_url)
-
-        log('\n=== WAF 熱備健康監看（表單／流程／配對／發行） ===')
-        result = apply_full_demo(db, models, org, demo, publisher, args.apply)
+        try:
+            result = provision(
+                org,
+                apply=args.apply,
+                failover_dir=args.failover_dir,
+                config=args.config,
+                interval_minutes=args.interval_minutes,
+                decision_timeout_minutes=args.decision_timeout_minutes,
+                probe_timeout_seconds=args.probe_timeout_seconds,
+                switch_timeout_seconds=args.switch_timeout_seconds,
+                approver_role=args.approver_role,
+                telegram_config=args.telegram_config,
+                telegram_channel=args.telegram_channel,
+            )
+        except ValueError as exc:
+            parser.error(str(exc))
 
         if args.apply:
             db.session.commit()
             log('\n已寫入。到 /forms/center 的「填寫表單」就看得到這張單。')
-            if result:
-                log(f"\n{WORKFLOW_CODE}: form_sc={result['form_sc']} "
-                    f"wf_sc={result['wf_sc']} published_sc={result['published_sc']}")
+            item = result['results'][WORKFLOW_CODE]
+            if item:
+                log(f"\n{WORKFLOW_CODE}: form_sc={item['form_sc']} "
+                    f"wf_sc={item['wf_sc']} published_sc={item['published_sc']}")
         else:
             db.session.rollback()
             log('\n[預演] 未寫入任何資料')

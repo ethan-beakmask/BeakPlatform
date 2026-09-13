@@ -68,6 +68,7 @@ def print_summary(summary):
         'seed_system_permissions': '平台權限',
         'sync_modules': '模組同步',
         'seed_system_org_defaults': '系統企業出廠資料',
+        'seed_node_showcase': 'node展覽館',
     }
     for key, value in summary.items():
         print(f"{labels.get(key, key)}: {value}")

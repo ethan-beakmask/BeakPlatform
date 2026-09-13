@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""佈建系統預設企業（SYSTEM，secure_code=system.local）的最小人資結構，
+"""佈建系統預設企業（SYSTEM）的最小人資結構，
 供 OpHrLookup（人事資料取值）節點示範使用（dev-notes/HR_LOOKUP_NODE_SPEC.md）。
 
 系統企業出廠時沒有任何職等／職系／職稱／核決類別／任職卡（刻意不種，
@@ -12,10 +12,8 @@
 - TRAVEL 核決類別（差旅費，與 provision_hr_lookup_demo.py 的 approval_category_code
   一致）：L200=0／L500=300000／L700=999999999（30 萬以下由 L500 核，超過由 L700 核）
 - 兩層部門：示範處（DEMO_DIV，根）> 示範部（DEMO_DEPT，子）
-- 3 個帳號：demo-director@system.local（DEMO_DIV 主管）／
-  demo-manager@system.local（DEMO_DEPT 主管，示範專員的直屬主管）／
-  demo-staff@system.local（DEMO_DEPT 一般成員，申請人）
-  密碼統一 NodeDemo2026#Ok
+- 3 個帳號：demo-director／demo-manager／demo-staff，email 依系統企業網域組出
+  密碼由參數或 ADMIN_INITIAL_PASSWORD 提供
 
 部門成員與部門主管角色只走 dept_membership_service（唯一寫入路徑，見
 backend/app/services/dept_membership_service.py），不自己寫 user_role_assignments。
@@ -25,9 +23,10 @@ backend/app/services/dept_membership_service.py），不自己寫 user_role_assi
 冪等：以 code / email 查找既有記錄，重跑不會重複建立。
 
 用法：
-    cd /opt/BeakPlatform-dev
+    cd <repo>
     set -a && source .env && set +a
-    venv/bin/python scripts/examples/provision_system_org_hr_demo.py --apply
+    venv/bin/python scripts/examples/provision_system_org_hr_demo.py --dry-run
+    ADMIN_INITIAL_PASSWORD='<password>' venv/bin/python scripts/examples/provision_system_org_hr_demo.py --apply
 """
 import argparse
 import os
@@ -38,7 +37,6 @@ from decimal import Decimal
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'backend'))
 
 ORG_CODE = 'SYSTEM'
-DEMO_PASSWORD = 'NodeDemo2026#Ok'
 OPERATOR = 'provision_system_org_hr_demo'
 EFFECTIVE_FROM = date(2026, 1, 1)
 
@@ -180,10 +178,16 @@ def get_or_create_unit(db, OrganizationalUnit, UnitType, org_sc, code, name, par
     return unit, True
 
 
-def get_or_create_user(db, User, UserType, org_sc, domain, username, native_name, english_name, employee_id):
+def get_or_create_user(db, User, UserType, org_sc, domain, username, native_name, english_name, employee_id, password):
     email = f'{username}@{domain}'
-    user = User.query.filter_by(org_secure_code=org_sc, email=email, is_deleted=False).first()
+    user = User.query.filter_by(
+        org_secure_code=org_sc,
+        email=email,
+        is_deleted=False,
+        is_active=True,
+    ).first()
     if user:
+        user.must_change_password = False
         return user, False
     user = User(
         org_secure_code=org_sc, username=username, email=email,
@@ -191,7 +195,7 @@ def get_or_create_user(db, User, UserType, org_sc, domain, username, native_name
         user_type=UserType.EMPLOYEE, is_active=True, employee_id=employee_id,
         must_change_password=False,
     )
-    user.set_password(DEMO_PASSWORD)
+    user.set_password(password)
     db.session.add(user)
     db.session.flush()
     return user, True
@@ -235,113 +239,141 @@ def get_or_create_position(db, EmployeePosition, PositionType, org_sc, user, tit
     return position, True
 
 
-def run():
-    from app import create_app, db
-    app = create_app('development')
-    with app.app_context():
-        from app.models import (
-            Organization, User, UserType, OrganizationalUnit, UnitType,
-            JobLevel, JobFamily, JobTitle, Role, UserRoleAssignment,
-        )
-        from app.models.approval_category import ApprovalCategory, JobLevelApprovalLimit
-        from app.models.employee_position import EmployeePosition, PositionType
-        from app.services.dept_membership_service import ensure_dept_membership, reconcile_dept_manager
+def provision(org, apply=True, password=None, **opts):
+    from app import db
+    from app.models import (
+        User, UserType, OrganizationalUnit, UnitType,
+        JobLevel, JobFamily, JobTitle, Role, UserRoleAssignment,
+    )
+    from app.models.approval_category import ApprovalCategory, JobLevelApprovalLimit
+    from app.models.employee_position import EmployeePosition, PositionType
+    from app.services.dept_membership_service import ensure_dept_membership, reconcile_dept_manager
 
-        org = Organization.query.filter_by(code=ORG_CODE, is_deleted=False).first()
-        if not org:
-            raise SystemExit(f'找不到企業 {ORG_CODE}')
-        osc = org.secure_code
-        domain = org.domain_name if hasattr(org, 'domain_name') and org.domain_name else 'system.local'
-        report = {'created': [], 'reused': []}
+    del opts
+    if not password:
+        raise ValueError('示範帳號密碼必須由 password 或 ADMIN_INITIAL_PASSWORD 提供')
 
-        def note(kind, label, obj_created):
-            report['created' if obj_created else 'reused'].append(label)
+    db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+    osc = org.secure_code
+    domain = org.domain_name
+    if not domain:
+        raise ValueError('系統企業缺少 domain_name，無法建立示範帳號 email')
+    report = {'created': [], 'reused': []}
 
-        # 1. 職等
-        levels = {}
-        for code, name, name_en, order, limit, is_mgr, scope in JOB_LEVELS:
-            level, created = get_or_create_job_level(db, JobLevel, osc, code, name, name_en, order, limit, is_mgr, scope)
-            levels[code] = level
-            note('job_level', f'{code} {name} ({level.secure_code})', created)
+    def note(kind, label, obj_created):
+        del kind
+        report['created' if obj_created else 'reused'].append(label)
 
-        # 2. 職系（PROF 必須先建，GEN 才能掛在它底下）
-        families = {}
-        for code, name, name_en, ftype, parent_code, desc in JOB_FAMILIES:
-            parent = families.get(parent_code)
-            family, created = get_or_create_job_family(db, JobFamily, osc, code, name, name_en, ftype, parent, desc)
-            families[code] = family
-            note('job_family', f'{code} {name} ({family.secure_code})', created)
+    # 1. 職等
+    levels = {}
+    for code, name, name_en, order, limit, is_mgr, scope in JOB_LEVELS:
+        level, created = get_or_create_job_level(db, JobLevel, osc, code, name, name_en, order, limit, is_mgr, scope)
+        levels[code] = level
+        note('job_level', f'{code} {name} ({level.secure_code})', created)
 
-        # 3. 職稱
-        titles = {}
-        for code, name, name_en, level_code, family_code, is_supv in JOB_TITLES:
-            title, created = get_or_create_job_title(
-                db, JobTitle, osc, code, name, name_en, levels[level_code], families[family_code], is_supv)
-            titles[code] = title
-            note('job_title', f'{code} {name} ({title.secure_code})', created)
+    # 2. 職系（PROF 必須先建，GEN 才能掛在它底下）
+    families = {}
+    for code, name, name_en, ftype, parent_code, desc in JOB_FAMILIES:
+        parent = families.get(parent_code)
+        family, created = get_or_create_job_family(db, JobFamily, osc, code, name, name_en, ftype, parent, desc)
+        families[code] = family
+        note('job_family', f'{code} {name} ({family.secure_code})', created)
 
-        # 4. 核決類別與職等上限
-        category, created = get_or_create_approval_category(db, ApprovalCategory, osc, APPROVAL_CATEGORY)
-        note('approval_category', f"{APPROVAL_CATEGORY['code']} {APPROVAL_CATEGORY['name']} ({category.secure_code})", created)
-        for level_code, limit_value in APPROVAL_LIMITS.items():
-            _row, changed = upsert_job_level_approval_limit(db, JobLevelApprovalLimit, osc, levels[level_code], category, limit_value)
-            note('approval_limit', f'{level_code} -> {limit_value}', changed)
+    # 3. 職稱
+    titles = {}
+    for code, name, name_en, level_code, family_code, is_supv in JOB_TITLES:
+        title, created = get_or_create_job_title(
+            db, JobTitle, osc, code, name, name_en, levels[level_code], families[family_code], is_supv)
+        titles[code] = title
+        note('job_title', f'{code} {name} ({title.secure_code})', created)
 
-        # 5. 部門（先建根，再建子）
-        units = {}
-        for code, name, parent_code in DEPARTMENTS:
-            parent = units.get(parent_code)
-            unit, created = get_or_create_unit(db, OrganizationalUnit, UnitType, osc, code, name, parent)
-            units[code] = unit
-            note('unit', f'{code} {name} ({unit.secure_code})', created)
+    # 4. 核決類別與職等上限
+    category, created = get_or_create_approval_category(db, ApprovalCategory, osc, APPROVAL_CATEGORY)
+    note('approval_category', f"{APPROVAL_CATEGORY['code']} {APPROVAL_CATEGORY['name']} ({category.secure_code})", created)
+    for level_code, limit_value in APPROVAL_LIMITS.items():
+        _row, changed = upsert_job_level_approval_limit(db, JobLevelApprovalLimit, osc, levels[level_code], category, limit_value)
+        note('approval_limit', f'{level_code} -> {limit_value}', changed)
 
-        # 6. 帳號 + EMPLOYEE 角色 + 任職卡
-        users = {}
-        for username, native_name, english_name, employee_id, unit_code, title_code, is_head in EMPLOYEES:
-            user, created = get_or_create_user(db, User, UserType, osc, domain, username, native_name, english_name, employee_id)
-            users[username] = user
-            note('user', f'{username}@{domain} {native_name} ({user.secure_code})', created)
-            ensure_employee_role(db, Role, UserRoleAssignment, osc, user)
-            position, pos_created = get_or_create_position(
-                db, EmployeePosition, PositionType, osc, user, titles[title_code], units[unit_code], is_head)
-            note('position', f'{username} @ {unit_code} / {title_code} ({position.secure_code})', pos_created)
+    # 5. 部門（先建根，再建子）
+    units = {}
+    for code, name, parent_code in DEPARTMENTS:
+        parent = units.get(parent_code)
+        unit, created = get_or_create_unit(db, OrganizationalUnit, UnitType, osc, code, name, parent)
+        units[code] = unit
+        note('unit', f'{code} {name} ({unit.secure_code})', created)
 
-        db.session.flush()
+    # 6. 帳號 + EMPLOYEE 角色 + 任職卡
+    users = {}
+    for username, native_name, english_name, employee_id, unit_code, title_code, is_head in EMPLOYEES:
+        user, created = get_or_create_user(
+            db, User, UserType, osc, domain, username, native_name,
+            english_name, employee_id, password)
+        users[username] = user
+        note('user', f'{username}@{domain} {native_name} ({user.secure_code})', created)
+        ensure_employee_role(db, Role, UserRoleAssignment, osc, user)
+        position, pos_created = get_or_create_position(
+            db, EmployeePosition, PositionType, osc, user, titles[title_code], units[unit_code], is_head)
+        note('position', f'{username} @ {unit_code} / {title_code} ({position.secure_code})', pos_created)
 
-        # 7. 部門成員關係與部門主管角色（唯一寫入路徑：dept_membership_service）
-        # 先處理一般成員（非主管），再處理主管，避免 reconcile 誤判
-        for username, native_name, english_name, employee_id, unit_code, title_code, is_head in EMPLOYEES:
-            if is_head:
-                continue
-            ensure_dept_membership(users[username], units[unit_code], OPERATOR)
-        for username, native_name, english_name, employee_id, unit_code, title_code, is_head in EMPLOYEES:
-            if not is_head:
-                continue
-            reconcile_dept_manager(users[username], units[unit_code], OPERATOR)
+    if not apply:
+        print(f'\n[預演] 企業：{ORG_CODE}（{osc}）')
+        print(f'[預演] 會確保 {len(report["created"])} 筆人資示範資料，沿用 {len(report["reused"])} 筆')
+        return report
 
-        db.session.commit()
+    db.session.flush()
 
-        print(f'\n企業：{ORG_CODE}（{osc}）')
-        print(f'新建 {len(report["created"])} 筆：')
-        for line in report['created']:
-            print(f'  + {line}')
-        print(f'沿用既有 {len(report["reused"])} 筆：')
-        for line in report['reused']:
-            print(f'  = {line}')
+    # 7. 部門成員關係與部門主管角色（唯一寫入路徑：dept_membership_service）
+    # 先處理一般成員（非主管），再處理主管，避免 reconcile 誤判
+    for username, native_name, english_name, employee_id, unit_code, title_code, is_head in EMPLOYEES:
+        if is_head:
+            continue
+        ensure_dept_membership(users[username], units[unit_code], OPERATOR)
+    for username, native_name, english_name, employee_id, unit_code, title_code, is_head in EMPLOYEES:
+        if not is_head:
+            continue
+        reconcile_dept_manager(users[username], units[unit_code], OPERATOR)
 
-        print('\n三個示範帳號 secure_code：')
-        for username, native_name, *_ in EMPLOYEES:
-            print(f'  {username}@{domain}（{native_name}）: {users[username].secure_code}')
+    print(f'\n企業：{ORG_CODE}（{osc}）')
+    print(f'新建 {len(report["created"])} 筆：')
+    for line in report['created']:
+        print(f'  + {line}')
+    print(f'沿用既有 {len(report["reused"])} 筆：')
+    for line in report['reused']:
+        print(f'  = {line}')
+
+    print('\n三個示範帳號 secure_code：')
+    for username, native_name, *_ in EMPLOYEES:
+        print(f'  {username}@{domain}（{native_name}）: {users[username].secure_code}')
+    return report
 
 
 def main():
     parser = argparse.ArgumentParser(description='佈建系統預設企業的最小人資結構（OpHrLookup 示範用）')
-    parser.add_argument('--apply', action='store_true', help='實際寫入資料庫；未加此參數只顯示說明')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入')
+    group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
+    parser.add_argument('--password', help='示範帳號初始密碼；省略時讀 ADMIN_INITIAL_PASSWORD')
     args = parser.parse_args()
-    if not args.apply:
-        parser.print_help()
-        return 0
-    run()
+    password = args.password or os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
+    if not password:
+        parser.error('--password 或 ADMIN_INITIAL_PASSWORD 必填')
+
+    from app import create_app, db
+    app = create_app('development')
+    with app.app_context():
+        from app.models import Organization
+
+        org = Organization.query.filter_by(code=ORG_CODE, is_deleted=False).first()
+        if not org:
+            print(f'找不到企業 {ORG_CODE}')
+            return 1
+        provision(org, apply=args.apply, password=password)
+        if args.apply:
+            db.session.commit()
+            print('\n已寫入。')
+        else:
+            db.session.rollback()
+            print('\n[預演] 未寫入任何資料')
     return 0
 
 

@@ -1503,6 +1503,18 @@ org 與 owner 一律取自登入身分、payload 給了也忽略。五件猜不�
 
 ### 造／清測試帳號（2026-08-23 試誤才弄對）
 
+- **要一整家可登入的範例企業，用 `scripts/seed_demo_org.py`（2026-09-13 PF-272／PF-224）**：
+  `venv/bin/python scripts/seed_demo_org.py --apply --password '<12 碼過政策>'` 建 DemoSOC
+  （code `DEMOSOC`、domain `demo-soc.example`、五個模組合約、13 位員工、已過精靈的
+  `admin-admin.ops@demo-soc.example`、資安人員 linda.hu／jason.ling、資安主管 kevin.ye、
+  OD 受理鏈路＋SOC 團隊版（sev>=3 路由已啟用）＋單人版＋差旅費人事取值示範）。domain 已存在
+  exit 2，移除靠硬刪除企業。dev 庫 2026-09-13 已建一份（管理員 quick-login 見 DB；密碼
+  `DemoSoc-Staff2026#`）；codex 驗證時另留了一家 `DEMOCORP`／`demo-corp.example`，可硬刪
+- 精靈邏輯唯一實作已抽成 `backend/app/services/org_initial_setup_service.py::complete_initial_setup()`，
+  `seed_test_companies.py` 每家 `admin_member` 也走它自動過精靈（管理員密碼常數 `SEED_ADMIN_PASSWORD`，
+  舊敘述「BRIGHTCODE／SHIELDEDGE 未過精靈」對重建後的企業不再成立）
+
+
 - `POST /api/users/` 必填四項：`native_name` / `english_name` / `username` /
   `employee_id`（少了只回「本國姓名、英文姓名、帳號為必填」，不會列出 employee_id）。
   **身分參數名是 `role` 不是 `user_type`**（`user_type` 會被靜默忽略——刻意設計，
@@ -1865,6 +1877,11 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
 每個會影響既有環境的任務要把「`--update` 之後還要手動做的事」記進下表，
 解凍時照表逐項執行，漏一項就是靜默的半套升級：
 
+**2026-09-13 晚間 Ethan 改定：解凍方式是「`--uninstall` 後從 GitHub 全新安裝」，不跑 `--update`。**
+下表各列在全新安裝上自然成立（集團共用 DB 已不存在、SysSqlExecutor 定義出廠即新名、
+NOCODE_BUILDER_MENU 由 install.sh 寫入），只剩 PF-266 的 origin 格式驗證改在重裝後補跑一次 `--update` 驗。
+表保留供考古。
+
 | 累積待做（解凍時依序執行） | 來源 | 指令／說明 |
 |---|---|---|
 | 退役集團共用 DB：軟刪選單、DROP 兩表、DROP 六欄 | PF-269（2026-09-13） | `venv/bin/python scripts/retire_cg_shared_db.py --dry-run` → `--apply`；細節 `dev-notes/CONGLOMERATE_SHARED_DB_RETIRED.md` |
@@ -2196,6 +2213,26 @@ Playwright E2E 的三條硬規則與 mutation 驗證。
   多道授權的判準維度不一致時，交集可能是空集合而且不報錯
 
 **系統預設企業的現成測試材料**（2026-08-31 PF-188 建立，省下每次重建的功夫）：
+
+**node展覽館 從 2026-09-13（PF-272）起是全新安裝內建的**：`bootstrap_db.py --fresh` 最後一步
+`seed_node_showcase`（runner `scripts/examples/node_showcase.py`，20 項＝B0 人資示範＋19 張節點示範，
+任一項失敗整個 bootstrap 非零退出）。既有環境補種或重跑單項：
+`venv/bin/python scripts/seed_node_showcase.py --apply [--only sqlexecutor]`（密碼從 `--password`
+或 `ADMIN_INITIAL_PASSWORD` 取，dev 隨便給即可，只有 B0 建帳號時用到）。五件猜不到的：
+
+- 分類**依名稱** `node展覽館` 在系統企業找、沒有就建（`ensure_showcase_category`），不再寫死 secure_code；
+  每支 `provision_nodedemo_*.py` 拆成 `provision(org, apply, **opts)`＋薄殼 `main()`，module-level 不得 create_app
+- 示範帳號 `demo-staff／demo-manager／demo-director@<系統企業 domain_name>`，密碼＝`ADMIN_INITIAL_PASSWORD`、
+  `must_change_password=False`（dev 是 `@system.local`，bpserv 是 `@sys-xxxx`）
+- SysTelegram／Email 示範引用的是**佔位設定組**（`node展覽館示範（請填入…）`，`is_active=False`），
+  要真的寄得出去得到企業設定填真實值並啟用
+- `fw_demo_inventory` 是正式 ORM model（`backend/app/models/fw_demo_inventory.py`，56 筆由 B8 種入），
+  三支 `fw_sp.check_stock／low_stock_items／stock_qty` 在 `scripts/sql/fw_sp_setup.sql`——
+  該檔在全新安裝時**先於 create_all** 執行，所以檔內有 `SET check_function_bodies = off;`，拿掉會在
+  「relation fw_demo_inventory does not exist」炸掉（2026-09-13 踩到）
+- `provision_nodedemo_waf_failover` 沒給 `--node` 時用佔位 `node-a／node-b`，`failover_dir` 由 `__file__`
+  反推 `<安裝目錄>/ITHome2026-WAF`；讀者要用真名重跑 `seed_node_showcase.py --only waf_failover --node … --apply`
+
 
 | 用途 | 識別碼 |
 |---|---|

@@ -46,7 +46,8 @@ EXCLUDE_FILES=(
     "scripts/push_github.sh"
     "scripts/init_database.sh"
     "scripts/seed_data.py"
-    "scripts/seed_test_companies.py"
+    # scripts/seed_test_companies.py 2026-09-13 起不再排除：seed_demo_org.py import 它的
+    # seed_one_company()，讀者裝的範例企業包靠它；內容是虛構企業，寫死的 dev 帳號 sc 已移除
     "scripts/analyze_project.py"
     "scripts/install_emailrelay.sh"
     "scripts/backfill_sync.py"

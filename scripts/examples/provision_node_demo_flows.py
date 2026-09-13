@@ -15,10 +15,10 @@
 所以一個人就能在 /forms/center 走完全程，不必先安排角色。
 
 使用方式：
-    cd /opt/BeakPlatform-dev
+    cd <repo>
     set -a && source .env && set +a
-    venv/bin/python scripts/examples/provision_node_demo_flows.py --dry-run
-    venv/bin/python scripts/examples/provision_node_demo_flows.py --apply
+    venv/bin/python scripts/examples/provision_node_demo_flows.py --org <domain-or-secure-code> --dry-run
+    venv/bin/python scripts/examples/provision_node_demo_flows.py --org <domain-or-secure-code> --apply
 
 冪等：重跑會覆寫 schema/graph 並重新發行（版本有變才建新快照）。
 
@@ -581,8 +581,8 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入')
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
-    parser.add_argument('--org', default='beluga.com',
-                        help='企業 domain_name 或 secure_code（預設 beluga.com）')
+    parser.add_argument('--org', required=True,
+                        help='企業 domain_name 或 secure_code')
     args = parser.parse_args()
 
     from app import create_app, db

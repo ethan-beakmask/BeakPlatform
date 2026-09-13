@@ -23,18 +23,16 @@ PF-252 B8 批次：node展覽館 —— SysSqlExecutor（NT-15）示範。
         驗證「回傳列數上限」的截斷行為。
 
 目標企業固定是系統預設企業（Organization.code='SYSTEM'），分類固定是「node展覽館」
-（fw_categories.secure_code='J1ygL6zexauKlLM0_Ktoaw'）。SysSqlExecutor 是受限節點
+。。SysSqlExecutor 是受限節點
 （org_restricted），出廠只授權系統預設企業。
 
 冪等：重跑會沿用既有表單／流程（依 code 找），bump revision 並重新發行（會停用
 舊的已發行版本並建立新版）。填寫權限授予企業內所有非 EXTERNAL 的在職帳號。
-示範用的庫存資料表 fw_demo_inventory 若不存在會自動重建並灌入示範資料
-（該表已於 2026-08-31 dev 清理中被刪除，這是刻意的資料還原，不是新增或修改
-任何預存程序——三支白名單函式 stock_qty／check_stock／low_stock_items 完全
-沒有改動）。
+示範用的庫存資料表 fw_demo_inventory 是正式 ORM model，由 fresh install 建表；
+本檔只冪等種入展示資料與三筆 SQL 白名單資料。
 
 用法：
-    cd /opt/BeakPlatform-dev
+    cd <repo>
     set -a && source .env && set +a
     venv/bin/python scripts/examples/provision_nodedemo_sqlexecutor.py --dry-run
     venv/bin/python scripts/examples/provision_nodedemo_sqlexecutor.py --apply
@@ -44,18 +42,13 @@ PF-252 B8 批次：node展覽館 —— SysSqlExecutor（NT-15）示範。
     modules/form_workflow/services/node_handlers/opset_handler.py
     modules/form_workflow/services/node_handlers/fieldwrite_handler.py
     modules/form_workflow/services/node_handlers/formadapter_handler.py
-權威對照表：/opt/tmp/verify/20260907-node-config-reference.md
 規格：dev-notes/SQL_EXECUTOR_SPEC.md
 
 安全限制（Ethan 派工要求）：
 - 只呼叫既有的三個唯讀查詢函式（stock_qty／check_stock／low_stock_items），
   不新增或修改任何預存程序。
-- 不修改 fw_sql_procedures 的既有登記（示範白名單擋人用一個不存在的函式名
-  即可，不去改資料）。
-- fw_demo_inventory 是純資料表（非平台功能、非預存程序），本檔只用
-  CREATE TABLE IF NOT EXISTS + INSERT ... ON CONFLICT DO NOTHING 還原它
-  2026-08-20 migration 106 原本建立的結構與示範資料，供既有的三支白名單
-  函式查得到資料、示範才有意義。
+- fw_demo_inventory 是純展示資料表（非平台功能、非預存程序），本檔只透過 ORM
+  冪等種入展示資料。
 """
 from __future__ import annotations
 
@@ -63,11 +56,16 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'backend'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+BACKEND_DIR = os.path.join(REPO_ROOT, 'backend')
+sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, REPO_ROOT)
+
+from scripts.examples.node_showcase import ensure_showcase_category
 
 ORG_CODE = 'SYSTEM'
 CATEGORY_NAME = 'node展覽館'
-CATEGORY_SECURE_CODE = 'J1ygL6zexauKlLM0_Ktoaw'
+SHOWCASE_CATEGORY_SECURE_CODE = None
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 
 # 示範用料號（見檔頭安全限制：只還原資料，不動預存程序本身）
@@ -196,6 +194,96 @@ def _approve_config(output_variable, label, target_edge):
 # 示範用庫存資料（純資料表，非預存程序，見檔頭安全限制）
 # ---------------------------------------------------------------------------
 
+SQL_PROCEDURES = [
+    {
+        'code': 'check_stock',
+        'function_name': 'check_stock',
+        'display_name': '查詢庫存',
+        'description': '依料號查詢本企業目前庫存量與安全存量，回傳單列。',
+        'parameters': [
+            {'name': 'p_org_secure_code', 'type': 'text', 'label': '企業識別碼',
+             'required': True, 'description': '由系統自動帶入'},
+            {'name': 'p_item_code', 'type': 'text', 'label': '料號',
+             'required': True, 'description': '要查詢的料號，例如 A-1001'},
+        ],
+        'result_mode': 'row',
+        'result_columns': [
+            {'name': 'item_code', 'label': '料號'},
+            {'name': 'item_name', 'label': '品名'},
+            {'name': 'qty_on_hand', 'label': '現有庫存'},
+            {'name': 'safety_qty', 'label': '安全存量'},
+            {'name': 'unit', 'label': '單位'},
+            {'name': 'is_below_safety', 'label': '低於安全存量'},
+        ],
+        'max_rows': 1,
+    },
+    {
+        'code': 'low_stock_items',
+        'function_name': 'low_stock_items',
+        'display_name': '低於安全存量清單',
+        'description': '列出本企業所有低於安全存量的料號，缺口大的排前面。',
+        'parameters': [
+            {'name': 'p_org_secure_code', 'type': 'text', 'label': '企業識別碼',
+             'required': True, 'description': '由系統自動帶入'},
+        ],
+        'result_mode': 'rows',
+        'result_columns': [
+            {'name': 'item_code', 'label': '料號'},
+            {'name': 'item_name', 'label': '品名'},
+            {'name': 'qty_on_hand', 'label': '現有庫存'},
+            {'name': 'safety_qty', 'label': '安全存量'},
+            {'name': 'shortage', 'label': '缺口'},
+        ],
+        'max_rows': 50,
+    },
+    {
+        'code': 'stock_qty',
+        'function_name': 'stock_qty',
+        'display_name': '庫存量（單一數值）',
+        'description': '回傳本企業某料號的現有庫存量，查無資料回 0。適合直接放進 Branch 條件比大小。',
+        'parameters': [
+            {'name': 'p_org_secure_code', 'type': 'text', 'label': '企業識別碼',
+             'required': True, 'description': '由系統自動帶入'},
+            {'name': 'p_item_code', 'type': 'text', 'label': '料號',
+             'required': True, 'description': '要查詢的料號'},
+        ],
+        'result_mode': 'scalar',
+        'result_columns': [],
+        'max_rows': 1,
+    },
+]
+
+
+def ensure_sql_procedures(db, apply):
+    from modules.form_workflow.models import FwSqlProcedure
+
+    changed = 0
+    for spec in SQL_PROCEDURES:
+        proc = FwSqlProcedure.query.filter(
+            FwSqlProcedure.org_secure_code.is_(None),
+            FwSqlProcedure.code == spec['code'],
+            FwSqlProcedure.is_deleted.is_(False),
+        ).first()
+        if not proc:
+            changed += 1
+            if apply:
+                proc = FwSqlProcedure(org_secure_code=None, **spec, is_active=True)
+                db.session.add(proc)
+            continue
+        for key, value in spec.items():
+            if getattr(proc, key) != value:
+                changed += 1
+                if apply:
+                    setattr(proc, key, value)
+        if proc and not proc.is_active:
+            changed += 1
+            if apply:
+                proc.is_active = True
+    if apply:
+        db.session.flush()
+    log(f'  {"已確保" if apply else "[預演] 會確保"} fw_sql_procedures 三筆白名單（變更 {changed} 筆）')
+
+
 def ensure_demo_inventory(db, org_secure_code, apply):
     """
     還原 fw_demo_inventory（migration 106 原始結構，已於 dev 清理中被刪除），
@@ -204,58 +292,48 @@ def ensure_demo_inventory(db, org_secure_code, apply):
       - NODEDEMO-LOW-001 ~ NODEDEMO-LOW-055：55 筆低於安全存量的料號
         （qty = 100-i, safety=100，shortage = i，範圍 1~55），用來驗證
         low_stock_items 白名單登記 max_rows=50 的截斷行為。
-    冪等：CREATE TABLE IF NOT EXISTS + partial unique index +
-    INSERT ... ON CONFLICT DO NOTHING。
-    不新增、不修改任何預存程序——三支白名單函式本身完全沒有改動。
+    冪等：依 (org_secure_code, item_code) 查找，不存在才新增。
     """
-    from sqlalchemy import text
+    from app.models import FwDemoInventory
 
     if not apply:
         log(f'  [預演] 會確保 fw_demo_inventory 存在，並灌入 1 + {LOW_STOCK_COUNT} 筆示範資料'
             f'（企業 {org_secure_code}）')
         return
 
-    db.session.execute(text("""
-        CREATE TABLE IF NOT EXISTS fw_demo_inventory (
-            id              SERIAL PRIMARY KEY,
-            secure_code     VARCHAR(32)   NOT NULL UNIQUE DEFAULT generate_secure_code(),
-            org_secure_code VARCHAR(32)   NOT NULL,
-            item_code       VARCHAR(64)   NOT NULL,
-            item_name       VARCHAR(200)  NOT NULL,
-            qty_on_hand     NUMERIC(14,2) NOT NULL DEFAULT 0,
-            safety_qty      NUMERIC(14,2) NOT NULL DEFAULT 0,
-            unit            VARCHAR(20)   NOT NULL DEFAULT 'PCS',
-            is_deleted      BOOLEAN       NOT NULL DEFAULT FALSE,
-            created_at      TIMESTAMP     NOT NULL DEFAULT NOW(),
-            updated_at      TIMESTAMP     NOT NULL DEFAULT NOW()
-        )
-    """))
-    db.session.execute(text("""
-        CREATE UNIQUE INDEX IF NOT EXISTS ux_fw_demo_inventory_org_item
-            ON fw_demo_inventory (org_secure_code, item_code)
-            WHERE is_deleted = FALSE
-    """))
-
-    db.session.execute(text("""
-        INSERT INTO fw_demo_inventory
-            (org_secure_code, item_code, item_name, qty_on_hand, safety_qty, unit)
-        VALUES (:org, :item_code, :item_name, :qty, :safety, 'PCS')
-        ON CONFLICT (org_secure_code, item_code) WHERE is_deleted = FALSE DO NOTHING
-    """), {'org': org_secure_code, 'item_code': ITEM_STOCK_OK,
-           'item_name': 'node展覽館示範料件（庫存充足）', 'qty': 120, 'safety': 50})
-
-    db.session.execute(text("""
-        INSERT INTO fw_demo_inventory
-            (org_secure_code, item_code, item_name, qty_on_hand, safety_qty, unit)
-        SELECT :org, 'NODEDEMO-LOW-' || lpad(i::text, 3, '0'),
-               'node展覽館示範料件（低於安全存量 #' || i || '）',
-               100 - i, 100, 'PCS'
-        FROM generate_series(1, :n) AS i
-        ON CONFLICT (org_secure_code, item_code) WHERE is_deleted = FALSE DO NOTHING
-    """), {'org': org_secure_code, 'n': LOW_STOCK_COUNT})
+    rows = [
+        (ITEM_STOCK_OK, 'node展覽館示範料件（庫存充足）', 120, 50, 'PCS'),
+    ]
+    rows.extend(
+        (f'NODEDEMO-LOW-{i:03d}', f'node展覽館示範料件（低於安全存量 #{i}）',
+         100 - i, 100, 'PCS')
+        for i in range(1, LOW_STOCK_COUNT + 1)
+    )
+    added = 0
+    for item_code, item_name, qty, safety, unit in rows:
+        row = FwDemoInventory.query.filter_by(
+            org_secure_code=org_secure_code,
+            item_code=item_code,
+            is_deleted=False,
+        ).first()
+        if row:
+            row.item_name = item_name
+            row.qty_on_hand = qty
+            row.safety_qty = safety
+            row.unit = unit
+            continue
+        db.session.add(FwDemoInventory(
+            org_secure_code=org_secure_code,
+            item_code=item_code,
+            item_name=item_name,
+            qty_on_hand=qty,
+            safety_qty=safety,
+            unit=unit,
+        ))
+        added += 1
 
     db.session.flush()
-    log(f'  已確保 fw_demo_inventory 存在並灌入示範資料（1 + {LOW_STOCK_COUNT} 筆，企業 {org_secure_code}）')
+    log(f'  已確保 fw_demo_inventory 示範資料（1 + {LOW_STOCK_COUNT} 筆，新增 {added} 筆，企業 {org_secure_code}）')
 
 
 # ---------------------------------------------------------------------------
@@ -709,7 +787,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['form_code'],
             version='AA', revision=1, name=demo['form_name'],
             description=demo['form_name'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE, schema=demo['form_schema'],
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE, schema=demo['form_schema'],
             builder_config={}, is_published=False, is_active=True,
             is_protected=False, permission_type='org')
     else:
@@ -726,7 +804,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['workflow_code'],
             version='AA', revision=1, name=demo['workflow_name'],
             description=demo['description'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE,
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE,
             graph=graph, cytoscape_config=graph, is_published=False, is_active=True,
             is_protected=False, permission_type='org', is_subprocess=False)
     else:
@@ -788,9 +866,51 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             'published_sc': published.secure_code}
 
 
+def _workflow_models():
+    from modules.form_workflow.models import (
+        FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
+        FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
+    )
+    return {
+        'FwFormTemplate': FwFormTemplate,
+        'FwFormWorkflowMapping': FwFormWorkflowMapping,
+        'FwMappingPermission': FwMappingPermission,
+        'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
+        'FwWorkflowTemplate': FwWorkflowTemplate,
+        'WorkflowNodeDefinition': WorkflowNodeDefinition,
+    }
+
+def provision(org, apply=True, **opts):
+    from app import db
+    from app.models import User
+
+    del opts
+    db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+    global SHOWCASE_CATEGORY_SECURE_CODE
+    SHOWCASE_CATEGORY_SECURE_CODE = ensure_showcase_category(org).secure_code
+
+    models = _workflow_models()
+    osc = org.secure_code
+    log(f'企業：{org.name}（{osc}）')
+    load_node_icons(models)
+
+    publisher = User.query.filter_by(
+        org_secure_code=osc, user_type='ORG_ADMIN',
+        is_deleted=False, is_active=True).first()
+
+    log('\n=== SysSqlExecutor 白名單（fw_sql_procedures） ===')
+    ensure_sql_procedures(db, apply)
+    ensure_demo_inventory(db, osc, apply)
+
+    results = {}
+    for demo in FULL_DEMOS_STATIC:
+        log(f"\n--- {demo['workflow_name']} ---")
+        results[demo['workflow_code']] = apply_full_demo(
+            db, models, org, demo, publisher, apply)
+    return {'results': results, 'category_secure_code': SHOWCASE_CATEGORY_SECURE_CODE}
+
 def main():
-    parser = argparse.ArgumentParser(
-        description='佈建 node展覽館的 SysSqlExecutor 示範（B8）')
+    parser = argparse.ArgumentParser(description='佈建 node展覽館的 SysSqlExecutor 示範（B8）')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入')
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
@@ -799,53 +919,21 @@ def main():
 
     from app import create_app, db
 
-    # modules 套件要等 create_app() 跑過 module_loader 才會被插進 sys.path。
     app = create_app('development')
     with app.app_context():
-        from app.models import Organization, User
-        from modules.form_workflow.models import (
-            FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
-            FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
-        )
-
-        models = {
-            'FwFormTemplate': FwFormTemplate,
-            'FwFormWorkflowMapping': FwFormWorkflowMapping,
-            'FwMappingPermission': FwMappingPermission,
-            'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
-            'FwWorkflowTemplate': FwWorkflowTemplate,
-            'WorkflowNodeDefinition': WorkflowNodeDefinition,
-        }
-
-        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+        from app.models import Organization
 
         org = Organization.query.filter_by(code=args.org, is_deleted=False).first()
         if not org:
             log(f'找不到企業：{args.org}')
             return 1
-        osc = org.secure_code
-        log(f'企業：{org.name}（{osc}）')
-        load_node_icons(models)
 
-        publisher = User.query.filter_by(
-            org_secure_code=osc, user_type='ORG_ADMIN',
-            is_deleted=False, is_active=True).first()
-
-        log('\n=== 示範用庫存資料（fw_demo_inventory） ===')
-        ensure_demo_inventory(db, osc, args.apply)
-
-        log('\n=== SysSqlExecutor 示範（表單／流程／配對／發行） ===')
-        full_results = {}
-        for demo in FULL_DEMOS_STATIC:
-            log(f"\n--- {demo['workflow_name']} ---")
-            full_results[demo['workflow_code']] = apply_full_demo(
-                db, models, org, demo, publisher, args.apply)
-
+        result = provision(org, apply=args.apply)
         if args.apply:
             db.session.commit()
             log('\n已寫入。到 /forms/center 的「填寫表單」就看得到這兩張單。')
             log('\n完整示範：')
-            for code, r in full_results.items():
+            for code, r in result['results'].items():
                 if r:
                     log(f"  {code}: form_sc={r['form_sc']} wf_sc={r['wf_sc']} "
                         f"published_sc={r['published_sc']}")
@@ -853,7 +941,6 @@ def main():
             db.session.rollback()
             log('\n[預演] 未寫入任何資料')
     return 0
-
 
 if __name__ == '__main__':
     sys.exit(main())

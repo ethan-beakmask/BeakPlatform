@@ -9,14 +9,14 @@ node展覽館 —— WAF 節點熱備切換（OsExecutor 實務應用）。
 exception / timeout 分流。成功直接結束，失敗進人工確認關卡後結束。
 
 目標企業預設是系統預設企業（Organization.code='SYSTEM'），分類固定是
-「node展覽館」（fw_categories.secure_code='J1ygL6zexauKlLM0_Ktoaw'）。
+「node展覽館」。。
 
 冪等：重跑會沿用既有表單／流程（依 code 找），bump revision 並重新發行
 （會停用舊的已發行版本並建立新版）。填寫權限授予企業內所有非 EXTERNAL
 的在職帳號。
 
 用法：
-    cd /opt/BeakPlatform-dev
+    cd <repo>
     set -a && source .env && set +a
     venv/bin/python scripts/examples/provision_nodedemo_waf_failover.py --dry-run --node "現役主機=sec-vm" --node "備援主機=ubuntu24"
     venv/bin/python scripts/examples/provision_nodedemo_waf_failover.py --apply  --node "現役主機=sec-vm" --node "備援主機=ubuntu24"
@@ -27,7 +27,6 @@ exception / timeout 分流。成功直接結束，失敗進人工確認關卡後
     modules/form_workflow/services/node_handlers/branch_handler.py
     modules/form_workflow/services/node_handlers/fieldwrite_handler.py
     modules/form_workflow/services/node_handlers/end_handler.py
-權威對照表：/opt/tmp/verify/20260907-node-config-reference.md（OsExecutor／
 FormAdapter／Branch／OpFieldWrite／End 各節）
 """
 from __future__ import annotations
@@ -36,11 +35,16 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'backend'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+BACKEND_DIR = os.path.join(REPO_ROOT, 'backend')
+sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, REPO_ROOT)
+
+from scripts.examples.node_showcase import ensure_showcase_category
 
 ORG_CODE = 'SYSTEM'
 CATEGORY_NAME = 'node展覽館'
-CATEGORY_SECURE_CODE = 'J1ygL6zexauKlLM0_Ktoaw'
+SHOWCASE_CATEGORY_SECURE_CODE = None
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 
 FORM_CODE = 'NODEDEMO_WAF_FAILOVER'
@@ -214,9 +218,9 @@ def build_waf_schema(node_options):
         'display': 'form',
         'components': [
             _title(FORM_NAME),
-            _hint('這張單會真的執行 WAF 節點熱備切換。決策關卡的簽核意見就是'
-                  '人員決策記錄；執行約 20 秒；failover.sh 的判定結果與輸出'
-                  '會寫回本單，成功直接結束，失敗會進人工確認關卡。'),
+            _hint('這張單示範 WAF 節點熱備切換。請先依 ITHome2026-WAF/failover.conf.example '
+                  '建立 failover.conf，並用 scripts/seed_node_showcase.py --only waf_failover '
+                  '--node <顯示名稱=節點識別> --apply 重跑以填入真實節點名稱。'),
             _select('target_node', '目標節點', node_options,
                     '選擇要切換到的 WAF 節點。選項值會原樣傳給 failover.sh 的 to 參數。'),
             symptom,
@@ -318,6 +322,9 @@ WAF_DESCRIPTION = (
     '成功時 failover_result 會是 ok，流程走到「完成」。若是 exception 或 timeout，'
     '流程會停在「切換失敗，人工確認」；請查看 failover_output 的 stdout/stderr，'
     '必要時依工具輸出的手動回退指令處置。'
+    '請先依 ITHome2026-WAF/failover.conf.example 建立 failover.conf，並用 '
+    'scripts/seed_node_showcase.py --only waf_failover --node <顯示名稱=節點識別> '
+    '--apply 重跑以填入真實節點名稱。'
 )
 
 
@@ -398,7 +405,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['form_code'],
             version='AA', revision=1, name=demo['form_name'],
             description=demo['form_name'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE, schema=demo['form_schema'],
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE, schema=demo['form_schema'],
             builder_config={}, is_published=False, is_active=True,
             is_protected=False, permission_type='org')
     else:
@@ -415,7 +422,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             secure_code=generate_secure_code(), org_secure_code=osc, code=demo['workflow_code'],
             version='AA', revision=1, name=demo['workflow_name'],
             description=demo['description'], category=CATEGORY_NAME,
-            category_secure_code=CATEGORY_SECURE_CODE,
+            category_secure_code=SHOWCASE_CATEGORY_SECURE_CODE,
             graph=graph, cytoscape_config=graph, is_published=False, is_active=True,
             is_protected=False, permission_type='org', is_subprocess=False)
     else:
@@ -523,86 +530,112 @@ def resolve_role_secure_code(Role, org_sc, role_code):
     role = Role.query.filter_by(
         org_secure_code=org_sc, code=role_code, is_deleted=False, is_active=True).first()
     if not role:
-        raise SystemExit(f'找不到角色：{role_code}（企業內 roles.code）')
+        raise ValueError(f'找不到角色：{role_code}（企業內 roles.code）')
     return role.secure_code
+
+
+def _workflow_models():
+    from modules.form_workflow.models import (
+        FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
+        FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
+    )
+    return {
+        'FwFormTemplate': FwFormTemplate,
+        'FwFormWorkflowMapping': FwFormWorkflowMapping,
+        'FwMappingPermission': FwMappingPermission,
+        'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
+        'FwWorkflowTemplate': FwWorkflowTemplate,
+        'WorkflowNodeDefinition': WorkflowNodeDefinition,
+    }
+
+
+def provision(org, apply=True, **opts):
+    from app import db
+    from app.models import Role, User
+
+    db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+    global SHOWCASE_CATEGORY_SECURE_CODE
+    SHOWCASE_CATEGORY_SECURE_CODE = ensure_showcase_category(org).secure_code
+
+    node_options = opts.get('node') or [
+        ('現役主機', 'node-a'),
+        ('備援主機', 'node-b'),
+    ]
+    if len(node_options) < 2:
+        raise ValueError('--node 至少要提供 2 個')
+    timeout_seconds = int(opts.get('timeout_seconds') or 240)
+    if timeout_seconds < 1 or timeout_seconds > 3600:
+        raise ValueError('--timeout-seconds 必須介於 1 到 3600')
+    failover_dir = os.path.abspath(opts.get('failover_dir') or default_failover_dir())
+    config_path = os.path.abspath(opts.get('config') or os.path.join(failover_dir, 'failover.conf'))
+
+    models = _workflow_models()
+    osc = org.secure_code
+    log(f'企業：{org.name}（{osc}）')
+    load_node_icons(models)
+
+    role_sc = resolve_role_secure_code(Role, osc, opts.get('approver_role'))
+    if role_sc:
+        assignee_config = {'assignee_type': 'ROLE', 'assignee_value': role_sc,
+                           'unit_scope': 'GLOBAL'}
+        log(f'決策關卡角色：{opts.get("approver_role")}（{role_sc}）')
+    else:
+        assignee_config = {'assignee_type': 'INITIATOR'}
+        log('決策關卡：INITIATOR（送單者自己決策）')
+
+    publisher = User.query.filter_by(
+        org_secure_code=osc, user_type='ORG_ADMIN',
+        is_deleted=False, is_active=True).first()
+
+    log(f'failover-dir：{failover_dir}')
+    log(f'config：{config_path}')
+    log('目標節點：')
+    for label, value in node_options:
+        log(f'  {label} = {value}')
+
+    demo = build_demo(node_options, failover_dir, config_path,
+                      timeout_seconds, assignee_config)
+
+    log('\n=== WAF 節點熱備切換（表單／流程／配對／發行） ===')
+    result = apply_full_demo(db, models, org, demo, publisher, apply)
+    return {'results': {WORKFLOW_CODE: result}, 'category_secure_code': SHOWCASE_CATEGORY_SECURE_CODE}
 
 
 def main():
     parser = build_parser()
     if len(sys.argv) == 1:
         parser.print_help()
-        return 0
+        return 1
     args = parser.parse_args()
-
-    if len(args.node) < 2:
-        parser.error('--node 至少要提供 2 個')
-    if args.timeout_seconds < 1 or args.timeout_seconds > 3600:
-        parser.error('--timeout-seconds 必須介於 1 到 3600')
-
-    failover_dir = os.path.abspath(args.failover_dir)
-    config_path = os.path.abspath(args.config or os.path.join(failover_dir, 'failover.conf'))
 
     from app import create_app, db
 
-    # modules 套件要等 create_app() 跑過 module_loader 才會被插進 sys.path。
     app = create_app('development')
     with app.app_context():
-        from app.models import Organization, Role, User
-        from modules.form_workflow.models import (
-            FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission,
-            FwPublishedFormWorkflow, FwWorkflowTemplate, WorkflowNodeDefinition,
-        )
-
-        models = {
-            'FwFormTemplate': FwFormTemplate,
-            'FwFormWorkflowMapping': FwFormWorkflowMapping,
-            'FwMappingPermission': FwMappingPermission,
-            'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
-            'FwWorkflowTemplate': FwWorkflowTemplate,
-            'WorkflowNodeDefinition': WorkflowNodeDefinition,
-        }
-
-        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+        from app.models import Organization
 
         org = Organization.query.filter_by(code=args.org, is_deleted=False).first()
         if not org:
             log(f'找不到企業：{args.org}')
             return 1
-        osc = org.secure_code
-        log(f'企業：{org.name}（{osc}）')
-        load_node_icons(models)
 
-        role_sc = resolve_role_secure_code(Role, osc, args.approver_role)
-        if role_sc:
-            assignee_config = {'assignee_type': 'ROLE', 'assignee_value': role_sc,
-                               'unit_scope': 'GLOBAL'}
-            log(f'決策關卡角色：{args.approver_role}（{role_sc}）')
-        else:
-            assignee_config = {'assignee_type': 'INITIATOR'}
-            log('決策關卡：INITIATOR（送單者自己決策）')
-
-        publisher = User.query.filter_by(
-            org_secure_code=osc, user_type='ORG_ADMIN',
-            is_deleted=False, is_active=True).first()
-
-        log(f'failover-dir：{failover_dir}')
-        log(f'config：{config_path}')
-        log('目標節點：')
-        for label, value in args.node:
-            log(f'  {label} = {value}')
-
-        demo = build_demo(args.node, failover_dir, config_path,
-                          args.timeout_seconds, assignee_config)
-
-        log('\n=== WAF 節點熱備切換（表單／流程／配對／發行） ===')
-        result = apply_full_demo(db, models, org, demo, publisher, args.apply)
+        result = provision(
+            org,
+            apply=args.apply,
+            node=args.node,
+            failover_dir=args.failover_dir,
+            config=args.config,
+            approver_role=args.approver_role,
+            timeout_seconds=args.timeout_seconds,
+        )
 
         if args.apply:
             db.session.commit()
             log('\n已寫入。到 /forms/center 的「填寫表單」就看得到這張單。')
-            if result:
-                log(f"\n{WORKFLOW_CODE}: form_sc={result['form_sc']} "
-                    f"wf_sc={result['wf_sc']} published_sc={result['published_sc']}")
+            item = result['results'][WORKFLOW_CODE]
+            if item:
+                log(f"\n{WORKFLOW_CODE}: form_sc={item['form_sc']} "
+                    f"wf_sc={item['wf_sc']} published_sc={item['published_sc']}")
         else:
             db.session.rollback()
             log('\n[預演] 未寫入任何資料')

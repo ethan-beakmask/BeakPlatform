@@ -509,6 +509,13 @@ if [ "$ACTION" = "update" ]; then
             echo "OD_SA_JWT_SECRET=$NEW_OD_SA_JWT"
         } >> "$INSTALL_DIR/.env"
     fi
+    if ! grep -q '^NOCODE_BUILDER_MENU=' "$INSTALL_DIR/.env" 2>/dev/null; then
+        {
+            echo ""
+            echo "# 子系統開發模組選單；off 時不註冊選單"
+            echo "NOCODE_BUILDER_MENU=on"
+        } >> "$INSTALL_DIR/.env"
+    fi
     chmod 600 "$INSTALL_DIR/.env"
     mkdir -p "$INSTALL_DIR/backend/encrypted_storage"
     chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/backend/encrypted_storage"
@@ -730,6 +737,9 @@ ENABLE_DEV_TOOLS=false
 
 # URL 前綴 (Nginx location / DispatcherMiddleware 路徑)
 APP_PREFIX=/beakplatform
+
+# 子系統開發模組選單；off 時不註冊選單
+NOCODE_BUILDER_MENU=on
 
 # 資料庫
 DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost/$DB_NAME

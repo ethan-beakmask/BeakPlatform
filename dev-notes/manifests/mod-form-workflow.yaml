@@ -58,6 +58,7 @@ files:
     - modules/form_workflow/models/
     - modules/form_workflow/models/node_org_grant.py        # 流程節點型別企業授權
     - modules/form_workflow/models/ai_usage_record.py       # AiAgent 用量記錄
+    - backend/app/models/fw_demo_inventory.py               # node展覽館 SysSqlExecutor 示範庫存資料
   template:
     - modules/form_workflow/templates/modules/form_workflow/
     - modules/form_workflow/templates/modules/form_workflow/ai_usage.html
@@ -101,9 +102,13 @@ files:
     - scripts/examples/provision_api_key_request_flow.py       # PF-160 API Key 申請單/流程/填寫權限
     - scripts/examples/provision_proxy_request_flow.py         # PF-251 代理指定申請單/流程/填寫權限
     - scripts/examples/provision_hr_lookup_demo.py             # OpHrLookup 差旅費人事取值示範
+    - scripts/examples/node_showcase.py                        # node展覽館系統級資料包 runner/helper
+    - scripts/examples/provision_system_org_hr_demo.py          # node展覽館 B0 示範人資結構
+    - scripts/examples/provision_nodedemo_*.py                 # node展覽館各節點示範流程
   scripts:
     - scripts/node_grant.py                                # restricted 節點企業授權維運工具
   tests:
+    - backend/tests/test_node_showcase.py                      # node展覽館 runner/helper 與示範庫存 model
     - backend/tests/test_execution_code_per_org.py             # PF-116 per-org execution_code 約束與序號池
     - backend/tests/test_form_serial_per_org.py                # per-org serial_number 約束與序號池
     - backend/tests/test_ai_usage_quota.py                     # AiAgent 用量記錄與配額
