@@ -68,6 +68,7 @@ def print_summary(summary):
         'seed_system_permissions': '平台權限',
         'sync_modules': '模組同步',
         'seed_system_admin_role': 'SYSTEM_ADMIN 角色與全權限',
+        'ensure_system_org_schedule': '系統企業預設班表',
         'seed_system_org_defaults': '系統企業出廠資料',
         'seed_node_showcase': 'node展覽館',
     }

@@ -4,6 +4,13 @@ from app import db
 from app.models import Organization, Role, User
 from app.models.role import RoleLevel, RoleType, ScopeType
 from app.models.user import UserType
+from app.models.user_numbering_rule import (
+    NumberingDefaultFor,
+    NumberingElementType,
+    NumberingUsageScope,
+    UserNumberingRule,
+)
+from app.services.numbering_service import NumberingService
 from app.services.org_initial_setup_service import complete_initial_setup
 
 
@@ -52,6 +59,29 @@ def _make_org_with_roles():
     db.session.add(original_admin)
     db.session.commit()
     return org, original_admin, roles
+
+
+def _create_default_employee_numbering_rule(org):
+    """建一條與 OrganizationService._create_default_numbering_rules 同構的
+    企業成員預設編號規則（4 位序號，無前後綴）。"""
+    rule = UserNumberingRule(
+        org_secure_code=org.secure_code,
+        name='測試用企業成員編號',
+        description='4 位數序號',
+        elements={
+            'components': [
+                {'type': NumberingElementType.SEQUENCE, 'order': 1,
+                 'start': 1, 'digits': 4, 'reset_period': 'never'},
+            ],
+            'total_length': 4,
+        },
+        usage_scope=NumberingUsageScope.INTERNAL_ONLY,
+        default_for=NumberingDefaultFor.EMPLOYEE,
+        is_active=True,
+    )
+    db.session.add(rule)
+    db.session.flush()
+    return rule
 
 
 def test_complete_initial_setup_creates_bound_accounts_and_deactivates_original(app):
@@ -129,4 +159,49 @@ def test_complete_initial_setup_rejects_non_original_admin(app):
             'Angel Hao',
             'DemoCorp2026#Pass',
             employee_id='E0001',
+        )
+
+
+def test_complete_initial_setup_auto_generates_employee_id_when_left_blank(app):
+    """用戶編號留空 + 企業有 EMPLOYEE 預設編號規則時，由 service 自動取號完成設定。
+
+    對應 f5065b1f 回歸：精靈 view 曾在呼叫 service 之前就先擋掉空白用戶編號，
+    導致這個（表單預設用法）永遠到不了這裡的自動取號邏輯。
+    """
+    org, original_admin, _roles = _make_org_with_roles()
+    rule = _create_default_employee_numbering_rule(org)
+    db.session.commit()
+
+    expected_id = NumberingService.get_next_number(rule, consume=False)
+
+    result = complete_initial_setup(
+        org,
+        original_admin,
+        'angel',
+        '晧安琪',
+        'Angel Hao',
+        'DemoCorp2026#Pass',
+        employee_id=None,
+    )
+    db.session.commit()
+
+    employee = result['employee']
+    assert employee.employee_id == expected_id
+    assert employee.email == 'angel@init-setup.example'
+
+
+def test_complete_initial_setup_rejects_blank_employee_id_without_default_rule(app):
+    """留空用戶編號、且企業沒有可用的 EMPLOYEE 預設編號規則時，service 必須
+    以 ValueError 擋下（訊息供 view flash 顯示），不能靜默通過或 500。"""
+    org, original_admin, _roles = _make_org_with_roles()
+
+    with pytest.raises(ValueError, match='用戶編號為必填，且無可用的預設編號規則'):
+        complete_initial_setup(
+            org,
+            original_admin,
+            'angel',
+            '晧安琪',
+            'Angel Hao',
+            'DemoCorp2026#Pass',
+            employee_id=None,
         )

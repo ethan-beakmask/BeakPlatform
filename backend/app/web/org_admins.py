@@ -104,11 +104,9 @@ def initial_setup():
             pw_valid, pw_errors = PasswordPolicyService.validate_password(
                 password, org.secure_code)
 
-        # 驗證必填欄位
+        # 驗證必填欄位（用戶編號留空時交由 complete_initial_setup 依預設編號規則自動取號）
         if not native_name or not english_name or not username:
             flash(_('本國姓名、英文姓名、帳號為必填'), 'error')
-        elif not employee_id:
-            flash(_('用戶編號為必填，且無可用的預設編號規則'), 'error')
         elif not password:
             flash(_('密碼為必填'), 'error')
         elif not pw_valid:

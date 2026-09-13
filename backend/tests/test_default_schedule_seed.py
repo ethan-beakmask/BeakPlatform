@@ -68,7 +68,8 @@ def test_ensure_default_schedule_avoids_existing_default_code(test_org):
     assert schedule.is_default is True
 
 
-def test_ensure_default_schedule_skips_system_org(app):
+def test_ensure_default_schedule_also_creates_for_system_org(app):
+    """2026-09-13 起系統企業不再提早 return None，也要有一張預設班表（Ethan 定案）。"""
     org = Organization(
         code='SYSTEM_TEST',
         name='System Test',
@@ -80,8 +81,14 @@ def test_ensure_default_schedule_skips_system_org(app):
     db.session.add(org)
     db.session.flush()
 
-    assert ScheduleService.ensure_default_schedule(org) is None
+    schedule = ScheduleService.ensure_default_schedule(org)
+    db.session.commit()
+
+    assert schedule is not None
+    assert schedule.is_default is True
+    assert schedule.weekly_hours['sat'] is None
+    assert schedule.weekly_hours['sun'] is None
     assert WorkSchedule.query.filter_by(
         org_secure_code=org.secure_code,
         is_deleted=False,
-    ).count() == 0
+    ).count() == 1

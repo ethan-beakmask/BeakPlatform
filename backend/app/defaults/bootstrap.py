@@ -297,6 +297,7 @@ def run_bootstrap(mode, admin_password=None, sql_dir=None) -> dict:
               lambda: seed_system_permissions(force=False))
     _run_step(summary, 'sync_modules', lambda: sync_modules(force=fresh))
     _run_step(summary, 'seed_system_admin_role', _seed_system_admin_role)
+    _run_step(summary, 'ensure_system_org_schedule', _ensure_system_org_schedule)
     _run_step(summary, 'ensure_org_databases', ensure_org_databases)
     if fresh:
         _run_step(summary, 'seed_system_org_defaults',
@@ -314,6 +315,40 @@ def _seed_system_admin_role() -> dict:
     result = seed_system_admin_role()
     db.session.commit()
     return result
+
+
+def _ensure_system_org_schedule() -> dict:
+    """系統企業出廠預設班表（fresh／update 皆跑，冪等）。
+
+    ensure_system_org() 是直接建構 Organization，不像一般企業走
+    OrganizationService.create_organization()，所以系統企業原本不會有預設班表
+    （ScheduleService.ensure_default_schedule() 此前也對 is_system_org 提早
+    return None）。Ethan 2026-09-13 定案：系統企業也該有一張當地時區、週休二日
+    的預設班表，這一步補上，放在 seed_system_admin_role 之後、
+    ensure_org_databases 之前皆可（無依賴關係）。
+    """
+    from app.models import Organization, WorkSchedule
+    from app.services.schedule_service import ScheduleService
+
+    org = Organization.query.filter_by(code='SYSTEM', is_deleted=False).first()
+    if not org:
+        raise BootstrapError('系統企業不存在，無法建立預設班表')
+
+    existing = WorkSchedule.query.filter_by(
+        org_secure_code=org.secure_code,
+        is_default=True,
+        is_deleted=False,
+    ).first()
+    if existing:
+        db.session.commit()
+        return {'schedule_created': False, 'schedule_secure_code': existing.secure_code}
+
+    schedule = ScheduleService.ensure_default_schedule(org)
+    db.session.commit()
+    return {
+        'schedule_created': True,
+        'schedule_secure_code': schedule.secure_code if schedule else None,
+    }
 
 
 def _ensure_update_system_org_exists() -> dict:

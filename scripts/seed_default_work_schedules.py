@@ -12,12 +12,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 USAGE = """用法:
   scripts/seed_default_work_schedules.py --dry-run
   scripts/seed_default_work_schedules.py --apply
-  scripts/seed_default_work_schedules.py --dry-run --include-system
-  scripts/seed_default_work_schedules.py --apply --include-system
 
 說明:
-  補上尚未有預設班表的企業。已存在企業預設班表時一律不修改。
-  系統企業預設略過；加 --include-system 時會列出系統企業的 skipped(system) 狀態。
+  補上尚未有預設班表的企業（含系統企業，2026-09-13 起系統企業也應有一張
+  當地時區、週休二日的預設班表）。已存在企業預設班表時一律不修改。
   --dry-run 只顯示結果；--apply 才會寫入資料庫。
 """
 
@@ -44,18 +42,17 @@ def _parse_args(argv):
         _print_usage()
         return None, 0
     mode_args = [arg for arg in argv if arg in ('--dry-run', '--apply')]
-    allowed = {'--dry-run', '--apply', '--include-system'}
+    allowed = {'--dry-run', '--apply'}
     if len(mode_args) != 1 or any(arg not in allowed for arg in argv):
         _print_usage()
         return None, 1
-    return (mode_args[0], '--include-system' in argv), 0
+    return mode_args[0], 0
 
 
 def main():
-    parsed, exit_code = _parse_args(sys.argv[1:])
-    if parsed is None:
+    mode, exit_code = _parse_args(sys.argv[1:])
+    if mode is None:
         return exit_code
-    mode, include_system = parsed
 
     _load_dotenv()
     from app import create_app, db
@@ -70,15 +67,8 @@ def main():
 
         created_count = 0
         exists_count = 0
-        skipped_count = 0
 
         for org in orgs:
-            if org.is_system_org:
-                skipped_count += 1
-                if include_system:
-                    print(f"{org.code}: skipped(system)")
-                continue
-
             existing = WorkSchedule.query.filter_by(
                 org_secure_code=org.secure_code,
                 is_default=True,
@@ -103,10 +93,7 @@ def main():
             db.session.rollback()
             print("dry-run，未寫入資料庫")
 
-        print(
-            f"統計: created={created_count}, exists={exists_count}, "
-            f"skipped(system)={skipped_count}"
-        )
+        print(f"統計: created={created_count}, exists={exists_count}")
 
     return 0
 

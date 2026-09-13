@@ -25,10 +25,12 @@ class ScheduleService:
 
     @staticmethod
     def ensure_default_schedule(org) -> Optional[WorkSchedule]:
-        """企業沒有預設班表時建立一張；已有就原樣回傳。不 commit，由呼叫端決定。"""
-        if org.is_system_org:
-            return None
+        """企業沒有預設班表時建立一張；已有就原樣回傳。不 commit，由呼叫端決定。
 
+        系統企業（is_system_org）2026-09-13 起也會建（Ethan 定案：即使沒有一般
+        企業的人事編制，系統企業自己也該有一張當地時區、週休二日的預設班表），
+        不再提早 return None。
+        """
         existing = WorkSchedule.query.filter_by(
             org_secure_code=org.secure_code,
             is_default=True,

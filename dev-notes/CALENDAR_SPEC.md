@@ -270,7 +270,9 @@ CREATE INDEX IF NOT EXISTS ix_schedule_holidays_holiday_calendar_secure_code ON 
 第一批（同日）配套：企業設定新增 `country`（ISO 3166-1 alpha-2，預設 `TW`，`/admin/settings` 可改；唯一對照表
 `backend/app/utils/regions.py`），`ScheduleService.ensure_default_schedule(org)` 在 `create_organization()` 建企業時
 自動種一張 `DEFAULT` 預設班表（週休日依 `country`，工時 09-12／13-18），既有環境用
-`scripts/seed_default_work_schedules.py --dry-run` → `--apply` 補種（系統企業刻意跳過）。
+`scripts/seed_default_work_schedules.py --dry-run` → `--apply` 補種
+（2026-09-13 起系統企業不再跳過，也會補一張當地時區、週休二日的預設班表；
+全新安裝改由 `bootstrap_db.py` 的 `ensure_system_org_schedule` 步驟種入）。
 
 已知取捨（2026-09-04 驗收時確認，皆為刻意）：
 
