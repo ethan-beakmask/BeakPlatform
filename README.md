@@ -26,7 +26,7 @@ Claude Code CLI. It is not required for any other feature. See
 
 ```bash
 curl -sL -H "Authorization: token YOUR_GITHUB_TOKEN" \
-  https://raw.githubusercontent.com/beakplatform/BeakPlatform/main/scripts/install.sh \
+  https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scripts/install.sh \
   | sudo GITHUB_TOKEN=YOUR_GITHUB_TOKEN ADMIN_INITIAL_PASSWORD='yourpassword' bash
 ```
 
@@ -40,7 +40,7 @@ and a one-time defense-node pairing string after the platform install succeeds:
 
 ```bash
 curl -sL -H "Authorization: token YOUR_GITHUB_TOKEN" \
-  https://raw.githubusercontent.com/beakplatform/BeakPlatform/main/scripts/install.sh \
+  https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scripts/install.sh \
   | sudo GITHUB_TOKEN=YOUR_GITHUB_TOKEN ADMIN_INITIAL_PASSWORD='yourStrongPassword1!' INSTALL_DEMO=1 bash
 ```
 

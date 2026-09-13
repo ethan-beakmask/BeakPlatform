@@ -205,7 +205,7 @@ fetch_source() {
         local tmp; tmp="$(mktemp -d)"
         local url="$GITHUB_REPO"
         if [[ -n "${GITHUB_TOKEN:-}" && "$url" == https://github.com/* ]]; then
-            url="https://${GITHUB_TOKEN}@github.com/${url#https://github.com/}"
+            url="https://x-access-token:${GITHUB_TOKEN}@github.com/${url#https://github.com/}"
         fi
         log_info "從 $GITHUB_REPO（$GIT_REF）取得 ITHome2026-WAF/"
         git clone --quiet --depth 1 --branch "$GIT_REF" --filter=blob:none --sparse "$url" "$tmp/repo" \
