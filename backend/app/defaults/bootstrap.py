@@ -296,6 +296,7 @@ def run_bootstrap(mode, admin_password=None, sql_dir=None) -> dict:
     _run_step(summary, 'seed_system_permissions',
               lambda: seed_system_permissions(force=False))
     _run_step(summary, 'sync_modules', lambda: sync_modules(force=fresh))
+    _run_step(summary, 'seed_system_admin_role', _seed_system_admin_role)
     _run_step(summary, 'ensure_org_databases', ensure_org_databases)
     if fresh:
         _run_step(summary, 'seed_system_org_defaults',
@@ -304,6 +305,15 @@ def run_bootstrap(mode, admin_password=None, sql_dir=None) -> dict:
                   lambda: _seed_node_showcase(admin_password))
 
     return summary
+
+
+def _seed_system_admin_role() -> dict:
+    """SYSTEM_ADMIN 角色與全權限（fresh／update 皆跑，冪等）。放在 sync_modules 之後，模組權限才會納入。"""
+    from app.defaults.system_admin_role_defaults import seed_system_admin_role
+
+    result = seed_system_admin_role()
+    db.session.commit()
+    return result
 
 
 def _ensure_update_system_org_exists() -> dict:

@@ -675,6 +675,15 @@ dev 上永遠重現不出來。**驗新 permission code 一律用拋棄式庫走
 `INIT_DB_YES=1 DB_NAME=freshcheck ADMIN_INITIAL_PASSWORD=<pw> bash scripts/init_database.sh`
 再比對 code 集合**，不要只看 dev。
 
+**同一個雷的第三種踩法：SYSTEM_ADMIN 帳號沒有角色（2026-09-13 bpserv 全新安裝撞到）**。
+SEC-02 之後 SYSTEM_ADMIN 這種 user_type 沒有 RBAC 捷徑，全靠系統企業的 `SYSTEM_ADMIN` 角色持有
+全部 permission code；dev 的那個角色是 legacy migration 076 建的，bootstrap 一直沒有對應步驟，
+所以 2026-09-13 之前每次全新安裝的系統管理員都是零角色——企業列表看得到（走 `@system_admin_required`），
+點進合約 `GET /api/contracts/<sc>` 就 403「No permission to view Contract」。現在
+`backend/app/defaults/system_admin_role_defaults.py::seed_system_admin_role()` 在 bootstrap 的
+`sync_modules` 之後跑（fresh／update 皆跑、冪等、逐 code 補缺），新增 permission code 後跑一次
+`--update` 就補齊。判別症狀：`SELECT count(*) FROM user_role_assignments WHERE user_secure_code=<SYSTEM_ADMIN 的 sc>` 是 0。
+
 **雷三：已註冊 model 改走 gateway 也不是等價替換。**
 `list()` / `filter()` 對 `LIST_RBAC_ENFORCED_MODELS` 內的 model 自動檢查
 `{resource_type}:read`，而可直接改的那 11 種**全部都在那份清單裡**。
