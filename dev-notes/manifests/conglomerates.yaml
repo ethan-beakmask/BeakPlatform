@@ -1,7 +1,7 @@
 # 集團管理
 # 系統管理員管理集團、成員企業
 page: /api/conglomerates/
-description: 集團管理（CRUD、成員企業管理、共享資料庫佈建）
+description: 集團管理（CRUD、成員企業管理）。共用資料庫功能已於 2026-09-13 依 PF-269 移除（安全因素），不要復活
 
 files:
   api:      backend/app/api/conglomerates.py

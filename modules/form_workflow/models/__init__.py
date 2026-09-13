@@ -20,7 +20,6 @@ from .workflow_background import FwWorkflowBackground
 from .field_change import FwFormFieldChange
 from .sql_form_registry import FwSqlFormRegistry
 from .org_database import FwOrgDatabase
-from .conglomerate_database import FwConglomerateDatabase
 from .sync_queue import FwSyncQueue
 from .node_definition import WorkflowNodeDefinition
 from .node_org_grant import WorkflowNodeOrgGrant
@@ -47,7 +46,6 @@ __all__ = [
     'FwFormFieldChange',
     'FwSqlFormRegistry',
     'FwOrgDatabase',
-    'FwConglomerateDatabase',
     'FwSyncQueue',
     'WorkflowNodeDefinition',
     'WorkflowNodeOrgGrant',

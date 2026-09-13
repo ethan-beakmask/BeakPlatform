@@ -102,19 +102,8 @@ def get_conglomerate(secure_code: str):
         is_deleted=False
     ).order_by(Organization.name).all()
 
-    cg_dict = conglomerate.to_dict()
-
-    # 補上共享 DB 名稱（來自 FwConglomerateDatabase）
-    if conglomerate.has_shared_db:
-        from modules.form_workflow.services.sql_sync.cg_db_manager import (
-            get_conglomerate_database,
-        )
-        cg_db = get_conglomerate_database(secure_code)
-        if cg_db:
-            cg_dict['shared_db_name'] = cg_db.db_name
-
     return jsonify({
-        'conglomerate': cg_dict,
+        'conglomerate': conglomerate.to_dict(),
         'organizations': [o.to_dict() for o in orgs]
     })
 
@@ -235,42 +224,3 @@ def get_logs(secure_code: str):
     return jsonify({
         'logs': [log.to_dict() for log in logs]
     })
-
-
-@conglomerate_bp.route('/<secure_code>/provision-db', methods=['POST'])
-@system_admin_required
-def provision_shared_db(secure_code: str):
-    """
-    為集團建立共享資料庫
-
-    Returns:
-        {db_name, admin_user, member_user, is_ready}
-    """
-    from ..models.conglomerate import Conglomerate
-
-    conglomerate = Conglomerate.query.filter_by(
-        secure_code=secure_code,
-        is_deleted=False,
-    ).first()
-    if not conglomerate:
-        return jsonify({'error': _('集團不存在')}), 404
-
-    if conglomerate.has_shared_db:
-        return jsonify({'error': _('此集團已有共享資料庫')}), 400
-
-    try:
-        from modules.spec_formulate.services.schema.pg_table_manager import (
-            ensure_conglomerate_database,
-        )
-        cg_db = ensure_conglomerate_database(conglomerate)
-        db.session.commit()
-
-        return jsonify({
-            'db_name': cg_db.db_name,
-            'admin_user': cg_db.admin_user,
-            'member_user': cg_db.member_user,
-            'is_ready': cg_db.is_ready,
-        }), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': _('建立失敗: %(error)s', error=str(e))}), 500

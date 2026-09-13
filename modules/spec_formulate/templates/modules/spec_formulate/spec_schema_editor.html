@@ -75,15 +75,6 @@ window.__MF_SPEC_CONFIG = {
                         @click="populateFacet('postgresql')"
                         :disabled="saving">PostgreSQL</button>
                 <div class="facet-actions" x-show="specSc">
-                    <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 4px;">
-                        <select x-model="pgTarget" @change="onPgTargetChange()"
-                                style="font-size: 0.8em; padding: 2px 4px;">
-                            <option value="org">{{ _('企業 DB') }}</option>
-                            <template x-if="cgDbAvailable">
-                                <option value="conglomerate" x-text="__('集團 DB ({name})', {name: cgDbName})"></option>
-                            </template>
-                        </select>
-                    </div>
                     <template x-if="!linkedSqlTable">
                         <div class="facet-action-btns">
                             <button class="mfe-btn" @click="openReadTableModal()">{{ _('讀入資料表') }}</button>
@@ -94,8 +85,6 @@ window.__MF_SPEC_CONFIG = {
                     <template x-if="linkedSqlTable">
                         <div class="facet-linked-info">
                             <span class="linked-name" x-text="linkedSqlTable"></span>
-                            <span x-show="linkedSqlTarget === 'conglomerate'"
-                                  style="font-size: 0.75em; color: #0d6efd;">[{{ _('集團') }}]</span>
                             <button class="mfe-btn danger" @click="pgUnlinkTable()">{{ _('解除') }}</button>
                         </div>
                     </template>

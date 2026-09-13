@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-12 23:34+0800\n"
+"POT-Creation-Date: 2026-09-13 12:01+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -228,8 +228,7 @@ msgstr "Unsupported action: %(action)s"
 
 #: ../modules/form_workflow/api/fc_admin.py:106
 #: ../modules/form_workflow/api/fc_admin.py:180
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:481
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:931
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:476
 #: app/api/_ss_emailrelay.py:419 app/api/_ss_emailrelay.py:439
 #: app/web/external_users.py:531 app/web/external_users.py:584
 #: app/web/external_users.py:633 app/web/org_admin_rescue.py:100
@@ -705,34 +704,32 @@ msgstr "At least two organizations must be selected"
 #: ../modules/form_workflow/api/categories.py:236
 #: ../modules/form_workflow/api/fc_fill.py:341
 #: ../modules/form_workflow/api/form_themes.py:164
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:414
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:836
-#: app/api/conglomerates.py:84 app/api/conglomerates.py:276
-#: app/api/users.py:284 app/web/approval_categories.py:189
-#: app/web/external_users.py:332 app/web/job_families.py:239
-#: app/web/job_families.py:240 app/web/job_levels.py:181
-#: app/web/job_titles.py:266 app/web/job_titles.py:267 app/web/menu.py:324
-#: app/web/menu.py:391 app/web/modules.py:123 app/web/org_admins.py:284
-#: app/web/org_admins.py:451 app/web/organizations.py:295
-#: app/web/positions.py:154 app/web/sys_accounts.py:171
-#: app/web/sys_accounts.py:172 app/web/units.py:128 app/web/users.py:492
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:409
+#: app/api/conglomerates.py:84 app/api/users.py:284
+#: app/web/approval_categories.py:189 app/web/external_users.py:332
+#: app/web/job_families.py:239 app/web/job_families.py:240
+#: app/web/job_levels.py:181 app/web/job_titles.py:266
+#: app/web/job_titles.py:267 app/web/menu.py:324 app/web/menu.py:391
+#: app/web/modules.py:123 app/web/org_admins.py:284 app/web/org_admins.py:451
+#: app/web/organizations.py:295 app/web/positions.py:154
+#: app/web/sys_accounts.py:171 app/web/sys_accounts.py:172 app/web/units.py:128
+#: app/web/users.py:492
 #, python-format
 msgid "建立失敗: %(error)s"
 msgstr "Creation failed: %(error)s"
 
-#: ../modules/spec_formulate/api/_mf_cg.py:38 app/api/conglomerates.py:98
-#: app/api/conglomerates.py:146 app/api/conglomerates.py:170
-#: app/api/conglomerates.py:256
+#: app/api/conglomerates.py:98 app/api/conglomerates.py:135
+#: app/api/conglomerates.py:159
 msgid "集團不存在"
 msgstr "Conglomerate not found"
 
-#: app/api/conglomerates.py:193
+#: app/api/conglomerates.py:182
 msgid "集團至少需要兩家企業"
 msgstr "A conglomerate requires at least two organizations"
 
 #: ../modules/form_workflow/api/backgrounds.py:151
 #: ../modules/form_workflow/api/categories.py:314
-#: ../modules/form_workflow/api/form_themes.py:219 app/api/conglomerates.py:214
+#: ../modules/form_workflow/api/form_themes.py:219 app/api/conglomerates.py:203
 #: app/web/approval_categories.py:269 app/web/external_users.py:452
 #: app/web/job_families.py:324 app/web/job_families.py:325
 #: app/web/job_levels.py:267 app/web/job_titles.py:344
@@ -743,10 +740,6 @@ msgstr "A conglomerate requires at least two organizations"
 #, python-format
 msgid "更新失敗: %(error)s"
 msgstr "Update failed: %(error)s"
-
-#: app/api/conglomerates.py:259
-msgid "此集團已有共享資料庫"
-msgstr "This conglomerate already has a shared database"
 
 #: app/api/contracts.py:85 app/api/contracts.py:187 app/api/contracts.py:226
 msgid "合約不存在"
@@ -1894,7 +1887,7 @@ msgid "無法確定企業"
 msgstr "Unable to determine organization"
 
 #: app/api/roles.py:166 app/api/roles.py:378 app/api/roles.py:471
-#: app/api/roles.py:526 app/services/org_database_service.py:225
+#: app/api/roles.py:526 app/services/org_database_service.py:251
 #: app/services/role_assignment_service.py:200
 msgid "角色不存在"
 msgstr "Role not found"
@@ -2488,29 +2481,28 @@ msgstr "This chapter covers:"
 msgid "本節包含以下主題："
 msgstr "This section covers:"
 
-#: app/services/org_database_service.py:176
+#: app/services/org_database_service.py:190
 msgid "不合法的資料庫名稱"
 msgstr "Invalid database name"
 
-#: app/services/org_database_service.py:181
-#: app/templates/pages/cg_databases/overview.html:116
+#: app/services/org_database_service.py:195
 msgid "資料庫不存在"
 msgstr "Database does not exist"
 
-#: app/services/org_database_service.py:183
-#: app/services/org_database_service.py:231
+#: app/services/org_database_service.py:197
+#: app/services/org_database_service.py:257
 msgid "企業仍存在，拒絕刪除"
 msgstr "The organization still exists; deletion refused"
 
-#: app/services/org_database_service.py:185
+#: app/services/org_database_service.py:199
 msgid "企業資料庫登記仍存在，拒絕刪除"
 msgstr "Organization database registration still exists; deletion refused"
 
-#: app/services/org_database_service.py:212
+#: app/services/org_database_service.py:238
 msgid "不合法的角色名稱"
 msgstr "Invalid role name"
 
-#: app/services/org_database_service.py:237
+#: app/services/org_database_service.py:263
 msgid "企業資料庫仍存在，拒絕刪除角色"
 msgstr "Organization database still exists; role deletion refused"
 
@@ -2880,12 +2872,12 @@ msgstr "Passwords match"
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:118
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:140
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:232
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:364
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:395
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:424
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:496
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:552
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:636
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:353
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:384
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:413
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:485
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:541
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:625
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:75
 #: app/templates/auth/change_password.html:74
 #: app/templates/pages/access_center/_tab_accounts.html:217
@@ -2941,7 +2933,7 @@ msgstr "Passwords match"
 #: app/templates/pages/organizations/create.html:120
 #: app/templates/pages/organizations/edit.html:149
 #: app/templates/pages/organizations/list.html:78
-#: app/templates/pages/organizations/list.html:471
+#: app/templates/pages/organizations/list.html:458
 #: app/templates/pages/positions/create.html:109
 #: app/templates/pages/positions/edit.html:114
 #: app/templates/pages/profile/edit.html:39
@@ -3194,7 +3186,7 @@ msgstr "No items to display"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:269
 #: app/templates/pageir/_page_ir.html:44
 #: app/templates/pages/admin/groups.html:191
-#: app/templates/pages/organizations/list.html:472
+#: app/templates/pages/organizations/list.html:459
 #: app/templates/pages/units/create.html:3
 #: app/templates/pages/units/create.html:11
 msgid "新增"
@@ -3246,7 +3238,7 @@ msgstr "Add"
 #: app/templates/pages/hostconfig/_system_settings_section_telegram.html:36
 #: app/templates/pages/modules/list.html:87
 #: app/templates/pages/organizations/admins.html:53
-#: app/templates/pages/organizations/list.html:308
+#: app/templates/pages/organizations/list.html:295
 #: app/templates/pages/personal_settings.html:214
 #: app/templates/pages/positions/list.html:25
 #: app/templates/pages/security/api_keys.html:34
@@ -3548,9 +3540,9 @@ msgstr "Proxy assignments I granted"
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:210
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:37
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:56
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:379
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:443
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:615
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:368
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:432
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:604
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:37
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/assets.html:32
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/dashboard.html:60
@@ -3563,8 +3555,6 @@ msgstr "Proxy assignments I granted"
 #: app/templates/pages/admin/_settings_recipients_section.html:15
 #: app/templates/pages/admin/_settings_smtp_section.html:15
 #: app/templates/pages/admin/_settings_telegram_section.html:15
-#: app/templates/pages/cg_databases/overview.html:84
-#: app/templates/pages/cg_databases/overview.html:246
 #: app/templates/pages/hostconfig/_system_settings_section_emailrelay.html:36
 #: app/templates/pages/hostconfig/_system_settings_section_loginsecurity.html:9
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:18
@@ -3643,7 +3633,7 @@ msgstr "Role"
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:240
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:29
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:43
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:191
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:180
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:17
 #: app/templates/pages/_my_proxy_assignments.html:25
 #: app/templates/pages/_my_proxy_assignments.html:57
@@ -3658,7 +3648,6 @@ msgstr "Role"
 #: app/templates/pages/approval_categories/edit.html:76
 #: app/templates/pages/approval_categories/list.html:97
 #: app/templates/pages/approval_categories/list.html:183
-#: app/templates/pages/cg_databases/overview.html:213
 #: app/templates/pages/external-users/list.html:37
 #: app/templates/pages/external-users/view.html:57
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:95
@@ -3681,8 +3670,8 @@ msgstr "Role"
 #: app/templates/pages/org_databases/monitor.html:67
 #: app/templates/pages/organizations/admins.html:51
 #: app/templates/pages/organizations/edit.html:87
-#: app/templates/pages/organizations/list.html:227
-#: app/templates/pages/organizations/list.html:307
+#: app/templates/pages/organizations/list.html:214
+#: app/templates/pages/organizations/list.html:294
 #: app/templates/pages/personal_settings.html:210
 #: app/templates/pages/positions/edit.html:101
 #: app/templates/pages/positions/list.html:24
@@ -4126,7 +4115,7 @@ msgstr "API key integration examples"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_template_modal.html:77
 #: app/templates/pages/admin/_settings_recipients_section.html:267
 #: app/templates/pages/calendar/calendar.html:144
-#: app/templates/pages/organizations/list.html:406
+#: app/templates/pages/organizations/list.html:393
 #: app/templates/pages/personal_settings.html:270
 #: app/templates/pages/server_manage/redis_monitor.html:185
 msgid "關閉"
@@ -4246,7 +4235,6 @@ msgstr "Role Assignments"
 #: app/templates/pages/admin/org-admins/list.html:74
 #: app/templates/pages/admin/org-admins/list.html:87
 #: app/templates/pages/admin/time/schedules.html:71
-#: app/templates/pages/cg_databases/overview.html:225
 #: app/templates/pages/external-users/list.html:62
 #: app/templates/pages/external-users/list.html:70
 #: app/templates/pages/external-users/view.html:62
@@ -4261,9 +4249,9 @@ msgstr "Role Assignments"
 #: app/templates/pages/organizations/admins.html:82
 #: app/templates/pages/organizations/admins.html:97
 #: app/templates/pages/organizations/edit.html:90
-#: app/templates/pages/organizations/list.html:140
-#: app/templates/pages/organizations/list.html:231
-#: app/templates/pages/organizations/list.html:320
+#: app/templates/pages/organizations/list.html:127
+#: app/templates/pages/organizations/list.html:218
+#: app/templates/pages/organizations/list.html:307
 #: app/templates/pages/positions/list.html:62
 #: app/templates/pages/positions/view.html:97
 #: app/templates/pages/sys_accounts/edit.html:55
@@ -4327,7 +4315,6 @@ msgstr "Manage menu Key 1 visible identities and Key 2 role thresholds"
 #: app/templates/pages/access_center/_tab_health.html:21
 #: app/templates/pages/access_center/_tab_roles.html:10
 #: app/templates/pages/access_center/_tab_roles.html:21
-#: app/templates/pages/cg_databases/overview.html:251
 #: app/templates/pages/node_grants/index.html:44
 #: app/templates/pages/org_databases/monitor.html:105
 msgid "企業"
@@ -4568,7 +4555,6 @@ msgstr "Holders"
 #: app/templates/pages/admin/time/schedules.html:68
 #: app/templates/pages/approval_categories/edit.html:81
 #: app/templates/pages/approval_categories/list.html:187
-#: app/templates/pages/cg_databases/overview.html:222
 #: app/templates/pages/external-users/list.html:60
 #: app/templates/pages/external-users/list.html:70
 #: app/templates/pages/external-users/view.html:60
@@ -4591,7 +4577,7 @@ msgstr "Holders"
 #: app/templates/pages/organizations/admins.html:80
 #: app/templates/pages/organizations/admins.html:97
 #: app/templates/pages/organizations/edit.html:89
-#: app/templates/pages/organizations/list.html:230
+#: app/templates/pages/organizations/list.html:217
 #: app/templates/pages/positions/edit.html:106
 #: app/templates/pages/positions/list.html:62
 #: app/templates/pages/positions/view.html:97
@@ -4685,8 +4671,8 @@ msgstr "Sort"
 #: app/templates/pages/modules/view.html:46
 #: app/templates/pages/organizations/create.html:71
 #: app/templates/pages/organizations/edit.html:105
-#: app/templates/pages/organizations/list.html:391
-#: app/templates/pages/organizations/list.html:442
+#: app/templates/pages/organizations/list.html:378
+#: app/templates/pages/organizations/list.html:429
 #: app/templates/pages/units/create.html:54
 #: app/templates/pages/units/edit.html:49
 #: app/templates/pages/units/view.html:56
@@ -5042,7 +5028,6 @@ msgstr "Group name"
 #: app/templates/pages/admin/time/holidays.html:90
 #: app/templates/pages/admin/time/holidays.html:177
 #: app/templates/pages/admin/time/schedules.html:101
-#: app/templates/pages/cg_databases/overview.html:251
 #: app/templates/pages/external-users/list.html:92
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:63
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:186
@@ -5155,7 +5140,7 @@ msgstr "Recipient preview -"
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:82
 #: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:116
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:309
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:157
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:146
 #: app/templates/pages/admin/_settings_recipients_section.html:245
 #: app/templates/pages/job_levels/list.html:68
 msgid "共"
@@ -5566,7 +5551,7 @@ msgstr "Group member"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_menu.html:37
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:34
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:193
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:599
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:588
 #: app/templates/pages/admin/groups.html:283
 #: app/templates/pages/admin/groups.html:319
 #: app/templates/pages/admin/groups.html:360
@@ -5854,16 +5839,15 @@ msgstr "None"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:44
 #: app/templates/pages/admin/module_list.html:112
 #: app/templates/pages/admin/settings.html:65
-#: app/templates/pages/cg_databases/overview.html:213
 #: app/templates/pages/org_databases/monitor.html:65
 #: app/templates/pages/organizations/create.html:34
 #: app/templates/pages/organizations/edit.html:56
-#: app/templates/pages/organizations/list.html:101
+#: app/templates/pages/organizations/list.html:88
 msgid "企業名稱"
 msgstr "Organization name"
 
 #: app/templates/pages/admin/module_list.html:113
-#: app/templates/pages/organizations/list.html:299
+#: app/templates/pages/organizations/list.html:286
 msgid "合約編號"
 msgstr "Contract Number"
 
@@ -5875,7 +5859,7 @@ msgstr "Expiration Date"
 
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/risk_list.html:20
 #: app/templates/pages/admin/module_list.html:126
-#: app/templates/pages/organizations/list.html:321 app/web/admin.py:27
+#: app/templates/pages/organizations/list.html:308 app/web/admin.py:27
 msgid "已過期"
 msgstr "Expired"
 
@@ -5893,7 +5877,7 @@ msgid "天"
 msgstr "days"
 
 #: app/templates/pages/admin/module_list.html:134
-#: app/templates/pages/organizations/list.html:322
+#: app/templates/pages/organizations/list.html:309
 msgid "有效"
 msgstr "Valid"
 
@@ -5981,7 +5965,7 @@ msgstr "domain"
 #: app/templates/pages/admin/settings.html:73
 #: app/templates/pages/organizations/create.html:75
 #: app/templates/pages/organizations/edit.html:78
-#: app/templates/pages/organizations/list.html:243
+#: app/templates/pages/organizations/list.html:230
 msgid "帳號上限"
 msgstr "Account limit"
 
@@ -6221,7 +6205,6 @@ msgstr "Return to rule list"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:159
 #: app/templates/pages/admin/numbering/edit.html:46
-#: app/templates/pages/cg_databases/overview.html:164
 #: app/templates/pages/external-users/edit.html:29
 #: app/templates/pages/organizations/edit.html:39
 msgid "基本資訊"
@@ -6340,8 +6323,8 @@ msgid "公元年碼"
 msgstr "AD year code"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:214
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:249
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:618
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:238
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:607
 #: app/templates/pages/admin/numbering/edit.html:154
 #: app/templates/pages/admin/numbering/edit.html:213
 msgid "格式:"
@@ -6697,12 +6680,11 @@ msgstr "(Must retain at least one enabled administrator)"
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:157
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:32
 #: app/templates/pages/admin/org-admins/list.html:44
-#: app/templates/pages/cg_databases/overview.html:187
 #: app/templates/pages/external-users/view.html:85
 #: app/templates/pages/job_levels/view.html:51
 #: app/templates/pages/modules/list.html:86
 #: app/templates/pages/organizations/admins.html:52
-#: app/templates/pages/organizations/list.html:256
+#: app/templates/pages/organizations/list.html:243
 #: app/templates/pages/positions/view.html:104
 #: app/templates/pages/sys_accounts/edit.html:119
 #: app/templates/pages/sys_accounts/list.html:187
@@ -7046,14 +7028,14 @@ msgid "返回基本班表"
 msgstr "Back to work schedules"
 
 #: app/templates/pages/admin/time/holidays.html:139
-#: app/templates/pages/organizations/list.html:427
+#: app/templates/pages/organizations/list.html:414
 msgid "開始日期 *"
 msgstr "Start date *"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:157
 #: app/templates/pages/admin/time/holidays.html:144
-#: app/templates/pages/organizations/list.html:304
-#: app/templates/pages/organizations/list.html:389
+#: app/templates/pages/organizations/list.html:291
+#: app/templates/pages/organizations/list.html:376
 msgid "結束日期"
 msgstr "End Date"
 
@@ -7217,10 +7199,10 @@ msgstr "Copy the currently set first working day time to all working days"
 #: app/templates/pages/hostconfig/_system_settings_modals.html:187
 #: app/templates/pages/job_titles/list.html:89
 #: app/templates/pages/organizations/create.html:72
-#: app/templates/pages/organizations/list.html:422
-#: app/templates/pages/organizations/list.html:438
-#: app/templates/pages/organizations/list.html:443
-#: app/templates/pages/organizations/list.html:448
+#: app/templates/pages/organizations/list.html:409
+#: app/templates/pages/organizations/list.html:425
+#: app/templates/pages/organizations/list.html:430
+#: app/templates/pages/organizations/list.html:435
 #: app/templates/pages/units/create.html:55
 msgid "選填"
 msgstr "Optional"
@@ -7479,7 +7461,6 @@ msgstr "No category information yet"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:352
 #: app/templates/pages/approval_categories/list.html:94
 #: app/templates/pages/approval_categories/list.html:259
-#: app/templates/pages/cg_databases/overview.html:213
 #: app/templates/pages/job_levels/create.html:99
 #: app/templates/pages/job_levels/list.html:80
 #: app/templates/pages/job_levels/list.html:124
@@ -7531,8 +7512,8 @@ msgstr "Such as: PETTY_CASH"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:595
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:121
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:428
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:555
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:417
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:544
 #: app/templates/pages/approval_categories/list.html:290
 msgid "建立中..."
 msgstr "Creating..."
@@ -7624,8 +7605,8 @@ msgstr "Company events are visible to the whole company"
 #: app/templates/pages/external-users/create.html:105
 #: app/templates/pages/external-users/edit.html:54
 #: app/templates/pages/external-users/view.html:81
-#: app/templates/pages/organizations/list.html:392
-#: app/templates/pages/organizations/list.html:447
+#: app/templates/pages/organizations/list.html:379
+#: app/templates/pages/organizations/list.html:434
 #: app/templates/pages/positions/create.html:101
 #: app/templates/pages/positions/edit.html:95
 #: app/templates/pages/positions/view.html:92
@@ -7712,138 +7693,6 @@ msgstr "No events on this day"
 #: app/templates/pages/calendar/calendar.html:143
 msgid "在這天新增"
 msgstr "Add on this day"
-
-#: app/templates/pages/cg_databases/overview.html:4
-#: app/templates/pages/cg_databases/overview.html:78
-msgid "集團資料庫總覽"
-msgstr "Conglomerate database overview"
-
-#: app/templates/pages/cg_databases/overview.html:94
-msgid "尚無任何集團資料庫"
-msgstr "There are no Conglomerate databases yet"
-
-#: app/templates/pages/cg_databases/overview.html:113
-#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:69
-#: app/templates/pages/org_databases/monitor.html:130
-msgid "孤兒資料庫"
-msgstr "Orphan database"
-
-#: app/templates/pages/cg_databases/overview.html:119
-msgid "未就緒"
-msgstr "Not ready"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:30
-#: app/templates/pages/cg_databases/overview.html:122
-#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:67
-msgid "正常"
-msgstr "Normal"
-
-#: app/templates/pages/cg_databases/overview.html:125
-msgid "集團停用"
-msgstr "Conglomerate deactivated"
-
-#: app/templates/pages/cg_databases/overview.html:147
-msgid "此資料庫存在於 PostgreSQL 但無對應的 fw_conglomerate_databases 記錄。"
-msgstr ""
-"This database exists in PostgreSQL but has no corresponding "
-"fw_conglomerate_databases record."
-
-#: app/templates/pages/cg_databases/overview.html:148
-msgid "可能是舊資料殘留或手動建立的資料庫。"
-msgstr "It may be remnants of old data or a manually created database."
-
-#: app/templates/pages/cg_databases/overview.html:155
-msgid "fw_conglomerate_databases 有此記錄但 PostgreSQL 中找不到對應的資料庫。"
-msgstr ""
-"fw_conglomerate_databases has this record but the corresponding database "
-"cannot be found in PostgreSQL."
-
-#: app/templates/pages/cg_databases/overview.html:156
-msgid "可能已被手動刪除。"
-msgstr "May have been manually removed."
-
-#: app/templates/pages/cg_databases/overview.html:167
-msgid "集團代碼"
-msgstr "Conglomerate code"
-
-#: app/templates/pages/cg_databases/overview.html:171
-msgid "集團 ID"
-msgstr "Conglomerate ID"
-
-#: app/templates/pages/cg_databases/overview.html:175
-#: app/templates/pages/org_databases/monitor.html:241
-#: app/templates/pages/org_databases/monitor.html:334
-msgid "主機"
-msgstr "Host"
-
-#: app/templates/pages/cg_databases/overview.html:179
-msgid "Admin 帳號"
-msgstr "Admin account"
-
-#: app/templates/pages/cg_databases/overview.html:183
-msgid "Member 帳號"
-msgstr "Member account"
-
-#: app/templates/pages/cg_databases/overview.html:197
-msgid "資料庫統計"
-msgstr "Database Statistics"
-
-#: app/templates/pages/cg_databases/overview.html:200
-#: app/templates/pages/org_databases/monitor.html:179
-msgid "容量"
-msgstr "Capacity"
-
-#: app/templates/pages/cg_databases/overview.html:210
-#: app/templates/pages/cg_databases/overview.html:236
-msgid "目前成員企業"
-msgstr "Current member Organization"
-
-#: app/templates/pages/cg_databases/overview.html:237
-msgid "無成員企業"
-msgstr "No memberOrganization"
-
-#: app/templates/pages/cg_databases/overview.html:244
-msgid "異動歷程"
-msgstr "Change process"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:136
-#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:170
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:400
-#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
-#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:54
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:240
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:324
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:350
-#: app/templates/pages/cg_databases/overview.html:251
-#: app/templates/pages/server_manage/redis_monitor.html:217
-msgid "時間"
-msgstr "Time"
-
-#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:58
-#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:321
-#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:49
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:49
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:150
-#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:44
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:102
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:165
-#: ../modules/open_defense/templates/modules/open_defense/decisions.html:188
-#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:239
-#: app/templates/pages/cg_databases/overview.html:251
-#: app/templates/pages/org_databases/monitor.html:69
-#: app/templates/pages/org_databases/monitor.html:139
-msgid "動作"
-msgstr "Action"
-
-#: app/templates/pages/cg_databases/overview.html:251
-msgid "操作者"
-msgstr "operator"
-
-#: app/templates/pages/cg_databases/overview.html:270
-msgid "無異動記錄"
-msgstr "No abnormal records"
 
 #: app/templates/pages/dev/portal_quick_login.html:6
 msgid "Portal 帳號快速切換 - BeakPlatform 開發工具"
@@ -8344,8 +8193,8 @@ msgid "企業網域"
 msgstr "Organization domain"
 
 #: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:26
-#: app/templates/pages/organizations/list.html:206
-#: app/templates/pages/organizations/list.html:221
+#: app/templates/pages/organizations/list.html:193
+#: app/templates/pages/organizations/list.html:208
 msgid "尚未設定"
 msgstr "Not set"
 
@@ -8750,9 +8599,19 @@ msgstr "Summary"
 msgid "企業總數"
 msgstr "Organizations"
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:30
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:67
+msgid "正常"
+msgstr "Normal"
+
 #: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:68
 msgid "異常"
 msgstr "Problems"
+
+#: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:69
+#: app/templates/pages/org_databases/monitor.html:130
+msgid "孤兒資料庫"
+msgstr "Orphan database"
 
 #: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:70
 #: app/templates/pages/org_databases/monitor.html:159
@@ -10150,7 +10009,7 @@ msgstr "e.g. Monitoring Management"
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:332
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:109
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:120
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:554
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:543
 #: app/templates/pages/menu/list.html:91
 #: app/templates/pages/units/create.html:67
 msgid "建立"
@@ -10582,7 +10441,7 @@ msgstr "Organizations with problems"
 #: app/templates/pages/org_databases/monitor.html:64
 #: app/templates/pages/organizations/create.html:42
 #: app/templates/pages/organizations/edit.html:44
-#: app/templates/pages/organizations/list.html:181
+#: app/templates/pages/organizations/list.html:168
 msgid "企業代碼"
 msgstr "Organization code"
 
@@ -10591,6 +10450,22 @@ msgstr "Organization code"
 #: app/templates/pages/org_databases/monitor.html:332
 msgid "資料庫"
 msgstr "Database"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:58
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:321
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:49
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:49
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:150
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:44
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:102
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:165
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:188
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:239
+#: app/templates/pages/org_databases/monitor.html:69
+#: app/templates/pages/org_databases/monitor.html:139
+msgid "動作"
+msgstr "Action"
 
 #: app/templates/pages/org_databases/monitor.html:81
 msgid "補建"
@@ -10632,6 +10507,10 @@ msgstr "Search for Organization name or domain..."
 msgid "排序:"
 msgstr "Sort by:"
 
+#: app/templates/pages/org_databases/monitor.html:179
+msgid "容量"
+msgstr "Capacity"
+
 #: app/templates/pages/org_databases/monitor.html:184
 msgid "尚無任何企業建立獨立資料庫"
 msgstr "There is no independent database established for Organization yet"
@@ -10643,6 +10522,11 @@ msgstr "No eligible Organization"
 #: app/templates/pages/org_databases/monitor.html:209
 msgid "請從左側選取企業"
 msgstr "Please select Organization from the left"
+
+#: app/templates/pages/org_databases/monitor.html:241
+#: app/templates/pages/org_databases/monitor.html:334
+msgid "主機"
+msgstr "Host"
 
 #: app/templates/pages/org_databases/monitor.html:245
 #: app/templates/pages/org_databases/monitor.html:338
@@ -10666,7 +10550,7 @@ msgstr "Password rotation"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:211
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:97
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:531
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:520
 #: app/templates/pages/org_databases/monitor.html:270
 msgid "資料表名稱"
 msgstr "Data table name"
@@ -10808,7 +10692,7 @@ msgid "返回企業管理"
 msgstr "Return to Organization management"
 
 #: app/templates/pages/organizations/admins.html:18
-#: app/templates/pages/organizations/list.html:174
+#: app/templates/pages/organizations/list.html:161
 msgid "管理員管理"
 msgstr "Administrator management"
 
@@ -10871,8 +10755,8 @@ msgstr ""
 
 #: app/templates/pages/organizations/create.html:61
 #: app/templates/pages/organizations/edit.html:48
-#: app/templates/pages/organizations/list.html:102
-#: app/templates/pages/organizations/list.html:182
+#: app/templates/pages/organizations/list.html:89
+#: app/templates/pages/organizations/list.html:169
 msgid "網域名稱"
 msgstr "Domain name"
 
@@ -10907,7 +10791,7 @@ msgstr "Create Organization"
 
 #: app/templates/pages/organizations/edit.html:5
 #: app/templates/pages/organizations/edit.html:16
-#: app/templates/pages/organizations/list.html:176
+#: app/templates/pages/organizations/list.html:163
 msgid "編輯企業"
 msgstr "EditOrganization"
 
@@ -10924,22 +10808,22 @@ msgstr ""
 "used."
 
 #: app/templates/pages/organizations/edit.html:70
-#: app/templates/pages/organizations/list.html:235
+#: app/templates/pages/organizations/list.html:222
 msgid "客戶類型"
 msgstr "Customer type"
 
 #: app/templates/pages/organizations/edit.html:72
-#: app/templates/pages/organizations/list.html:237
+#: app/templates/pages/organizations/list.html:224
 msgid "試用"
 msgstr "trial"
 
 #: app/templates/pages/organizations/edit.html:73
-#: app/templates/pages/organizations/list.html:238
+#: app/templates/pages/organizations/list.html:225
 msgid "正式客戶"
 msgstr "Formal customer"
 
 #: app/templates/pages/organizations/edit.html:74
-#: app/templates/pages/organizations/list.html:239
+#: app/templates/pages/organizations/list.html:226
 msgid "黑名單"
 msgstr "blacklist"
 
@@ -10956,7 +10840,7 @@ msgid "此企業有 %(count)s 份未到期合約"
 msgstr "This Organization has %(count)s shares of unexpired Contract"
 
 #: app/templates/pages/organizations/edit.html:97
-#: app/templates/pages/organizations/list.html:245
+#: app/templates/pages/organizations/list.html:232
 msgid "所屬集團"
 msgstr "Belongs to Conglomerate"
 
@@ -10971,17 +10855,17 @@ msgid "聯絡資訊"
 msgstr "Contact information"
 
 #: app/templates/pages/organizations/edit.html:119
-#: app/templates/pages/organizations/list.html:248
+#: app/templates/pages/organizations/list.html:235
 msgid "聯絡人"
 msgstr "Contact person"
 
 #: app/templates/pages/organizations/edit.html:124
-#: app/templates/pages/organizations/list.html:251
+#: app/templates/pages/organizations/list.html:238
 msgid "聯絡信箱"
 msgstr "Contact email"
 
 #: app/templates/pages/organizations/edit.html:131
-#: app/templates/pages/organizations/list.html:254
+#: app/templates/pages/organizations/list.html:241
 msgid "聯絡電話"
 msgstr "Contact number"
 
@@ -11053,183 +10937,164 @@ msgstr "update ("
 msgid "解散"
 msgstr "Disband"
 
-#: app/templates/pages/organizations/list.html:81
-msgid "共享資料庫："
-msgstr "Shared database:"
-
-#: app/templates/pages/organizations/list.html:83
-msgid "已建立 ("
-msgstr "Created ("
-
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:134
-#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:243
-#: app/templates/pages/organizations/list.html:87
-msgid "未建立"
-msgstr "Not created"
-
-#: app/templates/pages/organizations/list.html:89
-msgid "建立共享資料庫"
-msgstr "Create a shared database"
-
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:98
-#: app/templates/pages/organizations/list.html:103
+#: app/templates/pages/organizations/list.html:90
 msgid "集團"
 msgstr "Conglomerate"
 
-#: app/templates/pages/organizations/list.html:104
+#: app/templates/pages/organizations/list.html:91
 #: app/templates/pages/platform_help/org_admin.html:449
 msgid "合約"
 msgstr "Contract"
 
-#: app/templates/pages/organizations/list.html:130
+#: app/templates/pages/organizations/list.html:117
 msgid "系統"
 msgstr "system"
 
-#: app/templates/pages/organizations/list.html:137
+#: app/templates/pages/organizations/list.html:124
 msgid "無約"
 msgstr "No appointment"
 
-#: app/templates/pages/organizations/list.html:151
+#: app/templates/pages/organizations/list.html:138
 #, python-format
 msgid "共 %(total)s 筆"
 msgstr "%(total)s total"
 
-#: app/templates/pages/organizations/list.html:156
+#: app/templates/pages/organizations/list.html:143
 #, python-format
 msgid "第 %(page)s/%(pages)s 頁"
 msgstr "Page %(page)s/%(pages)s"
 
-#: app/templates/pages/organizations/list.html:188
+#: app/templates/pages/organizations/list.html:175
 msgid "登入 URL"
 msgstr "Login URL"
 
-#: app/templates/pages/organizations/list.html:190
+#: app/templates/pages/organizations/list.html:177
 msgid "尚未設定系統對外網址"
 msgstr "System external URL is not set"
 
-#: app/templates/pages/organizations/list.html:191
+#: app/templates/pages/organizations/list.html:178
 msgid "前往設定"
 msgstr "Go to settings"
 
-#: app/templates/pages/organizations/list.html:196
+#: app/templates/pages/organizations/list.html:183
 msgid "企業成員登入 URL"
 msgstr "Employee login URL"
 
-#: app/templates/pages/organizations/list.html:211
+#: app/templates/pages/organizations/list.html:198
 msgid "外部廠商登入 URL"
 msgstr "External External Vendor login URL"
 
-#: app/templates/pages/organizations/list.html:229
+#: app/templates/pages/organizations/list.html:216
 msgid "系統企業（永久有效）"
 msgstr "System Organization (valid permanently)"
 
-#: app/templates/pages/organizations/list.html:243
+#: app/templates/pages/organizations/list.html:230
 #, python-format
 msgid "%(used)s / %(limit)s 個（僅計企業成員與外部廠商，不含管理員）"
 msgstr ""
 "%(used)s / %(limit)s account(s) (members and external vendors only; "
 "administrators excluded)"
 
-#: app/templates/pages/organizations/list.html:264
+#: app/templates/pages/organizations/list.html:251
 #, python-format
 msgid "合約管理 (%(contracts)s)"
 msgstr "Contract Management (%(contracts)s)"
 
-#: app/templates/pages/organizations/list.html:265
+#: app/templates/pages/organizations/list.html:252
 msgid "+ 新增合約"
 msgstr "+ Added Contract"
 
-#: app/templates/pages/organizations/list.html:270
+#: app/templates/pages/organizations/list.html:257
 msgid "合約期間："
 msgstr "During Contract:"
 
-#: app/templates/pages/organizations/list.html:272
+#: app/templates/pages/organizations/list.html:259
 #, python-format
 msgid "剩餘 %(remaining)s"
 msgstr "Remaining %(remaining)s"
 
-#: app/templates/pages/organizations/list.html:276
+#: app/templates/pages/organizations/list.html:263
 msgid "系統企業："
 msgstr "System Organization:"
 
-#: app/templates/pages/organizations/list.html:276
+#: app/templates/pages/organizations/list.html:263
 msgid "永久有效，無需合約"
 msgstr "Valid permanently, no need for Contract"
 
-#: app/templates/pages/organizations/list.html:300
-#: app/templates/pages/organizations/list.html:387
-#: app/templates/pages/organizations/list.html:421
+#: app/templates/pages/organizations/list.html:287
+#: app/templates/pages/organizations/list.html:374
+#: app/templates/pages/organizations/list.html:408
 msgid "合約名稱"
 msgstr "Contract name"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:153
-#: app/templates/pages/organizations/list.html:302
-#: app/templates/pages/organizations/list.html:388
+#: app/templates/pages/organizations/list.html:289
+#: app/templates/pages/organizations/list.html:375
 #: app/templates/pages/users/view.html:110
 msgid "開始日期"
 msgstr "Start Date"
 
-#: app/templates/pages/organizations/list.html:306
-#: app/templates/pages/organizations/list.html:390
-#: app/templates/pages/organizations/list.html:437
+#: app/templates/pages/organizations/list.html:293
+#: app/templates/pages/organizations/list.html:377
+#: app/templates/pages/organizations/list.html:424
 msgid "金額"
 msgstr "Amount"
 
-#: app/templates/pages/organizations/list.html:323
+#: app/templates/pages/organizations/list.html:310
 msgid "尚未生效"
 msgstr "Not yet effective"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:321
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:72
 #: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:48
-#: app/templates/pages/organizations/list.html:327
+#: app/templates/pages/organizations/list.html:314
 msgid "檢視"
 msgstr "View"
 
-#: app/templates/pages/organizations/list.html:333
+#: app/templates/pages/organizations/list.html:320
 msgid "此篩選條件下無合約"
 msgstr "There is no Contract in this filter"
 
-#: app/templates/pages/organizations/list.html:342
+#: app/templates/pages/organizations/list.html:329
 msgid "系統企業無需建立合約"
 msgstr "System Organization does not need to create Contract"
 
-#: app/templates/pages/organizations/list.html:344
+#: app/templates/pages/organizations/list.html:331
 msgid "尚無合約，點擊上方「+ 新增合約」建立"
 msgstr "There is no Contract yet, click \"+ Add Contract\" above to create one"
 
-#: app/templates/pages/organizations/list.html:355
+#: app/templates/pages/organizations/list.html:342
 msgid "請從左側選擇一家企業"
 msgstr "Please select a Organization from the left"
 
-#: app/templates/pages/organizations/list.html:356
+#: app/templates/pages/organizations/list.html:343
 msgid "查看詳情與合約管理"
 msgstr "View details and Contract management"
 
-#: app/templates/pages/organizations/list.html:384
+#: app/templates/pages/organizations/list.html:371
 msgid "合約建立後不可修改內容（稽核要求）。如需變更請建立新合約。"
 msgstr ""
 "The content of Contract cannot be modified after it is created (audit "
 "requirement). If you need to change, please create a new Contract."
 
-#: app/templates/pages/organizations/list.html:395
-#: app/templates/pages/organizations/list.html:452
+#: app/templates/pages/organizations/list.html:382
+#: app/templates/pages/organizations/list.html:439
 msgid "授權模組"
 msgstr "Authorized modules"
 
-#: app/templates/pages/organizations/list.html:408
+#: app/templates/pages/organizations/list.html:395
 msgid "停用此合約"
 msgstr "Deactivate this Contract"
 
-#: app/templates/pages/organizations/list.html:411
+#: app/templates/pages/organizations/list.html:398
 msgid "此合約已停用，不可再啟用"
 msgstr "This Contract has been disabled and cannot be enabled again"
 
-#: app/templates/pages/organizations/list.html:431
+#: app/templates/pages/organizations/list.html:418
 msgid "結束日期 *"
 msgstr "End date *"
 
-#: app/templates/pages/organizations/list.html:467
+#: app/templates/pages/organizations/list.html:454
 msgid "選擇此合約授權使用的功能模組"
 msgstr "Select the function module authorized for use by this Contract"
 
@@ -12701,6 +12566,19 @@ msgstr "(truncated)"
 msgid "沒有慢查詢紀錄"
 msgstr "No slow query record"
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:136
+#: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:170
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:400
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:54
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:240
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:324
+#: ../modules/open_defense/templates/modules/open_defense/security_cases.html:350
+#: app/templates/pages/server_manage/redis_monitor.html:217
+msgid "時間"
+msgstr "Time"
+
 #: ../modules/form_workflow/templates/modules/form_workflow/ai_usage.html:177
 #: app/templates/pages/server_manage/redis_monitor.html:218
 msgid "耗時"
@@ -13336,7 +13214,7 @@ msgid "尚未參加任何社團"
 msgstr "Not yet joined any club"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:109
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:543
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:532
 #: app/templates/partials/_code_input.html:16
 msgid "建議:"
 msgstr "Suggestions:"
@@ -13403,10 +13281,6 @@ msgstr "Category %(name)s deleted"
 #: app/web/approval_categories.py:455
 msgid "已儲存核決上限"
 msgstr "Approval limits saved"
-
-#: app/web/cg_databases.py:139
-msgid "(集團已刪除)"
-msgstr "(conglomerate deleted)"
 
 #: app/web/dev.py:267 app/web/dev.py:371
 msgid "找不到子系統，或此子系統沒有 portal.db"
@@ -14013,8 +13887,8 @@ msgstr "Administrator %(name)s deleted"
 msgid "請使用「變更密碼」功能修改自己的密碼"
 msgstr "Please use the \"Change Password\" function to change your own password"
 
-#: app/web/org_databases.py:145 app/web/org_databases.py:359
-#: app/web/org_databases.py:407
+#: app/web/org_databases.py:145 app/web/org_databases.py:362
+#: app/web/org_databases.py:410
 msgid "憑證解密失敗，請檢查伺服器環境設定"
 msgstr ""
 "Credential decryption failed. Please check the server environment "
@@ -14036,48 +13910,48 @@ msgstr "Failed to provision the organization database"
 msgid "刪除孤兒資料庫失敗，請稍後再試"
 msgstr "Failed to delete the orphan database, please try again later"
 
-#: app/web/org_databases.py:294
+#: app/web/org_databases.py:296
 msgid "刪除孤兒資料庫失敗"
 msgstr "Failed to delete the orphan database"
 
-#: app/web/org_databases.py:313
+#: app/web/org_databases.py:316
 msgid "刪除孤兒角色失敗，請稍後再試"
 msgstr "Failed to delete orphan roles, please try again later"
 
-#: app/web/org_databases.py:457
+#: app/web/org_databases.py:460
 msgid "企業資料庫不存在"
 msgstr "Organization database not found"
 
-#: app/web/org_databases.py:495
+#: app/web/org_databases.py:498
 msgid "無效的表名格式"
 msgstr "Invalid table name format"
 
-#: app/web/org_databases.py:505
+#: app/web/org_databases.py:508
 msgid "企業資料庫不存在，可能尚未建立或已被移除"
 msgstr ""
 "Organization database not found; it may not have been created or has been"
 " removed"
 
-#: app/web/org_databases.py:506
+#: app/web/org_databases.py:509
 #, python-format
 msgid "資料庫連線失敗: %(error)s"
 msgstr "Database connection failed: %(error)s"
 
-#: app/web/org_databases.py:513
+#: app/web/org_databases.py:516
 #, python-format
 msgid "資料表 %(table)s 不存在"
 msgstr "Table %(table)s does not exist"
 
-#: app/web/org_databases.py:545
+#: app/web/org_databases.py:548
 #, python-format
 msgid "查詢失敗: %(error)s"
 msgstr "Query failed: %(error)s"
 
-#: app/web/org_databases.py:634
+#: app/web/org_databases.py:637
 msgid "無效表名"
 msgstr "Invalid table name"
 
-#: app/web/org_databases.py:638
+#: app/web/org_databases.py:641
 msgid "表不存在"
 msgstr "Table does not exist"
 
@@ -15864,20 +15738,6 @@ msgstr "Reviewer"
 msgid "理由"
 msgstr "Justification"
 
-#: ../modules/spec_formulate/api/_mf_cg.py:29
-msgid "此企業不屬於任何集團"
-msgstr "This organization does not belong to any conglomerate"
-
-#: ../modules/spec_formulate/api/_mf_cg.py:43
-msgid "此集團尚未建立共享資料庫"
-msgstr "This conglomerate has no shared database yet"
-
-#: ../modules/spec_formulate/api/_mf_cg.py:63
-#: ../modules/spec_formulate/api/_mf_cg.py:94
-#: ../modules/spec_formulate/api/_mf_cg.py:144
-#: ../modules/spec_formulate/api/_mf_cg.py:171
-#: ../modules/spec_formulate/api/_mf_cg.py:213
-#: ../modules/spec_formulate/api/_mf_cg.py:289
 #: ../modules/spec_formulate/api/_mf_export.py:51
 #: ../modules/spec_formulate/api/_mf_export.py:183
 #: ../modules/spec_formulate/api/_mf_form_link.py:39
@@ -15902,45 +15762,6 @@ msgstr "This conglomerate has no shared database yet"
 #: ../modules/spec_formulate/api/_mf_specs_crud.py:405
 msgid "無法取得企業資訊"
 msgstr "Unable to get organization info"
-
-#: ../modules/spec_formulate/api/_mf_cg.py:183
-#: ../modules/spec_formulate/api/_mf_cg.py:225
-#: ../modules/spec_formulate/api/_mf_cg.py:301
-#: ../modules/spec_formulate/api/_mf_form_link.py:48
-#: ../modules/spec_formulate/api/_mf_form_link.py:219
-#: ../modules/spec_formulate/api/_mf_form_link.py:278
-#: ../modules/spec_formulate/api/_mf_form_link.py:311
-#: ../modules/spec_formulate/api/_mf_form_link.py:375
-#: ../modules/spec_formulate/api/_mf_pg.py:109
-#: ../modules/spec_formulate/api/_mf_pg.py:143
-#: ../modules/spec_formulate/api/_mf_pg.py:210
-#: ../modules/spec_formulate/api/_mf_pg.py:253
-#: ../modules/spec_formulate/api/_mf_specs_crud.py:210
-#: ../modules/spec_formulate/api/_mf_specs_crud.py:251
-#: ../modules/spec_formulate/api/_mf_specs_crud.py:338
-#: ../modules/spec_formulate/api/_mf_specs_crud.py:370
-#: ../modules/spec_formulate/api/_mf_specs_crud.py:414
-msgid "規格不存在"
-msgstr "Spec not found"
-
-#: ../modules/spec_formulate/api/_mf_cg.py:230
-#: ../modules/spec_formulate/api/_mf_pg.py:148
-msgid "此規格尚未啟用 PostgreSQL 格式"
-msgstr "This spec has not enabled the PostgreSQL facet"
-
-#: ../modules/spec_formulate/api/_mf_cg.py:236
-#: ../modules/spec_formulate/api/_mf_cg.py:306
-#: ../modules/spec_formulate/api/_mf_pg.py:156
-#: ../modules/spec_formulate/api/_mf_pg.py:215
-msgid "請指定資料表名稱"
-msgstr "Specify a table name"
-
-#: ../modules/spec_formulate/api/_mf_cg.py:241
-#: ../modules/spec_formulate/api/_mf_pg.py:163
-msgid "資料表名稱只能包含小寫英文、數字和底線，且以英文開頭"
-msgstr ""
-"Table names may only contain lowercase letters, digits and underscores, "
-"and must start with a letter"
 
 #: ../modules/spec_formulate/api/_mf_export.py:56
 #: ../modules/spec_formulate/api/_mf_export.py:188
@@ -15981,6 +15802,23 @@ msgstr "%(name)s v%(version)s has inactive facets: %(facets)s"
 #, python-format
 msgid "匯出失敗: %(error)s"
 msgstr "Export failed: %(error)s"
+
+#: ../modules/spec_formulate/api/_mf_form_link.py:48
+#: ../modules/spec_formulate/api/_mf_form_link.py:219
+#: ../modules/spec_formulate/api/_mf_form_link.py:278
+#: ../modules/spec_formulate/api/_mf_form_link.py:311
+#: ../modules/spec_formulate/api/_mf_form_link.py:375
+#: ../modules/spec_formulate/api/_mf_pg.py:109
+#: ../modules/spec_formulate/api/_mf_pg.py:143
+#: ../modules/spec_formulate/api/_mf_pg.py:210
+#: ../modules/spec_formulate/api/_mf_pg.py:253
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:210
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:251
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:338
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:370
+#: ../modules/spec_formulate/api/_mf_specs_crud.py:414
+msgid "規格不存在"
+msgstr "Spec not found"
 
 #: ../modules/spec_formulate/api/_mf_form_link.py:118
 msgid "此表單尚未關聯規格"
@@ -16047,6 +15885,21 @@ msgstr "Form \"%(name)s\" (%(code)s) created and linked"
 #, python-format
 msgid "資料庫建立失敗: %(error)s"
 msgstr "Database creation failed: %(error)s"
+
+#: ../modules/spec_formulate/api/_mf_pg.py:148
+msgid "此規格尚未啟用 PostgreSQL 格式"
+msgstr "This spec has not enabled the PostgreSQL facet"
+
+#: ../modules/spec_formulate/api/_mf_pg.py:156
+#: ../modules/spec_formulate/api/_mf_pg.py:215
+msgid "請指定資料表名稱"
+msgstr "Specify a table name"
+
+#: ../modules/spec_formulate/api/_mf_pg.py:163
+msgid "資料表名稱只能包含小寫英文、數字和底線，且以英文開頭"
+msgstr ""
+"Table names may only contain lowercase letters, digits and underscores, "
+"and must start with a letter"
 
 #: ../modules/spec_formulate/api/_mf_pg.py:259
 msgid "已解除資料表關聯"
@@ -16148,50 +16001,34 @@ msgstr "fields[%(i)s] is not a valid object"
 msgid "field_key 重複: %(key)s"
 msgstr "Duplicate field_key: %(key)s"
 
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:302
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:702
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:297
 #, python-format
 msgid "%(fk)s: 無 PostgreSQL facet，使用預設型別 %(pg_type)s"
 msgstr "%(fk)s: no PostgreSQL facet, using default type %(pg_type)s"
 
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:329
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:727
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:324
 msgid "無有效欄位可建立資料表"
 msgstr "No valid fields to create a table"
 
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:407
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:402
 #, python-format
 msgid "資料表 %(table)s 建立成功"
 msgstr "Table %(table)s created successfully"
 
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:452
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:899
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:447
 #, python-format
 msgid "%(fk)s: SERIAL 型別無法透過 ALTER 修改，目前為 %(db_type)s"
 msgstr "%(fk)s: SERIAL type cannot be changed via ALTER; currently %(db_type)s"
 
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:471
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:921
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:466
 #, python-format
 msgid "已執行 %(n)s 項變更"
 msgstr "%(n)s changes applied"
 
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:472
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:922
+#: ../modules/spec_formulate/services/schema/pg_table_manager.py:467
 #, python-format
 msgid "，%(n)s 項失敗"
 msgstr ", %(n)s failed"
-
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:829
-#, python-format
-msgid "集團共享資料表 %(table)s 建立成功（含 RLS）"
-msgstr "Conglomerate shared table %(table)s created successfully (with RLS)"
-
-#: ../modules/spec_formulate/services/schema/pg_table_manager.py:869
-msgid "權限不足：只有建立此表的企業才能修改結構"
-msgstr ""
-"Permission denied: only the organization that created this table can "
-"modify its structure"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:3
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:15
@@ -16217,7 +16054,7 @@ msgstr "Reload"
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:19
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:153
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:68
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:565
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:554
 msgid "製作規格書"
 msgstr "Build Specification"
 
@@ -16238,8 +16075,8 @@ msgstr "Create the first spec"
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:34
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:38
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:92
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:145
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:526
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:134
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:515
 msgid "規格名稱"
 msgstr "Spec Name"
 
@@ -16259,24 +16096,24 @@ msgid "最後修改"
 msgstr "last modified"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:93
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:527
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:516
 msgid "例如：訂單資料表"
 msgstr "e.g. Order table"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:105
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:539
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:528
 msgid "採用建議"
 msgstr "Use suggestion"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:60
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:122
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:113
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:547
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:536
 msgid "描述（選填）"
 msgstr "Description (optional)"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:114
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:548
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:537
 msgid "規格用途說明"
 msgstr "Purpose of this spec"
 
@@ -16293,49 +16130,49 @@ msgid "此操作為軟刪除，資料不會真正移除。"
 msgstr "This is a soft delete; the data is not actually removed."
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:160
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:571
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:560
 msgid "文件標題"
 msgstr "Document Title"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:161
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:572
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:561
 msgid "資料結構規格書"
 msgstr "Data Structure Specification"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:166
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:575
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:564
 msgid "加入規格"
 msgstr "Add Spec"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:174
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:583
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:572
 msgid "-- 選擇規格 --"
 msgstr "-- Select spec --"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:184
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:591
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:580
 msgid "請從上方下拉選單加入規格"
 msgstr "Add specs from the dropdown above"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:46
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:198
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:603
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:592
 msgid "版本:"
 msgstr "Version:"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:223
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:627
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:616
 msgid "此版本無已啟用格式"
 msgstr "This version has no active facets"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:235
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:639
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:628
 msgid "匯出 DOCX"
 msgstr "Export DOCX"
 
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:236
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:640
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:646
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:629
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:635
 msgid "匯出中..."
 msgstr "Exporting..."
 
@@ -16364,174 +16201,170 @@ msgstr "Delete Selected"
 msgid "啟用格式:"
 msgstr "Active facets:"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:81
-msgid "企業 DB"
-msgstr "Organization DB"
-
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:89
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:438
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:80
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:427
 msgid "讀入資料表"
 msgstr "Read Table"
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:292
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:91
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:82
 msgid "新建資料表"
 msgstr "Create Table"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:99
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:121
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:88
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:110
 msgid "解除"
 msgstr "Unlink"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:77
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:112
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:101
 msgid "關聯表單"
 msgstr "Link Form"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:82
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:114
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:103
 msgid "建立表單"
 msgstr "Create Form"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:120
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:109
 msgid "同步回表單"
 msgstr "Sync to Form"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:144
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:133
 msgid "欄位定義表"
 msgstr "Field Definitions"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:109
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:157
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:488
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:146
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:477
 msgid "個欄位"
 msgstr "fields"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:200
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:165
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:154
 msgid "[+] 新增 10 列空白欄位"
 msgstr "[+] Add 10 blank field rows"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:176
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:165
 msgid "格式投影表"
 msgstr "Facet Projection"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:190
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:179
 msgid "格式映射"
 msgstr "Facet Mapping"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:211
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:200
 msgid "支援"
 msgstr "Supported"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:214
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:203
 msgid "不支援"
 msgstr "Not supported"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:228
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:217
 msgid "版本歷史表"
 msgstr "Version History"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:309
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:232
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:221
 msgid "無歷史記錄"
 msgstr "No history"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:288
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:242
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:231
 msgid "還原"
 msgstr "Restore"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:261
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:250
 msgid "+ 新增:"
 msgstr "+ Added:"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:269
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:258
 msgid "- 移除:"
 msgstr "- Removed:"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:277
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:266
 msgid "~ 修改:"
 msgstr "~ Modified:"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:403
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:298
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:287
 msgid "進階設定"
 msgstr "Advanced Settings"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:457
 #: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:269
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:311
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:300
 msgid "預設值"
 msgstr "Default Value"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:458
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:312
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:301
 msgid "(無)"
 msgstr "(none)"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:320
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:309
 msgid "結構屬性"
 msgstr "Structural Attributes"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:334
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:323
 msgid "FK 參照"
 msgstr "FK Reference"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:334
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:323
 msgid "（格式: table(column)）"
 msgstr "(format: table(column))"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:336
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:325
 msgid "例如: users(id)"
 msgstr "e.g. users(id)"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:346
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:335
 msgid "格式設定"
 msgstr "Facet Settings"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:348
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:337
 msgid "(此 data_class 不支援)"
 msgstr "(not supported by this data_class)"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:358
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:347
 msgid "尚未填充"
 msgstr "Not populated yet"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:533
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:325
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:492
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:365
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:354
 msgid "確認"
 msgstr "Confirm"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:374
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:363
 msgid "關聯表單模板"
 msgstr "Link Form Template"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:382
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:371
 msgid "目前沒有可關聯的表單模板"
 msgstr "No form templates available to link"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:385
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:374
 msgid "選擇表單模板"
 msgstr "Select Form Template"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:387
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:449
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:376
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:438
 msgid "-- 選擇 --"
 msgstr "-- Select --"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:563
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:398
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:387
 msgid "確認關聯"
 msgstr "Confirm Link"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:399
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:388
 msgid "關聯中..."
 msgstr "Linking..."
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:409
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:398
 msgid "建立 FormIO 表單"
 msgstr "Create FormIO Form"
 
@@ -16547,122 +16380,122 @@ msgstr "Create FormIO Form"
 #: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:104
 #: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:205
 #: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:126
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:415
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:404
 msgid "表單名稱"
 msgstr "Form Name"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:419
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:408
 msgid "表單代碼（選填，留空自動產生）"
 msgstr "Form code (optional, auto-generated if blank)"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:427
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:416
 msgid "建立並關聯"
 msgstr "Create & Link"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:447
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:436
 msgid "選擇資料表"
 msgstr "Select Table"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:460
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:449
 msgid "結構完全一致"
 msgstr "Structures match exactly"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:466
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:455
 msgid "SPEC 有但資料表無:"
 msgstr "In SPEC but not in table:"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:473
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:462
 msgid "資料表有但 SPEC 無:"
 msgstr "In table but not in SPEC:"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:480
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:469
 msgid "型別不符:"
 msgstr "Type mismatch:"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:488
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:477
 msgid "相符:"
 msgstr "Matched:"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:498
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:487
 msgid "直接關聯"
 msgstr "Link Directly"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:504
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:493
 msgid "SPEC 的欄位定義覆蓋到資料表"
 msgstr "Apply the SPEC field definitions onto the table"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:505
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:494
 msgid "SPEC 覆蓋資料表"
 msgstr "Apply SPEC to Table"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:667
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:506
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:495
 msgid "執行中..."
 msgstr "Running..."
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:509
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:498
 msgid "直接關聯，不修改資料表"
 msgstr "Link directly without modifying the table"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:509
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:498
 msgid "僅關聯"
 msgstr "Link Only"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:520
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:509
 msgid "新增多面向規格"
 msgstr "New Multi-Facet Spec"
 
-#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:645
+#: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:634
 msgid "匯出 PDF"
 msgstr "Export PDF"
 
-#: ../modules/nocode_builder/api/__init__.py:747
+#: ../modules/nocode_builder/api/__init__.py:741
 msgid "此 Master 記錄已鎖定，無法修改關聯資料"
 msgstr "This Master record is locked and related data cannot be modified"
 
-#: ../modules/nocode_builder/api/__init__.py:999
-#: ../modules/nocode_builder/api/__init__.py:1110
+#: ../modules/nocode_builder/api/__init__.py:990
+#: ../modules/nocode_builder/api/__init__.py:1101
 #: ../modules/nocode_builder/api/template_api.py:272
 #: ../modules/nocode_builder/api/template_api.py:374
 msgid "Page IR validation failed"
 msgstr "Page IR validation failed"
 
-#: ../modules/nocode_builder/api/__init__.py:1183
+#: ../modules/nocode_builder/api/__init__.py:1174
 msgid "頁面已發布"
 msgstr "Page published"
 
-#: ../modules/nocode_builder/api/__init__.py:1216
+#: ../modules/nocode_builder/api/__init__.py:1207
 msgid "頁面已取消發布"
 msgstr "Page unpublished"
 
-#: ../modules/nocode_builder/api/__init__.py:1308
-#: ../modules/nocode_builder/api/__init__.py:1354
+#: ../modules/nocode_builder/api/__init__.py:1299
+#: ../modules/nocode_builder/api/__init__.py:1345
 msgid "非子系統成員"
 msgstr "Not a subsystem member"
 
-#: ../modules/nocode_builder/api/__init__.py:1323
-#: ../modules/nocode_builder/api/__init__.py:1371
-#: ../modules/nocode_builder/api/__init__.py:1382
+#: ../modules/nocode_builder/api/__init__.py:1314
+#: ../modules/nocode_builder/api/__init__.py:1362
+#: ../modules/nocode_builder/api/__init__.py:1373
 #, python-format
 msgid "您的角色 (%(role_type)s) 不允許此操作"
 msgstr "Your role (%(role_type)s) is not allowed to perform this action"
 
-#: ../modules/nocode_builder/api/__init__.py:1466
+#: ../modules/nocode_builder/api/__init__.py:1457
 msgid "子系統預設樣式已更新"
 msgstr "Subsystem default style updated"
 
-#: ../modules/nocode_builder/api/__init__.py:1508
+#: ../modules/nocode_builder/api/__init__.py:1499
 #, python-format
 msgid "已套用到 %(count)s 個頁面"
 msgstr "Applied to %(count)s pages"
 
 #: ../modules/form_workflow/api/backgrounds.py:103
-#: ../modules/nocode_builder/api/__init__.py:1593
+#: ../modules/nocode_builder/api/__init__.py:1584
 msgid "底圖上傳成功"
 msgstr "Background image uploaded"
 
 #: ../modules/form_workflow/api/backgrounds.py:189
-#: ../modules/nocode_builder/api/__init__.py:1625
+#: ../modules/nocode_builder/api/__init__.py:1616
 msgid "底圖已刪除"
 msgstr "Background image deleted"
 
@@ -17059,23 +16892,19 @@ msgstr "Page removed"
 msgid "您不是此子系統的成員"
 msgstr "You are not a member of this subsystem"
 
-#: ../modules/nocode_builder/api/sub_system_api.py:473
+#: ../modules/nocode_builder/api/sub_system_api.py:471
 msgid "企業資料庫"
 msgstr "Organization database"
 
-#: ../modules/nocode_builder/api/sub_system_api.py:482
-msgid "集團共享資料庫"
-msgstr "Conglomerate shared database"
-
-#: ../modules/nocode_builder/api/sub_system_api.py:494
+#: ../modules/nocode_builder/api/sub_system_api.py:481
 msgid "Portal 帳號資料庫"
 msgstr "Portal account database"
 
-#: ../modules/nocode_builder/api/sub_system_api.py:500
+#: ../modules/nocode_builder/api/sub_system_api.py:487
 msgid "Portal 公開資料庫"
 msgstr "Portal public database"
 
-#: ../modules/nocode_builder/api/sub_system_api.py:847
+#: ../modules/nocode_builder/api/sub_system_api.py:834
 msgid "(未知社群)"
 msgstr "(Unknown group)"
 
@@ -17136,22 +16965,10 @@ msgstr "Built-in templates cannot be deleted"
 msgid "模板已刪除"
 msgstr "Template deleted"
 
-#: ../modules/nocode_builder/services/crud_service.py:474
+#: ../modules/nocode_builder/services/crud_service.py:456
 #, python-format
 msgid "必填欄位缺少值且無法自動填入: %(names)s"
 msgstr "Required fields are missing values and cannot be auto-filled: %(names)s"
-
-#: ../modules/nocode_builder/services/crud_service.py:542
-msgid "找不到資料，或該筆資料屬於其他企業無法修改"
-msgstr ""
-"Data not found, or this record belongs to another organization and cannot"
-" be modified"
-
-#: ../modules/nocode_builder/services/crud_service.py:583
-msgid "找不到資料，或該筆資料屬於其他企業無法刪除"
-msgstr ""
-"Data not found, or this record belongs to another organization and cannot"
-" be deleted"
 
 #: ../modules/nocode_builder/services/data_bridge_service.py:122
 #: ../modules/nocode_builder/services/data_bridge_service.py:212
@@ -17260,69 +17077,33 @@ msgstr "Invalid source_db: %(source_db)s"
 msgid "target_db 不合法: %(target_db)s"
 msgstr "Invalid target_db: %(target_db)s"
 
-#: ../modules/nocode_builder/services/data_source_manager.py:124
-#: ../modules/nocode_builder/services/data_source_manager.py:395
+#: ../modules/nocode_builder/services/data_source_manager.py:123
+#: ../modules/nocode_builder/services/data_source_manager.py:394
 #, python-format
 msgid "SQLite 檔案不存在: %(path)s (子系統 %(sc)s 可能尚未初始化)"
 msgstr ""
 "SQLite file does not exist: %(path)s (subsystem %(sc)s may not be "
 "initialized)"
 
-#: ../modules/nocode_builder/services/db_connector.py:104
+#: ../modules/nocode_builder/services/db_connector.py:89
 #, python-format
 msgid "企業 %(org_sc)s 尚未建立專屬資料庫，請聯繫系統管理員"
 msgstr ""
 "Organization %(org_sc)s has not created a dedicated database. Contact the"
 " system administrator"
 
-#: ../modules/nocode_builder/services/db_connector.py:121
-#, python-format
-msgid "找不到企業 %(org_sc)s"
-msgstr "Organization %(org_sc)s not found"
-
-#: ../modules/nocode_builder/services/db_connector.py:126
-#, python-format
-msgid "企業 %(org_sc)s 不屬於任何集團，無法存取集團共享資料庫"
-msgstr ""
-"Organization %(org_sc)s does not belong to any conglomerate and cannot "
-"access the shared database"
-
-#: ../modules/nocode_builder/services/db_connector.py:136
-#, python-format
-msgid "集團 %(cg_sc)s 尚未建立共享資料庫，請聯繫系統管理員"
-msgstr ""
-"Conglomerate %(cg_sc)s has not created a shared database. Contact the "
-"system administrator"
-
-#: ../modules/nocode_builder/services/db_connector.py:160
+#: ../modules/nocode_builder/services/db_connector.py:110
 #, python-format
 msgid "%(db_name)s (企業資料庫)"
 msgstr "%(db_name)s (organization database)"
 
-#: ../modules/nocode_builder/services/db_connector.py:161
+#: ../modules/nocode_builder/services/db_connector.py:111
 msgid "(尚未建立企業資料庫)"
 msgstr "(Organization database has not been created)"
 
-#: ../modules/nocode_builder/services/db_connector.py:163
+#: ../modules/nocode_builder/services/db_connector.py:113
 msgid "(無法取得資料庫資訊)"
 msgstr "(Unable to get database information)"
-
-#: ../modules/nocode_builder/services/db_connector.py:175
-msgid "(不屬於任何集團)"
-msgstr "(Does not belong to any conglomerate)"
-
-#: ../modules/nocode_builder/services/db_connector.py:186
-#, python-format
-msgid "%(db_name)s (集團共享資料庫)"
-msgstr "%(db_name)s (conglomerate shared database)"
-
-#: ../modules/nocode_builder/services/db_connector.py:187
-msgid "(集團尚未建立共享資料庫)"
-msgstr "(The conglomerate has not created a shared database)"
-
-#: ../modules/nocode_builder/services/db_connector.py:189
-msgid "(無法取得集團資料庫資訊)"
-msgstr "(Unable to get conglomerate database information)"
 
 #: ../modules/nocode_builder/services/pageir_formflow_resources.py:119
 msgid "我送出的表單"
@@ -19621,49 +19402,49 @@ msgstr ""
 msgid "流程模板已刪除"
 msgstr "Workflow template deleted"
 
-#: ../modules/form_workflow/api/workflows.py:991
+#: ../modules/form_workflow/api/workflows.py:994
 msgid "子流程已建立"
 msgstr "Subworkflow has been created"
 
-#: ../modules/form_workflow/api/workflows.py:1019
+#: ../modules/form_workflow/api/workflows.py:1022
 msgid "找不到子流程"
 msgstr "Subworkflow not found"
 
-#: ../modules/form_workflow/api/workflows.py:1023
+#: ../modules/form_workflow/api/workflows.py:1026
 msgid "無法刪除通用子流程"
 msgstr "Unable to delete generic subworkflow"
 
-#: ../modules/form_workflow/api/workflows.py:1075
+#: ../modules/form_workflow/api/workflows.py:1078
 #, python-format
 msgid "此子流程正被「%(name)s」引用，無法刪除"
 msgstr ""
 "This sub-workflow is being referenced by \"%(name)s\" and cannot be "
 "deleted"
 
-#: ../modules/form_workflow/api/workflows.py:1105
+#: ../modules/form_workflow/api/workflows.py:1108
 #, python-format
 msgid "已刪除 %(count)s 個子流程"
 msgstr "%(count)s subworkflow deleted"
 
-#: ../modules/form_workflow/api/workflows.py:1231
+#: ../modules/form_workflow/api/workflows.py:1234
 #, python-format
 msgid "建立變數映射失敗: %(error)s"
 msgstr "Failed to create variable mapping: %(error)s"
 
-#: ../modules/form_workflow/api/workflows.py:1468
+#: ../modules/form_workflow/api/workflows.py:1471
 msgid "流程不存在"
 msgstr "Workflow does not exist"
 
-#: ../modules/form_workflow/api/workflows.py:1544
+#: ../modules/form_workflow/api/workflows.py:1547
 #, python-format
 msgid "取得配對表單失敗: %(error)s"
 msgstr "Failed to obtain pairing form: %(error)s"
 
-#: ../modules/form_workflow/api/workflows.py:1605
+#: ../modules/form_workflow/api/workflows.py:1608
 msgid "表單不存在"
 msgstr "form does not exist"
 
-#: ../modules/form_workflow/api/workflows.py:1659
+#: ../modules/form_workflow/api/workflows.py:1662
 #, python-format
 msgid "分析表單欄位失敗: %(error)s"
 msgstr "Failed to parse form fields: %(error)s"
@@ -20807,6 +20588,11 @@ msgstr "Specification version"
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:225
 msgid "Registry 數"
 msgstr "Registry number"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:134
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:243
+msgid "未建立"
+msgstr "Not created"
 
 #: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:157
 msgid "編輯規格"
@@ -24699,4 +24485,139 @@ msgstr "Workflow tree diagram - BeakPlatform"
 #~ "This database belongs to no existing "
 #~ "organization; a system administrator must "
 #~ "drop it manually via CLI"
+
+#~ msgid "此集團已有共享資料庫"
+#~ msgstr "This conglomerate already has a shared database"
+
+#~ msgid "集團資料庫總覽"
+#~ msgstr "Conglomerate database overview"
+
+#~ msgid "尚無任何集團資料庫"
+#~ msgstr "There are no Conglomerate databases yet"
+
+#~ msgid "未就緒"
+#~ msgstr "Not ready"
+
+#~ msgid "集團停用"
+#~ msgstr "Conglomerate deactivated"
+
+#~ msgid "此資料庫存在於 PostgreSQL 但無對應的 fw_conglomerate_databases 記錄。"
+#~ msgstr ""
+#~ "This database exists in PostgreSQL but"
+#~ " has no corresponding fw_conglomerate_databases"
+#~ " record."
+
+#~ msgid "可能是舊資料殘留或手動建立的資料庫。"
+#~ msgstr "It may be remnants of old data or a manually created database."
+
+#~ msgid "fw_conglomerate_databases 有此記錄但 PostgreSQL 中找不到對應的資料庫。"
+#~ msgstr ""
+#~ "fw_conglomerate_databases has this record but"
+#~ " the corresponding database cannot be "
+#~ "found in PostgreSQL."
+
+#~ msgid "可能已被手動刪除。"
+#~ msgstr "May have been manually removed."
+
+#~ msgid "集團代碼"
+#~ msgstr "Conglomerate code"
+
+#~ msgid "集團 ID"
+#~ msgstr "Conglomerate ID"
+
+#~ msgid "Admin 帳號"
+#~ msgstr "Admin account"
+
+#~ msgid "Member 帳號"
+#~ msgstr "Member account"
+
+#~ msgid "資料庫統計"
+#~ msgstr "Database Statistics"
+
+#~ msgid "目前成員企業"
+#~ msgstr "Current member Organization"
+
+#~ msgid "無成員企業"
+#~ msgstr "No memberOrganization"
+
+#~ msgid "異動歷程"
+#~ msgstr "Change process"
+
+#~ msgid "操作者"
+#~ msgstr "operator"
+
+#~ msgid "無異動記錄"
+#~ msgstr "No abnormal records"
+
+#~ msgid "共享資料庫："
+#~ msgstr "Shared database:"
+
+#~ msgid "已建立 ("
+#~ msgstr "Created ("
+
+#~ msgid "建立共享資料庫"
+#~ msgstr "Create a shared database"
+
+#~ msgid "(集團已刪除)"
+#~ msgstr "(conglomerate deleted)"
+
+#~ msgid "此企業不屬於任何集團"
+#~ msgstr "This organization does not belong to any conglomerate"
+
+#~ msgid "此集團尚未建立共享資料庫"
+#~ msgstr "This conglomerate has no shared database yet"
+
+#~ msgid "集團共享資料表 %(table)s 建立成功（含 RLS）"
+#~ msgstr "Conglomerate shared table %(table)s created successfully (with RLS)"
+
+#~ msgid "權限不足：只有建立此表的企業才能修改結構"
+#~ msgstr ""
+#~ "Permission denied: only the organization "
+#~ "that created this table can modify "
+#~ "its structure"
+
+#~ msgid "企業 DB"
+#~ msgstr "Organization DB"
+
+#~ msgid "集團共享資料庫"
+#~ msgstr "Conglomerate shared database"
+
+#~ msgid "找不到資料，或該筆資料屬於其他企業無法修改"
+#~ msgstr ""
+#~ "Data not found, or this record "
+#~ "belongs to another organization and "
+#~ "cannot be modified"
+
+#~ msgid "找不到資料，或該筆資料屬於其他企業無法刪除"
+#~ msgstr ""
+#~ "Data not found, or this record "
+#~ "belongs to another organization and "
+#~ "cannot be deleted"
+
+#~ msgid "找不到企業 %(org_sc)s"
+#~ msgstr "Organization %(org_sc)s not found"
+
+#~ msgid "企業 %(org_sc)s 不屬於任何集團，無法存取集團共享資料庫"
+#~ msgstr ""
+#~ "Organization %(org_sc)s does not belong "
+#~ "to any conglomerate and cannot access"
+#~ " the shared database"
+
+#~ msgid "集團 %(cg_sc)s 尚未建立共享資料庫，請聯繫系統管理員"
+#~ msgstr ""
+#~ "Conglomerate %(cg_sc)s has not created a"
+#~ " shared database. Contact the system "
+#~ "administrator"
+
+#~ msgid "(不屬於任何集團)"
+#~ msgstr "(Does not belong to any conglomerate)"
+
+#~ msgid "%(db_name)s (集團共享資料庫)"
+#~ msgstr "%(db_name)s (conglomerate shared database)"
+
+#~ msgid "(集團尚未建立共享資料庫)"
+#~ msgstr "(The conglomerate has not created a shared database)"
+
+#~ msgid "(無法取得集團資料庫資訊)"
+#~ msgstr "(Unable to get conglomerate database information)"
 

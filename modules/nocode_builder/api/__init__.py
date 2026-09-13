@@ -59,15 +59,13 @@ def module_info():
 @api_bp.route('/db-info')
 @module_access_required('nocode_builder')
 def db_info():
-    """取得當前連線的資料庫資訊（支援 ?source=org|conglomerate）"""
-    from ..services.db_connector import get_db_display_name, check_cg_available
-    source = request.args.get('source', 'org')
+    """取得當前連線的資料庫資訊"""
+    from ..services.db_connector import get_db_display_name
     return jsonify({
         'success': True,
         'data': {
-            'db_name': get_db_display_name(data_source=source),
+            'db_name': get_db_display_name(),
             'is_system_admin': current_user.is_system_admin,
-            'cg_info': check_cg_available(),
         }
     })
 
@@ -79,16 +77,14 @@ def db_info():
 @api_bp.route('/schema/tables')
 @module_access_required('nocode_builder')
 def list_tables():
-    """列出可用資料表（支援 ?source=org|conglomerate）"""
+    """列出可用企業資料表"""
     from ..services.schema_service import SchemaService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
-
-    source = request.args.get('source', 'org')
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound
 
     try:
-        with get_data_conn(data_source=source) as conn:
+        with get_data_conn() as conn:
             tables = SchemaService.list_tables(conn)
-    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
+    except OrgDatabaseNotFound as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     return jsonify({'success': True, 'data': tables})
@@ -97,19 +93,17 @@ def list_tables():
 @api_bp.route('/schema/tables/<table_name>/columns')
 @module_access_required('nocode_builder')
 def get_table_columns(table_name):
-    """取得指定表的欄位（支援 ?source=org|conglomerate）"""
+    """取得指定企業資料表的欄位"""
     from ..services.schema_service import SchemaService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound
 
     if not IDENTIFIER_RE.match(table_name):
         return jsonify({'success': False, 'error': 'Invalid table name'}), 400
 
-    source = request.args.get('source', 'org')
-
     try:
-        with get_data_conn(data_source=source) as conn:
+        with get_data_conn() as conn:
             columns = SchemaService.get_columns(conn, table_name)
-    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
+    except OrgDatabaseNotFound as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if columns is None:
@@ -167,7 +161,7 @@ def create_view():
         return jsonify({'success': False, 'error': 'Invalid table name'}), 400
 
     data_source = data.get('data_source', 'org')
-    if data_source not in ('org', 'conglomerate'):
+    if data_source not in ('org',):
         return jsonify({'success': False, 'error': 'Invalid data_source'}), 400
 
     row_owner_scope = data.get('row_owner_scope', 'own')
@@ -582,7 +576,7 @@ def query_rows(secure_code):
     from ..services.crud_service import CrudService, FilterVariableNotSupported
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
-        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+        OrgDatabaseNotFound, PortalDatabaseNotFound,
     )
 
     view = ResourceGateway.get(
@@ -633,7 +627,7 @@ def query_rows(secure_code):
                 )
         else:
             # PostgreSQL 路徑
-            with get_data_conn(view.org_secure_code, view.data_source) as conn:
+            with get_data_conn(view.org_secure_code) as conn:
                 result = CrudService.query_rows(
                     conn=conn,
                     view=view,
@@ -646,7 +640,7 @@ def query_rows(secure_code):
                 )
     except FilterVariableNotSupported:
         return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
-    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
+    except (OrgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     return jsonify({'success': True, 'data': result})
@@ -660,7 +654,7 @@ def get_row(secure_code, row_id):
     from ..services.crud_service import CrudService, FilterVariableNotSupported
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
-        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+        OrgDatabaseNotFound, PortalDatabaseNotFound,
     )
 
     view = ResourceGateway.get(
@@ -684,11 +678,11 @@ def get_row(secure_code, row_id):
                     owner_ref=OWNER_REF_PLATFORM,
                 )
         else:
-            with get_data_conn(view.org_secure_code, view.data_source) as conn:
+            with get_data_conn(view.org_secure_code) as conn:
                 result = CrudService.get_row(conn=conn, view=view, row_id=row_id)
     except FilterVariableNotSupported:
         return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
-    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
+    except (OrgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:
@@ -730,7 +724,7 @@ def _check_formgrid_lock(request_obj):
         if not row_id_col:
             return None
 
-        with get_data_conn(master_view.org_secure_code, master_view.data_source) as conn:
+        with get_data_conn(master_view.org_secure_code) as conn:
             with conn.cursor() as cur:
                 query = psql.SQL('SELECT {} FROM {} WHERE {} = %s').format(
                     psql.Identifier('is_locked'),
@@ -762,7 +756,7 @@ def create_row(secure_code):
     from ..services.crud_service import CrudService, FilterVariableNotSupported
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
-        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+        OrgDatabaseNotFound, PortalDatabaseNotFound,
     )
 
     view = ResourceGateway.get(
@@ -800,14 +794,13 @@ def create_row(secure_code):
                     owner_ref=OWNER_REF_PLATFORM,
                 )
         else:
-            with get_data_conn(view.org_secure_code, view.data_source) as conn:
+            with get_data_conn(view.org_secure_code) as conn:
                 result = CrudService.create_row(
                     conn=conn, view=view, row_data=data,
-                    is_conglomerate=(view.data_source == 'conglomerate'),
                 )
     except FilterVariableNotSupported:
         return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
-    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
+    except (OrgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:
@@ -824,7 +817,7 @@ def update_row(secure_code, row_id):
     from ..services.crud_service import CrudService, FilterVariableNotSupported
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
-        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+        OrgDatabaseNotFound, PortalDatabaseNotFound,
     )
 
     view = ResourceGateway.get(
@@ -863,14 +856,13 @@ def update_row(secure_code, row_id):
                     owner_ref=OWNER_REF_PLATFORM,
                 )
         else:
-            with get_data_conn(view.org_secure_code, view.data_source) as conn:
+            with get_data_conn(view.org_secure_code) as conn:
                 result = CrudService.update_row(
                     conn=conn, view=view, row_id=row_id, row_data=data,
-                    is_conglomerate=(view.data_source == 'conglomerate'),
                 )
     except FilterVariableNotSupported:
         return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
-    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
+    except (OrgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:
@@ -887,7 +879,7 @@ def delete_row(secure_code, row_id):
     from ..services.crud_service import CrudService, FilterVariableNotSupported
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
-        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+        OrgDatabaseNotFound, PortalDatabaseNotFound,
     )
 
     view = ResourceGateway.get(
@@ -924,14 +916,13 @@ def delete_row(secure_code, row_id):
                     owner_ref=OWNER_REF_PLATFORM,
                 )
         else:
-            with get_data_conn(view.org_secure_code, view.data_source) as conn:
+            with get_data_conn(view.org_secure_code) as conn:
                 result = CrudService.delete_row(
                     conn=conn, view=view, row_id=row_id,
-                    is_conglomerate=(view.data_source == 'conglomerate'),
                 )
     except FilterVariableNotSupported:
         return jsonify({'success': False, 'error': 'filter_variable_not_supported'}), 400
-    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
+    except (OrgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:

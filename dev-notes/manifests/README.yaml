@@ -77,7 +77,6 @@ url_index:
   # === 資料庫監視 ===
   /organizations/databases:      org-databases.yaml
   /admin/org-database:           org-databases.yaml
-  /admin/cg-databases:           cg-databases.yaml
 
   # === 頁面與查詢表 ===
   /p/*:                          pages-mgmt.yaml
@@ -134,7 +133,6 @@ manifest_files:
   - numbering.yaml               # 帳號編號規則
   - lookup.yaml                  # 查詢表
   - org-databases.yaml           # 企業資料庫監視
-  - cg-databases.yaml            # 集團資料庫總覽
   - profile.yaml                 # 個人檔案
   - pages-mgmt.yaml              # 頁面管理
   - code-service.yaml            # 代碼生成服務

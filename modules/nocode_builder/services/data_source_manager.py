@@ -11,7 +11,6 @@ Data CRUD Module - DataSourceManager
 data_source 類型:
   'main'        → 主 DB (PostgreSQL)，不經此模組
   'org'         → 企業 DB (PostgreSQL)，不經此模組
-  'conglomerate'→ 集團 DB (PostgreSQL)，不經此模組
   'portal'      → 子系統帳號角色 DB (SQLite)
   'portal_data' → 子系統公開資料 DB (SQLite)
 """

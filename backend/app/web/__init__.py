@@ -130,10 +130,6 @@ def register_web_blueprints(app: Flask) -> None:
     from .org_databases import org_databases_bp
     app.register_blueprint(org_databases_bp)
 
-    # Conglomerate Database Overview (集團資料庫總覽)
-    from .cg_databases import cg_databases_bp
-    app.register_blueprint(cg_databases_bp)
-
     # Access Center (權限管理中心)
     app.register_blueprint(access_center_bp, url_prefix='/access')
 

@@ -23,6 +23,7 @@
 | 流程設計器、graph 操作、publish | `dev-notes/WORKFLOW_DESIGNER_NOTES.md` |
 | 企業行事曆（投影來源、受眾規則、二三期入口） | `dev-notes/CALENDAR_SPEC.md`（PF-229） |
 | 企業專屬資料庫（建立／刪除／健康／佈建憑證） | `dev-notes/ORG_DATABASE_LIFECYCLE.md`（PF-256） |
+| 集團共用資料庫為什麼不在了（看到 `cg_*`／`conglomerate` 殘留先讀這份） | `dev-notes/CONGLOMERATE_SHARED_DB_RETIRED.md`（PF-269，2026-09-13 刻意移除，集團分群保留） |
 | 節點型別規格（AiAgent / SysSqlExecutor / OsExecutor / 盤點） | `dev-notes/AI_NODE_SECURITY.md`、`dev-notes/SQL_EXECUTOR_SPEC.md`、`dev-notes/OS_EXECUTOR_SPEC.md`、`dev-notes/NODE_TEST_INVENTORY.md` |
 
 **維護原則**：新的踩坑先問「這是 codex 猜不到的專案特有事實，還是通用工程常識？」

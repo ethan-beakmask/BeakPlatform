@@ -17,8 +17,8 @@
 目前住在裡面的資料：企業級對照表（`lookup_categories` / `lookup_items`，
 含簽核片語）、表單 SQL Sync 的同步表、規格制定模組的實體表。
 
-集團庫 `cg_<id>`（`cgadmin_*` / `cgmember_*`）是平行的一套，
-除了「安裝時建立」這件事之外，本文的規則同樣適用。
+集團共用庫 `cg_<id>`（`cgadmin_*` / `cgmember_*`）已於 2026-09-13 依 PF-269 移除；
+看到這類庫或角色一律是歷史殘留，直接刪。
 
 ## 二、佈建憑證：不需要 superuser（2026-09-12 起）
 
@@ -163,7 +163,7 @@ DROP DATABASE / DROP ROLE    <- 必須在 commit 之後（交易若回滾，企�
 `REVOKE CONNECT ... FROM PUBLIC`，直接呼叫會整句 `InsufficientPrivilege`
 （實測 `permission denied for database org_106`）。
 一律包 `CASE WHEN has_database_privilege(datname, 'CONNECT') THEN ... ELSE NULL END`。
-`backend/app/web/cg_databases.py` 原本為了這件事開一條 superuser 連線，已於同批次改掉。
+已退役的集團資料庫總覽曾經為了這件事開一條 superuser 連線，後續已移除。
 
 ## 八、驗收憑證
 

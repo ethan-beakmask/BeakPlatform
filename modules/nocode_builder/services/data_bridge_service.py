@@ -440,7 +440,7 @@ class DataBridgeService:
         key_field = rule.get('key_field', 'secure_code')
 
         # 判斷方向
-        if source_db in ('org', 'conglomerate') and target_db == 'portal_data':
+        if source_db in ('org',) and target_db == 'portal_data':
             # PG -> SQLite
             if not record_key:
                 return {'success': False, 'error': _('PG->SQLite 方向需要 record_key')}
@@ -458,7 +458,7 @@ class DataBridgeService:
                 rule_id=rule_id,
             )
 
-        elif source_db == 'portal_data' and target_db in ('org', 'conglomerate'):
+        elif source_db == 'portal_data' and target_db in ('org',):
             # SQLite -> PG (受限)
             if not collect_context:
                 return {'success': False, 'error': _('SQLite->PG 方向需要 collect_context')}
@@ -521,7 +521,7 @@ class DataBridgeService:
 
         source_db = rule.get('source_db', '')
         target_db = rule.get('target_db', '')
-        valid_dbs = {'org', 'conglomerate', 'portal_data'}
+        valid_dbs = {'org', 'portal_data'}
         if source_db not in valid_dbs:
             errors.append(_('source_db 不合法: %(source_db)s', source_db=source_db))
         if target_db not in valid_dbs:
@@ -569,7 +569,7 @@ class DataBridgeService:
         )
 
         rows = []
-        with get_data_conn(org_secure_code, 'org') as conn:
+        with get_data_conn(org_secure_code) as conn:
             with conn.cursor() as cur:
                 cur.execute(query, where_values)
                 col_names = [desc[0] for desc in cur.description]
@@ -686,7 +686,7 @@ class DataBridgeService:
         from psycopg2 import sql as psql
 
         affected = 0
-        with get_data_conn(org_secure_code, 'org') as conn:
+        with get_data_conn(org_secure_code) as conn:
             for row in sqlite_rows:
                 mapped = self._map_fields(row, field_mapping)
                 if not mapped:

@@ -442,12 +442,10 @@ def list_data_sources(secure_code):
 
     回傳:
       - 企業 DB (若已建立)
-      - 集團 DB (若企業屬於集團且有共享 DB)
       - Portal 帳號 DB (若子系統已初始化 SQLite)
       - Portal 資料 DB (若子系統已初始化 SQLite)
     """
     from ..models import DcSubSystem
-    from ..services.db_connector import check_cg_available
     from ..services.data_source_manager import DataSourceManager
 
     ss = ResourceGateway.get(
@@ -475,17 +473,6 @@ def list_data_sources(secure_code):
         'available': bool(org_db),
     })
 
-    # 集團 DB
-    cg_info = check_cg_available(org_sc)
-    sources.append({
-        'key': 'conglomerate',
-        'label': _('集團共享資料庫') + (
-            f' ({cg_info["conglomerate_name"]})' if cg_info.get('conglomerate_name') else ''
-        ),
-        'db_name': cg_info.get('db_name'),
-        'available': cg_info.get('available', False),
-    })
-
     # Portal SQLite (子系統有初始化才顯示)
     mgr = DataSourceManager()
     has_sqlite = mgr.has_sqlite(ss.secure_code)
@@ -511,16 +498,16 @@ def list_source_tables(secure_code, source_key):
     """
     列出指定資料來源下的可用表
 
-    source_key: 'org', 'conglomerate', 'portal', 'portal_data'
+    source_key: 'org', 'portal', 'portal_data'
     """
     from ..models import DcSubSystem
     from ..services.schema_service import SchemaService
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
-        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+        OrgDatabaseNotFound, PortalDatabaseNotFound,
     )
 
-    _VALID_SOURCES = ('org', 'conglomerate', 'portal', 'portal_data')
+    _VALID_SOURCES = ('org', 'portal', 'portal_data')
     if source_key not in _VALID_SOURCES:
         return jsonify({'success': False, 'error': f'Unknown source: {source_key}'}), 400
 
@@ -538,9 +525,9 @@ def list_source_tables(secure_code, source_key):
             with get_sqlite_session(ss.secure_code, source_key) as session:
                 tables = SqliteSchemaService.list_tables(session)
         else:
-            with get_data_conn(ss.org_secure_code, data_source=source_key) as conn:
+            with get_data_conn(ss.org_secure_code) as conn:
                 tables = SchemaService.list_tables(conn)
-    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
+    except (OrgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     return jsonify({'success': True, 'data': tables})
@@ -553,7 +540,7 @@ def resolve_view(secure_code):
     """
     為指定的資料來源+表取得或自動建立 View
 
-    Body: { "data_source": "org|conglomerate|portal|portal_data", "table_name": "xxx" }
+    Body: { "data_source": "org|portal|portal_data", "table_name": "xxx" }
 
     邏輯:
     1. 找同 org + table_name + data_source 的既有 active view -> 回傳
@@ -563,10 +550,10 @@ def resolve_view(secure_code):
     from ..services.schema_service import SchemaService
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
-        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+        OrgDatabaseNotFound, PortalDatabaseNotFound,
     )
 
-    _VALID_SOURCES = ('org', 'conglomerate', 'portal', 'portal_data')
+    _VALID_SOURCES = ('org', 'portal', 'portal_data')
 
     ss = ResourceGateway.get(
         DcSubSystem, secure_code,
@@ -604,9 +591,9 @@ def resolve_view(secure_code):
             with get_sqlite_session(ss.secure_code, data_source) as session:
                 columns = SqliteSchemaService.get_columns(session, table_name)
         else:
-            with get_data_conn(org_sc, data_source=data_source) as conn:
+            with get_data_conn(org_sc) as conn:
                 columns = SchemaService.get_columns(conn, table_name)
-    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
+    except (OrgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if columns is None:
@@ -663,11 +650,11 @@ def get_source_table_columns(secure_code, source_key, table_name):
     from ..services.schema_service import SchemaService
     from ..services.db_connector import (
         get_data_conn, get_sqlite_session, is_sqlite_source,
-        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+        OrgDatabaseNotFound, PortalDatabaseNotFound,
     )
     from ..services.sqlite_crud_service import _validate_identifier
 
-    _VALID_SOURCES = ('org', 'conglomerate', 'portal', 'portal_data')
+    _VALID_SOURCES = ('org', 'portal', 'portal_data')
     if source_key not in _VALID_SOURCES:
         return jsonify({'success': False, 'error': f'Unknown source: {source_key}'}), 400
 
@@ -688,9 +675,9 @@ def get_source_table_columns(secure_code, source_key, table_name):
             with get_sqlite_session(ss.secure_code, source_key) as session:
                 columns = SqliteSchemaService.get_columns(session, table_name)
         else:
-            with get_data_conn(ss.org_secure_code, data_source=source_key) as conn:
+            with get_data_conn(ss.org_secure_code) as conn:
                 columns = SchemaService.get_columns(conn, table_name)
-    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
+    except (OrgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if columns is None:

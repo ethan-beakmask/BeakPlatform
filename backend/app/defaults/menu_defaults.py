@@ -297,19 +297,6 @@ CORE_MENUS = [
         'required_level': 0,
         'is_shared': False,
     },
-    {
-        'code': 'cg_databases_overview',
-        'title': '集團資料庫總覽',
-        'title_i18n': {'en': 'Conglomerate Database Overview'},
-        'parent_code': 'org_management',
-        'link_type': 'route',
-        'link_target': 'cg_databases.overview',
-        'display_order': 3,
-        'depth': 1,
-        'required_level': 0,
-        'is_shared': False,
-    },
-
     # -- 主機管理 (servsr_manage) --
     {
         'code': 'redis_monitor',

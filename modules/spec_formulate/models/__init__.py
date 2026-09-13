@@ -7,11 +7,9 @@ Spec Formulate Module - Models
 from .base import ModuleBaseModel
 from .spec_schema import FwSpecSchema
 from .spec_schema_history import FwSpecSchemaHistory
-from .conglomerate_table_registry import FwConglomerateTableRegistry
 
 __all__ = [
     'ModuleBaseModel',
     'FwSpecSchema',
     'FwSpecSchemaHistory',
-    'FwConglomerateTableRegistry',
 ]

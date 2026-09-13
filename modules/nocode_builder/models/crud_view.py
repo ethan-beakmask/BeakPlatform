@@ -27,7 +27,7 @@ class DcCrudView(ModuleBaseModel):
     page_size = Column(Integer, default=20, nullable=False)
     fixed_filters = Column(JSONB, default=dict, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
-    # 資料來源: 'org' = 企業 DB (預設), 'conglomerate' = 集團共享 DB
+    # 資料來源: 'org' = 企業 DB (預設)
     data_source = Column(String(20), default='org', nullable=False, server_default='org')
     # 列級擁有權範圍: 'own' = 只能存取自己建的列（預設）, 'all' = 表級授權
     row_owner_scope = Column(String(8), default='own', nullable=False, server_default='own')

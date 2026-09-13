@@ -77,19 +77,6 @@
                         <button type="button" class="btn btn-danger btn-sm" @click="dissolveConglomerate()">{{ _('解散') }}</button>
                         <button type="button" class="btn btn-secondary btn-sm" @click="cancelEditConglomerate()">{{ _('取消') }}</button>
                     </div>
-                    <div style="display: flex; gap: 8px; align-items: center; font-size: 0.85em;">
-                        <span style="color: #6c757d;">{{ _('共享資料庫：') }}</span>
-                        <template x-if="editingConglomerate.has_shared_db">
-                            <span style="color: #198754;">{{ _('已建立 (') }}<span x-text="editingConglomerate.shared_db_name || ''"></span>)</span>
-                        </template>
-                        <template x-if="!editingConglomerate.has_shared_db">
-                            <span>
-                                <span style="color: #6c757d;">{{ _('未建立') }}</span>
-                                <button type="button" class="btn btn-primary btn-sm" style="margin-left: 4px;"
-                                        @click="provisionSharedDb()">{{ _('建立共享資料庫') }}</button>
-                            </span>
-                        </template>
-                    </div>
                 </div>
             </template>
         </div>

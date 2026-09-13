@@ -75,7 +75,7 @@ class FwSpecSchema(ModuleBaseModel):
     # 關聯 SQL 表名（nullable，套用後記錄）
     linked_sql_table = Column(String(100), nullable=True)
 
-    # 關聯 SQL 目標資料庫: 'org'=企業DB, 'conglomerate'=集團共享DB
+    # 關聯 SQL 目標資料庫：目前只有 'org'（集團共用 DB 已於 2026-09-13 PF-269 移除）
     linked_sql_target = Column(String(20), nullable=True)
 
     # 修改者

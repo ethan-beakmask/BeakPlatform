@@ -202,13 +202,11 @@ PasswordPolicyService.get_policy(org_secure_code)
 
 ### 機制
 - 企業有獨立的資料庫實例（透過 `FwOrgDatabase`）
-- 集團有共享資料庫（`Conglomerate.shared_db_*`）
 - 連線透過 `pool.get_org_conn(org_secure_code)` 取得
 
 ### 踩坑場景
 - 用主 DB 連線查企業獨立 DB 的表 → 找不到表或跨企業
 - 日誌中洩露企業 DB 的連線密碼
-- API 回傳中包含 `shared_db_password_encrypted`
 
 ---
 

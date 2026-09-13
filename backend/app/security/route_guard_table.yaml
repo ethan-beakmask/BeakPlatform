@@ -498,21 +498,6 @@ routes:
     rules:
     - /api/conglomerates
     source: backend/app/api/conglomerates.py
-  api_conglomerates.provision_shared_db:
-    answer_source: code
-    guard_args: {}
-    guards:
-    - system_admin_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - POST
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/conglomerates/<secure_code>/provision-db
-    source: backend/app/api/conglomerates.py
   api_conglomerates.update_conglomerate:
     answer_source: code
     guard_args: {}
@@ -4613,51 +4598,6 @@ routes:
     rules:
     - /calendar/
     source: backend/app/web/calendar.py
-  cg_databases.db_logs:
-    answer_source: code
-    guard_args: {}
-    guards:
-    - system_admin_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /admin/cg-databases/<conglomerate_secure_code>/logs
-    source: backend/app/web/cg_databases.py
-  cg_databases.overview:
-    answer_source: code
-    guard_args: {}
-    guards:
-    - system_admin_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /admin/cg-databases
-    source: backend/app/web/cg_databases.py
-  cg_databases.overview_data:
-    answer_source: code
-    guard_args: {}
-    guards:
-    - system_admin_required
-    has_internal_check: false
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /admin/cg-databases/data
-    source: backend/app/web/cg_databases.py
   departments.department_settings:
     answer_source: none
     guard_args: {}
@@ -7975,7 +7915,7 @@ routes:
     guards:
     - module_access_required
     - page_keys_required
-    has_internal_check: false
+    has_internal_check: true
     internal_identity_check: false
     max_audience: null
     methods:
@@ -13208,132 +13148,6 @@ routes:
     rules:
     - /api/spec-formulate/schema/available-templates
     source: modules/spec_formulate/api/_mf_form_link.py
-  spec_formulate_schema.cg_apply_to_table:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: spec_formulate
-      page_keys_required:
-        menu_code: spec_formulate.spec_schema
-    guards:
-    - module_access_required
-    - page_keys_required
-    has_internal_check: true
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - POST
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/spec-formulate/schema/specs/<spec_sc>/cg/apply-to-table
-    source: modules/spec_formulate/api/_mf_cg.py
-  spec_formulate_schema.cg_compare:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: spec_formulate
-      page_keys_required:
-        menu_code: spec_formulate.spec_schema
-    guards:
-    - module_access_required
-    - page_keys_required
-    has_internal_check: true
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/spec-formulate/schema/specs/<spec_sc>/cg/compare/<table_name>
-    source: modules/spec_formulate/api/_mf_cg.py
-  spec_formulate_schema.cg_create_table:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: spec_formulate
-      page_keys_required:
-        menu_code: spec_formulate.spec_schema
-    guards:
-    - module_access_required
-    - page_keys_required
-    has_internal_check: true
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - POST
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/spec-formulate/schema/specs/<spec_sc>/cg/create-table
-    source: modules/spec_formulate/api/_mf_cg.py
-  spec_formulate_schema.cg_info:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: spec_formulate
-      page_keys_required:
-        menu_code: spec_formulate.spec_schema
-    guards:
-    - module_access_required
-    - page_keys_required
-    has_internal_check: true
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/spec-formulate/schema/cg/info
-    source: modules/spec_formulate/api/_mf_cg.py
-  spec_formulate_schema.cg_introspect_table:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: spec_formulate
-      page_keys_required:
-        menu_code: spec_formulate.spec_schema
-    guards:
-    - module_access_required
-    - page_keys_required
-    has_internal_check: true
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/spec-formulate/schema/cg/tables/<table_name>/introspect
-    source: modules/spec_formulate/api/_mf_cg.py
-  spec_formulate_schema.cg_list_tables:
-    answer_source: db
-    guard_args:
-      module_access_required:
-        check_acl: true
-        module: spec_formulate
-      page_keys_required:
-        menu_code: spec_formulate.spec_schema
-    guards:
-    - module_access_required
-    - page_keys_required
-    has_internal_check: true
-    internal_identity_check: false
-    max_audience: null
-    methods:
-    - GET
-    note: ''
-    review: unreviewed
-    rules:
-    - /api/spec-formulate/schema/cg/tables
-    source: modules/spec_formulate/api/_mf_cg.py
   spec_formulate_schema.create_form:
     answer_source: db
     guard_args:

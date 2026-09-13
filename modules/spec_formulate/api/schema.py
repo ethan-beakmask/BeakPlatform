@@ -10,7 +10,6 @@ URL prefix: /api/spec-formulate/schema
   _mf_export.py      - DOCX / PDF 匯出
   _mf_form_link.py   - 版本清單、表單關聯/解連/同步/建立
   _mf_pg.py          - 企業專屬 DB 資料表操作
-  _mf_cg.py          - 集團共享 DB 資料表操作
 """
 from flask import Blueprint
 
@@ -25,10 +24,8 @@ from . import _mf_specs_crud
 from . import _mf_export
 from . import _mf_form_link
 from . import _mf_pg
-from . import _mf_cg
 
 _mf_specs_crud.register(schema_bp)
 _mf_export.register(schema_bp)
 _mf_form_link.register(schema_bp)
 _mf_pg.register(schema_bp)
-_mf_cg.register(schema_bp)

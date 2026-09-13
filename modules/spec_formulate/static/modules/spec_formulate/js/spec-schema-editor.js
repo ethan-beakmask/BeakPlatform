@@ -78,9 +78,6 @@ function specSchemaEditor() {
         // PostgreSQL 資料表
         linkedSqlTable: '',
         linkedSqlTarget: '',
-        pgTarget: 'org',          // 'org' or 'conglomerate'
-        cgDbAvailable: false,     // 企業是否屬於有共享 DB 的集團
-        cgDbName: '',             // 集團名稱（顯示用）
         showReadTableModal: false,
         pgTables: [],
         pgTablesLoading: false,
@@ -113,7 +110,6 @@ function specSchemaEditor() {
             this.csrfToken = meta ? meta.getAttribute('content') : '';
 
             await this.loadDataClasses();
-            this.loadCgInfo();
             this.loadSpecList();
             if (this.specSc) {
                 await this.loadSpec();
@@ -197,9 +193,6 @@ function specSchemaEditor() {
                     this.linkedFormTemplateName = s.linked_form_template_name || '';
                     this.linkedSqlTable = s.linked_sql_table || '';
                     this.linkedSqlTarget = s.linked_sql_target || '';
-                    if (this.linkedSqlTarget === 'conglomerate') {
-                        this.pgTarget = 'conglomerate';
-                    }
                     if (this.activeFacets.length > 0 && !this.activeFacetTab) {
                         this.activeFacetTab = this.activeFacets[0];
                     }
@@ -856,51 +849,14 @@ function specSchemaEditor() {
 
         // ── PostgreSQL 資料表 ──
 
-        async loadCgInfo() {
-            try {
-                var resp = await fetch(window.__BP + '/api/spec-formulate/schema/cg/info');
-                var data = await resp.json();
-                if (data.success && data.data.has_conglomerate_db) {
-                    this.cgDbAvailable = true;
-                    this.cgDbName = data.data.conglomerate_name || '';
-                }
-            } catch (e) {
-                // 無集團 DB 不影響正常功能
-            }
-        },
-
-        onPgTargetChange() {
-            // 切換目標時清除已載入的表列表
-            this.pgTables = [];
-            this.pgSelectedTable = '';
-            this.pgCompareResult = null;
-        },
-
         pgTableOptions() {
-            // 統一成 {value, label} 格式
-            // org: pgTables = ['name1', 'name2']
-            // conglomerate: pgTables = [{name, creator_org_name, is_owner}]
+            // 統一成 {value, label} 格式；pgTables = ['name1', 'name2']
             var result = [];
             for (var i = 0; i < this.pgTables.length; i++) {
                 var t = this.pgTables[i];
-                if (typeof t === 'string') {
-                    result.push({ value: t, label: t });
-                } else {
-                    var label = t.name;
-                    if (t.creator_org_name) {
-                        label += ' (' + t.creator_org_name;
-                        if (t.is_owner) label += ', ' + __('自己建立');
-                        label += ')';
-                    }
-                    result.push({ value: t.name, label: label });
-                }
+                result.push({ value: t, label: t });
             }
             return result;
-        },
-
-        // 根據 pgTarget 回傳 API 路徑前綴
-        _pgApiPrefix() {
-            return this.pgTarget === 'conglomerate' ? '/cg/' : '/pg/';
         },
 
         async openReadTableModal() {
@@ -909,16 +865,13 @@ function specSchemaEditor() {
             this.pgCompareResult = null;
             this.pgTables = [];
             this.pgTablesLoading = true;
-            var prefix = this._pgApiPrefix();
             try {
-                if (this.pgTarget === 'org') {
-                    // 企業 DB: 先確保存在
-                    await fetch(window.__BP + '/api/spec-formulate/schema/pg/ensure-db', {
-                        method: 'POST',
-                        headers: { 'X-CSRFToken': this.csrfToken },
-                    });
-                }
-                var resp = await fetch(window.__BP + '/api/spec-formulate/schema' + prefix + 'tables');
+                // 企業 DB: 先確保存在
+                await fetch(window.__BP + '/api/spec-formulate/schema/pg/ensure-db', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': this.csrfToken },
+                });
+                var resp = await fetch(window.__BP + '/api/spec-formulate/schema/pg/tables');
                 var data = await resp.json();
                 if (data.success) {
                     this.pgTables = data.data || [];
@@ -936,14 +889,11 @@ function specSchemaEditor() {
                 this.pgCompareResult = null;
                 return;
             }
-            var prefix = this._pgApiPrefix();
-            var tableName = this.pgTarget === 'conglomerate'
-                ? (this.pgSelectedTable.name || this.pgSelectedTable)
-                : this.pgSelectedTable;
+            var tableName = this.pgSelectedTable;
             try {
                 var resp = await fetch(
                     window.__BP + '/api/spec-formulate/schema/specs/' + this.specSc +
-                    prefix + 'compare/' + encodeURIComponent(tableName)
+                    '/pg/compare/' + encodeURIComponent(tableName)
                 );
                 var data = await resp.json();
                 if (data.success) {
@@ -958,11 +908,10 @@ function specSchemaEditor() {
 
         async pgLinkTable(tableName) {
             // 僅關聯，不修改資料表
-            var prefix = this._pgApiPrefix();
             try {
                 var resp = await fetch(
                     window.__BP + '/api/spec-formulate/schema/specs/' + this.specSc +
-                    prefix + 'apply-to-table',
+                    '/pg/apply-to-table',
                     {
                         method: 'POST',
                         headers: {
@@ -974,7 +923,7 @@ function specSchemaEditor() {
                 );
                 var data = await resp.json();
                 this.linkedSqlTable = tableName;
-                this.linkedSqlTarget = this.pgTarget;
+                this.linkedSqlTarget = 'org';
                 this.showReadTableModal = false;
                 this.showToast(__('已關聯資料表: {name}', {name: tableName}), 'success');
             } catch (e) {
@@ -985,14 +934,11 @@ function specSchemaEditor() {
         async pgApplySpecToTable() {
             if (!this.pgSelectedTable) return;
             this.pgApplying = true;
-            var prefix = this._pgApiPrefix();
-            var tableName = this.pgTarget === 'conglomerate'
-                ? (this.pgSelectedTable.name || this.pgSelectedTable)
-                : this.pgSelectedTable;
+            var tableName = this.pgSelectedTable;
             try {
                 var resp = await fetch(
                     window.__BP + '/api/spec-formulate/schema/specs/' + this.specSc +
-                    prefix + 'apply-to-table',
+                    '/pg/apply-to-table',
                     {
                         method: 'POST',
                         headers: {
@@ -1005,7 +951,7 @@ function specSchemaEditor() {
                 var data = await resp.json();
                 if (data.success) {
                     this.linkedSqlTable = tableName;
-                    this.linkedSqlTarget = this.pgTarget;
+                    this.linkedSqlTarget = 'org';
                     var toastMsg = data.message;
                     if (data.data && data.data.errors && data.data.errors.length > 0) {
                         toastMsg += ' (' + __('{n} 個失敗', {n: data.data.errors.length}) + ')';
@@ -1046,22 +992,19 @@ function specSchemaEditor() {
                 }
             }
 
-            var prefix = this._pgApiPrefix();
             try {
                 // 先儲存最新欄位（含 PG Type）
                 await this.saveSpec();
 
-                if (this.pgTarget === 'org') {
-                    // 確保企業 DB 存在
-                    await fetch(window.__BP + '/api/spec-formulate/schema/pg/ensure-db', {
-                        method: 'POST',
-                        headers: { 'X-CSRFToken': this.csrfToken },
-                    });
-                }
+                // 確保企業 DB 存在
+                await fetch(window.__BP + '/api/spec-formulate/schema/pg/ensure-db', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': this.csrfToken },
+                });
 
                 var resp = await fetch(
                     window.__BP + '/api/spec-formulate/schema/specs/' + this.specSc +
-                    prefix + 'create-table',
+                    '/pg/create-table',
                     {
                         method: 'POST',
                         headers: {
@@ -1074,7 +1017,7 @@ function specSchemaEditor() {
                 var data = await resp.json();
                 if (data.success) {
                     this.linkedSqlTable = this.specTableName;
-                    this.linkedSqlTarget = this.pgTarget;
+                    this.linkedSqlTarget = 'org';
                     var msg = data.message;
                     if (data.data && data.data.warnings && data.data.warnings.length > 0) {
                         msg += ' (' + __('{n} 個警告', {n: data.data.warnings.length}) + ')';

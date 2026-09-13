@@ -11,7 +11,6 @@ chapter_index: true
 
 - [企業與合約管理](organizations.md)
 - [企業獨立資料庫管理](org_databases.md)
-- [集團資料庫總覽](cg_databases.md)
 - [系統管理員帳號](sys_accounts.md)
 - [權限管理中心](access_center_system.md)
 - [選單管理](menu_manage.md)

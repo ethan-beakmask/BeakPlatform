@@ -215,29 +215,6 @@ function orgManager() {
             }
         },
 
-        async provisionSharedDb() {
-            if (!this.editingConglomerate) return;
-            if (!confirm(__('確定要為集團「') + this.editingConglomerate.name + __('」建立共享資料庫嗎？'))) return;
-
-            const sc = this.editingConglomerate.secure_code;
-            try {
-                const resp = await fetch(window.__BP + '/api/conglomerates/' + sc + '/provision-db', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': csrfToken }
-                });
-                const data = await resp.json();
-                if (resp.ok) {
-                    this.editingConglomerate.has_shared_db = true;
-                    this.editingConglomerate.shared_db_name = data.db_name;
-                    alert(__('共享資料庫建立成功: ') + data.db_name);
-                } else {
-                    alert(data.error || __('建立失敗'));
-                }
-            } catch (e) {
-                alert(__('建立失敗: ') + e.message);
-            }
-        },
-
         cancelEditConglomerate() {
             this.editingConglomerate = null;
             this.selectedOrgs = [];

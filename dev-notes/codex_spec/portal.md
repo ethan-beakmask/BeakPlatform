@@ -142,7 +142,7 @@ portal rows API、寫入 API 的白名單。漏一個就是破口。
   只能直接寫子系統的 `portal.db`
 - 建表 API 一律自動加 `id` / `created_at` / `portal_user_ref`，
   自行宣告這三欄會被擋成 `reserved_column_name`
-- `POST /views` 的 `data_source` 只收 `org` / `conglomerate`；
+- `POST /views` 的 `data_source` 只收 `org`；
   portal 業務表要用 `POST /sub-systems/<sc>/resolve-view`
   （會自動讀表結構生成 columns_config）
 - 登入一律走 `/dev/quick-login`（帳密多已失效，猜密碼會鎖定），

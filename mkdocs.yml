@@ -66,7 +66,6 @@ nav:
           - manual/02_platform_admin/index.md
           - 企業與合約管理: manual/02_platform_admin/organizations.md
           - 企業獨立資料庫管理: manual/02_platform_admin/org_databases.md
-          - 集團資料庫總覽: manual/02_platform_admin/cg_databases.md
           - 系統管理員帳號: manual/02_platform_admin/sys_accounts.md
           - 權限管理中心: manual/02_platform_admin/access_center_system.md
           - 選單管理: manual/02_platform_admin/menu_manage.md
