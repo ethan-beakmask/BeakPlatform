@@ -1948,7 +1948,7 @@ Ethan 提供的 Proxmox VM，用途是驗證「讀者照裝」路徑與 fresh �
 |---|---|
 | 平台側架構、intake、路由、案件、處置中心 | `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md`（第 13 節是從本檔移入的操作備忘：ClickHouse 查詢、三種處置流程、protected targets、intake HMAC 金鑰、EDL 黑名單） |
 | `.20` 主機（Vector / Suricata / CrowdSec / od-bridge / ClickHouse）與埠、SSH、風險定調 | `dev-notes/SEC_STACK_ARCHITECTURE.md`（第 11 節同上） |
-| **`.20` 從 2026-09-11 起是浮動服務 IP**：真 sec-vm 的管理 IP 是 **`.21`**、備援機 `.13`，誰持有 `.20` 誰在服務（cloudflared＋od-bridge 只在持有者上跑）。維運 ssh 走 `.21`／`.13`，切換一律用 `ITHome2026-WAF/failover.sh`，不要手動改 netplan 或 `ip addr` | `dev-notes/SEC_STACK_ARCHITECTURE.md` 第 12 節「熱備（warm standby）切換」 |
+| **`.20` 從 2026-09-11 起是浮動服務 IP**，誰持有 `.20` 誰在服務（cloudflared＋od-bridge 只在持有者上跑）。**2026-09-14 起只剩 `.13` 一台持有 `.20` 對外服務**；`.21` 已清空重裝成**讀者版防禦節點**（配 bpserv `.66` 的 DemoSOC，無 tunnel），**`failover.sh switch` 切到 `.21` 會壞**，要恢復熱備得從 `.16:/opt/tmp/backup/waf-21-pre-reinstall-20260914/env.21` 還原。切換一律用 `ITHome2026-WAF/failover.sh`，不要手動改 netplan 或 `ip addr` | `dev-notes/SEC_STACK_ARCHITECTURE.md` 第 12 節「熱備（warm standby）切換」 |
 | `.20` 設定檔權威 | **`ITHome2026-WAF/`**（2026-09-10 起；`.20` 的部署在 `.20:/opt/ithome2026-waf`，只有 `.env` 與 `generated/` 是主機專屬）。改設定＝改 `ITHome2026-WAF/` → rsync 到 `.20:/opt/ithome2026-waf` → `sudo bash install.sh --reconfigure`。舊的 `sec-vm-bootstrap/` 已退役封存在 `dev-notes/archive/sec-vm-bootstrap-retired-20260910/`（`.20` 本機是 `~/sec-vm-bootstrap_RETIRED_20260910`） |
 
 **讀者版一鍵安裝在 repo 頂層 `ITHome2026-WAF/`（2026-09-10 起，會推 GitHub）**：
