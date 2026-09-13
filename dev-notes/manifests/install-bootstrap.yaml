@@ -10,7 +10,12 @@ files:
     - scripts/init_menus.py
     - scripts/init_permissions.py
     - scripts/seed_system_org_defaults.py
+    - scripts/seed_demo_org.py
+    - scripts/seed_test_companies.py
     - scripts/check_schema_drift.sh
+  docs:
+    - docs/install/README.md
+    - docs/install/demo_data.md
   service:
     - backend/app/defaults/bootstrap.py
     - backend/app/defaults/platform_menu_defaults.py

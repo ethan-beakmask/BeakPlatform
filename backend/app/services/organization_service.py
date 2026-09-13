@@ -887,6 +887,7 @@ class OrganizationService:
         customer_type: str = CustomerType.FORMAL,
         user_limit: int = DEFAULT_ORG_USER_LIMIT,
         contract_amount: float = None,
+        modules_config=None,
         admin_username: str = 'admin',
         admin_password: str = None,
         created_by: str = None,
@@ -919,6 +920,11 @@ class OrganizationService:
             start_date=contract_start_date,
             end_date=contract_end_date,
             amount=contract_amount,
+            modules_config=(
+                json.dumps(modules_config)
+                if isinstance(modules_config, (list, tuple))
+                else modules_config
+            ),
             created_by=created_by
         )
 

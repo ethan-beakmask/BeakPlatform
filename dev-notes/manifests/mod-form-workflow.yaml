@@ -100,6 +100,7 @@ files:
   provisioning: # 建置表單工作流範例與標準配對
     - scripts/examples/provision_api_key_request_flow.py       # PF-160 API Key 申請單/流程/填寫權限
     - scripts/examples/provision_proxy_request_flow.py         # PF-251 代理指定申請單/流程/填寫權限
+    - scripts/examples/provision_hr_lookup_demo.py             # OpHrLookup 差旅費人事取值示範
   scripts:
     - scripts/node_grant.py                                # restricted 節點企業授權維運工具
   tests:

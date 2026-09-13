@@ -21,7 +21,7 @@
     這是為了讓空白企業能立即驗證收案；正式環境請依組織政策改成分流規則。
 
 用法
-    cd /opt/BeakPlatform-dev
+    cd <BeakPlatform 專案目錄>
     set -a && source .env && set +a
     venv/bin/python scripts/examples/provision_od_intake_for_org.py --org lion.com --apply
 
@@ -563,7 +563,6 @@ def ensure_api_key(db, ApiKey, org_sc, admin, source_systems, apply):
         wanted = {'od_intake': {'source_systems': source_systems}}
         if scopes != wanted:
             existing.scopes = wanted
-            db.session.commit()
             log(f'  已更新既有 API Key 白名單：{existing.key_id}')
         else:
             log(f'  API Key 已存在：{existing.key_id}')
@@ -624,19 +623,11 @@ def parse_args(argv):
     return parser.parse_args(argv)
 
 
-def main(argv=None):
-    argv = list(sys.argv[1:] if argv is None else argv)
-    if not argv:
-        log(__doc__)
-        return 0
+def provision(org_sc, apply, force=False, source_systems=None, skip_api_key=False,
+              assignee_role=DEFAULT_ASSIGNEE_ROLE):
+    source_systems = source_systems or ['elk']
 
-    args = parse_args(argv)
-    if not args.org:
-        raise SystemExit('缺少 --org。請指定企業 secure_code 或 domain_name，例如 --org lion.com')
-
-    source_systems = args.source_system or ['elk']
-
-    from app import create_app, db
+    from app import db
     from app.models import Organization, Role, User
     from app.models.api_key import ApiKey
     from modules.form_workflow.models import (
@@ -650,59 +641,103 @@ def main(argv=None):
         'FwPublishedFormWorkflow': FwPublishedFormWorkflow,
     }
 
+    org = resolve_org(Organization, org_sc)
+    role = ensure_assignee_role(Role, org.secure_code, assignee_role)
+    publisher = get_publisher(User, org.secure_code)
+
+    log(f'\n企業：{org.name} / {org.domain_name} / {org.secure_code}')
+    log(f'簽核角色：{role.code} / {role.secure_code}')
+    log(f'發行人：{publisher.email}')
+    if not apply:
+        log('\n預演模式：不會寫入任何資料。加上 --apply 才會實際建置。')
+
+    log('\n[1/6] 資安分類')
+    category = ensure_security_category(db, FwCategory, org.secure_code, apply)
+
+    log('\n[2/6] 表單模板')
+    form_tpl = ensure_form_template(
+        db, FwFormTemplate, org.secure_code, category, apply, force)
+
+    log('\n[3/6] 流程模板')
+    workflow_tpl = ensure_workflow_template(
+        db, FwWorkflowTemplate, org.secure_code, category,
+        role.secure_code, apply, force)
+
+    log('\n[4/6] 表單流程配對與發行')
+    mapping, published = ensure_mapping_and_publish(
+        db, models, org.secure_code, form_tpl, workflow_tpl, publisher, apply)
+
+    log('\n[5/6] 事件路由規則')
+    routing_rule = ensure_routing_rule(
+        db, OdFormTemplateMapping, org.secure_code, form_tpl, apply)
+    log('  提醒：catch-all 規則會讓任何 event_class 都收案；正式環境請依政策改成分流規則。')
+
+    key_record = None
+    key_secret = None
+    log('\n[6/6] API Key')
+    if skip_api_key:
+        log('  已依 --skip-api-key 略過')
+    else:
+        key_record, key_secret, _ = ensure_api_key(
+            db, ApiKey, org.secure_code, publisher, source_systems, apply)
+
+    return {
+        'org': org,
+        'category': category,
+        'form': form_tpl,
+        'workflow': workflow_tpl,
+        'mapping': mapping,
+        'published': published,
+        'routing_rule': routing_rule,
+        'api_key': key_record,
+        'api_key_secret': key_secret,
+        'source_systems': source_systems,
+    }
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if not argv:
+        log(__doc__)
+        return 0
+
+    args = parse_args(argv)
+    if not args.org:
+        raise SystemExit('缺少 --org。請指定企業 secure_code 或 domain_name，例如 --org lion.com')
+
+    from app import create_app, db
+
     app = create_app('development')
     with app.app_context():
         try:
-            org = resolve_org(Organization, args.org)
-            role = ensure_assignee_role(Role, org.secure_code, args.assignee_role)
-            publisher = get_publisher(User, org.secure_code)
-
-            log(f'\n企業：{org.name} / {org.domain_name} / {org.secure_code}')
-            log(f'簽核角色：{role.code} / {role.secure_code}')
-            log(f'發行人：{publisher.email}')
-            if not args.apply:
-                log('\n預演模式：不會寫入任何資料。加上 --apply 才會實際建置。')
-
-            log('\n[1/6] 資安分類')
-            category = ensure_security_category(db, FwCategory, org.secure_code, args.apply)
-
-            log('\n[2/6] 表單模板')
-            form_tpl = ensure_form_template(
-                db, FwFormTemplate, org.secure_code, category, args.apply, args.force)
-
-            log('\n[3/6] 流程模板')
-            workflow_tpl = ensure_workflow_template(
-                db, FwWorkflowTemplate, org.secure_code, category,
-                role.secure_code, args.apply, args.force)
-
-            log('\n[4/6] 表單流程配對與發行')
-            mapping, published = ensure_mapping_and_publish(
-                db, models, org.secure_code, form_tpl, workflow_tpl, publisher, args.apply)
-
-            log('\n[5/6] 事件路由規則')
-            routing_rule = ensure_routing_rule(
-                db, OdFormTemplateMapping, org.secure_code, form_tpl, args.apply)
-            log('  提醒：catch-all 規則會讓任何 event_class 都收案；正式環境請依政策改成分流規則。')
-
-            key_record = None
-            key_secret = None
+            result = provision(
+                args.org,
+                args.apply,
+                force=args.force,
+                source_systems=args.source_system or ['elk'],
+                skip_api_key=args.skip_api_key,
+                assignee_role=args.assignee_role,
+            )
             if args.apply:
                 db.session.commit()
-                log('\n  已 commit 表單、流程、發行與路由設定')
+                log('\n  已 commit 表單、流程、發行、路由與 API Key 設定')
             else:
                 db.session.rollback()
 
-            log('\n[6/6] API Key')
-            if args.skip_api_key:
-                log('  已依 --skip-api-key 略過')
-            else:
-                key_record, key_secret, _ = ensure_api_key(
-                    db, ApiKey, org.secure_code, publisher, source_systems, args.apply)
-
             if not args.apply:
                 log('\n預演完成，未寫入任何資料。')
-                print_next_steps(None, None, source_systems[0])
+                print_next_steps(None, None, result['source_systems'][0])
                 return 0
+
+            org = result['org']
+            category = result['category']
+            form_tpl = result['form']
+            workflow_tpl = result['workflow']
+            mapping = result['mapping']
+            published = result['published']
+            routing_rule = result['routing_rule']
+            key_record = result['api_key']
+            key_secret = result['api_key_secret']
 
             log('\n' + '=' * 72)
             log('建置完成')
@@ -719,7 +754,7 @@ def main(argv=None):
                 if not key_secret:
                     log('API Key secret：既有金鑰不會再次顯示，請使用先前保存的 secret')
 
-            print_next_steps(key_record, key_secret, source_systems[0])
+            print_next_steps(key_record, key_secret, result['source_systems'][0])
             return 0
         except SystemExit:
             if args.apply:

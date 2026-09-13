@@ -17,6 +17,8 @@ files:
   model:
     - backend/app/models/user.py             # 所有帳號共用 User model
     - backend/app/models/organization.py
+  service:
+    - backend/app/services/org_initial_setup_service.py # 原始管理員初始設定唯一實作
   template:
     - backend/app/templates/pages/admin/initial_setup.html
     - backend/app/templates/pages/admin/org_admins/list.html
@@ -38,6 +40,8 @@ files:
     - backend/app/static/css/org-admin-create.css
     - backend/app/static/css/org-admin-rescue.css
     - backend/app/static/css/master-detail.css
+  test:
+    - backend/tests/test_org_initial_setup_service.py
 
 tables:
   primary: users

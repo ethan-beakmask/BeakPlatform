@@ -29,7 +29,7 @@
       請在「事件路由設定」頁自行設定，或用 --with-routing 建立停用狀態的範例規則）
 
 用法
-    cd /opt/BeakPlatform-dev
+    cd <BeakPlatform 專案目錄>
     set -a && source .env && set +a
     venv/bin/python scripts/examples/provision_od_workflow_variants.py --apply
 
@@ -43,6 +43,7 @@
     --force              流程／表單已存在時，覆寫其內容並重新發行
 """
 import argparse
+import copy
 import os
 import sys
 
@@ -222,7 +223,6 @@ def ensure_supervisor_assignment(db, models, org_sc, role_sc, staff_role_sc,
     """指派一位資安人員兼任資安主管。"""
     User = models['User']
     UserRoleAssignment = models['UserRoleAssignment']
-    from app.utils.security import generate_secure_code
 
     if not role_sc:
         log('  [預演] 角色尚未建立，略過人員指派')
@@ -257,6 +257,7 @@ def ensure_supervisor_assignment(db, models, org_sc, role_sc, staff_role_sc,
         user = candidates[0]
 
     exists = UserRoleAssignment.query.filter_by(
+        org_secure_code=org_sc,
         user_secure_code=user.secure_code,
         role_secure_code=role_sc,
         is_deleted=False,
@@ -269,12 +270,23 @@ def ensure_supervisor_assignment(db, models, org_sc, role_sc, staff_role_sc,
         log(f'  [預演] 會把 {SUPERVISOR_ROLE_CODE} 指派給 {user.email}')
         return
 
-    db.session.add(UserRoleAssignment(
-        secure_code=generate_secure_code(),
+    from app.services.role_assignment_service import assign_role
+    operator = User.query.filter_by(
         org_secure_code=org_sc,
-        user_secure_code=user.secure_code,
-        role_secure_code=role_sc,
-    ))
+        user_type='ORG_ADMIN',
+        is_deleted=False,
+        is_active=True,
+    ).first()
+    if not operator:
+        raise SystemExit('找不到可用 ORG_ADMIN，無法指派資安主管角色')
+    assign_role(
+        org_sc,
+        user.secure_code,
+        role_sc,
+        operator=operator,
+        source_ref='provision_od_workflow_variants',
+        commit=False,
+    )
     log(f'  已把 {SUPERVISOR_ROLE_CODE} 指派給 {user.email}（{user.display_name}）')
 
 
@@ -457,7 +469,8 @@ def ensure_mapping_and_publish(db, models, org_sc, form_tpl, wf_tpl, publisher, 
     return mapping, published
 
 
-def ensure_sample_routing(db, models, org_sc, variant_key, form_tpl, apply):
+def ensure_sample_routing(db, models, org_sc, variant_key, form_tpl, apply,
+                          soc_min_severity=None, activate_soc_routing=False):
     """建立停用狀態的路由規則範例。"""
     OdFormTemplateMapping = models['OdFormTemplateMapping']
     from app.utils.security import generate_secure_code
@@ -467,46 +480,45 @@ def ensure_sample_routing(db, models, org_sc, variant_key, form_tpl, apply):
         return
 
     spec = SAMPLE_ROUTING[variant_key]
+    match_rules = copy.deepcopy(spec['match_rules'])
+    is_active = False
+    name = spec['name']
+    note = ('由 provision_od_workflow_variants.py 建立，預設停用；'
+            '確認條件符合貴組織的政策後再啟用')
+    if variant_key == 'soc_team':
+        if soc_min_severity is not None:
+            match_rules = [{'field': 'severity_id', 'op': 'gte', 'value': soc_min_severity}]
+        if activate_soc_routing:
+            is_active = True
+            name = name.replace('停用中', '啟用中')
+            note = '由 seed_demo_org.py 建立並啟用，示範高嚴重度事件走 SOC 團隊版'
     exists = OdFormTemplateMapping.query.filter_by(
-        org_secure_code=org_sc, name=spec['name'], is_deleted=False).first()
+        org_secure_code=org_sc, name=name, is_deleted=False).first()
     if exists:
-        log(f"  路由規則「{spec['name']}」已存在：{exists.secure_code}")
+        exists.match_rules = match_rules
+        exists.is_active = is_active
+        exists.form_template_secure_code = form_tpl.secure_code
+        log(f"  路由規則「{name}」已存在：{exists.secure_code}")
         return
 
     rule = OdFormTemplateMapping(
         secure_code=generate_secure_code(),
         org_secure_code=org_sc,
-        name=spec['name'],
+        name=name,
         form_template_secure_code=form_tpl.secure_code,
         priority=spec['priority'],
-        match_rules=spec['match_rules'],
-        is_active=False,
-        note='由 provision_od_workflow_variants.py 建立，預設停用；'
-             '確認條件符合貴組織的政策後再啟用',
+        match_rules=match_rules,
+        is_active=is_active,
+        note=note,
     )
     db.session.add(rule)
     db.session.flush()
-    log(f"  已建立停用的路由規則「{spec['name']}」：{rule.secure_code}")
+    status = '啟用' if is_active else '停用'
+    log(f"  已建立{status}的路由規則「{name}」：{rule.secure_code}")
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description='建置 OpenDefense 的 SOC 團隊版與小企業單人版資安事件處置流程',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__,
-    )
-    parser.add_argument('--apply', action='store_true',
-                        help='實際寫入資料庫；省略時只做檢查與預演')
-    parser.add_argument('--org', default=None,
-                        help='企業 secure_code；省略時自動偵測')
-    parser.add_argument('--supervisor', default=None,
-                        help='要兼任資安主管的帳號 e-mail；省略時自動挑選')
-    parser.add_argument('--with-routing', action='store_true',
-                        help='一併建立停用狀態的 od 路由規則範例')
-    parser.add_argument('--force', action='store_true',
-                        help='表單／流程已存在時覆寫內容並重新發行')
-    args = parser.parse_args()
-
+def provision(org_sc, apply, with_routing, force=False, supervisor_email=None,
+              soc_min_severity=None, activate_soc_routing=False):
     # graph 的結構檢查先做，錯的東西不要進資料庫
     log('檢查 graph 結構…')
     dummy = 'X' * 22
@@ -520,7 +532,7 @@ def main():
             raise SystemExit('graph 結構檢查未通過，中止')
         log(f"  {name}：{len(graph['nodes'])} 節點 / {len(graph['edges'])} 連線，通過")
 
-    from app import create_app, db
+    from app import db
     from app.models import (
         Role, User, UserRoleAssignment, MenuItem, MenuRoleRequirement,
     )
@@ -539,55 +551,101 @@ def main():
         'OdFormTemplateMapping': OdFormTemplateMapping,
     }
 
+    org_sc, staff_role_sc = resolve_org(db, models, org_sc)
+    log(f'\n企業：{org_sc}')
+    log(f'資安人員角色：{staff_role_sc}')
+
+    source_form = FwFormTemplate.query.filter_by(
+        org_secure_code=org_sc, code=SOURCE_FORM_CODE, is_deleted=False).first()
+    if not source_form:
+        raise SystemExit(f'找不到來源表單 {SOURCE_FORM_CODE}，無法複製 schema')
+    field_count = len((source_form.schema or {}).get('components', []))
+    log(f'來源表單：{source_form.secure_code}（{field_count} 個頂層元件）')
+
+    publisher = User.query.filter_by(
+        org_secure_code=org_sc, user_type='ORG_ADMIN',
+        is_deleted=False, is_active=True).first()
+
+    log('\n[1/5] 資安主管角色')
+    supervisor_role_sc = ensure_supervisor_role(db, models, org_sc, apply)
+
+    log('\n[2/5] 選單角色需求（雙鑰匙 Key2）')
+    ensure_menu_requirements(db, models, org_sc, supervisor_role_sc, apply)
+
+    log('\n[3/5] 人員指派')
+    ensure_supervisor_assignment(db, models, org_sc, supervisor_role_sc,
+                                 staff_role_sc, supervisor_email, apply)
+
+    results = []
+    for idx, spec in enumerate(VARIANTS, start=1):
+        log(f"\n[4/5] 建置 {spec['workflow_name']}")
+        if spec['key'] == 'soc_team':
+            graph = build_soc_team_graph(
+                staff_role_sc, supervisor_role_sc or staff_role_sc)
+            if not supervisor_role_sc and apply:
+                log('  警告：資安主管角色不存在，二線節點暫時指向資安人員')
+        else:
+            graph = build_solo_graph(staff_role_sc)
+
+        form_tpl = ensure_form_template(
+            db, models, org_sc, source_form, spec, apply, force)
+        wf_tpl = ensure_workflow_template(
+            db, models, org_sc, source_form, spec, graph, apply, force)
+        mapping, published = ensure_mapping_and_publish(
+            db, models, org_sc, form_tpl, wf_tpl, publisher, apply)
+
+        if with_routing:
+            ensure_sample_routing(
+                db, models, org_sc, spec['key'], form_tpl, apply,
+                soc_min_severity=soc_min_severity,
+                activate_soc_routing=activate_soc_routing,
+            )
+
+        results.append((spec, form_tpl, wf_tpl, mapping, published))
+
+    return {
+        'org_secure_code': org_sc,
+        'staff_role_secure_code': staff_role_sc,
+        'supervisor_role_secure_code': supervisor_role_sc,
+        'results': results,
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='建置 OpenDefense 的 SOC 團隊版與小企業單人版資安事件處置流程',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__,
+    )
+    parser.add_argument('--apply', action='store_true',
+                        help='實際寫入資料庫；省略時只做檢查與預演')
+    parser.add_argument('--org', default=None,
+                        help='企業 secure_code；省略時自動偵測')
+    parser.add_argument('--supervisor', default=None,
+                        help='要兼任資安主管的帳號 e-mail；省略時自動挑選')
+    parser.add_argument('--with-routing', action='store_true',
+                        help='一併建立停用狀態的 od 路由規則範例')
+    parser.add_argument('--soc-min-severity', type=int, default=None,
+                        help='建立 SOC 團隊版路由時覆寫 severity_id gte 門檻')
+    parser.add_argument('--activate-soc-routing', action='store_true',
+                        help='建立 SOC 團隊版路由時直接啟用')
+    parser.add_argument('--force', action='store_true',
+                        help='表單／流程已存在時覆寫內容並重新發行')
+    args = parser.parse_args()
+
+    from app import create_app, db
+
     app = create_app('development')
     with app.app_context():
-        org_sc, staff_role_sc = resolve_org(db, models, args.org)
-        log(f'\n企業：{org_sc}')
-        log(f'資安人員角色：{staff_role_sc}')
-
-        source_form = FwFormTemplate.query.filter_by(
-            org_secure_code=org_sc, code=SOURCE_FORM_CODE, is_deleted=False).first()
-        if not source_form:
-            raise SystemExit(f'找不到來源表單 {SOURCE_FORM_CODE}，無法複製 schema')
-        field_count = len((source_form.schema or {}).get('components', []))
-        log(f'來源表單：{source_form.secure_code}（{field_count} 個頂層元件）')
-
-        publisher = User.query.filter_by(
-            org_secure_code=org_sc, user_type='ORG_ADMIN',
-            is_deleted=False, is_active=True).first()
-
-        log('\n[1/5] 資安主管角色')
-        supervisor_role_sc = ensure_supervisor_role(db, models, org_sc, args.apply)
-
-        log('\n[2/5] 選單角色需求（雙鑰匙 Key2）')
-        ensure_menu_requirements(db, models, org_sc, supervisor_role_sc, args.apply)
-
-        log('\n[3/5] 人員指派')
-        ensure_supervisor_assignment(db, models, org_sc, supervisor_role_sc,
-                                     staff_role_sc, args.supervisor, args.apply)
-
-        results = []
-        for idx, spec in enumerate(VARIANTS, start=1):
-            log(f"\n[4/5] 建置 {spec['workflow_name']}")
-            if spec['key'] == 'soc_team':
-                graph = build_soc_team_graph(
-                    staff_role_sc, supervisor_role_sc or staff_role_sc)
-                if not supervisor_role_sc and args.apply:
-                    log('  警告：資安主管角色不存在，二線節點暫時指向資安人員')
-            else:
-                graph = build_solo_graph(staff_role_sc)
-
-            form_tpl = ensure_form_template(
-                db, models, org_sc, source_form, spec, args.apply, args.force)
-            wf_tpl = ensure_workflow_template(
-                db, models, org_sc, source_form, spec, graph, args.apply, args.force)
-            mapping, published = ensure_mapping_and_publish(
-                db, models, org_sc, form_tpl, wf_tpl, publisher, args.apply)
-
-            if args.with_routing:
-                ensure_sample_routing(db, models, org_sc, spec['key'], form_tpl, args.apply)
-
-            results.append((spec, form_tpl, wf_tpl, mapping, published))
+        result = provision(
+            args.org,
+            args.apply,
+            args.with_routing,
+            force=args.force,
+            supervisor_email=args.supervisor,
+            soc_min_severity=args.soc_min_severity,
+            activate_soc_routing=args.activate_soc_routing,
+        )
 
         log('\n[5/5] 收尾')
         if args.apply:
@@ -601,9 +659,10 @@ def main():
         log('\n' + '=' * 72)
         log('建置完成，識別碼如下（下次要改流程時用得到）')
         log('=' * 72)
+        supervisor_role_sc = result['supervisor_role_secure_code']
         if supervisor_role_sc:
             log(f'資安主管角色 {SUPERVISOR_ROLE_CODE}：{supervisor_role_sc}')
-        for spec, form_tpl, wf_tpl, mapping, published in results:
+        for spec, form_tpl, wf_tpl, mapping, published in result['results']:
             log(f"\n{spec['workflow_name']}")
             log(f"  表單模板 {spec['form_code']}：{form_tpl.secure_code}")
             log(f"  流程模板 {spec['workflow_code']}：{wf_tpl.secure_code}")

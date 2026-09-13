@@ -5,7 +5,7 @@ BeakMask 測試企業種子資料
 並補齊簽核展示需要的部門成員關係與部門主管角色（直屬主管由此推導）、核決類別與職等上限、兼任/代理職位樣本。
 
 使用方式:
-    cd /opt/BeakPlatform
+    cd <BeakPlatform 專案目錄>
     source venv/bin/activate
     python scripts/seed_test_companies.py          # 顯示說明
     python scripts/seed_test_companies.py --run     # 執行建立
@@ -15,7 +15,7 @@ BeakMask 測試企業種子資料
 測試資料標準:
     - 網域: 主名 + example 綴尾 + .com.zz (ISO 3166 保留國碼)
     - 中文姓氏: 晧、霄、燁、琥、翎、璃、嵐、灃、珩、澈 (虛構姓)
-    - 密碼統一: Test1234! (測試環境)
+    - 密碼統一: SEED_ADMIN_PASSWORD (測試環境)
 """
 import sys
 import json
@@ -56,7 +56,8 @@ from app.models.user_numbering_rule import (
 # 常數
 # ============================================================================
 
-TEST_PASSWORD = 'Test1234!'
+SEED_ADMIN_PASSWORD = 'SeedAdmin2026!#'
+TEST_PASSWORD = SEED_ADMIN_PASSWORD
 CONTRACT_START = date(2026, 1, 1)
 CONTRACT_END = date(2027, 1, 1)
 
@@ -165,6 +166,7 @@ COMPANIES = [
             ('gary.heng', '珩嘉瑞', 'Gary Heng', 'CS_DEPT', 'CSR', False),
             ('helen.che', '澈海倫', 'Helen Che', 'MKT_DEPT', 'MKT_SPEC', False),
         ],
+        'admin_member': ('admin.ops', '晧安琪', 'Angel Hao', 'ADMIN_DEPT', 'ADMIN_SPEC', False),
         # 群組 (供外部廠商歸屬)
         'groups': [
             ('EXT_PARTNER', '外部合作夥伴'),
@@ -261,6 +263,7 @@ COMPANIES = [
             ('bruce.che', '澈布魯', 'Bruce Che', 'IT_DEPT', 'DEVOPS_ENG', True),
             ('diana.hao', '晧黛安', 'Diana Hao', 'RD_DIV', 'ARCHITECT', False),
         ],
+        'admin_member': ('admin.ops', '霄安琪', 'Angel Xiao', 'ADMIN_DEPT', 'ADMIN_SPEC', False),
         'groups': [
             ('EXT_PARTNER', '外部合作夥伴'),
         ],
@@ -354,6 +357,7 @@ COMPANIES = [
             ('yolanda.hao', '晧尤蘭', 'Yolanda Hao', 'TOOL_DEV', 'TOOL_DEV', False),
             ('zane.xiao', '霄乍恩', 'Zane Xiao', 'TOOL_DEV', 'MALWARE_ANALYST', False),
         ],
+        'admin_member': ('admin.ops', '燁安琪', 'Angel Ye', 'ADMIN_DEPT', 'ADMIN_SPEC', False),
         'groups': [
             ('EXT_PARTNER', '外部合作夥伴'),
         ],
@@ -373,6 +377,19 @@ COMPANIES = [
         'contact_phone': '02-2700-0004',
         'description': '個人測試環境 -- 僅含管理員帳號',
         'user_limit': 10,
+        'numbering': {
+            'employee': {
+                'name': '企業成員編號',
+                'elements': {
+                    'components': [
+                        {'type': 'prefix', 'order': 1, 'values': ['TP']},
+                        {'type': 'sequence', 'order': 2, 'start': 1, 'digits': 4, 'reset_period': 'never'},
+                    ],
+                    'total_length': 6,
+                },
+            },
+        },
+        'admin_member': ('admin.ops', '澈安琪', 'Angel Che', 'GM', 'ADMIN_SPEC', False),
         'admin_only': True,
     },
 ]
@@ -665,7 +682,22 @@ def generate_employee_id(rule, seq_num):
     return ''.join(parts)
 
 
-def create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rules):
+def _assign_seed_role(org_sc, user, role, operator):
+    if not role:
+        return
+    from app.services.role_assignment_service import assign_role
+    assign_role(
+        org_sc,
+        user.secure_code,
+        role.secure_code,
+        operator=operator,
+        source_ref='seed_script',
+        commit=False,
+    )
+
+
+def create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rules,
+                     password=TEST_PASSWORD, operator=None):
     """建立企業成員帳號 + 職位指派 + 企業成員編號 + EMPLOYEE 角色指派"""
     employee_rule = numbering_rules.get('employee')
     users = {}
@@ -694,7 +726,7 @@ def create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rul
             employee_id=emp_id,
             must_change_password=False,
         )
-        user.set_password(TEST_PASSWORD)
+        user.set_password(password)
         db.session.add(user)
         db.session.flush()
         users[username] = user
@@ -709,13 +741,7 @@ def create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rul
 
         # 指派 EMPLOYEE 角色 (鑰匙2)
         if employee_role:
-            ra = UserRoleAssignment(
-                org_secure_code=org_sc,
-                user_secure_code=user.secure_code,
-                role_secure_code=employee_role.secure_code,
-                assigned_by='seed_script',
-            )
-            db.session.add(ra)
+            _assign_seed_role(org_sc, user, employee_role, operator)
 
         # 建立職位指派
         if dept_code in depts and title_code in titles:
@@ -988,7 +1014,8 @@ def create_groups(org_sc, group_list):
     return groups
 
 
-def create_external_users(org, org_sc, ext_list, groups, numbering_rules):
+def create_external_users(org, org_sc, ext_list, groups, numbering_rules,
+                          password=TEST_PASSWORD, operator=None):
     """建立外部廠商帳號 + EXTERNAL_USERS 角色指派 + 群組成員關係"""
     external_rule = numbering_rules.get('external')
     if not external_rule:
@@ -1019,7 +1046,7 @@ def create_external_users(org, org_sc, ext_list, groups, numbering_rules):
             backup_email_1=email,
             must_change_password=False,
         )
-        user.set_password(TEST_PASSWORD)
+        user.set_password(password)
         db.session.add(user)
         db.session.flush()
         users[username] = user
@@ -1033,13 +1060,7 @@ def create_external_users(org, org_sc, ext_list, groups, numbering_rules):
 
         # 指派 EXTERNAL_USERS 角色 (鑰匙2)
         if external_role:
-            ra = UserRoleAssignment(
-                org_secure_code=org_sc,
-                user_secure_code=user.secure_code,
-                role_secure_code=external_role.secure_code,
-                assigned_by='seed_script',
-            )
-            db.session.add(ra)
+            _assign_seed_role(org_sc, user, external_role, operator)
 
         # 群組成員關係
         if group_code in groups:
@@ -1070,16 +1091,62 @@ def create_external_users(org, org_sc, ext_list, groups, numbering_rules):
 # 主流程
 # ============================================================================
 
-def seed_one_company(company_def):
+def _get_seed_created_by():
+    system_org = Organization.query.filter_by(code='SYSTEM', is_deleted=False).first()
+    if not system_org:
+        return None
+    system_admin = User.query.filter_by(
+        user_type=UserType.SYSTEM_ADMIN,
+        is_deleted=False,
+        is_active=True,
+    ).first()
+    return system_admin.secure_code if system_admin else None
+
+
+def _complete_admin_initial_setup(org, admin_user, company_def, password, depts=None, titles=None):
+    from app.services.org_initial_setup_service import complete_initial_setup
+
+    member = company_def.get('admin_member')
+    if not member:
+        return None
+    username, native_name, english_name, dept_code, title_code, is_head = member
+    result = complete_initial_setup(
+        org,
+        admin_user,
+        username,
+        native_name,
+        english_name,
+        password,
+        must_change_password=False,
+    )
+    employee = result['employee']
+    if depts and titles and dept_code in depts and title_code in titles:
+        position = EmployeePosition(
+            org_secure_code=org.secure_code,
+            user_secure_code=employee.secure_code,
+            job_title_secure_code=titles[title_code].secure_code,
+            unit_secure_code=depts[dept_code].secure_code,
+            position_type=PositionType.PRIMARY,
+            is_unit_head=is_head,
+            effective_from=date(2026, 1, 1),
+            is_active=True,
+        )
+        db.session.add(position)
+        employee.primary_unit_secure_code = depts[dept_code].secure_code
+    return result
+
+
+def seed_one_company(company_def, *, password=TEST_PASSWORD, commit=True, emit_summary=True):
     """建立一家企業的完整資料"""
     from app.services.organization_service import OrganizationService
+    from app.services.password_policy_service import PasswordPolicyService
 
     code = company_def['code']
     name = company_def['name']
     domain = company_def['domain']
     admin_only = company_def.get('admin_only', False)
 
-    total_steps = 1 if admin_only else 13
+    total_steps = 2 if admin_only else 13
 
     print(f"\n{'='*60}")
     print(f"  建立企業: {name} ({code})")
@@ -1087,6 +1154,10 @@ def seed_one_company(company_def):
 
     # 1. 企業 + 合約 + 原始管理員
     print(f"  [1/{total_steps}] 企業 + 合約 + 原始管理員...")
+    pw_valid, pw_errors = PasswordPolicyService.validate_password(password, None)
+    if not pw_valid:
+        raise ValueError('；'.join(pw_errors))
+    contract_modules = company_def.get('modules_config', SEED_CONTRACT_MODULES)
     org, admin_user, contract = OrganizationService.create_organization_with_contract(
         code=code,
         name=name,
@@ -1096,8 +1167,9 @@ def seed_one_company(company_def):
         contract_end_date=CONTRACT_END,
         customer_type=CustomerType.FORMAL,
         user_limit=company_def.get('user_limit', 50),
-        admin_password=TEST_PASSWORD,
-        created_by='nH5liUKQikH1NM2osVVXuF',  # 系統管理員 secure_code
+        admin_password=password,
+        modules_config=contract_modules,
+        created_by=_get_seed_created_by(),
         description=company_def.get('description'),
         contact_person=company_def.get('contact_person'),
         contact_email=company_def.get('contact_email'),
@@ -1105,21 +1177,19 @@ def seed_one_company(company_def):
     )
     db.session.flush()
     org_sc = org.secure_code
-    # 合約要帶 form_workflow 模組，範例企業才跑得動表單流程（含 OpHrLookup 示範）；
-    # 走 create_contract 同一套種入（模組預設角色 + Key2 + 預設 ACL），不要只改 modules_config
-    if not admin_only:
-        contract.modules_config = json.dumps(SEED_CONTRACT_MODULES)
-        from app.services.module_role_service import ModuleRoleService
-        ModuleRoleService.seed_contract_module_roles(org_sc, SEED_CONTRACT_MODULES)
-        db.session.flush()
     print(f"         org_sc: {org_sc}")
     print(f"         admin: admin@{domain}")
 
     if admin_only:
-        db.session.commit()
-        print(f"\n  完成! 企業 {name} (僅管理員):")
-        print(f"    管理員: admin@{domain}")
-        print(f"    密碼: {TEST_PASSWORD}")
+        print(f"  [2/2] 預設編號規則 + 初始設定...")
+        create_default_numbering_rule(org_sc, org_code=code)
+        _complete_admin_initial_setup(org, admin_user, company_def, password)
+        if commit:
+            db.session.commit()
+        if emit_summary:
+            print(f"\n  完成! 企業 {name} (僅管理員):")
+            print(f"    管理員: admin-{company_def['admin_member'][0]}@{domain}")
+            print(f"    密碼: {password}")
         return org
 
     # 2. 編號規則
@@ -1159,7 +1229,13 @@ def seed_one_company(company_def):
     # 9. 企業成員帳號 + 職位 + EMPLOYEE 角色
     emp_list = company_def['employees']
     print(f"  [9/{total_steps}] 企業成員帳號 ({len(emp_list)} 人) + 職位指派 + 角色...")
-    users = create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rules)
+    users = create_employees(
+        org, org_sc, domain, emp_list, depts, titles, numbering_rules,
+        password=password, operator=admin_user,
+    )
+
+    print(f"         初始設定: 建立綁定管理員 admin-{company_def['admin_member'][0]}@{domain}")
+    _complete_admin_initial_setup(org, admin_user, company_def, password, depts, titles)
 
     # 10. 部門成員與部門主管角色
     print(f"  [10/{total_steps}] 部門成員與部門主管角色...")
@@ -1178,15 +1254,23 @@ def seed_one_company(company_def):
     # 13. 外部廠商帳號 + EXTERNAL_USERS 角色
     ext_list = company_def.get('external_users', [])
     print(f"  [13/{total_steps}] 外部廠商 ({len(ext_list)} 人) + 角色...")
-    ext_users = create_external_users(org, org_sc, ext_list, groups, numbering_rules) if ext_list else {}
+    ext_users = (
+        create_external_users(
+            org, org_sc, ext_list, groups, numbering_rules,
+            password=password, operator=admin_user,
+        )
+        if ext_list else {}
+    )
 
-    db.session.commit()
+    if commit:
+        db.session.commit()
 
-    print(f"\n  完成! 企業 {name}:")
-    print(f"    管理員: admin@{domain}")
-    print(f"    企業成員: {len(users)} 人")
-    print(f"    外部廠商: {len(ext_users)} 人")
-    print(f"    密碼: {TEST_PASSWORD}")
+    if emit_summary:
+        print(f"\n  完成! 企業 {name}:")
+        print(f"    管理員: admin-{company_def['admin_member'][0]}@{domain}")
+        print(f"    企業成員: {len(users) + 1} 人")
+        print(f"    外部廠商: {len(ext_users)} 人")
+        print(f"    密碼: {password}")
 
     return org
 
@@ -1264,6 +1348,11 @@ def clean_test_companies():
             'recipient_groups',
             'smtp_configs',
             'telegram_configs',
+            'fw_mapping_permissions',
+            'fw_published_form_workflows',
+            'fw_form_workflow_mappings',
+            'fw_workflow_templates',
+            'fw_form_templates',
         ]
         for table in phase1_tables:
             _delete_by_org(table, org_sc)
@@ -1396,7 +1485,7 @@ def main():
   - 兼任 CONCURRENT 與代理 ACTING 職位樣本各 1 筆
   - 核決類別與各職等核決上限
   - 編號規則、職等、職系、職稱、部門
-  - 密碼統一: Test1234!
+  - 密碼統一: SEED_ADMIN_PASSWORD
         """,
     )
     parser.add_argument('--run', action='store_true', help='執行建立測試資料')

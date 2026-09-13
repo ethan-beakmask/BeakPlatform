@@ -13,7 +13,10 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'backend'))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_REPO_ROOT = os.path.abspath(os.path.join(_HERE, '..', '..'))
+sys.path.insert(0, os.path.join(_REPO_ROOT, 'backend'))
+sys.path.insert(0, _REPO_ROOT)
 
 FORM_CODE = 'HR_LOOKUP_TRAVEL_DEMO'
 WF_CODE = 'HR_LOOKUP_TRAVEL_DEMO_FLOW'
@@ -56,87 +59,100 @@ def build_graph(_node, _edge):
     ]}
 
 
-def run(org_code):
-    from app import create_app, db
-    app = create_app('development')
-    with app.app_context():
-        from app.models import Organization, User
-        from app.utils.security import generate_secure_code
-        from modules.form_workflow.models import (
-            FwFormTemplate, FwWorkflowTemplate, FwFormWorkflowMapping,
-            FwPublishedFormWorkflow, FwMappingPermission,
-        )
-        from app.defaults.api_key_request_defaults import (
-            _node, _edge, CATEGORY_NAME, CATEGORY_SECURE_CODE, MAPPING_PERMISSION_SPECS, _get_publisher,
-        )
-        org = Organization.query.filter_by(code=org_code, is_deleted=False).first()
-        if not org:
-            raise SystemExit(f'找不到企業 {org_code}')
-        osc = org.secure_code
-        schema = build_schema()
-        graph = build_graph(_node, _edge)
+def run(org_code, apply=True):
+    from app import db
+    from app.models import Organization, User
+    from app.utils.security import generate_secure_code
+    from modules.form_workflow.models import (
+        FwFormTemplate, FwWorkflowTemplate, FwFormWorkflowMapping,
+        FwPublishedFormWorkflow, FwMappingPermission,
+    )
+    from app.defaults.api_key_request_defaults import (
+        _node, _edge, CATEGORY_NAME, CATEGORY_SECURE_CODE, MAPPING_PERMISSION_SPECS, _get_publisher,
+    )
+    org = Organization.query.filter_by(code=org_code, is_deleted=False).first()
+    if not org:
+        raise SystemExit(f'找不到企業 {org_code}')
+    osc = org.secure_code
+    schema = build_schema()
+    graph = build_graph(_node, _edge)
 
-        form = FwFormTemplate.query.filter_by(org_secure_code=osc, code=FORM_CODE, is_deleted=False).first()
-        if not form:
-            form = FwFormTemplate(
-                secure_code=generate_secure_code(), org_secure_code=osc, code=FORM_CODE, version='AA', revision=1,
-                name='差旅費申請（人事取值示範）', description='示範 OpHrLookup：依金額沿主管鏈找核決人',
-                category=CATEGORY_NAME, category_secure_code=CATEGORY_SECURE_CODE,
-                schema=schema, builder_config={}, is_published=False, is_active=True,
-                is_protected=False, permission_type='org')
-            db.session.add(form)
-            db.session.flush()
-        wf = FwWorkflowTemplate.query.filter_by(org_secure_code=osc, code=WF_CODE, is_deleted=False).first()
-        if not wf:
-            wf = FwWorkflowTemplate(
-                secure_code=generate_secure_code(), org_secure_code=osc, code=WF_CODE, version='AA', revision=1,
-                name='差旅費核決流程（人事取值示範）', description='OpHrLookup → 依金額找核決人 → 動態簽核',
-                category=CATEGORY_NAME, category_secure_code=CATEGORY_SECURE_CODE,
-                graph=graph, cytoscape_config=graph, is_published=False, is_active=True,
-                is_protected=False, permission_type='org', is_subprocess=False)
-            db.session.add(wf)
-            db.session.flush()
-        else:
-            # graph 與 cytoscape_config 兩欄都要寫，且要 bump revision 才發行得出新版
-            wf.graph = graph
-            wf.cytoscape_config = graph
-            wf.revision = (wf.revision or 0) + 1
-        mapping = FwFormWorkflowMapping.query.filter_by(
-            org_secure_code=osc, form_template_secure_code=form.secure_code, is_deleted=False).first()
-        if not mapping:
-            mapping = FwFormWorkflowMapping(
-                secure_code=generate_secure_code(), org_secure_code=osc,
-                form_template_id=form.id, form_template_secure_code=form.secure_code,
-                form_template_code=form.code, form_template_version=form.version,
-                workflow_template_id=wf.id, workflow_template_secure_code=wf.secure_code,
-                workflow_template_code=wf.code, workflow_template_version=wf.version,
-                is_active=True, is_published=False, priority=0, description='OpHrLookup 示範')
-            db.session.add(mapping)
-            db.session.flush()
-        publisher = _get_publisher(User, osc)
-        for existing in FwPublishedFormWorkflow.query.filter_by(
-                org_secure_code=osc, source_mapping_secure_code=mapping.secure_code,
-                status='Published', is_deleted=False).all():
-            existing.status = 'Suspended'  # 不呼叫 suspend()：它內部會 commit
-        published = FwPublishedFormWorkflow.create_from_mapping(
-            mapping=mapping, form_template=form, workflow_template=wf,
-            published_by=publisher.secure_code if publisher else None,
-            published_by_name=(publisher.display_name if publisher else None))
-        mapping.is_published = True
-        db.session.add(published)
+    if not apply:
+        print(f'{org_code}: 將建立/更新並發行差旅費人事取值示範流程')
+        return {
+            'org': org,
+            'form': None,
+            'workflow': None,
+            'mapping': None,
+            'published': None,
+        }
+
+    form = FwFormTemplate.query.filter_by(org_secure_code=osc, code=FORM_CODE, is_deleted=False).first()
+    if not form:
+        form = FwFormTemplate(
+            secure_code=generate_secure_code(), org_secure_code=osc, code=FORM_CODE, version='AA', revision=1,
+            name='差旅費申請（人事取值示範）', description='示範 OpHrLookup：依金額沿主管鏈找核決人',
+            category=CATEGORY_NAME, category_secure_code=CATEGORY_SECURE_CODE,
+            schema=schema, builder_config={}, is_published=False, is_active=True,
+            is_protected=False, permission_type='org')
+        db.session.add(form)
         db.session.flush()
-        for grant_type, grant_target, grant_target_name, include_children in MAPPING_PERMISSION_SPECS:
-            exists = FwMappingPermission.query.filter_by(
-                org_secure_code=osc, mapping_secure_code=mapping.secure_code,
-                grant_type=grant_type, grant_target=grant_target, is_deleted=False).first()
-            if not exists:
-                db.session.add(FwMappingPermission(
-                    secure_code=generate_secure_code(), org_secure_code=osc,
-                    mapping_secure_code=mapping.secure_code, grant_type=grant_type,
-                    grant_target=grant_target, grant_target_name=grant_target_name,
-                    include_children=include_children))
-        db.session.commit()
-        print(f'{org_code}: 已發行 {published.secure_code}（表單 {form.secure_code}，流程 {wf.secure_code}）')
+    wf = FwWorkflowTemplate.query.filter_by(org_secure_code=osc, code=WF_CODE, is_deleted=False).first()
+    if not wf:
+        wf = FwWorkflowTemplate(
+            secure_code=generate_secure_code(), org_secure_code=osc, code=WF_CODE, version='AA', revision=1,
+            name='差旅費核決流程（人事取值示範）', description='OpHrLookup → 依金額找核決人 → 動態簽核',
+            category=CATEGORY_NAME, category_secure_code=CATEGORY_SECURE_CODE,
+            graph=graph, cytoscape_config=graph, is_published=False, is_active=True,
+            is_protected=False, permission_type='org', is_subprocess=False)
+        db.session.add(wf)
+        db.session.flush()
+    else:
+        wf.graph = graph
+        wf.cytoscape_config = graph
+        wf.revision = (wf.revision or 0) + 1
+    mapping = FwFormWorkflowMapping.query.filter_by(
+        org_secure_code=osc, form_template_secure_code=form.secure_code, is_deleted=False).first()
+    if not mapping:
+        mapping = FwFormWorkflowMapping(
+            secure_code=generate_secure_code(), org_secure_code=osc,
+            form_template_id=form.id, form_template_secure_code=form.secure_code,
+            form_template_code=form.code, form_template_version=form.version,
+            workflow_template_id=wf.id, workflow_template_secure_code=wf.secure_code,
+            workflow_template_code=wf.code, workflow_template_version=wf.version,
+            is_active=True, is_published=False, priority=0, description='OpHrLookup 示範')
+        db.session.add(mapping)
+        db.session.flush()
+    publisher = _get_publisher(User, osc)
+    for existing in FwPublishedFormWorkflow.query.filter_by(
+            org_secure_code=osc, source_mapping_secure_code=mapping.secure_code,
+            status='Published', is_deleted=False).all():
+        existing.status = 'Suspended'
+    published = FwPublishedFormWorkflow.create_from_mapping(
+        mapping=mapping, form_template=form, workflow_template=wf,
+        published_by=publisher.secure_code if publisher else None,
+        published_by_name=(publisher.display_name if publisher else None))
+    mapping.is_published = True
+    db.session.add(published)
+    db.session.flush()
+    for grant_type, grant_target, grant_target_name, include_children in MAPPING_PERMISSION_SPECS:
+        exists = FwMappingPermission.query.filter_by(
+            org_secure_code=osc, mapping_secure_code=mapping.secure_code,
+            grant_type=grant_type, grant_target=grant_target, is_deleted=False).first()
+        if not exists:
+            db.session.add(FwMappingPermission(
+                secure_code=generate_secure_code(), org_secure_code=osc,
+                mapping_secure_code=mapping.secure_code, grant_type=grant_type,
+                grant_target=grant_target, grant_target_name=grant_target_name,
+                include_children=include_children))
+    print(f'{org_code}: 已發行 {published.secure_code}（表單 {form.secure_code}，流程 {wf.secure_code}）')
+    return {
+        'org': org,
+        'form': form,
+        'workflow': wf,
+        'mapping': mapping,
+        'published': published,
+    }
 
 
 def main():
@@ -147,7 +163,11 @@ def main():
     if not args.apply:
         parser.print_help()
         return 0
-    run(args.org)
+    from app import create_app, db
+    app = create_app('development')
+    with app.app_context():
+        run(args.org, apply=True)
+        db.session.commit()
     return 0
 
 

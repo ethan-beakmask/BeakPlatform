@@ -17,9 +17,12 @@ from flask_login import current_user, logout_user
 from ..security.decorators import login_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.user import User, UserType
-from ..models.user_numbering_rule import UsedUserNumber
-from ..services.numbering_service import NumberingService
 from ..services.password_policy_service import PasswordPolicyService
+from ..services.numbering_service import NumberingService
+from ..services.org_initial_setup_service import (
+    complete_initial_setup,
+    create_bound_org_admin,
+)
 from .. import db
 
 logger = logging.getLogger(__name__)
@@ -95,21 +98,6 @@ def initial_setup():
         backup_email_1 = form_data['backup_email_1'] or None
         mobile_phone_1 = form_data['mobile_phone_1'] or None
 
-        # 用戶編號: 留空時自動從預設編號規則產生
-        auto_generated_id = False
-        if not employee_id:
-            default_rule = NumberingService.get_default_rule(
-                org.secure_code, 'EMPLOYEE'
-            )
-            if default_rule:
-                try:
-                    employee_id = NumberingService.get_next_number(
-                        default_rule, consume=False
-                    )
-                    auto_generated_id = True
-                except ValueError:
-                    pass
-
         # 密碼政策驗證（先計算，後面 elif 使用）
         pw_valid, pw_errors = (True, [])
         if password:
@@ -129,159 +117,37 @@ def initial_setup():
         elif password != confirm_password:
             flash(_('兩次輸入的密碼不一致'), 'error')
         else:
-            employee_email = f"{username}@{org.domain_name}"
-            admin_username = f"admin-{username}"
-            admin_email = f"{admin_username}@{org.domain_name}"
-
-            # 檢查帳號衝突
-            existing_emp = User.query.filter_by(email=employee_email, is_deleted=False).first()
-            existing_adm = User.query.filter_by(email=admin_email, is_deleted=False).first()
-
-            if existing_emp:
-                flash(_('帳號 %(username)s 已存在', username=username), 'error')
-            elif existing_adm:
-                flash(_('管理員帳號 %(username)s 已存在', username=admin_username), 'error')
-            else:
-                # 檢查企業成員編號唯一性
-                emp_id_exists = User.query.filter_by(
-                    org_secure_code=org.secure_code,
+            try:
+                result = complete_initial_setup(
+                    org,
+                    current_user._get_current_object(),
+                    username,
+                    native_name,
+                    english_name,
+                    password,
                     employee_id=employee_id,
-                    is_deleted=False
-                ).first()
-                if emp_id_exists:
-                    flash(_('用戶編號 %(employee_id)s 已存在', employee_id=employee_id), 'error')
-                else:
-                    try:
-                        # display_name 依企業設定
-                        display_name_field = org.get_setting('display_name_field', 'native_name')
-                        display_name_map = {
-                            'native_name': native_name,
-                            'english_name': english_name,
-                            'nickname': nickname or native_name,
-                            'username': username,
-                            'employee_id': employee_id,
-                        }
-                        display_name = display_name_map.get(display_name_field, native_name)
+                    nickname=nickname,
+                    backup_email_1=backup_email_1,
+                    mobile_phone_1=mobile_phone_1,
+                )
+                db.session.commit()
 
-                        if not backup_email_1:
-                            backup_email_1 = employee_email
+                logout_user()
 
-                        # 1. 建立企業成員帳號
-                        employee = User(
-                            username=username,
-                            email=employee_email,
-                            display_name=display_name,
-                            org_secure_code=org.secure_code,
-                            user_type=UserType.EMPLOYEE,
-                            is_active=True,
-                            employee_id=employee_id,
-                            english_name=english_name,
-                            native_name=native_name,
-                            nickname=nickname,
-                            backup_email_1=backup_email_1,
-                            mobile_phone_1=mobile_phone_1,
-                        )
-                        employee.set_password(password)
-                        db.session.add(employee)
-                        db.session.flush()  # 取得 secure_code
+                flash(
+                    _('初始設定完成。已建立企業成員帳號 %(username)s 與管理員帳號 %(admin_username)s。'
+                      '原始管理員已停用。請使用新的管理員帳號登入。',
+                      username=result['employee'].username,
+                      admin_username=result['admin'].username),
+                    'success'
+                )
+                return redirect(url_for('auth.org_login', domain_name=org.domain_name))
 
-                        # 記錄用戶編號
-                        if employee_id:
-                            if auto_generated_id:
-                                # 自動產生的編號: consume 並記錄
-                                default_rule = NumberingService.get_default_rule(
-                                    org.secure_code, 'EMPLOYEE'
-                                )
-                                if default_rule:
-                                    NumberingService.get_next_number(
-                                        default_rule, consume=True
-                                    )
-                                    # consume 已經記錄了 UsedUserNumber，
-                                    # 但 user_secure_code 尚未關聯，補上
-                                    used = UsedUserNumber.query.filter_by(
-                                        org_secure_code=org.secure_code,
-                                        number=employee_id
-                                    ).first()
-                                    if used:
-                                        used.user_secure_code = employee.secure_code
-                            else:
-                                UsedUserNumber.record_number(
-                                    org_secure_code=org.secure_code,
-                                    number=employee_id,
-                                    user_secure_code=employee.secure_code
-                                )
-
-                        # 2. 自動建立管理員帳號並綁定
-                        admin_user = User(
-                            username=admin_username,
-                            email=admin_email,
-                            display_name=display_name,
-                            org_secure_code=org.secure_code,
-                            user_type=UserType.ORG_ADMIN,
-                            is_active=True,
-                            backup_email_1=backup_email_1,
-                            bound_employee_secure_code=employee.secure_code,
-                        )
-                        admin_user.set_password(password)
-                        db.session.add(admin_user)
-
-                        # 3. 指派角色（雙鑰匙 Key2 必要）
-                        from ..models.role import Role
-                        from ..models.associations import UserRoleAssignment
-                        org_admin_role = Role.query.filter(
-                            Role.org_secure_code == org.secure_code,
-                            Role.code == 'ORG_ADMIN',
-                            Role.is_deleted == False,
-                        ).first()
-                        if org_admin_role:
-                            role_assignment = UserRoleAssignment(
-                                org_secure_code=org.secure_code,
-                                user_secure_code=admin_user.secure_code,
-                                role_secure_code=org_admin_role.secure_code,
-                                assigned_by='system:initial-setup',
-                            )
-                            db.session.add(role_assignment)
-
-                        # 企業成員帳號指派 EMPLOYEE 角色
-                        employee_role = Role.query.filter(
-                            Role.org_secure_code == org.secure_code,
-                            Role.code == 'EMPLOYEE',
-                            Role.is_deleted == False,
-                        ).first()
-                        if employee_role:
-                            emp_role_assignment = UserRoleAssignment(
-                                org_secure_code=org.secure_code,
-                                user_secure_code=employee.secure_code,
-                                role_secure_code=employee_role.secure_code,
-                                assigned_by='system:initial-setup',
-                            )
-                            db.session.add(emp_role_assignment)
-
-                        # 4. 停用原始管理員
-                        current_user.is_active = False
-                        logger.info(
-                            f"[INITIAL-SETUP] org={org.domain_name} "
-                            f"employee={username} admin={admin_username} "
-                            f"original_admin={current_user.username} deactivated"
-                        )
-
-                        db.session.commit()
-
-                        # 4. 登出，導向登入頁
-                        logout_user()
-
-                        flash(
-                            _('初始設定完成。已建立企業成員帳號 %(username)s 與管理員帳號 %(admin_username)s。'
-                              '原始管理員已停用。請使用新的管理員帳號登入。',
-                              username=username, admin_username=admin_username),
-                            'success'
-                        )
-                        return redirect(url_for('auth.org_login', domain_name=org.domain_name))
-
-                    except Exception as e:
-                        db.session.rollback()
-                        logger.error(f"[INITIAL-SETUP] Failed: {e}")
-                        flash(_('建立失敗: %(error)s', error=str(e)), 'error')
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"[INITIAL-SETUP] Failed: {e}")
+                for message in str(e).splitlines() or [str(e)]:
+                    flash(_('建立失敗: %(error)s', error=message), 'error')
 
     # 取得預設編號規則的下一個建議值
     suggested_employee_id = None
@@ -381,74 +247,28 @@ def create_admin():
                 if not org:
                     flash(_('找不到所屬企業'), 'error')
                 else:
-                    # 從綁定企業成員帶入資料
-                    username = bound_employee.username
-                    display_name = bound_employee.display_name
-                    email = bound_employee.email
-                    notify_email = bound_employee.backup_email_1 or email
+                    try:
+                        result = create_bound_org_admin(
+                            org,
+                            bound_employee,
+                            password,
+                            current_user._get_current_object(),
+                        )
+                        disabled = result.get('disabled_original_admin')
+                        disabled_msg = ''
+                        if disabled:
+                            disabled_msg = _('，預設管理員 %(username)s 已自動停用',
+                                             username=disabled.username)
 
-                    # 檢查是否已存在同 email 的管理員帳號
-                    # 注意：企業成員帳號和管理員帳號 email 相同是允許的嗎？
-                    # 不行，email 是 unique 的，所以管理員帳號需要不同的 email
-                    # 方案：使用 admin-{username}@domain 作為管理員帳號
-                    admin_username = f"admin-{username}"
-                    admin_email = f"{admin_username}@{org.domain_name}"
+                        db.session.commit()
 
-                    existing = User.query.filter_by(email=admin_email, is_deleted=False).first()
-                    if existing:
-                        flash(_('管理員帳號 %(username)s 已存在', username=admin_username), 'error')
-                    else:
-                        try:
-                            user = User(
-                                username=admin_username,
-                                email=admin_email,
-                                display_name=display_name,
-                                org_secure_code=org.secure_code,
-                                user_type=UserType.ORG_ADMIN,
-                                is_active=True,
-                                backup_email_1=notify_email,
-                                bound_employee_secure_code=bound_employee_code,
-                            )
-                            user.set_password(password)
-                            db.session.add(user)
-
-                            # 指派 ORG_ADMIN 角色
-                            from ..models.associations import UserRoleAssignment
-                            org_admin_role = Role.query.filter(
-                                Role.org_secure_code == org.secure_code,
-                                Role.code == 'ORG_ADMIN',
-                                Role.is_deleted == False,
-                            ).first()
-                            if org_admin_role:
-                                role_assignment = UserRoleAssignment(
-                                    org_secure_code=org.secure_code,
-                                    user_secure_code=user.secure_code,
-                                    role_secure_code=org_admin_role.secure_code,
-                                    assigned_by=current_user.email,
-                                )
-                                db.session.add(role_assignment)
-
-                            # 自動停用預設管理員帳號（名稱易被猜測，安全考量）
-                            original_admin = User.query.filter(
-                                User.org_secure_code == current_user.org_secure_code,
-                                User.is_original_admin == True,
-                                User.is_active == True,
-                                User.is_deleted == False
-                            ).first()
-                            disabled_msg = ''
-                            if original_admin:
-                                original_admin.is_active = False
-                                disabled_msg = _('，預設管理員 %(username)s 已自動停用', username=original_admin.username)
-
-                            db.session.commit()
-
-                            flash(_('已建立管理員 %(admin)s（綁定企業成員：%(employee)s）%(extra)s',
-                                    admin=admin_username, employee=bound_employee.display_name,
-                                    extra=disabled_msg), 'success')
-                            return redirect(url_for('org_admins.list_admins'))
-                        except Exception as e:
-                            db.session.rollback()
-                            flash(_('建立失敗: %(error)s', error=str(e)), 'error')
+                        flash(_('已建立管理員 %(admin)s（綁定企業成員：%(employee)s）%(extra)s',
+                                admin=result['admin'].username, employee=bound_employee.display_name,
+                                extra=disabled_msg), 'success')
+                        return redirect(url_for('org_admins.list_admins'))
+                    except Exception as e:
+                        db.session.rollback()
+                        flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
         # 保留表單資料供錯誤時回填
         form_data = {'bound_employee': bound_employee_code}
