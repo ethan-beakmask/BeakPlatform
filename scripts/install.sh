@@ -499,6 +499,16 @@ if [ "$ACTION" = "update" ]; then
             echo "SYNC_CREDENTIAL_KEY=$NEW_SYNC_CRED_KEY"
         } >> "$INSTALL_DIR/.env"
     fi
+    if ! grep -q '^OD_SA_JWT_SECRET=' "$INSTALL_DIR/.env" 2>/dev/null; then
+        log_warn ".env 缺少 OD_SA_JWT_SECRET（防禦節點執行帳號 JWT），自動產生..."
+        NEW_OD_SA_JWT=$(python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
+        {
+            echo ""
+            echo "# Open Defense 防禦節點執行帳號的 JWT 簽章金鑰 (HS256, base64url 32 bytes)"
+            echo "# 缺少時 /api/open_defense/sa/login 一律 500，防禦節點永遠拉不到封鎖決策"
+            echo "OD_SA_JWT_SECRET=$NEW_OD_SA_JWT"
+        } >> "$INSTALL_DIR/.env"
+    fi
     chmod 600 "$INSTALL_DIR/.env"
     mkdir -p "$INSTALL_DIR/backend/encrypted_storage"
     chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/backend/encrypted_storage"
@@ -703,6 +713,7 @@ SYS_ORG_CODE=$(python3 -c "import secrets; print('sys-' + secrets.token_hex(6))"
 SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 ENCRYPTION_MASTER_KEY=$(python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
 SYNC_CRED_KEY=$(python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
+OD_SA_JWT_SECRET=$(python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
 
 cat > "$INSTALL_DIR/.env" << ENVEOF
 # BeakPlatform 環境設定
@@ -755,6 +766,10 @@ SYNC_PG_ADMIN_URL=postgresql://$PROV_USER:$PROV_PASS@localhost/postgres
 
 # 企業專屬資料庫憑證加密金鑰 (Fernet)，遺失將無法解密既有企業庫帳密
 SYNC_CREDENTIAL_KEY=$SYNC_CRED_KEY
+
+# Open Defense 防禦節點執行帳號的 JWT 簽章金鑰 (HS256, base64url 32 bytes)
+# 缺少時 /api/open_defense/sa/login 一律 500，防禦節點永遠拉不到封鎖決策
+OD_SA_JWT_SECRET=$OD_SA_JWT_SECRET
 ENVEOF
 
 mkdir -p "$INSTALL_DIR/backend/encrypted_storage"

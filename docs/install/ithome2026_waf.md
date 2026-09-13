@@ -31,7 +31,11 @@ IP 都由你決定：平台在哪、被保護網站在哪、誰可以管理防�
 
 ## 二、前置條件
 
-- 管制端已裝好 BeakPlatform，且有一家企業要接收案件
+- 管制端已裝好 BeakPlatform，並且**另外建立一家企業**來接收案件（合約勾選
+  `form_workflow` 與 `open_defense`）。**不要用安裝時自動建立的系統預設企業**：它代表平台
+  本身，沒有資安人員角色、也沒有處置流程與路由，步驟一的 `--provision` 會直接失敗
+- 這家企業至少要有一位持 `SECURITY_STAFF` 角色的成員（建合約時會自動種出這個角色，
+  到「權限管理中心 → 帳號配角色」指派即可），案件才有人能簽核
 - 防禦端可連 Internet（抓 docker 映像檔與 Suricata 規則）、可連到管制端的平台埠
 - **管制端的主機防火牆要放行防禦端的 IP 打平台埠**（例如 iptables 只放行特定來源時，
   要補一條給防禦端），否則事件送不進去，症狀是連線逾時而不是 401
@@ -50,7 +54,15 @@ venv/bin/python scripts/od_node_pairing.py \
 
 - `--base-url` 是防禦端連回平台用的網址，含 `/beakplatform` 前綴
 - `--provision`：企業還沒有事件路由時，先建立最小受理鏈路（資安分類、處置表單、
-  簽核流程、catch-all 路由規則）。已有的企業會自動略過
+  簽核流程、catch-all 路由規則）。已有的企業會自動略過。
+  **這條最小流程只有「人工簽核 → 結束」，不會產生封鎖決策**，防禦端因此永遠沒有東西
+  可落地。要走完「案件 → 核可 → 防火牆封鎖」整圈，再多跑一支腳本建出含決策節點的
+  流程，並到「開放防禦 / 事件路由設定」把它建的範例規則啟用：
+
+  ```bash
+  venv/bin/python scripts/examples/provision_od_workflow_variants.py \
+      --org <企業secure_code> --with-routing --apply
+  ```
 - 產出**一行開通字串**（`ODN1.` 開頭），內含平台網址、事件受理金鑰與執行帳號。
   **只顯示一次**，複製起來給步驟二用；弄丟就重跑一次發新的（舊的到「安全中心 / API Key」
   與「開放防禦 / 服務帳號」停用）
@@ -109,6 +121,11 @@ sudo bash /opt/ithome2026-waf/install.sh --test-event
 它送一筆來源 `vector`、攻擊者 `203.0.113.42` 的測試事件進 Vector，幾秒後 od-bridge
 應印出 `forwarded ... status=200`，平台的「開放防禦 / 資安案件處置中心」出現一張標題含
 `TEST-` 的案件。看到 `status=422 no_mapping` 代表企業沒有事件路由（回步驟一加 `--provision`）。
+
+接著到案件處置中心以資安人員身分打開那張案件，填寫處置意見後按「封鎖攻擊來源」。
+幾秒內 od-bridge 應印出 `decision ... action=block target=ip/203.0.113.42`，防禦端執行
+`sudo nft list set inet secstack blocklist` 會看到 `203.0.113.42 timeout 1h`，平台的
+「開放防禦 / 防禦決策」該筆狀態為 `applied`。這一步需要流程含決策節點（見步驟一的說明）。
 
 真實路徑的驗證：從 Internet 打 `https://<你的 hostname>/?id=1' OR 1=1--`，應得到 403，
 幾秒後平台出現案件，攻擊者 IP 是你的公網 IP。正常請求則應看到被保護網站的畫面。
@@ -196,6 +213,9 @@ Cloudflare Tunnel 認的是 token 不是 IP，會自己重新連上。
 | od-bridge 一直 `401` | 開通字串貼錯或該 API Key 已停用；重跑步驟一發新的，`--reconfigure` |
 | `status=422 no_mapping` | 企業沒有事件路由；步驟一加 `--provision`，或在「開放防禦 / 事件路由設定」建規則 |
 | 執行帳號登入 `429` | 短時間登入太多次，等 90 秒 |
+| 執行帳號登入 `500`（od-bridge 印 `SA login 500: Internal server error`） | 管制端 `.env` 缺 `OD_SA_JWT_SECRET`（2026-09-13 之前的 `install.sh` 不會產生它）。在管制端重跑 `sudo bash /opt/BeakPlatform/scripts/install.sh --update` 會自動補上，或手動加一行 base64url 32 bytes 的值後 `systemctl restart beakplatform` |
+| 案件核可了，防禦端沒有動作 | 流程沒有決策節點（`--provision` 的最小流程就是這樣），到「開放防禦 / 防禦決策」看不到任何一筆。依步驟一建含決策節點的流程並啟用路由 |
+| 「放行」決策狀態變 `failed`、`unsupported_action:allow` | 防禦端的 nftables 執行點只做封鎖與解封，放行決策不該配 `nftables` 執行點。這不影響封鎖，是已知限制 |
 | WAF 正常請求 `502` | 防禦端連不到 `--backend`，先在防禦端 `curl` 那個位址；被保護網站若有 IP 白名單要放行防禦端 |
 | WAF 正常請求 `000` | 被保護網站對根路徑不回應（很多站台刻意如此），改測實際頁面路徑 |
 | Suricata 一直重啟 | `docker compose logs suricata`；常見是網卡名稱不對（`--iface`）或規則檔損毀（重跑規則更新） |

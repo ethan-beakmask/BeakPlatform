@@ -967,6 +967,38 @@ blocklist 帶剩餘 timeout 複製（用 TEST-NET `203.0.113.99 timeout 900s` �
 
 ---
 
+### 讀者路徑端對端驗證（2026-09-13，`.21` 待命機 → bpserv `.66` DemoSOC）
+
+Ethan 2026-09-13 問「一鍵安裝的防禦節點 → 讀者自建企業 → 案件流程」有沒有在 `.66` 測過，
+答案是**沒有**：bpserv DemoSOC 之前的 4 筆事件全是 `elk` 手送、0 個服務帳號、
+唯一一次配對（09-10）是 `.13` → `.16` BELUGA。當天用 `.21` 待命機當讀者節點補測，
+憑證 `/opt/tmp/verify/20260913-od-node-bpserv-demosoc.log`。做法與結果：
+
+1. bpserv `od_node_pairing.py --org demo-soc.example --apply`（不加 `--provision`，DemoSOC 已有路由）
+   → 新 key `ak_38dc044f67de1601` ＋ SA `sa_defense_node_21_36a0bd`
+2. `.21` 的 `.env` 換成該開通字串的五個值、`compose up -d --force-recreate od-bridge`
+   （**不跑 `--reconfigure`**，避免 fetch_source 與 bring_up 把待命機的東西動到；cloudflared 全程沒起來）
+3. **`.21` 打不到 `.66:8000` 的阻斷點不在 `.66` 的 iptables，在 Proxmox 的 `108.fw`**
+   （tap 介面層，`.66` 內部 tcpdump 根本看不到 SYN）。兩層都臨時加了 `.21`→8000 放行，驗完都已撤
+4. WAF 真實路徑：從 `.16` 對 `.21:8080` 送 SQLi，**Host 一定要帶 `www.beakmask.org`**
+   （vector `intake_filter` 會丟掉「內網 actor → 內網 target」，用 IP 當 Host 事件在源頭就消失）
+   → 403 → coraza 7 筆聚合成 1 案（S4，走 SOC 團隊版）；Suricata 另建 2 案（S2，走最小流程）
+5. **抓到讀者路徑的真實缺陷：`install.sh` 不產生 `OD_SA_JWT_SECRET`**，`/api/open_defense/sa/login`
+   對 fresh install 恆 500，節點永遠拉不到決策（bpserv 從 09-02 裝好到當天都是這樣，只是沒節點配對所以沒人撞到）。
+   已修 `install.sh`（fresh heredoc ＋ `--update` 冪等補值），bpserv 手動補值後重啟即通
+6. SA 登入通了之後，od-bridge 立刻拉走 PF-125 留下的 3 筆 `pending` 決策：block 203.0.113.42 → nftables `applied`；
+   兩筆 allow → `failed` `unsupported_action:allow`（nftables enforcer 只做 block/unblock，
+   DecisionWriter 對 allow 決策不該配 `nftables` 執行點，**已知限制未修**）
+7. 讀者的 `install.sh --test-event` → OD-20260913-0004（S3 → SOC 團隊版 L1）→ soc1 在案件中心
+   按「封鎖攻擊來源」→ DecisionWriter 寫 block → od-bridge 40 秒內 `applied`、`.21` blocklist 出現 `203.0.113.42 timeout 1h`。**整圈通**
+8. 復原：`.21` `.env` 還原指回 `.16`（`ik_5ad9...`）、od-bridge 停回 `Exited`（待命機本來就不跑它）、
+   Proxmox `108.fw` 與 `.66` iptables 的 TEMP 規則撤除、`.21`→`.66:8000` 回到 `000`
+
+**兩個文件層的後果**（已寫進 `docs/install/ithome2026_waf.md`）：讀者必須另建企業、不能用系統預設企業
+（沒有 `SECURITY_STAFF`，`--provision` 直接 `SystemExit`）；`--provision` 的最小流程沒有 DecisionWriter，
+只會建案不會產生決策，要走完整圈得再跑 `provision_od_workflow_variants.py --with-routing` 並啟用路由。
+
+
 ## 13. 熱備健康監看（PF-260，2026-09-12）
 
 **起因**：2026-09-12 sec-vm 網路靜默死亡，對外 530 約 12 小時無人發現，切換本身只花 15 秒。
