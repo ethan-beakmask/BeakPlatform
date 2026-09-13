@@ -244,10 +244,10 @@
                 if (!this.createdKey) return;
                 const text = 'key_id: ' + this.createdKey.key_id +
                     '\nsecret: ' + this.createdKey.secret;
-                try {
-                    await navigator.clipboard.writeText(text);
-                    this.secretCopied = true;
-                } catch (e) {
+                // 平台跑在 http，navigator.clipboard 是 undefined；
+                // Utils.copyToClipboard 內含 textarea + execCommand fallback（app.js）
+                this.secretCopied = await Utils.copyToClipboard(text);
+                if (!this.secretCopied) {
                     this.flash(__('複製失敗，請手動選取'), true);
                 }
             },
