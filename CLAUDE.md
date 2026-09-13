@@ -1868,6 +1868,8 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
 | 累積待做（解凍時依序執行） | 來源 | 指令／說明 |
 |---|---|---|
 | 退役集團共用 DB：軟刪選單、DROP 兩表、DROP 六欄 | PF-269（2026-09-13） | `venv/bin/python scripts/retire_cg_shared_db.py --dry-run` → `--apply`；細節 `dev-notes/CONGLOMERATE_SHARED_DB_RETIRED.md` |
+| SqlExecutor → SysSqlExecutor：節點定義、graph／發行快照／執行紀錄字串、系統企業授權、節點 icon 路徑 | PF-254 第一階段（2026-09-13） | `venv/bin/python scripts/migrate_sqlexecutor_to_sys.py --dry-run` → `--apply`（冪等，第二次全 0）；bpserv 沒有 node展覽館 示範流程，預期只有 node_definitions 1／系統企業授權 1 |
+| 驗 PF-266（origin URL 自我修復）：**這批改了 `install.sh` 本身，`--update` 要跑兩次** | PF-266（2026-09-13） | 第一次 `--update` 前先把 bpserv 的 origin 改回舊格式重現：`git -C /opt/BeakPlatform remote set-url origin "https://<PAT>@github.com/ethan-beakmask/BeakPlatform.git"`，第二次 `--update` 應印「remote URL 為舊格式（缺 x-access-token: 前綴），自動修正」且不再要密碼；驗完 `note_task_status(ref="PF-266", status="completed")` |
 
 （下表「部署狀態」欄記的是凍結前最後一次 `--update` 的狀態，凍結期間不會再往前推。）
 
@@ -2289,8 +2291,10 @@ graph 帶該節點寫入回 403「流程中含有本企業未獲授權的節點�
 執行紀錄裡的舊 node_type 字串，並修正節點 icon 路徑——**icon 那段不能省**，
 更名 `git mv` 了圖檔，漏了就是設計器畫布破圖而畫面不報錯。
 （連 `AiAgent` 借用舊 `sqlexecutor.svg` 的歷史節點也一併導到 `aiagent.svg`。）
-**企業級 SQL 節點（連企業專屬庫 `org_<id>`）是第二階段，鐵人賽後再評估，現在不做**
-（決策脈絡見 BBN `PF-254`）。
+**企業級 SQL 節點（連企業專屬庫 `org_<id>`）Ethan 2026-09-13 決定不開發**——
+第二視角 session 的注入實測證明 `org_N` 與平台主庫共用 postmaster 時，隔離只值
+「PG 沒有低權 RCE ＋ 即時修補」，不是結構邊界；同日連集團共用 DB 也一併退役（PF-269）。
+看到舊文件寫「鐵人賽後再評估」一律過時（決策脈絡見 BBN `PF-254`）。
 
 **`SysTelegram` 的設定組下拉曾經恆為「無法載入設定」**：前端寫死
 `/api/system/data/settings/telegram`，那支端點**從來不存在**（實測 404）。

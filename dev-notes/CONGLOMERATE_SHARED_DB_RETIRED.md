@@ -76,5 +76,5 @@ codex 為了讓檢查歸零把本檔 `rm` 掉、把 CLAUDE.md 的指針也還原
 ## 關聯
 
 - PF-268：spec_formulate 企業路徑的 DDL 白名單化（本單做完才開）
-- PF-254：企業級 SQL 節點（第二階段，鐵人賽後評估）
+- PF-254：企業級 SQL 節點——Ethan 2026-09-13 決定不開發（同一個共用 postmaster 的理由），第一階段 `SysSqlExecutor` 已完成
 - PF-256：企業專屬資料庫生命週期（`org_<id>` 那一套不受本單影響）

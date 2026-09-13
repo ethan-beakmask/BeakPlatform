@@ -25,9 +25,13 @@ handler 的 `handle()` 開頭另有一道 `is_node_allowed()` fail-closed 最後
 > `AiAgent` 導到 `aiagent.svg`（舊 graph 裡 AiAgent 借用過 `sqlexecutor.svg`，
 > 見 `dev-notes/WORKFLOW_DESIGNER_NOTES.md`），其餘型別不動。
 
-**企業級 SQL 節點（連企業專屬庫 `org_<id>`）是第二階段，鐵人賽之後再評估，現在不做。**
-延後的理由不是「現在有洞」而是風險耦合（PostgreSQL 的提權途徑目前全關，
-但那是可能為了別的需求被打開的外部變數）——完整脈絡與七項殘餘攻擊面見 BBN `PF-254`。
+**企業級 SQL 節點（連企業專屬庫 `org_<id>`）Ethan 2026-09-13 決定不開發，本單就此結案。**
+同日第二視角 session 對 `org_220` 做活體注入實測（`/opt/tmp/verify/20260913-pf254-inject.log`）：
+非 superuser 角色隔離擋得住跨租戶，但那是「PG 沒有低權 RCE ＋ 即時修補」的時間點防禦，
+`org_N` 與平台主庫共用 postmaster 就不是結構邊界；要結構上不可能得把 `org_N` 移到獨立
+PG instance，成本不值。同日集團共用 DB 也因同一理由退役（PF-269）。剩餘要收的是
+spec_formulate 建表 DDL 的白名單化（PF-268），與 SQL 節點無關。
+完整脈絡與七項殘餘攻擊面見 BBN `PF-254`。
 
 流程節點型別 `SysSqlExecutor`：讓流程呼叫**平台主庫裡事先登錄過**的 stored procedure，
 把結果寫進流程變數，可再插一筆簽核註記給人類參考。
