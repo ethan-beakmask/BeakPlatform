@@ -302,8 +302,11 @@ def run_bootstrap(mode, admin_password=None, sql_dir=None) -> dict:
     if fresh:
         _run_step(summary, 'seed_system_org_defaults',
                   lambda: _seed_system_org_defaults(admin_password))
-        _run_step(summary, 'seed_node_showcase',
-                  lambda: _seed_node_showcase(admin_password))
+        if os.environ.get('SKIP_NODE_SHOWCASE', '').strip().lower() in ('1', 'true', 'yes'):
+            summary['seed_node_showcase'] = {'skipped': True, 'reason': 'SKIP_NODE_SHOWCASE'}
+        else:
+            _run_step(summary, 'seed_node_showcase',
+                      lambda: _seed_node_showcase(admin_password))
 
     return summary
 

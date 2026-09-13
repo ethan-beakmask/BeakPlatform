@@ -19,6 +19,7 @@
 #   BEAK_PORT              BeakPlatform 存取 port (預設: 8000，被佔用時自動找空 port)
 #   ADMIN_INITIAL_PASSWORD 管理員初始密碼 (不設定則互動式輸入)
 #   GITHUB_TOKEN           GitHub Personal Access Token (不設定則互動式輸入)
+#   SKIP_NODE_SHOWCASE     設為 1 時全新安裝不種入「node展覽館」範例資料包 (預設種入；--update 不受影響)
 #   GITHUB_REPO            GitHub clone URL (預設: https://github.com/ethan-beakmask/BeakPlatform.git)
 # =============================================================================
 set -e
@@ -221,6 +222,7 @@ check_pg_version() {
 run_bootstrap() {
     sudo -u "$SERVICE_USER" env \
         ADMIN_INITIAL_PASSWORD="${ADMIN_PASS:-}" \
+        SKIP_NODE_SHOWCASE="${SKIP_NODE_SHOWCASE:-}" \
         HOME="$INSTALL_DIR" \
         bash -c "
             set -a; source '$INSTALL_DIR/.env'; set +a
