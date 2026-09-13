@@ -1,3 +1,7 @@
+Ethan本人來加註明：以下公告不發佈了，留著是避免其他atom說缺檔。20260913 14:57
+
+
+
 # 公告擬稿：子系統開發模組（NoCode Builder）尚未完工（2026-09-13）
 
 > 本檔只是擬稿，供 Ethan 貼到 `/security/alert-broadcasts/` 建立公告使用。
