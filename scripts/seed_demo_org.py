@@ -224,7 +224,7 @@ def _published_flows(org):
     return [(row.name, row.secure_code) for row in rows]
 
 
-def _print_summary(org, company, password, generated_password, db_result):
+def _print_summary(org, company, password, generated_password, db_result, node_showcase_result=None):
     log('\n' + '=' * 72)
     log('示範企業佈建完成')
     log('=' * 72)
@@ -237,6 +237,15 @@ def _print_summary(org, company, password, generated_password, db_result):
     log('已發行流程:')
     for name, secure_code in _published_flows(org):
         log(f'  - {name}: {secure_code}')
+    if node_showcase_result is not None:
+        log(
+            'node展覽館: '
+            f"done={len(node_showcase_result.get('done', []))} "
+            f"skipped={len(node_showcase_result.get('skipped', []))} "
+            f"failed={len(node_showcase_result.get('failed', []))}"
+        )
+        for name, reason in node_showcase_result.get('skipped', []):
+            log(f'  - SKIP {name}: {reason}')
     marker = '（自動產生，只顯示這一次）' if generated_password else '（只顯示這一次）'
     log(f'示範帳號共用密碼 {marker}: {password}')
     log('下一步:')
@@ -253,6 +262,7 @@ def parse_args(argv):
   set -a && source .env && set +a
   venv/bin/python scripts/seed_demo_org.py --dry-run
   venv/bin/python scripts/seed_demo_org.py --apply --password '<密碼>'
+  venv/bin/python scripts/seed_demo_org.py --apply --node-showcase --password '<密碼>'
         """,
     )
     parser.add_argument('--dry-run', action='store_true', help='只檢查與預演，不寫入')
@@ -260,6 +270,8 @@ def parse_args(argv):
     parser.add_argument('--password', default=None, help='示範帳號共用密碼；未給則讀 DEMO_ORG_PASSWORD 或自動產生')
     parser.add_argument('--code', default='DEMOSOC', help='企業 code，預設 DEMOSOC')
     parser.add_argument('--domain', default='demo-soc.example', help='企業登入 domain，預設 demo-soc.example')
+    parser.add_argument('--node-showcase', action='store_true',
+                        help='建立示範企業時一併佈建企業級 node展覽館；受限節點示範自動跳過')
     args = parser.parse_args(argv)
     if not args.dry_run and not args.apply:
         parser.print_help()
@@ -277,6 +289,7 @@ def main(argv=None):
     from app import create_app, db
     from app.models import Organization
     from app.services.org_database_service import ensure_org_database
+    from scripts.examples.node_showcase import seed_node_showcase
     from scripts.examples import provision_hr_lookup_demo
     from scripts.examples import provision_od_intake_for_org
     from scripts.examples import provision_od_workflow_variants
@@ -337,11 +350,40 @@ def main(argv=None):
             else:
                 log('  將建立並發行差旅費申請（人事取值示範）')
 
+            node_showcase_result = None
+            if args.node_showcase:
+                log('[8/8] 企業級 node展覽館')
+                if args.apply:
+                    node_showcase_result = seed_node_showcase(
+                        org,
+                        apply=True,
+                        password=password,
+                    )
+                    for name, reason in node_showcase_result.get('skipped', []):
+                        log(f'  - SKIP {name}: {reason}')
+                    failed = node_showcase_result.get('failed', [])
+                    if failed:
+                        detail = '；'.join(f'{name}: {err}' for name, err in failed)
+                        raise RuntimeError(f'node展覽館佈建失敗: {detail}')
+                    log(
+                        f"  done={len(node_showcase_result.get('done', []))} "
+                        f"skipped={len(node_showcase_result.get('skipped', []))} failed=0"
+                    )
+                else:
+                    log('  將佈建企業級 node展覽館；受限節點示範會依授權自動跳過')
+
             if args.apply:
                 db.session.commit()
                 db_result = ensure_org_database(org)
                 db.session.refresh(org)
-                _print_summary(org, company, password, generated_password, db_result)
+                _print_summary(
+                    org,
+                    company,
+                    password,
+                    generated_password,
+                    db_result,
+                    node_showcase_result=node_showcase_result,
+                )
             else:
                 db.session.rollback()
                 log('[8/8] 預演完成，未寫入任何資料')

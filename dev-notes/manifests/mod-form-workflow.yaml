@@ -109,6 +109,7 @@ files:
     - scripts/node_grant.py                                # restricted 節點企業授權維運工具
   tests:
     - backend/tests/test_node_showcase.py                      # node展覽館 runner/helper 與示範庫存 model
+    - backend/tests/test_node_showcase_package.py              # node展覽館企業／系統級安裝 plan 與 metadata 守恆
     - backend/tests/test_execution_code_per_org.py             # PF-116 per-org execution_code 約束與序號池
     - backend/tests/test_form_serial_per_org.py                # per-org serial_number 約束與序號池
     - backend/tests/test_ai_usage_quota.py                     # AiAgent 用量記錄與配額

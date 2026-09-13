@@ -2,14 +2,61 @@
 
 **適用對象：** 剛完成安裝、想快速驗證企業管理、人資核決鏈、表單流程與 Open Defense 的系統管理員。
 
-## 一、有哪兩包
+## 一、有哪三包
 
 | 資料包 | 佈建方式 | 內容 |
 |---|---|---|
-| 系統級 node 展覽館 | 安裝時內建（全新安裝時設環境變數 `SKIP_NODE_SHOWCASE=1` 可不種入；`--update` 不受影響） | 安裝完成後系統預設企業的表單中心會有「node展覽館」分類，用 `enterprise@<系統企業代碼>` 登入即可看；受限節點出廠關閉，看得到、要跑得動請見 `os_node.md`／`ai_node.md`。 |
-| 企業級範例企業 | `scripts/seed_demo_org.py` | 建立一家可直接登入的「示範企業」，含人資結構、Open Defense 受理鏈路、SOC 團隊版/單人版流程與差旅費人事取值示範。 |
+| 系統級 node展覽館 | 系統預設企業出廠內建；全新安裝自動種入，設 `SKIP_NODE_SHOWCASE=1` 可不種 | 安裝完成後系統預設企業的表單中心會有「node展覽館」分類，含企業級與系統級節點示範。升級／追加可執行 `scripts/seed_node_showcase.py --apply [--only <項目>]`，用 `--list` 查看現況。 |
+| 企業級 node 範例 | `scripts/seed_node_showcase.py --org <企業>`，或 `scripts/seed_demo_org.py --node-showcase` | 在指定企業建立同一組 node 範例；OS／Sys 系列等受限節點示範會依授權自動排除，未採購模組的示範也會跳過。 |
+| 示範企業 | `scripts/seed_demo_org.py` | 建立一家可直接登入的「示範企業」，含人資結構、Open Defense 受理鏈路、SOC 團隊版/單人版流程與差旅費人事取值示範。 |
 
-## 二、範例企業包含什麼
+## 二、node展覽館怎麼裝
+
+查看系統預設企業現況：
+
+```bash
+venv/bin/python scripts/seed_node_showcase.py --list
+```
+
+查看指定企業現況：
+
+```bash
+venv/bin/python scripts/seed_node_showcase.py --list --org DEMOSOC
+```
+
+對指定企業佈建企業級 node 範例：
+
+```bash
+venv/bin/python scripts/seed_node_showcase.py --apply --org DEMOSOC --password '<符合密碼政策的密碼>'
+```
+
+追加或升級系統預設企業的單一示範：
+
+```bash
+venv/bin/python scripts/seed_node_showcase.py --apply --only B8
+```
+
+建立示範企業時一併佈建企業級 node 範例：
+
+```bash
+venv/bin/python scripts/seed_demo_org.py --apply --node-showcase --password '<符合密碼政策的密碼>'
+```
+
+### 哪些示範是系統級
+
+下列示範包含受限節點；指定一般企業佈建時，若該企業未取得對應節點授權會自動跳過：
+
+| 代號 | 示範 | 受限節點 |
+|---|---|---|
+| B6 | osexecutor | `OsExecutor` |
+| B7 | osfile | `OsFileRead`、`OsFileWrite` |
+| B8 | sqlexecutor | `SysSqlExecutor` |
+| B11 | telegram | `SysTelegram` |
+| B12 | email | `SysEmailRelay` |
+| waf_failover | WAF 節點熱備切換 | `OsExecutor` |
+| waf_monitor | WAF 自動巡檢與切換 | `OsExecutor`、`SysTelegram` |
+
+## 三、示範企業包含什麼
 
 | 項目 | 內容 |
 |---|---|
@@ -20,7 +67,7 @@
 | SOC 流程 | SOC 團隊版、小企業單人版；SOC 團隊版路由預設啟用，`severity_id >= 3` |
 | 人事取值 | 差旅費申請流程示範依金額沿主管鏈找核決人 |
 
-## 三、怎麼裝
+## 四、示範企業怎麼裝
 
 先載入環境變數，再執行預演：
 
@@ -43,7 +90,7 @@ DEMO_ORG_PASSWORD='<符合密碼政策的密碼>' venv/bin/python scripts/seed_d
 
 如果 `--password` 與 `DEMO_ORG_PASSWORD` 都沒有提供，腳本會自動產生 16 碼密碼，並只在最後總結顯示一次。
 
-## 四、裝完怎麼用
+## 五、裝完怎麼用
 
 管理員登入：
 
@@ -57,7 +104,7 @@ http://<平台IP>:<埠>/beakplatform/auth/org/demo-soc.example/login
 
 申請人登入後，進入表單中心送出「差旅費申請（人事取值示範）」。填入金額後送單，可觀察系統依申請人的部門與職等上限找出主管鏈核決人。
 
-## 五、怎麼移除
+## 六、怎麼移除
 
 沒有移除參數。請用系統管理員到：
 
@@ -67,7 +114,7 @@ http://<平台IP>:<埠>/beakplatform/organizations/
 
 先將「示範企業」軟刪除，再到列表頁最下方使用「永久刪除已軟刪除的企業」。硬刪除流程會動態掃 `org_secure_code` 全表清理該企業資料。
 
-## 六、常見問題
+## 七、常見問題
 
 | 問題 | 說明 |
 |---|---|

@@ -382,10 +382,9 @@ def _seed_node_showcase(admin_password=None) -> dict:
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
 
-    from app.models import Organization
-    from scripts.examples.node_showcase import seed_node_showcase
+    from scripts.examples.node_showcase import resolve_showcase_org, seed_node_showcase
 
-    org = Organization.query.filter_by(code='SYSTEM', is_deleted=False).first()
+    org = resolve_showcase_org()
     if not org:
         raise BootstrapError('系統企業不存在，無法種入 node展覽館')
 
@@ -397,5 +396,6 @@ def _seed_node_showcase(admin_password=None) -> dict:
     return {
         'done': len(result.get('done', [])),
         'failed': len(result.get('failed', [])),
+        'skipped': len(result.get('skipped', [])),
         'category_secure_code': result.get('category_secure_code'),
     }

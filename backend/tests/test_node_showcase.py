@@ -25,11 +25,15 @@ def test_ensure_showcase_category_is_idempotent(app, test_org):
     assert second.show_in_form_design is True
     assert second.show_in_workflow_design is True
     assert second.show_in_form_center is True
+    assert second.is_system is False
 
 
 def test_showcase_items_are_importable_and_expose_provision(app):
     assert SHOWCASE_ITEMS
-    for _name, module_name, _opts in SHOWCASE_ITEMS:
+    for _name, module_name, _opts, metadata in SHOWCASE_ITEMS:
+        assert isinstance(metadata.get('node_types'), list)
+        assert isinstance(metadata.get('requires_modules'), list)
+        assert isinstance(metadata.get('depends_on'), list)
         module = importlib.import_module(module_name)
         assert callable(getattr(module, 'provision', None)), module_name
 
