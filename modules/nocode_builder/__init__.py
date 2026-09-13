@@ -13,7 +13,7 @@ import os
 _MENU_ITEMS = [
     {
         'code': 'nocode_builder',
-        'name': '子系統開發模組',
+        'name': '(未完成)NoCode_Builder',
         'icon': 'ri-database-2-line',
         'parent': None,
         'sort_order': 5,
