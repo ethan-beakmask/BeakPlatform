@@ -1886,7 +1886,7 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   開通字串與 WAF 那台要貼的整行，並存 `$INSTALL_DIR/demo-credentials.txt`（root 0600）。已安裝環境可單獨
   `install.sh --demo`。示範密碼＝`ADMIN_INITIAL_PASSWORD` 若過 12 碼四類政策，否則腳本自動產生。
   fresh 模式下示範段失敗只 warn 不中止；單獨 demo 模式失敗 exit 1。`DEMO_ORG_CODE`／`DEMO_ORG_DOMAIN` 可覆寫（測試用）。
-  **端對端尚未在全新機器實走**（2026-09-13 23:3x 時點），只驗過 bash -n、參數解析與各子指令。
+  **2026-09-13 23:34 已在 bpserv 全新重裝（GitHub `85574843`）以 `INSTALL_DEMO=1` 端對端實走成功**（示範段一次成功、憑證檔 0600、DemoSOC 五模組／15 帳號／6 流程；憑證 `/opt/tmp/verify/20260913-bpserv-fresh-4-demo.log`）。
 - **`scripts/bp_trigger.py`**：讀者用的 HMAC 建單工具（純標準庫單檔），`--list`／`--form-code`／`--selftest`，
   認證走 `BP_BASE_URL`／`BP_KEY_ID`／`BP_SECRET`。dev DEMOSOC 實測憑證 `/opt/tmp/verify/20260913-reader-oneclick.log`
   （建 key → 列 3 張 SEC_* 表單 → 建單 201 案件 RUNNING → 未知欄位 400 帶 allowed_keys）。
