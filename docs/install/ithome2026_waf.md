@@ -85,14 +85,11 @@ venv/bin/python scripts/od_node_pairing.py \
 ## 四、步驟二：在防禦端執行安裝
 
 ```bash
-curl -fsSL -H "Authorization: token <GitHub PAT>" \
-    https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/ITHome2026-WAF/install.sh -o install.sh
-sudo GITHUB_TOKEN=<GitHub PAT> bash install.sh \
+curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/ITHome2026-WAF/install.sh -o install.sh
+sudo bash install.sh \
     --pair 'ODN1....' \
     --backend http://<被保護網站IP>:<埠>
 ```
-
-`GITHUB_TOKEN` 是同一把 PAT：腳本要從 GitHub 取回 `ITHome2026-WAF/` 目錄，repo 是私有的就必須給。
 
 腳本會自動：裝 docker 與 nftables → 從 GitHub 取得 `ITHome2026-WAF/` → 寫 `.env` →
 產生 Suricata / ClickHouse / 防火牆設定 → 下載 Suricata 規則（約 40 MB）→

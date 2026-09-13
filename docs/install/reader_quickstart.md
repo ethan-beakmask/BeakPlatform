@@ -11,7 +11,6 @@
 | 主機 A（平台） | Ubuntu 22.04／24.04，2 vCPU、4 GB、20 GB 磁碟，固定內網 IP |
 | 主機 B（防禦節點） | Ubuntu 22.04／24.04，2 vCPU、6 GB、30 GB 磁碟，固定內網 IP，可連 Internet |
 | 兩台都要 | 一個能 `sudo` 的帳號；主機 B 能連到主機 A 的平台埠（預設 8000） |
-| GitHub PAT | 一把有 `repo` 權限的 Personal Access Token（程式碼在私有 repo，兩台安裝都用同一把） |
 | 一組密碼 | 至少 12 碼、含大小寫、數字、特殊符號（例 `Practice2026#Ok`）。**同一組密碼會用在系統管理員與示範企業所有帳號** |
 
 負載是 1～3 人練習用，上表已經寬鬆。時鐘不必對時，但兩台差超過 5 分鐘簽章會失敗（NTP 通常已開）。
@@ -19,9 +18,8 @@
 ## 一、主機 A：裝平台（一行，約 3～5 分鐘）
 
 ```bash
-curl -sL -H "Authorization: token <你的PAT>" \
-  https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scripts/install.sh \
-  | sudo GITHUB_TOKEN=<你的PAT> ADMIN_INITIAL_PASSWORD='<你的密碼>' INSTALL_DEMO=1 bash
+curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scripts/install.sh \
+  | sudo ADMIN_INITIAL_PASSWORD='<你的密碼>' INSTALL_DEMO=1 bash
 ```
 
 `INSTALL_DEMO=1` 讓安裝結束後自動多做兩件事：建立示範企業 DemoSOC（含資安人員、事件路由、處置流程），
@@ -60,12 +58,11 @@ curl -sL -H "Authorization: token <你的PAT>" \
 
 ## 二、主機 B：裝防禦節點（一行，約 3～6 分鐘）
 
-**以下在主機 B 上執行。**把主機 A 總結裡的「WAF 主機執行指令」貼到主機 B，補上 PAT 與被保護網站位址：
+**以下在主機 B 上執行。**把主機 A 總結裡的「WAF 主機執行指令」貼到主機 B，補上被保護網站位址：
 
 ```bash
-curl -fsSL -H "Authorization: token <你的PAT>" \
-  https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/ITHome2026-WAF/install.sh -o install.sh
-sudo GITHUB_TOKEN=<你的PAT> bash install.sh \
+curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/ITHome2026-WAF/install.sh -o install.sh
+sudo bash install.sh \
   --pair 'ODN1....' \
   --backend http://<主機A IP>:8000 \
   --admin-ips <你的工作機IP> \
@@ -117,7 +114,6 @@ python3 /opt/BeakPlatform/scripts/bp_trigger.py \
 
 | 症狀 | 原因與處置 |
 |---|---|
-| 主機 A 安裝的 `curl` 回 404 | PAT 沒帶、或 header 寫錯。`-H "Authorization: token <PAT>"` 那行不能省 |
 | 開網址是 404 | 少了 `:8000` 或 `/beakplatform` |
 | 主機 B `--verify` 說平台連不到 | 主機 A 有防火牆時要放行主機 B 的 IP 打 8000；症狀是逾時不是 401 |
 | od-bridge 一直 401 | 開通字串貼錯或貼到舊的。回主機 A 跑 `sudo bash /opt/BeakPlatform/scripts/install.sh --demo` 重發一組，再 `--reconfigure` |
