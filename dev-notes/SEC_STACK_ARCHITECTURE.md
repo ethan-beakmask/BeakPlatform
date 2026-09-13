@@ -967,6 +967,26 @@ blocklist 帶剩餘 timeout 複製（用 TEST-NET `203.0.113.99 timeout 900s` �
 
 ---
 
+### `.21` 已於 2026-09-14 00:3x 清空重裝成「讀者版防禦節點」，配 bpserv DemoSOC（Ethan 指示）
+
+**`.21` 從此不再是 www.beakmask.org 的熱備待命機**：`install.sh --uninstall --purge --yes` ＋ 手動清掉
+`waf-service-ip`／`waf-service-fence` unit、docker 映像與 volume、`/opt/ithome2026-waf`、`inet secstack`，reboot 後
+以 GitHub `85574843` 的 `ITHome2026-WAF/install.sh` 全新安裝（讀者路徑：`--pair '<bpserv --demo 印的 ODN1>'
+--backend http://192.168.0.66:8000 --admin-ips 192.168.0.10,192.168.0.16 --yes`，**沒有 tunnel、沒有歡迎頁**）。
+`--verify` 全綠、`--test-event` → bpserv DemoSOC `od_intake_events` 1 筆 `signature_verified=t` → 案件
+`OD-20260913-0001` RUNNING（bpserv 時鐘是 UTC）。憑證 `/opt/tmp/verify/20260914-waf21-wipe.log`、`20260914-waf21-fresh.log`。
+
+- 服務 IP `.20` 全程由 `.13` 持有，對外 www.beakmask.org 不受影響；**現在只剩 `.13` 一台在服務、沒有備援**，
+  `failover.sh status` 會把 `.21` 列成「無 SNAT／stopped」，`switch` 切過去會壞（`.21` 沒有 cloudflared 與 standby unit）
+- 重裝前 `.21` 的 `.env`（含 CF tunnel token、BELUGA intake key `ik_5ad9…`、ClickHouse／Grafana 密碼）備份在
+  `.16:/opt/tmp/backup/waf-21-pre-reinstall-20260914/env.21`，要把 `.21` 恢復成熱備就從這份還原
+- 網路：`.21`→`.66:8000` 這次是**永久**放行（Proxmox `108.fw` 多一條 `IN ACCEPT -source 192.168.0.21 -p tcp -dport 8000`，
+  備份 `.100:/root/108.fw.bak-20260914-waf21`；`.66:/etc/iptables-bpserv.rules` 多一條 `WAF node .21`，
+  備份 `.rules.bak-20260914-waf21`），與 09-13 那次驗完就撤的 TEMP 規則不同
+- `.21` 現在的 od-bridge 綁 DemoSOC 的 `ak_fb54061119cac611`／`sa_ithome2026_waf_bd3215`（`/opt/BeakPlatform/demo-credentials.txt`），
+  WAF 只能從內網 `http://192.168.0.21:8080` 打，Host 要帶什麼都可以（沒設 CF_HOSTNAME）
+- `/opt` 上的 `BeakBroodNest`、`Ethan_Lab`、`sec-stack.archive.20260515` 與 `/etc/crontab` 的 BeakBroodNest 排程**沒有動**（不屬 WAF）
+
 ### 讀者路徑端對端驗證（2026-09-13，`.21` 待命機 → bpserv `.66` DemoSOC）
 
 Ethan 2026-09-13 問「一鍵安裝的防禦節點 → 讀者自建企業 → 案件流程」有沒有在 `.66` 測過，
