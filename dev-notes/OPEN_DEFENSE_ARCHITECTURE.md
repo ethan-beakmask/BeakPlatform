@@ -634,6 +634,16 @@ SIG=$(printf '%s\n%s' "$TS" "$BODY" | openssl dgst -sha256 -mac HMAC -macopt hex
 - **`observe` 動作不可加 `edl` 執行點**：od-bridge 的 EDL enforcer 只認
   block/allow/unblock，收到 observe 回 `unsupported_action`，整筆決策會從
   `applied` 掉成 `partial`。改 DecisionWriter 的 `enforcement_points` 時要照 action 分
+- **`allow` 動作也不可加 `nftables`／`crowdsec`**（2026-09-13 Ethan 裁示，PF-125
+  在 bpserv 實測踩到）：這兩個執行器的 `apply()` 只實作 block/unblock
+  （`od_bridge/enforcers/nftables.py`、`crowdsec.py`），收到 allow 回
+  `unsupported_action`，決策從 `pending` 掉成 `failed`。**2026-09-13 起
+  `decision_writer_handler.py` 的 `ENFORCEMENT_POINT_ACTIONS` 對照表會在寫入
+  決策前自動過濾**：action=allow 時只保留支援 allow 的執行點（目前只有
+  `edl`），config 一個都不剩就補回 `['edl']`；block/unblock/observe 不受影響，
+  維持上一條的既有行為。設計器面板（`wf-node-decision-writer.js`）的
+  nftables／crowdsec 勾選也會在 action=allow 時反灰同步，但那只是提示，
+  真正的防線是 handler 這道過濾
 
 存取面：SMB `\\192.168.0.16\beakshare`（免帳密，`hosts allow` 只有 `.10`/`.16`/`.100`/`127.0.0.1`），
 HTTP `/edl/<org_sc>/blocklist.txt`（`@public_route` ＋ `OD_EDL_ALLOWED_IPS` 白名單 ＋ 60/min，

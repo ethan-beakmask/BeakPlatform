@@ -215,7 +215,7 @@ Cloudflare Tunnel 認的是 token 不是 IP，會自己重新連上。
 | 執行帳號登入 `429` | 短時間登入太多次，等 90 秒 |
 | 執行帳號登入 `500`（od-bridge 印 `SA login 500: Internal server error`） | 管制端 `.env` 缺 `OD_SA_JWT_SECRET`（2026-09-13 之前的 `install.sh` 不會產生它）。在管制端重跑 `sudo bash /opt/BeakPlatform/scripts/install.sh --update` 會自動補上，或手動加一行 base64url 32 bytes 的值後 `systemctl restart beakplatform` |
 | 案件核可了，防禦端沒有動作 | 流程沒有決策節點（`--provision` 的最小流程就是這樣），到「開放防禦 / 防禦決策」看不到任何一筆。依步驟一建含決策節點的流程並啟用路由 |
-| 「放行」決策狀態變 `failed`、`unsupported_action:allow` | 防禦端的 nftables 執行點只做封鎖與解封，放行決策不該配 `nftables` 執行點。這不影響封鎖，是已知限制 |
+| 「放行」決策狀態變 `failed`、`unsupported_action:allow` | 2026-09-13 之前的版本會這樣，現在放行只配 EDL。平台端 `decision_writer_handler.py` 已改為寫入放行決策前自動只保留支援放行的執行點（目前只有 `edl`），nftables／crowdsec 不再配上去；升級平台版本即可，不必手動改流程 |
 | WAF 正常請求 `502` | 防禦端連不到 `--backend`，先在防禦端 `curl` 那個位址；被保護網站若有 IP 白名單要放行防禦端 |
 | WAF 正常請求 `000` | 被保護網站對根路徑不回應（很多站台刻意如此），改測實際頁面路徑 |
 | Suricata 一直重啟 | `docker compose logs suricata`；常見是網卡名稱不對（`--iface`）或規則檔損毀（重跑規則更新） |

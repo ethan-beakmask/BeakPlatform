@@ -15,6 +15,26 @@ from .base import BaseNodeHandler
 logger = logging.getLogger(__name__)
 
 
+# 各執行端 apply() 實際支援的 action 集合(2026-09-13 對照
+# ITHome2026-WAF/od-bridge/od_bridge/enforcers/*.py 逐一確認,不得憑印象增修):
+#   - nftables.py:104-128  只認 block/unblock,其餘一律 unsupported_action
+#   - crowdsec.py:61-104   只認 block/unblock,其餘一律 unsupported_action
+#   - edl.py:154-188       _LIST_FOR_ACTION={block,allow} + 通用 unblock
+#   - cloudflare.py        整支尚未實作,任何 action 皆回 not_configured /
+#                          not_implemented_yet,結構上不算支援任何 action
+# 這張表是 DecisionWriter 寫決策前過濾 enforcement_points 的唯一依據,
+# 新增/調整執行端支援的 action 時只改這裡。
+ENFORCEMENT_POINT_ACTIONS = {
+    'nftables': {'block', 'unblock'},
+    'crowdsec': {'block', 'unblock'},
+    'edl': {'block', 'allow', 'unblock'},
+    'cloudflare': set(),
+}
+
+# 目前唯一支援 allow 的執行點,config 過濾後一個都不剩時的預設值
+DEFAULT_ALLOW_ENFORCEMENT_POINTS = ['edl']
+
+
 class DecisionWriterHandler(BaseNodeHandler):
     """寫入防禦決策的節點處理器"""
 
@@ -72,6 +92,27 @@ class DecisionWriterHandler(BaseNodeHandler):
             ]
         if not isinstance(enforcement_points, list):
             enforcement_points = []
+
+        # allow 決策的執行點過濾(Ethan 2026-09-13 裁示):
+        # nftables/crowdsec 執行器不認得 allow,拉到手會回 unsupported_action,
+        # 讓整筆決策從 applied 掉成 failed。block/unblock/observe 維持既有行為,
+        # 不在此處過濾(observe 本就不該配 edl,見
+        # dev-notes/OPEN_DEFENSE_ARCHITECTURE.md 該段,這裡不動它)。
+        if action == 'allow':
+            original_points = list(enforcement_points)
+            enforcement_points = [
+                ep for ep in enforcement_points
+                if 'allow' in ENFORCEMENT_POINT_ACTIONS.get(ep, set())
+            ]
+            if not enforcement_points:
+                enforcement_points = list(DEFAULT_ALLOW_ENFORCEMENT_POINTS)
+            dropped_points = [ep for ep in original_points if ep not in enforcement_points]
+            if dropped_points:
+                self.log_warning('DecisionWriter allow 決策不支援下列執行點,已略過', {
+                    'action': action,
+                    'dropped_enforcement_points': dropped_points,
+                    'kept_enforcement_points': enforcement_points,
+                })
 
         # 嚴格從 queue_item 取 org_secure_code,禁止從 form 欄位推斷
         org_secure_code = self.queue_item.org_secure_code

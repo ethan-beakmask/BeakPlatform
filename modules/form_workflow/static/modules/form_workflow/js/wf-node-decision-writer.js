@@ -170,20 +170,33 @@ function toggleDwFields() {
     const action = document.getElementById('dwAction')?.value || 'block';
     const targetType = document.getElementById('dwTargetType')?.value || 'ip';
     const edl = document.getElementById('dwEpEdl');
+    // nftables／crowdsec 執行器只做 block/unblock，收到 allow 會回
+    // unsupported_action（2026-09-13 裁示，見 decision_writer_handler.py 的
+    // ENFORCEMENT_POINT_ACTIONS）；handler 層已會自動過濾，這裡只是同步反灰。
+    const nftables = document.getElementById('dwEpNftables');
+    const crowdsec = document.getElementById('dwEpCrowdsec');
     const edlNote = document.getElementById('dwEdlNote');
     const protectedBlock = document.getElementById('dwProtectedBlock');
     const protectedNote = document.getElementById('dwProtectedNote');
     const edlAllowed = action === 'block' || action === 'allow' || action === 'unblock';
+    const nfCsAllowed = action === 'block' || action === 'unblock';
     const protectedApplies = action === 'block' && ['ip', 'ipv6', 'cidr'].includes(targetType);
 
     if (edl) {
         edl.disabled = !edlAllowed;
         if (!edlAllowed) edl.checked = false;
     }
+    [nftables, crowdsec].forEach(el => {
+        if (!el) return;
+        el.disabled = !nfCsAllowed;
+        if (!nfCsAllowed) el.checked = false;
+    });
     if (edlNote) {
-        edlNote.textContent = edlAllowed
-            ? __('執行點決定這筆決策會被哪些外部執行端拉走。edl 會進入防火牆黑名單。')
-            : __('observe／escalate 不可送 EDL：外部 EDL 執行端只接受 block／allow／unblock，收到其他動作會讓整筆決策從「已套用」掉成「部分套用」。');
+        edlNote.textContent = !edlAllowed
+            ? __('observe／escalate 不可送 EDL：外部 EDL 執行端只接受 block／allow／unblock，收到其他動作會讓整筆決策從「已套用」掉成「部分套用」。')
+            : (action === 'allow'
+                ? __('allow 只支援 edl：nftables／crowdsec 執行器不認得 allow，會回 unsupported_action，平台已自動只保留 edl。')
+                : __('執行點決定這筆決策會被哪些外部執行端拉走。edl 會進入防火牆黑名單。'));
     }
     if (protectedBlock) protectedBlock.style.display = protectedApplies ? '' : 'none';
     if (protectedNote) protectedNote.style.display = protectedApplies ? 'none' : '';

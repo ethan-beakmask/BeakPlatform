@@ -326,7 +326,12 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
                 'target_value': '${f.actor_ip}',
                 'severity': 'info',
                 'decided_via': 'human',
-                'enforcement_points': ['nftables', 'edl'],
+                # 2026-09-13 Ethan 裁示：allow 只配 edl。nftables 執行器只做
+                # block/unblock，拉到 allow 回 unsupported_action，決策從
+                # applied 掉成 failed（PF-125 在 bpserv 就是這樣壞的）。
+                # handler 層（decision_writer_handler.py）現在也會自動過濾，
+                # 這裡改掉是讓設計器看到的設定與實際行為一致。
+                'enforcement_points': ['edl'],
                 'reason_template':
                     'SOC 判定可接受風險 ${wi.exec_code}：${f.finding_title}',
             },
