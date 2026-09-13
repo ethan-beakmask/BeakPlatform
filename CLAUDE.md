@@ -1860,6 +1860,18 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
 
 ### bpserv 測試機（2026-09-01 建立，2026-09-02 PF-211 後重裝，install.sh 全新安裝的驗證環境）
 
+**【bpserv 部署凍結，Ethan 2026-09-13 定調】每個任務做完不要跑 `--update`。**
+`.16`（dev）這一波修改全部完成後才一次更新 bpserv，中間的任務只做 dev 驗收與 commit。
+每個會影響既有環境的任務要把「`--update` 之後還要手動做的事」記進下表，
+解凍時照表逐項執行，漏一項就是靜默的半套升級：
+
+| 累積待做（解凍時依序執行） | 來源 | 指令／說明 |
+|---|---|---|
+| 退役集團共用 DB：軟刪選單、DROP 兩表、DROP 六欄 | PF-269（2026-09-13） | `venv/bin/python scripts/retire_cg_shared_db.py --dry-run` → `--apply`；細節 `dev-notes/CONGLOMERATE_SHARED_DB_RETIRED.md` |
+
+（下表「部署狀態」欄記的是凍結前最後一次 `--update` 的狀態，凍結期間不會再往前推。）
+
+
 Ethan 提供的 Proxmox VM，用途是驗證「讀者照裝」路徑與 fresh 環境行為，
 **憑證都是測試用途、Ethan 明示可放本檔**（本檔不推 GitHub）：
 
