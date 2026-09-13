@@ -5,6 +5,7 @@
 # =============================================================================
 # 用法:
 #   sudo bash install.sh                         全新安裝 (互動式設定密碼)
+#   sudo bash install.sh --demo                  全新環境先安裝平台；已安裝環境佈建示範企業與防禦節點開通字串
 #   sudo bash install.sh --update                升級更新 (保留資料)
 #   sudo bash install.sh --status                查看服務狀態
 #   sudo bash install.sh --start                 啟動服務
@@ -18,6 +19,9 @@
 #   DB_PASS                資料庫密碼 (預設: postgres123)
 #   BEAK_PORT              BeakPlatform 存取 port (預設: 8000，被佔用時自動找空 port)
 #   ADMIN_INITIAL_PASSWORD 管理員初始密碼 (不設定則互動式輸入)
+#   INSTALL_DEMO           設為 1 時等同 --demo（適用 curl | sudo ... bash）
+#   DEMO_ORG_CODE          示範企業 code (預設: DEMOSOC)
+#   DEMO_ORG_DOMAIN        示範企業 domain (預設: demo-soc.example)
 #   GITHUB_TOKEN           GitHub Personal Access Token (不設定則互動式輸入)
 #   SKIP_NODE_SHOWCASE     設為 1 時全新安裝不種入「node展覽館」範例資料包 (預設種入；--update 不受影響)
 #   GITHUB_REPO            GitHub clone URL (預設: https://github.com/ethan-beakmask/BeakPlatform.git)
@@ -232,32 +236,265 @@ run_bootstrap() {
         "
 }
 
+password_meets_demo_policy() {
+    local pw="${1:-}"
+    [[ ${#pw} -ge 12 ]] || return 1
+    [[ "$pw" =~ [A-Z] ]] || return 1
+    [[ "$pw" =~ [a-z] ]] || return 1
+    [[ "$pw" =~ [0-9] ]] || return 1
+    [[ "$pw" =~ [^A-Za-z0-9] ]] || return 1
+    return 0
+}
+
+detect_server_ip() {
+    local detected
+    detected=$(ip -4 route get 8.8.8.8 2>/dev/null | awk '/src/ {print $7; exit}')
+    detected="${detected:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
+    detected="${detected:-$(hostname -f 2>/dev/null)}"
+    echo "$detected"
+}
+
+resolve_display_url_from_install() {
+    local server_ip listen_port
+    server_ip=$(detect_server_ip)
+    listen_port=$(sed -n 's/^[[:space:]]*listen[[:space:]]\+\([0-9]\+\).*/\1/p' \
+        "/etc/nginx/sites-available/$SERVICE_NAME" 2>/dev/null | head -1)
+    if [ -z "$listen_port" ]; then
+        listen_port="${BEAK_PORT:-8000}"
+    fi
+    if [ "$listen_port" = "80" ]; then
+        DISPLAY_URL="http://$server_ip"
+    else
+        DISPLAY_URL="http://$server_ip:$listen_port"
+    fi
+}
+
+print_last_lines() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        tail -30 "$file" || true
+    fi
+}
+
+run_demo_provision() {
+    local fatal="${1:-0}"
+    local demo_code="${DEMO_ORG_CODE:-DEMOSOC}"
+    local demo_domain="${DEMO_ORG_DOMAIN:-demo-soc.example}"
+    local seed_log pair_log seed_rc pair_rc demo_password demo_admin pair_string waf_command cred_file old_umask
+
+    echo ""
+    log_step "demo" "佈建示範企業與防禦節點開通字串..."
+
+    if [ ! -f "$INSTALL_DIR/.env" ]; then
+        log_warn "找不到 $INSTALL_DIR/.env，無法佈建示範企業"
+        [ "$fatal" = "1" ] && return 1
+        return 0
+    fi
+    if [ ! -x "$INSTALL_DIR/venv/bin/python" ]; then
+        log_warn "找不到 $INSTALL_DIR/venv/bin/python，無法佈建示範企業"
+        [ "$fatal" = "1" ] && return 1
+        return 0
+    fi
+
+    if [ -z "${DISPLAY_URL:-}" ]; then
+        resolve_display_url_from_install
+    fi
+
+    seed_log=$(mktemp)
+    pair_log=$(mktemp)
+
+    if password_meets_demo_policy "${ADMIN_PASS:-}"; then
+        if sudo -u "$SERVICE_USER" env \
+            DEMO_ORG_PASSWORD="$ADMIN_PASS" \
+            DEMO_ORG_CODE="$demo_code" \
+            DEMO_ORG_DOMAIN="$demo_domain" \
+            HOME="$INSTALL_DIR" \
+            bash -c "
+                set -a; source '$INSTALL_DIR/.env'; set +a
+                export PATH='$INSTALL_DIR/venv/bin':\$PATH
+                cd '$INSTALL_DIR'
+                python3 scripts/seed_demo_org.py --apply --code \"\$DEMO_ORG_CODE\" --domain \"\$DEMO_ORG_DOMAIN\"
+            " >"$seed_log" 2>&1; then
+            seed_rc=0
+        else
+            seed_rc=$?
+        fi
+    else
+        if sudo -u "$SERVICE_USER" env \
+            DEMO_ORG_CODE="$demo_code" \
+            DEMO_ORG_DOMAIN="$demo_domain" \
+            HOME="$INSTALL_DIR" \
+            bash -c "
+                set -a; source '$INSTALL_DIR/.env'; set +a
+                export PATH='$INSTALL_DIR/venv/bin':\$PATH
+                cd '$INSTALL_DIR'
+                python3 scripts/seed_demo_org.py --apply --code \"\$DEMO_ORG_CODE\" --domain \"\$DEMO_ORG_DOMAIN\"
+            " >"$seed_log" 2>&1; then
+            seed_rc=0
+        else
+            seed_rc=$?
+        fi
+    fi
+
+    if [ "$seed_rc" -eq 2 ]; then
+        log_info "示範企業 $demo_domain 已存在，略過建立"
+    elif [ "$seed_rc" -ne 0 ]; then
+        log_warn "示範企業佈建失敗（exit $seed_rc），最後 30 行輸出如下："
+        print_last_lines "$seed_log"
+        log_warn "可事後手動重跑：cd $INSTALL_DIR && set -a && source .env && set +a && venv/bin/python scripts/seed_demo_org.py --apply --code $demo_code --domain $demo_domain"
+        rm -f "$seed_log" "$pair_log"
+        [ "$fatal" = "1" ] && return 1
+        return 0
+    fi
+
+    demo_password=$(sed -n 's/^示範帳號共用密碼 .*: //p' "$seed_log" | tail -1)
+    demo_admin=$(sed -n 's/^管理員帳號: //p' "$seed_log" | tail -1)
+    if [ -z "$demo_password" ] && [ -f "$INSTALL_DIR/demo-credentials.txt" ]; then
+        demo_password=$(sed -n 's/^示範帳號共用密碼: //p' "$INSTALL_DIR/demo-credentials.txt" | tail -1)
+    fi
+    if [ -z "$demo_password" ]; then
+        demo_password="（示範企業已存在；請使用先前佈建時保存的密碼）"
+    fi
+    if [ -z "$demo_admin" ]; then
+        demo_admin="admin-<username>@$demo_domain"
+    fi
+
+    if sudo -u "$SERVICE_USER" env \
+        HOME="$INSTALL_DIR" \
+        DEMO_ORG_DOMAIN="$demo_domain" \
+        DEMO_BASE_URL="${DISPLAY_URL%/}/beakplatform" \
+        bash -c "
+            set -a; source '$INSTALL_DIR/.env'; set +a
+            export PATH='$INSTALL_DIR/venv/bin':\$PATH
+            cd '$INSTALL_DIR'
+            python3 scripts/od_node_pairing.py --org \"\$DEMO_ORG_DOMAIN\" --base-url \"\$DEMO_BASE_URL\" --provision --apply
+        " >"$pair_log" 2>&1; then
+        pair_rc=0
+    else
+        pair_rc=$?
+    fi
+
+    if [ "$pair_rc" -ne 0 ]; then
+        log_warn "防禦節點配對字串產生失敗（exit $pair_rc），最後 30 行輸出如下："
+        print_last_lines "$pair_log"
+        log_warn "可事後手動重跑：cd $INSTALL_DIR && set -a && source .env && set +a && venv/bin/python scripts/od_node_pairing.py --org $demo_domain --base-url ${DISPLAY_URL%/}/beakplatform --provision --apply"
+        rm -f "$seed_log" "$pair_log"
+        [ "$fatal" = "1" ] && return 1
+        return 0
+    fi
+
+    pair_string=$(grep '^ODN1\.' "$pair_log" | tail -1 || true)
+    if [ -z "$pair_string" ]; then
+        log_warn "示範佈建輸出解析失敗，最後 30 行輸出如下："
+        print_last_lines "$seed_log"
+        print_last_lines "$pair_log"
+        log_warn "可事後手動重跑 seed_demo_org.py 與 od_node_pairing.py 取得憑證"
+        rm -f "$seed_log" "$pair_log"
+        [ "$fatal" = "1" ] && return 1
+        return 0
+    fi
+
+    waf_command="sudo bash install.sh --pair '$pair_string' --backend http://<被保護網站IP>:<埠>"
+    cred_file="$INSTALL_DIR/demo-credentials.txt"
+    old_umask=$(umask)
+    umask 077
+    {
+        echo "BeakPlatform 示範企業與防禦節點開通資訊"
+        echo "產生時間: $(date '+%Y-%m-%d %H:%M:%S %z')"
+        echo ""
+        echo "示範企業: $demo_code / $demo_domain"
+        echo "登入網址: ${DISPLAY_URL%/}/beakplatform/auth/org/$demo_domain/login"
+        echo "示範企業管理員: $demo_admin"
+        echo "示範帳號共用密碼: $demo_password"
+        echo ""
+        echo "防禦節點開通字串:"
+        echo "$pair_string"
+        echo ""
+        echo "WAF 主機執行指令:"
+        echo "$waf_command"
+    } > "$cred_file"
+    umask "$old_umask"
+    chown root:root "$cred_file"
+    chmod 600 "$cred_file"
+    rm -f "$seed_log" "$pair_log"
+
+    echo ""
+    log_info "示範企業與防禦節點開通資訊"
+    echo "  示範企業: $demo_code / $demo_domain"
+    echo "  登入網址: ${DISPLAY_URL%/}/beakplatform/auth/org/$demo_domain/login"
+    echo "  示範企業管理員: $demo_admin"
+    echo "  示範帳號共用密碼: $demo_password"
+    echo "  防禦節點開通字串: $pair_string"
+    echo "  WAF 主機執行指令: $waf_command"
+    echo "  已存到 $cred_file（只有 root 可讀）"
+    return 0
+}
+
 # === 參數處理 ===
 ACTION="fresh"
+WITH_DEMO="${INSTALL_DEMO:-0}"
+ACTION_SET=0
 
-case "${1:-}" in
-    --update)    ACTION="update" ;;
-    --status)    ACTION="status" ;;
-    --start)     ACTION="start" ;;
-    --stop)      ACTION="stop" ;;
-    --uninstall) ACTION="uninstall" ;;
-    "")          ACTION="fresh" ;;
+usage() {
+    echo "BeakPlatform 安裝與升級腳本"
+    echo ""
+    echo "用法:"
+    echo "  sudo bash install.sh                  全新安裝"
+    echo "  sudo bash install.sh --demo           佈建示範企業與防禦節點開通字串；全新環境會先安裝平台"
+    echo "  sudo bash install.sh --update         升級更新 (保留資料)"
+    echo "  sudo bash install.sh --status         查看服務狀態"
+    echo "  sudo bash install.sh --start          啟動服務"
+    echo "  sudo bash install.sh --stop           停止服務"
+    echo "  sudo bash install.sh --uninstall      移除安裝"
+    echo ""
+    echo "環境變數:"
+    echo "  INSTALL_DIR=$INSTALL_DIR"
+    echo "  DB_NAME=$DB_NAME"
+    echo "  BEAK_PORT=$BEAK_PORT (存取 port，預設 8000，被佔用時自動找空 port)"
+    echo "  INSTALL_DEMO=1 (等同 --demo)"
+    echo "  DEMO_ORG_CODE=DEMOSOC"
+    echo "  DEMO_ORG_DOMAIN=demo-soc.example"
+    echo "  GITHUB_TOKEN=<GitHub PAT> (不設定則互動式輸入)"
+}
+
+for arg in "$@"; do
+    case "$arg" in
+        --help|-h)
+            usage
+            exit 0
+            ;;
+        --demo)
+            WITH_DEMO=1
+            ;;
+        --update|--status|--start|--stop|--uninstall)
+            if [ "$ACTION_SET" -eq 1 ]; then
+                usage
+                exit 1
+            fi
+            ACTION="${arg#--}"
+            ACTION_SET=1
+            ;;
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+if [ "$WITH_DEMO" = "1" ] && [ "$ACTION_SET" -eq 0 ] && [ -f "$INSTALL_DIR/.env" ]; then
+    ACTION="demo"
+fi
+
+if [ "$ACTION" = "fresh" ] && [ "$WITH_DEMO" = "1" ]; then
+    :
+elif [ "$WITH_DEMO" = "1" ] && [ "$ACTION" != "demo" ]; then
+    log_warn "--demo 只會搭配全新安裝或單獨 demo 入口；目前動作 $ACTION 會忽略 demo 佈建"
+fi
+
+case "$ACTION" in
+    fresh|demo|update|status|start|stop|uninstall) ;;
     *)
-        echo "BeakPlatform 安裝與升級腳本"
-        echo ""
-        echo "用法:"
-        echo "  sudo bash install.sh                  全新安裝"
-        echo "  sudo bash install.sh --update         升級更新 (保留資料)"
-        echo "  sudo bash install.sh --status         查看服務狀態"
-        echo "  sudo bash install.sh --start          啟動服務"
-        echo "  sudo bash install.sh --stop           停止服務"
-        echo "  sudo bash install.sh --uninstall      移除安裝"
-        echo ""
-        echo "環境變數:"
-        echo "  INSTALL_DIR=$INSTALL_DIR"
-        echo "  DB_NAME=$DB_NAME"
-        echo "  BEAK_PORT=$BEAK_PORT (存取 port，預設 8000，被佔用時自動找空 port)"
-        echo "  GITHUB_TOKEN=<GitHub PAT> (不設定則互動式輸入)"
+        usage
         exit 1
         ;;
 esac
@@ -352,6 +589,7 @@ if [ "$ACTION" = "uninstall" ]; then
     echo "  - systemd 服務 ($SERVICE_NAME)"
     echo "  - Nginx 設定"
     echo "  - 安裝目錄 ($INSTALL_DIR)"
+    echo "  - 示範憑證檔 ($INSTALL_DIR/demo-credentials.txt)"
     echo "  - 資料庫 ($DB_NAME)"
     echo "  - 企業專屬資料庫 (org_*) 與集團資料庫 (cg_*)"
     echo ""
@@ -394,6 +632,20 @@ if [ "$ACTION" = "uninstall" ]; then
 
     log_info "移除完成"
     exit 0
+fi
+
+
+# =========================================================================
+#  --demo 示範企業與防禦節點開通字串
+# =========================================================================
+if [ "$ACTION" = "demo" ]; then
+    check_root
+    ADMIN_PASS="${ADMIN_PASS:-${ADMIN_INITIAL_PASSWORD:-}}"
+    resolve_display_url_from_install
+    if run_demo_provision 1; then
+        exit 0
+    fi
+    exit 1
 fi
 
 
@@ -869,9 +1121,7 @@ log_info "systemd 服務已建立: ${SERVICE_NAME}.service"
 log_step "9/9" "設定 Nginx..."
 
 # 自動偵測 server IP（供 nginx server_name 和完成訊息使用）
-SERVER_IP=$(ip -4 route get 8.8.8.8 2>/dev/null | awk '/src/ {print $7; exit}')
-SERVER_IP="${SERVER_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
-SERVER_IP="${SERVER_IP:-$(hostname -f 2>/dev/null)}"
+SERVER_IP=$(detect_server_ip)
 
 cat > "/etc/nginx/sites-available/$SERVICE_NAME" << 'NGXEOF'
 upstream beakplatform {
@@ -983,3 +1233,8 @@ echo ""
 echo "  日誌查看:"
 echo "    journalctl -u $SERVICE_NAME -f"
 echo "============================================"
+
+# --demo：示範企業與防禦節點開通字串（放在總結之後，讓憑證區塊留在畫面最下方）
+if [ "$WITH_DEMO" = "1" ]; then
+    run_demo_provision 0
+fi

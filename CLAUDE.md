@@ -1879,6 +1879,21 @@ JOIN fw_form_instances fi     ON fi.secure_code = wi.form_instance_secure_code
   `grep -o 'name="csrf_token" value="[^"]*'` 在有 modal 的頁面會命中**兩個**，不加 `head -1`
   會把兩個 token 串成一個送出、回 400（2026-09-03 驗 PF-229 第三期時踩過）。
 
+### 讀者一鍵路徑（2026-09-13 晚間定案，Ethan：一切簡化優先、平台不用容器、WAF 維持 docker）
+
+- **`install.sh --demo`**（管線安裝用 `INSTALL_DEMO=1`）：全新安裝完成後接著 `seed_demo_org.py --apply`
+  ＋ `od_node_pairing.py --org demo-soc.example --provision --apply`，總結區印示範帳號、共用密碼、`ODN1.`
+  開通字串與 WAF 那台要貼的整行，並存 `$INSTALL_DIR/demo-credentials.txt`（root 0600）。已安裝環境可單獨
+  `install.sh --demo`。示範密碼＝`ADMIN_INITIAL_PASSWORD` 若過 12 碼四類政策，否則腳本自動產生。
+  fresh 模式下示範段失敗只 warn 不中止；單獨 demo 模式失敗 exit 1。`DEMO_ORG_CODE`／`DEMO_ORG_DOMAIN` 可覆寫（測試用）。
+  **端對端尚未在全新機器實走**（2026-09-13 23:3x 時點），只驗過 bash -n、參數解析與各子指令。
+- **`scripts/bp_trigger.py`**：讀者用的 HMAC 建單工具（純標準庫單檔），`--list`／`--form-code`／`--selftest`，
+  認證走 `BP_BASE_URL`／`BP_KEY_ID`／`BP_SECRET`。dev DEMOSOC 實測憑證 `/opt/tmp/verify/20260913-reader-oneclick.log`
+  （建 key → 列 3 張 SEC_* 表單 → 建單 201 案件 RUNNING → 未知欄位 400 帶 allowed_keys）。
+  取代 `/opt/BeakVulnRT/tools/trigger_form_probe.py` 的角色，文件 `docs/install/api_trigger.md`。
+- **E-MailRelay 不再是讀者路徑的一部分**：`docs/install/mail_smtp.md` 教在主機設定「發信服務」建 SMTP。
+- WAF 文件主範例只剩 `--pair`＋`--backend`，Cloudflare 移到「對外公開（選用）」。
+
 ### bpserv 測試機（2026-09-01 建立，2026-09-02 PF-211 後重裝，install.sh 全新安裝的驗證環境）
 
 **【bpserv 部署凍結，Ethan 2026-09-13 定調】每個任務做完不要跑 `--update`。**

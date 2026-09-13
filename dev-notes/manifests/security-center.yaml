@@ -41,6 +41,7 @@ related:
     - modules/form_workflow/api/external_trigger.py
     - modules/form_workflow/services/form_submit_service.py
     - modules/form_workflow/services/trigger_scope_service.py
+    - scripts/bp_trigger.py
     - backend/app/security/hmac_verifier.py
     - backend/app/security/rate_limiter.py
   spec: dev-notes/API_KEY_TRIGGER_SPEC.md

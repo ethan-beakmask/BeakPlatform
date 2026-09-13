@@ -34,6 +34,20 @@ Replace:
 - `YOUR_GITHUB_TOKEN` -- GitHub Personal Access Token with `repo` scope
 - `yourpassword` -- Admin initial password (min 8 characters, will be prompted to change on first login)
 
+To install the reader-friendly demo path in the same run, add `INSTALL_DEMO=1`.
+This provisions the DemoSOC organization, demo users, Open Defense intake flow,
+and a one-time defense-node pairing string after the platform install succeeds:
+
+```bash
+curl -sL -H "Authorization: token YOUR_GITHUB_TOKEN" \
+  https://raw.githubusercontent.com/beakplatform/BeakPlatform/main/scripts/install.sh \
+  | sudo GITHUB_TOKEN=YOUR_GITHUB_TOKEN ADMIN_INITIAL_PASSWORD='yourStrongPassword1!' INSTALL_DEMO=1 bash
+```
+
+On an already installed host, run `sudo bash /opt/BeakPlatform/scripts/install.sh --demo`.
+The demo credentials and WAF pairing command are also saved to
+`/opt/BeakPlatform/demo-credentials.txt` with root-only permissions.
+
 The script performs a fully automated installation:
 1. Installs system dependencies (PostgreSQL, Redis, Nginx, Python)
 2. Creates database and application user
@@ -44,8 +58,8 @@ The script performs a fully automated installation:
 
 ## First Login
 
-- **URL**: `http://YOUR_SERVER_IP`
-- **Username**: `admin`
+- **URL**: `http://YOUR_SERVER_IP:8000/beakplatform` (or the URL printed by the installer)
+- **Username**: `admin@<SYSTEM_ORG_CODE>` (the exact value is printed by the installer)
 - **Password**: (the password you set during installation)
 
 You will be prompted to change the password on first login.

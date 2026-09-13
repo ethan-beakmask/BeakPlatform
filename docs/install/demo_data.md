@@ -8,7 +8,7 @@
 |---|---|---|
 | 系統級 node展覽館 | 系統預設企業出廠內建；全新安裝自動種入，設 `SKIP_NODE_SHOWCASE=1` 可不種 | 安裝完成後系統預設企業的表單中心會有「node展覽館」分類，含企業級與系統級節點示範。升級／追加可執行 `scripts/seed_node_showcase.py --apply [--only <項目>]`，用 `--list` 查看現況。 |
 | 企業級 node 範例 | `scripts/seed_node_showcase.py --org <企業>`，或 `scripts/seed_demo_org.py --node-showcase` | 在指定企業建立同一組 node 範例；OS／Sys 系列等受限節點示範會依授權自動排除，未採購模組的示範也會跳過。 |
-| 示範企業 | `scripts/seed_demo_org.py` | 建立一家可直接登入的「示範企業」，含人資結構、Open Defense 受理鏈路、SOC 團隊版/單人版流程與差旅費人事取值示範。 |
+| 示範企業 | `install.sh --demo` 會自動建；也可手動執行 `scripts/seed_demo_org.py` | 建立一家可直接登入的「示範企業」，含人資結構、Open Defense 受理鏈路、SOC 團隊版/單人版流程與差旅費人事取值示範。 |
 
 ## 二、node展覽館怎麼裝
 
