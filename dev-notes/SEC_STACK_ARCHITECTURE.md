@@ -988,7 +988,7 @@ Ethan 2026-09-13 問「一鍵安裝的防禦節點 → 讀者自建企業 → �
    已修 `install.sh`（fresh heredoc ＋ `--update` 冪等補值），bpserv 手動補值後重啟即通
 6. SA 登入通了之後，od-bridge 立刻拉走 PF-125 留下的 3 筆 `pending` 決策：block 203.0.113.42 → nftables `applied`；
    兩筆 allow → `failed` `unsupported_action:allow`（nftables enforcer 只做 block/unblock，
-   DecisionWriter 對 allow 決策不該配 `nftables` 執行點，**已知限制未修**）
+   DecisionWriter 對 allow 決策不該配 `nftables` 執行點，**同日 19:2x 已修**：handler 依執行點支援表過濾，allow 只出 `edl`，commit `45e2dfef`）
 7. 讀者的 `install.sh --test-event` → OD-20260913-0004（S3 → SOC 團隊版 L1）→ soc1 在案件中心
    按「封鎖攻擊來源」→ DecisionWriter 寫 block → od-bridge 40 秒內 `applied`、`.21` blocklist 出現 `203.0.113.42 timeout 1h`。**整圈通**
 8. 復原：`.21` `.env` 還原指回 `.16`（`ik_5ad9...`）、od-bridge 停回 `Exited`（待命機本來就不跑它）、
