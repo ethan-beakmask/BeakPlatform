@@ -167,7 +167,6 @@
                 <table class="info-table">
                     <tr><td>{{ _('企業代碼') }}</td><td>{{ selected_org.code }}</td></tr>
                     <tr><td>{{ _('網域名稱') }}</td><td><code>{{ selected_org.domain_name }}</code></td></tr>
-                    {% if not selected_org.is_system_org %}
                     {% set emp_url = external_url(url_for('auth.org_login', domain_name=selected_org.domain_name)) %}
                     {% set ext_url = external_url(url_for('auth.org_public_login', domain_name=selected_org.domain_name)) %}
                     {% if not emp_url or not ext_url %}
@@ -209,7 +208,6 @@
                             {% endif %}
                         </td>
                     </tr>
-                    {% endif %}
                     <tr>
                         <td>{{ _('狀態') }}</td>
                         <td>
