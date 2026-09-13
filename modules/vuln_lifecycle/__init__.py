@@ -25,7 +25,7 @@ MODULE_INFO = {
     'menu_items': [
         {
             'code': 'vuln_lifecycle',
-            'name': '弱點管理',
+            'name': '(未完成)弱點管理',
             'icon': 'ri-shield-check-line',
             'parent': None,
             'sort_order': 8,
