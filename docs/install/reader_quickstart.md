@@ -60,7 +60,7 @@ curl -sL -H "Authorization: token <你的PAT>" \
 
 ## 二、主機 B：裝防禦節點（一行，約 3～6 分鐘）
 
-把主機 A 印出的「WAF 主機執行指令」貼過來，補上 PAT 與被保護網站位址：
+**以下在主機 B 上執行。**把主機 A 總結裡的「WAF 主機執行指令」貼到主機 B，補上 PAT 與被保護網站位址：
 
 ```bash
 curl -fsSL -H "Authorization: token <你的PAT>" \
@@ -75,6 +75,9 @@ sudo GITHUB_TOKEN=<你的PAT> bash install.sh \
 - `--backend` 填要被 WAF 保護的網站。練習時直接填平台本身（主機 A）最省事
 - `--admin-ips` 是允許進 Grafana／EveBox／Portainer 管理介面的來源；不給也能裝，預設放行平台主機與你 ssh 進來的那台
 - 這台會自己裝 docker 並拉映像檔，讀者不需要碰 docker
+- 裝完的入口：WAF `http://<主機B IP>:8080/`、Grafana `:3000`、EveBox `:5636`、Portainer `https://…:9443`、
+  od-bridge 狀態 `:8500/stats`、**EDL 黑名單 `:8500/edl`／白名單 `:8500/edl/allow`**（一行一個 IP 的純文字，防火牆可直接當外部動態清單抓）。
+  **這些埠只對主機 A 與 `--admin-ips` 的來源開放**，其他機器連不到；要加來源改 `.env` 的 `ADMIN_IPS` 後 `--reconfigure`
 
 跑完印出各服務網址與密碼，接著驗證：
 
@@ -84,7 +87,7 @@ sudo bash /opt/ithome2026-waf/install.sh --test-event    # 送一筆假攻擊事
 ```
 
 **檢查點**：回主機 A 的平台，用示範企業資安人員登入，「開放防禦 → 資安案件處置中心」出現一張標題含 `TEST-` 的案件。
-從內網開 `http://<主機B IP>:8080/?id=1' OR 1=1--` 應該得到 403，那是 WAF 在擋。
+從 `--admin-ips` 那台機器開 `http://<主機B IP>:8080/?id=1' OR 1=1--` 應該得到 403，那是 WAF 在擋。
 
 ## 三、用指令建一張案件（選用，示範外部系統對接）
 
