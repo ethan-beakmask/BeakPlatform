@@ -1,0 +1,131 @@
+        // ==================== E-MailRelay ====================
+        async loadEmailrelaySettings() {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.emailrelay.service = data.data.service;
+                    this.emailrelay.install_dir = data.data.install_dir || '';
+                    if (data.data.auth && data.data.auth.configured) {
+                        this.emailrelay.auth.email = data.data.auth.email || '';
+                        this.emailrelay.auth.password = data.data.auth.password || '';
+                    }
+                    this.emailrelay.from_email = data.data.from_email || '';
+                    this.emailrelay.from_name = data.data.from_name || '';
+                }
+            } catch (e) {
+                this.showMessage('emailrelay', __('載入設定失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        async saveEmailrelayInstallDir() {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        install_dir: this.emailrelay.install_dir
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.showMessage('emailrelay', data.message, false);
+                    await this.loadEmailrelaySettings();
+                    await this.loadMailService();
+                } else {
+                    let msg = data.message;
+                    if (data.errors && data.errors.length > 0) {
+                        msg += ': ' + data.errors.join('; ');
+                    }
+                    this.showMessage('emailrelay', msg, true);
+                }
+            } catch (e) {
+                this.showMessage('emailrelay', __('儲存失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        async saveEmailrelayAuth() {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay/auth`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        email: this.emailrelay.auth.email,
+                        password: this.emailrelay.auth.password
+                    })
+                });
+                const data = await res.json();
+                this.showMessage('emailrelay', data.message, !data.success);
+                if (data.success) {
+                    await this.loadMailService();
+                }
+            } catch (e) {
+                this.showMessage('emailrelay', __('儲存失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        async saveEmailrelaySender() {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        from_email: this.emailrelay.from_email,
+                        from_name: this.emailrelay.from_name
+                    })
+                });
+                const data = await res.json();
+                this.showMessage('emailrelay', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('emailrelay', __('儲存失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        async testEmailrelay() {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        recipient: this.emailrelay.testRecipient
+                    })
+                });
+                const data = await res.json();
+                this.showMessage('emailrelay', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('emailrelay', __('發送失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        async controlEmailrelayService(action) {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay/service/${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                const data = await res.json();
+                if (data.success && data.data) {
+                    this.emailrelay.service = data.data;
+                }
+                this.showMessage('emailrelay', data.message || __('服務已 {action}', {action: action}), !data.success);
+            } catch (e) {
+                this.showMessage('emailrelay', __('操作失敗: {message}', {message: e.message}), true);
+            }
+        },

@@ -1,0 +1,259 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('同步中控台 - BeakPlatform') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/sync-control.css">
+{% endblock %}
+
+{% block content %}
+<div class="sc-container" x-data="syncControl()">
+
+    <!-- 頁首 -->
+    <div class="sc-header">
+        <div>
+            <h1>{{ _('同步中控台') }}</h1>
+            <div class="sc-meta">
+                <span x-show="status && status.formio && status.formio.exists"
+                      x-text="status.formio.form_name"></span>
+                <span x-show="!status || !status.formio || !status.formio.exists" style="color: #9ca3af;">{{ _('載入中...') }}</span>
+            </div>
+        </div>
+        <div class="sc-toolbar">
+            <button class="sc-btn" @click="loadStatus()" :disabled="loading">{{ _('重新載入') }}</button>
+            <button class="sc-btn" @click="goSpecEditor()">{{ _('開啟規格編輯器') }}</button>
+            <button class="sc-btn" @click="window.open('{{ app_prefix }}/forms/data-specs', '_self')">{{ _('返回規格列表') }}</button>
+        </div>
+    </div>
+
+    <!-- 載入中 -->
+    <div x-show="loading" class="sc-loading">{{ _('載入中...') }}</div>
+
+    <!-- 主內容 -->
+    <div x-show="!loading && status">
+
+        <!-- 三面相卡片 -->
+        <div class="sc-aspects">
+            <!-- Spec -->
+            <div class="sc-aspect-card" :class="!status.spec.exists ? 'unavailable' : ''">
+                <div class="sc-aspect-title">
+                    {{ _('Spec (欄位規格)') }}
+                    <span class="sc-status-dot" :class="status.spec.exists ? 'active' : 'inactive'"></span>
+                </div>
+                <div class="sc-aspect-info">
+                    <template x-if="status.spec.exists">
+                        <div>
+                            <div>{{ _('版本:') }} <strong>v<span x-text="status.spec.version"></span></strong></div>
+                            <div>{{ _('欄位數:') }} <strong x-text="status.spec.field_count"></strong></div>
+                            <div>{{ _('修改者:') }} <span x-text="status.spec.last_modified_by_name || '-'"></span></div>
+                            <div>{{ _('更新:') }} <span x-text="formatDate(status.spec.last_modified_at)"></span></div>
+                        </div>
+                    </template>
+                    <template x-if="!status.spec.exists">
+                        <div style="color: #9ca3af;">{{ _('尚未建立') }}</div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- FormIO -->
+            <div class="sc-aspect-card" :class="!status.formio.exists ? 'unavailable' : ''">
+                <div class="sc-aspect-title">
+                    JSONB (FormIO)
+                    <span class="sc-status-dot" :class="status.formio.exists ? 'active' : 'inactive'"></span>
+                </div>
+                <div class="sc-aspect-info">
+                    <template x-if="status.formio.exists">
+                        <div>
+                            <div>{{ _('表單:') }} <strong x-text="status.formio.form_name"></strong></div>
+                            <div>{{ _('欄位數:') }} <strong x-text="status.formio.field_count"></strong></div>
+                            <div>{{ _('更新:') }} <span x-text="formatDate(status.formio.updated_at)"></span></div>
+                        </div>
+                    </template>
+                    <template x-if="!status.formio.exists">
+                        <div style="color: #9ca3af;">{{ _('找不到表單模板') }}</div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- SQL -->
+            <div class="sc-aspect-card" :class="!status.sql.exists ? 'unavailable' : ''">
+                <div class="sc-aspect-title">
+                    SQL Table
+                    <span class="sc-status-dot" :class="status.sql.exists ? 'active' : 'inactive'"></span>
+                </div>
+                <div class="sc-aspect-info">
+                    <template x-if="status.sql.exists">
+                        <div>
+                            <div>{{ _('表名:') }} <strong class="sc-mono" x-text="status.sql.table_name"></strong></div>
+                            <div>{{ _('欄位數:') }} <strong x-text="status.sql.column_count"></strong></div>
+                            <div>{{ _('資料筆數:') }} <strong x-text="status.sql.row_count"></strong></div>
+                            <div>{{ _('同步:') }} <span x-text="formatDate(status.sql.last_synced_at)"></span></div>
+                        </div>
+                    </template>
+                    <template x-if="!status.sql.exists">
+                        <div style="color: #9ca3af;">{{ _('尚未建立 SQL Registry') }}</div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- 同步方向 -->
+        <div class="sc-sync-grid">
+
+            <!-- Spec <-> FormIO -->
+            <div class="sc-sync-pair">
+                <div class="sc-sync-pair-title">
+                    Spec -- FormIO
+                    <span class="sc-comparison-badge"
+                          :class="status.comparisons.spec_vs_formio.status"
+                          x-text="getComparisonLabel(status.comparisons.spec_vs_formio)"></span>
+                </div>
+                <div class="sc-sync-buttons">
+                    <button class="sc-sync-btn"
+                            :class="getSyncBtnClass('spec_vs_formio', status.spec.exists && status.formio.exists)"
+                            :disabled="!status.spec.exists || !status.formio.exists || syncing"
+                            @click="doSync('spec-to-formio')">
+                        Spec -> FormIO
+                    </button>
+                    <button class="sc-sync-btn"
+                            :class="getSyncBtnClass('spec_vs_formio', status.spec.exists && status.formio.exists)"
+                            :disabled="!status.formio.exists || syncing"
+                            @click="doSync('formio-to-spec')">
+                        FormIO -> Spec
+                    </button>
+                </div>
+            </div>
+
+            <!-- Spec <-> SQL -->
+            <div class="sc-sync-pair">
+                <div class="sc-sync-pair-title">
+                    Spec -- SQL
+                    <span class="sc-comparison-badge"
+                          :class="status.comparisons.spec_vs_sql.status"
+                          x-text="getComparisonLabel(status.comparisons.spec_vs_sql)"></span>
+                </div>
+                <div class="sc-sync-buttons">
+                    <button class="sc-sync-btn"
+                            :class="getSyncBtnClass('spec_vs_sql', status.spec.exists && status.sql.exists)"
+                            :disabled="!status.spec.exists || !status.sql.exists || syncing"
+                            @click="doSync('spec-to-sql')">
+                        Spec -> SQL
+                    </button>
+                    <button class="sc-sync-btn"
+                            :class="getSyncBtnClass('spec_vs_sql', status.spec.exists && status.sql.exists)"
+                            :disabled="!status.sql.exists || syncing"
+                            @click="doSync('sql-to-spec')">
+                        SQL -> Spec
+                    </button>
+                </div>
+            </div>
+
+            <!-- FormIO <-> SQL -->
+            <div class="sc-sync-pair">
+                <div class="sc-sync-pair-title">
+                    FormIO -- SQL
+                    <span class="sc-comparison-badge"
+                          :class="status.comparisons.formio_vs_sql.status"
+                          x-text="getComparisonLabel(status.comparisons.formio_vs_sql)"></span>
+                </div>
+                <div class="sc-sync-buttons">
+                    <button class="sc-sync-btn"
+                            :class="getSyncBtnClass('formio_vs_sql', status.formio.exists && status.sql.exists)"
+                            :disabled="!status.formio.exists || !status.sql.exists || syncing"
+                            @click="doSync('formio-to-sql')">
+                        FormIO -> SQL
+                    </button>
+                    <button class="sc-sync-btn"
+                            :class="getSyncBtnClass('formio_vs_sql', status.formio.exists && status.sql.exists)"
+                            :disabled="!status.formio.exists || !status.sql.exists || syncing"
+                            @click="doSync('sql-to-formio')">
+                        SQL -> FormIO
+                    </button>
+                </div>
+                <div class="sc-also-spec">
+                    <input type="checkbox" x-model="alsoUpdateSpec" id="also-spec">
+                    <label for="also-spec">{{ _('同時更新 Spec（新增一版）') }}</label>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 偏移細節（三向比對結果） -->
+        <div x-show="driftData">
+            <template x-if="driftData && driftData.spec_vs_formio && driftData.spec_vs_formio.length > 0">
+                <div class="sc-drift-section">
+                    <div class="sc-drift-title">
+                        {{ _('Spec vs FormIO 偏移 (') }}<span x-text="driftData.spec_vs_formio.length"></span>)
+                    </div>
+                    <template x-for="d in driftData.spec_vs_formio" :key="d.field_key + d.issue">
+                        <div class="sc-drift-item" :class="d.severity">
+                            <span><strong x-text="d.field_key"></strong>: <span x-text="d.detail"></span></span>
+                            <span class="sc-drift-badge" :class="d.severity" x-text="d.severity"></span>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <template x-if="driftData && driftData.spec_vs_sql && driftData.spec_vs_sql.length > 0">
+                <div class="sc-drift-section">
+                    <div class="sc-drift-title">
+                        {{ _('Spec vs SQL 偏移 (') }}<span x-text="driftData.spec_vs_sql.length"></span>)
+                    </div>
+                    <template x-for="d in driftData.spec_vs_sql" :key="d.field_key + d.issue">
+                        <div class="sc-drift-item" :class="d.severity">
+                            <span><strong x-text="d.field_key"></strong>: <span x-text="d.detail"></span></span>
+                            <span class="sc-drift-badge" :class="d.severity" x-text="d.severity"></span>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <template x-if="driftData && (!driftData.spec_vs_formio || driftData.spec_vs_formio.length === 0) && (!driftData.spec_vs_sql || driftData.spec_vs_sql.length === 0)">
+                <div class="sc-drift-section">
+                    <div style="text-align: center; color: #059669; font-size: 13px; padding: 8px;">
+                        {{ _('三向比對一致，無偏移') }}
+                    </div>
+                </div>
+            </template>
+        </div>
+
+    </div>
+
+    <!-- 確認 Modal -->
+    <div x-show="showConfirmModal" x-cloak class="sc-modal">
+        <div class="sc-modal-content">
+            <div class="sc-modal-header">
+                <h3 x-text="confirmTitle"></h3>
+                <button @click="showConfirmModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="sc-modal-body">
+                <div class="sc-info-text" x-html="confirmMessage"></div>
+
+                <template x-if="confirmNeedTableName">
+                    <div style="margin-top: 12px;">
+                        <p class="sc-warning-text">{{ _('高風險操作：請輸入表名確認') }}</p>
+                        <input type="text" class="sc-confirm-input"
+                               x-model="confirmTableInput"
+                               :placeholder="__('輸入 {t} 確認', {t: (status && status.sql ? status.sql.table_name : '')})">
+                    </div>
+                </template>
+            </div>
+            <div class="sc-modal-footer">
+                <button class="sc-btn" @click="showConfirmModal = false">{{ _('取消') }}</button>
+                <button class="sc-btn primary" @click="executeConfirmed()"
+                        :disabled="confirmNeedTableName && confirmTableInput !== (status && status.sql ? status.sql.table_name : '')">
+                    {{ _('確認執行') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+window.__SYNC_CONFIG = {
+    formTemplateSc: '{{ form_template_secure_code }}',
+};
+</script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/sync-control.js"></script>
+{% endblock %}

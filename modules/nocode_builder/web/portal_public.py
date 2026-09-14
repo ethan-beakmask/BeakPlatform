@@ -1,0 +1,1537 @@
+"""
+NoCode Builder - Public Portal Route
+公開子系統入口路由
+
+路由一覽:
+  /public/portal/<path_id>                 -- 入口 (檢查匿名/session/導向登入)
+  /public/portal/<path_id>/login           -- 登入頁 (GET/POST)
+  /public/portal/<path_id>/register        -- 註冊頁 (GET/POST，需子系統開放)
+  /public/portal/<path_id>/logout          -- 登出 (POST)
+
+不需登入主系統，全部使用 @public_route 標記。
+CSRF 在登入/註冊 POST 端點豁免 (無已登入 session 可被攻擊)。
+"""
+import logging
+import re
+import secrets
+from datetime import date, datetime
+from decimal import Decimal
+from math import ceil
+
+from flask import Blueprint, render_template, abort, redirect, url_for, request, flash, jsonify
+from flask_babel import gettext as _
+
+from app import csrf, db, limiter
+from app.pageir.masking import apply_row_masks, masked_fields
+from app.security.decorators import public_route
+
+logger = logging.getLogger(__name__)
+PORTAL_ROW_ID_RE = re.compile(r'^[A-Za-z0-9_-]{1,128}$')
+
+public_portal_bp = Blueprint(
+    'nocode_public_portal',
+    __name__,
+    url_prefix='/public/portal',
+    template_folder='../templates',
+)
+
+
+# ── 共用: 驗證 path_id 並取子系統資訊 ────────────────────────
+
+def _resolve_sub_system(path_id: str):
+    """
+    透過 path_id 查 lookup → 子系統
+
+    Returns:
+        (sub_system, path_id) or abort(404)
+    """
+    from ..services.portal_path_service import get_by_path_id
+    from ..models.sub_system import DcSubSystem
+
+    item = get_by_path_id(path_id)
+    if not item or not item.is_active:
+        abort(404)
+
+    sub_system_sc = item.value_str
+    if not sub_system_sc:
+        abort(404)
+
+    ss = DcSubSystem.query.filter_by(
+        secure_code=sub_system_sc,
+        is_deleted=False,
+    ).first()
+    if not ss or ss.status != 'published':
+        abort(404)
+
+    return ss
+
+
+def _find_widget(doc: dict, widget_id: str) -> dict | None:
+    """Find a widget by id in Page IR v3, including nested layout children."""
+    if not isinstance(doc, dict) or not widget_id:
+        return None
+
+    def walk(widgets):
+        if not isinstance(widgets, list):
+            return None
+        for widget in widgets:
+            if not isinstance(widget, dict):
+                continue
+            if widget.get('id') == widget_id:
+                return widget
+            if widget.get('type') == 'layout':
+                found = walk(widget.get('children', []))
+                if found is not None:
+                    return found
+        return None
+
+    page = doc.get('page') or {}
+    return walk(page.get('widgets', []))
+
+
+def _find_table_widget(doc: dict, widget_id: str) -> dict | None:
+    """Find a table widget by id in Page IR v3, including nested layout children."""
+    widget = _find_widget(doc, widget_id)
+    return widget if widget and widget.get('type') == 'table' else None
+
+
+def _resolve_sort(widget: dict, binding: dict, requested_sort: str | None, requested_dir: str | None):
+    """Resolve API sort params against binding fields and sortable table columns."""
+    binding_fields = set(binding.get('fields') or [])
+    sortable = {
+        column.get('field')
+        for column in widget.get('columns') or []
+        if column.get('sortable') is True and column.get('mask') is None
+    }
+    if requested_sort in binding_fields and requested_sort in sortable:
+        return requested_sort, requested_dir if requested_dir in {'asc', 'desc'} else 'asc'
+
+    default_sort = widget.get('default_sort') or {}
+    default_field = default_sort.get('field')
+    if not default_field or default_field in masked_fields(widget.get('columns') or []):
+        return None, None
+    default_dir = default_sort.get('dir')
+    if default_dir not in {'asc', 'desc'}:
+        default_dir = 'asc'
+    return default_field, default_dir
+
+
+def _positive_int(value, default: int, max_value: int | None = None) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    if parsed < 1:
+        return default
+    if max_value is not None and parsed > max_value:
+        return max_value
+    return parsed
+
+
+def _json_safe_value(value):
+    if isinstance(value, bytes):
+        return value.decode('utf-8', errors='replace')
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        return str(value)
+    return str(value)
+
+
+def _sanitize_rows(rows: list[dict], fields: list[str]) -> list[dict]:
+    allowed = set(fields) | {'_sc', '_can_cancel'}
+    sanitized = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        sanitized.append({
+            key: _json_safe_value(value)
+            for key, value in row.items()
+            if key in allowed
+        })
+    return sanitized
+
+
+def _valid_portal_row_id(row_id: str) -> bool:
+    return isinstance(row_id, str) and bool(PORTAL_ROW_ID_RE.fullmatch(row_id))
+
+
+def _writable_payload(payload: dict, binding_fields, resource_fields, writable_fields, masked=None) -> dict:
+    allowed = ((
+        set(binding_fields or [])
+        & set(resource_fields or [])
+        & set(writable_fields or [])
+    ) - set(masked or []))
+    return {
+        key: value
+        for key, value in (payload or {}).items()
+        if key in allowed
+    }
+
+
+def _log_portal_write_denied(page_sc, widget_id, sub_system_sc, portal_user, action, reason):
+    logger.warning(
+        'Portal write denied: page=%s widget=%s sub_system=%s user=%s action=%s reason=%s',
+        page_sc,
+        widget_id,
+        sub_system_sc,
+        portal_user.get('user_id') if isinstance(portal_user, dict) else None,
+        action,
+        reason,
+    )
+
+
+def _portal_write_error(error: str) -> str:
+    safe_errors = {
+        'portal_db_missing': 'portal_db_missing',
+        'no_writable_fields': 'no_writable_fields',
+        'Row not found': 'row_not_found',
+        'No valid data provided': 'no_valid_data',
+        'No writable columns configured': 'no_writable_fields',
+        'Cannot determine row identifier': 'row_identifier_missing',
+        'Invalid table name': 'write_failed',
+    }
+    return safe_errors.get(error, 'write_failed')
+
+
+def _resolve_portal_widget_write(path_id, page_sc, widget_id, action):
+    """Run the full portal write admission chain and resolve widget resource."""
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.pageir.registry import get_resource
+    from ..services import portal_access_service
+
+    common = _resolve_portal_widget_common(path_id, page_sc, widget_id, action)
+    ss = common['ss']
+    portal_user = common['portal_user']
+    widget = common['widget']
+
+    if widget.get('type') != 'table':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'widget_not_found')
+        abort(404)
+
+    ctx = common['ctx']
+    access_matrix = widget.get('access_matrix')
+    if not portal_access_service.check_widget_write_access(access_matrix, action, ctx):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'widget_write_denied')
+        abort(404)
+
+    try:
+        set_render_context(
+            'portal',
+            sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
+            portal_user=portal_user,
+            path_id=path_id,
+            page_sc=page_sc,
+        )
+        binding = widget.get('binding') or {}
+        resource = get_resource(binding.get('resource'))
+    finally:
+        clear_render_context()
+
+    if resource is None:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'resource_not_found')
+        abort(404)
+
+    binding_view = binding.get('view')
+    binding_fields = binding.get('fields') or []
+    if binding_view not in set(resource.get('views', [])):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'view_denied')
+        abort(404)
+    resource_fields = resource.get('fields', [])
+    if any(field not in set(resource_fields) for field in binding_fields):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'field_denied')
+        abort(404)
+
+    crud = resource.get('crud') or {}
+    if crud.get(action) is not True:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'crud_disabled')
+        abort(404)
+
+    return {
+        'sub_system_sc': ss.secure_code,
+        'portal_user': portal_user,
+        'binding_fields': binding_fields,
+        'resource_fields': resource_fields,
+        'writable_fields': resource.get('writable_fields', []),
+        'masked_fields': masked_fields(widget.get('columns') or []),
+        'resource': resource,
+    }
+
+
+def _resolve_portal_widget_common(path_id, page_sc, widget_id, action='read'):
+    """Run common portal admission checks and resolve a Page IR widget."""
+    from app.security.resource_gateway import ResourceGateway
+    from ..models import DcPageLayout
+    from ..services.portal_auth_service import (
+        create_guest_session,
+        get_current_portal_user,
+        is_anonymous_allowed,
+    )
+    from ..services import portal_access_service
+
+    ss = _resolve_sub_system(path_id)
+    portal_user = get_current_portal_user(ss.secure_code)
+    if not portal_user:
+        if is_anonymous_allowed(ss.secure_code):
+            portal_user = create_guest_session(ss.secure_code)
+        else:
+            _log_portal_write_denied(page_sc, widget_id, ss.secure_code, None, action, 'no_session')
+            abort(404)
+
+    page = ResourceGateway.get(
+        DcPageLayout,
+        page_sc,
+        raise_on_not_found=False,
+        check_permission=False,
+    )
+    if (
+        not page
+        or page.is_deleted
+        or page.status != 'published'
+        or not isinstance(page.layout_json, dict)
+        or page.layout_json.get('ir_version') != 3
+    ):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'page_not_found')
+        abort(404)
+
+    if not _portal_page_mounted(ss.secure_code, page_sc, portal_user):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'mount_denied')
+        abort(404)
+
+    allowed, reason = portal_access_service.check_page_access(
+        ss.secure_code,
+        page_sc,
+        portal_user,
+    )
+    if not allowed:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, reason)
+        abort(404)
+
+    widget = _find_widget(page.layout_json, widget_id)
+    if widget is None:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'widget_not_found')
+        abort(404)
+
+    ctx = {
+        'world': 'portal',
+        'sub_system_sc': ss.secure_code,
+        'portal_user': portal_user,
+        'path_id': path_id,
+        'page_sc': page_sc,
+    }
+    access_matrix = widget.get('access_matrix')
+    if access_matrix is not None and not portal_access_service.check_widget_access(access_matrix, 'read', ctx):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, action, 'widget_read_denied')
+        abort(404)
+
+    return {
+        'ss': ss,
+        'portal_user': portal_user,
+        'page': page,
+        'widget': widget,
+        'ctx': ctx,
+    }
+
+
+# ── 入口 ──────────────────────────────────────────────────────
+
+@public_portal_bp.route('/<path_id>')
+@public_route
+def portal_entry(path_id):
+    """
+    公開 Portal 入口
+
+    1. path_id → 子系統
+    2. 已有 session → 進入 portal
+    3. allow_anonymous → 自動建立 GUEST session → 進入 portal
+    4. 否則 → 導向登入頁
+    """
+    from ..services.portal_auth_service import (
+        get_current_portal_user,
+        create_guest_session,
+        is_anonymous_allowed,
+    )
+
+    ss = _resolve_sub_system(path_id)
+
+    # 已有 session
+    portal_user = get_current_portal_user(ss.secure_code)
+    if portal_user:
+        return _render_portal(ss, portal_user, path_id)
+
+    # 允許匿名 → 自動 GUEST session
+    if is_anonymous_allowed(ss.secure_code):
+        portal_user = create_guest_session(ss.secure_code)
+        return _render_portal(ss, portal_user, path_id)
+
+    # 需要登入
+    return redirect(url_for('nocode_public_portal.portal_login', path_id=path_id))
+
+
+@public_portal_bp.route('/<path_id>/p/<page_sc>', endpoint='portal_page')
+@public_route
+def portal_page(path_id, page_sc):
+    """Public Page IR v3 portal page."""
+    from app.pageir import PageIrRenderError, render_page_ir_full
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.security.resource_gateway import ResourceGateway
+    from ..models import DcPageLayout
+    from ..services.portal_auth_service import (
+        create_guest_session,
+        get_current_portal_user,
+        is_anonymous_allowed,
+    )
+    from ..services import portal_access_service
+    from . import _page_ir_title
+
+    ss = _resolve_sub_system(path_id)
+
+    portal_user = get_current_portal_user(ss.secure_code)
+    if not portal_user:
+        if is_anonymous_allowed(ss.secure_code):
+            portal_user = create_guest_session(ss.secure_code)
+        else:
+            return redirect(url_for('nocode_public_portal.portal_login', path_id=path_id))
+
+    page = ResourceGateway.get(
+        DcPageLayout,
+        page_sc,
+        raise_on_not_found=False,
+        check_permission=False,
+    )
+    if (
+        not page
+        or page.is_deleted
+        or page.status != 'published'
+        or not isinstance(page.layout_json, dict)
+        or page.layout_json.get('ir_version') != 3
+    ):
+        abort(404)
+
+    if not _portal_page_mounted(ss.secure_code, page_sc, portal_user):
+        abort(404)
+
+    allowed, reason = portal_access_service.check_page_access(
+        ss.secure_code,
+        page_sc,
+        portal_user,
+    )
+    if not allowed:
+        logger.warning(
+            'Portal page access denied: page=%s sub_system=%s user=%s reason=%s',
+            page_sc,
+            ss.secure_code,
+            portal_user.get('user_id'),
+            reason,
+        )
+        abort(404)
+
+    try:
+        set_render_context(
+            'portal',
+            sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
+            portal_user=portal_user,
+            path_id=path_id,
+            page_sc=page_sc,
+        )
+        rendered = render_page_ir_full(page.layout_json)
+    except PageIrRenderError:
+        logger.exception('Portal Page IR v3 render failed: page=%s sub_system=%s', page_sc, ss.secure_code)
+        # portal 語境的錯誤頁不得繼承 layouts/base.html（會帶平台選單等平台物件）
+        return render_template(
+            'modules/nocode_builder/portal_page_error.html',
+            sub_system_name=ss.name,
+            sub_system_icon=ss.icon or '',
+        ), 422
+    finally:
+        clear_render_context()
+
+    return render_template(
+        'modules/nocode_builder/portal_page_v3.html',
+        page=page,
+        page_title=_page_ir_title(page),
+        body_html=rendered['html'],
+        has_form=rendered['has_form'],
+        engine=rendered['engine'],
+        sub_system_name=ss.name,
+        sub_system_icon=ss.icon or '',
+        path_id=path_id,
+        portal_user=portal_user,
+    )
+
+
+@public_portal_bp.route('/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/rows')
+@public_route
+def portal_widget_rows(path_id, page_sc, widget_id):
+    """Public portal Page IR table rows API for scroll loading."""
+    from app.pageir import PageIrRenderError
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.pageir.registry import get_resource
+    from app.security.resource_gateway import ResourceGateway
+    from ..models import DcPageLayout
+    from ..services.sqlite_crud_service import PortalFilterNotSupported
+    from ..services.portal_auth_service import (
+        create_guest_session,
+        get_current_portal_user,
+        is_anonymous_allowed,
+    )
+    from ..services import portal_access_service
+
+    ss = _resolve_sub_system(path_id)
+
+    portal_user = get_current_portal_user(ss.secure_code)
+    if not portal_user:
+        if is_anonymous_allowed(ss.secure_code):
+            portal_user = create_guest_session(ss.secure_code)
+        else:
+            abort(404)
+
+    page = ResourceGateway.get(
+        DcPageLayout,
+        page_sc,
+        raise_on_not_found=False,
+        check_permission=False,
+    )
+    if (
+        not page
+        or page.is_deleted
+        or page.status != 'published'
+        or not isinstance(page.layout_json, dict)
+        or page.layout_json.get('ir_version') != 3
+    ):
+        abort(404)
+
+    if not _portal_page_mounted(ss.secure_code, page_sc, portal_user):
+        abort(404)
+
+    allowed, reason = portal_access_service.check_page_access(
+        ss.secure_code,
+        page_sc,
+        portal_user,
+    )
+    if not allowed:
+        logger.warning(
+            'Portal rows access denied: page=%s widget=%s sub_system=%s user=%s reason=%s',
+            page_sc,
+            widget_id,
+            ss.secure_code,
+            portal_user.get('user_id'),
+            reason,
+        )
+        abort(404)
+
+    widget = _find_table_widget(page.layout_json, widget_id)
+    if widget is None:
+        abort(404)
+
+    try:
+        set_render_context(
+            'portal',
+            sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
+            portal_user=portal_user,
+            path_id=path_id,
+            page_sc=page_sc,
+        )
+        ctx = {
+            'world': 'portal',
+            'sub_system_sc': ss.secure_code,
+            'portal_user': portal_user,
+            'path_id': path_id,
+            'page_sc': page_sc,
+        }
+        access_matrix = widget.get('access_matrix')
+        if access_matrix is not None and not portal_access_service.check_widget_access(
+            access_matrix,
+            'read',
+            ctx,
+        ):
+            logger.warning(
+                'Portal rows widget denied: page=%s widget=%s sub_system=%s user=%s',
+                page_sc,
+                widget_id,
+                ss.secure_code,
+                portal_user.get('user_id'),
+            )
+            abort(404)
+
+        binding = widget.get('binding') or {}
+        resource = get_resource(binding.get('resource'))
+        if resource is None:
+            abort(404)
+
+        binding_view = binding.get('view')
+        binding_fields = binding.get('fields') or []
+        if binding_view not in set(resource.get('views', [])):
+            abort(404)
+        allowed_fields = set(resource.get('fields', []))
+        if any(field not in allowed_fields for field in binding_fields):
+            abort(404)
+
+        page_num = _positive_int(request.args.get('page'), 1, 10000)
+        page_size = _positive_int(widget.get('page_size'), 20)
+        sort_field, sort_dir = _resolve_sort(
+            widget,
+            binding,
+            request.args.get('sort'),
+            request.args.get('dir'),
+        )
+        rows, total = resource['fetch_list'](
+            binding_fields,
+            page_num,
+            page_size,
+            sort_field,
+            sort_dir,
+        )
+        rows = apply_row_masks(rows, widget.get('columns') or [])
+    except (PortalFilterNotSupported, PageIrRenderError):
+        logger.warning(
+            'Portal rows query rejected: page=%s widget=%s sub_system=%s user=%s',
+            page_sc,
+            widget_id,
+            ss.secure_code,
+            portal_user.get('user_id'),
+        )
+        abort(404)
+    finally:
+        clear_render_context()
+
+    pages = max(1, ceil(total / page_size)) if page_size else 1
+    return jsonify({
+        'success': True,
+        'rows': _sanitize_rows(rows, binding_fields),
+        'page': page_num,
+        'pages': pages,
+        'total': total,
+        'has_more': page_num < pages,
+    })
+
+
+@public_portal_bp.route('/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/rows', methods=['POST'])
+@public_route
+def portal_widget_create_row(path_id, page_sc, widget_id):
+    """Public portal Page IR table create API."""
+    config = _resolve_portal_widget_write(path_id, page_sc, widget_id, 'create')
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+    data = body.get('data')
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+
+    allowed_fields = ((
+        set(config['binding_fields'])
+        & set(config['resource_fields'])
+        & set(config['writable_fields'])
+    ) - set(config['masked_fields']))
+    if not allowed_fields:
+        return jsonify({'success': False, 'error': 'no_writable_fields'}), 400
+
+    payload = _writable_payload(
+        data,
+        config['binding_fields'],
+        config['resource_fields'],
+        config['writable_fields'],
+        config['masked_fields'],
+    )
+    ok, error = config['resource']['create_row'](payload)
+    if not ok:
+        return jsonify({'success': False, 'error': _portal_write_error(error)}), 400
+    return jsonify({'success': True}), 201
+
+
+@public_portal_bp.route('/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/submit', methods=['POST'], endpoint='portal_widget_submit')
+@limiter.limit('10 per minute; 100 per hour')
+@public_route
+def portal_widget_submit(path_id, page_sc, widget_id):
+    """Public portal Page IR form submit API."""
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.pageir.registry import get_portal_action
+    from app.services import nocode_service_account
+    from modules.form_workflow.models import FwFormWorkflowMapping, FwPublishedFormWorkflow
+    from modules.form_workflow.services.form_submit_service import (
+        SubmitError,
+        allocate_serial_number,
+        create_instance_and_start,
+        extract_schema_field_keys,
+    )
+    from ..services import portal_access_service
+    from ..services.portal_auth_service import nocode_user_ref
+
+    common = _resolve_portal_widget_common(path_id, page_sc, widget_id, 'create')
+    ss = common['ss']
+    portal_user = common['portal_user']
+    widget = common['widget']
+    ctx = common['ctx']
+
+    if widget.get('type') != 'form':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'widget_not_found')
+        abort(404)
+
+    if not portal_access_service.check_widget_write_access(widget.get('access_matrix') or {}, 'create', ctx):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'widget_write_denied')
+        abort(404)
+
+    # portal action registry 是准入的一環，不只是渲染期的 URL 來源：
+    # widget 未設定送出動作、或動作未註冊、或註冊的 endpoint 不是本端點時，
+    # 直接打這支 URL 一律拒絕（否則設計者「清空送出動作」不等於表單唯讀）。
+    submit_action_ref = widget.get('submit_action_ref')
+    if not submit_action_ref:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'submit_action_missing')
+        abort(404)
+    try:
+        set_render_context(
+            'portal',
+            sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
+            portal_user=portal_user,
+            path_id=path_id,
+            page_sc=page_sc,
+        )
+        action = get_portal_action(submit_action_ref)
+    finally:
+        clear_render_context()
+    if not action or action.get('endpoint') != 'nocode_public_portal.portal_widget_submit':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'submit_action_denied')
+        abort(404)
+
+    mapping_ref = widget.get('mapping_ref')
+    if not mapping_ref:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'mapping_missing')
+        abort(404)
+
+    mapping = FwFormWorkflowMapping.query.filter_by(
+        secure_code=mapping_ref,
+        org_secure_code=ss.org_secure_code,
+        is_deleted=False,
+    ).first()
+    if not mapping or not mapping.is_active or mapping.is_archived:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'mapping_denied')
+        abort(404)
+
+    published = FwPublishedFormWorkflow.query.filter_by(
+        source_mapping_secure_code=mapping.secure_code,
+        org_secure_code=ss.org_secure_code,
+        status='Published',
+        is_deleted=False,
+    ).order_by(FwPublishedFormWorkflow.created_at.desc()).first()
+    if not published:
+        return jsonify({'success': False, 'error': 'form_not_published'}), 422
+
+    form_data = request.get_json(silent=True)
+    if not isinstance(form_data, dict):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+
+    form_snapshot = published.form_snapshot or {}
+    workflow_snapshot = published.workflow_snapshot or {}
+    form_schema = form_snapshot.get('schema')
+    workflow_graph = (
+        workflow_snapshot.get('graph')
+        or workflow_snapshot.get('cytoscape_config')
+        or {}
+    )
+
+    allowed_keys = extract_schema_field_keys(form_schema)
+    unknown = sorted(set(form_data.keys()) - allowed_keys)
+    if unknown:
+        return jsonify({
+            'success': False,
+            'error': 'unknown_field',
+            'details': {'unknown_keys': unknown, 'allowed_keys': sorted(allowed_keys)},
+        }), 400
+
+    sub_ref = ss.secure_code
+    user_ref = nocode_user_ref(ss.secure_code, portal_user)
+    payload = dict(form_data)
+    if '_nocode_sub_system' in allowed_keys:
+        payload['_nocode_sub_system'] = sub_ref
+    if '_nocode_user_ref' in allowed_keys:
+        payload['_nocode_user_ref'] = user_ref
+
+    try:
+        applicant_user = nocode_service_account.get_or_create(ss.org_secure_code)
+        applicant = {
+            'applicant_secure_code': applicant_user.secure_code,
+            'applicant_name': applicant_user.display_name or applicant_user.username,
+            'applicant_username': applicant_user.username,
+            'applicant_email': getattr(applicant_user, 'email', None),
+            'applicant_dept': getattr(applicant_user, 'department_name', None),
+        }
+        published.mark_as_used()
+        serial_number, org_form_seq = allocate_serial_number(
+            ss.org_secure_code,
+            is_test=False,
+            published=published,
+        )
+        subject = (
+            form_snapshot.get('name')
+            or getattr(mapping, 'name', None)
+            or mapping.form_template_code
+            or published.name
+        )
+        form_instance, workflow_instance = create_instance_and_start(
+            org_secure_code=ss.org_secure_code,
+            serial_number=serial_number,
+            org_form_seq=org_form_seq,
+            subject=subject,
+            form_data=payload,
+            is_test=False,
+            source_type='NOCODE_PORTAL',
+            source_ip=request.remote_addr,
+            form_name=form_snapshot.get('name'),
+            form_code=form_snapshot.get('code'),
+            form_version=published.source_form_version,
+            form_schema=form_schema,
+            form_builder_config=form_snapshot.get('builder_config'),
+            workflow_name=workflow_snapshot.get('name'),
+            workflow_version=published.source_workflow_version,
+            workflow_graph=workflow_graph,
+            source_form_template_id=published.source_form_template_id,
+            source_form_template_secure_code=published.source_form_template_secure_code,
+            source_workflow_template_id=published.source_workflow_template_id,
+            source_workflow_template_secure_code=published.source_workflow_template_secure_code,
+            published_sc=published.secure_code,
+            proc_prefix='PROC-',
+            nocode_sub_system_sc=sub_ref,
+            nocode_user_ref=user_ref,
+            **applicant,
+        )
+    except SubmitError as exc:
+        return jsonify({'success': False, 'error': 'workflow_error', 'message': str(exc)}), 422
+    except Exception:
+        db.session.rollback()
+        logger.exception(
+            'Portal form submit failed: page=%s widget=%s sub_system=%s',
+            page_sc,
+            widget_id,
+            ss.secure_code,
+        )
+        return jsonify({'success': False, 'error': 'internal_error'}), 500
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'serial_number': form_instance.serial_number,
+            'execution_code': workflow_instance.execution_code,
+        },
+    }), 201
+
+
+@public_portal_bp.route(
+    '/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/master-detail',
+    methods=['POST'],
+    endpoint='portal_widget_master_detail_submit',
+)
+@limiter.limit('10 per minute; 100 per hour')
+@public_route
+def portal_widget_master_detail_submit(path_id, page_sc, widget_id):
+    """Public portal Page IR master-detail submit API."""
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.pageir.registry import get_resource
+    from ..services import portal_access_service
+    from ..services.db_connector import is_sqlite_source
+    from ..services.master_detail_service import (
+        MasterDetailWriteError,
+        save_master_detail,
+    )
+    from ..services.portal_auth_service import nocode_user_ref
+
+    common = _resolve_portal_widget_common(path_id, page_sc, widget_id, 'create')
+    ss = common['ss']
+    portal_user = common['portal_user']
+    widget = common['widget']
+    ctx = common['ctx']
+
+    if widget.get('type') != 'master_detail':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'widget_not_found')
+        abort(404)
+
+    if not portal_access_service.check_widget_write_access(widget.get('access_matrix') or {}, 'create', ctx):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'widget_write_denied')
+        abort(404)
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+    master_body = body.get('master') or {}
+    details = body.get('details')
+    if not isinstance(master_body, dict) or not isinstance(master_body.get('data') or {}, dict):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+    if not isinstance(details, list):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+    if len(details) > 200:
+        return jsonify({'success': False, 'error': 'too_many_details'}), 400
+    if any(not isinstance(item, dict) for item in details):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+
+    try:
+        set_render_context(
+            'portal',
+            sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
+            portal_user=portal_user,
+            path_id=path_id,
+            page_sc=page_sc,
+        )
+        master_binding = (widget.get('master') or {}).get('binding') or {}
+        detail_binding = (widget.get('detail') or {}).get('binding') or {}
+        master_resource = get_resource(master_binding.get('resource'))
+        detail_resource = get_resource(detail_binding.get('resource'))
+    finally:
+        clear_render_context()
+
+    if master_resource is None or detail_resource is None:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'resource_not_found')
+        abort(404)
+
+    master_binding_fields = master_binding.get('fields') or []
+    detail_binding_fields = detail_binding.get('fields') or []
+    if not _binding_allowed(master_binding, master_resource) or not _binding_allowed(detail_binding, detail_resource):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'binding_denied')
+        abort(404)
+
+    detail_crud = detail_resource.get('crud') or {}
+    if detail_crud.get('create') is not True:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'detail_crud_disabled')
+        abort(404)
+
+    master_sc = master_body.get('sc')
+    if master_sc in ('', None):
+        master_sc = None
+    else:
+        master_sc = str(master_sc)
+        if not _valid_portal_row_id(master_sc):
+            _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'bad_master_sc')
+            abort(404)
+
+    master_crud = master_resource.get('crud') or {}
+    if master_sc is None and master_crud.get('create') is not True:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'master_create_disabled')
+        abort(404)
+    if master_sc is not None:
+        try:
+            set_render_context(
+                'portal',
+                sub_system_sc=ss.secure_code,
+                org_secure_code=ss.org_secure_code,
+                portal_user=portal_user,
+                path_id=path_id,
+                page_sc=page_sc,
+            )
+            existing_master = master_resource['fetch_detail'](master_sc, master_binding_fields)
+        finally:
+            clear_render_context()
+        if existing_master is None:
+            _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'master_not_found')
+            abort(404)
+
+    foreign_key = (widget.get('detail') or {}).get('foreign_key')
+    if foreign_key not in set(detail_resource.get('writable_fields') or []):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'foreign_key_not_writable')
+        abort(404)
+
+    master_masked = masked_fields((widget.get('master') or {}).get('fields') or [])
+    detail_masked = masked_fields((widget.get('detail') or {}).get('columns') or [])
+    update_master_allowed = (
+        master_sc is not None
+        and (widget.get('master') or {}).get('editable') is True
+        and master_crud.get('update') is True
+        and portal_access_service.check_widget_write_access(widget.get('access_matrix') or {}, 'update', ctx)
+    )
+    master_payload = _writable_payload(
+        master_body.get('data') or {},
+        master_binding_fields,
+        master_resource.get('fields', []),
+        master_resource.get('writable_fields', []),
+        master_masked,
+    )
+    if master_sc is not None and not update_master_allowed:
+        master_payload = {}
+    detail_payloads = [
+        _writable_payload(
+            {key: value for key, value in detail_data.items() if key != foreign_key},
+            detail_binding_fields,
+            detail_resource.get('fields', []),
+            detail_resource.get('writable_fields', []),
+            detail_masked,
+        )
+        for detail_data in details
+    ]
+
+    master_view = _portal_crud_view_from_binding(master_binding, ss)
+    detail_view = _portal_crud_view_from_binding(detail_binding, ss)
+    if master_view is None or detail_view is None:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'view_denied')
+        abort(404)
+    if not is_sqlite_source(master_view.data_source) or master_view.data_source != 'portal_data':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'master_source_denied')
+        abort(404)
+    if not is_sqlite_source(detail_view.data_source) or detail_view.data_source != 'portal_data':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'create', 'detail_source_denied')
+        abort(404)
+
+    try:
+        owner_ref = nocode_user_ref(ss.secure_code, portal_user)
+    except ValueError:
+        logger.warning(
+            'Portal master-detail owner_ref unavailable: page=%s widget=%s sub_system=%s',
+            page_sc,
+            widget_id,
+            ss.secure_code,
+        )
+        abort(404)
+
+    try:
+        data = save_master_detail(
+            sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
+            master_view=master_view,
+            detail_view=detail_view,
+            master_sc=master_sc,
+            master_payload=master_payload,
+            detail_payloads=detail_payloads,
+            foreign_key=foreign_key,
+            update_master=update_master_allowed,
+            owner_ref=owner_ref,
+        )
+    except MasterDetailWriteError as exc:
+        return jsonify({'success': False, 'error': _portal_write_error(exc.error)}), 400
+    except FileNotFoundError:
+        return jsonify({'success': False, 'error': 'portal_db_missing'}), 400
+    except Exception:
+        logger.exception(
+            'Portal master-detail submit failed: page=%s widget=%s sub_system=%s',
+            page_sc,
+            widget_id,
+            ss.secure_code,
+        )
+        return jsonify({'success': False, 'error': 'write_failed'}), 500
+
+    return jsonify({'success': True, 'data': data}), 201
+
+
+def _binding_allowed(binding: dict, resource: dict) -> bool:
+    if binding.get('view') not in set(resource.get('views', [])):
+        return False
+    resource_fields = set(resource.get('fields') or [])
+    return not any(field not in resource_fields for field in binding.get('fields') or [])
+
+
+def _portal_crud_view_from_binding(binding: dict, ss):
+    from ..models.crud_view import DcCrudView
+
+    resource_ref = binding.get('resource') or ''
+    parts = resource_ref.split(':', 1)
+    if len(parts) != 2 or parts[0] != 'portal':
+        return None
+    return DcCrudView.query.filter_by(
+        secure_code=parts[1],
+        org_secure_code=ss.org_secure_code,
+        is_deleted=False,
+        is_active=True,
+    ).first()
+
+
+@public_portal_bp.route('/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/submissions/<record_sc>', methods=['PUT'], endpoint='portal_widget_update_submission')
+@limiter.limit('10 per minute; 100 per hour')
+@public_route
+def portal_widget_update_submission(path_id, page_sc, widget_id, record_sc):
+    """Public portal Page IR form submission update API."""
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.pageir.registry import get_portal_action
+    from modules.form_workflow.models import (
+        FwFormWorkflowMapping,
+        FwPublishedFormWorkflow,
+    )
+    from modules.form_workflow.services.form_submit_service import extract_schema_field_keys
+    from ..services import portal_access_service
+    from ..services.pageir_formflow_resources import get_editable_submission
+    from ..services.portal_auth_service import nocode_user_ref
+
+    common = _resolve_portal_widget_common(path_id, page_sc, widget_id, 'update')
+    ss = common['ss']
+    portal_user = common['portal_user']
+    widget = common['widget']
+    ctx = common['ctx']
+
+    if widget.get('type') != 'form':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'widget_not_found')
+        abort(404)
+
+    if not portal_access_service.check_widget_write_access(widget.get('access_matrix') or {}, 'update', ctx):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'widget_write_denied')
+        abort(404)
+
+    submit_action_ref = widget.get('submit_action_ref')
+    if not submit_action_ref:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'submit_action_missing')
+        abort(404)
+    try:
+        set_render_context(
+            'portal',
+            sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
+            portal_user=portal_user,
+            path_id=path_id,
+            page_sc=page_sc,
+        )
+        action = get_portal_action(submit_action_ref)
+    finally:
+        clear_render_context()
+    if not action or action.get('endpoint') != 'nocode_public_portal.portal_widget_submit':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'submit_action_denied')
+        abort(404)
+
+    mapping_ref = widget.get('mapping_ref')
+    if not mapping_ref:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'mapping_missing')
+        abort(404)
+
+    # 三重過濾 + editable 一次解析完成；不要在後面另外再查一次 FwFormInstance
+    form_instance = get_editable_submission(record_sc, ctx)
+    if form_instance is None:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'submission_denied')
+        abort(404)
+
+    mapping = FwFormWorkflowMapping.query.filter_by(
+        secure_code=mapping_ref,
+        org_secure_code=ss.org_secure_code,
+        is_deleted=False,
+    ).first()
+    if not mapping or not mapping.is_active or mapping.is_archived:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'mapping_denied')
+        abort(404)
+
+    published = FwPublishedFormWorkflow.query.filter_by(
+        source_mapping_secure_code=mapping.secure_code,
+        org_secure_code=ss.org_secure_code,
+        status='Published',
+        is_deleted=False,
+    ).order_by(FwPublishedFormWorkflow.created_at.desc()).first()
+    if not published:
+        return jsonify({'success': False, 'error': 'form_not_published'}), 422
+
+    form_data = request.get_json(silent=True)
+    if not isinstance(form_data, dict):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+
+    form_snapshot = published.form_snapshot or {}
+    form_schema = form_snapshot.get('schema')
+    allowed_keys = extract_schema_field_keys(form_schema)
+    unknown = sorted(set(form_data.keys()) - allowed_keys)
+    if unknown:
+        return jsonify({
+            'success': False,
+            'error': 'unknown_field',
+            'details': {'unknown_keys': unknown, 'allowed_keys': sorted(allowed_keys)},
+        }), 400
+
+    sub_ref = ss.secure_code
+    user_ref = nocode_user_ref(ss.secure_code, portal_user)
+    payload = dict(form_data)
+    if '_nocode_sub_system' in allowed_keys:
+        payload['_nocode_sub_system'] = sub_ref
+    if '_nocode_user_ref' in allowed_keys:
+        payload['_nocode_user_ref'] = user_ref
+
+    try:
+        form_instance.form_data = payload
+        form_instance.updated_at = datetime.utcnow()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception(
+            'Portal form update failed: page=%s widget=%s record=%s sub_system=%s',
+            page_sc,
+            widget_id,
+            record_sc,
+            ss.secure_code,
+        )
+        return jsonify({'success': False, 'error': 'internal_error'}), 500
+
+    return jsonify({
+        'success': True,
+        'data': {'serial_number': form_instance.serial_number},
+    }), 200
+
+
+@public_portal_bp.route(
+    '/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/submissions/<record_sc>/cancel',
+    methods=['POST'],
+    endpoint='portal_widget_cancel_submission',
+)
+@limiter.limit('10 per minute; 100 per hour')
+@public_route
+def portal_widget_cancel_submission(path_id, page_sc, widget_id, record_sc):
+    """Public portal Page IR 撤單（等同表單中心的強制結束）。"""
+    from app.pageir.context import clear_render_context, set_render_context
+    from app.pageir.registry import get_portal_action
+    from modules.form_workflow.models import FwApprovalRecord
+    from modules.form_workflow.services.workflow_engine import WorkflowEngine
+    from ..services import portal_access_service
+    from ..services.pageir_formflow_resources import _owned_submission
+
+    common = _resolve_portal_widget_common(path_id, page_sc, widget_id, 'update')
+    ss = common['ss']
+    portal_user = common['portal_user']
+    widget = common['widget']
+    ctx = common['ctx']
+
+    if widget.get('type') != 'actions':
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'widget_not_found')
+        abort(404)
+
+    if not portal_access_service.check_widget_write_access(widget.get('access_matrix') or {}, 'update', ctx):
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'widget_write_denied')
+        abort(404)
+
+    action_registered = False
+    try:
+        set_render_context(
+            'portal',
+            sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
+            portal_user=portal_user,
+            path_id=path_id,
+            page_sc=page_sc,
+        )
+        for button in widget.get('buttons') or []:
+            action = get_portal_action(button.get('action_ref'))
+            if action and action.get('endpoint') == 'nocode_public_portal.portal_widget_cancel_submission':
+                action_registered = True
+                break
+    finally:
+        clear_render_context()
+    if not action_registered:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'cancel_action_missing')
+        abort(404)
+
+    pair = _owned_submission(record_sc, ctx)
+    if pair is None:
+        _log_portal_write_denied(page_sc, widget_id, ss.secure_code, portal_user, 'update', 'submission_denied')
+        abort(404)
+    wi, fi = pair
+
+    if wi.status != 'RUNNING':
+        return jsonify({'success': False, 'error': 'not_cancellable'}), 409
+
+    try:
+        # portal session 沒有 username 欄位，可讀名稱在 display_name；
+        # 真正能對回帳號的識別碼是 wi.nocode_user_ref，一併寫進軌跡。
+        operator = 'portal:' + str(
+            portal_user.get('display_name')
+            or portal_user.get('username')
+            or portal_user.get('user_id')
+            or ''
+        )
+        WorkflowEngine.cancel_pending_nodes(wi.secure_code)
+        WorkflowEngine.complete_workflow(
+            wi.secure_code,
+            status='CANCELLED',
+            end_message=f'由 {operator} 撤單',
+        )
+        db.session.add(FwApprovalRecord(
+            secure_code=secrets.token_urlsafe(16),
+            org_secure_code=ss.org_secure_code,
+            workflow_instance_secure_code=wi.secure_code,
+            form_instance_secure_code=fi.secure_code,
+            node_id='FORCE_END',
+            node_name='撤單',
+            approver_secure_code=fi.applicant_secure_code,
+            approver_name=operator,
+            action='FORCE_END',
+            comment=f'由外部帳號 {operator} 撤單 (user_ref={wi.nocode_user_ref})',
+            acted_at=datetime.utcnow(),
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception(
+            'Portal form cancel failed: page=%s widget=%s record=%s sub_system=%s',
+            page_sc,
+            widget_id,
+            record_sc,
+            ss.secure_code,
+        )
+        return jsonify({'success': False, 'error': 'internal_error'}), 500
+
+    return jsonify({'success': True, 'data': {'execution_code': wi.execution_code}}), 200
+
+
+@public_portal_bp.route('/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/rows/<row_id>', methods=['PUT'])
+@public_route
+def portal_widget_update_row(path_id, page_sc, widget_id, row_id):
+    """Public portal Page IR table update API."""
+    config = _resolve_portal_widget_write(path_id, page_sc, widget_id, 'update')
+    if not _valid_portal_row_id(row_id):
+        _log_portal_write_denied(
+            page_sc,
+            widget_id,
+            config['sub_system_sc'],
+            config['portal_user'],
+            'update',
+            'bad_row_id',
+        )
+        abort(404)
+
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+    data = body.get('data')
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': 'invalid_data'}), 400
+
+    allowed_fields = ((
+        set(config['binding_fields'])
+        & set(config['resource_fields'])
+        & set(config['writable_fields'])
+    ) - set(config['masked_fields']))
+    if not allowed_fields:
+        return jsonify({'success': False, 'error': 'no_writable_fields'}), 400
+
+    payload = _writable_payload(
+        data,
+        config['binding_fields'],
+        config['resource_fields'],
+        config['writable_fields'],
+        config['masked_fields'],
+    )
+    ok, error = config['resource']['update_row'](row_id, payload)
+    if not ok:
+        return jsonify({'success': False, 'error': _portal_write_error(error)}), 400
+    return jsonify({'success': True})
+
+
+@public_portal_bp.route('/<path_id>/api/pages/<page_sc>/widgets/<widget_id>/rows/<row_id>', methods=['DELETE'])
+@public_route
+def portal_widget_delete_row(path_id, page_sc, widget_id, row_id):
+    """Public portal Page IR table delete API."""
+    config = _resolve_portal_widget_write(path_id, page_sc, widget_id, 'delete')
+    if not _valid_portal_row_id(row_id):
+        _log_portal_write_denied(
+            page_sc,
+            widget_id,
+            config['sub_system_sc'],
+            config['portal_user'],
+            'delete',
+            'bad_row_id',
+        )
+        abort(404)
+
+    ok, error = config['resource']['delete_row'](row_id)
+    if not ok:
+        return jsonify({'success': False, 'error': _portal_write_error(error)}), 400
+    return jsonify({'success': True})
+
+
+def _portal_page_mounted(sub_system_sc: str, page_sc: str, portal_user: dict) -> bool:
+    """頁面是否掛在此子系統下、且對此身分開放。
+
+    掛載採**雙路徑 OR**（同 page_ownership_service 的可達性判定）：
+    `dc_sub_system_pages` 掛載，或 `dc_site_map_nodes` 節點指向。
+    每個子系統自動附贈的 welcome 頁**只有後者**，只查前者的話
+    welcome 頁在公開 portal 上必定 404（2026-08-03 修）。
+
+    fail-closed 規則：
+    - 有掛載記錄但全部停用 → 拒絕（明確關閉，不因另一條路而放行）
+    - 走 site map 節點時沒有 visible_roles 可判，可見性交給後續的
+      `check_page_access`（節點 access_matrix），本函式只回答「掛沒掛」
+    """
+    from ..models import DcSubSystemPage
+    from ..models.site_map_node import DcSiteMapNode
+
+    mounts = DcSubSystemPage.query.filter_by(
+        sub_system_secure_code=sub_system_sc,
+        page_layout_secure_code=page_sc,
+        is_deleted=False,
+    ).all()
+    if mounts:
+        active_mounts = [mount for mount in mounts if mount.is_active]
+        if not active_mounts:
+            return False
+        return any(
+            _portal_role_allowed(mount.visible_roles, portal_user)
+            for mount in active_mounts
+        )
+
+    node = DcSiteMapNode.query.filter_by(
+        sub_system_secure_code=sub_system_sc,
+        page_layout_secure_code=page_sc,
+        is_deleted=False,
+        is_active=True,
+    ).first()
+    return node is not None
+
+
+def _portal_role_allowed(visible_roles, portal_user: dict) -> bool:
+    roles = visible_roles or []
+    if '*' in roles:
+        return True
+    user_roles = portal_user.get('roles') or ['GUEST']
+    return bool(user_roles and user_roles[0] in roles)
+
+
+def _render_portal(ss, portal_user: dict, path_id: str):
+    """渲染 portal 主頁"""
+    return render_template(
+        'modules/nocode_builder/portal_public.html',
+        sub_system_name=ss.name,
+        sub_system_description=ss.description or '',
+        sub_system_icon=ss.icon or '',
+        path_id=path_id,
+        portal_user=portal_user,
+    )
+
+
+# ── 登入 ──────────────────────────────────────────────────────
+
+@public_portal_bp.route('/<path_id>/login', methods=['GET'])
+@public_route
+def portal_login(path_id):
+    """登入頁面"""
+    from ..services.portal_auth_service import (
+        get_current_portal_user,
+        is_registration_allowed,
+    )
+
+    ss = _resolve_sub_system(path_id)
+
+    # 已登入 → 回入口
+    if get_current_portal_user(ss.secure_code):
+        return redirect(url_for('nocode_public_portal.portal_entry', path_id=path_id))
+
+    return render_template(
+        'modules/nocode_builder/portal_login.html',
+        sub_system_name=ss.name,
+        sub_system_icon=ss.icon or '',
+        path_id=path_id,
+        allow_registration=is_registration_allowed(ss.secure_code),
+    )
+
+
+@public_portal_bp.route('/<path_id>/login', methods=['POST'])
+@public_route
+@csrf.exempt
+def portal_login_post(path_id):
+    """登入處理"""
+    from ..services.portal_auth_service import login, is_registration_allowed
+
+    ss = _resolve_sub_system(path_id)
+
+    username = request.form.get('username', '')
+    password = request.form.get('password', '')
+
+    user_data, error = login(ss.secure_code, username, password)
+    if error:
+        flash(error, 'error')
+        return render_template(
+            'modules/nocode_builder/portal_login.html',
+            sub_system_name=ss.name,
+            sub_system_icon=ss.icon or '',
+            path_id=path_id,
+            allow_registration=is_registration_allowed(ss.secure_code),
+            form_username=username,
+        ), 200
+
+    return redirect(url_for('nocode_public_portal.portal_entry', path_id=path_id))
+
+
+# ── 註冊 ──────────────────────────────────────────────────────
+
+@public_portal_bp.route('/<path_id>/register', methods=['GET'])
+@public_route
+def portal_register(path_id):
+    """註冊頁面 (子系統允許註冊時才開放)"""
+    from ..services.portal_auth_service import (
+        get_current_portal_user,
+        is_registration_allowed,
+    )
+
+    ss = _resolve_sub_system(path_id)
+
+    if not is_registration_allowed(ss.secure_code):
+        abort(404)
+
+    # 已登入 → 回入口
+    if get_current_portal_user(ss.secure_code):
+        return redirect(url_for('nocode_public_portal.portal_entry', path_id=path_id))
+
+    return render_template(
+        'modules/nocode_builder/portal_register.html',
+        sub_system_name=ss.name,
+        sub_system_icon=ss.icon or '',
+        path_id=path_id,
+    )
+
+
+@public_portal_bp.route('/<path_id>/register', methods=['POST'])
+@public_route
+@csrf.exempt
+def portal_register_post(path_id):
+    """註冊處理"""
+    from ..services.portal_auth_service import register, is_registration_allowed
+
+    ss = _resolve_sub_system(path_id)
+
+    if not is_registration_allowed(ss.secure_code):
+        abort(404)
+
+    username = request.form.get('username', '')
+    password = request.form.get('password', '')
+    password_confirm = request.form.get('password_confirm', '')
+    display_name = request.form.get('display_name', '')
+    email = request.form.get('email', '')
+
+    # 密碼確認
+    if password != password_confirm:
+        flash('兩次輸入的密碼不一致', 'error')
+        return render_template(
+            'modules/nocode_builder/portal_register.html',
+            sub_system_name=ss.name,
+            sub_system_icon=ss.icon or '',
+            path_id=path_id,
+            form_username=username,
+            form_display_name=display_name,
+            form_email=email,
+        ), 200
+
+    user_data, error = register(
+        sub_system_sc=ss.secure_code,
+            org_secure_code=ss.org_secure_code,
+        username=username,
+        password=password,
+        display_name=display_name,
+        email=email,
+    )
+    if error:
+        flash(error, 'error')
+        return render_template(
+            'modules/nocode_builder/portal_register.html',
+            sub_system_name=ss.name,
+            sub_system_icon=ss.icon or '',
+            path_id=path_id,
+            form_username=username,
+            form_display_name=display_name,
+            form_email=email,
+        ), 200
+
+    flash('註冊成功，已自動登入', 'success')
+    return redirect(url_for('nocode_public_portal.portal_entry', path_id=path_id))
+
+
+# ── 登出 ──────────────────────────────────────────────────────
+
+@public_portal_bp.route('/<path_id>/logout', methods=['POST'])
+@public_route
+@csrf.exempt
+def portal_logout(path_id):
+    """登出"""
+    from ..services.portal_auth_service import logout
+
+    ss = _resolve_sub_system(path_id)
+    logout(ss.secure_code)
+    return redirect(url_for('nocode_public_portal.portal_login', path_id=path_id))

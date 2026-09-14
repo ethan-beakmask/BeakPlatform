@@ -1,0 +1,181 @@
+<template x-if="selectedWidget.type === 'menu' && !selectedWidget.shared_ref">
+    <div>
+        <div class="ird-section">
+            <div class="ird-field">
+                <label>{{ _('標題 zh-TW') }}</label>
+                <input type="text" x-model="selectedWidget.title_i18n['zh-TW']" @input="markDirty()">
+            </div>
+            <div class="ird-field">
+                <label>{{ _('標題 en') }}</label>
+                <input type="text" x-model="selectedWidget.title_i18n.en" @input="markDirty()">
+            </div>
+            <div class="ird-field">
+                <label>{{ _('選單資料來源') }}</label>
+                <select x-model="selectedWidget.source_mode" @change="markDirty()">
+                    <option value="manual">{{ _('手動挑選') }}</option>
+                    <option value="auto">{{ _('依 Site Map 自動產生') }}</option>
+                </select>
+            </div>
+
+            <label class="ird-inline-check" x-show="selectedWidget.source_mode === 'auto'">
+                <input type="checkbox" x-model="selectedWidget.include_system_links" @change="markDirty()">
+                <span>{{ _('包含系統連結（登入／註冊／登出）') }}</span>
+            </label>
+
+            <div class="ird-field" x-show="selectedWidget.source_mode !== 'auto'">
+                <label>{{ _('已選項目') }}</label>
+                <div class="ird-menu-list">
+                    <template x-for="row in selectedMenuRows(selectedWidget)" :key="row.key">
+                        <div class="ird-menu-row ird-menu-tree-row" :class="{ 'ird-menu-row-deleted': row.deleted }">
+                            <span class="ird-menu-name" :style="'padding-left:' + (row.depth * 18) + 'px'" x-text="row.label"></span>
+                            <span class="ird-menu-kind" x-text="row.kindLabel"></span>
+                            <span class="ird-menu-actions">
+                                <button type="button" class="ird-icon-btn" :disabled="!row.canUp" @click="moveMenuItem(selectedWidget, row.path, -1)" title="{{ _('上移') }}">↑</button>
+                                <button type="button" class="ird-icon-btn" :disabled="!row.canDown" @click="moveMenuItem(selectedWidget, row.path, 1)" title="{{ _('下移') }}">↓</button>
+                                <button type="button" class="ird-icon-btn" :disabled="!row.canIndent" @click="indentMenuItem(selectedWidget, row.path)" title="{{ _('降一層') }}">→</button>
+                                <button type="button" class="ird-icon-btn" :disabled="!row.canOutdent" @click="outdentMenuItem(selectedWidget, row.path)" title="{{ _('升一層') }}">←</button>
+                                <button type="button" class="ird-icon-btn" @click="removeMenuItem(selectedWidget, row.path)" title="{{ _('移除') }}">×</button>
+                            </span>
+                        </div>
+                    </template>
+                    <p class="ird-hint" x-show="menuItemCount(selectedWidget) === 0">{{ _('尚未選擇任何項目，儲存會失敗') }}</p>
+                </div>
+                <p class="ird-hint">{{ _('權限不通過的網頁在 portal 上會自動隱藏。') }}</p>
+            </div>
+
+            <div class="ird-field" x-show="selectedWidget.source_mode !== 'auto'">
+                <label>{{ _('可加入的網頁') }}</label>
+                <div class="ird-menu-list">
+                    <template x-for="node in availableMenuNodes(selectedWidget)" :key="node.secure_code">
+                        <div class="ird-menu-row">
+                            <span class="ird-menu-name" :style="'padding-left:' + (node.depth * 18) + 'px'" x-text="node.name"></span>
+                            <span class="ird-menu-kind" x-show="node.node_type === 'folder'">{{ _('資料夾') }}</span>
+                            <button type="button" class="ird-btn ird-menu-add-btn" @click="addMenuNode(selectedWidget, node.secure_code)">{{ _('加入') }}</button>
+                        </div>
+                    </template>
+                    <p class="ird-hint" x-show="siteMapLoaded && !siteMapError && siteMapNodes.length > 0 && availableMenuNodes(selectedWidget).length === 0">{{ _('所有網頁都已加入') }}</p>
+                    <p class="ird-hint" x-show="siteMapError" x-text="siteMapError"></p>
+                    <p class="ird-hint" x-show="siteMapLoaded && !siteMapError && siteMapNodes.length === 0">{{ _('此子系統尚無網頁節點') }}</p>
+                    <p class="ird-hint" x-show="!dataScope && !mountedSubSystem">{{ _('此頁尚未掛在子系統下，無法選擇網頁；仍可只放系統連結') }}</p>
+                </div>
+            </div>
+
+            <div class="ird-field" x-show="selectedWidget.source_mode !== 'auto'">
+                <label>{{ _('系統連結') }}</label>
+                <div class="ird-checks">
+                    <template x-for="link in menuSystemLinks" :key="link.link">
+                        <label>
+                            <input type="checkbox"
+                                   :checked="menuHasSystemLink(selectedWidget, link.link)"
+                                   @change="toggleMenuSystemLink(selectedWidget, link.link, $event.target.checked)">
+                            <span x-text="link.label"></span>
+                        </label>
+                    </template>
+                </div>
+                <p class="ird-hint">{{ _('登入與註冊只在未登入時出現，註冊需子系統開放註冊；登出只在已登入時出現。') }}</p>
+            </div>
+        </div>
+
+        <div class="ird-section">
+            <div class="ird-field">
+                <label>{{ _('方向') }}</label>
+                <select x-model="selectedWidget.orientation" @change="markDirty()">
+                    <option value="vertical">{{ _('直式 vertical') }}</option>
+                    <option value="horizontal">{{ _('橫式 horizontal') }}</option>
+                </select>
+            </div>
+            <div class="ird-field">
+                <label>{{ _('項目間隔') }}</label>
+                <input type="number" min="0" max="32" x-model.number="selectedWidget.item_gap" @input="markDirty()">
+            </div>
+            <label class="ird-inline-check" x-show="selectedWidget.orientation === 'horizontal'">
+                <input type="checkbox" x-model="selectedWidget.hover_expand" @change="markDirty()">
+                <span>{{ _('橫式子選單滑鼠懸停展開') }}</span>
+            </label>
+            <div class="ird-field">
+                <label>{{ _('選單來源') }}</label>
+                <select x-model="selectedWidget.nav_source" @change="markDirty()">
+                    <option value="self">{{ _('顯示整棵選單 self') }}</option>
+                    <option value="parent_selection">{{ _('顯示上層選中項的子項 parent_selection') }}</option>
+                </select>
+            </div>
+            <p class="ird-hint">{{ _('同一頁放兩個選單時，第一個設「顯示整棵選單」、第二個設「顯示上層選中項的子項」，兩者用同一個聯動參數名，點第一個選單就會換出第二個選單的內容。') }}</p>
+            <div class="ird-field">
+                <label>{{ _('聯動參數名') }}</label>
+                <input type="text" maxlength="32" x-model="selectedWidget.nav_key" @input="markDirty()">
+                <p class="ird-hint ird-hint-danger" x-show="!navKeyValid(selectedWidget)">{{ _('只能使用英數字、底線或連字號，長度 1 到 32') }}</p>
+            </div>
+        </div>
+
+        <div class="ird-section">
+            <template x-for="field in menuColorFields" :key="field.key">
+                <div class="ird-field">
+                    <label x-text="field.label"></label>
+                    <div class="ird-color-control">
+                        <input type="color" x-model="selectedWidget.style[field.key]" @input="markDirty()">
+                        <span x-text="selectedWidget.style[field.key]"></span>
+                    </div>
+                </div>
+            </template>
+            <div class="ird-mask-params">
+                <div class="ird-field">
+                    <label>{{ _('框線寬度') }}</label>
+                    <input type="number" min="0" max="8" x-model.number="selectedWidget.style.border_width" @input="markDirty()">
+                </div>
+                <div class="ird-field">
+                    <label>{{ _('圓角') }}</label>
+                    <input type="number" min="0" max="32" x-model.number="selectedWidget.style.border_radius" @input="markDirty()">
+                </div>
+            </div>
+
+            <div class="ird-field">
+                <label>{{ _('底圖') }}</label>
+                <div class="ird-inline-actions">
+                    <select x-model="selectedWidget.style.background_file" @change="markDirty()">
+                        <option value="">{{ _('不使用底圖') }}</option>
+                        <template x-for="bg in menuBackgrounds" :key="bg.platform_file_sc">
+                            <option :value="bg.platform_file_sc"
+                                    :selected="(bg.platform_file_sc) === selectedWidget.style.background_file"
+                                    x-text="bg.original_filename || bg.filename"></option>
+                        </template>
+                    </select>
+                    <button type="button" class="ird-btn" :disabled="menuUploadingBackground" @click="$refs.menuBackgroundFile.click()">{{ _('上傳') }}</button>
+                    <input type="file" class="ird-file-input" x-ref="menuBackgroundFile" accept="image/*" @change="uploadMenuBackground($event)">
+                </div>
+                <p class="ird-hint" x-show="menuBackgroundError" x-text="menuBackgroundError"></p>
+                <img class="ird-bg-preview"
+                     x-show="selectedWidget.style.background_file"
+                     :src="menuBackgroundUrl(selectedWidget.style.background_file)"
+                     alt="{{ _('底圖預覽') }}">
+            </div>
+
+            <div class="ird-mask-params">
+                <div class="ird-field">
+                    <label>{{ _('底圖尺寸') }}</label>
+                    <select x-model="selectedWidget.style.background_size" @change="markDirty()">
+                        <option value="cover">{{ _('填滿 cover') }}</option>
+                        <option value="contain">{{ _('完整顯示 contain') }}</option>
+                    </select>
+                </div>
+                <div class="ird-field">
+                    <label>{{ _('底圖重複') }}</label>
+                    <select x-model="selectedWidget.style.background_repeat" @change="markDirty()">
+                        <option value="no-repeat">{{ _('不重複 no-repeat') }}</option>
+                        <option value="repeat">{{ _('重複 repeat') }}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="ird-field">
+                <label>{{ _('底圖位置') }}</label>
+                <select x-model="selectedWidget.style.background_position" @change="markDirty()">
+                    <option value="center">{{ _('置中 center') }}</option>
+                    <option value="top">{{ _('上方 top') }}</option>
+                    <option value="bottom">{{ _('下方 bottom') }}</option>
+                    <option value="left">{{ _('靠左 left') }}</option>
+                    <option value="right">{{ _('靠右 right') }}</option>
+                </select>
+            </div>
+            <button type="button" class="ird-btn" @click="resetMenuStyle(selectedWidget)">{{ _('回復預設樣式') }}</button>
+        </div>
+    </div>
+</template>

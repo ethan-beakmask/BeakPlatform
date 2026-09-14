@@ -1,0 +1,304 @@
+{% extends "layouts/base.html" %}
+
+{% block help_doc %}manual/02_platform_admin/server_settings{% endblock %}
+
+{% block title %}{{ _('伺服器設定') }} - BeakMask{% endblock %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/system-settings.css">
+{% endblock %}
+
+{% block content %}
+<div class="settings-layout" x-data="serverSettings()" x-init="init()">
+    <!-- 左側選單 -->
+    <div class="settings-sidebar">
+        <h3>{{ _('設定分類') }}</h3>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'mailservice' }"
+             @click="activeSection = 'mailservice'; loadMailServiceSection()">
+            <span class="settings-menu-icon">[M]</span>
+            <span>{{ _('發信服務') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'telegram' }"
+             @click="activeSection = 'telegram'; loadTelegramConfigs()">
+            <span class="settings-menu-icon">[T]</span>
+            <span>Telegram</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'recipients' }"
+             @click="activeSection = 'recipients'; loadRecipientGroups()">
+            <span class="settings-menu-icon">[R]</span>
+            <span>{{ _('收件人群組') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'menucolors' }"
+             @click="activeSection = 'menucolors'; loadMenuColors()">
+            <span class="settings-menu-icon">[C]</span>
+            <span>{{ _('選單配色') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'baseurl' }"
+             @click="activeSection = 'baseurl'; loadBaseUrl()">
+            <span class="settings-menu-icon">[U]</span>
+            <span>{{ _('系統對外網址') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'audit' }"
+             @click="activeSection = 'audit'; loadAuditSettings()">
+            <span class="settings-menu-icon">[A]</span>
+            <span>{{ _('稽核設定') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'ratelimit' }"
+             @click="activeSection = 'ratelimit'; loadRateLimitSettings()">
+            <span class="settings-menu-icon">[L]</span>
+            <span>{{ _('速率限制') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'loginsecurity' }"
+             @click="activeSection = 'loginsecurity'; loadLoginSecuritySettings()">
+            <span class="settings-menu-icon">[K]</span>
+            <span>{{ _('登入安全欄位') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'filestorage' }"
+             @click="activeSection = 'filestorage'; loadFileStorageSettings()">
+            <span class="settings-menu-icon">[F]</span>
+            <span>{{ _('檔案儲存') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'orgdatabases' }"
+             @click="activeSection = 'orgdatabases'; loadOrgDatabasesHealth()">
+            <span class="settings-menu-icon">[D]</span>
+            <span>{{ _('企業專屬資料庫') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'packages' }"
+             @click="activeSection = 'packages'; loadPackageVersions()">
+            <span class="settings-menu-icon">[V]</span>
+            <span>{{ _('套件版本') }}</span>
+        </div>
+    </div>
+
+    <!-- 右側內容 -->
+    <div class="settings-content">
+        {% include "pages/hostconfig/_system_settings_section_mailservice.html" %}
+        {% include "pages/hostconfig/_system_settings_section_telegram.html" %}
+        {% include "pages/hostconfig/_system_settings_section_recipients.html" %}
+        {% include "pages/hostconfig/_system_settings_section_menucolors.html" %}
+        {% include "pages/hostconfig/_system_settings_section_baseurl.html" %}
+        {% include "pages/hostconfig/_system_settings_section_audit.html" %}
+        {% include "pages/hostconfig/_system_settings_section_ratelimit.html" %}
+        {% include "pages/hostconfig/_system_settings_section_loginsecurity.html" %}
+        {% include "pages/hostconfig/_system_settings_section_filestorage.html" %}
+        {% include "pages/hostconfig/_system_settings_section_orgdatabases.html" %}
+        {% include "pages/hostconfig/_system_settings_section_packages.html" %}
+    </div>
+
+    {% include "pages/hostconfig/_system_settings_modals.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API_BASE = '{{ app_prefix }}/api/system-settings';
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+function serverSettings() {
+    return {
+        activeSection: 'mailservice',
+
+        // 訊息
+        message: {
+            emailrelay: '',
+            emailrelayError: false,
+            mailservice: '',
+            mailserviceError: false,
+            smtp: '',
+            smtpError: false,
+            telegram: '',
+            telegramError: false,
+            recipients: '',
+            recipientsError: false,
+            packages: '',
+            packagesError: false,
+            baseUrl: '',
+            baseUrlError: false,
+            audit: '',
+            auditError: false,
+            menuColors: '',
+            menuColorsError: false,
+            ratelimit: '',
+            ratelimitError: false,
+            fileStorage: '',
+            fileStorageError: false,
+            orgdatabases: '',
+            orgdatabasesError: false,
+            loginSecurity: '',
+            loginSecurityError: false
+        },
+
+        // 發信服務
+        mailService: {
+            primary: '',
+            send_both: false,
+            readiness: null,
+            messages: {},
+            saving: false,
+            loaded: false
+        },
+
+        // 載入狀態
+        loading: {
+            smtp: false,
+            telegram: false,
+            recipients: false,
+            packages: false,
+            orgdatabases: false
+        },
+
+        // E-MailRelay
+        emailrelay: {
+            service: null,
+            install_dir: '',
+            auth: { email: '', password: '' },
+            from_email: '',
+            from_name: '',
+            testRecipient: ''
+        },
+
+        // SMTP
+        smtp: {
+            configs: [],
+            showModal: false,
+            editing: null,
+            form: {
+                name: '',
+                description: '',
+                smtp_host: '',
+                smtp_port: 587,
+                use_tls: true,
+                use_ssl: false,
+                username: '',
+                password: '',
+                from_email: '',
+                from_name: '',
+                provider_type: 'generic',
+                priority: 100,
+                is_default: false,
+                is_active: true
+            },
+            presets: {}
+        },
+
+        // Telegram
+        telegram: {
+            configs: [],
+            showModal: false,
+            editing: null,
+            form: {
+                name: '',
+                description: '',
+                bot_token: '',
+                channelList: [],
+                default_channel: '',
+                is_active: true
+            }
+        },
+
+        // 收件人群組
+        recipients: {
+            groups: [],
+            showModal: false,
+            editing: null,
+            form: {
+                name: '',
+                description: '',
+                priority: 100,
+                is_active: true,
+                emailList: ''
+            }
+        },
+
+        // 選單配色
+        menuColors: {
+            colors: {},
+            defaults: {},
+            saved: '{}'
+        },
+
+        // 系統對外網址
+        baseUrl: {
+            value: '',
+            saving: false
+        },
+
+        // 稽核設定
+        audit: {
+            level: 'STANDARD',
+            retentionDays: 90,
+            levels: [],
+            purging: false,
+            purgeInfo: ''
+        },
+
+        // 速率限制
+        ratelimit: {
+            categories: []
+        },
+
+        // 檔案儲存
+        fileStorage: {
+            encryptedStorageDir: '',
+            dirFileLimit: 100000
+        },
+
+        // 企業專屬資料庫
+        orgdatabases: {
+            provisioning: {},
+            orgs: [],
+            orphan_databases: [],
+            orphan_roles: [],
+            summary: {}
+        },
+
+        // 登入安全欄位
+        loginSecurity: {
+            employee: { password_field: 'sv_2', mine_field: 'sv_1', rescue_field: 'sv_3', rescue_keyword: '' },
+            vendor: { password_field: 'sv_2', mine_field: 'sv_1', rescue_field: 'sv_3', rescue_keyword: '' },
+            validFields: ['sv_1', 'sv_2', 'sv_3'],
+            loaded: false,
+        },
+
+        // 套件版本
+        packages: {
+            python: [],
+            frontend: [],
+            services: [],
+            dataSources: [],
+            cached: false,
+            cachedAt: '',
+            durationMs: 0,
+            stats: { total: 0, up_to_date: 0, minor_update: 0, major_update: 0, check_failed: 0 }
+        },
+
+        // 初始化
+        async init() {
+            await this.loadMailServiceSection();
+            // 載入 SMTP 預設值
+            try {
+                const res = await fetch(`${API_BASE}/smtp/presets`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.smtp.presets = data.data;
+                }
+            } catch (e) {}
+        },
+
+{% include "pages/hostconfig/_system_settings_emailrelay_methods.html" %}
+{% include "pages/hostconfig/_system_settings_mailservice_methods.html" %}
+{% include "pages/hostconfig/_system_settings_notification_methods.html" %}
+{% include "pages/hostconfig/_system_settings_orgdatabases_methods.html" %}
+{% include "pages/hostconfig/_system_settings_packages_methods.html" %}
+{% include "pages/hostconfig/_system_settings_menucolors_methods.html" %}
+{% include "pages/hostconfig/_system_settings_general_methods.html" %}
+{% include "pages/hostconfig/_system_settings_misc_methods.html" %}
+{% include "pages/hostconfig/_system_settings_loginsecurity_methods.html" %}
+
+    };
+}
+</script>
+{% endblock %}

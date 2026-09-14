@@ -1,0 +1,795 @@
+.ac-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ac-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.ac-tab {
+    appearance: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 10px 14px;
+    font: inherit;
+}
+
+.ac-tab:hover,
+.ac-tab:focus {
+    color: var(--color-text);
+}
+
+.ac-tab.is-active {
+    border-bottom-color: var(--color-primary);
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.ac-tab-panel {
+    min-width: 0;
+}
+
+.ac-section {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+    padding: 18px;
+}
+
+.ac-section-head,
+.ac-panel-head,
+.ac-auth-block-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.ac-section-title {
+    font-size: 18px;
+    line-height: 1.4;
+    margin: 0 0 8px;
+}
+
+.ac-muted {
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.ac-grid-2 {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
+    gap: 16px;
+}
+
+.ac-functions-layout {
+    align-items: start;
+    margin-top: 16px;
+}
+
+.ac-field {
+    display: grid;
+    gap: 6px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+
+.ac-org-filter {
+    min-width: 240px;
+}
+
+.ac-org-lock {
+    display: grid;
+    gap: 4px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    min-width: 200px;
+}
+
+.ac-org-lock strong {
+    color: var(--color-text);
+    font-size: 14px;
+}
+
+.ac-btn-small {
+    font-size: 12px;
+    padding: 6px 10px;
+}
+
+.ac-alert {
+    border: 1px solid var(--color-border);
+    margin-top: 14px;
+    padding: 10px 12px;
+}
+
+.ac-alert-success {
+    border-color: var(--color-primary);
+    color: var(--color-text);
+}
+
+.ac-alert-error {
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+.ac-alert-info {
+    border-color: var(--color-primary);
+    color: var(--color-text);
+}
+
+.ac-tree-panel,
+.ac-auth-panel {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-light);
+    min-width: 0;
+}
+
+.ac-tree-panel {
+    max-height: 72vh;
+    overflow: auto;
+}
+
+.ac-panel-head {
+    border-bottom: 1px solid var(--color-border);
+    padding: 12px;
+}
+
+.ac-panel-head h3,
+.ac-auth-block h4 {
+    color: var(--color-text);
+    font-size: 16px;
+    line-height: 1.35;
+    margin: 0;
+}
+
+.ac-panel-head .ac-muted,
+.ac-auth-block .ac-muted {
+    margin-top: 4px;
+}
+
+.ac-empty,
+.ac-panel-placeholder {
+    color: var(--color-text-secondary);
+    margin: 0;
+    padding: 18px;
+}
+
+.ac-panel-placeholder h3 {
+    color: var(--color-text);
+    margin: 0 0 8px;
+}
+
+.ac-tree {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+}
+
+.ac-tree-row {
+    margin: 0;
+}
+
+.ac-tree-node {
+    align-items: center;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    gap: 8px;
+    min-height: 34px;
+    padding-bottom: 6px;
+    padding-right: 10px;
+    padding-top: 6px;
+    text-align: left;
+    width: 100%;
+}
+
+.ac-tree-node:hover,
+.ac-tree-row.is-selected .ac-tree-node {
+    background: rgba(59, 130, 246, 0.14);
+}
+
+.ac-tree-row.is-structural .ac-tree-title {
+    color: var(--color-text-secondary);
+    font-weight: 600;
+}
+
+.ac-tree-toggle {
+    color: var(--color-text-secondary);
+    flex: 0 0 14px;
+    font-family: monospace;
+    text-align: center;
+}
+
+.ac-tree-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ac-key1-badges {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 4px;
+}
+
+.ac-key1-badge {
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    line-height: 1;
+    min-width: 20px;
+    padding: 3px 4px;
+    text-align: center;
+}
+
+.ac-key1-system-admin {
+    border-color: var(--color-primary);
+    color: var(--color-text);
+}
+
+.ac-key1-org-admin {
+    border-color: var(--color-primary);
+    color: var(--color-text);
+}
+
+.ac-key1-employee {
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+.ac-key1-external {
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+.ac-menu-editor {
+    display: grid;
+    gap: 14px;
+}
+
+.ac-link-type,
+.ac-role-meta {
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    padding: 4px 7px;
+}
+
+.ac-auth-block {
+    border-top: 1px solid var(--color-border);
+    display: grid;
+    gap: 14px;
+    padding: 14px;
+}
+
+.ac-check-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.ac-check-item,
+.ac-role-item {
+    align-items: center;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    display: flex;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px;
+}
+
+.ac-role-list {
+    display: grid;
+    border: 1px solid var(--color-border);
+    gap: 0;
+}
+
+.ac-role-main {
+    align-items: center;
+    display: flex;
+    flex: 1 1 auto;
+    gap: 10px;
+    min-width: 0;
+}
+
+.ac-role-main strong,
+.ac-role-main small {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ac-role-main small {
+    color: var(--color-text-secondary);
+}
+
+.ac-role-row,
+.ac-permission-row {
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    min-height: 34px;
+    padding: 5px 8px;
+}
+
+.ac-role-row:last-child,
+.ac-permission-row:last-child {
+    border-bottom: 0;
+}
+
+.ac-role-row:hover,
+.ac-permission-row:hover {
+    background: var(--color-bg-light);
+}
+
+.ac-permission-list {
+    border: 1px solid var(--color-border);
+    display: grid;
+    gap: 0;
+}
+
+.ac-role-code {
+    color: var(--color-text-secondary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 12px;
+}
+
+.ac-role-origin {
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    display: inline-block;
+    font-size: 11px;
+    line-height: 1.2;
+    padding: 2px 5px;
+    white-space: nowrap;
+}
+
+.ac-role-origin-system {
+    border-color: var(--color-info);
+    color: var(--color-info);
+}
+
+.ac-role-origin-custom {
+    border-color: var(--color-text-secondary);
+    color: var(--color-text-secondary);
+}
+
+.ac-actions {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.ac-table-wrap {
+    margin-top: 16px;
+    overflow-x: auto;
+}
+
+.ac-roles-table td {
+    vertical-align: top;
+}
+
+.ac-cell-note {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.ac-badge,
+.ac-status-on,
+.ac-status-off {
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    display: inline-block;
+    font-size: 12px;
+    line-height: 1.2;
+    padding: 3px 7px;
+    white-space: nowrap;
+}
+
+.ac-status-on {
+    color: var(--color-primary);
+}
+
+.ac-link-button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--color-primary);
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.ac-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ac-expanded-row td {
+    background: var(--color-bg-light);
+}
+
+.ac-empty-compact {
+    padding: 8px 0;
+}
+
+.ac-user-list {
+    display: grid;
+    gap: 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ac-user-list li {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ac-user-list span {
+    color: var(--color-text-secondary);
+}
+
+.ac-role-modal {
+    max-width: calc(100vw - 32px);
+}
+
+.ac-role-modal .modal-body {
+    display: grid;
+    gap: 16px;
+    max-height: min(72vh, 720px);
+    overflow: auto;
+}
+
+.ac-role-modal input.form-control:not([type="checkbox"]):not([type="radio"]),
+.ac-role-modal select.form-control,
+.ac-role-modal textarea.form-control {
+    width: 100%;
+}
+
+.ac-form-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ac-span-2 {
+    grid-column: 1 / -1;
+}
+
+.ac-check-inline {
+    align-items: center;
+    color: var(--color-text);
+    display: flex;
+    gap: 8px;
+    min-height: 38px;
+}
+
+.ac-help {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.ac-permission-details {
+    border-top: 1px solid var(--color-border);
+    padding-top: 12px;
+}
+
+.ac-permission-details summary {
+    color: var(--color-text);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.ac-permission-groups {
+    display: grid;
+    gap: 14px;
+    margin-top: 12px;
+}
+
+.ac-permission-group {
+    display: grid;
+    gap: 8px;
+}
+
+.ac-permission-group h4 {
+    color: var(--color-text);
+    font-size: 14px;
+    margin: 0;
+}
+
+.ac-account-filters {
+    align-items: flex-end;
+}
+
+.ac-accounts-table td {
+    vertical-align: top;
+}
+
+.ac-account-disabled {
+    color: var(--color-text-secondary);
+}
+
+.ac-account-disabled td {
+    background: var(--color-bg-light);
+}
+
+.ac-account-name {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ac-account-type-org-admin {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.ac-account-type-external {
+    border-color: var(--color-info);
+    color: var(--color-info);
+}
+
+.ac-unit-list {
+    display: grid;
+    gap: 4px;
+}
+
+.ac-unit-line {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ac-unit-role {
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    line-height: 1.2;
+    padding: 1px 5px;
+}
+
+.ac-unit-role-solid {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.ac-unit-role-cross {
+    border-color: var(--color-info);
+    color: var(--color-info);
+}
+
+.ac-role-chip-list {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ac-role-chip {
+    align-items: center;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    display: inline-flex;
+    gap: 5px;
+    line-height: 1.25;
+    max-width: 260px;
+    padding: 3px 7px;
+}
+
+.ac-role-chip.ac-kind-expired {
+    color: var(--color-text-muted);
+    opacity: 0.68;
+}
+
+.ac-role-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ac-kind-tag {
+    border: 1px solid var(--color-info);
+    color: var(--color-info);
+    flex: 0 0 auto;
+    font-size: var(--font-size-xs);
+    line-height: 1.15;
+    padding: 1px 5px;
+}
+
+.ac-chip-remove {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--color-danger);
+    cursor: pointer;
+    font: inherit;
+    line-height: 1;
+    padding: 0 2px;
+}
+
+.ac-chip-remove:disabled {
+    color: var(--color-text-secondary);
+    cursor: wait;
+}
+
+.ac-pagination {
+    align-items: center;
+    color: var(--color-text-secondary);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+    margin-top: 14px;
+}
+
+.ac-account-modal {
+    max-width: calc(100vw - 32px);
+    width: 520px;
+}
+
+.ac-account-modal .modal-body {
+    display: grid;
+    gap: 14px;
+}
+
+.ac-account-modal-user {
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    display: grid;
+    gap: 3px;
+    padding: 10px;
+}
+
+.ac-account-modal-user span {
+    color: var(--color-text-secondary);
+}
+
+.ac-grant-fields {
+    display: grid;
+    gap: 14px;
+}
+
+.ac-date-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ac-health-actions,
+.ac-import-panel,
+.ac-health-summary,
+.ac-conflict-groups,
+.ac-conflict-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.ac-health-actions,
+.ac-health-summary {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.ac-health-summary span {
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    padding: 6px 10px;
+}
+
+.ac-health-summary strong {
+    color: var(--color-text);
+}
+
+.ac-import-panel {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-light);
+    padding: 12px;
+}
+
+.ac-conflict-group {
+    border: 1px solid var(--color-border);
+}
+
+.ac-conflict-group-head {
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+}
+
+.ac-conflict-group-head h3 {
+    font-size: 15px;
+    margin: 0;
+}
+
+.ac-conflict-list {
+    margin-top: 0;
+    padding: 10px;
+}
+
+.ac-conflict-item {
+    align-items: flex-start;
+    border: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px;
+}
+
+.ac-conflict-error {
+    border-left: 4px solid var(--color-danger);
+}
+
+.ac-conflict-warning {
+    border-left: 4px solid var(--color-warning);
+}
+
+.ac-conflict-info {
+    border-left: 4px solid var(--color-info);
+}
+
+.ac-conflict-title {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ac-conflict-meta {
+    color: var(--color-text-secondary);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+@media (max-width: 800px) {
+    .ac-grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .ac-section-head,
+    .ac-panel-head,
+    .ac-auth-block-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .ac-org-filter {
+        min-width: 0;
+    }
+
+    .ac-actions,
+    .ac-form-grid,
+    .ac-conflict-item {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+}

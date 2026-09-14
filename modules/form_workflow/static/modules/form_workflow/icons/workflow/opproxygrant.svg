@@ -1,0 +1,22 @@
+<!--
+category: Workflow
+tags: [user, proxy, grant, shield]
+version: "1.0"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M5 8a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+  <path d="M3 20v-1a5 5 0 0 1 5 -5h2" />
+  <path d="M15 6l4 2v4c0 3 -1.8 5 -4 6c-2.2 -1 -4 -3 -4 -6v-4l4 -2z" />
+  <path d="M13 12h4" />
+  <path d="M15 10l2 2l-2 2" />
+</svg>

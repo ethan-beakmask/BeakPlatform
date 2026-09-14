@@ -1,0 +1,51 @@
+/* form-themes.css -- 表單風格主題管理頁面 */
+
+.fw-container { max-width: 1500px; margin: 0 auto; padding: 16px; }
+.fw-header { background: white; border: 1px solid #ddd; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+.fw-header h1 { margin: 0; font-size: 20px; }
+.fw-toolbar { display: flex; gap: 12px; align-items: center; }
+.fw-btn { padding: 8px 16px; border: 1px solid #ddd; background: #f9f9f9; cursor: pointer; font-size: 13px; }
+.fw-btn:hover { background: #e9e9e9; }
+.fw-btn.primary { background: #0066cc; color: white; border-color: #0066cc; }
+.fw-btn.primary:hover { background: #0055aa; }
+.fw-btn.danger { background: #dc2626; color: white; border-color: #dc2626; }
+.fw-btn.sm { padding: 4px 8px; font-size: 11px; }
+.fw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.fw-card { background: white; border: 1px solid #ddd; }
+.fw-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.fw-table th { background: #f5f5f5; padding: 10px 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: 600; }
+.fw-table td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+.fw-table tr:hover { background: #fafafa; }
+.fw-table .actions { text-align: right; white-space: nowrap; }
+.fw-table .actions button { padding: 4px 8px; margin: 0 2px; font-size: 11px; }
+
+.fw-badge { padding: 2px 8px; font-size: 11px; border-radius: 2px; }
+.fw-badge.system { background: #dbeafe; color: #1e40af; }
+.fw-badge.custom { background: #f3e8ff; color: #7c3aed; }
+.fw-badge.active { background: #ecfdf5; color: #065f46; }
+.fw-badge.inactive { background: #fef2f2; color: #991b1b; }
+
+.fw-empty { text-align: center; padding: 48px; color: #999; }
+.fw-loading { text-align: center; padding: 48px; color: #666; }
+
+.fw-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.fw-modal-content { background: white; width: 600px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+.fw-modal-header { padding: 16px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+.fw-modal-header h3 { margin: 0; font-size: 16px; }
+.fw-modal-body { padding: 20px; }
+.fw-modal-footer { padding: 16px 20px; border-top: 1px solid #ddd; display: flex; justify-content: flex-end; gap: 8px; }
+
+.fw-form-group { margin-bottom: 16px; }
+.fw-form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.fw-form-group input, .fw-form-group textarea, .fw-form-group select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; font-size: 13px; box-sizing: border-box; }
+.fw-form-group input:disabled { background: #f5f5f5; color: #999; }
+.fw-form-group textarea { min-height: 80px; resize: vertical; }
+
+.fw-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 10px 24px; font-size: 14px; z-index: 2000; white-space: nowrap; }
+.fw-toast-success { background: #065f46; color: white; }
+.fw-toast-error { background: #991b1b; color: white; }
+.fw-toast-warning { background: #92400e; color: white; }
+.fw-toast-info { background: #1e40af; color: white; }
+
+.child-count { font-size: 12px; color: #999; margin-left: 4px; }

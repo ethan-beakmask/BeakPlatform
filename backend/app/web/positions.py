@@ -1,0 +1,275 @@
+"""
+BeakMask Employee Position Management Web Routes
+企業成員職位管理網頁路由
+
+企業成員職位記錄：
+- 企業成員的職稱指派
+- 所屬部門
+- 直屬主管由部門主管角色推導，任職卡不記錄（PF-247 第 4 期）
+"""
+from datetime import datetime, date
+from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask_babel import gettext as _
+from flask_login import current_user
+
+from ..security.resource_gateway import ResourceGateway
+from ..models.employee_position import EmployeePosition, PositionType
+from ..models.job_title import JobTitle
+from ..models.organizational_unit import OrganizationalUnit
+from ..models.user import User
+from ..services.unit_resolver import resolve_direct_manager
+from .. import db
+
+positions_bp = Blueprint('positions', __name__)
+
+
+@positions_bp.route('/')
+def list_positions():
+    """職位列表頁面"""
+    result = ResourceGateway.list(
+        EmployeePosition,
+        page=1,
+        per_page=100,
+        order_by='-created_at'
+    )
+
+    return render_template(
+        'pages/positions/list.html',
+        positions=result['items'],
+        pagination=result
+    )
+
+
+@positions_bp.route('/<secure_code>')
+def view_position(secure_code: str):
+    """查看職位詳情"""
+    try:
+        position = ResourceGateway.get(EmployeePosition, secure_code)
+    except Exception:
+        abort(404)
+
+    station = resolve_direct_manager(position.user_secure_code, current_user.org_secure_code)
+    derived_manager = None
+    if station:
+        derived_manager = ResourceGateway.get(
+            User, station['manager_secure_code'], raise_on_not_found=False)
+    return render_template(
+        'pages/positions/view.html',
+        position=position,
+        derived_manager=derived_manager,
+        derived_unit_name=station['unit_name'] if station else None,
+    )
+
+
+@positions_bp.route('/create', methods=['GET', 'POST'])
+def create_position():
+    """建立職位頁面"""
+    # 取得選項
+    users = ResourceGateway.filter(
+        User,
+        is_deleted=False,
+        is_active=True,
+        order_by='display_name'
+    )
+
+    job_titles = ResourceGateway.filter(
+        JobTitle,
+        is_deleted=False,
+        is_active=True,
+        order_by='sort_order'
+    )
+
+    units = ResourceGateway.filter(
+        OrganizationalUnit,
+        is_deleted=False,
+        is_active=True,
+        order_by='sort_order'
+    )
+
+    position_types = [
+        (PositionType.PRIMARY, '主要職位'),
+        (PositionType.CONCURRENT, '兼任'),
+        (PositionType.ACTING, '代理'),
+        (PositionType.TEMPORARY, '臨時'),
+    ]
+
+    if request.method == 'POST':
+        user_secure_code = request.form.get('user_secure_code', '').strip()
+        job_title_secure_code = request.form.get('job_title_secure_code', '').strip()
+        unit_secure_code = request.form.get('unit_secure_code', '').strip()
+        position_type = request.form.get('position_type', PositionType.PRIMARY)
+        is_unit_head = request.form.get('is_unit_head') == 'true'
+        effective_from_str = request.form.get('effective_from', '').strip()
+        effective_until_str = request.form.get('effective_until', '').strip()
+        remarks = request.form.get('remarks', '').strip() or None
+
+        errors = []
+
+        if not user_secure_code:
+            errors.append(_('請選擇企業成員'))
+        if not job_title_secure_code:
+            errors.append(_('請選擇職稱'))
+        if not unit_secure_code:
+            errors.append(_('請選擇部門'))
+
+        effective_from = date.today()
+        if effective_from_str:
+            try:
+                effective_from = datetime.strptime(effective_from_str, '%Y-%m-%d').date()
+            except ValueError:
+                errors.append(_('生效日期格式錯誤'))
+
+        effective_until = None
+        if effective_until_str:
+            try:
+                effective_until = datetime.strptime(effective_until_str, '%Y-%m-%d').date()
+            except ValueError:
+                errors.append(_('失效日期格式錯誤'))
+
+        if errors:
+            for err in errors:
+                flash(err, 'error')
+        else:
+            try:
+                position = EmployeePosition(
+                    org_secure_code=current_user.org_secure_code,
+                    user_secure_code=user_secure_code,
+                    job_title_secure_code=job_title_secure_code,
+                    unit_secure_code=unit_secure_code,
+                    position_type=position_type,
+                    is_unit_head=is_unit_head,
+                    effective_from=effective_from,
+                    effective_until=effective_until,
+                    remarks=remarks,
+                    assigned_by=current_user.display_name,
+                    is_active=True
+                )
+                db.session.add(position)
+                db.session.commit()
+
+                flash(_('已建立職位指派'), 'success')
+                return redirect(url_for('positions.list_positions'))
+            except Exception as e:
+                db.session.rollback()
+                flash(_('建立失敗: %(error)s', error=str(e)), 'error')
+
+    return render_template(
+        'pages/positions/create.html',
+        users=users,
+        job_titles=job_titles,
+        units=units,
+        position_types=position_types
+    )
+
+
+@positions_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
+def edit_position(secure_code: str):
+    """編輯職位頁面"""
+    try:
+        position = ResourceGateway.get(EmployeePosition, secure_code)
+    except Exception:
+        abort(404)
+
+    users = ResourceGateway.filter(
+        User,
+        is_deleted=False,
+        is_active=True,
+        order_by='display_name'
+    )
+
+    job_titles = ResourceGateway.filter(
+        JobTitle,
+        is_deleted=False,
+        is_active=True,
+        order_by='sort_order'
+    )
+
+    units = ResourceGateway.filter(
+        OrganizationalUnit,
+        is_deleted=False,
+        is_active=True,
+        order_by='sort_order'
+    )
+
+    position_types = [
+        (PositionType.PRIMARY, '主要職位'),
+        (PositionType.CONCURRENT, '兼任'),
+        (PositionType.ACTING, '代理'),
+        (PositionType.TEMPORARY, '臨時'),
+    ]
+
+    if request.method == 'POST':
+        job_title_secure_code = request.form.get('job_title_secure_code', '').strip()
+        unit_secure_code = request.form.get('unit_secure_code', '').strip()
+        position_type = request.form.get('position_type', PositionType.PRIMARY)
+        is_unit_head = request.form.get('is_unit_head') == 'true'
+        effective_from_str = request.form.get('effective_from', '').strip()
+        effective_until_str = request.form.get('effective_until', '').strip()
+        remarks = request.form.get('remarks', '').strip() or None
+        is_active = request.form.get('is_active') == 'true'
+
+        errors = []
+
+        effective_from = position.effective_from
+        if effective_from_str:
+            try:
+                effective_from = datetime.strptime(effective_from_str, '%Y-%m-%d').date()
+            except ValueError:
+                errors.append(_('生效日期格式錯誤'))
+
+        effective_until = None
+        if effective_until_str:
+            try:
+                effective_until = datetime.strptime(effective_until_str, '%Y-%m-%d').date()
+            except ValueError:
+                errors.append(_('失效日期格式錯誤'))
+
+        if errors:
+            for err in errors:
+                flash(err, 'error')
+        else:
+            try:
+                position.job_title_secure_code = job_title_secure_code
+                position.unit_secure_code = unit_secure_code
+                position.position_type = position_type
+                position.is_unit_head = is_unit_head
+                position.effective_from = effective_from
+                position.effective_until = effective_until
+                position.remarks = remarks
+                position.is_active = is_active
+
+                db.session.commit()
+                flash(_('已更新職位'), 'success')
+                return redirect(url_for('positions.view_position', secure_code=secure_code))
+            except Exception as e:
+                db.session.rollback()
+                flash(_('更新失敗: %(error)s', error=str(e)), 'error')
+
+    return render_template(
+        'pages/positions/edit.html',
+        position=position,
+        users=users,
+        job_titles=job_titles,
+        units=units,
+        position_types=position_types
+    )
+
+
+@positions_bp.route('/<secure_code>/delete', methods=['POST'])
+def delete_position(secure_code: str):
+    """刪除職位"""
+    try:
+        position = ResourceGateway.get(EmployeePosition, secure_code)
+    except Exception:
+        abort(404)
+
+    try:
+        position.is_deleted = True
+        position.deleted_at = datetime.utcnow()
+        db.session.commit()
+        flash(_('已刪除職位指派'), 'success')
+        return redirect(url_for('positions.list_positions'))
+    except Exception as e:
+        db.session.rollback()
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
+        return redirect(url_for('positions.edit_position', secure_code=secure_code))

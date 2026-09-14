@@ -1,0 +1,380 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('資安案件處置中心') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/open_defense/css/od-common.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/open_defense/css/sc-cases.css">
+{% endblock %}
+
+{% block content %}
+<div class="od-container" x-data="scCases()" x-init="load()">
+
+    <div class="od-header">
+        <h1>{{ _('資安案件處置中心') }}</h1>
+        <div class="od-actions">
+            <button class="btn btn-secondary" :class="{ 'btn-primary': statusFilter === 'open' }"
+                    @click="setFilter('open')">{{ _('進行中') }}</button>
+            <button class="btn btn-secondary" :class="{ 'btn-primary': statusFilter === 'closed' }"
+                    @click="setFilter('closed')">{{ _('已結案') }}</button>
+            <button class="btn btn-secondary" x-show="statusFilter === 'open'"
+                    :class="{ 'btn-primary': onlyMine }"
+                    @click="toggleMine()">{{ _('僅我可簽核') }}</button>
+            <button class="btn btn-secondary" @click="load()">{{ _('重新整理') }}</button>
+        </div>
+    </div>
+
+    <div class="od-stats">
+        <div class="od-stat-tile">
+            <div class="od-stat-value" x-text="stats.open_count ?? '-'"></div>
+            <div class="od-stat-label">{{ _('進行中案件') }}</div>
+        </div>
+        <div class="od-stat-tile">
+            <div class="od-stat-value warn" x-text="stats.waiting_count ?? '-'"></div>
+            <div class="od-stat-label">{{ _('待簽核') }}</div>
+        </div>
+        <div class="od-stat-tile">
+            <div class="od-stat-value danger" x-text="stats.overdue_count ?? '-'"></div>
+            <div class="od-stat-label">{{ _('SLA 逾時') }}</div>
+        </div>
+        <div class="od-stat-tile">
+            <div class="od-stat-value ok" x-text="stats.today_block_count ?? '-'"></div>
+            <div class="od-stat-label">{{ _('今日封鎖') }}</div>
+        </div>
+        <div class="od-stat-tile">
+            <div class="od-stat-value" x-text="stats.today_case_count ?? '-'"></div>
+            <div class="od-stat-label">{{ _('今日新案') }}</div>
+        </div>
+    </div>
+
+    <div class="sc-main">
+        <!-- 左：案件清單 -->
+        <div class="sc-case-list">
+            <div class="sc-sort-bar">
+                <button type="button" class="sc-sort-btn" :class="sortKey === 'time' ? 'active' : ''"
+                        @click="setSort('time')">{{ _('時間') }}<span x-text="sortArrow('time')"></span></button>
+                <button type="button" class="sc-sort-btn" :class="sortKey === 'code' ? 'active' : ''"
+                        @click="setSort('code')">{{ _('案件編號') }}<span x-text="sortArrow('code')"></span></button>
+                <button type="button" class="sc-sort-btn" :class="sortKey === 'severity' ? 'active' : ''"
+                        @click="setSort('severity')">{{ _('緊急度') }}<span x-text="sortArrow('severity')"></span></button>
+                <button type="button" class="sc-sort-btn" :class="sortKey === 'overdue' ? 'active' : ''"
+                        @click="setSort('overdue')">{{ _('逾時') }}<span x-text="sortArrow('overdue')"></span></button>
+            </div>
+            <template x-if="truncated">
+                <div class="sc-truncated-note">{{ _('案件數超過單次顯示上限，僅列出最新的部分案件') }}</div>
+            </template>
+            <template x-if="!loading && cases.length === 0">
+                <div class="sc-detail-empty"
+                     x-text="onlyMine && statusFilter === 'open'
+                             ? '{{ _('目前沒有輪到您簽核的案件') }}'
+                             : '{{ _('目前沒有案件') }}'"></div>
+            </template>
+            <template x-for="c in sortedCases" :key="c.workflow_instance_secure_code">
+                <!-- :class 用單一字串表達式：Alpine 的陣列語法元素必須是字串，
+                     混入 { selected: ... } 物件會被轉成字面 "[object Object]"，
+                     選取高亮從第一版起就沒生效過 -->
+                <div class="sc-case-item"
+                     :class="`sev-${sevNum(c.severity_id)}` +
+                             (selected?.workflow_instance_secure_code === c.workflow_instance_secure_code
+                              ? ' selected' : '')"
+                     @click="selectCase(c)">
+                    <div class="sc-case-row1">
+                        <span class="sc-case-subject" x-text="c.subject || c.form_name"></span>
+                        <span class="sc-sev" :class="`sc-sev-${sevNum(c.severity_id)}`"
+                              x-text="'S' + sevNum(c.severity_id)"></span>
+                    </div>
+                    <div class="sc-case-row2">
+                        <span class="od-mono" x-text="c.execution_code"></span>
+                        <span class="sc-case-meta">
+                            <span x-text="fmtTime(c.submitted_at)"></span>
+                            <template x-if="slaInfo(c)">
+                                <span class="sc-sla" :class="slaInfo(c).cls"
+                                      x-text="slaInfo(c).text"></span>
+                            </template>
+                        </span>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- 右：案件詳情 + 1-click 處置 -->
+        <div class="sc-detail" id="sc-detail">
+            <template x-if="!selected">
+                <div class="sc-detail-empty">{{ _('從左側選擇案件') }}</div>
+            </template>
+
+            <template x-if="selected">
+                <div>
+                    <div class="sc-detail-header">
+                        <div>
+                            <h3 x-text="selected.subject || selected.form_name"></h3>
+                            <span class="od-mono" x-text="selected.execution_code"></span>
+                            <span class="od-badge"
+                                  :class="selected.status === 'RUNNING' ? 'od-badge-pending' : 'od-badge-applied'"
+                                  x-text="selected.status"></span>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="sc-risk" :class="riskClass(selected.risk_score)"
+                                 x-text="'{{ _('風險') }} ' + (selected.risk_score ?? '-')"></div>
+                            <div class="sc-field-label" x-text="'{{ _('建議') }}: ' + (selected.recommended_action || '-')"></div>
+                        </div>
+                    </div>
+
+                    <div class="sc-tabs">
+                        <template x-for="tab in tabs" :key="tab.id">
+                            <button class="sc-tab"
+                                    :class="{ active: activeTab === tab.id }"
+                                    @click="activeTab = tab.id"
+                                    x-text="tab.label"></button>
+                        </template>
+                    </div>
+
+                    <div class="sc-tab-panel" x-show="activeTab === 'summary'">
+                        <div class="sc-fields">
+                            <div><div class="sc-field-label">{{ _('攻擊者 IP') }}</div>
+                                 <div class="sc-field-value mono" x-html="val(selected.actor_ip)"></div></div>
+                            <div><div class="sc-field-label">{{ _('嚴重度') }}</div>
+                                 <div class="sc-field-value" x-text="sevNum(selected.severity_id)"></div></div>
+                            <div><div class="sc-field-label">{{ _('偵測來源') }}</div>
+                                 <div class="sc-field-value" x-html="val(selected.source_system)"></div></div>
+                            <!-- PF-106：first/last detected_by 並存，來自跨系統關聯查詢；
+                                 兩者相同來源時只顯示一列，ClickHouse 不可用或無關聯資料時整段不顯示 -->
+                            <template x-if="firstDetectedBy && detectedBySame">
+                                <div><div class="sc-field-label">{{ _('偵測來源（首次＝最近）') }}</div>
+                                     <div class="sc-field-value" x-text="sourceLabel(firstDetectedBy.source_system) + '　' + fmtTime(firstDetectedBy.event_time)"></div></div>
+                            </template>
+                            <template x-if="firstDetectedBy && !detectedBySame">
+                                <div><div class="sc-field-label">{{ _('首次偵測來源') }}</div>
+                                     <div class="sc-field-value" x-text="sourceLabel(firstDetectedBy.source_system) + '　' + fmtTime(firstDetectedBy.event_time)"></div></div>
+                            </template>
+                            <template x-if="lastDetectedBy && !detectedBySame">
+                                <div><div class="sc-field-label">{{ _('最近偵測來源') }}</div>
+                                     <div class="sc-field-value" x-text="sourceLabel(lastDetectedBy.source_system) + '　' + fmtTime(lastDetectedBy.event_time)"></div></div>
+                            </template>
+                            <div><div class="sc-field-label">{{ _('規則 ID') }}</div>
+                                 <div class="sc-field-value mono" x-html="val(selected.finding_rule_id)"></div></div>
+                            <div><div class="sc-field-label">{{ _('聚合事件數') }}</div>
+                                 <div class="sc-field-value" x-text="selected.od_event_count ?? 1"></div></div>
+                            <div><div class="sc-field-label">{{ _('建立時間') }}</div>
+                                 <div class="sc-field-value" x-text="fmtTime(selected.submitted_at)"></div></div>
+                            <div><div class="sc-field-label">{{ _('處置流程') }}</div>
+                                 <div class="sc-field-value" x-text="selected.flow_label || '-'"
+                                      :title="selected.flow_label ? '' : __('此案件沒有綁定發行版本')"></div></div>
+                        </div>
+
+                        <!-- 進行中且輪到簽核：完整表單欄位 + 處置 -->
+                        <template x-if="detail">
+                            <div>
+                                <!-- 簽核歷程：讓接手的人看見前手的判斷 -->
+                                <template x-if="detail.approvals && detail.approvals.length">
+                                    <div>
+                                        <div class="sc-subtitle">{{ _('簽核歷程（前手判斷）') }}</div>
+                                        <div class="sc-approval-trail">
+                                            <template x-for="(a, i) in detail.approvals" :key="i">
+                                                <div class="sc-approval-item">
+                                                    <div class="sc-approval-head">
+                                                        <span x-text="a.node_name"></span>
+                                                        <span class="sc-approval-who" x-text="a.approver_name"></span>
+                                                        <span class="sc-approval-delegate" x-show="a.delegate_from_name"
+                                                              x-text="__('（代 {name} 簽核）', {name: a.delegate_from_name || ''})"></span>
+                                                        <span class="sc-approval-delegate" x-show="a.acted_as_kind === 'standby'"
+                                                              x-text="__('（候補代理 {role}）', {role: a.acted_as_role_name || a.acted_as_role_code})"></span>
+                                                        <span class="od-badge"
+                                                              :class="a.action === 'approved' ? 'od-badge-applied' : 'od-badge-failed'"
+                                                              x-text="a.action"></span>
+                                                        <span class="sc-field-label" x-text="fmtTime(a.acted_at)"></span>
+                                                    </div>
+                                                    <div class="sc-approval-comment"
+                                                         x-show="a.comment" x-text="a.comment"></div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div class="sc-subtitle">{{ _('事件詳情（出口政策已套用）') }}</div>
+                                <div class="sc-fields">
+                                    <template x-for="key in ['target_host','target_url','target_service','actor_asn','actor_country','actor_user_agent','finding_summary','intel_summary','od_first_seen','od_last_seen']" :key="key">
+                                        <div x-show="detail.form_data && detail.form_data[key] !== undefined">
+                                            <div class="sc-field-label" x-text="key"></div>
+                                            <div class="sc-field-value" x-html="val(detail.form_data[key])"></div>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <template x-if="selected.can_act && actionOptions.length">
+                                    <div>
+                                        <div class="sc-subtitle">{{ _('處置（1-click，直接完成簽核）') }}</div>
+                                        <div class="sc-comment">
+                                            <textarea x-model="comment"
+                                                      placeholder="{{ _('處置意見（依流程設定可能必填）') }}"></textarea>
+                                        </div>
+                                        <div class="sc-actions">
+                                            <template x-for="opt in actionOptions" :key="opt.id">
+                                                <button class="btn"
+                                                        :class="opt.style === 'danger' ? 'btn-danger' : 'btn-primary'"
+                                                        :disabled="acting"
+                                                        @click="act(opt)" x-text="opt.label"></button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- 不可簽核：detail 根本不會請求（會 403），所以這段必須放在
+                             x-if="detail" 之外，否則永遠不會顯示 -->
+                        <template x-if="selected.waiting_node && !selected.can_act">
+                            <p class="sc-field-label"
+                               x-text="'{{ _('目前卡在') }}「' + (selected.waiting_node.node_name || '-') +
+                                       '」{{ _('，您不是此節點的指定簽核人。') }}'"></p>
+                        </template>
+
+                        <!-- 關聯防禦決策 -->
+                        <div class="sc-subtitle">{{ _('關聯防禦決策') }}</div>
+                        <template x-if="decisions.length === 0">
+                            <p class="sc-field-label">{{ _('尚無決策') }}</p>
+                        </template>
+                        <table class="od-table" x-show="decisions.length > 0">
+                            <thead><tr>
+                                <th>{{ _('動作') }}</th><th>{{ _('目標') }}</th>
+                                <th>{{ _('狀態') }}</th><th>{{ _('時間') }}</th>
+                            </tr></thead>
+                            <tbody>
+                                <template x-for="d in decisions" :key="d.secure_code">
+                                    <tr>
+                                        <td x-text="d.action"></td>
+                                        <td class="od-mono" x-text="d.target_value"></td>
+                                        <td><span class="od-badge" :class="`od-badge-${d.status}`"
+                                                  x-text="d.status"></span></td>
+                                        <td x-text="fmtTime(d.decided_at)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="sc-tab-panel" x-show="activeTab === 'detail'">
+                        <div class="sc-subtitle">{{ _('事件明細') }}</div>
+                        <template x-if="payload?.truncated">
+                            <p class="sc-field-label">{{ _('明細超過 500 筆，已截斷顯示。') }}</p>
+                        </template>
+                        <div class="sc-table-scroll">
+                            <table class="od-table">
+                                <thead>
+                                    <tr>
+                                        <template x-for="col in payload?.detail?.columns || []" :key="col.key">
+                                            <th x-text="col.label"></th>
+                                        </template>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(row, i) in payload?.detail?.rows || []" :key="i">
+                                        <tr>
+                                            <template x-for="col in payload?.detail?.columns || []" :key="col.key">
+                                                <td x-html="cellVal(row, col.key)"></td>
+                                            </template>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="sc-tab-panel" x-show="activeTab === 'fields'">
+                        <div class="sc-subtitle">{{ _('原始欄位') }}</div>
+                        <div class="sc-table-scroll">
+                            <table class="od-table">
+                                <thead><tr>
+                                    <th>{{ _('欄位名') }}</th><th>{{ _('值') }}</th>
+                                </tr></thead>
+                                <tbody>
+                                    <template x-for="field in payload?.fields || []" :key="field.key">
+                                        <tr>
+                                            <td class="od-mono" x-text="field.key"></td>
+                                            <td x-html="val(field.value)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PF-106：跨系統關聯（重點分頁）——同 actor_ip 在時間窗內，
+                         防禦節點 各資安套件各自偵測到什麼。只在有關聯事件時才會出現
+                         在 tabs 清單裡，故本面板一定有資料可畫。 -->
+                    <div class="sc-tab-panel" x-show="activeTab === 'cross-source'">
+                        <div class="sc-subtitle">{{ _('跨系統關聯：同一攻擊者被幾個系統偵測到') }}</div>
+                        <template x-if="crossSource?.window_crosses_backfill_boundary">
+                            <p class="sc-field-label">{{ _('此時間窗涵蓋 2026-08-08 之前，該期間 ClickHouse 資料為歸檔回灌，筆數僅供參考，不代表當時真實全量。') }}</p>
+                        </template>
+                        <div class="sc-fields">
+                            <div><div class="sc-field-label">{{ _('相異來源數') }}</div>
+                                 <div class="sc-field-value" x-text="crossSourceSources.length"></div></div>
+                            <div><div class="sc-field-label">{{ _('關聯事件數') }}</div>
+                                 <div class="sc-field-value" x-text="crossSource?.events?.length ?? 0"></div></div>
+                            <div><div class="sc-field-label">{{ _('查詢時間窗') }}</div>
+                                 <div class="sc-field-value" x-text="(crossSource?.window ? (fmtTime(crossSource.window.start) + ' ~ ' + fmtTime(crossSource.window.end)) : '-')"></div></div>
+                        </div>
+                        <template x-if="crossSource?.truncated">
+                            <p class="sc-field-label">{{ _('事件數超過單次顯示上限，僅列出時間窗內最早的部分事件。') }}</p>
+                        </template>
+                        <div class="sc-table-scroll">
+                            <table class="od-table">
+                                <thead><tr>
+                                    <th>{{ _('時間') }}</th><th>{{ _('來源系統') }}</th>
+                                    <th>{{ _('規則') }}</th><th>{{ _('標題') }}</th><th>{{ _('目標') }}</th>
+                                </tr></thead>
+                                <tbody>
+                                    <template x-for="(ev, i) in crossSource?.events || []" :key="i">
+                                        <tr>
+                                            <td x-text="fmtTime(ev.event_time)"></td>
+                                            <td><span class="od-badge" x-text="sourceLabel(ev.source_system)"></span></td>
+                                            <td class="od-mono" x-text="ev.finding_rule_id || '-'"></td>
+                                            <td x-html="val(ev.finding_title)"></td>
+                                            <td x-html="val(ev.target_host)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PF-106：各套件原始資料分頁（開發量最小，直接列 ClickHouse 明細），
+                         依 crossSourceSources 動態產生，沒有該來源就不會有這個分頁 -->
+                    <template x-for="src in crossSourceSources" :key="src">
+                        <div class="sc-tab-panel" x-show="activeTab === ('src-' + src)">
+                            <div class="sc-subtitle" x-text="sourceLabel(src)"></div>
+                            <div class="sc-table-scroll">
+                                <table class="od-table">
+                                    <thead><tr>
+                                        <th>{{ _('時間') }}</th><th>{{ _('嚴重度') }}</th>
+                                        <th>{{ _('規則') }}</th><th>{{ _('標題') }}</th>
+                                        <th>{{ _('目標') }}</th><th>{{ _('User-Agent') }}</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <template x-for="(ev, i) in (crossSource?.events || []).filter((e) => e.source_system === src)" :key="i">
+                                            <tr>
+                                                <td x-text="fmtTime(ev.event_time)"></td>
+                                                <td x-text="ev.severity_id ?? '-'"></td>
+                                                <td class="od-mono" x-text="ev.finding_rule_id || '-'"></td>
+                                                <td x-html="val(ev.finding_title)"></td>
+                                                <td x-html="val(ev.target_host)"></td>
+                                                <td x-html="val(ev.actor_ua)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ app_prefix }}/static/modules/open_defense/js/od-common.js"></script>
+<script src="{{ app_prefix }}/static/modules/open_defense/js/sc-cases.js"></script>
+{% endblock %}

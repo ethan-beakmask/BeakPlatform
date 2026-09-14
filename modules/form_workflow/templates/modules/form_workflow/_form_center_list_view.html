@@ -1,0 +1,429 @@
+{# 表單中心 - 清單模式 (partial, 注入到 formCenterManager x-data 範圍內) #}
+
+<!-- 清單模式 -->
+<div class="fc-main" x-show="viewMode === 'list'" x-cloak style="flex: 1;">
+    <!-- 返回按鈕 + 欄位設定 -->
+    <div style="margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+        <button @click="viewMode = 'dashboard'" class="fc-btn" style="background: #f3f4f6; color: #374151; font-size: 12px; padding: 4px 10px;">
+            {{ _('&larr; 返回表單中心') }}
+        </button>
+        <button x-show="isAdmin" @click="openColumnConfigModal()" class="fc-btn" style="background: #f3f4f6; color: #6b7280; font-size: 12px; padding: 4px 10px;" title="{{ _('欄位顯示設定') }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span style="margin-left: 4px;">{{ _('欄位設定') }}</span>
+        </button>
+    </div>
+
+    <!-- 三個主頁籤 -->
+    <div style="display: flex; align-items: center; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 8px;">
+        <button class="fc-list-tab" :class="{ active: listTab === 'pending' }"
+                @click="listTab = 'pending'; listSubTab = 'mine'; listPage = 1;">
+            {{ _('待簽核') }}
+            <span x-show="pendingApprovals.length > 0" class="fc-badge fc-badge-pending" style="margin-left: 4px;" x-text="pendingApprovals.length"></span>
+        </button>
+        <!-- 批次工具列（緊接待簽核頁籤後方） -->
+        <div x-show="listTab === 'pending' && batchSelectedCount > 0" style="display: flex; align-items: center; gap: 6px; padding: 2px 8px; background: #eef2ff; border-radius: 4px; font-size: 12px; margin-left: 100px;">
+            <span>{{ _('已選') }} <strong x-text="batchSelectedCount"></strong> {{ _('筆') }}</span>
+            <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchInvertSelection()">{{ _('反選') }}</button>
+            <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchClearSelection()">{{ _('清除') }}</button>
+            <button class="fc-btn fc-btn-warning fc-btn-sm" style="padding: 2px 8px; font-size: 11px;" @click="openBatchApprovalModal()">{{ _('批次簽核') }}</button>
+        </div>
+        <button class="fc-list-tab" :class="{ active: listTab === 'tracking' }"
+                @click="listTab = 'tracking'; listSubTab = 'mine'; listPage = 1;">
+            {{ _('追蹤中') }}
+            <span x-show="trackingList.length + signedList.length > 0" style="margin-left: 4px; color: #6b7280;"
+                  x-text="'(' + (trackingList.length + signedList.length) + ')'"></span>
+        </button>
+        <button class="fc-list-tab" :class="{ active: listTab === 'history' }"
+                @click="listTab = 'history'; listSubTab = 'mine'; listPage = 1;">
+            {{ _('歷史') }}
+            <span x-show="historyList.length + signedHistoryList.length > 0" style="margin-left: 4px; color: #6b7280;"
+                  x-text="'(' + (historyList.length + signedHistoryList.length) + ')'"></span>
+        </button>
+    </div>
+
+    <!-- 工具列：子頁籤(左) + 分頁(右) -->
+    <div class="fc-list-toolbar">
+        <!-- 左側：子頁籤 -->
+        <div>
+            <div x-show="listTab === 'tracking' || listTab === 'history'" class="fc-list-sub-tabs">
+                <button class="fc-list-sub-tab" :class="{ active: listSubTab === 'mine' }"
+                        @click="listSubTab = 'mine'; listPage = 1;">
+                    {{ _('我發起的表單(') }}<span x-text="listTab === 'tracking' ? trackingList.length : historyList.length"></span>)
+                </button>
+                <button class="fc-list-sub-tab" :class="{ active: listSubTab === 'signed' }"
+                        @click="listSubTab = 'signed'; listPage = 1;">
+                    {{ _('我簽過的表單(') }}<span x-text="listTab === 'tracking' ? signedList.length : signedHistoryList.length"></span>)
+                </button>
+            </div>
+            <div x-show="listTab === 'pending'" style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; color: #6b7280;">
+                    {{ _('共') }} <span x-text="pendingApprovals.length"></span> {{ _('筆') }}
+                </span>
+            </div>
+        </div>
+        <!-- 右側：分頁控制 -->
+        <div x-show="listTotalPages > 1" class="fc-list-pager-compact">
+            <span x-text="listPage + ' / ' + listTotalPages"></span>
+            <button :disabled="listPage <= 1" @click="listPage--">&lt;</button>
+            <button :disabled="listPage >= listTotalPages" @click="listPage++">&gt;</button>
+        </div>
+    </div>
+
+    <!-- 表格內容 -->
+    <div class="fc-section" style="margin-bottom: 0;">
+        <div style="padding: 0;">
+
+            <!-- 待簽核表格 -->
+            <template x-if="listTab === 'pending'">
+                <div>
+                    <div x-show="loadingPending" class="fc-loading">{{ _('載入中...') }}</div>
+                    <div x-show="!loadingPending && pendingApprovals.length === 0" class="fc-empty">{{ _('目前沒有待簽核的表單') }}</div>
+                    <table x-show="!loadingPending && pendingApprovals.length > 0" class="fc-table fc-table-dense fc-table-pending">
+                        <thead>
+                            <tr>
+                                <th style="width: 36px; text-align: center; overflow: visible; text-overflow: clip;">
+                                    <input type="checkbox" @change="batchSelectAll()" :checked="batchAllChecked"
+                                           title="{{ _('全選/取消全選（限同表單同節點同版本）') }}">
+                                </th>
+                                <th class="fc-sortable" :style="colW('serial_number')" x-show="colV('serial_number')" @click="toggleSort('pending', 'serial_number')">{{ _('單號') }}<span x-text="sortIcon('pending', 'serial_number')"></span></th>
+                                <th :style="colW('form_name')" x-show="colV('form_name')">{{ _('表單名稱') }}</th>
+                                <th x-show="colV('subject')">{{ _('主旨') }}</th>
+                                <th :style="colW('applicant')" x-show="colV('applicant')">{{ _('發起人') }}</th>
+                                <th :style="colW('category')" x-show="colV('category')">{{ _('表單類別') }}</th>
+                                <th :style="colW('current_node')" x-show="colV('current_node')">{{ _('目前關卡') }}</th>
+                                <th class="fc-sortable" :style="colW('wait_time')" x-show="colV('wait_time')" @click="toggleSort('pending', 'scheduled_at')">{{ _('等待時間') }}<span x-text="sortIcon('pending', 'scheduled_at')"></span></th>
+                                <th :style="colW('actions')" x-show="colV('actions')">{{ _('操作') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in pagedListData" :key="item.queue_secure_code">
+                                <tr :class="isBatchChecked(item) ? 'fc-row-selected' : ''">
+                                    <td style="text-align: center; overflow: visible; text-overflow: clip;">
+                                        <input type="checkbox" :checked="isBatchChecked(item)"
+                                               :disabled="(item.is_locked && !item.locked_by_self) || !isBatchCompatible(item)"
+                                               @change="batchToggle(item)"
+                                               :title="!isBatchCompatible(item) ? __('不同表單/節點/版本，無法一起批次簽核') : ''">
+                                    </td>
+                                    <td x-show="colV('serial_number')">
+                                        <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-right: 4px;">TEST</span>
+                                        <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
+                                    </td>
+                                    <td x-show="colV('form_name')" style="font-weight: 500;" x-text="item.form_name || __('未命名表單')"></td>
+                                    <td x-show="colV('subject')" style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
+                                    <td x-show="colV('applicant')" x-text="item.applicant_name || '-'"></td>
+                                    <td x-show="colV('category')" style="color: #6b7280;" x-text="item.category || '-'"></td>
+                                    <td x-show="colV('current_node')">
+                                        <span class="fc-badge fc-badge-pending" x-text="item.node_name || '-'"></span>
+                                        <div style="font-size: 11px; color: #6b7280;" x-show="getAssigneeDisplay(item)" x-text="getAssigneeDisplay(item)"></div>
+                                    </td>
+                                    <td x-show="colV('wait_time')" style="color: #92400e;" x-text="formatWaitTime(item.scheduled_at)"></td>
+                                    <td x-show="colV('actions')" style="display: flex; gap: 4px; align-items: center;">
+                                        <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" @click="openPendingReadForm(item)" title="{{ _('閱讀表單') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                        </button>
+                                        <button class="fc-btn fc-btn-warning fc-btn-sm" style="white-space: nowrap;" @click="openApprovalModal(item)"
+                                                :disabled="item.is_locked && !item.locked_by_self">
+                                            <span x-show="!(item.is_locked && !item.locked_by_self)">{{ _('簽核') }}</span>
+                                            <span x-show="item.is_locked && !item.locked_by_self" style="font-size: 11px;">{{ _('簽核中') }}</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+
+            <!-- 追蹤中 - 我發起的 -->
+            <template x-if="listTab === 'tracking' && listSubTab === 'mine'">
+                <div>
+                    <div x-show="loadingTracking" class="fc-loading">{{ _('載入中...') }}</div>
+                    <div x-show="!loadingTracking && trackingList.length === 0" class="fc-empty">{{ _('目前沒有執行中的流程') }}</div>
+                    <table x-show="!loadingTracking && trackingList.length > 0" class="fc-table fc-table-dense">
+                        <thead>
+                            <tr>
+                                <th class="fc-sortable" :style="colW('serial_number')" x-show="colV('serial_number')" @click="toggleSort('tracking', 'serial_number')">{{ _('單號') }}<span x-text="sortIcon('tracking', 'serial_number')"></span></th>
+                                <th :style="colW('form_name')" x-show="colV('form_name')">{{ _('表單名稱') }}</th>
+                                <th x-show="colV('subject')">{{ _('主旨') }}</th>
+                                <th :style="colW('category')" x-show="colV('category')">{{ _('表單類別') }}</th>
+                                <th :style="colW('current_node')" x-show="colV('current_node')">{{ _('待簽關卡') }}</th>
+                                <th class="fc-sortable" :style="colW('submit_time')" x-show="colV('submit_time')" @click="toggleSort('tracking', 'submitted_at')">{{ _('送單時間') }}<span x-text="sortIcon('tracking', 'submitted_at')"></span></th>
+                                <th :style="colW('actions')" x-show="colV('actions')"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in pagedListData" :key="item.secure_code">
+                                <tr>
+                                    <td x-show="colV('serial_number')">
+                                        <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-right: 4px;">TEST</span>
+                                        <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
+                                    </td>
+                                    <td x-show="colV('form_name')" style="font-weight: 500;" x-text="item.form_name"></td>
+                                    <td x-show="colV('subject')" style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
+                                    <td x-show="colV('category')" style="color: #6b7280;" x-text="item.category || '-'"></td>
+                                    <td x-show="colV('current_node')" style="color: #0d9488;" x-text="item.current_approver || __('尚未到簽核關卡')"></td>
+                                    <td x-show="colV('submit_time')" style="color: #6b7280;" x-text="formatDate(item.submitted_at)"></td>
+                                    <td x-show="colV('actions')" style="display: flex; gap: 4px;">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('除錯') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="{{ _('流程總圖') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                                        </button>
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('閱讀表單') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+
+            <!-- 追蹤中 - 我簽過的 -->
+            <template x-if="listTab === 'tracking' && listSubTab === 'signed'">
+                <div>
+                    <div x-show="loadingSigned" class="fc-loading">{{ _('載入中...') }}</div>
+                    <div x-show="!loadingSigned && signedList.length === 0" class="fc-empty">{{ _('沒有曾簽核過的執行中流程') }}</div>
+                    <table x-show="!loadingSigned && signedList.length > 0" class="fc-table fc-table-dense">
+                        <thead>
+                            <tr>
+                                <th class="fc-sortable" :style="colW('serial_number')" x-show="colV('serial_number')" @click="toggleSort('trackingSigned', 'serial_number')">{{ _('單號') }}<span x-text="sortIcon('trackingSigned', 'serial_number')"></span></th>
+                                <th :style="colW('form_name')" x-show="colV('form_name')">{{ _('表單名稱') }}</th>
+                                <th x-show="colV('subject')">{{ _('主旨') }}</th>
+                                <th :style="colW('category')" x-show="colV('category')">{{ _('表單類別') }}</th>
+                                <th :style="colW('applicant')" x-show="colV('applicant')">{{ _('發起人') }}</th>
+                                <th :style="colW('current_node')" x-show="colV('current_node')">{{ _('待簽關卡') }}</th>
+                                <th class="fc-sortable" :style="colW('signed_elapsed')" x-show="colV('signed_elapsed')" @click="toggleSort('trackingSigned', 'submitted_at')">{{ _('簽核後歷時') }}<span x-text="sortIcon('trackingSigned', 'submitted_at')"></span></th>
+                                <th :style="colW('actions')" x-show="colV('actions')"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in pagedListData" :key="item.secure_code">
+                                <tr>
+                                    <td x-show="colV('serial_number')">
+                                        <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-right: 4px;">TEST</span>
+                                        <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
+                                    </td>
+                                    <td x-show="colV('form_name')" style="font-weight: 500;" x-text="item.form_name"></td>
+                                    <td x-show="colV('subject')" style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
+                                    <td x-show="colV('category')" style="color: #6b7280;" x-text="item.category || '-'"></td>
+                                    <td x-show="colV('applicant')" x-text="item.applicant_name || '-'"></td>
+                                    <td x-show="colV('current_node')" style="color: #0d9488;" x-text="item.current_approver || '-'"></td>
+                                    <td x-show="colV('signed_elapsed')" style="color: #6b7280;" x-text="formatWaitTime(item.my_acted_at)"></td>
+                                    <td x-show="colV('actions')" style="display: flex; gap: 4px;">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('除錯') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="{{ _('流程總圖') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                                        </button>
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('閱讀表單') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+
+            <!-- 歷史 - 我發起的 -->
+            <template x-if="listTab === 'history' && listSubTab === 'mine'">
+                <div>
+                    <div x-show="loadingHistory" class="fc-loading">{{ _('載入中...') }}</div>
+                    <div x-show="!loadingHistory && historyList.length === 0" class="fc-empty">{{ _('沒有歷史記錄') }}</div>
+                    <table x-show="!loadingHistory && historyList.length > 0" class="fc-table fc-table-dense">
+                        <thead>
+                            <tr>
+                                <th class="fc-sortable" :style="colW('serial_number')" x-show="colV('serial_number')" @click="toggleSort('history', 'serial_number')">{{ _('單號') }}<span x-text="sortIcon('history', 'serial_number')"></span></th>
+                                <th :style="colW('form_name')" x-show="colV('form_name')">{{ _('表單名稱') }}</th>
+                                <th x-show="colV('subject')">{{ _('主旨') }}</th>
+                                <th :style="colW('category')" x-show="colV('category')">{{ _('表單類別') }}</th>
+                                <th :style="colW('status')" x-show="colV('status')">{{ _('狀態') }}</th>
+                                <th class="fc-sortable" :style="colW('end_time')" x-show="colV('end_time')" @click="toggleSort('history', 'workflow_completed_at')">{{ _('結束時間') }}<span x-text="sortIcon('history', 'workflow_completed_at')"></span></th>
+                                <th :style="colW('duration')" x-show="colV('duration')">{{ _('流程耗時') }}</th>
+                                <th :style="colW('actions')" x-show="colV('actions')"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in pagedListData" :key="item.secure_code">
+                                <tr>
+                                    <td x-show="colV('serial_number')">
+                                        <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-right: 4px;">TEST</span>
+                                        <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
+                                    </td>
+                                    <td x-show="colV('form_name')" style="font-weight: 500;" x-text="item.form_name"></td>
+                                    <td x-show="colV('subject')" style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
+                                    <td x-show="colV('category')" style="color: #6b7280;" x-text="item.category || '-'"></td>
+                                    <td x-show="colV('status')"><span class="fc-badge" :class="getStatusClass(item.workflow_status || item.status)" x-text="getStatusText(item.workflow_status || item.status)"></span></td>
+                                    <td x-show="colV('end_time')" style="color: #6b7280;" x-text="formatDate(item.workflow_completed_at)"></td>
+                                    <td x-show="colV('duration')" style="color: #6b7280;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
+                                    <td x-show="colV('actions')" style="display: flex; gap: 4px;">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('除錯') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="{{ _('流程總圖') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                                        </button>
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('閱讀表單') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+
+            <!-- 歷史 - 我簽過的 -->
+            <template x-if="listTab === 'history' && listSubTab === 'signed'">
+                <div>
+                    <div x-show="loadingSignedHistory" class="fc-loading">{{ _('載入中...') }}</div>
+                    <div x-show="!loadingSignedHistory && signedHistoryList.length === 0" class="fc-empty">{{ _('沒有曾簽核過的已結束流程') }}</div>
+                    <table x-show="!loadingSignedHistory && signedHistoryList.length > 0" class="fc-table fc-table-dense">
+                        <thead>
+                            <tr>
+                                <th class="fc-sortable" :style="colW('serial_number')" x-show="colV('serial_number')" @click="toggleSort('historySigned', 'serial_number')">{{ _('單號') }}<span x-text="sortIcon('historySigned', 'serial_number')"></span></th>
+                                <th :style="colW('form_name')" x-show="colV('form_name')">{{ _('表單名稱') }}</th>
+                                <th x-show="colV('subject')">{{ _('主旨') }}</th>
+                                <th :style="colW('category')" x-show="colV('category')">{{ _('表單類別') }}</th>
+                                <th :style="colW('applicant')" x-show="colV('applicant')">{{ _('發起人') }}</th>
+                                <th :style="colW('status')" x-show="colV('status')">{{ _('狀態') }}</th>
+                                <th class="fc-sortable" :style="colW('end_time')" x-show="colV('end_time')" @click="toggleSort('historySigned', 'workflow_completed_at')">{{ _('結束時間') }}<span x-text="sortIcon('historySigned', 'workflow_completed_at')"></span></th>
+                                <th :style="colW('duration')" x-show="colV('duration')">{{ _('流程耗時') }}</th>
+                                <th :style="colW('actions')" x-show="colV('actions')"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in pagedListData" :key="item.secure_code">
+                                <tr>
+                                    <td x-show="colV('serial_number')">
+                                        <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-right: 4px;">TEST</span>
+                                        <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
+                                    </td>
+                                    <td x-show="colV('form_name')" style="font-weight: 500;" x-text="item.form_name"></td>
+                                    <td x-show="colV('subject')" style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
+                                    <td x-show="colV('category')" style="color: #6b7280;" x-text="item.category || '-'"></td>
+                                    <td x-show="colV('applicant')" x-text="item.applicant_name || '-'"></td>
+                                    <td x-show="colV('status')"><span class="fc-badge" :class="getStatusClass(item.workflow_status || item.status)" x-text="getStatusText(item.workflow_status || item.status)"></span></td>
+                                    <td x-show="colV('end_time')" style="color: #6b7280;" x-text="formatDate(item.workflow_completed_at)"></td>
+                                    <td x-show="colV('duration')" style="color: #6b7280;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
+                                    <td x-show="colV('actions')" style="display: flex; gap: 4px;">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('除錯') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="{{ _('流程總圖') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                                        </button>
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('閱讀表單') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+
+        </div>
+    </div>
+
+    <!-- 分頁控制 -->
+    <div x-show="listTotalPages > 1" class="fc-list-pager">
+        <div>
+            {{ _('共') }} <span x-text="listDataSource.length"></span> {{ _('筆，第') }} <span x-text="listPage"></span> / <span x-text="listTotalPages"></span> {{ _('頁') }}
+        </div>
+        <div class="fc-list-pager-btns">
+            <button class="fc-list-pager-btn" :disabled="listPage <= 1" @click="listPage--">{{ _('&lt; 上一頁') }}</button>
+            <template x-for="p in listTotalPages" :key="p">
+                <button class="fc-list-pager-btn" :class="{ active: listPage === p }" @click="listPage = p" x-text="p"
+                        x-show="p === 1 || p === listTotalPages || (p >= listPage - 2 && p <= listPage + 2)"></button>
+            </template>
+            <button class="fc-list-pager-btn" :disabled="listPage >= listTotalPages" @click="listPage++">{{ _('下一頁') }} &gt;</button>
+        </div>
+    </div>
+</div>
+
+<!-- 欄位顯示設定 Modal (管理員) -->
+<div x-show="showColumnConfigModal" x-cloak class="fc-modal">
+    <div class="fc-modal-content" style="width: 560px;">
+        <div class="fc-modal-header">
+            <h3>{{ _('表單中心 - 欄位顯示設定') }}</h3>
+            <button @click="showColumnConfigModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <div class="fc-modal-body" style="padding: 16px;">
+            <!-- 語系選擇 -->
+            <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 13px; font-weight: 500;">{{ _('適用語系：') }}</label>
+                <select style="padding: 4px 8px; border: 1px solid #d1d5db; font-size: 13px;"
+                        :value="columnConfigLocale"
+                        @change="switchColumnConfigLocale($event.target.value)">
+                    <template x-for="loc in columnConfigLocales" :key="loc">
+                        <option :value="loc" x-text="loc === '*' ? __('* (通用)') : loc"></option>
+                    </template>
+                </select>
+                <div style="display: flex; gap: 4px;">
+                    <button class="fc-btn fc-btn-sm" style="font-size: 11px; padding: 2px 6px;"
+                            @click="addColumnConfigLocale('zh-TW')" x-show="!columnConfigLocales.includes('zh-TW')">+zh-TW</button>
+                    <button class="fc-btn fc-btn-sm" style="font-size: 11px; padding: 2px 6px;"
+                            @click="addColumnConfigLocale('en')" x-show="!columnConfigLocales.includes('en')">+en</button>
+                    <button class="fc-btn fc-btn-sm" style="font-size: 11px; padding: 2px 6px;"
+                            @click="addColumnConfigLocale('ja')" x-show="!columnConfigLocales.includes('ja')">+ja</button>
+                </div>
+            </div>
+            <p style="font-size: 11px; color: #6b7280; margin-bottom: 12px;">
+                {{ _('使用者登入後依其語系載入對應設定，無精確語系時 fallback 到「通用」，無通用則用程式預設值。') }}
+            </p>
+            <!-- 欄位列表 -->
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e5e7eb;">
+                        <th style="text-align: left; padding: 6px 8px;">{{ _('欄位') }}</th>
+                        <th style="text-align: center; padding: 6px 8px; width: 100px;">{{ _('寬度 (px)') }}</th>
+                        <th style="text-align: center; padding: 6px 8px; width: 60px;">{{ _('隱藏') }}</th>
+                        <th style="text-align: left; padding: 6px 8px; width: 80px;">{{ _('備註') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="(cfg, key) in columnConfigEditing" :key="key">
+                        <tr style="border-bottom: 1px solid #f3f4f6;">
+                            <td style="padding: 6px 8px;">
+                                <span x-text="cfg.label" style="font-weight: 500;"></span>
+                                <span x-show="cfg.flex" style="color: #6b7280; font-size: 11px; margin-left: 4px;">{{ _('(彈性)') }}</span>
+                            </td>
+                            <td style="text-align: center; padding: 6px 8px;">
+                                <template x-if="!cfg.flex">
+                                    <input type="number" min="40" max="400" step="10"
+                                           x-model.number="cfg.width"
+                                           style="width: 70px; padding: 2px 6px; border: 1px solid #d1d5db; text-align: center; font-size: 12px;">
+                                </template>
+                                <span x-show="cfg.flex" style="color: #9ca3af;">auto</span>
+                            </td>
+                            <td style="text-align: center; padding: 6px 8px;">
+                                <template x-if="!cfg.noHide">
+                                    <input type="checkbox" x-model="cfg.hidden">
+                                </template>
+                                <span x-show="cfg.noHide" style="color: #9ca3af;">-</span>
+                            </td>
+                            <td style="padding: 6px 8px; font-size: 11px; color: #6b7280;">
+                                <span x-show="cfg.noHide">{{ _('必顯示') }}</span>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+        <div class="fc-modal-footer">
+            <button class="fc-btn" @click="showColumnConfigModal = false">{{ _('取消') }}</button>
+            <button class="fc-btn fc-btn-warning" @click="saveColumnConfig()" :disabled="savingColumnConfig">
+                <span x-show="!savingColumnConfig">{{ _('儲存') }}</span>
+                <span x-show="savingColumnConfig">{{ _('儲存中...') }}</span>
+            </button>
+        </div>
+    </div>
+</div>

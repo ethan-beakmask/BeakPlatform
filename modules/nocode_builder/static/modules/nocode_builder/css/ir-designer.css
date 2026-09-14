@@ -1,0 +1,779 @@
+.ird-shell {
+    color: var(--color-text);
+}
+
+.ird-topbar {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+    padding: 12px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+}
+
+.ird-title-field,
+.ird-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ird-title-field label,
+.ird-field label,
+.ird-subtitle {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.ird-title-field input:not([type="radio"]):not([type="checkbox"]),
+.ird-field input:not([type="radio"]):not([type="checkbox"]),
+.ird-field select,
+.ird-field textarea,
+.ird-list-item input:not([type="radio"]):not([type="checkbox"]),
+.ird-list-item select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 8px;
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+
+.ird-field textarea {
+    min-height: 72px;
+    resize: vertical;
+}
+
+.ird-actions,
+.ird-node-actions,
+.ird-modal-actions,
+.ird-canvas-head {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ird-preview-identity {
+    display: flex;
+    gap: 8px;
+    align-items: end;
+}
+
+.ird-preview-line {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--color-text-muted);
+}
+
+.ird-preview-identity label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.ird-preview-identity select {
+    min-width: 150px;
+    box-sizing: border-box;
+    padding: 7px 8px;
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+
+.ird-btn,
+.ird-icon-btn,
+.ird-palette-item {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.ird-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 7px 12px;
+    text-decoration: none;
+}
+
+.ird-btn-primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-bg-white);
+}
+
+.ird-icon-btn {
+    width: 28px;
+    height: 28px;
+    line-height: 1;
+}
+
+.ird-errors-summary {
+    grid-column: 1 / -1;
+    justify-self: start;
+    padding: 8px;
+    color: #b91c1c;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.ird-error,
+.ird-hint {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.ird-error {
+    color: #b91c1c;
+}
+
+.ird-warning {
+    color: #92400e;
+}
+
+.ird-grid {
+    display: grid;
+    grid-template-columns: 220px minmax(360px, 1fr) 420px;
+    gap: 12px;
+    margin-top: 12px;
+    /* --topbar-height 由 topbar-offset.js 依實際平台選單高度設定（選單會換行，
+       寫死數值在選單多的企業會算錯）。workspace 全螢幕版面沒有 topbar，
+       該變數為 0，並由 .wks-designer-mount .ird-grid 覆寫成 100%。 */
+    height: calc(100vh - var(--topbar-height, 0px) - 145px);
+    min-height: 0;
+}
+
+.ird-panel {
+    min-width: 0;
+    min-height: 0;
+    padding: 12px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    overflow: auto;
+}
+
+.ird-panel h2 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: var(--color-text);
+}
+
+.ird-palette-item {
+    display: flex;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 8px;
+    text-align: left;
+}
+
+.ird-canvas-head {
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.ird-layout-tools {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) minmax(220px, 1fr);
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 12px;
+}
+
+.ird-layout-grid-fields,
+.ird-layout-free-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(120px, 180px));
+    gap: 12px;
+}
+
+.ird-layout-free-fields {
+    grid-template-columns: repeat(3, minmax(120px, 180px));
+}
+
+.ird-grid-designer {
+    display: grid;
+    grid-template-rows: minmax(360px, 1fr) auto auto;
+    gap: 12px;
+    min-height: 0;
+}
+
+.ird-grid-layout-editor {
+    min-height: 0;
+    border: 1px solid var(--color-border);
+}
+
+.ird-grid-layout-editor.gle-root {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.ird-grid-layout-editor .gle-wrapper {
+    min-height: 0;
+    overflow: auto;
+}
+
+.ird-grid-layout-editor .gle-grid {
+    min-width: 640px;
+}
+
+.ird-unplaced {
+    display: grid;
+    gap: 8px;
+}
+
+.ird-widget-inventory {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.ird-widget-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-widget-row-selected {
+    border-color: var(--color-primary);
+}
+
+.ird-widget-row-main {
+    display: grid;
+    grid-template-columns: minmax(80px, 1fr) minmax(90px, 1fr) minmax(72px, auto);
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    padding: 6px 8px;
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.ird-widget-zone {
+    color: var(--color-text-muted);
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ird-free-designer {
+    display: grid;
+    grid-template-rows: auto minmax(360px, 1fr) auto auto;
+    gap: 12px;
+    min-height: 0;
+}
+
+.ird-free-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ird-free-scroll {
+    overflow: auto;
+    min-height: 0;
+    padding: 8px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-free-gridstack {
+    min-height: 520px;
+    background: var(--color-bg-white);
+}
+
+.ird-free-gridstack .grid-stack-item-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.ird-free-gridstack .ird-free-frame-selected .grid-stack-item-content {
+    border-color: var(--color-primary);
+}
+
+.ird-free-gridstack .ird-free-frame-drag-over {
+    border-color: var(--color-primary);
+    background: var(--color-bg-light);
+}
+
+.ird-free-frame-head {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.ird-free-frame-id {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.ird-free-frame-items {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.ird-free-frame-widget {
+    padding: 1px 6px;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ird-unplaced-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    padding: 8px 10px;
+    color: var(--color-text);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.ird-empty {
+    padding: 16px;
+    color: var(--color-text-muted);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-node {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    min-height: 42px;
+    margin-bottom: 6px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+}
+
+.ird-node-selected {
+    border-color: var(--color-primary);
+}
+
+.ird-node-main {
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+}
+
+.ird-node-type {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.ird-node-id {
+    color: var(--color-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ird-prop-body,
+.ird-section {
+    display: grid;
+    gap: 12px;
+}
+
+.ird-section {
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+}
+
+.ird-checks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.ird-checks label {
+    color: var(--color-text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.ird-field input[type="checkbox"],
+.ird-checks input[type="checkbox"],
+.ird-menu-row input[type="checkbox"] {
+    width: auto;
+}
+
+.ird-menu-list {
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-menu-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    min-height: 28px;
+    color: var(--color-text-secondary);
+}
+
+.ird-menu-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ird-menu-kind {
+    color: var(--color-text-muted);
+    font-size: 12px;
+}
+
+.ird-menu-tree-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.ird-menu-row-deleted .ird-menu-name {
+    color: var(--color-text-muted);
+}
+
+.ird-menu-actions,
+.ird-inline-actions,
+.ird-color-control,
+.ird-inline-check {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ird-menu-actions {
+    flex-wrap: nowrap;
+}
+
+.ird-menu-actions .ird-icon-btn:disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+.ird-menu-add-btn {
+    min-height: 28px;
+    padding: 4px 10px;
+}
+
+.ird-shared-menu-box {
+    display: grid;
+    gap: 8px;
+    padding: 8px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-inline-check {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.ird-inline-actions select {
+    min-width: 0;
+}
+
+.ird-color-control input[type="color"] {
+    width: 44px;
+    min-width: 44px;
+    height: 34px;
+    padding: 3px;
+}
+
+.ird-color-control span {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.ird-file-input {
+    display: none;
+}
+
+.ird-bg-preview {
+    width: 100%;
+    max-height: 160px;
+    object-fit: contain;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-hint-danger {
+    color: #b00020;
+}
+
+.ird-list-item {
+    display: grid;
+    grid-template-columns: minmax(80px, 1fr);
+    gap: 8px;
+    padding: 8px;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+}
+
+.ird-zone-widget {
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    align-items: center;
+}
+
+.ird-zone-widget-main {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    padding: 6px 8px;
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.ird-mask-params {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.ird-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: var(--color-bg);
+}
+
+.ird-modal-box {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    width: min(1180px, 96vw);
+    height: min(860px, 92vh);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+}
+
+.ird-modal-head,
+.ird-modal-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.ird-modal-actions {
+    justify-content: flex-end;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 0;
+}
+
+.ird-form-builder {
+    overflow: auto;
+    padding: 12px;
+}
+
+.ird-issue-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.ird-issue-box {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    width: min(760px, 96vw);
+    max-height: min(680px, 90vh);
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+}
+
+.ird-issue-head,
+.ird-issue-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.ird-issue-head h2 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.ird-issue-actions {
+    justify-content: flex-end;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 0;
+}
+
+.ird-issue-list {
+    display: grid;
+    gap: 8px;
+    max-height: 520px;
+    padding: 12px;
+    overflow: auto;
+    user-select: text;
+}
+
+.ird-issue-item {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+    color: #b91c1c;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid #b91c1c;
+    cursor: pointer;
+    text-align: left;
+    user-select: text;
+}
+
+.ird-issue-item[aria-disabled="true"] {
+    cursor: text;
+}
+
+.ird-issue-warning {
+    color: #92400e;
+    border-left-color: #92400e;
+}
+
+.ird-issue-level {
+    font-weight: 600;
+}
+
+.ird-issue-message {
+    overflow-wrap: anywhere;
+}
+
+.ird-save-template-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.ird-save-template-box {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    width: min(520px, 96vw);
+    max-height: min(680px, 90vh);
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+}
+
+.ird-save-template-body {
+    display: grid;
+    gap: 12px;
+    min-height: 0;
+    overflow: auto;
+    padding: 12px;
+}
+
+.ird-toast {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1300;
+    max-width: min(360px, 90vw);
+    padding: 10px 12px;
+    color: var(--color-bg-white);
+    background: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    border-radius: 6px;
+}
+
+/* 矩陣格子上的元件標示（GridLayoutEditor 的 layoutOnly 模式使用，
+   .gle-* 本體樣式在 studio.css，這兩條是設計器專用的追加） */
+.gle-cell-contents {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.gle-cell-content-item {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    padding: 1px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 1100px) {
+    .ird-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ird-topbar {
+        grid-template-columns: 1fr;
+    }
+
+    .ird-actions,
+    .ird-preview-identity {
+        flex-wrap: wrap;
+    }
+}

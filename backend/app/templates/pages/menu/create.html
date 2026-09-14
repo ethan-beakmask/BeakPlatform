@@ -1,0 +1,117 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('新增選單項目') }} - BeakMask{% endblock %}
+
+{% block head %}
+<script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
+<script src="{{ url_for('static', filename='js/icon-picker.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('menu.list_menu') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回選單管理') }}</a>
+</div>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('新增選單項目') }}</h1>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ 'success' if category == 'success' else ('error' if category == 'danger' else category) }}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST"
+      x-data="{...codeInputMixin('menu_item'), ...iconPickerMixin(), codeval: ''}"
+      x-init="ipInit('')"
+      @submit="if (!codeval.trim() && _ci_generatedCode) { codeval = _ci_generatedCode; $refs.codeField.value = _ci_generatedCode; }">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table class="info-table">
+        <tr>
+            <th><label for="title">{{ _('選單標題 (繁中)') }} <span class="text-danger">*</span></label></th>
+            <td>
+                <input type="text" id="title" name="title" class="form-control" style="max-width:400px;" required
+                       @input.debounce.500ms="ciGenerateCode($event.target.value)">
+            </td>
+        </tr>
+        <tr>
+            <th><label for="code">{{ _('選單代碼') }}</label></th>
+            <td>
+                <input type="text" id="code" name="code" class="form-control" style="max-width:300px;" x-ref="codeField"
+                       x-model="codeval"
+                       :placeholder="_ci_generatedCode || __('留空自動產生')"
+                       @input.debounce.500ms="ciValidateCode(codeval)">
+                <div class="help-text">{{ _('選填，留空自動產生。英文、數字、底線') }}</div>
+                {% include "partials/_code_input.html" %}
+            </td>
+        </tr>
+        {% for code, name in [('en','English'),('zh-CN','简体中文'),('ja','日本語')] %}
+        <tr>
+            <th><label for="title_{{ code }}">{{ name }}</label></th>
+            <td><input type="text" id="title_{{ code }}" name="title_{{ code }}" class="form-control" style="max-width:400px;"></td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <th><label for="icon">{{ _('圖示') }}</label></th>
+            <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span x-show="_ip_selectedIcon" style="font-size:20px;width:28px;text-align:center;"><i :class="_ip_selectedIcon"></i></span>
+                    <input type="hidden" id="icon" name="icon" x-ref="iconField" value="">
+                    <button type="button" @click="ipOpen()" class="btn btn-secondary btn-sm">{{ _('選擇圖示') }}</button>
+                    <span x-show="_ip_selectedIcon" x-text="_ip_selectedIcon" class="text-muted" style="font-size:12px;"></span>
+                    <button type="button" x-show="_ip_selectedIcon" @click="ipClear()" class="btn btn-danger btn-sm">X</button>
+                </div>
+                {% include "partials/_icon_picker.html" %}
+            </td>
+        </tr>
+        <tr>
+            <th><label for="parent_secure_code">{{ _('父選單') }}</label></th>
+            <td>
+                <select id="parent_secure_code" name="parent_secure_code" class="form-control" style="max-width:400px;">
+                    <option value="">-- {{ _('根層級') }} --</option>
+                    {% for opt in parent_options %}
+                    <option value="{{ opt.item.secure_code }}">{{ opt.indent }}{{ opt.item.title }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('連結類型') }}</th>
+            <td>
+                <code>header</code>
+                <input type="hidden" name="link_type" value="header">
+                <input type="hidden" name="link_target" value="">
+                <span class="text-muted">({{ _('手動建立的選單僅能作為區塊標題，路由型選單由系統自動建立') }})</span>
+            </td>
+        </tr>
+        <tr>
+            <th style="vertical-align:top;">{{ _('授權用戶類型') }}</th>
+            <td>
+                {% for user_type in user_types %}
+                <label style="display:block;margin-bottom:4px;">
+                    <input type="checkbox" name="allowed_user_types" value="{{ user_type }}"
+                        {% if user_type in ['ORG_ADMIN', 'EMPLOYEE'] %}checked{% endif %}>
+                    {{ user_type_labels.get(user_type, user_type) }}
+                </label>
+                {% endfor %}
+                <div class="help-text">{{ _('勾選可看見此選單的用戶類型（平行關係，非繼承）') }}</div>
+            </td>
+        </tr>
+        <tr>
+            <th><label for="display_order">{{ _('顯示順序') }}</label></th>
+            <td><input type="number" id="display_order" name="display_order" class="form-control" style="max-width:120px;" value="0"></td>
+        </tr>
+        <tr>
+            <th><label for="is_expanded">{{ _('預設展開') }}</label></th>
+            <td><input type="checkbox" id="is_expanded" name="is_expanded"></td>
+        </tr>
+    </table>
+
+    <div style="margin-top:16px;display:flex;gap:8px;">
+        <button type="submit" class="btn btn-primary">{{ _('建立選單項目') }}</button>
+        <a href="{{ url_for('menu.list_menu') }}" class="btn btn-cancel">{{ _('取消') }}</a>
+    </div>
+</form>
+{% endblock %}

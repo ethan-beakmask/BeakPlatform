@@ -1,0 +1,58 @@
+<!-- ==================== SMTP 設定 ==================== -->
+    <div x-show="message.smtp" x-cloak
+         :class="'message ' + (message.smtpError ? 'message-error' : 'message-success')"
+         x-text="message.smtp"
+         x-transition></div>
+
+    <div class="settings-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="margin: 0;">{{ _('SMTP 設定列表') }}</h4>
+            <button class="btn btn-primary" @click="openSmtpModal()">+ {{ _('新增設定') }}</button>
+        </div>
+
+        <template x-if="loading.smtp">
+            <div class="loading">{{ _('載入中...') }}</div>
+        </template>
+
+        <template x-if="!loading.smtp && smtp.configs.length === 0">
+            <div class="empty-state">
+                <p>{{ _('尚無 SMTP 設定') }}</p>
+                <p style="font-size: 13px;">{{ _('點擊「新增設定」開始建立') }}</p>
+            </div>
+        </template>
+
+        <template x-if="!loading.smtp && smtp.configs.length > 0">
+            <table class="config-table">
+                <thead>
+                    <tr>
+                        <th>{{ _('名稱') }}</th>
+                        <th>{{ _('伺服器') }}</th>
+                        <th>{{ _('寄件人') }}</th>
+                        <th>{{ _('狀態') }}</th>
+                        <th>{{ _('操作') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="config in smtp.configs" :key="config.id">
+                        <tr>
+                            <td>
+                                <span x-text="config.name"></span>
+                                <span x-show="config.is_default" class="badge badge-info">{{ _('預設') }}</span>
+                            </td>
+                            <td x-text="config.smtp_host + ':' + config.smtp_port"></td>
+                            <td x-text="config.from_email"></td>
+                            <td>
+                                <span :class="'badge ' + (config.is_active ? 'badge-success' : 'badge-danger')"
+                                      x-text="config.is_active ? __('啟用') : __('停用')"></span>
+                            </td>
+                            <td class="actions">
+                                <button class="btn btn-secondary" @click="editSmtpConfig(config)">{{ _('編輯') }}</button>
+                                <button class="btn btn-success" @click="testSmtpConfig(config.id)">{{ _('測試') }}</button>
+                                <button class="btn btn-danger" @click="deleteSmtpConfig(config.id)">{{ _('刪除') }}</button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+    </div>

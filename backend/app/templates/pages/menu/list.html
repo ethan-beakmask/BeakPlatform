@@ -1,0 +1,169 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/02_platform_admin/menu_manage{% endblock %}
+
+{% block title %}{{ _('選單管理') }} - BeakMask{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu-tree.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1>{{ _('選單管理') }}</h1>
+
+{% if menu_items %}
+<div id="menu-trellis-section" x-data="menuTreeManager()" x-init="init()">
+    <div class="trellis-toolbar">
+        <button type="button" @click="_grid && _grid.expandAll()">{{ _('全部展開') }}</button>
+        <button type="button" @click="_grid && _grid.collapseAll()">{{ _('全部收合') }}</button>
+        <button type="button" @click="showRootHeaderModal = true">+ {{ _('新增根項目') }}</button>
+        <span class="trellis-hint">{{ _('拖曳調整位置') }}</span>
+        <span style="margin-left:auto; display:flex; gap:6px;">
+            <button type="button" @click="resetPositions()" :disabled="saving">{{ _('重置MENU項目位置') }}</button>
+            <button type="button" @click="showSaveFactoryModal = true" :disabled="saving">{{ _('設定目前組態成出廠值') }}</button>
+            <button type="button" @click="showFactoryResetModal = true" :disabled="saving" style="color:#f87171;">{{ _('重置MENU所有設定成出廠值') }}</button>
+        </span>
+    </div>
+
+    {# 儲存出廠值確認 Modal #}
+    <div x-show="showSaveFactoryModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;"
+         :style="showSaveFactoryModal && 'display:flex'">
+        <div style="background:#1e1e2e; border:1px solid #444; padding:24px; min-width:360px; max-width:520px;">
+            <h3 style="margin-top:0;">{{ _('確認設定目前組態成出廠值') }}</h3>
+            <p style="color:#ccc; line-height:1.6;">
+                {{ _('此操作將把目前所有預設選單的設定儲存為出廠預設值，包含：') }}
+            </p>
+            <ul style="color:#ccc; line-height:1.8; margin:8px 0 16px 0; padding-left:20px;">
+                <li>{{ _('選單位置、排序、父子關係') }}</li>
+                <li>{{ _('標題、圖示、連結設定') }}</li>
+                <li>{{ _('用戶類型權限 (鑰匙1)') }}</li>
+                <li>{{ _('角色存取需求 (鑰匙2)') }}</li>
+            </ul>
+            <p style="color:#aaa; font-size:0.85em;">
+                {{ _('儲存後，「重置MENU所有設定成出廠值」將以此快照為準。') }}
+            </p>
+            <div style="text-align:right; margin-top:16px;">
+                <button type="button" @click="showSaveFactoryModal = false" style="margin-right:8px;">{{ _('取消') }}</button>
+                <button type="button" @click="saveFactoryDefaults()" style="background:#2563eb; color:white; border:1px solid #3b82f6;">{{ _('確認儲存') }}</button>
+            </div>
+        </div>
+    </div>
+
+    {# 出廠值重置確認 Modal #}
+    <div x-show="showFactoryResetModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;"
+         :style="showFactoryResetModal && 'display:flex'">
+        <div style="background:#1e1e2e; border:1px solid #444; padding:24px; min-width:360px; max-width:480px;">
+            <h3 style="margin-top:0; color:#f87171;">{{ _('確認重置所有選單設定') }}</h3>
+            <p style="color:#ccc; line-height:1.6;">
+                {{ _('此操作將把所有預設選單的設定還原成出廠值，包含：') }}
+            </p>
+            <ul style="color:#ccc; line-height:1.8; margin:8px 0 16px 0; padding-left:20px;">
+                <li>{{ _('選單位置、排序、父子關係') }}</li>
+                <li>{{ _('標題、圖示、連結設定') }}</li>
+                <li>{{ _('用戶類型權限 (鑰匙1)') }}</li>
+                <li>{{ _('角色存取需求 (鑰匙2)') }}</li>
+            </ul>
+            <p style="color:#aaa; font-size:0.85em;">
+                {{ _('用戶自建選單不受影響。') }}
+            </p>
+            <div style="text-align:right; margin-top:16px;">
+                <button type="button" @click="showFactoryResetModal = false" style="margin-right:8px;">{{ _('取消') }}</button>
+                <button type="button" @click="resetFactory()" style="background:#991b1b; color:white; border:1px solid #dc2626;">{{ _('確認重置') }}</button>
+            </div>
+        </div>
+    </div>
+
+    {# 新增根項目 Modal #}
+    <div x-show="showRootHeaderModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;"
+         :style="showRootHeaderModal && 'display:flex'">
+        <div style="background:#1e1e2e; border:1px solid #444; padding:24px; min-width:360px; max-width:440px;">
+            <h3 style="margin-top:0;">{{ _('新增 MENU 根項目') }}</h3>
+            <p style="color:#aaa; font-size:0.85em; margin-bottom:16px;">{{ _('建立新選單，請輸入選單代碼(之後不可更改)(建議英文)(重覆會自動加尾號_01)') }}</p>
+            <form method="POST" action="{{ url_for('menu.create_root_header') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="root-header-title">{{ _('標題') }}</label>
+                <input type="text" id="root-header-title" name="title" required
+                       style="width:100%; padding:6px 8px; margin:8px 0 16px 0;"
+                       placeholder="{{ _('例：監控管理') }}"
+                       x-ref="rootHeaderTitle">
+                <div style="text-align:right;">
+                    <button type="button" @click="showRootHeaderModal = false" style="margin-right:8px;">{{ _('取消') }}</button>
+                    <button type="submit">{{ _('建立') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="menu-trellis"></div>
+    <div class="trellis-status">
+        <span x-show="saving">{{ _('儲存中...') }}</span>
+        <span x-show="message && !saving"
+              :class="messageType === 'success' ? 'msg-success' : 'msg-error'"
+              x-text="message"></span>
+    </div>
+</div>
+{% else %}
+<p>{{ _('尚無選單項目。') }}<a href="{{ url_for('menu.create_menu') }}">{{ _('建立第一個選單項目') }}</a></p>
+{% endif %}
+
+<div class="section-title" style="margin-top:32px;">{{ _('說明') }}</div>
+
+<h3>{{ _('連結類型') }}</h3>
+<table class="data-table bordered">
+    <tr><td><code>route</code></td><td>{{ _('Flask 路由端點 或 URL 路徑 (以 / 開頭)') }}</td></tr>
+    <tr><td><code>url</code></td><td>{{ _('外部網址') }}</td></tr>
+    <tr><td><code>page</code></td><td>{{ _('動態頁面') }}</td></tr>
+    <tr><td><code>header</code></td><td>{{ _('區塊標題 (不可點擊)') }}</td></tr>
+    <tr><td><code>divider</code></td><td>{{ _('分隔線') }}</td></tr>
+</table>
+
+<h3>{{ _('用戶類型說明') }}</h3>
+<table class="data-table bordered">
+    <thead>
+        <tr>
+            <th>{{ _('類型') }}</th>
+            <th>{{ _('說明') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ _('系統管理員') }}</td>
+            <td>{{ _('SYSTEM.local 的管理員，負責系統級設定，不可存取其他企業資料') }}</td>
+        </tr>
+        <tr>
+            <td>{{ _('企業管理員') }}</td>
+            <td>{{ _('各企業內最高權限帳號，可管理該企業的所有設定') }}</td>
+        </tr>
+        <tr>
+            <td>{{ _('企業成員') }}</td>
+            <td>{{ _('企業內部企業成員帳號') }}</td>
+        </tr>
+        <tr>
+            <td>{{ _('外部廠商') }}</td>
+            <td>{{ _('企業外部合作夥伴、客戶等，最小權限帳號') }}</td>
+        </tr>
+    </tbody>
+</table>
+<p><small>{{ _('每種用戶類型是「平行」的，不是繼承關係。系統管理員只能看到為其開放的選單。') }}</small></p>
+
+<h3>{{ _('底色說明') }}</h3>
+<table class="data-table bordered">
+    <tr><td style="background:#b91c1c;color:white;width:120px">{{ _('紅底') }}</td><td>{{ _('系統管理員專屬') }}</td></tr>
+    <tr><td style="background:#1d4ed8;color:white">{{ _('藍底') }}</td><td>{{ _('企業管理員專屬') }}</td></tr>
+    <tr><td style="background:#111827;color:white">{{ _('黑底') }}</td><td>{{ _('企業成員 / 固定選單') }}</td></tr>
+    <tr><td style="background:#f59e0b;color:#111827">{{ _('黃底') }}</td><td>{{ _('外部廠商') }}</td></tr>
+    <tr><td style="background:#7c3aed;color:white">{{ _('紫底') }}</td><td>{{ _('模組選單（權限由模組使用權控制）') }}</td></tr>
+</table>
+
+{# Window Bridge: 注入 BeakTrellis 樹狀資料 #}
+<script>
+window.__MENU_TRELLIS_DATA = {{ trellis_data_json }};
+</script>
+
+{# BeakTrellis 載入順序: model -> trellis -> renderer -> splitpane -> drag -> app #}
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-model.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/renderers/beak-tree-lines-dom.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis-splitpane.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis-drag.js') }}"></script>
+<script src="{{ url_for('static', filename='js/menu-tree.js') }}"></script>
+{% endblock %}

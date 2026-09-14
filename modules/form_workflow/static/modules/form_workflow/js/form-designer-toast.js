@@ -1,0 +1,71 @@
+/**
+ * form-designer-toast.js -- Toast 通知系統
+ * 從 form-designer-main.js 拆分
+ */
+
+const Toast = {
+    container: null,
+
+    init() {
+        this.container = document.getElementById('toast-container');
+        if (!this.container) {
+            console.error('Toast container not found!');
+        }
+    },
+
+    show(message, type = 'info', duration = 3000) {
+        if (!this.container) {
+            this.init();
+        }
+
+        if (!this.container) {
+            console.error('Toast container 初始化失敗');
+            return null;
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            info: 'fa-info-circle',
+            warning: 'fa-exclamation-triangle'
+        };
+
+        toast.innerHTML = `
+            <i class="fas ${icons[type]} toast-icon"></i>
+            <div class="toast-message">${message}</div>
+        `;
+
+        this.container.appendChild(toast);
+
+        // 自動移除
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, duration);
+
+        return toast;
+    },
+
+    success(message, duration) {
+        return this.show(message, 'success', duration);
+    },
+
+    error(message, duration) {
+        return this.show(message, 'error', duration);
+    },
+
+    info(message, duration) {
+        return this.show(message, 'info', duration);
+    },
+
+    warning(message, duration) {
+        return this.show(message, 'warning', duration);
+    }
+};

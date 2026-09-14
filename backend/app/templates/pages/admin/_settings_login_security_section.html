@@ -1,0 +1,132 @@
+        <!-- 登入安全欄位設定 -->
+        <section id="login-security" class="settings-section"
+                 x-show="activeSection === 'login-security'"
+                 x-data="loginSecuritySettings()" x-init="init()">
+            <h2>{{ _('登入安全欄位設定') }}</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
+                {{ _('登入頁面有三個外觀一致的驗證碼欄位，可分別指定為密碼、地雷、救助用途。員工登入與廠商登入各自獨立設定，避免洩漏彼此的策略。') }}
+            </p>
+
+            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">{{ _('載入中...') }}</div>
+
+            <div x-show="!loading">
+                <!-- 員工登入 -->
+                <div style="border: 1px solid #ddd; padding: 16px; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 15px;">{{ _('員工登入') }}</h3>
+                    <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; font-size: 13px;">
+                        <tbody>
+                            <tr>
+                                <th style="text-align: left; width: 140px; background: #f5f5f5;">{{ _('密碼欄位') }}</th>
+                                <td>
+                                    <select x-model="employee.password_field"
+                                            @change="saveConfig('employee')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <option value="sv_1" :disabled="'sv_1' === employee.mine_field || 'sv_1' === employee.rescue_field">{{ _('驗證碼 1') }}</option>
+                                        <option value="sv_2" :disabled="'sv_2' === employee.mine_field || 'sv_2' === employee.rescue_field">{{ _('驗證碼 2') }}</option>
+                                        <option value="sv_3" :disabled="'sv_3' === employee.mine_field || 'sv_3' === employee.rescue_field">{{ _('驗證碼 3') }}</option>
+                                    </select>
+                                    <span style="color: #666; font-size: 12px; margin-left: 8px;">{{ _('使用者實際輸入密碼的欄位') }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">{{ _('地雷欄位') }}</th>
+                                <td>
+                                    <select x-model="employee.mine_field"
+                                            @change="saveConfig('employee')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <option value="sv_1" :disabled="'sv_1' === employee.password_field || 'sv_1' === employee.rescue_field">{{ _('驗證碼 1') }}</option>
+                                        <option value="sv_2" :disabled="'sv_2' === employee.password_field || 'sv_2' === employee.rescue_field">{{ _('驗證碼 2') }}</option>
+                                        <option value="sv_3" :disabled="'sv_3' === employee.password_field || 'sv_3' === employee.rescue_field">{{ _('驗證碼 3') }}</option>
+                                    </select>
+                                    <span style="color: #666; font-size: 12px; margin-left: 8px;">{{ _('有任何輸入即視為攻擊，一律回應錯誤') }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">{{ _('救助欄位') }}</th>
+                                <td>
+                                    <select x-model="employee.rescue_field"
+                                            @change="saveConfig('employee')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <option value="sv_1" :disabled="'sv_1' === employee.password_field || 'sv_1' === employee.mine_field">{{ _('驗證碼 1') }}</option>
+                                        <option value="sv_2" :disabled="'sv_2' === employee.password_field || 'sv_2' === employee.mine_field">{{ _('驗證碼 2') }}</option>
+                                        <option value="sv_3" :disabled="'sv_3' === employee.password_field || 'sv_3' === employee.mine_field">{{ _('驗證碼 3') }}</option>
+                                    </select>
+                                    <span style="color: #666; font-size: 12px; margin-left: 8px;">{{ _('包含救助關鍵字時通知管理員') }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">{{ _('救助關鍵字') }}</th>
+                                <td>
+                                    <input type="text" x-model="employee.rescue_keyword"
+                                           @change="saveConfig('employee')"
+                                           placeholder="{{ _('留空=停用') }}"
+                                           style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+                                    <span style="color: #666; font-size: 12px; margin-left: 8px;">{{ _('忽略大小寫，出現在救助欄位中即觸發') }}</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 廠商登入 -->
+                <div style="border: 1px solid #ddd; padding: 16px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 15px;">{{ _('廠商登入') }}</h3>
+                    <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; font-size: 13px;">
+                        <tbody>
+                            <tr>
+                                <th style="text-align: left; width: 140px; background: #f5f5f5;">{{ _('密碼欄位') }}</th>
+                                <td>
+                                    <select x-model="vendor.password_field"
+                                            @change="saveConfig('vendor')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <option value="sv_1" :disabled="'sv_1' === vendor.mine_field || 'sv_1' === vendor.rescue_field">{{ _('驗證碼 1') }}</option>
+                                        <option value="sv_2" :disabled="'sv_2' === vendor.mine_field || 'sv_2' === vendor.rescue_field">{{ _('驗證碼 2') }}</option>
+                                        <option value="sv_3" :disabled="'sv_3' === vendor.mine_field || 'sv_3' === vendor.rescue_field">{{ _('驗證碼 3') }}</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">{{ _('地雷欄位') }}</th>
+                                <td>
+                                    <select x-model="vendor.mine_field"
+                                            @change="saveConfig('vendor')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <option value="sv_1" :disabled="'sv_1' === vendor.password_field || 'sv_1' === vendor.rescue_field">{{ _('驗證碼 1') }}</option>
+                                        <option value="sv_2" :disabled="'sv_2' === vendor.password_field || 'sv_2' === vendor.rescue_field">{{ _('驗證碼 2') }}</option>
+                                        <option value="sv_3" :disabled="'sv_3' === vendor.password_field || 'sv_3' === vendor.rescue_field">{{ _('驗證碼 3') }}</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">{{ _('救助欄位') }}</th>
+                                <td>
+                                    <select x-model="vendor.rescue_field"
+                                            @change="saveConfig('vendor')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <option value="sv_1" :disabled="'sv_1' === vendor.password_field || 'sv_1' === vendor.mine_field">{{ _('驗證碼 1') }}</option>
+                                        <option value="sv_2" :disabled="'sv_2' === vendor.password_field || 'sv_2' === vendor.mine_field">{{ _('驗證碼 2') }}</option>
+                                        <option value="sv_3" :disabled="'sv_3' === vendor.password_field || 'sv_3' === vendor.mine_field">{{ _('驗證碼 3') }}</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">{{ _('救助關鍵字') }}</th>
+                                <td>
+                                    <input type="text" x-model="vendor.rescue_keyword"
+                                           @change="saveConfig('vendor')"
+                                           placeholder="{{ _('留空=停用') }}"
+                                           style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p x-show="saveMessage" x-text="saveMessage"
+                   style="margin-top: 10px; padding: 8px 12px; background: #e8f5e9; color: #2e7d32; border-radius: 4px;"
+                   x-transition></p>
+                <p x-show="errorMessage" x-text="errorMessage"
+                   style="margin-top: 10px; padding: 8px 12px; background: #fef2f2; color: #dc2626; border-radius: 4px;"
+                   x-transition></p>
+            </div>
+        </section>

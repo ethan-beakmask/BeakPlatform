@@ -1,0 +1,71 @@
+<section class="hc-section" x-data='holidayCalendarsApp()'>
+    <div class="hc-header">
+        <div>
+            <h2>{{ _('假日表（企業級）') }}</h2>
+            <p>{{ _('匯入國定假日或自訂假日作為底稿，調整後發佈到所選班表；班表上手動設定的假日優先於假日表') }}</p>
+        </div>
+        <div class="hc-toolbar">
+            <select x-model.number="selectedYear">
+                <template x-for="yearOption in yearOptions" :key="yearOption">
+                    <option :value="yearOption" :selected="yearOption === selectedYear" x-text="yearOption"></option>
+                </template>
+            </select>
+            <button class="btn btn-secondary" @click="fetchTaiwan()" :disabled="loading">{{ _('從網路取得台灣行事曆') }}</button>
+            <button class="btn btn-primary" @click="openImportModal()">{{ _('上傳假日表') }}</button>
+        </div>
+    </div>
+
+    <template x-if="message">
+        <div class="alert" :class="messageType === 'success' ? 'alert-success' : 'alert-error'" x-text="message"></div>
+    </template>
+
+    <template x-if="calendars.length > 0">
+        <table class="data-table hc-table">
+            <thead>
+                <tr>
+                    <th>{{ _('名稱') }}</th>
+                    <th>{{ _('來源') }}</th>
+                    <th>{{ _('年度') }}</th>
+                    <th>{{ _('條目（底稿／已發佈）') }}</th>
+                    <th>{{ _('狀態') }}</th>
+                    <th>{{ _('發佈目標') }}</th>
+                    <th>{{ _('發佈時間') }}</th>
+                    <th>{{ _('操作') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="calendar in calendars" :key="calendar.id">
+                    <tr>
+                        <td x-text="calendar.name"></td>
+                        <td x-text="sourceLabel(calendar.source)"></td>
+                        <td x-text="calendar.year || '-'"></td>
+                        <td x-text="`${calendar.draft_count || 0} / ${calendar.published_count || 0}`"></td>
+                        <td>
+                            <span class="badge" :class="calendar.status === 'PUBLISHED' ? 'badge-active' : 'badge-inactive'" x-text="statusLabel(calendar.status)"></span>
+                            <template x-if="calendar.has_unpublished_changes">
+                                <span class="badge badge-warning">{{ _('有未發佈變更') }}</span>
+                            </template>
+                        </td>
+                        <td x-text="(calendar.published_target_names || []).join(', ') || '-'"></td>
+                        <td x-text="formatTime(calendar.published_at)"></td>
+                        <td class="actions">
+                            <a :href="'{{ app_prefix }}/admin/settings/holiday-calendars/' + calendar.id">{{ _('編輯底稿') }}</a>
+                            <button @click="openPublishModal(calendar)">{{ _('發佈…') }}</button>
+                            <template x-if="calendar.status === 'PUBLISHED'">
+                                <button @click="unpublish(calendar)">{{ _('下架') }}</button>
+                            </template>
+                            <template x-if="calendar.status === 'DRAFT'">
+                                <button class="danger" @click="deleteCalendar(calendar)">{{ _('刪除') }}</button>
+                            </template>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </template>
+    <template x-if="calendars.length === 0 && !loading">
+        <div class="empty-state">{{ _('尚未建立任何假日表') }}</div>
+    </template>
+
+    {% include 'pages/admin/time/_holiday_calendars_modals.html' %}
+</section>

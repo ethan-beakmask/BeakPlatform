@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <title>{{ _('外部廠商登入') }} - {{ org.name }}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo-container img {
+            max-width: 200px;
+            max-height: 80px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+        .error-msg {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        form table {
+            width: 100%;
+        }
+        form td {
+            padding: 8px 0;
+        }
+        form .sv-field {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+            -webkit-text-security: disc;
+            text-security: disc;
+        }
+        form input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        form input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        form button {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        form button:hover {
+            background: #1d4ed8;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .links a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    {% if logo_url and show_logo|default(true) %}
+    <div class="logo-container">
+        <img src="{{ logo_url }}" alt="{{ _('外部廠商登入') }}">
+    </div>
+    {% endif %}
+    {% if show_org_name|default(true) %}
+    <h1>{{ org.name }}<br>{{ _('外部廠商登入') }}</h1>
+    {% else %}
+    <h1>{{ _('外部廠商登入') }}</h1>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    {% if category == 'rate_limit' %}
+    <div class="error-msg">{{ message }}</div>
+    <script>alert('{{ message }}');</script>
+    {% else %}
+    <div class="error-msg">{{ message }}</div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.org_public_login', domain_name=domain_name) }}">
+        <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+                <td>
+                    <label for="f_account">Email</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="f_account" name="email"
+                           autocomplete="off" placeholder="your@email.com">
+                    <div class="help-text">{{ _('請輸入您的完整 Email 地址') }}</div>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 15px;">
+                    <label for="f_sv_1">{{ _('驗證碼') }} 1</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="f_sv_1" name="sv_1" class="sv-field" autocomplete="off">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 15px;">
+                    <label for="f_sv_2">{{ _('驗證碼') }} 2</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="f_sv_2" name="sv_2" class="sv-field" autocomplete="off">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 15px;">
+                    <label for="f_sv_3">{{ _('驗證碼') }} 3</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="f_sv_3" name="sv_3" class="sv-field" autocomplete="off">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 20px;">
+                    <button type="submit">{{ _('登入') }}</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <footer>
+        <p>&copy; 2025 BeakMask. Security First.</p>
+    </footer>
+</body>
+</html>

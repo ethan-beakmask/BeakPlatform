@@ -1,0 +1,217 @@
+/* redis-monitor.css - Redis 監看頁面 */
+
+.rdm-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.rdm-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.rdm-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+.rdm-status {
+    font-size: 13px;
+}
+.rdm-status-ok { color: #28a745; }
+.rdm-status-err { color: #dc3545; }
+
+/* 指標卡片列 */
+.rdm-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.rdm-metric-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 14px 16px;
+}
+.rdm-metric-label {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 4px;
+}
+.rdm-metric-value {
+    font-size: 20px;
+    font-weight: 600;
+    font-family: monospace;
+}
+.rdm-metric-sub {
+    font-size: 11px;
+    color: #999;
+    margin-top: 2px;
+}
+
+/* 區段 */
+.rdm-section {
+    margin-bottom: 24px;
+}
+.rdm-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+/* 表格通用 */
+.rdm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.rdm-table th,
+.rdm-table td {
+    padding: 6px 10px;
+    border: 1px solid #e5e5e5;
+    text-align: left;
+}
+.rdm-table th {
+    background: #f8f8f8;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.rdm-table tr:hover td {
+    background: #fafafa;
+}
+
+/* Key 瀏覽 */
+.rdm-key-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+.rdm-key-toolbar input,
+.rdm-key-toolbar select {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+}
+.rdm-key-toolbar input[type="text"] {
+    min-width: 200px;
+}
+
+/* 按鈕 */
+.rdm-btn {
+    display: inline-block;
+    padding: 4px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    color: #333;
+}
+.rdm-btn:hover {
+    background: #f0f0f0;
+}
+.rdm-btn-sm {
+    padding: 2px 8px;
+    font-size: 12px;
+}
+.rdm-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Tabs */
+.rdm-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 16px;
+}
+.rdm-tab {
+    padding: 8px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    color: #666;
+}
+.rdm-tab:hover {
+    color: #333;
+}
+.rdm-tab-active {
+    color: #333;
+    font-weight: 600;
+    border-bottom-color: #333;
+}
+
+/* Detail panel */
+.rdm-detail-panel {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 16px;
+    margin-top: 12px;
+}
+.rdm-detail-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    word-break: break-all;
+}
+.rdm-detail-meta {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 16px;
+}
+.rdm-detail-value {
+    background: #f8f8f8;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 13px;
+    max-height: 400px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* 載入中 / 錯誤 */
+.rdm-loading {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+.rdm-error {
+    text-align: center;
+    padding: 40px;
+    color: #dc3545;
+}
+
+/* Info table (兩欄 key-value) */
+.rdm-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+.rdm-info-grid .rdm-table {
+    font-size: 13px;
+}
+@media (max-width: 768px) {
+    .rdm-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Slowlog duration coloring */
+.rdm-slow-warn { color: #e8a838; font-weight: 600; }
+.rdm-slow-danger { color: #dc3545; font-weight: 600; }

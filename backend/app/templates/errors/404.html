@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale|default('zh-TW') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - {{ _('找不到頁面') }} - BeakPlatform</title>
+</head>
+<body>
+    <h1>404 {{ _('找不到頁面') }}</h1>
+    <p>{{ _('您要找的頁面不存在或已被移除。') }}</p>
+    <p><a href="{{ url_for('main.dashboard') }}">{{ _('返回儀表板') }}</a></p>
+</body>
+</html>

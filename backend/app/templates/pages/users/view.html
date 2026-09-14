@@ -1,0 +1,250 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/03_org_setup/users{% endblock %}
+
+{% block title %}{{ _('%(name)s - 用戶詳情', name=user.display_name) }} - BeakMask{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/user-view.css') }}">
+{% endblock %}
+
+{% block content %}
+<div x-data="resetPasswordForm()" x-init="init()">
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回用戶列表') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ user.display_name }}</h1>
+</div>
+
+<p>
+    <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}">{{ _('[編輯]') }}</a>
+    {% if can_reset_password %}
+    <button type="button" class="action-btn warning" @click="openResetModal()" style="margin-left: 10px;">{{ _('重設密碼') }}</button>
+    {% endif %}
+</p>
+
+<div class="user-info">
+    <div class="section-title">{{ _('帳號資訊') }}</div>
+    <table class="info-table">
+        <tr>
+            <th>{{ _('姓名') }}</th>
+            <td>{{ user.display_name }}</td>
+        </tr>
+        <tr>
+            <th>{{ _('帳號 (Email)') }}</th>
+            <td><code>{{ user.email }}</code></td>
+        </tr>
+        <tr>
+            <th>{{ _('角色') }}</th>
+            <td>
+                {% if user.is_system_admin %}{{ _('系統管理員') }}
+                {% elif user.is_org_admin %}{{ _('企業管理員') }}
+                {% else %}{{ _('一般用戶') }}{% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('狀態') }}</th>
+            <td class="{% if user.is_active %}status-active{% else %}status-inactive{% endif %}">
+                {% if user.is_active %}{{ _('啟用') }}{% else %}{{ _('停用') }}{% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('建立時間') }}</th>
+            <td>{{ user.created_at|tz_format('%Y-%m-%d %H:%M') if user.created_at else '-' }}</td>
+        </tr>
+        <tr>
+            <th>{{ _('最後登入') }}</th>
+            <td>{{ user.last_login_at|tz_format('%Y-%m-%d %H:%M') if user.last_login_at else _('從未登入') }}</td>
+        </tr>
+    </table>
+
+    <div class="section-title optional">{{ _('組織資訊') }}</div>
+    <table class="info-table">
+        <tr>
+            <th>{{ _('用戶編號') }}</th>
+            <td>{% if user.employee_id %}{{ user.employee_id }}{% else %}<span class="empty-value">{{ _('未設定') }}</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <th>{{ _('歸屬部門') }}</th>
+            <td>
+                {% if user.primary_unit %}
+                    {{ user.primary_unit.name }} ({{ user.primary_unit.code }})
+                {% else %}
+                    <span class="empty-value">{{ _('未設定') }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('職位') }}</th>
+            <td>
+                {% if user_positions %}
+                    {% for position in user_positions %}
+                    <div>
+                        {% if position.position_type == 'PRIMARY' %}{{ _('主要') }}
+                        {% elif position.position_type == 'CONCURRENT' %}{{ _('兼任') }}
+                        {% elif position.position_type == 'ACTING' %}{{ _('代理') }}
+                        {% elif position.position_type == 'TEMPORARY' %}{{ _('臨時') }}
+                        {% else %}{{ position.position_type }}
+                        {% endif %}
+                        <a href="{{ url_for('positions.view_position', secure_code=position.secure_code) }}">{{ position.job_title.name if position.job_title else '-' }}</a>
+                        ／ {{ position.unit.name if position.unit else '-' }}
+                        ／ {{ position.effective_from.strftime('%Y-%m-%d') if position.effective_from else '-' }}～{{ position.effective_until.strftime('%Y-%m-%d') if position.effective_until else _('長期') }}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <span class="empty-value">{{ _('尚未指派') }}</span>
+                {% endif %}
+                <div><a href="{{ url_for('positions.create_position') }}">{{ _('[新增職位]') }}</a></div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title optional">{{ _('跨部門支援') }}</div>
+    {% if cross_departments %}
+    <table class="info-table">
+        <thead>
+            <tr>
+                <th style="width: 200px;">{{ _('支援部門') }}</th>
+                <th style="width: 100px;">{{ _('角色') }}</th>
+                <th>{{ _('開始日期') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dept in cross_departments %}
+            <tr>
+                <td>{{ dept.name }}{% if dept.code %} <span class="text-muted">({{ dept.code }})</span>{% endif %}</td>
+                <td>
+                    {% if dept.role_type in ['MANAGER', 'DEPUTY'] %}
+                    <strong style="color: #1565c0;">{{ dept.role }}</strong>
+                    {% elif dept.role_type in ['PROXY1', 'PROXY2'] %}
+                    <span style="color: #6a1b9a;">{{ dept.role }}</span>
+                    {% else %}
+                    {{ dept.role }}
+                    {% endif %}
+                </td>
+                <td>{{ dept.start_date.strftime('%Y-%m-%d') if dept.start_date else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted" style="padding: 8px 12px;">{{ _('無跨部門支援關係') }}</p>
+    {% endif %}
+
+    <div class="section-title optional">{{ _('個人資料') }}</div>
+    <table class="info-table">
+        <tr>
+            <th>{{ _('英文姓名') }}</th>
+            <td>{% if user.english_name %}{{ user.english_name }}{% else %}<span class="empty-value">{{ _('未設定') }}</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <th>{{ _('本國姓名') }}</th>
+            <td>{% if user.native_name %}{{ user.native_name }}{% else %}<span class="empty-value">{{ _('未設定') }}</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <th>{{ _('暱稱') }}</th>
+            <td>{% if user.nickname %}{{ user.nickname }}{% else %}<span class="empty-value">{{ _('未設定') }}</span>{% endif %}</td>
+        </tr>
+    </table>
+
+    <div class="section-title optional">{{ _('聯絡方式') }}</div>
+    <table class="info-table">
+        {% for pii_field, pii_label in [
+            ('backup_email_1', _('備用 Email 1')),
+            ('backup_email_2', _('備用 Email 2')),
+            ('mobile_phone_1', _('手機號碼 1')),
+            ('mobile_phone_2', _('手機號碼 2')),
+        ] %}
+        {% if egress_visibility('user', 'detail', pii_field) != 'hidden' %}
+        <tr>
+            <th>{{ pii_label }}</th>
+            <td>{{ egress_value('user', 'detail', user.secure_code, pii_field, user|attr(pii_field)) }}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </table>
+
+    <div class="section-title optional">{{ _('參與社團') }}</div>
+    {% if groups %}
+    <table class="info-table">
+        <thead>
+            <tr>
+                <th style="width: 200px;">{{ _('社團名稱') }}</th>
+                <th style="width: 100px;">{{ _('角色') }}</th>
+                <th>{{ _('加入日期') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for group in groups %}
+            <tr>
+                <td>{{ group.name }}{% if group.code %} <span class="text-muted">({{ group.code }})</span>{% endif %}</td>
+                <td>
+                    {% if group.role_type in ['MANAGER', 'DEPUTY'] %}
+                    <strong style="color: #1565c0;">{{ group.role }}</strong>
+                    {% elif group.role_type in ['PROXY1', 'PROXY2'] %}
+                    <span style="color: #6a1b9a;">{{ group.role }}</span>
+                    {% else %}
+                    {{ group.role }}
+                    {% endif %}
+                </td>
+                <td>{{ group.start_date.strftime('%Y-%m-%d') if group.start_date else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted" style="padding: 8px 12px;">{{ _('尚未參加任何社團') }}</p>
+    {% endif %}
+</div>
+
+{% if can_reset_password %}
+<!-- 重設密碼對話框 -->
+<div class="modal-overlay" x-show="showResetPassword" x-cloak>
+    <div class="modal-content modal-sm">
+        <h3>{{ _('重設密碼') }}</h3>
+        <p style="margin-bottom: 16px;">{{ _('為') }} <strong>{{ user.display_name }}</strong> {{ _('設定新密碼') }}</p>
+        <form method="POST" action="{{ url_for('users.reset_password', secure_code=user.secure_code) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="new_password">{{ _('新密碼') }}</label>
+            <div class="password-field">
+                <input :type="showPassword ? 'text' : 'password'" id="new_password" name="new_password"
+                       x-model="password" @input="validatePassword()"
+                       required minlength="8" autocomplete="new-password">
+                <button type="button" class="btn-toggle" @click="showPassword = !showPassword"
+                        x-text="showPassword ? __('隱藏') : __('顯示')"></button>
+                <button type="button" class="btn-generate" @click="generatePassword()">{{ _('建議密碼') }}</button>
+            </div>
+            <p class="help-text" x-text="passwordRequirements"></p>
+            <div x-show="password && passwordErrors.length > 0" style="margin-bottom: 12px;">
+                <template x-for="err in passwordErrors" :key="err">
+                    <div class="password-errors"><div x-text="'• ' + err"></div></div>
+                </template>
+            </div>
+            <div x-show="password && passwordErrors.length === 0 && passwordChecked" class="password-ok" style="margin-bottom: 12px;">
+                {{ _('密碼符合要求') }}
+            </div>
+            <label for="confirm_password">{{ _('確認密碼') }}</label>
+            <input :type="showPassword ? 'text' : 'password'" id="confirm_password" name="confirm_password"
+                   x-model="confirmPassword" required minlength="8" autocomplete="new-password">
+            <div x-show="confirmPassword && password !== confirmPassword" style="color: #dc2626; font-size: 12px; margin-top: 4px; margin-bottom: 8px;">
+                {{ _('密碼不一致') }}
+            </div>
+            <div x-show="confirmPassword && password === confirmPassword && passwordChecked && passwordErrors.length === 0" class="text-success" style="font-size: 12px; margin-bottom: 8px;">
+                {{ _('確認密碼一致') }}
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" @click="closeModal()">{{ _('取消') }}</button>
+                <button type="submit" class="btn-submit" :disabled="!canSubmit"
+                        :style="!canSubmit ? 'opacity: 0.5; cursor: not-allowed;' : ''">{{ _('確認重設') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+</div><!-- 關閉 x-data -->
+
+<script src="{{ url_for('static', filename='js/user-view.js') }}"></script>
+<script>BkEgress.bind();</script>
+{% endblock %}

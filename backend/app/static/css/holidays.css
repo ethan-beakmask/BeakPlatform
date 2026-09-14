@@ -1,0 +1,168 @@
+/* holidays.css — 假期設定頁面
+   btn/form-group/modal/page-header 由 common.css 提供 */
+
+/* 年份導航 */
+.year-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.year-nav button {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    padding: 6px 12px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+}
+.year-nav button:hover {
+    background: var(--color-border-light);
+}
+.year-nav span {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* 日曆佈局 */
+.calendar-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+@media (max-width: 1200px) {
+    .calendar-container { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 900px) {
+    .calendar-container { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .calendar-container { grid-template-columns: 1fr; }
+}
+
+.month-card {
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+}
+.month-header {
+    background: var(--color-bg);
+    padding: 10px;
+    text-align: center;
+    font-weight: 600;
+}
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+}
+.weekday-header {
+    padding: 6px 0;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border-light);
+}
+.weekday-header:nth-child(1),
+.weekday-header:nth-child(7) {
+    color: var(--color-danger);
+}
+.day-cell {
+    padding: 8px 4px;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    position: relative;
+}
+.day-cell:hover { background: var(--color-bg-header); }
+.day-cell.empty { cursor: default; }
+.day-cell.empty:hover { background: transparent; }
+.day-cell.weekend { color: var(--color-danger); }
+.day-cell.holiday { background: #fee2e2; color: var(--color-danger); font-weight: 600; }
+.day-cell.workday { background: #dbeafe; color: #1d4ed8; font-weight: 600; }
+.day-cell.comp_off { background: #fef3c7; color: #d97706; font-weight: 600; }
+.day-cell.today { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.day-indicator {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+}
+.day-indicator.holiday { background: var(--color-danger); }
+.day-indicator.workday { background: #1d4ed8; }
+
+/* 圖例 */
+.legend { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: var(--font-size-sm); }
+.legend-box { width: 16px; height: 16px; border-radius: 3px; }
+.legend-box.holiday { background: #fee2e2; border: 1px solid #fca5a5; }
+.legend-box.workday { background: #dbeafe; border: 1px solid #93c5fd; }
+.legend-box.weekend {
+    background: white; border: 1px solid var(--color-border); color: var(--color-danger);
+    display: flex; align-items: center; justify-content: center; font-size: 10px;
+}
+
+/* 假期列表 */
+.holidays-list { margin-top: 30px; }
+.badge-holiday { background: #fee2e2; color: var(--color-danger); padding: 2px 8px; border-radius: 12px; font-size: var(--font-size-xs); }
+.badge-workday { background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 12px; font-size: var(--font-size-xs); }
+.badge-comp_off { background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 12px; font-size: var(--font-size-xs); }
+.actions button {
+    background: none; border: none; color: var(--color-primary);
+    cursor: pointer; padding: 0; margin-right: 8px; font-size: var(--font-size-sm);
+}
+.actions button:hover { text-decoration: underline; }
+.actions .danger { color: var(--color-danger); }
+
+/* 模態框尺寸：使用 common.css 的 modal-sm class */
+
+/* 匯入 */
+.import-section { margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: var(--border-radius); }
+.import-section h4 { margin-top: 0; }
+
+/* 企業假日表底稿編輯 */
+.hc-subtitle {
+    color: var(--color-text-secondary);
+    margin: 5px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.hc-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.legend-box.hc-comp-off {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+}
+.hc-radio,
+.hc-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+}
+.hc-radio input[type="radio"],
+.hc-check input[type="checkbox"] { width: auto; }
+.hc-schedule-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+}
+.hc-modal-title {
+    margin: 0 0 10px;
+    font-weight: 600;
+}
+.hc-summary {
+    margin-top: 12px;
+    padding: 10px;
+    background: var(--color-info-light);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    display: grid;
+    gap: 4px;
+}

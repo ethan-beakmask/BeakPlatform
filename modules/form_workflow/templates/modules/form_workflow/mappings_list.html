@@ -1,0 +1,449 @@
+{% extends "layouts/base.html" %}
+{% block help_doc %}manual/04_form_workflow/mappings{% endblock %}
+
+{% block title %}{{ _('表單流程配對 - BeakPlatform') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='modules/form_workflow/css/mappings.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="fw-container" x-data="mappingsManager()">
+
+    <!-- 頁首 -->
+    <div class="fw-header">
+        <div>
+            <h1>{{ _('表單流程配對') }}</h1>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">{{ _('設定表單與流程的對應關係') }}</p>
+        </div>
+        <div class="fw-toolbar">
+            <button class="fw-btn" @click="showHelpModal = true">{{ _('說明') }}</button>
+            <button class="fw-btn" @click="loadMappings()">{{ _('重新載入') }}</button>
+            <button class="fw-btn primary" @click="openCreateModal()">{{ _('+ 新增配對') }}</button>
+        </div>
+    </div>
+
+    <!-- 表格 -->
+    <div class="fw-card">
+        <div x-show="loading" class="fw-loading">{{ _('載入中...') }}</div>
+
+        <div x-show="!loading && mappings.length === 0" class="fw-empty">
+            <p style="font-size: 16px; margin-bottom: 8px;">{{ _('尚無表單流程配對') }}</p>
+            <p>{{ _('點擊「新增配對」將表單與流程關聯起來') }}</p>
+        </div>
+
+        <table x-show="!loading && mappings.length > 0" class="fw-table">
+            <thead>
+                <tr>
+                    <th>{{ _('發行名稱') }}</th>
+                    <th>{{ _('表單') }}</th>
+                    <th style="width: 40px;"></th>
+                    <th>{{ _('流程') }}</th>
+                    <th style="width: 180px;">{{ _('表單編號') }}</th>
+                    <th style="width: 80px; text-align: center;">{{ _('運作版本') }}</th>
+                    <th style="width: 140px;">{{ _('更新時間') }}</th>
+                    <th style="width: 310px;" class="actions">{{ _('操作') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="m in mappings" :key="m.secure_code">
+                    <tr>
+                        <td>
+                            <span x-show="m.published_form_name" x-text="m.published_form_name" style="font-size: 13px;"></span>
+                            <span x-show="!m.published_form_name" style="color: #999; font-size: 12px;">-</span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 500;" x-text="m.form_template_name || m.form_template_code"></div>
+                            <span class="fw-version" x-text="(m.form_current_version || m.form_template_version || 'AA') + (m.form_current_revision || '')"></span>
+                        </td>
+                        <td class="fw-arrow">→</td>
+                        <td>
+                            <div style="font-weight: 500;" x-text="m.workflow_template_name || m.workflow_template_code"></div>
+                            <span class="fw-version" x-text="(m.workflow_current_version || m.workflow_template_version || 'AA') + (m.workflow_current_revision || '')"></span>
+                        </td>
+                        <td>
+                            <select class="fw-numbering-select"
+                                    x-init="$nextTick(() => { $el.value = m.numbering_rule_secure_code || ''; })"
+                                    @change="updateNumberingRule(m, $event.target.value)">
+                                <template x-for="nr in numberingRules" :key="nr.secure_code">
+                                    <option :value="nr.secure_code"
+                                            x-text="nr.name + (nr.is_form_default ? __(' (預設)') : '')"></option>
+                                </template>
+                            </select>
+                            <div style="font-size: 11px; color: #999; margin-top: 2px;"
+                                 x-text="getNumberingPreview(m)"></div>
+                        </td>
+                        <td style="text-align: center;">
+                            <template x-if="m.version_error">
+                                <span class="fw-badge" style="background: #fee2e2; color: #dc2626;" x-text="__('錯誤')" :title="m.version_error"></span>
+                            </template>
+                            <template x-if="!m.version_error">
+                                <span class="fw-version" style="font-size: 13px;"
+                                      x-text="m.active_version + '/' + m.total_versions"></span>
+                            </template>
+                        </td>
+                        <td style="color: #999; font-size: 12px;" x-text="formatDate(m.updated_at)"></td>
+                        <td class="actions">
+                            <div class="fw-action-group">
+                                <button class="fw-btn success" @click="publishMapping(m)">{{ _('新發行') }}</button>
+                                <button class="fw-btn" @click="viewPublished(m)">{{ _('版本') }}</button>
+                                <button class="fw-btn" @click="openPermModal(m)">
+                                    {{ _('權限') }}<span x-show="m._perm_count > 0" class="fw-perm-badge count" x-text="m._perm_count"></span><span x-show="!m._perm_count || m._perm_count === 0" class="fw-perm-badge default">{{ _('預設') }}</span>
+                                </button>
+                                <button class="fw-btn" @click="archiveMapping(m)"
+                                        :disabled="!m.all_versions_archived || m.total_versions === 0"
+                                        :title="(!m.all_versions_archived && m.total_versions > 0) ? __('需先封存所有發行版本') : (m.total_versions === 0 ? __('無發行版本') : __('封存此配對'))">{{ _('封存') }}</button>
+                                <button class="fw-btn danger" @click="confirmDelete(m)" :disabled="m.is_published">{{ _('刪除') }}</button>
+                            </div>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 封存清單 -->
+    <div class="fw-card" style="margin-top: 16px;" x-show="archivedMappings.length > 0">
+        <div class="fw-archived-header" @click="showArchivedList = !showArchivedList" style="cursor: pointer;">
+            <span x-text="__('封存清單 (') + archivedMappings.length + ')'"></span>
+            <span x-text="showArchivedList ? '▼' : '▶'" style="font-size: 11px; margin-left: 6px;"></span>
+        </div>
+        <table x-show="showArchivedList" class="fw-table">
+            <thead>
+                <tr>
+                    <th>{{ _('表單') }}</th>
+                    <th style="width: 40px;"></th>
+                    <th>{{ _('流程') }}</th>
+                    <th>{{ _('封存時間') }}</th>
+                    <th style="width: 140px;" class="actions">{{ _('操作') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="a in archivedMappings" :key="a.secure_code">
+                    <tr>
+                        <td>
+                            <div style="font-weight: 500;" x-text="a.form_template_name || a.form_template_code"></div>
+                        </td>
+                        <td class="fw-arrow">→</td>
+                        <td>
+                            <div style="font-weight: 500;" x-text="a.workflow_template_name || a.workflow_template_code"></div>
+                        </td>
+                        <td style="color: #999; font-size: 12px;" x-text="formatDate(a.archived_at)"></td>
+                        <td class="actions">
+                            <button class="fw-btn" @click="unarchiveMapping(a)">{{ _('恢復') }}</button>
+                            <button class="fw-btn danger" @click="confirmDeleteArchived(a)">{{ _('刪除') }}</button>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 新增配對 Modal -->
+    <div x-show="showCreateModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content">
+            <div class="fw-modal-header">
+                <h3>{{ _('新增配對') }}</h3>
+                <button @click="closeCreateModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <form @submit.prevent="createMapping()">
+                <div class="fw-modal-body">
+                    <div class="fw-form-group">
+                        <label>{{ _('選擇表單 *') }}</label>
+                        <select x-model="newMapping.form_template_secure_code" required>
+                            <option value="">{{ _('-- 請選擇表單 --') }}</option>
+                            <template x-for="f in unmappedForms" :key="f.secure_code">
+                                <option :value="f.secure_code" x-text="f.name + ' (' + f.code + ') ' + (f.version || 'AA') + (f.revision || '')"></option>
+                            </template>
+                        </select>
+                        <p x-show="unmappedForms.length === 0" style="color: #f59e0b; font-size: 12px; margin-top: 4px;">
+                            {{ _('沒有可配對的表單，所有表單都已配對') }}
+                        </p>
+                    </div>
+                    <div class="fw-form-group">
+                        <label>{{ _('選擇流程 *') }}</label>
+                        <select x-model="newMapping.workflow_template_secure_code" required>
+                            <option value="">{{ _('-- 請選擇流程 --') }}</option>
+                            <template x-for="w in workflows" :key="w.secure_code">
+                                <option :value="w.secure_code" x-text="w.name + ' (' + w.code + ') ' + (w.version || 'AA') + (w.revision || '')"></option>
+                            </template>
+                        </select>
+                        <p x-show="workflows.length === 0" style="color: #f59e0b; font-size: 12px; margin-top: 4px;">
+                            {{ _('沒有可用的主流程') }}
+                        </p>
+                    </div>
+                    <div class="fw-hint">
+                        {{ _('配對建立後需「發行」才會讓一般用戶可在表單中心使用。') }}
+                    </div>
+                </div>
+                <div class="fw-modal-footer">
+                    <button type="button" class="fw-btn" @click="closeCreateModal()">{{ _('取消') }}</button>
+                    <button type="submit" class="fw-btn primary" :disabled="saving || !newMapping.form_template_secure_code || !newMapping.workflow_template_secure_code">
+                        <span x-show="!saving">{{ _('建立配對') }}</span>
+                        <span x-show="saving">{{ _('處理中...') }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 發行版本 Modal -->
+    <div x-show="showVersionsModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content" style="width: 1560px;">
+            <div class="fw-modal-header">
+                <h3>{{ _('發行版本 -') }} <span x-text="viewingMapping?.form_template_name"></span></h3>
+                <button @click="showVersionsModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <div x-show="publishedVersions.length === 0" style="text-align: center; padding: 24px; color: #999;">
+                    {{ _('尚無發行版本') }}
+                </div>
+                <table x-show="publishedVersions.length > 0" class="fw-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">{{ _('版本') }}</th>
+                            <th style="width: 240px;">{{ _('表單名稱') }}</th>
+                            <th style="width: 60px;">{{ _('表單版本') }}</th>
+                            <th style="width: 240px;">{{ _('流程名稱') }}</th>
+                            <th style="width: 60px;">{{ _('流程版本') }}</th>
+                            <th style="width: 120px;">{{ _('狀態') }}</th>
+                            <th style="width: 100px; text-align: center;">{{ _('SQL 同步') }}</th>
+                            <th style="width: 140px;">{{ _('資料表名稱') }}</th>
+                            <th style="width: 200px;">{{ _('發行時間') }}</th>
+                            <th style="width: 160px;" class="actions">{{ _('操作') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="v in publishedVersions" :key="v.secure_code">
+                            <tr>
+                                <td>
+                                    <span style="font-family: monospace;" x-text="'v' + v.publish_version"></span>
+                                </td>
+                                <td x-text="v.snapshot_form_name || '-'" style="font-size: 13px;"></td>
+                                <td>
+                                    <span class="fw-version" x-text="(v.source_form_version || 'AA') + (v.source_form_revision || '')"></span>
+                                </td>
+                                <td x-text="v.snapshot_workflow_name || '-'" style="font-size: 13px;"></td>
+                                <td>
+                                    <span class="fw-version" x-text="(v.source_workflow_version || 'AA') + (v.source_workflow_revision || '')"></span>
+                                </td>
+                                <td>
+                                    <span class="fw-badge"
+                                          :class="v.status === 'Published' ? 'active' : (v.status === 'Suspended' ? 'warning' : 'secondary')"
+                                          x-text="v.status === 'Published' ? __('已發行') : (v.status === 'Suspended' ? __('已暫停') : __('已封存'))"></span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <label class="fw-toggle"
+                                           :title="v.sql_sync_enabled ? __('SQL 同步已啟用（不可關閉）') : (v.status === 'Archived' ? __('已封存版本無法啟用') : __('啟用 SQL 同步'))">
+                                        <input type="checkbox" :checked="v.sql_sync_enabled"
+                                               :disabled="v.sql_sync_enabled || v.status === 'Archived'"
+                                               @change="toggleSqlSync(v, $event.target.checked)">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <div class="fw-sync-info" :class="v._syncInfo ? 'active' : ''"
+                                         x-text="v._syncInfo || ''"></div>
+                                </td>
+                                <td style="font-size: 12px; font-family: monospace; color: #6b7280;" x-text="v._tableName || '-'"></td>
+                                <td style="font-size: 12px; color: #666;" x-text="formatDate(v.published_at)"></td>
+                                <td class="actions">
+                                    <button x-show="v.status === 'Published'" class="fw-btn" @click="suspendVersion(v)">{{ _('暫停') }}</button>
+                                    <button x-show="v.status === 'Suspended'" class="fw-btn success" @click="reopenVersion(v)">{{ _('開放') }}</button>
+                                    <button x-show="v.status !== 'Archived'" class="fw-btn" @click="archiveVersion(v)">{{ _('封存') }}</button>
+                                    <button class="fw-btn danger" @click="deleteVersion(v)"
+                                            :disabled="v.is_used || v.status === 'Published'"
+                                            :title="v.is_used ? __('已使用過的版本無法刪除') : (v.status === 'Published' ? __('運作中版本無法刪除') : __('刪除此版本'))">{{ _('刪除') }}</button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showVersionsModal = false">{{ _('關閉') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 刪除確認 Modal -->
+    <div x-show="showDeleteModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content" style="width: 400px;">
+            <div class="fw-modal-header">
+                <h3>{{ _('確認解除配對') }}</h3>
+                <button @click="showDeleteModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <p>{{ _('確定要解除「') }}<strong x-text="deletingMapping?.form_template_name"></strong>{{ _('」與「') }}<strong x-text="deletingMapping?.workflow_template_name"></strong>{{ _('」的配對嗎？') }}</p>
+                <p style="color: #666; font-size: 13px; margin-top: 8px;">{{ _('此操作不會刪除表單或流程本身。') }}</p>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showDeleteModal = false">{{ _('取消') }}</button>
+                <button class="fw-btn danger" @click="deleteMapping()">{{ _('確認解除') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 權限 Modal -->
+    <div x-show="showPermModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content" style="width: 680px;">
+            <div class="fw-modal-header">
+                <h3>{{ _('填寫權限設定 -') }} <span x-text="permMapping?.form_template_name || ''"></span></h3>
+                <button @click="showPermModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <!-- 預設規則 -->
+                <div class="fw-perm-defaults">
+                    <div class="fw-perm-title">{{ _('預設規則（不可修改）') }}</div>
+                    <ul>
+                        <li>{{ _('流程設計師 (FLOW_DESIGNER) 角色 -- 永遠可填，供試行設計稿') }}</li>
+                        <li>{{ _('表單設計師 (FORM_DESIGNER) 角色 -- 永遠可填，供試行設計稿') }}</li>
+                        <li>{{ _('未設任何自訂規則時：企業成員 (EMPLOYEE) 角色可填；外部廠商不可填') }}</li>
+                    </ul>
+                </div>
+
+                <!-- 自訂規則列表 -->
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #555;">{{ _('自訂規則') }}</div>
+                <div class="fw-perm-list">
+                    <template x-if="permRules.length === 0">
+                        <div class="fw-perm-empty">{{ _('尚無自訂規則，目前由企業成員 (EMPLOYEE) 角色可填寫此表單') }}</div>
+                    </template>
+                    <template x-for="rule in permRules" :key="rule.secure_code">
+                        <div class="fw-perm-row">
+                            <span class="fw-perm-type-tag"
+                                  :class="rule.grant_type === 'department' ? 'dept' : (rule.grant_type === 'role' ? 'role' : (rule.grant_type === 'group' ? 'group' : 'user'))"
+                                  x-text="rule.grant_type === 'department' ? __('部門') : (rule.grant_type === 'role' ? __('角色') : (rule.grant_type === 'group' ? __('社群') : __('個人')))"></span>
+                            <span class="fw-perm-name" x-text="rule.grant_target_name"></span>
+                            <span class="fw-perm-note" x-show="rule.grant_type === 'department' && rule.include_children">{{ _('（含子部門）') }}</span>
+                            <span class="fw-perm-note" x-show="rule.grant_type === 'group' && rule.include_children">{{ _('（含下層群組）') }}</span>
+                            <button class="fw-perm-del" @click="deletePermRule(rule.secure_code)" title="{{ _('刪除此規則') }}">&times;</button>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- 新增規則 -->
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #555;">{{ _('+ 新增規則') }}</div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <div class="fw-perm-field">
+                            <label>{{ _('類型') }}</label>
+                            <select x-model="newPerm.grant_type" @change="onPermTypeChange()" style="width: 100px;">
+                                <option value="department">{{ _('部門') }}</option>
+                                <option value="role">{{ _('角色') }}</option>
+                                <option value="group">{{ _('社群') }}</option>
+                                <option value="user">{{ _('個人') }}</option>
+                            </select>
+                        </div>
+                        <div x-show="newPerm.grant_type === 'department'" style="margin-top: 14px;">
+                            <label style="white-space: nowrap; font-size: 12px;">
+                                <input type="checkbox" x-model="newPerm.include_children" style="margin-right: 4px;">{{ _('包含所有子部門') }}
+                            </label>
+                        </div>
+                        <div x-show="newPerm.grant_type === 'group'" style="margin-top: 14px;">
+                            <label style="white-space: nowrap; font-size: 12px;">
+                                <input type="checkbox" x-model="newPerm.include_children" style="margin-right: 4px;">{{ _('包含下層群組') }}
+                            </label>
+                        </div>
+                        <button class="fw-btn primary" @click="addPermRule()" :disabled="!newPerm.grant_target || permSaving" style="white-space: nowrap; margin-top: 14px;">{{ _('新增') }}</button>
+                    </div>
+
+                    <!-- 樹狀選擇器（部門/社群） -->
+                    <div x-show="newPerm.grant_type === 'department' || newPerm.grant_type === 'group'" class="fw-perm-tree-box">
+                        <div x-show="permTreeLoading" style="text-align: center; padding: 12px; color: #999; font-size: 12px;">{{ _('載入中...') }}</div>
+                        <div x-show="!permTreeLoading" id="perm-tree-container"></div>
+                    </div>
+
+                    <!-- 下拉選單（個人） -->
+                    <div x-show="newPerm.grant_type === 'user'" class="fw-perm-field" style="width: 100%;">
+                        <label>{{ _('選擇成員') }}</label>
+                        <select x-model="newPerm.grant_target" @change="newPerm._selectedName = ($event.target.selectedOptions[0] ? $event.target.selectedOptions[0].text : '')" style="width: 100%;">
+                            <option value="">{{ _('-- 請選擇 --') }}</option>
+                            <template x-for="opt in permTargetOptions" :key="opt.value">
+                                <option :value="opt.value" x-text="opt.label"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <!-- 下拉選單（角色） -->
+                    <div x-show="newPerm.grant_type === 'role'" class="fw-perm-field" style="width: 100%;">
+                        <label>{{ _('選擇角色') }}</label>
+                        <select x-model="newPerm.grant_target" @change="newPerm._selectedName = ($event.target.selectedOptions[0] ? $event.target.selectedOptions[0].text : '')" style="width: 100%;">
+                            <option value="">{{ _('-- 請選擇 --') }}</option>
+                            <template x-for="opt in permTargetOptions" :key="opt.value">
+                                <option :value="opt.value" x-text="opt.label" :selected="opt.value === newPerm.grant_target"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div x-show="newPerm.grant_target" style="font-size: 12px; color: #0066cc;">
+                        {{ _('已選擇:') }} <strong x-text="newPerm._selectedName || ''"></strong>
+                    </div>
+                </div>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showPermModal = false">{{ _('關閉') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 說明 Modal -->
+    <div x-show="showHelpModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content" style="width: 680px;">
+            <div class="fw-modal-header">
+                <h3>{{ _('配對規則說明') }}</h3>
+                <button @click="showHelpModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <div class="fw-help-section">
+                    <h4>{{ _('基本規則') }}</h4>
+                    <ul>
+                        <li>{{ _('表單同一時間只能與一個流程配對。') }}</li>
+                        <li>{{ _('一個流程可被多個表單配對。') }}</li>
+                        <li>{{ _('同一組配對，限制單一發行版本。') }}</li>
+                        <li>{{ _('同一組配對，發佈新的發行之後，舊版的表單流程若已發動，會從配對庫的舊版設計繼續完成流程，不會與新版發行衝突。') }}</li>
+                        <li>{{ _('基於上一項，如果企業原則需要中斷舊版流程，請由企業級管理員強制中斷（可能需自行通知申請人），並於設計時考慮逾期簽核的時效不宜太久。') }}</li>
+                    </ul>
+                </div>
+                <div class="fw-help-section">
+                    <h4>{{ _('自動配對規則') }}</h4>
+                    <ul>
+                        <li>{{ _('用名稱配對，當新建立流程時，如果沒有同名稱的表單，儲存新流程時會建立同名稱的表單且自動配對（因為流程需要表單發動）。') }}</li>
+                        <li>{{ _('再度建立同名稱的流程時（ID不同，這是合規則的），若同名稱的表單已經存在，無論如何不會自動配對（避免自動建立非預期的配對）。') }}</li>
+                    </ul>
+                </div>
+                <div class="fw-help-section">
+                    <h4>{{ _('人工配對') }}</h4>
+                    <ul>
+                        <li>{{ _('在不違反上述規則下可順利配對，並有防呆提示。') }}</li>
+                        <li>{{ _('同一配對未發行時，直接採用設計圖發動，提供設計者可「邊改邊測試」的環境，永遠是最新版本（設計圖只有一個版本），所以修改設計後請遺忘該設計在表單中心的舊記錄，因為舊資料與新設計版本不同（未必會有明顯錯誤）。') }}</li>
+                        <li>{{ _('每一次發行，會從表單與流程的設計圖「複製」到發行庫，確保變更設計後在表單中心查詢舊發行的表單時，能真實呈現當時的表單與流程。') }}</li>
+                        <li>{{ _('基於上一項，當企業一般用戶以發行的版本運作時，設計者依然能邊修改邊測試，或另以新配對發行給指定用戶於真實環境進行封測，等設計完成後用原本的配對或新配對來發行新版本。') }}</li>
+                    </ul>
+                </div>
+                <div class="fw-help-section">
+                    <h4>{{ _('表單權限') }}</h4>
+                    <ul>
+                        <li>{{ _('未發行：只管理員可使用。') }}</li>
+                        <li>{{ _('封測：表單權限設定給測試組人員，可用真實環境封閉測試。') }}</li>
+                        <li>{{ _('公開：表單權限設定給一般用戶，企業使用環境。') }}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showHelpModal = false">{{ _('關閉') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.show" x-cloak class="fw-toast" :class="toast.type" x-text="toast.message"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:leave="transition ease-in duration-200"></div>
+
+</div>
+
+<script>
+window.__MAPPING_CONFIG = {
+    orgName: {{ (org_name or '企業') | tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='modules/form_workflow/js/mappings.js') }}"></script>
+{% endblock %}

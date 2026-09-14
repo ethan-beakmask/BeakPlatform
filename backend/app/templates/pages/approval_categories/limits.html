@@ -1,0 +1,103 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/03_org_setup/job_approval_categories{% endblock %}
+
+{% block title %}{{ _('設定核決上限') }} - {{ category.name }} - BeakMask{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/approval-limits.css">
+{% endblock %}
+
+{% block content %}
+<h1>{{ _('設定核決上限') }}: {{ category.name }}</h1>
+
+<p>
+    <a href="{{ url_for('job_levels.job_matrix') }}">[{{ _('職級職稱矩陣') }}]</a>
+    |
+    <a href="{{ url_for('job_levels.list_job_levels') }}">[{{ _('職等管理') }}]</a>
+    |
+    <a href="{{ url_for('job_families.list_job_families') }}">[{{ _('職系管理') }}]</a>
+    |
+    <a href="{{ url_for('job_titles.list_job_titles') }}">[{{ _('職稱管理') }}]</a>
+    |
+    <a href="{{ url_for('approval_categories.list_categories') }}">[{{ _('核決權限類別') }}]</a>
+</p>
+<p>
+    <a href="{{ url_for('approval_categories.list_categories') }}">[{{ _('返回列表') }}]</a>
+    <a href="{{ url_for('approval_categories.edit_category', secure_code=category.secure_code) }}">[{{ _('編輯類別') }}]</a>
+</p>
+
+<p style="color: #666; font-size: 0.9em;">
+    {{ _('說明：設定各職等對於「%(name)s」的核決金額上限。0 表示無核決權限。', name=category.name) }}
+</p>
+
+{% if job_levels and job_families %}
+<div id="limits-form">
+    <table class="matrix-table">
+        <thead>
+            <tr>
+                <th>{{ _('職等') }}</th>
+                <th>{{ _('核決上限') }}<br><small>({{ category.currency }})</small></th>
+                {% for family in job_families %}
+                <th>{{ family.name }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for level in job_levels %}
+            <tr>
+                <td class="level-cell">
+                    <span class="level-code">{{ level.code }}</span>
+                    {{ level.name }}
+                    {% if level.is_manager_level %}
+                    <span class="manager-badge">{{ _('管理') }}</span>
+                    {% endif %}
+                </td>
+                <td class="limit-cell">
+                    <input type="number"
+                           class="limit-input"
+                           id="limit-{{ level.secure_code }}"
+                           data-level="{{ level.secure_code }}"
+                           min="0"
+                           step="1"
+                           value="{{ limits_map.get(level.secure_code).approval_limit|int if limits_map.get(level.secure_code) and limits_map[level.secure_code].approval_limit is not none else 0 }}">
+                </td>
+                {% for family in job_families %}
+                <td class="title-cell">
+                    {% set titles = matrix[level.secure_code][family.secure_code] %}
+                    {% if titles %}
+                        {% for title in titles %}
+                        <span class="title-item{% if title.is_supervisor %} supervisor{% endif %}"
+                              title="{{ title.name_en or '' }}">{{ title.name }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="empty-cell">-</span>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="save-bar">
+        <button class="btn-save" id="btn-save" onclick="saveLimits()">{{ _('儲存變更') }}</button>
+        <span id="save-message"></span>
+    </div>
+</div>
+
+<script>
+window.__LIMITS_CONFIG = {
+    saveUrl: '{{ url_for("approval_categories.save_category_limits", secure_code=category.secure_code) }}',
+    listUrl: '{{ url_for("approval_categories.list_categories") }}'
+};
+</script>
+<script src="{{ app_prefix }}/static/js/approval-limits.js"></script>
+
+{% else %}
+<p style="color: #6b7280;">
+    {{ _('尚無職等或職系資料。請先建立') }}
+    <a href="{{ url_for('job_levels.create_job_level') }}">{{ _('職等') }}</a> {{ _('和') }}
+    <a href="{{ url_for('job_families.create_job_family') }}">{{ _('職系') }}</a>。
+</p>
+{% endif %}
+{% endblock %}

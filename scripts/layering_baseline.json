@@ -1,0 +1,60 @@
+{
+  "platform-no-module-import": {
+    "backend/app/api/code_service.py": {
+      "nocode_builder": 1
+    },
+    "backend/app/api/my_api_keys.py": {
+      "form_workflow": 2
+    },
+    "backend/app/api/node_grants.py": {
+      "form_workflow": 4
+    },
+    "backend/app/api/store.py": {
+      "form_workflow": 4
+    },
+    "backend/app/defaults/api_key_request_defaults.py": {
+      "form_workflow": 3
+    },
+    "backend/app/defaults/od_protected_defaults.py": {
+      "open_defense": 1
+    },
+    "backend/app/defaults/proxy_request_defaults.py": {
+      "form_workflow": 3
+    },
+    "backend/app/security/decorators.py": {
+      "open_defense": 1
+    },
+    "backend/app/services/_menu_module_filter.py": {
+      "nocode_builder": 1
+    },
+    "backend/app/services/approver_exposure_service.py": {
+      "form_workflow": 2
+    },
+    "backend/app/services/calendar_projection_service.py": {
+      "form_workflow": 1
+    },
+    "backend/app/services/lookup_org_service.py": {
+      "form_workflow": 3
+    },
+    "backend/app/services/org_database_service.py": {
+      "form_workflow": 9
+    },
+    "backend/app/services/org_physical_cleanup_service.py": {
+      "open_defense": 1
+    },
+    "backend/app/services/proxy_assignment_service.py": {
+      "form_workflow": 1
+    },
+    "backend/app/web/access_center.py": {
+      "form_workflow": 1
+    },
+    "backend/app/web/main.py": {
+      "form_workflow": 2,
+      "nocode_builder": 3
+    },
+    "backend/app/web/org_databases.py": {
+      "form_workflow": 7,
+      "nocode_builder": 2
+    }
+  }
+}

@@ -1,0 +1,416 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/03_org_setup/system_settings{% endblock %}
+
+{% block title %}{{ _('系統設定') }} - BeakMask{% endblock %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="settings-layout" x-data="{ activeSection: 'basic' }">
+    <!-- 左側選單 -->
+    <div class="settings-sidebar">
+        <h3>{{ _('設定分類') }}</h3>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'basic' }"
+             @click="activeSection = 'basic'">
+            <span class="settings-menu-icon">[B]</span>
+            <span>{{ _('企業資訊') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'login-branding' }"
+             @click="activeSection = 'login-branding'">
+            <span class="settings-menu-icon">[L]</span>
+            <span>{{ _('登入頁面顯示') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'general' }"
+             @click="activeSection = 'general'">
+            <span class="settings-menu-icon">[G]</span>
+            <span>{{ _('一般設定') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'password-policy' }"
+             @click="activeSection = 'password-policy'">
+            <span class="settings-menu-icon">[P]</span>
+            <span>{{ _('密碼政策') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'login-security' }"
+             @click="activeSection = 'login-security'">
+            <span class="settings-menu-icon">[F]</span>
+            <span>{{ _('登入安全欄位') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'recipients' }"
+             @click="activeSection = 'recipients'">
+            <span class="settings-menu-icon">[R]</span>
+            <span>{{ _('收件人群組') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'smtp' }"
+             @click="activeSection = 'smtp'">
+            <span class="settings-menu-icon">[S]</span>
+            <span>{{ _('SMTP 郵件') }}</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'telegram' }"
+             @click="activeSection = 'telegram'">
+            <span class="settings-menu-icon">[T]</span>
+            <span>Telegram</span>
+        </div>
+    </div>
+
+    <!-- 右側內容 -->
+    <div class="settings-content">
+        <!-- 企業資訊 -->
+        <section id="basic" class="settings-section" x-show="activeSection === 'basic'" x-data="logoSettings()" x-init="init()">
+            <h2>{{ _('企業資訊') }}</h2>
+            <table border="1" cellpadding="10" cellspacing="0">
+                <tr>
+                    <th style="text-align: left; width: 150px;">{{ _('企業名稱') }}</th>
+                    <td>{{ current_user.organization.name if current_user.organization else '-' }}</td>
+                </tr>
+                <tr>
+                    <th style="text-align: left;">{{ _('網域') }}</th>
+                    <td>{{ current_user.organization.domain_name if current_user.organization else '-' }}</td>
+                </tr>
+                <tr>
+                    <th style="text-align: left;">{{ _('帳號上限') }}</th>
+                    <td>{{ _('&infin; -- 開源的沒打算商業化，大家盡量用吧^_^') }}</td>
+                </tr>
+                <tr>
+                    <th style="text-align: left; vertical-align: top;">{{ _('企業 Logo') }}</th>
+                    <td>
+                        <!-- 預覽區 -->
+                        <div style="margin-bottom: 12px;">
+                            <template x-if="logoUrl">
+                                <div style="display: flex; align-items: center; gap: 16px;">
+                                    <img :src="logoUrl" alt="{{ _('企業 Logo') }}"
+                                         style="max-width: 200px; max-height: 80px; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #fff;">
+                                    <button type="button" @click="deleteLogo()"
+                                            style="padding: 6px 12px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                        {{ _('刪除') }}
+                                    </button>
+                                </div>
+                            </template>
+                            <template x-if="!logoUrl">
+                                <span style="color: #999;">{{ _('尚未上傳 Logo') }}</span>
+                            </template>
+                        </div>
+                        <!-- 上傳區 -->
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="file" id="logo-upload" accept="image/*" @change="uploadLogo($event)"
+                                   style="display: none;">
+                            <button type="button" @click="document.getElementById('logo-upload').click()"
+                                    :disabled="uploading"
+                                    style="padding: 8px 16px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                <span x-text="uploading ? __('上傳中...') : (logoUrl ? __('更換 Logo') : __('上傳 Logo'))"></span>
+                            </button>
+                            <span style="color: #666; font-size: 12px;">{{ _('支援 PNG, JPG, GIF, SVG, WebP（最大 2MB）') }}</span>
+                        </div>
+                        <!-- 訊息 -->
+                        <p x-show="message" x-text="message"
+                           :style="'margin-top: 8px; padding: 6px 10px; border-radius: 4px; font-size: 13px;' +
+                                   (messageType === 'success' ? 'background: #e8f5e9; color: #2e7d32;' : 'background: #fef2f2; color: #dc2626;')"
+                           x-transition></p>
+                        <div style="margin-top: 8px; color: #666; font-size: 12px;">
+                            {{ _('Logo 會顯示在企業專屬登入頁面') }}
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <p style="margin-top: 10px; color: #666;">
+                <small>{{ _('如需修改其他企業資訊，請聯繫系統管理員。') }}</small>
+            </p>
+        </section>
+
+        <!-- 登入頁面品牌設定 -->
+        <section id="login-branding" class="settings-section" x-show="activeSection === 'login-branding'" x-data="loginBrandingSettings()" x-init="init()">
+            <h2>{{ _('登入頁面顯示') }}</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                {{ _('隱藏可避免透過登入頁辨識企業身份') }}
+            </p>
+            <table border="1" cellpadding="10" cellspacing="0" style="width: 100%;">
+                <tr>
+                    <th style="text-align: left; width: 200px; vertical-align: top;">{{ _('企業成員登入頁面') }}</th>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox"
+                                       x-model="settings.login_employee_show_logo"
+                                       @change="saveSetting('login_employee_show_logo', settings.login_employee_show_logo)"
+                                       style="width: 18px; height: 18px;">
+                                <span>{{ _('顯示企業 Logo') }}</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox"
+                                       x-model="settings.login_employee_show_name"
+                                       @change="saveSetting('login_employee_show_name', settings.login_employee_show_name)"
+                                       style="width: 18px; height: 18px;">
+                                <span>{{ _('顯示企業名稱') }}</span>
+                            </label>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="text-align: left; vertical-align: top;">{{ _('外部廠商登入頁面') }}</th>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox"
+                                       x-model="settings.login_external_show_logo"
+                                       @change="saveSetting('login_external_show_logo', settings.login_external_show_logo)"
+                                       style="width: 18px; height: 18px;">
+                                <span>{{ _('顯示企業 Logo') }}</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox"
+                                       x-model="settings.login_external_show_name"
+                                       @change="saveSetting('login_external_show_name', settings.login_external_show_name)"
+                                       style="width: 18px; height: 18px;">
+                                <span>{{ _('顯示企業名稱') }}</span>
+                            </label>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <p x-show="saveMessage" x-text="saveMessage"
+               style="margin-top: 10px; padding: 8px 12px; background: #e8f5e9; color: #2e7d32; border-radius: 4px;"
+               x-transition></p>
+        </section>
+
+        <!-- 一般設定 -->
+        <section id="general" class="settings-section" x-show="activeSection === 'general'" x-data="generalSettings()" x-init="init()">
+            <h2>{{ _('一般設定') }}</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                {{ _('控制企業的一般行為設定') }}
+            </p>
+
+            <table border="1" cellpadding="10" cellspacing="0" style="width: 100%;">
+                <tr>
+                    <th style="text-align: left; width: 200px;">{{ _('允許用戶修改個人資料') }}</th>
+                    <td>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox"
+                                   x-model="settings.allow_user_self_edit"
+                                   @change="saveSettings()"
+                                   style="width: 18px; height: 18px;">
+                            <span>{{ _('允許一般用戶在「個人設定」中編輯自己的資料') }}</span>
+                        </label>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            {{ _('關閉後，用戶只能檢視自己的資料但無法修改（密碼變更除外）') }}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="text-align: left;">{{ _('企業常用語系') }}</th>
+                    <td>
+                        <select x-model="settings.locale" @change="saveSettings()"
+                                style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                            {% for code, name in supported_languages.items() %}
+                            <option value="{{ code }}">{{ name }} ({{ code }})</option>
+                            {% endfor %}
+                        </select>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            {{ _('影響選單標題等介面元素的顯示語言（需重新整理頁面生效）') }}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="text-align: left;">{{ _('顯示名稱') }}</th>
+                    <td>
+                        <select x-model="settings.display_name_field" @change="saveSettings()"
+                                style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                            <option value="native_name">{{ _('本國姓名') }}</option>
+                            <option value="english_name">{{ _('英文姓名') }}</option>
+                            <option value="nickname">{{ _('暱稱') }}</option>
+                            <option value="username">{{ _('帳號') }}</option>
+                            <option value="employee_id">{{ _('用戶編號') }}</option>
+                        </select>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            {{ _('決定系統中用戶名稱的顯示方式') }}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="text-align: left;">{{ _('帳號姓名連接符號') }}</th>
+                    <td>
+                        <select x-model="settings.name_connector" @change="saveSettings()"
+                                style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                            <option value=".">{{ _('. (點) -- first.last') }}</option>
+                            <option value="_">{{ _('_ (底線) -- first_last') }}</option>
+                            <option value="-">{{ _('- (連字號) -- first-last') }}</option>
+                            <option value="">{{ _('(無符號) -- firstlast') }}</option>
+                        </select>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            {{ _('建立帳號時，姓名之間使用的連接符號（帳號統一小寫）') }}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="text-align: left;">{{ _('國家／地區') }}</th>
+                    <td>
+                        <select x-model="settings.country" @change="saveSettings()"
+                                style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 280px;">
+                            {% for country_code, country_name in country_choices %}
+                            <option value="{{ country_code }}">{{ country_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            {{ _('決定新企業預設班表的週休日，以及假日表「從網路取得」的資料來源（目前僅台灣提供）') }}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="text-align: left;">{{ _('企業主要時區') }}</th>
+                    <td>
+                        <select x-model="settings.timezone" @change="saveSettings()"
+                                style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 280px;">
+                            {% for group_label, timezones in timezone_choices %}
+                            <optgroup label="{{ group_label }}">
+                                {% for tz_value, tz_display in timezones %}
+                                <option value="{{ tz_value }}">{{ tz_display }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endfor %}
+                        </select>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            {{ _('IANA 時區，影響系統時間顯示（管理員設定一次即可）') }}
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <p x-show="saveMessage" x-text="saveMessage"
+               style="margin-top: 10px; padding: 8px 12px; background: #e8f5e9; color: #2e7d32; border-radius: 4px;"
+               x-transition></p>
+        </section>
+
+        <!-- 密碼政策 -->
+        <section id="password-policy" class="settings-section" x-show="activeSection === 'password-policy'" x-data="passwordPolicySettings()" x-init="init()">
+            <h2>{{ _('密碼政策') }}</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                {{ _('設定密碼複雜度要求、歷史限制和登入失敗鎖定') }}
+            </p>
+
+            <!-- 啟用開關 -->
+            <div style="margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox"
+                           x-model="policy.enabled"
+                           @change="savePolicy()"
+                           style="width: 18px; height: 18px;">
+                    <span style="font-weight: 500;">{{ _('啟用密碼政策') }}</span>
+                    <span style="color: #666; font-size: 13px;">{{ _('（啟用後，所有密碼欄位將檢查複雜度要求）') }}</span>
+                </label>
+            </div>
+
+            <!-- 系統發信服務未就緒警告 -->
+            <div x-show="!systemMailReady"
+                 style="padding: 12px 16px; margin-bottom: 16px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
+                <strong style="color: #92400e;">{{ _('注意') }}</strong>
+                <span style="color: #78350f;">
+                    {{ _('系統發信服務尚未就緒，忘記密碼驗證信與登入救助警報信目前寄不出去。這項設定由系統管理員在「主機設定 → 發信服務」完成，本頁的 SMTP 設定組只給流程節點使用，不影響系統信。') }}
+                </span>
+            </div>
+
+            <!-- 以下設定只在啟用時顯示 -->
+            <template x-if="policy.enabled">
+                <table border="1" cellpadding="10" cellspacing="0" style="width: 100%;">
+                    <tbody>
+                        <!-- 密碼長度 -->
+                        <tr>
+                            <th style="text-align: left;">{{ _('最小長度') }}</th>
+                            <td>
+                                <input type="number" x-model.number="policy.min_length"
+                                       @change="savePolicy()"
+                                       min="8" max="32"
+                                       style="width: 80px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <span style="margin-left: 8px; color: #666;">{{ _('個字元（建議 12 以上）') }}</span>
+                            </td>
+                        </tr>
+
+                        <!-- 複雜度要求 -->
+                        <tr>
+                            <th style="text-align: left; vertical-align: top;">{{ _('複雜度要求') }}</th>
+                            <td>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" x-model="policy.require_uppercase" @change="savePolicy()">
+                                        <span>{{ _('包含大寫字母 (A-Z)') }}</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" x-model="policy.require_lowercase" @change="savePolicy()">
+                                        <span>{{ _('包含小寫字母 (a-z)') }}</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" x-model="policy.require_digit" @change="savePolicy()">
+                                        <span>{{ _('包含數字 (0-9)') }}</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" x-model="policy.require_special" @change="savePolicy()">
+                                        <span>{{ _('包含特殊符號 (!@#$%%^&* 等)') }}</span>
+                                    </label>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- 密碼歷史 -->
+                        <tr>
+                            <th style="text-align: left;">{{ _('密碼歷史限制') }}</th>
+                            <td>
+                                <input type="number" x-model.number="policy.history_count"
+                                       @change="savePolicy()"
+                                       min="0" max="24"
+                                       style="width: 80px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <span style="margin-left: 8px; color: #666;">{{ _('次內不可重複使用（0 = 不限制）') }}</span>
+                            </td>
+                        </tr>
+
+                        <!-- 登入失敗鎖定 -->
+                        <tr>
+                            <th style="text-align: left;">{{ _('登入失敗鎖定') }}</th>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                    <span>{{ _('連續失敗') }}</span>
+                                    <input type="number" x-model.number="policy.max_failed_attempts"
+                                           @change="savePolicy()"
+                                           min="3" max="10"
+                                           style="width: 60px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <span>{{ _('次後鎖定帳號') }}</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span>{{ _('基礎鎖定時間') }}</span>
+                                    <input type="number" x-model.number="policy.lockout_duration_minutes"
+                                           @change="savePolicy()"
+                                           min="1" max="60"
+                                           style="width: 60px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <span>{{ _('分鐘，每次鎖定時間 x') }}</span>
+                                    <input type="number" x-model.number="policy.lockout_multiplier"
+                                           @change="savePolicy()"
+                                           min="1" max="3"
+                                           style="width: 50px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                </div>
+                                <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                                    {{ _('例：基礎 15 分鐘 x 2，第一次鎖 15 分鐘，第二次 30 分鐘，第三次 60 分鐘...（最多 24 小時）') }}
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </template>
+
+            <p x-show="saveMessage" x-text="saveMessage"
+               style="margin-top: 10px; padding: 8px 12px; background: #e8f5e9; color: #2e7d32; border-radius: 4px;"
+               x-transition></p>
+        </section>
+
+{% include "pages/admin/_settings_login_security_section.html" %}
+{% include "pages/admin/_settings_recipients_section.html" %}
+{% include "pages/admin/_settings_smtp_section.html" %}
+{% include "pages/admin/_settings_telegram_section.html" %}
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script src="{{ app_prefix }}/static/js/settings-login-security.js"></script>
+<script src="{{ app_prefix }}/static/js/settings-recipients.js"></script>
+<script src="{{ app_prefix }}/static/js/settings-smtp.js"></script>
+<script src="{{ app_prefix }}/static/js/settings-telegram.js"></script>
+{% endblock %}

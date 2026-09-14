@@ -1,0 +1,481 @@
+/* =============================================
+   FormGridWidget - 主細元件樣式
+   前綴: fgw-
+   ============================================= */
+
+.fgw-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #fff;
+    border: 1px solid #ddd;
+    overflow: hidden;
+    font-size: 13px;
+    font-family: -apple-system, "Microsoft JhengHei", sans-serif;
+}
+
+/* ===== Header (拖曳手柄 + 標題) ===== */
+
+.fgw-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    flex-shrink: 0;
+}
+.fgw-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.fgw-toolbar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* ===== 上半部: Master 區域 ===== */
+
+.fgw-master-area {
+    display: flex;
+    flex-shrink: 0;
+    border-bottom: 2px solid #ddd;
+    min-height: 140px;
+    max-height: 45%;
+}
+
+/* 左側: Master List (簡式清單) */
+.fgw-master-list {
+    width: 220px;
+    min-width: 180px;
+    max-width: 280px;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.fgw-ml-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    background: #eef2f7;
+    border-bottom: 1px solid #ddd;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #555;
+}
+.fgw-ml-body {
+    flex: 1;
+    overflow-y: auto;
+}
+.fgw-ml-item {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1.4;
+}
+.fgw-ml-item:hover {
+    background: #f0f7ff;
+}
+.fgw-ml-item.active {
+    background: #e0edff;
+    border-left: 3px solid #0066cc;
+    padding-left: 5px;
+}
+.fgw-ml-item .fgw-ml-key {
+    font-weight: 600;
+    color: #333;
+}
+.fgw-ml-item .fgw-ml-sub {
+    color: #777;
+    font-size: 11px;
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fgw-ml-item .fgw-ml-lock {
+    color: #b91c1c;
+    font-size: 10px;
+    margin-left: 4px;
+}
+.fgw-ml-empty {
+    padding: 16px 8px;
+    text-align: center;
+    color: #999;
+    font-size: 12px;
+}
+
+/* 右側: Master Detail (欄位展開) */
+.fgw-master-detail {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+}
+.fgw-md-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+}
+.fgw-md-fields {
+    flex: 1;
+    overflow-y: auto;
+}
+.fgw-md-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #aaa;
+    font-size: 13px;
+}
+
+/* Master 欄位 */
+.fgw-field {
+    display: flex;
+    margin-bottom: 6px;
+    align-items: flex-start;
+}
+.fgw-field-label {
+    width: 100px;
+    min-width: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    padding-top: 5px;
+    text-align: right;
+    padding-right: 8px;
+}
+.fgw-field-value {
+    flex: 1;
+}
+.fgw-field-value input,
+.fgw-field-value select,
+.fgw-field-value textarea {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    font-size: 12px;
+    font-family: inherit;
+    box-sizing: border-box;
+    background: #fff;
+}
+.fgw-field-value input:focus,
+.fgw-field-value select:focus,
+.fgw-field-value textarea:focus {
+    outline: none;
+    border-color: #0066cc;
+}
+.fgw-field-value input:disabled,
+.fgw-field-value select:disabled,
+.fgw-field-value textarea:disabled {
+    background: #f5f5f5;
+    color: #888;
+    cursor: not-allowed;
+}
+.fgw-field-value textarea {
+    min-height: 50px;
+    resize: vertical;
+}
+.fgw-field-value .fgw-check-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+.fgw-field-value .fgw-check-wrap input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+.fgw-field-required {
+    color: #dc2626;
+    margin-left: 2px;
+}
+
+/* 唯讀模式欄位值 */
+.fgw-field-text {
+    padding: 4px 0;
+    font-size: 12px;
+    color: #333;
+    word-break: break-all;
+}
+
+/* ===== 下半部: Detail 區域 ===== */
+
+.fgw-detail-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 100px;
+}
+.fgw-dt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 12px;
+    background: #eef2f7;
+    border-bottom: 1px solid #ddd;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #555;
+}
+.fgw-dt-body {
+    flex: 1;
+    overflow: auto;
+}
+.fgw-dt-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 60px;
+    color: #999;
+    font-size: 12px;
+}
+.fgw-dt-pager {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 12px;
+    background: #f9f9f9;
+    border-top: 1px solid #ddd;
+    font-size: 11px;
+    color: #666;
+    flex-shrink: 0;
+}
+.fgw-dt-page-btns { display: flex; gap: 4px; }
+
+/* Detail 表格 */
+.fgw-dt-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.fgw-dt-table th {
+    background: #fafafa;
+    padding: 5px 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    font-weight: 600;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.fgw-dt-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #eee;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fgw-dt-table tr:hover { background: #f8f8f8; }
+.fgw-dt-table .fgw-sortable { cursor: pointer; user-select: none; }
+.fgw-dt-table .fgw-sortable:hover { background: #eee; }
+.fgw-sort-arrow { font-size: 10px; color: #0066cc; margin-left: 2px; }
+.fgw-dt-actions { white-space: nowrap; }
+.fgw-dt-actions-th { width: 80px; }
+
+/* ===== 鎖定狀態 ===== */
+
+.fgw-locked-badge {
+    display: inline-block;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 11px;
+    padding: 1px 6px;
+    border: 1px solid #fca5a5;
+    margin-left: 8px;
+}
+.fgw-unlocked-badge {
+    display: inline-block;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 11px;
+    padding: 1px 6px;
+    border: 1px solid #86efac;
+    margin-left: 8px;
+}
+
+/* ===== 共用按鈕 ===== */
+
+.fgw-btn {
+    padding: 3px 8px;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    cursor: pointer;
+    font-size: 11px;
+    text-decoration: none;
+    color: #333;
+    display: inline-block;
+    line-height: 1.4;
+}
+.fgw-btn:hover { background: #e9e9e9; }
+.fgw-btn:disabled { opacity: 0.4; cursor: default; }
+.fgw-btn.sm { padding: 2px 6px; font-size: 11px; }
+.fgw-btn.danger { color: #dc2626; border-color: #dc2626; }
+.fgw-btn.danger:hover { background: #dc2626; color: white; }
+.fgw-btn.primary { color: #fff; background: #0066cc; border-color: #0066cc; }
+.fgw-btn.primary:hover { background: #0052a3; }
+.fgw-btn.primary:disabled { background: #999; border-color: #999; }
+.fgw-btn.warn { color: #b45309; border-color: #d97706; }
+.fgw-btn.warn:hover { background: #fbbf24; color: #78350f; }
+
+/* ===== Modal (複用 dlw 的 modal 樣式，但前綴 fgw) ===== */
+
+.fgw-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.fgw-modal {
+    background: #fff;
+    width: 560px;
+    max-width: 90vw;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    border: 1px solid #ccc;
+}
+.fgw-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #ddd;
+    background: #f5f5f5;
+    flex-shrink: 0;
+}
+.fgw-modal-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: #333;
+}
+.fgw-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #666;
+    padding: 0 4px;
+    line-height: 1;
+}
+.fgw-modal-close:hover { color: #333; }
+.fgw-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+.fgw-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid #ddd;
+    background: #f9f9f9;
+    flex-shrink: 0;
+}
+
+/* 表單欄位 (modal 內使用) */
+.fgw-form-field { margin-bottom: 14px; }
+.fgw-form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 4px;
+}
+.fgw-form-input,
+.fgw-form-select,
+.fgw-form-textarea {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+    font-family: inherit;
+    box-sizing: border-box;
+    background: #fff;
+}
+.fgw-form-input:focus,
+.fgw-form-select:focus,
+.fgw-form-textarea:focus {
+    outline: none;
+    border-color: #0066cc;
+}
+.fgw-form-input:disabled,
+.fgw-form-select:disabled,
+.fgw-form-textarea:disabled {
+    background: #f0f0f0;
+    color: #888;
+    cursor: not-allowed;
+}
+.fgw-form-textarea {
+    min-height: 80px;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 12px;
+}
+.fgw-form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+}
+.fgw-form-check input[type="checkbox"] {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+}
+.fgw-form-hint {
+    font-size: 11px;
+    color: #999;
+    margin-top: 2px;
+}
+.fgw-form-error {
+    color: #dc2626;
+    font-size: 12px;
+    padding: 8px 0;
+}
+.fgw-modal-loading {
+    text-align: center;
+    padding: 40px 0;
+    color: #999;
+}
+
+/* ===== 空狀態 ===== */
+
+.fgw-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 80px;
+    color: #999;
+    font-size: 13px;
+}
+.fgw-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 80px;
+    color: #999;
+    font-size: 13px;
+}

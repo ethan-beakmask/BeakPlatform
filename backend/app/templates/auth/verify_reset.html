@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    {% if org %}
+    <title>{{ _('驗證密碼重設') }} - {{ org.name }}</title>
+    {% else %}
+    <title>{{ _('驗證密碼重設') }} - BeakMask</title>
+    {% endif %}
+</head>
+<body>
+    <h1>{% if org %}{{ org.name }} - {% endif %}{{ _('驗證密碼重設') }}</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    {% if category == 'rate_limit' %}
+    <p style="color: #dc2626;"><strong>{{ message }}</strong></p>
+    <script>alert('{{ message }}');</script>
+    {% else %}
+    <p><strong>{{ message }}</strong></p>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <p>{{ _('請輸入您收到的 6 碼驗證碼') }}</p>
+    <p>{{ _('信箱：') }}{{ email }}</p>
+
+    <form method="POST" action="{{ url_for('auth.verify_reset', token=token) }}">
+        <table border="0" cellpadding="4" cellspacing="0">
+            <tr>
+                <td><label for="code">{{ _('驗證碼') }}</label></td>
+                <td>
+                    <input type="text" id="code" name="code" size="10" maxlength="6" required
+                           pattern="[0-9]{6}" placeholder="000000"
+                           style="font-size: 1.5em; letter-spacing: 0.5em; text-align: center;">
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <br>
+                    <button type="submit">{{ _('驗證並取得暫時密碼') }}</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <p>
+        <small>{{ _('驗證碼將於申請後 10 分鐘內失效。') }}</small>
+    </p>
+
+    <hr>
+    <p><small>&copy; 2025 BeakMask. Security First.</small></p>
+</body>
+</html>

@@ -1,0 +1,245 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('規格管理') }} - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/spec_formulate/css/spec-schema.css">
+{% endblock %}
+
+{% block content %}
+<div class="mf-container" x-data="specSchemaManager()">
+
+    <!-- Header -->
+    <div class="mf-header">
+        <div>
+            <h1>{{ _('規格管理') }}</h1>
+        </div>
+        <div class="mf-toolbar">
+            <button class="mf-btn" @click="loadSpecs()" :disabled="loading">{{ _('重新載入') }}</button>
+            <button class="mf-btn" @click="openDocxModal()" :disabled="loading || specs.length === 0">{{ _('製作規格書') }}</button>
+            <button class="mf-btn primary" @click="openCreate()">{{ _('新增規格') }}</button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div x-show="loading" class="mf-loading">{{ _('載入中...') }}</div>
+
+    <!-- Empty -->
+    <div x-show="!loading && specs.length === 0" class="mf-empty">
+        <p>{{ _('尚未建立任何規格') }}</p>
+        <button class="mf-btn primary" @click="openCreate()" style="margin-top: 8px;">{{ _('建立第一個規格') }}</button>
+    </div>
+
+    <!-- List -->
+    <div x-show="!loading && specs.length > 0" class="mf-card">
+        <table class="mf-table">
+            <thead>
+                <tr>
+                    <th style="width: 180px;">{{ _('規格名稱') }}</th>
+                    <th style="width: 160px;">{{ _('資料表') }}</th>
+                    <th style="width: 60px;">{{ _('版本') }}</th>
+                    <th style="width: 70px;">{{ _('欄位數') }}</th>
+                    <th style="width: 180px;">{{ _('已啟用格式') }}</th>
+                    <th style="width: 100px;">{{ _('狀態') }}</th>
+                    <th style="width: 120px;">{{ _('最後修改') }}</th>
+                    <th style="width: 160px;">{{ _('更新時間') }}</th>
+                    <th class="mf-actions" style="width: 140px;">{{ _('操作') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="s in specs" :key="s.secure_code">
+                    <tr>
+                        <td>
+                            <a href="#" @click.prevent="openEdit(s)"
+                               style="font-weight: 500; text-decoration: none;"
+                               x-text="s.name"></a>
+                        </td>
+                        <td class="mf-mono" style="font-size: 12px; color: #6b7280;" x-text="s.table_name || '-'"></td>
+                        <td x-text="'v' + s.version"></td>
+                        <td x-text="s.field_count"></td>
+                        <td>
+                            <template x-for="f in (s.active_facets || [])" :key="f">
+                                <span class="mf-facet-badge" :class="f" x-text="f"></span>
+                            </template>
+                            <span x-show="!s.active_facets || s.active_facets.length === 0"
+                                  style="font-size: 11px; color: #9ca3af;">-</span>
+                        </td>
+                        <td>
+                            <span class="mf-badge" :class="s.status" x-text="s.status"></span>
+                        </td>
+                        <td style="font-size: 12px; color: #6b7280;" x-text="s.last_modified_by_name || '-'"></td>
+                        <td style="font-size: 12px; color: #6b7280;" x-text="formatDate(s.updated_at)"></td>
+                        <td class="mf-actions">
+                            <button @click="openEdit(s)">{{ _('編輯') }}</button>
+                            <button class="danger" @click="confirmDelete(s)">{{ _('刪除') }}</button>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Create Modal -->
+    <div x-show="showCreateModal" x-cloak class="mf-modal">
+        <div class="mf-modal-content">
+            <div class="mf-modal-header">
+                <h3>{{ _('新增規格') }}</h3>
+                <button @click="showCreateModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mf-modal-body">
+                <div class="mf-form-group">
+                    <label>{{ _('規格名稱') }}</label>
+                    <input type="text" x-model="createForm.name" placeholder="{{ _('例如：訂單資料表') }}" autofocus
+                           @input.debounce.500ms="translateTableName(createForm.name)">
+                </div>
+                <div class="mf-form-group">
+                    <label>{{ _('資料表名稱') }}</label>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <input type="text" x-model="createForm.table_name"
+                               :placeholder="tableSuggestion || 'spec_xxx'"
+                               style="font-family: Consolas, monospace; font-size: 12px;">
+                        <button class="mf-btn" type="button" x-show="tableSuggestion && !createForm.table_name"
+                                @click="createForm.table_name = tableSuggestion"
+                                style="padding: 4px 8px; font-size: 11px; white-space: nowrap;">
+                            {{ _('採用建議') }}
+                        </button>
+                    </div>
+                    <div x-show="tableSuggestion" style="font-size: 11px; color: #6b7280; margin-top: 2px;">
+                        {{ _('建議:') }} <span class="mf-mono" x-text="tableSuggestion"></span>
+                    </div>
+                </div>
+                <div class="mf-form-group">
+                    <label>{{ _('描述（選填）') }}</label>
+                    <textarea x-model="createForm.description" placeholder="{{ _('規格用途說明') }}"></textarea>
+                </div>
+            </div>
+            <div class="mf-modal-footer">
+                <button class="mf-btn" @click="showCreateModal = false">{{ _('取消') }}</button>
+                <button class="mf-btn primary" @click="confirmCreate()" :disabled="creating">
+                    <span x-show="!creating">{{ _('建立') }}</span>
+                    <span x-show="creating">{{ _('建立中...') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div x-show="showDeleteModal" x-cloak class="mf-modal">
+        <div class="mf-modal-content" style="width: 400px;">
+            <div class="mf-modal-header">
+                <h3>{{ _('確認刪除') }}</h3>
+                <button @click="showDeleteModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mf-modal-body">
+                <p>{{ _('確定要刪除規格「') }}<strong x-text="deleteTarget ? deleteTarget.name : ''"></strong>{{ _('」？') }}</p>
+                <p style="font-size: 12px; color: #6b7280;">{{ _('此操作為軟刪除，資料不會真正移除。') }}</p>
+            </div>
+            <div class="mf-modal-footer">
+                <button class="mf-btn" @click="showDeleteModal = false">{{ _('取消') }}</button>
+                <button class="mf-btn danger" @click="doDelete()" :disabled="deleting">
+                    <span x-show="!deleting">{{ _('確認刪除') }}</span>
+                    <span x-show="deleting">{{ _('刪除中...') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOCX Export Modal -->
+    <div x-show="showDocxModal" x-cloak class="mf-modal">
+        <div class="mf-modal-content" style="width: 680px;">
+            <div class="mf-modal-header">
+                <h3>{{ _('製作規格書') }}</h3>
+                <button @click="showDocxModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mf-modal-body">
+                <!-- 文件標題 -->
+                <div class="mf-form-group">
+                    <label>{{ _('文件標題') }}</label>
+                    <input type="text" x-model="docxTitle" placeholder="{{ _('資料結構規格書') }}">
+                </div>
+
+                <!-- 加入規格 -->
+                <div class="mf-form-group">
+                    <label>{{ _('加入規格') }}</label>
+                    <select @change="if($event.target.value){
+                        var sc=$event.target.value;
+                        for(var i=0;i<specs.length;i++){
+                            if(specs[i].secure_code===sc){docxAddSpec(specs[i]);break;}
+                        }
+                        $event.target.value='';
+                    }">
+                        <option value="">{{ _('-- 選擇規格 --') }}</option>
+                        <template x-for="s in docxAvailableSpecs()" :key="s.secure_code">
+                            <option :value="s.secure_code" x-text="s.name + ' (v' + s.version + ', ' + s.field_count + ' fields)'"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- 已選規格列表 -->
+                <template x-if="docxItems.length === 0">
+                    <div style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px; border: 1px dashed #d1d5db; border-radius: 4px;">
+                        {{ _('請從上方下拉選單加入規格') }}
+                    </div>
+                </template>
+
+                <template x-for="(item, idx) in docxItems" :key="item.spec_sc">
+                    <div class="mf-docx-item">
+                        <div class="mf-docx-item-header">
+                            <span style="font-weight: 600;" x-text="item.name"></span>
+                            <button class="mf-btn danger" style="padding: 2px 6px; font-size: 11px;"
+                                    @click="docxRemoveSpec(idx)">{{ _('移除') }}</button>
+                        </div>
+                        <div class="mf-docx-item-body">
+                            <!-- 版本選擇 -->
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <label style="font-size: 12px; margin: 0; min-width: 40px;">{{ _('版本:') }}</label>
+                                <select x-model="item.version" @change="docxOnVersionChange(item)"
+                                        style="font-size: 12px; padding: 3px 6px; width: auto;">
+                                    <template x-if="item.versions.length === 0">
+                                        <option :value="item.currentVersion"
+                                                x-text="'v' + item.currentVersion + ' (' + __('最新') + ')'"></option>
+                                    </template>
+                                    <template x-for="v in item.versions" :key="v.version">
+                                        <option :value="v.version"
+                                                x-text="'v' + v.version + (v.is_current ? ' (' + __('最新') + ')' : '') + ' - ' + v.field_count + ' fields'"></option>
+                                    </template>
+                                </select>
+                                <span x-show="item.loadingVersions" style="font-size: 11px; color: #9ca3af;">{{ _('載入中...') }}</span>
+                            </div>
+                            <!-- Facet 勾選 -->
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label style="font-size: 12px; margin: 0; min-width: 40px;">{{ _('格式:') }}</label>
+                                <template x-for="af in item.activeFacets" :key="af">
+                                    <label style="display: inline-flex; align-items: center; gap: 3px; font-size: 12px; cursor: pointer;">
+                                        <input type="checkbox" :checked="item.selectedFacets[af]"
+                                               @change="item.selectedFacets[af] = $event.target.checked">
+                                        <span class="mf-facet-badge" :class="af" x-text="af"></span>
+                                    </label>
+                                </template>
+                                <span x-show="item.activeFacets.length === 0"
+                                      style="font-size: 11px; color: #9ca3af;">{{ _('此版本無已啟用格式') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div class="mf-modal-footer">
+                <span style="font-size: 12px; color: #6b7280; margin-right: auto;"
+                      x-text="__('{a} 個規格, {b} 個格式表', {a: docxItems.length, b: docxGetSelectedCount()})"></span>
+                <button class="mf-btn" @click="showDocxModal = false">{{ _('取消') }}</button>
+                <button class="mf-btn primary" @click="doExportDocx()"
+                        :disabled="docxExporting || docxItems.length === 0">
+                    <span x-show="!docxExporting">{{ _('匯出 DOCX') }}</span>
+                    <span x-show="docxExporting">{{ _('匯出中...') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="{{ app_prefix }}/static/modules/spec_formulate/js/spec-schema.js"></script>
+{% endblock %}

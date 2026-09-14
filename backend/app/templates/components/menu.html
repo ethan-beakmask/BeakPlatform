@@ -1,0 +1,45 @@
+{#
+動態選單元件
+
+Usage:
+    {% set menu_layout = 'navbar' %}
+    {% set default_expand_level = 1 %}
+    {% include 'components/menu.html' %}
+
+Variables:
+    menu_layout: 'navbar' (橫式) 或 'sidebar' (直式)
+    default_expand_level: 預設展開的層級數 (0 = 全部折疊)
+#}
+
+{% set layout = menu_layout | default('navbar') %}
+{% set expand_level = default_expand_level | default(1) %}
+
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/menu.css">
+
+<div x-data="menuComponent()" x-init="loadMenu()">
+    {% if layout == 'navbar' %}
+    <!-- 橫式選單 (Navbar) -->
+    <nav class="bk-menubar">
+        <ul class="menu-list">
+            <template x-for="item in menuTree" :key="item.id">
+                <li class="menu-item-wrapper" x-html="renderNavbarItem(item)"></li>
+            </template>
+        </ul>
+    </nav>
+    {% else %}
+    <!-- 直式選單 (Sidebar) -->
+    <nav class="sidebar-menu">
+        <template x-for="item in menuTree" :key="item.id">
+            <div x-html="renderSidebarItem(item, 0)"></div>
+        </template>
+    </nav>
+    {% endif %}
+</div>
+
+<script>
+window.__MENU_CONFIG = {
+    expandLevel: {{ expand_level }},
+    layout: '{{ layout }}'
+};
+</script>
+<script src="{{ app_prefix }}/static/js/menu.js"></script>

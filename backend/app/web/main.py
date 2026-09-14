@@ -1,0 +1,340 @@
+"""
+BeakMask Main Web Routes
+主要網頁路由
+"""
+import logging
+from datetime import datetime
+from flask import Blueprint, g, render_template, redirect, url_for, request, flash, abort
+from flask_babel import get_locale
+from flask_babel import gettext as _
+from flask_login import current_user
+
+from ..security.decorators import login_required, public_route
+from ..utils.timezone import get_timezone_choices
+from .. import db
+
+logger = logging.getLogger(__name__)
+
+main_bp = Blueprint('main', __name__)
+
+
+@main_bp.route('/i18n/<locale>.js')
+@public_route
+def i18n_dict_js(locale):
+    """前端 i18n 字典（阻塞式 script 載入，避免 Alpine 渲染搶先於字典）
+
+    來源：static/i18n/<locale>.json，包成 BkI18n.init() 呼叫回傳。
+    """
+    import json
+    import os
+    import re
+    from flask import current_app, Response
+
+    if not re.fullmatch(r'[A-Za-z]{2}(-[A-Za-z]{2,8})?', locale):
+        abort(404)
+    path = os.path.join(current_app.static_folder, 'i18n', f'{locale}.json')
+    try:
+        with open(path, encoding='utf-8') as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        data = {}
+    body = "BkI18n.init(%s, %s);" % (json.dumps(locale), json.dumps(data, ensure_ascii=False))
+    resp = Response(body, mimetype='application/javascript; charset=utf-8')
+    resp.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    return resp
+
+
+@main_bp.route('/')
+@public_route
+def index():
+    """首頁 - 重導向到儀表板或登入頁"""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.dashboard'))
+    return redirect(url_for('auth.login'))
+
+
+@main_bp.route('/dashboard')
+@login_required
+def dashboard():
+    """儀表板"""
+    from ..models.user import User, UserType
+
+    # 企業管理員相關提示
+    show_default_admin_warning = False
+    show_disable_default_admin_hint = False
+
+    if current_user.user_type == UserType.ORG_ADMIN:
+        if current_user.is_original_admin and current_user.username == 'admin':
+            show_default_admin_warning = True
+        else:
+            default_admin = User.query.filter(
+                User.org_secure_code == current_user.org_secure_code,
+                User.username == 'admin',
+                User.is_original_admin == True,
+                User.is_active == True,
+                User.is_deleted == False
+            ).first()
+            if default_admin:
+                show_disable_default_admin_hint = True
+
+    # 待簽核數量（直接查 DB，不經模組權限）
+    pending_count = 0
+    try:
+        from modules.form_workflow.models import FwNodeExecutionQueue
+        from modules.form_workflow.services.task_authorizer import (
+            can_act_on_task, build_actor,
+        )
+        from sqlalchemy import and_
+
+        user_code = current_user.secure_code
+        org_code = current_user.org_secure_code
+
+        if org_code:
+            tasks = FwNodeExecutionQueue.query.filter(
+                and_(
+                    FwNodeExecutionQueue.org_secure_code == org_code,
+                    FwNodeExecutionQueue.status == 'WAITING',
+                    FwNodeExecutionQueue.node_type.in_(['Approve', 'FormAdapter'])
+                )
+            ).all()
+
+            actor = build_actor(user_code, org_code)
+            for task in tasks:
+                if can_act_on_task(task, user_code, org_code, actor):
+                    pending_count += 1
+    except Exception as e:
+        logger.warning('Dashboard pending count query failed: %s', e)
+
+    # 我的社群
+    my_groups = []
+    try:
+        from ..models.user_unit_membership import UserUnitMembership, MembershipType
+        from ..models.organizational_unit import OrganizationalUnit
+
+        memberships = UserUnitMembership.query.filter(
+            UserUnitMembership.user_secure_code == current_user.secure_code,
+            UserUnitMembership.membership_type == MembershipType.MEMBER,
+            UserUnitMembership.is_deleted == False
+        ).all()
+
+        unit_codes = [m.unit_secure_code for m in memberships]
+        if unit_codes:
+            units = {
+                u.secure_code: u.name
+                for u in OrganizationalUnit.query.filter(
+                    OrganizationalUnit.secure_code.in_(unit_codes),
+                    OrganizationalUnit.is_deleted == False
+                ).all()
+            }
+            role_labels = {
+                'MANAGER': '召集人',
+                'DEPUTY': '副召集人',
+                'PROXY1': '代理人(一)',
+                'PROXY2': '代理人(二)',
+                'MEMBER': '成員',
+                None: '成員',
+            }
+            for m in memberships:
+                if m.is_active and m.unit_secure_code in units:
+                    my_groups.append({
+                        'name': units[m.unit_secure_code],
+                        'role': role_labels.get(m.role_type, '成員'),
+                        'is_leader': m.is_leader,
+                    })
+            my_groups.sort(key=lambda g: (not g['is_leader'], g['name']))
+    except Exception as e:
+        logger.warning('Dashboard my_groups query failed: %s', e)
+
+    return render_template(
+        'pages/dashboard.html',
+        show_default_admin_warning=show_default_admin_warning,
+        show_disable_default_admin_hint=show_disable_default_admin_hint,
+        pending_count=pending_count,
+        my_groups=my_groups
+    )
+
+
+# 支援的介面語言
+SUPPORTED_LANGUAGES = [
+    ('', '使用企業預設'),
+    ('zh-TW', '繁體中文'),
+    ('zh-CN', '简体中文'),
+    ('en', 'English'),
+    ('ja', '日本語'),
+]
+
+
+@main_bp.route('/personal-settings', methods=['GET', 'POST'])
+@login_required
+def personal_settings():
+    """個人設定頁面"""
+    if request.method == 'POST':
+        try:
+            # 更新個人資料
+            current_user.english_name = request.form.get('english_name', '').strip() or None
+            current_user.native_name = request.form.get('native_name', '').strip() or None
+            current_user.nickname = request.form.get('nickname', '').strip() or None
+
+            # 備用 Email 1 (系統通知專用)：空白時自動使用主要 Email
+            backup_email_1 = request.form.get('backup_email_1', '').strip()
+            current_user.backup_email_1 = backup_email_1 if backup_email_1 else current_user.email
+
+            current_user.backup_email_2 = request.form.get('backup_email_2', '').strip() or None
+            current_user.mobile_phone_1 = request.form.get('mobile_phone_1', '').strip() or None
+            current_user.mobile_phone_2 = request.form.get('mobile_phone_2', '').strip() or None
+            current_user.interface_language = request.form.get('interface_language', '').strip() or None
+            current_user.timezone = request.form.get('timezone', '').strip() or None
+            current_user.navbar_display = request.form.get('navbar_display', '').strip() or None
+
+            db.session.commit()
+            flash(_('個人設定已儲存'), 'success')
+            return redirect(url_for('main.personal_settings'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(_('儲存失敗: %(error)s', error=str(e)), 'error')
+
+    from app.utils.external_url import build_external_url
+    proxy_request_fill_url = None
+    if current_user.is_employee or current_user.is_org_admin:
+        from app.services.proxy_assignment_service import proxy_request_fill_url as _fill_url
+        proxy_request_fill_url = _fill_url(current_user.org_secure_code)
+
+    return render_template(
+        'pages/personal_settings.html',
+        languages=SUPPORTED_LANGUAGES,
+        timezone_choices=get_timezone_choices(),
+        # 尾斜線要去掉：範例裡是 "$BASE/api/trigger/form"，帶著尾斜線會組出
+        # .../beakplatform//api/... 的雙斜線。本機 nginx 容忍（實測 201），
+        # 但使用者複製出去的指令不該長這樣，經過嚴格的反代或 WAF 也可能被擋。
+        api_trigger_base_url=(build_external_url('/') or '').rstrip('/') or None,
+        proxy_request_fill_url=proxy_request_fill_url,
+    )
+
+
+@main_bp.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    """變更密碼頁面"""
+    if request.method == 'POST':
+        current_password = request.form.get('current_password', '').strip()
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+
+        # 密碼政策驗證
+        from ..services.password_policy_service import PasswordPolicyService
+        pw_valid, pw_errors = (True, [])
+        if new_password:
+            pw_valid, pw_errors = PasswordPolicyService.validate_password(
+                new_password, current_user.org_secure_code,
+                user_secure_code=current_user.secure_code)
+
+        # 驗證當前密碼
+        if not current_user.check_password(current_password):
+            flash(_('目前密碼不正確'), 'error')
+        elif not new_password:
+            flash(_('請輸入新密碼'), 'error')
+        elif not pw_valid:
+            for err in pw_errors:
+                flash(err, 'error')
+        elif new_password != confirm_password:
+            flash(_('新密碼與確認密碼不一致'), 'error')
+        else:
+            try:
+                current_user.set_password(new_password)
+                current_user.password_changed_at = datetime.utcnow()
+                current_user.must_change_password = False
+                db.session.commit()
+
+                flash(_('密碼已變更成功'), 'success')
+                return redirect(url_for('main.personal_settings'))
+
+            except Exception as e:
+                db.session.rollback()
+                flash(_('變更失敗: %(error)s', error=str(e)), 'error')
+
+    return render_template('pages/change_password.html')
+
+
+@main_bp.route('/p/<secure_code>')
+@login_required
+def published_page(secure_code):
+    """
+    Web Builder 上線版頁面
+
+    僅限 status='published' 的頁面。
+    支援子系統 context query params: ?sub=<sub_sc>&ssp=<ssp_sc>
+    """
+    from app.security.resource_gateway import ResourceGateway
+
+    try:
+        # 動態 import 模組 Model（避免循環引用）
+        from modules.nocode_builder.models import DcPageLayout
+
+        page = ResourceGateway.get(
+            DcPageLayout, secure_code,
+            raise_on_not_found=False,
+            check_permission=False
+        )
+    except Exception:
+        abort(404)
+        return
+
+    if not page or page.is_deleted or page.status != 'published':
+        abort(404)
+
+    from modules.nocode_builder.services.page_ownership_service import is_page_reachable
+
+    if not is_page_reachable(secure_code):
+        logger.info(
+            'Published page blocked: owner sub system deleted page=%s', secure_code
+        )
+        abort(404)
+
+    if isinstance(page.layout_json, dict) and page.layout_json.get('ir_version') == 3:
+        from app.pageir import PageIrRenderError, render_page_ir_full
+
+        sub_sc = request.args.get('sub', '').strip()
+        ssp_sc = request.args.get('ssp', '').strip()
+        if sub_sc and ssp_sc:
+            try:
+                from modules.nocode_builder.web import (
+                    _build_sub_system_context,
+                    _check_site_map_node_access,
+                    _deny_and_logout,
+                )
+            except ImportError:
+                abort(404)
+            ctx = _build_sub_system_context(sub_sc, ssp_sc)
+            if ctx is None:
+                _deny_and_logout('pageir_v3_page', secure_code, sub_sc)
+                return redirect(url_for('auth.login'))
+            if not _check_site_map_node_access(sub_sc, secure_code, current_user):
+                _deny_and_logout('pageir_v3_sitemap', secure_code, sub_sc)
+                return redirect(url_for('auth.login'))
+
+        try:
+            rendered = render_page_ir_full(page.layout_json)
+        except PageIrRenderError:
+            logger.exception('Page IR v3 render failed: page=%s', secure_code)
+            return render_template('pageir/page_error.html'), 422
+
+        return render_template(
+            'pageir/page_v3.html',
+            page=page,
+            page_title=_page_ir_title(page),
+            body_html=rendered['html'],
+            has_form=rendered['has_form'],
+            engine=rendered['engine'],
+        )
+
+    # v2 已廢棄：不再渲染，回明確錯誤頁。
+    logger.info('Legacy v2 page requested: %s', secure_code)
+    return render_template('pageir/page_error.html', legacy_v2=True), 410
+
+
+def _page_ir_title(page):
+    """依使用者語系選 Page IR 標題。"""
+    title_i18n = (page.layout_json or {}).get('page', {}).get('title_i18n', {})
+    locale = str(getattr(g, 'locale', None) or get_locale() or 'zh-TW')
+    return title_i18n.get(locale) or title_i18n.get('zh-TW') or page.name or ''

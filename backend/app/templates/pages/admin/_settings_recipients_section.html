@@ -1,0 +1,286 @@
+        <!-- 收件人群組設定 -->
+        <section id="recipients" class="settings-section" x-show="activeSection === 'recipients'" x-data="recipientGroupManager()" x-init="init()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0; border: none; padding: 0;">{{ _('收件人群組設定') }}</h2>
+                <button @click="openCreateModal()"
+                        style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                    {{ _('+ 新增群組') }}
+                </button>
+            </div>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                {{ _('設定系統通知的收件人群組，使用「備用 Email 1（系統通知專用）」作為通知信箱') }}
+            </p>
+
+            <!-- 載入中 -->
+            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">{{ _('載入中...') }}</div>
+
+            <!-- 空狀態 -->
+            <div x-show="!loading && groups.length === 0" style="background: #f9f9f9; padding: 48px; text-align: center; border: 1px solid #ddd;">
+                <p style="font-size: 16px; color: #999; margin-bottom: 8px;">{{ _('尚無收件人群組') }}</p>
+                <p style="color: #999;">{{ _('點擊「新增群組」開始建立') }}</p>
+            </div>
+
+            <!-- 群組列表 -->
+            <div x-show="!loading && groups.length > 0" style="background: white; border: 1px solid #ddd;">
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                    <thead style="background: #f5f5f5;">
+                        <tr>
+                            <th style="padding: 10px; text-align: left;">{{ _('群組名稱') }}</th>
+                            <th style="padding: 10px; text-align: left;">{{ _('說明') }}</th>
+                            <th style="padding: 10px; text-align: center; width: 80px;">{{ _('收件人數') }}</th>
+                            <th style="padding: 10px; text-align: center; width: 60px;">{{ _('狀態') }}</th>
+                            <th style="padding: 10px; text-align: center; width: 140px;">{{ _('操作') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="group in groups" :key="group.id">
+                            <tr style="border-top: 1px solid #eee;">
+                                <td style="padding: 10px;" x-text="group.name"></td>
+                                <td style="padding: 10px; color: #666;" x-text="group.description || '-'"></td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-text="group.recipient_count || 0"></span> {{ _('人') }}
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-show="group.is_active" style="color: #059669;">{{ _('啟用') }}</span>
+                                    <span x-show="!group.is_active" style="color: #dc2626;">{{ _('停用') }}</span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <button @click="previewRecipients(group)" title="{{ _('預覽') }}"
+                                            style="padding: 4px 8px; background: #e0f2fe; color: #0369a1; border: none; cursor: pointer; margin-right: 4px;">
+                                        {{ _('預覽') }}
+                                    </button>
+                                    <button @click="openEditModal(group)" title="{{ _('編輯') }}"
+                                            style="padding: 4px 8px; background: #e0e0e0; border: none; cursor: pointer; margin-right: 4px;">
+                                        {{ _('編輯') }}
+                                    </button>
+                                    <button @click="confirmDelete(group)" title="{{ _('刪除') }}"
+                                            style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer;">
+                                        {{ _('刪除') }}
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 新增/編輯 Modal -->
+            <div x-show="showModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 900px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 18px;" x-text="isEditing ? __('編輯收件人群組') : __('新增收件人群組')"></h3>
+                        <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+
+                    <form @submit.prevent="saveGroup()">
+                        <!-- 基本資訊 -->
+                        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('群組名稱 *') }}</label>
+                                <input type="text" x-model="formData.name" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                       placeholder="{{ _('例如: 全體企業成員、主管群組') }}">
+                            </div>
+                            <div style="flex: 2;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('說明') }}</label>
+                                <input type="text" x-model="formData.description"
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <!-- 收件人選擇區 -->
+                        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                            <!-- 左側：組織樹 + 用戶搜尋 -->
+                            <div style="flex: 1; border: 1px solid #ddd; padding: 12px;">
+                                <div style="font-weight: 500; margin-bottom: 8px;">{{ _('選擇來源') }}</div>
+
+                                <!-- Tab 切換 -->
+                                <div style="display: flex; border-bottom: 1px solid #ddd; margin-bottom: 8px;">
+                                    <button type="button" @click="sourceTab = 'units'"
+                                            :style="sourceTab === 'units' ? 'background: #e3f2fd; border-bottom: 2px solid #0066cc;' : ''"
+                                            style="flex: 1; padding: 8px; border: none; cursor: pointer;">
+                                        {{ _('部門/群組') }}
+                                    </button>
+                                    <button type="button" @click="sourceTab = 'users'"
+                                            :style="sourceTab === 'users' ? 'background: #e3f2fd; border-bottom: 2px solid #0066cc;' : ''"
+                                            style="flex: 1; padding: 8px; border: none; cursor: pointer;">
+                                        {{ _('個別用戶') }}
+                                    </button>
+                                </div>
+
+                                <!-- 部門樹 -->
+                                <div x-show="sourceTab === 'units'" style="max-height: 300px; overflow-y: auto;">
+                                    <template x-for="unit in orgTree" :key="unit.id">
+                                        <div :style="'padding: 4px 8px; padding-left: ' + ((unit.level - 1) * 16 + 8) + 'px; display: flex; align-items: center; gap: 8px; cursor: pointer; border-bottom: 1px solid #f0f0f0;'"
+                                             :class="{'bg-blue-50': isUnitSelected(unit.id)}"
+                                             @click="toggleUnit(unit)">
+                                            <span style="font-size: 12px; color: #666;" x-text="unit.unit_type === 'GROUP' ? '[G]' : ''"></span>
+                                            <span x-text="unit.name"></span>
+                                            <span style="font-size: 11px; color: #999;" x-text="'(' + unit.member_count + ')'"></span>
+                                        </div>
+                                    </template>
+                                    <div x-show="orgTree.length === 0" style="padding: 16px; text-align: center; color: #999;">
+                                        {{ _('無部門資料') }}
+                                    </div>
+                                </div>
+
+                                <!-- 用戶搜尋 -->
+                                <div x-show="sourceTab === 'users'">
+                                    <input type="text" x-model="userSearch" @input.debounce.300ms="searchUsers()"
+                                           style="width: 100%; padding: 8px; border: 1px solid #ccc; margin-bottom: 8px; box-sizing: border-box;"
+                                           placeholder="{{ _('搜尋用戶姓名或 email...') }}">
+                                    <div style="max-height: 260px; overflow-y: auto;">
+                                        <template x-for="user in searchedUsers" :key="user.id">
+                                            <div style="padding: 6px 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; border-bottom: 1px solid #f0f0f0;"
+                                                 :class="{'bg-blue-50': isUserSelected(user.id)}"
+                                                 @click="toggleUser(user)">
+                                                <span x-text="user.name"></span>
+                                                <span style="font-size: 11px; color: #666;" x-text="user.unit_name ? '(' + user.unit_name + ')' : ''"></span>
+                                            </div>
+                                        </template>
+                                        <div x-show="searchedUsers.length === 0 && userSearch" style="padding: 16px; text-align: center; color: #999;">
+                                            {{ _('無符合的用戶') }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 右側：已選清單 -->
+                            <div style="flex: 1; border: 1px solid #ddd; padding: 12px;">
+                                <div style="font-weight: 500; margin-bottom: 8px;">{{ _('已選收件人') }}</div>
+
+                                <!-- 已選部門 -->
+                                <div x-show="formData.included_units.length > 0" style="margin-bottom: 12px;">
+                                    <div style="font-size: 12px; color: #666; margin-bottom: 4px;">{{ _('部門/群組：') }}</div>
+                                    <template x-for="(unitCfg, idx) in formData.included_units" :key="unitCfg.id">
+                                        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #f0f9ff; margin-bottom: 4px; border-radius: 4px;">
+                                            <span x-text="getUnitName(unitCfg.id)"></span>
+                                            <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #666;">
+                                                <input type="checkbox" x-model="unitCfg.include_children">
+                                                {{ _('含子部門') }}
+                                            </label>
+                                            <button type="button" @click="removeUnit(idx)"
+                                                    style="margin-left: auto; background: none; border: none; color: #dc2626; cursor: pointer;">
+                                                &times;
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- 已選用戶 -->
+                                <div x-show="formData.included_users.length > 0" style="margin-bottom: 12px;">
+                                    <div style="font-size: 12px; color: #666; margin-bottom: 4px;">{{ _('個別用戶：') }}</div>
+                                    <template x-for="(userId, idx) in formData.included_users" :key="userId">
+                                        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #f0fdf4; margin-bottom: 4px; border-radius: 4px;">
+                                            <span x-text="getUserName(userId)"></span>
+                                            <button type="button" @click="removeUser(idx)"
+                                                    style="margin-left: auto; background: none; border: none; color: #dc2626; cursor: pointer;">
+                                                &times;
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- 排除區 -->
+                                <div x-show="formData.excluded_units.length > 0 || formData.excluded_users.length > 0"
+                                     style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ddd;">
+                                    <div style="font-size: 12px; color: #dc2626; margin-bottom: 4px;">{{ _('排除：') }}</div>
+                                    <template x-for="(unitId, idx) in formData.excluded_units" :key="'ex-' + unitId">
+                                        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #fef2f2; margin-bottom: 4px; border-radius: 4px;">
+                                            <span x-text="__('{name} (部門)', {name: getUnitName(unitId)})"></span>
+                                            <button type="button" @click="formData.excluded_units.splice(idx, 1)"
+                                                    style="margin-left: auto; background: none; border: none; color: #dc2626; cursor: pointer;">
+                                                &times;
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-for="(userId, idx) in formData.excluded_users" :key="'exu-' + userId">
+                                        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #fef2f2; margin-bottom: 4px; border-radius: 4px;">
+                                            <span x-text="getUserName(userId)"></span>
+                                            <button type="button" @click="formData.excluded_users.splice(idx, 1)"
+                                                    style="margin-left: auto; background: none; border: none; color: #dc2626; cursor: pointer;">
+                                                &times;
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <div x-show="formData.included_units.length === 0 && formData.included_users.length === 0"
+                                     style="padding: 32px; text-align: center; color: #999;">
+                                    {{ _('點擊左側的部門或用戶來加入收件人') }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 狀態 -->
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.is_active"> {{ _('啟用此群組') }}
+                            </label>
+                        </div>
+
+                        <!-- 按鈕 -->
+                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+                            <button type="button" @click="closeModal()"
+                                    style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">{{ _('取消') }}</button>
+                            <button type="submit"
+                                    style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                                <span x-text="isEditing ? __('儲存') : __('建立')"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 預覽 Modal -->
+            <div x-show="showPreviewModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 500px; max-width: 90%; max-height: 80vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 18px;">{{ _('收件人預覽 -') }} <span x-text="previewGroup?.name"></span></h3>
+                        <button @click="showPreviewModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+                    <p style="color: #666; margin-bottom: 12px;">
+                        {{ _('共') }} <span x-text="previewRecipientsList.length"></span> {{ _('位收件人') }}
+                    </p>
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd;">
+                        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                            <thead style="background: #f5f5f5; position: sticky; top: 0;">
+                                <tr>
+                                    <th style="padding: 8px; text-align: left;">{{ _('姓名') }}</th>
+                                    <th style="padding: 8px; text-align: left;">{{ _('通知信箱') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="r in previewRecipientsList" :key="r.user_id">
+                                    <tr style="border-top: 1px solid #eee;">
+                                        <td style="padding: 8px;" x-text="r.name"></td>
+                                        <td style="padding: 8px; font-size: 12px;" x-text="r.email"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 16px; text-align: right;">
+                        <button @click="showPreviewModal = false"
+                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">{{ _('關閉') }}</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 刪除確認 Modal -->
+            <div x-show="showDeleteModal" x-cloak
+                 style="position: fixed: inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 400px; max-width: 90%;">
+                    <h3 style="margin: 0 0 16px; font-size: 18px;">{{ _('確認刪除') }}</h3>
+                    <p style="margin: 0 0 16px;">{{ _('確定要刪除收件人群組「') }}<span style="font-weight: 600;" x-text="groupToDelete?.name"></span>{{ _('」嗎？') }}</p>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <button @click="showDeleteModal = false"
+                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">{{ _('取消') }}</button>
+                        <button @click="deleteGroup()"
+                                style="padding: 8px 16px; background: #dc2626; color: white; border: none; cursor: pointer;">{{ _('確認刪除') }}</button>
+                    </div>
+                </div>
+            </div>
+        </section>

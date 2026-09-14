@@ -1,0 +1,565 @@
+/* Field Spec Editor - Excel-like Grid */
+
+.fs-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px 24px;
+}
+
+.fs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.fs-header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.fs-header .fs-meta {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}
+
+/* Toolbar */
+.fs-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.fs-toolbar .fs-btn {
+    padding: 6px 14px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.fs-toolbar .fs-btn:hover {
+    background: #f3f4f6;
+}
+
+.fs-toolbar .fs-btn.primary {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+}
+
+.fs-toolbar .fs-btn.primary:hover {
+    background: #2563eb;
+}
+
+.fs-toolbar .fs-btn.warning {
+    background: #f59e0b;
+    color: #fff;
+    border-color: #f59e0b;
+}
+
+.fs-toolbar .fs-btn.warning:hover {
+    background: #d97706;
+}
+
+.fs-toolbar .fs-btn.success {
+    background: #10b981;
+    color: #fff;
+    border-color: #10b981;
+}
+
+.fs-toolbar .fs-btn.success:hover {
+    background: #059669;
+}
+
+.fs-toolbar .fs-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Card */
+.fs-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* Summary bar */
+.fs-summary {
+    display: flex;
+    gap: 16px;
+    padding: 10px 14px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.fs-summary strong {
+    color: #111827;
+}
+
+/* Empty hint */
+.fs-empty-hint {
+    padding: 8px 14px;
+    font-size: 12px;
+    color: #9ca3af;
+    background: #fafbfc;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* ===== Grid Table (Excel-like) ===== */
+.fs-grid-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    table-layout: fixed;
+}
+
+.fs-grid-table thead th {
+    background: #f9fafb;
+    padding: 8px 6px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    color: #6b7280;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+    user-select: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fs-grid-table tbody td {
+    padding: 2px 3px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+    overflow: hidden;
+}
+
+/* Grid rows */
+.fs-grid-row:hover {
+    background: #f0f4ff;
+}
+
+.fs-grid-row.dragging {
+    opacity: 0.3;
+}
+
+.fs-grid-row.new-row {
+    background: #fafbfc;
+    border-top: 2px dashed #e5e7eb;
+}
+
+.fs-grid-row.new-row:hover {
+    background: #f0f4ff;
+}
+
+/* Drag handle in grid */
+.fs-drag-handle {
+    cursor: grab;
+    color: #9ca3af;
+    padding: 0 4px;
+    font-size: 14px;
+    user-select: none;
+}
+
+.fs-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Row number */
+.fs-row-num {
+    color: #9ca3af;
+    font-size: 11px;
+    margin-left: 2px;
+}
+
+/* Excel-like cell inputs */
+.fs-grid-table input[type="text"],
+.fs-grid-table select {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    font-size: 12px;
+    border-radius: 2px;
+    outline: none;
+    box-sizing: border-box;
+    line-height: 1.4;
+}
+
+.fs-grid-table input[type="text"]:focus,
+.fs-grid-table select:focus {
+    border-color: #93c5fd;
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.fs-grid-table input[type="text"]:hover:not(:focus),
+.fs-grid-table select:hover:not(:focus) {
+    border-color: #d1d5db;
+}
+
+.fs-grid-table input.mono {
+    font-family: monospace;
+}
+
+.fs-grid-table select {
+    cursor: pointer;
+    appearance: auto;
+}
+
+/* Checkbox cell */
+.fs-grid-table .cb-cell {
+    text-align: center;
+}
+
+.fs-grid-table .cb-cell input[type="checkbox"] {
+    cursor: pointer;
+    width: 15px;
+    height: 15px;
+}
+
+/* Actions cell */
+.fs-grid-table .col-actions {
+    white-space: nowrap;
+    text-align: right;
+    padding-right: 8px;
+}
+
+.fs-grid-table .col-actions button {
+    padding: 2px 7px;
+    font-size: 11px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-left: 3px;
+}
+
+.fs-grid-table .col-actions button:hover {
+    background: #f3f4f6;
+}
+
+.fs-grid-table .col-actions button.danger {
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+.fs-grid-table .col-actions button.danger:hover {
+    background: #fef2f2;
+}
+
+/* New row placeholder text */
+.fs-grid-table .new-row input::placeholder {
+    color: #c0c7d0;
+    font-style: italic;
+}
+
+/* Badges (used in summary/other panels) */
+.fs-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: 2px;
+    font-weight: 500;
+}
+
+.fs-badge.pii {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.fs-badge.required {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.fs-badge.type {
+    background: #e0e7ff;
+    color: #3730a3;
+    font-family: monospace;
+}
+
+/* ===== Compare Panel ===== */
+.fs-compare-panel {
+    margin-top: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.fs-compare-header {
+    padding: 10px 14px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fs-compare-body {
+    padding: 12px 14px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.fs-drift-item {
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    border-radius: 3px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fs-drift-item.error {
+    background: #fef2f2;
+    border-left: 3px solid #dc2626;
+}
+
+.fs-drift-item.warning {
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+}
+
+.fs-drift-item.info {
+    background: #f0f9ff;
+    border-left: 3px solid #3b82f6;
+}
+
+.fs-drift-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.fs-drift-badge.error {
+    background: #dc2626;
+    color: #fff;
+}
+
+.fs-drift-badge.warning {
+    background: #f59e0b;
+    color: #fff;
+}
+
+.fs-drift-badge.info {
+    background: #3b82f6;
+    color: #fff;
+}
+
+/* ===== History Panel ===== */
+.fs-history-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.fs-history-item {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 12px;
+}
+
+.fs-history-item:last-child {
+    border-bottom: none;
+}
+
+.fs-history-item.active {
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+}
+
+.fs-history-version {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.fs-history-meta {
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.fs-history-diff {
+    margin-top: 4px;
+}
+
+.fs-history-diff span {
+    display: inline-block;
+    margin-right: 12px;
+}
+
+.fs-history-diff .added {
+    color: #059669;
+}
+
+.fs-history-diff .modified {
+    color: #d97706;
+}
+
+.fs-history-diff .removed {
+    color: #dc2626;
+}
+
+/* ===== Preview Panel ===== */
+.fs-preview-panel {
+    margin-top: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.fs-preview-header {
+    padding: 10px 14px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.fs-preview-body {
+    padding: 12px 14px;
+    max-height: 400px;
+    overflow: auto;
+}
+
+.fs-preview-body pre {
+    background: #f5f5f5;
+    padding: 12px;
+    font-size: 11px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* ===== Detail Modal ===== */
+.fs-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fs-modal-content {
+    background: #fff;
+    border-radius: 6px;
+    width: 640px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.fs-modal-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fs-modal-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.fs-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.fs-modal-footer {
+    padding: 10px 16px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* Detail modal field info */
+.fs-detail-info {
+    padding: 8px 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    display: flex;
+    gap: 20px;
+}
+
+.fs-detail-info .info-label {
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.fs-detail-info .info-value {
+    font-family: monospace;
+    color: #111827;
+    margin-left: 6px;
+}
+
+/* Form elements in modal */
+.fs-form-group {
+    margin-bottom: 12px;
+}
+
+.fs-form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.fs-form-group input[type="text"],
+.fs-form-group input[type="number"],
+.fs-form-group select,
+.fs-form-group textarea {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.fs-form-group textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.fs-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Grid children sub-table in detail modal */
+.fs-grid-children {
+    margin-top: 8px;
+    padding: 8px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+}

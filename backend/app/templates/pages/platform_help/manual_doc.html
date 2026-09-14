@@ -1,0 +1,26 @@
+{% extends 'layouts/manual_base.html' %}
+
+{% block title %}{{ _('%(title)s 說明', title=doc.title) }} - BeakPlatform{% endblock %}
+
+{% block content %}
+<main class="manual-shell">
+    <aside class="manual-shell__nav">
+        {% include 'pages/platform_help/_manual_nav.html' %}
+    </aside>
+
+    <article class="manual-shell__content help-doc">
+        <div class="help-doc__back">
+            <a href="{{ url_for('platform_help.index') }}">{{ _('返回說明目錄') }}</a>
+        </div>
+        {% if doc.locale_fallback %}
+        <div class="alert alert-info">{{ _('本頁尚未提供您所選語言的版本，以下為繁體中文原文。') }}</div>
+        {% endif %}
+        {{ doc.html|safe }}
+    </article>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/mermaid.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/manual-mermaid.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/03_org_setup/work_schedules{% endblock %}
+
+{% block title %}{{ _('基本班表') }} - BeakMask{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/schedules.css') }}">
+{% endblock %}
+
+{% block content %}
+<div x-data='schedulesApp()'>
+    <div style="margin-bottom:12px;">
+        <a href="{{ url_for('admin.settings') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回系統設定') }}</a>
+    </div>
+
+    <div class="page-header" style="margin-top:30px;">
+        <h1>{{ _('基本班表') }}</h1>
+        <button class="btn btn-primary" @click="openCreateModal()">{{ _('+ 新增班表') }}</button>
+    </div>
+
+    <!-- Flash Messages -->
+    <template x-if="message">
+        <div class="alert" :class="messageType === 'success' ? 'alert-success' : 'alert-error'" x-text="message"></div>
+    </template>
+
+    <!-- Schedules Table -->
+    <template x-if="schedules.length > 0">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>{{ _('班表名稱') }}</th>
+                    <th>{{ _('時區') }}</th>
+                    <th>{{ _('週間工時') }}</th>
+                    <th>{{ _('狀態') }}</th>
+                    <th>{{ _('操作') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="schedule in schedules" :key="schedule.id">
+                    <tr>
+                        <td>
+                            <span x-text="schedule.name"></span>
+                            <template x-if="schedule.is_default">
+                                <span class="badge badge-default">{{ _('預設') }}</span>
+                            </template>
+                        </td>
+                        <td x-text="schedule.timezone"></td>
+                        <td>
+                            <div class="weekly-grid">
+                                <template x-for="day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="'h-'+day">
+                                    <div class="day-header" :class="{ weekend: day === 'sat' || day === 'sun' }"
+                                         x-text="dayNames[day]"></div>
+                                </template>
+                                <template x-for="day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="'t-'+day">
+                                    <div class="day-time" :class="{ off: !schedule.weekly_hours[day] || schedule.weekly_hours[day].length === 0 }">
+                                        <template x-if="schedule.weekly_hours[day] && schedule.weekly_hours[day].length > 0">
+                                            <span x-html="formatDaySchedule(schedule.weekly_hours[day])"></span>
+                                        </template>
+                                        <template x-if="!schedule.weekly_hours[day] || schedule.weekly_hours[day].length === 0">
+                                            <span>{{ _('休') }}</span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </td>
+                        <td>
+                            <template x-if="schedule.is_active">
+                                <span class="badge badge-active">{{ _('啟用') }}</span>
+                            </template>
+                            <template x-if="!schedule.is_active">
+                                <span class="badge badge-inactive">{{ _('停用') }}</span>
+                            </template>
+                        </td>
+                        <td class="actions">
+                            <a :href="'{{ app_prefix }}/admin/settings/work-schedules/' + schedule.id + '/holidays'">{{ _('假日設定') }}</a>
+                            <button @click="openEditModal(schedule)">{{ _('編輯') }}</button>
+                            <template x-if="!schedule.is_default">
+                                <button @click="setDefault(schedule)">{{ _('設為預設') }}</button>
+                            </template>
+                            <template x-if="!schedule.is_default">
+                                <button class="danger" @click="deleteSchedule(schedule)">{{ _('刪除') }}</button>
+                            </template>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </template>
+
+    <template x-if="schedules.length === 0">
+        <div class="empty-state">
+            <p>{{ _('尚未建立任何班表') }}</p>
+            <button class="btn btn-primary" @click="openCreateModal()">{{ _('建立第一個班表') }}</button>
+        </div>
+    </template>
+
+    {% include 'pages/admin/time/_holiday_calendars_section.html' %}
+
+    <!-- Help -->
+    <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
+        <h3 style="margin-top: 0;">{{ _('說明') }}</h3>
+        <ul style="margin: 0; padding-left: 20px; color: #666;">
+            <li>{{ _('班表定義企業成員的標準工作時間') }}</li>
+            <li>{{ _('「預設」班表會自動套用給未指定班表的企業成員') }}</li>
+            <li>{{ _('週間工時格式：HH:MM-HH:MM，可設定多個時段（如午休分隔）') }}</li>
+            <li>{{ _('留空或設為休表示休息日') }}</li>
+            <li>{{ _('點擊「假日設定」可設定國定假日與補班日') }}</li>
+        </ul>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <template x-if="showModal">
+        <div class="modal-overlay">
+            <div class="modal-content modal-xl">
+                <div class="modal-header">
+                    <h3 x-text="editingSchedule ? __('編輯班表') : __('新增班表')"></h3>
+                    <button class="close-btn" @click="closeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>{{ _('班表代碼 *') }}</label>
+                        <input type="text" x-model="form.schedule_code" placeholder="{{ _('例：TW-STANDARD') }}"
+                               :disabled="editingSchedule">
+                        <div class="form-hint">{{ _('用於系統識別，建立後不可修改') }}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>{{ _('班表名稱 *') }}</label>
+                        <input type="text" x-model="form.name" placeholder="{{ _('例：台灣標準班表') }}">
+                    </div>
+                    <div class="form-group">
+                        <label>{{ _('時區') }}</label>
+                        <select x-model="form.timezone">
+                            <option value="Asia/Taipei">{{ _('Asia/Taipei (台北)') }}</option>
+                            <option value="Asia/Tokyo">{{ _('Asia/Tokyo (東京)') }}</option>
+                            <option value="Asia/Shanghai">{{ _('Asia/Shanghai (上海)') }}</option>
+                            <option value="Asia/Singapore">{{ _('Asia/Singapore (新加坡)') }}</option>
+                            <option value="America/Los_Angeles">{{ _('America/Los_Angeles (洛杉磯)') }}</option>
+                            <option value="America/New_York">{{ _('America/New_York (紐約)') }}</option>
+                            <option value="Europe/London">{{ _('Europe/London (倫敦)') }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>{{ _('週間工時') }}</label>
+                        <div class="weekly-hours-section">
+                            <template x-for="day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="day">
+                                <div class="day-config">
+                                    <span class="day-label" :class="{ weekend: day === 'sat' || day === 'sun' }"
+                                          x-text="__('週{day}', {day: dayNames[day]})"></span>
+                                    <select class="is-workday" x-model="dayConfig[day].isWorkday"
+                                            @change="onWorkdayChange(day)">
+                                        <option value="true">{{ _('上班') }}</option>
+                                        <option value="false">{{ _('休息') }}</option>
+                                    </select>
+                                    <template x-if="dayConfig[day].isWorkday === 'true'">
+                                        <div class="time-selects">
+                                            <select x-model="dayConfig[day].startTime">
+                                                <template x-for="t in timeOptions" :key="'s'+t">
+                                                    <option :value="t" x-text="t"></option>
+                                                </template>
+                                            </select>
+                                            <span>~</span>
+                                            <select x-model="dayConfig[day].endTime">
+                                                <template x-for="t in timeOptions" :key="'e'+t">
+                                                    <option :value="t" x-text="t"></option>
+                                                </template>
+                                            </select>
+                                            <template x-for="(brk, idx) in dayConfig[day].breaks" :key="day + '-brk-' + idx">
+                                                <div class="break-group">
+                                                    <span>{{ _('休') }}</span>
+                                                    <select :value="brk.start" @change="brk.start = $event.target.value">
+                                                        <template x-for="t in timeOptions" :key="day + '-bs-' + idx + '-' + t">
+                                                            <option :value="t" x-text="t" :selected="t === brk.start"></option>
+                                                        </template>
+                                                    </select>
+                                                    <span>~</span>
+                                                    <select :value="brk.end" @change="brk.end = $event.target.value">
+                                                        <template x-for="t in timeOptions" :key="day + '-be-' + idx + '-' + t">
+                                                            <option :value="t" x-text="t" :selected="t === brk.end"></option>
+                                                        </template>
+                                                    </select>
+                                                    <button type="button" class="remove-break-btn"
+                                                            @click="removeBreak(day, idx)">×</button>
+                                                </div>
+                                            </template>
+                                            <template x-if="dayConfig[day].breaks.length < 3">
+                                                <button type="button" class="add-break-btn"
+                                                        @click="addBreak(day)">{{ _('+ 休息') }}</button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <div class="copy-to-others">
+                                <label>
+                                    <input type="checkbox" x-model="copyToOthers">
+                                    {{ _('將目前設定的第一個上班日時間複製到所有上班日') }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>{{ _('描述') }}</label>
+                        <textarea x-model="form.description" rows="2" placeholder="{{ _('選填') }}"></textarea>
+                    </div>
+                    <div class="copy-to-others">
+                        <label>
+                            <input type="checkbox" x-model="form.is_default">
+                            {{ _('設為企業預設班表') }}
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="closeModal()">{{ _('取消') }}</button>
+                    <button class="btn btn-primary" @click="saveSchedule()" :disabled="saving">
+                        <span x-text="saving ? __('儲存中...') : __('儲存')"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<!-- Window Bridge: Jinja2 → JS -->
+<script>
+window.__SCHEDULES_CONFIG = {
+    schedules: {{ schedules_json | tojson | safe }}
+};
+window.__HOLIDAY_CAL_CONFIG = {
+    schedules: {{ schedules_json | tojson | safe }},
+    year: {{ current_year }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/schedules.js') }}"></script>
+<script src="{{ url_for('static', filename='js/holiday-calendars.js') }}"></script>
+{% endblock %}

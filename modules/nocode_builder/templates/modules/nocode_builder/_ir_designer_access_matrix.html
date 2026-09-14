@@ -1,0 +1,46 @@
+{% macro render(actions_expr, write_hint) %}
+<template x-if="dataScope && !sharedComponentEditor.open">
+    <div class="ird-section">
+        <div class="ird-subtitle">{{ _('元件准入') }}</div>
+        <template x-for="action in {{ actions_expr|safe }}" :key="action.key">
+            <div>
+                <div class="ird-field">
+                    <label>
+                        <input type="checkbox"
+                               :checked="widgetActionEnabled(action.key)"
+                               @change="toggleWidgetAction(action.key, $event.target.checked)">
+                        <span x-text="action.label"></span>
+                    </label>
+                </div>
+                <template x-if="widgetActionEnabled(action.key)">
+                    <div>
+                        <div class="ird-field">
+                            <label>{{ _('符合方式') }}</label>
+                            <select :value="widgetActionMatchMode(action.key)" @change="setWidgetActionMatchMode(action.key, $event.target.value)">
+                                <option value="any" :selected="widgetActionMatchMode(action.key) === 'any'">{{ _('任一') }}</option>
+                                <option value="all" :selected="widgetActionMatchMode(action.key) === 'all'">{{ _('全部') }}</option>
+                            </select>
+                        </div>
+                        <div class="ird-field">
+                            <label>{{ _('權限碼') }}</label>
+                            <div class="ird-checks">
+                                <template x-for="perm in activePortalPermissions()" :key="perm.code">
+                                    <label>
+                                        <input type="checkbox"
+                                               :checked="widgetActionPermissions(action.key).includes(perm.code)"
+                                               @change="toggleWidgetPermission(action.key, perm.code)">
+                                        <span x-text="perm.description ? perm.code + ' - ' + perm.description : perm.code"></span>
+                                    </label>
+                                </template>
+                                <span class="ird-hint" x-show="portalOrgLoaded && activePortalPermissions().length === 0">{{ _('尚無權限碼，請先到工作區「權限矩陣」分頁建立') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+        <p class="ird-hint">{{ _('僅在子系統 portal 語境生效；平台頁面不套用此限制。') }}</p>
+        <p class="ird-hint">{{ write_hint }}</p>
+    </div>
+</template>
+{% endmacro %}

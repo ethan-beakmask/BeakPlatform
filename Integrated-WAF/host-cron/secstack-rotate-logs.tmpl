@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# /etc/cron.hourly/secstack-rotate-logs（由 Integrated-WAF/install.sh 產生）
+# 防禦節點主機端 log 輪替：Suricata eve.json 與 WAF audit.log。
+# 兩段互相獨立，任一段失敗不影響另一段。
+#
+# 做法是 root 直接 copy + truncate（寫入端 fd 保持有效），不依賴 logrotate 的
+# 降權機制（降權後穿不過 750 的家目錄，會靜默失敗）。
+# 已知限制：truncate 當下 Vector 尚未讀走的那幾行會遺失（每小時一次、約一秒）。
+set -uo pipefail
+
+LOG=/opt/tmp/secstack-rotate-logs.log
+SURI_DIR=/var/lib/docker/volumes/secstack_suricata-logs/_data
+MODSEC=@@INSTALL_DIR@@/waf/log/audit.log
+RETAIN_EVE_MIN=2880   # 48h
+RETAIN_MODSEC_MIN=360 # 6h
+
+mkdir -p "$(dirname "$LOG")" 2>/dev/null
+log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') $*" >> "$LOG"; }
+
+rotate_one() {
+  local f="$1" keep="$2" dir base ts
+  if [[ ! -f "$f" ]]; then log "SKIP missing $f"; return 0; fi
+  if [[ "$(stat -c%s "$f")" -eq 0 ]]; then log "SKIP empty $f"; return 0; fi
+  dir=$(dirname "$f"); base=$(basename "$f"); ts=$(date -u +%Y%m%d-%H)
+  if [[ ! -f "$dir/$base.$ts" ]]; then
+    if cp "$f" "$dir/$base.$ts" && : > "$f"; then
+      log "ROTATED $f -> $base.$ts ($(stat -c%s "$dir/$base.$ts") bytes)"
+    else
+      log "FAIL rotate $f"; return 1
+    fi
+  else
+    log "SKIP already rotated this hour: $base.$ts"
+  fi
+  find "$dir" -maxdepth 1 -name "$base.*[0-9]" ! -name '*.gz' -mmin +5 -exec gzip -f {} \; 2>/dev/null
+  find "$dir" -maxdepth 1 -name "$base.*" -mmin +"$keep" -delete 2>/dev/null
+  return 0
+}
+
+rc=0
+rotate_one "$SURI_DIR/eve.json" "$RETAIN_EVE_MIN" || rc=1
+rotate_one "$MODSEC" "$RETAIN_MODSEC_MIN" || rc=1
+rotate_one "$(dirname "$MODSEC")/audit-welcome.log" "$RETAIN_MODSEC_MIN" || rc=1
+if [[ $rc -eq 0 ]]; then
+  log "OK"
+  mkdir -p /opt/tmp/heartbeat 2>/dev/null
+  date -u '+%Y-%m-%dT%H:%M:%SZ' > /opt/tmp/heartbeat/secstack-rotate-logs
+else
+  log "ERROR rc=$rc"
+fi
+exit $rc

@@ -1,0 +1,241 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('資產弱點詳情') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/vuln_lifecycle/css/vuln-common.css">
+{% endblock %}
+
+{% block content %}
+<div class="vlc-container" x-data="assetDetail()">
+
+    <div class="vlc-page-header">
+        <a href="{{ app_prefix }}/vuln/assets" class="vlc-btn-back">&larr; {{ _('返回清冊') }}</a>
+        <h1 x-text="title">{{ _('資產 #%(id)s', id=asset_id) }}</h1>
+    </div>
+
+    <!-- 資產資訊卡 -->
+    <div class="vlc-info-card" x-show="loaded" x-cloak>
+        <span><strong>IP:</strong> <span x-text="info.ip">-</span></span>
+        <span><strong>{{ _('主機名稱') }}:</strong> <span x-text="info.hostname">-</span></span>
+        <span><strong>{{ _('類型') }}:</strong> <span x-text="info.type">-</span></span>
+        <span><strong>{{ _('掃描次數') }}:</strong> <span x-text="info.scans">-</span></span>
+        <span><strong>{{ _('弱點數') }}:</strong> <span x-text="info.findings">-</span></span>
+    </div>
+
+    <!-- 篩選 -->
+    <div class="vlc-filter-bar">
+        <label>{{ _('嚴重度') }} &ge;</label>
+        <input type="number" x-model="sevFilter" @change="load()" value="0" min="0" max="10" step="0.1">
+    </div>
+
+    <!-- 弱點時間軸表 -->
+    <div class="vlc-section">
+        <div class="vlc-section-body" style="overflow-x:auto">
+            <table class="vlc-table">
+                <thead id="t-head"></thead>
+                <tbody id="t-body">
+                    <tr><td class="vlc-empty">{{ _('載入中...') }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 風險調整 Modal -->
+    <div class="vlc-modal-overlay" x-show="showModal" x-cloak @click.self="">
+        <div class="vlc-modal-box">
+            <div class="vlc-modal-header">
+                <h3>{{ _('風險調整') }}</h3>
+                <button class="vlc-modal-close" @click="showModal=false">&times;</button>
+            </div>
+            <p style="font-size:13px;color:#666" x-text="adjTarget"></p>
+            <div style="margin-bottom:12px">
+                <label class="form-label">{{ _('調整類型') }}</label>
+                <select x-model="adjType" class="form-control" style="font-size:13px">
+                    <option value="ACCEPTED">{{ _('已接受 (Accepted)') }}</option>
+                    <option value="MITIGATED">{{ _('已緩解 (Mitigated)') }}</option>
+                    <option value="FALSE_POSITIVE">{{ _('誤報 (False Positive)') }}</option>
+                    <option value="DEFERRED">{{ _('延後處理 (Deferred)') }}</option>
+                </select>
+            </div>
+            <div style="margin-bottom:12px">
+                <label class="form-label">{{ _('調整後嚴重度') }}</label>
+                <input type="number" x-model="adjSev" class="form-control" style="font-size:13px"
+                       min="0" max="10" step="0.1">
+            </div>
+            <div style="margin-bottom:12px">
+                <label class="form-label">{{ _('調整理由') }}</label>
+                <textarea x-model="adjJust" class="form-control" style="font-size:13px"
+                          rows="3" placeholder="{{ _('請說明風險調整的理由...') }}"></textarea>
+            </div>
+            <div style="margin-bottom:12px">
+                <label class="form-label">{{ _('到期日') }}</label>
+                <input type="date" x-model="adjExp" class="form-control" style="font-size:13px">
+            </div>
+            <div class="vlc-modal-footer">
+                <button class="btn btn-secondary" @click="showModal=false">{{ _('取消') }}</button>
+                <button class="btn btn-primary" @click="submitAdj()">{{ _('儲存') }}</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function assetDetail() {
+    var assetId = {{ asset_id }};
+
+    var ADJ_LABEL = {
+        'ACCEPTED': __('已接受'), 'MITIGATED': __('已緩解'),
+        'FALSE_POSITIVE': __('誤報'), 'DEFERRED': __('延後')
+    };
+
+    function sevColor(v) {
+        if (v >= 9) return '#c00';
+        if (v >= 7) return '#e60';
+        if (v >= 4) return '#e90';
+        return '#999';
+    }
+
+    function statusHtml(s) {
+        var map = {
+            'NEW': '<span class="vlc-badge vlc-badge-new">NEW</span>',
+            'OPEN': '<span class="vlc-badge vlc-badge-open">OPEN</span>',
+            'FIXED': '<span class="vlc-badge vlc-badge-fixed">FIXED</span>',
+            'RECURRED': '<span class="vlc-badge vlc-badge-recurred">RECUR</span>'
+        };
+        return map[s] || s;
+    }
+
+    return {
+        title: __('資產 #{id}', {id: assetId}),
+        loaded: false,
+        sevFilter: 0,
+        info: { ip: '-', hostname: '-', type: '-', scans: '-', findings: '-' },
+        showModal: false,
+        adjVulnId: null,
+        adjTarget: '',
+        adjType: 'ACCEPTED',
+        adjSev: 0,
+        adjJust: '',
+        adjExp: '',
+
+        init: function() { this.load(); },
+
+        load: function() {
+            var self = this;
+            fetch('{{ app_prefix }}/api/vuln-lifecycle/assets/' + assetId + '/findings?severity_min=' + self.sevFilter)
+            .then(function(r) {
+                if (!r.ok) {
+                    document.getElementById('t-body').innerHTML =
+                        '<tr><td style="color:#dc3545;font-weight:bold;padding:16px">' + __('未安裝 BeakRisk 弱點管制系統') + '</td></tr>';
+                    return null;
+                }
+                return r.json();
+            })
+            .then(function(r) {
+                if (!r) return;
+                if (!r.success) {
+                    document.getElementById('t-body').innerHTML =
+                        '<tr><td style="color:#c00;padding:16px">' + r.message + '</td></tr>';
+                    return;
+                }
+                var d = r.data, a = d.asset, ss = d.sessions, ff = d.findings;
+
+                self.title = __('資產: {ip}', {ip: a.ip || a.id});
+                self.info = {
+                    ip: a.ip || '-',
+                    hostname: a.hostname || '-',
+                    type: a.asset_type || '-',
+                    scans: ss.length,
+                    findings: ff.length
+                };
+                self.loaded = true;
+
+                // 表頭
+                var th = '<tr><th>' + __('弱點名稱') + '</th><th>Port</th><th>' + __('嚴重度') + '</th><th>' + __('狀態') + '</th>';
+                ss.forEach(function(s) {
+                    var dt = s.scan_start ? s.scan_start.substring(5, 10) : '?';
+                    th += '<th style="width:28px;text-align:center;padding:2px">' +
+                        '<div class="vlc-session-hdr">' + dt + '</div></th>';
+                });
+                th += '<th>' + __('風險調整') + '</th><th></th></tr>';
+                document.getElementById('t-head').innerHTML = th;
+
+                // 弱點列
+                var html = '';
+                ff.forEach(function(f) {
+                    var sc = sevColor(f.max_severity);
+                    var vn = (f.vuln_name || '-');
+                    var short = vn.length > 50 ? vn.substring(0, 50) + '...' : vn;
+                    html += '<tr>';
+                    html += '<td title="' + vn.replace(/"/g, '&quot;') + '">' + short;
+                    if (f.cve) html += ' <small style="color:#999">' + f.cve + '</small>';
+                    html += '</td>';
+                    html += '<td>' + (f.port || '-') + '</td>';
+                    html += '<td style="color:' + sc + ';font-weight:' + (f.max_severity >= 7 ? '600' : 'normal') + '">' + f.max_severity.toFixed(1) + '</td>';
+                    html += '<td>' + statusHtml(f.status) + '</td>';
+
+                    (f.presence || []).forEach(function(p) {
+                        html += '<td style="text-align:center;padding:2px">' +
+                            '<span class="vlc-dot ' + (p ? 'vlc-dot-found' : 'vlc-dot-clear') + '">' +
+                            (p ? 'X' : '') + '</span></td>';
+                    });
+
+                    if (f.adjustment) {
+                        html += '<td><span class="vlc-adj-badge vlc-adj-' + f.adjustment.type.toLowerCase() + '">' +
+                            (ADJ_LABEL[f.adjustment.type] || f.adjustment.type) + '</span></td><td></td>';
+                    } else {
+                        html += '<td>-</td>';
+                        html += '<td><button class="vlc-btn-adjust" ' +
+                            'onclick="document.querySelector(\'[x-data]\').__x.$data.openAdj(' +
+                            f.vuln_id + ',\'' + vn.replace(/'/g, "\\'").replace(/"/g, '&quot;') +
+                            '\',' + f.max_severity + ')">' + __('調整') + '</button></td>';
+                    }
+                    html += '</tr>';
+                });
+                document.getElementById('t-body').innerHTML =
+                    html || '<tr><td colspan="99" class="vlc-empty">' + __('無弱點發現') + '</td></tr>';
+            });
+        },
+
+        openAdj: function(vid, vname, sev) {
+            this.adjVulnId = vid;
+            this.adjTarget = vname;
+            this.adjSev = Math.max(0, sev - 2).toFixed(1);
+            this.adjJust = '';
+            this.adjExp = '';
+            this.showModal = true;
+        },
+
+        submitAdj: function() {
+            var self = this;
+            if (!self.adjJust.trim()) {
+                alert(__('請填寫調整理由'));
+                return;
+            }
+            fetch('{{ app_prefix }}/api/vuln-lifecycle/risk/adjust', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    asset_id: assetId,
+                    vuln_id: self.adjVulnId,
+                    adjustment_type: self.adjType,
+                    adjusted_severity: parseFloat(self.adjSev),
+                    justification: self.adjJust,
+                    expires_at: self.adjExp || null
+                })
+            }).then(function(r) { return r.json(); }).then(function(r) {
+                if (r.success) {
+                    self.showModal = false;
+                    self.load();
+                } else {
+                    alert(r.message || __('儲存失敗'));
+                }
+            });
+        }
+    };
+}
+</script>
+{% endblock %}

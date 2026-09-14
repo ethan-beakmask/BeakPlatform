@@ -1,0 +1,341 @@
+/* Sync Control -- 同步中控台 */
+
+.sc-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 24px;
+}
+
+.sc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.sc-header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.sc-header .sc-meta {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}
+
+.sc-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.sc-btn {
+    padding: 6px 14px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.sc-btn:hover { background: #f3f4f6; }
+.sc-btn.primary { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.sc-btn.primary:hover { background: #2563eb; }
+.sc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 三面相卡片 */
+.sc-aspects {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.sc-aspect-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px;
+}
+
+.sc-aspect-card.unavailable {
+    opacity: 0.5;
+}
+
+.sc-aspect-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sc-aspect-title .sc-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.sc-status-dot.active { background: #10b981; }
+.sc-status-dot.inactive { background: #9ca3af; }
+
+.sc-aspect-info {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.8;
+}
+
+.sc-aspect-info strong {
+    color: #111827;
+}
+
+/* 同步方向區 */
+.sc-sync-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.sc-sync-pair {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 14px 16px;
+}
+
+.sc-sync-pair-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sc-comparison-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-weight: 500;
+}
+
+.sc-comparison-badge.match {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.sc-comparison-badge.mismatch {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.sc-comparison-badge.unavailable {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.sc-sync-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.sc-sync-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    text-align: center;
+    transition: all 0.15s;
+}
+
+.sc-sync-btn:hover { background: #f3f4f6; }
+
+.sc-sync-btn.match {
+    border-color: #6ee7b7;
+    color: #065f46;
+}
+
+.sc-sync-btn.match:hover {
+    background: #ecfdf5;
+}
+
+.sc-sync-btn.mismatch {
+    border-color: #f59e0b;
+    color: #92400e;
+    background: #fffbeb;
+}
+
+.sc-sync-btn.mismatch:hover {
+    background: #fef3c7;
+}
+
+.sc-sync-btn.unavailable {
+    border-color: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.sc-sync-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.sc-also-spec {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 8px;
+}
+
+.sc-also-spec input[type="checkbox"] {
+    width: 13px;
+    height: 13px;
+    margin: 0;
+}
+
+/* 偏移細節 */
+.sc-drift-section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.sc-drift-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.sc-drift-item {
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    border-radius: 3px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sc-drift-item.error {
+    background: #fef2f2;
+    border-left: 3px solid #dc2626;
+}
+
+.sc-drift-item.warning {
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+}
+
+.sc-drift-item.info {
+    background: #f0f9ff;
+    border-left: 3px solid #3b82f6;
+}
+
+.sc-drift-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.sc-drift-badge.error { background: #dc2626; color: #fff; }
+.sc-drift-badge.warning { background: #f59e0b; color: #fff; }
+.sc-drift-badge.info { background: #3b82f6; color: #fff; }
+
+/* 載入中 */
+.sc-loading {
+    padding: 40px;
+    text-align: center;
+    color: #9ca3af;
+}
+
+/* Modal */
+.sc-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sc-modal-content {
+    background: #fff;
+    border-radius: 6px;
+    width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.sc-modal-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sc-modal-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.sc-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.sc-modal-footer {
+    padding: 10px 16px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.sc-confirm-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    font-size: 13px;
+    font-family: monospace;
+    margin-top: 8px;
+}
+
+.sc-warning-text {
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.sc-info-text {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.6;
+}

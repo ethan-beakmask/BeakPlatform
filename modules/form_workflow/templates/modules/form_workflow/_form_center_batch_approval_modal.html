@@ -1,0 +1,131 @@
+{# 表單中心 - 批次簽核模態框 (partial, 注入到 formCenterManager x-data 範圍內) #}
+
+<!-- 批次簽核 Modal -->
+<div x-show="showBatchApprovalModal" x-cloak class="fc-modal">
+    <div class="fc-modal-content" style="width: 700px; max-height: 100vh;">
+        <div class="fc-modal-header">
+            <div>
+                <h3>{{ _('批次簽核') }}</h3>
+                <p style="margin: 4px 0 0; font-size: 13px; color: #374151;"
+                   x-text="batchApprovalInfo ? (batchApprovalInfo.form_name + ' / ' + batchApprovalInfo.node_name) : ''"></p>
+            </div>
+            <button class="fc-close-btn" @click="closeBatchApprovalModal()">&times;</button>
+        </div>
+        <div class="fc-modal-body">
+            <div x-show="loadingBatchInfo" class="fc-loading">{{ _('載入中...') }}</div>
+            <div x-show="!loadingBatchInfo && batchApprovalInfo">
+
+                <!-- 選取項目摘要 -->
+                <div style="background: #f9fafb; padding: 12px; margin-bottom: 16px; border-radius: 4px;">
+                    <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                        {{ _('選取項目（') }}<span x-text="batchSelectedCount"></span> {{ _('筆）') }}
+                    </div>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead>
+                                <tr style="background: #f3f4f6;">
+                                    <th style="padding: 4px 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">{{ _('單號') }}</th>
+                                    <th style="padding: 4px 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">{{ _('主旨') }}</th>
+                                    <th style="padding: 4px 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">{{ _('發起人') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="item in batchSelectedItems" :key="item.queue_secure_code">
+                                    <tr style="border-bottom: 1px solid #f3f4f6;">
+                                        <td style="padding: 4px 8px; font-family: monospace; color: #3b82f6;" x-text="getShortSerial(item.serial_number)"></td>
+                                        <td style="padding: 4px 8px; color: #374151;" x-text="shortSubject(item.form_subject)"></td>
+                                        <td style="padding: 4px 8px; color: #6b7280;" x-text="item.applicant_name || '-'"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 簽核選項：自定義決策模式 -->
+                <div x-show="batchApprovalInfo?.use_custom_decisions" style="margin-bottom: 16px; padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;">
+                    <label style="font-size: 14px; font-weight: 600; display: block; margin-bottom: 8px;">{{ _('請選擇決策') }}</label>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <template x-for="option in (batchApprovalInfo?.available_paths || []).filter(p => p.value !== undefined)" :key="option.id">
+                            <button type="button"
+                                    @click="selectBatchDecisionOption(option)"
+                                    style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.15s; text-align: left;"
+                                    :style="{
+                                        'primary': batchApprovalOptionId === option.id
+                                            ? 'background: #667eea; color: white; border: 2px solid #667eea;'
+                                            : 'background: white; color: #667eea; border: 2px solid #667eea;',
+                                        'success': batchApprovalOptionId === option.id
+                                            ? 'background: #28a745; color: white; border: 2px solid #28a745;'
+                                            : 'background: white; color: #28a745; border: 2px solid #28a745;',
+                                        'warning': batchApprovalOptionId === option.id
+                                            ? 'background: #ffc107; color: #333; border: 2px solid #ffc107;'
+                                            : 'background: white; color: #856404; border: 2px solid #ffc107;',
+                                        'danger': batchApprovalOptionId === option.id
+                                            ? 'background: #dc3545; color: white; border: 2px solid #dc3545;'
+                                            : 'background: white; color: #dc3545; border: 2px solid #dc3545;',
+                                        'default': batchApprovalOptionId === option.id
+                                            ? 'background: #6c757d; color: white; border: 2px solid #6c757d;'
+                                            : 'background: white; color: #6c757d; border: 2px solid #6c757d;'
+                                    }[option.style || 'default']"
+                                    x-text="option.label">
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 簽核選項：傳統模式（edge 選擇） -->
+                <div x-show="!batchApprovalInfo?.use_custom_decisions" style="margin-bottom: 16px; padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;">
+                    <label style="font-size: 14px; font-weight: 600; display: block; margin-bottom: 8px;">
+                        {{ _('請選擇後續動作') }}
+                        <span x-show="batchApprovalInfo?.selection_mode === 'multiple'" style="color: #7c3aed;">{{ _('（可複選）') }}</span>
+                    </label>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        {# 同 _form_center_approval_modal：x-show 下自訂決策流程也會執行，
+                           key 缺 fallback 會因重複 undefined 讓 Alpine 崩潰 #}
+                        <template x-for="path in (batchApprovalInfo?.available_paths || [])" :key="path.edge_id || path.id">
+                            <label style="display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; cursor: pointer; background: white;"
+                                   :style="batchApprovalEdges.includes(path.edge_id) ? 'border-color: #3b82f6; background: #eff6ff;' : ''">
+                                <input x-show="batchApprovalInfo?.selection_mode !== 'multiple'" type="radio" name="batch_approval_path" :value="path.edge_id"
+                                       @change="batchApprovalEdges = [path.edge_id]" style="margin-right: 12px;">
+                                <input x-show="batchApprovalInfo?.selection_mode === 'multiple'" type="checkbox" :value="path.edge_id"
+                                       @change="
+                                           const idx = batchApprovalEdges.indexOf(path.edge_id);
+                                           if (idx >= 0) batchApprovalEdges.splice(idx, 1);
+                                           else batchApprovalEdges.push(path.edge_id);
+                                       "
+                                       :checked="batchApprovalEdges.includes(path.edge_id)" style="margin-right: 12px;">
+                                <span style="font-weight: 500;" x-text="path.label"></span>
+                                <span style="margin-left: 8px; font-size: 12px; color: #6b7280;" x-text="'-> ' + path.target_node_type"></span>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 簽核意見 + 簽核片語 -->
+                <div style="margin-bottom: 16px;" data-canned-target="batchApprovalComment">
+                    <label style="font-size: 14px; font-weight: 600; margin: 0 0 4px 0; display: block;">
+                        {{ _('簽核意見') }} <span x-show="(batchApprovalInfo?.min_comment_length || 0) > 0" style="color: #dc2626;">*</span>
+                    </label>
+                    {% include "modules/form_workflow/_canned_messages_bar.html" %}
+                    <textarea x-model="batchApprovalComment" rows="3"
+                              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; resize: vertical; box-sizing: border-box;"
+                              placeholder="{{ _('輸入簽核意見...') }}"></textarea>
+                    <div x-show="(batchApprovalInfo?.min_comment_length || 0) > 0" style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 13px; color: #6b7280;">
+                        <span>{{ _('最少') }} <span x-text="batchApprovalInfo?.min_comment_length"></span> {{ _('字') }}</span>
+                        <span :style="batchApprovalComment.trim().length < (batchApprovalInfo?.min_comment_length || 0) ? 'color: #dc2626;' : 'color: #16a34a;'"
+                              x-text="batchApprovalComment.trim().length + ' / ' + (batchApprovalInfo?.min_comment_length || 0)"></span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="fc-modal-footer">
+            <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="closeBatchApprovalModal()">{{ _('取消') }}</button>
+            <button class="fc-btn fc-btn-primary" @click="submitBatchApproval()"
+                    :disabled="(batchApprovalInfo?.use_custom_decisions ? batchApprovalOptionValue === null : batchApprovalEdges.length === 0) || submittingBatchApproval">
+                <span x-show="!submittingBatchApproval" x-text="__('批次簽核 (') + batchSelectedCount + __(' 筆)')"></span>
+                <span x-show="submittingBatchApproval">{{ _('處理中...') }}</span>
+            </button>
+        </div>
+    </div>
+</div>

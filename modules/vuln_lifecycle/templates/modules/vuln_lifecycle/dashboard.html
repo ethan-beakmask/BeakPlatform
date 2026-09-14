@@ -1,0 +1,219 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('弱點儀表板') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/vuln_lifecycle/css/vuln-common.css">
+{% endblock %}
+
+{% block content %}
+<div class="vlc-container">
+
+    <div class="vlc-page-header">
+        <h1>{{ _('弱點儀表板') }}</h1>
+    </div>
+
+    <!-- BeakRisk 服務狀態提示 -->
+    <div id="health-banner" class="vlc-health-banner" style="display:none;"></div>
+
+    <!-- 嚴重等級統計 -->
+    <div class="vlc-stats" id="stat-cards">
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value vlc-critical" id="stat-critical">-</div>
+            <div class="vlc-stat-label">Critical</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value vlc-high" id="stat-high">-</div>
+            <div class="vlc-stat-label">High</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value vlc-medium" id="stat-medium">-</div>
+            <div class="vlc-stat-label">Medium</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value vlc-low" id="stat-low">-</div>
+            <div class="vlc-stat-label">Low</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value" style="color:#333" id="stat-assets">-</div>
+            <div class="vlc-stat-label">{{ _('資產數') }}</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value" style="color:#369" id="stat-adjusted">-</div>
+            <div class="vlc-stat-label">{{ _('已調整') }}</div>
+        </div>
+    </div>
+
+    <!-- 雙欄區塊 -->
+    <div class="vlc-grid-2">
+        <!-- 掃描器來源 -->
+        <div class="vlc-section">
+            <div class="vlc-section-header">{{ _('掃描器來源') }}</div>
+            <div class="vlc-section-body">
+                <table class="vlc-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('名稱') }}</th><th>{{ _('類型') }}</th><th>{{ _('匯入方式') }}</th>
+                            <th>{{ _('掃描次數') }}</th><th>{{ _('最後掃描') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scanner-table">
+                        <tr><td colspan="5" class="vlc-empty">{{ _('載入中...') }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 風險調整 -->
+        <div class="vlc-section">
+            <div class="vlc-section-header">{{ _('生效中的風險調整') }}</div>
+            <div class="vlc-section-body">
+                <table class="vlc-table">
+                    <thead>
+                        <tr><th>{{ _('調整類型') }}</th><th>{{ _('數量') }}</th></tr>
+                    </thead>
+                    <tbody id="adj-table">
+                        <tr><td colspan="2" class="vlc-empty">{{ _('載入中...') }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 雙欄區塊 -->
+    <div class="vlc-grid-2">
+        <!-- 資產類型 -->
+        <div class="vlc-section">
+            <div class="vlc-section-header">{{ _('資產類型分布') }}</div>
+            <div class="vlc-section-body">
+                <table class="vlc-table">
+                    <thead><tr><th>{{ _('類型') }}</th><th>{{ _('數量') }}</th></tr></thead>
+                    <tbody id="asset-type-table">
+                        <tr><td colspan="2" class="vlc-empty">{{ _('載入中...') }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 部署模式 -->
+        <div class="vlc-section">
+            <div class="vlc-section-header">{{ _('部署模式') }}</div>
+            <div class="vlc-section-body padded">
+                <span id="deploy-mode" class="vlc-mode-badge vlc-mode-standalone">-</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var STATUS_MSG = {
+        'service_down': __('BeakRisk 服務未啟動 -- 顯示的是最後一次同步的資料'),
+        'db_error': __('BeakRisk 資料庫暫時不可用'),
+    };
+    var STATUS_COLOR = {
+        'service_down': '#d97706',
+        'db_error': '#dc2626',
+    };
+    var ADJ_LABEL = {
+        'ACCEPTED': __('已接受'), 'MITIGATED': __('已緩解'),
+        'FALSE_POSITIVE': __('誤報'), 'DEFERRED': __('延後處理')
+    };
+    var ASSET_LABEL = { 'host': __('主機 (Host)'), 'webapp': __('網頁應用 (WebApp)') };
+    var MODE_LABEL = { 'standalone': __('獨立模式'), 'platform': __('平台模式'), 'unknown': __('未知') };
+
+    // 先查 BeakRisk 服務狀態
+    fetch('{{ app_prefix }}/api/vuln-lifecycle/health')
+    .then(function(r) { return r.json(); })
+    .then(function(r) {
+        var health = r.data || {};
+        var banner = document.getElementById('health-banner');
+        if (health.status === 'ok') {
+            banner.style.display = 'none';
+        } else {
+            var msg = STATUS_MSG[health.status] || health.message || __('BeakRisk 狀態未知');
+            var color = STATUS_COLOR[health.status] || '#666';
+            banner.style.display = 'block';
+            banner.style.color = color;
+            banner.style.borderColor = color;
+            banner.textContent = msg;
+        }
+    })
+    .catch(function() {
+        // health API 本身失敗（未登入等），不顯示 banner
+    });
+
+    // 載入 dashboard 資料
+    fetch('{{ app_prefix }}/api/vuln-lifecycle/dashboard/summary')
+    .then(function(r) {
+        if (!r.ok) {
+            return r.json().then(function(j) {
+                var msg = (j && j.message) ? j.message : __('BeakRisk 資料庫不可用');
+                document.getElementById('stat-cards').innerHTML =
+                    '<div style="color:#dc2626;font-weight:bold;padding:20px;">' +
+                    msg + '</div>';
+                return null;
+            }).catch(function() {
+                document.getElementById('stat-cards').innerHTML =
+                    '<div style="color:#dc2626;font-weight:bold;padding:20px;">' + __('BeakRisk 資料庫不可用') + '</div>';
+                return null;
+            });
+        }
+        return r.json();
+    })
+    .then(function(r) {
+        if (!r || !r.success) return;
+        var d = r.data, s = d.severity || {};
+
+        document.getElementById('stat-critical').textContent = s.critical || 0;
+        document.getElementById('stat-high').textContent = s.high || 0;
+        document.getElementById('stat-medium').textContent = s.medium || 0;
+        document.getElementById('stat-low').textContent = s.low || 0;
+
+        var ta = 0;
+        for (var k in (d.assets || {})) ta += d.assets[k];
+        document.getElementById('stat-assets').textContent = ta;
+
+        var adj = 0;
+        for (var k in (d.adjustments || {})) adj += d.adjustments[k];
+        document.getElementById('stat-adjusted').textContent = adj;
+
+        // 掃描器表
+        var html = '';
+        (d.scanners || []).forEach(function(sc) {
+            var ls = sc.last_scan ? BkTime.format(sc.last_scan, 'short') : '-';
+            html += '<tr><td>' + sc.name + '</td><td>' + sc.scanner_type +
+                '</td><td><span class="vlc-adj-badge vlc-adj-mitigated">' + (sc.import_method || 'direct_db') +
+                '</span></td><td>' + sc.session_count + '</td><td>' + ls + '</td></tr>';
+        });
+        document.getElementById('scanner-table').innerHTML =
+            html || '<tr><td colspan="5" class="vlc-empty">' + __('無掃描器') + '</td></tr>';
+
+        // 風險調整表
+        html = '';
+        for (var t in (d.adjustments || {})) {
+            html += '<tr><td>' + (ADJ_LABEL[t] || t) + '</td><td>' + d.adjustments[t] + '</td></tr>';
+        }
+        document.getElementById('adj-table').innerHTML =
+            html || '<tr><td colspan="2" class="vlc-empty">' + __('無調整紀錄') + '</td></tr>';
+
+        // 資產類型表
+        html = '';
+        for (var at in (d.assets || {})) {
+            html += '<tr><td>' + (ASSET_LABEL[at] || at) + '</td><td>' + d.assets[at] + '</td></tr>';
+        }
+        document.getElementById('asset-type-table').innerHTML =
+            html || '<tr><td colspan="2" class="vlc-empty">' + __('無資產') + '</td></tr>';
+
+        // 部署模式
+        var mode = d.mode || 'unknown';
+        var el = document.getElementById('deploy-mode');
+        el.textContent = MODE_LABEL[mode] || mode;
+        el.className = 'vlc-mode-badge ' +
+            (mode === 'platform' ? 'vlc-mode-platform' : 'vlc-mode-standalone');
+    });
+})();
+</script>
+{% endblock %}

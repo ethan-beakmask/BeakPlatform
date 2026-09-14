@@ -1,0 +1,369 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}{% if is_self %}manual/01_getting_started/personal_settings{% else %}manual/03_org_setup/users{% endif %}{% endblock %}
+
+{% block title %}{% if is_self %}{{ _('個人設定') }}{% else %}{{ _('編輯用戶 - %(name)s', name=user.display_name) }}{% endif %} - BeakMask{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/user-form.css') }}">
+{% endblock %}
+
+{% block content %}
+{% if is_self %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回首頁') }}</a>
+</div>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('個人設定') }}</h1>
+</div>
+{% else %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回用戶列表') }}</a>
+</div>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('編輯用戶') }}</h1>
+</div>
+{% endif %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+{% if is_self and not can_edit %}
+<div class="readonly-notice">
+    {{ _('企業管理員已關閉「允許用戶修改個人資料」功能，目前您只能檢視資料。如需修改請聯繫管理員。') }}
+</div>
+{% endif %}
+
+<div class="edit-form">
+    <form method="POST" x-data="passwordForm()">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="section-title">{{ _('帳號資訊') }}</div>
+        <table class="form-table">
+            <tr>
+                <td>{{ _('帳號') }}</td>
+                <td><span class="readonly-info">{{ user.email }}</span>
+                    <div class="help-text">{{ _('帳號不可變更') }}</div>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="native_name" class="required">{{ _('本國姓名') }}</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="text" id="native_name" name="native_name" x-model="nativeName" required>
+                    {% else %}
+                    <span class="readonly-info">{{ user.native_name or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="english_name" class="required">{{ _('英文姓名') }}</label></td>
+                <td>
+                    {% if can_edit %}
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="english_name" name="english_name" x-model="englishName" required placeholder="English Name">
+                        <button type="button" @click="transliterateName()"
+                                :disabled="!nativeName || transliterating"
+                                style="padding: 6px 10px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
+                                :style="(!nativeName || transliterating) ? 'opacity: 0.5; cursor: not-allowed;' : ''">
+                            <span x-show="!transliterating">{{ _('自動翻譯') }}</span>
+                            <span x-show="transliterating">{{ _('翻譯中...') }}</span>
+                        </button>
+                    </div>
+                    <div class="help-text" x-show="detectedLang" style="color: #8b5cf6;">
+                        {{ _('偵測語言:') }} <span x-text="langNames[detectedLang] || detectedLang"></span>
+                    </div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.english_name or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if can_edit_role %}
+            <tr>
+                <td><label for="role">{{ _('角色') }}</label></td>
+                <td>
+                    <select id="role" name="role">
+                        <option value="user" {% if user.user_type == 'EMPLOYEE' %}selected{% endif %}>{{ _('一般用戶') }}</option>
+                        <option value="external" {% if user.user_type == 'EXTERNAL' %}selected{% endif %}>{{ _('外部廠商') }}</option>
+                        <option value="org_admin" {% if user.user_type == 'ORG_ADMIN' %}selected{% endif %}>{{ _('企業管理員') }}</option>
+                        {% if current_user.is_system_admin %}
+                        <option value="system_admin" {% if user.user_type == 'SYSTEM_ADMIN' %}selected{% endif %}>{{ _('系統管理員') }}</option>
+                        {% endif %}
+                    </select>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td>{{ _('角色') }}</td>
+                <td>
+                    <span class="readonly-info">
+                        {% if user.user_type == 'SYSTEM_ADMIN' %}{{ _('系統管理員') }}
+                        {% elif user.user_type == 'ORG_ADMIN' %}{{ _('企業管理員') }}
+                        {% elif user.user_type == 'EXTERNAL' %}{{ _('外部廠商') }}
+                        {% else %}{{ _('一般用戶') }}{% endif %}
+                    </span>
+                </td>
+            </tr>
+            {% endif %}
+            {% if can_edit_status %}
+            <tr>
+                <td><label for="is_active">{{ _('狀態') }}</label></td>
+                <td>
+                    <select id="is_active" name="is_active">
+                        <option value="true" {% if user.is_active %}selected{% endif %}>{{ _('啟用') }}</option>
+                        <option value="false" {% if not user.is_active %}selected{% endif %}>{{ _('停用') }}</option>
+                    </select>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td>{{ _('狀態') }}</td>
+                <td>
+                    <span class="readonly-info">{{ _('啟用') if user.is_active else _('停用') }}</span>
+                </td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td style="vertical-align: top;"><label for="new_password">{{ _('新密碼') }}</label></td>
+                <td>
+                    {% if can_edit %}
+                    <div style="display: flex; gap: 8px; align-items: start;">
+                        <div style="flex: 1;">
+                            <input :type="showPassword ? 'text' : 'password'" id="new_password" name="new_password"
+                                   x-model="password" @input="validatePassword()"
+                                   minlength="8" placeholder="{{ _('留空則不變更') }}" style="width: 100%;">
+                        </div>
+                        <button type="button" @click="showPassword = !showPassword"
+                                style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+                                x-text="showPassword ? __('隱藏') : __('顯示')"></button>
+                        <button type="button" @click="generatePassword()"
+                                style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            {{ _('建議密碼') }}
+                        </button>
+                    </div>
+                    <div class="help-text" x-text="passwordRequirements"></div>
+                    <!-- 驗證錯誤 -->
+                    <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
+                        <template x-for="err in passwordErrors" :key="err">
+                            <div class="text-danger" style="font-size: 12px;" x-text="'• ' + err"></div>
+                        </template>
+                    </div>
+                    <!-- 驗證通過 -->
+                    <div x-show="password && passwordErrors.length === 0 && passwordChecked"
+                         style="margin-top: 6px; color: #16a34a; font-size: 12px;">
+                        {{ _('密碼符合要求') }}
+                    </div>
+                    {% else %}
+                    <span class="readonly-info">******</span>
+                    <div class="help-text"><a href="{{ url_for('profile.change_password') }}">{{ _('變更密碼') }}</a></div>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title optional">{{ _('組織資訊') }}</div>
+        <table class="form-table">
+            <tr>
+                <td><label for="employee_id">{{ _('用戶編號') }}</label></td>
+                <td>
+                    {% if can_edit_org_info %}
+                    <input type="text" id="employee_id" name="employee_id" value="{{ user.employee_id or '' }}" placeholder="EMP001">
+                    <div class="help-text">{{ _('同一企業內需唯一') }}</div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.employee_id or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="department_code">{{ _('部門') }}</label></td>
+                <td>
+                    {% if can_edit_org_info %}
+                    <select id="department_code" name="department_code">
+                        <option value="">{{ _('-- 未分配 --') }}</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.code }}" {% if user.primary_unit and user.primary_unit.code == dept.code %}selected{% endif %}>
+                            {{ dept.name }} ({{ dept.code }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                    <span class="readonly-info">{{ user.primary_unit.name if user.primary_unit else '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="work_schedule_code">{{ _('班表') }}</label></td>
+                <td>
+                    {% if can_edit_org_info %}
+                    <select id="work_schedule_code" name="work_schedule_code">
+                        <option value="">{{ _('-- 使用企業預設 --') }}</option>
+                        {% for schedule in work_schedules %}
+                        <option value="{{ schedule.secure_code }}" {% if user.work_schedule_secure_code == schedule.secure_code %}selected{% endif %}>
+                            {{ schedule.name }}{% if schedule.is_default %} {{ _('(預設)') }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">{{ _('用於計算工作時間') }}</div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.work_schedule.name if user.work_schedule else _('使用企業預設') }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title optional">{{ _('個人資料') }}</div>
+        <table class="form-table">
+            <tr>
+                <td><label for="nickname">{{ _('暱稱') }}</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="text" id="nickname" name="nickname" value="{{ user.nickname or '' }}" placeholder="Nickname">
+                    <div class="help-text">{{ _('遮罩處理的姓名，避免螢幕旁的窺視者識別身份或推測登入帳號') }}</div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.nickname or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="navbar_display">{{ _('Navbar 顯示') }}</label></td>
+                <td>
+                    {% if can_edit %}
+                    <select id="navbar_display" name="navbar_display">
+                        <option value="">{{ _('-- 跟隨企業設定 --') }}</option>
+                        <option value="nickname" {% if user.navbar_display == 'nickname' %}selected{% endif %}>{{ _('暱稱') }}</option>
+                        <option value="employee_id" {% if user.navbar_display == 'employee_id' %}selected{% endif %}>{{ _('用戶編號') }}</option>
+                        <option value="employee_id_dept" {% if user.navbar_display == 'employee_id_dept' %}selected{% endif %}>{{ _('用戶編號 + 部門') }}</option>
+                    </select>
+                    <div class="help-text">{{ _('在公開場所使用時，可改為不含真名的顯示方式') }}</div>
+                    {% else %}
+                    <span class="readonly-info">
+                        {% if user.navbar_display == 'nickname' %}{{ _('暱稱') }}
+                        {% elif user.navbar_display == 'employee_id' %}{{ _('用戶編號') }}
+                        {% elif user.navbar_display == 'employee_id_dept' %}{{ _('用戶編號 + 部門') }}
+                        {% else %}{{ _('跟隨企業設定') }}{% endif %}
+                    </span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="interface_language">{{ _('語系') }}</label></td>
+                <td>
+                    {% if can_edit %}
+                    <select id="interface_language" name="interface_language">
+                        <option value="">{{ _('-- 跟隨企業設定 --') }}</option>
+                        {% for code, name in supported_languages.items() %}
+                        <option value="{{ code }}" {% if user.interface_language == code %}selected{% endif %}>{{ name }} ({{ code }})</option>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">{{ _('留空則跟隨企業設定') }}</div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.interface_language or _('跟隨企業設定') }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="timezone">{{ _('時區') }}</label></td>
+                <td>
+                    {% if can_edit %}
+                    <select id="timezone" name="timezone" style="width: 280px;">
+                        <option value="">{{ _('-- 跟隨企業設定 --') }}</option>
+                        {% for group_label, timezones in timezone_choices %}
+                        <optgroup label="{{ group_label }}">
+                            {% for tz_value, tz_display in timezones %}
+                            <option value="{{ tz_value }}" {% if user.timezone == tz_value %}selected{% endif %}>{{ tz_display }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">{{ _('留空則使用企業預設時區') }}</div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.timezone or _('跟隨企業設定') }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title optional">{{ _('聯絡方式') }}</div>
+        <table class="form-table">
+            <tr>
+                <td><label for="backup_email_1">{{ _('通知 Email') }}</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="email" id="backup_email_1" name="backup_email_1" value="{{ user.backup_email_1 or user.email }}" placeholder="{{ _('留空則使用帳號 Email') }}">
+                    <div class="help-text">{{ _('系統通知發送地址') }}</div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.backup_email_1 or user.email }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="backup_email_2">{{ _('備用 Email') }}</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="email" id="backup_email_2" name="backup_email_2" value="{{ user.backup_email_2 or '' }}" placeholder="backup2@example.com">
+                    {% else %}
+                    <span class="readonly-info">{{ user.backup_email_2 or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="mobile_phone_1">{{ _('手機號碼 1') }}</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="tel" id="mobile_phone_1" name="mobile_phone_1" value="{{ user.mobile_phone_1 or '' }}" placeholder="+886-912-345-678">
+                    {% else %}
+                    <span class="readonly-info">{{ user.mobile_phone_1 or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="mobile_phone_2">{{ _('手機號碼 2') }}</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="tel" id="mobile_phone_2" name="mobile_phone_2" value="{{ user.mobile_phone_2 or '' }}" placeholder="+886-912-345-678">
+                    {% else %}
+                    <span class="readonly-info">{{ user.mobile_phone_2 or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        {% if can_edit %}
+        <div class="btn-row">
+            <button type="submit" class="btn btn-primary">{{ _('儲存變更') }}</button>
+            {% if is_self %}
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-cancel">{{ _('取消') }}</a>
+            {% else %}
+            <a href="{{ url_for('users.list_users') }}" class="btn btn-cancel">{{ _('取消') }}</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </form>
+
+    {% if is_admin and not is_self %}
+    <div class="danger-zone">
+        <h3>{{ _('危險區域') }}</h3>
+        <p>{{ _('刪除此用戶將無法復原，請謹慎操作。') }}</p>
+        <form method="POST" action="{{ url_for('users.delete_user', secure_code=user.secure_code) }}" onsubmit="return confirm(__('確定要刪除用戶「{name}」嗎？此操作無法復原！', {name: {{ user.display_name|tojson|forceescape }} }));">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">{{ _('刪除用戶') }}</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Window Bridge: Jinja2 → JS -->
+<script>
+window.__USER_EDIT_CONFIG = {
+    nativeName: '{{ user.native_name or "" | e }}',
+    englishName: '{{ user.english_name or "" | e }}'
+};
+</script>
+<script src="{{ url_for('static', filename='js/user-edit.js') }}"></script>
+{% endblock %}

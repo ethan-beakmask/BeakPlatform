@@ -1,0 +1,66 @@
+/* external-user-edit.css — 外部廠商編輯頁面 */
+/* .section-title, .help-text 由 common.css 提供 */
+
+.info-table {
+    width: 100%;
+    max-width: 600px;
+    border-collapse: collapse;
+}
+.info-table th, .info-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+.info-table th {
+    width: 120px;
+    color: #666;
+    font-weight: normal;
+    background: #f9fafb;
+}
+.group-table {
+    width: 100%;
+    max-width: 600px;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+.group-table th, .group-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+.group-table th {
+    background: #f9fafb;
+    font-weight: 600;
+}
+.btn-remove {
+    color: #dc2626;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+.btn-remove:hover {
+    text-decoration: underline;
+}
+.add-group-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+}
+.add-group-form select {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.add-group-form button {
+    padding: 6px 12px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.add-group-form button:hover {
+    background: #1d4ed8;
+}

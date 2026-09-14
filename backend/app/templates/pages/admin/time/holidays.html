@@ -1,0 +1,206 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/03_org_setup/work_schedules{% endblock %}
+
+{% block title %}{{ _('共用月曆 - %(name)s', name=schedule.name) }} - BeakMask{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/holidays.css') }}">
+{% endblock %}
+
+{% block content %}
+<div x-data='holidaysApp()'>
+    <p>
+        <a href="{{ url_for('work_schedules.list_schedules') }}">{{ _('&lt; 返回班表列表') }}</a>
+    </p>
+
+    <div class="page-header">
+        <div>
+            <h1>{{ _('共用月曆') }}</h1>
+            <p style="color: #666; margin: 5px 0 0;">{{ schedule.name }}</p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="year-nav">
+                <button @click="changeYear(-1)">&lt;</button>
+                <span x-text="year"></span>
+                <button @click="changeYear(1)">&gt;</button>
+            </div>
+            <button class="btn btn-primary" @click="openAddModal()">{{ _('+ 新增假日') }}</button>
+        </div>
+    </div>
+
+    <!-- Alert -->
+    <template x-if="message">
+        <div class="alert" :class="messageType === 'success' ? 'alert-success' : 'alert-error'" x-text="message"></div>
+    </template>
+
+    <!-- Legend -->
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-box holiday"></div>
+            <span>{{ _('假日') }}</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: #fef3c7; border: 1px solid #fcd34d;"></div>
+            <span>{{ _('補假') }}</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box workday"></div>
+            <span>{{ _('補班') }}</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box weekend">{{ _('六') }}</div>
+            <span>{{ _('週末（依班表設定）') }}</span>
+        </div>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="calendar-container">
+        <template x-for="month in 12" :key="month">
+            <div class="month-card">
+                <div class="month-header" x-text="monthNames[month - 1]"></div>
+                <div class="month-grid">
+                    <div class="weekday-header">{{ _('日') }}</div>
+                    <div class="weekday-header">{{ _('一') }}</div>
+                    <div class="weekday-header">{{ _('二') }}</div>
+                    <div class="weekday-header">{{ _('三') }}</div>
+                    <div class="weekday-header">{{ _('四') }}</div>
+                    <div class="weekday-header">{{ _('五') }}</div>
+                    <div class="weekday-header">{{ _('六') }}</div>
+                    <template x-for="cell in getMonthCells(month)" :key="cell.key">
+                        <div class="day-cell"
+                             :class="getDayClass(cell)"
+                             @click="cell.day && onDayClick(month, cell.day)">
+                            <span x-text="cell.day || ''"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Holidays List -->
+    <div class="holidays-list">
+        <h3>{{ _('假日/補班列表') }}</h3>
+        <template x-if="holidays.length > 0">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>{{ _('日期') }}</th>
+                        <th>{{ _('類型') }}</th>
+                        <th>{{ _('說明') }}</th>
+                        <th>{{ _('工作時段') }}</th>
+                        <th>{{ _('操作') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="h in holidays" :key="h.id">
+                        <tr>
+                            <td x-text="h.holiday_date"></td>
+                            <td>
+                                <span :class="getTypeBadgeClass(h.holiday_type)"
+                                      x-text="getTypeLabel(h.holiday_type)"></span>
+                                <template x-if="h.holiday_calendar_secure_code">
+                                    <span class="badge badge-info" x-text="__('假日表：{name}', {name: calendarBadgeName(h)})"></span>
+                                </template>
+                            </td>
+                            <td x-text="h.description || '-'"></td>
+                            <td x-text="h.work_periods ? h.work_periods.join(', ') : '-'"></td>
+                            <td class="actions">
+                                <button @click="editHoliday(h)">{{ _('編輯') }}</button>
+                                <button class="danger" @click="deleteHoliday(h)">{{ _('刪除') }}</button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+        <template x-if="holidays.length === 0">
+            <p style="color: #666;">{{ _('本年度尚未設定任何假日/補班') }}</p>
+        </template>
+    </div>
+
+    <div class="import-section">
+        <p style="font-size: 13px; color: #666; margin: 0 0 10px;">
+            {{ _('國定假日請到「基本班表」頁的「假日表」區塊取得或上傳，發佈到本班表後會出現在這裡；來自假日表的日期手動修改後就不再被下次發佈覆蓋') }}
+        </p>
+        <a class="btn btn-secondary" href="{{ url_for('work_schedules.list_schedules') }}">{{ _('返回基本班表') }}</a>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <template x-if="showModal">
+        <div class="modal-overlay">
+            <div class="modal-content modal-sm">
+                <div class="modal-header">
+                    <h3 x-text="editingHoliday ? __('編輯假日設定') : __('假日/補班設定')"></h3>
+                    <button class="close-btn" @click="closeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>{{ _('開始日期 *') }}</label>
+                        <input type="date" x-model="form.holiday_date" :disabled="editingHoliday">
+                    </div>
+                    <template x-if="!editingHoliday">
+                        <div class="form-group">
+                            <label>{{ _('結束日期') }}</label>
+                            <input type="date" x-model="form.end_date" :min="form.holiday_date">
+                            <div class="form-hint">{{ _('留空表示僅設定單日') }}</div>
+                        </div>
+                    </template>
+                    <template x-if="!editingHoliday">
+                        <div class="form-group" style="margin: 16px 0; padding: 12px; background: #fef2f2; border-radius: 4px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                                <input type="checkbox" x-model="form.cancelMode" style="width: auto;">
+                                <span style="color: #dc2626;">{{ _('取消設定（回復班表預設值）') }}</span>
+                            </label>
+                            <div class="form-hint" style="margin-left: 24px;">{{ _('勾選後將刪除範圍內的假日/補班設定') }}</div>
+                        </div>
+                    </template>
+                    <template x-if="!form.cancelMode">
+                        <div>
+                            <div class="form-group">
+                                <label>{{ _('類型 *') }}</label>
+                                <select x-model="form.holiday_type">
+                                    <option value="HOLIDAY">{{ _('假日（休假）') }}</option>
+                                    <option value="COMP_OFF">{{ _('補假（休假）') }}</option>
+                                    <option value="WORKDAY">{{ _('補班（上班）') }}</option>
+                                </select>
+                            </div>
+                            <template x-if="form.holiday_type === 'WORKDAY'">
+                                <div class="form-group">
+                                    <label>{{ _('工作時段 *') }}</label>
+                                    <input type="text" x-model="form.work_periods_str"
+                                           placeholder="09:00-12:00,13:00-17:00">
+                                    <div class="form-hint">{{ _('多時段用逗號分隔') }}</div>
+                                </div>
+                            </template>
+                            <div class="form-group">
+                                <label>{{ _('說明') }}</label>
+                                <input type="text" x-model="form.description" placeholder="{{ _('例：中秋節') }}">
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="closeModal()">{{ _('取消') }}</button>
+                    <button class="btn btn-primary"
+                            :style="form.cancelMode ? 'background: #dc2626' : ''"
+                            @click="saveHoliday()"
+                            :disabled="saving">
+                        <span x-text="saving ? __('處理中...') : (form.cancelMode ? __('確認取消設定') : __('儲存'))"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<!-- Window Bridge: Jinja2 → JS -->
+<script>
+window.__HOLIDAYS_CONFIG = {
+    scheduleId: '{{ schedule.secure_code }}',
+    year: {{ year }},
+    weeklyHours: {{ schedule.weekly_hours | tojson | safe }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/holidays.js') }}"></script>
+{% endblock %}

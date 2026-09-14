@@ -1,0 +1,251 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('決策列表 - OpenDefense') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/open_defense/css/od-common.css">
+{% endblock %}
+
+{% block content %}
+<div class="od-container" x-data="odDecisions()" x-init="loadActive(); load()">
+
+    <div class="od-header">
+        <h1>{{ _('防禦決策') }}</h1>
+        <button class="btn btn-secondary" @click="refresh()">{{ _('重新整理') }}</button>
+    </div>
+
+    <div class="od-tabs od-page-tabs">
+        <button type="button" :class="{active: activeTab === 'active'}"
+                @click="activeTab = 'active'">{{ _('生效中名單') }}</button>
+        <button type="button" :class="{active: activeTab === 'history'}"
+                @click="activeTab = 'history'">{{ _('決策歷史') }}</button>
+    </div>
+
+    <div class="od-section" x-show="activeTab === 'active'">
+        <div class="od-section-header">
+            <h2>{{ _('生效中名單') }}</h2>
+            <div class="od-active-summary">
+                <span x-text="__('生效 {count} 筆', {count: activeRows.length})"></span>
+                <span x-show="bridge.available"
+                      x-text="__('缺漏 {count} 筆', {count: activeSummary.missing_downstream || 0})"></span>
+                <span x-show="bridge.available && orphanRows.length > 0"
+                      x-text="__('殘留 {count} 筆', {count: orphanRows.length})"></span>
+            </div>
+        </div>
+        <div class="od-alert od-alert-warning" x-show="!activeLoading && !bridge.available">
+            {{ _('無法連線到防禦節點，以下只是平台端記錄') }}
+        </div>
+        <div x-show="activeLoading" class="od-empty">{{ _('載入中...') }}</div>
+        <div x-show="!activeLoading && activeRows.length===0 && orphanRows.length===0" class="od-empty">{{ _('無資料') }}</div>
+        <table x-show="!activeLoading && (activeRows.length>0 || orphanRows.length>0)"
+               class="od-table od-active-table">
+            <thead>
+                <tr>
+                    <th>{{ _('對帳') }}</th>
+                    <th>{{ _('動作') }}</th>
+                    <th>{{ _('目標') }}</th>
+                    <th>EP</th>
+                    <th>{{ _('嚴重度') }}</th>
+                    <th>{{ _('決策時間') }}</th>
+                    <th>{{ _('到期') }}</th>
+                    <th>{{ _('來源') }}</th>
+                    <th>{{ _('執行方') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <template x-for="row in activeRows" :key="row.secure_code">
+                <tbody>
+                    <tr>
+                        <td>
+                            <span class="od-badge"
+                                  :class="verdictClass(row.reconciliation?.verdict)"
+                                  x-text="verdictLabel(row.reconciliation?.verdict)"></span>
+                            <div class="od-muted" x-show="row.reconciliation?.missing_points?.length"
+                                 x-text="row.reconciliation.missing_points.join(', ')"></div>
+                        </td>
+                        <td><span class="od-mono" x-text="row.action"></span></td>
+                        <td>
+                            <div class="od-muted" x-text="row.target_type"></div>
+                            <button type="button" class="od-link-btn od-mono od-target-value"
+                                    :title="row.target_value"
+                                    @click="toggleHistory(row)"
+                                    x-text="row.target_value"></button>
+                            <div class="od-muted" x-show="row.same_target_other_count > 0"
+                                 x-text="__('同目標另有 {count} 筆', {count: row.same_target_other_count})"></div>
+                        </td>
+                        <td>
+                            <template x-for="ep in row.enforcement_points" :key="ep">
+                                <span class="od-badge od-badge-active od-ep-badge" x-text="ep"></span>
+                            </template>
+                        </td>
+                        <td x-text="row.severity || '-'"></td>
+                        <td x-text="OD.formatTime(row.decided_at, 'short')"></td>
+                        <td>
+                            <div x-text="row.expires_at ? OD.formatTime(row.expires_at, 'short') : __('永久')"></div>
+                            <div class="od-muted" x-show="row.remaining_seconds !== null"
+                                 x-text="formatRemaining(row.remaining_seconds)"></div>
+                        </td>
+                        <td x-text="row.decided_via || '-'"></td>
+                        <td x-text="row.applied_by || '-'"></td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                    @click="toggleHistory(row)"
+                                    x-text="isExpanded(row) ? __('收合') : __('時間軸')"></button>
+                        </td>
+                    </tr>
+                    <tr x-show="isExpanded(row)">
+                        <td colspan="10" class="od-history-cell">
+                            <div x-show="historyLoading[rowKey(row)]" class="od-empty">{{ _('載入中...') }}</div>
+                            <table x-show="!historyLoading[rowKey(row)]" class="od-table od-timeline-table">
+                                <thead>
+                                    <tr>
+                                        <th>{{ _('決策時間') }}</th>
+                                        <th>{{ _('動作') }}</th>
+                                        <th>{{ _('狀態') }}</th>
+                                        <th>EP</th>
+                                        <th>{{ _('到期') }}</th>
+                                        <th>{{ _('來源') }}</th>
+                                        <th>{{ _('執行方') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="h in historyCache[rowKey(row)] || []" :key="h.secure_code">
+                                        <tr>
+                                            <td x-text="OD.formatTime(h.decided_at, 'short')"></td>
+                                            <td><span class="od-mono" x-text="h.action"></span></td>
+                                            <td><span class="od-badge" :class="`od-badge-${h.status === 'picked_up' ? 'picked' : h.status}`" x-text="h.status"></span></td>
+                                            <td>
+                                                <template x-for="ep in h.enforcement_points" :key="ep">
+                                                    <span class="od-badge od-badge-active od-ep-badge" x-text="ep"></span>
+                                                </template>
+                                            </td>
+                                            <td x-text="h.expires_at ? OD.formatTime(h.expires_at, 'short') : __('永久')"></td>
+                                            <td x-text="h.decided_via || '-'"></td>
+                                            <td>
+                                                <div x-text="h.applied_by || '-'"></div>
+                                                <div class="od-err" x-show="h.error_message" x-text="h.error_message"></div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                </tbody>
+            </template>
+            <template x-for="row in orphanRows" :key="`${row.source}:${row.action}:${row.target_value}`">
+                <tbody>
+                    <tr>
+                        <td><span class="od-badge od-badge-failed">{{ _('殘留') }}</span></td>
+                        <td><span class="od-mono" x-text="row.action"></span></td>
+                        <td>
+                            <div class="od-muted" x-text="row.target_type"></div>
+                            <div class="od-mono od-target-value" x-text="row.target_value"></div>
+                        </td>
+                        <td><span class="od-badge od-badge-active" x-text="row.source"></span></td>
+                        <td colspan="6" class="od-muted">{{ _('落地點有資料，但平台查不到對應的生效決策') }}</td>
+                    </tr>
+                </tbody>
+            </template>
+        </table>
+    </div>
+
+    <div class="od-section" x-show="activeTab === 'history'">
+        <div class="od-filters">
+            <label>{{ _('狀態') }}</label>
+            <select x-model="filters.status" @change="load()">
+                <option value="">{{ _('全部') }}</option>
+                <option value="pending">pending</option>
+                <option value="picked_up">picked_up</option>
+                <option value="applied">applied</option>
+                <option value="partial">partial</option>
+                <option value="failed">failed</option>
+                <option value="expired">expired</option>
+                <option value="revoked">revoked</option>
+            </select>
+            <label>{{ _('動作') }}</label>
+            <select x-model="filters.action" @change="load()">
+                <option value="">{{ _('全部') }}</option>
+                <option value="block">block</option>
+                <option value="unblock">unblock</option>
+                <option value="allow">allow</option>
+                <option value="escalate">escalate</option>
+                <option value="observe">observe</option>
+            </select>
+            <label>{{ _('目標包含') }}</label>
+            <input type="text" x-model="filters.target" @keyup.enter="load()" placeholder="{{ _('如 203.0') }}">
+            <label>{{ _('筆數') }}</label>
+            <select x-model="filters.limit" @change="load()">
+                <option>50</option><option>100</option><option>200</option><option>500</option>
+            </select>
+            <span style="margin-left:auto;font-size:12px;color:#666;" x-text="__('共 {count} 筆', {count: decisions.length})"></span>
+        </div>
+        <div x-show="loading" class="od-empty">{{ _('載入中...') }}</div>
+        <div x-show="!loading && decisions.length===0" class="od-empty">{{ _('無資料') }}</div>
+        <table x-show="!loading && decisions.length>0" class="od-table od-decisions-table">
+            <thead>
+                <tr>
+                    <th>{{ _('建立時間') }}</th>
+                    <th>{{ _('動作') }}</th>
+                    <th>{{ _('目標') }}</th>
+                    <th>EP</th>
+                    <th>{{ _('嚴重度') }}</th>
+                    <th>TTL</th>
+                    <th>{{ _('狀態') }}</th>
+                    <th>{{ _('來源') }}</th>
+                    <th></th>
+                    <th>{{ _('執行方') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="d in decisions" :key="d.secure_code">
+                    <tr>
+                        <td x-text="OD.formatTime(d.created_at, 'short')"></td>
+                        <td><span class="od-mono" x-text="d.action"></span></td>
+                        <td>
+                            <div style="font-size:11px;color:#888;" x-text="d.target_type"></div>
+                            <div class="od-mono od-target-value"
+                                 :title="d.target_value" x-text="d.target_value"></div>
+                        </td>
+                        <td>
+                            <template x-for="ep in d.enforcement_points">
+                                <span class="od-badge od-badge-active" style="margin-right:4px;" x-text="ep"></span>
+                            </template>
+                        </td>
+                        <td x-text="d.severity || '-'"></td>
+                        <td>
+                            <span x-show="d.ttl_seconds" x-text="d.ttl_seconds + 's'"></span>
+                            <span x-show="!d.ttl_seconds" style="color:#999;">{{ _('永久') }}</span>
+                        </td>
+                        <td>
+                            <span class="od-badge"
+                                  :class="`od-badge-${d.status === 'picked_up' ? 'picked' : d.status}`"
+                                  x-text="d.status"></span>
+                        </td>
+                        <td>
+                            <div style="font-size:11px;" x-text="d.decided_via"></div>
+                        </td>
+                        <td class="od-actions">
+                            {% if can('open_defense.decision.write') %}
+                            <button x-show="d.status==='applied' && d.action!=='unblock'"
+                                    class="btn btn-sm btn-secondary"
+                                    @click="revoke(d)">{{ _('撤銷') }}</button>
+                            {% endif %}
+                        </td>
+                        <td class="od-applied-cell">
+                            <div x-text="d.applied_by || '-'"></div>
+                            <div class="od-err" x-show="d.error_message" x-text="d.error_message"></div>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+<script>
+window.__OD_API = '{{ app_prefix }}/api/open_defense/admin';
+</script>
+<script src="{{ app_prefix }}/static/modules/open_defense/js/od-common.js"></script>
+<script>window.__PAGE_CAPS = {{ page_caps | tojson }};</script>
+<script src="{{ app_prefix }}/static/modules/open_defense/js/od-decisions.js"></script>
+{% endblock %}

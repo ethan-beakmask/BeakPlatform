@@ -1,0 +1,918 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beakplatform.local/schemas/page_ir_v3.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ir_version", "page"],
+  "properties": {
+    "ir_version": {
+      "const": 3
+    },
+    "page": {
+      "$ref": "#/$defs/page"
+    }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,63}$"
+    },
+    "binding_slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+    },
+    "resource_ref": {
+      "type": "string",
+      "pattern": "^([a-z][a-z0-9_-]{0,63}|(portal|formflow):[A-Za-z0-9_-]{8,64})$"
+    },
+    "field_key": {
+      "type": "string",
+      "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+    },
+    "permission_ref": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.:-]{1,127}$"
+    },
+    "site_map_node_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{16,32}$"
+    },
+    "menu_nav_key": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,32}$"
+    },
+    "menu_color": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "menu_background_file": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,32}$"
+    },
+    "shared_component_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,32}$"
+    },
+    "portal_access_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_permissions"],
+      "properties": {
+        "required_permissions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
+          }
+        },
+        "match_mode": {
+          "enum": ["any", "all"]
+        }
+      }
+    },
+    "widget_access_matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "read": {
+          "$ref": "#/$defs/portal_access_rule"
+        },
+        "create": {
+          "$ref": "#/$defs/portal_access_rule"
+        },
+        "update": {
+          "$ref": "#/$defs/portal_access_rule"
+        },
+        "delete": {
+          "$ref": "#/$defs/portal_access_rule"
+        }
+      }
+    },
+    "field_mask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["partial", "full", "email", "phone"]
+        },
+        "keep_head": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "keep_tail": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        }
+      }
+    },
+    "i18n": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "propertyNames": {
+        "pattern": "^[a-z]{2}(-[A-Za-z]{2,8})?$"
+      },
+      "minProperties": 1
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource", "view", "fields"],
+      "properties": {
+        "resource": {
+          "$ref": "#/$defs/resource_ref"
+        },
+        "view": {
+          "$ref": "#/$defs/binding_slug"
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/field_key"
+          }
+        }
+      }
+    },
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title_i18n", "widgets"],
+      "allOf": [
+        {
+          "if": {
+            "anyOf": [
+              {
+                "not": {
+                  "required": ["engine"]
+                }
+              },
+              {
+                "required": ["engine"],
+                "properties": {
+                  "engine": {
+                    "const": "flow"
+                  }
+                }
+              }
+            ]
+          },
+          "then": {
+            "not": {
+              "required": ["canvas"]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["engine"],
+            "properties": {
+              "engine": {
+                "const": "grid"
+              }
+            }
+          },
+          "then": {
+            "required": ["canvas"],
+            "properties": {
+              "canvas": {
+                "$ref": "#/$defs/grid_canvas"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["engine"],
+            "properties": {
+              "engine": {
+                "const": "free"
+              }
+            }
+          },
+          "then": {
+            "required": ["canvas"],
+            "properties": {
+              "canvas": {
+                "$ref": "#/$defs/free_canvas"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "title_i18n": {
+          "$ref": "#/$defs/i18n"
+        },
+        "engine": {
+          "enum": ["flow", "grid", "free"]
+        },
+        "canvas": {
+          "type": "object"
+        },
+        "widgets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/widget"
+          }
+        }
+      }
+    },
+    "grid_canvas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["col_widths", "row_heights", "zones"],
+      "properties": {
+        "min_width": {
+          "type": "integer",
+          "minimum": 320,
+          "maximum": 4096
+        },
+        "col_widths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 20
+          }
+        },
+        "row_heights": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "type": "integer",
+            "minimum": 48,
+            "maximum": 2000
+          }
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "zones": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/grid_zone"
+          }
+        }
+      }
+    },
+    "grid_zone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "row", "col", "row_span", "col_span", "widget_ids"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "col": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "row_span": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "col_span": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "overflow": {
+          "enum": ["auto", "visible"]
+        },
+        "widget_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slug"
+          }
+        }
+      }
+    },
+    "free_canvas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frames"],
+      "properties": {
+        "min_width": {
+          "type": "integer",
+          "minimum": 320,
+          "maximum": 4096
+        },
+        "row_unit": {
+          "type": "integer",
+          "minimum": 20,
+          "maximum": 200
+        },
+        "columns": {
+          "const": 12
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "frames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/free_frame"
+          }
+        }
+      }
+    },
+    "free_frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "x", "y", "w", "h", "widget_ids"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "x": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 11
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 999
+        },
+        "w": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "h": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "overflow": {
+          "enum": ["auto", "visible"]
+        },
+        "widget_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slug"
+          }
+        }
+      }
+    },
+    "widget": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/layout_widget"
+        },
+        {
+          "$ref": "#/$defs/table_widget"
+        },
+        {
+          "$ref": "#/$defs/detail_widget"
+        },
+        {
+          "$ref": "#/$defs/master_detail_widget"
+        },
+        {
+          "$ref": "#/$defs/form_widget"
+        },
+        {
+          "$ref": "#/$defs/actions_widget"
+        },
+        {
+          "$ref": "#/$defs/menu_widget"
+        },
+        {
+          "$ref": "#/$defs/text_widget"
+        }
+      ]
+    },
+    "layout_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["columns", "children"]}, {"required": ["shared_ref"]}],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "layout"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/widget"
+          }
+        }
+      }
+    },
+    "table_column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "label_i18n"],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/field_key"
+        },
+        "label_i18n": {
+          "$ref": "#/$defs/i18n"
+        },
+        "sortable": {
+          "type": "boolean"
+        },
+        "mask": {
+          "$ref": "#/$defs/field_mask"
+        }
+      }
+    },
+    "default_sort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "dir"],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/field_key"
+        },
+        "dir": {
+          "enum": ["asc", "desc"]
+        }
+      }
+    },
+    "table_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["binding", "columns"]}, {"required": ["shared_ref"]}],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "table"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
+        },
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/table_column"
+          }
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "default_sort": {
+          "$ref": "#/$defs/default_sort"
+        },
+        "row_actions_ref": {
+          "$ref": "#/$defs/slug"
+        },
+        "row_link_ref": {
+          "$ref": "#/$defs/slug"
+        },
+        "access_matrix": {
+          "$ref": "#/$defs/widget_access_matrix"
+        }
+      }
+    },
+    "detail_field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "label_i18n"],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/field_key"
+        },
+        "label_i18n": {
+          "$ref": "#/$defs/i18n"
+        },
+        "mask": {
+          "$ref": "#/$defs/field_mask"
+        }
+      }
+    },
+    "detail_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["binding", "fields"]}, {"required": ["shared_ref"]}],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "detail"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
+        },
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "layout_columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/detail_field"
+          }
+        },
+        "access_matrix": {
+          "$ref": "#/$defs/widget_access_matrix"
+        }
+      }
+    },
+    "master_detail_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["master", "detail"]}, {"required": ["shared_ref"]}],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "master_detail"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
+        },
+        "master": {
+          "$ref": "#/$defs/md_master"
+        },
+        "detail": {
+          "$ref": "#/$defs/md_detail"
+        },
+        "history": {
+          "$ref": "#/$defs/md_history"
+        },
+        "access_matrix": {
+          "$ref": "#/$defs/widget_access_matrix"
+        }
+      }
+    },
+    "md_master": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "fields"],
+      "properties": {
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/detail_field"
+          }
+        },
+        "layout_columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "editable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "md_detail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "foreign_key", "columns"],
+      "properties": {
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "foreign_key": {
+          "$ref": "#/$defs/field_key"
+        },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/table_column"
+          }
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        }
+      }
+    },
+    "md_history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "default_sort": {
+          "$ref": "#/$defs/default_sort"
+        }
+      }
+    },
+    "form_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["formio_schema"]}, {"required": ["shared_ref"]}],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "form"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
+        },
+        "formio_schema": {
+          "type": "object"
+        },
+        "submit_action_ref": {
+          "$ref": "#/$defs/permission_ref"
+        },
+        "mapping_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{8,64}$"
+        },
+        "access_matrix": {
+          "$ref": "#/$defs/widget_access_matrix"
+        }
+      }
+    },
+    "action_button": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label_i18n", "action_ref"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "label_i18n": {
+          "$ref": "#/$defs/i18n"
+        },
+        "style": {
+          "enum": ["primary", "secondary", "danger"]
+        },
+        "permission": {
+          "$ref": "#/$defs/permission_ref"
+        },
+        "action_ref": {
+          "$ref": "#/$defs/permission_ref"
+        }
+      }
+    },
+    "actions_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["buttons"]}, {"required": ["shared_ref"]}],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "actions"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
+        },
+        "buttons": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/action_button"
+          }
+        },
+        "access_matrix": {
+          "$ref": "#/$defs/widget_access_matrix"
+        }
+      }
+    },
+    "menu_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "anyOf": [
+        {"required": ["items"]},
+        {"required": ["shared_ref"]},
+        {
+          "required": ["source_mode"],
+          "properties": {
+            "source_mode": {
+              "const": "auto"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "menu"
+        },
+        "title_i18n": {
+          "$ref": "#/$defs/i18n"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "$ref": "#/$defs/menu_item"
+          }
+        },
+        "source_mode": {
+          "enum": ["manual", "auto"]
+        },
+        "include_system_links": {
+          "type": "boolean"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
+        },
+        "orientation": {
+          "enum": ["vertical", "horizontal"]
+        },
+        "item_gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        },
+        "hover_expand": {
+          "type": "boolean"
+        },
+        "nav_source": {
+          "enum": ["self", "parent_selection"]
+        },
+        "nav_key": {
+          "$ref": "#/$defs/menu_nav_key"
+        },
+        "style": {
+          "$ref": "#/$defs/menu_style"
+        },
+        "access_matrix": {
+          "$ref": "#/$defs/widget_access_matrix"
+        }
+      }
+    },
+    "menu_item": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "node"],
+          "properties": {
+            "kind": {
+              "const": "node"
+            },
+            "node": {
+              "$ref": "#/$defs/site_map_node_ref"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/menu_item"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "link"],
+          "properties": {
+            "kind": {
+              "const": "system"
+            },
+            "link": {
+              "enum": ["login", "register", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    "menu_style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bg_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "item_bg_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "item_text_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "item_hover_bg_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "item_hover_text_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "accent_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "border_color": {
+          "$ref": "#/$defs/menu_color"
+        },
+        "border_width": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "border_radius": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        },
+        "background_file": {
+          "$ref": "#/$defs/menu_background_file"
+        },
+        "background_size": {
+          "enum": ["cover", "contain", "auto"]
+        },
+        "background_repeat": {
+          "enum": ["no-repeat", "repeat", "repeat-x", "repeat-y"]
+        },
+        "background_position": {
+          "enum": ["center", "top", "bottom", "left", "right"]
+        }
+      }
+    },
+    "text_widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "anyOf": [{"required": ["level", "content_i18n"]}, {"required": ["shared_ref"]}],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slug"
+        },
+        "type": {
+          "const": "text"
+        },
+        "shared_ref": {
+          "$ref": "#/$defs/shared_component_ref"
+        },
+        "level": {
+          "enum": ["h1", "h2", "h3", "p"]
+        },
+        "content_i18n": {
+          "$ref": "#/$defs/i18n"
+        }
+      }
+    }
+  }
+}

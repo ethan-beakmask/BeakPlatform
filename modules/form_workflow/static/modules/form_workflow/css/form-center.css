@@ -1,0 +1,240 @@
+/* form_center.html 專用樣式 */
+
+/* 畫布呈現：灰色背景 + 白色表單區域 */
+.fc-modal-body.fc-form-canvas {
+    background: #f0f1f3;
+    padding: 24px;
+}
+
+/* 表單主旨輸入框 */
+.fc-subject-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+.fc-subject-input.fc-subject-error {
+    border-color: #dc2626;
+}
+
+/* 主容器 */
+.fc-container { display: flex; gap: 16px; padding: 16px; min-height: calc(100vh - 120px); }
+
+/* 左側邊欄 */
+.fc-sidebar { width: 200px; flex-shrink: 0; }
+.fc-sidebar-box { background: white; border: 1px solid #ddd; padding: 12px; margin-bottom: 12px; }
+.fc-sidebar-title { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+.fc-category-item { padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: space-between; border-radius: 4px; }
+.fc-category-item:hover { background: #f3f4f6; }
+.fc-category-item.active { background: #dbeafe; color: #1d4ed8; font-weight: 500; }
+.fc-category-count { font-size: 11px; background: #e5e7eb; padding: 2px 6px; border-radius: 10px; }
+.fc-category-item.active .fc-category-count { background: #bfdbfe; }
+
+/* 快速連結 */
+.fc-link-item { padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: space-between; border-radius: 4px; color: #4b5563; }
+.fc-link-item:hover { background: #f3f4f6; }
+.fc-link-badge { font-size: 10px; background: #fbbf24; color: white; padding: 2px 6px; border-radius: 10px; }
+
+/* 主內容區 */
+.fc-main { flex: 1; min-width: 0; }
+
+/* 區塊 */
+.fc-section { background: white; border: 1px solid #ddd; margin-bottom: 16px; }
+.fc-section-header { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+.fc-section-title { font-size: 14px; font-weight: 600; color: #1f2937; display: flex; align-items: center; gap: 8px; }
+.fc-section-body { padding: 16px; }
+
+/* 表單網格 */
+.fc-form-grid { display: grid; grid-template-columns: repeat(auto-fill, 240px); gap: 10px; max-height: 140px; overflow-y: auto; }
+.fc-form-card { border: 1px solid #e5e7eb; padding: 12px; cursor: pointer; transition: all 0.2s; border-radius: 4px; }
+.fc-form-card:hover { border-color: #93c5fd; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.fc-form-card h4 { font-size: 14px; font-weight: 600; margin: 0; color: #1f2937; display: flex; align-items: center; gap: 6px; }
+
+/* 徽章 */
+.fc-badge { font-size: 11px; padding: 2px 6px; border-radius: 3px; font-weight: 500; }
+.fc-badge-test { background: #fed7aa; color: #c2410c; }
+.fc-badge-pending { background: #fef3c7; color: #92400e; }
+.fc-badge-running { background: #dbeafe; color: #1e40af; }
+.fc-badge-completed { background: #dcfce7; color: #166534; }
+.fc-badge-error { background: #fee2e2; color: #dc2626; }
+.fc-delegate-tag { font-size: 11px; color: var(--color-text-muted); margin-left: 4px; }
+
+/* 表格 */
+.fc-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+.fc-table th { text-align: left; padding: 8px 12px; background: #f9fafb; color: #6b7280; font-weight: 500; border-bottom: 1px solid #e5e7eb; white-space: nowrap; overflow: hidden; }
+.fc-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fc-table th.fc-sortable { cursor: pointer; user-select: none; }
+.fc-table th.fc-sortable:hover { background: #e5e7eb; }
+.fc-table tr:hover td { background: #fafafa; }
+.fc-table-pending { background: #fffbeb; }
+.fc-table-pending th { background: #fef3c7; }
+
+/* 頁籤 */
+.fc-tabs { display: flex; gap: 4px; }
+.fc-tab { padding: 4px 10px; font-size: 13px; cursor: pointer; border-radius: 4px; color: #6b7280; }
+.fc-tab:hover { background: #f3f4f6; }
+.fc-tab.active { background: #dbeafe; color: #1d4ed8; font-weight: 500; }
+
+/* 水平分類頁籤 */
+.fc-cat-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.fc-cat-tab { padding: 4px 10px; font-size: 13px; cursor: pointer; border-radius: 4px; color: #6b7280; white-space: nowrap; }
+.fc-cat-tab:hover { background: #f3f4f6; }
+.fc-cat-tab.active { background: #dbeafe; color: #1d4ed8; font-weight: 500; }
+.fc-cat-count { font-size: 11px; margin-left: 2px; }
+
+/* 分頁 */
+.fc-pagination { display: flex; align-items: center; gap: 4px; font-size: 13px; color: #6b7280; }
+.fc-pagination button { background: none; border: none; cursor: pointer; padding: 2px 6px; color: #3b82f6; }
+.fc-pagination button:disabled { color: #d1d5db; cursor: not-allowed; }
+
+/* 清單模式主分頁 */
+.fc-list-tabs { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 8px; }
+.fc-list-tab {
+    padding: 8px 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+    color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px;
+    background: none; border-top: none; border-left: none; border-right: none;
+}
+.fc-list-tab:hover { color: #374151; }
+.fc-list-tab.active { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+.fc-list-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; min-height: 30px; }
+.fc-list-sub-tabs { display: flex; gap: 4px; }
+.fc-list-sub-tab { padding: 4px 10px; font-size: 13px; cursor: pointer; border-radius: 4px; color: #6b7280; background: none; border: 1px solid #e5e7eb; }
+.fc-list-sub-tab:hover { background: #f3f4f6; }
+.fc-list-sub-tab.active { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; font-weight: 500; }
+.fc-list-pager { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #6b7280; }
+.fc-list-pager-compact { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6b7280; }
+.fc-list-pager-compact button { background: none; border: 1px solid #d1d5db; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 13px; color: #374151; }
+.fc-list-pager-compact button:hover { background: #f3f4f6; }
+.fc-list-pager-compact button:disabled { color: #d1d5db; cursor: not-allowed; }
+.fc-list-pager-btns { display: flex; align-items: center; gap: 4px; }
+.fc-list-pager-btn {
+    padding: 3px 8px; border: 1px solid #d1d5db; border-radius: 4px; background: white;
+    cursor: pointer; font-size: 13px; color: #374151;
+}
+.fc-list-pager-btn:hover { background: #f3f4f6; }
+.fc-list-pager-btn:disabled { color: #d1d5db; cursor: not-allowed; background: #f9fafb; }
+.fc-list-pager-btn.active { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+
+/* 清單模式緊密表格 */
+.fc-table-dense th { padding: 4px 8px; }
+.fc-table-dense td { padding: 3px 8px; line-height: 1.3; }
+.fc-table-dense .fc-btn-sm { padding: 2px 4px; }
+.fc-table-dense .fc-badge { padding: 1px 5px; }
+
+/* 標題超連結樣式 */
+.fc-section-link { color: inherit; text-decoration: none; border-bottom: 1px dashed #9ca3af; cursor: pointer; }
+.fc-section-link:hover { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+
+/* 按鈕 */
+.fc-btn { padding: 6px 12px; font-size: 13px; border: none; cursor: pointer; border-radius: 4px; }
+.fc-btn-primary { background: #3b82f6; color: white; }
+.fc-btn-primary:hover { background: #2563eb; }
+.fc-btn-warning { background: #f59e0b; color: white; }
+.fc-btn-warning:hover { background: #d97706; }
+.fc-btn-sm { padding: 4px 8px; font-size: 13px; }
+
+/* 空狀態 */
+.fc-empty { text-align: center; padding: 24px; color: #9ca3af; font-size: 13px; }
+.fc-loading { text-align: center; padding: 24px; color: #6b7280; }
+
+/* 模態框 */
+.fc-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+.fc-modal-content { background: white; max-width: 90vw; max-height: 80vh; display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; }
+.fc-modal-header { padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.fc-modal-header h3 { font-size: 16px; font-weight: 600; margin: 0; }
+.fc-modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+.fc-modal-footer { padding: 16px 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0; background: #f9fafb; }
+.fc-close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280; }
+.fc-close-btn:hover { color: #1f2937; }
+
+/* 底圖支援 */
+.has-background { position: relative; }
+.has-background::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none; z-index: 0;
+}
+.has-background > * { position: relative; z-index: 1; }
+
+/* 唯讀表單樣式（僅針對特定容器內的 Form.io 元素） */
+#formDetailViewer .formio-component input,
+#formDetailViewer .formio-component textarea,
+#formDetailViewer .formio-component select,
+#read-form-container .formio-component input,
+#read-form-container .formio-component textarea,
+#read-form-container .formio-component select,
+.fc-form-readonly .formio-component input,
+.fc-form-readonly .formio-component textarea,
+.fc-form-readonly .formio-component select {
+    background-color: #f9fafb !important;
+    pointer-events: none;
+}
+#formDetailViewer .formio-component button[type="submit"],
+#read-form-container .formio-component button[type="submit"],
+#approval-form-container .formio-component button[type="submit"] {
+    display: none !important;
+}
+
+/* Toast */
+.fc-toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: white; z-index: 2000; font-size: 13px; }
+.fc-toast-success { background: #16a34a; }
+.fc-toast-error { background: #dc2626; }
+.fc-toast-warning { background: #f59e0b; }
+
+/* 監控模態框 */
+.fc-monitor-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 8px; }
+.fc-monitor-content { background: white; width: 95vw; height: 85vh; display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; }
+.fc-monitor-header { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; background: #f9fafb; flex-shrink: 0; }
+.fc-monitor-body { flex: 1; display: flex; gap: 16px; padding: 16px; overflow: hidden; }
+
+/* 流程總圖 - 獨立全螢幕對話窗 */
+.fc-flowchart-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.fc-flowchart-modal-content { background: white; width: 90vw; height: 90vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 8px; }
+.fc-flowchart-modal-header { padding: 8px 16px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; flex-shrink: 0; }
+
+/* 流程總圖 - 圖例 */
+.fc-flowchart-legend { position: absolute; bottom: 12px; left: 12px; background: rgba(255,255,255,0.95); padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px; display: flex; gap: 10px; flex-wrap: wrap; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.fc-flowchart-legend-item { display: flex; align-items: center; gap: 4px; }
+.fc-flowchart-legend-dot { width: 10px; height: 10px; border-radius: 2px; border: 1px solid #999; }
+
+/* 監控狀態徽章 */
+.fc-status-badge { padding: 4px 8px; font-size: 13px; border-radius: 4px; }
+.fc-status-badge-running { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.fc-status-badge-completed { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+.fc-status-badge-failed { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+.fc-status-badge-waiting { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+
+/* 流程圖區域 */
+.fc-graph-container { flex-shrink: 0; display: flex; flex-direction: column; width: 55%; max-width: calc(92vh - 100px); }
+.fc-graph-tabs { display: flex; gap: 4px; margin-bottom: 8px; overflow-x: auto; padding-bottom: 4px; }
+.fc-graph-tab { padding: 6px 12px; font-size: 13px; border-radius: 4px 4px 0 0; cursor: pointer; white-space: nowrap; border: 1px solid #e5e7eb; border-bottom: none; background: #f9fafb; color: #6b7280; }
+.fc-graph-tab:hover { background: #f3f4f6; }
+.fc-graph-tab.active { background: white; color: #1d4ed8; font-weight: 500; border-color: #3b82f6; }
+.fc-graph-box { flex: 1; border: 1px solid #e5e7eb; border-radius: 4px; background: white; min-height: 400px; }
+
+/* 執行歷程區域 */
+.fc-history-container { flex: 1; display: flex; flex-direction: column; background: #f9fafb; border-radius: 8px; padding: 12px; overflow: hidden; }
+.fc-history-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px; flex-shrink: 0; }
+.fc-history-list { flex: 1; overflow-y: auto; }
+.fc-history-row { display: flex; align-items: center; padding: 8px; font-size: 13px; border-bottom: 1px solid #f3f4f6; gap: 4px; }
+.fc-history-row:hover { background: white; }
+.fc-history-row.running { background: #fffbeb; }
+.fc-history-row.failed { background: #fef2f2; }
+
+/* 節點狀態指示器 */
+.fc-node-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.fc-node-dot-running { background: #fbbf24; animation: pulse 1s infinite; }
+.fc-node-dot-completed { background: #22c55e; }
+.fc-node-dot-failed { background: #ef4444; }
+.fc-node-dot-waiting { background: #3b82f6; }
+.fc-node-dot-pending { background: #9ca3af; }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* 批次選取 row 高亮 */
+.fc-row-selected { background: #eef2ff; }
+.fc-table-pending input[type="checkbox"]:disabled { opacity: 0.35; cursor: not-allowed; }

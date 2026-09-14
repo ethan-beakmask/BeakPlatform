@@ -1,0 +1,280 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/03_org_setup/job_levels{% endblock %}
+
+{% block title %}{{ _('職等管理') }} - BeakMask{% endblock %}
+
+{% block head %}
+<script src="{{ url_for('static', filename='js/job-levels.js') }}"></script>
+<style>
+.master-detail { display: flex; gap: 20px; min-height: 500px; }
+.master-panel { flex: 0 0 500px; }
+.detail-panel { flex: 0 0 600px; border: 1px solid var(--color-border); padding: 16px; background: var(--color-bg-light); }
+.master-panel table { width: 100%; }
+.master-panel tr { cursor: pointer; }
+.master-panel tr.selected { background: var(--color-primary-light); }
+.master-panel tr:hover { background: var(--color-bg-header); }
+.master-panel tr.selected:hover { background: var(--color-primary-light); }
+.detail-placeholder { color: var(--color-text-muted); text-align: center; padding-top: 120px; }
+.detail-form th { width: 120px; text-align: right; padding-right: 10px; vertical-align: top; white-space: nowrap; }
+.detail-form td { padding: 4px 0; }
+.detail-form input[type="text"],
+.detail-form input[type="number"],
+.detail-form textarea {
+    width: 100%; box-sizing: border-box;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+}
+.detail-form input:focus,
+.detail-form textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+.msg-success { color: var(--color-success); }
+.msg-error { color: var(--color-danger); }
+.btn-row { padding-top: 16px; display: flex; gap: 8px; align-items: center; }
+.error-list { color: var(--color-danger); margin-bottom: 12px; font-size: 13px; }
+.error-list div { margin-bottom: 2px; }
+.form-table { width: 100%; border-collapse: collapse; }
+.form-table th {
+    text-align: left; padding: 8px; vertical-align: top;
+    font-weight: 500; color: var(--color-text-secondary); white-space: nowrap; width: 100px;
+}
+.form-table td { padding: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="jobLevelsManager()">
+
+<h1>{{ _('職等管理') }}</h1>
+
+<p>
+    <a href="{{ url_for('job_levels.job_matrix') }}">{{ _('[職級職稱矩陣]') }}</a>
+    |
+    <strong>{{ _('[職等管理]') }}</strong>
+    |
+    <a href="{{ url_for('job_families.list_job_families') }}">{{ _('[職系管理]') }}</a>
+    |
+    <a href="{{ url_for('job_titles.list_job_titles') }}">{{ _('[職稱管理]') }}</a>
+    |
+    <a href="{{ url_for('approval_categories.list_categories') }}">{{ _('[核決權限類別]') }}</a>
+</p>
+
+<p>
+    <button type="button" class="btn btn-primary" @click="openCreateModal()">{{ _('+ 新增職等') }}</button>
+    <span class="text-muted" style="font-size: 0.85em; margin-left: 12px;">
+        {{ _('共') }} <span x-text="levels.length"></span> {{ _('個職等') }}
+    </span>
+</p>
+
+<!-- Master-Detail 布局 -->
+<div class="master-detail">
+
+    <!-- 左面板：表格 -->
+    <div class="master-panel">
+        <table class="data-table bordered">
+            <thead>
+                <tr>
+                    <th>{{ _('代碼') }}</th>
+                    <th>{{ _('名稱') }}</th>
+                    <th style="text-align:right;">{{ _('序號') }}</th>
+                    <th style="text-align:center;">{{ _('管理職') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="level in levels" :key="level.secure_code">
+                    <tr @click="selectLevel(level)" style="cursor: pointer;"
+                        :class="{ 'selected': selected && selected.secure_code === level.secure_code, 'text-muted': !level.is_active }">
+                        <td><code x-text="level.code"></code></td>
+                        <td>
+                            <strong x-text="level.name"></strong>
+                            <template x-if="level.is_system_default">
+                                <span class="text-muted" style="font-size:0.8em;">{{ _('(預設)') }}</span>
+                            </template>
+                        </td>
+                        <td style="text-align:right;" x-text="level.level_order"></td>
+                        <td style="text-align:center;" x-text="level.is_manager_level ? __('是') : '-'"></td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+        <template x-if="levels.length === 0">
+            <p class="text-muted">{{ _('尚無職等資料') }}</p>
+        </template>
+    </div>
+
+    <!-- 右面板：編輯 -->
+    <div class="detail-panel">
+        <!-- 未選擇 -->
+        <template x-if="!selected">
+            <div class="detail-placeholder">{{ _('請從左側選擇職等') }}</div>
+        </template>
+
+        <!-- 已選擇 -->
+        <template x-if="selected">
+            <div>
+                <h3 style="margin-top:0;">
+                    {{ _('編輯職等:') }} <span x-text="selected.name"></span>
+                </h3>
+
+                <table class="detail-form">
+                    <tr>
+                        <th>{{ _('代碼') }}</th>
+                        <td>
+                            <code style="font-size:1.1em;" x-text="selected.code"></code>
+                            <span class="text-muted" style="font-size:0.85em;">{{ _('(不可修改)') }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('名稱 *') }}</th>
+                        <td><input type="text" x-model="editForm.name" maxlength="100"></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('英文名稱') }}</th>
+                        <td><input type="text" x-model="editForm.name_en" maxlength="100"></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('序號 *') }}</th>
+                        <td>
+                            <input type="number" x-model.number="editForm.level_order" min="0" max="9999">
+                            <div class="text-muted" style="font-size:0.8em;">{{ _('數字越大職等越高 (0-9999)') }}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('管理職') }}</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" x-model="editForm.is_manager_level">
+                                {{ _('是管理職等 (帶人主管)') }}
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('管理幅度') }}</th>
+                        <td><input type="text" x-model="editForm.management_scope" maxlength="100" placeholder="{{ _('如 單一部門、全公司') }}"></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('描述') }}</th>
+                        <td><textarea x-model="editForm.description" rows="3"></textarea></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('狀態') }}</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" x-model="editForm.is_active">
+                                {{ _('啟用') }}
+                            </label>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 訊息 -->
+                <template x-if="editMessage">
+                    <div style="margin-top:8px;"
+                         :class="editMessageType === 'success' ? 'msg-success' : 'msg-error'"
+                         x-text="editMessage"></div>
+                </template>
+
+                <!-- 按鈕列 -->
+                <div class="btn-row">
+                    <button type="button" class="btn btn-primary" @click="submitEdit()" :disabled="editSaving">
+                        <span x-text="editSaving ? __('儲存中...') : __('儲存')"></span>
+                    </button>
+                    <template x-if="!selected.is_system_default">
+                        <button type="button" class="btn btn-danger" @click="submitDelete()">
+                            {{ _('刪除') }}
+                        </button>
+                    </template>
+                </div>
+                <template x-if="selected.is_system_default">
+                    <div class="text-muted" style="margin-top:8px; font-size:0.85em;">{{ _('系統預設職等不可刪除') }}</div>
+                </template>
+            </div>
+        </template>
+    </div>
+</div>
+
+<!-- 新增 Modal -->
+<template x-if="showCreateModal">
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>{{ _('新增職等') }}</h3>
+                <button type="button" class="modal-close" @click="closeCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <template x-if="createMessage">
+                    <div style="margin-bottom:10px;"
+                         :class="createMessageType === 'success' ? 'msg-success' : 'msg-error'"
+                         x-text="createMessage"></div>
+                </template>
+                <table class="form-table">
+                    <tr>
+                        <th>{{ _('名稱 *') }}</th>
+                        <td><input type="text" class="form-control" x-model="createForm.name" maxlength="100" placeholder="{{ _('如 職員級') }}"></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('代碼') }}</th>
+                        <td>
+                            <input type="text" class="form-control" x-model="createForm.code" maxlength="20" placeholder="{{ _('留空自動產生') }}">
+                            <div class="text-muted" style="font-size:0.8em; margin-top: 4px;">{{ _('選填，建議格式: L + 序號 (如 L100)') }}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('英文名稱') }}</th>
+                        <td><input type="text" class="form-control" x-model="createForm.name_en" maxlength="100" placeholder="{{ _('如 Staff Level') }}"></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('序號 *') }}</th>
+                        <td>
+                            <input type="number" class="form-control" x-model="createForm.level_order" min="0" max="9999" placeholder="{{ _('如 150') }}">
+                            <div class="text-muted" style="font-size:0.8em; margin-top: 4px;">{{ _('數字越大職等越高 (0-9999)，等距跳號: 0, 100, 200...900') }}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('管理職') }}</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" x-model="createForm.is_manager_level">
+                                {{ _('是管理職等 (帶人主管)') }}
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('管理幅度') }}</th>
+                        <td><input type="text" class="form-control" x-model="createForm.management_scope" maxlength="100" placeholder="{{ _('如 單一部門、全公司') }}"></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('描述') }}</th>
+                        <td><textarea class="form-control" x-model="createForm.description" rows="3"></textarea></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @click="closeCreateModal()">{{ _('取消') }}</button>
+                <button type="button" class="btn btn-primary" @click="submitCreate()" :disabled="createSaving">
+                    <span x-text="createSaving ? __('建立中...') : __('建立職等')"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
+</div>
+
+<!-- Window Bridge -->
+<script>
+window.__JOB_LEVELS_CONFIG = {
+    levels: {{ levels_json | tojson }},
+    csrfToken: '{{ csrf_token() }}',
+    urls: {
+        create: '{{ url_for("job_levels.create_job_level") }}',
+        edit: '{{ url_for("job_levels.edit_job_level", secure_code="__SC__") }}',
+        delete: '{{ url_for("job_levels.delete_job_level", secure_code="__SC__") }}',
+        checkUsage: '{{ url_for("job_levels.check_usage", secure_code="__SC__") }}'
+    }
+};
+</script>
+{% endblock %}

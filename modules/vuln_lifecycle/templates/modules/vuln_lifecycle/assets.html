@@ -1,0 +1,155 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('資產清冊') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/vuln_lifecycle/css/vuln-common.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/vuln_lifecycle/css/beak-trellis.css">
+{% endblock %}
+
+{% block content %}
+<div class="vlc-container">
+
+    <div class="vlc-page-header">
+        <h1>{{ _('資產清冊') }}</h1>
+    </div>
+
+    <!-- 篩選列 -->
+    <div class="vlc-filter-bar">
+        <label>{{ _('資產類型') }}</label>
+        <select id="filter-type" onchange="loadAssets()">
+            <option value="">{{ _('全部') }}</option>
+            <option value="host">{{ _('主機 (Host)') }}</option>
+            <option value="webapp">{{ _('網頁應用 (WebApp)') }}</option>
+        </select>
+        <label>{{ _('嚴重度') }} &ge;</label>
+        <input type="number" id="filter-sev" value="0" min="0" max="10" step="0.1"
+               onchange="loadAssets()">
+        <span class="vlc-filter-count" id="asset-count"></span>
+    </div>
+
+    <!-- Trellis Grid 容器 -->
+    <div id="asset-grid" class="vlc-trellis-wrap" style="min-height:200px"></div>
+    <div id="asset-loading" class="vlc-empty">{{ _('載入中...') }}</div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ app_prefix }}/static/modules/vuln_lifecycle/js/beak-tree-model.js"></script>
+<script src="{{ app_prefix }}/static/modules/vuln_lifecycle/js/beak-trellis.js"></script>
+<script src="{{ app_prefix }}/static/modules/vuln_lifecycle/js/beak-tree-lines-dom.js"></script>
+<script>
+var trellis = null;
+
+function sevColor(v) {
+    if (v >= 9) return '#c00';
+    if (v >= 7) return '#e60';
+    if (v >= 4) return '#e90';
+    return '#999';
+}
+
+function loadAssets() {
+    var type = document.getElementById('filter-type').value;
+    var sev = document.getElementById('filter-sev').value;
+    var url = '{{ app_prefix }}/api/vuln-lifecycle/assets?severity_min=' + sev;
+    if (type) url += '&type=' + type;
+
+    fetch(url).then(function(r) {
+        if (!r.ok) {
+            document.getElementById('asset-loading').innerHTML =
+                '<span style="color:#dc3545;font-weight:bold;">' + __('未安裝 BeakRisk 弱點管制系統') + '</span>';
+            return null;
+        }
+        return r.json();
+    }).then(function(r) {
+        if (!r || !r.success) return;
+
+        document.getElementById('asset-loading').style.display = 'none';
+        document.getElementById('asset-count').textContent = __('{n} 筆資產', {n: r.total});
+
+        var groups = {};
+        var typeLabel = { 'host': __('主機 (Host)'), 'webapp': __('網頁應用 (WebApp)') };
+
+        r.data.forEach(function(a) {
+            var g = a.asset_type || 'other';
+            if (!groups[g]) groups[g] = [];
+            groups[g].push({
+                id: 'a_' + a.id,
+                label: a.ip || '-',
+                data: {
+                    ip: a.ip || '-',
+                    hostname: a.hostname || '-',
+                    asset_type: a.asset_type || '-',
+                    scan_count: a.scan_count || 0,
+                    finding_count: a.finding_count || 0,
+                    max_severity: a.max_severity != null ? Number(a.max_severity).toFixed(1) : '0.0',
+                    last_seen: a.last_seen ? a.last_seen.substring(0, 10) : '-',
+                    _asset_id: a.id
+                }
+            });
+        });
+
+        var treeData = [];
+        for (var g in groups) {
+            treeData.push({
+                id: 'group_' + g,
+                label: (typeLabel[g] || g) + ' (' + groups[g].length + ')',
+                children: groups[g],
+                data: {
+                    ip: '',
+                    hostname: '',
+                    asset_type: typeLabel[g] || g,
+                    scan_count: '',
+                    finding_count: groups[g].reduce(function(s, c) { return s + (c.data.finding_count || 0); }, 0),
+                    max_severity: Math.max.apply(null, groups[g].map(function(c) { return parseFloat(c.data.max_severity) || 0; })).toFixed(1),
+                    last_seen: '',
+                    _asset_id: null
+                }
+            });
+        }
+
+        var columns = [
+            { id: 'ip', label: 'IP / URL', width: 200, sortable: true },
+            { id: 'hostname', label: __('主機名稱'), width: 180, sortable: true },
+            { id: 'asset_type', label: __('類型'), width: 140, sortable: true },
+            { id: 'scan_count', label: __('掃描次數'), width: 90, sortable: true, type: 'number' },
+            { id: 'finding_count', label: __('弱點數'), width: 80, sortable: true, type: 'number' },
+            { id: 'max_severity', label: __('最高嚴重度'), width: 100, sortable: true, type: 'number',
+              renderer: function(value) {
+                  var v = parseFloat(value) || 0;
+                  var el = document.createElement('span');
+                  el.style.color = sevColor(v);
+                  el.style.fontWeight = v >= 7 ? '600' : 'normal';
+                  el.textContent = v.toFixed(1);
+                  return el;
+              }
+            },
+            { id: 'last_seen', label: __('最後偵測'), width: 110, sortable: true }
+        ];
+
+        var container = document.getElementById('asset-grid');
+
+        if (trellis) {
+            trellis.setData(treeData);
+        } else {
+            container.innerHTML = '';
+            trellis = new BeakTrellis(container, {
+                columns: columns,
+                data: treeData,
+                treeMode: 'lines-dom',
+                maxExpanded: 1000,
+                onRowClick: function(node) {
+                    if (node.data && node.data._asset_id) {
+                        window.location.href = '{{ app_prefix }}/vuln/assets/' + node.data._asset_id;
+                    }
+                }
+            });
+        }
+
+        treeData.forEach(function(g) { trellis.expand(g.id); });
+    });
+}
+
+loadAssets();
+</script>
+{% endblock %}

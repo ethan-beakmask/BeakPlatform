@@ -1,0 +1,123 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('新增外部廠商') }} - BeakMask{% endblock %}
+
+{% block head %}
+<script src="{{ app_prefix }}/static/js/password-form.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('external_users.list_external_users') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回外部廠商列表') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('新增外部廠商') }}</h1>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST" style="max-width: 600px;" x-data="passwordForm()">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <table class="info-table">
+        <tr>
+            <th style="width: 150px;">{{ _('姓名 *') }}</th>
+            <td>
+                <input type="text" name="display_name" value="{{ form_data.get('display_name', '') }}"
+                       required maxlength="100" style="width: 100%;">
+            </td>
+        </tr>
+        <tr>
+            <th>Email *</th>
+            <td>
+                <input type="email" name="email" value="{{ form_data.get('email', '') }}"
+                       required maxlength="255" style="width: 100%;"
+                       placeholder="{{ _('例如: guest@example.mail') }}">
+                <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
+                    {{ _('請輸入完整的 Email 地址（此為登入帳號）') }}
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th style="vertical-align: top;">{{ _('密碼 *') }}</th>
+            <td>
+                <div style="display: flex; gap: 8px; align-items: start;">
+                    <div style="flex: 1;">
+                        <input :type="showPassword ? 'text' : 'password'" name="password"
+                               x-model="password" @input="validatePassword()"
+                               required minlength="8" style="width: 100%;">
+                    </div>
+                    <button type="button" @click="showPassword = !showPassword"
+                            style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+                            x-text="showPassword ? __('隱藏') : __('顯示')"></button>
+                    <button type="button" @click="generatePassword()"
+                            style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        {{ _('建議密碼') }}
+                    </button>
+                </div>
+                <div class="help-text" x-text="passwordRequirements"></div>
+                <!-- 驗證錯誤 -->
+                <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
+                    <template x-for="err in passwordErrors" :key="err">
+                        <div class="text-danger" style="font-size: 12px;" x-text="'• ' + err"></div>
+                    </template>
+                </div>
+                <!-- 驗證通過 -->
+                <div x-show="password && passwordErrors.length === 0 && passwordChecked"
+                     style="margin-top: 6px; color: #16a34a; font-size: 12px;">
+                    {{ _('✓ 密碼符合要求') }}
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('歸屬群組 *') }}</th>
+            <td>
+                <select name="group_code" required style="width: 100%;">
+                    <option value="">{{ _('-- 請選擇 --') }}</option>
+                    {% for group in groups %}
+                    <option value="{{ group.code }}" {% if form_data.get('group_code') == group.code %}selected{% elif not form_data.get('group_code') and group.code == 'EXTERNAL_VENDORS' %}selected{% endif %}>
+                        {{ group.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
+                    {{ _('外部廠商必須歸屬至少一個群組') }}
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('編號') }}</th>
+            <td>
+                <span style="color: #059669;">{{ _('自動產生') }}</span>
+                <span style="color: #6b7280; margin-left: 8px;">{{ _('（使用規則：%(name)s）', name=default_rule.name) }}</span>
+            </td>
+        </tr>
+        <tr>
+            <th style="vertical-align: top;">{{ _('備註') }}</th>
+            <td>
+                <textarea name="notes" rows="3" style="width: 100%;" maxlength="1000"
+                          placeholder="{{ _('選填，可記錄公司、聯絡方式等') }}">{{ form_data.get('notes', '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit" class="btn btn-primary">
+                    {{ _('建立外部廠商') }}
+                </button>
+                <a href="{{ url_for('external_users.list_external_users') }}" style="margin-left: 20px; color: #6b7280;">{{ _('取消') }}</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+
+{% endblock %}

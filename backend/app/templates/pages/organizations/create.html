@@ -1,0 +1,126 @@
+{% extends 'layouts/base.html' %}
+
+{% block help_doc %}manual/02_platform_admin/organizations{% endblock %}
+
+{% block title %}{{ _('新增企業') }} - BeakMask{% endblock %}
+
+{% block head %}
+<script src="{{ app_prefix }}/static/js/password-form.js"></script>
+<script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('organizations.list_orgs') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回企業列表') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;"><h1 class="page-title">{{ _('新增企業') }}</h1></div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST"
+      x-data="{...passwordForm({autoGenerate: true}), ...codeInputMixin('organization'), codeval: '{{ request.form.get('code', '') }}'}"
+      x-init="init()"
+      @submit="if (!codeval.trim() && _ci_generatedCode) { codeval = _ci_generatedCode; $refs.codeField.value = _ci_generatedCode; }">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table class="info-table">
+        <tr>
+            <td><label for="name">{{ _('企業名稱') }} *</label></td>
+            <td>
+                <input type="text" id="name" name="name" size="40" required
+                       value="{{ request.form.get('name', '') }}"
+                       @input.debounce.500ms="ciGenerateCode($event.target.value)">
+            </td>
+        </tr>
+        <tr>
+            <td><label for="code">{{ _('企業代碼') }}</label></td>
+            <td>
+                <input type="text" id="code" name="code" size="20" x-ref="codeField"
+                       x-model="codeval"
+                       :placeholder="_ci_generatedCode || __('留空自動產生')"
+                       @input.debounce.500ms="ciValidateCode(codeval)">
+                <br><small>{{ _('選填，留空自動產生。如 ACME、DEMO_CORP') }}</small>
+                {% include "partials/_code_input.html" %}
+            </td>
+        </tr>
+        <tr>
+            <td><label for="display_name">{{ _('顯示名稱') }}</label></td>
+            <td>
+                <input type="text" id="display_name" name="display_name" size="40"
+                       value="{{ request.form.get('display_name', '') }}">
+                <br><small>{{ _('多語言顯示用，如不填則使用企業名稱') }}</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="domain_name">{{ _('網域名稱') }} *</label></td>
+            <td>
+                <input type="text" id="domain_name" name="domain_name" size="30" required pattern="[a-zA-Z0-9\-\.]+"
+                       style="text-transform: lowercase;"
+                       value="{{ request.form.get('domain_name', '') }}">
+                <br><small>{{ _('例: example.com (用於登入帳號，如 admin@example.com，會自動轉小寫)') }}</small>
+                <br><small class="text-muted">{{ _('不可使用公共信箱 Domain (如 gmail.com, yahoo.com)') }}</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="description">{{ _('描述') }}</label></td>
+            <td><textarea id="description" name="description" rows="3" cols="40" placeholder="{{ _('選填') }}"></textarea></td>
+        </tr>
+        <tr>
+            <td><label for="user_limit">{{ _('帳號上限') }}</label></td>
+            <td>
+                <input type="number" id="user_limit" name="user_limit" size="10"
+                       min="1" step="1"
+                       value="{{ request.form.get('user_limit', default_user_limit) }}">
+                <br><small>{{ _('選填，留空使用平台預設值 %(default)s。只計企業成員與外部廠商，不含管理員帳號', default=default_user_limit) }}</small>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2"><div class="section-title" style="margin-top:32px;">{{ _('管理員帳號') }}</div></td>
+        </tr>
+        <tr>
+            <td><label for="admin_username">{{ _('管理員帳號') }}</label></td>
+            <td>
+                <input type="text" id="admin_username" name="admin_username" size="20"
+                       value="{{ request.form.get('admin_username', 'admin') }}" pattern="[a-zA-Z0-9_]+">
+                <br><small>{{ _('預設 admin，登入時為: admin@domain') }}</small>
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;"><label for="admin_password">{{ _('管理員密碼') }} *</label></td>
+            <td>
+                <div class="password-field">
+                    <input :type="showPassword ? 'text' : 'password'" id="admin_password" name="admin_password"
+                           x-model="password" @input="validatePassword()"
+                           size="20" minlength="12" required>
+                    <button type="button" class="btn-toggle" @click="showPassword = !showPassword"
+                            x-text="showPassword ? __('隱藏') : __('顯示')"></button>
+                    <button type="button" class="btn-generate" @click="generatePassword()">{{ _('建議密碼') }}</button>
+                </div>
+                <small x-text="passwordRequirements"></small>
+                <div class="password-errors" x-show="password && passwordErrors.length > 0">
+                    <template x-for="err in passwordErrors" :key="err">
+                        <div x-text="'• ' + err"></div>
+                    </template>
+                </div>
+                <div class="password-ok" x-show="password && passwordErrors.length === 0 && passwordChecked">
+                    {{ _('密碼符合要求') }}
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit" class="btn btn-primary">{{ _('建立企業') }}</button>
+                <a href="{{ url_for('organizations.list_orgs') }}" class="btn btn-cancel">{{ _('取消') }}</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+{% endblock %}

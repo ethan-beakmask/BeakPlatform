@@ -1,0 +1,387 @@
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 按鈕樣式 - 縮小高度、淡色系 */
+.btn-toolbar .btn {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.btn-toolbar .btn-outline-secondary {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #6c757d;
+}
+
+.btn-toolbar .btn-outline-secondary:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    color: #495057;
+}
+
+.btn-toolbar .btn-outline-secondary.active {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+/* Schema 彈出視窗 */
+.schema-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.schema-modal.show {
+    display: flex;
+}
+
+.schema-modal-content {
+    background-color: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.schema-modal-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.schema-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.schema-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.schema-modal-body pre {
+    background-color: #f8f9fa;
+    padding: 16px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    margin: 0;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* 預覽表單樣式 */
+#preview-form {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 4px;
+    min-height: 200px;
+}
+
+#preview-modal .schema-modal-body {
+    background-color: #f8f9fa;
+}
+
+/* 列印預覽樣式 */
+#print-preview-container {
+    background-color: #ffffff;
+    padding: 40px;
+    max-width: 210mm;
+    margin: 0 auto;
+}
+
+/* 列印樣式 */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #print-preview-container,
+    #print-preview-container * {
+        visibility: visible;
+    }
+
+    .schema-modal {
+        background: none !important;
+    }
+
+    #print-preview-modal .schema-modal-content {
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+    }
+
+    #print-preview-modal .schema-modal-header {
+        display: none !important;
+    }
+
+    #print-preview-modal .schema-modal-body {
+        padding: 0 !important;
+        background: white !important;
+    }
+
+    #print-preview-container {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: 100% !important;
+        padding: 10mm !important;
+        margin: 0 !important;
+    }
+
+    #print-preview-container h2 {
+        page-break-after: avoid;
+    }
+
+    button {
+        display: none !important;
+    }
+
+    @page {
+        margin: 15mm;
+        size: A4;
+    }
+
+    .page-break-line {
+        display: none !important;
+    }
+
+    .print-page-break {
+        page-break-before: always;
+    }
+}
+
+/* ===== 設計器主要布局 ===== */
+.designer-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.designer-toolbar {
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    flex-shrink: 0;
+}
+
+.designer-canvas {
+    height: calc(100vh - 64px - 85px);
+    overflow: auto;
+    background: #e9ecef;
+    padding: 15px;
+}
+
+#builder-wrapper {
+}
+
+#builder {
+    min-height: 600px;
+}
+
+/* 平台元件分類 — 深綠色區別於 Form.io 原廠藍色 */
+#group-container-custom .btn.formcomponent {
+    background-color: #1a7a3a !important;
+    border-color: #166c33 !important;
+    color: #fff !important;
+}
+
+#group-container-custom .btn.formcomponent:hover {
+    background-color: #145f2e !important;
+    border-color: #0f4d25 !important;
+}
+
+/* Form.io Builder 元件面板浮動 */
+.formbuilder {
+    display: flex;
+    align-items: flex-start;
+}
+
+.formcomponents {
+    position: sticky;
+    top: 0;
+    max-height: calc(100vh - 64px - 85px - 30px);
+    overflow-y: auto;
+    flex-shrink: 0;
+    background: white;
+    z-index: 10;
+}
+
+/* 底圖樣式 */
+.formarea.has-background {
+    position: relative;
+}
+
+.formarea.has-background::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.formarea.has-background > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* 底圖圖庫項目 */
+.bg-gallery-item {
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.bg-gallery-item:hover {
+    border-color: #0d6efd;
+    transform: scale(1.02);
+}
+
+.bg-gallery-item.selected {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+.bg-gallery-item img {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+}
+
+.bg-gallery-item .bg-name {
+    font-size: 11px;
+    padding: 4px;
+    background: #f8f9fa;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+/* Toast 通知樣式 */
+#toast-container {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+    pointer-events: none;
+}
+
+.toast {
+    background: white !important;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 16px;
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    animation: slideIn 0.3s ease-out;
+    min-width: 300px;
+    pointer-events: auto;
+}
+
+.toast.toast-success {
+    border-left: 4px solid #22c55e;
+}
+
+.toast.toast-error {
+    border-left: 4px solid #ef4444;
+}
+
+.toast.toast-info {
+    border-left: 4px solid #3b82f6;
+}
+
+.toast.toast-warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.toast-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.toast-success .toast-icon {
+    color: #22c55e;
+}
+
+.toast-error .toast-icon {
+    color: #ef4444;
+}
+
+.toast-info .toast-icon {
+    color: #3b82f6;
+}
+
+.toast-warning .toast-icon {
+    color: #f59e0b;
+}
+
+.toast-message {
+    flex: 1;
+    color: #1f2937;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.toast.fade-out {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+/* Navbar (獨立頁面，不使用 base.html) */
+.navbar { background: white; border-bottom: 1px solid #ccc; padding: 8px 16px; width: 100%; }
+.navbar a { text-decoration: none; }
+.navbar-content { display: flex; align-items: center; width: 100%; }
+.navbar-logo { font-weight: bold; font-size: 16px; color: #333; margin-right: auto; }
+.navbar-user { margin-left: 16px; color: #666; white-space: nowrap; }

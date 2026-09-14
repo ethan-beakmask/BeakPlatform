@@ -1,0 +1,106 @@
+/* platform-help.css - 平台說明頁面樣式 */
+
+.ph-subtitle {
+    color: var(--color-text-secondary);
+    margin-bottom: 24px;
+}
+
+/* Tab navigation */
+.ph-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: 24px;
+}
+
+.ph-tab {
+    padding: 8px 20px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: none;
+    cursor: pointer;
+    font-size: var(--font-size-base);
+    color: var(--color-text-secondary);
+    position: relative;
+    top: 2px;
+}
+
+.ph-tab:hover {
+    color: var(--color-text);
+    background: var(--color-bg-light);
+}
+
+.ph-tab.active {
+    color: var(--color-primary);
+    border-color: var(--color-border);
+    border-bottom: 2px solid #fff;
+    background: #fff;
+    font-weight: 600;
+}
+
+/* Sections */
+.ph-section {
+    margin-bottom: 32px;
+}
+
+.ph-section h3 {
+    margin: 0 0 12px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.ph-section h4 {
+    margin: 20px 0 8px 0;
+    color: var(--color-text);
+}
+
+/* Tables */
+.ph-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    font-size: var(--font-size-base);
+}
+
+.ph-table th,
+.ph-table td {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.ph-table th {
+    background: var(--color-bg-light);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ph-table tbody tr:hover {
+    background: var(--color-bg-light);
+}
+
+/* Notes */
+.ph-note {
+    padding: 12px 16px;
+    background: #f0f4ff;
+    border-left: 3px solid var(--color-primary);
+    margin: 16px 0;
+    font-size: var(--font-size-sm);
+}
+
+/* Lists */
+.ph-list {
+    padding-left: 24px;
+    margin: 8px 0 16px 0;
+}
+
+.ph-list li {
+    margin-bottom: 6px;
+    line-height: 1.6;
+}
+
+/* Alpine cloak */
+[x-cloak] {
+    display: none !important;
+}

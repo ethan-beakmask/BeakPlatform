@@ -1,0 +1,468 @@
+/* User manual index and document pages
+ *
+ * 版面尺寸一律用下方 .manual-page 的區域變數，不要在個別規則裡寫死數字。
+ * （2026-08-14：寬度原本散在 .manual-shell / .help-doc / .manual-nav 三處，
+ *   調一個值要改三個地方且容易漏。）
+ *
+ * 這裡的 --manual-* 是本檔自用的版面變數，與全站的 --color-* 色票是兩回事：
+ * 色票必須來自 common.css 的 :root（引用不存在的會靜默 fallback），
+ * 版面變數在自己的 scope 定義自己用，不存在 fallback 問題。
+ *
+ * 例外：media query 的 breakpoint 不能用 CSS 變數，只能寫死。
+ * 目前唯一的斷點是 900px，改的話要同時改本檔底部的 @media。
+ */
+
+.manual-page {
+    /* --- 版面尺寸，要調寬窄改這裡 --- */
+    --manual-shell-max: 1800px;      /* 整個版面（側欄 + 內容）的最大寬度 */
+    --manual-nav-width: 300px;       /* 左側目錄欄寬 */
+    --manual-topbar-height: 48px;
+    --manual-gutter: 24px;           /* 版面左右留白與欄間距 */
+
+    margin: 0;
+    min-height: 100vh;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.manual-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--manual-topbar-height);
+    padding: 0 20px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+}
+
+.manual-topbar__logo {
+    color: var(--color-text);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.manual-topbar__right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.manual-topbar__identity {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.manual-topbar__back {
+    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.manual-topbar__back:hover {
+    color: var(--color-primary-hover);
+}
+
+.manual-shell {
+    display: grid;
+    grid-template-columns: var(--manual-nav-width) minmax(0, 1fr);
+    gap: var(--manual-gutter);
+    max-width: var(--manual-shell-max);
+    margin: var(--manual-gutter) auto;
+    padding: 0 var(--manual-gutter);
+}
+
+.manual-shell__nav {
+    min-width: 0;
+}
+
+.manual-shell__content {
+    min-width: 0;
+}
+
+.manual-nav {
+    position: sticky;
+    top: calc(var(--manual-topbar-height) + 16px);
+    max-height: calc(100vh - var(--manual-topbar-height) - 40px);
+    overflow: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg-white);
+    padding: 10px;
+}
+
+.manual-nav__chapter + .manual-nav__chapter {
+    border-top: 1px solid var(--color-border);
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.manual-nav__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 32px;
+    gap: 6px;
+    align-items: center;
+}
+
+.manual-nav__title,
+.manual-nav__link,
+.manual-nav__section-title {
+    display: block;
+    color: var(--color-text);
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.manual-nav__title {
+    padding: 8px 10px;
+    font-weight: 600;
+}
+
+.manual-nav__title:hover,
+.manual-nav__link:hover,
+.manual-nav__section-title:hover {
+    background: var(--color-bg-light);
+    color: var(--color-primary);
+}
+
+.manual-nav__toggle {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg-white);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.manual-nav__toggle:hover {
+    color: var(--color-primary);
+    background: var(--color-bg-light);
+}
+
+.manual-nav__list {
+    display: grid;
+    gap: 4px;
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0 0 0 12px;
+}
+
+.manual-nav__link {
+    padding: 7px 10px;
+    color: var(--color-text-secondary);
+}
+
+.manual-nav__section {
+    display: grid;
+    gap: 4px;
+}
+
+.manual-nav__subhead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 32px;
+    gap: 6px;
+    align-items: center;
+}
+
+.manual-nav__section-title {
+    padding: 7px 10px;
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+.manual-nav__sublist {
+    display: grid;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 14px;
+}
+
+.manual-nav__title.is-active,
+.manual-nav__link.is-active,
+.manual-nav__section-title.is-active {
+    background: var(--color-bg-light);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.manual-nav__extra {
+    border-top: 1px solid var(--color-border);
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.manual-index__header {
+    margin-bottom: 24px;
+}
+
+.manual-index__grid {
+    display: grid;
+    gap: 18px;
+}
+
+.manual-chapter {
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg-white);
+    padding: 18px 20px;
+}
+
+.manual-chapter h2 {
+    margin: 0 0 12px;
+    font-size: 1.2rem;
+}
+
+.manual-chapter ul {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding-left: 20px;
+}
+
+.manual-empty {
+    color: var(--color-text-secondary);
+    padding: 32px 0;
+}
+
+/* 內容區用滿版面寬度，不限行長：手冊預期會有大量流程圖與截圖，
+   限行長（原本 46rem）會讓圖被壓縮。文字行長因此偏長是刻意的取捨。 */
+.help-doc {
+    padding: 32px 40px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 16px;
+    line-height: 1.75;
+}
+
+.help-doc__back {
+    margin-bottom: 18px;
+}
+
+.help-doc__back a,
+.help-doc a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.help-doc__back a:hover,
+.help-doc a:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+}
+
+.help-doc h1,
+.help-doc h2,
+.help-doc h3 {
+    color: var(--color-text);
+    line-height: 1.3;
+}
+
+.help-doc h1 {
+    margin: 0 0 0.8em;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.help-doc h2 {
+    margin: 2.2em 0 0.8em;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.help-doc h3 {
+    margin: 1.8em 0 0.7em;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.help-doc p {
+    margin: 0.8em 0;
+    line-height: 1.75;
+}
+
+.help-doc ul,
+.help-doc ol {
+    display: grid;
+    gap: 0.4em;
+    margin: 0.8em 0;
+    padding-left: 1.6em;
+    line-height: 1.75;
+}
+
+.help-doc li {
+    line-height: 1.75;
+}
+
+.help-doc strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.help-doc table {
+    width: auto;
+    border-collapse: collapse;
+    margin: 1.2em 0;
+}
+
+.help-doc th,
+.help-doc td {
+    padding: 8px 14px;
+    vertical-align: top;
+}
+
+.help-doc th {
+    border-bottom: 2px solid var(--color-border);
+    background: transparent;
+    font-weight: 600;
+    text-align: left;
+}
+
+.help-doc td {
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.help-doc code {
+    background: var(--color-bg-light);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.help-doc pre {
+    background: var(--color-bg-light);
+    padding: 16px;
+    border-radius: 4px;
+    overflow-x: auto;
+    line-height: 1.6;
+}
+
+.help-doc pre code {
+    background: transparent;
+    padding: 0;
+}
+
+.help-doc .admonition {
+    margin: 1.2em 0;
+    padding: 12px 16px;
+    border-left: 4px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg-light);
+}
+
+/* 預設標題色用 --color-text：色條可以是淺灰，文字不行
+   （--color-border 是 #ddd，配 --color-bg-light 背景幾乎讀不到） */
+.help-doc .admonition-title {
+    margin: 0 0 0.5em;
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.help-doc .admonition > :last-child {
+    margin-bottom: 0;
+}
+
+.help-doc .admonition.note,
+.help-doc .admonition.info {
+    border-left-color: var(--color-info);
+    background: var(--color-info-light);
+}
+
+.help-doc .admonition.note .admonition-title,
+.help-doc .admonition.info .admonition-title {
+    color: var(--color-info);
+}
+
+.help-doc .admonition.abstract,
+.help-doc .admonition.tip,
+.help-doc .admonition.hint {
+    border-left-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.help-doc .admonition.abstract .admonition-title,
+.help-doc .admonition.tip .admonition-title,
+.help-doc .admonition.hint .admonition-title {
+    color: var(--color-primary);
+}
+
+.help-doc .admonition.success {
+    border-left-color: var(--color-success);
+    background: var(--color-success-light);
+}
+
+.help-doc .admonition.success .admonition-title {
+    color: var(--color-success);
+}
+
+.help-doc .admonition.warning,
+.help-doc .admonition.caution {
+    border-left-color: var(--color-warning);
+    background: var(--color-warning-light);
+}
+
+.help-doc .admonition.warning .admonition-title,
+.help-doc .admonition.caution .admonition-title {
+    color: var(--color-warning);
+}
+
+.help-doc .admonition.danger,
+.help-doc .admonition.error {
+    border-left-color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+
+.help-doc .admonition.danger .admonition-title,
+.help-doc .admonition.error .admonition-title {
+    color: var(--color-danger);
+}
+
+/* Mermaid 流程圖：manual-mermaid.js 把 pre>code.language-mermaid 換成這個容器 */
+.manual-mermaid {
+    margin: 16px 0;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg-white);
+    overflow-x: auto;
+    text-align: center;
+}
+
+.manual-mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* 唯一的斷點。media query 不能用 CSS 變數，所以這個 900px 是寫死的，
+   要改的話只有這一處。 */
+@media (max-width: 900px) {
+    .manual-topbar__identity {
+        display: none;
+    }
+
+    .manual-shell {
+        grid-template-columns: 1fr;
+        padding: 0 16px;
+    }
+
+    .manual-nav {
+        position: static;
+        max-height: none;
+    }
+
+    .help-doc {
+        padding: 24px 20px;
+    }
+}

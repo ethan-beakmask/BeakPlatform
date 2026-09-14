@@ -1,0 +1,223 @@
+"""
+FormWorkflow Module - 表單流程系統模組
+
+移轉自 FormFlow A6，提供：
+- 表單設計與管理
+- 工作流設計與執行
+- 簽核流程
+- 流程節點處理器
+
+使用方式：
+    將此模組放置於 BeakPlatform/modules/ 目錄下，
+    平台啟動時會自動載入。
+"""
+
+MODULE_INFO = {
+    'name': 'form_workflow',
+    'display_name': '表單流程系統',
+    'version': '1.0.0',
+    'description': '提供表單設計、工作流程設計、簽核流程等功能',
+    'author': 'BeakPlatform Team',
+    'dependencies': [],  # 無依賴其他模組
+    'platform_version': '>=1.0.0',
+    'enabled': True,
+
+    # 模組選單項目
+    'menu_items': [
+        {
+            'code': 'form_workflow',
+            'name': '表單流程',
+            'icon': 'ri-flow-chart',
+            'parent': None,
+            'sort_order': 3,
+            'user_types': ['ORG_ADMIN', 'EMPLOYEE'],
+            'children': [
+                {
+                    'code': 'form_workflow.workflows',
+                    'name': '流程設計',
+                    'url': 'form_workflow_web.workflows',
+                    'sort_order': 0,
+                    'required_permission': 'form_workflow.workflow.manage'
+                },
+                {
+                    'code': 'form_workflow.templates',
+                    'name': '表單範本',
+                    'url': 'form_workflow_web.templates',
+                    'sort_order': 1,
+                    'required_permission': 'form_workflow.template.manage'
+                },
+                {
+                    'code': 'form_workflow.mappings',
+                    'name': '配對管理',
+                    'url': 'form_workflow_web.mappings',
+                    'sort_order': 2,
+                    'required_permission': 'form_workflow.workflow.manage'
+                },
+                {
+                    'code': 'form_workflow.categories',
+                    'name': '分類管理',
+                    'url': 'form_workflow_web.categories',
+                    'sort_order': 3,
+                    'required_permission': 'form_workflow.admin'
+                },
+                {
+                    'code': 'form_workflow.form_themes',
+                    'name': '表單風格管理',
+                    'url': 'form_workflow_web.form_themes',
+                    'sort_order': 4,
+                    'required_permission': 'form_workflow.admin'
+                },
+                {
+                    'code': 'form_workflow.ai_usage',
+                    'name': 'AI 用量與配額',
+                    'url': 'form_workflow_web.ai_usage',
+                    'sort_order': 5,
+                    # AI 用量與配額屬成本管理面，刻意不開放 EMPLOYEE。
+                    'user_types': ['ORG_ADMIN'],
+                    'required_permission': 'form_workflow.admin'
+                },
+            ]
+        }
+    ],
+
+    # 模組預設 ACL（fail-closed 配套）：合約建立時種入，僅設計者可用
+    # 設計類 API（check_acl=True）。表單中心等終端用戶面走 check_acl=False，
+    # 不受 ACL 影響
+    'default_acl_roles': ['FLOW_DESIGNER', 'FORM_DESIGNER'],
+
+    # 模組權限定義
+    'permissions': [
+        # 表單填寫權限
+        {
+            'code': 'form_workflow.form.create',
+            'name': '填寫表單',
+            'description': '允許填寫並提交表單',
+            'level': 'MODULE',
+        },
+        {
+            'code': 'form_workflow.form.view',
+            'name': '檢視表單',
+            'description': '允許檢視自己的表單',
+            'level': 'MODULE',
+        },
+        {
+            'code': 'form_workflow.form.view_all',
+            'name': '檢視所有表單',
+            'description': '允許檢視企業內所有表單',
+            'level': 'ORG',
+        },
+
+        # 簽核權限
+        {
+            'code': 'form_workflow.approval.approve',
+            'name': '簽核表單',
+            'description': '允許簽核/退回表單',
+            'level': 'MODULE',
+        },
+        {
+            'code': 'form_workflow.approval.transfer',
+            'name': '轉交簽核',
+            'description': '允許將簽核轉交他人',
+            'level': 'MODULE',
+        },
+
+        # 表單範本管理權限
+        {
+            'code': 'form_workflow.template.view',
+            'name': '檢視表單範本',
+            'description': '允許檢視表單範本',
+            'level': 'MODULE',
+        },
+        {
+            'code': 'form_workflow.template.manage',
+            'name': '管理表單範本',
+            'description': '允許新增、編輯、刪除表單範本',
+            'level': 'ORG',
+        },
+        {
+            'code': 'form_workflow.template.publish',
+            'name': '發布表單範本',
+            'description': '允許發布表單範本供填寫',
+            'level': 'ORG',
+        },
+
+        # 工作流程管理權限
+        {
+            'code': 'form_workflow.workflow.view',
+            'name': '檢視工作流程',
+            'description': '允許檢視工作流程定義',
+            'level': 'MODULE',
+        },
+        {
+            'code': 'form_workflow.workflow.manage',
+            'name': '管理工作流程',
+            'description': '允許新增、編輯、刪除工作流程',
+            'level': 'ORG',
+        },
+
+        # 設計試行權限
+        {
+            'code': 'form_workflow.design.tryout',
+            'name': '試行設計稿',
+            'description': '允許使用未發行的配對送出測試表單，供設計階段驗證流程',
+            'level': 'ORG',
+        },
+
+        # 系統管理權限
+        {
+            'code': 'form_workflow.admin',
+            'name': '模組管理員',
+            'description': '表單流程模組的完整管理權限',
+            'level': 'ORG',
+        },
+    ],
+}
+
+
+def init_runtime(app):
+    """
+    模組運行時初始化 hook
+
+    在應用啟動時被 module_loader 調用，用於啟動背景服務。
+    """
+    import os
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # 註冊 form_attachment 的檔案物件級授權判定（流程參與者）
+    try:
+        from app.services import file_service
+        from .services.file_authorizer import register
+        register(file_service)
+    except Exception as e:
+        logger.error(f'FormWorkflow: 註冊檔案 authorizer 失敗: {str(e)}')
+
+    # 註冊 egress 揭示通道（EGRESS-01 form_node 語境，資源代碼 fw_form:<sc>）
+    try:
+        from app.services import egress_service
+        from .services.egress_adapter import register as register_egress
+        register_egress(egress_service)
+    except Exception as e:
+        logger.error(f'FormWorkflow: 註冊 egress accessor 失敗: {str(e)}')
+
+    # 僅在非測試環境且未使用獨立 executor 進程時啟動
+    # Flask debug reloader 會產生父+子兩個進程，只在子進程（WERKZEUG_RUN_MAIN=true）啟動
+    is_reloader_parent = (
+        app.debug and
+        os.environ.get('WERKZEUG_RUN_MAIN') != 'true'
+    )
+
+    if is_reloader_parent:
+        logger.info('FormWorkflow: Reloader 父進程，跳過啟動執行器')
+    elif not app.config.get('TESTING', False) and not os.environ.get('EXECUTOR_STANDALONE'):
+        try:
+            from .services.workflow_executor import start_executor
+            start_executor(app=app)
+            logger.info('FormWorkflow: 工作流執行器已啟動（Flask 內建模式）')
+        except Exception as e:
+            logger.error(f'FormWorkflow: 啟動工作流執行器失敗: {str(e)}')
+    else:
+        logger.info('FormWorkflow: 工作流執行器由獨立進程管理')
+
+    # SQL Sync: per-org 架構，不需全域連線池（連線由 Worker 按需建立）
+    logger.info('FormWorkflow: SQL Sync 使用 per-org 佇列模式（Worker 獨立處理）')

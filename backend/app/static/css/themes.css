@@ -1,0 +1,616 @@
+/**
+ * SOC SOAR Platform - 專業監控主題系統
+ * 參考 Grafana 風格的企業級資安監控界面
+ * 三種主題：light（恆亮）、dark（恆暗）、gray（暗灰）
+ */
+
+/* ============================================
+   CSS 變數定義
+   ============================================ */
+
+/* 恆暗主題 (預設) */
+:root[data-theme="dark"],
+:root {
+    /* 主要背景色 */
+    --bg-primary: #0f1419;
+    --bg-secondary: #1a1f26;
+    --bg-tertiary: #22272e;
+    --bg-hover: #2d333b;
+
+    /* 文字顏色 */
+    --text-primary: #e6edf3;
+    --text-secondary: #9198a0;
+    --text-tertiary: #6e7681;
+    --text-inverse: #0f1419;
+
+    /* 邊框顏色 */
+    --border-primary: #373e47;
+    --border-secondary: #2d333b;
+    --border-focus: #58a6ff;
+
+    /* 強調色 - 橙紅警示色系 */
+    --accent-primary: #ff6b35;
+    --accent-secondary: #f77f00;
+    --accent-hover: #ff8552;
+
+    /* 狀態顏色 */
+    --status-success: #26a641;
+    --status-warning: #f77f00;
+    --status-error: #ff4d4f;
+    --status-info: #58a6ff;
+
+    /* 圖表顏色 */
+    --chart-line-1: #58a6ff;
+    --chart-line-2: #ff6b35;
+    --chart-line-3: #26a641;
+    --chart-line-4: #f77f00;
+    --chart-grid: #2d333b;
+
+    /* 卡片 */
+    --card-bg: #1a1f26;
+    --card-border: #373e47;
+
+    /* 輸入框 */
+    --input-bg: #22272e;
+    --input-border: #373e47;
+    --input-focus-border: #58a6ff;
+
+    /* 按鈕 */
+    --btn-primary-bg: #ff6b35;
+    --btn-primary-hover: #ff8552;
+    --btn-secondary-bg: #2d333b;
+    --btn-secondary-hover: #373e47;
+}
+
+/* 暗灰主題 */
+:root[data-theme="gray"] {
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #252526;
+    --bg-tertiary: #2d2d30;
+    --bg-hover: #3e3e42;
+
+    --text-primary: #cccccc;
+    --text-secondary: #969696;
+    --text-tertiary: #6e6e6e;
+
+    --border-primary: #3e3e42;
+    --border-secondary: #2d2d30;
+
+    --card-bg: #252526;
+    --card-border: #3e3e42;
+
+    --input-bg: #2d2d30;
+    --input-border: #3e3e42;
+}
+
+/* 恆亮主題 */
+:root[data-theme="light"] {
+    --bg-primary: #f6f8fa;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #edf0f4;
+    --bg-hover: #e2e6ea;
+
+    --text-primary: #24292f;
+    --text-secondary: #57606a;
+    --text-tertiary: #6e7781;
+    --text-inverse: #ffffff;
+
+    --border-primary: #afb8c1;
+    --border-secondary: #d0d7de;
+    --border-focus: #0969da;
+
+    --accent-primary: #e34c26;
+    --accent-secondary: #f77f00;
+    --accent-hover: #ff6b35;
+
+    --status-success: #1a7f37;
+    --status-warning: #bf8700;
+    --status-error: #cf222e;
+    --status-info: #0969da;
+
+    --chart-line-1: #0969da;
+    --chart-line-2: #e34c26;
+    --chart-line-3: #1a7f37;
+    --chart-line-4: #bf8700;
+    --chart-grid: #d0d7de;
+
+    --card-bg: #ffffff;
+    --card-border: #afb8c1;
+
+    --input-bg: #ffffff;
+    --input-border: #afb8c1;
+    --input-focus-border: #0969da;
+
+    --btn-primary-bg: #e34c26;
+    --btn-primary-hover: #ff6b35;
+    --btn-secondary-bg: #edf0f4;
+    --btn-secondary-hover: #e2e6ea;
+}
+
+/* ============================================
+   全域樣式
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ============================================
+   文字大小等級標準 - 三個等級
+   ============================================ */
+
+/* 大 - Logo、功能標題、重要數值 */
+.text-size-large,
+.page-title,
+.feature-title {
+    font-size: 1.5rem;
+}
+
+.text-size-xlarge,
+.logo-text {
+    font-size: 1.25rem;
+}
+
+/* 中 - 一般文字、按鈕、表單、正文 */
+.text-size-medium,
+.text-normal,
+body {
+    font-size: 1rem;
+}
+
+/* 小 - 提示文字、標籤、次要資訊 */
+.text-size-small,
+.text-hint,
+.hint-text {
+    font-size: 0.75rem;
+}
+
+/* 等寬字體 - 用於數據和日誌顯示 */
+.monospace,
+code,
+pre,
+.data-display,
+.log-display {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.8125rem; /* 13px converted to rem */
+}
+
+/* ============================================
+   導航欄
+   ============================================ */
+
+.bk-navbar {
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bk-navbar-brand {
+    font-size: 1.25rem; /* 大等级 - Logo */
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+}
+
+.bk-navbar-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.bk-navbar-user span {
+    color: var(--text-secondary);
+    font-size: 1rem; /* 中等級 - 一般文字 */
+}
+
+/* ============================================
+   容器和佈局
+   ============================================ */
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.container-fluid {
+    width: 100%;
+    padding: 1.5rem;
+}
+
+/* ============================================
+   卡片組件 - Grafana 風格
+   ============================================ */
+
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 2px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.card:hover {
+    border-color: var(--border-focus);
+}
+
+.card-header {
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-title {
+    font-size: 1rem; /* 中等級 - 功能標題 */
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.2px;
+}
+
+.card-body {
+    color: var(--text-secondary);
+    font-size: 1rem; /* 中等級 - 一般文字 */
+}
+
+/* ============================================
+   網格佈局
+   ============================================ */
+
+.grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 1200px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   按鈕
+   ============================================ */
+
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    font-size: 1rem; /* 中等級 -按鈕文字 */
+    font-weight: 500;
+    line-height: 1.5;
+    text-align: center;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background-color: var(--btn-primary-bg);
+    color: white;
+    border-color: var(--btn-primary-bg);
+}
+
+.btn-primary:hover {
+    background-color: var(--btn-primary-hover);
+    border-color: var(--btn-primary-hover);
+}
+
+.btn-secondary {
+    background-color: var(--btn-secondary-bg);
+    color: var(--text-primary);
+    border-color: var(--border-primary);
+}
+
+.btn-secondary:hover {
+    background-color: var(--btn-secondary-hover);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   表單控件
+   ============================================ */
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1rem; /* 中等級 -表單標籤 */
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem; /* 中等級 -表單輸入 */
+    line-height: 1.5;
+    color: var(--text-primary);
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 2px;
+    transition: border-color 0.15s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--input-focus-border);
+}
+
+select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23999' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px;
+    padding-right: 2.5rem;
+}
+
+/* ============================================
+   徽章和標籤
+   ============================================ */
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem; /* 小等级 - 徽章標籤 */
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    border-radius: 2px;
+}
+
+.badge-success {
+    background-color: var(--status-success);
+    color: white;
+}
+
+.badge-warning {
+    background-color: var(--status-warning);
+    color: white;
+}
+
+.badge-error {
+    background-color: var(--status-error);
+    color: white;
+}
+
+.badge-info {
+    background-color: var(--status-info);
+    color: white;
+}
+
+/* ============================================
+   表格
+   ============================================ */
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem; /* 中等級 -表格文字 */
+}
+
+.table th,
+.table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.table th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    background-color: var(--bg-tertiary);
+}
+
+.table tbody tr:hover {
+    background-color: var(--bg-hover);
+}
+
+/* ============================================
+   數據顯示 - 等寬字體
+   ============================================ */
+
+.data-panel {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 2px;
+    padding: 1rem;
+}
+
+.metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.metric-label {
+    font-size: 0.75rem; /* 小等级 - 指標標籤 */
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 1.5rem; /* 大等级 - 指標數值 */
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ============================================
+   日誌顯示
+   ============================================ */
+
+.log-container {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 2px;
+    padding: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.log-entry {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid var(--border-secondary);
+    color: var(--text-secondary);
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-timestamp {
+    color: var(--text-tertiary);
+    margin-right: 0.5rem;
+}
+
+.log-level-error {
+    color: var(--status-error);
+}
+
+.log-level-warning {
+    color: var(--status-warning);
+}
+
+.log-level-info {
+    color: var(--status-info);
+}
+
+/* ============================================
+   狀態指示器
+   ============================================ */
+
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-online {
+    background-color: var(--status-success);
+}
+
+.status-warning {
+    background-color: var(--status-warning);
+}
+
+.status-offline {
+    background-color: var(--status-error);
+}
+
+/* ============================================
+   主題切換器
+   ============================================ */
+
+.theme-switcher {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-radius: 2px;
+}
+
+.theme-option {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem; /* 小等级 - 主題切換按鈕 */
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 1px solid transparent;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.theme-option:hover {
+    background-color: var(--bg-hover);
+}
+
+.theme-option.active {
+    background-color: var(--btn-primary-bg);
+    color: white;
+    border-color: var(--btn-primary-bg);
+}
+
+/* ============================================
+   工具類
+   ============================================ */
+
+.text-muted { color: var(--text-tertiary); }
+.text-primary { color: var(--accent-primary); }
+.text-success { color: var(--status-success); }
+.text-warning { color: var(--status-warning); }
+.text-error { color: var(--status-error); }
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+.p-3 { padding: 1.5rem; }
+
+/* ============================================
+   滾動條樣式
+   ============================================ */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-primary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}

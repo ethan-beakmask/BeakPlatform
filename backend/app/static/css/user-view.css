@@ -1,0 +1,49 @@
+/* user-view.css — 用戶詳情頁面
+   info-table/modal/password-field 等由 common.css 提供 */
+
+.user-info {
+    max-width: 700px;
+}
+
+.empty-value {
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+.status-active {
+    color: var(--color-success);
+}
+.status-inactive {
+    color: var(--color-danger);
+}
+
+/* 操作按鈕 */
+.action-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    background: var(--color-primary);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--border-radius);
+    border: none;
+    cursor: pointer;
+    font-size: var(--font-size-base);
+}
+.action-btn:hover {
+    background: var(--color-primary-hover);
+}
+.action-btn.warning {
+    background: var(--color-warning);
+}
+.action-btn.warning:hover {
+    background: var(--color-warning-hover);
+}
+
+/* 密碼模態框確認按鈕使用警告色 */
+.modal-buttons .btn-submit {
+    background: var(--color-warning);
+    color: white;
+    border: none;
+}
+.modal-buttons .btn-submit:hover {
+    background: var(--color-warning-hover);
+}

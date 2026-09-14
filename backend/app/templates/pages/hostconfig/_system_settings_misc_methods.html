@@ -1,0 +1,196 @@
+        // ==================== 稽核設定 ====================
+        async loadAuditSettings() {
+            try {
+                const res = await fetch(`${API_BASE}/audit`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.audit.level = data.data.audit_level;
+                    this.audit.retentionDays = data.data.audit_retention_days;
+                    this.audit.levels = data.data.levels;
+                }
+            } catch (e) {
+                this.message.audit = __('載入稽核設定失敗: {message}', {message: e.message});
+                this.message.auditError = true;
+            }
+        },
+
+        async saveAuditSettings() {
+            try {
+                const res = await fetch(`${API_BASE}/audit`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        audit_level: this.audit.level,
+                        audit_retention_days: this.audit.retentionDays
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.message.audit = data.message;
+                    this.message.auditError = false;
+                } else {
+                    this.message.audit = data.error || __('儲存失敗');
+                    this.message.auditError = true;
+                }
+            } catch (e) {
+                this.message.audit = __('儲存失敗: {message}', {message: e.message});
+                this.message.auditError = true;
+            }
+        },
+
+        async purgeAuditLogs() {
+            this.audit.purging = true;
+            this.message.audit = '';
+            try {
+                // 先試算，讓使用者在確認框看到實際會刪掉幾筆
+                const preview = await this._callAuditPurge(true);
+                if (!preview) return;
+
+                if (preview.count === 0) {
+                    this.audit.purgeInfo = __('沒有早於 {cutoff} 的稽核紀錄（保留 {days} 天）', {
+                        cutoff: preview.cutoff, days: preview.retention_days
+                    });
+                    return;
+                }
+
+                const ok = confirm(__('將刪除 {count} 筆 {cutoff} 之前的稽核紀錄（保留 {days} 天），刪除後無法復原。確定執行？', {
+                    count: preview.count, cutoff: preview.cutoff, days: preview.retention_days
+                }));
+                if (!ok) return;
+
+                const result = await this._callAuditPurge(false);
+                if (!result) return;
+
+                this.audit.purgeInfo = '';
+                this.message.audit = result.message;
+                this.message.auditError = false;
+            } catch (e) {
+                this.message.audit = __('清除失敗: {message}', {message: e.message});
+                this.message.auditError = true;
+            } finally {
+                this.audit.purging = false;
+            }
+        },
+
+        async _callAuditPurge(dryRun) {
+            const res = await fetch(`${API_BASE}/audit/purge`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({dry_run: dryRun})
+            });
+            const data = await res.json();
+            if (!data.success) {
+                this.message.audit = data.error || __('清除失敗');
+                this.message.auditError = true;
+                return null;
+            }
+            return Object.assign({message: data.message}, data.data);
+        },
+
+        // ==================== 速率限制 ====================
+        async loadRateLimitSettings() {
+            try {
+                const res = await fetch(`${API_BASE}/rate-limits`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.ratelimit.categories = data.data.categories;
+                    this.message.ratelimit = '';
+                    this.message.ratelimitError = false;
+                } else {
+                    this.message.ratelimit = data.error || __('載入失敗');
+                    this.message.ratelimitError = true;
+                }
+            } catch (e) {
+                this.message.ratelimit = __('載入速率限制設定失敗: {message}', {message: e.message});
+                this.message.ratelimitError = true;
+            }
+        },
+
+        async saveRateLimitSettings() {
+            try {
+                const body = {};
+                this.ratelimit.categories.forEach(c => { body[c.key] = c.value; });
+                const res = await fetch(`${API_BASE}/rate-limits`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.message.ratelimit = data.message;
+                    this.message.ratelimitError = false;
+                    await this.loadRateLimitSettings();
+                } else {
+                    let errMsg = data.error || __('儲存失敗');
+                    if (data.details) {
+                        errMsg += ': ' + data.details.join(', ');
+                    }
+                    this.message.ratelimit = errMsg;
+                    this.message.ratelimitError = true;
+                }
+            } catch (e) {
+                this.message.ratelimit = __('儲存失敗: {message}', {message: e.message});
+                this.message.ratelimitError = true;
+            }
+        },
+
+        // ==================== 檔案儲存 ====================
+        async loadFileStorageSettings() {
+            try {
+                const res = await fetch(`${API_BASE}/file-storage`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.fileStorage.encryptedStorageDir = data.data.encrypted_storage_dir;
+                    this.fileStorage.dirFileLimit = data.data.dir_file_limit;
+                    this.message.fileStorage = '';
+                    this.message.fileStorageError = false;
+                } else {
+                    this.message.fileStorage = data.error || __('載入失敗');
+                    this.message.fileStorageError = true;
+                }
+            } catch (e) {
+                this.message.fileStorage = __('載入檔案儲存設定失敗: {message}', {message: e.message});
+                this.message.fileStorageError = true;
+            }
+        },
+
+        async saveFileStorageSettings() {
+            try {
+                const res = await fetch(`${API_BASE}/file-storage`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        dir_file_limit: this.fileStorage.dirFileLimit
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.message.fileStorage = data.message;
+                    this.message.fileStorageError = false;
+                } else {
+                    this.message.fileStorage = data.error || __('儲存失敗');
+                    this.message.fileStorageError = true;
+                }
+            } catch (e) {
+                this.message.fileStorage = __('儲存失敗: {message}', {message: e.message});
+                this.message.fileStorageError = true;
+            }
+        },

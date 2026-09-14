@@ -1,0 +1,44 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('編輯個人資料') }} - BeakMask{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('profile.view') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回個人資料') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('編輯個人資料') }}</h1>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table class="info-table">
+        <tr>
+            <td>{{ _('帳號 (Email)') }}</td>
+            <td><code>{{ current_user.email }}</code> {{ _('(不可變更)') }}</td>
+        </tr>
+        <tr>
+            <td><label for="display_name">{{ _('姓名 *') }}</label></td>
+            <td><input type="text" id="display_name" name="display_name" size="30" value="{{ current_user.display_name }}" required></td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit" class="btn btn-primary">{{ _('儲存變更') }}</button>
+                <a href="{{ url_for('profile.view') }}" class="btn btn-cancel">{{ _('取消') }}</a>
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}

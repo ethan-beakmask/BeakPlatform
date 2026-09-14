@@ -1,0 +1,90 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('API Key 管理') }} - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/api-keys.css">
+{% endblock %}
+
+{% block content %}
+<div class="ak-container" x-data="apiKeysManager()" x-init="init()">
+    <div class="ak-toolbar">
+        <div>
+            <h2 style="margin:0;">{{ _('API Key 管理') }}</h2>
+            <p class="ak-sub" style="margin:4px 0 0 0;">
+                {{ _('外部系統以 HMAC 簽章發動表單流程的專屬金鑰。每個外部系統/裝置一把 Key，來源清楚可稽核。') }}
+            </p>
+        </div>
+        <button class="btn btn-primary" @click="openCreate()">{{ _('建立 API Key') }}</button>
+    </div>
+
+    <div x-show="msg" class="ak-msg" :class="msgErr ? 'ak-msg-err' : 'ak-msg-ok'"
+         x-text="msg" x-transition></div>
+
+    <table class="ak-table">
+        <thead>
+            <tr>
+                <th>Key ID</th>
+                <th>{{ _('名稱 / 使用者') }}</th>
+                <th>{{ _('授權範圍') }}</th>
+                <th>{{ _('IP 鎖定') }}</th>
+                <th>{{ _('期限') }}</th>
+                <th>{{ _('最後使用') }}</th>
+                <th>{{ _('狀態') }}</th>
+                <th>{{ _('操作') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <template x-for="key in keys" :key="key.secure_code">
+                <tr>
+                    <td><code x-text="key.key_id"></code></td>
+                    <td>
+                        <div x-text="key.name"></div>
+                        <div class="ak-sub" x-text="key.consumer_label || ''"></div>
+                    </td>
+                    <td x-text="scopeSummary(key)"></td>
+                    <td>
+                        <span x-text="(key.allowed_ips && key.allowed_ips.length) ? key.allowed_ips.join(', ') : __('不鎖')"></span>
+                    </td>
+                    <td x-text="fmtDate(key.expires_at)"></td>
+                    <td x-text="fmtTime(key.last_used_at)"></td>
+                    <td>
+                        <span class="ak-badge"
+                              :class="key.status === 'active' ? 'ak-badge-active' : 'ak-badge-suspended'"
+                              x-text="statusLabel(key.status)"></span>
+                        <div class="ak-sub" x-show="key.suspended_reason"
+                             x-text="key.suspended_reason"></div>
+                    </td>
+                    <td class="ak-actions">
+                        <button class="ak-btn-sm" @click="openEdit(key)">{{ _('編輯') }}</button>
+                        <template x-if="key.status === 'active'">
+                            <button class="ak-btn-sm" @click="openSuspend(key)">{{ _('暫停') }}</button>
+                        </template>
+                        <template x-if="key.status === 'suspended'">
+                            <button class="ak-btn-sm" @click="resume(key)">{{ _('復原') }}</button>
+                        </template>
+                        <button class="ak-btn-sm ak-btn-danger" @click="revoke(key)">{{ _('撤銷') }}</button>
+                    </td>
+                </tr>
+            </template>
+            <template x-if="!loading && keys.length === 0">
+                <tr><td colspan="8" style="text-align:center; color:#6b7280;">
+                    {{ _('尚未建立任何 API Key') }}
+                </td></tr>
+            </template>
+        </tbody>
+    </table>
+
+    {% include 'pages/security/_api_keys_modals.html' %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.__APIKEYS_CONFIG = {
+    appPrefix: '{{ app_prefix }}'
+};
+</script>
+<script src="{{ app_prefix }}/static/js/app.js"></script>
+<script src="{{ app_prefix }}/static/js/api-keys.js"></script>
+{% endblock %}

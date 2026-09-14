@@ -1,0 +1,530 @@
+/* od-common.css -- OpenDefense 模組共用樣式
+ * 平台無 Bootstrap,所有排版用 CSS Grid / Flexbox。
+ * Class 一律用 od- 前綴避免撞名。
+ */
+
+.od-container {
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+/* 頁首與統計帶一律走扁平：這些頁面的重點在下方的清單與內容，
+ * 上方只留辨識與數字，不佔垂直空間。 */
+.od-header {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 8px 14px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.od-header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+.od-header p  { margin: 2px 0 0 0; font-size: 12px; color: #666; }
+/* 平台 .btn 的 8px 16px 會把扁平頁首又撐回 56px */
+.od-header .btn { padding: 5px 12px; font-size: 12px; }
+
+.od-section {
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 16px;
+}
+.od-section-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.od-section-header h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+.od-section-body {
+    padding: 16px;
+}
+
+/* 統計卡 */
+.od-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 6px;
+    margin-bottom: 10px;
+}
+/* 一張卡一行：row-reverse 讓 HTML 上先寫的數值落在右側，標籤在左，
+ * 不動模板結構就能從「數字上、標籤下」的方塊變成單行。 */
+.od-stat-tile {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 5px 10px;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+.od-stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0066cc;
+    line-height: 1.2;
+}
+.od-stat-label {
+    font-size: 11px;
+    color: #666;
+    margin-top: 0;
+}
+.od-stat-value.warn   { color: #f59e0b; }
+.od-stat-value.danger { color: #dc2626; }
+.od-stat-value.ok     { color: #10b981; }
+
+/* 表格 */
+.od-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.od-table th, .od-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    vertical-align: top;
+}
+.od-table th {
+    background: #f7f7f7;
+    font-weight: 600;
+    font-size: 12px;
+    color: #555;
+}
+.od-table tbody tr:hover { background: #fafbfc; }
+.od-table .od-mono { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; }
+
+/* Badge */
+.od-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+}
+.od-badge-pending  { background: #fef3c7; color: #92400e; }
+.od-badge-picked   { background: #dbeafe; color: #1e40af; }
+.od-badge-applied  { background: #d1fae5; color: #065f46; }
+.od-badge-failed   { background: #fee2e2; color: #991b1b; }
+.od-badge-expired  { background: #e5e7eb; color: #4b5563; }
+.od-badge-revoked  { background: #e5e7eb; color: #4b5563; }
+.od-badge-partial  { background: #fef3c7; color: #92400e; }
+.od-badge-active   { background: #d1fae5; color: #065f46; }
+.od-badge-inactive { background: #fee2e2; color: #991b1b; }
+.od-badge-locked   { background: #fee2e2; color: #991b1b; }
+
+/* Action 列 */
+.od-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Form */
+.od-field { margin-bottom: 12px; }
+.od-field label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: #333;
+    font-weight: 500;
+}
+.od-field input:not([type="radio"]):not([type="checkbox"]),
+.od-field select,
+.od-field textarea {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+.od-field textarea { min-height: 60px; }
+.od-field-hint { font-size: 11px; color: #888; margin-top: 4px; }
+
+/* Multi-select chips */
+.od-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.od-chip {
+    padding: 4px 10px;
+    border: 1px solid #ccc;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    background: #fff;
+}
+.od-chip.selected { background: #0066cc; color: #fff; border-color: #0066cc; }
+
+/* 一次性 secret 顯示 */
+.od-secret-box {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    padding: 12px 16px;
+    margin: 12px 0;
+}
+.od-secret-box h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: #92400e;
+}
+.od-secret-value {
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 13px;
+    background: #fff;
+    border: 1px solid #f59e0b;
+    padding: 8px 10px;
+    word-break: break-all;
+    user-select: all;
+}
+.od-secret-warn {
+    color: #92400e;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+/* Empty state */
+.od-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+}
+
+/* Modal overlay -- 沿用平台既有 modal-overlay,只補佈局 */
+.od-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Filter 列 */
+.od-filters {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    background: #f7f7f7;
+    border-bottom: 1px solid #eee;
+}
+.od-filters label { font-size: 12px; color: #555; margin-right: 4px; }
+.od-filters select,
+.od-filters input {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+}
+
+/* Event routing */
+.od-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+.od-tabs button {
+    border: 1px solid var(--color-border);
+    border-bottom: none;
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+    padding: 9px 16px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.od-tabs button.active {
+    background: var(--color-bg-white);
+    color: var(--color-text);
+    font-weight: 600;
+}
+.od-muted {
+    margin-top: 3px;
+    color: var(--color-text-muted);
+    font-size: 12px;
+}
+.od-err {
+    color: var(--color-danger);
+    font-size: 11px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+.od-alert {
+    padding: 10px 12px;
+    margin: 12px 16px;
+    border: 1px solid var(--color-border);
+    font-size: 13px;
+}
+.od-section-body .od-alert,
+.modal-body .od-alert {
+    margin: 0 0 12px 0;
+}
+.od-alert-error {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+.od-alert-warning {
+    background: #fef3c7;
+    border-color: #fde68a;
+    color: #92400e;
+}
+.od-alert-success {
+    background: #d1fae5;
+    border-color: #a7f3d0;
+    color: #065f46;
+}
+.od-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+}
+.od-form-span {
+    grid-column: 1 / -1;
+}
+.od-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+.od-editor-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 16px 0 8px;
+}
+.od-editor-head h4,
+.modal-body h4,
+.od-profile-result h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+.od-condition-row,
+.od-pair-row,
+.od-kv-row {
+    display: grid;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.od-condition-row {
+    grid-template-columns: minmax(160px, 1.4fr) 130px minmax(160px, 1fr) auto;
+}
+.od-pair-row {
+    grid-template-columns: minmax(160px, 1fr) minmax(120px, 1fr) auto auto auto;
+}
+.od-kv-row {
+    grid-template-columns: repeat(4, minmax(120px, 1fr)) auto;
+}
+.od-condition-row input:not([type="radio"]):not([type="checkbox"]),
+.od-condition-row select,
+.od-pair-row input:not([type="radio"]):not([type="checkbox"]),
+.od-pair-row select,
+.od-kv-row input:not([type="radio"]):not([type="checkbox"]),
+.od-kv-row select {
+    width: 100%;
+    min-width: 0;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    font-size: 13px;
+}
+.od-test-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
+    gap: 16px;
+}
+.od-json-input {
+    min-height: 260px;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 12px;
+}
+.od-test-results {
+    display: grid;
+    gap: 8px;
+}
+.od-test-result {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+    padding: 10px 12px;
+}
+.od-test-result.matched {
+    border-color: #10b981;
+    background: #ecfdf5;
+}
+.od-profile-result dl {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 8px 12px;
+    margin: 0 0 14px 0;
+    font-size: 13px;
+}
+.od-profile-result dt {
+    color: var(--color-text-secondary);
+    font-weight: 600;
+}
+.od-profile-result dd {
+    margin: 0;
+    min-width: 0;
+    word-break: break-word;
+}
+.od-json-preview {
+    max-height: 320px;
+    overflow: auto;
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    padding: 10px;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+}
+.od-subtitle {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+.od-network-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+.od-test-inline {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+}
+.od-modal-wide {
+    width: 1100px;
+    max-width: 96vw;
+}
+
+/* 決策列表（/open-defense/decisions） */
+.od-page-tabs {
+    margin-bottom: 10px;
+}
+.od-active-summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+.od-ep-badge {
+    margin-right: 4px;
+    margin-bottom: 3px;
+}
+.od-link-btn {
+    border: none;
+    background: transparent;
+    color: var(--color-primary);
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+}
+.od-link-btn:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+}
+.od-history-cell {
+    background: var(--color-bg-light);
+    padding: 10px 14px;
+}
+.od-timeline-table {
+    background: var(--color-bg-white);
+}
+.od-active-table th,
+.od-active-table td,
+.od-timeline-table th,
+.od-timeline-table td {
+    white-space: nowrap;
+}
+.od-active-table th:nth-child(3),
+.od-active-table td:nth-child(3),
+.od-timeline-table th:nth-child(7),
+.od-timeline-table td:nth-child(7) {
+    white-space: normal;
+}
+.od-active-table .od-target-value {
+    display: block;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.od-decisions-table {
+    width: 100%;
+    table-layout: auto;
+}
+
+.od-decisions-table th:nth-child(3),
+.od-decisions-table td:nth-child(3),
+.od-decisions-table th:nth-child(6),
+.od-decisions-table td:nth-child(6) { box-sizing: border-box; }
+.od-decisions-table th:nth-child(3),
+.od-decisions-table td:nth-child(3) { min-width: 116px; }
+.od-decisions-table th:nth-child(6),
+.od-decisions-table td:nth-child(6) { min-width: 66px; }
+
+/* 歷史表前九欄收縮，最右「執行方」不設寬度，承接剩餘空間與錯誤訊息。 */
+.od-decisions-table th:nth-child(1),
+.od-decisions-table td:nth-child(1),
+.od-decisions-table th:nth-child(2),
+.od-decisions-table td:nth-child(2),
+.od-decisions-table th:nth-child(4),
+.od-decisions-table td:nth-child(4),
+.od-decisions-table th:nth-child(5),
+.od-decisions-table td:nth-child(5),
+.od-decisions-table th:nth-child(6),
+.od-decisions-table td:nth-child(6),
+.od-decisions-table th:nth-child(7),
+.od-decisions-table td:nth-child(7),
+.od-decisions-table th:nth-child(8),
+.od-decisions-table td:nth-child(8),
+.od-decisions-table th:nth-child(9),
+.od-decisions-table td:nth-child(9) {
+    width: 1%;
+    white-space: nowrap;
+}
+.od-decisions-table th:nth-child(9),
+.od-decisions-table td:nth-child(9) {
+    text-align: right;
+}
+.od-decisions-table .od-applied-cell {
+    min-width: 260px;
+    font-size: 12px;
+}
+.od-decisions-table .od-err {
+    color: var(--color-danger);
+    font-size: 11px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+/* 目標值限寬截斷：target_type 合法值有 9 種，user_agent（100~150 字元）與
+ * 長 URL 若照 max-content 展開會把整張表撐出容器。截斷後完整值掛在
+ * title，滑鼠停留即可看到。 */
+.od-decisions-table .od-target-value {
+    display: block;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .od-form-grid,
+    .od-test-grid,
+    .od-network-grid,
+    .od-test-inline {
+        grid-template-columns: 1fr;
+    }
+    .od-condition-row,
+    .od-pair-row,
+    .od-kv-row {
+        grid-template-columns: 1fr;
+    }
+}

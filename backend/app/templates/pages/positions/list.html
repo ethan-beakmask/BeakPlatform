@@ -1,0 +1,75 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/03_org_setup/positions{% endblock %}
+
+{% block title %}{{ _('職位管理') }} - BeakMask{% endblock %}
+
+{% block content %}
+<h1>{{ _('職位管理') }}</h1>
+
+<p>
+    <a href="{{ url_for('positions.create_position') }}">{{ _('[新增職位]') }}</a>
+</p>
+
+<p>{{ _('共 %(positions)s 筆職位指派', positions=positions|length) }}</p>
+
+<table class="data-table bordered" style="width: 100%;" x-data="sortableTable()">
+    <thead>
+        <tr>
+            <th data-sort="text">{{ _('企業成員') }}</th>
+            <th data-sort="text">{{ _('職稱') }}</th>
+            <th data-sort="text">{{ _('部門') }}</th>
+            <th data-sort="text">{{ _('類型') }}</th>
+            <th data-sort="text">{{ _('部門主管') }}</th>
+            <th data-sort="date">{{ _('生效日') }}</th>
+            <th data-sort="text">{{ _('狀態') }}</th>
+            <th>{{ _('操作') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pos in positions %}
+        <tr>
+            <td>
+                {% if pos.user %}
+                {{ pos.user.display_name }}
+                {% else %}
+                <span class="text-muted">-</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if pos.job_title %}
+                {{ pos.job_title.name }}
+                {% else %}
+                <span class="text-muted">-</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if pos.unit %}
+                {{ pos.unit.name }}
+                {% else %}
+                <span class="text-muted">-</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if pos.position_type == 'PRIMARY' %}{{ _('主要') }}
+                {% elif pos.position_type == 'CONCURRENT' %}{{ _('兼任') }}
+                {% elif pos.position_type == 'ACTING' %}{{ _('代理') }}
+                {% elif pos.position_type == 'TEMPORARY' %}{{ _('臨時') }}
+                {% else %}{{ pos.position_type }}
+                {% endif %}
+            </td>
+            <td>{% if pos.is_unit_head %}{{ _('是') }}{% else %}-{% endif %}</td>
+            <td>{{ pos.effective_from.strftime('%Y-%m-%d') if pos.effective_from else '-' }}</td>
+            <td>{% if pos.is_active %}{{ _('啟用') }}{% else %}{{ _('停用') }}{% endif %}</td>
+            <td>
+                <a href="{{ url_for('positions.view_position', secure_code=pos.secure_code) }}">{{ _('[查看]') }}</a>
+                <a href="{{ url_for('positions.edit_position', secure_code=pos.secure_code) }}">{{ _('[編輯]') }}</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="8" class="text-muted" style="text-align: center;">{{ _('尚無職位指派') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

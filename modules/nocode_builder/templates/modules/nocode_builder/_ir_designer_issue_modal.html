@@ -1,0 +1,23 @@
+<div class="ird-issue-modal" x-show="showIssueModal" x-cloak role="dialog" aria-modal="true" aria-labelledby="ird-issue-title">
+    <div class="ird-issue-box">
+        <div class="ird-issue-head">
+            <h2 id="ird-issue-title">{{ _('儲存檢查') }}</h2>
+            <button type="button" class="ird-icon-btn" @click="closeIssueModal()" title="{{ _('關閉') }}">×</button>
+        </div>
+        <div class="ird-issue-list">
+            <template x-for="(err, errIndex) in errors" :key="'issue-' + errIndex">
+                <button type="button"
+                        class="ird-issue-item"
+                        :class="{'ird-issue-warning': err.severity === 'warning'}"
+                        :aria-disabled="!canLocateIssue(err)"
+                        @click="canLocateIssue(err) && selectIssueTarget(err)">
+                    <span class="ird-issue-level" x-text="err.severity === 'warning' ? __('警告') : __('錯誤')"></span>
+                    <span class="ird-issue-message" x-text="formatError(err)"></span>
+                </button>
+            </template>
+        </div>
+        <div class="ird-issue-actions">
+            <button type="button" class="ird-btn" @click="closeIssueModal()">{{ _('關閉') }}</button>
+        </div>
+    </div>
+</div>

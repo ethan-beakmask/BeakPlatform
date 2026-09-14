@@ -1,0 +1,85 @@
+
+    <div class="ird-topbar">
+        <div class="ird-title-field">
+            <label for="ird-page-title">{{ _('頁面標題') }}</label>
+            <input id="ird-page-title" type="text" x-model="pageTitleZh" @input="markDirty()">
+        </div>
+        <div class="ird-actions">
+            <button type="button" class="ird-btn ird-btn-primary" @click="savePage()">{{ _('儲存') }}</button>
+            {% if can('nocode_builder.manage') %}
+            <button type="button" class="ird-btn" @click="openSaveTemplateModal()">{{ _('另存為樣板') }}</button>
+            {% endif %}
+            <div class="ird-preview-identity" x-show="dataScope">
+                <label>
+                    <span>{{ _('預覽群組') }}</span>
+                    <select x-model="previewGroup">
+                        <option value="" :selected="previewGroup === ''">{{ _('不限群組') }}</option>
+                        <template x-for="group in activePortalGroups()" :key="group.code">
+                            <option :value="group.code" :selected="group.code === previewGroup" x-text="group.name + ' (' + group.code + ')'"></option>
+                        </template>
+                    </select>
+                </label>
+                <label>
+                    <span>{{ _('預覽階級') }}</span>
+                    <select x-model="previewLevel">
+                        <template x-for="level in sortedPortalLevels()" :key="level.code">
+                            <option :value="level.code" :selected="level.code === previewLevel" x-text="level.name + ' (' + level.code + ', rank ' + level.rank + ')'"></option>
+                        </template>
+                    </select>
+                </label>
+                <p class="ird-hint ird-preview-line" x-show="dataScope">
+                    {{ _('目前以此身分預覽：') }}<span x-text="previewIdentityLabel()"></span>
+                </p>
+                <p class="ird-hint ird-preview-line">{{ _('預覽身分僅影響[預覽]的檢視結果，不會隨頁面儲存。') }}</p>
+            </div>
+            <button type="button" class="ird-btn" @click="previewPage()">{{ _('預覽') }}</button>
+            {% if secure_code is defined %}
+            <a class="ird-btn" href="{{ app_prefix }}/nocode-builder/sub-systems">{{ _('返回') }}</a>
+            {% endif %}
+        </div>
+        <template x-if="errors.length">
+            <button type="button" class="ird-errors-summary" @click="openIssueModal()" x-text="issueSummary()"></button>
+        </template>
+    </div>
+
+    {% include "modules/nocode_builder/_ir_designer_issue_modal.html" %}
+    {% include "modules/nocode_builder/_ir_designer_save_template.html" %}
+    <div class="ird-toast" x-show="toast.show" x-text="toast.message"></div>
+
+    <div class="ird-grid">
+        <aside class="ird-panel">
+            <h2>{{ _('元件庫') }}</h2>
+            <template x-for="item in palette" :key="item.type">
+                <button type="button" class="ird-palette-item" draggable="true"
+                        @dragstart="dragType = item.type; $event.dataTransfer.setData('text/plain', item.type)" @click="addWidget(item.type)">
+                    <span x-text="item.label"></span>
+                </button>
+            </template>
+        </aside>
+
+        <main class="ird-panel ird-canvas"
+              @dragover.prevent
+              @drop.prevent="addWidget(dragType); dragType = ''">
+            <div class="ird-canvas-head">
+                <h2>{{ _('頁面結構') }}</h2>
+                <button type="button" class="ird-btn" @click="selectedId = ''; selectedZoneId = ''">{{ _('根層') }}</button>
+            </div>
+            {% include "modules/nocode_builder/_ir_designer_layout.html" %}
+        </main>
+
+        {% include "modules/nocode_builder/_ir_designer_props.html" %}
+    </div>
+
+    <div class="ird-modal" x-show="showFormModal" x-cloak>
+        <div class="ird-modal-box">
+            <div class="ird-modal-head">
+                <h2>{{ _('表單編輯') }}</h2>
+                <button type="button" class="ird-icon-btn" @click="closeFormBuilder()">×</button>
+            </div>
+            <div id="ird-form-builder" class="ird-form-builder"></div>
+            <div class="ird-modal-actions">
+                <button type="button" class="ird-btn" @click="closeFormBuilder()">{{ _('取消') }}</button>
+                <button type="button" class="ird-btn ird-btn-primary" @click="saveFormBuilder()">{{ _('儲存表單') }}</button>
+            </div>
+        </div>
+    </div>

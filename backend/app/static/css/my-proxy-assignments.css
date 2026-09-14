@@ -1,0 +1,30 @@
+.mpa-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.mpa-help {
+    margin: 0 0 16px;
+    font-size: var(--font-size-sm);
+}
+
+.mpa-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 24px;
+}
+
+.mpa-table {
+    min-width: 860px;
+}
+
+.mpa-empty {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    padding: 12px 0 20px;
+}
+
+.mpa-status-pending {
+    color: var(--color-warning);
+}

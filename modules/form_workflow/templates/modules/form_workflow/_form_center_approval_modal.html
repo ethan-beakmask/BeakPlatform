@@ -1,0 +1,181 @@
+{# 表單中心 - 簽核模態框 (partial, 注入到 formCenterManager x-data 範圍內) #}
+
+<!-- 簽核 Modal -->
+<div x-show="showApprovalModal" x-cloak class="fc-modal">
+    <div class="fc-modal-content" :style="'width: ' + ((currentApproval?.builder_config?.formWidth > 0) ? Math.max(currentApproval.builder_config.formWidth + 120, 700) + 'px' : '85vw') + '; max-height: 100vh;'">
+        <div class="fc-modal-header">
+            <div>
+                <h3>{{ _('簽核表單') }}</h3>
+                <p style="margin: 4px 0 0; font-size: 13px; color: #374151;" x-text="currentApproval?.form_name || ''"></p>
+                <p style="margin: 2px 0 0; font-size: 12px; color: #6b7280;" x-text="getShortSerial(currentApproval?.serial_number)"></p>
+                <p x-show="currentApproval?.form_subject" style="margin: 2px 0 0; font-size: 12px; color: #374151;">
+                    {{ _('主旨：') }}<span x-text="currentApproval?.form_subject"></span>
+                </p>
+            </div>
+            <button class="fc-close-btn" @click="closeApprovalModal()">&times;</button>
+        </div>
+        <div class="fc-modal-body">
+            <div x-show="loadingApproval" class="fc-loading">{{ _('載入中...') }}</div>
+            <div x-show="!loadingApproval && currentApproval">
+                <!-- 申請人資訊 -->
+                <div style="background: #f9fafb; padding: 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
+                    <span>{{ _('申請人：') }}<strong x-text="currentApproval?.applicant_name || '-'"></strong></span>
+                    <span style="margin-left: 16px;">{{ _('關卡：') }}<strong x-text="currentApproval?.node_name || '-'"></strong></span>
+                    <p x-show="getAssigneeDisplay(currentApproval || {})" style="margin: 6px 0 0;">
+                        {{ _('簽核者') }}：<span x-text="getAssigneeDisplay(currentApproval || {})"></span>
+                    </p>
+                </div>
+
+                <!-- 表單內容 -->
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <label style="font-size: 16px; font-weight: 600;">{{ _('表單內容') }}</label>
+                        <span x-show="!currentApproval?.has_editable_fields" style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 4px;">{{ _('唯讀') }}</span>
+                        <span x-show="currentApproval?.has_editable_fields" style="font-size: 11px; color: #1d4ed8; background: #dbeafe; padding: 2px 8px; border-radius: 4px;">{{ _('部分欄位可編輯') }}</span>
+                    </div>
+                    <div style="background: #f0f1f3; border-radius: 4px; padding: 16px; min-height: 150px;"
+                         :class="{ 'fc-form-readonly': !currentApproval?.has_editable_fields }">
+                        <div id="approval-form-container"></div>
+                    </div>
+                </div>
+
+                <!-- 附件 -->
+                <div id="approval-form-attachments" style="margin-bottom: 16px;"></div>
+
+                <!-- 簽核歷程 -->
+                <div x-show="currentApproval?.approvals?.length > 0" style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
+                        <span style="font-size: 13px; font-weight: 600;">{{ _('簽核歷程') }}</span>
+                        <button @click="approvalSortAsc = !approvalSortAsc"
+                                style="padding: 2px 8px; font-size: 11px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; color: #374151;">
+                            <i class="fas fa-sort"></i> <span x-text="approvalSortAsc ? __('舊→新') : __('新→舊')"></span>
+                        </button>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="background: #f9fafb;">
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">{{ _('簽核者') }}</th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">{{ _('動作') }}</th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">{{ _('關卡') }}</th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap; cursor: pointer;" @click="approvalSortAsc = !approvalSortAsc">
+                                    {{ _('簽核時間') }} <i class="fas" :class="approvalSortAsc ? 'fa-sort-up' : 'fa-sort-down'" style="color: #6b7280;"></i>
+                                </th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">{{ _('意見') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(approval, idx) in sortedApprovals(currentApproval?.approvals)" :key="idx">
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 6px 8px; white-space: nowrap; font-weight: 500;">
+                                        <span x-text="approval.approver_name"></span>
+                                        <span x-show="approval.delegate_from_name" class="fc-delegate-tag"
+                                              x-text="__('（代 {name} 簽核）', {name: approval.delegate_from_name || ''})"></span>
+                                        <span x-show="approval.acted_as_kind === 'standby'" class="fc-delegate-tag"
+                                              x-text="__('（候補代理 {role}）', {role: approval.acted_as_role_name || approval.acted_as_role_code})"></span>
+                                        <span x-show="!approval.acted_as_kind && approval.acted_as_role_code" class="fc-delegate-tag"
+                                              x-text="__('（以{role}身分）', {role: approval.acted_as_role_name || approval.acted_as_role_code})"></span>
+                                    </td>
+                                    <td style="padding: 6px 8px; white-space: nowrap;">
+                                        <span class="fc-badge" :class="getActionBadgeClass(approval.action)" x-text="getActionText(approval.action)"></span>
+                                    </td>
+                                    <td style="padding: 6px 8px; color: #6b7280; white-space: nowrap;" x-text="approval.node_name || '-'"></td>
+                                    <td style="padding: 6px 8px; color: #6b7280; white-space: nowrap;" x-text="approval.acted_at ? formatDate(approval.acted_at) : '-'"></td>
+                                    <td style="padding: 6px 8px; color: #374151; white-space: pre-wrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis;"
+                                        x-text="approval.comment || '-'"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 簽核選項：自定義決策模式 -->
+                <div x-show="currentApproval?.use_custom_decisions" style="margin-bottom: 16px; padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;">
+                    <label style="font-size: 16px; font-weight: 600; display: block; margin-bottom: 8px;">
+                        {{ _('請選擇決策') }}
+                    </label>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <template x-for="option in visibleDecisionOptions" :key="option.id">
+                            <button type="button"
+                                    @click="selectDecisionOption(option)"
+                                    style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.15s; text-align: left;"
+                                    :style="{
+                                        'primary': selectedOptionId === option.id
+                                            ? 'background: #667eea; color: white; border: 2px solid #667eea; text-align: left;'
+                                            : 'background: white; color: #667eea; border: 2px solid #667eea; text-align: left;',
+                                        'success': selectedOptionId === option.id
+                                            ? 'background: #28a745; color: white; border: 2px solid #28a745; text-align: left;'
+                                            : 'background: white; color: #28a745; border: 2px solid #28a745; text-align: left;',
+                                        'warning': selectedOptionId === option.id
+                                            ? 'background: #ffc107; color: #333; border: 2px solid #ffc107; text-align: left;'
+                                            : 'background: white; color: #856404; border: 2px solid #ffc107; text-align: left;',
+                                        'danger': selectedOptionId === option.id
+                                            ? 'background: #dc3545; color: white; border: 2px solid #dc3545; text-align: left;'
+                                            : 'background: white; color: #dc3545; border: 2px solid #dc3545; text-align: left;',
+                                        'default': selectedOptionId === option.id
+                                            ? 'background: #6c757d; color: white; border: 2px solid #6c757d; text-align: left;'
+                                            : 'background: white; color: #6c757d; border: 2px solid #6c757d; text-align: left;'
+                                    }[option.style || 'default']"
+                                    x-text="option.label">
+                            </button>
+                        </template>
+                    </div>
+                    <div x-show="selectedOptionId !== null" style="margin-top: 8px; font-size: 12px; color: #6b7280;">
+                        {{ _('已選擇：') }}<strong x-text="visibleDecisionOptions.find(o => o.id === selectedOptionId)?.label || ''"></strong>
+                    </div>
+                </div>
+
+                <!-- 簽核選項：傳統模式（edge 選擇） -->
+                <div x-show="!currentApproval?.use_custom_decisions" style="margin-bottom: 16px; padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;">
+                    <label style="font-size: 16px; font-weight: 600; display: block; margin-bottom: 8px;">
+                        {{ _('請選擇後續動作') }}
+                        <span x-show="currentApproval?.selection_mode === 'multiple'" style="color: #7c3aed;">{{ _('（可複選）') }}</span>
+                    </label>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        {# 本區塊用 x-show 隱藏，自訂決策流程下這個 x-for 仍會執行；
+                           自訂決策的項目只有 id 沒有 edge_id，key 必須有 fallback，
+                           否則兩筆 undefined 重複 key 會讓 Alpine 崩潰（reading 'after'） #}
+                        <template x-for="path in (currentApproval?.available_paths || [])" :key="path.edge_id || path.id">
+                            <label style="display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; cursor: pointer; background: white;"
+                                   :style="selectedEdges.includes(path.edge_id) ? 'border-color: #3b82f6; background: #eff6ff;' : ''">
+                                <input x-show="currentApproval?.selection_mode !== 'multiple'" type="radio" name="approval_path" :value="path.edge_id"
+                                       @change="selectedEdges = [path.edge_id]" style="margin-right: 12px;">
+                                <input x-show="currentApproval?.selection_mode === 'multiple'" type="checkbox" :value="path.edge_id"
+                                       @change="toggleEdgeSelection(path.edge_id)" :checked="selectedEdges.includes(path.edge_id)" style="margin-right: 12px;">
+                                <span style="font-weight: 500;" x-text="path.label"></span>
+                                <span style="margin-left: 8px; font-size: 12px; color: #6b7280;" x-text="'→ ' + path.target_node_type"></span>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 簽核意見 -->
+                <div x-show="currentApproval?.allow_comment" style="margin-bottom: 16px;" data-canned-target="approvalComment">
+                    <label style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; display: block;">
+                        {{ _('簽核意見') }} <span x-show="(currentApproval?.min_comment_length || 0) > 0" style="color: #dc2626;">*</span>
+                    </label>
+                    <div x-show="approvalLockRemaining > 0" style="text-align: center; margin-bottom: 8px;">
+                        <span style="font-size: 16px; font-weight: 600; font-family: monospace; padding: 4px 10px; border-radius: 4px;"
+                              :style="approvalLockRemaining <= 60 ? 'background: #fef2f2; color: #dc2626;' : 'background: #f0fdf4; color: #16a34a;'"
+                              x-text="approvalCountdownText"></span>
+                    </div>
+                    {% include "modules/form_workflow/_canned_messages_bar.html" %}
+                    <textarea x-model="approvalComment" rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 16px; resize: vertical; box-sizing: border-box;"
+                              placeholder="{{ _('輸入簽核意見...') }}"></textarea>
+                    <div x-show="(currentApproval?.min_comment_length || 0) > 0" style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 13px; color: #6b7280;">
+                        <span>{{ _('最少') }} <span x-text="currentApproval?.min_comment_length"></span> {{ _('字') }}</span>
+                        <span :style="approvalComment.trim().length < (currentApproval?.min_comment_length || 0) ? 'color: #dc2626;' : 'color: #16a34a;'"
+                              x-text="approvalComment.trim().length + ' / ' + (currentApproval?.min_comment_length || 0)"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="fc-modal-footer">
+            <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="closeApprovalModal()">{{ _('取消') }}</button>
+            <button class="fc-btn fc-btn-primary" @click="submitApproval()"
+                    :disabled="(currentApproval?.use_custom_decisions ? selectedOptionValue === null : selectedEdges.length === 0) || submittingApproval">
+                <span x-show="!submittingApproval">{{ _('送出簽核') }}</span>
+                <span x-show="submittingApproval">{{ _('處理中...') }}</span>
+            </button>
+        </div>
+    </div>
+</div>

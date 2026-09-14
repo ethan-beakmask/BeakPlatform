@@ -1,0 +1,81 @@
+%YAML 1.1
+---
+# =============================================================================
+# Suricata（防禦節點，被動 IDS）
+# 由 install.sh 從 suricata.yaml.tmpl 產生到 generated/suricata.yaml，
+# 要改請改 .env 的 HOME_NET 後執行 install.sh --reconfigure。
+# =============================================================================
+vars:
+  address-groups:
+    HOME_NET: "@@HOME_NET@@"
+    EXTERNAL_NET: "!$HOME_NET"
+
+default-rule-path: /var/lib/suricata/rules
+rule-files:
+  - suricata.rules
+
+# 監聽介面由 docker-compose 的 command 參數（-i ${NODE_IFACE}）指定
+af-packet:
+  - interface: @@NODE_IFACE@@
+    cluster-id: 99
+    cluster-type: cluster_flow
+    defrag: yes
+    use-mmap: yes
+    tpacket-v3: yes
+
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: /var/log/suricata/eve.json
+      types:
+        - alert:
+            metadata: yes
+            tagged-packets: no
+            payload-printable: yes
+            # 反向代理後面的 IDS：以 Cloudflare 帶的 CF-Connecting-IP 覆寫 src_ip，
+            # 告警的 actor 才是真實攻擊者而不是代理。
+            # 代價：能直連本機 8080 的來源也能偽造這個 header——所以 8080 的來源
+            # 由 nftables 限制在 ADMIN_IPS。
+            xff:
+              enabled: yes
+              mode: overwrite
+              deployment: reverse
+              header: CF-Connecting-IP
+        - http:
+            extended: yes
+            xff:
+              enabled: yes
+              mode: overwrite
+              deployment: reverse
+              header: CF-Connecting-IP
+        - dns
+        - tls
+        - flow
+        - anomaly
+
+logging:
+  default-log-level: notice
+  outputs:
+    - console: { enabled: yes }
+    - file:
+        enabled: yes
+        level: info
+        filename: /var/log/suricata/suricata.log
+
+app-layer:
+  protocols:
+    http: { enabled: yes }
+    tls:  { enabled: yes }
+    dns:  { tcp: { enabled: yes }, udp: { enabled: yes } }
+
+stream:
+  memcap: 256mb
+  checksum-validation: no
+  inline: no
+  reassembly:
+    memcap: 128mb
+    depth: 1mb
+
+host-mode: auto
+runmode: autofp

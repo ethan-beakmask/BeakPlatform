@@ -1,0 +1,68 @@
+<!-- ==================== 收件人群組設定 ==================== -->
+<div id="section-recipients" class="settings-section" :class="{ active: activeSection === 'recipients' }">
+    <h2>{{ _('收件人群組設定') }}</h2>
+    <p>{{ _('系統級收件人群組，供流程節點批次發送通知使用。') }}</p>
+
+    <div x-show="message.recipients" x-cloak
+         :class="'message ' + (message.recipientsError ? 'message-error' : 'message-success')"
+         x-text="message.recipients"
+         x-transition></div>
+
+    <div class="settings-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="margin: 0;">{{ _('收件人群組列表') }}</h4>
+            <button class="btn btn-primary" @click="openRecipientModal()">+ {{ _('新增群組') }}</button>
+        </div>
+
+        <template x-if="loading.recipients">
+            <div class="loading">{{ _('載入中...') }}</div>
+        </template>
+
+        <template x-if="!loading.recipients && recipients.groups.length === 0">
+            <div class="empty-state">
+                <p>{{ _('尚無收件人群組') }}</p>
+                <p style="font-size: 13px;">{{ _('點擊「新增群組」開始建立') }}</p>
+            </div>
+        </template>
+
+        <template x-if="!loading.recipients && recipients.groups.length > 0">
+            <table class="config-table">
+                <thead>
+                    <tr>
+                        <th>{{ _('群組名稱') }}</th>
+                        <th>{{ _('描述') }}</th>
+                        <th>{{ _('優先順序') }}</th>
+                        <th>{{ _('狀態') }}</th>
+                        <th>{{ _('操作') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="group in recipients.groups" :key="group.id">
+                        <tr>
+                            <td x-text="group.name"></td>
+                            <td x-text="group.description || '-'"></td>
+                            <td x-text="group.priority"></td>
+                            <td>
+                                <span :class="'badge ' + (group.is_active ? 'badge-success' : 'badge-danger')"
+                                      x-text="group.is_active ? __('啟用') : __('停用')"></span>
+                            </td>
+                            <td class="actions">
+                                <button class="btn btn-secondary" @click="editRecipientGroup(group)">{{ _('編輯') }}</button>
+                                <button class="btn btn-danger" @click="deleteRecipientGroup(group.id)">{{ _('刪除') }}</button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+    </div>
+
+    <div class="settings-card" style="background: #f0f9ff; border-color: #bae6fd;">
+        <h4 style="color: #0369a1;">{{ _('說明') }}</h4>
+        <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #0369a1;">
+            <li>{{ _('系統級收件人群組用於跨企業的系統通知') }}</li>
+            <li>{{ _('可指定多個收件人 Email 或用戶 ID') }}</li>
+            <li>{{ _('流程節點可選擇使用這些群組發送通知') }}</li>
+        </ul>
+    </div>
+</div>

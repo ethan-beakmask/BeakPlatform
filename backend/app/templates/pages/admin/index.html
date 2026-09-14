@@ -1,0 +1,35 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('企業管理') }} - BeakMask{% endblock %}
+
+{% block content %}
+<h1>{{ _('企業管理') }}</h1>
+
+<p>{{ _('歡迎使用企業管理功能。') }}</p>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+        <h3>{{ _('系統設定') }}</h3>
+        <p>{{ _('管理企業基本資訊、選單配置等設定。') }}</p>
+        <a href="{{ url_for('admin.settings') }}">[{{ _('進入設定') }}]</a>
+    </div>
+
+    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+        <h3>{{ _('用戶管理') }}</h3>
+        <p>{{ _('管理企業內的用戶帳號。') }}</p>
+        <a href="{{ url_for('users.list_users') }}">[{{ _('管理用戶') }}]</a>
+    </div>
+
+    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+        <h3>{{ _('角色權限') }}</h3>
+        <p>{{ _('設定角色及其權限。') }}</p>
+        <a href="{{ url_for('access_center.index') }}">[{{ _('管理角色') }}]</a>
+    </div>
+
+    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+        <h3>{{ _('選單管理') }}</h3>
+        <p>{{ _('自訂企業選單結構。') }}</p>
+        <a href="{{ url_for('menu.list_menu') }}">[{{ _('管理選單') }}]</a>
+    </div>
+</div>
+{% endblock %}

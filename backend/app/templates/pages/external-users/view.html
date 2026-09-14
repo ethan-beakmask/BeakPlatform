@@ -1,0 +1,93 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('%(name)s - 外部廠商', name=user.display_name) }} - BeakMask{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('external_users.list_external_users') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回外部廠商列表') }}</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0;">
+    <h1 style="font-size: 20px; font-weight: bold; margin: 0;">
+        {{ user.display_name }}
+        <span style="font-size: 14px; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">{{ _('外部廠商') }}</span>
+    </h1>
+    <div>
+        <a href="{{ url_for('external_users.edit_external_user', secure_code=user.secure_code) }}"
+           class="btn btn-primary" style="margin-right: 8px;">
+            {{ _('編輯') }}
+        </a>
+        <form method="POST" action="{{ url_for('external_users.toggle_status', secure_code=user.secure_code) }}" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn">
+                {% if user.is_active %}{{ _('停用帳號') }}{% else %}{{ _('啟用帳號') }}{% endif %}
+            </button>
+        </form>
+        <form method="POST" action="{{ url_for('external_users.delete_external_user', secure_code=user.secure_code) }}"
+              style="display: inline;"
+              onsubmit="return confirm(__('確定要刪除此外部廠商嗎？'))">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger" style="margin-left: 8px;">
+                {{ _('刪除') }}
+            </button>
+        </form>
+    </div>
+</div>
+
+<table class="info-table" style="max-width: 600px;">
+    <tr>
+        <th style="width: 150px;">{{ _('編號') }}</th>
+        <td><code>{{ user.employee_id or '-' }}</code></td>
+    </tr>
+    <tr>
+        <th>Email</th>
+        <td>{{ user.email }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('狀態') }}</th>
+        <td>
+            {% if user.is_active %}
+            <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px;">{{ _('啟用') }}</span>
+            {% else %}
+            <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 10px;">{{ _('停用') }}</span>
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th>{{ _('歸屬群組') }}</th>
+        <td>
+            {% if groups %}
+                {% for group in groups %}
+                <span style="background: #e0e7ff; color: #3730a3; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; margin-right: 4px;">
+                    {{ group.name }}
+                </span>
+                {% endfor %}
+            {% else %}
+                <span style="color: #9ca3af;">-</span>
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th style="vertical-align: top;">{{ _('備註') }}</th>
+        <td style="white-space: pre-wrap;">{{ user.notes or '-' }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('建立時間') }}</th>
+        <td>{{ user.created_at|tz_format('%Y-%m-%d %H:%M') if user.created_at else '-' }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('最後登入') }}</th>
+        <td>{{ user.last_login_at|tz_format('%Y-%m-%d %H:%M') if user.last_login_at else _('從未登入') }}</td>
+    </tr>
+</table>
+{% endblock %}

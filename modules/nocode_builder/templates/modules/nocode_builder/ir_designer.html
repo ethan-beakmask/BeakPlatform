@@ -1,0 +1,34 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('IR 設計器') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/formio.full.min.css') }}">
+<link rel="stylesheet" href="{{ app_prefix }}/static/vendor/gridstack/gridstack.min.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/studio.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/ir-designer.css">
+{% endblock %}
+
+{% block content %}
+<div class="ird-shell" x-data="irDesigner()" x-cloak>
+    {% include "modules/nocode_builder/_ir_designer_body.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.__PAGE_CAPS = {{ page_caps | default({}) | tojson }};
+window.__IR_DESIGNER_CONFIG = {
+    secureCode: {{ secure_code|tojson }},
+    designerUrl: {{ (app_prefix ~ '/nocode/ir-designer/' ~ secure_code)|tojson }},
+    previewUrl: {{ (app_prefix ~ '/nocode/ir-designer/' ~ secure_code ~ '/preview')|tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='vendor/formio.full.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/formio-local-cdn.js') }}"></script>
+<script src="{{ app_prefix }}/static/vendor/gridstack/gridstack-all.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/grid-layout-editor.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/page-template.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/shared-component.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/ir-designer.js"></script>
+{% endblock %}

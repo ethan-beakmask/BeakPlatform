@@ -1,0 +1,208 @@
+        <!-- SMTP 設定 -->
+        <section id="smtp" class="settings-section" x-show="activeSection === 'smtp'" x-data="smtpManager()" x-init="init()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0; border: none; padding: 0;">{{ _('SMTP 郵件設定') }}</h2>
+                <button @click="openCreateModal()"
+                        style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                    {{ _('+ 新增設定') }}
+                </button>
+            </div>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                {{ _('給流程 Email 節點使用的郵件伺服器設定組。系統信（忘記密碼、警報）不走這裡。') }}
+            </p>
+
+            <!-- 載入中 -->
+            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">{{ _('載入中...') }}</div>
+
+            <!-- 空狀態 -->
+            <div x-show="!loading && configs.length === 0" style="background: #f9f9f9; padding: 48px; text-align: center; border: 1px solid #ddd;">
+                <p style="font-size: 16px; color: #999; margin-bottom: 8px;">{{ _('尚無 SMTP 設定') }}</p>
+                <p style="color: #999;">{{ _('點擊「新增設定」開始建立') }}</p>
+            </div>
+
+            <!-- 設定列表 -->
+            <div x-show="!loading && configs.length > 0" style="background: white; border: 1px solid #ddd;">
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                    <thead style="background: #f5f5f5;">
+                        <tr>
+                            <th style="padding: 10px; text-align: left;">{{ _('名稱') }}</th>
+                            <th style="padding: 10px; text-align: left;">{{ _('伺服器') }}</th>
+                            <th style="padding: 10px; text-align: left;">{{ _('寄件人') }}</th>
+                            <th style="padding: 10px; text-align: center; width: 60px;">{{ _('預設') }}</th>
+                            <th style="padding: 10px; text-align: center; width: 60px;">{{ _('狀態') }}</th>
+                            <th style="padding: 10px; text-align: center; width: 120px;">{{ _('操作') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="config in configs" :key="config.id">
+                            <tr style="border-top: 1px solid #eee;">
+                                <td style="padding: 10px;">
+                                    <span x-text="config.name"></span>
+                                    <span x-show="config.provider_type !== 'generic'"
+                                          style="margin-left: 6px; padding: 2px 6px; background: #e0e7ff; color: #3730a3; font-size: 11px;"
+                                          x-text="config.provider_type"></span>
+                                </td>
+                                <td style="padding: 10px; font-family: monospace; font-size: 12px;">
+                                    <span x-text="config.smtp_host + ':' + config.smtp_port"></span>
+                                </td>
+                                <td style="padding: 10px;" x-text="config.from_email"></td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-show="config.is_default" style="color: #059669;">★</span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-show="config.is_active" style="color: #059669;">{{ _('啟用') }}</span>
+                                    <span x-show="!config.is_active" style="color: #dc2626;">{{ _('停用') }}</span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <button @click="testConfig(config)" title="{{ _('測試') }}"
+                                            style="padding: 4px 8px; background: #d1fae5; color: #065f46; border: none; cursor: pointer; margin-right: 4px;">
+                                        {{ _('測試') }}
+                                    </button>
+                                    <button @click="openEditModal(config)" title="{{ _('編輯') }}"
+                                            style="padding: 4px 8px; background: #e0e0e0; border: none; cursor: pointer; margin-right: 4px;">
+                                        {{ _('編輯') }}
+                                    </button>
+                                    <button @click="confirmDelete(config)" title="{{ _('刪除') }}"
+                                            style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer;">
+                                        {{ _('刪除') }}
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- SMTP Modal -->
+            <div x-show="showModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 18px;" x-text="isEditing ? __('編輯 SMTP 設定') : __('新增 SMTP 設定')"></h3>
+                        <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+
+                    <form @submit.prevent="saveConfig()">
+                        <!-- 名稱 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('設定名稱 *') }}</label>
+                            <input type="text" x-model="formData.name" required
+                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                   placeholder="{{ _('例如: 公司主要郵件') }}">
+                        </div>
+
+                        <!-- 提供者類型 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('郵件服務') }}</label>
+                            <select x-model="formData.provider_type" @change="applyPreset()"
+                                    style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                                <option value="generic">{{ _('自訂') }}</option>
+                                <option value="gmail">Gmail</option>
+                                <option value="outlook">Outlook / Office 365</option>
+                            </select>
+                        </div>
+
+                        <!-- SMTP 伺服器 -->
+                        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                            <div style="flex: 3;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('SMTP 伺服器 *') }}</label>
+                                <input type="text" x-model="formData.smtp_host" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                       placeholder="smtp.example.com">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('連接埠 *') }}</label>
+                                <input type="number" x-model="formData.smtp_port" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <!-- TLS/SSL -->
+                        <div style="margin-bottom: 12px; display: flex; gap: 24px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.use_tls"> {{ _('使用 STARTTLS') }}
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.use_ssl"> {{ _('使用 SSL') }}
+                            </label>
+                        </div>
+
+                        <!-- Gmail 應用程式密碼 -->
+                        <div x-show="formData.provider_type === 'gmail'" style="margin-bottom: 12px; padding: 12px; background: #fef3c7; border: 1px solid #f59e0b;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 8px;">
+                                <input type="checkbox" x-model="formData.use_app_password">
+                                <span style="font-weight: 500;">{{ _('使用應用程式密碼') }}</span>
+                            </label>
+                            <p style="margin: 0; font-size: 12px; color: #92400e;">
+                                {{ _('如果您的 Gmail 帳號啟用了兩步驟驗證，需要使用應用程式密碼而非一般密碼。') }}
+                                <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color: #b45309;">{{ _('前往設定應用程式密碼') }}</a>
+                            </p>
+                        </div>
+
+                        <!-- 帳號密碼 -->
+                        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('帳號 *') }}</label>
+                                <input type="text" x-model="formData.username" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('密碼 *') }}</label>
+                                <input type="password" x-model="formData.password" :required="!isEditing"
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                       :placeholder="isEditing ? __('(不修改請留空)') : ''">
+                            </div>
+                        </div>
+
+                        <!-- 寄件人 -->
+                        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('寄件人信箱 *') }}</label>
+                                <input type="email" x-model="formData.from_email" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('寄件人名稱') }}</label>
+                                <input type="text" x-model="formData.from_name"
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <!-- 狀態 -->
+                        <div style="margin-bottom: 16px; display: flex; gap: 24px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.is_default"> {{ _('設為預設') }}
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.is_active"> {{ _('啟用') }}
+                            </label>
+                        </div>
+
+                        <!-- 按鈕 -->
+                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+                            <button type="button" @click="closeModal()"
+                                    style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">{{ _('取消') }}</button>
+                            <button type="submit"
+                                    style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                                <span x-text="isEditing ? __('儲存') : __('建立')"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 刪除確認 Modal -->
+            <div x-show="showDeleteModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 400px; max-width: 90%;">
+                    <h3 style="margin: 0 0 16px; font-size: 18px;">{{ _('確認刪除') }}</h3>
+                    <p style="margin: 0 0 16px;">{{ _('確定要刪除 SMTP 設定「') }}<span style="font-weight: 600;" x-text="configToDelete?.name"></span>{{ _('」嗎？') }}</p>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <button @click="showDeleteModal = false"
+                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">{{ _('取消') }}</button>
+                        <button @click="deleteConfig()"
+                                style="padding: 8px 16px; background: #dc2626; color: white; border: none; cursor: pointer;">{{ _('確認刪除') }}</button>
+                    </div>
+                </div>
+            </div>
+        </section>

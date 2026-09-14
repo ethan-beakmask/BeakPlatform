@@ -1,0 +1,185 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('表單風格管理 - BeakPlatform') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='modules/form_workflow/css/form-themes.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="fw-container" x-data="formThemeManager()">
+
+    <!-- 頁首 -->
+    <div class="fw-header">
+        <div>
+            <h1>{{ _('表單風格管理') }}</h1>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">{{ _('管理表單的外觀風格主題') }}</p>
+        </div>
+        <div class="fw-toolbar">
+            <button class="fw-btn" @click="loadThemes()">{{ _('重新載入') }}</button>
+            <button class="fw-btn primary" @click="openCreateModal()">{{ _('+ 新增主題') }}</button>
+        </div>
+    </div>
+
+    <!-- 表格 -->
+    <div class="fw-card">
+        <div x-show="loading" class="fw-loading">{{ _('載入中...') }}</div>
+
+        <div x-show="!loading && themes.length === 0" class="fw-empty">
+            <p style="font-size: 16px; margin-bottom: 8px;">{{ _('尚無自訂主題') }}</p>
+            <p>{{ _('系統已內建「預設」主題，點擊「新增主題」建立自訂風格') }}</p>
+        </div>
+
+        <table x-show="!loading && themes.length > 0" class="fw-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">{{ _('排序') }}</th>
+                    <th style="width: 120px;">{{ _('識別碼') }}</th>
+                    <th style="width: 160px;">{{ _('顯示名稱') }}</th>
+                    <th>{{ _('描述') }}</th>
+                    <th style="width: 80px;">CSS</th>
+                    <th style="width: 80px;">{{ _('類型') }}</th>
+                    <th style="width: 80px;">{{ _('狀態') }}</th>
+                    <th style="width: 230px;" class="actions">{{ _('操作') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="theme in themes" :key="theme.secure_code">
+                    <tr>
+                        <td style="text-align: center; color: #999;" x-text="theme.sort_order"></td>
+                        <td>
+                            <code style="font-size: 12px; background: #f3f4f6; padding: 2px 6px; border-radius: 3px;" x-text="theme.name"></code>
+                        </td>
+                        <td style="font-weight: 500;" x-text="theme.display_name"></td>
+                        <td style="color: #666; font-size: 13px;" x-text="theme.description || '-'"></td>
+                        <td style="font-size: 12px; color: #666;">
+                            <span x-show="theme.has_css" x-text="formatSize(theme.css_size)"></span>
+                            <span x-show="!theme.has_css" style="color: #999;">{{ _('無') }}</span>
+                        </td>
+                        <td>
+                            <span class="fw-badge" :class="theme.is_system ? 'system' : 'custom'"
+                                  x-text="theme.is_system ? __('系統') : __('自訂')"></span>
+                        </td>
+                        <td>
+                            <span class="fw-badge" :class="theme.is_active ? 'active' : 'inactive'"
+                                  x-text="theme.is_active ? __('啟用') : __('停用')"></span>
+                        </td>
+                        <td class="actions">
+                            <button class="fw-btn sm" @click="editTheme(theme)">{{ _('編輯') }}</button>
+                            <button class="fw-btn sm" @click="downloadCSS(theme)" x-show="theme.has_css">{{ _('下載 CSS') }}</button>
+                            <button class="fw-btn sm" @click="openUploadModal(theme)">{{ _('上傳 CSS') }}</button>
+                            <button class="fw-btn sm" @click="toggleActive(theme)" x-text="theme.is_active ? __('停用') : __('啟用')"></button>
+                            <button class="fw-btn sm danger" @click="confirmDelete(theme)" :disabled="theme.is_system"
+                                    x-show="!theme.is_system">{{ _('刪除') }}</button>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 預設主題提示 -->
+    <div class="fw-card" style="margin-top: 16px; padding: 12px 16px; background: #f9fafb;">
+        <p style="font-size: 13px; color: #666; margin: 0;">
+            {{ _('「預設」主題為') }} <code>formio-theme.css</code>{{ _('，不在此管理。自訂主題的 CSS 需以') }}
+            <code>{{ _('[data-form-theme="識別碼"]') }}</code> {{ _('為 scope 覆寫樣式。') }}
+        </p>
+    </div>
+
+    <!-- 新增/編輯 Modal -->
+    <div x-show="showModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content">
+            <div class="fw-modal-header">
+                <h3 x-text="modalTitle"></h3>
+                <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <form @submit.prevent="saveTheme()">
+                <div class="fw-modal-body">
+                    <div class="fw-form-group">
+                        <label>{{ _('識別碼 *') }} <span style="font-weight: normal; color: #999; font-size: 12px;">{{ _('（小寫英文、數字、連字號）') }}</span></label>
+                        <input type="text" x-model="formData.name" required placeholder="{{ _('例：modern-flat') }}"
+                               pattern="[a-z][a-z0-9-]*" :disabled="editingTheme">
+                    </div>
+                    <div class="fw-form-group">
+                        <label>{{ _('顯示名稱 *') }}</label>
+                        <input type="text" x-model="formData.display_name" required placeholder="{{ _('例：現代扁平') }}">
+                    </div>
+                    <div class="fw-form-group">
+                        <label>{{ _('描述') }}</label>
+                        <textarea x-model="formData.description" placeholder="{{ _('簡述此風格的特點') }}"></textarea>
+                    </div>
+                    <div class="fw-form-group">
+                        <label>{{ _('排序') }}</label>
+                        <input type="number" x-model.number="formData.sort_order" min="0" placeholder="{{ _('數字越小越前面') }}">
+                    </div>
+                    <!-- CSS 編輯區（編輯模式才顯示） -->
+                    <div class="fw-form-group" x-show="editingTheme">
+                        <label>{{ _('CSS 內容') }} <span style="font-weight: normal; color: #999; font-size: 12px;">(<span x-text="(formData.css_content || '').length"></span> {{ _('字元)') }}</span></label>
+                        <textarea x-model="formData.css_content" rows="12"
+                                  style="font-family: monospace; font-size: 12px; line-height: 1.4;"
+                                  placeholder="[data-form-theme=&quot;your-theme&quot;] { ... }"></textarea>
+                    </div>
+                </div>
+                <div class="fw-modal-footer">
+                    <button type="button" class="fw-btn" @click="closeModal()">{{ _('取消') }}</button>
+                    <button type="submit" class="fw-btn primary" :disabled="saving">
+                        <span x-show="!saving" x-text="editingTheme ? __('儲存變更') : __('建立主題')"></span>
+                        <span x-show="saving">{{ _('處理中...') }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 上傳 CSS Modal -->
+    <div x-show="showUploadModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content" style="width: 480px;">
+            <div class="fw-modal-header">
+                <h3>{{ _('上傳 CSS') }}</h3>
+                <button @click="showUploadModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <p style="margin-bottom: 12px;">
+                    {{ _('為「') }}<strong x-text="uploadTarget?.display_name"></strong>{{ _('」上傳 CSS 檔案，將覆蓋現有內容。') }}
+                </p>
+                <input type="file" accept=".css" @change="handleFileSelect($event)" id="css-file-input">
+                <p x-show="uploadFileName" style="margin-top: 8px; font-size: 13px; color: #666;">
+                    {{ _('已選擇:') }} <span x-text="uploadFileName"></span>
+                    (<span x-text="formatSize(uploadFileSize)"></span>)
+                </p>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showUploadModal = false">{{ _('取消') }}</button>
+                <button class="fw-btn primary" @click="uploadCSS()" :disabled="!uploadFile || uploading">
+                    <span x-show="!uploading">{{ _('上傳') }}</span>
+                    <span x-show="uploading">{{ _('上傳中...') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 刪除確認 Modal -->
+    <div x-show="showDeleteModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content" style="width: 400px;">
+            <div class="fw-modal-header">
+                <h3>{{ _('確認刪除') }}</h3>
+                <button @click="showDeleteModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <p>{{ _('確定要刪除「') }}<strong x-text="deletingTheme?.display_name"></strong>{{ _('」嗎？') }}</p>
+                <p style="color: #dc2626; font-size: 13px;">{{ _('已套用此主題的表單將回退至預設風格。') }}</p>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showDeleteModal = false">{{ _('取消') }}</button>
+                <button class="fw-btn danger" @click="deleteTheme()">{{ _('確認刪除') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.show" x-cloak class="fw-toast" :class="'fw-toast-' + toast.type" x-text="toast.message"></div>
+
+</div>
+
+<script src="{{ url_for('static', filename='modules/form_workflow/js/form-themes.js') }}"></script>
+{% endblock %}

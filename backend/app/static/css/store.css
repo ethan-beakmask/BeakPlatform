@@ -1,0 +1,174 @@
+/* store.css -- 內部商場 */
+
+.store-subtitle {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* 篩選列 */
+.store-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ddd;
+}
+
+.store-filter-btn {
+    padding: 6px 16px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.store-filter-btn.active {
+    background: #2c3e50;
+    color: #fff;
+    border-color: #2c3e50;
+}
+
+.store-filter-btn:hover:not(.active) {
+    background: #f0f0f0;
+}
+
+/* 商品網格 */
+.store-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* 商品卡片 */
+.store-card {
+    border: 1px solid #ddd;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+.store-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+}
+
+.store-card-icon {
+    font-size: 20px;
+    color: #2c3e50;
+}
+
+.store-card-badge-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.store-card-type {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: #e9ecef;
+    color: #495057;
+}
+
+.store-card-version {
+    font-size: 11px;
+    padding: 2px 6px;
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.store-card-body {
+    padding: 16px;
+    flex: 1;
+}
+
+.store-card-title {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.store-card-desc {
+    font-size: 13px;
+    color: #666;
+    margin: 0 0 8px 0;
+    line-height: 1.5;
+}
+
+.store-card-category {
+    font-size: 12px;
+    color: #888;
+}
+
+.store-card-footer {
+    padding: 12px 16px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* 安裝按鈕 */
+.store-install-btn {
+    padding: 6px 20px;
+    font-size: 13px;
+}
+
+/* 已安裝狀態 */
+.store-installed-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.store-installed-badge {
+    font-size: 12px;
+    padding: 2px 10px;
+    background: #d4edda;
+    color: #155724;
+}
+
+.store-upgrade-badge {
+    font-size: 12px;
+    padding: 2px 10px;
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* 狀態訊息 */
+.store-loading {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+}
+
+.store-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+}
+
+.store-error {
+    padding: 12px 16px;
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 16px;
+}
+
+.store-success {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    padding: 12px 24px;
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    z-index: 1000;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}

@@ -1,0 +1,83 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ job_title.name }} - {{ _('職稱詳情') }} - BeakMask{% endblock %}
+
+{% block content %}
+<h1>{{ job_title.name }}</h1>
+
+<p>
+    <a href="{{ url_for('job_titles.list_job_titles') }}">{{ _('[返回列表]') }}</a>
+    <a href="{{ url_for('job_titles.edit_job_title', secure_code=job_title.secure_code) }}">{{ _('[編輯]') }}</a>
+</p>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th style="text-align: left; background: #f0f0f0; width: 150px;">{{ _('職稱代碼') }}</th>
+        <td><code>{{ job_title.code }}</code></td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">{{ _('職稱名稱') }}</th>
+        <td>{{ job_title.name }}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">{{ _('英文名稱') }}</th>
+        <td>{{ job_title.name_en or '-' }}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">{{ _('簡稱') }}</th>
+        <td>{{ job_title.short_name or '-' }}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">{{ _('職等') }}</th>
+        <td>
+            {% if job_title.job_level %}
+            <a href="{{ url_for('job_levels.view_job_level', secure_code=job_title.job_level.secure_code) }}">
+                {{ job_title.job_level.code }} - {{ job_title.job_level.name }}
+            </a>
+            {% else %}
+            -
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">{{ _('職系') }}</th>
+        <td>
+            {% if job_title.job_family %}
+            <a href="{{ url_for('job_families.view_job_family', secure_code=job_title.job_family.secure_code) }}">
+                {{ job_title.job_family.name }}
+            </a>
+            ({{ job_title.job_family.family_type }})
+            {% else %}
+            -
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">{{ _('管理職') }}</th>
+        <td>{% if job_title.is_supervisor %}{{ _('是 (帶人)') }}{% else %}{{ _('否') }}{% endif %}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">{{ _('描述') }}</th>
+        <td>{{ job_title.description or '-' }}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">{{ _('狀態') }}</th>
+        <td>{% if job_title.is_active %}{{ _('啟用') }}{% else %}{{ _('停用') }}{% endif %}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">{{ _('系統預設') }}</th>
+        <td>{% if job_title.is_system_default %}{{ _('是 (不可刪除)') }}{% else %}{{ _('否') }}{% endif %}</td>
+    </tr>
+</table>
+
+{% if job_title.employees %}
+<h3 style="margin-top: 30px;">{{ _('擁有此職稱的企業成員') }}</h3>
+<ul>
+    {% for emp in job_title.employees %}
+    {% if not emp.is_deleted %}
+    <li>{{ emp.user.display_name if emp.user else '?' }}</li>
+    {% endif %}
+    {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

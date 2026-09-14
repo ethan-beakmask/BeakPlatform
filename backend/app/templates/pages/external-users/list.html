@@ -1,0 +1,100 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('外部廠商帳號') }} - BeakMask{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1 style="margin: 0;">{{ _('外部廠商帳號') }}</h1>
+    <a href="{{ url_for('external_users.create_external_user') }}"
+       class="btn btn-primary">
+        {{ _('+ 新增外部廠商') }}
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div style="background: #fef3c7; padding: 12px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #fcd34d;">
+    <strong style="color: #92400e;">{{ _('外部廠商') }}</strong>
+    <span style="color: #78350f;">{{ _('：廠商、訪客、合作夥伴等非企業正式企業成員。需指定歸屬群組並使用外部專用編號。') }}</span>
+</div>
+
+{% if users %}
+<table class="data-table bordered" style="width: 100%;" x-data="sortableTable()">
+    <thead>
+        <tr>
+            <th data-sort="text">{{ _('編號') }}</th>
+            <th data-sort="text">{{ _('帳號') }}</th>
+            <th data-sort="text">{{ _('姓名') }}</th>
+            <th data-sort="text">{{ _('歸屬群組') }}</th>
+            <th data-sort="text" style="text-align: center;">{{ _('狀態') }}</th>
+            <th style="text-align: center;">{{ _('操作') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr {% if not user.is_active %}style="background: #f3f4f6; color: #9ca3af;"{% endif %}>
+            <td><code>{{ user.employee_id or '-' }}</code></td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.display_name }}</td>
+            <td>
+                {% if user.groups %}
+                    {% for group in user.groups %}
+                    <span style="background: #e0e7ff; color: #3730a3; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; margin-right: 4px;">
+                        {{ group.name }}
+                    </span>
+                    {% endfor %}
+                {% else %}
+                    <span class="text-muted">-</span>
+                {% endif %}
+            </td>
+            <td style="text-align: center;">
+                {% if user.is_active %}
+                <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">{{ _('啟用') }}</span>
+                {% else %}
+                <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">{{ _('停用') }}</span>
+                {% endif %}
+            </td>
+            <td style="text-align: center;">
+                <a href="{{ url_for('external_users.edit_external_user', secure_code=user.secure_code) }}" style="color: #2563eb;">{{ _('編輯') }}</a>
+                <a href="{{ url_for('external_users.toggle_status', secure_code=user.secure_code) }}"
+                   style="color: #2563eb; margin-left: 8px;"
+                   onclick="event.preventDefault(); document.getElementById('toggle-{{ user.secure_code }}').submit();">
+                    {% if user.is_active %}{{ _('停用') }}{% else %}{{ _('啟用') }}{% endif %}
+                </a>
+                <form id="toggle-{{ user.secure_code }}" method="POST" action="{{ url_for('external_users.toggle_status', secure_code=user.secure_code) }}" style="display: none;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                </form>
+                <a href="#" class="text-danger" style="margin-left: 8px;"
+                   onclick="event.preventDefault(); if(confirm(__('確定要刪除外部廠商「{name}」嗎？', {name: {{ user.display_name|tojson|forceescape }} }))) document.getElementById('delete-{{ user.secure_code }}').submit();">
+                    {{ _('刪除') }}
+                </a>
+                <form id="delete-{{ user.secure_code }}" method="POST" action="{{ url_for('external_users.delete_external_user', secure_code=user.secure_code) }}" style="display: none;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="color: #6b7280;">{{ _('尚無外部廠商帳號。') }}</p>
+{% endif %}
+
+<div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
+    <h3 style="margin-top: 0;">{{ _('說明') }}</h3>
+    <ul class="text-muted" style="margin: 0; padding-left: 20px;">
+        <li>{{ _('外部廠商必須歸屬至少一個群組') }}</li>
+        <li>{{ _('外部廠商使用「外部專用」編號規則') }}</li>
+        <li>{{ _('如尚未建立外部專用編號，請先到「用戶編號規則」頁面建立') }}</li>
+        <li>{{ _('停用的外部廠商無法登入系統') }}</li>
+    </ul>
+</div>
+{% endblock %}

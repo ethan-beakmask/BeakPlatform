@@ -1,0 +1,176 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('速率限制') }} - BeakPlatform{% endblock %}
+
+{% block head %}
+<style>
+    .rl-container { max-width: 720px; margin: 0 auto; }
+    .rl-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+    }
+    .rl-card h4 { margin: 0 0 8px 0; font-size: 15px; color: #111827; }
+    .rl-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .rl-input {
+        width: 240px;
+        padding: 6px 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    .rl-input:focus { outline: none; border-color: #2563eb; }
+    .rl-source { font-size: 12px; }
+    .rl-source-org { color: #059669; }
+    .rl-source-system { color: #0369a1; }
+    .rl-system-default { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .rl-actions { margin-top: 20px; display: flex; gap: 10px; }
+    .rl-info {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 6px;
+        padding: 16px 20px;
+        margin-top: 24px;
+    }
+    .rl-info h4 { margin: 0 0 10px 0; font-size: 15px; }
+    .rl-info table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .rl-info th, .rl-info td { text-align: left; padding: 4px 8px; border-bottom: 1px solid #e0f2fe; }
+    .rl-info th { color: #0369a1; }
+    .rl-msg {
+        padding: 10px 14px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+    .rl-msg-ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .rl-msg-err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rl-container" x-data="orgRateLimits()" x-init="load()">
+    <h2>{{ _('速率限制設定') }}</h2>
+    <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">
+        {{ _('設定本企業認證頁面的 POST 嘗試頻率上限。未設定時使用系統預設值。') }}
+    </p>
+
+    <div x-show="msg" class="rl-msg" :class="msgErr ? 'rl-msg-err' : 'rl-msg-ok'"
+         x-text="msg" x-transition></div>
+
+    <template x-if="categories.length > 0">
+        <div>
+            <template x-for="cat in categories" :key="cat.key">
+                <div class="rl-card">
+                    <h4 x-text="cat.label"></h4>
+                    <div class="rl-row">
+                        <input type="text" class="rl-input" x-model="cat.value"
+                               :placeholder="cat.system_default">
+                        <template x-if="cat.source === 'org'">
+                            <span class="rl-source rl-source-org">{{ _('(企業自訂)') }}</span>
+                        </template>
+                        <template x-if="cat.source === 'system'">
+                            <span class="rl-source rl-source-system">{{ _('(系統預設)') }}</span>
+                        </template>
+                        <button style="font-size: 12px; padding: 3px 8px; border: 1px solid #d1d5db;
+                                       border-radius: 3px; background: #f9fafb; cursor: pointer;"
+                                @click="cat.value = ''"
+                                x-show="cat.source === 'org'"
+                                title="{{ _('清除企業設定，回歸系統預設') }}">{{ _('恢復預設') }}</button>
+                    </div>
+                    <div class="rl-system-default">
+                        {{ _('系統預設:') }} <span x-text="cat.system_default"></span>
+                    </div>
+                </div>
+            </template>
+
+            <div class="rl-actions">
+                <button class="btn btn-primary" @click="save()">{{ _('儲存') }}</button>
+            </div>
+        </div>
+    </template>
+
+    <template x-if="categories.length === 0 && !loading">
+        <p style="color: #6b7280;">{{ _('載入中...') }}</p>
+    </template>
+
+    <div class="rl-info">
+        <h4>{{ _('格式說明') }}</h4>
+        <table>
+            <thead><tr><th>{{ _('格式') }}</th><th>{{ _('說明') }}</th></tr></thead>
+            <tbody>
+                <tr><td><code>20 per 10 minutes</code></td><td>{{ _('每 10 分鐘最多 20 次') }}</td></tr>
+                <tr><td><code>5 per minute</code></td><td>{{ _('每分鐘最多 5 次') }}</td></tr>
+                <tr><td><code>3 per hour</code></td><td>{{ _('每小時最多 3 次') }}</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 8px; font-size: 13px; color: #6b7280;">
+            {{ _('限制以「帳號 + 來源 IP」計算，同企業不同帳號互不影響。清空欄位並儲存即可恢復系統預設。') }}
+        </p>
+    </div>
+</div>
+
+<script>
+function orgRateLimits() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    return {
+        categories: [],
+        loading: false,
+        msg: '',
+        msgErr: false,
+
+        async load() {
+            this.loading = true;
+            try {
+                const res = await fetch('{{ app_prefix }}/api/security/rate-limits', {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.categories = data.data.categories;
+                } else {
+                    this.msg = data.error || __('載入失敗');
+                    this.msgErr = true;
+                }
+            } catch (e) {
+                this.msg = __('載入失敗: {message}', {message: e.message});
+                this.msgErr = true;
+            }
+            this.loading = false;
+        },
+
+        async save() {
+            try {
+                const body = {};
+                this.categories.forEach(c => { body[c.key] = c.value; });
+                const res = await fetch('{{ app_prefix }}/api/security/rate-limits', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.msg = data.message;
+                    this.msgErr = false;
+                    await this.load();
+                } else {
+                    let errMsg = data.error || __('儲存失敗');
+                    if (data.details) {
+                        errMsg += ': ' + data.details.join(', ');
+                    }
+                    this.msg = errMsg;
+                    this.msgErr = true;
+                }
+            } catch (e) {
+                this.msg = __('儲存失敗: {message}', {message: e.message});
+                this.msgErr = true;
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,268 @@
+/* sc-cases.css -- 資安案件處置中心（SIEM 式雙欄佈局） */
+
+.sc-main {
+    display: grid;
+    /* 左清單加寬（原 420px）：兩列版案件卡要放得下案件名稱不截斷。
+     * 兩欄都給 minmax(0, ...)，否則右側 min-width:720px 的明細表格
+     * 會把 1fr 撐開、整個版面超出 1000px 容器。 */
+    grid-template-columns: minmax(0, 460px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+/* ---- 左側案件清單 ---- */
+.sc-case-list {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    /* 320 = 平台固定頂欄 137 + 容器上下 padding 32 + 扁平頁首 49+10
+     *       + 統計帶 34+10 + 邊距，實測到「貼齊視窗底且整頁不出現捲軸」 */
+    max-height: calc(100vh - 320px);
+    overflow-y: auto;
+}
+.sc-sort-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-white);
+    /* 清單容器自己捲動（overflow-y: auto），不釘住的話捲兩筆案件就看不到排序鈕 */
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.sc-sort-btn {
+    appearance: none;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1.2;
+    padding: 4px 7px;
+    white-space: nowrap;
+}
+.sc-sort-btn:hover {
+    color: var(--color-text);
+    background: var(--color-bg-light);
+}
+.sc-sort-btn.active {
+    color: var(--color-primary);
+    background: var(--color-bg-light);
+    border-color: var(--color-primary);
+}
+.sc-sort-btn span {
+    margin-left: 4px;
+}
+.sc-sort-btn:not(.active) span {
+    color: var(--color-text-muted);
+}
+.sc-truncated-note {
+    color: var(--color-text-muted);
+    font-size: 12px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border);
+}
+.sc-case-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    border-left: 4px solid transparent;
+    cursor: pointer;
+}
+.sc-case-item:hover { background: #fafbfc; }
+.sc-case-item.selected { background: #eff6ff; }
+.sc-case-item.sev-5, .sc-case-item.sev-4 { border-left-color: #dc2626; }
+.sc-case-item.sev-3 { border-left-color: #f59e0b; }
+.sc-case-item.sev-2, .sc-case-item.sev-1 { border-left-color: #9ca3af; }
+
+/* 兩列版案件卡：列1 = 案件名稱 + 案件等級，列2 = 編號 + 立案時間（+SLA） */
+.sc-case-row1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.sc-case-row2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #666;
+}
+.sc-case-subject {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sc-case-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* 嚴重度徽章 */
+.sc-sev {
+    display: inline-block;
+    min-width: 24px;
+    text-align: center;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.sc-sev-5, .sc-sev-4 { background: #fee2e2; color: #991b1b; }
+.sc-sev-3 { background: #fef3c7; color: #92400e; }
+.sc-sev-2, .sc-sev-1, .sc-sev-0 { background: #e5e7eb; color: #4b5563; }
+
+/* SLA 倒數 */
+.sc-sla { font-size: 11px; font-weight: 600; color: #059669; }
+.sc-sla.warn { color: #f59e0b; }
+.sc-sla.overdue { color: #dc2626; }
+
+/* ---- 右側詳情 ---- */
+.sc-detail {
+    min-width: 0;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px;
+    max-height: calc(100vh - 320px);
+    overflow-y: auto;
+}
+.sc-detail-empty {
+    color: #9ca3af;
+    text-align: center;
+    padding: 60px 0;
+}
+.sc-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+}
+.sc-detail-header h3 { margin: 0; font-size: 16px; }
+
+.sc-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #e5e7eb;
+    margin: 0 0 12px 0;
+    overflow-x: auto;
+}
+.sc-tab {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 12px;
+    white-space: nowrap;
+}
+.sc-tab:hover {
+    color: #111827;
+    background: #f9fafb;
+}
+.sc-tab.active {
+    color: #1d4ed8;
+    border-bottom-color: #1d4ed8;
+}
+.sc-tab-panel {
+    min-width: 0;
+}
+.sc-table-scroll {
+    overflow-x: auto;
+    max-width: 100%;
+}
+.sc-table-scroll .od-table {
+    min-width: 720px;
+}
+.sc-table-scroll th,
+.sc-table-scroll td {
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.sc-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px 16px;
+    margin-bottom: 14px;
+}
+.sc-field-label { font-size: 11px; color: #888; }
+.sc-field-value { font-size: 13px; word-break: break-all; }
+.sc-field-value.mono { font-family: ui-monospace, SFMono-Regular, monospace; }
+
+/* 風險分數 */
+.sc-risk {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+.sc-risk.high { background: #fee2e2; color: #991b1b; }
+.sc-risk.mid  { background: #fef3c7; color: #92400e; }
+.sc-risk.low  { background: #d1fae5; color: #065f46; }
+
+/* 1-click 處置按鈕列 */
+.sc-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+}
+.sc-comment { margin: 8px 0; }
+.sc-comment textarea {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 13px;
+}
+
+/* 簽核歷程 */
+.sc-approval-trail {
+    border-left: 3px solid #e5e7eb;
+    margin: 4px 0 10px 4px;
+    padding-left: 12px;
+}
+.sc-approval-item { margin-bottom: 8px; }
+.sc-approval-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+.sc-approval-who { font-weight: 600; }
+.sc-approval-delegate { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.sc-approval-comment {
+    margin-top: 2px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border-radius: 4px;
+    font-size: 13px;
+    white-space: pre-wrap;
+}
+
+.sc-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 14px 0 6px 0;
+    color: #374151;
+}

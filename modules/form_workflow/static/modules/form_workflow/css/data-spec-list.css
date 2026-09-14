@@ -1,0 +1,479 @@
+/* Data Spec List */
+
+.ds-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px 24px;
+}
+
+.ds-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.ds-header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ds-header .ds-meta {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}
+
+.ds-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ds-btn {
+    padding: 6px 14px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.ds-btn:hover {
+    background: #f3f4f6;
+}
+
+.ds-btn.primary {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+}
+
+.ds-btn.primary:hover {
+    background: #2563eb;
+}
+
+.ds-btn.success {
+    background: #10b981;
+    color: #fff;
+    border-color: #10b981;
+}
+
+.ds-btn.success:hover {
+    background: #059669;
+}
+
+.ds-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 主卡片 */
+.ds-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* 統計摘要 */
+.ds-summary {
+    display: flex;
+    gap: 16px;
+    padding: 10px 14px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.ds-summary strong {
+    color: #111827;
+}
+
+/* 空狀態 */
+.ds-empty {
+    padding: 40px;
+    text-align: center;
+    color: #9ca3af;
+}
+
+.ds-empty p {
+    margin: 4px 0;
+}
+
+/* 主表格 */
+.ds-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.ds-table thead th {
+    background: #f9fafb;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.ds-table tbody td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+}
+
+.ds-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+/* 展開切換列 */
+.ds-group-row {
+    cursor: pointer;
+}
+
+.ds-group-row td {
+    background: #fafbfc;
+    font-weight: 500;
+}
+
+.ds-group-row:hover td {
+    background: #f0f1f3;
+}
+
+.ds-expand-icon {
+    display: inline-block;
+    width: 16px;
+    font-size: 11px;
+    color: #6b7280;
+    transition: transform 0.15s;
+}
+
+.ds-expand-icon.expanded {
+    transform: rotate(90deg);
+}
+
+/* 子列 */
+.ds-sub-row td {
+    padding-left: 32px;
+    font-size: 12px;
+    color: #374151;
+    background: #fff;
+}
+
+.ds-sub-row:hover td {
+    background: #f9fafb;
+}
+
+/* 操作按鈕 */
+.ds-actions {
+    white-space: nowrap;
+    text-align: right;
+}
+
+.ds-actions button {
+    padding: 3px 8px;
+    font-size: 12px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-left: 4px;
+}
+
+.ds-actions button:hover {
+    background: #f3f4f6;
+}
+
+.ds-actions button.primary {
+    color: #3b82f6;
+    border-color: #93c5fd;
+}
+
+.ds-actions button.primary:hover {
+    background: #eff6ff;
+}
+
+/* Badge */
+.ds-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: 2px;
+    font-weight: 500;
+}
+
+.ds-badge.active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.ds-badge.none {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.ds-badge.published {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.ds-badge.suspended {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.ds-badge.archived {
+    background: #e5e7eb;
+    color: #6b7280;
+}
+
+/* Modal (複用 fs- 規範) */
+.ds-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ds-modal-content {
+    background: #fff;
+    border-radius: 6px;
+    width: 560px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.ds-modal-content.wide {
+    width: 720px;
+}
+
+.ds-modal-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ds-modal-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ds-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.ds-modal-footer {
+    padding: 10px 16px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* 範本選擇列表 */
+.ds-template-list {
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.ds-template-item {
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ds-template-item:hover {
+    background: #f9fafb;
+    border-color: #93c5fd;
+}
+
+.ds-template-item.selected {
+    background: #eff6ff;
+    border-color: #3b82f6;
+}
+
+.ds-template-item .name {
+    font-weight: 500;
+}
+
+.ds-template-item .code {
+    font-size: 11px;
+    color: #6b7280;
+    font-family: monospace;
+}
+
+/* 比對結果 (複用 field-spec-editor 結構) */
+.ds-drift-item {
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    border-radius: 3px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ds-drift-item.error {
+    background: #fef2f2;
+    border-left: 3px solid #dc2626;
+}
+
+.ds-drift-item.warning {
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+}
+
+.ds-drift-item.info {
+    background: #f0f9ff;
+    border-left: 3px solid #3b82f6;
+}
+
+.ds-drift-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.ds-drift-badge.error {
+    background: #dc2626;
+    color: #fff;
+}
+
+.ds-drift-badge.warning {
+    background: #f59e0b;
+    color: #fff;
+}
+
+.ds-drift-badge.info {
+    background: #3b82f6;
+    color: #fff;
+}
+
+/* Mono text */
+.ds-mono {
+    font-family: monospace;
+    font-size: 12px;
+}
+
+/* 清單工具列 */
+.ds-list-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+/* 小按鈕 */
+.ds-btn.sm {
+    padding: 3px 10px;
+    font-size: 12px;
+}
+
+/* 隱藏按鈕 (紅色風格) */
+.ds-btn.danger {
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+.ds-btn.danger:hover {
+    background: #fef2f2;
+}
+
+.ds-btn.danger:disabled {
+    color: #d1d5db;
+    border-color: #d1d5db;
+    background: #fff;
+}
+
+/* Checkbox */
+.ds-checkbox {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    margin: 0;
+}
+
+/* 選取的子列 */
+.ds-sub-row.selected td {
+    background: #eff6ff;
+}
+
+.ds-sub-row.selected:hover td {
+    background: #dbeafe;
+}
+
+/* 已隱藏區塊 */
+.ds-hidden-section {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 2px solid #e5e7eb;
+}
+
+.ds-hidden-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.ds-hidden-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+/* 子列操作小按鈕 */
+.ds-actions button.sm {
+    padding: 2px 8px;
+    font-size: 11px;
+}
+
+/* 區塊標題 */
+.ds-section {
+    margin-bottom: 20px;
+}
+
+.ds-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.ds-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+/* 載入中 */
+.ds-loading {
+    padding: 40px;
+    text-align: center;
+    color: #9ca3af;
+}

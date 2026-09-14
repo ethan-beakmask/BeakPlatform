@@ -1,0 +1,21 @@
+# Integrated-WAF 熱備切換組態（bash 語法，KEY=VALUE）。
+# 複製成 failover.conf 放在 failover.sh 旁邊（或 /etc/integrated-waf/failover.conf），
+# failover.conf 含內網 IP，不要進版控。
+
+SERVICE_IP="192.168.1.20"          # 只綁在現役節點的服務 IP（被保護網站與管制端只放行它）
+
+NODE_A="192.168.1.11"              # 節點 A 的管理 IP（固定 IP）
+NODE_A_NAME="primary"              # 給 `failover.sh to primary` 用的名稱，隨意取
+NODE_B="192.168.1.12"              # 節點 B 的管理 IP
+NODE_B_NAME="standby"
+
+SSH_USER="ubuntu"                  # 兩台防禦端的 SSH 帳號（要能 sudo -n）
+SSH_OPTS_STR="-i ~/.ssh/waf-node"  # 額外的 ssh 參數；~/ 會自動展開
+INSTALL_DIR="/opt/integrated-waf"  # 防禦端的安裝目錄
+LOG_DIR="/var/log/integrated-waf"  # 每次切換的輸出落地目錄（空字串＝不落地）
+
+# ---- 健康監看（monitor_probe.sh）----
+PUBLIC_URL="https://example.com/"          # 對外網址，探測期望 3xx/2xx
+PUBLIC_HOST="example.com"                  # 給 curl --resolve 用；一定要指定 IPv4，否則可能測到另一條路徑
+INTERNAL_URL="http://192.168.1.20:8080/"   # 服務 IP 上的 WAF；000 才算死（404 代表節點活著）
+GATEWAY_IP="192.168.1.1"                   # 與兩台管理 IP 一起用來判定「管理機自己斷網」

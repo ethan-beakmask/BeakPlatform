@@ -1,0 +1,135 @@
+# BeakMask .gitignore
+
+# =============================================================================
+# SECURITY: Never commit these files!
+# =============================================================================
+.env
+*.pem
+*.key
+*.crt
+*.json.bak
+secrets/
+credentials/
+
+# Google Cloud Service Account Keys
+*-*.json
+beakmask-*.json
+# 例外：npm 依賴鎖定檔（被上面的 *-*.json 通則誤傷，需進版控才能重現 E2E 環境）
+!package-lock.json
+# 例外：Form.io 前端翻譯檔（同樣被 *-*.json 誤傷，執行期需要）
+!backend/app/static/vendor/formio-i18n-*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+venv-docs/
+ENV/
+env/
+.venv/
+
+# MkDocs 建置產物（使用者文件站，由 docs/ 產生）
+site/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Testing
+.coverage
+.pytest_cache/
+test-results/
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Node (if frontend uses it)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Semgrep
+.semgrep_logs/
+
+# Uploaded files (managed by FileService, not in static/)
+backend/uploads/
+
+# =============================================================================
+# E-MailRelay (系統郵件服務)
+# =============================================================================
+# 認證檔案（包含 SMTP 密碼）- 絕對不可上傳
+emailrelay.auth
+emailrelay.auth-backup
+# Spool 和 logs（運行時產生）
+E-MailRelay/spool/
+E-MailRelay/logs/
+E-MailRelay/*.pid
+temp_*
+
+# Brand assets (原始設計檔，不進版控)
+dev-notes/BeakMask*
+backend/encrypted_storage/
+
+# push_github.sh 的秘密值掃描清單（PF-107）。
+# 放本機才有的密碼（例如防禦節點上 Grafana / ClickHouse 的現行值），一行一個。
+# 這個檔進版控就等於把密碼 commit 進歷史，正是它要防的事。
+scripts/.secrets-scan-extra
+
+# curl 測試用的 cookie jar（VERIFY-01 驗收時大量產生）
+cj*.txt
+q.txt
+p4_cj.txt
+
+# 熱備切換的實際組態（含內網 IP）
+Integrated-WAF/failover.conf

@@ -1,0 +1,84 @@
+<!-- ==================== 企業專屬資料庫 ==================== -->
+<div id="section-orgdatabases" class="settings-section" :class="{ active: activeSection === 'orgdatabases' }">
+    <h2>{{ _('企業專屬資料庫') }}</h2>
+    <p>{{ _('檢視企業專屬 PostgreSQL 資料庫的佈建連線、企業狀態與孤兒資源。') }}</p>
+
+    <div x-show="message.orgdatabases" x-cloak
+         :class="'message ' + (message.orgdatabasesError ? 'message-error' : 'message-success')"
+         x-text="message.orgdatabases"
+         x-transition></div>
+
+    <template x-if="loading.orgdatabases">
+        <div class="settings-card">
+            <div class="loading">{{ _('正在檢查企業專屬資料庫...') }}</div>
+        </div>
+    </template>
+
+    <div class="settings-card">
+        <h4>{{ _('佈建連線自檢') }}</h4>
+        <p>
+            <span class="badge"
+                  :class="orgdatabases.provisioning && orgdatabases.provisioning.ok ? 'badge-success' : 'badge-danger'"
+                  x-text="orgdatabases.provisioning && orgdatabases.provisioning.ok ? __('正常') : __('異常')"></span>
+        </p>
+        <table class="config-table">
+            <tbody>
+                <tr>
+                    <td>{{ _('SYNC_PG_ADMIN_URL 已設定') }}</td>
+                    <td x-text="orgDatabaseCheckLabel(orgdatabases.provisioning && orgdatabases.provisioning.configured)"></td>
+                </tr>
+                <tr>
+                    <td>{{ _('SYNC_CREDENTIAL_KEY 已設定') }}</td>
+                    <td x-text="orgDatabaseCheckLabel(orgdatabases.provisioning && orgdatabases.provisioning.credential_key)"></td>
+                </tr>
+                <tr>
+                    <td>{{ _('連線成功') }}</td>
+                    <td x-text="orgDatabaseCheckLabel(orgdatabases.provisioning && orgdatabases.provisioning.reachable)"></td>
+                </tr>
+                <tr>
+                    <td>{{ _('具備 CREATEDB 權限') }}</td>
+                    <td x-text="orgDatabaseCheckLabel(orgdatabases.provisioning && orgdatabases.provisioning.can_create_db)"></td>
+                </tr>
+                <tr>
+                    <td>{{ _('具備 CREATEROLE 權限') }}</td>
+                    <td x-text="orgDatabaseCheckLabel(orgdatabases.provisioning && orgdatabases.provisioning.can_create_role)"></td>
+                </tr>
+                <template x-if="orgdatabases.provisioning && orgdatabases.provisioning.role">
+                    <tr>
+                        <td>{{ _('角色') }}</td>
+                        <td><code x-text="orgdatabases.provisioning.role"></code></td>
+                    </tr>
+                </template>
+                <template x-if="orgdatabases.provisioning && orgdatabases.provisioning.error">
+                    <tr>
+                        <td>{{ _('錯誤') }}</td>
+                        <td x-text="orgdatabases.provisioning.error"></td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="settings-card">
+        <h4>{{ _('摘要') }}</h4>
+        <table class="config-table">
+            <tbody>
+                <tr><td>{{ _('企業總數') }}</td><td x-text="orgdatabases.summary.total || 0"></td></tr>
+                <tr><td>{{ _('正常') }}</td><td x-text="orgdatabases.summary.ok || 0"></td></tr>
+                <tr><td>{{ _('異常') }}</td><td x-text="orgdatabases.summary.abnormal || 0"></td></tr>
+                <tr><td>{{ _('孤兒資料庫') }}</td><td x-text="orgdatabases.summary.orphan_databases || 0"></td></tr>
+                <tr><td>{{ _('孤兒角色') }}</td><td x-text="orgdatabases.summary.orphan_roles || 0"></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <template x-if="orgDatabaseHasIssues()">
+        <div class="message message-error">
+            {{ _('偵測到企業專屬資料庫異常，請到「企業獨立資料庫管理」頁處理。') }}
+        </div>
+    </template>
+
+    <div class="settings-card">
+        <a href="{{ url_for('org_databases.system_view') }}">{{ _('前往企業獨立資料庫管理') }}</a>
+    </div>
+</div>

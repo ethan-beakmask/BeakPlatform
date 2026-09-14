@@ -1,0 +1,481 @@
+{% extends 'layouts/base.html' %}
+
+{% block help_doc %}manual/02_platform_admin/organizations{% endblock %}
+
+{% block title %}{{ _('企業管理') }} - BeakMask{% endblock %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/organizations.css">
+{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="org-page" x-data="orgManager()" x-cloak>
+    <nav class="org-tabs" aria-label="{{ _('企業管理分頁') }}">
+        <button type="button" class="org-tab" :class="{ 'is-active': activeTab === 'list' }"
+                @click="switchTab('list')">
+            {{ _('企業清單') }}
+        </button>
+        <button type="button" class="org-tab org-tab-danger" :class="{ 'is-active': activeTab === 'harddelete' }"
+                @click="switchTab('harddelete')">
+            {{ _('永久刪除已軟刪除的企業') }}
+        </button>
+    </nav>
+
+    <section class="org-tab-panel" x-show="activeTab === 'list'">
+    <div class="outlook-layout">
+    <!-- 左側面板 - 企業列表 -->
+    <div class="left-panel">
+        <div class="panel-header">
+            <h2>
+                {{ _('企業管理') }}
+                <a href="{{ url_for('organizations.create_org') }}" class="btn btn-primary btn-sm">{{ _('+ 新增') }}</a>
+            </h2>
+            <div class="filter-row">
+                <input type="text" x-model="searchText" @input.debounce.300ms="applyFilter()"
+                       placeholder="{{ _('搜尋企業名稱/網域') }}">
+                <select x-model="conglomerateFilter" @change="applyFilter()">
+                    <option value="">{{ _('全部') }}</option>
+                    <option value="none">{{ _('無集團') }}</option>
+                    {% for c in conglomerates %}
+                    <option value="{{ c.secure_code }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm" @click="toggleConglomerateMode()"
+                        x-text="conglomerateMode ? __('取消集團設定') : __('集團設定')"></button>
+            </div>
+        </div>
+
+        <!-- 集團設定模式 -->
+        <div class="conglomerate-mode-bar" x-show="conglomerateMode" x-cloak>
+            <template x-if="!editingConglomerate">
+                <div>
+                    <input type="text" x-model="newConglomerateName" placeholder="{{ _('集團名稱') }}">
+                    <button type="button" class="btn btn-success btn-sm" @click="createConglomerate()">
+                        {{ _('建立 (') }}<span x-text="selectedOrgs.length"></span>)
+                    </button>
+                </div>
+            </template>
+            <template x-if="editingConglomerate">
+                <div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                        <input type="text" x-model="editingConglomerate.name">
+                        <button type="button" class="btn btn-success btn-sm" @click="updateConglomerate()">
+                            {{ _('更新 (') }}<span x-text="selectedOrgs.length"></span>)
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" @click="dissolveConglomerate()">{{ _('解散') }}</button>
+                        <button type="button" class="btn btn-secondary btn-sm" @click="cancelEditConglomerate()">{{ _('取消') }}</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- 企業列表 -->
+        <div class="org-list">
+            <div class="org-list-header">
+                <span class="col-id">ID</span>
+                <span class="col-name">{{ _('企業名稱') }}</span>
+                <span class="col-domain">{{ _('網域名稱') }}</span>
+                <span class="col-conglomerate">{{ _('集團') }}</span>
+                <span class="col-contract">{{ _('合約') }}</span>
+            </div>
+            {% for org in organizations %}
+            <div class="org-item{% if org.is_system_org %} org-system{% endif %}"
+                 :class="{'selected': selectedOrgCode === '{{ org.secure_code }}' || selectedOrgs.includes('{{ org.secure_code }}')}"
+                 @click="selectOrg('{{ org.secure_code }}')">
+
+                <template x-if="conglomerateMode">
+                    <input type="checkbox" style="margin-right: 4px;"
+                           :checked="selectedOrgs.includes('{{ org.secure_code }}')"
+                           @click.stop="toggleOrgSelection('{{ org.secure_code }}')">
+                </template>
+
+                <span class="org-id">{{ org.id }}</span>
+                <span class="org-name" title="{{ org.name }}">{{ org.name }}</span>
+                <span class="org-domain" title="{{ org.domain_name }}">{{ org.domain_name }}</span>
+                <span class="org-conglomerate">
+                    {% if org.conglomerate_secure_code and conglomerate_map.get(org.conglomerate_secure_code) %}
+                    <span class="badge badge-conglomerate"
+                          @click.stop="editConglomerateById('{{ org.conglomerate_secure_code }}')">
+                        {{ conglomerate_map[org.conglomerate_secure_code].name }}
+                    </span>
+                    {% endif %}
+                </span>
+                <span class="org-contract">
+                    {% if org.is_system_org %}
+                    <span class="badge badge-system">{{ _('系統') }}</span>
+                    {% else %}
+                    {% set active_count = org_active_counts.get(org.secure_code, 0) %}
+                    {% set total_count = org_total_counts.get(org.secure_code, 0) %}
+                    {% if total_count > 0 %}
+                    <span class="badge {% if active_count > 0 %}badge-contract{% else %}badge-no-contract{% endif %}">{{ active_count }}/{{ total_count }}</span>
+                    {% else %}
+                    <span class="badge badge-no-contract">{{ _('無約') }}</span>
+                    {% endif %}
+                    {% if not org.is_active %}
+                    <span class="badge badge-inactive">{{ _('停用') }}</span>
+                    {% endif %}
+                    {% endif %}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 分頁 -->
+        {% if pagination.pages > 1 %}
+        <div class="pagination-bar">
+            <span>{{ _('共 %(total)s 筆', total=pagination.total) }}</span>
+            <span>
+                {% if pagination.page > 1 %}
+                <a href="?page={{ pagination.page - 1 }}{% if search %}&search={{ search }}{% endif %}{% if conglomerate_filter %}&conglomerate={{ conglomerate_filter }}{% endif %}">&lt;</a>
+                {% endif %}
+                {{ _('第 %(page)s/%(pages)s 頁', page=pagination.page, pages=pagination.pages) }}
+                {% if pagination.page < pagination.pages %}
+                <a href="?page={{ pagination.page + 1 }}{% if search %}&search={{ search }}{% endif %}{% if conglomerate_filter %}&conglomerate={{ conglomerate_filter }}{% endif %}">&gt;</a>
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 右側面板 - 詳情 -->
+    <div class="right-panel">
+        {% if selected_org %}
+        <!-- 企業資訊 -->
+        <div class="detail-card">
+            <div class="detail-card-header">
+                <h3>{{ selected_org.name }}</h3>
+                <div style="display: flex; gap: 8px;">
+                    <a href="{{ url_for('org_admin_rescue.list_admins', org_code=selected_org.secure_code) }}"
+                       class="btn btn-primary btn-sm">{{ _('管理員管理') }}</a>
+                    <a href="{{ url_for('organizations.edit_org', secure_code=selected_org.secure_code) }}"
+                       class="btn btn-secondary btn-sm">{{ _('編輯企業') }}</a>
+                </div>
+            </div>
+            <div class="detail-card-body">
+                <table class="info-table">
+                    <tr><td>{{ _('企業代碼') }}</td><td>{{ selected_org.code }}</td></tr>
+                    <tr><td>{{ _('網域名稱') }}</td><td><code>{{ selected_org.domain_name }}</code></td></tr>
+                    {% set emp_url = external_url(url_for('auth.org_login', domain_name=selected_org.domain_name)) %}
+                    {% set ext_url = external_url(url_for('auth.org_public_login', domain_name=selected_org.domain_name)) %}
+                    {% if not emp_url or not ext_url %}
+                    <tr>
+                        <td>{{ _('登入 URL') }}</td>
+                        <td>
+                            <span class="external-url-warning">{{ _('尚未設定系統對外網址') }}</span>
+                            <a href="{{ url_for('hostconfig.server_settings') }}" class="btn btn-secondary btn-sm">{{ _('前往設定') }}</a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td>{{ _('企業成員登入 URL') }}</td>
+                        <td>
+                            {% if emp_url %}
+                            <div class="external-url-row">
+                                <a href="{{ emp_url }}" target="_blank"><code>{{ emp_url }}</code></a>
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        @click='copyLoginUrl("employee", {{ emp_url|tojson }})'
+                                        x-text="copiedLoginUrl === 'employee' ? __('已複製') : __('複製')"></button>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">{{ _('尚未設定') }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>{{ _('外部廠商登入 URL') }}</td>
+                        <td>
+                            {% if ext_url %}
+                            <div class="external-url-row">
+                                <a href="{{ ext_url }}" target="_blank"><code>{{ ext_url }}</code></a>
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        @click='copyLoginUrl("vendor", {{ ext_url|tojson }})'
+                                        x-text="copiedLoginUrl === 'vendor' ? __('已複製') : __('複製')"></button>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">{{ _('尚未設定') }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>{{ _('狀態') }}</td>
+                        <td>
+                            {% if selected_org.is_system_org %}{{ _('系統企業（永久有效）') }}
+                            {% elif selected_org.is_active %}{{ _('啟用') }}
+                            {% else %}<span class="text-danger">{{ _('停用') }}</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>{{ _('客戶類型') }}</td>
+                        <td>
+                            {% if selected_org.customer_type == 'TRIAL' %}{{ _('試用') }}
+                            {% elif selected_org.customer_type == 'FORMAL' %}{{ _('正式客戶') }}
+                            {% elif selected_org.customer_type == 'BLACKLIST' %}{{ _('黑名單') }}
+                            {% else %}{{ selected_org.customer_type }}{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td>{{ _('帳號上限') }}</td><td>{{ _('%(used)s / %(limit)s 個（僅計企業成員與外部廠商，不含管理員）', used=selected_org.get_active_user_count(), limit=selected_org.user_limit) }}</td></tr>
+                    {% if selected_org.conglomerate %}
+                    <tr><td>{{ _('所屬集團') }}</td><td><span class="badge badge-conglomerate">{{ selected_org.conglomerate.name }}</span></td></tr>
+                    {% endif %}
+                    {% if selected_org.contact_person %}
+                    <tr><td>{{ _('聯絡人') }}</td><td>{{ selected_org.contact_person }}</td></tr>
+                    {% endif %}
+                    {% if selected_org.contact_email %}
+                    <tr><td>{{ _('聯絡信箱') }}</td><td>{{ selected_org.contact_email }}</td></tr>
+                    {% endif %}
+                    {% if selected_org.contact_phone %}
+                    <tr><td>{{ _('聯絡電話') }}</td><td>{{ selected_org.contact_phone }}</td></tr>
+                    {% endif %}
+                    <tr><td>{{ _('建立時間') }}</td><td>{{ selected_org.created_at|tz_format('%Y-%m-%d %H:%M') if selected_org.created_at else '-' }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- 合約管理 -->
+        <div class="detail-card">
+            <div class="detail-card-header">
+                <h3>{{ _('合約管理 (%(contracts)s)', contracts=contracts|length) }}</h3>
+                <button type="button" class="btn btn-primary btn-sm" @click="openContractModal()">{{ _('+ 新增合約') }}</button>
+            </div>
+            <div class="detail-card-body">
+                {% if contract_period %}
+                <div class="contract-summary {% if contract_period.is_expired %}expired{% endif %}">
+                    <strong>{{ _('合約期間：') }}</strong>
+                    {{ contract_period.start.strftime('%Y-%m-%d') }} ~ {{ contract_period.end.strftime('%Y-%m-%d') }}
+                    （{% if contract_period.is_expired %}<span class="status-expired">{{ contract_period.remaining }}</span>{% else %}<span class="status-valid">{{ _('剩餘 %(remaining)s', remaining=contract_period.remaining) }}</span>{% endif %}）
+                </div>
+                {% elif selected_org.is_system_org %}
+                <div class="contract-summary">
+                    <strong>{{ _('系統企業：') }}</strong>{{ _('永久有效，無需合約') }}
+                </div>
+                {% endif %}
+
+                <div x-show="contracts.length > 0">
+                    <div style="margin-bottom: 8px; display: flex; gap: 4px;">
+                        <button type="button" class="btn btn-sm"
+                                :class="contractStatusFilter === 'all' ? 'btn-primary' : 'btn-secondary'"
+                                @click="contractStatusFilter = 'all'"
+                                x-text="__('全部 ({count})', {count: contracts.length})"></button>
+                        <button type="button" class="btn btn-sm"
+                                :class="contractStatusFilter === 'active' ? 'btn-primary' : 'btn-secondary'"
+                                @click="contractStatusFilter = 'active'"
+                                x-text="__('有效 ({count})', {count: contracts.filter(c => c.status === 'ACTIVE' && c.is_active).length})"></button>
+                        <button type="button" class="btn btn-sm"
+                                :class="contractStatusFilter === 'inactive' ? 'btn-primary' : 'btn-secondary'"
+                                @click="contractStatusFilter = 'inactive'"
+                                x-text="__('無效 ({count})', {count: contracts.filter(c => c.status === 'DISABLED' || c.is_expired || !c.is_active).length})"></button>
+                    </div>
+                    <table class="contract-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable-th" @click="sortContracts('contract_number')"
+                                    >{{ _('合約編號') }} <span x-text="contractSortIcon('contract_number')"></span></th>
+                                <th>{{ _('合約名稱') }}</th>
+                                <th class="sortable-th" @click="sortContracts('start_date')"
+                                    >{{ _('開始日期') }} <span x-text="contractSortIcon('start_date')"></span></th>
+                                <th class="sortable-th" @click="sortContracts('end_date')"
+                                    >{{ _('結束日期') }} <span x-text="contractSortIcon('end_date')"></span></th>
+                                <th class="sortable-th" @click="sortContracts('amount')"
+                                    >{{ _('金額') }} <span x-text="contractSortIcon('amount')"></span></th>
+                                <th>{{ _('狀態') }}</th>
+                                <th>{{ _('操作') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="c in filteredContracts()" :key="c.secure_code">
+                                <tr>
+                                    <td><code x-text="c.contract_number"></code></td>
+                                    <td x-text="c.name || '-'"></td>
+                                    <td x-text="c.start_date"></td>
+                                    <td x-text="c.end_date"></td>
+                                    <td x-text="c.amount ? Number(c.amount).toLocaleString() : '-'"></td>
+                                    <td>
+                                        <span x-show="c.status === 'DISABLED'" class="status-disabled">{{ _('停用') }}</span>
+                                        <span x-show="c.status !== 'DISABLED' && c.is_expired" class="status-expired">{{ _('已過期') }}</span>
+                                        <span x-show="c.status !== 'DISABLED' && c.is_active" class="status-valid">{{ _('有效') }}</span>
+                                        <span x-show="c.status !== 'DISABLED' && !c.is_expired && !c.is_active">{{ _('尚未生效') }}</span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-secondary btn-sm"
+                                                @click="editContract(c.secure_code)">{{ _('檢視') }}</button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="filteredContracts().length === 0">
+                                <td colspan="7" style="text-align: center; color: #6c757d; padding: 16px;">
+                                    {{ _('此篩選條件下無合約') }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div x-show="contracts.length === 0">
+                    <p class="text-muted" style="text-align: center; padding: 20px;">
+                        {% if selected_org and selected_org.is_system_org %}
+                        {{ _('系統企業無需建立合約') }}
+                        {% else %}
+                        {{ _('尚無合約，點擊上方「+ 新增合約」建立') }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- 未選擇企業 -->
+        <div class="empty-state">
+            <p style="font-size: 48px;">&#8592;</p>
+            <p>{{ _('請從左側選擇一家企業') }}</p>
+            <p>{{ _('查看詳情與合約管理') }}</p>
+        </div>
+        {% endif %}
+    </div>
+    </div>
+
+    </section>
+
+    <section class="org-tab-panel" x-show="activeTab === 'harddelete'">
+        {% include "pages/organizations/_org_hard_delete.html" %}
+    </section>
+
+    <!-- 合約新增/編輯 Modal -->
+    <div x-show="contractModal.show" x-cloak class="modal-overlay">
+        <div class="modal-content modal-md">
+            <div class="modal-header">
+                <h3 x-text="contractModal.editing ? __('檢視合約') : __('新增合約')"></h3>
+                <button class="modal-close" @click="contractModal.show = false">&times;</button>
+            </div>
+
+            <div x-show="contractModal.message" x-cloak
+                 :class="'message ' + (contractModal.error ? 'message-error' : 'message-success')"
+                 x-text="contractModal.message"></div>
+
+            <!-- 編輯模式：唯讀檢視 -->
+            <template x-if="contractModal.editing">
+                <div>
+                    <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 12px; margin-bottom: 16px;">
+                        <small style="color: #6c757d;">{{ _('合約建立後不可修改內容（稽核要求）。如需變更請建立新合約。') }}</small>
+                    </div>
+                    <table class="info-table">
+                        <tr><td style="width: 100px;">{{ _('合約名稱') }}</td><td x-text="contractModal.form.name || '-'"></td></tr>
+                        <tr><td>{{ _('開始日期') }}</td><td x-text="contractModal.form.start_date"></td></tr>
+                        <tr><td>{{ _('結束日期') }}</td><td x-text="contractModal.form.end_date"></td></tr>
+                        <tr><td>{{ _('金額') }}</td><td x-text="contractModal.form.amount ? Number(contractModal.form.amount).toLocaleString() : '-'"></td></tr>
+                        <tr><td>{{ _('描述') }}</td><td x-text="contractModal.form.description || '-'"></td></tr>
+                        <tr><td>{{ _('備註') }}</td><td x-text="contractModal.form.notes || '-'"></td></tr>
+                    </table>
+                    <div x-show="contractModal.form.modules.length > 0" style="margin-top: 12px; text-align: left;">
+                        <strong>{{ _('授權模組') }}</strong>
+                        <template x-for="mod in contractModal.availableModules" :key="mod.code">
+                            <div x-show="contractModal.form.modules.includes(mod.code)" style="margin: 4px 0 4px 8px;">
+                                <span x-text="mod.label"></span>
+                                <small x-show="mod.value && mod.value.version" style="color: #888;"
+                                       x-text="'(v' + (mod.value && mod.value.version || '') + ')'"></small>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="contractModal.show = false">{{ _('關閉') }}</button>
+                        <template x-if="contractModal.originalStatus === 'ACTIVE'">
+                            <button type="button" class="btn btn-danger" @click="disableContract()">{{ _('停用此合約') }}</button>
+                        </template>
+                        <template x-if="contractModal.originalStatus === 'DISABLED'">
+                            <span style="color: #6c757d; font-size: 0.9em; align-self: center;">{{ _('此合約已停用，不可再啟用') }}</span>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 新增模式：可輸入表單 -->
+            <template x-if="!contractModal.editing">
+                <form @submit.prevent="saveContract()">
+                    <div class="form-group">
+                        <label>{{ _('合約名稱') }}</label>
+                        <input type="text" x-model="contractModal.form.name" placeholder="{{ _('選填') }}">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>{{ _('開始日期 *') }}</label>
+                            <input type="date" x-model="contractModal.form.start_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>{{ _('結束日期 *') }}</label>
+                            <input type="date" x-model="contractModal.form.end_date" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>{{ _('金額') }}</label>
+                        <input type="number" x-model="contractModal.form.amount" placeholder="{{ _('選填') }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label>{{ _('描述') }}</label>
+                        <textarea x-model="contractModal.form.description" rows="2" placeholder="{{ _('選填') }}"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>{{ _('備註') }}</label>
+                        <textarea x-model="contractModal.form.notes" rows="2" placeholder="{{ _('選填') }}"></textarea>
+                    </div>
+
+                    <div class="form-group" x-show="contractModal.availableModules.length > 0" style="text-align: left;">
+                        <label>{{ _('授權模組') }}</label>
+                        <template x-for="mod in contractModal.availableModules" :key="mod.code">
+                            <label style="display: block; margin-bottom: 4px; font-weight: normal; cursor: pointer;">
+                                <input type="checkbox" :value="mod.code"
+                                       :checked="contractModal.form.modules.includes(mod.code)"
+                                       @change="toggleModule(mod.code)"
+                                       style="width: auto; margin: 0 6px 0 0;">
+                                <span x-text="mod.label"></span>
+                                <small x-show="mod.value && mod.value.version" style="color: #888;"
+                                       x-text="'(v' + (mod.value && mod.value.version || '') + ')'"></small>
+                                <br x-show="mod.value && mod.value.description">
+                                <small x-show="mod.value && mod.value.description" style="color: #666; margin-left: 22px;"
+                                       x-text="mod.value && mod.value.description || ''"></small>
+                            </label>
+                        </template>
+                        <small style="color: #888;">{{ _('選擇此合約授權使用的功能模組') }}</small>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="contractModal.show = false">{{ _('取消') }}</button>
+                        <button type="submit" class="btn btn-primary">{{ _('新增') }}</button>
+                    </div>
+                </form>
+            </template>
+        </div>
+    </div>
+</div>
+
+<script>
+window.__ORG_PAGE_CONFIG = {
+    search: '{{ search }}',
+    conglomerateFilter: '{{ conglomerate_filter }}',
+    selectedOrgCode: '{{ selected_org.secure_code if selected_org else '' }}',
+    availableModules: {{ available_modules | default([]) | tojson }},
+    contracts: {{ contracts_json | default('[]') | safe }}
+};
+window.__ORG_HARD_DELETE = {
+    previewUrl: '{{ url_for("organizations.hard_delete_preview") }}',
+    executeUrl: '{{ url_for("organizations.hard_delete_execute") }}'
+};
+</script>
+<script src="{{ app_prefix }}/static/js/app.js"></script>
+<script src="{{ app_prefix }}/static/js/organizations.js"></script>
+<script src="{{ app_prefix }}/static/js/organizations-hard-delete.js"></script>
+{% endblock %}

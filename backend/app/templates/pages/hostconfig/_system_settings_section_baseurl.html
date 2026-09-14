@@ -1,0 +1,37 @@
+<!-- ==================== 系統對外網址 ==================== -->
+<div id="section-baseurl" class="settings-section" :class="{ active: activeSection === 'baseurl' }">
+    <h2>{{ _('系統對外網址') }}</h2>
+    <p>{{ _('設定平台產生對外登入連結時使用的完整 base URL。') }}</p>
+
+    <div x-show="message.baseUrl" x-cloak
+         :class="'message ' + (message.baseUrlError ? 'message-error' : 'message-success')"
+         x-text="message.baseUrl"
+         x-transition></div>
+
+    <div class="settings-card">
+        <h4>{{ _('對外 base URL') }}</h4>
+        <div class="form-group">
+            <label>{{ _('完整 base URL') }}</label>
+            <input type="text" x-model="baseUrl.value" placeholder="https://example.com">
+            <div class="form-hint">
+                {{ _('請填完整 base URL，例如 https://example.com。不要含尾斜線，也不要含 /beakplatform。') }}
+            </div>
+        </div>
+        <div class="form-group">
+            <label>{{ _('登入連結預覽') }}</label>
+            <div class="baseurl-preview" x-show="baseUrl.value.trim()">
+                <code x-text="baseUrl.value.trim().replace(/\/+$/, '') + '{{ app_prefix }}/auth/org/{{ _('企業網域') }}/login'"></code>
+            </div>
+            <div class="baseurl-preview baseurl-preview-empty" x-show="!baseUrl.value.trim()">
+                {{ _('尚未設定') }}
+            </div>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn btn-primary" @click="saveBaseUrl()" :disabled="baseUrl.saving">
+            <span x-show="!baseUrl.saving">{{ _('儲存') }}</span>
+            <span x-show="baseUrl.saving">{{ _('儲存中...') }}</span>
+        </button>
+    </div>
+</div>

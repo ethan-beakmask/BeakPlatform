@@ -1,0 +1,332 @@
+{% extends 'layouts/base.html' %}
+
+{% block help_doc %}manual/01_getting_started/personal_settings{% endblock %}
+
+{% block title %}{{ _('個人設定') }} - BeakMask{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/my-proxy-assignments.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="mak-page">
+
+<!-- 頁面標題列 -->
+<div class="page-header">
+    <h1 class="page-title">{{ _('個人設定') }}</h1>
+</div>
+
+<!-- Flash 訊息 -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'success' %}alert-success{% elif category == 'warning' %}alert-warning{% else %}alert-error{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- 帳號資訊 -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h3>{{ _('帳號資訊') }}</h3>
+        </div>
+        <div class="detail-card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">{{ _('帳號') }}</label>
+                    <input type="text" class="form-control" value="{{ current_user.username }}@{{ current_user.organization.domain_name }}" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ _('主要 Email') }}</label>
+                    <input type="text" class="form-control" value="{{ current_user.email }}" disabled>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">{{ _('顯示名稱') }}</label>
+                    <input type="text" class="form-control" value="{{ current_user.display_name }}" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ _('密碼') }}</label>
+                    <div style="padding-top: 8px;">
+                        <a href="{{ url_for('main.change_password') }}" class="btn btn-secondary btn-sm">{{ _('變更密碼') }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 個人資料 -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h3>{{ _('個人資料') }}</h3>
+        </div>
+        <div class="detail-card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="english_name">{{ _('英文姓名') }}</label>
+                    <input type="text" id="english_name" name="english_name" class="form-control"
+                           value="{{ current_user.english_name or '' }}" placeholder="English Name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="native_name">{{ _('本國姓名') }}</label>
+                    <input type="text" id="native_name" name="native_name" class="form-control"
+                           value="{{ current_user.native_name or '' }}" placeholder="{{ _('本國語言姓名') }}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="nickname">{{ _('暱稱') }}</label>
+                    <input type="text" id="nickname" name="nickname" class="form-control"
+                           value="{{ current_user.nickname or '' }}" placeholder="Nickname">
+                    {% if current_user.is_org_admin %}
+                    <div class="form-hint">{{ _('企業管理員可在此設定暱稱，否則 Navbar 只會顯示加上隱私保護的名稱（企業預設對管理員不適用）') }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <!-- 空白佔位 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 聯絡方式 -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h3>{{ _('聯絡方式') }}</h3>
+        </div>
+        <div class="detail-card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="backup_email_1">{{ _('備用 Email') }} 1</label>
+                    <input type="email" id="backup_email_1" name="backup_email_1" class="form-control"
+                           value="{{ current_user.backup_email_1 or '' }}" placeholder="backup@example.com">
+                    <div class="form-hint">{{ _('系統通知專用（空白時自動使用主要 Email）') }}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="backup_email_2">{{ _('備用 Email') }} 2</label>
+                    <input type="email" id="backup_email_2" name="backup_email_2" class="form-control"
+                           value="{{ current_user.backup_email_2 or '' }}" placeholder="backup2@example.com">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="mobile_phone_1">{{ _('手機') }} 1</label>
+                    <input type="tel" id="mobile_phone_1" name="mobile_phone_1" class="form-control"
+                           value="{{ current_user.mobile_phone_1 or '' }}" placeholder="+886-912-345-678">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="mobile_phone_2">{{ _('手機') }} 2</label>
+                    <input type="tel" id="mobile_phone_2" name="mobile_phone_2" class="form-control"
+                           value="{{ current_user.mobile_phone_2 or '' }}" placeholder="+886-912-345-678">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 介面設定 -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h3>{{ _('介面設定') }}</h3>
+        </div>
+        <div class="detail-card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="navbar_display">{{ _('Navbar 顯示') }}</label>
+                    <select id="navbar_display" name="navbar_display" class="form-control">
+                        <option value="">{{ _('跟隨企業設定') }}</option>
+                        <option value="nickname" {% if current_user.navbar_display == 'nickname' %}selected{% endif %}>{{ _('暱稱') }}</option>
+                        <option value="employee_id" {% if current_user.navbar_display == 'employee_id' %}selected{% endif %}>{{ _('用戶編號') }}</option>
+                        <option value="employee_id_dept" {% if current_user.navbar_display == 'employee_id_dept' %}selected{% endif %}>{{ _('用戶編號 + 部門') }}</option>
+                    </select>
+                    <div class="form-hint">{{ _('在公開場所使用時，可改為不含真名的顯示方式') }}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="interface_language">{{ _('語言') }}</label>
+                    <select id="interface_language" name="interface_language" class="form-control">
+                        {% for code, label in languages %}
+                        <option value="{{ code }}" {% if current_user.interface_language == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="timezone">{{ _('時區') }}</label>
+                    <select id="timezone" name="timezone" class="form-control">
+                        <option value="">{{ _('使用企業預設') }}</option>
+                        {% for group_label, timezones in timezone_choices %}
+                        <optgroup label="{{ group_label }}">
+                            {% for tz_value, tz_display in timezones %}
+                            <option value="{{ tz_value }}" {% if current_user.timezone == tz_value %}selected{% endif %}>{{ tz_display }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <!-- 空白佔位 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 儲存按鈕 -->
+    <div style="margin-bottom: 24px;">
+        <button type="submit" class="btn btn-primary">{{ _('儲存設定') }}</button>
+    </div>
+
+</form>
+
+{% if current_user.is_employee or current_user.is_org_admin %}
+{% include 'pages/_my_proxy_assignments.html' %}
+{% endif %}
+
+<div class="detail-card" x-data="myApiKeysManager()" x-init="init()">
+    <div class="detail-card-header">
+        <h3>{{ _('我的 API Key') }}</h3>
+    </div>
+    <div class="detail-card-body">
+        <div x-show="message" class="alert" :class="messageIsError ? 'alert-error' : 'alert-success'" x-text="message"></div>
+
+        <div x-show="!loading && keys.length === 0" class="mak-empty">
+            {{ _('目前沒有屬於你的 API Key。可到表單中心提出「API Key 申請單」。') }}
+        </div>
+
+        <div x-show="loading" class="mak-empty">{{ _('載入中...') }}</div>
+
+        <div x-show="!loading && keys.length > 0" class="mak-table-wrap">
+            <table class="data-table mak-table">
+                <thead>
+                    <tr>
+                        <th>{{ _('名稱') }}</th>
+                        <th>Key ID</th>
+                        <th>{{ _('授權表單') }}</th>
+                        <th>{{ _('狀態') }}</th>
+                        <th>{{ _('最後使用') }}</th>
+                        <th>{{ _('申請單') }}</th>
+                        <th>{{ _('金鑰') }}</th>
+                        <th>{{ _('操作') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="key in keys" :key="key.secure_code">
+                        <tr>
+                            <td>
+                                <div class="mak-name" x-text="key.name || '-'"></div>
+                                <div class="mak-sub mak-desc" x-text="key.description || ''"></div>
+                            </td>
+                            <td><code class="mak-code" x-text="key.key_id"></code></td>
+                            <td>
+                                <template x-if="key.triggerable_forms && key.triggerable_forms.length">
+                                    <div>
+                                        <template x-for="form in key.triggerable_forms" :key="form.form_code || form.published_secure_code">
+                                            <div x-text="form.name || form.form_code || '-'"></div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <span x-show="!key.triggerable_forms || key.triggerable_forms.length === 0">{{ _('（無）') }}</span>
+                            </td>
+                            <td>
+                                <div x-text="statusLabel(key.status)"></div>
+                                <div class="mak-sub" :class="isExpired(key.expires_at) ? 'mak-danger-text' : ''"
+                                     x-text="expiryLabel(key.expires_at)"></div>
+                            </td>
+                            <td x-text="key.last_used_at ? fmtTime(key.last_used_at) : __('尚未使用')"></td>
+                            <td x-text="key.form_instance ? key.form_instance.serial_number : '—'"></td>
+                            <td>
+                                <div x-text="claimLabel(key)"></div>
+                                <div class="mak-sub" x-show="key.claim && key.claim.state === 'pending'"
+                                     x-text="__('領取期限: ') + fmtTime(key.claim.expires_at)"></div>
+                            </td>
+                            <td>
+                                <div class="mak-actions">
+                                    <template x-if="key.claim && key.claim.state === 'pending'">
+                                        <button type="button" class="btn btn-primary btn-sm" @click="claim(key)">{{ _('領取金鑰') }}</button>
+                                    </template>
+                                    <template x-if="key.claim && key.claim.state === 'claimed'">
+                                        <button type="button" class="btn btn-secondary btn-sm" @click="openExample(key)">{{ _('查看串接範例') }}</button>
+                                    </template>
+                                    <template x-if="key.claim && key.claim.state !== 'pending'">
+                                        <button type="button" class="btn btn-danger btn-sm" @click="regenerate(key)">{{ _('重新產生金鑰') }}</button>
+                                    </template>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="modal-overlay" x-show="showModal" x-cloak @click.self="closeModal()">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>{{ _('API Key 串接範例') }}</h3>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="closeModal()">{{ _('關閉') }}</button>
+                </div>
+
+                <div class="alert alert-warning" x-text="modalWarning()"></div>
+
+                <div class="form-group">
+                    <label class="form-label">{{ _('金鑰') }}</label>
+                    <div class="mak-copy-row">
+                        <input type="text" class="form-control" readonly :value="secret || '$BP_API_KEY_SECRET'">
+                        <button type="button" class="btn btn-secondary" @click="copySecret()" x-text="secretCopied ? __('已複製') : __('複製')"></button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">{{ _('表單') }}</label>
+                        <select class="form-control" x-model="selectedFormCode" @change="resetExampleFields()">
+                            <template x-for="form in modalForms()" :key="form.form_code || form.published_secure_code">
+                                <option :value="form.form_code" x-text="form.name || form.form_code"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ _('主旨') }}</label>
+                        <input type="text" class="form-control" x-model="subject">
+                    </div>
+                </div>
+
+                <div class="alert alert-warning" x-show="!baseUrl">
+                    {{ _('（尚未設定系統對外網址，請聯絡管理員）') }}
+                </div>
+
+                <div class="mak-fields" x-show="selectedFieldKeys().length > 0">
+                    <template x-for="field in selectedFieldKeys()" :key="field">
+                        <div class="form-group">
+                            <label class="form-label" x-text="field"></label>
+                            <input type="text" class="form-control" x-model="exampleFields[field]">
+                        </div>
+                    </template>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">curl</label>
+                    <div class="mak-copy-row mak-copy-row-top">
+                        <textarea class="form-control mak-curl" readonly x-text="curlCommand()"></textarea>
+                        <button type="button" class="btn btn-secondary" @click="copyCurl()" x-text="curlCopied ? __('已複製') : __('複製')"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.__PAGE_CONFIG = {apiTriggerBaseUrl: {{ api_trigger_base_url|tojson }}};
+</script>
+<script src="{{ app_prefix }}/static/js/app.js"></script>
+<script src="{{ app_prefix }}/static/js/my-api-keys.js"></script>
+<script src="{{ app_prefix }}/static/js/my-proxy-assignments.js"></script>
+{% endblock %}

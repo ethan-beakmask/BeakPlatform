@@ -1,0 +1,279 @@
+<section class="wks-main wks-main-perms" x-show="activeTab === 'perms'" x-data='wksPermsManager(subSystemSc)'>
+    <div class="wks-perm-head">
+        <div>
+            <h2>{{ _('權限矩陣') }}</h2>
+            <p>{{ _('未設限代表所有 portal 訪客可讀；空白不是禁止。') }}</p>
+        </div>
+        <button type="button" class="wks-btn" @click="loadAll()" :disabled="loading">{{ _('重新整理') }}</button>
+    </div>
+
+    <div class="wks-status wks-status-error" x-show="error" x-text="error"></div>
+    <div class="wks-status" x-show="toast.show" x-text="toast.message"></div>
+    <div class="wks-empty" x-show="loading">{{ _('載入中...') }}</div>
+
+    <div class="wks-perm-grid" x-show="!loading">
+        <section class="wks-perm-panel">
+            <div class="wks-perm-panel-head">
+                <h3>{{ _('權限碼') }}</h3>
+                <span class="wks-muted" x-text="permissions.length"></span>
+            </div>
+            {% if can('nocode_builder.manage') %}
+            <div class="wks-perm-form">
+                <label>
+                    <span>{{ _('權限碼') }}</span>
+                    <input type="text" x-model="permissionForm.code" placeholder="page.read">
+                </label>
+                <label>
+                    <span>{{ _('說明') }}</span>
+                    <input type="text" x-model="permissionForm.description">
+                </label>
+                <label>
+                    <span>{{ _('風險等級') }}</span>
+                    <select x-model="permissionForm.risk_level">
+                        <option value="low">{{ _('低') }}</option>
+                        <option value="normal">{{ _('一般') }}</option>
+                        <option value="high">{{ _('高') }}</option>
+                        <option value="critical">{{ _('重大') }}</option>
+                    </select>
+                </label>
+                <button type="button" class="wks-btn wks-btn-primary" @click="createPermission()" :disabled="saving">{{ _('新增') }}</button>
+            </div>
+            {% endif %}
+            <div class="wks-perm-table-wrap">
+                <table class="wks-perm-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('code') }}</th>
+                            <th>{{ _('說明') }}</th>
+                            <th>{{ _('風險等級') }}</th>
+                            <th>{{ _('動作') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="perm in permissions" :key="perm.code">
+                            <tr>
+                                <td><code x-text="perm.code"></code></td>
+                                <td x-text="perm.description || '-'"></td>
+                                <td><span class="wks-perm-pill" x-text="riskLabel(perm.risk_level)"></span></td>
+                                <td>
+                                    {% if can('nocode_builder.manage') %}
+                                    <button type="button" class="wks-btn" @click="deletePermission(perm)" :disabled="saving">{{ _('刪除') }}</button>
+                                    {% else %}
+                                    <span class="wks-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="wks-perm-panel">
+            <div class="wks-perm-panel-head">
+                <h3>{{ _('表1 網頁 × 權限碼') }}</h3>
+                <span class="wks-muted" x-text="__('{count} 個頁面', { count: pageRows.length })"></span>
+            </div>
+            <div class="wks-perm-table-wrap">
+                <table class="wks-perm-table wks-perm-matrix-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('狀態') }}</th>
+                            <th>{{ _('網頁') }}</th>
+                            <template x-for="perm in permissions" :key="'page:' + perm.code">
+                                <th><code x-text="permLabel(perm)"></code></th>
+                            </template>
+                            <th>{{ _('符合方式') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="row in pageRows" :key="row.secure_code">
+                            <tr>
+                                <td><span class="wks-perm-pill" x-text="accessStatusLabel(row)"></span></td>
+                                <td>
+                                    <span class="wks-perm-page-name" :style="'padding-left:' + (row.depth * 18) + 'px'" x-text="row.name"></span>
+                                </td>
+                                <template x-for="perm in permissions" :key="row.secure_code + ':' + perm.code">
+                                    <td class="wks-perm-check-cell">
+                                        <input type="checkbox" :checked="pageHasPermission(row, perm.code)" @change="togglePagePermission(row, perm.code, $event.target.checked)" :disabled="saving || !canManage()">
+                                    </td>
+                                </template>
+                                <td>
+                                    <select x-model="row.perm_match_mode" @change="updatePageMatchMode(row)" :disabled="saving || !canManage()">
+                                        <template x-for="mode in matchModes" :key="mode">
+                                            <option :value="mode" :selected="mode === row.perm_match_mode" x-text="matchModeLabel(mode)"></option>
+                                        </template>
+                                    </select>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <div class="wks-empty" x-show="pageRows.length === 0">{{ _('尚無網頁節點') }}</div>
+        </section>
+
+        <section class="wks-perm-panel">
+            <div class="wks-perm-panel-head">
+                <h3>{{ _('表2 等級／角色 × 權限碼') }}</h3>
+            </div>
+            {% if can('nocode_builder.manage') %}
+            <div class="wks-perm-form wks-perm-role-form">
+                <label>
+                    <span>{{ _('角色 code') }}</span>
+                    <input type="text" x-model="roleForm.code" placeholder="EDITOR">
+                </label>
+                <label>
+                    <span>{{ _('名稱') }}</span>
+                    <input type="text" x-model="roleForm.name">
+                </label>
+                <label>
+                    <span>{{ _('說明') }}</span>
+                    <input type="text" x-model="roleForm.description">
+                </label>
+                <label>
+                    <span>{{ _('顯示順序') }}</span>
+                    <input type="number" x-model="roleForm.display_order">
+                </label>
+                <button type="button" class="wks-btn wks-btn-primary" @click="createRole()" :disabled="saving">{{ _('新增角色') }}</button>
+            </div>
+            {% endif %}
+            <div class="wks-perm-table-wrap">
+                <table class="wks-perm-table wks-perm-matrix-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('類型') }}</th>
+                            <th>{{ _('名稱') }}</th>
+                            <template x-for="perm in permissions" :key="'rolelevel:' + perm.code">
+                                <th><code x-text="permLabel(perm)"></code></th>
+                            </template>
+                            <th>{{ _('動作') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="level in sortedLevels()" :key="'level:' + level.code">
+                            <tr>
+                                <td>{{ _('等級') }}</td>
+                                <td x-text="level.name + ' (rank ' + level.rank + ')'"></td>
+                                <template x-for="perm in permissions" :key="level.code + ':' + perm.code">
+                                    <td class="wks-perm-check-cell">
+                                        <input type="checkbox" :checked="hasPermission(level, perm.code)" @change="toggleLevelPermission(level, perm.code, $event.target.checked)" :disabled="saving || !canManage()">
+                                    </td>
+                                </template>
+                                <td><span class="wks-muted">-</span></td>
+                            </tr>
+                        </template>
+                        <template x-for="role in sortedRoles()" :key="'role:' + role.code">
+                            <tr>
+                                <td>{{ _('管理角色') }}</td>
+                                <td>
+                                    <span x-text="role.name + ' (' + role.code + ')'"></span>
+                                    <span class="wks-perm-pill" x-show="!truthy(role.enabled)">{{ _('停用') }}</span>
+                                </td>
+                                <template x-for="perm in permissions" :key="role.code + ':' + perm.code">
+                                    <td class="wks-perm-check-cell">
+                                        <input type="checkbox" :checked="hasPermission(role, perm.code)" @change="toggleRolePermission(role, perm.code, $event.target.checked)" :disabled="saving || !canManage()">
+                                    </td>
+                                </template>
+                                <td>
+                                    {% if can('nocode_builder.manage') %}
+                                    <button type="button" class="wks-btn" @click="deleteRole(role)" :disabled="saving">{{ _('刪除') }}</button>
+                                    {% else %}
+                                    <span class="wks-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="wks-perm-panel">
+            <div class="wks-perm-panel-head">
+                <h3>{{ _('帳號 × 角色') }}</h3>
+            </div>
+            <div class="wks-perm-table-wrap">
+                <table class="wks-perm-table wks-perm-user-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('帳號') }}</th>
+                            <th>{{ _('階級') }}</th>
+                            <template x-for="role in sortedRoles()" :key="'userrole:' + role.code">
+                                <th><code x-text="role.code"></code></th>
+                            </template>
+                            <th>{{ _('個人覆寫') }}</th>
+                            <th>{{ _('新增例外') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="user in users" :key="user.secure_code">
+                            <tr>
+                                <td>
+                                    <strong x-text="user.username"></strong>
+                                    <span class="wks-muted" x-text="user.display_name || ''"></span>
+                                </td>
+                                <td x-text="levelName(user.level_code)"></td>
+                                <template x-for="role in sortedRoles()" :key="user.secure_code + ':' + role.code">
+                                    <td class="wks-perm-check-cell">
+                                        <input type="checkbox" :checked="userHasRole(user, role.code)" @change="toggleUserRole(user, role.code, $event.target.checked)" :disabled="saving || !canManage()">
+                                    </td>
+                                </template>
+                                <td>
+                                    <div class="wks-perm-tags">
+                                        <template x-for="override in user.overrides || []" :key="user.secure_code + ':ov:' + override.code">
+                                            {% if can('nocode_builder.manage') %}
+                                            <button type="button" class="wks-perm-tag" @click="removeOverride(user, override)" :disabled="saving || !canManage()" x-text="override.code + '(' + override.effect + ')'"></button>
+                                            {% else %}
+                                            <span class="wks-perm-pill" x-text="override.code + '(' + override.effect + ')'"></span>
+                                            {% endif %}
+                                        </template>
+                                        <span class="wks-muted" x-show="!(user.overrides || []).length">-</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="wks-perm-exception-form">
+                                        <select x-model="overrideForms[user.secure_code].code">
+                                            <template x-for="perm in permissions" :key="'ovopt:' + user.secure_code + ':' + perm.code">
+                                                <option :value="perm.code" :selected="perm.code === overrideForms[user.secure_code].code" x-text="perm.code"></option>
+                                            </template>
+                                        </select>
+                                        <select x-model="overrideForms[user.secure_code].effect">
+                                            <option value="allow">allow</option>
+                                            <option value="deny">deny</option>
+                                        </select>
+                                        {% if can('nocode_builder.manage') %}
+                                        <button type="button" class="wks-btn" @click="saveOverride(user)" :disabled="saving || !canManage()">{{ _('送出') }}</button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="wks-perm-panel">
+            <div class="wks-perm-panel-head">
+                <h3>{{ _('權限模板') }}</h3>
+                <span class="wks-muted">{{ _('套用是疊加，不會移除既有設定。') }}</span>
+            </div>
+            <div class="wks-perm-template-list">
+                <template x-for="tpl in templates" :key="tpl.code">
+                    <div class="wks-perm-template-item">
+                        <div>
+                            <strong x-text="tpl.name"></strong>
+                            <p x-text="tpl.description || '-'"></p>
+                            <span class="wks-muted" x-text="__('{count} 個權限碼', { count: tpl.permission_count || 0 })"></span>
+                        </div>
+                        {% if can('nocode_builder.manage') %}
+                        <button type="button" class="wks-btn wks-btn-primary" @click="applyTemplate(tpl)" :disabled="saving">{{ _('套用') }}</button>
+                        {% endif %}
+                    </div>
+                </template>
+                <div class="wks-empty" x-show="templates.length === 0">{{ _('尚無權限模板') }}</div>
+            </div>
+        </section>
+    </div>
+</section>

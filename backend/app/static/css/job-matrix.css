@@ -1,0 +1,144 @@
+/* job-matrix.css — 職級職稱矩陣 */
+
+.matrix-container {
+    margin: 20px 0;
+}
+.matrix-table {
+    border-collapse: collapse;
+}
+.matrix-table th,
+.matrix-table td {
+    border: 1px solid #d1d5db;
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+.matrix-table thead th {
+    background: #1f2937;
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    position: sticky;
+    top: 0;
+}
+.matrix-table thead th.level-header {
+    background: #374151;
+    min-width: 120px;
+}
+.matrix-table thead th.family-header {
+    min-width: 150px;
+}
+.matrix-table tbody tr:nth-child(odd) {
+    background: #f9fafb;
+}
+.matrix-table tbody tr:hover {
+    background: #f3f4f6;
+}
+.level-cell {
+    background: #e5e7eb !important;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    min-width: 140px;
+}
+.level-code {
+    font-family: monospace;
+    color: #6b7280;
+    font-size: 0.85em;
+}
+.level-name {
+    display: block;
+    margin-top: 2px;
+}
+.level-order {
+    font-size: 0.75em;
+    color: #9ca3af;
+}
+.level-info {
+    display: block;
+    font-size: 0.75em;
+    color: #6b7280;
+    font-weight: normal;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px dashed #d1d5db;
+}
+.level-approval {
+    color: #059669;
+}
+.level-manager {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.7em;
+    margin-left: 4px;
+}
+.level-manager.yes {
+    background: #fef3c7;
+    color: #92400e;
+}
+.level-manager.no {
+    background: #f3f4f6;
+    color: #9ca3af;
+}
+.title-cell {
+    min-height: 50px;
+    min-width: 120px;
+    transition: background-color 0.2s;
+}
+.title-cell.drag-over {
+    background: #dbeafe !important;
+    outline: 2px dashed #3b82f6;
+}
+.title-item {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin: 3px;
+    font-size: 0.9em;
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.title-item:hover {
+    background: #bfdbfe;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.title-item:active {
+    cursor: grabbing;
+}
+.title-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+.title-item.supervisor {
+    background: #fef3c7;
+    color: #92400e;
+}
+.empty-cell {
+    color: #d1d5db;
+    text-align: center;
+    font-style: italic;
+}
+.nav-links {
+    margin-bottom: 20px;
+}
+.nav-links a {
+    color: #3b82f6;
+    margin-right: 16px;
+}
+.legend {
+    margin-top: 20px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    font-size: 0.9em;
+}
+.legend-item {
+    display: inline-block;
+    margin-right: 20px;
+}
+/* toast 由 common.css 提供 */

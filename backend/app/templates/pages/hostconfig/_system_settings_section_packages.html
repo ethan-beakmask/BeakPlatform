@@ -1,0 +1,194 @@
+<!-- ==================== 套件版本 ==================== -->
+<div id="section-packages" class="settings-section" :class="{ active: activeSection === 'packages' }">
+    <h2>{{ _('套件版本') }}</h2>
+    <p>{{ _('系統服務、Python 後端套件與前端 vendor 套件的版本比對（僅供檢視）。') }}</p>
+
+    <div x-show="message.packages" x-cloak
+         :class="'message ' + (message.packagesError ? 'message-error' : 'message-success')"
+         x-text="message.packages"
+         x-transition></div>
+
+    <!-- 操作列 -->
+    <div class="settings-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="font-size: 13px; color: #666;">
+                <template x-if="packages.cachedAt">
+                    <span>
+                        {{ _('查詢時間:') }} <span x-text="packages.cachedAt.replace('T', ' ').substring(0, 19)"></span>
+                        <span x-show="packages.cached" style="color: #f59e0b;">{{ _('（快取）') }}</span>
+                        <span style="color: #888;" x-text="__('（耗時 {ms}ms）', {ms: packages.durationMs})"></span>
+                    </span>
+                </template>
+            </div>
+            <button class="btn btn-primary"
+                    @click="loadPackageVersions(true)"
+                    :disabled="loading.packages">
+                <span x-show="loading.packages">{{ _('查詢中...') }}</span>
+                <span x-show="!loading.packages">{{ _('重新查詢') }}</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 統計摘要 -->
+    <template x-if="packages.stats.total > 0">
+        <div class="settings-card" style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <span class="badge badge-success" x-text="__('最新 {count}', {count: packages.stats.up_to_date})"></span>
+            <span class="badge badge-warning" x-text="__('小版本更新 {count}', {count: packages.stats.minor_update})"></span>
+            <span class="badge badge-danger" x-text="__('大版本更新 {count}', {count: packages.stats.major_update})"></span>
+            <span class="badge badge-secondary" x-text="__('無法檢查 {count}', {count: packages.stats.check_failed})"></span>
+            <span style="color: #888; font-size: 13px;" x-text="__('共 {count} 個套件', {count: packages.stats.total})"></span>
+        </div>
+    </template>
+
+    <!-- 載入中 -->
+    <template x-if="loading.packages && packages.python.length === 0">
+        <div class="settings-card">
+            <div class="loading">{{ _('正在查詢套件版本，可能需要數秒...') }}</div>
+        </div>
+    </template>
+
+    <!-- 外部資料來源 -->
+    <template x-if="packages.dataSources.length > 0">
+        <div class="settings-card">
+            <h4>{{ _('外部資料來源與授權') }}</h4>
+            <div style="overflow-x: auto;">
+                <table class="config-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('資料') }}</th>
+                            <th>{{ _('提供者') }}</th>
+                            <th>{{ _('授權') }}</th>
+                            <th>{{ _('整理者') }}</th>
+                            <th>{{ _('取用端點') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="source in packages.dataSources" :key="source.key">
+                            <tr>
+                                <td><a :href="source.provider_url" target="_blank" rel="noopener" x-text="source.name"></a></td>
+                                <td x-text="source.provider"></td>
+                                <td x-text="source.license"></td>
+                                <td><a :href="source.curator_url" target="_blank" rel="noopener" x-text="source.curator"></a></td>
+                                <td x-text="source.endpoint" style="font-family: monospace;"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <p style="font-size: 13px; color: #666; margin: 10px 0 0;">
+                {{ _('用於「基本班表」的假日表「從網路取得台灣行事曆」功能；資料只在管理員按下按鈕時抓取，不會自動連線') }}
+            </p>
+        </div>
+    </template>
+
+    <!-- 系統服務表格 -->
+    <template x-if="packages.services.length > 0">
+        <div class="settings-card">
+            <h4>{{ _('系統服務') }} (<span x-text="packages.services.length"></span>)</h4>
+            <div style="overflow-x: auto;">
+                <table class="config-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('服務名稱') }}</th>
+                            <th>{{ _('安裝版本') }}</th>
+                            <th>{{ _('最新版本') }}</th>
+                            <th>{{ _('狀態') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="pkg in packages.services" :key="pkg.name">
+                            <tr>
+                                <td x-text="pkg.name" style="font-weight: 500;"></td>
+                                <td x-text="pkg.installed_version" style="font-family: monospace;"></td>
+                                <td x-text="pkg.latest_version || '-'" style="font-family: monospace;"></td>
+                                <td>
+                                    <span :class="getStatusBadgeClass(pkg.status)"
+                                          x-text="getStatusLabel(pkg.status)"></span>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <!-- 前端套件表格 -->
+    <template x-if="packages.frontend.length > 0">
+        <div class="settings-card">
+            <h4>{{ _('前端 Vendor 套件') }} (<span x-text="packages.frontend.length"></span>)</h4>
+            <div style="overflow-x: auto;">
+                <table class="config-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('套件名稱') }}</th>
+                            <th>{{ _('安裝版本') }}</th>
+                            <th>{{ _('最新版本') }}</th>
+                            <th>{{ _('來源檔案') }}</th>
+                            <th>{{ _('狀態') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="pkg in packages.frontend" :key="pkg.name">
+                            <tr>
+                                <td x-text="pkg.name" style="font-weight: 500;"></td>
+                                <td x-text="pkg.installed_version" style="font-family: monospace;"></td>
+                                <td x-text="pkg.latest_version || '-'" style="font-family: monospace;"></td>
+                                <td x-text="pkg.source" style="font-size: 12px; color: #888;"></td>
+                                <td>
+                                    <span :class="getStatusBadgeClass(pkg.status)"
+                                          x-text="getStatusLabel(pkg.status)"></span>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <!-- Python 套件表格 -->
+    <template x-if="packages.python.length > 0">
+        <div class="settings-card">
+            <h4>{{ _('Python 套件') }} (<span x-text="packages.python.length"></span>)</h4>
+            <div style="overflow-x: auto;">
+                <table class="config-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('套件名稱') }}</th>
+                            <th>{{ _('需求版本') }}</th>
+                            <th>{{ _('安裝版本') }}</th>
+                            <th>{{ _('最新版本') }}</th>
+                            <th>{{ _('狀態') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="pkg in packages.python" :key="pkg.name">
+                            <tr>
+                                <td x-text="pkg.name" style="font-weight: 500;"></td>
+                                <td x-text="pkg.required_version" style="font-family: monospace;"></td>
+                                <td x-text="pkg.installed_version" style="font-family: monospace;"></td>
+                                <td x-text="pkg.latest_version || '-'" style="font-family: monospace;"></td>
+                                <td>
+                                    <span :class="getStatusBadgeClass(pkg.status)"
+                                          x-text="getStatusLabel(pkg.status)"></span>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <!-- 說明 -->
+    <div class="settings-card" style="background: #f0f9ff; border-color: #bae6fd;">
+        <h4 style="color: #0369a1;">{{ _('說明') }}</h4>
+        <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #0369a1;">
+            <li>{{ _('系統服務版本從 GitHub 取得，Python 套件從 PyPI 取得，前端套件從 npm Registry 取得') }}</li>
+            <li>{{ _('查詢結果快取 30 分鐘，點擊「重新查詢」可強制刷新') }}</li>
+            <li>{{ _('封閉網路環境下線上版本會顯示「無法檢查」，不影響系統運作') }}</li>
+            <li>{{ _('此頁面僅供版本檢視，不提供線上升級功能') }}</li>
+        </ul>
+    </div>
+</div>

@@ -1,0 +1,22 @@
+/* org-admin-rescue.css — 管理員救援頁面
+   btn/modal/password-field/help-text 等由 common.css 提供 */
+
+/* 密碼模態框確認按鈕使用警告色（重設密碼語義） */
+.modal-buttons .btn-submit {
+    background: var(--color-warning);
+    color: white;
+    border: none;
+}
+.modal-buttons .btn-submit:hover {
+    background: var(--color-warning-hover);
+}
+
+/* 確認密碼欄位寬度 */
+#confirm_password {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    box-sizing: border-box;
+}

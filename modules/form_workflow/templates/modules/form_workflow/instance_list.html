@@ -1,0 +1,142 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('我的表單 - BeakPlatform') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/fw-instance-list.css">
+{% endblock %}
+
+{% block content %}
+<div class="fw-container" x-data="instanceListManager()">
+
+    <!-- 頁首 -->
+    <div class="fw-header">
+        <div>
+            <h1>{{ _('我的表單') }}</h1>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">{{ _('查看您填寫和參與的表單') }}</p>
+        </div>
+        <div class="fw-toolbar">
+            <select x-model="statusFilter" @change="loadInstances()" style="padding: 8px 12px; border: 1px solid #ddd;">
+                <option value="">{{ _('全部狀態') }}</option>
+                <option value="DRAFT">{{ _('草稿') }}</option>
+                <option value="PENDING">{{ _('待處理') }}</option>
+                <option value="RUNNING">{{ _('處理中') }}</option>
+                <option value="COMPLETED">{{ _('已完成') }}</option>
+                <option value="REJECTED">{{ _('已駁回') }}</option>
+                <option value="CANCELLED">{{ _('已取消') }}</option>
+            </select>
+            <button class="fw-btn" @click="loadInstances()">{{ _('重新載入') }}</button>
+        </div>
+    </div>
+
+    <!-- 標籤頁 -->
+    <div class="fw-card">
+        <div class="fw-tabs">
+            <div class="fw-tab" :class="{ active: tab === 'mine' }" @click="tab = 'mine'; loadInstances()">
+                {{ _('我提交的') }}
+            </div>
+            <div class="fw-tab" :class="{ active: tab === 'involved' }" @click="tab = 'involved'; loadInstances()">
+                {{ _('我參與的') }}
+            </div>
+        </div>
+
+        <div x-show="loading" class="fw-loading">{{ _('載入中...') }}</div>
+
+        <div x-show="!loading && instances.length === 0" class="fw-empty">
+            <p style="font-size: 16px; margin-bottom: 8px;">{{ _('尚無表單記錄') }}</p>
+        </div>
+
+        <table x-show="!loading && instances.length > 0" class="fw-table">
+            <thead>
+                <tr>
+                    <th style="width: 150px;">{{ _('單號') }}</th>
+                    <th style="width: 180px;">{{ _('表單名稱') }}</th>
+                    <th>{{ _('當前節點') }}</th>
+                    <th style="width: 100px;">{{ _('狀態') }}</th>
+                    <th style="width: 140px;">{{ _('提交時間') }}</th>
+                    <th style="width: 100px;" class="actions">{{ _('操作') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="i in instances" :key="i.secure_code">
+                    <tr>
+                        <td style="font-family: monospace;" x-text="i.serial_number || i.secure_code.substring(0, 8)"></td>
+                        <td style="font-weight: 500;" x-text="i.form_name || '-'"></td>
+                        <td style="color: #666;" x-text="i.current_node || '-'"></td>
+                        <td>
+                            <span class="fw-badge" :class="getStatusClass(i.status)"
+                                  x-text="getStatusText(i.status)"></span>
+                        </td>
+                        <td style="color: #999; font-size: 12px;" x-text="formatDate(i.created_at)"></td>
+                        <td class="actions">
+                            <button class="fw-btn" @click="viewDetail(i)">{{ _('檢視') }}</button>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+
+        <!-- 分頁 -->
+        <div x-show="!loading && pagination.pages > 1" class="fw-pagination">
+            <span style="font-size: 12px; color: #666;">
+                {{ _('共') }} <strong x-text="pagination.total"></strong> {{ _('項') }}
+            </span>
+            <div style="display: flex; gap: 4px;">
+                <button class="fw-btn" @click="goToPage(pagination.page - 1)" :disabled="!pagination.has_prev">{{ _('上一頁') }}</button>
+                <button class="fw-btn" @click="goToPage(pagination.page + 1)" :disabled="!pagination.has_next">{{ _('下一頁') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 詳情 Modal -->
+    <div x-show="showDetailModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content">
+            <div class="fw-modal-header">
+                <h3>{{ _('表單詳情') }}</h3>
+                <button @click="showDetailModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">{{ _('單號') }}</div>
+                    <div class="fw-detail-value" x-text="viewingInstance?.serial_number || viewingInstance?.secure_code"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">{{ _('表單名稱') }}</div>
+                    <div class="fw-detail-value" x-text="viewingInstance?.form_name || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">{{ _('狀態') }}</div>
+                    <div class="fw-detail-value">
+                        <span class="fw-badge" :class="getStatusClass(viewingInstance?.status)"
+                              x-text="getStatusText(viewingInstance?.status)"></span>
+                    </div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">{{ _('當前節點') }}</div>
+                    <div class="fw-detail-value" x-text="viewingInstance?.current_node || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">{{ _('提交時間') }}</div>
+                    <div class="fw-detail-value" x-text="formatDate(viewingInstance?.created_at)"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">{{ _('更新時間') }}</div>
+                    <div class="fw-detail-value" x-text="formatDate(viewingInstance?.updated_at)"></div>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px;">{{ _('表單資料') }}</h4>
+                    <pre style="background: #f5f5f5; padding: 12px; font-size: 12px; overflow: auto; max-height: 200px;"
+                         x-text="JSON.stringify(viewingInstance?.form_data || {}, null, 2)"></pre>
+                </div>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showDetailModal = false">{{ _('關閉') }}</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fw-instance-list.js"></script>
+{% endblock %}

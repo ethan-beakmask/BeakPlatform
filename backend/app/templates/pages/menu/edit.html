@@ -1,0 +1,130 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('編輯選單項目') }} - BeakMask{% endblock %}
+
+{% block head %}
+<script src="{{ url_for('static', filename='js/icon-picker.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('menu.list_menu') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回選單管理') }}</a>
+</div>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('編輯選單項目') }} {{ item.title }}</h1>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ 'success' if category == 'success' else ('error' if category == 'danger' else category) }}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST" x-data="{...iconPickerMixin()}" x-init="ipInit('{{ item.icon or '' }}')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table class="info-table">
+        <tr>
+            <th>{{ _('選單代碼') }}</th>
+            <td><code>{{ item.code }}</code> <span class="text-muted">({{ _('不可變更') }})</span></td>
+        </tr>
+        <tr>
+            <th><label for="title">{{ _('選單標題 (繁中)') }} <span class="text-danger">*</span></label></th>
+            <td><input type="text" id="title" name="title" class="form-control" style="max-width:400px;" value="{{ item.title }}" required></td>
+        </tr>
+        {% for code, name in [('en','English'),('zh-CN','简体中文'),('ja','日本語')] %}
+        <tr>
+            <th><label for="title_{{ code }}">{{ name }}</label></th>
+            <td><input type="text" id="title_{{ code }}" name="title_{{ code }}" class="form-control" style="max-width:400px;" value="{{ (item.title_i18n or {}).get(code, '') }}"></td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <th><label for="icon">{{ _('圖示') }}</label></th>
+            <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span x-show="_ip_selectedIcon" style="font-size:20px;width:28px;text-align:center;"><i :class="_ip_selectedIcon"></i></span>
+                    <input type="hidden" id="icon" name="icon" x-ref="iconField" value="{{ item.icon or '' }}">
+                    <button type="button" @click="ipOpen()" class="btn btn-secondary btn-sm">{{ _('選擇圖示') }}</button>
+                    <span x-show="_ip_selectedIcon" x-text="_ip_selectedIcon" class="text-muted" style="font-size:12px;"></span>
+                    <button type="button" x-show="_ip_selectedIcon" @click="ipClear()" class="btn btn-danger btn-sm">X</button>
+                </div>
+                {% include "partials/_icon_picker.html" %}
+            </td>
+        </tr>
+        <tr>
+            <th><label for="parent_secure_code">{{ _('父選單') }}</label></th>
+            <td>
+                <select id="parent_secure_code" name="parent_secure_code" class="form-control" style="max-width:400px;">
+                    <option value="">-- {{ _('根層級') }} --</option>
+                    {% for opt in parent_options %}
+                    <option value="{{ opt.item.secure_code }}"
+                        {% if item.parent_secure_code == opt.item.secure_code %}selected{% endif %}>
+                        {{ opt.indent }}{{ opt.item.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="help-text">{{ _('變更父選單會自動更新層級深度') }}</div>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('連結類型') }}</th>
+            <td>
+                <code>{{ item.link_type }}</code>
+                <input type="hidden" name="link_type" value="{{ item.link_type }}">
+                <span class="text-muted">({{ _('系統設定，不可變更') }})</span>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('連結目標') }}</th>
+            <td>
+                <code>{{ item.link_target or '-' }}</code>
+                <input type="hidden" name="link_target" value="{{ item.link_target or '' }}">
+                <span class="text-muted">({{ _('系統設定，不可變更') }})</span>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('鑰匙授權') }}</th>
+            <td>
+                <span class="text-muted">{{ _('鑰匙授權已移至') }}</span>
+                <a href="{{ url_for('access_center.index') }}">{{ _('權限管理中心') }}</a>
+            </td>
+        </tr>
+        <tr>
+            <th><label for="display_order">{{ _('顯示順序') }}</label></th>
+            <td><input type="number" id="display_order" name="display_order" class="form-control" style="max-width:120px;" value="{{ item.display_order }}"></td>
+        </tr>
+        <tr>
+            <th><label for="is_expanded">{{ _('預設展開') }}</label></th>
+            <td><input type="checkbox" id="is_expanded" name="is_expanded" {% if item.is_expanded %}checked{% endif %}></td>
+        </tr>
+        <tr>
+            <th><label for="is_active">{{ _('啟用') }}</label></th>
+            <td><input type="checkbox" id="is_active" name="is_active" {% if item.is_active %}checked{% endif %}></td>
+        </tr>
+    </table>
+
+    <div style="margin-top:16px;display:flex;gap:8px;">
+        <button type="submit" class="btn btn-primary">{{ _('儲存變更') }}</button>
+        <a href="{{ url_for('menu.list_menu') }}" class="btn btn-cancel">{{ _('取消') }}</a>
+    </div>
+</form>
+
+{% if item.is_user_created %}
+<div class="section-title" style="margin-top:32px;border-left-color:var(--color-danger);">{{ _('刪除選單項目') }}</div>
+{% if protected_children %}
+<div class="alert alert-error" style="margin-top:8px;">
+    {{ _('無法刪除：子項目中包含預設選單（') }}{{ protected_children[:5]|join('、') }}{% if protected_children|length > 5 %} {{ _('等共') }} {{ protected_children|length }} {{ _('項') }}{% endif %}{{ _('），請先將其移出') }}
+</div>
+<button type="button" class="btn btn-danger" disabled>{{ _('刪除選單項目') }}</button>
+{% else %}
+<div class="alert alert-error" style="margin-top:8px;">
+    {{ _('刪除此選單項目將連同子項目一起刪除。') }}
+</div>
+<form method="POST" action="{{ url_for('menu.delete_menu', secure_code=item.secure_code) }}" onsubmit="return confirm(__('確定要刪除此選單項目嗎？子項目也會一併刪除。'));">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-danger">{{ _('刪除選單項目') }}</button>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}

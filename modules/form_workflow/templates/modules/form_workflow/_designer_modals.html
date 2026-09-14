@@ -1,0 +1,193 @@
+    <!-- Schema 彈出視窗 -->
+    <div class="schema-modal" id="schema-modal">
+        <div class="schema-modal-content" style="max-width: 900px;">
+            <div class="schema-modal-header">
+                <h5 class="mb-0">{{ _('表單 Schema（可編輯）') }}</h5>
+                <button type="button" class="btn-close" id="schema-modal-close"></button>
+            </div>
+            <div class="schema-modal-body">
+                <textarea id="schema-output" style="width: 100%; height: 500px; font-family: monospace; font-size: 12px; white-space: pre; overflow: auto;"></textarea>
+                <div id="schema-error" class="text-danger mt-2" style="display: none;"></div>
+            </div>
+            <div class="schema-modal-footer">
+                <button type="button" class="btn btn-secondary" id="schema-modal-cancel">{{ _('取消') }}</button>
+                <button type="button" class="btn btn-primary" id="schema-modal-apply">
+                    <i class="fas fa-check me-1"></i>{{ _('套用變更') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 預覽模態框（含全覽切換） -->
+    <div class="schema-modal" id="preview-modal">
+        <div class="schema-modal-content" style="max-width: 95vw; max-height: 95vh;">
+            <div class="schema-modal-header">
+                <h5 class="mb-0">{{ _('表單預覽') }}</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <!-- 預覽模式切換 -->
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary active" id="preview-mode-normal" title="{{ _('正常預覽（可捲動）') }}">
+                            <i class="fas fa-eye"></i> {{ _('正常') }}
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="preview-mode-overview" title="{{ _('全覽模式（縮放顯示全部）') }}">
+                            <i class="fas fa-search-minus"></i> {{ _('全覽') }}
+                        </button>
+                    </div>
+                    <span id="preview-scale-info" class="small text-muted" style="display: none;"></span>
+                    <button type="button" class="btn-close" id="preview-modal-close"></button>
+                </div>
+            </div>
+            <div class="schema-modal-body" id="preview-modal-body" style="overflow: auto; max-height: calc(95vh - 60px);">
+                <div id="preview-form-wrapper" style="transform-origin: top center;">
+                    <div id="preview-form"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 列印預覽模態框 -->
+    <div class="schema-modal" id="print-preview-modal">
+        <div class="schema-modal-content" style="max-width: 1200px;">
+            <div class="schema-modal-header">
+                <h5 class="mb-0">{{ _('列印預覽') }}</h5>
+                <div>
+                    <button type="button" class="btn btn-sm btn-primary me-2" id="print-button">
+                        <i class="fas fa-print"></i> {{ _('列印') }}
+                    </button>
+                    <button type="button" class="btn-close" id="print-preview-modal-close"></button>
+                </div>
+            </div>
+            <div class="schema-modal-body">
+                <div id="print-preview-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底圖管理模態框 -->
+    <div class="schema-modal" id="background-modal" style="display: none;">
+        <div class="schema-modal-content" style="max-width: 900px;">
+            <div class="schema-modal-header">
+                <h5 class="mb-0"><i class="fas fa-image me-2"></i>{{ _('表單底圖設定') }}</h5>
+                <button type="button" class="btn-close" id="background-modal-close"></button>
+            </div>
+            <div class="schema-modal-body">
+                <!-- 目前底圖預覽 -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="mb-3">{{ _('目前底圖') }}</h6>
+                        <div id="current-bg-preview" class="border rounded p-3 text-center" style="min-height: 150px; background: #f8f9fa;">
+                            <span class="text-muted">{{ _('尚未設定底圖') }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3">{{ _('顯示設定') }}</h6>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('透明度') }}</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="range" class="form-range" id="bg-opacity" min="0" max="100" value="30" style="flex:1;">
+                                <span id="bg-opacity-value" style="width:40px;">30%</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('顯示方式') }}</label>
+                            <select class="form-select form-select-sm" id="bg-fit">
+                                <option value="contain">{{ _('符合 (保持比例)') }}</option>
+                                <option value="cover">{{ _('填滿 (裁切)') }}</option>
+                                <option value="100% 100%">{{ _('拉伸 (可能變形)') }}</option>
+                                <option value="auto">{{ _('原始大小') }}</option>
+                                <option value="tile">{{ _('拼圖 (平鋪)') }}</option>
+                                <option value="tile-offset">{{ _('拼圖 (位移交錯)') }}</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('位置') }}</label>
+                            <select class="form-select form-select-sm" id="bg-position">
+                                <option value="center center">{{ _('置中') }}</option>
+                                <option value="top center">{{ _('靠上') }}</option>
+                                <option value="bottom center">{{ _('靠下') }}</option>
+                                <option value="left center">{{ _('靠左') }}</option>
+                                <option value="right center">{{ _('靠右') }}</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="btn-remove-bg">
+                            <i class="fas fa-trash"></i> {{ _('移除底圖') }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 上傳新底圖 -->
+                <div class="border-top pt-3">
+                    <h6 class="mb-3">{{ _('上傳新底圖') }}</h6>
+                    <div class="d-flex gap-2 mb-3">
+                        <input type="file" class="form-control form-control-sm" id="bg-file-input" accept="image/*" style="flex:1;">
+                        <button type="button" class="btn btn-sm btn-primary" id="btn-upload-bg">
+                            <i class="fas fa-upload"></i> {{ _('上傳') }}
+                        </button>
+                    </div>
+                    <small class="text-muted">{{ _('支援 PNG, JPG, GIF, WebP 格式，最大 5MB') }}</small>
+                </div>
+
+                <!-- 圖庫選擇 -->
+                <div class="border-top pt-3 mt-3">
+                    <h6 class="mb-3">{{ _('從圖庫選擇') }}</h6>
+                    <div id="bg-gallery" class="row g-2" style="max-height: 200px; overflow-y: auto;">
+                        <div class="col-12 text-center text-muted py-3">
+                            <i class="fas fa-spinner fa-spin"></i> {{ _('載入中...') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="schema-modal-footer">
+                <button type="button" class="btn btn-secondary" id="background-cancel">{{ _('取消') }}</button>
+                <button type="button" class="btn btn-primary" id="background-apply">
+                    <i class="fas fa-check"></i> {{ _('套用') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 確認放棄模態框 -->
+    <div class="schema-modal" id="discard-confirm-modal" style="display: none;">
+        <div class="schema-modal-content" style="max-width: 500px;">
+            <div class="schema-modal-header">
+                <h5 class="mb-0">{{ _('確認放棄') }}</h5>
+                <button type="button" class="btn-close" id="discard-modal-close"></button>
+            </div>
+            <div class="schema-modal-body">
+                <div class="text-center py-3">
+                    <i class="fas fa-exclamation-triangle text-warning" style="font-size: 48px;"></i>
+                    <p class="mt-3 mb-0" style="font-size: 16px;">{{ _('您有未儲存的變更，確定要放棄嗎？') }}</p>
+                </div>
+            </div>
+            <div class="schema-modal-footer">
+                <button type="button" class="btn btn-secondary" id="discard-cancel">{{ _('取消') }}</button>
+                <button type="button" class="btn btn-danger" id="discard-confirm">
+                    <i class="fas fa-times"></i> {{ _('確認放棄') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 範本選擇模態框 -->
+    <div class="schema-modal" id="template-modal" style="display: none;">
+        <div class="schema-modal-content" style="max-width: 700px;">
+            <div class="schema-modal-header">
+                <h5 class="mb-0"><i class="fas fa-file-import me-2"></i>{{ _('選擇表單範本') }}</h5>
+                <button type="button" class="btn-close" id="template-modal-close"></button>
+            </div>
+            <div class="schema-modal-body">
+                <p class="text-muted mb-3">{{ _('選擇一個範本來快速建立表單結構。載入範本會覆蓋目前的表單內容。') }}</p>
+                <div id="template-list" class="list-group">
+                    <div class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin me-2"></i>{{ _('載入中...') }}
+                    </div>
+                </div>
+            </div>
+            <div class="schema-modal-footer">
+                <button type="button" class="btn btn-secondary" id="template-cancel">{{ _('取消') }}</button>
+                <button type="button" class="btn btn-success" id="template-load" disabled>
+                    <i class="fas fa-check"></i> {{ _('載入範本') }}
+                </button>
+            </div>
+        </div>
+    </div>

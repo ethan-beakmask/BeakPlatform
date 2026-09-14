@@ -1,0 +1,110 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('編輯核決權限類別') }} - {{ category.name }} - BeakMask{% endblock %}
+
+{% block content %}
+<h1>{{ _('編輯核決權限類別') }}: {{ category.name }}</h1>
+
+<p>
+    <a href="{{ url_for('job_levels.job_matrix') }}">[{{ _('職級職稱矩陣') }}]</a>
+    |
+    <a href="{{ url_for('job_levels.list_job_levels') }}">[{{ _('職等管理') }}]</a>
+    |
+    <a href="{{ url_for('job_families.list_job_families') }}">[{{ _('職系管理') }}]</a>
+    |
+    <a href="{{ url_for('job_titles.list_job_titles') }}">[{{ _('職稱管理') }}]</a>
+    |
+    <a href="{{ url_for('approval_categories.list_categories') }}">[{{ _('核決權限類別') }}]</a>
+</p>
+<p>
+    <a href="{{ url_for('approval_categories.list_categories') }}">[{{ _('返回列表') }}]</a>
+    <a href="{{ url_for('approval_categories.category_limits', secure_code=category.secure_code) }}">[{{ _('設定上限') }}]</a>
+</p>
+
+<form method="POST" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table class="info-table">
+        <tr>
+            <th style="width: 150px;">{{ _('類別代碼') }}</th>
+            <td>
+                <code style="font-size: 1.2em;">{{ category.code }}</code>
+                <span class="text-muted" style="font-size: 0.9em;">({{ _('不可修改') }})</span>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('類別名稱') }} *</th>
+            <td>
+                <input type="text" name="name" required maxlength="100"
+                       style="width: 100%;"
+                       value="{{ request.form.get('name', category.name) }}">
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('英文名稱') }}</th>
+            <td>
+                <input type="text" name="name_en" maxlength="100"
+                       style="width: 100%;"
+                       value="{{ request.form.get('name_en', category.name_en or '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('幣別') }}</th>
+            <td>
+                <select name="currency" style="width: 100%;">
+                    <option value="TWD" {% if category.currency == 'TWD' %}selected{% endif %}>TWD</option>
+                    <option value="USD" {% if category.currency == 'USD' %}selected{% endif %}>USD</option>
+                    <option value="CNY" {% if category.currency == 'CNY' %}selected{% endif %}>CNY</option>
+                    <option value="JPY" {% if category.currency == 'JPY' %}selected{% endif %}>JPY</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('排序') }}</th>
+            <td>
+                <input type="number" name="sort_order" min="0"
+                       style="width: 100%;"
+                       value="{{ request.form.get('sort_order', category.sort_order) }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="vertical-align: top;">{{ _('描述') }}</th>
+            <td>
+                <textarea name="description" rows="3" style="width: 100%;">{{ request.form.get('description', category.description or '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('狀態') }}</th>
+            <td>
+                <label>
+                    <input type="checkbox" name="is_active" value="true"
+                           {% if category.is_active %}checked{% endif %}>
+                    {{ _('啟用') }}
+                </label>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit">{{ _('儲存變更') }}</button>
+                <a href="{{ url_for('approval_categories.list_categories') }}" style="margin-left: 20px;">{{ _('取消') }}</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+{% if not category.is_system_default %}
+<hr style="margin-top: 40px;">
+<h3 class="text-danger">{{ _('危險區域') }}</h3>
+<form method="POST" action="{{ url_for('approval_categories.delete_category', secure_code=category.secure_code) }}"
+      onsubmit="return confirm(__('確定要刪除類別「{name}」嗎？此操作無法復原。', {name: {{ category.name|tojson|forceescape }} }));">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-danger">
+        {{ _('刪除此類別') }}
+    </button>
+</form>
+{% else %}
+<hr style="margin-top: 40px;">
+<p class="text-muted">
+    {{ _('此為系統預設類別，不可刪除。') }}
+</p>
+{% endif %}
+{% endblock %}

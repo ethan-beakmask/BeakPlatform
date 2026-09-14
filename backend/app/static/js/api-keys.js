@@ -1,0 +1,313 @@
+/**
+ * API Key 管理頁面 (/security/api-keys/)
+ * 規格: dev-notes/API_KEY_TRIGGER_SPEC.md §4
+ *
+ * 依賴 window.__APIKEYS_CONFIG = { appPrefix }（模板橋接注入）
+ */
+(function () {
+    const config = window.__APIKEYS_CONFIG || {};
+    const PREFIX = config.appPrefix || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    async function api(path, options = {}) {
+        const res = await fetch(PREFIX + path, {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            ...options,
+        });
+        return res.json();
+    }
+
+    window.apiKeysManager = function () {
+        return {
+            keys: [],
+            loading: true,
+            msg: '',
+            msgErr: false,
+
+            // 選項資料（分類 / 已發行表單 / 用戶）
+            categories: [],
+            publishedForms: [],
+            users: [],
+
+            // 建立/編輯共用表單狀態
+            showFormModal: false,
+            editingSc: null,          // null = 建立模式
+            form: {},
+            // 一次性 secret 顯示
+            showSecretModal: false,
+            createdKey: null,
+            secretCopied: false,
+            // 暫停
+            showSuspendModal: false,
+            suspendTarget: null,
+            suspendReason: '',
+
+            emptyForm() {
+                return {
+                    name: '',
+                    consumer_label: '',
+                    description: '',
+                    expires_at: '',
+                    allowed_ips_text: '',
+                    scope_categories: [],
+                    scope_forms: [],
+                    scope_od_sources_text: '',
+                    applicant_user_secure_code: '',
+                    _extra_scopes: {},   // 未知 scope key 原樣保留，避免編輯時被覆寫
+                };
+            },
+
+            async init() {
+                this.form = this.emptyForm();
+                await Promise.all([this.load(), this.loadOptions()]);
+            },
+
+            async load() {
+                this.loading = true;
+                try {
+                    const data = await api('/api/security/api-keys');
+                    if (data.success) {
+                        this.keys = data.data;
+                    } else {
+                        this.flash(data.error || __('載入失敗'), true);
+                    }
+                } catch (e) {
+                    this.flash(__('載入失敗: {message}', {message: e.message}), true);
+                }
+                this.loading = false;
+            },
+
+            async loadOptions() {
+                // 分類（form_workflow 模組）
+                try {
+                    const data = await api('/api/form-workflow/categories?flat=1');
+                    if (data.success) {
+                        this.categories = (data.data || []).filter(c => c.parent_secure_code);
+                        // 父分類排前面供整組授權
+                        const parents = (data.data || []).filter(c => !c.parent_secure_code);
+                        this.categories = parents.concat(this.categories);
+                    }
+                } catch (e) { /* 模組未載入時忽略 */ }
+                // 已發行表單
+                try {
+                    const data = await api('/api/mappings/published?status=Published');
+                    if (data.success) this.publishedForms = data.data || [];
+                } catch (e) { /* ignore */ }
+                // 企業成員（申請人綁定）
+                try {
+                    const data = await api('/api/users/?per_page=100');
+                    this.users = data.users || [];
+                } catch (e) { /* ignore */ }
+            },
+
+            flash(message, isErr) {
+                this.msg = message;
+                this.msgErr = !!isErr;
+                if (!isErr) setTimeout(() => { this.msg = ''; }, 4000);
+            },
+
+            categoryName(sc) {
+                const c = this.categories.find(x => x.secure_code === sc);
+                return c ? c.name : sc;
+            },
+
+            formName(sc) {
+                const f = this.publishedForms.find(x => x.secure_code === sc);
+                return f ? f.name : sc;
+            },
+
+            scopeSummary(key) {
+                const s = key.scopes || {};
+                const cats = (s.form_category || []).length;
+                const forms = (s.form || []).length;
+                const templates = (s.form_template || []).length;
+                const odSources = ((s.od_intake || {}).source_systems || []).length;
+                const parts = [];
+                if (cats) parts.push(__('分類 x{count}', {count: cats}));
+                if (forms) parts.push(__('表單 x{count}', {count: forms}));
+                if (templates) parts.push(__('表單模板 x{count}', {count: templates}));
+                if (odSources) parts.push(__('資安事件來源 x{count}', {count: odSources}));
+                return parts.length ? parts.join('、') : __('（無授權範圍）');
+            },
+
+            statusLabel(status) {
+                return { active: __('啟用中'), suspended: __('已暫停'), revoked: __('已撤銷') }[status] || status;
+            },
+
+            fmtTime(iso) {
+                if (!iso) return '-';
+                // timezone.js 用 `const BkTime` 宣告，全域 const 不會成為 window 的屬性，
+                // 判斷寫成 window.BkTime 會恆為 false、時間永遠顯示未轉換的 UTC 原文（TZ-01）
+                return (typeof BkTime !== 'undefined' && BkTime.format) ? BkTime.format(iso, 'short') : iso;
+            },
+
+            fmtDate(iso) {
+                if (!iso) return __('永久');
+                return iso.slice(0, 10);
+            },
+
+            // ---- 建立 / 編輯 ----
+
+            openCreate() {
+                this.editingSc = null;
+                this.form = this.emptyForm();
+                this.showFormModal = true;
+            },
+
+            openEdit(key) {
+                this.editingSc = key.secure_code;
+                const s = key.scopes || {};
+                const KNOWN_SCOPES = ['form_category', 'form', 'od_intake'];
+                const extra = {};
+                for (const k of Object.keys(s)) {
+                    if (!KNOWN_SCOPES.includes(k)) extra[k] = s[k];
+                }
+                this.form = {
+                    name: key.name || '',
+                    consumer_label: key.consumer_label || '',
+                    description: key.description || '',
+                    expires_at: key.expires_at ? key.expires_at.slice(0, 10) : '',
+                    allowed_ips_text: (key.allowed_ips || []).join('\n'),
+                    scope_categories: [...(s.form_category || [])],
+                    scope_forms: [...(s.form || [])],
+                    scope_od_sources_text: ((s.od_intake || {}).source_systems || []).join('\n'),
+                    applicant_user_secure_code: key.applicant_user_secure_code || '',
+                    _extra_scopes: extra,
+                };
+                this.showFormModal = true;
+            },
+
+            buildPayload() {
+                const ips = this.form.allowed_ips_text
+                    .split('\n').map(x => x.trim()).filter(Boolean);
+                const odSources = this.form.scope_od_sources_text
+                    .split('\n').map(x => x.trim()).filter(Boolean);
+                const scopes = {
+                    ...(this.form._extra_scopes || {}),
+                    form_category: this.form.scope_categories,
+                    form: this.form.scope_forms,
+                };
+                if (odSources.length) {
+                    scopes.od_intake = { source_systems: odSources };
+                }
+                return {
+                    name: this.form.name,
+                    consumer_label: this.form.consumer_label,
+                    description: this.form.description,
+                    expires_at: this.form.expires_at || null,
+                    allowed_ips: ips.length ? ips : null,
+                    scopes: scopes,
+                    applicant_user_secure_code: this.form.applicant_user_secure_code || null,
+                };
+            },
+
+            async submitForm() {
+                if (!this.form.name.trim()) {
+                    this.flash(__('請填寫名稱'), true);
+                    return;
+                }
+                const payload = this.buildPayload();
+                try {
+                    let data;
+                    if (this.editingSc) {
+                        data = await api('/api/security/api-keys/' + this.editingSc, {
+                            method: 'PATCH', body: JSON.stringify(payload),
+                        });
+                    } else {
+                        data = await api('/api/security/api-keys', {
+                            method: 'POST', body: JSON.stringify(payload),
+                        });
+                    }
+                    if (!data.success) {
+                        this.flash(data.error || __('儲存失敗'), true);
+                        return;
+                    }
+                    this.showFormModal = false;
+                    if (!this.editingSc) {
+                        // 建立成功 -> 顯示一次性 secret
+                        this.createdKey = data.data;
+                        this.secretCopied = false;
+                        this.showSecretModal = true;
+                    } else {
+                        this.flash(__('已更新'));
+                    }
+                    await this.load();
+                } catch (e) {
+                    this.flash(__('儲存失敗: {message}', {message: e.message}), true);
+                }
+            },
+
+            async copySecret() {
+                if (!this.createdKey) return;
+                const text = 'key_id: ' + this.createdKey.key_id +
+                    '\nsecret: ' + this.createdKey.secret;
+                // 平台跑在 http，navigator.clipboard 是 undefined；
+                // Utils.copyToClipboard 內含 textarea + execCommand fallback（app.js）
+                this.secretCopied = await Utils.copyToClipboard(text);
+                if (!this.secretCopied) {
+                    this.flash(__('複製失敗，請手動選取'), true);
+                }
+            },
+
+            closeSecretModal() {
+                this.showSecretModal = false;
+                this.createdKey = null;   // 關閉即丟棄，無法再看
+            },
+
+            // ---- 暫停 / 復原 / 撤銷 ----
+
+            openSuspend(key) {
+                this.suspendTarget = key;
+                this.suspendReason = '';
+                this.showSuspendModal = true;
+            },
+
+            async submitSuspend() {
+                if (!this.suspendReason.trim()) {
+                    this.flash(__('請填寫暫停原因'), true);
+                    return;
+                }
+                const data = await api(
+                    '/api/security/api-keys/' + this.suspendTarget.secure_code + '/suspend',
+                    { method: 'POST', body: JSON.stringify({ reason: this.suspendReason }) });
+                if (data.success) {
+                    this.showSuspendModal = false;
+                    this.flash(__('已暫停'));
+                    await this.load();
+                } else {
+                    this.flash(data.error || __('暫停失敗'), true);
+                }
+            },
+
+            async resume(key) {
+                const data = await api(
+                    '/api/security/api-keys/' + key.secure_code + '/resume',
+                    { method: 'POST', body: JSON.stringify({}) });
+                if (data.success) {
+                    this.flash(__('已復原'));
+                    await this.load();
+                } else {
+                    this.flash(data.error || __('復原失敗'), true);
+                }
+            },
+
+            async revoke(key) {
+                if (!confirm(__('撤銷後不可復原，外部系統將立即無法使用此 Key。確定撤銷「{name}」？', {name: key.name}))) {
+                    return;
+                }
+                const data = await api(
+                    '/api/security/api-keys/' + key.secure_code,
+                    { method: 'DELETE' });
+                if (data.success) {
+                    this.flash(__('已撤銷'));
+                    await this.load();
+                } else {
+                    this.flash(data.error || __('撤銷失敗'), true);
+                }
+            },
+        };
+    };
+})();

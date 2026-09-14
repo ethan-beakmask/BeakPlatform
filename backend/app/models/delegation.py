@@ -1,0 +1,259 @@
+"""PF-251 第 3b 期（2026-09-06）退役。
+
+表與 model 留一版供考古；不得新增任何讀寫。有效資料已由
+scripts/migrate_proxy_assignments.py 第六段遷成 user_role_assignments 的 proxy 列。
+"""
+from datetime import date, datetime
+from decimal import Decimal
+import json
+from typing import Dict, Any
+
+from sqlalchemy import Column, String, Boolean, Date, DateTime, Text, Numeric, ForeignKey
+from sqlalchemy.orm import relationship
+
+from .base import TenantBaseModel
+from .. import db
+
+
+class DelegationType:
+    """代理類型"""
+    FULL = 'FULL'                # 全權代理
+    APPROVAL = 'APPROVAL'        # 僅簽核代理
+    SPECIFIC = 'SPECIFIC'        # 特定流程代理
+
+
+class DelegationStatus:
+    """代理狀態"""
+    PENDING = 'PENDING'          # 待生效
+    ACTIVE = 'ACTIVE'            # 生效中
+    EXPIRED = 'EXPIRED'          # 已過期
+    REVOKED = 'REVOKED'          # 已撤銷
+
+
+class Delegation(TenantBaseModel):
+    """
+    代理授權 Model
+
+    支援：
+    - 全權代理：代理人可執行授權人的所有權限
+    - 限定代理：只能簽核特定金額以下，或特定流程類型
+    - 時間限定：指定生效期間
+
+    範例：
+    - 王經理出差 12/20-12/31，授權李副理全權代理
+    - 張處長授權陳經理代理簽核 100 萬以下的請購單
+    """
+    __tablename__ = 'delegations'
+
+    # 授權人（誰授權）
+    delegator_secure_code = Column(
+        String(32),
+        ForeignKey('users.secure_code'),
+        nullable=False,
+        index=True
+    )
+
+    # 被授權人（誰被授權）
+    delegate_secure_code = Column(
+        String(32),
+        ForeignKey('users.secure_code'),
+        nullable=False,
+        index=True
+    )
+
+    # 代理類型
+    delegation_type = Column(
+        String(20),
+        default=DelegationType.FULL,
+        nullable=False,
+        index=True
+    )
+
+    # 狀態
+    status = Column(
+        String(20),
+        default=DelegationStatus.PENDING,
+        nullable=False,
+        index=True
+    )
+
+    # 生效期間
+    effective_from = Column(Date, nullable=False)
+    effective_until = Column(Date, nullable=False)
+
+    # 金額上限（NULL = 無上限，使用授權人原有權限）
+    approval_limit = Column(Numeric(15, 2), nullable=True)
+    approval_currency = Column(String(3), default='TWD', nullable=False)
+
+    # 特定代理允許的表單模板 secure_code（JSON 陣列，如 ["abc...", "def..."]）
+    allowed_process_types = Column(Text, nullable=True)
+
+    # 授權原因
+    reason = Column(Text, nullable=True)
+
+    # 授權時間
+    created_by = Column(String(100), nullable=True)
+
+    # 撤銷資訊
+    revoked_at = Column(DateTime, nullable=True)
+    revoked_by = Column(String(100), nullable=True)
+    revoke_reason = Column(Text, nullable=True)
+
+    # 關聯
+    delegator = relationship('User', foreign_keys=[delegator_secure_code],
+                            backref=db.backref('delegations_given', lazy='dynamic'))
+    delegate = relationship('User', foreign_keys=[delegate_secure_code],
+                           backref=db.backref('delegations_received', lazy='dynamic'))
+    organization = relationship('Organization', foreign_keys='Delegation.org_secure_code')
+
+    def _org_today(self) -> date:
+        """企業當地日曆日（TZ-01，與 Contract 相同做法）。"""
+        org = self.organization
+        if org is None and self.org_secure_code:
+            from .organization import Organization
+            org = Organization.query.filter_by(secure_code=self.org_secure_code).first()
+        if org is not None:
+            return org.local_today()
+        from app.utils.timezone import local_today
+        return local_today('Asia/Taipei')
+
+    def is_effective_on(self, today: date) -> bool:
+        """指定日期是否在生效期間內（撤銷、刪除一律 False）。
+
+        效期判定只看日期，不看 `status` 欄位——`status` 是儲存當下算出的快照，
+        沒有排程更新它，提前建立的授權到了開始日不會自己翻成 ACTIVE（2026-09-02 修）。
+        """
+        if self.status == DelegationStatus.REVOKED or self.is_deleted:
+            return False
+        if not self.effective_from or not self.effective_until:
+            return False
+        return self.effective_from <= today <= self.effective_until
+
+    @property
+    def effective_status(self) -> str:
+        """依企業當地今天推導的狀態；畫面與 API 一律用這個，不用 `status`。"""
+        if self.status == DelegationStatus.REVOKED:
+            return DelegationStatus.REVOKED
+        today = self._org_today()
+        if today < self.effective_from:
+            return DelegationStatus.PENDING
+        if today > self.effective_until:
+            return DelegationStatus.EXPIRED
+        return DelegationStatus.ACTIVE
+
+    @property
+    def is_active(self) -> bool:
+        """今天（企業當地日）是否生效中。簽核授權（task_authorizer）吃的就是這個。"""
+        return self.is_effective_on(self._org_today())
+
+    @property
+    def is_expired(self) -> bool:
+        """檢查是否已過期"""
+        return self._org_today() > self.effective_until
+
+    @property
+    def days_remaining(self) -> int:
+        """剩餘天數"""
+        if self.is_expired:
+            return 0
+        return (self.effective_until - self._org_today()).days
+
+    def can_approve_amount(self, amount: Decimal, currency: str = 'TWD') -> bool:
+        """
+        檢查代理人是否可簽核指定金額
+
+        Args:
+            amount: 金額
+            currency: 幣別
+
+        Returns:
+            是否可簽核
+        """
+        if not self.is_active:
+            return False
+
+        if self.approval_limit is None:
+            return True  # 無上限
+
+        if currency != self.approval_currency:
+            # TODO: 匯率轉換
+            pass
+
+        return amount <= self.approval_limit
+
+    def get_allowed_form_templates(self) -> list[str]:
+        """取得特定代理允許的表單模板 secure_code 清單（解析失敗一律 fail-closed）。"""
+        if not self.allowed_process_types:
+            return []
+        try:
+            values = json.loads(self.allowed_process_types)
+        except (TypeError, ValueError):
+            return []
+        if not isinstance(values, list):
+            return []
+        return [str(v).strip() for v in values if str(v).strip()]
+
+    def set_allowed_form_templates(self, secure_codes: list[str]) -> None:
+        """設定特定代理允許的表單模板 secure_code 清單。"""
+        seen = set()
+        values = []
+        for secure_code in secure_codes or []:
+            value = str(secure_code).strip()
+            if not value or value in seen:
+                continue
+            seen.add(value)
+            values.append(value)
+        self.allowed_process_types = json.dumps(values) if values else None
+
+    def activate(self) -> None:
+        """啟動代理授權"""
+        self.status = DelegationStatus.ACTIVE
+
+    def revoke(self, revoked_by: str, reason: str = None) -> None:
+        """撤銷代理授權"""
+        self.status = DelegationStatus.REVOKED
+        self.revoked_at = datetime.utcnow()
+        self.revoked_by = revoked_by
+        self.revoke_reason = reason
+
+    def check_and_update_status(self) -> None:
+        """把 `status` 快照同步成目前推導值（儲存時呼叫；已撤銷不變更）。"""
+        if self.status == DelegationStatus.REVOKED:
+            return
+        self.status = self.effective_status
+
+    def to_dict(self) -> Dict[str, Any]:
+        base = super().to_dict()
+        base.update({
+            'delegator_id': self.delegator_secure_code,
+            'delegate_id': self.delegate_secure_code,
+            'delegation_type': self.delegation_type,
+            'status': self.effective_status,
+            'stored_status': self.status,
+            'is_active': self.is_active,
+            'effective_from': self.effective_from.isoformat() if self.effective_from else None,
+            'effective_until': self.effective_until.isoformat() if self.effective_until else None,
+            'days_remaining': self.days_remaining,
+            'approval_limit': float(self.approval_limit) if self.approval_limit else None,
+            'approval_currency': self.approval_currency,
+            'allowed_process_types': self.allowed_process_types,
+            'allowed_form_templates': self.get_allowed_form_templates(),
+            'reason': self.reason,
+        })
+
+        if self.delegator:
+            base['delegator'] = {
+                'id': self.delegator.secure_code,
+                'name': self.delegator.display_name,
+            }
+
+        if self.delegate:
+            base['delegate'] = {
+                'id': self.delegate.secure_code,
+                'name': self.delegate.display_name,
+            }
+
+        return base
+
+    def __repr__(self):
+        return f'<Delegation {self.delegator_secure_code} -> {self.delegate_secure_code}>'

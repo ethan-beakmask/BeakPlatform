@@ -1,0 +1,66 @@
+"""
+BeakMask Access Logger
+HTTP 存取日誌 - 所有請求記錄到檔案
+
+記錄格式類似 Apache Combined Log Format，方便用 GoAccess 等工具分析。
+輸出位置: /opt/tmp/BeakPlatform-access-{hash}.log（依專案路徑衍生，避免多實例衝突）
+"""
+import hashlib
+import logging
+import os
+from logging.handlers import RotatingFileHandler
+from datetime import datetime
+from flask import Flask, request
+
+from .client_ip import get_client_ip
+
+
+# 根據專案路徑產生唯一後綴，與 config.py session 目錄同一策略
+# __file__ 在 backend/app/security/，往上 3 層到 backend/
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_log_suffix = hashlib.md5(_project_root.encode()).hexdigest()[:8]
+LOG_PATH = f'/opt/tmp/BeakPlatform-access-{_log_suffix}.log'
+
+
+def register_access_logger(app: Flask) -> None:
+    """註冊 HTTP 存取日誌 after_request hook"""
+
+    # 專用 logger，不干擾 app logger
+    access_logger = logging.getLogger('beakmask.access')
+    access_logger.setLevel(logging.INFO)
+    access_logger.propagate = False
+
+    # 確保 log 目錄存在 (Docker 容器內可能不存在)
+    log_dir = os.path.dirname(LOG_PATH)
+    os.makedirs(log_dir, exist_ok=True)
+
+    handler = RotatingFileHandler(
+        LOG_PATH,
+        maxBytes=50 * 1024 * 1024,  # 50MB
+        backupCount=5,
+        encoding='utf-8'
+    )
+    handler.setFormatter(logging.Formatter('%(message)s'))
+    access_logger.addHandler(handler)
+
+    @app.after_request
+    def log_access(response):
+        # 跳過靜態資源
+        if request.path.startswith(('/static/', '/favicon.ico')):
+            return response
+
+        # NET-01：來源 IP 一律走 client_ip.get_client_ip()，不自行讀 header
+        ip = get_client_ip() or '-'
+
+        country = request.headers.get('CF-IPCountry', '-')
+        user_agent = request.headers.get('User-Agent', '-')
+        now = datetime.now().strftime('%d/%b/%Y:%H:%M:%S %z').strip()
+
+        access_logger.info(
+            f'{ip} [{country}] [{now}] '
+            f'"{request.method} {request.full_path.rstrip("?")} {request.environ.get("SERVER_PROTOCOL", "HTTP/1.1")}" '
+            f'{response.status_code} {response.content_length or 0} '
+            f'"{request.referrer or "-"}" "{user_agent}"'
+        )
+
+        return response

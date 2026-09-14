@@ -1,0 +1,976 @@
+/* org-databases.css - 企業獨立資料庫監視頁面 */
+
+.odb-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.odb-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.odb-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+.odb-summary {
+    font-size: 13px;
+    color: #888;
+}
+
+/* ========== 系統級健康檢查 ========== */
+
+.odb-health {
+    margin: 0 0 16px;
+    padding: 16px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+}
+.odb-health-header,
+.odb-health-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.odb-health-header {
+    margin-bottom: 14px;
+}
+.odb-health-header h2,
+.odb-health-card h3 {
+    margin: 0;
+    color: var(--color-text);
+}
+.odb-health-header h2 {
+    font-size: 18px;
+}
+.odb-health-card h3 {
+    font-size: var(--font-size-base);
+}
+.odb-health-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+    gap: 12px;
+}
+.odb-health-card {
+    margin-top: 12px;
+    padding: 14px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius);
+}
+.odb-health-grid .odb-health-card {
+    margin-top: 0;
+}
+.odb-health-card-danger {
+    border-color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+.odb-health-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+}
+.odb-health-status-ok {
+    color: var(--color-success);
+    background: var(--color-success-light);
+}
+.odb-health-status-bad {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+.odb-health-muted,
+.odb-health-note,
+.odb-health-detail {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+.odb-health-checks {
+    display: grid;
+    gap: 6px;
+    margin-top: 12px;
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+}
+.odb-health-checks span {
+    display: inline-block;
+    width: 16px;
+    font-family: monospace;
+}
+.odb-health-detail,
+.odb-health-warning,
+.odb-health-note,
+.odb-health-roles,
+.odb-health-ok-line {
+    margin-top: 10px;
+}
+.odb-health-detail-error,
+.odb-health-warning,
+.odb-health-error {
+    color: var(--color-danger);
+}
+.odb-health-warning,
+.odb-health-error {
+    padding: 8px 10px;
+    background: var(--color-danger-light);
+    border: 1px solid var(--color-danger);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+}
+.odb-health-ok-line {
+    color: var(--color-success);
+    font-size: var(--font-size-sm);
+}
+.odb-health-table-wrap {
+    margin-top: 12px;
+    overflow-x: auto;
+}
+.odb-health-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+.odb-health-table th,
+.odb-health-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-light);
+    vertical-align: top;
+}
+.odb-health-table th {
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+}
+.odb-health-table code,
+.odb-health-detail code {
+    padding: 1px 4px;
+    background: var(--color-bg-light);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-xs);
+}
+.odb-health-roles {
+    color: var(--color-text);
+    font-family: monospace;
+    font-size: var(--font-size-sm);
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+    .odb-health-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 空狀態 */
+.odb-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 14px;
+}
+
+/* 企業資料庫卡片 */
+.odb-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.odb-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 0.1s;
+    user-select: none;
+}
+.odb-card-header:hover {
+    background: #f9f9f9;
+}
+
+.odb-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+.odb-org-id {
+    font-family: monospace;
+    font-size: 12px;
+    color: #999;
+    min-width: 30px;
+}
+.odb-org-name {
+    font-weight: 600;
+}
+.odb-org-domain {
+    font-size: 12px;
+    color: #888;
+    font-family: monospace;
+}
+
+.odb-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+}
+.odb-db-name {
+    font-family: monospace;
+    color: #555;
+    font-size: 12px;
+}
+.odb-db-size {
+    font-weight: 600;
+    color: #1976d2;
+}
+.odb-table-count {
+    color: #888;
+}
+
+/* 展開箭頭 */
+.odb-toggle-icon {
+    font-size: 10px;
+    color: #999;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+.odb-toggle-icon.expanded {
+    transform: rotate(90deg);
+}
+
+/* Badge */
+.odb-badge {
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+.odb-badge-inactive {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* 錯誤訊息 */
+.odb-error {
+    padding: 8px 16px;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: 12px;
+    border-top: 1px solid #fca5a5;
+}
+
+/* 卡片展開區 */
+.odb-card-body {
+    border-top: 1px solid #eee;
+    padding: 12px 16px 16px;
+}
+
+/* 資料庫資訊 */
+.odb-info-row {
+    margin-bottom: 12px;
+}
+.odb-info-table {
+    width: 100%;
+    font-size: 13px;
+    border-collapse: collapse;
+}
+.odb-info-table td {
+    padding: 4px 8px 4px 0;
+    vertical-align: top;
+}
+.odb-info-table td:nth-child(odd) {
+    color: #888;
+    width: 80px;
+    white-space: nowrap;
+}
+.odb-info-table td:nth-child(even) {
+    padding-right: 24px;
+}
+.odb-info-table code {
+    font-size: 12px;
+    background: #f5f5f5;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+/* 資料表清單 */
+.odb-table-list {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.odb-table-list th,
+.odb-table-list td {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+.odb-table-list thead th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #666;
+    border-bottom: 2px solid #ddd;
+}
+.odb-table-list tfoot td {
+    border-top: 2px solid #ddd;
+    border-bottom: none;
+    background: #fafafa;
+}
+.odb-table-list .col-num {
+    width: 40px;
+    color: #bbb;
+    text-align: center;
+}
+.odb-table-list .col-name {
+    min-width: 200px;
+}
+.odb-table-list .col-name code {
+    font-size: 12px;
+}
+.odb-table-list .col-rows {
+    width: 100px;
+    text-align: right;
+    font-family: monospace;
+}
+.odb-table-list .col-size {
+    width: 100px;
+    text-align: right;
+    font-family: monospace;
+}
+.odb-table-list tbody tr:hover {
+    background: #f9fafb;
+}
+.odb-table-list th.col-sortable {
+    cursor: pointer;
+    user-select: none;
+}
+.odb-table-list th.col-sortable:hover {
+    background: #f0f0f0;
+}
+
+.odb-empty-tables {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+    font-size: 13px;
+}
+
+/* ========== 系統級 master-detail 佈局 ========== */
+
+.odb-layout {
+    display: flex;
+    height: calc(100vh - var(--topbar-height, 80px) - 20px);
+    margin: 4px -16px -16px;
+    background: #f5f5f5;
+    overflow: hidden;
+}
+
+/* 左側企業清單 */
+.odb-sidebar {
+    width: 680px;
+    min-width: 680px;
+    background: white;
+    border-right: 1px solid #ddd;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+.odb-sidebar-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid #ddd;
+    background: #fafafa;
+}
+.odb-sidebar-header h2 {
+    margin: 0;
+    font-size: 16px;
+}
+.odb-sidebar-summary {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}
+.odb-search {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    outline: none;
+    box-sizing: border-box;
+}
+.odb-search:focus {
+    border-color: #999;
+}
+.odb-sort-bar {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.odb-sort-btn {
+    padding: 2px 8px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    color: #666;
+}
+.odb-sort-btn:hover {
+    background: #f0f0f0;
+}
+.odb-sort-btn.active {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+.odb-sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+}
+.odb-sidebar-empty {
+    padding: 40px 16px;
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+}
+
+/* 企業列表項（單列佈局：ID | 名稱 | domain | [badge] | stats） */
+.odb-org-item {
+    padding: 10px 16px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+}
+.odb-org-item:hover {
+    background: #f5f5f5;
+}
+.odb-org-item.active {
+    background: #e8e8e8;
+    border-left: 3px solid #333;
+    padding-left: 13px;
+}
+.odb-org-item-id {
+    font-family: monospace;
+    font-size: 11px;
+    color: #aaa;
+    min-width: 28px;
+    flex-shrink: 0;
+}
+.odb-org-item-name {
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+.odb-org-item-domain {
+    font-size: 11px;
+    color: #888;
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 0 0 auto;
+    max-width: 200px;
+}
+.odb-org-item-stats {
+    font-size: 11px;
+    color: #666;
+    font-family: monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 110px;
+    text-align: right;
+}
+
+/* 右側詳情面板 */
+.odb-detail {
+    flex: 1;
+    padding: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+/* Alpine x-if 產生的中間 div，需延續 flex 鏈 */
+.odb-detail > div {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.odb-detail-placeholder {
+    color: #999;
+    font-size: 14px;
+    padding: 40px 0;
+    text-align: center;
+}
+.odb-detail-loading {
+    color: #888;
+    font-size: 14px;
+    padding: 40px 0;
+    text-align: center;
+}
+.odb-detail-header {
+    margin-bottom: 16px;
+}
+.odb-detail-header h3 {
+    margin: 0 0 4px;
+    font-size: 16px;
+}
+.odb-detail-header .odb-org-domain {
+    font-size: 12px;
+}
+.odb-detail-nodb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #999;
+    font-size: 14px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+.odb-detail-content {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 16px;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+.odb-detail-content .odb-info-row {
+    margin-bottom: 16px;
+}
+.odb-detail-content .odb-table-list {
+    margin-top: 8px;
+}
+
+/* ========== 企業級：工具列 ========== */
+
+.odb-table-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #f9fafb;
+    border-bottom: 1px solid #ddd;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+.odb-toolbar-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+.odb-toolbar-check input[type="checkbox"] {
+    margin: 0;
+}
+.odb-toolbar-spacer {
+    flex: 1;
+}
+.odb-toolbar-sort {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #888;
+    white-space: nowrap;
+}
+
+/* 反選按鈕 */
+.odb-btn-invert {
+    padding: 3px 10px;
+    font-size: 12px;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    color: #555;
+}
+.odb-btn-invert:hover {
+    background: #f0f0f0;
+}
+
+/* 刪除按鈕 */
+.odb-btn-danger {
+    padding: 3px 10px;
+    font-size: 12px;
+    border: 1px solid #dc2626;
+    border-radius: 3px;
+    background: #dc2626;
+    color: white;
+    cursor: pointer;
+}
+.odb-btn-danger:hover {
+    background: #b91c1c;
+}
+.odb-btn-danger:disabled {
+    background: #ccc;
+    border-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* 取消按鈕 */
+.odb-btn-cancel {
+    padding: 6px 16px;
+    font-size: 13px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    color: #333;
+}
+.odb-btn-cancel:hover {
+    background: #f5f5f5;
+}
+
+/* ========== 企業級：資料表清單項 ========== */
+
+.odb-table-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 16px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    transition: background 0.1s;
+}
+.odb-table-item:hover {
+    background: #f5f5f5;
+}
+.odb-table-item.active {
+    background: #e8f0fe;
+}
+.odb-table-item input[type="checkbox"] {
+    margin: 0;
+    flex-shrink: 0;
+}
+.odb-table-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    color: #1a73e8;
+    font-family: monospace;
+    font-size: 12px;
+}
+.odb-table-name:hover {
+    text-decoration: underline;
+}
+.odb-table-stat {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-family: monospace;
+    color: #888;
+    min-width: 70px;
+    text-align: right;
+}
+
+/* ========== 企業級：預覽區 ========== */
+
+.odb-preview-header {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+.odb-preview-header strong {
+    font-family: monospace;
+    font-size: 14px;
+}
+.odb-preview-header span {
+    color: #888;
+    font-size: 12px;
+    margin-left: 8px;
+}
+.odb-preview-wrap {
+    overflow: auto;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+.odb-preview-table {
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: monospace;
+    white-space: nowrap;
+}
+.odb-preview-table th,
+.odb-preview-table td {
+    padding: 4px 10px;
+    border: 1px solid #e0e0e0;
+    text-align: left;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.odb-preview-table thead th {
+    background: #f5f5f5;
+    font-weight: 600;
+    color: #555;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.odb-preview-table tbody tr {
+    cursor: pointer;
+}
+.odb-preview-table tbody tr:hover {
+    background: #f0f4ff;
+}
+.odb-preview-table tbody tr:nth-child(even) {
+    background: #fcfcfc;
+}
+.odb-preview-table tbody tr:nth-child(even):hover {
+    background: #f0f4ff;
+}
+
+/* 行號欄 */
+.odb-col-rowsel {
+    width: 32px;
+    min-width: 32px;
+    text-align: center;
+    color: #aaa;
+    font-size: 11px;
+    cursor: pointer;
+    user-select: none;
+}
+.odb-preview-table thead .odb-col-rowsel {
+    color: #888;
+}
+
+/* 選中行 */
+.odb-row-selected {
+    background: #e0edff;
+}
+.odb-row-selected:hover {
+    background: #d0e0f8;
+}
+
+/* ========== 企業級：上下分割 ========== */
+
+.odb-detail-split {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.odb-split-top {
+    display: flex;
+    flex-direction: column;
+    min-height: 60px;
+    overflow: hidden;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+}
+.odb-split-top .odb-preview-header {
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+.odb-split-top .odb-preview-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+/* 拖拉分割條 */
+.odb-split-handle {
+    height: 8px;
+    cursor: row-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    user-select: none;
+}
+.odb-split-handle-bar {
+    width: 40px;
+    height: 3px;
+    background: #ccc;
+    border-radius: 2px;
+}
+.odb-split-handle:hover .odb-split-handle-bar {
+    background: #999;
+}
+
+/* 下半：單筆直式 */
+.odb-split-bottom {
+    display: flex;
+    flex-direction: column;
+    min-height: 40px;
+    overflow: hidden;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+}
+.odb-split-bottom .odb-detail-placeholder {
+    padding: 16px 0;
+    font-size: 13px;
+}
+.odb-row-detail-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+.odb-row-detail-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #555;
+}
+.odb-row-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.odb-row-detail-table th {
+    text-align: left;
+    width: 180px;
+    padding: 4px 12px 4px 0;
+    color: #888;
+    font-weight: normal;
+    font-family: monospace;
+    white-space: nowrap;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: top;
+}
+.odb-row-detail-table td {
+    padding: 4px 0;
+    font-family: monospace;
+    border-bottom: 1px solid #f0f0f0;
+    word-break: break-all;
+    white-space: pre-wrap;
+}
+
+/* ========== 企業級：刪除確認 Modal ========== */
+
+.odb-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.odb-modal {
+    background: white;
+    border-radius: 8px;
+    width: 520px;
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+.odb-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    font-size: 15px;
+}
+.odb-modal-body {
+    padding: 16px 20px;
+    flex: 1;
+    overflow-y: auto;
+    font-size: 13px;
+}
+.odb-modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.odb-modal-footer .odb-btn-danger {
+    padding: 6px 16px;
+    font-size: 13px;
+}
+.odb-modal-section {
+    margin-bottom: 12px;
+}
+.odb-modal-section-title {
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #555;
+}
+.odb-modal-table-row {
+    padding: 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.odb-modal-table-row code {
+    font-size: 12px;
+    background: #f5f5f5;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+.odb-modal-table-row span {
+    color: #888;
+    font-size: 12px;
+}
+.odb-modal-ref {
+    padding: 3px 0 3px 12px;
+    font-size: 12px;
+    color: #666;
+}
+.odb-modal-ref code {
+    font-size: 11px;
+    background: #f5f5f5;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+/* 加密欄位（binary）標記 */
+.odb-cell-binary {
+    background: #fef2f2;
+    color: #991b1b;
+    font-style: italic;
+    text-align: center;
+}
+
+.odb-modal-warning {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: #fef2f2;
+    color: #991b1b;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+}

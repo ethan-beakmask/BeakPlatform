@@ -1,0 +1,70 @@
+[project]
+name = "beakplatform"
+version = "1.0.0"
+description = "Multi-tenant RBAC Platform"
+requires-python = ">=3.12"
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # defaults
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  # custom
+  | migrations
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv"]
+skips = [
+    "B101",  # Skip assert warnings
+    "B105",  # hardcoded password (test/dev configs)
+    "B108",  # hardcoded tmp directory (dev config uses /tmp for sessions)
+    "B110",  # try/except/pass (intentional for optional error handling)
+    "B404",  # subprocess import (used for workflow executor)
+    "B603",  # subprocess without shell (intentional for security)
+    "B607",  # partial path (sudo/systemctl are standard)
+]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+markers = [
+    "e2e: 需要本機實跑服務與 PostgreSQL 的端到端測試",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["backend/app"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]

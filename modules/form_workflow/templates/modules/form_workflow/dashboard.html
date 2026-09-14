@@ -1,0 +1,128 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('表單流程 - BeakPlatform') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/fw-dashboard.css">
+{% endblock %}
+
+{% block content %}
+<div class="fw-container" x-data="fwDashboard()">
+
+    <!-- 頁面標題 -->
+    <div class="fw-header">
+        <h1>{{ _('表單流程系統') }}</h1>
+        <p>{{ _('管理表單模板、工作流程和簽核任務') }}</p>
+    </div>
+
+    <!-- 統計卡片 -->
+    <div class="fw-stats">
+        <div class="fw-stat-card">
+            <div class="fw-stat-value" x-text="stats.form_templates"></div>
+            <div class="fw-stat-label">{{ _('表單模板') }}</div>
+        </div>
+        <div class="fw-stat-card">
+            <div class="fw-stat-value" x-text="stats.workflow_templates"></div>
+            <div class="fw-stat-label">{{ _('工作流模板') }}</div>
+        </div>
+        <div class="fw-stat-card">
+            <div class="fw-stat-value" x-text="stats.form_instances"></div>
+            <div class="fw-stat-label">{{ _('表單實例') }}</div>
+        </div>
+        <div class="fw-stat-card">
+            <div class="fw-stat-value" style="color: #f59e0b;" x-text="stats.pending_instances"></div>
+            <div class="fw-stat-label">{{ _('待處理') }}</div>
+        </div>
+    </div>
+
+    <!-- 快速操作 -->
+    <div class="fw-section">
+        <h2 class="fw-section-title">{{ _('快速操作') }}</h2>
+        <div class="fw-quick-actions">
+            <button class="fw-action-btn primary" @click="goTo('templates')">
+                <span>+</span> {{ _('建立表單模板') }}
+            </button>
+            <button class="fw-action-btn primary" @click="goTo('workflows')">
+                <span>+</span> {{ _('建立工作流') }}
+            </button>
+            <button class="fw-action-btn" @click="goTo('instances')">
+                {{ _('查看我的表單') }}
+            </button>
+            <button class="fw-action-btn" @click="goTo('pending')">
+                {{ _('待簽核任務') }}
+            </button>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <!-- 最近表單模板 -->
+        <div class="fw-section">
+            <h2 class="fw-section-title">{{ _('最近表單模板') }}</h2>
+            <div x-show="loading" class="fw-empty">{{ _('載入中...') }}</div>
+            <div x-show="!loading && templates.length === 0" class="fw-empty">
+                {{ _('尚無表單模板') }}
+            </div>
+            <ul x-show="!loading && templates.length > 0" class="fw-list">
+                <template x-for="t in templates.slice(0, 5)" :key="t.secure_code">
+                    <li class="fw-list-item">
+                        <div>
+                            <div style="font-weight: 500;" x-text="t.name"></div>
+                            <div style="font-size: 12px; color: #999;" x-text="t.code || '-'"></div>
+                        </div>
+                        <span class="fw-badge" :class="t.is_active ? 'completed' : 'pending'"
+                              x-text="t.is_active ? __('啟用') : __('停用')"></span>
+                    </li>
+                </template>
+            </ul>
+        </div>
+
+        <!-- 最近工作流模板 -->
+        <div class="fw-section">
+            <h2 class="fw-section-title">{{ _('最近工作流模板') }}</h2>
+            <div x-show="loading" class="fw-empty">{{ _('載入中...') }}</div>
+            <div x-show="!loading && workflows.length === 0" class="fw-empty">
+                {{ _('尚無工作流模板') }}
+            </div>
+            <ul x-show="!loading && workflows.length > 0" class="fw-list">
+                <template x-for="w in workflows.slice(0, 5)" :key="w.secure_code">
+                    <li class="fw-list-item">
+                        <div>
+                            <div style="font-weight: 500;" x-text="w.name"></div>
+                            <div style="font-size: 12px; color: #999;" x-text="w.code || '-'"></div>
+                        </div>
+                        <span class="fw-badge" :class="w.is_active ? 'completed' : 'pending'"
+                              x-text="w.is_active ? __('啟用') : __('停用')"></span>
+                    </li>
+                </template>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 最近表單實例 -->
+    <div class="fw-section">
+        <h2 class="fw-section-title">{{ _('我的最近表單') }}</h2>
+        <div x-show="loading" class="fw-empty">{{ _('載入中...') }}</div>
+        <div x-show="!loading && instances.length === 0" class="fw-empty">
+            {{ _('尚無表單實例') }}
+        </div>
+        <ul x-show="!loading && instances.length > 0" class="fw-list">
+            <template x-for="i in instances.slice(0, 5)" :key="i.secure_code">
+                <li class="fw-list-item">
+                    <div>
+                        <div style="font-weight: 500;" x-text="i.serial_number || i.secure_code"></div>
+                        <div style="font-size: 12px; color: #999;">
+                            <span x-text="formatDate(i.created_at)"></span>
+                        </div>
+                    </div>
+                    <span class="fw-badge"
+                          :class="getStatusClass(i.status)"
+                          x-text="getStatusText(i.status)"></span>
+                </li>
+            </template>
+        </ul>
+    </div>
+
+</div>
+
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fw-dashboard.js"></script>
+{% endblock %}

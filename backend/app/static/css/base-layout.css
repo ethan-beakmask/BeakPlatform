@@ -1,0 +1,224 @@
+/* =============================================
+   BeakPlatform Base Layout CSS
+   =============================================
+   從 base.html 抽離的佈局樣式。
+   由 base.html 全域引入，僅次於 common.css。
+   ============================================= */
+
+/* ------------------------------------------
+   選單配色 CSS 變數（預設值，可由系統設定覆蓋）
+   ------------------------------------------ */
+:root {
+    --menu-sys-bg: #b91c1c;
+    --menu-sys-text: #ffffff;
+    --menu-org-bg: #1d4ed8;
+    --menu-org-text: #ffffff;
+    --menu-user-bg: #111827;
+    --menu-user-text: #ffffff;
+    --menu-ext-bg: #f59e0b;
+    --menu-ext-text: #111827;
+    --menu-cross-text: #fde047;
+    --menu-common-bg: #374151;
+    --menu-common-text: #e5e7eb;
+    --menu-fixed-bg: #111827;
+    --menu-fixed-text: #ffffff;
+    --menu-module-bg: #7c3aed;
+    --menu-module-text: #ffffff;
+    --menu-header-bg: #1e3a5f;
+    --menu-header-text: #ffffff;
+    --menubar-bg: #333333;
+    --menu-hover-accent: #22d3ee;
+}
+
+/* ------------------------------------------
+   Body 基礎
+   ------------------------------------------ */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    background: #f5f5f5;
+}
+a { color: var(--color-primary); }
+a:hover { color: #004499; }
+code { background: #e8e8e8; padding: 2px 4px; font-family: monospace; }
+table { border-collapse: collapse; }
+th { text-align: left; background: #f0f0f0; }
+button { cursor: pointer; }
+input::placeholder, textarea::placeholder {
+    color: #999;
+    opacity: 0.5;
+}
+
+/* ------------------------------------------
+   Fixed Top Bar (navbar + menubar 置頂容器)
+   ------------------------------------------ */
+.bk-topbar-fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+}
+
+/* ------------------------------------------
+   Navbar (頂部導覽列)
+   ------------------------------------------ */
+.bk-navbar {
+    background: white;
+    border-bottom: 1px solid #ccc;
+    padding: 8px 16px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.bk-navbar a { text-decoration: none; }
+.bk-navbar-content {
+    display: flex;
+    align-items: center;
+}
+.bk-navbar-logo {
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+    margin-right: auto;
+}
+.bk-navbar-user { margin-left: 16px; color: #666; }
+.bk-navbar-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: 12px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #ffffff;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+}
+.bk-navbar-help:hover {
+    background: var(--color-primary-hover);
+    color: #ffffff;
+}
+
+/* ------------------------------------------
+   Menubar (選單列)
+   ------------------------------------------ */
+.bk-menubar {
+    background: var(--menubar-bg);
+    padding: 4px 16px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.bk-menubar-admin {
+    background: var(--menubar-bg);
+    border-top: 1px solid rgba(255,255,255,0.15);
+}
+.bk-menubar a {
+    color: #ccc;
+    text-decoration: none;
+    padding: 8px 12px;
+    display: inline-block;
+    border-bottom: 3px solid transparent;
+    transition: border-color 0.15s ease, filter 0.15s ease;
+}
+.bk-menubar a:hover {
+    color: white;
+    border-bottom-color: var(--menu-hover-accent);
+    filter: brightness(1.3);
+}
+
+/* ------------------------------------------
+   Menubar 權限等級著色 (CSS 變數驅動)
+   ------------------------------------------ */
+/* 系統管理員 */
+.bk-menubar a.menu-sys-only,
+.bk-menubar .bk-menu-trigger.menu-sys-only { background: var(--menu-sys-bg); color: var(--menu-sys-text); }
+.bk-menubar a.menu-sys-cross,
+.bk-menubar .bk-menu-trigger.menu-sys-cross { background: var(--menu-sys-bg); color: var(--menu-cross-text); }
+/* 企業管理員 */
+.bk-menubar a.menu-org-only,
+.bk-menubar .bk-menu-trigger.menu-org-only { background: var(--menu-org-bg); color: var(--menu-org-text); }
+.bk-menubar a.menu-org-cross,
+.bk-menubar .bk-menu-trigger.menu-org-cross { background: var(--menu-org-bg); color: var(--menu-cross-text); }
+/* 企業成員 */
+.bk-menubar a.menu-user-only,
+.bk-menubar .bk-menu-trigger.menu-user-only { background: var(--menu-user-bg); color: var(--menu-user-text); }
+.bk-menubar a.menu-user-cross,
+.bk-menubar .bk-menu-trigger.menu-user-cross { background: var(--menu-user-bg); color: var(--menu-cross-text); }
+/* 外部廠商 */
+.bk-menubar a.menu-ext-only,
+.bk-menubar .bk-menu-trigger.menu-ext-only { background: var(--menu-ext-bg); color: var(--menu-ext-text); }
+/* 跨階層基本選單 */
+.bk-menubar a.menu-common,
+.bk-menubar .bk-menu-trigger.menu-common { background: var(--menu-common-bg); color: var(--menu-common-text); }
+/* 固定項目（向下相容） */
+.bk-menubar a.menu-fixed-black,
+.bk-menubar .bk-menu-trigger.menu-fixed-black { background: var(--menu-fixed-bg); color: var(--menu-fixed-text); }
+/* 下拉選單內項目著色 */
+.bk-menu-dropdown-content a.menu-sys-only { background: var(--menu-sys-bg); color: var(--menu-sys-text); }
+.bk-menu-dropdown-content a.menu-sys-cross { background: var(--menu-sys-bg); color: var(--menu-cross-text); }
+.bk-menu-dropdown-content a.menu-org-only { background: var(--menu-org-bg); color: var(--menu-org-text); }
+.bk-menu-dropdown-content a.menu-org-cross { background: var(--menu-org-bg); color: var(--menu-cross-text); }
+.bk-menu-dropdown-content a.menu-user-only { background: var(--menu-user-bg); color: var(--menu-user-text); }
+.bk-menu-dropdown-content a.menu-user-cross { background: var(--menu-user-bg); color: var(--menu-cross-text); }
+.bk-menu-dropdown-content a.menu-ext-only { background: var(--menu-ext-bg); color: var(--menu-ext-text); }
+.bk-menu-dropdown-content a.menu-common { background: var(--menu-common-bg); color: var(--menu-common-text); }
+.bk-menu-dropdown-content a.menu-fixed-black { background: var(--menu-fixed-bg); color: var(--menu-fixed-text); }
+
+/* ------------------------------------------
+   Menubar 下拉選單
+   ------------------------------------------ */
+.bk-menubar-sep { color: #666; margin: 0 4px; }
+.bk-menu-dropdown {
+    display: inline-block;
+    position: relative;
+}
+.bk-menu-trigger {
+    color: #ccc;
+    padding: 8px 12px;
+    display: inline-block;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: border-color 0.15s ease, filter 0.15s ease;
+}
+.bk-menu-trigger:hover {
+    color: white;
+    border-bottom-color: var(--menu-hover-accent);
+    filter: brightness(1.3);
+}
+.bk-menu-dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #444;
+    min-width: 160px;
+    z-index: 100;
+    border-radius: 0 0 4px 4px;
+}
+.bk-menu-dropdown:hover .bk-menu-dropdown-content { display: block; }
+.bk-menu-dropdown-content a {
+    display: block;
+    padding: 8px 12px;
+    border-left: 3px solid transparent;
+    transition: border-color 0.15s ease, filter 0.15s ease;
+}
+.bk-menu-dropdown-content a:hover {
+    border-left-color: var(--menu-hover-accent);
+    filter: brightness(1.3);
+}
+
+/* ------------------------------------------
+   Main Content
+   ------------------------------------------ */
+.main-content {
+    padding: 16px;
+    /* padding-top 由 topbar-offset.js 動態設定，預設值防止初始閃跳 */
+    padding-top: 110px;
+}

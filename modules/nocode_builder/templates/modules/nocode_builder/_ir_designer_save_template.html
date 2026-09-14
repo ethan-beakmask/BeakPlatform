@@ -1,0 +1,35 @@
+<div class="ird-save-template-modal" x-show="saveTemplateModal.open" x-cloak>
+    <div class="ird-save-template-box">
+        <div class="ird-modal-head">
+            <h2>{{ _('另存為樣板') }}</h2>
+            <button type="button" class="ird-icon-btn" @click="closeSaveTemplateModal()">×</button>
+        </div>
+        <div class="ird-save-template-body">
+            <div class="ird-error" x-show="saveTemplateModal.error" x-text="saveTemplateModal.error"></div>
+            <label class="ird-field">
+                <span>{{ _('名稱') }}</span>
+                <input type="text" x-model="saveTemplateModal.name">
+            </label>
+            <label class="ird-field">
+                <span>{{ _('描述') }}</span>
+                <textarea x-model="saveTemplateModal.description"></textarea>
+            </label>
+            <label class="ird-field">
+                <span>{{ _('分類') }}</span>
+                <input type="text" x-model="saveTemplateModal.category">
+            </label>
+            <label class="ird-field">
+                <span>{{ _('範圍') }}</span>
+                <select x-model="saveTemplateModal.scope">
+                    <option value="sub_system" :selected="saveTemplateModal.scope === 'sub_system'" :disabled="!mountedSubSystem">{{ _('本子系統可用') }}</option>
+                    <option value="org" :selected="saveTemplateModal.scope === 'org'">{{ _('全企業可用') }}</option>
+                </select>
+            </label>
+            <p class="ird-hint" x-show="!mountedSubSystem">{{ _('此頁尚未掛在子系統下，只能另存為全企業可用樣板。') }}</p>
+        </div>
+        <div class="ird-modal-actions">
+            <button type="button" class="ird-btn" @click="closeSaveTemplateModal()">{{ _('取消') }}</button>
+            <button type="button" class="ird-btn ird-btn-primary" @click="saveAsTemplate()" :disabled="saveTemplateModal.saving">{{ _('儲存樣板') }}</button>
+        </div>
+    </div>
+</div>

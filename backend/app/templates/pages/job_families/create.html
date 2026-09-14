@@ -1,0 +1,101 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('新增職系') }} - BeakMask{% endblock %}
+
+{% block head %}
+<script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('job_families.list_job_families') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回列表') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('新增職系') }}</h1>
+</div>
+
+<form method="POST" style="max-width: 600px;"
+      x-data="{...codeInputMixin('job_family'), codeval: '{{ request.form.get('code', '') }}'}"
+      @submit="if (!codeval.trim() && _ci_generatedCode) { codeval = _ci_generatedCode; $refs.codeField.value = _ci_generatedCode; }">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table class="info-table">
+        <tr>
+            <th style="width: 150px;">{{ _('職系名稱') }} *</th>
+            <td>
+                <input type="text" name="name" required maxlength="100"
+                       placeholder="{{ _('如 工程技術職') }}" style="width: 100%;"
+                       value="{{ request.form.get('name', '') }}"
+                       @input.debounce.500ms="ciGenerateCode($event.target.value)">
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('職系代碼') }}</th>
+            <td>
+                <input type="text" name="code" maxlength="20" x-ref="codeField"
+                       :placeholder="_ci_generatedCode || __('留空自動產生')" style="width: 100%;"
+                       x-model="codeval"
+                       @input.debounce.500ms="ciValidateCode(codeval)">
+                <div class="text-muted" style="font-size: 0.8em;">{{ _('選填，留空自動產生。如 MGR, SALES, TECH') }}</div>
+                {% include "partials/_code_input.html" %}
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('英文名稱') }}</th>
+            <td>
+                <input type="text" name="name_en" maxlength="100"
+                       placeholder="{{ _('如 Technical Position') }}" style="width: 100%;"
+                       value="{{ request.form.get('name_en', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('職系類型') }} *</th>
+            <td>
+                {% for type_value, type_label in family_types %}
+                <label style="display: block; margin-bottom: 5px;">
+                    <input type="radio" name="family_type" value="{{ type_value }}"
+                           {% if request.form.get('family_type', 'PROFESSIONAL') == type_value %}checked{% endif %}>
+                    {{ type_label }}
+                </label>
+                {% endfor %}
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('上層職系') }}</th>
+            <td>
+                <select name="parent_secure_code" style="width: 100%;">
+                    <option value="">{{ _('-- 無 (根職系) --') }}</option>
+                    {% for parent in parent_options %}
+                    <option value="{{ parent.secure_code }}"
+                            {% if request.form.get('parent_secure_code') == parent.secure_code %}selected{% endif %}>
+                        {{ parent.name }} ({{ parent.code }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="text-muted" style="font-size: 0.8em;">{{ _('子職系可選擇歸屬的上層職系') }}</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="vertical-align: top;">{{ _('描述') }}</th>
+            <td>
+                <textarea name="description" rows="3" style="width: 100%;"
+                          placeholder="{{ _('職系的詳細說明') }}">{{ request.form.get('description', '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('排序順序') }}</th>
+            <td>
+                <input type="number" name="sort_order" min="0"
+                       style="width: 100%;"
+                       value="{{ request.form.get('sort_order', '0') }}">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit" class="btn btn-primary">{{ _('建立職系') }}</button>
+                <a href="{{ url_for('job_families.list_job_families') }}" class="btn btn-cancel" style="margin-left: 20px;">{{ _('取消') }}</a>
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}

@@ -1,0 +1,387 @@
+        // ==================== SMTP ====================
+        getEmptySmtpForm() {
+            return {
+                name: '',
+                description: '',
+                smtp_host: '',
+                smtp_port: 587,
+                use_tls: true,
+                use_ssl: false,
+                username: '',
+                password: '',
+                from_email: '',
+                from_name: '',
+                provider_type: 'generic',
+                priority: 100,
+                is_default: false,
+                is_active: true
+            };
+        },
+
+        async loadSmtpConfigs() {
+            this.loading.smtp = true;
+            try {
+                const res = await fetch(`${API_BASE}/smtp`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.smtp.configs = data.data;
+                }
+            } catch (e) {
+                this.showMessage('smtp', __('載入失敗: {message}', {message: e.message}), true);
+            }
+            this.loading.smtp = false;
+        },
+
+        openSmtpModal() {
+            this.smtp.editing = null;
+            this.smtp.form = this.getEmptySmtpForm();
+            this.smtp.showModal = true;
+        },
+
+        async editSmtpConfig(config) {
+            // 取得完整設定（含密碼）
+            try {
+                const res = await fetch(`${API_BASE}/smtp/${config.id}`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.smtp.editing = config.id;
+                    this.smtp.form = { ...data.data, password: '' };
+                    this.smtp.showModal = true;
+                }
+            } catch (e) {
+                this.showMessage('smtp', __('載入設定失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        applySmtpPreset() {
+            const preset = this.smtp.presets[this.smtp.form.provider_type];
+            if (preset) {
+                this.smtp.form.smtp_host = preset.smtp_host;
+                this.smtp.form.smtp_port = preset.smtp_port;
+                this.smtp.form.use_tls = preset.use_tls;
+                this.smtp.form.use_ssl = preset.use_ssl;
+            }
+        },
+
+        async saveSmtpConfig() {
+            const url = this.smtp.editing
+                ? `${API_BASE}/smtp/${this.smtp.editing}`
+                : `${API_BASE}/smtp`;
+            const method = this.smtp.editing ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(this.smtp.form)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.smtp.showModal = false;
+                    await this.loadSmtpConfigs();
+                    await this.loadMailService();
+                }
+                this.showMessage('smtp', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('smtp', __('儲存失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        async testSmtpConfig(secureCode) {
+            const recipient = prompt(__('輸入測試收件人 Email（可留空只測連線）:'));
+            try {
+                const res = await fetch(`${API_BASE}/smtp/${secureCode}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ test_recipient: recipient })
+                });
+                const data = await res.json();
+                this.showMessage('smtp', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('smtp', __('測試失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        async deleteSmtpConfig(secureCode) {
+            if (!confirm(__('確定要刪除此 SMTP 設定？'))) return;
+            try {
+                const res = await fetch(`${API_BASE}/smtp/${secureCode}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    await this.loadSmtpConfigs();
+                    await this.loadMailService();
+                }
+                this.showMessage('smtp', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('smtp', __('刪除失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        // ==================== Telegram ====================
+        getEmptyTelegramForm() {
+            return {
+                name: '',
+                description: '',
+                bot_token: '',
+                channelList: [],
+                default_channel: '',
+                is_active: true
+            };
+        },
+
+        async loadTelegramConfigs() {
+            this.loading.telegram = true;
+            try {
+                const res = await fetch(`${API_BASE}/telegram`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.telegram.configs = data.data;
+                }
+            } catch (e) {
+                this.showMessage('telegram', __('載入失敗: {message}', {message: e.message}), true);
+            }
+            this.loading.telegram = false;
+        },
+
+        openTelegramModal() {
+            this.telegram.editing = null;
+            this.telegram.form = this.getEmptyTelegramForm();
+            this.telegram.showModal = true;
+        },
+
+        async editTelegramConfig(config) {
+            try {
+                const res = await fetch(`${API_BASE}/telegram/${config.id}`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const cfg = data.data;
+                    this.telegram.editing = config.id;
+                    this.telegram.form = {
+                        name: cfg.name,
+                        description: cfg.description || '',
+                        bot_token: cfg.bot_token,
+                        channelList: Object.entries(cfg.channels || {}).map(([name, chat_id]) => ({ name, chat_id })),
+                        default_channel: cfg.default_channel || '',
+                        is_active: cfg.is_active
+                    };
+                    this.telegram.showModal = true;
+                }
+            } catch (e) {
+                this.showMessage('telegram', __('載入設定失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        addChannel() {
+            this.telegram.form.channelList.push({ name: '', chat_id: '' });
+        },
+
+        removeChannel(index) {
+            this.telegram.form.channelList.splice(index, 1);
+        },
+
+        async saveTelegramConfig() {
+            // 轉換頻道列表為物件
+            const channels = {};
+            for (const ch of this.telegram.form.channelList) {
+                if (ch.name && ch.chat_id) {
+                    channels[ch.name] = ch.chat_id;
+                }
+            }
+
+            const payload = {
+                name: this.telegram.form.name,
+                description: this.telegram.form.description,
+                bot_token: this.telegram.form.bot_token,
+                channels: channels,
+                default_channel: this.telegram.form.default_channel,
+                is_active: this.telegram.form.is_active
+            };
+
+            const url = this.telegram.editing
+                ? `${API_BASE}/telegram/${this.telegram.editing}`
+                : `${API_BASE}/telegram`;
+            const method = this.telegram.editing ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.telegram.showModal = false;
+                    await this.loadTelegramConfigs();
+                }
+                this.showMessage('telegram', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('telegram', __('儲存失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        async testTelegramConfig(secureCode) {
+            try {
+                const res = await fetch(`${API_BASE}/telegram/${secureCode}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+                this.showMessage('telegram', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('telegram', __('測試失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        async deleteTelegramConfig(secureCode) {
+            if (!confirm(__('確定要刪除此 Telegram 設定？'))) return;
+            try {
+                const res = await fetch(`${API_BASE}/telegram/${secureCode}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    await this.loadTelegramConfigs();
+                }
+                this.showMessage('telegram', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('telegram', __('刪除失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        // ==================== 收件人群組 ====================
+        getEmptyRecipientForm() {
+            return {
+                name: '',
+                description: '',
+                priority: 100,
+                is_active: true,
+                emailList: ''
+            };
+        },
+
+        async loadRecipientGroups() {
+            this.loading.recipients = true;
+            try {
+                const res = await fetch(`${API_BASE}/recipient-groups`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.recipients.groups = data.data;
+                }
+            } catch (e) {
+                this.showMessage('recipients', __('載入失敗: {message}', {message: e.message}), true);
+            }
+            this.loading.recipients = false;
+        },
+
+        openRecipientModal() {
+            this.recipients.editing = null;
+            this.recipients.form = this.getEmptyRecipientForm();
+            this.recipients.showModal = true;
+        },
+
+        editRecipientGroup(group) {
+            this.recipients.editing = group.id;
+            // 將 included_users (Email 列表) 轉為文字
+            const emails = group.included_users || [];
+            this.recipients.form = {
+                name: group.name,
+                description: group.description || '',
+                priority: group.priority,
+                is_active: group.is_active,
+                emailList: emails.join('\n')
+            };
+            this.recipients.showModal = true;
+        },
+
+        async saveRecipientGroup() {
+            // 解析 Email 列表
+            const emails = this.recipients.form.emailList
+                .split('\n')
+                .map(e => e.trim())
+                .filter(e => e);
+
+            const payload = {
+                name: this.recipients.form.name,
+                description: this.recipients.form.description,
+                priority: this.recipients.form.priority,
+                is_active: this.recipients.form.is_active,
+                included_users: emails
+            };
+
+            const url = this.recipients.editing
+                ? `${API_BASE}/recipient-groups/${this.recipients.editing}`
+                : `${API_BASE}/recipient-groups`;
+            const method = this.recipients.editing ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.recipients.showModal = false;
+                    await this.loadRecipientGroups();
+                }
+                this.showMessage('recipients', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('recipients', __('儲存失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        async deleteRecipientGroup(secureCode) {
+            if (!confirm(__('確定要刪除此收件人群組？'))) return;
+            try {
+                const res = await fetch(`${API_BASE}/recipient-groups/${secureCode}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    await this.loadRecipientGroups();
+                }
+                this.showMessage('recipients', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('recipients', __('刪除失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        // ==================== 共用 ====================
+        showMessage(section, msg, isError = false) {
+            this.message[section] = msg;
+            this.message[section + 'Error'] = isError;
+            setTimeout(() => {
+                this.message[section] = '';
+            }, 5000);
+        },

@@ -1,0 +1,72 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}{% if is_system_admin %}manual/02_platform_admin/access_center_system{% endif %}{% endblock %}
+
+{% block title %}{{ _('權限管理中心') }} - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/access-center.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="ac-page" x-data="accessCenter()">
+    <div class="page-header">
+        <h1 class="page-title">{{ _('權限管理中心') }}</h1>
+    </div>
+
+    <nav class="ac-tabs" aria-label="{{ _('權限管理中心分頁') }}">
+        <button type="button" class="ac-tab" :class="{ 'is-active': activeTab === 'functions' }"
+                @click="switchTab('functions')">
+            {{ _('功能授權') }}
+        </button>
+        <button type="button" class="ac-tab" :class="{ 'is-active': activeTab === 'roles' }"
+                @click="switchTab('roles')">
+            {{ _('角色') }}
+        </button>
+        {% if not is_system_admin %}
+        <button type="button" class="ac-tab" :class="{ 'is-active': activeTab === 'accounts' }"
+                @click="switchTab('accounts')">
+            {{ _('帳號配角色') }}
+        </button>
+        {% endif %}
+        <button type="button" class="ac-tab" :class="{ 'is-active': activeTab === 'health' }"
+                @click="switchTab('health')">
+            {{ _('健檢') }}
+        </button>
+    </nav>
+
+    <section class="ac-tab-panel" x-show="activeTab === 'functions'" x-cloak>
+        {% include 'pages/access_center/_tab_functions.html' %}
+    </section>
+
+    <section class="ac-tab-panel" x-show="activeTab === 'roles'" x-cloak>
+        {% include 'pages/access_center/_tab_roles.html' %}
+    </section>
+
+    {% if not is_system_admin %}
+    <section class="ac-tab-panel" x-show="activeTab === 'accounts'" x-cloak>
+        {% include 'pages/access_center/_tab_accounts.html' %}
+    </section>
+    {% endif %}
+
+    <section class="ac-tab-panel" x-show="activeTab === 'health'" x-cloak>
+        {% include 'pages/access_center/_tab_health.html' %}
+    </section>
+</div>
+
+<script>
+window.__AC_CONFIG = {
+    isSystemAdmin: {{ is_system_admin | tojson }},
+    userOrgSecureCode: {{ user_org_secure_code | tojson }},
+    userOrgLabel: {{ user_org_label | tojson }},
+    organizations: {{ organizations | tojson }},
+    formTemplates: {{ form_templates | default([]) | tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/access-center/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/access-center/functions.js') }}"></script>
+<script src="{{ url_for('static', filename='js/access-center/roles.js') }}"></script>
+{% if not is_system_admin %}
+<script src="{{ url_for('static', filename='js/access-center/accounts.js') }}"></script>
+{% endif %}
+<script src="{{ url_for('static', filename='js/access-center/health.js') }}"></script>
+{% endblock %}

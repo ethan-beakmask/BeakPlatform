@@ -1,0 +1,254 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('緊急廣播管理') }} - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
+<style>
+.broadcast-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    background: white;
+}
+.broadcast-card.active {
+    border-left: 4px solid #DC2626;
+}
+.broadcast-card.inactive {
+    border-left: 4px solid #9ca3af;
+    opacity: 0.7;
+}
+.broadcast-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+.broadcast-meta {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+.broadcast-meta span {
+    margin-right: 12px;
+}
+.badge-active {
+    background: #DC2626;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+.badge-inactive {
+    background: #9ca3af;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+.ack-panel {
+    background: #f9fafb;
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 8px;
+    display: none;
+}
+.ack-panel.show { display: block; }
+.ack-table {
+    width: 100%;
+    font-size: 13px;
+    border-collapse: collapse;
+}
+.ack-table th, .ack-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+.ack-table th {
+    background: #f3f4f6;
+    font-weight: 600;
+    color: #374151;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="alertBroadcastManager()">
+    <h3 style="margin-bottom: 20px;">{{ _('緊急廣播管理') }}</h3>
+
+    {% if broadcasts %}
+    {% for b in broadcasts %}
+    <div class="broadcast-card {{ 'active' if b.is_active else 'inactive' }}">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div class="broadcast-title">{{ b.title }}</div>
+                <div class="broadcast-meta">
+                    <span>{{ _('代碼:') }} {{ b.code }}</span>
+                    <span>{{ _('建立:') }} {{ b.created_at|tz_format('%Y-%m-%d %H:%M') if b.created_at else '-' }}</span>
+                    <span>
+                        {% if b.is_active %}
+                        <span class="badge-active">{{ _('進行中') }}</span>
+                        {% else %}
+                        <span class="badge-inactive">{{ _('已結束') }}</span>
+                        {% endif %}
+                    </span>
+                    {% if b.target.type == 'all' %}
+                    <span>{{ _('對象: 全企業') }}</span>
+                    {% else %}
+                    <span>{{ _('對象: 指定') }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                {% if b.require_ack %}
+                <button class="btn btn-sm btn-outline-secondary"
+                        @click="toggleAckPanel('{{ b.secure_code }}')">
+                    {{ _('簽到明細 (%(count)s 人)', count=b.ack_count) }}
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if b.require_ack %}
+        <div class="ack-panel" :class="{ 'show': openPanel === '{{ b.secure_code }}' }" id="ack-{{ b.secure_code }}">
+            <div x-show="loadingAck" style="text-align: center; padding: 10px; color: #999;">{{ _('載入中...') }}</div>
+            <div x-show="!loadingAck && ackData['{{ b.secure_code }}']">
+                <div x-show="statsData['{{ b.secure_code }}']"
+                     style="margin-bottom: 10px; font-size: 13px; color: #374151;">
+                    {{ _('有效帳號') }}
+                    <strong x-text="statsData['{{ b.secure_code }}']?.total_active_users || 0"></strong> {{ _('人') }} /
+                    {{ _('已登入') }}
+                    <strong x-text="statsData['{{ b.secure_code }}']?.total_logged_in || 0"></strong> {{ _('人') }} /
+                    {{ _('已簽到') }}
+                    <strong x-text="statsData['{{ b.secure_code }}']?.total_acks || 0"></strong> {{ _('人') }}
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <button class="btn btn-sm"
+                            :class="activeTab['{{ b.secure_code }}'] !== 'unacked' ? 'btn-secondary' : 'btn-outline-secondary'"
+                            @click="activeTab['{{ b.secure_code }}'] = 'acked'">
+                        {{ _('已簽到') }}
+                    </button>
+                    <button class="btn btn-sm"
+                            :class="activeTab['{{ b.secure_code }}'] === 'unacked' ? 'btn-secondary' : 'btn-outline-secondary'"
+                            @click="activeTab['{{ b.secure_code }}'] = 'unacked'">
+                        {{ _('未簽到') }}
+                        <span x-text="'(' + (unackedData['{{ b.secure_code }}'] || []).length + ')'"></span>
+                    </button>
+                </div>
+                <!-- 已簽到表 -->
+                <table class="ack-table" x-show="activeTab['{{ b.secure_code }}'] !== 'unacked'">
+                    <thead>
+                        <tr>
+                            <th>{{ _('姓名') }}</th>
+                            <th>{{ _('企業成員編號 / 部門') }}</th>
+                            <th>{{ _('確認時間') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="ack in (ackData['{{ b.secure_code }}'] || [])" :key="ack.user_secure_code">
+                            <tr>
+                                <td x-text="ack.display_name"></td>
+                                <td>
+                                    <span x-text="ack.employee_id || '-'"></span>
+                                    <span x-show="ack.dept_name"
+                                          x-text="' / ' + ack.dept_name"
+                                          style="color: #6b7280;"></span>
+                                </td>
+                                <td x-text="BkTime.format(ack.acknowledged_at, 'short')"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <div x-show="activeTab['{{ b.secure_code }}'] !== 'unacked' && (ackData['{{ b.secure_code }}'] || []).length === 0"
+                     style="text-align: center; padding: 10px; color: #999;">
+                    {{ _('尚無確認記錄') }}
+                </div>
+                <!-- 未簽到表 -->
+                <table class="ack-table" x-show="activeTab['{{ b.secure_code }}'] === 'unacked'">
+                    <thead>
+                        <tr>
+                            <th>{{ _('姓名') }}</th>
+                            <th>{{ _('企業成員編號 / 部門') }}</th>
+                            <th>{{ _('最後登入') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="u in (unackedData['{{ b.secure_code }}'] || [])" :key="u.user_secure_code">
+                            <tr>
+                                <td x-text="u.display_name"></td>
+                                <td>
+                                    <span x-text="u.employee_id || '-'"></span>
+                                    <span x-show="u.dept_name"
+                                          x-text="' / ' + u.dept_name"
+                                          style="color: #6b7280;"></span>
+                                </td>
+                                <td x-text="u.last_login_at ? BkTime.format(u.last_login_at, 'short') : __('從未登入')"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <div x-show="activeTab['{{ b.secure_code }}'] === 'unacked' && (unackedData['{{ b.secure_code }}'] || []).length === 0"
+                     style="text-align: center; padding: 10px; color: #999;">
+                    {{ _('全員已簽到') }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: #999;">
+        {{ _('尚無緊急廣播記錄') }}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function alertBroadcastManager() {
+    return {
+        openPanel: null,
+        loadingAck: false,
+        ackData: {},
+        unackedData: {},
+        statsData: {},
+        activeTab: {},
+
+        toggleAckPanel(securecode) {
+            if (this.openPanel === securecode) {
+                this.openPanel = null;
+                return;
+            }
+            this.openPanel = securecode;
+            this.loadAcks(securecode);
+        },
+
+        loadAcks(securecode) {
+            if (this.ackData[securecode]) return;
+            this.loadingAck = true;
+
+            fetch('{{ app_prefix }}/api/security/alert-broadcasts/' + securecode + '/acks', {
+                credentials: 'same-origin',
+                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.ackData[securecode] = data.acks;
+                    this.unackedData[securecode] = data.unacked || [];
+                    if (data.stats) {
+                        this.statsData[securecode] = data.stats;
+                    }
+                    if (!this.activeTab[securecode]) {
+                        this.activeTab[securecode] = 'acked';
+                    }
+                }
+                this.loadingAck = false;
+            })
+            .catch(() => { this.loadingAck = false; });
+        }
+    };
+}
+</script>
+{% endblock %}

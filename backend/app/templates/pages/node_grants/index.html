@@ -1,0 +1,122 @@
+{% extends "layouts/base.html" %}
+{% block help_doc %}manual/02_platform_admin/node_grants{% endblock %}
+
+{% block title %}{{ _('節點授權') }} - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/node-grants.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ _('節點授權') }}</h1>
+    <p>{{ _('授權指定企業使用受限的流程節點型別。未授權的企業在流程設計器看不到、也存不進流程圖。') }}</p>
+    <p>{{ _('僅系統管理員可操作。') }}</p>
+</div>
+
+<div class="ng-card" x-data="nodeGrantsManager()" x-init="loadMatrix()" x-cloak>
+    <div class="ng-toolbar">
+        <div>
+            <h2>{{ _('企業授權矩陣') }}</h2>
+            <p x-text="summaryText()"></p>
+        </div>
+        <button type="button" class="ng-button ng-button-secondary" @click="loadMatrix()" :disabled="busy">
+            <span x-show="!busy">{{ _('重新整理') }}</span>
+            <span x-show="busy">{{ _('處理中...') }}</span>
+        </button>
+    </div>
+
+    <div class="ng-alert ng-alert-success" x-show="message && messageType === 'success'" x-text="message"></div>
+    <div class="ng-alert ng-alert-error" x-show="message && messageType === 'error'" x-text="message"></div>
+
+    <div class="ng-empty" x-show="!loading && nodes.length === 0">
+        {{ _('目前沒有受限節點型別') }}
+    </div>
+
+    <div class="ng-loading" x-show="loading">
+        {{ _('載入中...') }}
+    </div>
+
+    <div class="ng-table-wrap" x-show="!loading && nodes.length > 0" x-ref="tableWrap">
+        <table class="ng-matrix" :aria-busy="busy ? 'true' : 'false'">
+            <thead>
+                <tr x-ref="headRow">
+                    <th class="ng-org-col">{{ _('企業') }}</th>
+                    <template x-for="node in nodes" :key="node.node_type">
+                        <th class="ng-node-col" :class="{'ng-col-disabled': !node.is_active}">
+                            <div class="ng-node-title">
+                                <strong x-text="node.display_name"></strong>
+                                <span class="ng-badge ng-badge-warning"
+                                      x-show="!node.is_active"
+                                      title="{{ _('此節點型別已在平台層停用，授權設定會保留但設計器不會顯示') }}">
+                                    {{ _('總開關關閉') }}
+                                </span>
+                            </div>
+                            <div class="ng-node-type" x-text="node.node_type"></div>
+                            <div class="ng-node-note" x-show="!node.is_active">
+                                {{ _('此節點型別已在平台層停用，授權設定會保留但設計器不會顯示') }}
+                            </div>
+                        </th>
+                    </template>
+                </tr>
+                <tr class="ng-bulk-row" x-ref="bulkRow">
+                    <th class="ng-org-col">{{ _('批次') }}</th>
+                    <template x-for="node in nodes" :key="'bulk:' + node.node_type">
+                        <th class="ng-bulk-cell">
+                            <button type="button" class="ng-button ng-button-primary"
+                                    @click="bulk(node, 'grant')" :disabled="busy">
+                                {{ _('全部授權') }}
+                            </button>
+                            <button type="button" class="ng-button ng-button-danger"
+                                    @click="bulk(node, 'revoke')" :disabled="busy">
+                                {{ _('全部撤銷') }}
+                            </button>
+                        </th>
+                    </template>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="org in orderedOrgs()" :key="org.secure_code">
+                    <tr :class="{'ng-system-row': org.is_system_org, 'ng-row-disabled': !org.is_active}">
+                        <td class="ng-org-cell">
+                            <div class="ng-org-title">
+                                <strong x-text="orgLabel(org)"></strong>
+                                <span class="ng-badge ng-badge-info" x-show="org.is_system_org">{{ _('系統預設企業') }}</span>
+                                <span class="ng-badge ng-badge-muted" x-show="!org.is_active">{{ _('停用') }}</span>
+                            </div>
+                            <div class="ng-org-code" x-text="org.code"></div>
+                        </td>
+                        <template x-for="node in nodes" :key="org.secure_code + ':' + node.node_type">
+                            <td class="ng-grant-cell">
+                                <label class="ng-check">
+                                    <input type="checkbox"
+                                           :checked="isGranted(node, org)"
+                                           :disabled="busy"
+                                           @click.prevent="toggle(node, org)">
+                                    <span class="ng-check-mark" x-text="isGranted(node, org) ? 'v' : ''"></span>
+                                </label>
+                                <div class="ng-grant-meta" x-show="isGranted(node, org)">
+                                    <span x-text="grantBy(node, org)"></span>
+                                    <span x-text="grantTime(node, org)"></span>
+                                </div>
+                            </td>
+                        </template>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.__NODE_GRANTS = {
+    matrixUrl: '{{ url_for("node_grants_api.matrix") }}',
+    grantUrl: '{{ url_for("node_grants_api.grant") }}',
+    revokeUrl: '{{ url_for("node_grants_api.revoke") }}',
+    bulkUrl: '{{ url_for("node_grants_api.bulk") }}'
+};
+</script>
+<script src="{{ url_for('static', filename='js/node-grants.js') }}"></script>
+{% endblock %}

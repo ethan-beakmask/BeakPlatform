@@ -1,0 +1,156 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('待簽核任務 - BeakPlatform') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/fw-pending-list.css">
+{% endblock %}
+
+{% block content %}
+<div class="fw-container" x-data="pendingListManager()">
+
+    <!-- 頁首 -->
+    <div class="fw-header">
+        <div style="display: flex; align-items: center;">
+            <h1>{{ _('待簽核任務') }}</h1>
+            <span x-show="tasks.length > 0" class="count" x-text="tasks.length"></span>
+        </div>
+        <div class="fw-toolbar">
+            <button class="fw-btn" @click="loadTasks()">{{ _('重新載入') }}</button>
+        </div>
+    </div>
+
+    <!-- 任務列表 -->
+    <div class="fw-card">
+        <div x-show="loading" class="fw-loading">{{ _('載入中...') }}</div>
+
+        <div x-show="!loading && tasks.length === 0" class="fw-empty">
+            <p style="font-size: 16px; margin-bottom: 8px;">{{ _('目前沒有待簽核的任務') }}</p>
+            <p>{{ _('當有表單需要您簽核時，會顯示在這裡') }}</p>
+        </div>
+
+        <ul x-show="!loading && tasks.length > 0" class="fw-task-list">
+            <template x-for="task in tasks" :key="task.queue_secure_code">
+                <li class="fw-task-item">
+                    <div class="fw-task-info">
+                        <h3 x-text="task.form_name || __('表單簽核')"></h3>
+                        <div class="fw-task-desc">
+                            {{ _('申請人：') }}<strong x-text="task.applicant_name || '-'"></strong>
+                            <span style="margin: 0 8px;">|</span>
+                            {{ _('節點：') }}<span class="fw-badge" x-text="task.node_name || task.node_type"></span>
+                        </div>
+                        <div class="fw-task-meta">
+                            <span>{{ _('單號：') }}<span x-text="task.serial_number || '-'"></span></span>
+                            <span>{{ _('提交：') }}<span x-text="formatDate(task.submitted_at)"></span></span>
+                        </div>
+                    </div>
+                    <div class="fw-task-actions">
+                        <button class="fw-btn" @click="viewTask(task)">{{ _('檢視') }}</button>
+                        <button class="fw-btn approve" @click="openApproveModal(task)">{{ _('簽核') }}</button>
+                    </div>
+                </li>
+            </template>
+        </ul>
+    </div>
+
+    <!-- 簽核 Modal -->
+    <div x-show="showApproveModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content">
+            <div class="fw-modal-header" style="background: #f59e0b; color: white;">
+                <h3>{{ _('簽核表單') }}</h3>
+                <button @click="closeApproveModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: white;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <!-- 基本資訊 -->
+                <div style="background: #fffbeb; border: 1px solid #fcd34d; padding: 12px; margin-bottom: 16px;">
+                    <div style="font-weight: 500;" x-text="currentTask?.form_name"></div>
+                    <div style="font-size: 12px; color: #666; margin-top: 4px;">
+                        {{ _('申請人：') }}<span x-text="currentTask?.applicant_name"></span>
+                        <span style="margin: 0 8px;">|</span>
+                        {{ _('單號：') }}<span x-text="currentTask?.serial_number"></span>
+                    </div>
+                </div>
+
+                <!-- 表單資料 -->
+                <div style="margin-bottom: 16px;">
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px;">{{ _('表單內容') }}</h4>
+                    <div x-show="!taskDetail" style="text-align: center; padding: 16px; color: #999;">{{ _('載入中...') }}</div>
+                    <div x-show="taskDetail" style="background: #f9f9f9; padding: 12px; max-height: 200px; overflow-y: auto;">
+                        <template x-for="(value, key) in (taskDetail?.form_data || {})" :key="key">
+                            <div class="fw-detail-row">
+                                <div class="fw-detail-label" x-text="key"></div>
+                                <div class="fw-detail-value" x-text="typeof value === 'object' ? JSON.stringify(value) : value"></div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 路徑選擇 -->
+                <div x-show="availablePaths.length > 0" style="margin-bottom: 16px;">
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px;">{{ _('選擇路徑') }}</h4>
+                    <div class="fw-path-options">
+                        <template x-for="path in availablePaths" :key="path.id">
+                            <div class="fw-path-option"
+                                 :class="{ selected: selectedPath === path.id }"
+                                 @click="selectedPath = path.id"
+                                 x-text="path.label || path.id"></div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 簽核意見 -->
+                <div class="fw-form-group">
+                    <label>{{ _('簽核意見（選填）') }}</label>
+                    <textarea x-model="comment" placeholder="{{ _('輸入簽核意見...') }}"></textarea>
+                </div>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="closeApproveModal()">{{ _('取消') }}</button>
+                <button class="fw-btn approve" @click="submitApproval()" :disabled="submitting || (availablePaths.length > 0 && !selectedPath)">
+                    <span x-show="!submitting">{{ _('確認簽核') }}</span>
+                    <span x-show="submitting">{{ _('處理中...') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 詳情 Modal -->
+    <div x-show="showDetailModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content">
+            <div class="fw-modal-header">
+                <h3>{{ _('任務詳情') }}</h3>
+                <button @click="showDetailModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">{{ _('表單名稱') }}</div>
+                    <div class="fw-detail-value" x-text="viewingTask?.form_name || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">{{ _('單號') }}</div>
+                    <div class="fw-detail-value" x-text="viewingTask?.serial_number || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">{{ _('申請人') }}</div>
+                    <div class="fw-detail-value" x-text="viewingTask?.applicant_name || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">{{ _('節點') }}</div>
+                    <div class="fw-detail-value" x-text="viewingTask?.node_name || viewingTask?.node_type || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">{{ _('提交時間') }}</div>
+                    <div class="fw-detail-value" x-text="formatDate(viewingTask?.submitted_at)"></div>
+                </div>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showDetailModal = false">{{ _('關閉') }}</button>
+                <button class="fw-btn approve" @click="showDetailModal = false; openApproveModal(viewingTask)">{{ _('開始簽核') }}</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fw-pending-list.js"></script>
+{% endblock %}

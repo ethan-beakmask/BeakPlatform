@@ -1,0 +1,37 @@
+        // ==================== 企業專屬資料庫 ====================
+        async loadOrgDatabasesHealth() {
+            this.loading.orgdatabases = true;
+            this.message.orgdatabases = '';
+            try {
+                const res = await fetch(window.__BP + '/organizations/databases/health', {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    this.orgdatabases.provisioning = data.provisioning || {};
+                    this.orgdatabases.orgs = data.orgs || [];
+                    this.orgdatabases.orphan_databases = data.orphan_databases || [];
+                    this.orgdatabases.orphan_roles = data.orphan_roles || [];
+                    this.orgdatabases.summary = data.summary || {};
+                    this.message.orgdatabasesError = false;
+                } else {
+                    this.showMessage('orgdatabases', data.error || __('載入失敗'), true);
+                }
+            } catch (e) {
+                this.showMessage('orgdatabases', __('載入失敗: {message}', {message: e.message}), true);
+            }
+            this.loading.orgdatabases = false;
+        },
+
+        orgDatabaseCheckLabel(value) {
+            return value ? '✓ ' + __('是') : '✗ ' + __('否');
+        },
+
+        orgDatabaseHasIssues() {
+            const summary = this.orgdatabases.summary || {};
+            const provisioning = this.orgdatabases.provisioning || {};
+            return provisioning.ok === false ||
+                (summary.abnormal || 0) > 0 ||
+                (summary.orphan_databases || 0) > 0 ||
+                (summary.orphan_roles || 0) > 0;
+        },

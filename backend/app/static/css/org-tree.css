@@ -1,0 +1,453 @@
+/* org-tree.css — 部門/社群共用樣式 (departments.html, groups.html) */
+
+/* 覆蓋 base.html 的 max-width 限制，讓頁面填滿可用寬度 */
+.main-content { max-width: none !important; }
+
+.main-container {
+    display: flex;
+    gap: 15px;
+    min-height: 600px;
+    width: 100%;
+}
+
+/* ===== 左側樹狀面板 ===== */
+.tree-panel {
+    width: 336px;
+    min-width: 336px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fafafa;
+    flex-shrink: 0;
+    transition: width 0.3s ease, min-width 0.3s ease;
+}
+.tree-panel.expanded {
+    width: 504px;
+    min-width: 504px;
+}
+
+.tree-header {
+    padding: 8px 12px;
+    background: #f0f0f0;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+.tree-header-left {
+    font-weight: bold;
+    padding-top: 2px;
+}
+.tree-header-left .conglomerate-name {
+    font-size: 11px;
+    font-weight: normal;
+    color: #666;
+    margin-top: 2px;
+}
+.tree-header-right {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+}
+.tree-header-right .btn {
+    font-size: 11px;
+    padding: 3px 8px;
+    min-width: 70px;
+}
+
+.tree-content {
+    padding: 8px;
+    max-height: 550px;
+    overflow-y: auto;
+}
+
+.tree-node {
+    padding: 6px 8px;
+    margin: 2px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+}
+
+.tree-node:hover { background: #e8e8e8; }
+.tree-node.selected { background: #0066cc; color: white; }
+.tree-node.drag-over { background: #cce5ff; border: 2px dashed #0066cc; }
+.tree-node.drag-over-member { background: #d4edda; border: 2px dashed #28a745; }
+.tree-node.root { font-weight: bold; background: #e0e0e0; cursor: default; }
+
+/* ===== jstree 自訂樣式 ===== */
+#dept-tree, #group-tree { padding: 5px; }
+.jstree-default .jstree-clicked { background: #0066cc !important; color: white !important; }
+.jstree-default .jstree-hovered { background: #e8e8e8 !important; }
+.jstree-default .jstree-node { margin-left: 15px; }
+.jstree-default .jstree-icon:empty { width: 15px; }
+
+/* jstree 圖案 */
+.jstree-icon.icon-company { font-style: normal !important; color: #2c3e50; }
+.jstree-icon.icon-company::before { content: '\25A0'; }
+.jstree-icon.icon-dept { font-style: normal !important; color: #3498db; }
+.jstree-icon.icon-dept::before { content: '\25A1'; }
+.jstree-icon.icon-group { font-style: normal !important; color: #27ae60; }
+.jstree-icon.icon-group::before { content: '\25CF'; }
+
+.person-node { font-size: 11px; color: #666; }
+.person-node.leader { color: #d35400; }
+.person-node.employee { color: #2980b9; }
+
+.role-tag {
+    display: inline-block;
+    padding: 0 3px;
+    border-radius: 2px;
+    font-size: 11px;
+    margin-right: 3px;
+    font-weight: 500;
+    background: transparent;
+    line-height: 1.2;
+}
+.role-tag.leader { color: #c0392b; border: 1px solid #e74c3c; }
+.role-tag.employee { color: #2471a3; border: none; }
+
+/* jstree 拖放到外部區域的視覺反饋 */
+.jstree-drop-target {
+    background: #d4edda !important;
+    border-color: #28a745 !important;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+}
+
+/* ===== 中間詳情面板 ===== */
+.detail-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 400px;
+}
+
+.panel-section {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+}
+
+.section-header {
+    padding: 8px 12px;
+    background: #f0f0f0;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-content { padding: 12px; }
+
+/* ===== 右側面板：未分配企業成員 (departments) ===== */
+.unassigned-panel {
+    width: 260px;
+    min-width: 260px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fffbf0;
+    flex-shrink: 0;
+}
+
+.unassigned-header {
+    padding: 10px 12px;
+    background: #fff3cd;
+    border-bottom: 1px solid #ffc107;
+    font-weight: bold;
+    color: #856404;
+}
+
+.unassigned-content {
+    padding: 8px;
+    max-height: 550px;
+    overflow-y: auto;
+}
+
+.drag-over-unassigned {
+    background: #fff3cd !important;
+    outline: 2px dashed #ffc107;
+}
+
+.employee-item {
+    padding: 6px 8px;
+    margin: 4px 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: grab;
+    user-select: none;
+    font-size: 12px;
+}
+
+.employee-item:hover {
+    background: #f8f9fa;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.employee-item.dragging { opacity: 0.5; }
+
+/* ===== 右側面板：所有帳號 (groups) ===== */
+.users-panel {
+    width: 260px;
+    min-width: 260px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f0fff0;
+    flex-shrink: 0;
+}
+
+.users-header {
+    padding: 10px 12px;
+    background: #d4edda;
+    border-bottom: 1px solid #28a745;
+    font-weight: bold;
+    color: #155724;
+}
+
+.users-content {
+    padding: 8px;
+    max-height: 550px;
+    overflow-y: auto;
+}
+
+.users-search {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.user-item {
+    padding: 6px 8px;
+    margin: 4px 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: grab;
+    user-select: none;
+    font-size: 12px;
+}
+
+.user-item:hover {
+    background: #f8f9fa;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.user-item.dragging { opacity: 0.5; }
+.user-item.is-member { background: #e8f5e9; border-color: #4caf50; }
+
+/* ===== 企業成員/帳號項目共用 ===== */
+.emp-id {
+    display: inline-block;
+    background: #e9ecef;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 10px;
+    color: #666;
+    margin-right: 4px;
+}
+
+.emp-native { font-weight: 500; }
+.emp-english { color: #888; font-size: 11px; margin-left: 4px; }
+
+/* ===== 三欄佈局：主管/團長、副主管/副團長、企業成員/團員 ===== */
+.staff-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 12px;
+}
+
+.staff-column {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    min-height: 120px;
+}
+
+.staff-column.drag-over {
+    background: #e8f5e9 !important;
+    border-color: #4caf50 !important;
+}
+
+/* departments 欄位色 */
+.staff-column.manager-col { border-color: #ff9800; background: #fff8e1; }
+.staff-column.employee-col { border-color: #17a2b8; background: #f0f9ff; }
+/* groups 欄位色 */
+.staff-column.leader-col { border-color: #ff9800; background: #fff8e1; }
+.staff-column.member-col { border-color: #4caf50; background: #e8f5e9; }
+/* 共用 */
+.staff-column.deputy-col { border-color: #2196f3; background: #e3f2fd; }
+
+.column-label {
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #ddd;
+}
+
+.manager-col .column-label { color: #e65100; }
+.leader-col .column-label { color: #e65100; }
+.deputy-col .column-label { color: #1565c0; }
+.employee-col .column-label { color: #0c5460; }
+.member-col .column-label { color: #2e7d32; }
+
+.staff-person {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    cursor: grab;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.staff-person:hover { background: #f5f5f5; }
+.staff-person:last-child { margin-bottom: 0; }
+
+.staff-empty { color: #999; font-size: 11px; font-style: italic; }
+
+.staff-person .remove-btn {
+    margin-left: auto;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+}
+.staff-person .remove-btn:hover { color: #a71d2a; }
+
+/* 代理人 */
+.proxy-section {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed #ddd;
+}
+
+.proxy-label {
+    font-size: 10px;
+    color: #7b1fa2;
+    margin-bottom: 4px;
+}
+
+.leadership-cell {
+    min-height: auto;
+}
+.leadership-cell.drag-over {
+    background: #e8f5e9;
+    border-color: #4caf50;
+}
+
+/* ===== 表單 ===== */
+.form-row { margin-bottom: 10px; }
+.form-row label { display: block; margin-bottom: 3px; font-weight: 500; font-size: 13px; }
+.form-row input, .form-row select, .form-row textarea {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+}
+.field-hint {
+    font-size: 11px;
+    color: #888;
+    margin-top: 3px;
+}
+
+/* ===== 按鈕 ===== */
+.btn-group { display: flex; gap: 6px; margin-top: 12px; }
+.btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+.btn-primary { background: #0066cc; color: white; }
+.btn-secondary { background: #6c757d; color: white; }
+.btn-danger { background: #dc3545; color: white; }
+.btn-success { background: #28a745; color: white; }
+.btn-sm { padding: 4px 8px; font-size: 11px; }
+
+/* ===== 通用 ===== */
+.empty-message { color: #888; font-style: italic; padding: 15px; text-align: center; font-size: 13px; }
+.drag-hint { font-size: 11px; color: #999; margin-top: 10px; }
+
+/* toast 由 common.css 提供 */
+
+/* ===== 跨部門人員 (departments only) ===== */
+.cross-member-list {
+    margin-bottom: 12px;
+}
+.cross-member-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    margin: 4px 0;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    font-size: 12px;
+}
+.cross-member-item:hover { background: #e9ecef; }
+.cross-tag {
+    display: inline-block;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 500;
+    background: #e3f2fd;
+    color: #1565c0;
+    border: 1px solid #90caf9;
+}
+.cross-tag.leader {
+    background: #fff3e0;
+    color: #e65100;
+    border-color: #ffcc80;
+}
+.cross-unit {
+    color: #888;
+    font-size: 11px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.cross-add-section {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #ddd;
+}
+.cross-add-form {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+.cross-add-form .form-row {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 150px;
+}
+.cross-add-form .form-row label {
+    font-size: 11px;
+    color: #666;
+}
+.cross-add-form .btn-group {
+    margin-top: 0;
+}
+.cross-drop-zone.drag-over {
+    background: #e3f2fd !important;
+    outline: 2px dashed #1976d2;
+}
+.cross-drop-hint {
+    padding: 10px;
+    text-align: center;
+    color: #1976d2;
+    background: #e3f2fd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 12px;
+}

@@ -1,0 +1,702 @@
+/**
+ * Form.io 美化主題
+ * 相容 Bootstrap 5.3.2 + Form.io
+ * FormFlow 專用
+ */
+
+/* ========================================
+   Font Awesome 相容修補
+   Form.io iconClass 產生的 class 與 FA 7.x 不一致時在此補齊
+   ======================================== */
+.fa-move                    { --fa: "\f047"; }  /* → arrows-up-down-left-right */
+.fa-new-window              { --fa: "\f2d2"; }  /* → window-restore            */
+.fa-question-sign           { --fa: "\f059"; }  /* → circle-question           */
+.fa-zoom-in                 { --fa: "\f00e"; }  /* → magnifying-glass-plus     */
+.fa-zoom-out                { --fa: "\f010"; }  /* → magnifying-glass-minus    */
+.fa-arrow-counterclockwise  { --fa: "\f0e2"; }  /* → rotate-left               */
+
+/* ========================================
+   CSS 變數定義
+   ======================================== */
+:root {
+    --formio-primary: #4f46e5;
+    --formio-primary-hover: #4338ca;
+    --formio-secondary: #64748b;
+    --formio-success: #10b981;
+    --formio-danger: #ef4444;
+    --formio-warning: #f59e0b;
+    --formio-info: #3b82f6;
+    --formio-light: #f8fafc;
+    --formio-border: #e2e8f0;
+    --formio-text: #334155;
+    --formio-text-muted: #94a3b8;
+    --formio-radius: 8px;
+    --formio-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --formio-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --formio-transition: all 0.2s ease;
+}
+
+/* ========================================
+   整體表單容器
+   ======================================== */
+.formio-form {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+    color: var(--formio-text);
+    line-height: 1.6;
+}
+
+.formio-component {
+    margin-bottom: 1.25rem;
+}
+
+/* ========================================
+   標籤樣式
+   ======================================== */
+.formio-component label.col-form-label,
+.formio-component label.form-label,
+.formio-component .control-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--formio-text);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* 必填標記 */
+.formio-component label.field-required::after,
+.formio-component .field-required .control-label::after {
+    content: " *";
+    color: var(--formio-danger);
+    font-weight: 600;
+}
+
+/* ========================================
+   輸入欄位通用樣式
+   ======================================== */
+.formio-component .form-control {
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9375rem;
+    color: var(--formio-text);
+    background-color: #fff;
+    transition: var(--formio-transition);
+    box-shadow: var(--formio-shadow);
+}
+
+.formio-component .form-control:hover {
+    border-color: #cbd5e1;
+}
+
+.formio-component .form-control:focus {
+    border-color: var(--formio-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    outline: none;
+}
+
+.formio-component .form-control::placeholder {
+    color: var(--formio-text-muted);
+    font-size: 0.875rem;
+}
+
+/* 禁用狀態 */
+.formio-component .form-control:disabled,
+.formio-component .form-control[readonly] {
+    background-color: var(--formio-light);
+    border-color: var(--formio-border);
+    color: var(--formio-secondary);
+    cursor: not-allowed;
+}
+
+/* ========================================
+   下拉選單
+   ======================================== */
+.formio-component .form-select,
+.formio-component select.form-control {
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    padding: 0.625rem 2.25rem 0.625rem 0.875rem;
+    font-size: 0.9375rem;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    cursor: pointer;
+    transition: var(--formio-transition);
+}
+
+.formio-component .form-select:focus,
+.formio-component select.form-control:focus {
+    border-color: var(--formio-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+/* Choices.js 下拉選單美化 */
+.formio-component .choices {
+    margin-bottom: 0;
+}
+
+.formio-component .choices__inner {
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    padding: 0.5rem 0.75rem;
+    min-height: 44px;
+    background-color: #fff;
+    transition: var(--formio-transition);
+}
+
+.formio-component .choices__inner:hover {
+    border-color: #cbd5e1;
+}
+
+.formio-component .choices.is-focused .choices__inner {
+    border-color: var(--formio-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.formio-component .choices__list--dropdown {
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    box-shadow: var(--formio-shadow-lg);
+    margin-top: 4px;
+}
+
+.formio-component .choices__list--dropdown .choices__item--selectable.is-highlighted {
+    background-color: var(--formio-primary);
+    color: #fff;
+}
+
+/* ========================================
+   複選框與單選按鈕
+   ======================================== */
+.formio-component .form-check {
+    padding-left: 1.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.formio-component .form-check-input {
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: 0.15rem;
+    margin-left: -1.75rem;
+    border: 2px solid var(--formio-border);
+    transition: var(--formio-transition);
+    cursor: pointer;
+}
+
+.formio-component .form-check-input:hover {
+    border-color: var(--formio-primary);
+}
+
+.formio-component .form-check-input:checked {
+    background-color: var(--formio-primary);
+    border-color: var(--formio-primary);
+}
+
+.formio-component .form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.formio-component .form-check-label {
+    cursor: pointer;
+    font-size: 0.9375rem;
+    color: var(--formio-text);
+}
+
+/* 單選按鈕圓形 */
+.formio-component .form-check-input[type="radio"] {
+    border-radius: 50%;
+}
+
+/* ========================================
+   按鈕樣式
+   ======================================== */
+.formio-component .btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border-radius: var(--formio-radius);
+    transition: var(--formio-transition);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* 主要按鈕 */
+.formio-component .btn-primary {
+    background: linear-gradient(135deg, var(--formio-primary) 0%, #6366f1 100%);
+    border: none;
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
+}
+
+.formio-component .btn-primary:hover {
+    background: linear-gradient(135deg, var(--formio-primary-hover) 0%, #4f46e5 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(79, 70, 229, 0.4);
+}
+
+.formio-component .btn-primary:active {
+    transform: translateY(0);
+}
+
+/* 次要按鈕 */
+.formio-component .btn-secondary {
+    background-color: var(--formio-light);
+    border: 1px solid var(--formio-border);
+    color: var(--formio-text);
+}
+
+.formio-component .btn-secondary:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+/* 成功按鈕 */
+.formio-component .btn-success {
+    background: linear-gradient(135deg, var(--formio-success) 0%, #059669 100%);
+    border: none;
+    color: #fff;
+}
+
+.formio-component .btn-success:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+/* 危險按鈕 */
+.formio-component .btn-danger {
+    background: linear-gradient(135deg, var(--formio-danger) 0%, #dc2626 100%);
+    border: none;
+    color: #fff;
+}
+
+.formio-component .btn-danger:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+/* ========================================
+   面板 / 卡片樣式
+   ======================================== */
+.formio-component-panel {
+    background: #fff;
+    border: 1px solid var(--formio-border);
+    border-radius: calc(var(--formio-radius) + 4px);
+    box-shadow: var(--formio-shadow);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.formio-component-panel > .card {
+    border: none;
+    background: transparent;
+}
+
+.formio-component-panel .card-header {
+    background: linear-gradient(135deg, var(--formio-light) 0%, #f1f5f9 100%);
+    border-bottom: 1px solid var(--formio-border);
+    padding: 1rem 1.25rem;
+}
+
+.formio-component-panel .card-header .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--formio-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.formio-component-panel .card-header .card-title::before {
+    content: "";
+    width: 4px;
+    height: 1.25rem;
+    background: var(--formio-primary);
+    border-radius: 2px;
+}
+
+.formio-component-panel .card-body {
+    padding: 1.25rem;
+}
+
+/* ========================================
+   欄位集 (Fieldset)
+   ======================================== */
+.formio-component-fieldset fieldset {
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.formio-component-fieldset legend {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--formio-text);
+    padding: 0 0.5rem;
+    margin-bottom: 0;
+    width: auto;
+    float: none;
+}
+
+/* ========================================
+   表格元件
+   ======================================== */
+.formio-component-table .table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    overflow: hidden;
+}
+
+.formio-component-table .table th {
+    background: var(--formio-light);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--formio-text);
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--formio-border);
+}
+
+.formio-component-table .table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--formio-border);
+    vertical-align: middle;
+}
+
+.formio-component-table .table tr:last-child td {
+    border-bottom: none;
+}
+
+.formio-component-table .table tr:hover td {
+    background-color: var(--formio-light);
+}
+
+/* ========================================
+   DataGrid 元件
+   ======================================== */
+.formio-component-datagrid .datagrid-table {
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    overflow: hidden;
+}
+
+.formio-component-datagrid .datagrid-table thead th {
+    background: linear-gradient(135deg, var(--formio-light) 0%, #f1f5f9 100%);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: var(--formio-secondary);
+    padding: 0.75rem 0.5rem;
+}
+
+.formio-component-datagrid .datagrid-table tbody tr:nth-child(even) {
+    background-color: var(--formio-light);
+}
+
+.formio-component-datagrid .btn-secondary {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+}
+
+/* ========================================
+   Tabs 標籤頁
+   ======================================== */
+.formio-component-tabs .nav-tabs {
+    border-bottom: 2px solid var(--formio-border);
+    gap: 0.25rem;
+}
+
+.formio-component-tabs .nav-tabs .nav-link {
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+    color: var(--formio-secondary);
+    transition: var(--formio-transition);
+    border-radius: var(--formio-radius) var(--formio-radius) 0 0;
+}
+
+.formio-component-tabs .nav-tabs .nav-link:hover {
+    color: var(--formio-primary);
+    background-color: var(--formio-light);
+}
+
+.formio-component-tabs .nav-tabs .nav-link.active {
+    color: var(--formio-primary);
+    border-bottom-color: var(--formio-primary);
+    background-color: transparent;
+}
+
+.formio-component-tabs .tab-content {
+    padding: 1.25rem 0;
+}
+
+/* ========================================
+   錯誤與驗證訊息
+   ======================================== */
+.formio-component .form-control.is-invalid,
+.formio-component .has-error .form-control {
+    border-color: var(--formio-danger);
+    background-image: none;
+}
+
+.formio-component .form-control.is-invalid:focus,
+.formio-component .has-error .form-control:focus {
+    border-color: var(--formio-danger);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.formio-component .invalid-feedback,
+.formio-component .formio-errors .error {
+    color: var(--formio-danger);
+    font-size: 0.8125rem;
+    margin-top: 0.375rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.formio-component .formio-errors .error::before {
+    content: "⚠";
+    font-size: 0.75rem;
+}
+
+/* 成功訊息 */
+.formio-component .form-control.is-valid {
+    border-color: var(--formio-success);
+}
+
+.formio-component .valid-feedback {
+    color: var(--formio-success);
+    font-size: 0.8125rem;
+    margin-top: 0.375rem;
+}
+
+/* ========================================
+   說明文字
+   ======================================== */
+.formio-component .form-text,
+.formio-component .text-muted {
+    color: var(--formio-text-muted);
+    font-size: 0.8125rem;
+    margin-top: 0.375rem;
+}
+
+/* ========================================
+   檔案上傳
+   ======================================== */
+.formio-component-file .fileSelector {
+    border: 2px dashed var(--formio-border);
+    border-radius: var(--formio-radius);
+    padding: 2rem;
+    text-align: center;
+    background: var(--formio-light);
+    transition: var(--formio-transition);
+    cursor: pointer;
+}
+
+.formio-component-file .fileSelector:hover {
+    border-color: var(--formio-primary);
+    background: #f0f4ff;
+}
+
+.formio-component-file .fileSelector i {
+    font-size: 2.5rem;
+    color: var(--formio-primary);
+    margin-bottom: 0.5rem;
+}
+
+.formio-component-file .file {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--formio-light);
+    border-radius: var(--formio-radius);
+    margin-top: 0.5rem;
+}
+
+.formio-component-file .file .fileName {
+    flex: 1;
+    font-size: 0.875rem;
+    color: var(--formio-text);
+}
+
+/* ========================================
+   日期時間選擇器
+   ======================================== */
+.formio-component-datetime .flatpickr-calendar {
+    border-radius: var(--formio-radius);
+    box-shadow: var(--formio-shadow-lg);
+    border: 1px solid var(--formio-border);
+}
+
+.formio-component-datetime .flatpickr-day.selected {
+    background: var(--formio-primary);
+    border-color: var(--formio-primary);
+}
+
+.formio-component-datetime .flatpickr-day:hover {
+    background: var(--formio-light);
+}
+
+/* ========================================
+   簽名欄位
+   ======================================== */
+.formio-component-signature .signature-pad-canvas {
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    background: #fff;
+}
+
+.formio-component-signature .signature-pad-footer {
+    padding-top: 0.5rem;
+}
+
+/* ========================================
+   Well 區塊
+   ======================================== */
+.formio-component-well .well {
+    background: var(--formio-light);
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    padding: 1.25rem;
+}
+
+/* ========================================
+   HTML 內容區塊
+   ======================================== */
+.formio-component-htmlelement {
+    padding: 0.5rem 0;
+}
+
+.formio-component-htmlelement h1,
+.formio-component-htmlelement h2,
+.formio-component-htmlelement h3,
+.formio-component-htmlelement h4 {
+    color: var(--formio-text);
+    margin-bottom: 0.75rem;
+}
+
+.formio-component-htmlelement p {
+    color: var(--formio-secondary);
+    line-height: 1.7;
+}
+
+/* ========================================
+   進度條
+   ======================================== */
+.formio-component .progress {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--formio-light);
+    overflow: hidden;
+}
+
+.formio-component .progress-bar {
+    background: linear-gradient(90deg, var(--formio-primary) 0%, #6366f1 100%);
+    border-radius: 9999px;
+}
+
+/* ========================================
+   Alert 提示訊息
+   ======================================== */
+.formio-component .alert {
+    border: none;
+    border-radius: var(--formio-radius);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.formio-component .alert-info {
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.formio-component .alert-success {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.formio-component .alert-warning {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.formio-component .alert-danger {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+/* ========================================
+   Input Group
+   ======================================== */
+.formio-component .input-group {
+    border-radius: var(--formio-radius);
+    overflow: hidden;
+}
+
+.formio-component .input-group-text {
+    background: var(--formio-light);
+    border: 1px solid var(--formio-border);
+    border-right: none;
+    color: var(--formio-secondary);
+    font-size: 0.875rem;
+}
+
+.formio-component .input-group .form-control {
+    border-radius: 0 var(--formio-radius) var(--formio-radius) 0;
+}
+
+/* ========================================
+   Builder 預覽模式（可選）
+   ======================================== */
+.formio-component-preview {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* ========================================
+   響應式調整
+   ======================================== */
+@media (max-width: 768px) {
+    .formio-component .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .formio-component-panel .card-body {
+        padding: 1rem;
+    }
+
+    .formio-component-tabs .nav-tabs .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* ========================================
+   列印樣式
+   ======================================== */
+@media print {
+    .formio-component .btn {
+        display: none;
+    }
+
+    .formio-component-panel {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+
+    .formio-component .form-control {
+        border: 1px solid #ddd;
+        box-shadow: none;
+    }
+}

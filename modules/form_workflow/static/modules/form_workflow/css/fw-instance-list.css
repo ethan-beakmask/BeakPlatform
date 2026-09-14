@@ -1,0 +1,45 @@
+/* fw-instance-list.css — 我的表單列表 */
+
+.fw-container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+.fw-header { background: white; border: 1px solid #ddd; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+.fw-header h1 { margin: 0; font-size: 20px; }
+.fw-toolbar { display: flex; gap: 12px; align-items: center; }
+.fw-btn { padding: 8px 16px; border: 1px solid #ddd; background: #f9f9f9; cursor: pointer; font-size: 13px; }
+.fw-btn:hover { background: #e9e9e9; }
+.fw-btn.primary { background: #0066cc; color: white; border-color: #0066cc; }
+
+.fw-card { background: white; border: 1px solid #ddd; }
+.fw-tabs { display: flex; border-bottom: 1px solid #ddd; }
+.fw-tab { padding: 12px 20px; cursor: pointer; font-size: 13px; border-bottom: 2px solid transparent; }
+.fw-tab:hover { background: #f9f9f9; }
+.fw-tab.active { border-bottom-color: #0066cc; color: #0066cc; font-weight: 500; }
+
+.fw-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.fw-table th { background: #f5f5f5; padding: 10px 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: 600; }
+.fw-table td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+.fw-table tr:hover { background: #fafafa; }
+.fw-table .actions { text-align: center; white-space: nowrap; }
+.fw-table .actions button { padding: 4px 8px; margin: 0 2px; font-size: 11px; }
+
+.fw-badge { padding: 2px 8px; font-size: 11px; border-radius: 2px; display: inline-block; }
+.fw-badge.draft { background: #e5e7eb; color: #374151; }
+.fw-badge.pending { background: #fef3c7; color: #92400e; }
+.fw-badge.running { background: #dbeafe; color: #1e40af; }
+.fw-badge.completed { background: #dcfce7; color: #166534; }
+.fw-badge.rejected { background: #fee2e2; color: #991b1b; }
+.fw-badge.cancelled { background: #f3f4f6; color: #6b7280; }
+
+.fw-empty { text-align: center; padding: 48px; color: #999; }
+.fw-loading { text-align: center; padding: 48px; color: #666; }
+.fw-pagination { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; border-top: 1px solid #ddd; }
+
+.fw-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.fw-modal-content { background: white; width: 600px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+.fw-modal-header { padding: 16px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+.fw-modal-header h3 { margin: 0; font-size: 16px; }
+.fw-modal-body { padding: 20px; }
+.fw-modal-footer { padding: 16px 20px; border-top: 1px solid #ddd; display: flex; justify-content: flex-end; gap: 8px; }
+
+.fw-detail-row { display: flex; padding: 8px 0; border-bottom: 1px solid #eee; }
+.fw-detail-label { width: 120px; color: #666; font-size: 13px; }
+.fw-detail-value { flex: 1; font-size: 13px; }

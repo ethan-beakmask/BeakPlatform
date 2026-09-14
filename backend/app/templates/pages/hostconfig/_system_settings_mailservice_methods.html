@@ -1,0 +1,60 @@
+        // ==================== 發信服務 ====================
+        async loadMailServiceSection() {
+            await Promise.all([
+                this.loadMailService(),
+                this.loadEmailrelaySettings(),
+                this.loadSmtpConfigs()
+            ]);
+        },
+
+        async loadMailService() {
+            try {
+                const res = await fetch(`${API_BASE}/mail-service`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.mailService.primary = data.data.primary || '';
+                    this.mailService.send_both = data.data.send_both;
+                    this.mailService.readiness = data.data.readiness;
+                    this.mailService.messages = data.data.messages || {};
+                    this.mailService.loaded = true;
+                } else {
+                    this.showMessage('mailservice', data.message || __('載入發信服務設定失敗'), true);
+                }
+            } catch (e) {
+                this.showMessage('mailservice', __('載入發信服務設定失敗: {message}', {message: e.message}), true);
+            }
+        },
+
+        async saveMailService() {
+            this.mailService.saving = true;
+            try {
+                const res = await fetch(`${API_BASE}/mail-service`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        primary: this.mailService.primary,
+                        send_both: this.mailService.send_both
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.mailService.primary = data.data.primary || '';
+                    this.mailService.send_both = data.data.send_both;
+                    this.mailService.readiness = data.data.readiness;
+                    this.mailService.messages = data.data.messages || {};
+                    this.mailService.loaded = true;
+                    this.showMessage('mailservice', data.message, false);
+                } else {
+                    this.showMessage('mailservice', data.message, true);
+                }
+            } catch (e) {
+                this.showMessage('mailservice', __('儲存發信服務失敗: {message}', {message: e.message}), true);
+            } finally {
+                this.mailService.saving = false;
+            }
+        },

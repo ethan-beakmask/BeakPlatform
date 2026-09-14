@@ -1,0 +1,644 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('規格編輯器') }} - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/spec_formulate/vendor/tabulator_bootstrap5.min.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/spec_formulate/css/spec-schema-editor.css">
+<script src="{{ app_prefix }}/static/modules/spec_formulate/vendor/tabulator.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<script>
+window.__MF_SPEC_CONFIG = {
+    specSc: '{{ spec_sc or "" }}'
+};
+</script>
+
+<div class="mfe-container" x-data="specSchemaEditor()">
+
+    <!-- Header -->
+    <div class="mfe-header">
+        <h1>{{ _('規格編輯器') }}</h1>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="mfe-toast-container" id="mfe-toast-container"></div>
+
+    <!-- Body: Sidebar + Main -->
+    <div class="mfe-body">
+
+    <!-- SPEC 清單側邊欄 -->
+    <div class="mfe-sidebar">
+        <div class="mfe-sidebar-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>{{ _('SPEC 清單') }}</span>
+            <button class="mfe-btn" @click="openNewSpecModal()" style="padding: 1px 6px; font-size: 10px; color: #1e2a5a; border-color: rgba(0,0,0,0.2); background: rgba(255,255,255,0.5);">{{ _('+ 新增') }}</button>
+        </div>
+        <div x-show="specListLoading" style="padding: 12px; text-align: center; color: #9ca3af; font-size: 12px;">{{ _('載入中...') }}</div>
+        <div class="mfe-sidebar-list">
+            <template x-for="item in specList" :key="item.secure_code">
+                <div class="mfe-sidebar-item" :class="{'active': item.secure_code === specSc}"
+                     @click="switchSpec(item.secure_code)">
+                    <div class="mfe-sidebar-item-name" x-text="item.name || '(' + __('未命名') + ')'"></div>
+                </div>
+            </template>
+            <div x-show="!specListLoading && specList.length === 0"
+                 style="padding: 12px; text-align: center; color: #9ca3af; font-size: 12px;">
+                {{ _('尚無規格') }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="mfe-main">
+
+    <!-- Loading -->
+    <div x-show="loading" style="padding: 40px; text-align: center; color: #9ca3af;">{{ _('載入中...') }}</div>
+
+    <!-- Toolbar -->
+    <div class="mfe-toolbar" x-show="!loading">
+        <div class="toolbar-group">
+            <button class="mfe-btn" @click="addColumn()">{{ _('+ 欄位') }}</button>
+            <button class="mfe-btn danger" @click="deleteSelectedRows()">{{ _('刪除選取') }}</button>
+            <button class="mfe-btn primary" @click="saveSpec()" :disabled="saving">
+                <span x-show="!saving">{{ _('儲存') }}</span>
+                <span x-show="saving">{{ _('儲存中...') }}</span>
+            </button>
+            <button class="mfe-btn" @click="openDocxModal()"
+                    :disabled="specList.length === 0">{{ _('製作規格書') }}</button>
+        </div>
+        <div class="toolbar-group toolbar-facets">
+            <span class="facet-label">{{ _('啟用格式:') }}</span>
+            <div class="facet-column">
+                <button class="mfe-btn facet-postgresql"
+                        :class="{'facet-active': activeFacets.indexOf('postgresql') >= 0}"
+                        @click="populateFacet('postgresql')"
+                        :disabled="saving">PostgreSQL</button>
+                <div class="facet-actions" x-show="specSc">
+                    <template x-if="!linkedSqlTable">
+                        <div class="facet-action-btns">
+                            <button class="mfe-btn" @click="openReadTableModal()">{{ _('讀入資料表') }}</button>
+                            <button class="mfe-btn" @click="pgCreateTable()"
+                                    :disabled="activeFacets.indexOf('postgresql') < 0 || !specTableName">{{ _('新建資料表') }}</button>
+                        </div>
+                    </template>
+                    <template x-if="linkedSqlTable">
+                        <div class="facet-linked-info">
+                            <span class="linked-name" x-text="linkedSqlTable"></span>
+                            <button class="mfe-btn danger" @click="pgUnlinkTable()">{{ _('解除') }}</button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="facet-column">
+                <button class="mfe-btn facet-formio"
+                        :class="{'facet-active': activeFacets.indexOf('formio') >= 0}"
+                        @click="populateFacet('formio')"
+                        :disabled="saving">FormIO</button>
+                <div class="facet-actions" x-show="specSc">
+                    <template x-if="!linkedFormTemplateSc">
+                        <div class="facet-action-btns">
+                            <button class="mfe-btn" @click="openLinkFormModal()">{{ _('關聯表單') }}</button>
+                            <button class="mfe-btn" @click="openCreateFormModal()"
+                                    :disabled="activeFacets.indexOf('formio') < 0">{{ _('建立表單') }}</button>
+                        </div>
+                    </template>
+                    <template x-if="linkedFormTemplateSc">
+                        <div class="facet-linked-info">
+                            <span class="linked-name" x-text="linkedFormTemplateName || linkedFormTemplateSc"></span>
+                            <button class="mfe-btn" @click="syncToForm()">{{ _('同步回表單') }}</button>
+                            <button class="mfe-btn danger" @click="unlinkForm()">{{ _('解除') }}</button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="facet-column">
+                <button class="mfe-btn facet-excel"
+                        :class="{'facet-active': activeFacets.indexOf('excel') >= 0}"
+                        @click="populateFacet('excel')"
+                        :disabled="saving">Excel</button>
+            </div>
+            <div class="facet-column">
+                <button class="mfe-btn facet-csv"
+                        :class="{'facet-active': activeFacets.indexOf('csv') >= 0}"
+                        @click="populateFacet('csv')"
+                        :disabled="saving">CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Field Grid: 欄位定義表 -->
+    <div x-show="!loading" class="mfe-card">
+        <div class="mfe-card-title" style="display: flex; align-items: center; gap: 10px;">
+            <span>{{ _('欄位定義表') }}</span>
+            <input type="text" x-model="specName" placeholder="{{ _('規格名稱') }}"
+                   @input.debounce.500ms="autoTranslateTableName()"
+                   style="border: 1px solid rgba(0,0,0,0.15); padding: 2px 8px; font-size: 12px; border-radius: 3px; width: 200px; background: rgba(255,255,255,0.5); color: #1e2a5a;">
+            <template x-if="specTableName">
+                <span style="font-family: Consolas, monospace; font-size: 12px; color: #3b4a7a; font-weight: normal;"
+                      x-text="specTableName"></span>
+            </template>
+            <template x-if="specVersion">
+                <span style="font-size: 12px; color: #3b4a7a; font-weight: normal;">v<span x-text="specVersion"></span></span>
+            </template>
+        </div>
+        <div class="mfe-summary">
+            <span>{{ _('共') }} <strong x-text="projectionFields.length"></strong> {{ _('個欄位') }}</span>
+            <span x-show="projectionFields.filter(function(f){return f.core && f.core.is_pii;}).length > 0">
+                PII: <strong x-text="projectionFields.filter(function(f){return f.core && f.core.is_pii;}).length"></strong>
+            </span>
+        </div>
+        <div id="mf-field-grid"></div>
+        <div class="mfe-add-row-bar">
+            <button class="mfe-btn" @click="addEmptyRows(10)" style="font-size: 12px; padding: 3px 12px;">
+                {{ _('[+] 新增 10 列空白欄位') }}
+            </button>
+        </div>
+    </div>
+
+    <!-- 下方雙欄: 投影表(左) + 歷史表(右) -->
+    <div class="mfe-bottom-row">
+
+        <!-- Facet Projection Panel: 格式投影表 -->
+        <template x-if="activeFacets.length > 0 && !loading">
+            <div class="mfe-facet-panel">
+                <div class="mfe-card-title">{{ _('格式投影表') }}</div>
+                <div class="mfe-facet-tabs">
+                    <template x-for="af in activeFacets" :key="af">
+                        <div class="mfe-facet-tab" :class="[af, activeFacetTab === af ? 'active' : '']"
+                             @click="activeFacetTab = af" x-text="af"></div>
+                    </template>
+                </div>
+                <div class="mfe-facet-body" x-show="activeFacetTab">
+                    <table class="mfe-facet-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">Label</th>
+                                <th style="width: 140px;">Field Key</th>
+                                <th style="width: 100px;">Data Class</th>
+                                <th>{{ _('格式映射') }}</th>
+                                <th style="width: 80px;">{{ _('狀態') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="f in projectionFields" :key="f.field_key">
+                                <tr>
+                                    <td x-text="f.label"></td>
+                                    <td class="mono" x-text="f.field_key"></td>
+                                    <td x-text="_dcValues[(f.core||{}).data_class] || (f.core||{}).data_class || '-'"></td>
+                                    <td>
+                                        <template x-if="getFacetProjection(f, activeFacetTab)">
+                                            <span class="mono" x-text="JSON.stringify(getFacetProjection(f, activeFacetTab))"></span>
+                                        </template>
+                                        <template x-if="!getFacetProjection(f, activeFacetTab)">
+                                            <span class="unsupported"
+                                                  x-text="getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported ? '(' + __('未填充') + ')' : __('不支援')"></span>
+                                        </template>
+                                    </td>
+                                    <td>
+                                        <template x-if="getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported">
+                                            <span style="color: #059669; font-size: 11px;">{{ _('支援') }}</span>
+                                        </template>
+                                        <template x-if="!getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported">
+                                            <span style="color: #dc2626; font-size: 11px;">{{ _('不支援') }}</span>
+                                        </template>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </template>
+
+        <!-- History Panel: 版本歷史表 (常駐) -->
+        <div class="mfe-history-panel" x-show="!loading">
+            <div class="mfe-history-header">
+                <span>{{ _('版本歷史表') }}</span>
+            </div>
+                <div class="mfe-history-list">
+                    <template x-if="histories.length === 0">
+                        <p style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">{{ _('無歷史記錄') }}</p>
+                    </template>
+                    <template x-for="h in histories" :key="h.secure_code">
+                        <div class="mfe-history-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span class="mfe-history-version">v<span x-text="h.version"></span></span>
+                                    <span style="margin-left: 8px; color: #6b7280;" x-text="h.change_description || ''"></span>
+                                </div>
+                                <button class="mfe-btn" style="padding: 2px 10px; font-size: 11px;"
+                                        @click="restoreVersion(h)">{{ _('還原') }}</button>
+                            </div>
+                            <div class="mfe-history-meta">
+                                <span x-text="h.changed_by_name || __('系統')"></span> |
+                                <span x-text="formatDate(h.created_at)"></span> |
+                                <span x-text="__('{n} 個欄位', {n: (h.fields_snapshot || []).length})"></span>
+                                <template x-if="h.active_facets_snapshot && h.active_facets_snapshot.length > 0">
+                                    <span> | {{ _('格式:') }}
+                                        <template x-for="af in h.active_facets_snapshot" :key="af">
+                                            <span class="mf-facet-badge" :class="af" x-text="af" style="margin-left: 2px;"></span>
+                                        </template>
+                                    </span>
+                                </template>
+                            </div>
+                            <!-- 差異摘要 -->
+                            <template x-if="h.change_diff && ((h.change_diff.added || []).length > 0 || (h.change_diff.removed || []).length > 0 || (h.change_diff.modified || []).length > 0)">
+                                <div class="mfe-history-diff">
+                                    <template x-if="(h.change_diff.added || []).length > 0">
+                                        <div class="diff-section diff-added">
+                                            <span class="diff-label">{{ _('+ 新增:') }}</span>
+                                            <template x-for="a in h.change_diff.added" :key="a.field_key">
+                                                <span class="diff-tag" x-text="a.label || a.field_key"></span>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="(h.change_diff.removed || []).length > 0">
+                                        <div class="diff-section diff-removed">
+                                            <span class="diff-label">{{ _('- 移除:') }}</span>
+                                            <template x-for="r in h.change_diff.removed" :key="r.field_key">
+                                                <span class="diff-tag" x-text="r.label || r.field_key"></span>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="(h.change_diff.modified || []).length > 0">
+                                        <div class="diff-section diff-modified">
+                                            <span class="diff-label">{{ _('~ 修改:') }}</span>
+                                            <template x-for="m in h.change_diff.modified" :key="m.field_key">
+                                                <span class="diff-tag" x-text="m.field_key + ' (' + m.changes.length + ')'"></span>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+    </div><!-- /mfe-bottom-row -->
+
+    </div><!-- /mfe-main -->
+    </div><!-- /mfe-body -->
+
+    <!-- Detail Modal -->
+    <div x-show="showDetailModal" x-cloak class="mfe-modal">
+        <div class="mfe-modal-content">
+            <div class="mfe-modal-header">
+                <h3>{{ _('進階設定') }}</h3>
+                <button @click="closeDetail()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mfe-modal-body">
+                <!-- 基本資訊 -->
+                <div class="mfe-detail-info">
+                    <div><span class="info-label">Field Key:</span><span x-text="detailForm.field_key || '-'"></span></div>
+                    <div><span class="info-label">Label:</span><span x-text="detailForm.label || '-'"></span></div>
+                    <div><span class="info-label">Data Class:</span><span x-text="_dcValues[(detailForm.core||{}).data_class] || '-'"></span></div>
+                </div>
+
+                <!-- Core 設定 -->
+                <div class="mfe-form-group">
+                    <label>{{ _('預設值') }}</label>
+                    <input type="text" x-model="detailForm.core.default_value" placeholder="{{ _('(無)') }}">
+                </div>
+
+                <!-- PostgreSQL 屬性 -->
+                <template x-if="activeFacets.indexOf('postgresql') >= 0 && detailForm.facets && detailForm.facets.postgresql">
+                    <div class="mfe-facet-section">
+                        <div class="mfe-facet-section-title">
+                            <span class="badge postgresql">postgresql</span>
+                            <span>{{ _('結構屬性') }}</span>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px;">
+                            <label style="display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                                <input type="checkbox" x-model="detailForm.facets.postgresql.primary_key"> PK
+                            </label>
+                            <label style="display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                                <input type="checkbox" x-model="detailForm.facets.postgresql.index"> INDEX
+                            </label>
+                            <label style="display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                                <input type="checkbox" x-model="detailForm.facets.postgresql.unique"> UNIQUE
+                            </label>
+                        </div>
+                        <div class="mfe-form-group" style="margin-top: 8px; margin-bottom: 0;">
+                            <label style="font-size: 11px;">{{ _('FK 參照') }} <span style="color: #9ca3af; font-weight: normal;">{{ _('（格式: table(column)）') }}</span></label>
+                            <input type="text" x-model="detailForm.facets.postgresql.foreign_key"
+                                   placeholder="{{ _('例如: users(id)') }}" style="font-family: Consolas, monospace; font-size: 12px;">
+                        </div>
+                    </div>
+                </template>
+
+                <!-- 其他 Facet 區塊 -->
+                <template x-for="af in activeFacets" :key="af">
+                    <div class="mfe-facet-section" x-show="af !== 'postgresql'">
+                        <div class="mfe-facet-section-title">
+                            <span class="badge" :class="af" x-text="af"></span>
+                            <span>{{ _('格式設定') }}</span>
+                            <template x-if="!getFacetSupportInfo((detailForm.core||{}).data_class, af).supported">
+                                <span style="color: #dc2626; font-size: 11px; margin-left: 8px;">{{ _('(此 data_class 不支援)') }}</span>
+                            </template>
+                        </div>
+                        <template x-if="detailForm.facets && detailForm.facets[af]">
+                            <div style="font-size: 12px;">
+                                <pre style="margin: 0; padding: 8px; background: #f3f4f6; border-radius: 3px; font-size: 11px; overflow-x: auto;"
+                                     x-text="JSON.stringify(detailForm.facets[af], null, 2)"></pre>
+                            </div>
+                        </template>
+                        <template x-if="!detailForm.facets || !detailForm.facets[af]">
+                            <div style="font-size: 12px; color: #9ca3af;">{{ _('尚未填充') }}</div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+            <div class="mfe-modal-footer">
+                <button class="mfe-btn" @click="closeDetail()">{{ _('取消') }}</button>
+                <button class="mfe-btn primary" @click="saveDetail()">{{ _('確認') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Form Modal -->
+    <div x-show="showLinkFormModal" x-cloak class="mfe-modal">
+        <div class="mfe-modal-content" style="width: 480px;">
+            <div class="mfe-modal-header">
+                <h3>{{ _('關聯表單模板') }}</h3>
+                <button @click="showLinkFormModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mfe-modal-body">
+                <div x-show="linkTemplatesLoading" style="padding: 16px; text-align: center; color: #9ca3af;">{{ _('載入中...') }}</div>
+                <div x-show="!linkTemplatesLoading && linkTemplates.length === 0"
+                     style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">
+                    {{ _('目前沒有可關聯的表單模板') }}
+                </div>
+                <div x-show="!linkTemplatesLoading && linkTemplates.length > 0" class="mfe-form-group">
+                    <label>{{ _('選擇表單模板') }}</label>
+                    <select x-model="linkSelectedSc">
+                        <option value="">{{ _('-- 選擇 --') }}</option>
+                        <template x-for="t in linkTemplates" :key="t.secure_code">
+                            <option :value="t.secure_code" x-text="t.name + ' (' + t.code + ')'"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+            <div class="mfe-modal-footer">
+                <button class="mfe-btn" @click="showLinkFormModal = false">{{ _('取消') }}</button>
+                <button class="mfe-btn primary" @click="confirmLinkForm()"
+                        :disabled="!linkSelectedSc || linkSubmitting">
+                    <span x-show="!linkSubmitting">{{ _('確認關聯') }}</span>
+                    <span x-show="linkSubmitting">{{ _('關聯中...') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Form Modal -->
+    <div x-show="showCreateFormModal" x-cloak class="mfe-modal">
+        <div class="mfe-modal-content" style="width: 480px;">
+            <div class="mfe-modal-header">
+                <h3>{{ _('建立 FormIO 表單') }}</h3>
+                <button @click="showCreateFormModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mfe-modal-body">
+                <div class="mfe-form-group">
+                    <label>{{ _('表單名稱') }}</label>
+                    <input type="text" x-model="createFormName" :placeholder="specName">
+                </div>
+                <div class="mfe-form-group">
+                    <label>{{ _('表單代碼（選填，留空自動產生）') }}</label>
+                    <input type="text" x-model="createFormCode" placeholder="FT_XXXXXXXX">
+                </div>
+            </div>
+            <div class="mfe-modal-footer">
+                <button class="mfe-btn" @click="showCreateFormModal = false">{{ _('取消') }}</button>
+                <button class="mfe-btn primary" @click="confirmCreateForm()"
+                        :disabled="createFormSubmitting">
+                    <span x-show="!createFormSubmitting">{{ _('建立並關聯') }}</span>
+                    <span x-show="createFormSubmitting">{{ _('建立中...') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Read Table Modal -->
+    <div x-show="showReadTableModal" x-cloak class="mfe-modal">
+        <div class="mfe-modal-content" style="width: 600px;">
+            <div class="mfe-modal-header">
+                <h3>{{ _('讀入資料表') }}</h3>
+                <button @click="showReadTableModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mfe-modal-body">
+                <div x-show="pgTablesLoading" style="padding: 16px; text-align: center; color: #9ca3af;">{{ _('載入中...') }}</div>
+
+                <!-- 選擇表 -->
+                <div x-show="!pgTablesLoading" class="mfe-form-group">
+                    <label>{{ _('選擇資料表') }}</label>
+                    <select x-model="pgSelectedTable" @change="pgCompareTable()">
+                        <option value="">{{ _('-- 選擇 --') }}</option>
+                        <template x-for="t in pgTableOptions()" :key="t.value">
+                            <option :value="t.value" x-text="t.label"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- 比對結果 -->
+                <div x-show="pgCompareResult" style="margin-top: 8px;">
+                    <template x-if="pgCompareResult && pgCompareResult.match">
+                        <div style="padding: 12px; background: #d1fae5; border-radius: 4px; font-size: 13px; color: #065f46;">
+                            {{ _('結構完全一致') }}
+                        </div>
+                    </template>
+                    <template x-if="pgCompareResult && !pgCompareResult.match">
+                        <div>
+                            <div x-show="pgCompareResult.spec_only.length > 0" style="margin-bottom: 6px;">
+                                <div style="font-size: 12px; font-weight: 600; color: #b45309;">{{ _('SPEC 有但資料表無:') }}</div>
+                                <template x-for="c in pgCompareResult.spec_only" :key="c.field_key">
+                                    <div style="font-size: 12px; padding-left: 12px; font-family: Consolas, monospace;"
+                                         x-text="c.field_key + ' (' + c.pg_type + ')'"></div>
+                                </template>
+                            </div>
+                            <div x-show="pgCompareResult.db_only.length > 0" style="margin-bottom: 6px;">
+                                <div style="font-size: 12px; font-weight: 600; color: #6b7280;">{{ _('資料表有但 SPEC 無:') }}</div>
+                                <template x-for="c in pgCompareResult.db_only" :key="c.column_name">
+                                    <div style="font-size: 12px; padding-left: 12px; font-family: Consolas, monospace;"
+                                         x-text="c.column_name + ' (' + c.display_type + ')'"></div>
+                                </template>
+                            </div>
+                            <div x-show="pgCompareResult.type_mismatch.length > 0" style="margin-bottom: 6px;">
+                                <div style="font-size: 12px; font-weight: 600; color: #dc2626;">{{ _('型別不符:') }}</div>
+                                <template x-for="c in pgCompareResult.type_mismatch" :key="c.field_key">
+                                    <div style="font-size: 12px; padding-left: 12px; font-family: Consolas, monospace;"
+                                         x-text="c.field_key + ': SPEC=' + c.spec_type + ' / DB=' + c.db_type"></div>
+                                </template>
+                            </div>
+                            <div x-show="pgCompareResult.matched.length > 0" style="margin-bottom: 6px;">
+                                <div style="font-size: 12px; font-weight: 600; color: #059669;">
+                                    {{ _('相符:') }} <span x-text="pgCompareResult.matched.length"></span> {{ _('個欄位') }}
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="mfe-modal-footer">
+                <button class="mfe-btn" @click="showReadTableModal = false">{{ _('取消') }}</button>
+                <template x-if="pgCompareResult && pgCompareResult.match">
+                    <button class="mfe-btn primary" @click="pgLinkTable(pgSelectedTable)">{{ _('直接關聯') }}</button>
+                </template>
+                <template x-if="pgCompareResult && !pgCompareResult.match">
+                    <span style="display: inline-flex; gap: 4px;">
+                        <button class="mfe-btn" @click="pgApplySpecToTable()"
+                                :disabled="pgApplying"
+                                title="{{ _('SPEC 的欄位定義覆蓋到資料表') }}">
+                            <span x-show="!pgApplying">{{ _('SPEC 覆蓋資料表') }}</span>
+                            <span x-show="pgApplying">{{ _('執行中...') }}</span>
+                        </button>
+                        <button class="mfe-btn primary" @click="pgLinkTable(pgSelectedTable)"
+                                title="{{ _('直接關聯，不修改資料表') }}">{{ _('僅關聯') }}</button>
+                    </span>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Spec Modal -->
+    <div x-show="showNewSpecModal" x-cloak class="mfe-modal">
+        <div class="mfe-modal-content" style="width: 480px;">
+            <div class="mfe-modal-header">
+                <h3>{{ _('新增多面向規格') }}</h3>
+                <button @click="showNewSpecModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mfe-modal-body">
+                <div class="mfe-form-group">
+                    <label>{{ _('規格名稱') }}</label>
+                    <input type="text" x-model="newSpecForm.name" placeholder="{{ _('例如：訂單資料表') }}" autofocus
+                           @input.debounce.500ms="translateNewSpecTableName()">
+                </div>
+                <div class="mfe-form-group">
+                    <label>{{ _('資料表名稱') }}</label>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <input type="text" x-model="newSpecForm.table_name"
+                               :placeholder="newSpecTableSuggestion || 'spec_xxx'"
+                               style="font-family: Consolas, monospace; font-size: 12px;">
+                        <button class="mfe-btn" type="button" x-show="newSpecTableSuggestion && !newSpecForm.table_name"
+                                @click="newSpecForm.table_name = newSpecTableSuggestion"
+                                style="padding: 4px 8px; font-size: 11px; white-space: nowrap;">
+                            {{ _('採用建議') }}
+                        </button>
+                    </div>
+                    <div x-show="newSpecTableSuggestion" style="font-size: 11px; color: #6b7280; margin-top: 2px;">
+                        {{ _('建議:') }} <span style="font-family: Consolas, monospace;" x-text="newSpecTableSuggestion"></span>
+                    </div>
+                </div>
+                <div class="mfe-form-group">
+                    <label>{{ _('描述（選填）') }}</label>
+                    <textarea x-model="newSpecForm.description" placeholder="{{ _('規格用途說明') }}" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="mfe-modal-footer">
+                <button class="mfe-btn" @click="showNewSpecModal = false">{{ _('取消') }}</button>
+                <button class="mfe-btn primary" @click="confirmNewSpec()" :disabled="newSpecCreating">
+                    <span x-show="!newSpecCreating">{{ _('建立') }}</span>
+                    <span x-show="newSpecCreating">{{ _('建立中...') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOCX Export Modal -->
+    <div x-show="showDocxModal" x-cloak class="mfe-modal">
+        <div class="mfe-modal-content" style="width: 680px;">
+            <div class="mfe-modal-header">
+                <h3>{{ _('製作規格書') }}</h3>
+                <button @click="showDocxModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mfe-modal-body">
+                <div class="mfe-form-group">
+                    <label>{{ _('文件標題') }}</label>
+                    <input type="text" x-model="docxTitle" placeholder="{{ _('資料結構規格書') }}">
+                </div>
+                <div class="mfe-form-group">
+                    <label>{{ _('加入規格') }}</label>
+                    <select @change="if($event.target.value){
+                        var sc=$event.target.value;
+                        for(var i=0;i<specList.length;i++){
+                            if(specList[i].secure_code===sc){docxAddSpec(specList[i]);break;}
+                        }
+                        $event.target.value='';
+                    }">
+                        <option value="">{{ _('-- 選擇規格 --') }}</option>
+                        <template x-for="s in docxAvailableSpecs()" :key="s.secure_code">
+                            <option :value="s.secure_code" x-text="s.name + ' (v' + s.version + ', ' + s.field_count + ' fields)'"></option>
+                        </template>
+                    </select>
+                </div>
+                <template x-if="docxItems.length === 0">
+                    <div style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px; border: 1px dashed #d1d5db; border-radius: 4px;">
+                        {{ _('請從上方下拉選單加入規格') }}
+                    </div>
+                </template>
+                <template x-for="(item, idx) in docxItems" :key="item.spec_sc">
+                    <div style="border: 1px solid #e5e7eb; border-radius: 4px; margin-bottom: 8px; overflow: hidden;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f9fafb;">
+                            <span style="font-weight: 600; font-size: 13px;" x-text="item.name"></span>
+                            <button class="mfe-btn danger" style="padding: 2px 6px; font-size: 11px;"
+                                    @click="docxRemoveSpec(idx)">{{ _('移除') }}</button>
+                        </div>
+                        <div style="padding: 8px 12px; font-size: 12px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <label style="font-size: 12px; margin: 0; min-width: 40px;">{{ _('版本:') }}</label>
+                                <select x-model="item.version" @change="docxOnVersionChange(item)"
+                                        style="font-size: 12px; padding: 3px 6px; width: auto;">
+                                    <template x-if="item.versions.length === 0">
+                                        <option :value="item.currentVersion"
+                                                x-text="'v' + item.currentVersion + ' (' + __('最新') + ')'"></option>
+                                    </template>
+                                    <template x-for="v in item.versions" :key="v.version">
+                                        <option :value="v.version"
+                                                x-text="'v' + v.version + (v.is_current ? ' (' + __('最新') + ')' : '') + ' - ' + v.field_count + ' fields'"></option>
+                                    </template>
+                                </select>
+                                <span x-show="item.loadingVersions" style="font-size: 11px; color: #9ca3af;">{{ _('載入中...') }}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label style="font-size: 12px; margin: 0; min-width: 40px;">{{ _('格式:') }}</label>
+                                <template x-for="af in item.activeFacets" :key="af">
+                                    <label style="display: inline-flex; align-items: center; gap: 3px; font-size: 12px; cursor: pointer;">
+                                        <input type="checkbox" :checked="item.selectedFacets[af]"
+                                               @change="item.selectedFacets[af] = $event.target.checked">
+                                        <span x-text="af"></span>
+                                    </label>
+                                </template>
+                                <span x-show="item.activeFacets.length === 0"
+                                      style="font-size: 11px; color: #9ca3af;">{{ _('此版本無已啟用格式') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div class="mfe-modal-footer">
+                <span style="font-size: 12px; color: #6b7280; margin-right: auto;"
+                      x-text="__('{a} 個規格, {b} 個格式表', {a: docxItems.length, b: docxGetSelectedCount()})"></span>
+                <button class="mfe-btn" @click="showDocxModal = false">{{ _('取消') }}</button>
+                <button class="mfe-btn primary" @click="doExportDocx()"
+                        :disabled="docxExporting || pdfExporting || docxItems.length === 0">
+                    <span x-show="!docxExporting">{{ _('匯出 DOCX') }}</span>
+                    <span x-show="docxExporting">{{ _('匯出中...') }}</span>
+                </button>
+                <button class="mfe-btn primary" @click="doExportPdf()"
+                        :disabled="pdfExporting || docxExporting || docxItems.length === 0"
+                        style="background-color: #dc3545; border-color: #dc3545;">
+                    <span x-show="!pdfExporting">{{ _('匯出 PDF') }}</span>
+                    <span x-show="pdfExporting">{{ _('匯出中...') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="{{ app_prefix }}/static/modules/spec_formulate/js/spec-schema-editor.js"></script>
+{% endblock %}

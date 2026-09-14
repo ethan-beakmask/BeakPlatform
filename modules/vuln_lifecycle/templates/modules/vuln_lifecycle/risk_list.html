@@ -1,0 +1,107 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('風險調整') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/vuln_lifecycle/css/vuln-common.css">
+{% endblock %}
+
+{% block content %}
+<div class="vlc-container">
+
+    <div class="vlc-page-header">
+        <h1>{{ _('風險調整紀錄') }}</h1>
+    </div>
+
+    <!-- 篩選列 -->
+    <div class="vlc-filter-bar">
+        <label>{{ _('狀態') }}</label>
+        <select id="filter-status" onchange="loadAdj()">
+            <option value="ACTIVE">{{ _('生效中') }}</option>
+            <option value="EXPIRED">{{ _('已過期') }}</option>
+            <option value="REVOKED">{{ _('已撤銷') }}</option>
+            <option value="SUPERSEDED">{{ _('已取代') }}</option>
+        </select>
+        <span class="vlc-filter-count" id="adj-count"></span>
+    </div>
+
+    <!-- 風險調整表 -->
+    <div class="vlc-section">
+        <div class="vlc-section-body">
+            <table class="vlc-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>{{ _('資產') }}</th>
+                        <th>{{ _('弱點') }}</th>
+                        <th>{{ _('調整類型') }}</th>
+                        <th>{{ _('調整後嚴重度') }}</th>
+                        <th>{{ _('審核人') }}</th>
+                        <th>{{ _('到期日') }}</th>
+                        <th>{{ _('理由') }}</th>
+                    </tr>
+                </thead>
+                <tbody id="adj-table">
+                    <tr><td colspan="8" class="vlc-empty">{{ _('載入中...') }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var ADJ_LABEL = {
+        'ACCEPTED': __('已接受'), 'MITIGATED': __('已緩解'),
+        'FALSE_POSITIVE': __('誤報'), 'DEFERRED': __('延後處理')
+    };
+
+    window.loadAdj = function() {
+        var st = document.getElementById('filter-status').value;
+        fetch('{{ app_prefix }}/api/vuln-lifecycle/risk/adjustments?status=' + st)
+        .then(function(r) {
+            if (!r.ok) {
+                document.getElementById('adj-count').innerHTML =
+                    '<span style="color:#dc3545;font-weight:bold;">' + __('未安裝 BeakRisk 弱點管制系統') + '</span>';
+                document.getElementById('adj-table').innerHTML =
+                    '<tr><td colspan="8" class="vlc-empty"></td></tr>';
+                return null;
+            }
+            return r.json();
+        })
+        .then(function(r) {
+            if (!r || !r.success) return;
+            document.getElementById('adj-count').textContent = __('{n} 筆紀錄', {n: r.data.length});
+            var html = '';
+            r.data.forEach(function(a) {
+                var exp = a.expires_at ? a.expires_at.substring(0, 10) : '-';
+                var adjType = ADJ_LABEL[a.adjustment_type] || a.adjustment_type;
+                var adjClass = 'vlc-adj-badge vlc-adj-' + (a.adjustment_type || '').toLowerCase();
+                var vn = (a.vuln_name || '-');
+                var short = vn.length > 40 ? vn.substring(0, 40) + '...' : vn;
+                html += '<tr>';
+                html += '<td>' + a.id + '</td>';
+                html += '<td><a href="{{ app_prefix }}/vuln/assets/' + a.asset_id + '">' + (a.ip || '-') + '</a></td>';
+                html += '<td title="' + vn.replace(/"/g, '&quot;') + '">' + short;
+                if (a.cve) html += ' <small style="color:#999">' + a.cve + '</small>';
+                html += '</td>';
+                html += '<td><span class="' + adjClass + '">' + adjType + '</span></td>';
+                html += '<td>' + (a.adjusted_severity != null ? Number(a.adjusted_severity).toFixed(1) : '-') + '</td>';
+                html += '<td>' + (a.reviewer || '-') + '</td>';
+                html += '<td>' + exp + '</td>';
+                html += '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" ' +
+                    'title="' + (a.justification || '').replace(/"/g, '&quot;') + '">' +
+                    (a.justification || '-') + '</td>';
+                html += '</tr>';
+            });
+            document.getElementById('adj-table').innerHTML =
+                html || '<tr><td colspan="8" class="vlc-empty">' + __('無紀錄') + '</td></tr>';
+        });
+    };
+
+    loadAdj();
+})();
+</script>
+{% endblock %}

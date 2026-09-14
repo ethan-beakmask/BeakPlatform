@@ -1,0 +1,105 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ sub_system_name }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/nocode-builder.css">
+<style>
+    .portal-container { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
+    .portal-header {
+        background: #fff;
+        border: 1px solid #ddd;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+    }
+    .portal-header h1 { margin: 0; font-size: 22px; }
+    .portal-header-meta {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #666;
+        display: flex;
+        gap: 16px;
+    }
+    .portal-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+    }
+    .portal-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        padding: 20px;
+        cursor: pointer;
+        transition: border-color 0.15s;
+    }
+    .portal-card:hover { border-color: #0066cc; }
+    .portal-card-name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .portal-card-order { font-size: 12px; color: #999; }
+    .portal-empty {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+        background: #fff;
+        border: 1px solid #ddd;
+    }
+    .portal-loading {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+        background: #fff;
+        border: 1px solid #ddd;
+    }
+    .portal-error {
+        text-align: center;
+        padding: 40px;
+        color: #dc2626;
+        background: #fff;
+        border: 1px solid #ddd;
+    }
+    .role-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        font-size: 12px;
+        border: 1px solid #ddd;
+        background: #f5f5f5;
+    }
+    .role-badge.admin { border-color: #0066cc; color: #0066cc; background: #eef4ff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<script>
+window.__PORTAL_CONFIG = {
+    subSystemSc: {{ sub_system_sc | tojson }},
+    subSystemName: {{ sub_system_name | tojson }}
+};
+</script>
+
+<div class="portal-container" x-data="subSystemPortal()" x-cloak>
+    <div class="portal-header">
+        <h1 x-text="subSystemName || __('子系統')"></h1>
+        <div class="portal-header-meta">
+            <span>{{ _('角色:') }} <span class="role-badge" :class="isAdmin ? 'admin' : ''"
+                          x-text="roleLabel"></span></span>
+            <span x-text="__('{n} 個頁面', {n: pages.length})"></span>
+        </div>
+    </div>
+
+    <div class="portal-loading" x-show="loading">{{ _('載入中...') }}</div>
+    <div class="portal-error" x-show="error" x-text="error"></div>
+
+    <div class="portal-empty" x-show="!loading && !error && pages.length === 0">
+        {{ _('目前沒有可用的頁面') }}
+    </div>
+
+    <div class="portal-cards" x-show="!loading && !error && pages.length > 0">
+        <template x-for="p in pages" :key="p.secure_code">
+            <div class="portal-card" @click="openPage(p)">
+                <div class="portal-card-name" x-text="p.display_name"></div>
+            </div>
+        </template>
+    </div>
+</div>
+
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/sub-system-portal.js"></script>
+{% endblock %}

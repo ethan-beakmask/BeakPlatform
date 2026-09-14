@@ -1,0 +1,84 @@
+<div class="wks-template-modal" x-show="templateModal.open" x-cloak>
+    <div class="wks-template-box">
+        <div class="wks-template-head">
+            <h2>{{ _('從樣板新增') }}</h2>
+            <button type="button" class="wks-icon-btn" @click="closeTemplateModal()">×</button>
+        </div>
+        <div class="wks-template-body">
+            <label class="wks-template-toggle" x-show="canManageTemplates()">
+                <input type="checkbox"
+                       x-model="templateModal.showHidden"
+                       @change="toggleShowHiddenTemplates()">
+                <span>{{ _('顯示已隱藏的樣板') }}</span>
+            </label>
+            <div class="wks-status wks-status-error" x-show="templateModal.error" x-text="templateModal.error"></div>
+            <div class="wks-status" x-show="templateModal.loading">{{ _('載入中...') }}</div>
+            <div class="wks-empty" x-show="!templateModal.loading && templateModal.templates.length === 0">{{ _('目前沒有可用的版面樣板') }}</div>
+
+            <template x-if="!templateModal.loading && templateModal.templates.length > 0">
+                <div class="wks-template-grid">
+                    <section class="wks-template-gallery">
+                        <template x-for="group in templateGroups()" :key="group.category">
+                            <div class="wks-template-group">
+                                <h3 x-text="group.category"></h3>
+                                <div class="wks-template-cards">
+                                    <template x-for="item in group.items" :key="item.secure_code">
+                                        <div class="wks-template-card"
+                                             role="button"
+                                             tabindex="0"
+                                             :class="{ 'wks-template-card-active': templateModal.selectedSc === item.secure_code, 'wks-template-card-hidden': item.is_hidden }"
+                                             @click="selectTemplateItem(item)"
+                                             @keydown.enter.prevent="selectTemplateItem(item)"
+                                             @keydown.space.prevent="selectTemplateItem(item)">
+                                            <img class="wks-template-thumb" :src="templateThumbnailSrc(item)" alt="">
+                                            <span class="wks-template-card-title" x-text="item.name"></span>
+                                            <span class="wks-template-badge" x-text="templateScopeLabel(item.scope)"></span>
+                                            <small x-text="item.description || ''"></small>
+                                            <template x-if="item.scope === 'system' && canManageTemplates()">
+                                                <button type="button"
+                                                        class="wks-template-hide-btn"
+                                                        @click.stop="item.is_hidden ? unhideTemplateItem(item) : hideTemplateItem(item)"
+                                                        :disabled="templateModal.busySc === item.secure_code || templateModal.loading">
+                                                    <span x-text="item.is_hidden ? '{{ _('取消隱藏') }}' : '{{ _('隱藏') }}'"></span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </section>
+
+                    <aside class="wks-template-form">
+                        <label>
+                            <span>{{ _('網頁名稱') }}</span>
+                            <input type="text" x-model="templateModal.pageName">
+                        </label>
+                        <template x-if="selectedTemplate()">
+                            <div class="wks-template-selected">
+                                <img class="wks-template-preview" :src="templateThumbnailSrc(selectedTemplate())" alt="">
+                                <h3 x-text="selectedTemplate().name"></h3>
+                                <p x-text="selectedTemplate().description || ''"></p>
+                            </div>
+                        </template>
+                        <div class="wks-template-report" x-show="templateModal.reportLines.length > 0">
+                            <h3>{{ _('建立結果提醒') }}</h3>
+                            <ul>
+                                <template x-for="line in templateModal.reportLines" :key="line">
+                                    <li x-text="line"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </aside>
+                </div>
+            </template>
+        </div>
+        <div class="wks-template-actions">
+            <button type="button" class="wks-btn" @click="closeTemplateModal()">{{ _('關閉') }}</button>
+            <button type="button"
+                    class="wks-btn wks-btn-primary"
+                    @click="createPageFromTemplate()"
+                    :disabled="templateModal.loading || templateModal.saving || !templateModal.templates.length">{{ _('建立網頁') }}</button>
+        </div>
+    </div>
+</div>

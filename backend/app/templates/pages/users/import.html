@@ -1,0 +1,188 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/03_org_setup/users{% endblock %}
+
+{% block title %}{{ _('匯入用戶') }} - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .import-form {
+        max-width: 600px;
+    }
+    .field-info {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .field-info h3 {
+        margin-top: 0;
+        color: #333;
+    }
+    .field-info table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .field-info th, .field-info td {
+        padding: 6px 8px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    .field-info th {
+        background: #f0f0f0;
+        font-weight: bold;
+    }
+    .required-mark {
+        color: #dc2626;
+        font-weight: bold;
+    }
+    .upload-area {
+        margin: 20px 0;
+        padding: 30px;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        text-align: center;
+        background: #fafafa;
+    }
+    .upload-area input[type="file"] {
+        margin: 10px 0;
+    }
+    .btn-row {
+        margin-top: 20px;
+    }
+    .btn-row button {
+        padding: 10px 24px;
+        background: #0066cc;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .btn-row button:hover {
+        background: #0052a3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回用戶列表') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('匯入用戶') }}</h1>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="import-form">
+    <div class="field-info">
+        <h3>{{ _('CSV 欄位說明') }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ _('欄位名稱') }}</th>
+                    <th>{{ _('說明') }}</th>
+                    <th>{{ _('必填') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>username</td>
+                    <td>{{ _('帳號 (不含 @domain)') }}</td>
+                    <td class="required-mark">*</td>
+                </tr>
+                <tr>
+                    <td>password</td>
+                    <td>{{ _('密碼 (至少 8 字元)') }}</td>
+                    <td class="required-mark">*</td>
+                </tr>
+                <tr>
+                    <td>display_name</td>
+                    <td>{{ _('顯示姓名') }}</td>
+                    <td class="required-mark">*</td>
+                </tr>
+                <tr>
+                    <td>role</td>
+                    <td>{{ _('角色: user / org_admin') }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>employee_id</td>
+                    <td>{{ _('用戶編號 (組織內唯一)') }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>department_code</td>
+                    <td>{{ _('部門代碼') }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>english_name</td>
+                    <td>{{ _('英文姓名') }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>native_name</td>
+                    <td>{{ _('本國姓名') }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>nickname</td>
+                    <td>{{ _('暱稱') }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>backup_email_1</td>
+                    <td>{{ _('備用 Email 1') }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>backup_email_2</td>
+                    <td>{{ _('備用 Email 2') }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>mobile_phone_1</td>
+                    <td>{{ _('手機號碼 1') }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>mobile_phone_2</td>
+                    <td>{{ _('手機號碼 2') }}</td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="text-muted" style="margin-top: 10px; font-size: 12px;">
+            <a href="{{ url_for('users.download_csv_template') }}">{{ _('[下載 CSV 範本]') }}</a>
+        </p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="upload-area">
+            <p>{{ _('選擇 CSV 檔案上傳') }}</p>
+            <input type="file" name="csv_file" accept=".csv" required>
+            <p class="text-muted" style="font-size: 12px;">
+                {{ _('支援 UTF-8 編碼的 CSV 檔案') }}
+            </p>
+        </div>
+
+        <div class="btn-row">
+            <button type="submit" class="btn btn-primary">{{ _('開始匯入') }}</button>
+            <a href="{{ url_for('users.list_users') }}" class="btn btn-cancel">{{ _('取消') }}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

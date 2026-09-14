@@ -1,0 +1,47 @@
+{% extends 'layouts/manual_base.html' %}
+
+{% block title %}{{ _('使用者手冊') }} - BeakPlatform{% endblock %}
+
+{% block content %}
+<main class="manual-shell">
+    <aside class="manual-shell__nav">
+        {% include 'pages/platform_help/_manual_nav.html' %}
+    </aside>
+
+    <section class="manual-shell__content manual-index">
+        <header class="manual-index__header">
+            <h1>{{ _('使用者手冊') }}</h1>
+        </header>
+
+        {% if chapters %}
+        <div class="manual-index__grid">
+            {% for chapter in chapters %}
+            <section class="manual-chapter">
+                <h2>
+                    <a href="{{ url_for('platform_help.manual_doc', doc_id=chapter.index_doc_id) }}">{{ chapter.title }}</a>
+                </h2>
+                <ul>
+                    {% for entry in chapter.entries %}
+                    {% if entry.kind == 'section' %}
+                    <li class="manual-chapter__section">
+                        <a href="{{ url_for('platform_help.manual_doc', doc_id=entry.index_doc_id) }}">{{ entry.title }}</a>
+                        <ul>
+                            {% for doc in entry.docs %}
+                            <li><a href="{{ url_for('platform_help.manual_doc', doc_id=doc.doc_id) }}">{{ doc.title }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li><a href="{{ url_for('platform_help.manual_doc', doc_id=entry.doc_id) }}">{{ entry.title }}</a></li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </section>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="manual-empty">{{ _('目前沒有可閱讀的說明文件。') }}</p>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}

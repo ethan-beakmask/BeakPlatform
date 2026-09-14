@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale|default('zh-TW') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ page_title }}</title>
+    <script>window.__BP = '{{ app_prefix }}';</script>
+    <script>window.__TIMEZONE = {{ (g.get('timezone') or 'Asia/Taipei')|tojson }};</script>
+    <script src="{{ app_prefix }}/static/js/timezone.js"></script>
+    <link rel="icon" href="{{ app_prefix }}/static/favicon.ico">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/css/common.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/css/pageir.css">
+    {% if has_form %}
+    <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/formio.full.min.css">
+    {% endif %}
+    <style>
+        body { background: var(--color-bg); color: var(--color-text); margin: 0; }
+        .portal-shell { min-height: 100vh; }
+        .portal-topbar { background: var(--color-bg-white); border-bottom: 1px solid var(--color-border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .portal-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .portal-brand h1 { font-size: 18px; margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+        .portal-user { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--color-text-muted); }
+        .portal-badge { border: 1px solid var(--color-border); padding: 2px 8px; }
+        .portal-logout { border: 1px solid var(--color-border); background: var(--color-bg-white); color: var(--color-text-muted); padding: 4px 12px; cursor: pointer; }
+        .portal-content { max-width: 1180px; margin: 0 auto; padding: 24px; }
+        .portal-content--wide { max-width: none; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="portal-shell">
+        <header class="portal-topbar">
+            <div class="portal-brand">
+                {% if sub_system_icon %}<span><i class="{{ sub_system_icon }}"></i></span>{% endif %}
+                <h1>{{ sub_system_name }}</h1>
+            </div>
+            <div class="portal-user">
+                {% if portal_user %}
+                <span>{{ portal_user.display_name }}</span>
+                <span class="portal-badge">{% if is_preview|default(false) %}{{ portal_user.group_code or _('不限群組') }} / {{ portal_user.level_code }}{% else %}{{ (portal_user.roles or ['GUEST'])[0] }}{% endif %}</span>
+                {% if portal_user.user_type != 'GUEST' and not is_preview|default(false) %}
+                <form method="POST" action="{{ url_for('nocode_public_portal.portal_logout', path_id=path_id) }}" style="margin:0;">
+                    <button type="submit" class="portal-logout">{{ _('登出') }}</button>
+                </form>
+                {% endif %}
+                {% endif %}
+            </div>
+        </header>
+        <main class="portal-content{% if engine in ['grid', 'free'] %} portal-content--wide{% endif %}">
+            <div class="pir-page{% if engine in ['grid', 'free'] %} pir-page--wide{% endif %}">
+                <div class="pir-body">{{ body_html|safe }}</div>
+            </div>
+        </main>
+    </div>
+    {% if has_form %}
+    <script src="{{ app_prefix }}/static/vendor/formio.full.min.js"></script>
+    <script src="{{ app_prefix }}/static/js/formio-local-cdn.js"></script>
+    {% endif %}
+    {% if not is_preview|default(false) %}
+    <script>window.__PIR_ROWS_URL_BASE = {{ (app_prefix ~ '/public/portal/' ~ path_id ~ '/api/pages/' ~ page.secure_code ~ '/widgets')|tojson }};</script>
+    {% endif %}
+    <script src="{{ app_prefix }}/static/js/pageir.js"></script>
+</body>
+</html>

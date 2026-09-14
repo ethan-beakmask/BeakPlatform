@@ -1,0 +1,149 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('我的開發案') }} - Web Builder{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/nocode-builder.css">
+{% endblock %}
+
+{% block content %}
+<div class="dc-container" x-data="myProjectsManager()" x-cloak>
+
+    <!-- Header -->
+    <div class="dc-header">
+        <div>
+            <h1>{{ _('我的開發案') }}</h1>
+            <p>{{ _('建立和管理 Web Builder 開發案') }}</p>
+        </div>
+        <div class="dc-toolbar">
+            <button class="dc-btn" @click="loadList()">{{ _('重新載入') }}</button>
+            <button class="dc-btn primary" @click="openCreate()">+ {{ _('建立開發案') }}</button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="dc-card" x-show="loading">
+        <div class="dc-loading" style="padding: 40px; text-align: center; color: #999;">{{ _('載入中...') }}</div>
+    </div>
+
+    <!-- Empty -->
+    <div class="dc-card" x-show="!loading && items.length === 0">
+        <div style="text-align: center; padding: 60px; color: #999;">
+            <p>{{ _('尚未建立任何開發案') }}</p>
+            <p style="margin-top: 8px; font-size: 13px;">{{ _('建立開發案後，可在設計器中定義網站結構和頁面佈局') }}</p>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="dc-card" x-show="!loading && items.length > 0">
+        <table class="dc-table">
+            <thead>
+                <tr>
+                    <th style="width: 220px;">{{ _('開發案名稱') }}</th>
+                    <th style="width: 100px;">{{ _('狀態') }}</th>
+                    <th style="width: 120px;">{{ _('佈局模式') }}</th>
+                    <th>{{ _('說明') }}</th>
+                    <th style="width: 80px;">{{ _('開發者') }}</th>
+                    <th style="width: 140px;">{{ _('建立時間') }}</th>
+                    <th style="width: 240px;">{{ _('操作') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="item in items" :key="item.secure_code">
+                    <tr>
+                        <td style="font-weight: 500;">
+                            <span x-text="item.icon" style="margin-right: 4px;" x-show="item.icon"></span>
+                            <span x-text="item.name"></span>
+                        </td>
+                        <td>
+                            <span class="dc-badge" :class="statusClass(item.status)"
+                                  x-text="statusLabel(item.status)"></span>
+                        </td>
+                        <td style="color: #666; font-size: 12px;" x-text="layoutLabel(item.layout_mode)"></td>
+                        <td style="color: #666; font-size: 13px;" x-text="item.description || '-'"></td>
+                        <td style="text-align: center;" x-text="item.developer_count || 1"></td>
+                        <td style="color: #999; font-size: 12px;" x-text="formatDate(item.created_at)"></td>
+                        <td class="actions">
+                            <a :href="'{{ app_prefix }}/nocode/workspace/' + item.secure_code"
+                               class="dc-btn sm primary">{{ _('工作區') }}</a>
+                            <a :href="'{{ app_prefix }}/nocode-builder/sub-systems/' + item.secure_code + '/portal'"
+                               class="dc-btn sm" target="_blank">{{ _('預覽') }}</a>
+                            <button class="dc-btn sm"
+                                    @click="togglePublish(item)"
+                                    x-text="item.status === 'draft' ? __('上線') : __('下線')"></button>
+                            <button class="dc-btn sm danger" @click="confirmDelete(item)">{{ _('刪除') }}</button>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Create Modal -->
+    <div x-show="showCreateModal" x-cloak class="dc-modal">
+        <div class="dc-modal-content" style="width: 480px;">
+            <div class="dc-modal-header">
+                <h3>{{ _('建立開發案') }}</h3>
+                <button class="dc-close-btn" @click="showCreateModal = false">&times;</button>
+            </div>
+            <div class="dc-modal-body">
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; margin-bottom: 4px; font-weight: 500;">{{ _('名稱') }} *</label>
+                    <input type="text" x-model="createForm.name" placeholder="{{ _('例: 訂餐系統') }}"
+                           style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; margin-bottom: 4px; font-weight: 500;">{{ _('說明') }}</label>
+                    <textarea x-model="createForm.description" rows="2" placeholder="{{ _('開發目的') }}"
+                              style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;"></textarea>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; margin-bottom: 4px; font-weight: 500;">{{ _('佈局模式') }} *</label>
+                    <div style="display: flex; gap: 16px; margin-top: 4px;">
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="radio" value="grid" x-model="createForm.layout_mode">
+                            {{ _('Grid 宮格 (一般用戶)') }}
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="radio" value="free" x-model="createForm.layout_mode">
+                            {{ _('GridStack 自由 (進階)') }}
+                        </label>
+                    </div>
+                    <p style="font-size: 12px; color: #999; margin-top: 4px;"
+                       x-text="createForm.layout_mode === 'grid'
+                           ? __('Grid 宮格: 4x4 格子合併，簡單直覺')
+                           : __('GridStack 自由: 12 欄拖放，精確定位')"></p>
+                </div>
+            </div>
+            <div class="dc-modal-footer">
+                <button class="dc-btn" @click="showCreateModal = false">{{ _('取消') }}</button>
+                <button class="dc-btn primary" @click="doCreate()">{{ _('建立') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div x-show="showDeleteModal" x-cloak class="dc-modal">
+        <div class="dc-modal-content" style="width: 400px;">
+            <div class="dc-modal-header">
+                <h3>{{ _('確認刪除') }}</h3>
+                <button class="dc-close-btn" @click="showDeleteModal = false">&times;</button>
+            </div>
+            <div class="dc-modal-body">
+                <p>{{ _('確定要刪除開發案「') }}<strong x-text="deletingItem?.name"></strong>{{ _('」嗎?') }}</p>
+                <p style="color: #999; font-size: 13px; margin-top: 8px;">{{ _('此操作會同時刪除相關的 Site Map 和頁面佈局設定') }}</p>
+            </div>
+            <div class="dc-modal-footer">
+                <button class="dc-btn" @click="showDeleteModal = false">{{ _('取消') }}</button>
+                <button class="dc-btn danger" @click="doDelete()" style="background: #dc2626; color: white;">{{ _('確認刪除') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.show" x-cloak class="dc-toast" :class="toast.type"
+         x-text="toast.message" x-transition></div>
+</div>
+
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/my-projects.js"></script>
+{% endblock %}

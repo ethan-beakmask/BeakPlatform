@@ -1,0 +1,73 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('新增') }}{% if unit_type == 'DEPARTMENT' %}{{ _('部門') }}{% else %}{{ _('群組') }}{% endif %} - BeakMask{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('units.list_units') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回組織單位列表') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('新增') }}{% if unit_type == 'DEPARTMENT' %}{{ _('部門') }}{% else %}{{ _('群組') }}{% endif %}</h1>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="unit_type" value="{{ unit_type }}">
+
+    <table class="info-table">
+        <tr>
+            <td><label for="code">{{ _('單位代碼 *') }}</label></td>
+            <td>
+                <input type="text" id="code" name="code" required size="30" placeholder="{{ _('例如: SALES, HR, IT') }}">
+                <br><small>{{ _('代碼會自動轉為大寫，建議使用英文縮寫') }}</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="name">{{ _('單位名稱 *') }}</label></td>
+            <td><input type="text" id="name" name="name" required size="30" placeholder="{{ _('例如: 業務部、人力資源部') }}"></td>
+        </tr>
+        <tr>
+            <td><label for="parent_id">{{ _('上層單位') }}</label></td>
+            <td>
+                <select id="parent_id" name="parent_id">
+                    <option value="">{{ _('(根層級)') }}</option>
+                    {% for parent in parent_units %}
+                    <option value="{{ parent.secure_code }}">
+                        {{ '-- ' * (parent.level - 1) }}{{ parent.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="description">{{ _('描述') }}</label></td>
+            <td><textarea id="description" name="description" rows="3" cols="40" placeholder="{{ _('選填') }}"></textarea></td>
+        </tr>
+        <tr>
+            <td><label for="sort_order">{{ _('排序順序') }}</label></td>
+            <td>
+                <input type="number" id="sort_order" name="sort_order" value="0" size="5">
+                <br><small>{{ _('數字越小排越前面') }}</small>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit" class="btn btn-primary">{{ _('建立') }}{% if unit_type == 'DEPARTMENT' %}{{ _('部門') }}{% else %}{{ _('群組') }}{% endif %}</button>
+                <a href="{{ url_for('units.list_units') }}" class="btn btn-cancel">{{ _('取消') }}</a>
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}

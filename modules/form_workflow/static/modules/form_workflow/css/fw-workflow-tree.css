@@ -1,0 +1,46 @@
+/* fw-workflow-tree.css — 流程樹系圖頁面 */
+
+.tree-page { padding: 0; height: calc(100vh - 50px); display: flex; flex-direction: column; }
+
+.tree-toolbar {
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.tree-toolbar .spacer { flex: 1; }
+
+.tree-zoom-group { display: flex; gap: 2px; }
+.tree-ctrl-btn {
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid #d1d5db; background: #fff; color: #374151; cursor: pointer; font-size: 18px; border-radius: 4px;
+}
+.tree-ctrl-btn:hover { background: #f3f4f6; }
+.tree-ctrl-btn:active { background: #e5e7eb; }
+
+.tree-chart-area {
+    flex: 1;
+    overflow: hidden;
+    background: #fafafa;
+}
+
+#tree-viewport {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    cursor: grab;
+    background: #f9fafb;
+}
+
+.tree-loading, .tree-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6b7280;
+    font-size: 14px;
+}
+.tree-error { color: #dc2626; }

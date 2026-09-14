@@ -1,0 +1,16 @@
+/* org-admin-create.css — 新增企業管理員頁面
+   form-control/help-text 等由 common.css 提供 */
+
+/* Email 帳號輸入佈局 */
+.email-input {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.email-input input {
+    width: 150px;
+}
+.email-domain {
+    color: var(--color-text-secondary);
+    font-family: monospace;
+}

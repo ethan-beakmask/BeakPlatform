@@ -1,0 +1,143 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('新增企業管理員') }} - BeakMask{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/org-admin-create.css') }}">
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('org_admins.list_admins') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回管理員列表') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('新增企業管理員') }}</h1>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% else %}alert-success{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+{% if available_employees %}
+<form method="POST" style="max-width: 550px;" x-data="createAdminForm()">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <table class="info-table">
+        <tr>
+            <th>{{ _('綁定企業成員') }} *</th>
+            <td>
+                <select name="bound_employee" required x-model="selectedEmployee" @change="onEmployeeChange()"
+                        class="form-control">
+                    <option value="">{{ _('-- 請選擇企業成員 --') }}</option>
+                    {% for emp in available_employees %}
+                    <option value="{{ emp.secure_code }}"
+                            data-name="{{ emp.display_name }}"
+                            data-username="{{ emp.username }}"
+                            data-notify-email="{{ emp.backup_email_1 or emp.email }}"
+                            {% if form_data.get('bound_employee') == emp.secure_code %}selected{% endif %}>
+                        {{ emp.display_name }} ({{ emp.employee_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="help-text">{{ _('管理員帳號將綁定此企業成員，企業成員停用時管理員也無法登入') }}</div>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('姓名') }} *</th>
+            <td>
+                <input type="text" name="display_name" x-model="displayName"
+                       required maxlength="100" class="form-control" style="background: #f3f4f6;" readonly>
+                <div class="help-text">{{ _('自動帶入綁定企業成員姓名') }}</div>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('管理員帳號') }}</th>
+            <td>
+                <div class="email-input">
+                    <span class="text-muted">admin-</span>
+                    <input type="text" x-model="username" readonly class="form-control"
+                           style="background: #f3f4f6; width: 100px;">
+                    <span class="email-domain">@{{ current_user.organization.domain_name if current_user.organization else 'domain' }}</span>
+                </div>
+                <div class="help-text">{{ _('管理員登入帳號（自動加上 admin- 前綴）') }}</div>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('通知 Email') }}</th>
+            <td>
+                <input type="text" name="notify_email" x-model="notifyEmail"
+                       maxlength="100" class="form-control" style="background: #f3f4f6;" readonly>
+                <div class="help-text">{{ _('自動帶入綁定企業成員通知信箱') }}</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="vertical-align: top;">{{ _('密碼') }} *</th>
+            <td>
+                <div class="password-field">
+                    <input :type="showPassword ? 'text' : 'password'" name="password"
+                           x-model="password" @input="validatePassword()"
+                           required minlength="8" class="form-control">
+                    <button type="button" class="btn-toggle"
+                            @click="showPassword = !showPassword"
+                            x-text="showPassword ? __('隱藏') : __('顯示')"></button>
+                    <button type="button" class="btn-generate" @click="generatePassword()">
+                        {{ _('建議密碼') }}
+                    </button>
+                </div>
+                <div class="help-text" x-text="passwordRequirements"></div>
+                <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
+                    <template x-for="err in passwordErrors" :key="err">
+                        <div class="password-errors" x-text="'• ' + err"></div>
+                    </template>
+                </div>
+                <div x-show="password && passwordErrors.length === 0 && passwordChecked"
+                     class="password-ok" style="margin-top: 6px;">
+                    {{ _('密碼符合要求') }}
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit" :disabled="!selectedEmployee" class="btn btn-primary"
+                        :style="!selectedEmployee && 'opacity: 0.5; cursor: not-allowed'">
+                    {{ _('建立管理員') }}
+                </button>
+                <a href="{{ url_for('org_admins.list_admins') }}" class="btn btn-cancel" style="margin-left: 20px;">{{ _('取消') }}</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<script>
+window.__ADMIN_CREATE_CONFIG = {
+    boundEmployee: '{{ form_data.get("bound_employee", "") }}',
+    displayName: '{{ form_data.get("display_name", "") }}',
+    username: '{{ form_data.get("username", "") }}',
+    notifyEmail: '{{ form_data.get("notify_email", "") }}'
+};
+</script>
+<script src="{{ url_for('static', filename='js/org-admin-create.js') }}"></script>
+{% else %}
+<div class="alert alert-warning">
+    <strong>{{ _('無法建立管理員') }}</strong>
+    <p style="margin: 8px 0 0 0;">
+        {{ _('目前沒有可綁定的企業成員帳號。請先建立至少一個具有企業成員編號的企業成員帳號。') }}
+    </p>
+    <p style="margin: 12px 0 0 0;">
+        <a href="{{ url_for('users.create_user') }}">{{ _('前往新增企業成員') }}</a>
+    </p>
+</div>
+{% endif %}
+
+<div class="alert alert-warning mt-16">
+    <strong>{{ _('注意：') }}</strong>
+    <span>{{ _('企業管理員擁有管理企業設定、用戶帳號的權限。請謹慎授予。') }}</span>
+</div>
+{% endblock %}

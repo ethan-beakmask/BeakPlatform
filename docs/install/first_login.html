@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BeakPlatform 初次登入設定</title>
+<style>
+  :root {
+    --c-text: #1f2328; --c-muted: #57606a; --c-bg: #ffffff; --c-soft: #f6f8fa;
+    --c-border: #d0d7de; --c-primary: #0969da; --c-warn: #9a6700;
+    --c-warn-bg: #fff8c5; --c-danger: #cf222e; --c-danger-bg: #ffebe9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1rem; background: var(--c-bg); color: var(--c-text);
+    font-family: -apple-system, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    line-height: 1.75; font-size: 16px;
+  }
+  main { max-width: 780px; margin: 0 auto; }
+  h1 { font-size: 1.7rem; border-bottom: 2px solid var(--c-border); padding-bottom: .5rem; }
+  h2 { font-size: 1.25rem; margin-top: 2.2rem; border-bottom: 1px solid var(--c-border);
+       padding-bottom: .3rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.6rem; }
+  code { background: var(--c-soft); padding: .15em .4em; border-radius: 4px;
+         font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .9em; }
+  pre { background: var(--c-soft); border: 1px solid var(--c-border); border-radius: 6px;
+        padding: .9rem 1rem; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; display: block;
+          overflow-x: auto; }
+  th, td { border: 1px solid var(--c-border); padding: .5rem .7rem; text-align: left;
+           vertical-align: top; }
+  th { background: var(--c-soft); }
+  .note { border-left: 4px solid var(--c-primary); background: var(--c-soft);
+          padding: .8rem 1rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .warn { border-left: 4px solid var(--c-warn); background: var(--c-warn-bg);
+          padding: .8rem 1rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .danger { border-left: 4px solid var(--c-danger); background: var(--c-danger-bg);
+            padding: .8rem 1rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .note p:last-child, .warn p:last-child, .danger p:last-child { margin-bottom: 0; }
+  ol li, ul li { margin: .3rem 0; }
+  .muted { color: var(--c-muted); font-size: .92em; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--c-border);
+           color: var(--c-muted); font-size: .88em; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>BeakPlatform 初次登入設定</h1>
+
+<p class="muted">
+本文件刻意做成單一 HTML 檔，<strong>不需要平台在執行中就能閱讀</strong>。
+因為它要處理的正是「系統剛裝好、還沒有任何可用帳號」的那個時間點，
+此時站內線上說明還進不去。
+</p>
+
+<h2>為什麼會有這一步</h2>
+
+<p>
+安裝完成後，系統會建立一組<strong>原始管理員</strong>帳號，格式是
+<code>admin@貴公司網域</code>。這組帳號的存在是為了解決一個先後次序問題：
+</p>
+
+<blockquote class="note">
+<p>
+要建立員工帳號，必須先有管理員登入；<br>
+但要有管理員，又必須先建立帳號。
+</p>
+</blockquote>
+
+<p>
+原始管理員就是打破這個循環用的引導帳號。但它的名稱是<strong>可推測的</strong>——
+任何人都猜得到某家公司的管理員帳號叫 <code>admin@</code> 開頭，
+這在對外開放的環境是明確的風險。
+</p>
+
+<p>
+因此系統的設計是：<strong>原始管理員只用來完成一次設定，之後立刻停用。</strong>
+您第一次登入時，系統會強制導向設定頁，不做完就不能使用其他功能。
+這不是可以略過的步驟。
+</p>
+
+<h2>操作步驟</h2>
+
+<h3>1. 用安裝時取得的帳密登入</h3>
+
+<p>安裝腳本在收尾時會印出這兩項：</p>
+
+<pre><code>系統企業: 貴公司網域
+管理員:   admin@貴公司網域
+密碼:     (安裝時設定，首次登入須變更)</code></pre>
+
+<p class="muted">
+忘記密碼時無法自助重設（此時發信服務還沒設定、也還沒有第二個管理員可以協助），
+只能由主機管理者重新執行安裝腳本的初始化步驟。<strong>請在安裝當下就記下來。</strong>
+</p>
+
+<h3>2. 系統自動導向初始設定頁</h3>
+
+<p>
+登入後會直接進入設定頁（網址結尾是 <code>/admin/initial-setup</code>），
+<strong>此頁沒有選單、也無法用網址跳過</strong>。
+</p>
+
+<h3>3. 填寫您本人的員工資料</h3>
+
+<p>這一步建立的是「您這個人」的員工帳號，不是另一組管理員帳號。</p>
+
+<table>
+  <thead><tr><th>欄位</th><th>必填</th><th>說明</th></tr></thead>
+  <tbody>
+    <tr><td>本國姓名</td><td>是</td><td>中文姓名</td></tr>
+    <tr><td>英文姓名</td><td>是</td><td>護照或公司慣用的英文名</td></tr>
+    <tr><td>帳號</td><td>是</td><td>登入用的識別名稱，例如 <code>yourname</code></td></tr>
+    <tr><td>用戶編號</td><td>是</td><td>沒有預設編號規則時必須自行填寫</td></tr>
+    <tr><td>密碼</td><td>是</td><td>需符合系統的密碼強度規則，需輸入兩次</td></tr>
+    <tr><td>暱稱、備用信箱、行動電話</td><td>否</td><td>可事後在個人設定補上</td></tr>
+  </tbody>
+</table>
+
+<h3>4. 送出後系統自動完成三件事</h3>
+
+<ol>
+  <li>建立您的<strong>員工帳號</strong>（就是您剛填的那組）</li>
+  <li>自動產生一組綁定的<strong>管理員帳號</strong>，名稱是
+      <code>admin-您的帳號</code>（例如 <code>admin-yourname</code>）</li>
+  <li><strong>停用原始管理員 <code>admin@…</code></strong>，該帳號自此無法再登入</li>
+</ol>
+
+<div class="warn">
+<p>
+<strong>從此您有兩組帳號，這是刻意的設計。</strong>
+日常作業（填單、簽核、看報表）用員工帳號；
+只有在需要管理設定（建立部門、指派角色、模組授權）時才切換到
+<code>admin-</code> 開頭的管理員帳號。
+</p>
+<p>
+分開的理由很單純：管理員權限很大，天天掛在上面等於天天把最大權限暴露在外。
+</p>
+</div>
+
+<h2>做完之後</h2>
+
+<p>
+設定完成後就會進入儀表板，站內說明（右上角 [?] 或選單的「使用者手冊」）
+從這時起可以正常使用，後續操作請看那裡。建議的下一步順序：
+</p>
+
+<ol>
+  <li>建立部門與組織單位</li>
+  <li>建立職等、職系、職稱</li>
+  <li>設定核決權限</li>
+  <li>建立其他員工帳號並指派角色</li>
+</ol>
+
+<h2>常見問題</h2>
+
+<h3>可以不要建立員工帳號，直接繼續用 admin@ 嗎？</h3>
+<p>
+不行。系統會持續把您導回設定頁。這是安全設計，沒有開關可以關閉。
+</p>
+
+<h3>已經有人做過設定了，我登入卻沒看到這頁</h3>
+<p>
+表示該企業已經有綁定的管理員帳號，設定流程已完成，
+原始管理員也已停用。請向完成設定的那個人索取您的帳號。
+</p>
+
+<h3>填錯了可以重來嗎？</h3>
+<p>
+姓名、暱稱、聯絡方式等資料可以事後在「個人設定」或「企業成員帳號」修改。
+但<strong>帳號名稱</strong>與連帶產生的 <code>admin-</code> 帳號名稱無法變更，
+送出前請確認。
+</p>
+
+<h3>忘記管理員密碼</h3>
+<p>
+此時系統中通常還沒有第二個管理員可以協助重設。
+請聯絡主機管理者從伺服器端處理。
+</p>
+
+<div class="danger">
+<p>
+<strong>不要反覆嘗試猜測密碼。</strong>
+系統有登入失敗鎖定機制，連續失敗會鎖住帳號，
+在只有一個管理員的階段會讓情況更難處理。
+</p>
+</div>
+
+<footer>
+BeakPlatform 安裝文件 · 本頁不需要平台執行中即可閱讀 ·
+完成初次設定後，後續操作請看站內「使用者手冊」
+</footer>
+
+</main>
+</body>
+</html>

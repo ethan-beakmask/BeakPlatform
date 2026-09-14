@@ -1,0 +1,276 @@
+{% extends "layouts/base.html" %}
+{% block help_doc %}manual/02_platform_admin/redis_monitor{% endblock %}
+
+{% block title %}{{ _('Redis 監看') }} - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/redis-monitor.css">
+{% endblock %}
+
+{% block content %}
+<div class="rdm-page" x-data="redisMonitor()" x-init="init()">
+
+    <!-- Header -->
+    <div class="rdm-header">
+        <h2>{{ _('Redis 監看') }}</h2>
+        <span class="rdm-status" :class="connected ? 'rdm-status-ok' : 'rdm-status-err'"
+              x-text="connected ? 'Connected' : (errorMsg || 'Disconnected')"></span>
+        <span style="margin-left: auto; font-size: 12px; color: #999;"
+              x-show="lastRefresh" x-text="'Last: ' + lastRefresh"></span>
+        <button class="rdm-btn rdm-btn-sm" @click="loadInfo()" :disabled="loading">
+            <i class="ri-refresh-line"></i> {{ _('重新整理') }}
+        </button>
+    </div>
+
+    <!-- Loading -->
+    <div class="rdm-loading" x-show="loading && !info">{{ _('載入中...') }}</div>
+
+    <!-- Error -->
+    <div class="rdm-error" x-show="!loading && errorMsg && !info" x-text="errorMsg"></div>
+
+    <!-- Main content -->
+    <template x-if="info">
+        <div>
+            <!-- Tabs -->
+            <div class="rdm-tabs">
+                <div class="rdm-tab" :class="tab === 'overview' && 'rdm-tab-active'"
+                     @click="tab = 'overview'">{{ _('總覽') }}</div>
+                <div class="rdm-tab" :class="tab === 'keys' && 'rdm-tab-active'"
+                     @click="tab = 'keys'; if(!keysLoaded) scanKeys()">{{ _('Key 瀏覽') }}</div>
+                <div class="rdm-tab" :class="tab === 'slowlog' && 'rdm-tab-active'"
+                     @click="tab = 'slowlog'; if(!slowlogLoaded) loadSlowlog()">{{ _('慢查詢') }}</div>
+                <div class="rdm-tab" :class="tab === 'info' && 'rdm-tab-active'"
+                     @click="tab = 'info'">{{ _('完整 INFO') }}</div>
+            </div>
+
+            <!-- Tab: 總覽 -->
+            <div x-show="tab === 'overview'">
+                <!-- 指標卡片 -->
+                <div class="rdm-metrics">
+                    <div class="rdm-metric-card">
+                        <div class="rdm-metric-label">{{ _('版本') }}</div>
+                        <div class="rdm-metric-value" x-text="info.version"></div>
+                        <div class="rdm-metric-sub" x-text="info.mode + ' / PID ' + info.pid"></div>
+                    </div>
+                    <div class="rdm-metric-card">
+                        <div class="rdm-metric-label">{{ _('運行時間') }}</div>
+                        <div class="rdm-metric-value" x-text="formatUptime(info.uptime_seconds)"></div>
+                        <div class="rdm-metric-sub" x-text="info.uptime_days + ' days'"></div>
+                    </div>
+                    <div class="rdm-metric-card">
+                        <div class="rdm-metric-label">{{ _('記憶體使用') }}</div>
+                        <div class="rdm-metric-value" x-text="info.used_memory_human"></div>
+                        <div class="rdm-metric-sub" x-text="'Peak: ' + info.used_memory_peak_human + ' / RSS: ' + info.used_memory_rss_human"></div>
+                    </div>
+                    <div class="rdm-metric-card">
+                        <div class="rdm-metric-label">{{ _('連線數') }}</div>
+                        <div class="rdm-metric-value" x-text="info.connected_clients"></div>
+                        <div class="rdm-metric-sub" x-text="'Blocked: ' + info.blocked_clients + ' / Max: ' + info.maxclients"></div>
+                    </div>
+                    <div class="rdm-metric-card">
+                        <div class="rdm-metric-label">Ops/sec</div>
+                        <div class="rdm-metric-value" x-text="info.instantaneous_ops_per_sec"></div>
+                        <div class="rdm-metric-sub" x-text="'Total cmds: ' + Number(info.total_commands_processed).toLocaleString()"></div>
+                    </div>
+                    <div class="rdm-metric-card">
+                        <div class="rdm-metric-label">Hit Rate</div>
+                        <div class="rdm-metric-value" x-text="info.hit_rate + '%'"></div>
+                        <div class="rdm-metric-sub" x-text="'Hits: ' + Number(info.keyspace_hits).toLocaleString() + ' / Misses: ' + Number(info.keyspace_misses).toLocaleString()"></div>
+                    </div>
+                    <div class="rdm-metric-card">
+                        <div class="rdm-metric-label">{{ _('碎片率') }}</div>
+                        <div class="rdm-metric-value" x-text="info.mem_fragmentation_ratio"></div>
+                        <div class="rdm-metric-sub" x-text="'Max memory: ' + info.maxmemory_human"></div>
+                    </div>
+                    <div class="rdm-metric-card">
+                        <div class="rdm-metric-label">{{ _('持久化') }}</div>
+                        <div class="rdm-metric-value" x-text="info.rdb_last_bgsave_status"></div>
+                        <div class="rdm-metric-sub" x-text="'AOF: ' + (info.aof_enabled ? 'ON' : 'OFF')"></div>
+                    </div>
+                </div>
+
+                <!-- Keyspace -->
+                <div class="rdm-section" x-show="Object.keys(info.databases).length > 0">
+                    <div class="rdm-section-title">Keyspace</div>
+                    <table class="rdm-table">
+                        <thead>
+                            <tr>
+                                <th>DB</th>
+                                <th>Keys</th>
+                                <th>Expires</th>
+                                <th>Avg TTL (ms)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(val, dbName) in info.databases" :key="dbName">
+                                <tr>
+                                    <td x-text="dbName" style="font-family: monospace;"></td>
+                                    <td x-text="Number(val.keys || 0).toLocaleString()"></td>
+                                    <td x-text="Number(val.expires || 0).toLocaleString()"></td>
+                                    <td x-text="Number(val.avg_ttl || 0).toLocaleString()"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <div x-show="Object.keys(info.databases).length === 0"
+                     style="color: #999; font-size: 13px; margin-top: 8px;">
+                    {{ _('Keyspace 為空（尚無任何 key）') }}
+                </div>
+            </div>
+
+            <!-- Tab: Key 瀏覽 -->
+            <div x-show="tab === 'keys'">
+                <div class="rdm-key-toolbar">
+                    <label style="font-size: 13px;">DB:</label>
+                    <select x-model="keyDb" @change="scanKeys(true)" style="width: 70px;">
+                        <template x-for="i in 16" :key="i">
+                            <option :value="i - 1" x-text="'db' + (i - 1)"></option>
+                        </template>
+                    </select>
+                    <input type="text" x-model="keyPattern" placeholder="Pattern (e.g. session:*)"
+                           @keydown.enter="scanKeys(true)">
+                    <button class="rdm-btn" @click="scanKeys(true)">
+                        <i class="ri-search-line"></i> {{ _('搜尋') }}
+                    </button>
+                    <span style="font-size: 12px; color: #999;" x-show="keysResult.length > 0"
+                          x-text="keysResult.length + ' keys loaded'"></span>
+                </div>
+
+                <div class="rdm-loading" x-show="keysLoading">{{ _('掃描中...') }}</div>
+
+                <div x-show="!keysLoading && keysResult.length === 0 && keysLoaded"
+                     style="color: #999; font-size: 13px; padding: 20px; text-align: center;">
+                    {{ _('沒有找到符合的 Key') }}
+                </div>
+
+                <table class="rdm-table" x-show="keysResult.length > 0">
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th style="width: 70px;">Type</th>
+                            <th style="width: 90px;">TTL</th>
+                            <th style="width: 90px;">Memory</th>
+                            <th style="width: 60px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(item, idx) in keysResult" :key="idx">
+                            <tr>
+                                <td style="font-family: monospace; word-break: break-all;" x-text="item.key"></td>
+                                <td><span style="font-size: 12px;" x-text="item.type"></span></td>
+                                <td x-text="item.ttl === -1 ? 'PERSIST' : (item.ttl === -2 ? 'EXPIRED' : item.ttl + 's')"></td>
+                                <td x-text="formatBytes(item.memory)"></td>
+                                <td>
+                                    <button class="rdm-btn rdm-btn-sm" @click="viewKey(item.key)">
+                                        <i class="ri-eye-line"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 10px; text-align: center;" x-show="keysHasMore">
+                    <button class="rdm-btn" @click="scanKeys(false)" :disabled="keysLoading">
+                        {{ _('載入更多...') }}
+                    </button>
+                </div>
+
+                <!-- Key 詳細 -->
+                <div class="rdm-detail-panel" x-show="keyDetail">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="rdm-detail-title" x-text="keyDetail ? keyDetail.key : ''"></div>
+                        <button class="rdm-btn rdm-btn-sm" @click="keyDetail = null">
+                            <i class="ri-close-line"></i> {{ _('關閉') }}
+                        </button>
+                    </div>
+                    <div class="rdm-detail-meta" x-show="keyDetail">
+                        <span x-text="'Type: ' + (keyDetail ? keyDetail.type : '')"></span>
+                        <span x-text="'TTL: ' + (keyDetail ? (keyDetail.ttl === -1 ? 'PERSIST' : keyDetail.ttl + 's') : '')"></span>
+                        <span x-text="'Memory: ' + (keyDetail ? formatBytes(keyDetail.memory) : '')"></span>
+                        <span x-show="keyDetail && keyDetail.truncated" style="color: #e8a838;">{{ _('（已截斷）') }}</span>
+                    </div>
+                    <div class="rdm-detail-value" x-text="keyDetail ? formatValue(keyDetail.value, keyDetail.type) : ''"></div>
+                </div>
+            </div>
+
+            <!-- Tab: 慢查詢 -->
+            <div x-show="tab === 'slowlog'">
+                <div style="margin-bottom: 10px;">
+                    <button class="rdm-btn rdm-btn-sm" @click="loadSlowlog()" :disabled="slowlogLoading">
+                        <i class="ri-refresh-line"></i> {{ _('重新整理') }}
+                    </button>
+                </div>
+
+                <div class="rdm-loading" x-show="slowlogLoading">{{ _('載入中...') }}</div>
+
+                <div x-show="!slowlogLoading && slowlogEntries.length === 0 && slowlogLoaded"
+                     style="color: #999; font-size: 13px; padding: 20px; text-align: center;">
+                    {{ _('沒有慢查詢紀錄') }}
+                </div>
+
+                <table class="rdm-table" x-show="slowlogEntries.length > 0">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">ID</th>
+                            <th style="width: 160px;">{{ _('時間') }}</th>
+                            <th style="width: 110px;">{{ _('耗時') }}</th>
+                            <th>{{ _('指令') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="entry in slowlogEntries" :key="entry.id">
+                            <tr>
+                                <td x-text="entry.id"></td>
+                                <td x-text="BkTime.format(new Date(entry.timestamp * 1000).toISOString(), 'full')"></td>
+                                <td>
+                                    <span :class="entry.duration_us > 100000 ? 'rdm-slow-danger' : (entry.duration_us > 10000 ? 'rdm-slow-warn' : '')"
+                                          x-text="formatDuration(entry.duration_us)"></span>
+                                </td>
+                                <td style="font-family: monospace; word-break: break-all;" x-text="entry.command"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tab: 完整 INFO -->
+            <div x-show="tab === 'info'">
+                <div style="margin-bottom: 10px; font-size: 12px; color: #999;">
+                    {{ _('Redis INFO 完整輸出（結構化顯示）') }}
+                </div>
+                <div class="rdm-info-grid">
+                    <table class="rdm-table">
+                        <tbody>
+                            <template x-for="(val, key) in infoLeft()" :key="key">
+                                <tr>
+                                    <td style="font-weight: 600; width: 45%; white-space: nowrap;" x-text="key"></td>
+                                    <td style="font-family: monospace; word-break: break-all;" x-text="val"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                    <table class="rdm-table">
+                        <tbody>
+                            <template x-for="(val, key) in infoRight()" :key="key">
+                                <tr>
+                                    <td style="font-weight: 600; width: 45%; white-space: nowrap;" x-text="key"></td>
+                                    <td style="font-family: monospace; word-break: break-all;" x-text="val"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<script>
+window.__REDIS_MONITOR_CONFIG = {
+    csrfToken: '{{ csrf_token() }}'
+};
+</script>
+<script src="{{ app_prefix }}/static/js/redis-monitor.js"></script>
+{% endblock %}

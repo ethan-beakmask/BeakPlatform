@@ -1,0 +1,97 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('新增核決權限類別') }} - BeakMask{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('approval_categories.list_categories') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回列表') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('新增核決權限類別') }}</h1>
+</div>
+
+<p>
+    <a href="{{ url_for('job_levels.job_matrix') }}">[{{ _('職級職稱矩陣') }}]</a>
+    |
+    <a href="{{ url_for('job_levels.list_job_levels') }}">[{{ _('職等管理') }}]</a>
+    |
+    <a href="{{ url_for('job_families.list_job_families') }}">[{{ _('職系管理') }}]</a>
+    |
+    <a href="{{ url_for('job_titles.list_job_titles') }}">[{{ _('職稱管理') }}]</a>
+    |
+    <a href="{{ url_for('approval_categories.list_categories') }}">[{{ _('核決權限類別') }}]</a>
+</p>
+
+<form method="POST" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table class="info-table">
+        <tr>
+            <th>{{ _('類別名稱') }} *</th>
+            <td>
+                <input type="text" name="name" required maxlength="100"
+                       placeholder="{{ _('如 零用金') }}" style="width: 100%;"
+                       value="{{ request.form.get('name', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('英文名稱') }}</th>
+            <td>
+                <input type="text" name="name_en" id="name_en" maxlength="100"
+                       placeholder="{{ _('如 Petty Cash') }}" style="width: 100%;"
+                       value="{{ request.form.get('name_en', '') }}"
+                       oninput="updateCode()">
+            </td>
+        </tr>
+        <tr>
+            <th style="width: 150px;">{{ _('類別代碼') }} *</th>
+            <td>
+                <input type="text" name="code" id="code" required maxlength="50"
+                       placeholder="{{ _('如 PETTY_CASH') }}" style="width: 100%;"
+                       value="{{ request.form.get('code', '') }}">
+                <div class="text-muted" style="font-size: 0.8em;">{{ _('自動從英文名稱產生，可手動修改') }}</div>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('幣別') }}</th>
+            <td>
+                <select name="currency" style="width: 100%;">
+                    <option value="TWD" {% if request.form.get('currency', 'TWD') == 'TWD' %}selected{% endif %}>TWD</option>
+                    <option value="USD" {% if request.form.get('currency') == 'USD' %}selected{% endif %}>USD</option>
+                    <option value="CNY" {% if request.form.get('currency') == 'CNY' %}selected{% endif %}>CNY</option>
+                    <option value="JPY" {% if request.form.get('currency') == 'JPY' %}selected{% endif %}>JPY</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>{{ _('排序') }}</th>
+            <td>
+                <input type="number" name="sort_order" min="0"
+                       placeholder="0" style="width: 100%;"
+                       value="{{ request.form.get('sort_order', '0') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="vertical-align: top;">{{ _('描述') }}</th>
+            <td>
+                <textarea name="description" rows="3" style="width: 100%;"
+                          placeholder="{{ _('類別的詳細說明') }}">{{ request.form.get('description', '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit">{{ _('建立類別') }}</button>
+                <a href="{{ url_for('approval_categories.list_categories') }}" style="margin-left: 20px;">{{ _('取消') }}</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<script>
+function updateCode() {
+    const nameEn = document.getElementById('name_en').value;
+    const code = nameEn.toUpperCase().replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
+    document.getElementById('code').value = code;
+}
+</script>
+{% endblock %}

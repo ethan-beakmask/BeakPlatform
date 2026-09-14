@@ -1,0 +1,624 @@
+"""
+FormWorkflow Module - Workflow Engine
+工作流執行引擎
+
+負責啟動工作流、處理節點執行、推進流程。
+適配 BeakPlatform 模組化架構。
+"""
+import logging
+import os
+import re
+import secrets
+import signal
+import subprocess
+import time
+from datetime import datetime
+from typing import List, Optional, Tuple
+from sqlalchemy import or_, text
+from sqlalchemy.exc import IntegrityError
+
+logger = logging.getLogger(__name__)
+
+OS_EXECUTOR_UNIT_RE = re.compile(r'^[A-Za-z0-9_.-]+$')
+OS_EXECUTOR_UNIT_PREFIX = 'bp-'
+
+from app import db
+
+from ..models import (
+    FwFormInstance,
+    FwWorkflowInstance,
+    FwApprovalRecord,
+    FwNodeExecutionQueue,
+)
+
+
+def _pid_matches_queue_item(pid: int, queue_item_secure_code: str) -> bool:
+    """Verify a PID still belongs to this node_runner before terminating it.
+
+    The stored process_id may be stale because operating systems reuse PIDs.
+    Failing closed prevents cancel mode from killing an unrelated process.
+    """
+    try:
+        with open(f'/proc/{pid}/cmdline', 'rb') as cmdline_file:
+            args = cmdline_file.read().split(b'\0')
+    except OSError:
+        return False
+
+    expected_arg = f'--queue-item-code={queue_item_secure_code}'.encode()
+    return expected_arg in args
+
+
+def _terminate_node_process(pid: int, queue_item_secure_code: str) -> str:
+    """Terminate a node process without risking unrelated process groups.
+
+    node_runner is launched with start_new_session=True, so the expected safe
+    case is pgid == pid and its child processes share that process group. If
+    pgid differs, fall back to killing only pid because killpg could otherwise
+    terminate the executor or service process group.
+    """
+    try:
+        if not _pid_matches_queue_item(pid, queue_item_secure_code):
+            return 'skipped_pid_mismatch'
+
+        pgid = os.getpgid(pid)
+        use_process_group = pgid == pid
+
+        if use_process_group:
+            os.killpg(pgid, signal.SIGTERM)
+        else:
+            os.kill(pid, signal.SIGTERM)
+
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                return 'sigterm'
+            time.sleep(0.2)
+
+        if use_process_group:
+            os.killpg(pgid, signal.SIGKILL)
+        else:
+            os.kill(pid, signal.SIGKILL)
+        return 'sigkill'
+    except ProcessLookupError:
+        return 'already_gone'
+    except PermissionError:
+        logger.warning(f'Permission denied while terminating node process pid={pid}')
+        return 'permission_denied'
+    except Exception as e:
+        logger.warning(f'Failed to terminate node process pid={pid}: {e}')
+        return 'error'
+
+
+def _stop_os_dispatched_units(tree_codes: List[str]) -> None:
+    """Stop dispatched OsExecutor systemd units for a cancelled workflow tree.
+
+    Dispatched nodes become SUCCESS immediately, so they are invisible to the
+    existing RUNNING process cancellation path. This helper deliberately runs
+    after the normal cancel flow and never raises; canceling workflow state must
+    not depend on systemctl availability.
+    """
+    if not tree_codes:
+        return
+
+    try:
+        nodes = FwNodeExecutionQueue.query.filter(
+            FwNodeExecutionQueue.workflow_instance_secure_code.in_(tree_codes),
+            FwNodeExecutionQueue.node_type == 'OsExecutor',
+            FwNodeExecutionQueue.result.isnot(None),
+        ).all()
+
+        counts = {
+            'stopped': 0,
+            'detach': 0,
+            'invalid_unit': 0,
+            'failed': 0,
+        }
+        for node in nodes:
+            result = node.result if isinstance(node.result, dict) else {}
+            os_dispatch = result.get('os_dispatch') or {}
+            if not isinstance(os_dispatch, dict):
+                continue
+
+            unit = os_dispatch.get('unit')
+            if not unit:
+                continue
+            if (os_dispatch.get('cancel_scope') or 'unit') == 'detach':
+                counts['detach'] += 1
+                continue
+            if (
+                not isinstance(unit, str)
+                or not unit.startswith(OS_EXECUTOR_UNIT_PREFIX)
+                or not OS_EXECUTOR_UNIT_RE.fullmatch(unit)
+            ):
+                counts['invalid_unit'] += 1
+                logger.warning(f'cancel 模式：略過不合法 OsExecutor unit: {unit}')
+                continue
+
+            try:
+                proc = subprocess.run(
+                    ['sudo', '-n', 'systemctl', 'stop', unit],
+                    capture_output=True,
+                    text=True,
+                    timeout=20,
+                )
+                if proc.returncode == 0:
+                    counts['stopped'] += 1
+                else:
+                    counts['failed'] += 1
+                    logger.warning(
+                        f'cancel 模式：停止 OsExecutor unit 失敗 unit={unit} '
+                        f'code={proc.returncode} stderr={(proc.stderr or "")[:300]}')
+            except Exception as e:
+                counts['failed'] += 1
+                logger.warning(f'cancel 模式：停止 OsExecutor unit 例外 unit={unit}: {e}')
+
+        logger.info(
+            'cancel 模式：OsExecutor dispatched unit cleanup '
+            f"stopped={counts['stopped']} detach={counts['detach']} "
+            f"invalid_unit={counts['invalid_unit']} failed={counts['failed']}")
+    except Exception as e:
+        logger.warning(f'cancel 模式：OsExecutor dispatched unit cleanup 失敗: {e}')
+
+
+class WorkflowEngine:
+    """工作流執行引擎"""
+
+    @staticmethod
+    def get_effective_graph(workflow_instance) -> dict:
+        """取得工作流的有效流程圖（快照優先，設計圖 fallback）"""
+        if workflow_instance.graph_snapshot:
+            return workflow_instance.graph_snapshot
+        # 向下相容：舊實例無 graph_snapshot，回退到設計圖
+        from ..models import FwWorkflowTemplate
+        template = FwWorkflowTemplate.query.filter_by(
+            secure_code=workflow_instance.workflow_template_secure_code,
+            is_deleted=False
+        ).first()
+        if template:
+            return template.graph or {}
+        return {}
+
+    @staticmethod
+    def generate_execution_code(org_secure_code: str) -> str:
+        """
+        生成流程執行代碼
+
+        Args:
+            org_secure_code: 組織安全碼
+
+        Returns:
+            str: 執行代碼 (格式: ORG-YYYYMMDD-XXXX)
+        """
+        import random
+        import string
+        date_str = datetime.utcnow().strftime('%Y%m%d')
+        random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+        return f"{org_secure_code[:4]}-{date_str}-{random_str}"
+
+    @staticmethod
+    def get_next_nodes(graph: dict, current_node_id: str) -> List[str]:
+        """
+        從 graph 中找到下一個節點
+
+        Args:
+            graph: 流程圖結構 {'nodes': [...], 'edges': [...]}
+            current_node_id: 當前節點 ID
+
+        Returns:
+            List[str]: 下一個節點 ID 列表
+        """
+        next_nodes = []
+
+        if not graph or 'edges' not in graph:
+            return next_nodes
+
+        for edge in graph['edges']:
+            # 支援兩種格式
+            edge_data = edge.get('data', edge)
+            if edge_data.get('source') == current_node_id:
+                target = edge_data.get('target')
+                if target:
+                    next_nodes.append(target)
+
+        return next_nodes
+
+    @staticmethod
+    def get_node_info(graph: dict, node_id: str) -> Optional[dict]:
+        """
+        從 graph 中取得節點資訊
+
+        Args:
+            graph: 流程圖結構
+            node_id: 節點 ID
+
+        Returns:
+            節點資訊字典
+        """
+        if not graph or 'nodes' not in graph:
+            return None
+
+        for node in graph['nodes']:
+            nid = node.get('id') or node.get('data', {}).get('id')
+            if nid == node_id:
+                return node
+
+        return None
+
+    @staticmethod
+    def get_next_node_by_edge(graph: dict, edge_id: str) -> List[str]:
+        """
+        根據 edge ID 取得目標節點
+
+        Args:
+            graph: 流程圖結構
+            edge_id: 邊的 ID
+
+        Returns:
+            List[str]: 目標節點 ID 列表（通常只有一個）
+        """
+        if not graph or 'edges' not in graph:
+            return []
+
+        for edge in graph['edges']:
+            edge_data = edge.get('data', edge)
+            eid = edge_data.get('id') or edge.get('id')
+            if eid == edge_id:
+                target = edge_data.get('target')
+                if target:
+                    return [target]
+
+        return []
+
+    @staticmethod
+    def advance_workflow(
+        workflow_instance_secure_code: str,
+        completed_node_id: str,
+        selected_path: Optional[str] = None
+    ) -> List[FwNodeExecutionQueue]:
+        """
+        推進工作流到下一個節點
+
+        Args:
+            workflow_instance_secure_code: 工作流實例 secure_code
+            completed_node_id: 已完成的節點 ID
+            selected_path: 選擇的路徑 edge ID（用於 FormAdapter 等需要選擇的節點）
+
+        Returns:
+            新建立的佇列項目列表
+        """
+        workflow_instance = FwWorkflowInstance.query.filter_by(
+            secure_code=workflow_instance_secure_code,
+            is_deleted=False
+        ).first()
+
+        if not workflow_instance:
+            return []
+
+        # 終態防護：已結束的流程不得再建新節點（PF-200 改動 1）。
+        # node_runner.advance_to_next_nodes 有同樣的檢查，但 end_handler 喚醒父流程
+        # 與簽核路徑會直接呼叫本函式繞過它，缺這段會讓已結束的流程被復活。
+        if workflow_instance.status in ('COMPLETED', 'CANCELLED', 'ERROR', 'FAILED', 'REJECTED'):
+            logger.info(f'[advance_workflow] 工作流已是終態，跳過推進: '
+                        f'workflow={workflow_instance.secure_code}, status={workflow_instance.status}, '
+                        f'completed_node={completed_node_id}')
+            return []
+
+        # 取得有效流程圖（快照優先）
+        graph = WorkflowEngine.get_effective_graph(workflow_instance)
+        if not graph:
+            return []
+
+        # 找到下一個節點
+        # 如果有 selected_path（字符串，edge ID），只取該路徑的目標節點
+        if selected_path and isinstance(selected_path, str):
+            next_node_ids = WorkflowEngine.get_next_node_by_edge(graph, selected_path)
+        else:
+            next_node_ids = WorkflowEngine.get_next_nodes(graph, completed_node_id)
+
+        if not next_node_ids:
+            return []
+
+        # 為每個下一節點建立佇列項目
+        # 逐筆 commit，配合 partial unique index 防止 race condition 重複建立
+        new_items = []
+        for next_node_id in next_node_ids:
+            node_info = WorkflowEngine.get_node_info(graph, next_node_id)
+            if not node_info:
+                continue
+
+            # 推斷節點類型
+            node_type = node_info.get('type') or node_info.get('data', {}).get('type')
+            if not node_type:
+                if next_node_id.startswith('node-End'):
+                    node_type = 'End'
+                elif next_node_id.startswith('node-Start'):
+                    node_type = 'Start'
+                else:
+                    node_type = 'UNKNOWN'
+
+            node_config = node_info.get('config') or node_info.get('data', {}).get('config') or {}
+            display_name = node_info.get('label') or node_info.get('data', {}).get('label') or ''
+
+            # 檢查是否已存在未完成的相同節點
+            existing = FwNodeExecutionQueue.query.filter(
+                FwNodeExecutionQueue.workflow_instance_secure_code == workflow_instance.secure_code,
+                FwNodeExecutionQueue.node_id == next_node_id,
+                FwNodeExecutionQueue.status.in_(['PENDING', 'RUNNING', 'WAITING'])
+            ).first()
+
+            if existing:
+                logger.debug(f'[advance_workflow] 節點 {next_node_id} 已有 {existing.status} 項目，跳過')
+                continue
+
+            queue_item = FwNodeExecutionQueue(
+                org_secure_code=workflow_instance.org_secure_code,
+                workflow_instance_secure_code=workflow_instance.secure_code,
+                form_instance_secure_code=workflow_instance.form_instance_secure_code,
+                node_id=next_node_id,
+                node_type=node_type,
+                node_name=display_name,
+                node_config=node_config,
+                status='PENDING',
+                scheduled_at=datetime.utcnow()
+            )
+            try:
+                with db.session.begin_nested():
+                    db.session.add(queue_item)
+                    db.session.flush()
+            except IntegrityError:
+                # Race condition：另一個 executor 已為此節點建立了 queue item
+                # begin_nested 只回滾 savepoint，不影響整個 session
+                logger.info(f'[advance_workflow] 節點 {next_node_id} 已被其他 executor 建立，跳過')
+                continue
+
+            new_items.append(queue_item)
+
+            # 更新當前節點
+            workflow_instance.current_node_id = next_node_id
+
+        db.session.commit()
+        return new_items
+
+    @staticmethod
+    def complete_workflow(
+        workflow_instance_secure_code: str,
+        status: str = 'COMPLETED',
+        end_message: Optional[str] = None
+    ):
+        """
+        完成工作流
+
+        Args:
+            workflow_instance_secure_code: 工作流實例 secure_code
+            status: 最終狀態 (COMPLETED, REJECTED, CANCELLED, ERROR)
+            end_message: 結束訊息
+        """
+        workflow_instance = FwWorkflowInstance.query.filter_by(
+            secure_code=workflow_instance_secure_code,
+            is_deleted=False
+        ).first()
+
+        if not workflow_instance:
+            return
+
+        workflow_instance.status = status
+        workflow_instance.completed_at = datetime.utcnow()
+
+        # 子流程不更新 form_instance 狀態（form_instance 由主流程管理）
+        if workflow_instance.parent_instance_code:
+            logger.info(f'子流程完成，跳過 form_instance 狀態更新 '
+                        f'(child={workflow_instance.secure_code}, parent={workflow_instance.parent_instance_code})')
+            db.session.commit()
+            return
+
+        # 更新表單實例狀態（僅主流程）
+        form_instance = FwFormInstance.query.filter_by(
+            secure_code=workflow_instance.form_instance_secure_code,
+            is_deleted=False
+        ).first()
+
+        if form_instance:
+            if status == 'COMPLETED':
+                form_instance.status = 'APPROVED'
+            elif status == 'REJECTED':
+                form_instance.status = 'REJECTED'
+            elif status == 'CANCELLED':
+                form_instance.status = 'CANCELLED'
+            else:
+                form_instance.status = 'ERROR'
+
+            form_instance.completed_at = datetime.utcnow()
+
+        db.session.commit()
+
+        # SQL Sync：流程結束時寫入企業 DB（終態資料，含簽核者修改）
+        if form_instance and form_instance.published_secure_code:
+            try:
+                from ..services.sql_sync.sync_service import enqueue_sync_safe
+                if enqueue_sync_safe(form_instance, form_instance.published_secure_code):
+                    db.session.commit()
+            except Exception as e:
+                logger.warning(f'SQL Sync enqueue 失敗: {e}')
+
+        # Post-approval provisioning 已改由 SubSystemProvision Node 處理
+        # 企業管理員在流程設計器中拉入此 Node 即可，不再硬編碼
+
+    @staticmethod
+    def cancel_pending_nodes(
+        workflow_instance_secure_code: str,
+        exclude_queue_item_id: int = None,
+        scope: str = 'tree'
+    ):
+        """
+        取消工作流中所有未完成的節點（cancel 模式用）
+
+        Args:
+            workflow_instance_secure_code: 工作流實例 secure_code
+            exclude_queue_item_id: 排除的佇列項目 ID（End 節點自己）
+            scope: 'tree' = 整棵樹（主流程 End(cancel)、管理員強制結案、portal 撤單）
+                   'subtree' = 自己與所有後代（子流程 End(cancel) 用，PF-200）——
+                   不能用 root_instance_code：同一子流程模板可能在多條支線同時執行，
+                   必須沿 parent_instance_code 只收自己這一串，不得波及上一層與其他支線
+        """
+        workflow_instance = FwWorkflowInstance.query.filter_by(
+            secure_code=workflow_instance_secure_code,
+            is_deleted=False
+        ).first()
+
+        if workflow_instance and scope == 'subtree':
+            rows = db.session.execute(text("""
+                WITH RECURSIVE subtree AS (
+                    SELECT secure_code FROM fw_workflow_instances
+                    WHERE secure_code = :self AND is_deleted = false
+                  UNION ALL
+                    SELECT i.secure_code FROM fw_workflow_instances i
+                    JOIN subtree s ON i.parent_instance_code = s.secure_code
+                    WHERE i.is_deleted = false
+                )
+                SELECT secure_code FROM subtree
+            """), {'self': workflow_instance_secure_code}).fetchall()
+            tree_codes = [row[0] for row in rows]
+        elif workflow_instance:
+            root_instance_code = workflow_instance.root_instance_code or workflow_instance.secure_code
+            tree_instances = FwWorkflowInstance.query.filter(
+                or_(
+                    FwWorkflowInstance.secure_code == root_instance_code,
+                    FwWorkflowInstance.root_instance_code == root_instance_code
+                ),
+                FwWorkflowInstance.is_deleted.is_(False)
+            ).all()
+            tree_codes = [instance.secure_code for instance in tree_instances]
+        else:
+            logger.warning(f'cancel_pending_nodes: workflow instance not found, fallback to single scope '
+                           f'(workflow={workflow_instance_secure_code})')
+            tree_codes = [workflow_instance_secure_code]
+
+        query = FwNodeExecutionQueue.query.filter(
+            FwNodeExecutionQueue.workflow_instance_secure_code.in_(tree_codes),
+            FwNodeExecutionQueue.status.in_(['PENDING', 'RUNNING', 'WAITING'])
+        )
+
+        if exclude_queue_item_id:
+            query = query.filter(FwNodeExecutionQueue.id != exclude_queue_item_id)
+
+        pending_nodes = query.all()
+        process_targets = [
+            (node.process_id, node.secure_code)
+            for node in pending_nodes
+            if node.status == 'RUNNING' and node.process_id and node.process_id > 0
+        ]
+
+        for node in pending_nodes:
+            node.cancel()
+
+        cancelled_instances = FwWorkflowInstance.query.filter(
+            FwWorkflowInstance.secure_code.in_(tree_codes),
+            FwWorkflowInstance.secure_code != workflow_instance_secure_code,
+            FwWorkflowInstance.status.in_(['PENDING', 'RUNNING']),
+            FwWorkflowInstance.is_deleted.is_(False)
+        ).all()
+
+        for instance in cancelled_instances:
+            instance.status = 'CANCELLED'
+            instance.completed_at = datetime.utcnow()
+
+        if pending_nodes or cancelled_instances:
+            db.session.commit()
+            logger.info(f'cancel 模式：已取消 {len(pending_nodes)} 個未完成節點 '
+                        f'與 {len(cancelled_instances)} 個子流程 '
+                        f'(workflow={workflow_instance_secure_code}, scope={scope}, '
+                        f'instances={len(tree_codes)})')
+
+        if process_targets:
+            terminate_counts = {}
+            for pid, queue_item_secure_code in process_targets:
+                result = _terminate_node_process(pid, queue_item_secure_code)
+                terminate_counts[result] = terminate_counts.get(result, 0) + 1
+            summary = ' '.join(
+                f'{result}={count}'
+                for result, count in sorted(terminate_counts.items())
+            )
+            logger.info(f'cancel 模式：OS process termination results {summary} '
+                        f'(workflow={workflow_instance_secure_code})')
+
+        _stop_os_dispatched_units(tree_codes)
+
+    @staticmethod
+    def process_approval(
+        queue_item_secure_code: str,
+        action: str,
+        approver_secure_code: str,
+        comment: Optional[str] = None
+    ) -> Tuple[bool, str]:
+        """
+        處理簽核動作
+
+        Args:
+            queue_item_secure_code: 佇列項目 secure_code
+            action: 動作 ('APPROVE' or 'REJECT')
+            approver_secure_code: 審批人 secure_code
+            comment: 意見
+
+        Returns:
+            Tuple[bool, str]: (是否成功, 訊息)
+        """
+        queue_item = FwNodeExecutionQueue.query.filter_by(
+            secure_code=queue_item_secure_code
+        ).first()
+
+        if not queue_item:
+            return False, '佇列項目不存在'
+
+        if queue_item.status not in ['PENDING', 'WAITING']:
+            return False, f'佇列項目狀態為 {queue_item.status}，無法處理'
+
+        try:
+            # 更新佇列項目
+            queue_item.status = 'SUCCESS' if action == 'APPROVE' else 'FAILED'
+            queue_item.completed_at = datetime.utcnow()
+            queue_item.result = {
+                'action': action,
+                'comment': comment,
+                'approver_secure_code': approver_secure_code
+            }
+
+            # 建立簽核記錄
+            approval_record = FwApprovalRecord(
+                secure_code=secrets.token_urlsafe(16),
+                org_secure_code=queue_item.org_secure_code,
+                workflow_instance_secure_code=queue_item.workflow_instance_secure_code,
+                form_instance_secure_code=queue_item.form_instance_secure_code,
+                node_id=queue_item.node_id,
+                node_name=queue_item.node_name,
+                node_queue_secure_code=queue_item.secure_code,
+                approver_secure_code=approver_secure_code,
+                action=action,
+                comment=comment,
+                acted_at=datetime.utcnow(),
+            )
+            db.session.add(approval_record)
+
+            # 根據動作處理
+            if action == 'APPROVE':
+                # 推進到下一個節點
+                WorkflowEngine.advance_workflow(
+                    queue_item.workflow_instance_secure_code,
+                    queue_item.node_id,
+                    queue_item.result
+                )
+            else:
+                # 拒絕，結束工作流
+                WorkflowEngine.complete_workflow(
+                    queue_item.workflow_instance_secure_code,
+                    status='REJECTED',
+                    end_message=comment
+                )
+
+            db.session.commit()
+            return True, '處理成功'
+
+        except Exception as e:
+            db.session.rollback()
+            return False, f'處理失敗: {str(e)}'

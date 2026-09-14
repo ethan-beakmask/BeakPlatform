@@ -1,0 +1,191 @@
+# BeakPlatform 使用者文件 -- MkDocs 設定
+#
+# 產出對象是「最終使用者」（企業管理員、資安人員、一般員工），不是開發者。
+# 內部開發筆記在 dev-notes/，不在這裡，也不會被 build 進站台。
+#
+# 建置：venv-docs/bin/mkdocs build      （產出 site/，純靜態，可離線開）
+# 預覽：venv-docs/bin/mkdocs serve -a <BeakPlatform-VM>:8899
+# 撰寫規格：dev-notes/DOCS_AUTHORING_SPEC.md（動筆前先讀）
+#
+# 封閉網路要求：build 產出不得有任何外部請求。改設定後務必用
+#   grep -rE 'https?://(unpkg|cdn|fonts)' site/ --include='*.html'
+# 確認，theme.font 一旦沒設 false，Material 會去抓 Google Fonts。
+
+site_name: BeakPlatform 使用手冊
+site_description: 多租戶權限管理平台 -- 最終使用者文件
+docs_dir: docs
+site_dir: site
+use_directory_urls: false   # 產出 xxx.html，file:// 可直接開（離線包用）
+
+theme:
+  name: material
+  language: zh-TW
+  font: false               # 關閉 Google Fonts，封閉網路必要，不要拿掉
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: 切換深色
+    - scheme: slate
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: 切換淺色
+
+# docs/help/ 是站內 help 的資料來源（help_service.py 讀取），
+# 內文包在 YAML 的 sections[].body 裡，MkDocs 直接渲染會是一片空白，
+# 因此排除。兩個出口共用同一批檔的整併方式見撰寫規格。
+exclude_docs: |
+  help/
+  *.en.md
+  *.ja.md
+  *.zh-cn.md
+
+nav:
+  - 開始使用: index.md
+  - 使用手冊:
+      - 開始使用:
+          - manual/01_getting_started/index.md
+          - 登入與登出: manual/01_getting_started/login.md
+          - 登入救助機制: manual/01_getting_started/duress_login.md
+          - 介面導覽: manual/01_getting_started/interface_tour.md
+          - 個人設定: manual/01_getting_started/personal_settings.md
+          - 儀表板: manual/01_getting_started/dashboard.md
+          - 取得說明與手冊: manual/01_getting_started/getting_help.md
+      - 平台管理:
+          - manual/02_platform_admin/index.md
+          - 企業與合約管理: manual/02_platform_admin/organizations.md
+          - 企業獨立資料庫管理: manual/02_platform_admin/org_databases.md
+          - 系統管理員帳號: manual/02_platform_admin/sys_accounts.md
+          - 權限管理中心: manual/02_platform_admin/access_center_system.md
+          - 選單管理: manual/02_platform_admin/menu_manage.md
+          - 節點授權: manual/02_platform_admin/node_grants.md
+          - 模組管理: manual/02_platform_admin/modules.md
+          - 內部商場: manual/02_platform_admin/store.md
+          - 主機設定: manual/02_platform_admin/server_settings.md
+          - 主機資料清理: manual/02_platform_admin/data_maintenance.md
+          - Redis 監看: manual/02_platform_admin/redis_monitor.md
+          - 本機登入錯誤監看: manual/02_platform_admin/login_failures_local.md
+      - 企業建置:
+          - manual/03_org_setup/index.md
+          - 組織單位: manual/03_org_setup/units.md
+          - 部門設定: manual/03_org_setup/departments.md
+          - 社群設定: manual/03_org_setup/groups.md
+          - 職級職稱矩陣: manual/03_org_setup/job_matrix.md
+          - 職等設定: manual/03_org_setup/job_levels.md
+          - 職系設定: manual/03_org_setup/job_families.md
+          - 職稱設定: manual/03_org_setup/job_titles.md
+          - 核決權限: manual/03_org_setup/job_approval_categories.md
+          - 職位設定: manual/03_org_setup/positions.md
+          - 企業成員帳號: manual/03_org_setup/users.md
+          - 外部廠商帳號: manual/03_org_setup/external_users.md
+          - 代理與候補: manual/03_org_setup/delegations.md
+          - 基本班表: manual/03_org_setup/work_schedules.md
+          - 編號設定: manual/03_org_setup/numbering.md
+          - 權限管理中心: manual/03_org_setup/access_center.md
+          - 模組權限管理: manual/03_org_setup/module_permissions.md
+          - 企業管理員: manual/03_org_setup/org_admins.md
+          - 企業系統設定: manual/03_org_setup/system_settings.md
+          - 企業獨立資料庫: manual/03_org_setup/org_database.md
+      - 表單與流程:
+          - manual/04_form_workflow/index.md
+          - 分類管理: manual/04_form_workflow/categories.md
+          - 表單範本: manual/04_form_workflow/templates.md
+          - 流程設計: manual/04_form_workflow/workflows.md
+          - AI 分析節點: manual/04_form_workflow/ai_agent_node.md
+          - SQL 執行節點: manual/04_form_workflow/sql_executor_node.md
+          - 人事資料取值節點: manual/04_form_workflow/hr_lookup_node.md
+          - 配對管理與發行: manual/04_form_workflow/mappings.md
+          - 表單風格管理: manual/04_form_workflow/form_themes.md
+          - 表單中心: manual/04_form_workflow/center.md
+          - 規格制定: manual/04_form_workflow/spec_formulate.md
+          - AI 用量與配額: manual/04_form_workflow/ai_usage.md
+      - 資安作業:
+          - manual/05_security_ops/index.md
+          - 資安監控團隊規劃:
+              - manual/05_security_ops/soc_planning/index.md
+              - 資安事件處置流程: manual/05_security_ops/soc_planning/workflow_variants.md
+              - 資安團隊角色設計: manual/05_security_ops/soc_planning/role_design.md
+          - 資安案件處置中心: manual/05_security_ops/security_cases.md
+          - 開放防禦儀表板: manual/05_security_ops/od_dashboard.md
+          - 決策列表: manual/05_security_ops/decisions.md
+          - 封鎖保護清單: manual/05_security_ops/protected_targets.md
+          - 事件路由設定: manual/05_security_ops/event_routing.md
+          - 事件接收金鑰: manual/05_security_ops/intake_keys.md
+          - 執行端帳號: manual/05_security_ops/service_accounts.md
+          - 登入錯誤監看: manual/05_security_ops/login_failures.md
+          - 速率限制: manual/05_security_ops/rate_limits.md
+          - 緊急廣播管理: manual/05_security_ops/alert_broadcasts.md
+          - API Key 管理: manual/05_security_ops/api_keys.md
+          - 弱點儀表板: manual/05_security_ops/vuln_dashboard.md
+          - 資產清冊: manual/05_security_ops/vuln_assets.md
+          - 風險調整: manual/05_security_ops/vuln_risk.md
+          - KYND 弱點情報: manual/05_security_ops/vuln_kynd.md
+          - WAF 節點熱備切換: manual/05_security_ops/waf_failover.md
+      - 子系統開發:
+          - manual/06_subsystem/index.md
+          - 子系統開發總覽: manual/06_subsystem/overview.md
+      - 日常操作:
+          - manual/07_daily_work/index.md
+          - 我的任務與簽核: manual/07_daily_work/my_tasks.md
+          - 填寫與送出表單: manual/07_daily_work/fill_form.md
+          - 設定代理人: manual/07_daily_work/my_delegation.md
+          - 追蹤案件進度: manual/07_daily_work/track_case.md
+          - 企業行事曆與我的行事曆: manual/07_daily_work/calendar.md
+      - 外部協作:
+          - manual/08_external/index.md
+          - 可存取的範圍: manual/08_external/scope.md
+          - 受邀的表單作業: manual/08_external/external_tasks.md
+      - 從零開始到發動流程表單:
+          - manual/09_from_zero/index.md
+          - 這條鏈路怎麼運作: manual/09_from_zero/01_how_it_works.md
+          - 逐步建置: manual/09_from_zero/02_build_it.md
+          - 送出第一筆事件: manual/09_from_zero/03_send_and_verify.md
+          - 卡住時對照這張表: manual/09_from_zero/04_when_it_fails.md
+
+plugins:
+  - search:
+      lang: [ja]            # lunr 沒有 zh 分詞器，ja 的 bigram 對中文檢索堪用
+
+markdown_extensions:
+  - admonition              # !!! warning "前置條件"
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details        # ??? 可摺疊區塊
+  - pymdownx.tabbed:
+      alternate_style: true # 同頁切換不同作業模式
+  - pymdownx.superfences:
+      custom_fences:
+        # class 刻意不叫 mermaid：Material 內建的 mermaid 支援會從 unpkg CDN
+        # 動態 import，封閉網路不能用。改名後由 docs/javascripts/mermaid-init.js
+        # 以本地 docs/assets/mermaid.min.js 全權接手。
+        - name: mermaid
+          class: mermaid-diagram
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+hooks:
+  - scripts/mkdocs_hooks/doc_relations.py
+
+extra_javascript:
+  - assets/mermaid.min.js
+  - javascripts/mermaid-init.js

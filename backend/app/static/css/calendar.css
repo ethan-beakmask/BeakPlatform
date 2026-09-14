@@ -1,0 +1,427 @@
+/* calendar.css — 企業行事曆／我的行事曆（PF-229 第一期）
+   btn / alert / modal-* / page-header / text-muted 由 common.css 提供。
+   本檔只引用 common.css :root 白名單變數；--cal-* 是本頁自己定義自己用的區域變數。 */
+
+.cal-page {
+    --cal-day-min: 96px;
+    --cal-week-min: 240px;
+    /* 非工作日（六、日、假日、補假）底色：淡紅，補班日不套用 */
+    --cal-off-bg: var(--color-danger-light);
+}
+@supports (color: color-mix(in srgb, red 50%, white)) {
+    .cal-page { --cal-off-bg: color-mix(in srgb, var(--color-danger) 9%, var(--color-bg-white)); }
+}
+
+.cal-subtitle {
+    margin: 4px 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+/* 工具列 */
+.cal-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.cal-switch {
+    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+}
+.cal-viewswitch {
+    display: flex;
+    gap: 4px;
+}
+.cal-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cal-nav button {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    padding: 6px 12px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    color: var(--color-text);
+}
+.cal-nav button:hover {
+    background: var(--color-border-light);
+}
+.cal-range-title {
+    font-size: 18px;
+    font-weight: 600;
+    min-width: 8em;
+}
+.cal-loading {
+    margin: 0 0 8px;
+    font-size: var(--font-size-sm);
+}
+.cal-toast {
+    max-width: 520px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cal-toast a {
+    color: inherit;
+    text-decoration: underline;
+}
+.cal-toast-close {
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* 圖例 */
+.cal-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+.cal-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 事件色票（chip / row / dot / 圖例共用）
+   每一類只定義一個主色 --cal-c（值一律引用 common.css 白名單變數）：
+   格內 chip／row ＝ 主色淡化的底 ＋ 主色左邊線；圖例色塊與週視圖 dot ＝ 主色實色。
+   淡化用 color-mix（Chrome 111+ / Firefox 113+ / Safari 16.2+），
+   不支援時退回 --cal-c-tint（common.css 的 *-light）。
+   2026-09-03：原本圖例只有 *-light 淡底，看不清楚，改成實色並加左邊線。 */
+.cal-ev {
+    --cal-c: var(--color-primary);
+    --cal-c-tint: var(--color-primary-light);
+    color: var(--color-text);
+    border: 1px solid var(--color-border-light);
+    border-left: 3px solid var(--cal-c);
+    background: var(--cal-c-tint);
+}
+.cal-ev--holiday    { --cal-c: var(--color-danger);         --cal-c-tint: var(--color-danger-light); }
+.cal-ev--workday    { --cal-c: var(--color-info);           --cal-c-tint: var(--color-info-light); }
+.cal-ev--proxy      { --cal-c: var(--color-warning);        --cal-c-tint: var(--color-warning-light); }
+.cal-ev--position   { --cal-c: var(--color-primary-hover);  --cal-c-tint: var(--color-primary-light); }
+.cal-ev--flow       { --cal-c: var(--color-text-secondary); --cal-c-tint: var(--color-bg-header); }
+.cal-ev--broadcast  { --cal-c: var(--color-success);        --cal-c-tint: var(--color-success-light); }
+.cal-ev--leave,
+.cal-ev--trip,
+.cal-ev--meeting,
+.cal-ev--org_event,
+.cal-ev--other      { --cal-c: var(--color-primary);        --cal-c-tint: var(--color-primary-light); }
+.cal-ev--busy {
+    --cal-c: var(--color-text-muted);
+    color: var(--color-text-secondary);
+    background: repeating-linear-gradient(
+        135deg,
+        var(--color-bg-white) 0 4px,
+        var(--color-border) 4px 8px
+    );
+}
+@supports (color: color-mix(in srgb, red 50%, white)) {
+    .cal-ev:not(.cal-ev--busy) { background: color-mix(in srgb, var(--cal-c) 18%, var(--color-bg-white)); }
+    /* 限期職位與個人／企業事件原本同為 primary，圖例分不出來；混出一個紫色專用 */
+    .cal-ev--position { --cal-c: color-mix(in srgb, var(--color-primary) 55%, var(--color-danger)); }
+}
+
+/* 圖例色塊：主色實色。放在色票區塊之後才蓋得過 @supports 內的 (0,2,0) 規則 */
+.cal-legend-item .cal-ev {
+    width: 16px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+    background: var(--cal-c);
+    border: 1px solid var(--cal-c);
+}
+.cal-legend-item .cal-ev--busy {
+    background: repeating-linear-gradient(
+        135deg,
+        var(--color-bg-white) 0 3px,
+        var(--color-text-muted) 3px 6px
+    );
+    border-color: var(--color-text-muted);
+}
+.cal-legend-off {
+    width: 16px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+    background: var(--cal-off-bg);
+    border: 1px solid var(--color-border);
+}
+
+/* 月視圖 */
+.cal-month {
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    background: var(--color-bg-white);
+}
+.cal-weekhead {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border-light);
+}
+.cal-weekhead-cell {
+    padding: 8px 0;
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+.cal-weekhead-cell--weekend {
+    color: var(--color-danger);
+}
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+.cal-day {
+    min-height: var(--cal-day-min);
+    border-right: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border-light);
+    padding: 4px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--color-bg-white);
+}
+.cal-day:nth-child(7n) {
+    border-right: none;
+}
+.cal-day:hover {
+    background: var(--color-bg-header);
+}
+.cal-day--off {
+    background: var(--cal-off-bg);
+}
+.cal-day--outside .cal-day-num {
+    color: var(--color-text-muted);
+}
+.cal-day--weekend .cal-day-num,
+.cal-day--holiday-holiday .cal-day-num,
+.cal-day--holiday-comp_off .cal-day-num {
+    color: var(--color-danger);
+}
+.cal-day--holiday-workday .cal-day-num {
+    color: var(--color-info);
+}
+.cal-day--today .cal-day-num {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+.cal-day-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
+}
+.cal-day-num {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    padding: 0 3px;
+}
+.cal-day-holiday {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}
+.cal-day-events {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.cal-ev--chip {
+    font-size: var(--font-size-xs);
+    padding: 1px 4px;
+    border-radius: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cal-more {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    padding-left: 4px;
+}
+
+/* 週視圖 */
+.cal-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    background: var(--color-bg-white);
+}
+.cal-weekcol {
+    min-height: var(--cal-week-min);
+    border-right: 1px solid var(--color-border-light);
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-white);
+}
+.cal-weekcol:last-child {
+    border-right: none;
+}
+.cal-weekcol.cal-day--off {
+    background: var(--cal-off-bg);
+}
+.cal-weekcol-head {
+    padding: 8px 6px;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border-light);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+}
+.cal-weekcol-name {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}
+.cal-weekcol-body {
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.cal-ev--row {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    font-size: var(--font-size-sm);
+    padding: 3px 6px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+}
+.cal-ev-time {
+    flex: 0 0 auto;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+.cal-ev-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cal-empty {
+    font-size: var(--font-size-xs);
+    margin: 0;
+}
+
+/* 明細面板 */
+.cal-panel-holiday {
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+    margin: 0 0 12px;
+}
+.cal-panel-item {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--color-border-light);
+}
+.cal-panel-item:last-child {
+    border-bottom: none;
+}
+.cal-panel-time {
+    flex: 0 0 5.5em;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+.cal-panel-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.cal-ev.cal-ev--dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    background: var(--cal-c);
+    border: 1px solid var(--cal-c);
+}
+.cal-panel-title {
+    font-weight: 600;
+}
+.cal-panel-owner {
+    font-size: var(--font-size-sm);
+    margin-left: 4px;
+}
+.cal-panel-note {
+    font-size: var(--font-size-sm);
+    margin-top: 4px;
+    white-space: pre-wrap;
+}
+.cal-panel-link {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: var(--font-size-sm);
+    color: var(--color-primary);
+}
+.cal-panel-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+/* 事件表單 */
+.cal-form-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.cal-form-row > label {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+.cal-form-row input:not([type="radio"]):not([type="checkbox"]),
+.cal-form-row select,
+.cal-form-row textarea {
+    width: 100%;
+}
+.cal-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.cal-form-radios {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.cal-form-radios label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.cal-form-note {
+    margin: 0;
+    font-size: var(--font-size-sm);
+}
+
+@media (max-width: 900px) {
+    .cal-page {
+        --cal-day-min: 72px;
+        --cal-week-min: 160px;
+    }
+    .cal-ev--chip,
+    .cal-day-num {
+        font-size: var(--font-size-xs);
+    }
+}

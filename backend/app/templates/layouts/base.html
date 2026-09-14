@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale|default('zh-TW') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}BeakPlatform{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <!-- URL 前綴 (供前端 JS 統一使用) -->
+    <script>window.__BP = '{{ app_prefix }}';</script>
+    <!-- 用戶時區 (供前端 JS 統一格式化) -->
+    <script>window.__TIMEZONE = '{{ current_timezone|default("Asia/Taipei") }}';</script>
+    <script src="{{ url_for('static', filename='js/timezone.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/capability.js') }}"></script>
+    <!-- 資料出口遮罩 (BkEgress，哨兵渲染 + hover 揭示) -->
+    <script src="{{ url_for('static', filename='js/egress-mask.js') }}"></script>
+    <!-- 前端 i18n (BkI18n + __()，非 zh-TW 時載入對應字典) -->
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    {% set _locale = current_locale|default('zh-TW') %}
+    {% if _locale != 'zh-TW' %}
+    <script src="{{ url_for('main.i18n_dict_js', locale=_locale) }}"></script>
+    {% endif %}
+    <!-- 通用表格排序元件（須在 Alpine.js 之前載入，確保函式已定義） -->
+    <script src="{{ url_for('static', filename='js/sortable-table.js') }}"></script>
+    <!-- Alpine.js (本地) -->
+    <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
+
+    <!-- Remix Icon (本地) - Apache 2.0 License -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='fonts/remixicon/remixicon.css') }}">
+
+    <!-- 全域共用樣式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base-layout.css') }}">
+
+    {% if menu_color_overrides %}
+    <style>:root {
+    {% for key, val in menu_color_overrides.items() %}--{{ key }}: {{ val }};
+    {% endfor %}}</style>
+    {% endif %}
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {# 頁內 [?]：子模板用 {% block help_doc %}manual/xx/yy{% endblock %} 宣告對應手冊頁。
+       block 必須在 base 定義過，子模板的覆寫才生效；但直接寫在版面上會把 doc_id
+       印在畫面上，所以包進一個永遠不呼叫的 macro，只取 self.help_doc() 的值。 #}
+    {% macro _define_help_doc_block() %}{% block help_doc %}{% endblock %}{% endmacro %}
+    {% set _help_doc = self.help_doc()|trim %}
+    {% if current_user.is_authenticated %}
+    {% macro render_menu_item(item) %}
+        {# 權限顏色 class 由後端 bg_level + is_cross_level 決定 #}
+        {% set item_class = _menu_color_class(item) %}
+
+        {% if item.children %}
+        <div class="bk-menu-dropdown">
+            <span class="bk-menu-trigger {{ item_class }}">{% if item.icon %}<i class="{{ item.icon }}"></i> {% endif %}{{ item.title }} &#9662;</span>
+            <div class="bk-menu-dropdown-content">
+                {% for child in item.children %}
+                {% set child_class = _menu_color_class(child) %}
+                <a href="{{ child.href or '#' }}"{% if child.open_in_new_tab %} target="_blank"{% endif %} class="{{ child_class }}">
+                    {% if child.icon %}<i class="{{ child.icon }}"></i> {% endif %}{{ child.title }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <a href="{{ item.href or '#' }}"{% if item.open_in_new_tab %} target="_blank"{% endif %} class="{{ item_class }}">
+            {% if item.icon %}<i class="{{ item.icon }}"></i> {% endif %}{{ item.title }}
+        </a>
+        {% endif %}
+    {% endmacro %}
+
+    {% set menu_groups = namespace(primary=[], admin=[]) %}
+    {% for item in nav_menu %}
+        {% if item.bg_level == 'admin' and not item.is_cross_level %}
+            {% set _ = menu_groups.admin.append(item) %}
+        {% else %}
+            {% set _ = menu_groups.primary.append(item) %}
+        {% endif %}
+    {% endfor %}
+
+    {% block topbar %}
+    <!-- Fixed Top Bar -->
+    <div class="bk-topbar-fixed">
+        <!-- Navbar -->
+        <div class="bk-navbar">
+            <div class="bk-navbar-content">
+                <a href="{{ url_for('main.dashboard') }}" class="bk-navbar-logo">BeakPlatform{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
+                <span class="bk-navbar-user">{% if current_user.navbar_display == 'nickname' %}{{ current_user.nickname or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id' %}{{ current_user.employee_id or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id_dept' %}{{ current_user.employee_id or current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% else %}{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% if current_user.employee_id %} ({{ current_user.employee_id }}){% endif %}{% endif %}</span>
+                {% if _help_doc and manual_doc_exists(_help_doc) %}
+                <a class="bk-navbar-help"
+                   href="{{ url_for('platform_help.manual_doc', doc_id=_help_doc) }}"
+                   target="_blank" rel="noopener"
+                   title="{{ _('本頁說明') }}" aria-label="{{ _('本頁說明') }}">?</a>
+                {% endif %}
+                <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit">{{ _('登出') }}</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Menu Bar (動態選單) -->
+        <div class="bk-menubar">
+            {% for item in menu_groups.primary %}
+                {{ render_menu_item(item) }}
+            {% else %}
+                {% if not nav_menu %}
+            <!-- 無選單資料時的 fallback -->
+            <a href="{{ url_for('main.dashboard') }}">{{ _('首頁') }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% if menu_groups.admin %}
+        <div class="bk-menubar bk-menubar-admin">
+            {% for item in menu_groups.admin %}
+                {{ render_menu_item(item) }}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endblock %}
+    {% endif %}
+
+    <!-- Main Content -->
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- 置頂列高度偏移計算 -->
+    <script src="{{ url_for('static', filename='js/topbar-offset.js') }}"></script>
+
+    {% if current_user.is_authenticated %}
+    <!-- 廣播系統 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/broadcast.css') }}">
+    <script>window.__BROADCAST_POLL_INTERVAL = {{ broadcast_poll_interval_minutes|default(1) }};</script>
+    <script src="{{ url_for('static', filename='js/broadcast-poller.js') }}"></script>
+
+    {# 頁面說明 [?] 按鈕：2026-08-14 用戶決定停用。
+       原因是它的內容來源 docs/help/ 只有三篇、且是與使用者手冊完全不同的
+       另一套格式（YAML sections），風格不一致。日後要復原就把下面三行取消註解，
+       help-button.js / help-button.css 與 /help/page/、/help/api/page 路由都還在。
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/help-button.css') }}">
+    <script>window.__CURRENT_ENDPOINT = '{{ request.endpoint or "" }}';</script>
+    <script src="{{ url_for('static', filename='js/help-button.js') }}"></script>
+    #}
+    {% endif %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale|default('zh-TW') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('無法預覽此頁') }}</title>
+    <link rel="icon" href="{{ app_prefix }}/static/favicon.ico">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/css/common.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/css/pageir.css">
+    <style>
+        body { background: var(--color-bg); color: var(--color-text); margin: 0; }
+        .portal-shell { min-height: 100vh; }
+        .portal-topbar { background: var(--color-bg-white); border-bottom: 1px solid var(--color-border); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+        .portal-topbar h1 { font-size: 18px; margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+        .portal-content { max-width: 1180px; margin: 0 auto; padding: 24px; }
+        .ird-preview-denied { display: grid; gap: 18px; }
+        .ird-preview-denied p { margin: 0; line-height: 1.7; }
+        .ird-preview-denied-section { display: grid; gap: 10px; }
+        .ird-preview-denied-section h2 { font-size: 15px; margin: 0; font-weight: 600; color: var(--color-text); }
+        .ird-preview-permissions { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+        .ird-preview-permission { border: 1px solid var(--color-border); background: var(--color-bg-white); padding: 10px 12px; overflow-wrap: anywhere; }
+        .ird-preview-denied code { color: var(--color-text); background: var(--color-bg-light); padding: 1px 5px; }
+        .ird-preview-note { color: var(--color-text-secondary); }
+        .ird-preview-reason { color: var(--color-text-muted); font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="portal-shell">
+        {% if sub_system_name %}
+        <header class="portal-topbar">
+            {% if sub_system_icon %}<span><i class="{{ sub_system_icon }}"></i></span>{% endif %}
+            <h1>{{ sub_system_name }}</h1>
+        </header>
+        {% endif %}
+        <main class="portal-content">
+            <div class="pir-page pir-error ird-preview-denied">
+                <h1 class="pir-page-title">{{ _('無法預覽此頁') }}</h1>
+                <p>
+                    {{ _('目前預覽身分：') }}
+                    {{ _('群組') }}
+                    {% if group_code %}
+                    {{ group_name or group_code }} (<code>{{ group_code }}</code>)
+                    {% else %}
+                    {{ _('不限群組') }}
+                    {% endif %}
+                    {{ _('，階級') }}
+                    {{ level_name }} (<code>{{ level_code }}</code>{% if level_rank is not none %}{{ _('，階級排序') }} {{ level_rank }}{% endif %})
+                </p>
+
+                {% if required_permissions %}
+                <section class="ird-preview-denied-section">
+                    <h2>{{ _('此頁要求的權限碼') }}</h2>
+                    <ul class="ird-preview-permissions">
+                        {% for permission in required_permissions %}
+                        <li class="ird-preview-permission">
+                            <code>{{ permission.code }}</code>{% if permission.description %} - {{ permission.description }}{% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+                {% endif %}
+
+                <p class="ird-preview-note">{{ _('可在頁面頂端的「預覽階級」改用其他身分，或到工作區「權限矩陣」分頁調整該頁的權限碼') }}</p>
+                <p class="ird-preview-reason">{{ _('拒絕原因短碼：') }}<code>{{ deny_reason }}</code></p>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

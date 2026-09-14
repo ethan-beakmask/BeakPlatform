@@ -1,0 +1,301 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('主機資料清理') }} - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/hostconfig-index.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ _('主機資料清理') }}</h1>
+    <p>{{ _('清理這台主機上沒有歸屬的殘留資料，僅限系統管理員操作') }}</p>
+    <p style="color: #666;">{{ _('要永久刪除某一家已軟刪除的企業，請到「企業與合約管理」頁面操作。') }}</p>
+</div>
+
+<div class="tool-grid">
+    <div class="tool-card" style="min-width: 400px;" x-data="purgeDeletedManager()" x-init="loadOrgs()">
+        <h3>{{ _('清除標記刪除的資料') }}</h3>
+        <p style="margin-bottom: 12px;">{{ _('永久刪除各表中 is_deleted=true 的記錄（無法復原）') }}</p>
+
+        <!-- 範圍選擇 + 掃描按鈕 -->
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <label>{{ _('範圍:') }}</label>
+            <select x-model="scope" style="padding: 4px 8px; min-width: 160px;">
+                <option value="all">{{ _('全系統') }}</option>
+                <template x-for="org in orgs" :key="org.secure_code">
+                    <option :value="org.secure_code" x-text="org.name + ' (' + org.domain_name + ')'"></option>
+                </template>
+            </select>
+            <button class="restart-btn" @click="scan()" :disabled="scanning">
+                <span x-show="!scanning">{{ _('掃描') }}</span>
+                <span x-show="scanning">{{ _('掃描中...') }}</span>
+            </button>
+        </div>
+
+        <!-- 掃描結果 -->
+        <div x-show="scanned && tables.length === 0" style="color: #666;">
+            {{ _('沒有標記刪除的記錄') }}
+        </div>
+
+        <div x-show="tables.length > 0">
+            <table border="1" cellpadding="6" cellspacing="0" style="margin-bottom: 12px; font-size: 13px;">
+                <thead>
+                    <tr style="background: #f5f5f5;">
+                        <th>{{ _('資料表') }}</th>
+                        <th>{{ _('筆數') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="t in tables" :key="t.table">
+                        <tr>
+                            <td x-text="t.display_name + ' (' + t.table + ')'"></td>
+                            <td style="text-align: right;" x-text="t.count"></td>
+                        </tr>
+                    </template>
+                </tbody>
+                <tfoot>
+                    <tr style="font-weight: bold; background: #f9f9f9;">
+                        <td>{{ _('合計') }}</td>
+                        <td style="text-align: right;" x-text="totalCount"></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <button class="restart-btn" @click="executePurge()" :disabled="executing">
+                <span x-show="!executing">{{ _('執行清除') }}</span>
+                <span x-show="executing">{{ _('清除中...') }}</span>
+            </button>
+        </div>
+
+        <!-- 結果訊息 -->
+        <div x-show="resultMessage" x-text="resultMessage"
+             :style="resultSuccess ? 'color: #2f855a; margin-top: 10px;' : 'color: #c53030; margin-top: 10px;'">
+        </div>
+    </div>
+
+    <div class="tool-card" style="min-width: 400px;" x-data="orphanCleanupManager()">
+        <h3>{{ _('清理企業孤兒資料') }}</h3>
+        <p style="margin-bottom: 12px;">{{ _('刪除指向已不存在企業的殘留記錄（無法復原）') }}</p>
+
+        <button class="restart-btn" @click="scan()" :disabled="scanning">
+            <span x-show="!scanning">{{ _('掃描') }}</span>
+            <span x-show="scanning">{{ _('掃描中...') }}</span>
+        </button>
+
+        <div x-show="scanned && total === 0" style="color: #666; margin-top: 12px;">
+            {{ _('沒有企業孤兒資料') }}
+        </div>
+
+        <div x-show="orphanOrgs.length > 0" style="margin-top: 12px;">
+            <strong>{{ _('孤兒企業識別碼') }}:</strong>
+            <table border="1" cellpadding="6" cellspacing="0" style="margin-top: 4px; margin-bottom: 12px; font-size: 13px;">
+                <thead>
+                    <tr style="background: #f5f5f5;">
+                        <th>{{ _('企業識別碼') }}</th>
+                        <th>{{ _('筆數') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="org in orphanOrgs" :key="org.org_secure_code">
+                        <tr>
+                            <td x-text="org.org_secure_code"></td>
+                            <td style="text-align: right;" x-text="org.count"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <div x-show="tables.length > 0">
+            <strong>{{ _('涉及資料表:') }}</strong>
+            <table border="1" cellpadding="6" cellspacing="0" style="margin-top: 4px; margin-bottom: 12px; font-size: 13px;">
+                <thead>
+                    <tr style="background: #f5f5f5;">
+                        <th>{{ _('資料表') }}</th>
+                        <th>{{ _('筆數') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="t in tables" :key="t.table">
+                        <tr>
+                            <td x-text="t.display_name + ' (' + t.table + ')'"></td>
+                            <td style="text-align: right;" x-text="t.count"></td>
+                        </tr>
+                    </template>
+                </tbody>
+                <tfoot>
+                    <tr style="font-weight: bold; background: #f9f9f9;">
+                        <td>{{ _('合計') }}</td>
+                        <td style="text-align: right;" x-text="total"></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <button class="restart-btn" @click="executeCleanup()" :disabled="executing">
+                <span x-show="!executing">{{ _('執行清理') }}</span>
+                <span x-show="executing">{{ _('清理中...') }}</span>
+            </button>
+        </div>
+
+        <div x-show="resultMessage" x-text="resultMessage"
+             :style="resultSuccess ? 'color: #2f855a; margin-top: 10px;' : 'color: #c53030; margin-top: 10px;'">
+        </div>
+
+        <div x-show="errors.length > 0" style="color: #c53030; margin-top: 10px;">
+            <strong>{{ _('失敗資料表:') }}</strong>
+            <ul style="margin: 4px 0 0 20px; padding: 0;">
+                <template x-for="err in errors" :key="err.table">
+                    <li x-text="err.display_name + ' (' + err.table + '): ' + err.error"></li>
+                </template>
+            </ul>
+        </div>
+
+        <hr style="margin: 16px 0;">
+
+        <div x-data="physicalOrphanManager()">
+            <h3>{{ _('實體資源') }}</h3>
+            <p style="margin-bottom: 12px;">{{ _('掃描並刪除沒有對應企業的檔案與目錄（無法復原）') }}</p>
+
+            <button class="restart-btn" @click="scan()" :disabled="scanning">
+                <span x-show="!scanning">{{ _('掃描實體資源') }}</span>
+                <span x-show="scanning">{{ _('掃描中...') }}</span>
+            </button>
+
+            <div x-show="scanned && uploadFiles.length === 0 && encryptedDirs.length === 0 && edlDirs.length === 0" style="color: #666; margin-top: 12px;">
+                {{ _('沒有實體孤兒資源') }}
+            </div>
+
+            <div x-show="uploadFiles.length > 0" style="margin-top: 12px;">
+                <strong>{{ _('無主上傳檔案') }}:</strong>
+                <table border="1" cellpadding="6" cellspacing="0" style="margin-top: 4px; margin-bottom: 12px; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f5f5f5;">
+                            <th>{{ _('檔名') }}</th>
+                            <th>{{ _('大小') }}</th>
+                            <th>{{ _('修改時間') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="file in uploadFiles" :key="file.name">
+                            <tr>
+                                <td x-text="file.name"></td>
+                                <td style="text-align: right;" x-text="formatBytes(file.size)"></td>
+                                <td x-text="formatUtcTime(file.modified_at)"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div x-show="encryptedDirs.length > 0">
+                <strong>{{ _('孤兒加密檔案目錄') }}:</strong>
+                <table border="1" cellpadding="6" cellspacing="0" style="margin-top: 4px; margin-bottom: 12px; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f5f5f5;">
+                            <th>{{ _('企業識別碼') }}</th>
+                            <th>{{ _('檔案數') }}</th>
+                            <th>{{ _('大小') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="dir in encryptedDirs" :key="dir.org_secure_code">
+                            <tr>
+                                <td x-text="dir.org_secure_code"></td>
+                                <td style="text-align: right;" x-text="dir.file_count"></td>
+                                <td style="text-align: right;" x-text="formatBytes(dir.size)"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div x-show="edlDirs.length > 0">
+                <strong>{{ _('孤兒 EDL 目錄') }}:</strong>
+                <table border="1" cellpadding="6" cellspacing="0" style="margin-top: 4px; margin-bottom: 12px; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f5f5f5;">
+                            <th>{{ _('企業識別碼') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="dir in edlDirs" :key="dir.org_secure_code">
+                            <tr>
+                                <td x-text="dir.org_secure_code"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div x-show="manualRequired.length > 0" style="margin-top: 12px;">
+                <strong>{{ _('需自行以 CLI 處理') }}</strong>
+                <table border="1" cellpadding="6" cellspacing="0" style="margin-top: 4px; margin-bottom: 12px; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f5f5f5;">
+                            <th>{{ _('名稱') }}</th>
+                            <th>{{ _('原因') }}</th>
+                            <th>{{ _('指令') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="item in manualRequired" :key="item.type + ':' + item.name">
+                            <tr>
+                                <td x-text="item.name"></td>
+                                <td x-text="item.reason"></td>
+                                <td>
+                                    <template x-if="item.command">
+                                        <span>
+                                            <code x-text="item.command"></code>
+                                            <button type="button" class="copy-btn" @click="copyCommand(item.command)">{{ _('複製') }}</button>
+                                        </span>
+                                    </template>
+                                    <template x-if="!item.command">
+                                        <span>—</span>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="restart-btn" x-show="totalRemovable > 0" @click="executeCleanup()" :disabled="executing">
+                <span x-show="!executing">{{ _('執行實體清理') }}</span>
+                <span x-show="executing">{{ _('清理中...') }}</span>
+            </button>
+
+            <div x-show="resultMessage" x-text="resultMessage"
+                 :style="resultSuccess ? 'color: #2f855a; margin-top: 10px;' : 'color: #c53030; margin-top: 10px;'">
+            </div>
+
+            <div x-show="errors.length > 0" style="color: #c53030; margin-top: 10px;">
+                <strong>{{ _('失敗資源') }}:</strong>
+                <ul style="margin: 4px 0 0 20px; padding: 0;">
+                    <template x-for="err in errors" :key="err.resource">
+                        <li x-text="err.resource + ': ' + err.error"></li>
+                    </template>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.__HOSTCONFIG = {
+    purgePreviewUrl: '{{ url_for("hostconfig.purge_deleted_preview") }}',
+    purgeExecuteUrl: '{{ url_for("hostconfig.purge_deleted_execute") }}',
+    orphanPreviewUrl: '{{ url_for("hostconfig.orphan_cleanup_preview") }}',
+    orphanExecuteUrl: '{{ url_for("hostconfig.orphan_cleanup_execute") }}',
+    physicalPreviewUrl: '{{ url_for("hostconfig.physical_orphans_preview") }}',
+    physicalExecuteUrl: '{{ url_for("hostconfig.physical_orphans_execute") }}'
+};
+</script>
+<!-- app.js 提供 Utils.copyToClipboard（平台跑在 http，navigator.clipboard 不可用）；
+     base.html 並未載入它，需要用到的頁面各自引入 -->
+<script src="{{ app_prefix }}/static/js/app.js"></script>
+<script src="{{ app_prefix }}/static/js/hostconfig-index.js"></script>
+{% endblock %}

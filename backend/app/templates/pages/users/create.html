@@ -1,0 +1,264 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/03_org_setup/users{% endblock %}
+
+{% block title %}{{ _('新增用戶') }} - BeakMask{% endblock %}
+
+{% block head %}
+<!-- 零依賴 Tree 元件 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.css') }}">
+<!-- 用戶表單樣式 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/user-form.css') }}">
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回用戶列表') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('新增用戶') }}</h1>
+</div>
+
+<p style="margin-bottom: 20px;">
+    <button type="submit" form="create-user-form" class="btn btn-primary">{{ _('建立用戶') }}</button>
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-cancel">{{ _('取消') }}</a>
+</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST" id="create-user-form" x-data="userForm()">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="section-title">{{ _('必填欄位') }}</div>
+    <table class="form-table">
+        <tr>
+            <td><label for="native_name" class="required">{{ _('本國姓名') }}</label></td>
+            <td>
+                <input type="text" id="native_name" name="native_name" required
+                       x-model="nativeName"
+                       @input="onNativeNameChange()">
+                <div class="help-text">{{ _('文件與流程使用的正式姓名') }}</div>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="english_name" class="required">{{ _('英文姓名') }}</label></td>
+            <td>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="text" id="english_name" name="english_name" required
+                           x-model="englishName"
+                           @input="onEnglishNameChange()"
+                           placeholder="English Name">
+                    <button type="button" @click="transliterateName()"
+                            :disabled="!nativeName || transliterating"
+                            style="padding: 6px 10px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
+                            :style="(!nativeName || transliterating) ? 'opacity: 0.5; cursor: not-allowed;' : ''">
+                        <span x-show="!transliterating">{{ _('自動翻譯') }}</span>
+                        <span x-show="transliterating">{{ _('翻譯中...') }}</span>
+                    </button>
+                </div>
+                <div class="help-text" x-show="detectedLang" style="color: #8b5cf6;">
+                    {{ _('偵測語言:') }} <span x-text="langNames[detectedLang] || detectedLang"></span>
+                </div>
+                <div class="help-text">{{ _('帳號與 Email 的名稱來源，非 CJK 姓名可直接輸入') }}</div>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="username" class="required">{{ _('帳號') }}</label></td>
+            <td>
+                <input type="text" id="username" name="username" required style="width: 120px;"
+                       x-model="usernameRaw"
+                       @input="onUsernameManualChange()">@{{ current_user.organization.domain_name if current_user.organization else 'unknown' }}
+                <div class="help-text" x-show="usernameRaw && usernameRaw !== normalizedUsername">
+                    {{ _('儲存時將轉換為:') }} <code x-text="normalizedUsername"></code>
+                </div>
+                <div style="font-size: 12px; margin-top: 4px;">
+                    <span x-show="usernameChecking" class="text-muted">{{ _('檢查帳號中...') }}</span>
+                    <span x-show="usernameChecked && usernameAvailable && normalizedUsername" style="color: #16a34a;">{{ _('帳號可用') }}</span>
+                    <span x-show="usernameChecked && !usernameAvailable && normalizedUsername" class="text-danger">{{ _('帳號已存在') }}</span>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;"><label for="password">{{ _('密碼') }}</label></td>
+            <td>
+                <div style="display: flex; gap: 8px; align-items: start;">
+                    <div style="flex: 1;">
+                        <input :type="showPassword ? 'text' : 'password'" id="password" name="password"
+                               x-model="password" @input="validatePassword()"
+                               :placeholder="suggestedPassword"
+                               style="width: 100%;">
+                    </div>
+                    <button type="button" @click="showPassword = !showPassword"
+                            style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+                            x-text="showPassword ? __('隱藏') : __('顯示')"></button>
+                    <button type="button" @click="useSuggestedPassword()"
+                            style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        {{ _('使用建議密碼') }}
+                    </button>
+                </div>
+                <div class="help-text" x-text="passwordRequirements"></div>
+                <div class="help-text">{{ _('留空將自動產生強化密碼，並寄到備用 Email 1（未填時寄到帳號 Email）；成員首次登入須變更密碼') }}</div>
+                {% if not system_mail_ready %}
+                <div class="help-text text-danger">{{ _('主機發信服務尚未就緒，密碼留空時通知信不會寄出，請改用 [使用建議密碼] 抄給對方') }}</div>
+                {% endif %}
+                <!-- 驗證錯誤 -->
+                <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
+                    <template x-for="err in passwordErrors" :key="err">
+                        <div class="text-danger" style="font-size: 12px;" x-text="'&bull; ' + err"></div>
+                    </template>
+                </div>
+                <!-- 驗證通過 -->
+                <div x-show="password && passwordErrors.length === 0 && passwordChecked"
+                     style="margin-top: 6px; color: #16a34a; font-size: 12px;">
+                    {{ _('密碼符合要求') }}
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="employee_id" class="required">{{ _('用戶編號') }}</label></td>
+            <td>
+                <div class="number-field">
+                    <input type="text" id="employee_id" name="employee_id" required
+                           x-model="employeeId"
+                           @input="employeeIdManual = true"
+                           placeholder="{{ _('自動產生') }}">
+                    <select x-model="selectedRule" @change="onRuleChange()" x-show="rules.length > 1">
+                        <template x-for="rule in rules" :key="rule.secure_code">
+                            <option :value="rule.secure_code" x-text="rule.name"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="help-text">
+                    <span x-show="hasRules && !employeeIdManual">{{ _('將使用自動編號:') }} <span class="next-number" x-text="nextNumber"></span></span>
+                    <span x-show="hasRules && employeeIdManual" class="text-muted">{{ _('手動輸入模式') }}</span>
+                    <span x-show="!hasRules" class="text-muted">{{ _('尚未設定編號規則，請手動輸入') }}</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <!-- 角色固定為一般用戶，企業管理員與外部廠商由專用介面管理 -->
+    <input type="hidden" name="role" value="user">
+
+    <details open>
+        <summary>{{ _('選填欄位') }}</summary>
+        <div class="detail-content">
+
+            <div class="section-title optional">{{ _('組織資訊') }}</div>
+            <table class="form-table">
+                <tr>
+                    <td><label for="department_code">{{ _('部門') }}</label></td>
+                    <td>
+                        <div id="dept-selector-container" style="position: relative;">
+                            <input type="hidden" name="department_code" id="department_code_input" value="{{ form_data.department_code if form_data else '' }}">
+                            <div class="dept-selector">
+                                <div class="dept-display" id="dept-display"
+                                     @click="toggleDeptPicker()">{{ _('點擊選擇部門') }}</div>
+                                <button type="button" id="dept-clear-btn" style="padding: 4px 8px; font-size: 12px; display: none;"
+                                        @click="clearDeptSelection()">{{ _('清除') }}</button>
+                            </div>
+                            <div class="dept-tree-picker" id="dept-tree-picker" style="display: none;">
+                                <div class="dept-tree-header">
+                                    <span>{{ _('選擇部門') }}</span>
+                                    <button type="button" class="btn-close" @click="closeDeptPicker()">x</button>
+                                </div>
+                                <div class="dept-tree-content">
+                                    <div id="dept-tree-select"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="help-text">{{ _('選擇用戶所屬部門（點擊展開組織樹）') }}</div>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="section-title optional">{{ _('個人資料') }}</div>
+            <table class="form-table">
+                <tr>
+                    <td><label for="nickname">{{ _('暱稱') }}</label></td>
+                    <td>
+                        <input type="text" id="nickname" name="nickname"
+                               x-model="nickname"
+                               @input="onNicknameChange()"
+                               placeholder="{{ _('自動遮罩') }}">
+                        <div class="help-text">{{ _('預設遮罩處理本國姓名，避免螢幕旁的窺視者識別身份或推測登入帳號') }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="interface_language">{{ _('語系') }}</label></td>
+                    <td>
+                        <select id="interface_language" name="interface_language"
+                                x-model="interfaceLanguage">
+                            <option value="">-- {{ _('跟隨企業設定') }} --</option>
+                            {% for code, name in supported_languages.items() %}
+                            <option value="{{ code }}">{{ name }} ({{ code }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="help-text">{{ _('留空則跟隨企業設定') }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="timezone">{{ _('時區') }}</label></td>
+                    <td>
+                        <select id="timezone" name="timezone"
+                                x-model="userTimezone" style="min-width: 280px;">
+                            <option value="">-- {{ _('跟隨企業設定') }} --</option>
+                            {% for group_label, timezones in timezone_choices %}
+                            <optgroup label="{{ group_label }}">
+                                {% for tz_value, tz_display in timezones %}
+                                <option value="{{ tz_value }}">{{ tz_display }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endfor %}
+                        </select>
+                        <div class="help-text">{{ _('留空則跟隨企業設定') }}</div>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="section-title optional">{{ _('聯絡方式') }}</div>
+            <table class="form-table">
+                <tr>
+                    <td><label for="backup_email_1">{{ _('通知 Email') }}</label></td>
+                    <td>
+                        <input type="email" id="backup_email_1" name="backup_email_1" x-model="backupEmail1" placeholder="{{ _('留空則使用帳號 Email') }}">
+                        <div class="help-text">{{ _('系統通知發送地址，留空自動使用帳號 Email') }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="backup_email_2">{{ _('備用 Email 2') }}</label></td>
+                    <td><input type="email" id="backup_email_2" name="backup_email_2" x-model="backupEmail2" placeholder="backup2@example.com"></td>
+                </tr>
+                <tr>
+                    <td><label for="mobile_phone_1">{{ _('手機號碼 1') }}</label></td>
+                    <td><input type="tel" id="mobile_phone_1" name="mobile_phone_1" x-model="mobilePhone1" placeholder="+886-912-345-678"></td>
+                </tr>
+                <tr>
+                    <td><label for="mobile_phone_2">{{ _('手機號碼 2') }}</label></td>
+                    <td><input type="tel" id="mobile_phone_2" name="mobile_phone_2" x-model="mobilePhone2" placeholder="+886-912-345-678"></td>
+                </tr>
+            </table>
+
+        </div>
+    </details>
+</form>
+
+<!-- Window Bridge: Jinja2 → JS -->
+<script>
+window.__USER_FORM_CONFIG = {
+    formData: {{ form_data | tojson | safe if form_data else '{}' }},
+    orgSettings: {{ org_settings | tojson | safe if org_settings is defined else '{}' }},
+    orgName: {% if organization %}{{ organization.name|tojson }}{% else %}__('企業'){% endif %}
+};
+</script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-model.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.js') }}"></script>
+<script src="{{ url_for('static', filename='js/user-form.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,342 @@
+/* ai-usage.css - AiAgent usage and quota administration */
+
+.fw-container {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.fw-header,
+.fw-card {
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-border);
+}
+
+.fw-header {
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.fw-header h1 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.fw-page-subtitle,
+.fw-section-head p,
+.fw-period,
+.fw-default {
+    margin: 4px 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.fw-toolbar,
+.fw-section-head,
+.fw-source-row,
+.fw-filter-bar,
+.fw-pagination {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.fw-section-head {
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.fw-section-head h2 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.fw-card {
+    margin-bottom: 16px;
+}
+
+.fw-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-light);
+    color: var(--color-text);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    border-radius: var(--border-radius);
+}
+
+.fw-btn:hover {
+    background: var(--color-bg-header);
+}
+
+.fw-btn.primary {
+    background: var(--color-primary);
+    color: var(--color-bg-white);
+    border-color: var(--color-primary);
+}
+
+.fw-btn.primary:hover {
+    background: var(--color-primary-hover);
+}
+
+.fw-btn.sm {
+    padding: 4px 8px;
+    font-size: var(--font-size-xs);
+}
+
+.fw-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.fw-loading,
+.fw-empty {
+    padding: 36px;
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+.fw-usage-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    padding: 20px;
+}
+
+.fw-usage-block {
+    border: 1px solid var(--color-border-light);
+    padding: 16px;
+    border-radius: var(--border-radius);
+}
+
+.fw-usage-block h3 {
+    margin: 0 0 14px;
+    font-size: 15px;
+}
+
+.fw-meter-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    font-size: var(--font-size-sm);
+}
+
+.fw-meter {
+    height: 8px;
+    margin-top: 6px;
+    overflow: hidden;
+    background: var(--color-bg-light);
+    border-radius: var(--border-radius);
+}
+
+.fw-meter-fill {
+    height: 100%;
+    width: 0;
+    background: var(--color-info);
+}
+
+.fw-meter-fill.success {
+    background: var(--color-success);
+}
+
+.fw-meter-fill.warning {
+    background: var(--color-warning);
+}
+
+.fw-meter-fill.danger {
+    background: var(--color-danger);
+}
+
+.fw-blocked-alert {
+    margin: 0 20px 20px;
+    padding: 10px 12px;
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+    border: 1px solid var(--color-danger);
+    border-radius: var(--border-radius);
+}
+
+.fw-config-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 20px;
+    padding: 20px;
+}
+
+.fw-form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.fw-form-group input:not([type="radio"]):not([type="checkbox"]),
+.fw-form-group select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+}
+
+.fw-toggle-row label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fw-source-row {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.fw-source {
+    padding: 2px 8px;
+    color: var(--color-info);
+    background: var(--color-info-light);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-xs);
+}
+
+.fw-message {
+    margin: 0 20px 20px;
+    color: var(--color-success);
+    font-size: var(--font-size-sm);
+}
+
+.fw-filter-bar {
+    flex-wrap: wrap;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.fw-filter-bar label {
+    display: grid;
+    gap: 4px;
+    min-width: 150px;
+    font-size: var(--font-size-sm);
+}
+
+.fw-table-wrap {
+    overflow-x: auto;
+}
+
+.fw-table {
+    width: 100%;
+    min-width: 1120px;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.fw-table th {
+    padding: 10px 12px;
+    background: var(--color-bg-header);
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.fw-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border-light);
+    vertical-align: top;
+}
+
+.fw-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+}
+
+.fw-badge.success {
+    color: var(--color-success);
+    background: var(--color-success-light);
+}
+
+.fw-badge.danger {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+
+.fw-badge.warning {
+    color: var(--color-warning);
+    background: var(--color-warning-light);
+}
+
+.fw-badge.info {
+    color: var(--color-info);
+    background: var(--color-info-light);
+}
+
+.fw-expand-btn {
+    margin-right: 6px;
+    padding: 0 4px;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.fw-error-text {
+    display: inline-block;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fw-model-cell {
+    background: var(--color-bg-light);
+}
+
+.fw-model-grid {
+    display: grid;
+    gap: 8px;
+}
+
+.fw-model-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 2fr) repeat(3, minmax(110px, 1fr));
+    gap: 12px;
+    align-items: center;
+}
+
+.fw-model-empty {
+    color: var(--color-text-muted);
+}
+
+.fw-pagination {
+    justify-content: flex-end;
+    padding: 16px 20px;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+@media (max-width: 860px) {
+    .fw-header,
+    .fw-section-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .fw-usage-grid,
+    .fw-config-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fw-model-row {
+        grid-template-columns: 1fr;
+    }
+}

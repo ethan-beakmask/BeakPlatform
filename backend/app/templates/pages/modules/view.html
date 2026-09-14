@@ -1,0 +1,123 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ module.name }} - {{ _('模組詳情') }} - BeakMask{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('modules.list_modules') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回模組列表') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ module.icon or '' }} {{ module.name }}</h1>
+</div>
+
+{% if not module.is_system_module %}
+<p>
+    <a href="{{ url_for('modules.edit_module', secure_code=module.secure_code) }}">[{{ _('編輯') }}]</a>
+</p>
+{% else %}
+<p><em>({{ _('系統內建模組，不可編輯') }})</em></p>
+{% endif %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<table class="info-table">
+    <tr>
+        <th>{{ _('模組代碼') }}</th>
+        <td><code>{{ module.code }}</code></td>
+    </tr>
+    <tr>
+        <th>{{ _('模組名稱') }}</th>
+        <td>{{ module.name }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('圖標') }}</th>
+        <td>{{ module.icon or '-' }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('描述') }}</th>
+        <td>{{ module.description or '-' }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('系統模組') }}</th>
+        <td>{% if module.is_system_module %}{{ _('是') }}{% else %}{{ _('否') }}{% endif %}</td>
+    </tr>
+    <tr>
+        <th>{{ _('狀態') }}</th>
+        <td>{% if module.is_active %}{{ _('啟用') }}{% else %}{{ _('停用') }}{% endif %}</td>
+    </tr>
+    <tr>
+        <th>{{ _('顯示順序') }}</th>
+        <td>{{ module.display_order }}</td>
+    </tr>
+</table>
+
+<div class="section-title" style="margin-top:32px;">{{ _('頁面列表') }}</div>
+{% if pages %}
+<table class="data-table bordered">
+    <thead>
+        <tr>
+            <th>{{ _('頁面標題') }}</th>
+            <th>{{ _('URL 路徑') }}</th>
+            <th>{{ _('頁面類型') }}</th>
+            <th>{{ _('權限') }}</th>
+            <th>{{ _('狀態') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for page in pages %}
+        <tr>
+            <td>{{ page.title }}</td>
+            <td><code>{{ page.url_path }}</code></td>
+            <td>{{ page.page_type }}</td>
+            <td>{{ page.required_access }}</td>
+            <td>{% if page.is_active %}{{ _('啟用') }}{% else %}{{ _('停用') }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>{{ _('此模組無頁面') }}</p>
+{% endif %}
+
+<div class="section-title" style="margin-top:32px;">{{ _('選單結構') }}</div>
+{% if menu_items %}
+<table class="data-table bordered">
+    <thead>
+        <tr>
+            <th>{{ _('選單標題') }}</th>
+            <th>{{ _('代碼') }}</th>
+            <th>{{ _('連結類型') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in menu_items %}
+        <tr>
+            <td>{{ '--' * item.depth }} {{ item.icon or '' }} {{ item.title }}</td>
+            <td><code>{{ item.code }}</code></td>
+            <td>{{ item.link_type }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>{{ _('此模組無選單') }}</p>
+{% endif %}
+
+{% if not module.is_system_module %}
+<div class="section-title" style="margin-top:32px;">{{ _('刪除模組') }}</div>
+<p>{{ _('刪除此模組將連同相關頁面和選單一起刪除。') }}</p>
+<form method="POST" action="{{ url_for('modules.delete_module', secure_code=module.secure_code) }}" onsubmit="return confirm(__('確定要刪除此模組嗎？相關頁面和選單也會一併刪除。'));">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-primary">{{ _('刪除模組') }}</button>
+</form>
+{% endif %}
+{% endblock %}

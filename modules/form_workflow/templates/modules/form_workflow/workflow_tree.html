@@ -1,0 +1,48 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('流程樹系圖 - BeakPlatform') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/fw-workflow-tree.css">
+{% endblock %}
+
+{% block content %}
+<div class="tree-page" x-data="workflowTreePage()" x-cloak>
+
+    <div class="tree-toolbar">
+        <button class="tree-ctrl-btn" @click="window.location.href='{{ back_url }}'" title="{{ _('返回') }}">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <div class="spacer"></div>
+        <div class="tree-zoom-group">
+            <button class="tree-ctrl-btn" @click="zoomOut()" title="{{ _('縮小') }}">
+                <i class="ri-zoom-out-line"></i>
+            </button>
+            <button class="tree-ctrl-btn" @click="zoomFit()" title="{{ _('適應畫面') }}">
+                <i class="ri-fullscreen-line"></i>
+            </button>
+            <button class="tree-ctrl-btn" @click="zoomIn()" title="{{ _('放大') }}">
+                <i class="ri-zoom-in-line"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="tree-chart-area">
+        <div x-show="loading" class="tree-loading">{{ _('載入中...') }}</div>
+        <div x-show="error" class="tree-error" x-text="error"></div>
+        <div x-show="!loading && !error" id="tree-viewport"
+             @mousedown="startPan($event)"
+             @wheel.prevent="onWheel($event)">
+            <div id="workflow-tree-chart" style="transform-origin:0 0;display:inline-block;"></div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.__TREE_CONFIG = { secureCode: '{{ secure_code }}' };
+</script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fw-workflow-tree.js"></script>
+{% endblock %}

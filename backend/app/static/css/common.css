@@ -1,0 +1,764 @@
+/* =============================================
+   BeakPlatform Common CSS
+   =============================================
+   跨頁面共用的基礎樣式，避免各模板重複定義。
+   由 base.html 全域引入（載入順序最前）。
+
+   結構:
+   1. CSS Custom Properties (色票)
+   2. Alpine.js cloak
+   3. 統一按鈕
+   4. 統一表格
+   5. 統一表單元素
+   6. 頁面標題/動作列
+   7. Section Title
+   8. Modal
+   9. Toast
+   10. Form Layout
+   11. Password Field
+   12. Alert
+   13. Badge
+   14. 工具類
+   ============================================= */
+
+/* ------------------------------------------
+   1. CSS Custom Properties (全域色票)
+   ------------------------------------------ */
+:root {
+    /* 主色 */
+    --color-primary: #0066cc;
+    --color-primary-hover: #0052a3;
+    --color-primary-light: #e8f0fe;
+
+    /* 語義色 */
+    --color-danger: #dc2626;
+    --color-danger-hover: #b91c1c;
+    --color-danger-light: #fef2f2;
+    --color-success: #16a34a;
+    --color-success-hover: #15803d;
+    --color-success-light: #f0fdf4;
+    --color-warning: #f59e0b;
+    --color-warning-hover: #d97706;
+    --color-warning-light: #fffbeb;
+    --color-info: #3b82f6;
+    --color-info-hover: #2563eb;
+    --color-info-light: #eff6ff;
+
+    /* 文字色 */
+    --color-text: #333;
+    --color-text-secondary: #666;
+    --color-text-muted: #999;
+
+    /* 背景色 */
+    --color-bg: #f5f5f5;
+    --color-bg-white: #fff;
+    --color-bg-light: #f9fafb;
+    --color-bg-header: #f0f0f0;
+
+    /* 邊框色 */
+    --color-border: #ddd;
+    --color-border-light: #eee;
+
+    /* 元件預設值 */
+    --border-radius: 4px;
+    --border-radius-lg: 8px;
+    --font-size-base: 14px;
+    --font-size-sm: 13px;
+    --font-size-xs: 12px;
+}
+
+/* ------------------------------------------
+   2. Alpine.js cloak
+   ------------------------------------------ */
+[x-cloak] { display: none !important; }
+
+/* ------------------------------------------
+   3. 統一按鈕
+   ------------------------------------------ */
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    line-height: 1.5;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--color-primary);
+    color: white;
+}
+.btn-primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+}
+.btn-secondary:hover:not(:disabled) {
+    background: #d1d5db;
+}
+
+.btn-danger {
+    background: var(--color-danger);
+    color: white;
+}
+.btn-danger:hover:not(:disabled) {
+    background: var(--color-danger-hover);
+}
+
+.btn-success {
+    background: var(--color-success);
+    color: white;
+}
+.btn-success:hover:not(:disabled) {
+    background: var(--color-success-hover);
+}
+
+.btn-warning {
+    background: var(--color-warning);
+    color: white;
+}
+.btn-warning:hover:not(:disabled) {
+    background: var(--color-warning-hover);
+}
+
+.btn-cancel {
+    background: #e5e7eb;
+    color: var(--color-text);
+    border: none;
+}
+.btn-cancel:hover:not(:disabled) {
+    background: #d1d5db;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: var(--font-size-xs);
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    padding: 0;
+    font-weight: normal;
+    text-decoration: underline;
+}
+.btn-link:hover {
+    color: var(--color-primary-hover);
+}
+
+/* ------------------------------------------
+   4. 統一表格
+   ------------------------------------------ */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.data-table th,
+.data-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.data-table th {
+    background: var(--color-bg-light);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.data-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+.data-table th.sortable:hover {
+    background: #e8e8e8;
+}
+.data-table th.sort-active {
+    background: #e8e8e8;
+    color: var(--color-text);
+}
+.sort-indicator {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-left: 2px;
+}
+.sort-active .sort-indicator {
+    color: var(--color-primary);
+}
+
+.data-table tbody tr:hover {
+    background: #fafafa;
+}
+
+/* 緊湊表格 (設定頁面等) */
+.data-table.compact th,
+.data-table.compact td {
+    padding: 6px 10px;
+}
+
+/* 全框線表格 (明細/矩陣等) */
+.data-table.bordered th,
+.data-table.bordered td {
+    border: 1px solid #d1d5db;
+}
+
+/* 資訊表格 (兩欄 label-value 佈局) */
+.info-table {
+    width: 100%;
+    border: 1px solid var(--color-border-light);
+}
+.info-table th,
+.info-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+.info-table th {
+    text-align: left;
+    width: 150px;
+    background: var(--color-bg-light);
+    vertical-align: top;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+.info-table .hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-top: 4px;
+}
+
+/* ------------------------------------------
+   5. 統一表單元素
+   ------------------------------------------ */
+.form-group {
+    margin-bottom: 12px;
+}
+
+.form-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.form-label .required {
+    color: var(--color-danger);
+    margin-left: 2px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    background: var(--color-bg-white);
+    box-sizing: border-box;
+    transition: border-color 0.15s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.form-control:disabled,
+.form-control[readonly] {
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+}
+
+select.form-control {
+    appearance: auto;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* ------------------------------------------
+   6. 頁面標題 / 動作列
+   ------------------------------------------ */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.page-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.page-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* ------------------------------------------
+   7. Section Title
+   ------------------------------------------ */
+.section-title {
+    background: var(--color-bg-header);
+    padding: 8px 12px;
+    margin: 20px 0 10px 0;
+    font-weight: bold;
+    border-left: 4px solid var(--color-primary);
+}
+
+.section-title.optional {
+    border-left-color: #888;
+    color: var(--color-text-secondary);
+}
+
+/* ------------------------------------------
+   8. Modal
+   ------------------------------------------ */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-box {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-content {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    width: 650px;
+    min-width: 320px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 30px;
+}
+.modal-content.modal-sm  { width: 450px; }
+.modal-content.modal-md  { width: 650px; }
+.modal-content.modal-lg  { width: 850px; }
+.modal-content.modal-xl  { width: 1050px; max-width: 95vw; }
+.modal-content.modal-full { width: 95vw; }
+.modal-header {
+    padding: 0 0 16px 0;
+    border-bottom: 1px solid var(--color-border-light);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.modal-header h3 { margin: 0; }
+.modal-body { padding: 0; }
+.modal-footer {
+    padding: 16px 0 0 0;
+    border-top: 1px solid var(--color-border-light);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.close-btn,
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+}
+.close-btn:hover,
+.modal-close:hover { color: var(--color-text); }
+
+/* 密碼重設連結按鈕（管理員列表等多頁共用） */
+.btn-reset-pwd {
+    background: none;
+    border: none;
+    color: var(--color-warning);
+    cursor: pointer;
+    padding: 4px 8px;
+}
+.btn-reset-pwd:hover {
+    color: var(--color-warning-hover);
+}
+
+/* Modal: 密碼重設 (user-view, org-admins 共用) */
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+.modal-content label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+.modal-content input[type="password"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: var(--border-radius);
+    margin-bottom: 12px;
+    box-sizing: border-box;
+}
+.modal-content input[type="password"]:focus {
+    border-color: var(--color-primary);
+    outline: none;
+}
+.modal-content .help-text {
+    margin-top: -8px;
+    margin-bottom: 12px;
+}
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+.modal-buttons button {
+    padding: 8px 16px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+}
+.modal-buttons .btn-cancel {
+    background: #e5e7eb;
+    border: none;
+}
+.modal-buttons .btn-submit {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+}
+.modal-buttons .btn-submit:hover {
+    background: var(--color-primary-hover);
+}
+
+/* ------------------------------------------
+   9. Toast Notification
+   ------------------------------------------ */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    color: white;
+    font-weight: 500;
+    z-index: 1000;
+    animation: toast-slide-in 0.3s ease;
+}
+
+.toast.success { background: var(--color-success); }
+.toast.error   { background: var(--color-danger); }
+.toast.warning { background: var(--color-warning); }
+.toast.info    { background: var(--color-info); }
+
+@keyframes toast-slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ------------------------------------------
+   10. Form Layout
+   ------------------------------------------ */
+.form-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.help-text {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+}
+
+.form-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+}
+
+/* ------------------------------------------
+   11. Password Field
+   ------------------------------------------ */
+.password-field {
+    display: flex;
+    gap: 8px;
+    align-items: start;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.password-field input {
+    flex: 1;
+    min-width: 150px;
+}
+.password-field button {
+    padding: 6px 10px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    white-space: nowrap;
+}
+.btn-toggle {
+    background: #f3f4f6;
+    border: 1px solid #ccc;
+}
+.btn-generate {
+    background: var(--color-success);
+    color: white;
+    border: none;
+}
+.password-errors div {
+    color: var(--color-danger);
+    font-size: var(--font-size-xs);
+}
+.password-ok {
+    color: var(--color-success);
+    font-size: var(--font-size-xs);
+}
+
+/* ------------------------------------------
+   12. Alert
+   ------------------------------------------ */
+.alert {
+    padding: 12px;
+    border-radius: var(--border-radius);
+    margin-bottom: 16px;
+}
+.alert-success {
+    background: var(--color-success-light);
+    color: var(--color-success);
+    border: 1px solid #86efac;
+}
+.alert-error {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    border: 1px solid #fecaca;
+}
+.alert-warning {
+    background: var(--color-warning-light);
+    color: var(--color-warning-hover);
+    border: 1px solid #fcd34d;
+}
+.alert-info {
+    background: var(--color-info-light);
+    color: var(--color-info-hover);
+    border: 1px solid #93c5fd;
+}
+
+/* .message 別名（hostconfig/organizations 等使用） */
+.message {
+    padding: 10px 14px;
+    border-radius: var(--border-radius);
+    margin-bottom: 12px;
+    font-size: var(--font-size-sm);
+}
+.message-success {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+.message-error {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+/* ------------------------------------------
+   13. Badge
+   ------------------------------------------ */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.badge-success {
+    background: #d1fae5;
+    color: #065f46;
+}
+.badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+.badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.badge-info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.badge-secondary {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* ------------------------------------------
+   14. 工具類
+   ------------------------------------------ */
+.text-muted { color: var(--color-text-muted); }
+.text-danger { color: var(--color-danger); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-left { text-align: left; }
+.text-nowrap { white-space: nowrap; }
+
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.mt-8 { margin-top: 8px; }
+.mb-8 { margin-bottom: 8px; }
+.mt-16 { margin-top: 16px; }
+.mb-16 { margin-bottom: 16px; }
+
+.hidden { display: none; }
+
+/* ------------------------------------------
+   My API Keys (personal settings)
+   ------------------------------------------ */
+.mak-page {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.mak-empty {
+    color: var(--color-text-secondary);
+    padding: 8px 0;
+}
+
+.mak-table-wrap {
+    overflow-x: auto;
+}
+
+.mak-table td {
+    vertical-align: top;
+}
+
+.mak-name {
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.mak-sub {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    margin-top: 3px;
+}
+
+.mak-desc {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mak-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: var(--font-size-xs);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius);
+    padding: 2px 5px;
+    white-space: nowrap;
+}
+
+.mak-danger-text {
+    color: var(--color-danger);
+}
+
+.mak-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.mak-copy-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.mak-copy-row .form-control {
+    flex: 1;
+}
+
+.mak-copy-row-top {
+    align-items: flex-start;
+}
+
+.mak-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.mak-curl {
+    min-height: 230px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: var(--font-size-xs);
+    line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+    .mak-copy-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .mak-page .form-row {
+        flex-direction: column;
+    }
+}
+
+/* ===== 資料出口遮罩 (egress-mask.js) ===== */
+.bk-egress-mask {
+    cursor: pointer;
+    color: #94a3b8;
+    letter-spacing: 1px;
+    user-select: none;
+    border-bottom: 1px dashed #cbd5e1;
+}
+.bk-egress-mask.bk-egress-loading { opacity: 0.5; }
+.bk-egress-mask.bk-egress-revealed {
+    color: inherit;
+    letter-spacing: normal;
+    border-bottom-color: #f59e0b;
+}

@@ -1,0 +1,96 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('新增系統管理員') }} - BeakMask{% endblock %}
+
+{% block head %}
+<script src="{{ app_prefix }}/static/js/password-form.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('sys_accounts.list_accounts') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回列表') }}</a>
+</div>
+
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('新增系統管理員') }}</h1>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST" x-data="passwordForm({autoGenerate: true})" x-init="init()">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table class="info-table">
+        <tr>
+            <td><label for="username">{{ _('帳號') }} *</label></td>
+            <td>
+                <input type="text" id="username" name="username" size="30" required
+                       pattern="[a-zA-Z0-9_]+" value="{{ request.form.get('username', '') }}">
+                <br><small>{{ _('英數字和底線，登入時為: username@%(org_code)s', org_code=SYSTEM_ORG_CODE) }}</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="email">Email *</label></td>
+            <td>
+                <input type="email" id="email" name="email" size="40" required
+                       value="{{ request.form.get('email', '') }}">
+                <br><small>{{ _('可使用任何 Email（含 Gmail 等公共信箱）') }}</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="display_name">{{ _('顯示名稱') }} *</label></td>
+            <td>
+                <input type="text" id="display_name" name="display_name" size="40" required
+                       value="{{ request.form.get('display_name', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;"><label for="password">{{ _('密碼') }} *</label></td>
+            <td>
+                <div class="password-field">
+                    <input :type="showPassword ? 'text' : 'password'" id="password" name="password"
+                           x-model="password" @input="validatePassword()"
+                           required minlength="8">
+                    <button type="button" class="btn-toggle" @click="showPassword = !showPassword"
+                            x-text="showPassword ? __('隱藏') : __('顯示')"></button>
+                    <button type="button" class="btn-generate" @click="generatePassword()">{{ _('建議密碼') }}</button>
+                </div>
+                <small x-text="passwordRequirements"></small>
+                <div class="password-errors" x-show="passwordErrors.length > 0">
+                    <template x-for="err in passwordErrors" :key="err">
+                        <div x-text="'• ' + err"></div>
+                    </template>
+                </div>
+                <div class="password-ok" x-show="password && passwordErrors.length === 0 && passwordChecked">
+                    {{ _('密碼符合要求') }}
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="confirm_password">{{ _('確認密碼') }} *</label></td>
+            <td>
+                <input :type="showPassword ? 'text' : 'password'" id="confirm_password" name="confirm_password"
+                       x-model="confirmPassword" required minlength="8">
+                <div x-show="confirmPassword && password !== confirmPassword" style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    {{ _('密碼不一致') }}
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit" class="btn btn-primary">{{ _('建立帳號') }}</button>
+                <a href="{{ url_for('sys_accounts.list_accounts') }}" class="btn btn-cancel" style="margin-left: 10px;">{{ _('取消') }}</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+{% endblock %}

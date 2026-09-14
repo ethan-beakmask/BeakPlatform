@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('表單設計器 - BeakPlatform') }}</title>
+    <script>window.__BP = '{{ app_prefix }}';</script>
+    <script src="{{ app_prefix }}/static/js/i18n.js"></script>
+    {% set _locale = current_locale|default('zh-TW') %}
+    {% if _locale != 'zh-TW' %}
+    <script src="{{ app_prefix }}/i18n/{{ _locale }}.js"></script>
+    {% endif %}
+
+    <!-- Bootstrap 5 (本地) -->
+    <link href="{{ app_prefix }}/static/vendor/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome 6 (本地) -->
+    <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/fontawesome/css/all.min.css">
+
+    <!-- Form.io CSS (本地) -->
+    <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/formio.full.min.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/css/formio-theme.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/api/form-workflow/form-themes/bundle.css">
+
+    <!-- Theme Styles -->
+    <link rel="stylesheet" href="{{ app_prefix }}/static/css/theme-styles.css">
+
+    <!-- 表單設計器樣式 (含 navbar) -->
+    <link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/form-designer.css">
+</head>
+<body>
+    <!-- Toast 容器 -->
+    <div id="toast-container"></div>
+
+    <!-- Navbar (與 base.html 共用風格) -->
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="{{ url_for('main.dashboard') }}" class="navbar-logo">BeakPlatform{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
+            <span class="navbar-user">{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}</span>
+            <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">{{ _('登出') }}</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 模態框 -->
+    {% include "modules/form_workflow/_designer_modals.html" %}
+
+    <!-- 主要編輯區 -->
+    <div class="designer-layout">
+        <!-- 工具列 -->
+        <div class="designer-toolbar">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <input type="text" class="form-control form-control-sm" style="width: 210px;" placeholder="{{ _('表單檔名') }}" id="form-name">
+                    <span id="form-version-badge" class="badge bg-secondary" style="display: none;">AA</span>
+                    <span id="form-author-info" class="text-muted small" style="display: none; margin-left: 4px;"></span>
+                    <select class="form-select form-select-sm" style="width: 170px;" id="form-category">
+                    </select>
+                    <input type="text" class="form-control form-control-sm" style="width: 240px;" placeholder="{{ _('描述（選填）') }}" id="form-description">
+                    <button id="btn-save" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-save"></i> {{ _('儲存') }}
+                    </button>
+                    <button id="btn-save-close" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-save"></i> {{ _('儲存並離開') }}
+                    </button>
+                    <button id="btn-save-new-version" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-code-branch"></i> {{ _('另存新版') }}
+                    </button>
+                    <button id="btn-discard" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-times"></i> {{ _('放棄') }}
+                    </button>
+                </div>
+
+                <!-- 第二列：範本、預覽、寬度設定 -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button id="btn-load-template" class="btn btn-sm btn-outline-success" title="{{ _('從範本載入表單結構') }}">
+                        <i class="fas fa-file-import"></i> {{ _('載入範本') }}
+                    </button>
+                    <button id="btn-upload-template" class="btn btn-sm btn-outline-success" title="{{ _('上傳範本檔案') }}">
+                        <i class="fas fa-upload"></i> {{ _('上傳範本') }}
+                    </button>
+                    <input type="file" id="template-file-input" accept=".json" style="display: none;">
+                    <button id="btn-background" class="btn btn-sm btn-outline-secondary" title="{{ _('設定表單底圖') }}">
+                        <i class="fas fa-image"></i> {{ _('底圖') }}
+                    </button>
+                    <button id="btn-preview" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-eye"></i> {{ _('表單預覽') }}
+                    </button>
+                    <button id="btn-print-preview" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-print"></i> {{ _('列印預覽') }}
+                    </button>
+                    <button id="btn-get-schema" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-code"></i> Schema
+                    </button>
+                    <button id="btn-field-spec" class="btn btn-sm btn-outline-warning" title="{{ _('開啟欄位規格編輯器') }}" onclick="openFieldSpecEditor()">
+                        <i class="fas fa-database"></i> {{ _('規格') }}
+                    </button>
+                    <span class="border-start ps-2 ms-1"></span>
+                    <label class="form-check form-check-inline mb-0 small" title="{{ _('啟用後，填表時可上傳附件檔案') }}">
+                        <input class="form-check-input" type="checkbox" id="chk-file-upload" checked>
+                        <span class="form-check-label text-muted">{{ _('附件上傳') }}</span>
+                    </label>
+                    <label class="form-check form-check-inline mb-0 small" title="{{ _('啟用後，元件 placeholder 中的非拉丁文字會自動填入 label。&#10;支援 || 分隔：前段→label，後段→placeholder&#10;範例：姓名||請輸入姓名') }}">
+                        <input class="form-check-input" type="checkbox" id="chk-placeholder-to-label" checked>
+                        <span class="form-check-label text-muted">{{ _('提示→標籤') }}</span>
+                    </label>
+                    <span class="border-start ps-2 ms-1"></span>
+                    <span class="small text-muted">{{ _('風格:') }}</span>
+                    <select id="form-theme" class="form-select form-select-sm" style="width: auto;">
+                        <option value="default">{{ _('formio預設') }}</option>
+                    </select>
+                    <span class="border-start ps-2 ms-1"></span>
+                    <span class="small text-muted">{{ _('寬度:') }}</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button id="btn-width-narrow" class="btn btn-outline-secondary" title="{{ _('窄版 900px') }}">
+                            {{ _('窄') }}
+                        </button>
+                        <button id="btn-width-wide" class="btn btn-outline-secondary" title="{{ _('寬版 1200px') }}">
+                            {{ _('寬') }}
+                        </button>
+                        <button id="btn-width-full" class="btn btn-outline-secondary active" title="{{ _('不限制寬度') }}">
+                            {{ _('不限') }}
+                        </button>
+                    </div>
+                    <input type="number" class="form-control form-control-sm" style="width: 90px;"
+                           id="form-width-input" placeholder="{{ _('自訂 px') }}" min="300" step="10">
+                    <span class="text-muted small ms-1">300+</span>
+                </div>
+            </div>
+
+        <!-- 表單畫布（左側元件區 + 右側畫布） -->
+        <div class="designer-canvas">
+            <div id="builder-wrapper">
+                <div id="builder"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS (本地) -->
+    <script src="{{ app_prefix }}/static/vendor/bootstrap.bundle.min.js"></script>
+
+    <!-- Auth Module -->
+    <script src="{{ app_prefix }}/static/js/auth.js"></script>
+
+    <!-- Timezone (BkTime) -->
+    <script src="{{ app_prefix }}/static/js/timezone.js"></script>
+
+    <!-- Form.io JS (本地) -->
+    <script src="{{ app_prefix }}/static/vendor/formio.full.min.js"></script>
+    <script src="{{ app_prefix }}/static/js/formio-local-cdn.js"></script>
+
+    <!-- FormIO 自訂 Storage Provider (上傳走 file_service 加密) -->
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/formio-bkfile-provider.js"></script>
+
+    <!-- BaekTree (UserPicker 依賴) -->
+    <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-model.js"></script>
+    <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.js"></script>
+    <script src="{{ app_prefix }}/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
+    <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.css">
+
+    <!-- 設計器配置（權限等級控制元件面板） -->
+    <script>
+    window.__DESIGNER_CONFIG = {
+        userType: '{{ user_type }}'
+    };
+    </script>
+
+    <!-- Form.io 自訂元件 -->
+    <script src="{{ app_prefix }}/static/js/formio-user-picker.js"></script>
+    <script src="{{ app_prefix }}/static/js/formio-form-picker.js"></script>
+    <script src="{{ app_prefix }}/static/js/formio-my-role-picker.js"></script>
+    <script src="{{ app_prefix }}/static/js/formio-form-title.js"></script>
+
+    <!-- 設計器 ID 注入 -->
+    <script>
+    window.__DESIGNER_ID = '{{ form_secure_code or "" }}';
+    </script>
+
+    <!-- 欄位規格跳轉（查找或自動建立關聯的 spec） -->
+    <script>
+    function openFieldSpecEditor() {
+        var ftSc = window.__DESIGNER_ID;
+        if (!ftSc) return;
+        var csrfInput = document.querySelector('input[name="csrf_token"]');
+        var csrfToken = csrfInput ? csrfInput.value : '';
+        fetch('{{ app_prefix }}/api/spec-formulate/schema/by-form-template/' + ftSc, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    window.location.href = '{{ app_prefix }}/spec-formulate/' + data.data.secure_code + '/edit';
+                } else {
+                    alert(data.error || '開啟規格失敗');
+                }
+            })
+            .catch(function() {
+                alert('開啟規格失敗');
+            });
+    }
+    </script>
+
+    <!-- form-designer-main.js 拆分為主檔索引 + 7 個子模組 -->
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-main.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-toast.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-theme.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-background.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-preview.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-save.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-template.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-init.js"></script>
+</body>
+</html>

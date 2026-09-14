@@ -1,0 +1,512 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('選項-清單-資料樹') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ app_prefix }}/static/vendor/beak-trellis/beak-trellis.css">
+<style>
+/* 選項樹：隱藏展開/收合按鈕，一律全展開 */
+#bt-lookup-tree .bt-toggle { display: none; }
+#bt-lookup-tree .bt-td-tree { cursor: default; }
+
+.lk-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px;
+    box-sizing: border-box;
+    height: calc(100vh - var(--topbar-height, 60px) - 46px);
+    display: flex;
+    flex-direction: column;
+}
+.lk-page h1 { margin: 0 0 4px 0; font-size: 1.2em; flex-shrink: 0; }
+.lk-page .lk-desc { font-size: 0.85em; color: var(--color-text-muted); margin-bottom: 14px; flex-shrink: 0; }
+
+/* 主佈局 */
+.lk-layout {
+    display: flex;
+    gap: 0;
+    flex: 1;
+    min-height: 200px;
+    border: 1px solid var(--color-border);
+    background: #fff;
+}
+
+/* 左側：類別列表 */
+.lk-sidebar {
+    width: 280px;
+    min-width: 240px;
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    background: #fafafa;
+    overflow: hidden;
+}
+.lk-sidebar-header {
+    padding: 8px 10px;
+    background: var(--color-bg-header);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+.lk-search {
+    padding: 8px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+.lk-search input {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    box-sizing: border-box;
+}
+.lk-search input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+.lk-cat-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+.lk-cat-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border-light);
+    font-size: 0.9em;
+}
+.lk-cat-item:hover { background: var(--color-primary-light); }
+.lk-cat-item.selected {
+    background: #d0e0f8;
+    border-left: 3px solid var(--color-primary);
+    padding-left: 7px;
+}
+.lk-cat-name { font-weight: 500; color: var(--color-text); }
+.lk-cat-code { font-size: 0.8em; font-family: monospace; color: var(--color-text-muted); margin-top: 1px; }
+.lk-cat-badges { display: inline-flex; gap: 4px; margin-left: 6px; vertical-align: middle; }
+.lk-badge-sys {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    color: #b8860b; background: #fef3cd; border: 1px solid #e0c97a;
+    padding: 0 4px; line-height: 16px;
+}
+.lk-badge-hier {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    color: #3730a3; background: #e0e7ff; border: 1px solid #a5b4fc;
+    padding: 0 4px; line-height: 16px;
+}
+.lk-sidebar-actions {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--color-border-light);
+    background: var(--color-bg-header);
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+.lk-cat-item.inactive { opacity: 0.55; }
+.lk-cat-item.inactive .lk-cat-name { text-decoration: line-through; }
+.lk-cat-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.85em;
+}
+
+/* 右側：選項編輯 */
+.lk-detail {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.lk-detail-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-bg-header);
+}
+.lk-detail-header .lk-cat-info strong { font-size: 0.95em; }
+.lk-detail-header .lk-cat-info code {
+    margin-left: 8px;
+    font-size: 0.8em;
+    color: var(--color-text-muted);
+}
+.lk-detail-desc {
+    padding: 4px 12px;
+    font-size: 0.8em;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border-light);
+}
+.lk-detail-body {
+    flex: 1;
+    overflow: hidden;
+    padding: 0;
+    min-height: 0;
+}
+.lk-detail-body .bt-container {
+    height: 100%;
+    max-height: 100%;
+    border: none;
+}
+.lk-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--color-text-muted);
+    font-size: 0.9em;
+}
+.lk-loading {
+    padding: 30px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.9em;
+}
+.lk-empty-items {
+    padding: 40px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.85em;
+}
+
+/* Treegrid 操作按鈕 */
+.lk-tree-actions { white-space: nowrap; }
+.lk-tree-actions .btn { padding: 1px 8px; font-size: 0.8em; }
+
+/* Toast */
+.lk-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 18px;
+    color: white;
+    font-size: 0.85em;
+    z-index: 2000;
+    animation: lk-toast-in 0.3s ease;
+}
+.lk-toast.success { background: var(--color-success); }
+.lk-toast.error { background: var(--color-danger); }
+@keyframes lk-toast-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lk-page" x-data="lookupManager()" x-cloak>
+
+    <h1>{{ _('選項-清單-資料樹') }}</h1>
+    <p class="lk-desc">{{ _('管理 Lookup Table 類別與選項，供下拉選單、表單欄位使用') }}</p>
+    <p class="lk-desc" style="margin-top: -10px; color: #856404;">{{ _('雖然選項容許填入多種資料形態，建議還是同一樹系都用相同的資料型別，以避免前端取得空值') }}</p>
+
+    <div class="lk-layout">
+
+        <!-- 左側：類別列表 -->
+        <div class="lk-sidebar">
+            <div class="lk-sidebar-header">
+                <span>{{ _('類別') }}</span>
+                <button type="button" class="btn btn-primary btn-sm" @click="openCategoryModal()">+ {{ _('新增') }}</button>
+            </div>
+            <!-- 類別操作區（選中時顯示） -->
+            <div class="lk-sidebar-actions" x-show="selectedCat">
+                <button type="button" class="btn btn-secondary btn-sm" @click="openCategoryModal(selectedCat)" :disabled="selectedCat && selectedCat.is_system">{{ _('編輯') }}</button>
+                <button type="button" class="btn btn-secondary btn-sm" @click="toggleCategoryActive()" :disabled="selectedCat && selectedCat.is_system"
+                        x-text="selectedCat && selectedCat.is_active === false ? __('啟用') : __('停用')"></button>
+                <button type="button" class="btn btn-danger btn-sm" @click="deleteCategory()"
+                        :disabled="!selectedCat || selectedCat.is_system || selectedCat.is_active !== false">{{ _('刪除') }}</button>
+            </div>
+            <div class="lk-search">
+                <input type="text" x-model="catFilter" placeholder="{{ _('搜尋類別...') }}">
+            </div>
+            <div class="lk-cat-list">
+                <div x-show="loading" class="lk-loading">{{ _('載入中...') }}</div>
+                <template x-for="cat in filteredCategories" :key="cat.secure_code">
+                    <div class="lk-cat-item"
+                         :class="{
+                             'selected': selectedCat && selectedCat.secure_code === cat.secure_code,
+                             'inactive': cat.is_active === false
+                         }"
+                         @click="selectCategory(cat)">
+                        <div class="lk-cat-name">
+                            <span x-text="cat.name"></span>
+                            <span class="lk-cat-badges">
+                                <span x-show="cat.is_system" class="lk-badge-sys">SYS</span>
+                                <span x-show="cat.is_hierarchical" class="lk-badge-hier">{{ _('階層') }}</span>
+                            </span>
+                        </div>
+                        <div class="lk-cat-code" x-text="cat.code"></div>
+                    </div>
+                </template>
+                <div x-show="!loading && filteredCategories.length === 0" class="lk-cat-empty">
+                    {{ _('無符合的類別') }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：選項 TreeGrid -->
+        <div class="lk-detail">
+            <template x-if="!selectedCat">
+                <div class="lk-placeholder">{{ _('請從左側選擇一個類別') }}</div>
+            </template>
+            <template x-if="selectedCat">
+                <div style="display: flex; flex-direction: column; height: 100%;">
+                    <div class="lk-detail-header">
+                        <div class="lk-cat-info">
+                            <strong x-text="selectedCat.name"></strong>
+                            <code x-text="selectedCat.code"></code>
+                            <span x-show="selectedCat.is_active === false" style="color: var(--color-danger); font-size: 0.8em; margin-left: 6px;">{{ _('(已停用)') }}</span>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-primary btn-sm" @click="openItemModal()" :disabled="selectedCat.is_active === false">+ {{ _('新增選項') }}</button>
+                        </div>
+                    </div>
+                    <div x-show="selectedCat.description" class="lk-detail-desc" x-text="selectedCat.description"></div>
+                    <div class="lk-detail-body">
+                        <div x-show="itemsLoading" class="lk-loading">{{ _('載入選項中...') }}</div>
+                        <div x-show="!itemsLoading && items.length === 0" class="lk-empty-items">
+                            {{ _('此類別尚無選項，點擊 [+ 新增選項] 開始建立') }}
+                        </div>
+                        <div id="bt-lookup-tree" x-show="!itemsLoading && items.length > 0"
+                             style="height: 100%; overflow: hidden;"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- 類別 Modal -->
+    <template x-if="showCatModal">
+        <div class="modal-overlay">
+            <div class="modal-content modal-sm">
+                <div class="modal-header">
+                    <h3 x-text="catForm.secure_code ? __('編輯類別') : __('新增類別')"></h3>
+                    <button type="button" class="modal-close" @click="showCatModal = false">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <table class="form-table">
+                        <tr>
+                            <th>{{ _('名稱') }} *</th>
+                            <td>
+                                <input type="text" class="form-control" x-model="catForm.name"
+                                       placeholder="{{ _('例: 優先程度') }}"
+                                       @input="if(!catForm.secure_code) ciGenerateCodeDebounced(catForm.name)">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>{{ _('代碼') }} *</th>
+                            <td>
+                                <input type="text" class="form-control" x-model="catForm.code"
+                                       :placeholder="_ci_generatedCode || __('例: PRIORITY')"
+                                       :disabled="!!catForm.secure_code"
+                                       style="font-family: monospace;"
+                                       @input="if(!catForm.secure_code) ciValidateCode(catForm.code)">
+                                {% include "partials/_code_input.html" %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>{{ _('說明') }}</th>
+                            <td><textarea class="form-control" rows="2" x-model="catForm.description" placeholder="{{ _('類別用途說明') }}"></textarea></td>
+                        </tr>
+                        <tr>
+                            <th>{{ _('階層') }}</th>
+                            <td><label><input type="checkbox" x-model="catForm.is_hierarchical"> {{ _('支援階層結構（樹狀下拉）') }}</label></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="showCatModal = false">{{ _('取消') }}</button>
+                    <button type="button" class="btn btn-primary" @click="saveCategory()" :disabled="catSaving">
+                        <span x-show="!catSaving">{{ _('確認') }}</span>
+                        <span x-show="catSaving">{{ _('處理中...') }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 選項 Modal -->
+    <template x-if="showItemModal">
+        <div class="modal-overlay">
+            <div class="modal-content" style="width: 620px; max-height: 90vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h3 x-text="itemForm.secure_code ? __('編輯選項') : __('新增選項')"></h3>
+                    <button type="button" class="modal-close" @click="showItemModal = false">&times;</button>
+                </div>
+                <div class="modal-body" style="overflow-y: auto; flex: 1;">
+                    <table class="form-table">
+                        <tr>
+                            <th>{{ _('顯示文字') }} *</th>
+                            <td>
+                                <input type="text" class="form-control" x-model="itemForm.label"
+                                       placeholder="{{ _('例: 高') }}"
+                                       @input="if(!itemForm.secure_code) ciGenerateCodeDebounced(itemForm.label)">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>{{ _('代碼') }} *</th>
+                            <td>
+                                <input type="text" class="form-control" x-model="itemForm.code"
+                                       :placeholder="_ci_generatedCode || __('例: HIGH')"
+                                       :disabled="!!itemForm.secure_code"
+                                       style="font-family: monospace;"
+                                       @input="if(!itemForm.secure_code) ciValidateCode(itemForm.code)">
+                                {% include "partials/_code_input.html" %}
+                            </td>
+                        </tr>
+                        <tr x-show="selectedCat && selectedCat.is_hierarchical">
+                            <th>{{ _('父項') }}</th>
+                            <td>
+                                <select class="form-control" x-model="itemForm.parent_code">
+                                    <option value="">{{ _('-- 無 (頂層) --') }}</option>
+                                    <template x-for="pi in items.filter(i => !itemForm.secure_code || i.secure_code !== itemForm.secure_code)" :key="pi.secure_code">
+                                        <option :value="pi.code" x-text="pi.code + ' - ' + pi.label"></option>
+                                    </template>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>{{ _('排序') }}</th>
+                            <td><input type="number" class="form-control" x-model.number="itemForm.sort_order" min="0"></td>
+                        </tr>
+                    </table>
+
+                    <!-- 多型別值欄位 -->
+                    <fieldset style="border: 1px solid var(--color-border); padding: 10px 12px; margin: 12px 0 0 0;">
+                        <legend style="font-size: 0.85em; font-weight: 600; padding: 0 6px; color: var(--color-text-muted);">{{ _('值欄位') }}</legend>
+                        <table class="form-table" style="margin: 0;">
+                            <tr>
+                                <th style="width: 80px;">{{ _('字串') }}</th>
+                                <td><input type="text" class="form-control" x-model="itemForm.value_str" maxlength="500" placeholder="{{ _('文字值 (最長 500 字元)') }}"></td>
+                            </tr>
+                            <tr>
+                                <th>{{ _('整數') }}</th>
+                                <td><input type="number" class="form-control" x-model="itemForm.value_int" step="1" placeholder="{{ _('整數值') }}"></td>
+                            </tr>
+                            <tr>
+                                <th>{{ _('小數') }}</th>
+                                <td><input type="number" class="form-control" x-model="itemForm.value_decimal" step="0.01" placeholder="{{ _('小數值 (2 位)') }}"></td>
+                            </tr>
+                            <tr>
+                                <th>{{ _('日期') }}</th>
+                                <td><input type="date" class="form-control" x-model="itemForm.value_date"></td>
+                            </tr>
+                            <tr>
+                                <th>{{ _('時間') }}</th>
+                                <td><input type="time" class="form-control" x-model="itemForm.value_time"></td>
+                            </tr>
+                            <tr>
+                                <th>{{ _('日期時間') }}</th>
+                                <td><input type="datetime-local" class="form-control" x-model="itemForm.value_datetime"></td>
+                            </tr>
+                        </table>
+                    </fieldset>
+
+                    <!-- JSON 附加資料 -->
+                    <fieldset style="border: 1px solid var(--color-border); padding: 10px 12px; margin: 12px 0 0 0;">
+                        <legend style="font-size: 0.85em; font-weight: 600; padding: 0 6px; color: var(--color-text-muted);">
+                            {{ _('JSON 附加資料') }}
+                            <span style="float: right; font-weight: normal;">
+                                <button type="button" class="btn btn-secondary" style="padding: 0 6px; font-size: 0.75em; line-height: 18px;"
+                                        @click="toggleJsonMode()">
+                                    <span x-show="itemForm.jsonMode === 'simple'">{{ _('原始模式') }}</span>
+                                    <span x-show="itemForm.jsonMode === 'raw'">{{ _('簡易模式') }}</span>
+                                </button>
+                            </span>
+                        </legend>
+
+                        <!-- 簡易模式: 鍵值對 -->
+                        <div x-show="itemForm.jsonMode === 'simple'">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+                                <thead>
+                                    <tr style="background: var(--color-bg-header);">
+                                        <th style="padding: 3px 6px; text-align: left; border: 1px solid var(--color-border); width: 30%;">Key</th>
+                                        <th style="padding: 3px 6px; text-align: left; border: 1px solid var(--color-border); width: 40%;">Value</th>
+                                        <th style="padding: 3px 6px; text-align: center; border: 1px solid var(--color-border); width: 20%;">{{ _('型別') }}</th>
+                                        <th style="padding: 3px 6px; text-align: center; border: 1px solid var(--color-border); width: 10%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(pair, idx) in itemForm.jsonPairs" :key="idx">
+                                        <tr>
+                                            <td style="padding: 2px; border: 1px solid var(--color-border);">
+                                                <input type="text" class="form-control" x-model="pair.key" placeholder="key"
+                                                       style="font-size: 0.9em; padding: 2px 4px; font-family: monospace;">
+                                            </td>
+                                            <td style="padding: 2px; border: 1px solid var(--color-border);">
+                                                <template x-if="pair.type === 'boolean'">
+                                                    <select class="form-control" x-model="pair.value" style="font-size: 0.9em; padding: 2px 4px;">
+                                                        <option value="true">true</option>
+                                                        <option value="false">false</option>
+                                                    </select>
+                                                </template>
+                                                <template x-if="pair.type !== 'boolean'">
+                                                    <input type="text" class="form-control" x-model="pair.value" placeholder="value"
+                                                           style="font-size: 0.9em; padding: 2px 4px; font-family: monospace;">
+                                                </template>
+                                            </td>
+                                            <td style="padding: 2px; border: 1px solid var(--color-border);">
+                                                <select class="form-control" x-model="pair.type"
+                                                        style="font-size: 0.8em; padding: 1px 2px;">
+                                                    <option value="auto">{{ _('自動') }}</option>
+                                                    <option value="string">{{ _('字串') }}</option>
+                                                    <option value="number">{{ _('數字') }}</option>
+                                                    <option value="boolean">{{ _('布林') }}</option>
+                                                </select>
+                                            </td>
+                                            <td style="padding: 2px; border: 1px solid var(--color-border); text-align: center;">
+                                                <button type="button" class="btn btn-danger" style="padding: 0 5px; font-size: 0.75em; line-height: 18px;"
+                                                        @click="itemForm.jsonPairs.splice(idx, 1)">X</button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 4px; font-size: 0.8em;"
+                                    @click="itemForm.jsonPairs.push({key:'', value:'', type:'auto'})">+ {{ _('新增') }}</button>
+                        </div>
+
+                        <!-- 原始模式: textarea -->
+                        <div x-show="itemForm.jsonMode === 'raw'">
+                            <textarea class="form-control" rows="4" x-model="itemForm.valueJson"
+                                      placeholder='{"key": "value"}'
+                                      style="font-family: monospace; font-size: 0.85em;"></textarea>
+                        </div>
+                    </fieldset>
+
+                    <table class="form-table" style="margin-top: 12px;">
+                        <tr>
+                            <th style="width: 80px;">{{ _('狀態') }}</th>
+                            <td><label><input type="checkbox" x-model="itemForm.is_active"> {{ _('啟用') }}</label></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="showItemModal = false">{{ _('取消') }}</button>
+                    <button type="button" class="btn btn-primary" @click="saveItem()" :disabled="itemSaving">
+                        <span x-show="!itemSaving">{{ _('確認') }}</span>
+                        <span x-show="itemSaving">{{ _('處理中...') }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Toast -->
+    <div x-show="toast.show" x-cloak class="lk-toast" :class="toast.type"
+         x-text="toast.message" x-transition></div>
+</div>
+
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-model.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-trellis.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-trellis-drag.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
+<script src="{{ app_prefix }}/static/js/code-input.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/lookup-manager.js"></script>
+<script>window.addEventListener("DOMContentLoaded", function () { window.alert({{ _("NoCode模組尚未完工，不建議使用，後果自負。")|tojson }}); });</script>
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/03_org_setup/job_approval_categories{% endblock %}
+
+{% block title %}{{ _('核決權限類別') }} - BeakMask{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis.css') }}">
+<style>
+.master-detail { display: flex; gap: 20px; min-height: 400px; align-items: flex-start; }
+.master-panel { flex: 0 0 500px; display: flex; flex-direction: column; max-height: 520px; }
+.master-panel-scroll { flex: 1; overflow-y: auto; }
+.detail-panel { flex: 0 0 600px; border: 1px solid var(--color-border); padding: 20px; background: var(--color-bg-light); }
+.detail-placeholder { color: var(--color-text-muted); text-align: center; padding-top: 80px; font-size: 0.95em; }
+
+.cat-table { width: 100%; border-collapse: collapse; }
+.cat-table th, .cat-table td { border: 1px solid var(--color-border); padding: 6px 10px; text-align: left; font-size: 0.9em; }
+.cat-table thead th { background: var(--color-bg-header); font-weight: 600; }
+.cat-table tbody tr { cursor: pointer; }
+.cat-table tbody tr:hover { background: var(--color-primary-light); }
+.cat-table tbody tr.selected { background: #d0e0f8; }
+.cat-table tbody tr.inactive { color: var(--color-text-muted); }
+
+.edit-table { width: 100%; border-collapse: collapse; }
+.edit-table th { text-align: left; padding: 6px 10px; width: 120px; font-weight: 600; font-size: 0.9em; vertical-align: top; }
+.edit-table td { padding: 6px 10px; }
+.edit-table input[type="text"],
+.edit-table input[type="number"],
+.edit-table select,
+.edit-table textarea {
+    width: 100%; padding: 8px 12px;
+    border: 1px solid var(--color-border); border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+}
+.edit-table input:focus, .edit-table select:focus, .edit-table textarea:focus {
+    outline: none; border-color: var(--color-primary);
+}
+.edit-table textarea { resize: vertical; }
+
+.btn-row { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
+.error-list { color: var(--color-danger); margin: 0 0 10px 0; padding: 0; list-style: none; font-size: 0.9em; }
+.success-msg { color: var(--color-success); font-size: 0.9em; margin-bottom: 10px; }
+.danger-zone { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--color-border-light); }
+
+.form-table { width: 100%; border-collapse: collapse; }
+.form-table th {
+    text-align: left; padding: 8px; vertical-align: top;
+    font-weight: 500; color: var(--color-text-secondary); white-space: nowrap; width: 100px;
+}
+.form-table td { padding: 8px; }
+
+/* 矩陣區 */
+#matrix-container { border: 1px solid var(--color-border); height: 480px; overflow: hidden; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="approvalCategoriesManager()" x-init="init()">
+
+<h1>{{ _('核決權限類別') }}</h1>
+
+<p>
+    <a href="{{ url_for('job_levels.job_matrix') }}">[{{ _('職級職稱矩陣') }}]</a>
+    |
+    <a href="{{ url_for('job_levels.list_job_levels') }}">[{{ _('職等管理') }}]</a>
+    |
+    <a href="{{ url_for('job_families.list_job_families') }}">[{{ _('職系管理') }}]</a>
+    |
+    <a href="{{ url_for('job_titles.list_job_titles') }}">[{{ _('職稱管理') }}]</a>
+    |
+    <strong>[{{ _('核決權限類別') }}]</strong>
+</p>
+
+<p class="text-muted" style="font-size: 0.9em;">
+    {{ _('管理各種費用的核決權限類別，並針對每個職等設定不同的核決上限。') }}
+</p>
+
+<!-- Master-Detail 布局 -->
+<div class="master-detail">
+    <!-- 左面板：類別表格 -->
+    <div class="master-panel">
+        <div style="margin-bottom: 10px;">
+            <button type="button" class="btn btn-primary" @click="openCreateModal()">+ {{ _('新增類別') }}</button>
+        </div>
+
+        <div class="master-panel-scroll">
+            <template x-if="categories.length === 0">
+                <p style="color: #999; font-size: 0.9em;">{{ _('尚無類別資料') }}</p>
+            </template>
+
+            <template x-if="categories.length > 0">
+                <table class="cat-table">
+                    <thead>
+                        <tr>
+                            <th>{{ _('代碼') }}</th>
+                            <th>{{ _('名稱') }}</th>
+                            <th>{{ _('幣別') }}</th>
+                            <th>{{ _('狀態') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="cat in categories" :key="cat.secure_code">
+                            <tr @click="selectCategory(cat)"
+                                :class="{
+                                    'selected': selected && selected.secure_code === cat.secure_code,
+                                    'inactive': !cat.is_active
+                                }">
+                                <td><code x-text="cat.code"></code></td>
+                                <td>
+                                    <span x-text="cat.name"></span>
+                                    <template x-if="cat.is_system_default">
+                                        <span class="text-muted" style="font-size: 0.8em;">({{ _('預設') }})</span>
+                                    </template>
+                                </td>
+                                <td x-text="cat.currency"></td>
+                                <td x-text="cat.is_active ? __('啟用') : __('停用')"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </template>
+        </div>
+    </div>
+
+    <!-- 右面板：編輯表單 -->
+    <div class="detail-panel">
+        <template x-if="!selected">
+            <div class="detail-placeholder">{{ _('請從左側選擇類別進行編輯') }}</div>
+        </template>
+
+        <template x-if="selected">
+            <div>
+                <h3 style="margin: 0 0 12px 0; font-size: 1em;">
+                    {{ _('編輯類別') }}: <span x-text="selected.name"></span>
+                </h3>
+
+                <template x-if="editErrors.length > 0">
+                    <ul class="error-list">
+                        <template x-for="err in editErrors" :key="err">
+                            <li x-text="err"></li>
+                        </template>
+                    </ul>
+                </template>
+                <template x-if="editMessage">
+                    <div class="success-msg" x-text="editMessage"></div>
+                </template>
+
+                <table class="edit-table">
+                    <tr>
+                        <th>{{ _('類別代碼') }}</th>
+                        <td>
+                            <code style="font-size: 1.1em;" x-text="selected.code"></code>
+                            <span class="text-muted" style="font-size: 0.85em;">({{ _('不可修改') }})</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('名稱') }} *</th>
+                        <td><input type="text" x-model="editForm.name" required maxlength="100"></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('英文名稱') }}</th>
+                        <td><input type="text" x-model="editForm.name_en" maxlength="100"></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('幣別') }}</th>
+                        <td>
+                            <select x-model="editForm.currency">
+                                <option value="TWD">TWD</option>
+                                <option value="USD">USD</option>
+                                <option value="CNY">CNY</option>
+                                <option value="JPY">JPY</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('排序') }}</th>
+                        <td><input type="number" x-model.number="editForm.sort_order" min="0"></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('描述') }}</th>
+                        <td><textarea rows="3" x-model="editForm.description"></textarea></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('狀態') }}</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" x-model="editForm.is_active">
+                                {{ _('啟用') }}
+                            </label>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="btn-row">
+                    <a :href="getLimitsUrl()" class="btn btn-primary">{{ _('設定上限') }}</a>
+                    <button type="button" class="btn btn-primary" @click="submitEdit()" :disabled="editSubmitting">
+                        <span x-show="!editSubmitting">{{ _('儲存變更') }}</span>
+                        <span x-show="editSubmitting">{{ _('儲存中...') }}</span>
+                    </button>
+                </div>
+
+                <!-- 刪除區 -->
+                <template x-if="!selected.is_system_default">
+                    <div class="danger-zone">
+                        <template x-if="!deleteConfirm">
+                            <button type="button" class="btn btn-danger btn-sm" @click="deleteConfirm = true">{{ _('刪除此類別') }}</button>
+                        </template>
+                        <template x-if="deleteConfirm">
+                            <div>
+                                <span style="color: var(--color-danger); font-size: 0.9em;">
+                                    {{ _('確定要刪除「') }}<span x-text="selected.name"></span>{{ _('」嗎？') }}
+                                </span>
+                                <button type="button" class="btn btn-danger btn-sm" @click="submitDelete()" style="margin-left: 10px;">{{ _('確定刪除') }}</button>
+                                <button type="button" class="btn btn-secondary btn-sm" @click="deleteConfirm = false" style="margin-left: 6px;">{{ _('取消') }}</button>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template x-if="selected.is_system_default">
+                    <div class="danger-zone">
+                        <span class="text-muted" style="font-size: 0.85em;">{{ _('此為系統預設類別，不可刪除。') }}</span>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </div>
+</div>
+
+<!-- 新增類別 Modal -->
+<template x-if="showCreateModal">
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>{{ _('新增核決權限類別') }}</h3>
+                <button type="button" class="modal-close" @click="showCreateModal = false">&times;</button>
+            </div>
+            <div class="modal-body">
+                <template x-if="createErrors.length > 0">
+                    <ul class="error-list">
+                        <template x-for="err in createErrors" :key="err">
+                            <li x-text="err"></li>
+                        </template>
+                    </ul>
+                </template>
+
+                <table class="form-table">
+                    <tr>
+                        <th>{{ _('名稱') }} *</th>
+                        <td><input type="text" class="form-control" x-model="createForm.name" required maxlength="100" placeholder="{{ _('如: 零用金') }}"></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('英文名稱') }}</th>
+                        <td>
+                            <input type="text" class="form-control" x-model="createForm.name_en" maxlength="100"
+                                   placeholder="{{ _('如: Petty Cash') }}"
+                                   @input="autoGenerateCode()">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('代碼') }} *</th>
+                        <td>
+                            <input type="text" class="form-control" x-model="createForm.code" required maxlength="50" placeholder="{{ _('如: PETTY_CASH') }}">
+                            <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">{{ _('自動從英文名稱產生，可手動修改') }}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('幣別') }}</th>
+                        <td>
+                            <select class="form-control" x-model="createForm.currency">
+                                <option value="TWD">TWD</option>
+                                <option value="USD">USD</option>
+                                <option value="CNY">CNY</option>
+                                <option value="JPY">JPY</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('排序') }}</th>
+                        <td><input type="number" class="form-control" x-model.number="createForm.sort_order" min="0" placeholder="0"></td>
+                    </tr>
+                    <tr>
+                        <th>{{ _('描述') }}</th>
+                        <td><textarea class="form-control" rows="3" x-model="createForm.description" placeholder="{{ _('類別的詳細說明') }}"></textarea></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @click="showCreateModal = false">{{ _('取消') }}</button>
+                <button type="button" class="btn btn-primary" @click="submitCreate()" :disabled="createSubmitting">
+                    <span x-show="!createSubmitting">{{ _('建立類別') }}</span>
+                    <span x-show="createSubmitting">{{ _('建立中...') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
+</div><!-- end x-data -->
+
+<!-- 核決金額矩陣 (BeakTrellis) -->
+<h2 style="margin-top: 40px;">{{ _('核決金額矩陣') }}</h2>
+<p class="text-muted" style="font-size: 0.85em;">{{ _('僅顯示啟用中的類別。左側職等固定，右側類別可水平捲動。') }}</p>
+<div id="matrix-container"></div>
+
+<!-- Window Bridge -->
+<script>
+window.__APPROVAL_CATEGORIES_CONFIG = {
+    categories: {{ categories_json | tojson }},
+    createUrl: '{{ url_for("approval_categories.create_category") }}',
+    editUrlTemplate: '{{ url_for("approval_categories.edit_category", secure_code="__SC__") }}',
+    deleteUrlTemplate: '{{ url_for("approval_categories.delete_category", secure_code="__SC__") }}',
+    limitsUrlTemplate: '{{ url_for("approval_categories.category_limits", secure_code="__SC__") }}',
+    matrixTree: {{ matrix_tree_json | tojson }},
+    matrixColumns: {{ matrix_columns_json | tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-model.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis-splitpane.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/renderers/beak-tree-lines-dom.js') }}"></script>
+<script src="{{ url_for('static', filename='js/approval-categories.js') }}"></script>
+{% endblock %}

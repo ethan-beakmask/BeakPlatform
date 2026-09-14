@@ -1,0 +1,103 @@
+        // ==================== 選單配色 ====================
+        async loadMenuColors() {
+            try {
+                const res = await fetch(`${API_BASE}/menu-colors`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                if (!res.ok) {
+                    this.message.menuColors = __('載入選單配色失敗 (HTTP {status})', {status: res.status});
+                    this.message.menuColorsError = true;
+                    return;
+                }
+                const data = await res.json();
+                if (data.success) {
+                    this.menuColors.colors = data.data.colors;
+                    this.menuColors.defaults = data.data.defaults;
+                    this.menuColors.saved = JSON.stringify(data.data.colors);
+                }
+            } catch (e) {
+                this.message.menuColors = __('載入選單配色失敗: {message}', {message: e.message});
+                this.message.menuColorsError = true;
+            }
+        },
+
+        async saveMenuColors() {
+            try {
+                const res = await fetch(`${API_BASE}/menu-colors`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ colors: this.menuColors.colors })
+                });
+                if (!res.ok) {
+                    this.message.menuColors = __('儲存失敗 (HTTP {status})', {status: res.status});
+                    this.message.menuColorsError = true;
+                    return;
+                }
+                const data = await res.json();
+                if (data.success) {
+                    this.message.menuColors = data.message;
+                    this.message.menuColorsError = false;
+                    this.menuColors.saved = JSON.stringify(this.menuColors.colors);
+                    this._applyMenuColors(this.menuColors.colors);
+                } else {
+                    this.message.menuColors = data.error || __('儲存失敗');
+                    this.message.menuColorsError = true;
+                }
+            } catch (e) {
+                this.message.menuColors = __('儲存失敗: {message}', {message: e.message});
+                this.message.menuColorsError = true;
+            }
+        },
+
+        async resetMenuColors() {
+            if (!confirm(__('確定要重置所有選單配色為預設值？'))) return;
+            try {
+                const res = await fetch(`${API_BASE}/menu-colors/reset`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                if (!res.ok) {
+                    this.message.menuColors = __('重置失敗 (HTTP {status})', {status: res.status});
+                    this.message.menuColorsError = true;
+                    return;
+                }
+                const data = await res.json();
+                if (data.success) {
+                    this.menuColors.colors = JSON.parse(JSON.stringify(this.menuColors.defaults));
+                    this.menuColors.saved = JSON.stringify(this.menuColors.colors);
+                    this.message.menuColors = data.message;
+                    this.message.menuColorsError = false;
+                    this._applyMenuColors(this.menuColors.colors);
+                } else {
+                    this.message.menuColors = data.error || __('重置失敗');
+                    this.message.menuColorsError = true;
+                }
+            } catch (e) {
+                this.message.menuColors = __('重置失敗: {message}', {message: e.message});
+                this.message.menuColorsError = true;
+            }
+        },
+
+        previewMenuColors() {
+            this._applyMenuColors(this.menuColors.colors);
+        },
+
+        resetSingleColor(key) {
+            if (this.menuColors.defaults[key]) {
+                this.menuColors.colors[key] = this.menuColors.defaults[key];
+            }
+        },
+
+        _applyMenuColors(colors) {
+            var root = document.documentElement;
+            for (var key in colors) {
+                root.style.setProperty('--' + key, colors[key]);
+            }
+        },
+
+        get menuColorsChanged() {
+            return JSON.stringify(this.menuColors.colors) !== this.menuColors.saved;
+        },

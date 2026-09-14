@@ -1,0 +1,80 @@
+/* settings.css -- 企業系統設定頁面 (admin/settings)
+   採用左側 sidebar + 右側 tab 切換佈局 */
+
+/* 左右佈局 */
+.settings-layout {
+    display: flex;
+    min-height: calc(100vh - 140px);
+    margin: -16px;
+    background: var(--color-bg, #f5f5f5);
+}
+
+/* 左側選單 */
+.settings-sidebar {
+    width: 200px;
+    min-width: 200px;
+    background: white;
+    border-right: 1px solid var(--color-border, #dee2e6);
+    flex-shrink: 0;
+}
+.settings-sidebar h3 {
+    padding: 16px;
+    margin: 0;
+    font-size: var(--font-size-sm, 13px);
+    color: var(--color-text-secondary, #666);
+    border-bottom: 1px solid var(--color-border-light, #eee);
+    background: #fafafa;
+}
+.settings-menu-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border-light, #eee);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--font-size-sm, 13px);
+    transition: background 0.15s;
+    color: var(--color-text, #333);
+}
+.settings-menu-item:hover {
+    background: var(--color-bg, #f5f5f5);
+}
+.settings-menu-item.active {
+    background: #e8e8e8;
+    border-left: 3px solid var(--color-text, #333);
+    font-weight: 500;
+}
+.settings-menu-icon {
+    font-size: var(--font-size-base, 14px);
+    color: var(--color-text-secondary, #666);
+    width: 20px;
+    text-align: center;
+}
+
+/* 右側內容 */
+.settings-content {
+    flex: 1;
+    padding: 24px;
+    background: var(--color-bg, #f5f5f5);
+    overflow-y: auto;
+    min-width: 0;
+}
+.settings-section {
+    max-width: 900px;
+}
+.settings-section h2 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    color: var(--color-text, #333);
+    padding-bottom: 8px;
+    border-bottom: 2px solid #0066cc;
+}
+
+/* 分類管理樣式 */
+.category-row { transition: background-color 0.15s; }
+.category-row:hover { background-color: #f9fafb; }
+.color-dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; }
+.checkbox-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.unit-tree { max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; padding: 8px; }
+.unit-item { padding: 4px 0; }
+.unit-item label { display: flex; align-items: center; gap: 6px; cursor: pointer; }

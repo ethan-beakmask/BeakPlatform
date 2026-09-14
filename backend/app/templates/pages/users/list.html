@@ -1,0 +1,121 @@
+{% extends 'layouts/base.html' %}
+{% block help_doc %}manual/03_org_setup/users{% endblock %}
+
+{% block title %}{{ _('企業成員管理') }} - BeakMask{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div class="page-header" style="margin-top:30px;">
+        <h1 class="page-title" style="margin: 0;">{{ _('企業成員管理') }}</h1>
+    </div>
+    <div>
+        <a href="{{ url_for('users.create_user') }}" class="btn btn-primary">
+            + {{ _('新增帳號') }}
+        </a>
+        <a href="{{ url_for('users.import_users') }}" style="margin-left: 10px; color: #2563eb;">{{ _('匯入CSV') }}</a>
+        <a href="{{ url_for('users.download_csv_template') }}" style="margin-left: 10px; color: #6b7280;">{{ _('下載範本') }}</a>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div style="background: #eff6ff; padding: 12px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #bfdbfe;">
+    <span style="color: #1e40af;">{{ _('此頁面管理一般用戶帳號。') }}</span>
+    <span style="color: #6b7280;">{{ _('企業管理員請至「企業管理員帳號」管理，外部廠商請至「外部廠商帳號」管理。') }}</span>
+</div>
+
+{% if users %}
+<table class="data-table bordered" x-data="sortableTable()">
+    <thead>
+        <tr>
+            <th data-sort="text">{{ _('姓名') }}</th>
+            <th data-sort="text">{{ _('帳號') }}</th>
+            <th data-sort="text">{{ _('用戶編號') }}</th>
+            <th data-sort="text">{{ _('部門') }}</th>
+            <th data-sort="text">{{ _('職稱') }}</th>
+            <th data-sort="text" style="text-align: center;">{{ _('狀態') }}</th>
+            <th data-sort="date">{{ _('建立時間') }}</th>
+            <th style="text-align: center;">{{ _('操作') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr {% if not user.is_active %}style="background: #f3f4f6; color: #9ca3af;"{% endif %}>
+            <td>{{ user.display_name }}</td>
+            <td><code>{{ user.email }}</code></td>
+            <td>{{ user.employee_id or '-' }}</td>
+            <td>{{ user.primary_unit.name if user.primary_unit else '-' }}</td>
+            <td>
+                {% set representative_position = representative_positions.get(user.secure_code) %}
+                {% if representative_position and representative_position.job_title %}
+                    {{ representative_position.job_title.name }}{% if representative_position.position_type == 'CONCURRENT' %}（{{ _('兼任') }}）{% elif representative_position.position_type == 'ACTING' %}（{{ _('代理') }}）{% elif representative_position.position_type == 'TEMPORARY' %}（{{ _('臨時') }}）{% endif %}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td style="text-align: center;">
+                {% if user.is_active %}
+                <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">{{ _('啟用') }}</span>
+                {% else %}
+                <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">{{ _('停用') }}</span>
+                {% endif %}
+            </td>
+            <td>{{ user.created_at|tz_format('%Y-%m-%d') if user.created_at else '-' }}</td>
+            <td style="text-align: center;">
+                <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}" style="color: #2563eb;">{{ _('編輯') }}</a>
+                {% if user.secure_code != current_user.secure_code %}
+                <a href="#" style="color: #2563eb; margin-left: 8px;"
+                   onclick="event.preventDefault(); document.getElementById('toggle-{{ user.secure_code }}').submit();">
+                    {% if user.is_active %}{{ _('停用') }}{% else %}{{ _('啟用') }}{% endif %}
+                </a>
+                <form id="toggle-{{ user.secure_code }}" method="POST" action="{{ url_for('users.toggle_status', secure_code=user.secure_code) }}" style="display: none;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                </form>
+                <a href="#" class="text-danger" style="margin-left: 8px;"
+                   onclick="event.preventDefault(); if(confirm(__('確定要刪除用戶「{name}」嗎？', {name: {{ user.display_name|tojson|forceescape }} }))) document.getElementById('delete-{{ user.secure_code }}').submit();">
+                    {{ _('刪除') }}
+                </a>
+                <form id="delete-{{ user.secure_code }}" method="POST" action="{{ url_for('users.delete_user', secure_code=user.secure_code) }}" style="display: none;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if pagination.pages > 1 %}
+<p style="margin-top: 20px;">
+    {% if pagination.page > 1 %}
+    <a href="?page={{ pagination.page - 1 }}">[{{ _('上一頁') }}]</a>
+    {% endif %}
+    {{ _('第 %(page)s / %(pages)s 頁 （共 %(total)s 筆）', page=pagination.page, pages=pagination.pages, total=pagination.total) }}
+    {% if pagination.page < pagination.pages %}
+    <a href="?page={{ pagination.page + 1 }}">[{{ _('下一頁') }}]</a>
+    {% endif %}
+</p>
+{% endif %}
+
+{% else %}
+<p class="text-muted">{{ _('尚無一般用戶帳號。') }}<a href="{{ url_for('users.create_user') }}">{{ _('建立第一位用戶') }}</a></p>
+{% endif %}
+
+<div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
+    <h3 style="margin-top: 0;">{{ _('說明') }}</h3>
+    <ul style="margin: 0; padding-left: 20px; color: #666;">
+        <li>{{ _('此頁面只顯示一般用戶帳號') }}</li>
+        <li>{{ _('企業管理員帳號請至「帳號管理 > 企業管理員帳號」管理') }}</li>
+        <li>{{ _('外部廠商帳號請至「帳號管理 > 外部廠商帳號」管理') }}</li>
+        <li>{{ _('停用的用戶無法登入系統') }}</li>
+    </ul>
+</div>
+{% endblock %}
