@@ -1,4 +1,4 @@
-# ITHome2026-WAF 熱備切換組態（bash 語法，KEY=VALUE）。
+# Integrated-WAF 熱備切換組態（bash 語法，KEY=VALUE）。
 # 複製成 failover.conf 放在 failover.sh 旁邊（或 /etc/ithome2026-waf/failover.conf），
 # failover.conf 含內網 IP，不要進版控。
 

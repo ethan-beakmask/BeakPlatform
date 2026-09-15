@@ -94,14 +94,14 @@ sudo bash /opt/BeakPlatform/scripts/install.sh --uninstall   # 移除服務、�
 journalctl -u beakplatform -f
 ```
 
-## 一鍵安裝 WAF 防禦節點（ITHome2026-WAF）
+## 一鍵安裝 WAF 防禦節點（Integrated-WAF）
 
-`ITHome2026-WAF/` 是一包「快速安裝與整合」的防禦節點：
+`Integrated-WAF/` 是一包「快速安裝與整合」的防禦節點：
 WAF（nginx + ModSecurity + OWASP CRS）、Suricata、CrowdSec、Vector、ClickHouse，
 以及自寫的 od-bridge，把事件送進 BeakPlatform 建立案件，並把平台的封鎖決策落地到 nftables、CrowdSec 與 EDL。
 
 裡面的偵測與防禦元件都是各上游專案的成果，我只做了簡化安裝與配合 BeakPlatform 的整合調整。
-內容物、版本、各元件授權與著作權聲明（中英）見 `ITHome2026-WAF/COMPONENTS.md`，
+內容物、版本、各元件授權與著作權聲明（中英）見 `Integrated-WAF/COMPONENTS.md`，
 安裝說明見 `docs/install/ithome2026_waf.md`。
 
 ## 版權與授權
@@ -111,7 +111,7 @@ WAF（nginx + ModSecurity + OWASP CRS）、Suricata、CrowdSec、Vector、ClickH
 專案與文章中用到的 OWASP ModSecurity CRS、Suricata、Emerging Threats Open 規則、CrowdSec、
 Vector、ClickHouse、cloudflared、nginx，以及其他所有非本人創作的軟體、規則與素材，
 著作權均屬各原作者與專案所有，並依其各自的授權條款使用；本專案不主張任何所有權，也不改變它們的授權。
-完整清單見 `ITHome2026-WAF/COMPONENTS.md`。
+完整清單見 `Integrated-WAF/COMPONENTS.md`。
 
 ### 本專案
 

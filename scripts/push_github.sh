@@ -31,7 +31,7 @@ EXCLUDE_DIRS=(
     "tests/e2e"
     # sec-vm-bootstrap 已於 2026-09-10 退役並移入 dev-notes/archive/（本來就被
     # dev-notes 擋住）。留這一條是保險：日後若有人把它搬回頂層，仍不會推上 GitHub。
-    # 讀者版在頂層 ITHome2026-WAF/，刻意「不」排除。
+    # 讀者版在頂層 Integrated-WAF/，刻意「不」排除。
     "sec-vm-bootstrap"
 )
 

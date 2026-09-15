@@ -3,7 +3,7 @@
 發放「防禦節點」憑證並產生開通字串（平台端）。
 
 用途
-    防禦節點（ITHome2026-WAF，另一台主機上的 WAF / IDS / od-bridge）要連回平台需要三樣東西：
+    防禦節點（Integrated-WAF，另一台主機上的 WAF / IDS / od-bridge）要連回平台需要三樣東西：
       1. 平台網址
       2. 事件受理金鑰（API Key，scope 含 od_intake）——節點把偵測到的事件簽章後送進來
       3. 執行帳號（service account）——節點定期拉取平台核可的封鎖決策去落地

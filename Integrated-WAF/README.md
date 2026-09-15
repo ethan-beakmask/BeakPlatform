@@ -1,4 +1,4 @@
-# ITHome2026-WAF 防禦節點
+# Integrated-WAF 防禦節點
 
 把一台 Ubuntu 主機變成 BeakPlatform 的「防禦端」：WAF、網路 IDS、事件正規化、
 封鎖落地，並透過 Cloudflare Tunnel 對外提供被保護的網站。偵測到的事件送進
@@ -24,7 +24,7 @@ venv/bin/python scripts/od_node_pairing.py --org <企業網域> --base-url http:
 
 # 防禦端（另一台 Ubuntu）
 curl -fsSL -H "Authorization: token <GitHub PAT>" \
-    https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/ITHome2026-WAF/install.sh -o install.sh
+    https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o install.sh
 sudo bash install.sh --pair '<開通字串>' --backend http://<被保護網站IP>:<埠> \
      --cf-api-token <Cloudflare API Token> --cf-hostname www.example.com \
      --welcome-hostname www.example.com --backend-path /beakplatform

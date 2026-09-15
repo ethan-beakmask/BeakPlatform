@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# ITHome2026-WAF 防禦節點熱備切換工具
+# Integrated-WAF 防禦節點熱備切換工具
 # =============================================================================
 # 用法：
 #   sudo bash standby.sh status        --service-ip IP
@@ -347,7 +347,7 @@ write_unit() {
     local ip="$1"
     cat > /etc/systemd/system/waf-service-ip.service <<EOT
 [Unit]
-Description=ITHome2026-WAF service IP warm standby takeover
+Description=Integrated-WAF service IP warm standby takeover
 After=network-online.target nftables.service
 Wants=network-online.target
 Before=docker.service
@@ -364,7 +364,7 @@ EOT
     # 第二階段：docker 起來之後，被 fence 的話把只能單機跑的容器停掉
     cat > /etc/systemd/system/waf-service-fence.service <<EOT
 [Unit]
-Description=ITHome2026-WAF warm standby fence (stop cloudflared/od-bridge if service IP is held elsewhere)
+Description=Integrated-WAF warm standby fence (stop cloudflared/od-bridge if service IP is held elsewhere)
 After=docker.service waf-service-ip.service
 Requires=docker.service
 

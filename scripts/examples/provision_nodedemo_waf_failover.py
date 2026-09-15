@@ -5,7 +5,7 @@ node展覽館 —— WAF 節點熱備切換（OsExecutor 實務應用）。
 
 這張範本表單示範一個真的會有副作用的維運流程：發現 WAF 故障的人送單，
 寫明故障現象與切換原因；決策關卡留下人員簽核意見做為決策記錄；OsExecutor
-在管理機上執行 ITHome2026-WAF/failover.sh；結果寫回表單，再依 ok /
+在管理機上執行 Integrated-WAF/failover.sh；結果寫回表單，再依 ok /
 exception / timeout 分流。成功直接結束，失敗進人工確認關卡後結束。
 
 目標企業預設是系統預設企業（Organization.code='SYSTEM'），分類固定是
@@ -218,7 +218,7 @@ def build_waf_schema(node_options):
         'display': 'form',
         'components': [
             _title(FORM_NAME),
-            _hint('這張單示範 WAF 節點熱備切換。請先依 ITHome2026-WAF/failover.conf.example '
+            _hint('這張單示範 WAF 節點熱備切換。請先依 Integrated-WAF/failover.conf.example '
                   '建立 failover.conf，並用 scripts/seed_node_showcase.py --only waf_failover '
                   '--node <顯示名稱=節點識別> --apply 重跑以填入真實節點名稱。'),
             _select('target_node', '目標節點', node_options,
@@ -322,7 +322,7 @@ WAF_DESCRIPTION = (
     '成功時 failover_result 會是 ok，流程走到「完成」。若是 exception 或 timeout，'
     '流程會停在「切換失敗，人工確認」；請查看 failover_output 的 stdout/stderr，'
     '必要時依工具輸出的手動回退指令處置。'
-    '請先依 ITHome2026-WAF/failover.conf.example 建立 failover.conf，並用 '
+    '請先依 Integrated-WAF/failover.conf.example 建立 failover.conf，並用 '
     'scripts/seed_node_showcase.py --only waf_failover --node <顯示名稱=節點識別> '
     '--apply 重跑以填入真實節點名稱。'
 )
@@ -489,7 +489,7 @@ def repo_root():
 
 
 def default_failover_dir():
-    return os.path.join(repo_root(), 'ITHome2026-WAF')
+    return os.path.join(repo_root(), 'Integrated-WAF')
 
 
 def parse_node_option(raw):
@@ -512,7 +512,7 @@ def build_parser():
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
     parser.add_argument('--org', default=ORG_CODE, help=f'企業 code（預設 {ORG_CODE}）')
     parser.add_argument('--failover-dir', default=default_failover_dir(),
-                        help='failover.sh 所在目錄（預設為本 repo 的 ITHome2026-WAF）')
+                        help='failover.sh 所在目錄（預設為本 repo 的 Integrated-WAF）')
     parser.add_argument('--config', default=None,
                         help='failover.conf 路徑（預設 <failover-dir>/failover.conf）')
     parser.add_argument('--node', action='append', type=parse_node_option, default=[],

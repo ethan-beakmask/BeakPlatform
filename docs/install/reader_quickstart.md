@@ -61,7 +61,7 @@ curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scri
 **以下在主機 B 上執行。**把主機 A 總結裡的「WAF 主機執行指令」貼到主機 B，補上被保護網站位址：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/ITHome2026-WAF/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o install.sh
 sudo bash install.sh \
   --pair 'ODN1....' \
   --backend http://<主機A IP>:8000 \

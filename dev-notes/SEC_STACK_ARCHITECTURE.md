@@ -1,6 +1,6 @@
 # sec-vm（`.20`）架構與運維手冊
 
-**最後更新：2026-09-10（ITHome2026-WAF 讀者版一鍵安裝、`.20` 換裝、dmz-web tunnel 與 www 歡迎頁上線；2026-08-15 PF-104 建立）**
+**最後更新：2026-09-10（Integrated-WAF 讀者版一鍵安裝、`.20` 換裝、dmz-web tunnel 與 www 歡迎頁上線；2026-08-15 PF-104 建立）**
 **權威範圍**：本檔記錄跑在 `.20`（sec-vm）上、BeakPlatform-dev **之外**的 Open Defense
 安全棧（Vector、Suricata、Coraza WAF、CrowdSec、ClickHouse、Grafana、EveBox、
 od-bridge）。平台側（`.16`，`/opt/BeakPlatform-dev` 內）的程式架構在
@@ -14,12 +14,12 @@ od-bridge）。平台側（`.16`，`/opt/BeakPlatform-dev` 內）的程式架構
 
 **為什麼要分兩份**：`.16` 與 `.20` 各自會改，混在一份必定漂移。
 
-> **2026-09-10 起 `.20` 已換裝成 `ITHome2026-WAF/`（`/opt/ithome2026-waf`），`sec-vm-bootstrap/` 退役封存在
+> **2026-09-10 起 `.20` 已換裝成 `Integrated-WAF/`（`/opt/ithome2026-waf`），`sec-vm-bootstrap/` 退役封存在
 > `dev-notes/archive/sec-vm-bootstrap-retired-20260910/`。** 本檔第 12 節之前凡提到
 > `sec-vm-bootstrap/`、`~/sec-vm-bootstrap`、`vector.production.yaml`、`nftables-bootstrap.sh`、
-> 「scp 後 md5 比對」的段落都是歷史，現在的對應是：設定檔權威 `ITHome2026-WAF/`；
+> 「scp 後 md5 比對」的段落都是歷史，現在的對應是：設定檔權威 `Integrated-WAF/`；
 > `.20` 部署目錄 `/opt/ithome2026-waf`（`.env` 與 `generated/` 為主機專屬）；
-> 改設定流程 = 改 `ITHome2026-WAF/` → rsync 到 `.20:/opt/ithome2026-waf` → `sudo bash install.sh --reconfigure`；
+> 改設定流程 = 改 `Integrated-WAF/` → rsync 到 `.20:/opt/ithome2026-waf` → `sudo bash install.sh --reconfigure`；
 > 防火牆由 `nftables.sh` 依 `.env` 產生（不再手改 heredoc）；vector 設定是 `vector/vector.yaml`
 > 一份（值來自 `.env`）。埠、來源管制、ClickHouse 白名單、時區等環境事實不變。
 > 遷移憑證 `/opt/tmp/verify/20260910-dot20-migrate.log`（ClickHouse 8206 筆歷史資料保留、
@@ -836,18 +836,18 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 
 ---
 
-## 12. 讀者版一鍵安裝 `ITHome2026-WAF/`（2026-09-10 建立，會推上 GitHub；當日先叫 defense-node，Ethan 裁示改名：內容幾乎都是別人的專案，不冠 Beak）
+## 12. 讀者版一鍵安裝 `Integrated-WAF/`（2026-09-10 建立，會推上 GitHub；當日先叫 defense-node，Ethan 裁示改名：內容幾乎都是別人的專案，不冠 Beak）
 
 **`sec-vm-bootstrap/` 是 `.20` 這台的部署副本（含內部 IP，不推 GitHub）；
-`ITHome2026-WAF/` 是它的參數化產品版（不含任何內部 IP，推 GitHub 給 ITHome 讀者）。**
+`Integrated-WAF/` 是它的參數化產品版（不含任何內部 IP，推 GitHub 給 ITHome 讀者）。**
 兩者結構相同、設定檔內容相同，差別只在「值來自 `.env`」與「安裝流程自動化」。
 **`.20` 已於 2026-09-10 換裝完成**（Ethan 裁示），`sec-vm-bootstrap/` 同日退役。
 
 | 檔案 | 說明 |
 |---|---|
-| `ITHome2026-WAF/install.sh` | 一鍵安裝／`--reconfigure`／`--verify`／`--test-event`／`--update`／`--uninstall`。從 GitHub 用 sparse-checkout 只抓 `ITHome2026-WAF/` |
-| `ITHome2026-WAF/cf_tunnel.py` | Cloudflare API：建 tunnel、PUT ingress（`hostname → http://waf-nginx:8080`）、CNAME、取 connector token。只需 Zone: Read／DNS: Edit／Tunnel: Edit，account 由 zone 反查（Token 列不出 `/accounts` 也能用） |
-| `ITHome2026-WAF/nftables.sh` | 依 `.env` 產生 `/etc/nftables.conf`（allowlist／blocklist／ingest／mgmt／SSH guard），重建前保存 blocklist 元素再補回 |
+| `Integrated-WAF/install.sh` | 一鍵安裝／`--reconfigure`／`--verify`／`--test-event`／`--update`／`--uninstall`。從 GitHub 用 sparse-checkout 只抓 `Integrated-WAF/` |
+| `Integrated-WAF/cf_tunnel.py` | Cloudflare API：建 tunnel、PUT ingress（`hostname → http://waf-nginx:8080`）、CNAME、取 connector token。只需 Zone: Read／DNS: Edit／Tunnel: Edit，account 由 zone 反查（Token 列不出 `/accounts` 也能用） |
+| `Integrated-WAF/nftables.sh` | 依 `.env` 產生 `/etc/nftables.conf`（allowlist／blocklist／ingest／mgmt／SSH guard），重建前保存 blocklist 元素再補回 |
 | `scripts/od_node_pairing.py`（平台端） | 一行建 API Key（od_intake scope）＋ service account，打包成 `ODN1.<base64url json>` 開通字串；`--provision` 時先呼叫 `provision_od_intake_for_org.py` |
 | `docs/install/ithome2026_waf.md` | 讀者文件（公開，不含內部 IP） |
 
@@ -874,7 +874,7 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 | connector | **`.20`** 的 `secstack-cloudflared-1`（換裝後上線，`www.beakmask.org` 對外服務中）；`.13` 那個已 `compose stop`，做頂替驗收時 `--reconfigure` 會帶起來 |
 | API Token | 沿用 `/opt/CFTunnel/config-ho-gate.ini` 的 `api_token`（權限夠用，不必另建） |
 
-換 hostname：`python3 ITHome2026-WAF/cf_tunnel.py setup --hostname <新名> --tunnel-name dmz-web`，
+換 hostname：`python3 Integrated-WAF/cf_tunnel.py setup --hostname <新名> --tunnel-name dmz-web`，
 舊的 `cf_tunnel.py remove --hostname <舊名>`（連 CNAME 一起刪）。`.66` 的 `system_base_url` 維持
 `http://192.168.0.66:8000`——**這是讀者依自己環境設定的值，不是 Ethan 環境的待辦**（Ethan 2026-09-11 定調）；讀者要讓平台寄出的連結指向對外網址時，自己在「主機設定 → 伺服器設定 → 系統對外網址」填自己的 hostname。
 
@@ -884,15 +884,15 @@ header。**不是 HMAC**——實測 vector 0.41.1 的 http sink headers 不做�
 `/root/netplan-01-static.yaml.bak-20260911`），`.13`（VM 109 `ubuntu24`）改成固定 IP
 （`50-cloud-init.yaml`，DHCP 版備份 `/root/netplan-50-cloud-init.yaml.bak-20260911-dhcp`）。
 服務 IP **`.20` 不在任何 netplan 裡**，由 `standby.sh takeover` 綁上、`waf-service-ip.service` 開機重做。
-兩台程式一致（`rsync` 自 `ITHome2026-WAF/`），`.13` 的 `.env` 已對齊 www 分流並跑過 `--reconfigure`。
+兩台程式一致（`rsync` 自 `Integrated-WAF/`），`.13` 的 `.env` 已對齊 www 分流並跑過 `--reconfigure`。
 `.12` 被一台不回 ping 的裝置占用（MAC `a6:bf:3a:c3:3d:6a`），選管理 IP 前一律看 `ip neigh` 不要只 ping。
 
-工具：`ITHome2026-WAF/standby.sh`（節點端）、`failover.sh`（`.16` 端，**2026-09-12 起參數放組態檔**
-`ITHome2026-WAF/failover.conf`，已 gitignore；範例 `failover.conf.example`），讀者文件
+工具：`Integrated-WAF/standby.sh`（節點端）、`failover.sh`（`.16` 端，**2026-09-12 起參數放組態檔**
+`Integrated-WAF/failover.conf`，已 gitignore；範例 `failover.conf.example`），讀者文件
 `docs/install/ithome2026_waf_standby.md`。**從 `.16` 切換與看狀態**：
 
 ```bash
-cd /opt/BeakPlatform-dev/ITHome2026-WAF
+cd /opt/BeakPlatform-dev/Integrated-WAF
 bash failover.sh status                 # 誰持有 .20、SNAT、cloudflared／od-bridge／blocklist；失聯的會標「失聯」
 bash failover.sh dry-run                # 只做前置檢查
 bash failover.sh switch --yes           # 切到沒持有 .20 的那台；現役整台失聯時也用這條（活著的那台自動成目標）
@@ -971,7 +971,7 @@ blocklist 帶剩餘 timeout 複製（用 TEST-NET `203.0.113.99 timeout 900s` �
 
 **`.21` 從此不再是 www.beakmask.org 的熱備待命機**：`install.sh --uninstall --purge --yes` ＋ 手動清掉
 `waf-service-ip`／`waf-service-fence` unit、docker 映像與 volume、`/opt/ithome2026-waf`、`inet secstack`，reboot 後
-以 GitHub `85574843` 的 `ITHome2026-WAF/install.sh` 全新安裝（讀者路徑：`--pair '<bpserv --demo 印的 ODN1>'
+以 GitHub `85574843` 的 `Integrated-WAF/install.sh` 全新安裝（讀者路徑：`--pair '<bpserv --demo 印的 ODN1>'
 --backend http://192.168.0.66:8000 --admin-ips 192.168.0.10,192.168.0.16 --yes`，**沒有 tunnel、沒有歡迎頁**）。
 `--verify` 全綠、`--test-event` → bpserv DemoSOC `od_intake_events` 1 筆 `signature_verified=t` → 案件
 `OD-20260913-0001` RUNNING（bpserv 時鐘是 UTC）。憑證 `/opt/tmp/verify/20260914-waf21-wipe.log`、`20260914-waf21-fresh.log`。
@@ -1030,7 +1030,7 @@ Ethan 2026-09-13 問「一鍵安裝的防禦節點 → 讀者自建企業 → �
 
 | 元件 | 位置 |
 |---|---|
-| 探測 | `ITHome2026-WAF/monitor_probe.sh`（讀 `failover.conf`，新增 4 個鍵） |
+| 探測 | `Integrated-WAF/monitor_probe.sh`（讀 `failover.conf`，新增 4 個鍵） |
 | 流程 | 系統企業 node展覽館「WAF 熱備健康監看」<br>form `NODEDEMO_WAF_MONITOR` / flow `NODEDEMO_WAF_MONITOR_FLOW`<br>佈建 `scripts/examples/provision_nodedemo_waf_monitor.py`（冪等） |
 | 看門狗 | `scripts/cron/waf_monitor_watchdog.py`，`/etc/crontab` 每 5 分鐘（2026-09-12 加入） |
 

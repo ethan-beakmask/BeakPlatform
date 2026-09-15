@@ -2,7 +2,7 @@
 DecisionWriter handler -- enforcement_points 依 action 過濾（PF-125，2026-09-13 Ethan 裁示）
 
 背景：od-bridge 的 nftables／crowdsec 執行器只實作 block/unblock
-(ITHome2026-WAF/od-bridge/od_bridge/enforcers/nftables.py、crowdsec.py)，
+(Integrated-WAF/od-bridge/od_bridge/enforcers/nftables.py、crowdsec.py)，
 拉到 action=allow 的決策會回 unsupported_action，讓整筆決策從 pending
 掉成 failed。DecisionWriterHandler 因此在寫入 od_defense_decisions 之前，
 對 action=allow 只保留支援 allow 的執行點（目前只有 edl）。

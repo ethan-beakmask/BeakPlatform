@@ -178,7 +178,7 @@ Suricata（監聽網卡） ─► Vector ─► od-bridge ──事件──► 
 <p><strong>以下全部在主機 B（防禦節點）上執行。</strong>回到第三節主機 A 印出的總結，複製「WAF 主機執行指令」那一行，貼到主機 B 的終端機，再補上 PAT、被保護網站與你的工作機 IP：</p>
 
 <pre><code>curl -fsSL -H "Authorization: token &lt;你的PAT&gt;" \
-  https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/ITHome2026-WAF/install.sh -o install.sh
+  https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o install.sh
 sudo GITHUB_TOKEN=&lt;你的PAT&gt; bash install.sh \
   --pair 'ODN1....' \
   --backend http://192.168.0.111:8000 \

@@ -155,7 +155,7 @@ def upsert_dns(token, zone_id, hostname, tunnel_id):
     target = f"{tunnel_id}.cfargotunnel.com"
     recs = _req(token, "GET", f"/zones/{zone_id}/dns_records?name={hostname}") or []
     body = {"type": "CNAME", "name": hostname, "content": target, "proxied": True, "ttl": 1,
-            "comment": "ITHome2026-WAF tunnel"}
+            "comment": "Integrated-WAF tunnel"}
     for r in recs:
         if r["type"] == "CNAME":
             if r["content"] == target and r.get("proxied"):

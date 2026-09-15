@@ -80,7 +80,7 @@ fi
 cat > "$CONF" <<NFT
 #!/usr/sbin/nft -f
 #
-# 防禦節點主機防火牆（由 ITHome2026-WAF/nftables.sh 產生，勿手改；改 .env 後重跑）
+# 防禦節點主機防火牆（由 Integrated-WAF/nftables.sh 產生，勿手改；改 .env 後重跑）
 #
 # 不使用 flush ruleset：docker 的 ip nat / ip filter 由 docker 管理。
 # 只以 delete + create 重建 inet secstack 一張表。

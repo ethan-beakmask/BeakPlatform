@@ -1,4 +1,4 @@
-# ITHome2026-WAF：防禦節點一鍵安裝
+# Integrated-WAF：防禦節點一鍵安裝
 
 **這是選用元件。** 要讓 BeakPlatform 自動收到網站與網路層的攻擊事件、建立資安案件、
 再把核可的封鎖決策落地到防火牆，需要第二台主機當「防禦端」。本頁說明如何用一支
@@ -85,13 +85,13 @@ venv/bin/python scripts/od_node_pairing.py \
 ## 四、步驟二：在防禦端執行安裝
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/ITHome2026-WAF/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o install.sh
 sudo bash install.sh \
     --pair 'ODN1....' \
     --backend http://<被保護網站IP>:<埠>
 ```
 
-腳本會自動：裝 docker 與 nftables → 從 GitHub 取得 `ITHome2026-WAF/` → 寫 `.env` →
+腳本會自動：裝 docker 與 nftables → 從 GitHub 取得 `Integrated-WAF/` → 寫 `.env` →
 產生 Suricata / ClickHouse / 防火牆設定 → 下載 Suricata 規則（約 40 MB）→
 啟動全部容器 → 建 ClickHouse 表 → 註冊 CrowdSec → 印出各服務網址與密碼 → 跑健康檢查。
 全程約 3～6 分鐘，多數時間在抓映像檔。

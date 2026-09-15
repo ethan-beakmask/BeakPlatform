@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ITHome2026-WAF 防禦節點運作原理：總覽</title>
+<title>Integrated-WAF 防禦節點運作原理：總覽</title>
 <style>
 :root{--ink:#1f2933;--muted:#5f6b76;--line:#cfd6dd;--soft:#f4f6f8;--head:#e9eef3;--accent:#0b5394;--warn:#b45309;--warnbg:#fff7e6;--ok:#1b6e3a;--okbg:#ecf7ee;--bad:#9b1c1c;--badbg:#fdecec}
 *{box-sizing:border-box}
@@ -57,7 +57,7 @@ pre code{background:none;padding:0}
 <body>
 <div class="wrap">
 
-<h1>ITHome2026-WAF 防禦節點運作原理</h1>
+<h1>Integrated-WAF 防禦節點運作原理</h1>
 <p class="sub">封包從 Internet 進來之後經過哪些系統、每個系統各管什麼、以及「單獨使用這些開源元件」與「接上 BeakPlatform」之後的處理方式有什麼差別。共六篇，本篇是總覽與閱讀順序。</p>
 
 <nav class="toc">
@@ -74,7 +74,7 @@ pre code{background:none;padding:0}
 
 <h2>一、先建立全景</h2>
 
-<p>整套架構只有兩台主機，與安裝章節用同一組位址。<strong>主機 A（192.168.0.111）</strong>裝 BeakPlatform，是「管制端」：收事件、跑案件流程、記錄決策。<strong>主機 B（192.168.0.112）</strong>裝 ITHome2026-WAF 安裝包，是「防禦端」：站在被保護網站前面擋攻擊、監聽網路、把事件送出去、再把平台核可的封鎖落地到自己的防火牆。被保護的網站可以是主機 A 上的平台本身，也可以是任何一台內網網站。</p>
+<p>整套架構只有兩台主機，與安裝章節用同一組位址。<strong>主機 A（192.168.0.111）</strong>裝 BeakPlatform，是「管制端」：收事件、跑案件流程、記錄決策。<strong>主機 B（192.168.0.112）</strong>裝 Integrated-WAF 安裝包，是「防禦端」：站在被保護網站前面擋攻擊、監聽網路、把事件送出去、再把平台核可的封鎖落地到自己的防火牆。被保護的網站可以是主機 A 上的平台本身，也可以是任何一台內網網站。</p>
 
 <p>三條資料流方向不同，讀後面各篇時請隨時對照：</p>
 
@@ -104,7 +104,7 @@ pre code{background:none;padding:0}
 
 <!-- Host B zone -->
 <rect x="210" y="20" width="560" height="520" rx="8" class="zone"/>
-<text x="225" y="42" class="tt">主機 B：防禦節點（ITHome2026-WAF）</text>
+<text x="225" y="42" class="tt">主機 B：防禦節點（Integrated-WAF）</text>
 <text x="225" y="60" class="ts">外殼：nftables（allowlist / blocklist / 來源管制）；容器全部由 docker compose 管理</text>
 
 <!-- cloudflared -->

@@ -1,4 +1,4 @@
-# ITHome2026-WAF：WAF 節點熱備（warm standby）切換
+# Integrated-WAF：WAF 節點熱備（warm standby）切換
 
 這份文件說明如何把兩台防禦端做成「兩台主機、三個 IP」的熱備架構：兩台各有自己的管理 IP，
 另有一個服務 IP 只放在現役節點。被保護網站與管制端防火牆只放行服務 IP，切換時用

@@ -1,5 +1,5 @@
-# ITHome2026-WAF 內容物、單獨安裝方式與授權聲明
-# ITHome2026-WAF: Contents, Standalone Installation, and Licensing Notice
+# Integrated-WAF 內容物、單獨安裝方式與授權聲明
+# Integrated-WAF: Contents, Standalone Installation, and Licensing Notice
 
 ## 聲明 / Notice
 

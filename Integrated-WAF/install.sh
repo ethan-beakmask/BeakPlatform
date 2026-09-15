@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# ITHome2026-WAF 防禦節點一鍵安裝
+# Integrated-WAF 防禦節點一鍵安裝
 # 適用於 Ubuntu 22.04 / 24.04 LTS（amd64），需要 sudo 與可連 Internet
 # =============================================================================
 # 這台主機會裝上：
@@ -207,12 +207,12 @@ fetch_source() {
         if [[ -n "${GITHUB_TOKEN:-}" && "$url" == https://github.com/* ]]; then
             url="https://x-access-token:${GITHUB_TOKEN}@github.com/${url#https://github.com/}"
         fi
-        log_info "從 $GITHUB_REPO（$GIT_REF）取得 ITHome2026-WAF/"
+        log_info "從 $GITHUB_REPO（$GIT_REF）取得 Integrated-WAF/"
         git clone --quiet --depth 1 --branch "$GIT_REF" --filter=blob:none --sparse "$url" "$tmp/repo" \
             || die "git clone 失敗（私有 repo 請設 GITHUB_TOKEN）"
-        (cd "$tmp/repo" && git sparse-checkout set ITHome2026-WAF --quiet)
-        [[ -f "$tmp/repo/ITHome2026-WAF/docker-compose.yml" ]] || die "repo 內找不到 ITHome2026-WAF/"
-        src="$tmp/repo/ITHome2026-WAF"
+        (cd "$tmp/repo" && git sparse-checkout set Integrated-WAF --quiet)
+        [[ -f "$tmp/repo/Integrated-WAF/docker-compose.yml" ]] || die "repo 內找不到 Integrated-WAF/"
+        src="$tmp/repo/Integrated-WAF"
     fi
     mkdir -p "$INSTALL_DIR"
     if [[ "$(cd "$src" && pwd)" != "$(cd "$INSTALL_DIR" && pwd)" ]]; then
@@ -380,7 +380,7 @@ disable_nic_offload() {
     command -v ethtool >/dev/null || { log_warn "沒有 ethtool，略過網卡卸載設定"; return 0; }
     cat > /etc/systemd/system/ithome2026-waf-offload.service <<EOT
 [Unit]
-Description=ITHome2026-WAF: disable NIC offload on $iface for Suricata capture
+Description=Integrated-WAF: disable NIC offload on $iface for Suricata capture
 After=network-online.target
 Wants=network-online.target
 
@@ -589,7 +589,7 @@ do_uninstall() {
     fi
     if [[ $OPT_PURGE -eq 1 ]]; then compose down -v --remove-orphans || true; else compose down --remove-orphans || true; fi
     nft delete table inet secstack 2>/dev/null || true
-    if [[ -f /etc/nftables.conf ]] && grep -q "ITHome2026-WAF/nftables.sh" /etc/nftables.conf; then
+    if [[ -f /etc/nftables.conf ]] && grep -q "/nftables.sh 產生" /etc/nftables.conf && grep -q "table inet secstack" /etc/nftables.conf; then
         printf '#!/usr/sbin/nft -f\n' > /etc/nftables.conf
     fi
     rm -f /etc/cron.hourly/secstack-rotate-logs

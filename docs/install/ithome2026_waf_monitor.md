@@ -1,4 +1,4 @@
-# ITHome2026-WAF：熱備健康監看（流程自動巡檢 + 看門狗）
+# Integrated-WAF：熱備健康監看（流程自動巡檢 + 看門狗）
 
 這份文件接續 [WAF 節點熱備切換](ithome2026_waf_standby.md)。熱備做好之後還缺一件事：
 **誰來發現現役節點死了。**
@@ -16,7 +16,7 @@
 
 | 元件 | 位置 | 做什麼 |
 |---|---|---|
-| `monitor_probe.sh` | `ITHome2026-WAF/` | 探測一次，把判定寫成 stdout 單行，並更新 heartbeat |
+| `monitor_probe.sh` | `Integrated-WAF/` | 探測一次，把判定寫成 stdout 單行，並更新 heartbeat |
 | 「WAF 熱備健康監看」表單流程 | 平台（node展覽館分類） | 常駐迴圈：每 N 分鐘呼叫探測、計數、告警、決策、切換 |
 | `waf_monitor_watchdog.py` | `scripts/cron/` | 每 5 分鐘檢查 heartbeat，監看流程自己死掉時發 Telegram |
 
@@ -173,7 +173,7 @@ Telegram 的 bot token 不寫在腳本或排程裡，執行時才從平台的 Te
 
 ```bash
 # 探測本身
-bash ITHome2026-WAF/monitor_probe.sh
+bash Integrated-WAF/monitor_probe.sh
 # → TS=... STATE=OK EXT=302 INT=404 GW=ok
 
 # 看門狗（不會真的發送）

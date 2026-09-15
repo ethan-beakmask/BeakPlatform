@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 # 各執行端 apply() 實際支援的 action 集合(2026-09-13 對照
-# ITHome2026-WAF/od-bridge/od_bridge/enforcers/*.py 逐一確認,不得憑印象增修):
+# Integrated-WAF/od-bridge/od_bridge/enforcers/*.py 逐一確認,不得憑印象增修):
 #   - nftables.py:104-128  只認 block/unblock,其餘一律 unsupported_action
 #   - crowdsec.py:61-104   只認 block/unblock,其餘一律 unsupported_action
 #   - edl.py:154-188       _LIST_FOR_ACTION={block,allow} + 通用 unblock
