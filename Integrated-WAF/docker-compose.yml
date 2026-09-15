@@ -33,6 +33,9 @@ volumes:
   evebox-data:
   grafana-data:
 
+# 發布到主機的埠一律明寫 0.0.0.0（只綁 IPv4）。不寫主機位址時 docker-proxy 會同時
+# 在 [::] 監聽，IPv6 連線走 input hook，完全繞過 nftables.sh 掛在 forward hook 的來源管制
+# （2026-09-15 實測：Grafana、Vector API、Portainer、WAF 都能從非白名單的 IPv6 來源連上）。
 services:
 
   # ---------------- ClickHouse（事件儲存）----------------
@@ -54,8 +57,8 @@ services:
     ports:
       # 綁 0.0.0.0 而不是本機 IP：換 IP 時才不必重建容器。來源限制在帳號層
       # （generated/clickhouse-network-allowlist.xml：本機、docker 網段、ADMIN_IPS、平台）
-      - "8123:8123"   # HTTP SQL
-      - "9000:9000"   # native
+      - "0.0.0.0:8123:8123"   # HTTP SQL
+      - "0.0.0.0:9000:9000"   # native
     healthcheck:
       test: ["CMD", "wget", "-q", "-O-", "http://localhost:8123/ping"]
       interval: 10s
@@ -82,7 +85,7 @@ services:
       - "host.docker.internal:host-gateway"   # vector → od-bridge（host network）
     ports:
       - "127.0.0.1:8688:8688"   # 合成事件注入口，只開本機（可直接注入任意事件，不可對外）
-      - "8686:8686"             # GraphQL / metrics（唯讀；來源由 nftables 管制）
+      - "0.0.0.0:8686:8686"             # GraphQL / metrics（唯讀；來源由 nftables 管制）
     volumes:
       - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
       - vector-data:/var/lib/vector
@@ -152,7 +155,7 @@ services:
       REAL_IP_RECURSIVE: "on"
       REAL_IP_PROXY_HEADER: "X-Real-IP"
     ports:
-      - "8080:8080"   # 內網驗證用；正式流量由 cloudflared 容器直接走 docker 網段
+      - "0.0.0.0:8080:8080"   # 內網驗證用；正式流量由 cloudflared 容器直接走 docker 網段
     volumes:
       - ./waf/log:/var/log/modsec
       - ./waf/nginx-templates/logging.conf.template:/etc/nginx/templates/conf.d/logging.conf.template:ro
@@ -192,7 +195,7 @@ services:
       REAL_IP_RECURSIVE: "on"
       REAL_IP_PROXY_HEADER: "X-Real-IP"
     ports:
-      - "8082:8080"   # 內網驗證用
+      - "0.0.0.0:8082:8080"   # 內網驗證用
     volumes:
       - ./waf/log:/var/log/modsec
       - ./waf/nginx-templates/logging.conf.template:/etc/nginx/templates/conf.d/logging.conf.template:ro
@@ -218,7 +221,7 @@ services:
     restart: unless-stopped
     profiles: ["ui"]
     ports:
-      - "9443:9443"   # HTTPS，自簽憑證
+      - "0.0.0.0:9443:9443"   # HTTPS，自簽憑證
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer-data:/data
@@ -235,7 +238,7 @@ services:
       - suricata-logs:/var/log/suricata:ro
       - evebox-data:/data
     ports:
-      - "5636:5636"
+      - "0.0.0.0:5636:5636"
 
   grafana:
     image: grafana/grafana:11.3.0
@@ -248,7 +251,7 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
     ports:
-      - "3000:3000"
+      - "0.0.0.0:3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro

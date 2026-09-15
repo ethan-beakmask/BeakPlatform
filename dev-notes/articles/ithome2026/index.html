@@ -258,7 +258,7 @@ pre code{background:none;padding:0}
 </table>
 
 <div class="note">
-三個容易誤會的：第 1 條只救「直連主機 B 本機程序」的流量，開了 <code>--ssh-guard</code> 又把自己排除在 ADMIN_IPS 外時它救不了 SSH；第 5 條在平台端做一次，防禦端不帶本地副本，所以改了保護清單不必動主機 B；第 1、2、7 條的產生器只收 IPv4，<code>ADMIN_IPS</code> 填 IPv6 會被靜默略過。CrowdSec 也有內建 whitelist，出廠只含本機回送位址，本架構沒有另外擴充。
+三個容易誤會的：第 1 條只救「直連主機 B 本機程序」的流量，開了 <code>--ssh-guard</code> 又把自己排除在 ADMIN_IPS 外時它救不了 SSH；第 5 條在平台端做一次，防禦端不帶本地副本，所以改了保護清單不必動主機 B；第 1、2、7 條只支援 IPv4，<code>ADMIN_IPS</code> 要填 IPv4 位址；主機 B 發布的埠也只綁 IPv4（<code>0.0.0.0</code>），IPv6 連不進這些埠，不會繞過來源管制。CrowdSec 也有內建 whitelist，出廠只含本機回送位址，本架構沒有另外擴充。
 </div>
 
 <h2>四、一句話版本的運作原理</h2>
