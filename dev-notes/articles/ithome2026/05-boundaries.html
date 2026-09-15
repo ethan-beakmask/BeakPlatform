@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 5 篇　信任邊界與盲區</title>
+<style>
+:root{--ink:#1f2933;--muted:#5f6b76;--line:#cfd6dd;--soft:#f4f6f8;--head:#e9eef3;--accent:#0b5394;--warn:#b45309;--warnbg:#fff7e6;--ok:#1b6e3a;--okbg:#ecf7ee;--bad:#9b1c1c;--badbg:#fdecec}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:15px/1.7 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:26px;margin:0 0 6px;border-bottom:3px solid var(--accent);padding-bottom:8px}
+h2{font-size:21px;margin:40px 0 12px;border-left:5px solid var(--accent);padding-left:10px}
+h3{font-size:17px;margin:26px 0 8px}
+p{margin:8px 0}
+.sub{color:var(--muted);margin-bottom:18px}
+a{color:var(--accent)}
+table{border-collapse:collapse;width:100%;margin:12px 0 18px;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 10px;vertical-align:top;text-align:left}
+th{background:var(--head);font-weight:600}
+tbody tr:nth-child(even){background:#fafbfc}
+td.y{background:#ecf7ee;text-align:center}
+td.n{background:#fdecec;text-align:center}
+td.m{background:#fff7e6;text-align:center}
+code{font-family:Consolas,"Cascadia Mono",Menlo,monospace;font-size:13px;background:#f1f3f5;padding:1px 5px;border-radius:3px}
+pre{background:#f1f3f5;border:1px solid var(--line);padding:10px 12px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+.fig{margin:16px 0 22px;border:1px solid var(--line);background:#fff;padding:10px}
+.fig svg{width:100%;height:auto;display:block}
+.cap{font-size:13px;color:var(--muted);margin-top:6px;text-align:center}
+.note{border-left:4px solid var(--accent);background:var(--soft);padding:10px 14px;margin:14px 0}
+.warn{border-left:4px solid var(--warn);background:var(--warnbg);padding:10px 14px;margin:14px 0}
+.ok{border-left:4px solid var(--ok);background:var(--okbg);padding:10px 14px;margin:14px 0}
+.bad{border-left:4px solid var(--bad);background:var(--badbg);padding:10px 14px;margin:14px 0}
+.pager{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:40px;padding-top:12px;font-size:14px}
+.b{fill:#fff;stroke:#334;stroke-width:1.2}
+.bs{fill:#f4f6f8;stroke:#334;stroke-width:1.2}
+.bh{fill:#e3edf7;stroke:#0b5394;stroke-width:1.4}
+.bw{fill:#fff7e6;stroke:#b45309;stroke-width:1.2}
+.bg{fill:#ecf7ee;stroke:#1b6e3a;stroke-width:1.2}
+.bd{fill:#fdecec;stroke:#9b1c1c;stroke-width:1.2}
+.zone{fill:none;stroke:#8a96a3;stroke-width:1;stroke-dasharray:6 4}
+.t{font-size:13px;fill:#1f2933}
+.ts{font-size:11.5px;fill:#5f6b76}
+.tb{font-size:13px;fill:#1f2933;font-weight:600}
+.tt{font-size:14px;fill:#0b5394;font-weight:700}
+.l{stroke:#334;stroke-width:1.6;fill:none}
+.lr{stroke:#9b1c1c;stroke-width:1.6;fill:none}
+.lg{stroke:#8a96a3;stroke-width:1.2;fill:none;stroke-dasharray:4 3}
+.lok{stroke:#1b6e3a;stroke-width:1.6;fill:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>第 5 篇　信任邊界與盲區</h1>
+<p class="sub">這套設計信任誰、不信任誰；封鎖清單實際擋得住什麼；Suricata 看不到什麼；哪一份資料才是「發生了多少事」的真相；以及各元件掛掉時會發生什麼。導入前讀完這篇，能省掉多數「為什麼沒動作」的排查。</p>
+
+<h2>一、攻擊者 IP 的歸因：信任誰說的</h2>
+
+<p>整條鏈最後會封鎖的是「攻擊者 IP」，而這個 IP 在反向代理架構下<strong>不是封包來源，是標頭裡寫的值</strong>。誰能寫這個標頭、系統信不信，決定了會不會有人陷害第三方。</p>
+
+<div class="fig">
+<svg viewBox="0 0 1100 415" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#334"/></marker>
+<marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#9b1c1c"/></marker>
+<marker id="arg" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1b6e3a"/></marker>
+</defs>
+<!-- WAF center -->
+<rect x="450" y="150" width="200" height="80" rx="6" class="bh"/>
+<text x="550" y="178" text-anchor="middle" class="tb">waf-nginx</text>
+<text x="550" y="196" text-anchor="middle" class="ts">記下 client_ip＝直連者</text>
+<text x="550" y="212" text-anchor="middle" class="ts">標頭原樣進 audit.log</text>
+
+<!-- trusted source -->
+<rect x="60" y="60" width="220" height="70" rx="6" class="bg"/>
+<text x="170" y="86" text-anchor="middle" class="tb">cloudflared 172.18.0.250</text>
+<text x="170" y="104" text-anchor="middle" class="ts">TRUSTED_INGRESS_LIST 唯一預設成員</text>
+<text x="170" y="120" text-anchor="middle" class="ts">它帶的 CF-Connecting-IP 被採信</text>
+<path d="M280,95 C380,95 400,190 450,190" class="lok" marker-end="url(#arg)"/>
+
+<!-- untrusted LAN -->
+<rect x="60" y="250" width="220" height="70" rx="6" class="bw"/>
+<text x="170" y="276" text-anchor="middle" class="tb">內網直連 8080 的來源</text>
+<text x="170" y="294" text-anchor="middle" class="ts">先過 nftables 來源管制</text>
+<text x="170" y="310" text-anchor="middle" class="ts">進得來也「誰打的記誰」</text>
+<path d="M280,285 C380,285 400,200 450,200" class="l" marker-end="url(#ar)"/>
+
+<!-- Vector decision -->
+<rect x="720" y="60" width="330" height="110" rx="6" class="b"/>
+<text x="885" y="84" text-anchor="middle" class="tb">Vector 歸因規則（WAF 事件）</text>
+<text x="735" y="106" class="ts">client_ip 在可信清單 且 有 CF-Connecting-IP → 採信標頭</text>
+<text x="735" y="124" class="ts">client_ip 在可信清單 且 有 XFF → 採 XFF 第一段</text>
+<text x="735" y="142" class="ts">其餘 → actor＝client_ip（TCP 來源）</text>
+<text x="735" y="160" class="ts">不丟事件，只決定歸因；國別欄位同樣只在可信時採用</text>
+<path d="M650,180 C690,180 690,115 720,115" class="l" marker-end="url(#ar)"/>
+
+<!-- Suricata line -->
+<rect x="720" y="220" width="330" height="110" rx="6" class="bd"/>
+<text x="885" y="244" text-anchor="middle" class="tb">Suricata 那條線沒有這道判斷</text>
+<text x="735" y="266" class="ts">xff mode: overwrite 在 Suricata 內部就把 src_ip 換掉，</text>
+<text x="735" y="284" class="ts">eve.json 不留原始 TCP 來源，Vector 事後補不了。</text>
+<text x="735" y="302" class="ts">改成 extra-data 又會讓告警的 actor 變成代理自己。</text>
+<text x="735" y="320" class="ts">所以 8080 的來源管制是這條線唯一的防線。</text>
+<path d="M650,215 C690,215 690,275 720,275" class="lr" marker-end="url(#arr)"/>
+
+<rect x="60" y="350" width="990" height="52" rx="4" class="bs"/>
+<text x="555" y="370" text-anchor="middle" class="ts">nginx 的 real_ip 模組刻意設成永遠不匹配（SET_REAL_IP_FROM=127.0.0.2）：若讓 nginx 自己「相信」cloudflared，</text>
+<text x="555" y="390" text-anchor="middle" class="ts">任何能打到 8080 的人都能把攻擊者填成任意位址。判斷必須在 Vector 做，因為只有它同時看得到 client_ip 與原始標頭。</text>
+</svg>
+<div class="cap">圖 5-1　歸因的信任邊界。綠線是唯一被信任的來源，紅框是補不了的那條線。</div>
+</div>
+
+<h2>二、封鎖清單實際擋得住什麼</h2>
+
+<p>nftables 的 blocklist 掛在 <code>input</code> hook。這一句話決定了它的效力範圍：</p>
+
+<table>
+<thead><tr><th style="width:34%">流量</th><th style="width:22%">封包來源是誰</th><th style="width:14%">走哪個 hook</th><th>blocklist 擋得住嗎</th></tr></thead>
+<tbody>
+<tr><td>攻擊者經 Cloudflare Tunnel 打被保護網站</td><td>Cloudflare edge（而且是 cloudflared 主動連出的既有連線）</td><td>—（出站連線的回應）</td><td class="n">擋不住。封鎖攻擊者 IP 對這條路完全沒有作用，仍由 WAF 逐請求擋</td></tr>
+<tr><td>攻擊者從內網直打 8080（DNAT 到容器）</td><td>攻擊者</td><td>forward</td><td class="n">擋不住（blocklist 只掛 input）；但 <code>ingest_guard_forward</code> 本來就只放行白名單來源</td></tr>
+<tr><td>攻擊者直連主機 B 本機程序：SSH、8500、host network 服務</td><td>攻擊者</td><td>input</td><td class="y">擋得住，kernel 直接 drop</td></tr>
+<tr><td>外部防火牆抓了 EDL 之後的邊界流量</td><td>攻擊者</td><td>—（在那台防火牆上）</td><td class="y">擋得住，範圍取決於那台防火牆放在哪</td></tr>
+<tr><td>接了 CrowdSec bouncer 的任何主機</td><td>攻擊者</td><td>—（在那台主機上）</td><td class="y">擋得住，bouncer 從 LAPI 拿決策</td></tr>
+</tbody>
+</table>
+
+<div class="warn">
+<strong>所以在「純 tunnel 部署」下，nftables 執行點的意義是保護主機 B 自己，以及作為決策落地的參考實作與驗證手段</strong>（<code>--test-event</code> 那一圈驗的就是它）。要讓封鎖真的在邊界生效，讀者要接的是 EDL 到自己的邊界防火牆，或補上 bouncer。Cloudflare 執行點目前是預留的空殼。這不是缺陷被藏起來，安裝文件的驗證章節寫的就是 nftables 這一圈，本篇只是把效力範圍講白。
+</div>
+
+<h2>三、自鎖保險與白名單：哪些 IP 永遠不會被封</h2>
+
+<p>全架構的八份白名單集中列在<a href="index.html">總覽第三節</a>。與「不會被封」直接相關的是下面三個。</p>
+
+<table>
+<thead><tr><th style="width:26%">機制</th><th>內容</th><th style="width:30%">限制</th></tr></thead>
+<tbody>
+<tr><td>nftables <code>allowlist</code>（白名單第 1 條）</td><td>平台主機 IP 與 <code>ADMIN_IPS</code>，在 <code>input</code> chain 最前面 accept，blocklist 對它們無效</td><td>只救 <code>input</code>。<code>ssh_guard_input</code> priority -150 比它早，開了 <code>--ssh-guard</code> 又把自己排除在 ADMIN_IPS 外，allowlist 救不了，只能從主控台救</td></tr>
+<tr><td>平台端保護清單（白名單第 5 條）</td><td>DecisionWriter 寫 block 前比對：企業內建 16 條（RFC1918、回送、link-local、CGNAT、群播、保留、IPv6 ULA 與 link-local）、平台設定的可信代理與額外網段、企業自訂。命中即拒寫</td><td>在平台端做一次，防禦端不帶本地清單（避免兩份要同步）。TEST-NET 段（203.0.113.0/24 等）刻意不納入，端對端驗證用它當公網攻擊者</td></tr>
+<tr><td>豁免與覆寫</td><td>企業可加豁免項目（目標須完全落在豁免網段內）；流程節點可設 <code>allow_protected_target</code> 覆寫並留稽核痕跡</td><td>豁免一台主機不會讓整段變成可封</td></tr>
+<tr><td>EDL 白名單（白名單第 4 條）</td><td>平台「放行」決策落地成 <code>:8500/edl/allow</code>，外部防火牆把它放在 deny 規則之上，就能保證名單內的來源即使日後被誤判也不會在邊界被擋</td><td>只對有抓 EDL 的防火牆生效；nftables 與 CrowdSec 執行點不支援 allow 動作</td></tr>
+</tbody>
+</table>
+
+<h2>四、Suricata 的視野</h2>
+
+<table>
+<thead><tr><th style="width:36%">流量</th><th>Suricata 看得到嗎</th><th>原因</th></tr></thead>
+<tbody>
+<tr><td>Internet → Cloudflare → tunnel → 主機 B</td><td class="n">看不到內容</td><td>tunnel 是加密的 QUIC／HTTP/2，實體網卡上只有密文</td></tr>
+<tr><td>cloudflared → waf-nginx</td><td class="n">看不到</td><td>docker bridge 內部，不經實體網卡</td></tr>
+<tr><td>被 WAF 擋下（403）的請求</td><td class="n">看不到</td><td>從未走到實體網卡</td></tr>
+<tr><td>WAF 放行後轉往後端的請求與回應</td><td class="y">看得到，明文</td><td>容器對外經 MASQUERADE 走實體網卡；src_ip 會被 XFF 覆寫成真實訪客</td></tr>
+<tr><td>內網直打 8080</td><td class="y">看得到兩次</td><td>進來一次（來源＝測試機）、轉出一次（來源＝主機 B）</td></tr>
+<tr><td>內網對內網的掃描</td><td class="m">規則多半不觸發</td><td>HOME_NET 預設涵蓋 RFC1918，<code>$EXTERNAL_NET → $HOME_NET</code> 方向的 ET SCAN 不會命中</td></tr>
+<tr><td>主機 B 或容器往外連（DNS、更新、回連）</td><td class="y">看得到</td><td>這是 ET MALWARE／POLICY／INFO 最常命中的方向；cloudflared 自己的 tunnel DNS 查詢曾因此建案，已停用該規則</td></tr>
+<tr><td><code>127.0.0.1</code> 上的任何測試</td><td class="n">看不到</td><td>它只監聽實體網卡，打 localhost 永遠零告警</td></tr>
+</tbody>
+</table>
+
+<h2>五、哪一份資料才是真相</h2>
+
+<div class="fig">
+<svg viewBox="0 0 1100 250" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#334"/></marker></defs>
+<rect x="20" y="60" width="200" height="90" rx="6" class="bg"/>
+<text x="120" y="88" text-anchor="middle" class="tb">ClickHouse events</text>
+<text x="120" y="108" text-anchor="middle" class="ts">全量（過解析、未過濾）</text>
+<text x="120" y="126" text-anchor="middle" class="ts">90 天 TTL</text>
+<text x="120" y="142" text-anchor="middle" class="ts">回答「被打幾次」用這裡</text>
+
+<rect x="300" y="60" width="200" height="90" rx="6" class="bw"/>
+<text x="400" y="88" text-anchor="middle" class="tb">od-bridge 送出的</text>
+<text x="400" y="108" text-anchor="middle" class="ts">過濾＋分桶封頂＋全域封頂後</text>
+<text x="400" y="126" text-anchor="middle" class="ts">/forwards 只在記憶體，重啟清零</text>
+
+<rect x="580" y="60" width="200" height="90" rx="6" class="b"/>
+<text x="680" y="88" text-anchor="middle" class="tb">平台 od_intake_events</text>
+<text x="680" y="108" text-anchor="middle" class="ts">與左邊一對一（驗簽通過者）</text>
+<text x="680" y="126" text-anchor="middle" class="ts">raw_body 整包保留</text>
+
+<rect x="860" y="60" width="200" height="90" rx="6" class="bh"/>
+<text x="960" y="88" text-anchor="middle" class="tb">案件</text>
+<text x="960" y="108" text-anchor="middle" class="ts">再經 60 分鐘併案</text>
+<text x="960" y="126" text-anchor="middle" class="ts">一張案＝一個攻擊者×一條規則</text>
+<text x="960" y="142" text-anchor="middle" class="ts">回答「有誰在打」用這裡</text>
+
+<path d="M220,105 L300,105" class="l" marker-end="url(#ar)"/>
+<path d="M500,105 L580,105" class="l" marker-end="url(#ar)"/>
+<path d="M780,105 L860,105" class="l" marker-end="url(#ar)"/>
+
+<text x="20" y="190" class="ts">實測基準（開發環境，一批 go-ftw 攻擊樣本）：ClickHouse 15 個 CRS 規則群 5610 筆 → 平台 5 群 17 筆。全域封頂 8 筆/60 秒是主因。</text>
+<text x="20" y="212" class="ts">案件頁的「跨系統關聯」分頁就是為了補這個落差：它拿案件的 actor_ip 回頭查 ClickHouse，把各系統各自看到的紀錄再串起來。</text>
+</svg>
+<div class="cap">圖 5-2　四份資料的關係。往右每一步都在減量，各自回答不同的問題。</div>
+</div>
+
+<h2>六、秘密與憑證：在哪、外洩了會怎樣</h2>
+
+<table>
+<thead><tr><th style="width:24%">憑證</th><th style="width:26%">存放位置</th><th>持有者能做什麼</th><th style="width:20%">補救</th></tr></thead>
+<tbody>
+<tr><td>事件受理金鑰（<code>INTAKE_KEY_ID</code> + secret）</td><td>主機 B <code>.env</code>（600）；平台 <code>api_keys</code> 表加密存</td><td>以該企業身分注入任意事件 → 建案 → 在自動處置流程下等於<strong>處置權</strong>。這是「注入權＝處置權」的由來，也是每家企業一台防禦端、金鑰不集中的理由</td><td>平台「安全中心 → API Key」停用，重跑配對</td></tr>
+<tr><td>執行帳號（<code>SA_ID</code> + secret）</td><td>同上；平台 <code>od_service_accounts</code></td><td>拉取與回報決策。能把決策標成 applied 卻不真的落地；<strong>不能</strong>標 expired／revoked、不能建新決策</td><td>平台「開放防禦 → 服務帳號」停用</td></tr>
+<tr><td><code>BRIDGE_INGEST_TOKEN</code></td><td>主機 B <code>.env</code></td><td>直接對 od-bridge 8500 注入事件（繞過 Vector 的過濾與封頂，但仍要能打到 8500，而 8500 只放行平台主機）</td><td>改 <code>.env</code> 後 <code>--reconfigure</code></td></tr>
+<tr><td>CrowdSec machine 憑證</td><td><code>od-bridge/state/crowdsec_machine.json</code>（600）</td><td>對本機 LAPI 寫決策</td><td><code>cscli machines delete</code> 後 <code>--reconfigure</code></td></tr>
+<tr><td>Cloudflare Tunnel token</td><td>主機 B <code>.env</code></td><td>在任何地方起一個 connector 接管對外 hostname 的流量</td><td>Cloudflare 後台刪 tunnel 重建</td></tr>
+<tr><td>ClickHouse / Grafana 密碼</td><td>主機 B <code>.env</code></td><td>讀全量事件（含 payload、UA、XFF）</td><td>改密後重建容器</td></tr>
+</tbody>
+</table>
+
+<h2>七、各元件掛掉時會發生什麼</h2>
+
+<table>
+<thead><tr><th style="width:20%">掛掉的是</th><th>還會擋嗎</th><th>還會建案嗎</th><th>還會落地／解封嗎</th><th style="width:26%">備註</th></tr></thead>
+<tbody>
+<tr><td>BeakPlatform（主機 A）</td><td class="y">會（WAF、nftables 現有元素）</td><td class="n">不會；od-bridge 回 502，Vector 該筆事件丟失（sink 無重試緩衝）</td><td class="n">新決策與 cron 的 unblock 都不會產生；kernel timeout 仍會剔除到期元素</td><td>最壞情況是「封鎖只會少不會多」</td></tr>
+<tr><td>od-bridge</td><td class="y">會</td><td class="n">不會；Vector 連不上 8500，事件丟失</td><td class="n">決策停在 pending，恢復後會補拉（<code>limit=100</code>）</td><td>ClickHouse 那一路不受影響</td></tr>
+<tr><td>Vector</td><td class="y">會</td><td class="n">不會</td><td class="y">會（od-bridge 獨立）</td><td>file source 有 checkpoint，重啟後從上次位置續讀，不重讀舊檔</td></tr>
+<tr><td>Suricata</td><td class="y">會（它本來就不擋）</td><td class="m">只剩 WAF 事件</td><td class="y">會</td><td>常見原因：網卡名不對、規則檔損毀</td></tr>
+<tr><td>waf-nginx</td><td class="n">網站直接不通（502／無回應）</td><td class="m">只剩 Suricata 事件</td><td class="y">會</td><td>WAF 是 inline，掛了就是斷線，這是 inline 的代價</td></tr>
+<tr><td>cloudflared</td><td class="n">對外 530，內網 8080 仍通</td><td class="m">只剩內網流量的事件</td><td class="y">會</td><td>熱備切換與健康監看是另一份文件的主題</td></tr>
+<tr><td>ClickHouse</td><td class="y">會</td><td class="y">會（od-bridge 那一路獨立）</td><td class="y">會</td><td>Vector 的 clickhouse sink 會緩衝重試；平台案件頁的跨系統關聯分頁會隱藏，不影響案件本身</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<strong>一個已知的靜默丟失。</strong>主機 B 每小時整點過後的 log 輪替是 copy + truncate，Vector 會短暫「停止監看 → 重新發現檔案」，這 3～4 秒內寫入的那幾行會被清掉。每小時固定一次、只影響那幾秒，實務上損失接近零，但它是「ClickHouse 也不是 100% 全量」的原因之一。
+</div>
+
+<h2>八、刻意沒做的事（不要當成新發現回報）</h2>
+
+<table>
+<thead><tr><th style="width:30%">沒做的事</th><th>理由或現況</th></tr></thead>
+<tbody>
+<tr><td>防禦端不帶本地保護清單</td><td>保護判定只在平台端做一次，避免兩份清單要同步而漂移</td></tr>
+<tr><td>CrowdSec 沒有 bouncer、其決策不進平台</td><td>本安裝包把 CrowdSec 當第二份決策落地點與 SSH 行為偵測；要讓它自己擋，讀者自行加 bouncer</td></tr>
+<tr><td>Cloudflare 執行點未實作</td><td>指「把封鎖推到 Cloudflare IP List」這個落地點，需要帳戶層 API token；目前決策帶 <code>cloudflare</code> 執行點會回 <code>not_configured</code>。Cloudflare Tunnel 作為對外入口是建議做法且完整支援，兩件事不要混為一談</td></tr>
+<tr><td>HTTP 登入暴力破解沒有專責偵測</td><td>CRS PL1 沒有速率規則；CrowdSec 需要 access log 解析器。平台端只能靠併案計數看出重複</td></tr>
+<tr><td>Vector 到 od-bridge 用靜態 token 而非 HMAC</td><td>Vector 0.41 的 http sink 先 batch 再編碼，VRL 算不出最終 body 的簽章；8500 另有來源管制</td></tr>
+<tr><td>金鑰的 <code>allowed_source_systems</code> 未在收件時強制比對</td><td>已知未生效、優先度低；同企業多台防禦端之間採君子協定</td></tr>
+<tr><td>事件從防禦端到平台沒有離線緩衝</td><td>平台不在時事件丟失，但 ClickHouse 有全量可回查；案件本來就不是全量</td></tr>
+</tbody>
+</table>
+
+<div class="pager"><a href="04-default-vs-integrated.html">← 第 4 篇：預設 vs 整合</a><a href="index.html">回總覽</a></div>
+</div>
+</body>
+</html>

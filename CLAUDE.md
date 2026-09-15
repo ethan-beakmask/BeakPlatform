@@ -16,6 +16,7 @@
 | 頁面版面樣板庫（複製語意） | `dev-notes/PAGE_TEMPLATE_SPEC.md` |
 | 用 API 操作 NoCode 子系統的實測陷阱 | `dev-notes/codex_spec/portal.md` 尾段 |
 | 名詞對照 | `dev-notes/GLOSSARY.md` |
+| ITHome 2026 文章草稿（安裝章節＋WAF 原理圖文六篇，HTML）**正本** | `dev-notes/articles/ithome2026/`（2026-09-15 起；`/mnt/smb` 上的同名檔只是給 Ethan 看的副本，改稿一律改這裡再複製過去。文章環境固定用主機 A `192.168.0.111`／主機 B `192.168.0.112`） |
 | 跨 session 待辦與決策脈絡 | BeakBroodNest 知識庫（`note_search` / `note_get`） |
 | NoCode Builder / portal 的開發備忘 | `dev-notes/NOCODE_PORTAL_NOTES.md`、`dev-notes/PORTAL_ACCOUNT_SPEC.md` |
 | open_defense 平台側 / `.20` 資安堆疊 | `dev-notes/OPEN_DEFENSE_ARCHITECTURE.md`、`dev-notes/SEC_STACK_ARCHITECTURE.md` |

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ITHome2026-WAF 防禦節點運作原理：總覽</title>
+<style>
+:root{--ink:#1f2933;--muted:#5f6b76;--line:#cfd6dd;--soft:#f4f6f8;--head:#e9eef3;--accent:#0b5394;--warn:#b45309;--warnbg:#fff7e6;--ok:#1b6e3a;--okbg:#ecf7ee;--bad:#9b1c1c;--badbg:#fdecec}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:15px/1.7 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:26px;margin:0 0 6px;border-bottom:3px solid var(--accent);padding-bottom:8px}
+h2{font-size:21px;margin:40px 0 12px;border-left:5px solid var(--accent);padding-left:10px}
+h3{font-size:17px;margin:26px 0 8px}
+p{margin:8px 0}
+.sub{color:var(--muted);margin-bottom:18px}
+nav.toc{background:var(--soft);border:1px solid var(--line);padding:12px 18px;margin:16px 0 24px}
+nav.toc ol{margin:6px 0 0;padding-left:22px}
+nav.toc li{margin:4px 0}
+a{color:var(--accent)}
+table{border-collapse:collapse;width:100%;margin:12px 0 18px;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 10px;vertical-align:top;text-align:left}
+th{background:var(--head);font-weight:600}
+tbody tr:nth-child(even){background:#fafbfc}
+code{font-family:Consolas,"Cascadia Mono",Menlo,monospace;font-size:13px;background:#f1f3f5;padding:1px 5px;border-radius:3px}
+pre{background:#f1f3f5;border:1px solid var(--line);padding:10px 12px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+.fig{margin:16px 0 22px;border:1px solid var(--line);background:#fff;padding:10px}
+.fig svg{width:100%;height:auto;display:block}
+.cap{font-size:13px;color:var(--muted);margin-top:6px;text-align:center}
+.note{border-left:4px solid var(--accent);background:var(--soft);padding:10px 14px;margin:14px 0}
+.warn{border-left:4px solid var(--warn);background:var(--warnbg);padding:10px 14px;margin:14px 0}
+.ok{border-left:4px solid var(--ok);background:var(--okbg);padding:10px 14px;margin:14px 0}
+.bad{border-left:4px solid var(--bad);background:var(--badbg);padding:10px 14px;margin:14px 0}
+.pager{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:40px;padding-top:12px;font-size:14px}
+.tag{display:inline-block;font-size:12px;padding:1px 7px;border:1px solid var(--line);border-radius:3px;background:#fff;margin-right:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:800px){.grid2{grid-template-columns:1fr}}
+/* SVG 共用 */
+.b{fill:#fff;stroke:#334;stroke-width:1.2}
+.bs{fill:#f4f6f8;stroke:#334;stroke-width:1.2}
+.bh{fill:#e3edf7;stroke:#0b5394;stroke-width:1.4}
+.bw{fill:#fff7e6;stroke:#b45309;stroke-width:1.2}
+.bg{fill:#ecf7ee;stroke:#1b6e3a;stroke-width:1.2}
+.bd{fill:#fdecec;stroke:#9b1c1c;stroke-width:1.2}
+.zone{fill:none;stroke:#8a96a3;stroke-width:1;stroke-dasharray:6 4}
+.t{font-size:13px;fill:#1f2933}
+.ts{font-size:11.5px;fill:#5f6b76}
+.tb{font-size:13px;fill:#1f2933;font-weight:600}
+.tt{font-size:14px;fill:#0b5394;font-weight:700}
+.l{stroke:#334;stroke-width:1.6;fill:none}
+.ld{stroke:#0b5394;stroke-width:1.6;fill:none;stroke-dasharray:6 4}
+.lr{stroke:#9b1c1c;stroke-width:1.6;fill:none;stroke-dasharray:2 3}
+.lg{stroke:#8a96a3;stroke-width:1.2;fill:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>ITHome2026-WAF 防禦節點運作原理</h1>
+<p class="sub">封包從 Internet 進來之後經過哪些系統、每個系統各管什麼、以及「單獨使用這些開源元件」與「接上 BeakPlatform」之後的處理方式有什麼差別。共六篇，本篇是總覽與閱讀順序。</p>
+
+<nav class="toc">
+<strong>閱讀順序</strong>
+<ol>
+<li><a href="index.html">總覽：兩台主機、三條資料流、元件一覽</a>（本篇）</li>
+<li><a href="01-packet-path.html">封包路徑：從 Internet 到被保護網站，逐站說明</a></li>
+<li><a href="02-analyzers.html">分析系統各管什麼：nftables、WAF、Suricata、CrowdSec、Vector</a></li>
+<li><a href="03-event-to-decision.html">事件如何變成案件與決策：Vector → od-bridge → BeakPlatform → 回到防火牆</a></li>
+<li><a href="04-default-vs-integrated.html">系統預設處理 vs 與 BeakPlatform 整合後的處理</a></li>
+<li><a href="05-boundaries.html">信任邊界與盲區：誰能偽造來源、Suricata 看不到什麼、哪份資料才是全量</a></li>
+</ol>
+</nav>
+
+<h2>一、先建立全景</h2>
+
+<p>整套架構只有兩台主機，與安裝章節用同一組位址。<strong>主機 A（192.168.0.111）</strong>裝 BeakPlatform，是「管制端」：收事件、跑案件流程、記錄決策。<strong>主機 B（192.168.0.112）</strong>裝 ITHome2026-WAF 安裝包，是「防禦端」：站在被保護網站前面擋攻擊、監聽網路、把事件送出去、再把平台核可的封鎖落地到自己的防火牆。被保護的網站可以是主機 A 上的平台本身，也可以是任何一台內網網站。</p>
+
+<p>三條資料流方向不同，讀後面各篇時請隨時對照：</p>
+
+<table>
+<thead><tr><th style="width:18%">資料流</th><th style="width:22%">方向</th><th>內容</th><th style="width:16%">圖中線型</th></tr></thead>
+<tbody>
+<tr><td>請求路徑</td><td>Internet → 主機 B → 被保護網站</td><td>使用者或攻擊者的 HTTP 請求與回應。WAF 在這條線上<strong>即時</strong>放行或阻擋</td><td>實線</td></tr>
+<tr><td>事件路徑</td><td>主機 B → 主機 A</td><td>WAF 與 Suricata 的告警，經 Vector 正規化、過濾、封頂後，由 od-bridge 簽章送進平台的事件受理端點</td><td>藍色虛線</td></tr>
+<tr><td>決策路徑</td><td>主機 A → 主機 B</td><td>案件簽核產生的封鎖／解封決策。od-bridge 每 5 秒去平台拉取，落地到 nftables、CrowdSec、EDL</td><td>紅色點線</td></tr>
+</tbody>
+</table>
+
+<div class="fig">
+<svg viewBox="0 0 1100 560" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#334"/></marker>
+<marker id="arb" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#0b5394"/></marker>
+<marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#9b1c1c"/></marker>
+</defs>
+<!-- Internet / Cloudflare -->
+<rect x="20" y="40" width="150" height="70" rx="6" class="bs"/>
+<text x="95" y="68" text-anchor="middle" class="tb">Internet</text>
+<text x="95" y="90" text-anchor="middle" class="ts">訪客 / 攻擊者</text>
+<rect x="20" y="140" width="150" height="70" rx="6" class="bs"/>
+<text x="95" y="168" text-anchor="middle" class="tb">Cloudflare edge</text>
+<text x="95" y="190" text-anchor="middle" class="ts">建議；TLS 終結、Tunnel</text>
+
+<!-- Host B zone -->
+<rect x="210" y="20" width="560" height="520" rx="8" class="zone"/>
+<text x="225" y="42" class="tt">主機 B：防禦節點（ITHome2026-WAF）</text>
+<text x="225" y="60" class="ts">外殼：nftables（allowlist / blocklist / 來源管制）；容器全部由 docker compose 管理</text>
+
+<!-- cloudflared -->
+<rect x="240" y="90" width="130" height="52" rx="5" class="b"/>
+<text x="305" y="112" text-anchor="middle" class="tb">cloudflared</text>
+<text x="305" y="130" text-anchor="middle" class="ts">只出不進的 tunnel</text>
+<!-- waf -->
+<rect x="410" y="90" width="150" height="52" rx="5" class="bh"/>
+<text x="485" y="112" text-anchor="middle" class="tb">waf-nginx :8080</text>
+<text x="485" y="130" text-anchor="middle" class="ts">ModSecurity + OWASP CRS</text>
+<!-- welcome -->
+<rect x="410" y="160" width="150" height="40" rx="5" class="b"/>
+<text x="485" y="185" text-anchor="middle" class="ts">waf-welcome（歡迎頁）</text>
+<!-- suricata -->
+<rect x="240" y="220" width="130" height="52" rx="5" class="bh"/>
+<text x="305" y="242" text-anchor="middle" class="tb">Suricata</text>
+<text x="305" y="260" text-anchor="middle" class="ts">被動監聽實體網卡</text>
+<!-- vector -->
+<rect x="410" y="240" width="150" height="52" rx="5" class="b"/>
+<text x="485" y="262" text-anchor="middle" class="tb">Vector</text>
+<text x="485" y="280" text-anchor="middle" class="ts">解析 → OCSF → 過濾 → 封頂</text>
+<!-- clickhouse -->
+<rect x="600" y="240" width="150" height="52" rx="5" class="b"/>
+<text x="675" y="262" text-anchor="middle" class="tb">ClickHouse</text>
+<text x="675" y="280" text-anchor="middle" class="ts">全量事件，保留 90 天</text>
+<!-- od-bridge -->
+<rect x="410" y="330" width="150" height="52" rx="5" class="bh"/>
+<text x="485" y="352" text-anchor="middle" class="tb">od-bridge :8500</text>
+<text x="485" y="370" text-anchor="middle" class="ts">簽章轉送 / 決策落地</text>
+<!-- crowdsec -->
+<rect x="240" y="330" width="130" height="52" rx="5" class="b"/>
+<text x="305" y="352" text-anchor="middle" class="tb">CrowdSec LAPI</text>
+<text x="305" y="370" text-anchor="middle" class="ts">127.0.0.1:8081</text>
+<!-- nftables -->
+<rect x="240" y="420" width="130" height="52" rx="5" class="bd"/>
+<text x="305" y="442" text-anchor="middle" class="tb">nftables blocklist</text>
+<text x="305" y="460" text-anchor="middle" class="ts">kernel 直接 drop</text>
+<!-- EDL -->
+<rect x="410" y="420" width="150" height="52" rx="5" class="b"/>
+<text x="485" y="442" text-anchor="middle" class="tb">EDL 檔（/edl）</text>
+<text x="485" y="460" text-anchor="middle" class="ts">給外部防火牆抓的清單</text>
+<!-- UI -->
+<rect x="600" y="330" width="150" height="70" rx="5" class="bs"/>
+<text x="675" y="352" text-anchor="middle" class="tb">Grafana / EveBox</text>
+<text x="675" y="370" text-anchor="middle" class="ts">Portainer（選用 UI）</text>
+<text x="675" y="388" text-anchor="middle" class="ts">只讀 ClickHouse / eve.json</text>
+
+<!-- Host A zone -->
+<rect x="800" y="20" width="280" height="330" rx="8" class="zone"/>
+<text x="815" y="42" class="tt">主機 A：BeakPlatform（管制端）</text>
+<rect x="820" y="70" width="240" height="44" rx="5" class="b"/>
+<text x="940" y="88" text-anchor="middle" class="tb">/api/open_defense/intake</text>
+<text x="940" y="106" text-anchor="middle" class="ts">HMAC 驗簽、限流、冪等</text>
+<rect x="820" y="130" width="240" height="44" rx="5" class="b"/>
+<text x="940" y="148" text-anchor="middle" class="tb">路由規則 → 聚合降噪 → 建案</text>
+<text x="940" y="166" text-anchor="middle" class="ts">同 IP + 同規則 60 分鐘併案</text>
+<rect x="820" y="190" width="240" height="44" rx="5" class="bh"/>
+<text x="940" y="208" text-anchor="middle" class="tb">資安案件處置中心 / 簽核流程</text>
+<text x="940" y="226" text-anchor="middle" class="ts">人工 1-click 或流程自動決定</text>
+<rect x="820" y="250" width="240" height="44" rx="5" class="b"/>
+<text x="940" y="268" text-anchor="middle" class="tb">od_defense_decisions</text>
+<text x="940" y="286" text-anchor="middle" class="ts">block / unblock / allow，帶 TTL</text>
+<rect x="820" y="306" width="240" height="34" rx="5" class="bs"/>
+<text x="940" y="328" text-anchor="middle" class="ts">cron 每分鐘：到期 → 自動產生 unblock</text>
+
+<!-- Protected site -->
+<rect x="830" y="420" width="220" height="60" rx="6" class="bg"/>
+<text x="940" y="445" text-anchor="middle" class="tb">被保護的網站</text>
+<text x="940" y="465" text-anchor="middle" class="ts">內網 IP:埠（可以就是主機 A）</text>
+
+<!-- request path (solid) -->
+<path d="M95,110 L95,140" class="l" marker-end="url(#ar)"/>
+<path d="M170,175 C200,175 200,116 240,116" class="l" marker-end="url(#ar)"/>
+<path d="M370,116 L410,116" class="l" marker-end="url(#ar)"/>
+<path d="M560,116 C700,116 720,450 830,450" class="l" marker-end="url(#ar)"/>
+<text x="705" y="200" class="ts">代理到後端（明文 HTTP，經實體網卡）</text>
+<!-- LAN direct -->
+<path d="M485,20 L485,90" class="lg" marker-end="url(#ar)"/>
+<text x="500" y="80" class="ts">內網直打 :8080（驗證用）</text>
+
+<!-- suricata taps the NIC -->
+<path d="M305,220 L305,150" class="lg"/>
+<text x="230" y="205" class="ts">看得到經過實體網卡的封包</text>
+
+<!-- event path (blue dashed) -->
+<path d="M370,252 L410,262" class="ld" marker-end="url(#arb)"/>
+<path d="M485,142 L485,240" class="ld" marker-end="url(#arb)"/>
+<text x="495" y="225" class="ts">audit.log</text>
+<path d="M560,266 L600,266" class="ld" marker-end="url(#arb)"/>
+<path d="M485,292 L485,330" class="ld" marker-end="url(#arb)"/>
+<path d="M560,345 C700,345 720,92 820,92" class="ld" marker-end="url(#arb)"/>
+<text x="600" y="315" class="ts">HMAC 簽章事件</text>
+
+<!-- decision path (red dotted) -->
+<path d="M820,272 C740,272 700,372 560,372" class="lr" marker-end="url(#arr)"/>
+<text x="620" y="415" class="ts">每 5 秒拉取 pending 決策</text>
+<path d="M410,360 L370,352" class="lr" marker-end="url(#arr)"/>
+<path d="M430,382 L340,420" class="lr" marker-end="url(#arr)"/>
+<path d="M485,382 L485,420" class="lr" marker-end="url(#arr)"/>
+
+<!-- legend -->
+<rect x="20" y="470" width="180" height="70" rx="4" class="bs"/>
+<path d="M30,486 L60,486" class="l"/><text x="66" y="490" class="ts">請求路徑</text>
+<path d="M30,506 L60,506" class="ld"/><text x="66" y="510" class="ts">事件路徑（B → A）</text>
+<path d="M30,526 L60,526" class="lr"/><text x="66" y="530" class="ts">決策路徑（A → B）</text>
+</svg>
+<div class="cap">圖 0-1　兩台主機與三條資料流。事件是「推」上去的，決策是「拉」回來的，主機 B 不需要對主機 A 開任何入站埠。</div>
+</div>
+
+<div class="note">
+<strong>兩個常被誤會的方向。</strong>第一，決策不是平台「推」到防禦端，而是防禦端主動輪詢；所以防禦端不必對外開任何接收埠，平台被入侵也無法直接對防禦端下指令。第二，Suricata 不在請求路徑上，它是旁路監聽，永遠不會擋任何封包；真正即時阻擋的只有 WAF（HTTP 層）與 nftables（IP 層）。
+</div>
+
+<h2>二、元件一覽：誰在哪一層、負責什麼</h2>
+
+<table>
+<thead><tr><th style="width:15%">元件</th><th style="width:10%">層</th><th style="width:12%">在請求路徑上？</th><th>負責什麼</th><th style="width:18%">產出</th></tr></thead>
+<tbody>
+<tr><td>Cloudflare（建議的對外入口）</td><td>邊緣</td><td>是</td><td>TLS 終結、DNS 代理、Tunnel 對外入口；依方案另有 DDoS 與受管 WAF 規則。Cloudflare 服務本身是外部服務，但安裝包內含 cloudflared 連接器與 <code>cf_tunnel.py</code> 自動設定，完整支援；不用它也能以內網路徑運作</td><td>請求標頭 <code>CF-Connecting-IP</code>、<code>Cf-Ipcountry</code></td></tr>
+<tr><td>cloudflared</td><td>傳輸</td><td>是</td><td>從主機 B 主動連出到 Cloudflare 建立 tunnel，把對外 hostname 的流量帶進 docker 網段交給 WAF</td><td>無</td></tr>
+<tr><td>nftables</td><td>L3/L4</td><td>是（最外層）</td><td>依來源 IP 放行或丟棄：自鎖保險 allowlist、封鎖 blocklist、ingest 面與管理面的來源管制</td><td>kernel 計數器</td></tr>
+<tr><td>WAF：nginx + ModSecurity v3 + OWASP CRS</td><td>L7 HTTP</td><td>是（inline）</td><td>檢查請求與回應內容，異常分數達門檻即回 403；正常請求轉給後端</td><td>JSON audit log（只記有命中或 4xx/5xx 的交易）</td></tr>
+<tr><td>Suricata</td><td>L3–L7</td><td>否（旁路）</td><td>以 Emerging Threats Open 規則比對實體網卡上的封包與應用層協定（HTTP、DNS、TLS）</td><td><code>eve.json</code> 告警</td></tr>
+<tr><td>CrowdSec</td><td>行為</td><td>否</td><td>依情境（scenario）看時間軸上的重複行為，例如 SSH 暴力破解；LAPI 同時是平台決策的第二份落地點</td><td>LAPI 決策清單</td></tr>
+<tr><td>Vector</td><td>資料管線</td><td>否</td><td>讀 eve.json 與 audit.log，轉成 OCSF 格式，判定攻擊者 IP 可不可信，過濾內網對內網與低嚴重度，分來源與全域封頂</td><td>兩路輸出：ClickHouse（全量）、od-bridge（篩過）</td></tr>
+<tr><td>ClickHouse</td><td>儲存</td><td>否</td><td>一張寬表存全部事件，90 天 TTL；每分鐘彙總視圖供 Grafana</td><td>可查詢的事件湖</td></tr>
+<tr><td>od-bridge（本專案自寫）</td><td>橋接</td><td>否</td><td>把事件加 HMAC 簽章送到平台；用服務帳號拉決策，落地到 nftables、CrowdSec、EDL，回報結果</td><td>EDL 檔、狀態頁 <code>/stats</code></td></tr>
+<tr><td>BeakPlatform（主機 A）</td><td>管制</td><td>否</td><td>驗簽收事件、路由到案件類型、併案降噪、走簽核流程、寫決策、到期自動解封、保護清單擋誤封</td><td>案件、決策、稽核紀錄、平台端 EDL</td></tr>
+<tr><td>Grafana / EveBox / Portainer（選用）</td><td>檢視</td><td>否</td><td>儀表板、Suricata 告警瀏覽、容器管理。全靠來源 IP 管制，EveBox 與 Vector API 無認證</td><td>畫面</td></tr>
+</tbody>
+</table>
+
+<h2>三、白名單在哪裡</h2>
+
+<p>企業對白名單的重視不亞於黑名單：誰永遠不能被封、誰可以連管理介面、誰說的來源 IP 才算數。這套架構的白名單散在八個地方，各管一件事，這裡集中列出，後面各篇提到時會註明是哪一份。</p>
+
+<table>
+<thead><tr><th style="width:5%">#</th><th style="width:22%">白名單</th><th style="width:16%">在哪裡設定</th><th>管什麼</th><th style="width:20%">在鏈上的位置</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>nftables <code>allowlist</code>（自鎖保險）</td><td>主機 B <code>.env</code> 的 <code>ADMIN_IPS</code> 與 <code>BEAK_BASE_URL</code>，由 <code>nftables.sh</code> 產生</td><td>命中者在 <code>input</code> chain 最前面 accept，<strong>永遠不會被封鎖決策鎖死</strong>。內容是平台主機與管理來源</td><td>主機 B 最外層，第 1 篇第三節、第 5 篇第三節</td></tr>
+<tr><td>2</td><td>nftables 來源管制（ingest 面、管理面、SSH）</td><td>同上</td><td>誰能連 8080／8082／8688／8500，誰能連 Grafana、EveBox、Vector API、Portainer，開 <code>--ssh-guard</code> 時誰能 SSH。不在名單內的連線逾時而不是 403</td><td>主機 B 最外層，第 1 篇第三節</td></tr>
+<tr><td>3</td><td>Vector 歸因可信來源 <code>TRUSTED_INGRESS_LIST</code></td><td>主機 B <code>.env</code>（預設只有 cloudflared 的 <code>172.18.0.250</code>，可用 <code>TRUSTED_INGRESS_EXTRA</code> 加）</td><td>只有名單內的直連來源送來的 <code>CF-Connecting-IP</code>／XFF 才被採信為攻擊者 IP，其餘「誰打的記誰」</td><td>Vector 正規化階段，第 5 篇第一節</td></tr>
+<tr><td>4</td><td>EDL 白名單 <code>:8500/edl/allow</code></td><td>由平台「放行」決策（<code>action=allow</code>）落地，od-bridge 渲染成 <code>allowlist.txt</code></td><td>給外部防火牆抓的允許清單，放在 deny 規則之上；與黑名單同格式、同 TTL 機制</td><td>決策落地後，第 3 篇第二節</td></tr>
+<tr><td>5</td><td>平台端「封鎖保護清單」</td><td>平台管理頁「開放防禦 → 封鎖保護清單」（表 <code>od_protected_targets</code>）＋平台 <code>.env</code> 的 <code>OD_PROTECTED_EXTRA_NETWORKS</code>、<code>TRUSTED_PROXY_IPS</code></td><td><strong>不得封鎖</strong>的網段：出廠 16 條（RFC1918、回送、CGNAT 等）＋企業自訂（辦公室對外 IP、分公司、合作廠商）；另可加「豁免」讓特定內網主機可封。任何流程寫 block 前都會比對，命中即拒寫</td><td>平台 DecisionWriter 寫入前，第 3 篇第三節、第 5 篇第三節</td></tr>
+<tr><td>6</td><td>API Key 的來源系統白名單</td><td>平台「安全中心 → API Key」的 scope <code>od_intake.source_systems</code></td><td>這把金鑰可以送哪些 <code>source_system</code> 的事件，不在名單內 403</td><td>平台 intake 驗簽後，第 3 篇第三節</td></tr>
+<tr><td>7</td><td>ClickHouse 帳號層網路白名單</td><td>主機 B <code>generated/clickhouse-network-allowlist.xml</code>（由 <code>.env</code> 產生）</td><td>哪些來源能用 <code>secstack</code> 帳號查事件庫：本機、docker 網段、ADMIN_IPS、平台主機</td><td>事件湖存取，第 2 篇第五節</td></tr>
+<tr><td>8</td><td>WAF 規則放寬（路徑層白名單）</td><td>主機 B <code>waf/modsec-overrides/modsecurity-override.conf</code>（範例規則 900300，預設註解）</td><td>對特定路徑移除某些 CRS 規則的檢查目標（例如允許已登入使用者輸入程式碼片段的 API），URL、標頭、cookie 仍照常檢查</td><td>WAF 請求階段，第 2 篇第二節</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+兩個容易誤會的：第 1 條只救「直連主機 B 本機程序」的流量，開了 <code>--ssh-guard</code> 又把自己排除在 ADMIN_IPS 外時它救不了 SSH；第 5 條在平台端做一次，防禦端不帶本地副本，所以改了保護清單不必動主機 B。CrowdSec 也有內建 whitelist，出廠只含本機回送位址，本架構沒有另外擴充。
+</div>
+
+<h2>四、一句話版本的運作原理</h2>
+
+<p>攻擊進來時，<strong>WAF 當場擋掉</strong>，這件事不需要平台。平台介入的是「擋掉之後」：把這次攻擊變成一張<strong>有人負責、有時限、有紀錄</strong>的案件，由人或流程決定要不要進一步封鎖來源 IP，封多久，然後把決定<strong>落地到防火牆</strong>，到期再<strong>自動解除</strong>。單獨使用這些開源元件時，前半段一樣會發生，後半段完全不存在。</p>
+
+<p>後面五篇依序展開：封包經過哪些站（第 1 篇）、每一站看什麼（第 2 篇）、告警怎麼變成決策再回來（第 3 篇）、有沒有平台差在哪（第 4 篇）、這套設計信任誰、看不到什麼（第 5 篇）。</p>
+
+<div class="pager"><span></span><a href="01-packet-path.html">下一篇：封包路徑 →</a></div>
+</div>
+</body>
+</html>

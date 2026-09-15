@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 1 篇　封包路徑：從 Internet 到被保護網站</title>
+<style>
+:root{--ink:#1f2933;--muted:#5f6b76;--line:#cfd6dd;--soft:#f4f6f8;--head:#e9eef3;--accent:#0b5394;--warn:#b45309;--warnbg:#fff7e6;--ok:#1b6e3a;--okbg:#ecf7ee;--bad:#9b1c1c;--badbg:#fdecec}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:15px/1.7 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:26px;margin:0 0 6px;border-bottom:3px solid var(--accent);padding-bottom:8px}
+h2{font-size:21px;margin:40px 0 12px;border-left:5px solid var(--accent);padding-left:10px}
+h3{font-size:17px;margin:26px 0 8px}
+p{margin:8px 0}
+.sub{color:var(--muted);margin-bottom:18px}
+a{color:var(--accent)}
+table{border-collapse:collapse;width:100%;margin:12px 0 18px;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 10px;vertical-align:top;text-align:left}
+th{background:var(--head);font-weight:600}
+tbody tr:nth-child(even){background:#fafbfc}
+code{font-family:Consolas,"Cascadia Mono",Menlo,monospace;font-size:13px;background:#f1f3f5;padding:1px 5px;border-radius:3px}
+pre{background:#f1f3f5;border:1px solid var(--line);padding:10px 12px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+.fig{margin:16px 0 22px;border:1px solid var(--line);background:#fff;padding:10px}
+.fig svg{width:100%;height:auto;display:block}
+.cap{font-size:13px;color:var(--muted);margin-top:6px;text-align:center}
+.note{border-left:4px solid var(--accent);background:var(--soft);padding:10px 14px;margin:14px 0}
+.warn{border-left:4px solid var(--warn);background:var(--warnbg);padding:10px 14px;margin:14px 0}
+.ok{border-left:4px solid var(--ok);background:var(--okbg);padding:10px 14px;margin:14px 0}
+.bad{border-left:4px solid var(--bad);background:var(--badbg);padding:10px 14px;margin:14px 0}
+.pager{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:40px;padding-top:12px;font-size:14px}
+.b{fill:#fff;stroke:#334;stroke-width:1.2}
+.bs{fill:#f4f6f8;stroke:#334;stroke-width:1.2}
+.bh{fill:#e3edf7;stroke:#0b5394;stroke-width:1.4}
+.bw{fill:#fff7e6;stroke:#b45309;stroke-width:1.2}
+.bg{fill:#ecf7ee;stroke:#1b6e3a;stroke-width:1.2}
+.bd{fill:#fdecec;stroke:#9b1c1c;stroke-width:1.2}
+.zone{fill:none;stroke:#8a96a3;stroke-width:1;stroke-dasharray:6 4}
+.t{font-size:13px;fill:#1f2933}
+.ts{font-size:11.5px;fill:#5f6b76}
+.tb{font-size:13px;fill:#1f2933;font-weight:600}
+.tt{font-size:14px;fill:#0b5394;font-weight:700}
+.num{font-size:12px;fill:#fff;font-weight:700}
+.l{stroke:#334;stroke-width:1.6;fill:none}
+.ld{stroke:#0b5394;stroke-width:1.6;fill:none;stroke-dasharray:6 4}
+.lr{stroke:#9b1c1c;stroke-width:1.6;fill:none;stroke-dasharray:2 3}
+.lg{stroke:#8a96a3;stroke-width:1.2;fill:none}
+.eye{fill:#ecf7ee;stroke:#1b6e3a}
+.noeye{fill:#fdecec;stroke:#9b1c1c}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>第 1 篇　封包路徑：從 Internet 到被保護網站</h1>
+<p class="sub">一個 HTTP 請求從攻擊者的瀏覽器出發，到被保護網站回應為止，依序經過哪些站、每一站看到的「來源 IP」是誰、哪一站有能力把它擋下來。</p>
+
+<h2>一、對外公開時的完整路徑（經 Cloudflare Tunnel）</h2>
+
+<div class="fig">
+<svg viewBox="0 0 1100 640" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#334"/></marker>
+<marker id="arg" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8a96a3"/></marker>
+</defs>
+
+<!-- station boxes row -->
+<g>
+<rect x="20" y="60" width="120" height="76" rx="6" class="bs"/>
+<circle cx="32" cy="72" r="10" fill="#334"/><text x="32" y="76" text-anchor="middle" class="num">1</text>
+<text x="80" y="92" text-anchor="middle" class="tb">攻擊者</text>
+<text x="80" y="110" text-anchor="middle" class="ts">查 DNS 得到</text>
+<text x="80" y="124" text-anchor="middle" class="ts">Cloudflare 的 IP</text>
+
+<rect x="170" y="60" width="130" height="76" rx="6" class="bs"/>
+<circle cx="182" cy="72" r="10" fill="#334"/><text x="182" y="76" text-anchor="middle" class="num">2</text>
+<text x="235" y="92" text-anchor="middle" class="tb">Cloudflare edge</text>
+<text x="235" y="110" text-anchor="middle" class="ts">TLS 終結，加上</text>
+<text x="235" y="124" text-anchor="middle" class="ts">CF-Connecting-IP</text>
+
+<rect x="330" y="60" width="130" height="76" rx="6" class="b"/>
+<circle cx="342" cy="72" r="10" fill="#334"/><text x="342" y="76" text-anchor="middle" class="num">3</text>
+<text x="395" y="92" text-anchor="middle" class="tb">cloudflared</text>
+<text x="395" y="110" text-anchor="middle" class="ts">tunnel 是主機 B</text>
+<text x="395" y="124" text-anchor="middle" class="ts">主動連出去的</text>
+
+<rect x="490" y="60" width="150" height="76" rx="6" class="bh"/>
+<circle cx="502" cy="72" r="10" fill="#0b5394"/><text x="502" y="76" text-anchor="middle" class="num">4</text>
+<text x="565" y="92" text-anchor="middle" class="tb">waf-nginx</text>
+<text x="565" y="110" text-anchor="middle" class="ts">ModSecurity 檢查</text>
+<text x="565" y="124" text-anchor="middle" class="ts">命中即 403</text>
+
+<rect x="670" y="60" width="130" height="76" rx="6" class="bs"/>
+<circle cx="682" cy="72" r="10" fill="#334"/><text x="682" y="76" text-anchor="middle" class="num">5</text>
+<text x="735" y="92" text-anchor="middle" class="tb">主機 B 實體網卡</text>
+<text x="735" y="110" text-anchor="middle" class="ts">docker SNAT 後</text>
+<text x="735" y="124" text-anchor="middle" class="ts">轉往後端</text>
+
+<rect x="830" y="60" width="130" height="76" rx="6" class="bg"/>
+<circle cx="842" cy="72" r="10" fill="#1b6e3a"/><text x="842" y="76" text-anchor="middle" class="num">6</text>
+<text x="895" y="92" text-anchor="middle" class="tb">被保護網站</text>
+<text x="895" y="110" text-anchor="middle" class="ts">看到來源是</text>
+<text x="895" y="124" text-anchor="middle" class="ts">主機 B 的 IP</text>
+
+<path d="M140,98 L170,98" class="l" marker-end="url(#ar)"/>
+<path d="M300,98 L330,98" class="l" marker-end="url(#ar)"/>
+<path d="M460,98 L490,98" class="l" marker-end="url(#ar)"/>
+<path d="M640,98 L670,98" class="l" marker-end="url(#ar)"/>
+<path d="M800,98 L830,98" class="l" marker-end="url(#ar)"/>
+</g>
+
+<!-- zones under -->
+<rect x="320" y="45" width="330" height="105" rx="6" class="zone"/>
+<text x="330" y="165" class="ts">docker 網段 secstack（cloudflared → waf-nginx 這一跳不經過實體網卡）</text>
+<rect x="15" y="45" width="295" height="105" rx="6" class="zone"/>
+<text x="20" y="165" class="ts">Internet（加密 HTTPS）</text>
+<rect x="660" y="45" width="310" height="105" rx="6" class="zone"/>
+<text x="665" y="165" class="ts">主機 B 實體網卡 → 內網（明文 HTTP）</text>
+
+<!-- Row: what each station knows as client IP -->
+<text x="20" y="215" class="tt">每一站認得的「客戶端 IP」</text>
+<rect x="20" y="228" width="120" height="50" rx="4" class="b"/><text x="80" y="249" text-anchor="middle" class="ts">自己的公網 IP</text><text x="80" y="266" text-anchor="middle" class="ts">203.0.113.42（範例）</text>
+<rect x="170" y="228" width="130" height="50" rx="4" class="b"/><text x="235" y="249" text-anchor="middle" class="ts">TCP 來源＝攻擊者</text><text x="235" y="266" text-anchor="middle" class="ts">寫進 CF-Connecting-IP</text>
+<rect x="330" y="228" width="130" height="50" rx="4" class="b"/><text x="395" y="249" text-anchor="middle" class="ts">不在意來源</text><text x="395" y="266" text-anchor="middle" class="ts">只依 hostname/path 轉</text>
+<rect x="490" y="228" width="150" height="50" rx="4" class="b"/><text x="565" y="249" text-anchor="middle" class="ts">client_ip＝cloudflared</text><text x="565" y="266" text-anchor="middle" class="ts">172.18.0.250（刻意）</text>
+<rect x="670" y="228" width="130" height="50" rx="4" class="b"/><text x="735" y="249" text-anchor="middle" class="ts">封包來源＝主機 B</text><text x="735" y="266" text-anchor="middle" class="ts">仍帶 CF-Connecting-IP</text>
+<rect x="830" y="228" width="130" height="50" rx="4" class="b"/><text x="895" y="249" text-anchor="middle" class="ts">REMOTE_ADDR＝主機 B</text><text x="895" y="266" text-anchor="middle" class="ts">要真 IP 得讀標頭</text>
+
+<!-- Row: who can block -->
+<text x="20" y="315" class="tt">哪一站能擋</text>
+<rect x="20" y="328" width="120" height="40" rx="4" class="bs"/><text x="80" y="353" text-anchor="middle" class="ts">—</text>
+<rect x="170" y="328" width="130" height="40" rx="4" class="bw"/><text x="235" y="353" text-anchor="middle" class="ts">依方案（DDoS 等）</text>
+<rect x="330" y="328" width="130" height="40" rx="4" class="bs"/><text x="395" y="353" text-anchor="middle" class="ts">不檢查內容</text>
+<rect x="490" y="328" width="150" height="40" rx="4" class="bd"/><text x="565" y="353" text-anchor="middle" class="ts">是：異常分數 ≥ 5 → 403</text>
+<rect x="670" y="328" width="130" height="40" rx="4" class="bs"/><text x="735" y="353" text-anchor="middle" class="ts">nftables 在此，但見下表</text>
+<rect x="830" y="328" width="130" height="40" rx="4" class="bs"/><text x="895" y="353" text-anchor="middle" class="ts">應用程式自己的檢查</text>
+
+<!-- Row: who sees (Suricata) -->
+<text x="20" y="405" class="tt">Suricata 看得到嗎（它監聽實體網卡）</text>
+<rect x="20" y="418" width="120" height="40" rx="4" class="noeye"/><text x="80" y="443" text-anchor="middle" class="ts">看不到</text>
+<rect x="170" y="418" width="130" height="40" rx="4" class="noeye"/><text x="235" y="443" text-anchor="middle" class="ts">看不到（HTTPS）</text>
+<rect x="330" y="418" width="130" height="40" rx="4" class="noeye"/><text x="395" y="443" text-anchor="middle" class="ts">只看到加密的 tunnel</text>
+<rect x="490" y="418" width="150" height="40" rx="4" class="noeye"/><text x="565" y="443" text-anchor="middle" class="ts">看不到（docker 網段）</text>
+<rect x="670" y="418" width="130" height="40" rx="4" class="eye"/><text x="735" y="443" text-anchor="middle" class="ts">看得到，明文 HTTP</text>
+<rect x="830" y="418" width="130" height="40" rx="4" class="eye"/><text x="895" y="443" text-anchor="middle" class="ts">看得到回應</text>
+
+<!-- Row: logs produced -->
+<text x="20" y="495" class="tt">留下什麼紀錄</text>
+<rect x="20" y="508" width="120" height="50" rx="4" class="bs"/><text x="80" y="537" text-anchor="middle" class="ts">—</text>
+<rect x="170" y="508" width="130" height="50" rx="4" class="bs"/><text x="235" y="530" text-anchor="middle" class="ts">Cloudflare 後台</text><text x="235" y="546" text-anchor="middle" class="ts">（不進本系統）</text>
+<rect x="330" y="508" width="130" height="50" rx="4" class="bs"/><text x="395" y="537" text-anchor="middle" class="ts">容器 log</text>
+<rect x="490" y="508" width="150" height="50" rx="4" class="bh"/><text x="565" y="530" text-anchor="middle" class="ts">audit.log（JSON）</text><text x="565" y="546" text-anchor="middle" class="ts">只記命中或 4xx/5xx</text>
+<rect x="670" y="508" width="130" height="50" rx="4" class="bh"/><text x="735" y="530" text-anchor="middle" class="ts">eve.json 告警</text><text x="735" y="546" text-anchor="middle" class="ts">src_ip 已換成真 IP</text>
+<rect x="830" y="508" width="130" height="50" rx="4" class="bs"/><text x="895" y="537" text-anchor="middle" class="ts">網站自己的 log</text>
+
+<text x="20" y="600" class="ts">兩份紀錄（audit.log、eve.json）是後續整條事件鏈的唯一輸入。Cloudflare 後台的紀錄與網站自己的 log 都不會進入本系統。</text>
+</svg>
+<div class="cap">圖 1-1　經 Cloudflare Tunnel 的請求路徑，以及每一站認得的客戶端 IP、能不能擋、Suricata 看不看得到、留下什麼紀錄。</div>
+</div>
+
+<p>圖中的攻擊者位址 <code>203.0.113.42</code> 不是真實 IP：<code>203.0.113.0/24</code> 是 RFC 5737 保留給文件範例用的 TEST-NET-3，不會出現在 Internet 路由上。安裝包的 <code>--test-event</code> 送的測試事件也用這個位址，而平台的保護清單刻意不把它列為受保護網段，正是為了讓端對端驗證能拿它當「公網攻擊者」走完整圈。</p>
+
+<div class="note">
+<strong>Cloudflare 是建議的對外方式，本架構完整支援。</strong>安裝包內含 cloudflared 服務（compose profile <code>tunnel</code>）與 <code>cf_tunnel.py</code>（用 Cloudflare API 自動建 tunnel、ingress 與 DNS），安裝時給 <code>--cf-api-token</code> 與 <code>--cf-hostname</code> 就完成；沒有網域時也可以在 Zero Trust 後台手動建 tunnel。不用 Cloudflare 也能運作，第二節的內網直打路徑就是，差別只在對外入口與攻擊者 IP 的歸因來源。
+</div>
+
+<h3>逐站說明</h3>
+
+<table>
+<thead><tr><th style="width:6%">站</th><th style="width:16%">位置</th><th>發生什麼事</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>攻擊者</td><td>對外 hostname 的 DNS 記錄是 CNAME 到 <code>&lt;tunnel id&gt;.cfargotunnel.com</code> 且由 Cloudflare 代理，解析到的是 Cloudflare 的 anycast IP。<strong>攻擊者從頭到尾拿不到主機 B 的 IP</strong>，主機 B 也沒有對 Internet 開任何入站埠。</td></tr>
+<tr><td>2</td><td>Cloudflare edge</td><td>終結 TLS，把真實來源寫進 <code>CF-Connecting-IP</code>、國別寫進 <code>Cf-Ipcountry</code>，並依帳戶方案套用 DDoS 與受管 WAF 規則（這部分不屬本安裝包）。然後把明文 HTTP 塞進 tunnel。</td></tr>
+<tr><td>3</td><td>cloudflared 容器</td><td>tunnel 是 cloudflared <strong>從主機 B 主動連出去</strong>的長連線（QUIC 或 HTTP/2），Cloudflare 把請求沿這條既有連線送回來。cloudflared 依 ingress 規則轉發：hostname 與路徑前綴符合被保護網站的送 <code>http://waf-nginx:8080</code>，其餘路徑送 <code>http://waf-welcome:8080</code>（歡迎頁，有自己獨立的 WAF）。這一跳走 docker 內部網段，不經過實體網卡。</td></tr>
+<tr><td>4</td><td>waf-nginx 容器</td><td>nginx 收到明文 HTTP，交給 ModSecurity 依 OWASP CRS 在四個階段檢查（請求標頭、請求本文、回應標頭、回應本文）。累計異常分數達 5 即回 403，不再往後送；沒達門檻就 <code>proxy_pass</code> 到 <code>--backend</code> 指定的網站，並帶上 <code>X-Real-IP</code>、<code>X-Forwarded-For</code>、<code>X-Forwarded-Proto</code>，原始標頭（含 <code>CF-Connecting-IP</code>）也一併轉過去。<br>nginx 的 real_ip 模組刻意設成永遠不會匹配的值，所以 ModSecurity 記下的 <code>client_ip</code> 是直連它的對象（cloudflared 的固定 IP <code>172.18.0.250</code>），這是後面 Vector 判斷「標頭可不可信」的依據，見<a href="05-boundaries.html">第 5 篇</a>。</td></tr>
+<tr><td>5</td><td>主機 B 實體網卡</td><td>容器對外連線經 docker 的 MASQUERADE，封包來源變成主機 B 自己的 IP，從實體網卡送往內網的後端。<strong>這是 Suricata 唯一看得到這次請求的位置</strong>。Suricata 設定了 XFF 覆寫（<code>mode: overwrite</code>、<code>header: CF-Connecting-IP</code>），告警裡的 <code>src_ip</code> 會被換成標頭裡的真實攻擊者，而不是主機 B。</td></tr>
+<tr><td>6</td><td>被保護網站</td><td>看到的 TCP 來源是主機 B；要知道真實訪客得讀 <code>X-Forwarded-For</code> 或 <code>CF-Connecting-IP</code>。回應原路回去，經過 WAF 的第 3、4 階段（回應檢查：異常分數門檻 4，抓 SQL 錯誤訊息、原始碼外洩之類），再經 tunnel 回到 Cloudflare、回到攻擊者。</td></tr>
+</tbody>
+</table>
+
+<div class="warn">
+<strong>被 WAF 擋下的請求，Suricata 看不到。</strong>403 在第 4 站就回頭了，永遠不會走到第 5 站的實體網卡。所以「同一次 SQL injection 同時有 WAF 事件與 Suricata 事件」只在 WAF 放行時才可能發生。反過來，Suricata 對第 5 站看到的是「WAF 已經放行的請求」，它抓到的東西通常是 CRS 沒涵蓋的型態（掃描器指紋、惡意 User-Agent、特定 CVE 特徵）或後端回應中的異常。
+</div>
+
+<h2>二、內網直打的路徑（安裝後驗證用）</h2>
+
+<p>沒有網域或還沒接 Cloudflare 時，從內網直接打 <code>http://&lt;主機 B&gt;:8080</code> 也會經過 WAF。路徑短很多，但多了兩件事：nftables 的來源管制，以及 Suricata 會看到兩次。</p>
+
+<div class="fig">
+<svg viewBox="0 0 1100 300" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="ar2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#334"/></marker></defs>
+<rect x="20" y="60" width="130" height="70" rx="6" class="bs"/>
+<text x="85" y="90" text-anchor="middle" class="tb">內網測試機</text>
+<text x="85" y="110" text-anchor="middle" class="ts">curl 主機B:8080</text>
+
+<rect x="200" y="60" width="150" height="70" rx="6" class="bs"/>
+<text x="275" y="84" text-anchor="middle" class="tb">主機 B 實體網卡</text>
+<text x="275" y="102" text-anchor="middle" class="ts">Suricata 第一次看到</text>
+<text x="275" y="118" text-anchor="middle" class="ts">來源＝測試機</text>
+
+<rect x="400" y="60" width="160" height="70" rx="6" class="bd"/>
+<text x="480" y="84" text-anchor="middle" class="tb">nftables ingest_guard</text>
+<text x="480" y="102" text-anchor="middle" class="ts">8080 只放行平台主機</text>
+<text x="480" y="118" text-anchor="middle" class="ts">與 ADMIN_IPS，其餘 drop</text>
+
+<rect x="610" y="60" width="150" height="70" rx="6" class="bh"/>
+<text x="685" y="84" text-anchor="middle" class="tb">waf-nginx</text>
+<text x="685" y="102" text-anchor="middle" class="ts">docker DNAT 進來</text>
+<text x="685" y="118" text-anchor="middle" class="ts">client_ip＝docker 網關</text>
+
+<rect x="810" y="60" width="150" height="70" rx="6" class="bs"/>
+<text x="885" y="84" text-anchor="middle" class="tb">實體網卡 → 後端</text>
+<text x="885" y="102" text-anchor="middle" class="ts">Suricata 第二次看到</text>
+<text x="885" y="118" text-anchor="middle" class="ts">來源＝主機 B</text>
+
+<path d="M150,95 L200,95" class="l" marker-end="url(#ar2)"/>
+<path d="M350,95 L400,95" class="l" marker-end="url(#ar2)"/>
+<path d="M560,95 L610,95" class="l" marker-end="url(#ar2)"/>
+<path d="M760,95 L810,95" class="l" marker-end="url(#ar2)"/>
+
+<rect x="20" y="170" width="940" height="100" rx="6" class="bw"/>
+<text x="35" y="195" class="tb">為什麼 8080 要管來源</text>
+<text x="35" y="218" class="ts">Suricata 的 XFF 覆寫與 Vector 的歸因都會讀 CF-Connecting-IP 標頭。能直連 8080 的人只要自帶這個標頭，就能把「攻擊者 IP」填成任意第三方位址，</text>
+<text x="35" y="238" class="ts">再讓平台去封它。所以 8080（與 8082 歡迎頁、8688 Vector 注入口）只放行平台主機與 ADMIN_IPS；來自 cloudflared 的流量走 docker 內部網段，不受這條規則影響。</text>
+<text x="35" y="258" class="ts">同一次攻擊在這條路徑會被 Suricata 看到兩次（進來一次、轉出一次），到了平台會因為同 IP、同規則而併成一案。</text>
+</svg>
+<div class="cap">圖 1-2　內網直打 8080 的路徑。nftables 在這裡是第一道門，Suricata 會在請求進來與轉出時各看到一次。</div>
+</div>
+
+<h2>三、nftables 在路徑上的實際位置</h2>
+
+<p>nftables 是主機 B 最外層，但它有兩個 hook，管的對象不同。這件事決定了「封鎖清單到底擋得住什麼」，第 5 篇會再回來談。</p>
+
+<table>
+<thead><tr><th style="width:22%">nftables chain</th><th style="width:14%">hook</th><th style="width:30%">管到的流量</th><th>規則內容</th></tr></thead>
+<tbody>
+<tr><td><code>input</code></td><td>input，priority -100</td><td>目的地是主機 B 本機程序的封包：SSH、od-bridge 8500、任何 host network 的服務</td><td>來源在 <code>allowlist</code>（平台主機、ADMIN_IPS）一律 accept；來源在 <code>blocklist</code> / <code>blocklist6</code> 一律 drop。<strong>封鎖決策落地的就是這兩個 set</strong></td></tr>
+<tr><td><code>ingest_guard_forward</code></td><td>forward，priority -150</td><td>docker 發布的埠（經 DNAT 後走 forward）：8080、8082、8688</td><td>從實體網卡進來的，只放行平台主機與 ADMIN_IPS，其餘 drop。非實體網卡（lo、docker bridge）一律 accept</td></tr>
+<tr><td><code>ingest_guard_input</code></td><td>input，priority -150</td><td>od-bridge 8500（host network）</td><td>同上</td></tr>
+<tr><td><code>mgmt_guard_forward</code></td><td>forward，priority -150</td><td>3000 Grafana、5636 EveBox、8686 Vector API、9443 Portainer</td><td>只放行 ADMIN_IPS，其餘 drop 並計數</td></tr>
+<tr><td><code>ssh_guard_input</code>（選用）</td><td>input，priority -150</td><td>22</td><td><code>--ssh-guard</code> 才啟用：只放行 ADMIN_IPS，其餘 drop 並記 log。priority 比自鎖保險的 -100 更早，<strong>allowlist 救不了它</strong>，鎖到自己只能從主控台救</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<strong>docker 的 nat / filter 表由 docker 自己管</strong>，安裝包刻意只重建 <code>inet secstack</code> 一張表、不 flush 整個 ruleset，否則會打斷所有 port forwarding。重建表會清空 blocklist，所以腳本會先把現有元素（含剩餘 timeout）記下來再補回去。
+</div>
+
+<h2>四、時間軸：一次 SQL injection 走完全程要多久</h2>
+
+<table>
+<thead><tr><th style="width:18%">時間點</th><th style="width:22%">位置</th><th>事件</th></tr></thead>
+<tbody>
+<tr><td>t + 0 ms</td><td>攻擊者 → Cloudflare</td><td>送出 <code>GET /?id=1' OR 1=1--</code></td></tr>
+<tr><td>t + 數十 ms</td><td>cloudflared → waf-nginx</td><td>請求進入 ModSecurity 第 1、2 階段；CRS 942 系列（SQLi）命中，異常分數超過 5</td></tr>
+<tr><td>t + 數十 ms</td><td>waf-nginx → 攻擊者</td><td><strong>回 403。到這裡攻擊已經被擋，平台完全沒有參與</strong></td></tr>
+<tr><td>t + 數十 ms</td><td>waf-nginx</td><td>第 5 階段寫 audit.log（JSON 一行，含命中的規則、請求標頭、client_ip）</td></tr>
+<tr><td>t + 1～2 秒</td><td>Vector</td><td>讀到新行，解析、轉 OCSF、判斷歸因、過過濾與封頂（第 3 篇）</td></tr>
+<tr><td>t + 2～3 秒</td><td>od-bridge → 主機 A</td><td>HMAC 簽章後 POST 到平台 intake；平台驗簽、路由、建案或併案</td></tr>
+<tr><td>t + 數秒</td><td>主機 A 處置中心</td><td>案件出現在清單，高危標 15 分鐘 SLA</td></tr>
+<tr><td>人按下去 或 流程逾時</td><td>主機 A</td><td>DecisionWriter 寫入 block 決策（先過保護清單）</td></tr>
+<tr><td>+ 0～5 秒</td><td>od-bridge</td><td>輪詢拉到 pending 決策，落地 nftables / CrowdSec / EDL，回報 applied</td></tr>
+<tr><td>TTL 到期後 ≤ 1 分鐘</td><td>主機 A cron → od-bridge</td><td>產生 unblock 決策 → 落地移除</td></tr>
+</tbody>
+</table>
+
+<div class="pager"><a href="index.html">← 總覽</a><a href="02-analyzers.html">下一篇：分析系統各管什麼 →</a></div>
+</div>
+</body>
+</html>

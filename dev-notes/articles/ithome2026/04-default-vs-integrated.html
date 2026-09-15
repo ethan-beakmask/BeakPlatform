@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 4 篇　系統預設處理 vs 與 BeakPlatform 整合後</title>
+<style>
+:root{--ink:#1f2933;--muted:#5f6b76;--line:#cfd6dd;--soft:#f4f6f8;--head:#e9eef3;--accent:#0b5394;--warn:#b45309;--warnbg:#fff7e6;--ok:#1b6e3a;--okbg:#ecf7ee;--bad:#9b1c1c;--badbg:#fdecec}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:15px/1.7 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:26px;margin:0 0 6px;border-bottom:3px solid var(--accent);padding-bottom:8px}
+h2{font-size:21px;margin:40px 0 12px;border-left:5px solid var(--accent);padding-left:10px}
+h3{font-size:17px;margin:26px 0 8px}
+p{margin:8px 0}
+.sub{color:var(--muted);margin-bottom:18px}
+a{color:var(--accent)}
+table{border-collapse:collapse;width:100%;margin:12px 0 18px;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 10px;vertical-align:top;text-align:left}
+th{background:var(--head);font-weight:600}
+tbody tr:nth-child(even){background:#fafbfc}
+td.dim{background:#f6f6f6}
+td.plus{background:#ecf7ee}
+code{font-family:Consolas,"Cascadia Mono",Menlo,monospace;font-size:13px;background:#f1f3f5;padding:1px 5px;border-radius:3px}
+pre{background:#f1f3f5;border:1px solid var(--line);padding:10px 12px;overflow-x:auto;font-size:13px;line-height:1.5}
+.fig{margin:16px 0 22px;border:1px solid var(--line);background:#fff;padding:10px}
+.fig svg{width:100%;height:auto;display:block}
+.cap{font-size:13px;color:var(--muted);margin-top:6px;text-align:center}
+.note{border-left:4px solid var(--accent);background:var(--soft);padding:10px 14px;margin:14px 0}
+.warn{border-left:4px solid var(--warn);background:var(--warnbg);padding:10px 14px;margin:14px 0}
+.ok{border-left:4px solid var(--ok);background:var(--okbg);padding:10px 14px;margin:14px 0}
+.bad{border-left:4px solid var(--bad);background:var(--badbg);padding:10px 14px;margin:14px 0}
+.pager{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:40px;padding-top:12px;font-size:14px}
+.b{fill:#fff;stroke:#334;stroke-width:1.2}
+.bs{fill:#f4f6f8;stroke:#334;stroke-width:1.2}
+.bh{fill:#e3edf7;stroke:#0b5394;stroke-width:1.4}
+.bw{fill:#fff7e6;stroke:#b45309;stroke-width:1.2}
+.bg{fill:#ecf7ee;stroke:#1b6e3a;stroke-width:1.2}
+.bd{fill:#fdecec;stroke:#9b1c1c;stroke-width:1.2}
+.t{font-size:13px;fill:#1f2933}
+.ts{font-size:11.5px;fill:#5f6b76}
+.tb{font-size:13px;fill:#1f2933;font-weight:600}
+.tt{font-size:14px;fill:#0b5394;font-weight:700}
+.l{stroke:#334;stroke-width:1.6;fill:none}
+.lr{stroke:#9b1c1c;stroke-width:1.6;fill:none;stroke-dasharray:2 3}
+.lg{stroke:#8a96a3;stroke-width:1.2;fill:none;stroke-dasharray:4 3}
+.axis{stroke:#8a96a3;stroke-width:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>第 4 篇　系統預設處理 vs 與 BeakPlatform 整合後</h1>
+<p class="sub">同一批開源元件，單獨裝起來會怎麼反應？接上 BeakPlatform 之後多了什麼、沒有改變什麼？本篇先給一張總表，再用六個具體情境走一遍。</p>
+
+<h2>一、先說清楚：整合沒有改變的事</h2>
+
+<div class="note">
+<p><strong>WAF 擋不擋、Suricata 抓不抓，與平台無關。</strong>平台不會讓 CRS 多擋一種攻擊，也不會讓 ET 規則多抓一條。攻擊當下的即時阻擋 100% 由 WAF 自己完成，403 早在平台收到事件之前就回給攻擊者了。</p>
+<p>平台改變的是「擋掉之後」與「沒擋到但看到了之後」：這些告警有沒有人負責、要不要進一步封鎖來源、封多久、由誰決定、怎麼解除、事後查不查得到。單獨使用時，這些問題的答案全部是「沒有」。</p>
+</div>
+
+<h2>二、總表</h2>
+
+<table>
+<thead><tr><th style="width:16%">面向</th><th style="width:40%">系統預設（單獨使用各元件）</th><th>與 BeakPlatform 整合後</th></tr></thead>
+<tbody>
+<tr><td class="dim">攻擊當下</td><td>WAF 回 403；Suricata 寫一行告警；CrowdSec 依情境計數</td><td class="plus"><strong>完全相同</strong></td></tr>
+<tr><td class="dim">告警去哪</td><td>躺在 <code>audit.log</code>、<code>eve.json</code>；EveBox／Grafana 可以看，但要有人去看</td><td class="plus">正規化為同一格式，篩過後推進平台成為<strong>案件</strong>；全量仍在 ClickHouse</td></tr>
+<tr><td class="dim">誰負責</td><td>沒有指派概念。log 沒有「這筆歸誰」</td><td class="plus">案件依角色進入資安人員的待辦；簽核授權依角色、單位與代理判定；二線可升級到資安主管</td></tr>
+<tr><td class="dim">時限</td><td>無</td><td class="plus">高危 15 分鐘、中危 60 分鐘 SLA；團隊版逾時催辦再升級；單人版逾時自動處置</td></tr>
+<tr><td class="dim">累犯</td><td>WAF 與 Suricata 都無跨請求記憶；每次都當第一次</td><td class="plus">60 分鐘內同 IP 同規則併案並計數；24 小時內重複數與歷史封鎖次數進風險分數</td></tr>
+<tr><td class="dim">封鎖來源 IP</td><td>CrowdSec 可以下決策，但本安裝包沒有 bouncer，決策不落地；nftables blocklist 是空的，沒有人會往裡面寫</td><td class="plus">人一鍵或流程自動寫決策 → od-bridge 5 秒內落地到 nftables blocklist、CrowdSec LAPI、EDL 檔</td></tr>
+<tr><td class="dim">封鎖多久、怎麼解</td><td>CrowdSec 預設 4 小時；手動 nft 加的元素若沒帶 timeout 就是永久，得有人記得去刪</td><td class="plus">每筆決策帶 TTL（1h／24h／7d 依流程）；kernel timeout 與平台 cron 雙層到期，到期自動產生 unblock 落地；可人工撤銷、可改判</td></tr>
+<tr><td class="dim">誤封自家設備</td><td>沒有防護。反向代理後面的偵測器看到的來源常是代理自己，照封</td><td class="plus">服務層保護清單：RFC1918、回送、CGNAT、平台可信代理等命中即拒寫；企業可加自訂與豁免；覆寫要留痕</td></tr>
+<tr><td class="dim">給外部防火牆用</td><td>無</td><td class="plus">兩份 EDL：防禦端 <code>:8500/edl</code>（只含標了 edl 執行點的決策）與平台端每企業一份（該企業所有有效封鎖）。純 IP 一行一個，防火牆定期抓</td></tr>
+<tr><td class="dim">通知</td><td>無（Grafana 可另設 alert）</td><td class="plus">流程內建緊急廣播；可接 Email／Telegram 節點；封鎖完成通報、SLA 催辦、夜間自動處置通報</td></tr>
+<tr><td class="dim">跨系統關聯</td><td>要自己在 ClickHouse 或 EveBox 裡用 IP 查</td><td class="plus">案件頁「跨系統關聯」分頁即時查 ClickHouse，列出同一 IP 在時間窗內被各系統各自看到的紀錄</td></tr>
+<tr><td class="dim">稽核與證據</td><td>log 輪替後就沒了；誰做過什麼沒有紀錄</td><td class="plus">案件、簽核歷程（含以誰的身分、代理誰）、決策、執行結果、覆寫痕跡全部落 DB；原始事件整包保留</td></tr>
+<tr><td class="dim">多租戶</td><td>不適用，一台一套</td><td class="plus">每個企業各自的金鑰、路由、案件、決策、EDL；防禦端每家一台，租戶歸屬取自驗簽後的金鑰</td></tr>
+<tr><td class="dim">事件量控制</td><td>log 有多少寫多少；EveBox 靠人翻</td><td class="plus">Vector 三道閘門在源頭壓量；平台再併案。代價是平台上的數字不代表攻擊總量（第 5 篇）</td></tr>
+<tr><td class="dim">誰被平台入侵影響</td><td>不適用</td><td class="plus">決策是防禦端<strong>拉</strong>的，平台不能主動對防禦端下指令；狀態流轉受限，執行端無法偽造 expired；保護清單在平台端，流程怎麼寫都繞不過</td></tr>
+</tbody>
+</table>
+
+<h2>三、同一次 SQL injection 的兩條時間軸</h2>
+
+<div class="fig">
+<svg viewBox="0 0 1100 470" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#334"/></marker>
+<marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#9b1c1c"/></marker>
+</defs>
+<!-- time axis -->
+<line x1="150" y1="60" x2="1080" y2="60" class="axis" marker-end="url(#ar)"/>
+<text x="150" y="50" class="ts">t=0</text>
+<text x="330" y="50" class="ts">數十毫秒</text>
+<text x="480" y="50" class="ts">數秒</text>
+<text x="640" y="50" class="ts">數分鐘（人）／即時（自動）</text>
+<text x="900" y="50" class="ts">TTL 到期</text>
+
+<!-- lane 1 -->
+<rect x="20" y="80" width="120" height="150" rx="5" class="bs"/>
+<text x="80" y="150" text-anchor="middle" class="tb">單獨使用</text>
+<text x="80" y="170" text-anchor="middle" class="ts">各元件預設</text>
+
+<rect x="160" y="90" width="150" height="60" rx="5" class="bh"/><text x="235" y="113" text-anchor="middle" class="tb">WAF 回 403</text><text x="235" y="131" text-anchor="middle" class="ts">CRS 942 命中</text>
+<rect x="330" y="90" width="150" height="60" rx="5" class="b"/><text x="405" y="113" text-anchor="middle" class="tb">寫 audit.log 一行</text><text x="405" y="131" text-anchor="middle" class="ts">EveBox 看不到這份</text>
+<rect x="500" y="90" width="560" height="60" rx="5" class="bs"/><text x="780" y="113" text-anchor="middle" class="tb">…沒有然後</text><text x="780" y="131" text-anchor="middle" class="ts">攻擊者換個 payload 再來，WAF 再擋一次；log 一小時輪替一次</text>
+<path d="M310,120 L330,120" class="l" marker-end="url(#ar)"/>
+<path d="M480,120 L500,120" class="l" marker-end="url(#ar)"/>
+<text x="160" y="180" class="ts">同一個 IP 打第 500 次時，系統對它的態度與第 1 次完全相同。</text>
+<text x="160" y="200" class="ts">Suricata 這一路：因為請求已被 WAF 擋下、沒走到實體網卡，這次攻擊 Suricata 根本沒看到。</text>
+
+<!-- lane 2 -->
+<rect x="20" y="250" width="120" height="200" rx="5" class="bg"/>
+<text x="80" y="345" text-anchor="middle" class="tb">整合後</text>
+<text x="80" y="365" text-anchor="middle" class="ts">同一批元件</text>
+
+<rect x="160" y="260" width="150" height="60" rx="5" class="bh"/><text x="235" y="283" text-anchor="middle" class="tb">WAF 回 403</text><text x="235" y="301" text-anchor="middle" class="ts">一模一樣</text>
+<rect x="330" y="260" width="150" height="60" rx="5" class="b"/><text x="405" y="283" text-anchor="middle" class="tb">Vector → od-bridge</text><text x="405" y="301" text-anchor="middle" class="ts">歸因、篩選、簽章送出</text>
+<rect x="500" y="260" width="150" height="60" rx="5" class="b"/><text x="575" y="283" text-anchor="middle" class="tb">平台建案</text><text x="575" y="301" text-anchor="middle" class="ts">高危 → 15 分鐘 SLA</text>
+<rect x="670" y="260" width="200" height="60" rx="5" class="bw"/><text x="770" y="283" text-anchor="middle" class="tb">人一鍵 / 流程自動</text><text x="770" y="301" text-anchor="middle" class="ts">寫 block 決策（先過保護清單）</text>
+<rect x="890" y="260" width="170" height="60" rx="5" class="bd"/><text x="975" y="283" text-anchor="middle" class="tb">落地封鎖</text><text x="975" y="301" text-anchor="middle" class="ts">nftables / CrowdSec / EDL</text>
+<path d="M310,290 L330,290" class="l" marker-end="url(#ar)"/>
+<path d="M480,290 L500,290" class="l" marker-end="url(#ar)"/>
+<path d="M650,290 L670,290" class="l" marker-end="url(#ar)"/>
+<path d="M870,290 L890,290" class="lr" marker-end="url(#arr)"/>
+
+<rect x="500" y="340" width="150" height="50" rx="5" class="bs"/><text x="575" y="361" text-anchor="middle" class="ts">第 2～N 次同 IP 同規則</text><text x="575" y="377" text-anchor="middle" class="ts">併進同一案，計數 +1</text>
+<path d="M575,320 L575,340" class="lg" marker-end="url(#ar)"/>
+<rect x="890" y="340" width="170" height="50" rx="5" class="bs"/><text x="975" y="361" text-anchor="middle" class="ts">TTL 到期 → cron 產 unblock</text><text x="975" y="377" text-anchor="middle" class="ts">→ 落地移除；kernel 也自行剔除</text>
+<path d="M975,320 L975,340" class="lg" marker-end="url(#ar)"/>
+
+<text x="160" y="420" class="ts">攻擊者第 500 次來時：案件顯示事件數 500、風險分數已到建議封鎖；若已被封，直連主機 B 的封包在 kernel 就被丟；</text>
+<text x="160" y="440" class="ts">走 Cloudflare 的請求仍由 WAF 逐一擋（nftables 看到的來源是 Cloudflare，不是攻擊者），除非外部防火牆有抓 EDL。</text>
+</svg>
+<div class="cap">圖 4-1　同一次攻擊的兩條時間軸。前兩格完全相同，差別從第三格開始。</div>
+</div>
+
+<h2>四、六個情境逐一對照</h2>
+
+<h3>情境 A：從 Internet 打 SQL injection（經 Cloudflare Tunnel）</h3>
+<table>
+<thead><tr><th style="width:14%"></th><th style="width:43%">預設</th><th>整合後</th></tr></thead>
+<tbody>
+<tr><td>即時</td><td>WAF 403</td><td>WAF 403</td></tr>
+<tr><td>之後</td><td>audit.log 一行，一小時後輪替</td><td>案件 <code>OD-…</code>，攻擊者 IP 是 <code>CF-Connecting-IP</code>（因為直連 WAF 的是可信的 cloudflared），國別一併帶入。SOC 在處置中心看到 payload、規則、UA；按「封鎖攻擊來源」後 5 秒內落地，TTL 1 小時</td></tr>
+<tr><td>封鎖效果</td><td>—</td><td>nftables 只擋該 IP <strong>直連主機 B</strong> 的封包；經 Cloudflare 進來的請求封包來源是 Cloudflare，nftables 不會擋，仍由 WAF 逐請求擋。要在邊界擋掉，得讓外部防火牆抓 EDL，或未來實作 Cloudflare 執行點</td></tr>
+</tbody>
+</table>
+
+<h3>情境 B：掃描器一分鐘打 300 個路徑</h3>
+<table>
+<thead><tr><th style="width:14%"></th><th style="width:43%">預設</th><th>整合後</th></tr></thead>
+<tbody>
+<tr><td>即時</td><td>WAF 擋掉命中 913／920／930 的那些，其餘（存在的路徑）放行到後端</td><td>相同</td></tr>
+<tr><td>之後</td><td>audit.log 幾百行；放行的那些到後端時 Suricata 可能另有 ET SCAN／WEB_SERVER 告警</td><td>Vector 封頂：同 IP 同規則 5 分鐘只放 5 筆、全域每分鐘 8 筆；平台再把同 IP 同規則併成一案。SOC 看到的是「一個 IP、幾條規則、事件數」而不是三百張單。ClickHouse 仍有全部 300 筆可查</td></tr>
+<tr><td>差異重點</td><td>人翻 log 才知道是同一個人</td><td>風險分數因 24 小時內重複數加成而上升，建議處置變 block</td></tr>
+</tbody>
+</table>
+
+<h3>情境 C：後端網站掛了</h3>
+<table>
+<thead><tr><th style="width:14%"></th><th style="width:43%">預設</th><th>整合後</th></tr></thead>
+<tbody>
+<tr><td>即時</td><td>WAF 對每個請求回 502</td><td>相同</td></tr>
+<tr><td>之後</td><td>audit.log 記下 5xx 交易（RelevantOnly 包含 5xx）</td><td>建案，但<strong>沒有規則編號</strong>、actor 是正常訪客。這是刻意保留的：後端異常也是事件，可用性也是 C.I.A. 的一環。量由封頂控制，SOC 看到的是「很多不同 IP 對同一 host 的 502」</td></tr>
+<tr><td>注意</td><td>—</td><td>這種案件不該封 IP，訪客是無辜的。單人版的自動封鎖條件要求 severity ≥ 4，5xx 事件的嚴重度來自 ModSecurity 等級對映，通常到不了門檻</td></tr>
+</tbody>
+</table>
+
+<h3>情境 D：有人對主機 B 的 SSH 暴力破解</h3>
+<table>
+<thead><tr><th style="width:14%"></th><th style="width:43%">預設</th><th>整合後</th></tr></thead>
+<tbody>
+<tr><td>即時</td><td>sshd 逐次拒絕；開了 <code>--ssh-guard</code> 的話 nftables 直接 drop 非白名單來源</td><td>相同</td></tr>
+<tr><td>偵測</td><td>CrowdSec <code>ssh-bf</code> 情境命中，LAPI 產生一筆 ban；<strong>沒有 bouncer，不落地</strong>。Suricata 可能有 ET SCAN SSH 告警</td><td>Suricata 那條告警若通過 Vector 篩選（來源是公網、嚴重度 ≥ 2）會進平台建案；CrowdSec 的決策<strong>不會</strong>進平台（Vector 不讀 CrowdSec）</td></tr>
+<tr><td>差異重點</td><td>走 tunnel 部署時攻擊者根本碰不到主機 B 的 22 埠，這個情境只在內網或主機 B 有公網 IP 時成立</td><td>同左；整合沒有補上「CrowdSec 決策進平台」這條線，這是目前的缺口</td></tr>
+</tbody>
+</table>
+
+<h3>情境 E：內網某台機器自帶 <code>CF-Connecting-IP</code> 標頭直打 8080，想陷害第三方 IP</h3>
+<table>
+<thead><tr><th style="width:14%"></th><th style="width:43%">預設</th><th>整合後</th></tr></thead>
+<tbody>
+<tr><td>第一道</td><td colspan="2">nftables <code>ingest_guard_forward</code>：來源不在平台主機與 ADMIN_IPS 內 → drop，連 WAF 都到不了</td></tr>
+<tr><td>第二道（來源在白名單內時）</td><td>WAF 正常處理；Suricata 的 XFF 覆寫會把 src_ip 換成標頭裡的第三方 IP（Suricata 沒有「信任代理」概念）</td><td>Vector 對 WAF 事件比對 <code>client_ip</code> 是否為可信直連來源（只有 cloudflared 的 172.18.0.250）；不是，就「誰打的記誰」，第三方 IP 不會被歸因。Suricata 那條線 Vector 補不了（eve.json 已無原始來源），所以 8080 的來源管制是這條線的唯一防線；即使歸因錯了，保護清單也擋得住封到內網，但擋不住封到外部關鍵服務</td></tr>
+</tbody>
+</table>
+
+<h3>情境 F：凌晨三點的高危案件，公司只有一位資安人員</h3>
+<table>
+<thead><tr><th style="width:14%"></th><th style="width:43%">預設</th><th>整合後（小企業單人版流程）</th></tr></thead>
+<tbody>
+<tr><td>即時</td><td>WAF 403（如果是 WAF 抓到的）</td><td>相同</td></tr>
+<tr><td>之後</td><td>沒有人看，也沒有東西會做任何事</td><td>分流：severity ≥ 4 且 actor 是公網 IP → 判斷非上班時段 → 立即寫 block 決策 TTL 24 小時 → 落地 → 發「待複核」提示。若 actor 是內網 IP 或缺 IP → 改走人工，不自動處置</td></tr>
+<tr><td>早上</td><td>—</td><td>複核任務在待辦：確認是攻擊 → 延長到 7 天；誤判 → 立即解除；不確定 → 什麼都不做，24 小時後自動解封</td></tr>
+<tr><td>週末</td><td>—</td><td>時間變數沒有星期幾，週六日會被判成上班時段；靠「上班時段 30 分鐘無人處理也自動封鎖」補上</td></tr>
+</tbody>
+</table>
+
+<h2>五、整合帶來的代價</h2>
+
+<table>
+<thead><tr><th style="width:24%">代價</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td>多一台主機與一條依賴</td><td>平台掛了，防禦端照常擋（WAF 與 nftables 現有元素不受影響），但新決策不會產生、到期的 unblock 不會產生。kernel timeout 仍會自己剔除，所以最壞情況是「封鎖只會少不會多」</td></tr>
+<tr><td>平台上的數字不是全量</td><td>Vector 封頂是丟棄。要回答「今天被打幾次」一律查 ClickHouse，不要看案件數</td></tr>
+<tr><td>自動處置需要人設定邊界</td><td>保護清單、豁免、TTL、上班時段（UTC）都是設定值，第一次導入要逐一確認，尤其時區</td></tr>
+<tr><td>需要企業與角色</td><td>平台側必須另建一家企業（不能用系統預設企業）、至少一位持 <code>SECURITY_STAFF</code> 角色的成員、一條路由規則、一個已發行的流程，缺一件事件就進不來，症狀是處置中心永遠是 0</td></tr>
+</tbody>
+</table>
+
+<div class="pager"><a href="03-event-to-decision.html">← 第 3 篇：事件如何變成案件與決策</a><a href="05-boundaries.html">下一篇：信任邊界與盲區 →</a></div>
+</div>
+</body>
+</html>
