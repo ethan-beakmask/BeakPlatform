@@ -112,7 +112,7 @@ pre code{background:none;padding:0}
 
 <pre><code>{
   "correlation_id": "6f1d…",            // 冪等鍵，平台看到重複就直接回 duplicate
-  "source_system": "coraza",            // 或 suricata；平台 API key 有來源白名單
+  "source_system": "coraza",            // 或 suricata；平台 API key 的 scope 限定來源系統
   "event_class": "web_activity",        // suricata 是 network_activity
   "occurred_at": "2026-09-15T00:12:34Z",
   "severity_id": 4,                     // 1 Low … 4 Critical
@@ -142,7 +142,7 @@ pre code{background:none;padding:0}
 <tbody>
 <tr><td><code>nftables</code></td><td>主機 B 的 <code>inet secstack blocklist</code>／<code>blocklist6</code> set，帶 timeout</td><td><code>block</code>（加元素，TTL 交給 kernel）、<code>unblock</code>（刪元素，已不存在也算成功）。<code>allow</code> 不支援</td><td>只影響「以該 IP 為封包來源、直連主機 B 本機程序」的流量，見<a href="05-boundaries.html">第 5 篇</a></td></tr>
 <tr><td><code>crowdsec</code></td><td>本機 CrowdSec LAPI（<code>127.0.0.1:8081</code>），以 od-bridge 這個 machine 身分寫 <code>type=ban</code> 決策</td><td><code>block</code>、<code>unblock</code>；target 可為 ip／cidr／country／asn</td><td>沒有 bouncer 就只是清單；接了 bouncer 的任何主機都能消費</td></tr>
-<tr><td><code>edl</code></td><td><code>state.json</code> 為權威，重新渲染 <code>blocklist.txt</code>／<code>allowlist.txt</code>，由 <code>:8500/edl</code> 與 <code>/edl/allow</code> 提供（後者就是白名單第 4 條，平台「放行」決策的落地點）</td><td><code>block</code>、<code>allow</code>、<code>unblock</code>（從兩份清單移除）。每 60 秒自動剔除過期項目</td><td>取決於誰來抓：PAN-OS、FortiGate、pfSense 等支援 External Dynamic List 的防火牆</td></tr>
+<tr><td><code>edl</code></td><td><code>state.json</code> 為權威，重新渲染 <code>blocklist.txt</code>／<code>allowlist.txt</code>，由 <code>:8500/edl</code> 與 <code>/edl/allow</code> 提供（後者就是總覽第三節第 4 條，平台「放行」決策的落地點）</td><td><code>block</code>、<code>allow</code>、<code>unblock</code>（從兩份清單移除）。每 60 秒自動剔除過期項目</td><td>取決於誰來抓：PAN-OS、FortiGate、pfSense 等支援 External Dynamic List 的防火牆</td></tr>
 <tr><td><code>cloudflare</code></td><td>預留，未實作（指「把封鎖推到 Cloudflare IP List」這個執行點；Cloudflare Tunnel 入口本身是完整支援的）</td><td>一律回 <code>not_configured</code></td><td>無</td></tr>
 </tbody>
 </table>
@@ -214,7 +214,7 @@ pre code{background:none;padding:0}
 <tr><td>併案降噪</td><td>同 <code>actor_ip</code> + 同 <code>finding_rule_id</code>、60 分鐘窗內併進既有案件：事件數累加、嚴重度取最大、風險分數重算。任一鍵為空就不併；OCSF 事件只與 OCSF 併、原生格式只與同來源併</td><td>Vector 已經封頂，但仍可能一分鐘內同 IP 多條規則各到一筆；併案讓 SOC 看到的是「一個攻擊者」而不是「五張單」</td></tr>
 <tr><td>風險分數</td><td><code>min(100, severity×15 + min(24h 內同 IP 事件數, 6)×5 + min(歷史封鎖次數, 3)×10)</code>；≥ 60 建議 <code>block</code>，否則 <code>observe</code></td><td>規則式而非模型，因為資料量還不足；歷史封鎖次數刻意跨偵測器計算，同一 IP 被不同系統看到正是風險升高的訊號</td></tr>
 <tr><td>SLA</td><td>severity ≥ 4 為 15 分鐘、= 3 為 60 分鐘、以下無。起點是案件送出時間</td><td>標準版只在清單上顯示；SOC 團隊版與單人版有流程節點真的在計時（見下表）</td></tr>
-<tr><td>保護清單（白名單第 5 條：不得封鎖的對象）</td><td>只檢查 <code>action=block</code> 且目標是 ip／ipv6／cidr；三層來源（企業內建 16 條出廠網段、平台設定的可信代理與額外網段、企業自訂）；目標與保護網段<strong>有交集</strong>即擋；豁免項目須目標<strong>完全落在</strong>豁免網段內才生效</td><td>偵測器架在流量出口，看到的來源常是反向代理自己；無人時段的自動封鎖若沒有這道，會反覆封掉自家設備而且沒人發現。交集與包含語意刻意不對稱：前者防「封 0.0.0.0/0」，後者防「豁免一台變成整段可封」</td></tr>
+<tr><td>保護清單（總覽第三節第 5 條：禁封清單）</td><td>只檢查 <code>action=block</code> 且目標是 ip／ipv6／cidr；三層來源（企業內建 16 條出廠網段、平台設定的可信代理與額外網段、企業自訂）；目標與保護網段<strong>有交集</strong>即擋；豁免項目須目標<strong>完全落在</strong>豁免網段內才生效</td><td>偵測器架在流量出口，看到的來源常是反向代理自己；無人時段的自動封鎖若沒有這道，會反覆封掉自家設備而且沒人發現。交集與包含語意刻意不對稱：前者防「封 0.0.0.0/0」，後者防「豁免一台變成整段可封」</td></tr>
 </tbody>
 </table>
 

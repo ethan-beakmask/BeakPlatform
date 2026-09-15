@@ -237,26 +237,28 @@ pre code{background:none;padding:0}
 </tbody>
 </table>
 
-<h2>三、白名單在哪裡</h2>
+<h2>三、放行與例外：誰可以繞過哪一道檢查</h2>
 
-<p>企業對白名單的重視不亞於黑名單：誰永遠不能被封、誰可以連管理介面、誰說的來源 IP 才算數。這套架構的白名單散在八個地方，各管一件事，這裡集中列出，後面各篇提到時會註明是哪一份。</p>
+<p>資安人員聽到「白名單」直覺是一份 IP 清單，名單內的來源不受檢查。這套架構有八個「放行點」，但只有三個真的是這種 IP 白名單，其餘各有自己的業界名詞：可信代理管的是「信誰說的來源 IP」、禁封清單管的是「誰不得被封」、授權範圍管的是「這把金鑰能送什麼」、規則排除管的是「哪條路徑少檢查什麼」。混稱白名單會讓人拿錯工具，所以下表先標類型，再列原廠用詞。後面各篇提到時會註明是第幾條。</p>
+
+<p>八個放行點<strong>不是八份要分開維護的名單</strong>。主機 B 上人手要改的只有 <code>.env</code> 兩行（<code>ADMIN_IPS</code>、<code>TRUSTED_INGRESS_EXTRA</code>），第 1、2、7 條由 <code>install.sh --reconfigure</code> 從同一個 <code>ADMIN_IPS</code> 重新產生；第 4 條是決策的輸出，沒有人手維護；平台側三條各在自己的管理頁或 <code>.env</code>。</p>
 
 <table>
-<thead><tr><th style="width:5%">#</th><th style="width:22%">白名單</th><th style="width:16%">在哪裡設定</th><th>管什麼</th><th style="width:20%">在鏈上的位置</th></tr></thead>
+<thead><tr><th style="width:4%">#</th><th style="width:13%">類型（原廠用詞）</th><th style="width:17%">名稱與設定位置</th><th style="width:22%">管什麼</th><th style="width:26%">範例內容</th><th style="width:18%">在鏈上的位置</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>nftables <code>allowlist</code>（自鎖保險）</td><td>主機 B <code>.env</code> 的 <code>ADMIN_IPS</code> 與 <code>BEAK_BASE_URL</code>，由 <code>nftables.sh</code> 產生</td><td>命中者在 <code>input</code> chain 最前面 accept，<strong>永遠不會被封鎖決策鎖死</strong>。內容是平台主機與管理來源</td><td>主機 B 最外層，第 1 篇第三節、第 5 篇第三節</td></tr>
-<tr><td>2</td><td>nftables 來源管制（ingest 面、管理面、SSH）</td><td>同上</td><td>誰能連 8080／8082／8688／8500，誰能連 Grafana、EveBox、Vector API、Portainer，開 <code>--ssh-guard</code> 時誰能 SSH。不在名單內的連線逾時而不是 403</td><td>主機 B 最外層，第 1 篇第三節</td></tr>
-<tr><td>3</td><td>Vector 歸因可信來源 <code>TRUSTED_INGRESS_LIST</code></td><td>主機 B <code>.env</code>（預設只有 cloudflared 的 <code>172.18.0.250</code>，可用 <code>TRUSTED_INGRESS_EXTRA</code> 加）</td><td>只有名單內的直連來源送來的 <code>CF-Connecting-IP</code>／XFF 才被採信為攻擊者 IP，其餘「誰打的記誰」</td><td>Vector 正規化階段，第 5 篇第一節</td></tr>
-<tr><td>4</td><td>EDL 白名單 <code>:8500/edl/allow</code></td><td>由平台「放行」決策（<code>action=allow</code>）落地，od-bridge 渲染成 <code>allowlist.txt</code></td><td>給外部防火牆抓的允許清單，放在 deny 規則之上；與黑名單同格式、同 TTL 機制</td><td>決策落地後，第 3 篇第二節</td></tr>
-<tr><td>5</td><td>平台端「封鎖保護清單」</td><td>平台管理頁「開放防禦 → 封鎖保護清單」（表 <code>od_protected_targets</code>）＋平台 <code>.env</code> 的 <code>OD_PROTECTED_EXTRA_NETWORKS</code>、<code>TRUSTED_PROXY_IPS</code></td><td><strong>不得封鎖</strong>的網段：出廠 16 條（RFC1918、回送、CGNAT 等）＋企業自訂（辦公室對外 IP、分公司、合作廠商）；另可加「豁免」讓特定內網主機可封。任何流程寫 block 前都會比對，命中即拒寫</td><td>平台 DecisionWriter 寫入前，第 3 篇第三節、第 5 篇第三節</td></tr>
-<tr><td>6</td><td>API Key 的來源系統白名單</td><td>平台「安全中心 → API Key」的 scope <code>od_intake.source_systems</code></td><td>這把金鑰可以送哪些 <code>source_system</code> 的事件，不在名單內 403</td><td>平台 intake 驗簽後，第 3 篇第三節</td></tr>
-<tr><td>7</td><td>ClickHouse 帳號層網路白名單</td><td>主機 B <code>generated/clickhouse-network-allowlist.xml</code>（由 <code>.env</code> 產生）</td><td>哪些來源能用 <code>secstack</code> 帳號查事件庫：本機、docker 網段、ADMIN_IPS、平台主機</td><td>事件湖存取，第 2 篇第五節</td></tr>
-<tr><td>8</td><td>WAF 規則放寬（路徑層白名單）</td><td>主機 B <code>waf/modsec-overrides/modsecurity-override.conf</code>（範例規則 900300，預設註解）</td><td>對特定路徑移除某些 CRS 規則的檢查目標（例如允許已登入使用者輸入程式碼片段的 API），URL、標頭、cookie 仍照常檢查</td><td>WAF 請求階段，第 2 篇第二節</td></tr>
+<tr><td>1</td><td>IP 白名單<br>（nftables：named <code>set</code> ＋ <code>accept</code>）</td><td>nftables <code>allowlist</code>（自鎖保險）<br>主機 B <code>.env</code> 的 <code>ADMIN_IPS</code> 與 <code>BEAK_BASE_URL</code>，由 <code>nftables.sh</code> 產生</td><td>命中者在 <code>input</code> chain 最前面 accept，<strong>永遠不會被封鎖決策鎖死</strong>。內容是平台主機與管理來源</td><td><code>.env</code>：<code>ADMIN_IPS=192.168.0.50</code><br>產生：<code>set allowlist { elements = { 192.168.0.50, 192.168.0.111 } }</code>（平台 IP 由 <code>BEAK_BASE_URL</code> 自動補入）</td><td>主機 B 最外層，第 1 篇第三節、第 5 篇第三節</td></tr>
+<tr><td>2</td><td>IP 白名單<br>（同上）</td><td>nftables 來源管制（ingest 面、管理面、SSH）<br>同上，同一份 <code>ADMIN_IPS</code></td><td>誰能連 8080／8082／8688／8500，誰能連 Grafana、EveBox、Vector API、Portainer，開 <code>--ssh-guard</code> 時誰能 SSH。不在名單內的連線逾時而不是 403</td><td>與第 1 條同一組元素；差別只在掛的 chain（<code>ingest_guard_*</code>、<code>mgmt_guard_*</code>、<code>ssh_guard_input</code>）</td><td>主機 B 最外層，第 1 篇第三節</td></tr>
+<tr><td>3</td><td>可信代理<br>（trusted proxies，同 nginx <code>set_real_ip_from</code>）</td><td>Vector 歸因可信來源 <code>TRUSTED_INGRESS_LIST</code><br>主機 B <code>.env</code>，預設只有 cloudflared 的 <code>172.18.0.250</code>，用 <code>TRUSTED_INGRESS_EXTRA</code> 加</td><td>只有名單內的直連來源送來的 <code>CF-Connecting-IP</code>／XFF 才被採信為攻擊者 IP，其餘「誰打的記誰」。<strong>名單內的來源不是免檢，是它說的話才算數</strong></td><td><code>.env</code>：<code>TRUSTED_INGRESS_EXTRA=172.18.0.1</code>（docker 網關，讓管理機帶假 header 測試）<br>產生：<code>TRUSTED_INGRESS_LIST=172.18.0.250,172.18.0.1</code></td><td>Vector 正規化階段，第 5 篇第一節</td></tr>
+<tr><td>4</td><td>放行物件<br>（PAN-OS：External Dynamic List；FortiGate：Threat Feed）</td><td>EDL 允許清單 <code>:8500/edl/allow</code><br>由平台「放行」決策（<code>action=allow</code>）落地，od-bridge 渲染成 <code>allowlist.txt</code></td><td>給外部防火牆抓的允許清單，放在 deny 規則之上；與黑名單同格式、同 TTL 機制。<strong>這是決策的輸出，沒有人手維護</strong></td><td><code>curl http://192.168.0.112:8500/edl/allow</code> 回應每行一個位址：<br><code>198.51.100.7</code><br><code>198.51.100.0/24</code><br>TTL 到期自動消失</td><td>決策落地後，第 3 篇第二節</td></tr>
+<tr><td>5</td><td>禁封清單<br>（Fail2ban：<code>ignoreip</code>；CrowdSec：whitelist／allowlist）</td><td>平台端「封鎖保護清單」<br>平台管理頁「開放防禦 → 封鎖保護清單」（表 <code>od_protected_targets</code>）＋平台 <code>.env</code> 的 <code>OD_PROTECTED_EXTRA_NETWORKS</code>、<code>TRUSTED_PROXY_IPS</code></td><td><strong>不得封鎖</strong>的網段：出廠 16 條（RFC1918、回送、CGNAT 等）＋企業自訂（辦公室對外 IP、分公司、合作廠商）；另可加「豁免」讓特定內網主機可封。任何流程寫 block 前都會比對，命中即拒寫。方向與第 1 條相反：管的是「誰不能被封」，不是「誰能連」</td><td>管理頁一筆：類型 <code>protect</code>、目標 <code>198.51.100.0/24</code>、名稱「台北辦公室對外 IP」<br>豁免一筆：類型 <code>exempt</code>、目標 <code>192.168.0.77</code>（允許封鎖這台內網測試機）<br>平台 <code>.env</code>：<code>OD_PROTECTED_EXTRA_NETWORKS=198.51.100.0/24</code></td><td>平台 DecisionWriter 寫入前，第 3 篇第三節、第 5 篇第三節</td></tr>
+<tr><td>6</td><td>授權範圍<br>（OAuth／API：scope）</td><td>API Key 的來源系統範圍<br>平台「安全中心 → API Key」的 scope <code>od_intake.source_systems</code></td><td>這把金鑰可以送哪些 <code>source_system</code> 的事件，不在名單內 403。<strong>內容是系統名稱，不是 IP</strong></td><td>scopes JSON：<code>{"od_intake": {"source_systems": ["suricata", "coraza"]}}</code><br>送 <code>source_system=zeek</code> 回 403</td><td>平台 intake 驗簽後，第 3 篇第三節</td></tr>
+<tr><td>7</td><td>IP 白名單<br>（ClickHouse：使用者的 <code>networks</code>／<code>HOST IP</code>）</td><td>ClickHouse 帳號層網路限制<br>主機 B <code>generated/clickhouse-network-allowlist.xml</code>，由同一份 <code>ADMIN_IPS</code> 產生</td><td>哪些來源能用 <code>secstack</code> 帳號查事件庫：本機、docker 網段、ADMIN_IPS、平台主機。綁在帳號上，不是主機層</td><td>產生的 XML：<br><code>&lt;networks&gt;&lt;ip&gt;127.0.0.1&lt;/ip&gt;&lt;ip&gt;172.18.0.0/16&lt;/ip&gt;&lt;ip&gt;192.168.0.50&lt;/ip&gt;&lt;ip&gt;192.168.0.111&lt;/ip&gt;&lt;/networks&gt;</code></td><td>事件湖存取，第 2 篇第五節</td></tr>
+<tr><td>8</td><td>規則排除<br>（OWASP CRS：Rule Exclusion）</td><td>WAF 路徑層規則排除<br>主機 B <code>waf/modsec-overrides/modsecurity-override.conf</code>（範例規則 900300，預設註解）</td><td>對特定路徑移除某些 CRS 規則的檢查目標（例如允許已登入使用者輸入程式碼片段的 API），URL、標頭、cookie 仍照常檢查。<strong>依路徑不依來源</strong></td><td><code>SecRule REQUEST_URI "@beginsWith /beakplatform/api/notes/" "id:900300,phase:1,pass,ctl:ruleRemoveTargetByTag=attack-sqli;ARGS"</code></td><td>WAF 請求階段，第 2 篇第二節</td></tr>
 </tbody>
 </table>
 
 <div class="note">
-兩個容易誤會的：第 1 條只救「直連主機 B 本機程序」的流量，開了 <code>--ssh-guard</code> 又把自己排除在 ADMIN_IPS 外時它救不了 SSH；第 5 條在平台端做一次，防禦端不帶本地副本，所以改了保護清單不必動主機 B。CrowdSec 也有內建 whitelist，出廠只含本機回送位址，本架構沒有另外擴充。
+三個容易誤會的：第 1 條只救「直連主機 B 本機程序」的流量，開了 <code>--ssh-guard</code> 又把自己排除在 ADMIN_IPS 外時它救不了 SSH；第 5 條在平台端做一次，防禦端不帶本地副本，所以改了保護清單不必動主機 B；第 1、2、7 條的產生器只收 IPv4，<code>ADMIN_IPS</code> 填 IPv6 會被靜默略過。CrowdSec 也有內建 whitelist，出廠只含本機回送位址，本架構沒有另外擴充。
 </div>
 
 <h2>四、一句話版本的運作原理</h2>

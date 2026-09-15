@@ -131,17 +131,17 @@ pre code{background:none;padding:0}
 <strong>所以在「純 tunnel 部署」下，nftables 執行點的意義是保護主機 B 自己，以及作為決策落地的參考實作與驗證手段</strong>（<code>--test-event</code> 那一圈驗的就是它）。要讓封鎖真的在邊界生效，讀者要接的是 EDL 到自己的邊界防火牆，或補上 bouncer。Cloudflare 執行點目前是預留的空殼。這不是缺陷被藏起來，安裝文件的驗證章節寫的就是 nftables 這一圈，本篇只是把效力範圍講白。
 </div>
 
-<h2>三、自鎖保險與白名單：哪些 IP 永遠不會被封</h2>
+<h2>三、自鎖保險與禁封清單：哪些 IP 永遠不會被封</h2>
 
-<p>全架構的八份白名單集中列在<a href="index.html">總覽第三節</a>。與「不會被封」直接相關的是下面三個。</p>
+<p>全架構的八個放行點集中列在<a href="index.html">總覽第三節</a>。與「不會被封」直接相關的是下面三個。</p>
 
 <table>
 <thead><tr><th style="width:26%">機制</th><th>內容</th><th style="width:30%">限制</th></tr></thead>
 <tbody>
-<tr><td>nftables <code>allowlist</code>（白名單第 1 條）</td><td>平台主機 IP 與 <code>ADMIN_IPS</code>，在 <code>input</code> chain 最前面 accept，blocklist 對它們無效</td><td>只救 <code>input</code>。<code>ssh_guard_input</code> priority -150 比它早，開了 <code>--ssh-guard</code> 又把自己排除在 ADMIN_IPS 外，allowlist 救不了，只能從主控台救</td></tr>
-<tr><td>平台端保護清單（白名單第 5 條）</td><td>DecisionWriter 寫 block 前比對：企業內建 16 條（RFC1918、回送、link-local、CGNAT、群播、保留、IPv6 ULA 與 link-local）、平台設定的可信代理與額外網段、企業自訂。命中即拒寫</td><td>在平台端做一次，防禦端不帶本地清單（避免兩份要同步）。TEST-NET 段（203.0.113.0/24 等）刻意不納入，端對端驗證用它當公網攻擊者</td></tr>
+<tr><td>nftables <code>allowlist</code>（總覽第三節第 1 條）</td><td>平台主機 IP 與 <code>ADMIN_IPS</code>，在 <code>input</code> chain 最前面 accept，blocklist 對它們無效</td><td>只救 <code>input</code>。<code>ssh_guard_input</code> priority -150 比它早，開了 <code>--ssh-guard</code> 又把自己排除在 ADMIN_IPS 外，allowlist 救不了，只能從主控台救</td></tr>
+<tr><td>平台端保護清單（總覽第三節第 5 條）</td><td>DecisionWriter 寫 block 前比對：企業內建 16 條（RFC1918、回送、link-local、CGNAT、群播、保留、IPv6 ULA 與 link-local）、平台設定的可信代理與額外網段、企業自訂。命中即拒寫</td><td>在平台端做一次，防禦端不帶本地清單（避免兩份要同步）。TEST-NET 段（203.0.113.0/24 等）刻意不納入，端對端驗證用它當公網攻擊者</td></tr>
 <tr><td>豁免與覆寫</td><td>企業可加豁免項目（目標須完全落在豁免網段內）；流程節點可設 <code>allow_protected_target</code> 覆寫並留稽核痕跡</td><td>豁免一台主機不會讓整段變成可封</td></tr>
-<tr><td>EDL 白名單（白名單第 4 條）</td><td>平台「放行」決策落地成 <code>:8500/edl/allow</code>，外部防火牆把它放在 deny 規則之上，就能保證名單內的來源即使日後被誤判也不會在邊界被擋</td><td>只對有抓 EDL 的防火牆生效；nftables 與 CrowdSec 執行點不支援 allow 動作</td></tr>
+<tr><td>EDL 允許清單（總覽第三節第 4 條）</td><td>平台「放行」決策落地成 <code>:8500/edl/allow</code>，外部防火牆把它放在 deny 規則之上，就能保證名單內的來源即使日後被誤判也不會在邊界被擋</td><td>只對有抓 EDL 的防火牆生效；nftables 與 CrowdSec 執行點不支援 allow 動作</td></tr>
 </tbody>
 </table>
 

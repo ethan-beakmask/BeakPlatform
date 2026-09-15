@@ -70,7 +70,7 @@ pre{background:#f1f3f5;border:1px solid var(--line);padding:10px 12px;overflow-x
 <rect x="20" y="52" width="140" height="60" rx="4" class="bs"/><text x="90" y="78" text-anchor="middle" class="tb">L3 / L4</text><text x="90" y="96" text-anchor="middle" class="ts">IP、埠</text>
 <rect x="180" y="52" width="220" height="60" rx="4" class="bd"/><text x="290" y="78" text-anchor="middle" class="tb">nftables</text><text x="290" y="96" text-anchor="middle" class="ts">kernel 防火牆</text>
 <text x="420" y="74" class="t">來源 IP、目的埠、進來的網卡</text><text x="420" y="94" class="ts">完全不看內容</text>
-<text x="720" y="74" class="t">查表：allowlist / blocklist / 來源白名單</text>
+<text x="720" y="74" class="t">查表：allowlist / blocklist / 可信代理</text>
 <text x="920" y="74" class="t">accept / drop</text><text x="920" y="94" class="ts">即時，零延遲</text>
 
 <!-- row 2 WAF -->
@@ -109,7 +109,7 @@ pre{background:#f1f3f5;border:1px solid var(--line);padding:10px 12px;overflow-x
 
 <h2>二、WAF：nginx + ModSecurity v3 + OWASP Core Rule Set</h2>
 
-<p>WAF 是唯一會讀完整 HTTP 內容並即時阻擋的元件。它以 <strong>OWASP CRS</strong> 的規則對每個請求打分數：每條命中的規則依嚴重度加 2～5 分（CRITICAL 5、ERROR 4、WARNING 3、NOTICE 2），請求階段總分達 <code>ANOMALY_INBOUND=5</code> 就回 403，回應階段達 <code>ANOMALY_OUTBOUND=4</code> 就攔下回應。安裝包用 <strong>Paranoia Level 1</strong>（最保守、誤判最少的一級），並在覆寫檔補上 REST 常用的 <code>PUT / DELETE / PATCH / OPTIONS</code> 方法白名單，否則每個非 GET/POST 的 API 呼叫都會被當 CRITICAL 擋掉。同一個覆寫檔也是路徑層白名單的位置（總覽白名單第 8 條）：對特定 API 路徑移除某些規則的檢查目標，其餘照常檢查。</p>
+<p>WAF 是唯一會讀完整 HTTP 內容並即時阻擋的元件。它以 <strong>OWASP CRS</strong> 的規則對每個請求打分數：每條命中的規則依嚴重度加 2～5 分（CRITICAL 5、ERROR 4、WARNING 3、NOTICE 2），請求階段總分達 <code>ANOMALY_INBOUND=5</code> 就回 403，回應階段達 <code>ANOMALY_OUTBOUND=4</code> 就攔下回應。安裝包用 <strong>Paranoia Level 1</strong>（最保守、誤判最少的一級），並在覆寫檔補上 REST 常用的 <code>PUT / DELETE / PATCH / OPTIONS</code> 方法白名單，否則每個非 GET/POST 的 API 呼叫都會被當 CRITICAL 擋掉。同一個覆寫檔也是路徑層規則排除的位置（總覽第三節第 8 條）：對特定 API 路徑移除某些規則的檢查目標，其餘照常檢查。</p>
 
 <table>
 <thead><tr><th style="width:12%">CRS 規則群</th><th style="width:22%">抓什麼</th><th>典型例子</th><th style="width:12%">階段</th></tr></thead>
@@ -172,7 +172,7 @@ pre{background:#f1f3f5;border:1px solid var(--line);padding:10px 12px;overflow-x
 <thead><tr><th style="width:16%">步驟</th><th>做什麼</th><th style="width:30%">規則</th></tr></thead>
 <tbody>
 <tr><td>1. 解析與正規化</td><td>把 ModSecurity JSON 與 Suricata eve 兩種完全不同的格式轉成同一套 OCSF 欄位：<code>source_system</code>、<code>event_class</code>、<code>severity_id</code>、<code>actor.ip</code>、<code>target.host</code>、<code>finding.rule_id</code>、<code>occurred_at</code></td><td>WAF 事件取第一條命中規則當 rule_id、整筆最嚴重的等級當 severity；Suricata 只留 <code>event_type=alert</code> 且有 src_ip／dest_ip 的</td></tr>
-<tr><td>2. 攻擊者 IP 歸因</td><td>WAF 事件的 <code>client_ip</code> 若是可信的直連來源（cloudflared 容器的固定 IP），就採信標頭裡的 <code>CF-Connecting-IP</code> 或 XFF 第一段；否則「誰打的就記誰」</td><td><code>TRUSTED_INGRESS_LIST</code>（總覽白名單第 3 條），預設只有 <code>172.18.0.250</code>；不丟事件，只決定歸因</td></tr>
+<tr><td>2. 攻擊者 IP 歸因</td><td>WAF 事件的 <code>client_ip</code> 若是可信的直連來源（cloudflared 容器的固定 IP），就採信標頭裡的 <code>CF-Connecting-IP</code> 或 XFF 第一段；否則「誰打的就記誰」</td><td><code>TRUSTED_INGRESS_LIST</code>（總覽第三節第 3 條，可信代理），預設只有 <code>172.18.0.250</code>；不丟事件，只決定歸因</td></tr>
 <tr><td>3. 過濾</td><td>內網 actor 對內網 target 一律丟（自家服務互連）；Suricata 的 severity 1（資訊）丟。WAF 事件不看嚴重度，因為它是 inline 已擋下的攻擊證據</td><td>ClickHouse 那一路<strong>不經過</strong>這一步，仍是全量</td></tr>
 <tr><td>4. 封頂（throttle）</td><td>先按 <code>來源|規則|IP</code> 分桶各給配額，再全域封頂。<strong>封頂是丟棄不是聚合</strong>，超額的事件根本不離開主機 B</td><td>Suricata 每桶 1 筆／小時；WAF 每桶 5 筆／5 分鐘；其他 1 筆／5 分鐘；全域 8 筆／分鐘（<code>.env</code> 可調）</td></tr>
 </tbody>
