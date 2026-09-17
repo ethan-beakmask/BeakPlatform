@@ -87,7 +87,7 @@ venv/bin/python scripts/od_node_pairing.py \
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o /tmp/install.sh
 sudo bash /tmp/install.sh \
-    --pair 'ODN1....' \
+    --pair '<貼上平台端印出的整串開通字串，ODN1. 開頭>' \
     --backend http://<被保護網站IP>:<埠>
 ```
 
@@ -157,7 +157,7 @@ sudo bash /opt/integrated-waf/install.sh --test-event
 
 ```bash
 sudo bash /tmp/install.sh \
-    --pair 'ODN1....' \
+    --pair '<貼上平台端印出的整串開通字串，ODN1. 開頭>' \
     --backend http://<被保護網站IP>:<埠> \
     --cf-api-token <Cloudflare API Token> \
     --cf-hostname app.example.com

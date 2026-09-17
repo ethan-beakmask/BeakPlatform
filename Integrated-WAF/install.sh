@@ -157,7 +157,14 @@ if not s.startswith("ODN1."):
     sys.exit("開通字串格式不對（應以 ODN1. 開頭）")
 raw = s[5:]
 raw += "=" * (-len(raw) % 4)
-d = json.loads(base64.urlsafe_b64decode(raw.encode()).decode())
+try:
+    d = json.loads(base64.urlsafe_b64decode(raw.encode()).decode())
+    if not isinstance(d, dict):
+        raise ValueError
+except Exception:
+    sys.exit("開通字串內容無法解碼。請貼上平台主機安裝完成時印出的「防禦節點開通字串」整串"
+             "（ODN1. 後面是一長串英數字），文件裡的 'ODN1....' 只是佔位示意，不能照抄。"
+             "忘了可在平台主機重跑：sudo bash /opt/BeakPlatform/scripts/install.sh --demo")
 mapping = {"base_url": "BEAK_BASE_URL", "key_id": "INTAKE_KEY_ID", "secret": "INTAKE_SECRET_B64",
            "sa_id": "SA_ID", "sa_secret": "SA_SECRET"}
 for k, env in mapping.items():

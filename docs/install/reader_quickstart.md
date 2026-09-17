@@ -63,7 +63,7 @@ curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scri
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o /tmp/install.sh
 sudo bash /tmp/install.sh \
-  --pair 'ODN1....' \
+  --pair '<貼上主機 A 印出的整串開通字串，ODN1. 開頭>' \
   --backend http://<主機A IP>:8000 \
   --admin-ips <你的工作機IP> \
   --yes
