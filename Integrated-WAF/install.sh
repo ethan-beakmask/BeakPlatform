@@ -580,30 +580,55 @@ print_summary() {
     local ip; ip="$(get_env NODE_IP)"
     # 經 WAF 開被保護網站的網址：後端就是平台本身時（練習環境），直接給平台登入頁，
     # 因為平台的根路徑沒有頁面，只印 :8080/ 會讓人以為 WAF 壞了
-    local waf_url="http://$ip:8080$(get_env WAF_BACKEND_PATH)/" waf_note=""
+    local waf_url="http://$ip:8080$(get_env WAF_BACKEND_PATH)/" waf_note="（若回 404，代表被保護網站在這個路徑沒有頁面，不是 WAF 故障；502 才是 WAF 連不到後端）"
     local base; base="$(get_env BEAK_BASE_URL)"
     if [[ -n "$base" && "$(platform_ip_from_url "$base")" == "$(platform_ip_from_url "$(get_env WAF_BACKEND_URL)")" ]]; then
         local ppath; ppath="$(printf '%s' "$base" | sed -E 's#^[a-z]+://[^/]+##; s#/$##')"
         waf_url="http://$ip:8080${ppath}/auth/login"
         waf_note="（經 WAF 開平台登入頁；根路徑 http://$ip:8080/ 回 404 屬正常，平台根路徑沒有頁面）"
     fi
+    local backend_note=""
+    [[ -n "$waf_note" && "$waf_url" == */auth/login ]] && backend_note="  （平台的根路徑沒有頁面，這個位址貼到瀏覽器是 404，屬正常）"
     cat <<EOT
 
 安裝目錄：$INSTALL_DIR（設定在 .env，改完跑 sudo bash $INSTALL_DIR/install.sh --reconfigure）
 
-  對外入口   $( [[ -n "$(get_env CF_HOSTNAME)" ]] && echo "https://$(get_env CF_HOSTNAME)$(get_env WAF_BACKEND_PATH)/" || echo "（未設 tunnel）" )
-  歡迎頁     $( [[ -n "$(get_env WELCOME_HOSTNAME)" ]] && echo "https://$(get_env WELCOME_HOSTNAME)/  （內網驗證 http://$ip:8082/）" || echo "（未啟用）" )
-  被保護網站 $(get_env WAF_BACKEND_URL)
-  平台       $(get_env BEAK_BASE_URL)
-  管理來源   $(get_env ADMIN_IPS)
+== 本次設定（這一段是設定值，不是要開的網址）==
+  被保護網站（WAF 把流量轉去哪）  $(get_env WAF_BACKEND_URL)$backend_note
+  平台（攻擊事件回報給誰）        $(get_env BEAK_BASE_URL)  （貼到瀏覽器會轉到平台登入頁，這是不經 WAF 的直連）
+  管理來源（誰能開下面的管理介面）$(get_env ADMIN_IPS)
+  對外入口                        $( [[ -n "$(get_env CF_HOSTNAME)" ]] && echo "https://$(get_env CF_HOSTNAME)$(get_env WAF_BACKEND_PATH)/" || echo "（未設 Cloudflare tunnel，只能從內網連）" )
+  歡迎頁                          $( [[ -n "$(get_env WELCOME_HOSTNAME)" ]] && echo "https://$(get_env WELCOME_HOSTNAME)/  （內網驗證 http://$ip:8082/）" || echo "（未啟用）" )
 
-  WAF（內網驗證）  $waf_url  $waf_note
-  Grafana          http://$ip:3000/      admin / $(get_env GRAFANA_ADMIN_PASSWORD)
-  EveBox           http://$ip:5636/      （Suricata 告警，無密碼，來源受防火牆限制）
-  Portainer        https://$ip:9443/     admin / $(get_env PORTAINER_ADMIN_PASSWORD)  （自簽憑證，瀏覽器警告請按繼續）
-  ClickHouse       http://$ip:8123/play  secstack / $(get_env CLICKHOUSE_PASSWORD)
-  od-bridge        http://$ip:8500/stats  /forwards  /decisions  /edl
-  Vector API       http://$ip:8686/playground  （GraphQL 查詢介面；健康檢查 /health。根路徑沒有頁面）
+== 可以直接貼到瀏覽器的網址（只有「管理來源」列出的電腦打得開）==
+
+  經 WAF 開被保護網站
+    $waf_url
+    $waf_note
+
+  Grafana（儀表板）            帳號 admin  密碼 $(get_env GRAFANA_ADMIN_PASSWORD)
+    http://$ip:3000/
+
+  EveBox（Suricata 告警瀏覽）  無密碼
+    http://$ip:5636/
+
+  Portainer（容器管理）        帳號 admin  密碼 $(get_env PORTAINER_ADMIN_PASSWORD)
+    https://$ip:9443/
+    （自簽憑證，瀏覽器出現安全警告時選「繼續前往」）
+
+  ClickHouse（SQL 查詢）       帳號 secstack  密碼 $(get_env CLICKHOUSE_PASSWORD)
+    http://$ip:8123/play
+
+  od-bridge（本節點與平台之間的橋接，以下都是純文字／JSON）
+    http://$ip:8500/stats        統計
+    http://$ip:8500/forwards     已轉送給平台的事件
+    http://$ip:8500/decisions    平台下發、目前生效的封鎖決策
+    http://$ip:8500/edl          黑名單（一行一個 IP，防火牆可當外部動態清單）
+    http://$ip:8500/edl/allow    白名單
+
+  Vector（log 管線）
+    http://$ip:8686/playground   GraphQL 查詢介面
+    http://$ip:8686/health       健康檢查
 
 下一步：
   sudo bash $INSTALL_DIR/install.sh --verify        健康檢查
