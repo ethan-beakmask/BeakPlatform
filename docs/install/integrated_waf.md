@@ -85,8 +85,8 @@ venv/bin/python scripts/od_node_pairing.py \
 ## 四、步驟二：在防禦端執行安裝
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o install.sh
-sudo bash install.sh \
+curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o /tmp/install.sh
+sudo bash /tmp/install.sh \
     --pair 'ODN1....' \
     --backend http://<被保護網站IP>:<埠>
 ```
@@ -156,7 +156,7 @@ sudo bash /opt/integrated-waf/install.sh --test-event
 ### 用 Cloudflare API 自動設定
 
 ```bash
-sudo bash install.sh \
+sudo bash /tmp/install.sh \
     --pair 'ODN1....' \
     --backend http://<被保護網站IP>:<埠> \
     --cf-api-token <Cloudflare API Token> \
@@ -197,10 +197,10 @@ WAF 容器，刺探它同樣會產生事件。
 
 ```bash
 cd /opt/integrated-waf
-sudo bash install.sh --status          # 容器、封鎖中的 IP、tunnel 狀態
-sudo bash install.sh --reconfigure     # 改了 .env 之後
-sudo bash install.sh --update          # 從 GitHub 更新程式後重新套用
-sudo bash install.sh --uninstall       # 停止（資料卷保留；加 --purge 連資料一起刪）
+sudo bash /opt/integrated-waf/install.sh --status          # 容器、封鎖中的 IP、tunnel 狀態
+sudo bash /opt/integrated-waf/install.sh --reconfigure     # 改了 .env 之後
+sudo bash /opt/integrated-waf/install.sh --update          # 從 GitHub 更新程式後重新套用
+sudo bash /opt/integrated-waf/install.sh --uninstall       # 停止（資料卷保留；加 --purge 連資料一起刪）
 sudo docker compose logs -f od-bridge  # 事件轉送與決策落地
 sudo nft list set inet secstack blocklist        # 目前被封的 IP（帶剩餘秒數）
 curl http://<防禦端IP>:8500/edl                   # 給防火牆抓的黑名單（純 IP 一行一個）
@@ -210,7 +210,7 @@ Suricata 規則更新（會套用 `suricata/disable.conf` 的停用清單，裡�
 以及一條會把本機 cloudflared 自己的 tunnel DNS 查詢當事件的 ET INFO 規則）：
 
 ```bash
-sudo bash install.sh --update-rules
+sudo bash /opt/integrated-waf/install.sh --update-rules
 ```
 
 各服務入口（安裝完成時會印出密碼，也在 `.env` 裡）：

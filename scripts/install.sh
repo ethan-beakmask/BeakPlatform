@@ -400,7 +400,7 @@ run_demo_provision() {
         return 0
     fi
 
-    waf_command="sudo bash install.sh --pair '$pair_string' --backend http://<被保護網站IP>:<埠>"
+    waf_command="sudo bash /tmp/install.sh --pair '$pair_string' --backend http://<被保護網站IP>:<埠>"
     cred_file="$INSTALL_DIR/demo-credentials.txt"
     old_umask=$(umask)
     umask 077

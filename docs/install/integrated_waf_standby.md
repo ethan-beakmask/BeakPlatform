@@ -86,7 +86,7 @@ WAF 容器卻連不到，症狀是「歡迎頁正常、被保護網站的路徑�
 範例：
 
 ```bash
-sudo bash install.sh \
+sudo bash /tmp/install.sh \
     --pair 'ODN1....' \
     --backend http://192.168.1.30:8000 \
     --cf-api-token <Cloudflare API Token> --cf-hostname app.example.com \

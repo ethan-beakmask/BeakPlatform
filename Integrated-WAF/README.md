@@ -23,9 +23,9 @@ cd /opt/BeakPlatform && set -a && source .env && set +a
 venv/bin/python scripts/od_node_pairing.py --org <企業網域> --base-url http://<平台IP>:<埠>/beakplatform --provision --apply
 
 # 防禦端（另一台 Ubuntu）
-curl -fsSL -H "Authorization: token <GitHub PAT>" \
-    https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o install.sh
-sudo bash install.sh --pair '<開通字串>' --backend http://<被保護網站IP>:<埠> \
+curl -fsSL \
+    https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o /tmp/install.sh
+sudo bash /tmp/install.sh --pair '<開通字串>' --backend http://<被保護網站IP>:<埠> \
      --cf-api-token <Cloudflare API Token> --cf-hostname www.example.com \
      --welcome-hostname www.example.com --backend-path /beakplatform
 ```

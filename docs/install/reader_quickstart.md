@@ -39,7 +39,7 @@ curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scri
   示範企業管理員: admin-admin.ops@demo-soc.example
   示範帳號共用密碼: <你的密碼>
   防禦節點開通字串: ODN1.....
-  WAF 主機執行指令: sudo bash install.sh --pair 'ODN1....' --backend http://<被保護網站IP>:<埠>
+  WAF 主機執行指令: sudo bash /tmp/install.sh --pair 'ODN1....' --backend http://<被保護網站IP>:<埠>
 ```
 
 **檢查點**：瀏覽器開 `http://<主機A IP>:8000/beakplatform/auth/login` 看得到登入頁。
@@ -61,8 +61,8 @@ curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scri
 **以下在主機 B 上執行。**把主機 A 總結裡的「WAF 主機執行指令」貼到主機 B，補上被保護網站位址：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o install.sh
-sudo bash install.sh \
+curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o /tmp/install.sh
+sudo bash /tmp/install.sh \
   --pair 'ODN1....' \
   --backend http://<主機A IP>:8000 \
   --admin-ips <你的工作機IP> \
