@@ -220,11 +220,16 @@ services:
     image: portainer/portainer-ce:2.21.4
     restart: unless-stopped
     profiles: ["ui"]
+    # 管理員密碼在安裝時就設好：Portainer 啟動後 5 分鐘內沒人建立管理員會自我鎖定
+    # （Administrator initialization timeout），而本節點安裝加拉映像檔就超過 5 分鐘。
+    # 此旗標只在資料卷是空的第一次啟動時生效。
+    command: ["--admin-password-file=/run/portainer_admin_password"]
     ports:
       - "0.0.0.0:9443:9443"   # HTTPS，自簽憑證
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer-data:/data
+      - ./generated/portainer_admin_password:/run/portainer_admin_password:ro
 
   evebox:
     image: jasonish/evebox:0.18.2
@@ -233,7 +238,7 @@ services:
     entrypoint: ["/usr/bin/evebox"]
     command: ["server", "--no-auth", "--datastore=sqlite",
               "--data-directory=/data", "--input=/var/log/suricata/eve.json",
-              "--host=0.0.0.0", "--port=5636"]
+              "--host=0.0.0.0", "--port=5636", "--no-tls"]   # 預設會開自簽 TLS，用 http 開會得到 ERR_INVALID_HTTP_RESPONSE
     volumes:
       - suricata-logs:/var/log/suricata:ro
       - evebox-data:/data

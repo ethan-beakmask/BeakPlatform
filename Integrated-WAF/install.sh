@@ -329,6 +329,7 @@ build_env() {
     # 秘密與衍生值
     set_env_if_empty CLICKHOUSE_PASSWORD "$(gen_secret)"
     set_env_if_empty GRAFANA_ADMIN_PASSWORD "$(gen_secret)"
+    set_env_if_empty PORTAINER_ADMIN_PASSWORD "$(gen_secret)"
     set_env_if_empty BRIDGE_INGEST_TOKEN "$(gen_secret)"
     set_env_if_empty CLOUDFLARED_IP "172.18.0.250"
     set_env_if_empty DOCKER_SUBNET "172.18.0.0/16"
@@ -364,6 +365,8 @@ build_env() {
 render_templates() {
     log_step "4/8" "產生設定檔（generated/）"
     local g="$INSTALL_DIR/generated"; mkdir -p "$g"
+    # Portainer 管理員密碼檔（compose 以唯讀掛入；不可有換行）
+    ( umask 077; printf '%s' "$(get_env PORTAINER_ADMIN_PASSWORD)" > "$g/portainer_admin_password" )
     local home_net iface subnet admin platform_ip
     home_net="$(get_env HOME_NET)"; iface="$(get_env NODE_IFACE)"; subnet="$(get_env DOCKER_SUBNET)"
     admin="$(get_env ADMIN_IPS)"; platform_ip="$(platform_ip_from_url "$(get_env BEAK_BASE_URL)")"
@@ -575,6 +578,15 @@ print(json.dumps({
 print_summary() {
     log_step "8/8" "完成"
     local ip; ip="$(get_env NODE_IP)"
+    # 經 WAF 開被保護網站的網址：後端就是平台本身時（練習環境），直接給平台登入頁，
+    # 因為平台的根路徑沒有頁面，只印 :8080/ 會讓人以為 WAF 壞了
+    local waf_url="http://$ip:8080$(get_env WAF_BACKEND_PATH)/" waf_note=""
+    local base; base="$(get_env BEAK_BASE_URL)"
+    if [[ -n "$base" && "$(platform_ip_from_url "$base")" == "$(platform_ip_from_url "$(get_env WAF_BACKEND_URL)")" ]]; then
+        local ppath; ppath="$(printf '%s' "$base" | sed -E 's#^[a-z]+://[^/]+##; s#/$##')"
+        waf_url="http://$ip:8080${ppath}/auth/login"
+        waf_note="（經 WAF 開平台登入頁；根路徑 http://$ip:8080/ 回 404 屬正常，平台根路徑沒有頁面）"
+    fi
     cat <<EOT
 
 安裝目錄：$INSTALL_DIR（設定在 .env，改完跑 sudo bash $INSTALL_DIR/install.sh --reconfigure）
@@ -585,13 +597,13 @@ print_summary() {
   平台       $(get_env BEAK_BASE_URL)
   管理來源   $(get_env ADMIN_IPS)
 
-  WAF（內網驗證）  http://$ip:8080/
+  WAF（內網驗證）  $waf_url  $waf_note
   Grafana          http://$ip:3000/      admin / $(get_env GRAFANA_ADMIN_PASSWORD)
   EveBox           http://$ip:5636/      （Suricata 告警，無密碼，來源受防火牆限制）
-  Portainer        https://$ip:9443/     （首次開啟時設定管理員密碼）
+  Portainer        https://$ip:9443/     admin / $(get_env PORTAINER_ADMIN_PASSWORD)  （自簽憑證，瀏覽器警告請按繼續）
   ClickHouse       http://$ip:8123/play  secstack / $(get_env CLICKHOUSE_PASSWORD)
   od-bridge        http://$ip:8500/stats  /forwards  /decisions  /edl
-  Vector API       http://$ip:8686/
+  Vector API       http://$ip:8686/playground  （GraphQL 查詢介面；健康檢查 /health。根路徑沒有頁面）
 
 下一步：
   sudo bash $INSTALL_DIR/install.sh --verify        健康檢查
