@@ -85,11 +85,19 @@
 
 <h3>1. 用安裝時取得的帳密登入</h3>
 
-<p>安裝腳本在收尾時會印出這兩項：</p>
+<p>登入網址是 <code>http://主機IP:8000/beakplatform/auth/login</code>（埠號與
+<code>/beakplatform</code> 缺一不可）。安裝腳本在收尾時會印出登入網址與兩組出廠帳號：</p>
 
-<pre><code>系統企業: 貴公司網域
-管理員:   admin@貴公司網域
-密碼:     (安裝時設定，首次登入須變更)</code></pre>
+<pre><code>系統企業: sys-xxxxxxxxxxxx
+admin@sys-xxxxxxxxxxxx       系統管理員（管所有企業），改完密碼即可使用
+enterprise@sys-xxxxxxxxxxxx  系統企業的原始管理員，改完密碼後進初始設定精靈</code></pre>
+
+<div class="warn">
+本文件說的「原始管理員」在全新安裝時是 <code>enterprise@sys-…</code>，
+<strong>不是</strong> <code>admin@sys-…</code>。後者是平台層級的系統管理員，
+第一次登入只會被要求變更密碼，不會進初始設定頁，這是正常的。
+日後由系統管理員新建的企業，其原始管理員才是 <code>admin@該企業網域</code>。
+</div>
 
 <p class="muted">
 忘記密碼時無法自助重設（此時發信服務還沒設定、也還沒有第二個管理員可以協助），
