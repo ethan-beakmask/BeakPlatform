@@ -162,9 +162,9 @@ try:
     if not isinstance(d, dict):
         raise ValueError
 except Exception:
-    sys.exit("開通字串內容無法解碼。請貼上平台主機安裝完成時印出的「防禦節點開通字串」整串"
-             "（ODN1. 後面是一長串英數字），文件裡的 'ODN1....' 只是佔位示意，不能照抄。"
-             "忘了可在平台主機重跑：sudo bash /opt/BeakPlatform/scripts/install.sh --demo")
+    sys.exit("開通字串不正確。\n"
+             "  請到主機 A 執行：sudo cat /opt/BeakPlatform/demo-credentials.txt\n"
+             "  把最後兩行指令整段複製到這台主機執行（文件裡的 ODN1.... 只是示意，不是真的字串）。")
 mapping = {"base_url": "BEAK_BASE_URL", "key_id": "INTAKE_KEY_ID", "secret": "INTAKE_SECRET_B64",
            "sa_id": "SA_ID", "sa_secret": "SA_SECRET"}
 for k, env in mapping.items():

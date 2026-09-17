@@ -400,7 +400,10 @@ run_demo_provision() {
         return 0
     fi
 
-    waf_command="sudo bash /tmp/install.sh --pair '$pair_string' --backend http://<被保護網站IP>:<埠>"
+    # 整段可直接貼到主機 B：--backend 預設保護平台本身；管理來源 IP 由 WAF 安裝腳本
+    # 自動納入平台主機與 SSH 來源，練習環境不必另外給 --admin-ips
+    waf_download="curl -fsSL ${GITHUB_REPO%.git}/raw/main/Integrated-WAF/install.sh -o /tmp/install.sh"
+    waf_command="sudo bash /tmp/install.sh --pair '$pair_string' --backend ${DISPLAY_URL%/} --yes"
     cred_file="$INSTALL_DIR/demo-credentials.txt"
     old_umask=$(umask)
     umask 077
@@ -416,7 +419,8 @@ run_demo_provision() {
         echo "防禦節點開通字串:"
         echo "$pair_string"
         echo ""
-        echo "WAF 主機執行指令:"
+        echo "主機 B（防禦節點）安裝指令，兩行整段複製貼上即可，不需修改:"
+        echo "$waf_download"
         echo "$waf_command"
     } > "$cred_file"
     umask "$old_umask"
@@ -430,9 +434,14 @@ run_demo_provision() {
     echo "  登入網址: ${DISPLAY_URL%/}/beakplatform/auth/org/$demo_domain/login"
     echo "  示範企業管理員: $demo_admin"
     echo "  示範帳號共用密碼: $demo_password"
-    echo "  防禦節點開通字串: $pair_string"
-    echo "  WAF 主機執行指令: $waf_command"
-    echo "  已存到 $cred_file（只有 root 可讀）"
+    echo "  已存到 $cred_file（只有 root 可讀，之後可用 sudo cat 再看一次）"
+    echo ""
+    echo "  ---- 下一步：到主機 B（防禦節點）執行下面兩行，整段複製貼上即可，不需修改 ----"
+    echo ""
+    echo "$waf_download"
+    echo "$waf_command"
+    echo ""
+    echo "  （--backend 是要被 WAF 保護的網站，這裡預設填本平台；要保護別的網站才需要改）"
     return 0
 }
 

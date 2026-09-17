@@ -29,17 +29,20 @@ curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scri
 
 ```text
 [INFO] 全新安裝完成
-  URL:  http://<主機A IP>:8000
+  登入網址: http://<主機A IP>:8000/beakplatform/auth/login
   系統企業: sys-xxxxxxxxxxxx
-  管理員:   admin@sys-xxxxxxxxxxxx
   ...
 [INFO] 示範企業與防禦節點開通資訊
   示範企業: DEMOSOC / demo-soc.example
   登入網址: http://<主機A IP>:8000/beakplatform/auth/org/demo-soc.example/login
   示範企業管理員: admin-admin.ops@demo-soc.example
   示範帳號共用密碼: <你的密碼>
-  防禦節點開通字串: ODN1.....
-  WAF 主機執行指令: sudo bash /tmp/install.sh --pair 'ODN1....' --backend http://<被保護網站IP>:<埠>
+  已存到 /opt/BeakPlatform/demo-credentials.txt
+
+  ---- 下一步：到主機 B（防禦節點）執行下面兩行，整段複製貼上即可，不需修改 ----
+
+curl -fsSL https://github.com/ethan-beakmask/BeakPlatform/raw/main/Integrated-WAF/install.sh -o /tmp/install.sh
+sudo bash /tmp/install.sh --pair 'ODN1.（很長一串英數字）' --backend http://<主機A IP>:8000 --yes
 ```
 
 **檢查點**：瀏覽器開 `http://<主機A IP>:8000/beakplatform/auth/login` 看得到登入頁。
@@ -56,21 +59,16 @@ curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scri
 **練習從示範企業開始**，用「登入網址」那個 URL 登入示範企業管理員即可。
 資安人員帳號 `linda.hu@demo-soc.example`、資安主管 `kevin.ye@demo-soc.example`，密碼同一組。
 
-## 二、主機 B：裝防禦節點（一行，約 3～6 分鐘）
+## 二、主機 B：裝防禦節點（貼兩行，約 3～6 分鐘）
 
-**以下在主機 B 上執行。**把主機 A 總結裡的「WAF 主機執行指令」貼到主機 B，補上被保護網站位址：
+**以下在主機 B 上執行。**把主機 A 安裝結束時印出的最後那**兩行指令**（`curl ...` 與 `sudo bash /tmp/install.sh --pair 'ODN1.…'`）
+原封不動複製，貼到主機 B 執行。不需要修改任何內容。
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/Integrated-WAF/install.sh -o /tmp/install.sh
-sudo bash /tmp/install.sh \
-  --pair '<貼上主機 A 印出的整串開通字串，ODN1. 開頭>' \
-  --backend http://<主機A IP>:8000 \
-  --admin-ips <你的工作機IP> \
-  --yes
-```
-
-- `--backend` 填要被 WAF 保護的網站。練習時直接填平台本身（主機 A）最省事
-- `--admin-ips` 是允許進 Grafana／EveBox／Portainer 管理介面的來源；不給也能裝，預設放行平台主機與你 ssh 進來的那台
+- 開通字串是 `ODN1.` 開頭的一長串英數字，每次安裝都不同，**只能從你自己的主機 A 畫面複製**，本文件沒有可以照抄的字串
+- 主機 A 的畫面關掉了：在主機 A 執行 `sudo cat /opt/BeakPlatform/demo-credentials.txt`，最後兩行就是
+- 主機 A 先裝、主機 B 後裝即可，兩者之間沒有時間限制
+- `--backend` 是要被 WAF 保護的網站，指令裡已預設填平台本身（主機 A）；要保護別的網站才需要改
+- `--admin-ips <IP>`（選用，加在指令最後）是允許進 Grafana／EveBox／Portainer 管理介面的來源；不給也能裝，預設放行平台主機與你 ssh 進來的那台
 - 這台會自己裝 docker 並拉映像檔，讀者不需要碰 docker
 - 裝完的入口：WAF `http://<主機B IP>:8080/`、Grafana `:3000`、EveBox `:5636`、Portainer `https://…:9443`、
   od-bridge 狀態 `:8500/stats`、**EDL 黑名單 `:8500/edl`／白名單 `:8500/edl/allow`**（一行一個 IP 的純文字，防火牆可直接當外部動態清單抓）。
