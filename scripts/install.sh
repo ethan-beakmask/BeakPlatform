@@ -260,6 +260,19 @@ detect_server_ip() {
     echo "$detected"
 }
 
+# 操作者工作機的 IP：給主機 B 的 --admin-ips 用（允許從哪裡開 Grafana 等管理介面）。
+# 可用環境變數 WORKSTATION_IP 指定；否則取目前 SSH 連進本機的來源。
+# sudo 會清掉 SSH_CONNECTION，所以另外看 who 與 sshd 已建立連線的對端位址。
+detect_workstation_ips() {
+    local ips="${WORKSTATION_IP:-}"
+    if [ -z "$ips" ]; then
+        [ -n "${SSH_CONNECTION:-}" ] && ips="${SSH_CONNECTION%% *}"
+        ips="$ips,$(who 2>/dev/null | awk '$NF ~ /^\(/ {gsub(/[()]/,"",$NF); print $NF}' | paste -sd, -)"
+        ips="$ips,$(ss -Htn state established '( sport = :22 )' 2>/dev/null | awk '{print $NF}' | sed -E 's/:[0-9]+$//; s/^\[::ffff:([0-9.]+)\]$/\1/' | paste -sd, -)"
+    fi
+    printf '%s\n' "$ips" | tr ',' '\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | awk '!seen[$0]++' | paste -sd, - || true
+}
+
 resolve_display_url_from_install() {
     local server_ip listen_port
     server_ip=$(detect_server_ip)
@@ -286,7 +299,7 @@ run_demo_provision() {
     local fatal="${1:-0}"
     local demo_code="${DEMO_ORG_CODE:-DEMOSOC}"
     local demo_domain="${DEMO_ORG_DOMAIN:-demo-soc.example}"
-    local seed_log pair_log seed_rc pair_rc demo_password demo_admin pair_string waf_command cred_file old_umask
+    local seed_log pair_log seed_rc pair_rc demo_password demo_admin pair_string waf_command waf_download workstation_ips cred_file old_umask
 
     echo ""
     log_step "demo" "佈建示範企業與防禦節點開通字串..."
@@ -403,7 +416,8 @@ run_demo_provision() {
     # 整段可直接貼到主機 B：--backend 預設保護平台本身；管理來源 IP 由 WAF 安裝腳本
     # 自動納入平台主機與 SSH 來源，練習環境不必另外給 --admin-ips
     waf_download="curl -fsSL ${GITHUB_REPO%.git}/raw/main/Integrated-WAF/install.sh -o /tmp/install.sh"
-    waf_command="sudo bash /tmp/install.sh --pair '$pair_string' --backend ${DISPLAY_URL%/} --yes"
+    workstation_ips="$(detect_workstation_ips)"
+    waf_command="sudo bash /tmp/install.sh --pair '$pair_string' --backend ${DISPLAY_URL%/}${workstation_ips:+ --admin-ips $workstation_ips} --yes"
     cred_file="$INSTALL_DIR/demo-credentials.txt"
     old_umask=$(umask)
     umask 077
@@ -444,6 +458,11 @@ run_demo_provision() {
     echo "$waf_command"
     echo ""
     echo "  （--backend 是要被 WAF 保護的網站，這裡預設填本平台；要保護別的網站才需要改）"
+    if [ -n "$workstation_ips" ]; then
+        echo "  （--admin-ips 是允許開啟主機 B 管理介面 Grafana／EveBox／Portainer 的來源，已自動填入你現在連線進來的工作機 $workstation_ips）"
+    else
+        log_warn "偵測不到你的工作機 IP（不是用 SSH 連進來的？）。請在第二道指令的 --yes 前面自行加上 --admin-ips <你的工作機IP>，否則從工作機打不開主機 B 的管理介面"
+    fi
     return 0
 }
 

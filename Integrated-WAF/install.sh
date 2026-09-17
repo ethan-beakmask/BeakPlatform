@@ -141,11 +141,16 @@ compose() { (cd "$INSTALL_DIR" && docker compose "$@"); }
 
 detect_iface() { ip -4 route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev"){print $(i+1); exit}}'; }
 detect_ip()    { ip -4 -o addr show dev "$1" 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -1; }
-ssh_client_ip() {
-    local ip=""
-    [[ -n "${SSH_CONNECTION:-}" ]] && ip="${SSH_CONNECTION%% *}"
-    [[ -z "$ip" && -n "${SUDO_USER:-}" ]] && ip="$(who 2>/dev/null | awk -v u="$SUDO_USER" '$1==u && $NF ~ /^\(/ {gsub(/[()]/,"",$NF); print $NF; exit}')"
-    [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] && printf '%s' "$ip" || true
+ssh_client_ip() {   # 目前透過 SSH 連進本機的來源 IP（可能多個，逗號分隔）
+    # sudo 預設會清掉 SSH_CONNECTION，所以不能只靠環境變數：
+    #   1) SSH_CONNECTION（sudo -E 或直接 root 登入時才有）
+    #   2) who 的登入來源
+    #   3) 本機 sshd 目前已建立連線的對端位址（不受 sudo 影響，最可靠）
+    local ips=""
+    [[ -n "${SSH_CONNECTION:-}" ]] && ips="${SSH_CONNECTION%% *}"
+    ips="$ips,$(who 2>/dev/null | awk '$NF ~ /^\(/ {gsub(/[()]/,"",$NF); print $NF}' | paste -sd, -)"
+    ips="$ips,$(ss -Htn state established '( sport = :22 )' 2>/dev/null | awk '{print $NF}' | sed -E 's/:[0-9]+$//; s/^\[::ffff:([0-9.]+)\]$/\1/' | paste -sd, -)"
+    printf '%s\n' "$ips" | tr ',' '\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | awk '!seen[$0]++' | paste -sd, - || true
 }
 uniq_csv() { printf '%s\n' "$@" | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^$' | awk '!seen[$0]++' | paste -sd, -; }
 
@@ -220,6 +225,20 @@ fetch_source() {
         (cd "$tmp/repo" && git sparse-checkout set Integrated-WAF --quiet)
         [[ -f "$tmp/repo/Integrated-WAF/docker-compose.yml" ]] || die "repo 內找不到 Integrated-WAF/"
         src="$tmp/repo/Integrated-WAF"
+    fi
+    # 上一次安裝的目錄被直接 rm -rf（沒走 --uninstall）時，容器與資料卷還在，但 .env 裡的
+    # 密碼已經遺失；新產生的密碼對不上舊資料卷（Grafana 只在第一次啟動時設定管理員密碼）。
+    # 沒有 .env 就代表這是全新安裝，先把殘留的舊容器與資料卷清掉。
+    if [[ ! -f "$INSTALL_DIR/.env" ]]; then
+        local old_c old_v
+        old_c="$(docker ps -aq --filter label=com.docker.compose.project=secstack 2>/dev/null)"
+        old_v="$(docker volume ls -q --filter label=com.docker.compose.project=secstack 2>/dev/null)"
+        if [[ -n "$old_c$old_v" ]]; then
+            log_warn "發現上一次安裝殘留的容器／資料卷（安裝目錄已不在、舊密碼無從得知），清除後重新安裝"
+            [[ -n "$old_c" ]] && docker rm -f $old_c >/dev/null 2>&1 || true
+            [[ -n "$old_v" ]] && docker volume rm $old_v >/dev/null 2>&1 || true
+            docker network rm secstack_default >/dev/null 2>&1 || true
+        fi
     fi
     mkdir -p "$INSTALL_DIR"
     if [[ "$(cd "$src" && pwd)" != "$(cd "$INSTALL_DIR" && pwd)" ]]; then

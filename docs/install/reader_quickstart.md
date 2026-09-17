@@ -42,7 +42,7 @@ curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scri
   ---- 下一步：到主機 B（防禦節點）執行下面兩行，整段複製貼上即可，不需修改 ----
 
 curl -fsSL https://github.com/ethan-beakmask/BeakPlatform/raw/main/Integrated-WAF/install.sh -o /tmp/install.sh
-sudo bash /tmp/install.sh --pair 'ODN1.（很長一串英數字）' --backend http://<主機A IP>:8000 --yes
+sudo bash /tmp/install.sh --pair 'ODN1.（很長一串英數字）' --backend http://<主機A IP>:8000 --admin-ips <你的工作機IP> --yes
 ```
 
 **檢查點**：瀏覽器開 `http://<主機A IP>:8000/beakplatform/auth/login` 看得到登入頁。
@@ -68,7 +68,7 @@ sudo bash /tmp/install.sh --pair 'ODN1.（很長一串英數字）' --backend ht
 - 主機 A 的畫面關掉了：在主機 A 執行 `sudo cat /opt/BeakPlatform/demo-credentials.txt`，最後兩行就是
 - 主機 A 先裝、主機 B 後裝即可，兩者之間沒有時間限制
 - `--backend` 是要被 WAF 保護的網站，指令裡已預設填平台本身（主機 A）；要保護別的網站才需要改
-- `--admin-ips <IP>`（選用，加在指令最後）是允許進 Grafana／EveBox／Portainer 管理介面的來源；不給也能裝，預設放行平台主機與你 ssh 進來的那台
+- `--admin-ips` 是允許進 Grafana／EveBox／Portainer 管理介面的來源。主機 A 會自動填入你當時用 SSH 連進去的那台工作機 IP；若你是在主機 A 的主控台（不是 SSH）安裝，會偵測不到並提示你自己補上，也可在安裝主機 A 時加環境變數 `WORKSTATION_IP=<你的工作機IP>` 指定。平台主機本身一律自動放行
 - 這台會自己裝 docker 並拉映像檔，讀者不需要碰 docker
 - 裝完的入口：WAF `http://<主機B IP>:8080/`、Grafana `:3000`、EveBox `:5636`、Portainer `https://…:9443`、
   od-bridge 狀態 `:8500/stats`、**EDL 黑名單 `:8500/edl`／白名單 `:8500/edl/allow`**（一行一個 IP 的純文字，防火牆可直接當外部動態清單抓）。
