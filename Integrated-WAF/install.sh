@@ -72,6 +72,7 @@ OPT_YES=0; OPT_PURGE=0
 
 usage() { sed -n '2,45p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
+ORIG_ARGS=("$@")   # 自我更新重新執行時要原樣帶回
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --pair)           OPT_PAIR="$2"; shift 2 ;;
@@ -169,7 +170,7 @@ try:
 except Exception:
     sys.exit("開通字串不正確。\n"
              "  請到主機 A 執行：sudo cat /opt/BeakPlatform/demo-credentials.txt\n"
-             "  把最後兩行指令整段複製到這台主機執行（文件裡的 ODN1.... 只是示意，不是真的字串）。")
+             "  把最後兩列（一道指令）整段複製到這台主機執行（文件裡的 ODN1.... 只是示意，不是真的字串）。")
 mapping = {"base_url": "BEAK_BASE_URL", "key_id": "INTAKE_KEY_ID", "secret": "INTAKE_SECRET_B64",
            "sa_id": "SA_ID", "sa_secret": "SA_SECRET"}
 for k, env in mapping.items():
@@ -366,6 +367,8 @@ render_templates() {
     log_step "4/8" "產生設定檔（generated/）"
     local g="$INSTALL_DIR/generated"; mkdir -p "$g"
     # Portainer 管理員密碼檔（compose 以唯讀掛入；不可有換行）
+    # 路徑若是目錄，是舊版腳本配新版 compose 時 docker 自動建出來的空目錄，先移除
+    [[ -d "$g/portainer_admin_password" ]] && rm -rf "$g/portainer_admin_password"
     ( umask 077; printf '%s' "$(get_env PORTAINER_ADMIN_PASSWORD)" > "$g/portainer_admin_password" )
     local home_net iface subnet admin platform_ip
     home_net="$(get_env HOME_NET)"; iface="$(get_env NODE_IFACE)"; subnet="$(get_env DOCKER_SUBNET)"
@@ -670,6 +673,14 @@ case "$MODE" in
     install)
         install_packages
         fetch_source
+        # 正在執行的這支腳本若與剛從 GitHub 取得的版本不同（例如 /tmp 裡留著上次下載的舊檔、
+        # 這次下載又沒成功覆蓋），改跑新取得的那一支。否則會變成「舊腳本＋新 docker-compose」，
+        # 兩邊對不上（實例：舊腳本不會產生 Portainer 密碼檔，新 compose 卻要掛它）。
+        if [[ -z "${WAF_INSTALL_REEXEC:-}" && -f "$INSTALL_DIR/install.sh" ]] \
+           && ! cmp -s "${BASH_SOURCE[0]}" "$INSTALL_DIR/install.sh"; then
+            log_warn "執行中的安裝腳本不是最新版，改用剛取得的 $INSTALL_DIR/install.sh 重新執行"
+            WAF_INSTALL_REEXEC=1 exec bash "$INSTALL_DIR/install.sh" "${ORIG_ARGS[@]}"
+        fi
         build_env
         render_templates
         apply_firewall

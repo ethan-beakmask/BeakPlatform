@@ -415,9 +415,11 @@ run_demo_provision() {
 
     # 整段可直接貼到主機 B：--backend 預設保護平台本身；管理來源 IP 由 WAF 安裝腳本
     # 自動納入平台主機與 SSH 來源，練習環境不必另外給 --admin-ips
-    waf_download="curl -fsSL ${GITHUB_REPO%.git}/raw/main/Integrated-WAF/install.sh -o /tmp/install.sh"
+    # 下載到家目錄並用 && 串接：下載失敗就不會往下跑到舊檔。不放 /tmp——/tmp 是 sticky 目錄，
+    # 留著別的帳號（例如 root）建立的同名舊檔時覆蓋會失敗，接著執行到的就是舊腳本
+    waf_download="curl -fsSL ${GITHUB_REPO%.git}/raw/main/Integrated-WAF/install.sh -o ~/integrated-waf-install.sh \\"
     workstation_ips="$(detect_workstation_ips)"
-    waf_command="sudo bash /tmp/install.sh --pair '$pair_string' --backend ${DISPLAY_URL%/}${workstation_ips:+ --admin-ips $workstation_ips} --yes"
+    waf_command="  && sudo bash ~/integrated-waf-install.sh --pair '$pair_string' --backend ${DISPLAY_URL%/}${workstation_ips:+ --admin-ips $workstation_ips} --yes"
     cred_file="$INSTALL_DIR/demo-credentials.txt"
     old_umask=$(umask)
     umask 077
@@ -433,9 +435,8 @@ run_demo_provision() {
         echo "防禦節點開通字串:"
         echo "$pair_string"
         echo ""
-        echo "主機 B（防禦節點）安裝指令，共兩道（中間空一列隔開），整段複製貼上即可，不需修改:"
+        echo "主機 B（防禦節點）安裝指令（一道指令共兩列，兩列一起複製貼上，不需修改）:"
         echo "$waf_download"
-        echo ""
         echo "$waf_command"
     } > "$cred_file"
     umask "$old_umask"
@@ -451,10 +452,9 @@ run_demo_provision() {
     echo "  示範帳號共用密碼: $demo_password"
     echo "  已存到 $cred_file（只有 root 可讀，之後可用 sudo cat 再看一次）"
     echo ""
-    echo "  ---- 下一步：到主機 B（防禦節點）執行下面兩道指令（中間空一列隔開），整段複製貼上即可，不需修改 ----"
+    echo "  ---- 下一步：到主機 B（防禦節點）執行下面這一道指令（共兩列，第一列結尾的 \\ 表示接續下一列），兩列一起複製貼上，不需修改 ----"
     echo ""
     echo "$waf_download"
-    echo ""
     echo "$waf_command"
     echo ""
     echo "  （--backend 是要被 WAF 保護的網站，這裡預設填本平台；要保護別的網站才需要改）"

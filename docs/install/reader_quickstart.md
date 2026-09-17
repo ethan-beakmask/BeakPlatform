@@ -39,10 +39,10 @@ curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scri
   示範帳號共用密碼: <你的密碼>
   已存到 /opt/BeakPlatform/demo-credentials.txt
 
-  ---- 下一步：到主機 B（防禦節點）執行下面兩行，整段複製貼上即可，不需修改 ----
+  ---- 下一步：到主機 B（防禦節點）執行下面這一道指令（共兩列），兩列一起複製貼上，不需修改 ----
 
-curl -fsSL https://github.com/ethan-beakmask/BeakPlatform/raw/main/Integrated-WAF/install.sh -o /tmp/install.sh
-sudo bash /tmp/install.sh --pair 'ODN1.（很長一串英數字）' --backend http://<主機A IP>:8000 --admin-ips <你的工作機IP> --yes
+curl -fsSL https://github.com/ethan-beakmask/BeakPlatform/raw/main/Integrated-WAF/install.sh -o ~/integrated-waf-install.sh \
+  && sudo bash ~/integrated-waf-install.sh --pair 'ODN1.（很長一串英數字）' --backend http://<主機A IP>:8000 --admin-ips <你的工作機IP> --yes
 ```
 
 **檢查點**：瀏覽器開 `http://<主機A IP>:8000/beakplatform/auth/login` 看得到登入頁。
@@ -61,11 +61,11 @@ sudo bash /tmp/install.sh --pair 'ODN1.（很長一串英數字）' --backend ht
 
 ## 二、主機 B：裝防禦節點（貼兩行，約 3～6 分鐘）
 
-**以下在主機 B 上執行。**把主機 A 安裝結束時印出的最後那**兩行指令**（`curl ...` 與 `sudo bash /tmp/install.sh --pair 'ODN1.…'`）
+**以下在主機 B 上執行。**把主機 A 安裝結束時印出的最後那**一道指令（共兩列：`curl ... \` 與 `&& sudo bash ~/integrated-waf-install.sh --pair 'ODN1.…'`）**
 原封不動複製，貼到主機 B 執行。不需要修改任何內容。
 
 - 開通字串是 `ODN1.` 開頭的一長串英數字，每次安裝都不同，**只能從你自己的主機 A 畫面複製**，本文件沒有可以照抄的字串
-- 主機 A 的畫面關掉了：在主機 A 執行 `sudo cat /opt/BeakPlatform/demo-credentials.txt`，最後兩行就是
+- 主機 A 的畫面關掉了：在主機 A 執行 `sudo cat /opt/BeakPlatform/demo-credentials.txt`，最後兩列就是
 - 主機 A 先裝、主機 B 後裝即可，兩者之間沒有時間限制
 - `--backend` 是要被 WAF 保護的網站，指令裡已預設填平台本身（主機 A）；要保護別的網站才需要改
 - `--admin-ips` 是允許進 Grafana／EveBox／Portainer 管理介面的來源。主機 A 會自動填入你當時用 SSH 連進去的那台工作機 IP；若你是在主機 A 的主控台（不是 SSH）安裝，會偵測不到並提示你自己補上，也可在安裝主機 A 時加環境變數 `WORKSTATION_IP=<你的工作機IP>` 指定。平台主機本身一律自動放行
