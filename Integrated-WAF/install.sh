@@ -428,7 +428,7 @@ update_rules() {
         return 0
     fi
     log_info "下載規則集（約 40MB，視網路 1~3 分鐘）"
-    if ! compose run --rm --no-deps suricata suricata-update --no-test \
+    if ! compose run --rm --no-deps suricata suricata-update --no-test --no-reload \
             --disable-conf /etc/suricata-update/disable.conf 2>&1 | grep -E "Loaded|Writing|Disabled|ERROR|Error" | tail -5; then
         log_warn "規則下載失敗，Suricata 會以空規則啟動；稍後可重跑本步驟"
     fi
@@ -480,8 +480,10 @@ do_verify() {
     local c
     local nip; nip="$(get_env NODE_IP)"
     c="$(http_code "http://127.0.0.1:8123/ping")";      printf '  ClickHouse /ping        %s\n' "$c"; [[ "$c" == 200 ]] || ok=0
-    c="$(http_code http://127.0.0.1:8500/health)"; printf '  od-bridge  /health      %s\n' "$c"; [[ "$c" == 200 ]] || ok=0
-    c="$(http_code "http://$nip:8080/")";          printf '  WAF        /            %s（後端 %s；502＝WAF 活著但連不到後端，000＝後端對根路徑不回應，很多站台刻意如此）\n' "$c" "$(get_env WAF_BACKEND_URL)"
+    # od-bridge 在安裝尾聲才被重啟（註冊 CrowdSec machine 之後），剛起來的幾秒還沒開始監聽，等它最多 40 秒
+    local i; for i in $(seq 1 20); do c="$(http_code http://127.0.0.1:8500/health)"; [[ "$c" == 200 ]] && break; sleep 2; done
+    printf '  od-bridge  /health      %s\n' "$c"; [[ "$c" == 200 ]] || ok=0
+    c="$(http_code "http://$nip:8080/")";          printf '  WAF        /            %s（後端 %s；這一列只看 WAF 有沒有把請求轉給後端：200/3xx/404 都算正常，404 表示後端的根路徑本來就沒有頁面，BeakPlatform 即是如此；502＝WAF 活著但連不到後端；000＝後端對根路徑不回應）\n' "$c" "$(get_env WAF_BACKEND_URL)"
     c="$(http_code "http://$nip:8080/?id=1%27%20OR%201=1--")"; printf '  WAF        SQLi 探測     %s（403 代表 WAF 規則引擎有在擋）\n' "$c"; [[ "$c" == 403 ]] || ok=0
     if compose exec -T vector vector validate /etc/vector/vector.yaml >/dev/null 2>&1; then
         echo "  Vector     設定檔        OK"
