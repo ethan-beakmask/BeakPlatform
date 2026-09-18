@@ -64,24 +64,46 @@ BeakPlatform 是整合型的運作平台，不只是傳統的流程引擎、BPM 
 流程設計器的「AI 分析」節點會呼叫本機安裝的 Claude Code CLI，其他功能不需要它，
 前置條件見 `docs/install/ai_node.md`。
 
-### 一行安裝（含示範企業）
+### 主機 A：平台（一行安裝，含示範企業）
+
+在**主機 A** 上，用 SSH 從你的工作機連進去執行（腳本會記下你的工作機 IP，
+之後主機 B 的管理介面才會對它開放）：
 
 ```bash
 curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scripts/install.sh \
   | sudo ADMIN_INITIAL_PASSWORD='<你的密碼>' INSTALL_DEMO=1 bash
 ```
 
-`INSTALL_DEMO=1` 會在平台裝完後建立示範企業 DemoSOC、示範帳號、資安事件受理流程，
-並印出防禦節點的一次性開通字串（同時存在 `/opt/BeakPlatform/demo-credentials.txt`，僅 root 可讀）。
-已安裝的主機可單獨執行 `sudo bash /opt/BeakPlatform/scripts/install.sh --demo`。
+- 密碼至少 8 字元，含大小寫、數字、符號；示範企業的帳號共用這組密碼。
+- `INSTALL_DEMO=1` 會建立示範企業 DemoSOC、示範帳號、資安事件受理流程，
+  並產生防禦節點的開通字串（同時存於 `/opt/BeakPlatform/demo-credentials.txt`，僅 root 可讀）。
+- 裝完會印出登入網址、出廠帳號，以及**一道給主機 B 的安裝指令（共兩列）**。
+- 已裝好的主機要補示範企業：`sudo bash /opt/BeakPlatform/scripts/install.sh --demo`。
 
-兩台主機（平台＋防禦節點）的完整練習 SOP 見 **`docs/install/reader_quickstart.md`**。
+### 主機 B：防禦節點（貼上主機 A 印出的指令）
+
+把主機 A 安裝結束時印出的那一道指令（`curl ... \` 與 `&& sudo bash ~/integrated-waf-install.sh --pair 'ODN1.…' ...` 兩列）
+原封不動複製到**主機 B** 執行，不需修改。長相如下，其中的開通字串每次安裝都不同，只能從你自己的主機 A 複製：
+
+```bash
+curl -fsSL https://github.com/ethan-beakmask/BeakPlatform/raw/main/Integrated-WAF/install.sh -o ~/integrated-waf-install.sh \
+  && sudo bash ~/integrated-waf-install.sh --pair 'ODN1.（很長一串英數字）' --backend http://<主機A IP>:8000 --admin-ips <你的工作機IP> --yes
+```
+
+- `--backend` 是 WAF 要保護的網站，預設填平台本身；`--admin-ips` 是允許開 Grafana／EveBox／Portainer 的來源。
+- 主機 A 的畫面關掉了：在主機 A 執行 `sudo cat /opt/BeakPlatform/demo-credentials.txt`，最後兩列就是。
+- 裝完會印出所有可直接貼到瀏覽器的網址與帳密，結尾應顯示「驗證通過」。
+- 經 SSH 跳板連線時，偵測到的工作機 IP 會是跳板機；請自行把 `--admin-ips` 改成真正的工作機。
+
+完整練習 SOP 與常見錯誤見 **`docs/install/reader_quickstart.md`**。
 
 ### 第一次登入
 
-- 網址：`http://<主機IP>:8000/beakplatform`（安裝總結會印出）
-- 系統管理員：`admin@<系統企業代碼>`（代碼由安裝腳本產生並印出），首次登入須改密碼
-- 練習請從示範企業開始：`admin-admin.ops@demo-soc.example`，密碼同安裝時設定
+- 登入網址：`http://<主機A IP>:8000/beakplatform/auth/login`（埠號與 `/beakplatform` 缺一不可）
+- 出廠兩組帳號共用安裝時設定的密碼，首次登入都會強制改密碼：
+  - `admin@<系統企業代碼>`：系統管理員，改完密碼即可使用
+  - `enterprise@<系統企業代碼>`：系統企業的原始管理員，改完密碼後進入初始設定精靈；練習用不必碰它
+- 練習請從示範企業開始：`admin-admin.ops@demo-soc.example`，登入網址在安裝總結的「示範企業」段
 
 ### 服務管理
 
@@ -94,9 +116,9 @@ sudo bash /opt/BeakPlatform/scripts/install.sh --uninstall   # 移除服務、�
 journalctl -u beakplatform -f
 ```
 
-## 一鍵安裝 WAF 防禦節點（Integrated-WAF）
+## 防禦節點（Integrated-WAF）
 
-`Integrated-WAF/` 是一包「快速安裝與整合」的防禦節點：
+`Integrated-WAF/` 是一包「快速安裝與整合」的防禦節點（安裝方式見上方「主機 B」）：
 WAF（nginx + ModSecurity + OWASP CRS）、Suricata、CrowdSec、Vector、ClickHouse，
 以及自寫的 od-bridge，把事件送進 BeakPlatform 建立案件，並把平台的封鎖決策落地到 nftables、CrowdSec 與 EDL。
 
