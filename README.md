@@ -59,7 +59,8 @@ BeakPlatform 是整合型的運作平台，不只是傳統的流程引擎、BPM 
 ### 系統需求
 
 - Ubuntu 22.04 / 24.04 LTS，可 sudo
-- 安裝腳本會自動裝好 PostgreSQL、Redis、Nginx、Python 3
+- 安裝腳本會自動裝好 PostgreSQL 18、Redis 8（走各自的官方套件庫，與開發環境同版）、Nginx、Python 3
+- 封閉網路或不想加外部套件庫：安裝時加 `USE_DISTRO_PKGS=1`，改用 Ubuntu 內建的 PostgreSQL 16 / Redis 7.0
 
 流程設計器的「AI 分析」節點會呼叫本機安裝的 Claude Code CLI，其他功能不需要它，
 前置條件見 `docs/install/ai_node.md`。

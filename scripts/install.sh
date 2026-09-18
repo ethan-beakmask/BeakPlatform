@@ -57,6 +57,15 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step()  { echo -e "${BLUE}[$1]${NC} $2"; }
 
+# 既有安裝的 PostgreSQL 埠：從 .env 的 DATABASE_URL 取，取不到就 5432。
+# 全新安裝流程會在 [1/9] 依實際建出的 cluster 重新決定。
+resolve_pg_port_from_env() {
+    grep '^DATABASE_URL=' "$INSTALL_DIR/.env" 2>/dev/null | cut -d= -f2- \
+        | sed -nE 's#^[a-z+]+://[^@]*@[^:/]+:([0-9]+)/.*#\1#p'
+}
+PG_PORT="${PG_PORT:-$(resolve_pg_port_from_env)}"
+PG_PORT="${PG_PORT:-5432}"
+
 # === 共用函式 ===
 
 check_root() {
@@ -197,8 +206,8 @@ run_as_app() {
 # 擁有權分離。其餘 seed 全部在 scripts/bootstrap_db.py（以應用帳號執行，不需 sudo）。
 # 冪等，安裝與更新共用。
 apply_superuser_db_objects() {
-    sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" 2>/dev/null || true
-    sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -v app_user="$DB_USER" \
+    sudo -u postgres env PGPORT="$PG_PORT" psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" 2>/dev/null || true
+    sudo -u postgres env PGPORT="$PG_PORT" psql -d "$DB_NAME" -v ON_ERROR_STOP=1 -v app_user="$DB_USER" \
         -q -f "$INSTALL_DIR/scripts/sql/fw_sp_setup.sql"
 }
 
@@ -207,10 +216,10 @@ apply_superuser_db_objects() {
 ensure_provisioner_role() {
     PROV_USER="${DB_USER}_prov"
     PROV_PASS=$(python3 -c "import secrets,string;print(''.join(secrets.choice(string.ascii_letters+string.digits) for _ in range(28)))")
-    sudo -u postgres psql -c "CREATE ROLE \"$PROV_USER\" WITH LOGIN PASSWORD '$PROV_PASS' CREATEDB CREATEROLE;" >/dev/null 2>&1 || true
+    sudo -u postgres env PGPORT="$PG_PORT" psql -c "CREATE ROLE \"$PROV_USER\" WITH LOGIN PASSWORD '$PROV_PASS' CREATEDB CREATEROLE;" >/dev/null 2>&1 || true
     # ALTER 是唯一權威（角色已存在時要確保密碼與屬性正確）。失敗就是真的壞了，
     # 不能靜默略過——沒有這個角色，新建企業一律沒有專屬資料庫。
-    if ! prov_err=$(sudo -u postgres psql -v ON_ERROR_STOP=1 \
+    if ! prov_err=$(sudo -u postgres env PGPORT="$PG_PORT" psql -v ON_ERROR_STOP=1 \
             -c "ALTER ROLE \"$PROV_USER\" WITH LOGIN PASSWORD '$PROV_PASS' CREATEDB CREATEROLE;" 2>&1 >/dev/null); then
         log_error "無法建立企業資料庫佈建角色 $PROV_USER：$prov_err"
         exit 1
@@ -221,7 +230,7 @@ ensure_provisioner_role() {
 # 「非 superuser 的佈建角色」這個隔離假設在那些版本不成立。
 check_pg_version() {
     local pg_ver
-    pg_ver=$(sudo -u postgres psql -tAc "SHOW server_version_num" 2>/dev/null || echo 0)
+    pg_ver=$(sudo -u postgres env PGPORT="$PG_PORT" psql -tAc "SHOW server_version_num" 2>/dev/null || echo 0)
     if [ "${pg_ver:-0}" -lt 160000 ]; then
         log_warn "PostgreSQL 版本低於 16，CREATEROLE 角色可奪取任何非 superuser 角色，企業資料庫佈建帳號的權限隔離在此版本不成立"
     fi
@@ -491,6 +500,8 @@ usage() {
     echo "  DEMO_ORG_CODE=DEMOSOC"
     echo "  DEMO_ORG_DOMAIN=demo-soc.example"
     echo "  GITHUB_TOKEN=<GitHub PAT> (公開 repo 不需要；私有 fork 才設定)"
+    echo "  PG_MAJOR=18 (PostgreSQL 大版本，走官方套件庫)"
+    echo "  USE_DISTRO_PKGS=1 (改用 Ubuntu 內建的 PostgreSQL 16 / Redis 7.0；封閉網路用)"
 }
 
 for arg in "$@"; do
@@ -648,14 +659,14 @@ if [ "$ACTION" = "uninstall" ]; then
 
     # 移除資料庫
     # 企業／集團專屬資料庫與其專用角色
-    for dbn in $(sudo -u postgres psql -tAc "SELECT datname FROM pg_database WHERE datname ~ '^(org|cg)_[0-9]+$'" 2>/dev/null || true); do
-        sudo -u postgres psql -c "DROP DATABASE IF EXISTS \"$dbn\" WITH (FORCE);" >/dev/null 2>&1 || true
+    for dbn in $(sudo -u postgres env PGPORT="$PG_PORT" psql -tAc "SELECT datname FROM pg_database WHERE datname ~ '^(org|cg)_[0-9]+$'" 2>/dev/null || true); do
+        sudo -u postgres env PGPORT="$PG_PORT" psql -c "DROP DATABASE IF EXISTS \"$dbn\" WITH (FORCE);" >/dev/null 2>&1 || true
     done
-    for rol in $(sudo -u postgres psql -tAc "SELECT rolname FROM pg_roles WHERE rolname ~ '^(bfadmin|bfsync|cgadmin|cgmember)_[0-9]+$'" 2>/dev/null || true); do
-        sudo -u postgres psql -c "DROP ROLE IF EXISTS \"$rol\";" >/dev/null 2>&1 || true
+    for rol in $(sudo -u postgres env PGPORT="$PG_PORT" psql -tAc "SELECT rolname FROM pg_roles WHERE rolname ~ '^(bfadmin|bfsync|cgadmin|cgmember)_[0-9]+$'" 2>/dev/null || true); do
+        sudo -u postgres env PGPORT="$PG_PORT" psql -c "DROP ROLE IF EXISTS \"$rol\";" >/dev/null 2>&1 || true
     done
-    sudo -u postgres psql -c "DROP ROLE IF EXISTS \"${DB_USER}_prov\";" >/dev/null 2>&1 || true
-    sudo -u postgres psql -c "DROP DATABASE IF EXISTS \"$DB_NAME\";" 2>/dev/null || true
+    sudo -u postgres env PGPORT="$PG_PORT" psql -c "DROP ROLE IF EXISTS \"${DB_USER}_prov\";" >/dev/null 2>&1 || true
+    sudo -u postgres env PGPORT="$PG_PORT" psql -c "DROP DATABASE IF EXISTS \"$DB_NAME\";" 2>/dev/null || true
 
     # 移除安裝目錄
     rm -rf "$INSTALL_DIR"
@@ -759,7 +770,7 @@ if [ "$ACTION" = "update" ]; then
         {
             echo ""
             echo "# 企業專屬資料庫佈建（非 superuser：LOGIN + CREATEDB + CREATEROLE）"
-            echo "SYNC_PG_ADMIN_URL=postgresql://$PROV_USER:$PROV_PASS@localhost/postgres"
+            echo "SYNC_PG_ADMIN_URL=postgresql://$PROV_USER:$PROV_PASS@localhost:$PG_PORT/postgres"
         } >> "$INSTALL_DIR/.env"
     fi
     if ! grep -q '^SYNC_CREDENTIAL_KEY=' "$INSTALL_DIR/.env" 2>/dev/null; then
@@ -861,7 +872,38 @@ fi
 # === [1/9] 系統依賴 ===
 log_step "1/9" "檢查系統依賴..."
 
-REQUIRED_PKGS=(python3 python3-venv python3-pip postgresql postgresql-contrib redis-server nginx git curl sudo)
+# PostgreSQL 與 Redis 的版本控制：預設走各自的官方套件庫（PostgreSQL 18、Redis 8），
+# 與開發環境對齊；Ubuntu 24.04 內建的是 PostgreSQL 16、Redis 7.0，三個環境版本不一致會讓
+# 除錯時很難判斷是版本差異還是程式問題。封閉網路或刻意要用發行版內建版本時設 USE_DISTRO_PKGS=1。
+PG_MAJOR="${PG_MAJOR:-18}"
+USE_DISTRO_PKGS="${USE_DISTRO_PKGS:-0}"
+if [ "$USE_DISTRO_PKGS" = "1" ]; then
+    PG_PKGS=(postgresql postgresql-contrib)
+    log_info "USE_DISTRO_PKGS=1：PostgreSQL 與 Redis 使用 Ubuntu 內建版本"
+else
+    OS_CODENAME="$(. /etc/os-release && echo "${VERSION_CODENAME:-noble}")"
+    apt-get install -y -q ca-certificates curl gnupg >/dev/null 2>&1 || true
+    if [ ! -f /etc/apt/sources.list.d/pgdg.list ]; then
+        curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg --yes \
+            || log_error "無法取得 PostgreSQL 官方庫金鑰（封閉網路請改用 USE_DISTRO_PKGS=1）"
+        echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] https://apt.postgresql.org/pub/repos/apt ${OS_CODENAME}-pgdg main" \
+            > /etc/apt/sources.list.d/pgdg.list
+        log_info "已加入 PostgreSQL 官方套件庫（${OS_CODENAME}-pgdg）"
+    fi
+    if [ ! -f /etc/apt/sources.list.d/redis.list ]; then
+        curl -fsSL https://packages.redis.io/gpg \
+            | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg --yes \
+            || log_error "無法取得 Redis 官方庫金鑰（封閉網路請改用 USE_DISTRO_PKGS=1）"
+        echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb ${OS_CODENAME} main" \
+            > /etc/apt/sources.list.d/redis.list
+        log_info "已加入 Redis 官方套件庫"
+    fi
+    PG_PKGS=("postgresql-$PG_MAJOR" "postgresql-client-$PG_MAJOR")
+    APT_NEED_UPDATE=1
+fi
+
+REQUIRED_PKGS=(python3 python3-venv python3-pip "${PG_PKGS[@]}" redis-server nginx git curl sudo)
 MISSING_PKGS=()
 
 for pkg in "${REQUIRED_PKGS[@]}"; do
@@ -873,14 +915,31 @@ for pkg in "${REQUIRED_PKGS[@]}"; do
     fi
 done
 
-if [ ${#MISSING_PKGS[@]} -eq 0 ]; then
+if [ ${#MISSING_PKGS[@]} -eq 0 ] && [ "${APT_NEED_UPDATE:-0}" != "1" ]; then
     log_info "所有系統依賴已安裝，跳過"
 else
-    log_info "需要安裝: ${MISSING_PKGS[*]}"
     # apt-get update 加 120 秒 timeout，避免在封閉網路無限等待
     timeout 120 apt-get update -q || log_warn "apt update 逾時或失敗，嘗試直接安裝..."
-    apt-get install -y -q "${MISSING_PKGS[@]}"
+    if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
+        log_info "需要安裝: ${MISSING_PKGS[*]}"
+        apt-get install -y -q "${MISSING_PKGS[@]}"
+    fi
+    if [ "$USE_DISTRO_PKGS" != "1" ]; then
+        # 官方庫的 redis-server 版本字串形如 6:8.10.2-1rl1~noble1；主機若原本裝了 Ubuntu 的 7.0，
+        # 在這裡升到官方庫版本（apt 會保留 /etc/redis/redis.conf）
+        apt-get install -y -q redis-server >/dev/null 2>&1 || true
+    fi
 fi
+
+# 決定平台要用的 PostgreSQL 埠：pgdg 對每個大版本各建一個 cluster，主機若原本已有 Ubuntu 的
+# PostgreSQL 16 佔住 5432，新裝的 18-main 會落在 5433。後面所有 psql 與連線字串一律用這個埠。
+if [ "$USE_DISTRO_PKGS" = "1" ]; then
+    PG_PORT="$(pg_lsclusters -h 2>/dev/null | awk 'NR==1 {print $3}')"
+else
+    PG_PORT="$(pg_lsclusters -h 2>/dev/null | awk -v v="$PG_MAJOR" '$1==v {print $3; exit}')"
+fi
+PG_PORT="${PG_PORT:-5432}"
+export PGPORT="$PG_PORT"
 
 # 確保服務啟動
 systemctl enable --now postgresql 2>/dev/null || true
@@ -896,29 +955,29 @@ ensure_service_user
 # === [2/9] PostgreSQL ===
 log_step "2/9" "設定 PostgreSQL..."
 
-sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || true
-sudo -u postgres psql -c "ALTER USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || true
+sudo -u postgres env PGPORT="$PG_PORT" psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || true
+sudo -u postgres env PGPORT="$PG_PORT" psql -c "ALTER USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || true
 
 # 全新安裝：先清除舊 DB 再建立（避免殘留資料衝突）
 # 斷開所有連線後再 DROP，並驗證結果
-sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
+sudo -u postgres env PGPORT="$PG_PORT" psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
 sleep 1
-if ! sudo -u postgres psql -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null; then
+if ! sudo -u postgres env PGPORT="$PG_PORT" psql -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null; then
     log_error "無法刪除資料庫 $DB_NAME（可能有程式佔用連線）"
     log_error "請先停止所有連線此資料庫的程式，再重新執行安裝"
     exit 1
 fi
-sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null
+sudo -u postgres env PGPORT="$PG_PORT" psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null
+sudo -u postgres env PGPORT="$PG_PORT" psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null
 
 # 全新安裝一併清掉前一次安裝留下的企業／集團專屬資料庫與其專用角色。
 # 不清的話，新環境的 org_1 會直接沿用舊環境的 org_1（provision 看到庫已存在就不重建），
 # 等於把前一套的企業資料接到新企業身上。順序不可顛倒：角色是資料庫 owner。
-for dbn in $(sudo -u postgres psql -tAc "SELECT datname FROM pg_database WHERE datname ~ '^(org|cg)_[0-9]+$'" 2>/dev/null || true); do
-    sudo -u postgres psql -c "DROP DATABASE IF EXISTS \"$dbn\" WITH (FORCE);" >/dev/null 2>&1 || true
+for dbn in $(sudo -u postgres env PGPORT="$PG_PORT" psql -tAc "SELECT datname FROM pg_database WHERE datname ~ '^(org|cg)_[0-9]+$'" 2>/dev/null || true); do
+    sudo -u postgres env PGPORT="$PG_PORT" psql -c "DROP DATABASE IF EXISTS \"$dbn\" WITH (FORCE);" >/dev/null 2>&1 || true
 done
-for rol in $(sudo -u postgres psql -tAc "SELECT rolname FROM pg_roles WHERE rolname ~ '^(bfadmin|bfsync|cgadmin|cgmember)_[0-9]+$'" 2>/dev/null || true); do
-    sudo -u postgres psql -c "DROP ROLE IF EXISTS \"$rol\";" >/dev/null 2>&1 || true
+for rol in $(sudo -u postgres env PGPORT="$PG_PORT" psql -tAc "SELECT rolname FROM pg_roles WHERE rolname ~ '^(bfadmin|bfsync|cgadmin|cgmember)_[0-9]+$'" 2>/dev/null || true); do
+    sudo -u postgres env PGPORT="$PG_PORT" psql -c "DROP ROLE IF EXISTS \"$rol\";" >/dev/null 2>&1 || true
 done
 
 check_pg_version
@@ -1005,7 +1064,7 @@ APP_PREFIX=/beakplatform
 NOCODE_BUILDER_MENU=on
 
 # 資料庫
-DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost/$DB_NAME
+DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost:$PG_PORT/$DB_NAME
 
 # Redis
 REDIS_URL=redis://localhost:6379/0
@@ -1035,7 +1094,7 @@ ENCRYPTED_STORAGE_DIR=$INSTALL_DIR/backend/encrypted_storage
 
 # 企業專屬資料庫佈建（非 superuser：LOGIN + CREATEDB + CREATEROLE）
 # 缺少此設定時，新建企業不會有專屬資料庫，企業級對照表與簽核片語將無法使用
-SYNC_PG_ADMIN_URL=postgresql://$PROV_USER:$PROV_PASS@localhost/postgres
+SYNC_PG_ADMIN_URL=postgresql://$PROV_USER:$PROV_PASS@localhost:$PG_PORT/postgres
 
 # 企業專屬資料庫憑證加密金鑰 (Fernet)，遺失將無法解密既有企業庫帳密
 SYNC_CREDENTIAL_KEY=$SYNC_CRED_KEY
@@ -1212,7 +1271,7 @@ fi
 # 種入系統對外網址（URL-02：未設定時領取頁等處只會顯示「尚未設定」，
 # 安裝當下就知道正確值，直接種入；已設定的不覆蓋，管理員可在
 # /hostconfig/server-settings 調整）
-sudo -u postgres psql -d "$DB_NAME" -q -c "
+sudo -u postgres env PGPORT="$PG_PORT" psql -d "$DB_NAME" -q -c "
 INSERT INTO system_settings (secure_code, key, value, value_type, category, created_at, updated_at, is_deleted)
 SELECT substr(md5(random()::text),1,22), 'system_base_url', '$DISPLAY_URL', 'string', 'general',
        now() AT TIME ZONE 'UTC', now() AT TIME ZONE 'UTC', false

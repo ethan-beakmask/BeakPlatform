@@ -99,22 +99,25 @@ fi
 DB_USER="${DB_USER:-beakplatform}"
 DB_PASS="${DB_PASS:-}"
 DB_HOST="${DB_HOST:-localhost}"
+# DATABASE_URL 的 host 可能帶埠（localhost:5433），psql 的 -h 不吃埠，拆開
+DB_PORT="${DB_HOST##*:}"; [ "$DB_PORT" != "$DB_HOST" ] || DB_PORT=5432
+DB_HOST="${DB_HOST%%:*}"
 DB_NAME="${DB_NAME:-beakplatform_dev}"
 
 if [ -z "$DB_PASS" ]; then
     echo -e "  ${RED}[FAIL]${NC} 資料庫連線（.env 沒有 DATABASE_URL 或其中沒有密碼，無法測試）"
     ((FAIL_COUNT++))
 fi
-[ -n "$DB_PASS" ] && check "資料庫連線" "PGPASSWORD=$DB_PASS psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c 'SELECT 1'"
+[ -n "$DB_PASS" ] && check "資料庫連線" "PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c 'SELECT 1'"
 
 # 檢查平台資料表
-check_output "users 資料表存在" "PGPASSWORD=$DB_PASS psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c '\\dt users'" "users"
-check_output "organizations 資料表存在" "PGPASSWORD=$DB_PASS psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c '\\dt organizations'" "organizations"
+check_output "users 資料表存在" "PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\\dt users'" "users"
+check_output "organizations 資料表存在" "PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\\dt organizations'" "organizations"
 
 # 檢查模組資料表
 echo -e "\n${BLUE}[FormWorkflow 資料表]${NC}"
 for table in fw_form_templates fw_workflow_templates fw_form_instances fw_workflow_instances fw_approval_records fw_workflow_variables fw_node_execution_queue; do
-    check_output "$table 存在" "PGPASSWORD=$DB_PASS psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c '\\dt $table'" "$table"
+    check_output "$table 存在" "PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\\dt $table'" "$table"
 done
 
 # API 測試（需要 Flask 運行中）
