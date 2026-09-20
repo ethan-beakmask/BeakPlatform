@@ -212,7 +212,7 @@ def main():
                     help='只印分級統計，不寫 CSV')
     ap.add_argument('--no-callers', action='store_true',
                     help='跳過前端呼叫者反查（快很多，但少了判斷依據）')
-    ap.add_argument('--db', default='beakplatform_dev', help='資料庫名稱')
+    ap.add_argument('--db', default='beakplatform', help='資料庫名稱')
     ap.add_argument('--db-host', default='localhost', help='資料庫主機')
     ap.add_argument('--db-user', default='beakplatform', help='資料庫帳號')
     ap.add_argument('--db-password', default=os.getenv('PGPASSWORD', ''),

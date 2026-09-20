@@ -4,7 +4,7 @@
 #
 # 為什麼需要這支：TestingConfig 的資料庫是 os.getenv('DATABASE_URL', 'sqlite:///:memory:')，
 # 而專案標準操作是先 `set -a && source .env && set +a`——.env 的 DATABASE_URL 指向開發庫
-# beakplatform_dev，於是測試會跑在開發資料庫上，而 app fixture 收尾會呼叫 db.drop_all()。
+# beakplatform，於是測試會跑在開發資料庫上，而 app fixture 收尾會呼叫 db.drop_all()。
 # 這支腳本負責在載入 .env 之後把 DATABASE_URL 強制改指到拋棄式測試庫。
 # （conftest.py 的 pytest_configure 另有一道防呆，會擋下庫名不是 _test 結尾的情況。）
 #

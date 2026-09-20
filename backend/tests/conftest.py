@@ -27,7 +27,7 @@ def _assert_disposable_database(uri: str) -> None:
 
     TestingConfig 的 URI 是 os.getenv('DATABASE_URL', 'sqlite:///:memory:')，
     而專案的標準操作是先 `set -a && source .env && set +a` 再跑 flask/pytest。
-    .env 的 DATABASE_URL 指向開發庫 beakplatform_dev，於是整組測試會直接跑在
+    .env 的 DATABASE_URL 指向開發庫 beakplatform，於是整組測試會直接跑在
     開發資料庫上，而底下的 app fixture 收尾時會呼叫 db.drop_all()。
 
     2026-08-05 之前一直沒出事，只是因為 drop_all() 被大量 FK 相依擋下來而拋例外

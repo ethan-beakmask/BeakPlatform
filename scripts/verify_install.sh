@@ -102,7 +102,7 @@ DB_HOST="${DB_HOST:-localhost}"
 # DATABASE_URL 的 host 可能帶埠（localhost:5433），psql 的 -h 不吃埠，拆開
 DB_PORT="${DB_HOST##*:}"; [ "$DB_PORT" != "$DB_HOST" ] || DB_PORT=5432
 DB_HOST="${DB_HOST%%:*}"
-DB_NAME="${DB_NAME:-beakplatform_dev}"
+DB_NAME="${DB_NAME:-beakplatform}"
 
 if [ -z "$DB_PASS" ]; then
     echo -e "  ${RED}[FAIL]${NC} 資料庫連線（.env 沒有 DATABASE_URL 或其中沒有密碼，無法測試）"
