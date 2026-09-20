@@ -81,6 +81,11 @@ def test_seed_org_proxy_request_flow_is_idempotent(test_org):
     ).all()
 
     assert form.schema['components'][1]['defaultToCurrentUser'] is False
+    authorized_forms = next(
+        item for item in form.schema['components']
+        if item.get('key') == 'authorized_forms')
+    assert authorized_forms['type'] == 'proxyFormPicker'
+    assert 'beneficiaryKey' not in authorized_forms
     assert workflow.graph
     assert workflow.cytoscape_config
     assert mapping.workflow_template_secure_code == workflow.secure_code

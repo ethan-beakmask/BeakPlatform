@@ -89,6 +89,31 @@ def _regular(org, user, role, unit=None):
     return row
 
 
+def _publish_form(org, template_sc, mapping_sc, name='可限定表單',
+                  status='Published'):
+    from modules.form_workflow.models import FwPublishedFormWorkflow
+
+    row = FwPublishedFormWorkflow(
+        secure_code=f'pub_{template_sc}',
+        org_secure_code=org.secure_code,
+        source_mapping_id=abs(hash(mapping_sc)) % 100000,
+        source_mapping_secure_code=mapping_sc,
+        source_form_template_id=abs(hash(template_sc)) % 100000,
+        source_form_template_secure_code=template_sc,
+        source_workflow_template_id=1,
+        source_workflow_template_secure_code=f'wf_{mapping_sc}',
+        publish_version=1,
+        name=name,
+        form_snapshot={'name': name, 'code': f'CODE_{template_sc}'},
+        workflow_snapshot={'name': f'WF {name}'},
+        status=status,
+        is_deleted=False,
+    )
+    db.session.add(row)
+    db.session.commit()
+    return row
+
+
 def _queue(org, applicant, delegate_sc, roles, *, forms=None, reason='出差期間代理簽核',
            start=None, end=None):
     today = org.local_today()
@@ -192,10 +217,12 @@ def test_allowed_forms_are_copied_or_left_unlimited(test_org):
     delegate = _user(test_org, 'op_proxy_forms_del01', 'opproxyformsdel')
     role = _role(test_org, 'op_proxy_forms_role1', 'FORM_SIGNER')
     _regular(test_org, applicant, role)
+    _publish_form(test_org, 'tpl_a', 'map_tpl_a')
+    _publish_form(test_org, 'tpl_b', 'map_tpl_b')
 
     with_forms = _queue(test_org, applicant, delegate.secure_code, [
         {'role_secure_code': role.secure_code, 'unit_secure_code': None},
-    ], forms=['tpl_a', 'tpl_b'])
+    ], forms={'mode': 'limited', 'forms': ['tpl_a', 'tpl_b']})
     assert _run(with_forms)['status'] == 'success'
     assert _proxy_rows(test_org, delegate)[0].allowed_form_templates == ['tpl_a', 'tpl_b']
 
@@ -205,6 +232,52 @@ def test_allowed_forms_are_copied_or_left_unlimited(test_org):
     ], forms=[])
     assert _run(no_forms)['status'] == 'success'
     assert _proxy_rows(test_org, other_delegate)[0].allowed_form_templates is None
+
+
+def test_limited_all_mode_and_old_list_format_are_supported(test_org):
+    applicant = _user(test_org, 'op_proxy_modes_app1', 'opproxymodesapp')
+    delegate = _user(test_org, 'op_proxy_modes_del1', 'opproxymodesdel')
+    role = _role(test_org, 'op_proxy_modes_role', 'MODE_SIGNER')
+    _regular(test_org, applicant, role)
+    _publish_form(test_org, 'tpl_old_format', 'map_old_format')
+
+    all_queue = _queue(test_org, applicant, delegate.secure_code, [
+        {'role_secure_code': role.secure_code, 'unit_secure_code': None},
+    ], forms={'mode': 'all', 'forms': ['tpl_old_format']})
+    assert _run(all_queue)['status'] == 'success'
+    assert _proxy_rows(test_org, delegate)[0].allowed_form_templates is None
+
+    other_delegate = _user(test_org, 'op_proxy_modes_del2', 'opproxymodesdel2')
+    old_queue = _queue(test_org, applicant, other_delegate.secure_code, [
+        {'role_secure_code': role.secure_code, 'unit_secure_code': None},
+    ], forms=['tpl_old_format', 'tpl_old_format'])
+    assert _run(old_queue)['status'] == 'success'
+    assert _proxy_rows(test_org, other_delegate)[0].allowed_form_templates == ['tpl_old_format']
+
+
+def test_limited_empty_or_unpublished_forms_fail_before_assigning(test_org):
+    applicant = _user(test_org, 'op_proxy_badforms_app', 'opproxybadformsapp')
+    delegate = _user(test_org, 'op_proxy_badforms_del', 'opproxybadformsdel')
+    role = _role(test_org, 'op_proxy_badforms_role', 'BAD_FORM_SIGNER')
+    _regular(test_org, applicant, role)
+
+    empty_queue = _queue(test_org, applicant, delegate.secure_code, [
+        {'role_secure_code': role.secure_code, 'unit_secure_code': None},
+    ], forms={'mode': 'limited', 'forms': []})
+    empty_result = _run(empty_queue)
+
+    assert empty_result['status'] == 'error'
+    assert '沒有勾選任何表單' in empty_result['message']
+    assert _proxy_rows(test_org, delegate) == []
+
+    unpublished_queue = _queue(test_org, applicant, delegate.secure_code, [
+        {'role_secure_code': role.secure_code, 'unit_secure_code': None},
+    ], forms={'mode': 'limited', 'forms': ['tpl_not_published']})
+    unpublished_result = _run(unpublished_queue)
+
+    assert unpublished_result['status'] == 'error'
+    assert '不存在或尚未發行' in unpublished_result['message']
+    assert _proxy_rows(test_org, delegate) == []
 
 
 def test_revalidates_regular_roles_at_execution_time_and_rolls_back(test_org):

@@ -17,6 +17,16 @@ logger = logging.getLogger(__name__)
 class OpProxyGrantHandler(BaseNodeHandler):
     """代理指定授出節點處理器"""
 
+    FIELD_DEFAULTS = {
+        'roles_field': 'proxy_roles',
+        'delegate_field': 'delegate',
+        'from_field': 'effective_from',
+        'until_field': 'effective_until',
+        'forms_field': 'authorized_forms',
+        'reason_field': 'reason',
+        'result_var': 'proxy',
+    }
+
     def handle(self) -> Dict[str, Any]:
         self.report_running()
 
@@ -27,13 +37,27 @@ class OpProxyGrantHandler(BaseNodeHandler):
                 self.log_error('OpProxyGrant invalid form_data')
                 return {'status': 'error', 'message': msg}
 
-            roles_field = self.get_config_value('roles_field') or 'proxy_roles'
-            delegate_field = self.get_config_value('delegate_field') or 'delegate'
-            from_field = self.get_config_value('from_field') or 'effective_from'
-            until_field = self.get_config_value('until_field') or 'effective_until'
-            forms_field = self.get_config_value('forms_field') or 'authorized_forms'
-            reason_field = self.get_config_value('reason_field') or 'reason'
-            result_var = self.get_config_value('result_var') or 'proxy'
+            roles_field = (
+                self.get_config_value('roles_field')
+                or self.FIELD_DEFAULTS['roles_field'])
+            delegate_field = (
+                self.get_config_value('delegate_field')
+                or self.FIELD_DEFAULTS['delegate_field'])
+            from_field = (
+                self.get_config_value('from_field')
+                or self.FIELD_DEFAULTS['from_field'])
+            until_field = (
+                self.get_config_value('until_field')
+                or self.FIELD_DEFAULTS['until_field'])
+            forms_field = (
+                self.get_config_value('forms_field')
+                or self.FIELD_DEFAULTS['forms_field'])
+            reason_field = (
+                self.get_config_value('reason_field')
+                or self.FIELD_DEFAULTS['reason_field'])
+            result_var = (
+                self.get_config_value('result_var')
+                or self.FIELD_DEFAULTS['result_var'])
 
             applicant_sc = (
                 self.form_instance.applicant_secure_code if self.form_instance else ''
@@ -96,7 +120,14 @@ class OpProxyGrantHandler(BaseNodeHandler):
                 self.log_error('OpProxyGrant missing roles')
                 return {'status': 'error', 'message': msg}
 
-            forms = self._normalize_forms(form_data.get(forms_field))
+            forms_ok, forms, forms_msg, bad_forms = self._parse_limited_forms(
+                form_data, forms_field, org_code)
+            if not forms_ok:
+                self.log_error('OpProxyGrant invalid limited forms', {
+                    'forms_field': forms_field,
+                    'invalid_forms': bad_forms,
+                })
+                return {'status': 'error', 'message': forms_msg}
             today = self._org_today(org_code)
             allowed_rows = self._proxyable_rows(org_code, applicant_sc, today)
             allowed_keys = {(row.role_secure_code, row.unit_secure_code) for row in allowed_rows}
@@ -243,15 +274,78 @@ class OpProxyGrantHandler(BaseNodeHandler):
             roles.append(key)
         return roles
 
-    def _normalize_forms(self, raw: Any) -> Optional[List[str]]:
+    def _parse_limited_forms(self, form_data: Dict[str, Any], forms_field: str,
+                             org_code: str):
+        if forms_field not in form_data or form_data.get(forms_field) is None:
+            return True, None, None, []
+
+        raw = form_data.get(forms_field)
+        if isinstance(raw, dict):
+            mode = raw.get('mode')
+            if mode == 'all':
+                return True, None, None, []
+            if mode != 'limited' or not isinstance(raw.get('forms'), list):
+                return (
+                    False, None,
+                    _('代理指定失敗：限定表單格式錯誤'),
+                    [],
+                )
+            ok, forms = self._normalize_limited_form_list(raw.get('forms'))
+            if not ok:
+                return (
+                    False, None,
+                    _('代理指定失敗：限定表單格式錯誤'),
+                    [],
+                )
+            if not forms:
+                return (
+                    False, None,
+                    _('代理指定失敗：選了限定表單但沒有勾選任何表單'),
+                    [],
+                )
+            return self._validate_published_forms(forms, org_code)
+
+        if isinstance(raw, list):
+            ok, forms = self._normalize_limited_form_list(raw)
+            if not ok:
+                return (
+                    False, None,
+                    _('代理指定失敗：限定表單格式錯誤'),
+                    [],
+                )
+            if not forms:
+                return True, None, None, []
+            return self._validate_published_forms(forms, org_code)
+
+        return False, None, _('代理指定失敗：限定表單格式錯誤'), []
+
+    def _normalize_limited_form_list(self, raw: Any):
         if not isinstance(raw, list):
-            return None
+            return False, []
         forms = []
         for item in raw:
-            sc = str(item or '').strip()
+            if not isinstance(item, str):
+                return False, []
+            sc = item.strip()
             if sc and sc not in forms:
                 forms.append(sc)
-        return forms or None
+        return True, forms
+
+    def _validate_published_forms(self, forms: List[str], org_code: str):
+        from ..fill_permission_service import list_published_templates
+
+        allowed = {
+            item['secure_code']
+            for item in list_published_templates(org_code)
+        }
+        bad = [sc for sc in forms if sc not in allowed]
+        if bad:
+            return (
+                False, None,
+                _('代理指定失敗：限定的表單不存在或尚未發行'),
+                bad,
+            )
+        return True, forms, None, []
 
     def _role_labels(self, rows, requested_roles) -> List[str]:
         labels = {}

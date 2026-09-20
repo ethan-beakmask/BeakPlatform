@@ -6287,6 +6287,27 @@ routes:
     rules:
     - /api/form-center/fillable-form-templates
     source: modules/form_workflow/api/fc_available.py
+  form_workflow_form_center.list_published_form_templates:
+    answer_source: db
+    guard_args:
+      module_access_required:
+        check_acl: false
+        module: form_workflow
+    guards:
+    - module_access_required
+    has_internal_check: true
+    internal_identity_check: false
+    max_audience:
+    - ORG_ADMIN
+    - EMPLOYEE
+    methods:
+    - GET
+    note: 代理限定表單選擇器選項。函式內拒絕 EXTERNAL，並由登入者 session
+      的企業取得 org，只列出同企業已發行且非資安分類的表單模板。
+    review: confirmed
+    rules:
+    - /api/form-center/published-form-templates
+    source: modules/form_workflow/api/fc_available.py
   form_workflow_form_center.list_my_forms:
     answer_source: db
     guard_args:

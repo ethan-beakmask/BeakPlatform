@@ -360,7 +360,9 @@ FORM_APIKEYISSUE_SCHEMA = {
             'description': '核發出來的 Key 只能用來觸發這裡選的表單。核發前'
                           '會重新驗證這些表單是否落在「Key 歸屬人」自己'
                           '填得到的範圍內——這是伺服器端的強制重驗，不是'
-                          '前端下拉選單過濾一下就能繞過的提權防線。',
+                          '前端下拉選單過濾一下就能繞過的提權防線。這個'
+                          '元件的 beneficiaryKey 設定指向 key_owner 欄位。',
+            'beneficiaryKey': 'key_owner',
             'tableView': True, 'validate': {'required': True},
             'validateWhenHidden': False,
         },

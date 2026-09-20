@@ -193,37 +193,13 @@ def _build_unit_ancestors(unit_sc, ancestors, org_sc):
     ancestors.add('__ORG_ROOT__')
 
 
-def list_fillable_published_templates(user, org_sc):
-    """
-    列出該使用者「可填寫且有 Published 版本」的表單模板。
-
-    PF-160 的規則「你能手動填的表單，才能申請 key 去自動填」就是這一支：
-    API Key 申請單的授權表單選項（fc_available.list_fillable_form_templates）
-    與核發前的重驗（ApiKeyIssue handler）共用它，避免兩邊判定漂移。
-
-    Args:
-        user: 被判定的使用者（代申請時是「被代申請人」，不是送單人）
-        org_sc: 企業 secure_code（TENANT-01）
-
-    Returns:
-        list[dict]: secure_code 為 fw_form_templates.secure_code（穩定、不隨發行
-            改變），對應 api_keys.scopes.form_template
-    """
+def _latest_published_template_rows(org_sc):
+    """回傳每張表單模板最新一筆 Published，已排除資安分類。"""
     from app import db
     from ..models import (
-        FwCategory, FwFormWorkflowMapping, FwMappingPermission,
-        FwPublishedFormWorkflow,
+        FwCategory, FwFormWorkflowMapping, FwPublishedFormWorkflow,
     )
     from .security_center import is_security_category
-
-    ctx = build_fill_permission_context(user, org_sc)
-
-    perm_map = {}  # mapping_secure_code -> [FwMappingPermission, ...]
-    if not ctx['is_hardcoded']:
-        for p in FwMappingPermission.query.filter_by(
-            org_secure_code=org_sc, is_deleted=False
-        ).all():
-            perm_map.setdefault(p.mapping_secure_code, []).append(p)
 
     mapping_id_to_sc = {
         m.id: m.secure_code
@@ -251,7 +227,7 @@ def list_fillable_published_templates(user, org_sc):
         is_deleted=False,
     ).order_by(FwPublishedFormWorkflow.created_at.desc()).all()
 
-    result = []
+    rows = []
     seen_template_scs = set()
     for p in published_list:
         template_sc = p.source_form_template_secure_code
@@ -259,27 +235,80 @@ def list_fillable_published_templates(user, org_sc):
             continue
         seen_template_scs.add(template_sc)
 
-        mapping_sc = p.source_mapping_secure_code or mapping_id_to_sc.get(
-            p.source_mapping_id)
-        if not check_mapping_permission(ctx, perm_map.get(mapping_sc)):
-            continue
-
         form_snapshot = p.form_snapshot or {}
         cat_sc = form_snapshot.get('category_secure_code')
-        # 資安分類表單由處置中心 / intake 專用鏈路承接，不是使用者手動填的對象，
-        # 與表單中心清單採同一條隔離規則
+        # 資安分類表單由處置中心 / intake 專用鏈路承接，不是一般表單選項，
+        # 與表單中心清單採同一條隔離規則。
         if is_security_category(cat_sc):
             continue
 
         cat = cat_map.get(cat_sc) if cat_sc else None
-        result.append({
-            'secure_code': template_sc,
-            'name': form_snapshot.get('name') or p.name,
-            'code': form_snapshot.get('code'),
-            'description': form_snapshot.get('description') or p.description,
-            'category_secure_code': cat_sc,
-            'category_name': cat.name if cat else form_snapshot.get('category'),
+        rows.append({
+            'published': p,
+            'mapping_secure_code': (
+                p.source_mapping_secure_code
+                or mapping_id_to_sc.get(p.source_mapping_id)
+            ),
+            'item': {
+                'secure_code': template_sc,
+                'name': form_snapshot.get('name') or p.name,
+                'code': form_snapshot.get('code'),
+                'description': form_snapshot.get('description') or p.description,
+                'category_secure_code': cat_sc,
+                'category_name': cat.name if cat else form_snapshot.get('category'),
+            },
         })
 
-    result.sort(key=lambda i: (i.get('category_name') or '', i.get('name') or ''))
+    rows.sort(key=lambda row: (
+        row['item'].get('category_name') or '',
+        row['item'].get('name') or '',
+    ))
+    return rows
+
+
+def list_published_templates(org_sc):
+    """
+    列出企業內「有 Published 版本」的表單模板，不套填寫權限過濾。
+
+    用途：代理限定表單選擇器與 OpProxyGrant 重驗。回傳形狀與排序必須和
+    list_fillable_published_templates() 一致，讓前後端顯示與驗證同源。
+    """
+    return [row['item'] for row in _latest_published_template_rows(org_sc)]
+
+
+def list_fillable_published_templates(user, org_sc):
+    """
+    列出該使用者「可填寫且有 Published 版本」的表單模板。
+
+    PF-160 的規則「你能手動填的表單，才能申請 key 去自動填」就是這一支：
+    API Key 申請單的授權表單選項（fc_available.list_fillable_form_templates）
+    與核發前的重驗（ApiKeyIssue handler）共用它，避免兩邊判定漂移。
+
+    Args:
+        user: 被判定的使用者（代申請時是「被代申請人」，不是送單人）
+        org_sc: 企業 secure_code（TENANT-01）
+
+    Returns:
+        list[dict]: secure_code 為 fw_form_templates.secure_code（穩定、不隨發行
+            改變），對應 api_keys.scopes.form_template
+    """
+    from ..models import FwMappingPermission
+
+    ctx = build_fill_permission_context(user, org_sc)
+
+    perm_map = {}  # mapping_secure_code -> [FwMappingPermission, ...]
+    if not ctx['is_hardcoded']:
+        for p in FwMappingPermission.query.filter_by(
+            org_secure_code=org_sc, is_deleted=False
+        ).all():
+            perm_map.setdefault(p.mapping_secure_code, []).append(p)
+
+    result = []
+    for row in _latest_published_template_rows(org_sc):
+        mapping_sc = row['mapping_secure_code']
+        if not check_mapping_permission(ctx, perm_map.get(mapping_sc)):
+            continue
+
+        result.append(row['item'])
+
     return result

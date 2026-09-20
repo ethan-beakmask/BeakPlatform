@@ -106,11 +106,10 @@ FORM_SCHEMA = {
         },
         {
             'key': 'authorized_forms',
-            'type': 'formPicker',
+            'type': 'proxyFormPicker',
             'input': True,
             'label': '限定表單',
-            'description': '留空表示代理人可以簽你這些角色的所有單。選了就只限這幾張表單。',
-            'beneficiaryKey': '',
+            'description': '選「不限」時，代理人可以簽你這些角色的所有單；選「限定」就只能簽勾選的表單。',
             'tableView': True,
             'validateWhenHidden': False,
         },

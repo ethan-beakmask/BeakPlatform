@@ -14,6 +14,7 @@ from app.platform.data import get_current_org
 from app import db, csrf
 from flask_babel import gettext as _
 from .graph_authz import reject_unauthorized_graph_nodes
+from ..services.node_field_binding_check import check_node_field_bindings
 
 # 建立 API Blueprint
 mappings_bp = Blueprint(
@@ -606,6 +607,14 @@ def publish_mapping(secure_code):
     if unauthorized_response:
         return unauthorized_response
 
+    binding_errors = check_node_field_bindings(
+        form_template.schema, workflow_template.graph)
+    if binding_errors:
+        return jsonify({
+            'success': False,
+            'error': '；'.join(binding_errors),
+        }), 400
+
     try:
         # 檢查現有 Published 版本
         existing_published = FwPublishedFormWorkflow.query.filter_by(
@@ -1151,5 +1160,4 @@ def list_workflows_for_mapping():
             'revision': w.revision
         } for w in workflows]
     })
-
 

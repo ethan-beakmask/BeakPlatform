@@ -6,12 +6,51 @@ API Key 申請單的選項來源與 ApiKeyIssue 核發前的重驗都走它，
 判定放寬等於讓申請人取得填不到的表單的自動化能力。
 """
 import os
+import json
 from datetime import datetime, timedelta
 
 os.environ.setdefault("SYSTEM_ORG_CODE", "system.local")
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 
 from app import db  # noqa: E402
+from app.models import User  # noqa: E402
+from app.models.contract import Contract, ContractStatus  # noqa: E402
+from app.models.user import UserType  # noqa: E402
+from flask import session  # noqa: E402
+from flask_login import login_user  # noqa: E402
+from modules.form_workflow.api.fc_available import (  # noqa: E402
+    list_published_form_templates,
+)
+
+
+def _login_in_request(user, org):
+    login_user(user)
+    session['org_secure_code'] = org.secure_code
+    session['org_domain'] = org.domain_name
+
+
+def _json_from_response(result):
+    response = result[0] if isinstance(result, tuple) else result
+    status = result[1] if isinstance(result, tuple) else response.status_code
+    return status, response.get_json()
+
+
+def _grant_form_workflow_contract(org):
+    today = org.local_today()
+    contract = Contract(
+        secure_code=f'contract_fw_{org.secure_code[-8:]}',
+        org_secure_code=org.secure_code,
+        contract_number=f'CTR-FW-{org.secure_code[-8:]}',
+        name='Form Workflow Test Contract',
+        start_date=today - timedelta(days=1),
+        end_date=today + timedelta(days=30),
+        status=ContractStatus.ACTIVE,
+        modules_config=json.dumps(['form_workflow']),
+        is_deleted=False,
+    )
+    db.session.add(contract)
+    db.session.commit()
+    return contract
 
 
 def _publish(org_sc, template_sc, mapping_sc, name, *, status='Published',
@@ -134,3 +173,46 @@ def test_other_org_publish_is_not_visible(app, test_org, test_user):
     _grant_user(org_sc, 'map_foreign', test_user.secure_code, 'perm_foreign_local')
 
     assert _codes(test_user, org_sc) == []
+
+
+def test_published_form_templates_endpoint_success_and_filters(
+        app, test_org, test_admin, rbac_seed):
+    org_sc = test_org.secure_code
+    _publish(org_sc, 'tpl_pub_ok', 'map_pub_ok', '一般表單')
+    _publish(org_sc, 'tpl_pub_sec', 'map_pub_sec', '資安表單',
+             category_sc='CAT_SECURITY_f5bc0629')
+    _publish('other_org_published01', 'tpl_other_org', 'map_other_org',
+             '別企業表單')
+    _grant_form_workflow_contract(test_org)
+
+    with app.test_request_context('/api/form-center/published-form-templates'):
+        _login_in_request(test_admin, test_org)
+        status, data = _json_from_response(list_published_form_templates())
+
+    assert status == 200
+    assert data['success'] is True
+    assert [item['secure_code'] for item in data['data']] == ['tpl_pub_ok']
+
+
+def test_published_form_templates_endpoint_rejects_external(app, test_org):
+    external = User(
+        secure_code='fillable_ext_user001',
+        org_secure_code=test_org.secure_code,
+        username='fillable_ext',
+        email='fillable_ext@example.com',
+        display_name='External',
+        user_type=UserType.EXTERNAL,
+        is_active=True,
+        is_deleted=False,
+    )
+    external.set_password('password123')
+    db.session.add(external)
+    db.session.commit()
+    _grant_form_workflow_contract(test_org)
+
+    with app.test_request_context('/api/form-center/published-form-templates'):
+        _login_in_request(external, test_org)
+        status, data = _json_from_response(list_published_form_templates())
+
+    assert status == 403
+    assert data['success'] is False

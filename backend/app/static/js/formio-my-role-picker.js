@@ -100,8 +100,8 @@
 
         static get builderInfo() {
             return {
-                title: __('我的角色選擇'),
-                group: 'custom',
+                title: __('可委任角色選擇'),
+                group: 'systemForms',
                 icon: 'fa fa-user-shield',
                 weight: 12,
                 schema: MyRolePickerComponent.schema(),
@@ -113,6 +113,14 @@
                 {
                     key: 'display',
                     components: [
+                        {
+                            key: 'myRolePickerHelp',
+                            type: 'htmlelement',
+                            tag: 'div',
+                            input: false,
+                            content: __('代理指定申請單專用：讓申請人勾選要把自己的哪些角色暫時交給代理人，只列出本人正式持有的角色。流程中需搭配 OpProxyGrant 節點；單獨放進一般表單沒有作用。'),
+                            weight: -10,
+                        },
                         { key: 'label', type: 'textfield', label: __('欄位標籤'), input: true, weight: 0 },
                         { key: 'key', type: 'textfield', label: __('欄位 Key'), input: true, weight: 10 },
                         { key: 'description', type: 'textfield', label: __('說明文字'), input: true, weight: 20 },

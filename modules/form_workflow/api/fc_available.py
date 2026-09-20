@@ -280,3 +280,26 @@ def list_fillable_form_templates():
             'display_name': target_user.display_name,
         },
     })
+
+
+@form_center_bp.route('/published-form-templates')
+@module_access_required('form_workflow', False)
+def list_published_form_templates():
+    """取得企業內全部已發行表單模板清單（不依填寫權限過濾）。"""
+    from ..services.fill_permission_service import list_published_templates
+
+    if getattr(current_user, 'is_external', False):
+        return jsonify({
+            'success': False,
+            'error': 'external_forbidden',
+            'message': _('外部帳號不可查詢已發行表單清單'),
+        }), 403
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    return jsonify({
+        'success': True,
+        'data': list_published_templates(org.secure_code),
+    })

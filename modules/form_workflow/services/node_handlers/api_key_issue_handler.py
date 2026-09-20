@@ -20,6 +20,16 @@ logger = logging.getLogger(__name__)
 class ApiKeyIssueHandler(BaseNodeHandler):
     """API Key 核發節點處理器"""
 
+    FIELD_DEFAULTS = {
+        'beneficiary_field': 'beneficiary',
+        'forms_field': 'authorized_forms',
+        'purpose_field': 'purpose',
+        'expires_field': 'expires_at',
+        'allowed_ips_field': 'allowed_ips',
+        'claim_ttl_hours': 72,
+        'result_var': 'apikey',
+    }
+
     def handle(self) -> Dict[str, Any]:
         self.report_running()
 
@@ -29,15 +39,20 @@ class ApiKeyIssueHandler(BaseNodeHandler):
                 form_data = {}
 
             beneficiary_field = self.get_config_value(
-                'beneficiary_field') or 'beneficiary'
+                'beneficiary_field') or self.FIELD_DEFAULTS['beneficiary_field']
             forms_field = self.get_config_value(
-                'forms_field') or 'authorized_forms'
-            purpose_field = self.get_config_value('purpose_field') or 'purpose'
-            expires_field = self.get_config_value('expires_field') or 'expires_at'
+                'forms_field') or self.FIELD_DEFAULTS['forms_field']
+            purpose_field = self.get_config_value(
+                'purpose_field') or self.FIELD_DEFAULTS['purpose_field']
+            expires_field = self.get_config_value(
+                'expires_field') or self.FIELD_DEFAULTS['expires_field']
             allowed_ips_field = self.get_config_value(
-                'allowed_ips_field') or 'allowed_ips'
-            claim_ttl_hours = int(self.get_config_value('claim_ttl_hours') or 72)
-            result_var = self.get_config_value('result_var') or 'apikey'
+                'allowed_ips_field') or self.FIELD_DEFAULTS['allowed_ips_field']
+            claim_ttl_hours = int(
+                self.get_config_value('claim_ttl_hours')
+                or self.FIELD_DEFAULTS['claim_ttl_hours'])
+            result_var = self.get_config_value(
+                'result_var') or self.FIELD_DEFAULTS['result_var']
 
             beneficiary = str(form_data.get(beneficiary_field) or '').strip()
             forms = form_data.get(forms_field)

@@ -58,6 +58,7 @@ FORM_SCHEMA = {
             'input': True,
             'label': '授權表單',
             'description': '只列出「Key 歸屬人」自己填得到、且已發行的表單。換人時選項會重新計算。',
+            'beneficiaryKey': 'beneficiary',
             'tableView': True,
             'validate': {'required': True},
             'validateWhenHidden': False,

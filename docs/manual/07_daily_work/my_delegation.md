@@ -7,6 +7,7 @@ covers:
   - backend/app/defaults/proxy_request_defaults.py
   - modules/form_workflow/services/node_handlers/op_proxy_grant_handler.py
   - backend/app/static/js/formio-my-role-picker.js
+  - backend/app/static/js/formio-proxy-form-picker.js
   - backend/app/api/my_proxy_assignments.py
   - backend/app/templates/pages/_my_proxy_assignments.html
 ---
@@ -23,7 +24,7 @@ covers:
     3. 選代理人
     4. 勾選要委任的角色
     5. 填生效開始、生效結束與事由
-    6. 需要時選限定表單
+    6. 「限定表單」預設是「不限」；只想讓代理人簽某幾種表單時，改選「限定以下表單」並勾選
     7. 送出
     8. 等代理人在表單中心的待簽清單同意
     9. 對方同意後，代理指派才會出現在「我授出的代理」
@@ -49,6 +50,7 @@ covers:
 - 代理只涵蓋「以角色指定」的簽核關卡。流程若把某一關直接指名到你本人（例如依人事資料算出的核決人），代理人不會收到那一關。
 - 送出後在對方同意前不會生效，可在表單中心追蹤這張單。
 - 沒有可委任的角色時，申請單會顯示沒有可選項目。
+- 「要委任的角色」只列出你本人正式持有的角色；別人代理給你的角色不能再轉交出去。
 - 候補由管理員或部門頁登記，不在這裡設定。
 
 ## 常見問題
@@ -60,7 +62,8 @@ covers:
 可以，各建一次。
 
 **可以只代理某幾張表單嗎？**
-可以，申請單上的「限定表單」留空表示不限；有選表單時，只限代理人簽那些表單。
+可以。申請單上的「限定表單」改選「限定以下表單」，再勾選要開放的表單，代理人就只能簽那幾種。
+清單列的是全企業已發行的表單；選了「限定」卻沒有勾任何表單，這張申請單不會建立代理指派。
 
 **送出後對方一直沒處理怎麼辦？**
 到表單中心「我的申請」看進度，或請對方到待簽清單處理。

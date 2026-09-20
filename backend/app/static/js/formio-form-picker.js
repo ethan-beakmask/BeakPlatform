@@ -1,20 +1,7 @@
 /**
- * Form.io FormPicker 自訂元件（PF-160 API Key 申請單的「授權表單」欄位）
- *
- * 功能：
- *   - 多選「已發行且該使用者填得到」的表單模板，值存 fw_form_templates.secure_code 陣列
- *   - 選項來源依「被代申請人」計算，不是登入者 --
- *     依登入者算的話，A 可以幫 B 申請一把「B 手動填不到的表單」的 key（提權）
- *   - 被代申請人（userPicker 欄位）改變時自動重載，並移除新對象填不到的已選項目
+ * Form.io FormPicker 自訂元件（API Key 申請單的「授權表單」欄位）
  *
  * 值：["<form_template_secure_code>", ...]
- *   對應 api_keys.scopes.form_template 與 ApiKeyIssue 節點的 forms_field。
- *
- * 前端過濾只是體驗，不是防線：核發前由 ApiKeyIssue handler 用
- * fill_permission_service 重驗一次（form_data 由送單人控制）。
- *
- * 依賴：Form.io (Formio global)
- * 註冊方式：Formio.use() 外掛，升級 Form.io 不受影響
  */
 'use strict';
 
@@ -23,51 +10,22 @@
         console.error('[FormPicker] Formio is not loaded');
         return;
     }
+    if (!window.BkFormPickerBase) {
+        console.error('[FormPicker] BkFormPickerBase is not loaded');
+        return;
+    }
 
+    var Base = window.BkFormPickerBase;
     var DEFAULT_BENEFICIARY_KEY = 'beneficiary';
-
-    // ========================================
-    // 選項來源（依被代申請人快取）
-    // ========================================
-    var _optionsCache = {};   // userSc('' = 自己) -> [{secure_code, name, code, ...}]
-    var _loadingCache = {};
-
-    function fetchOptions(userSc) {
-        var cacheKey = userSc || '';
-        if (_optionsCache[cacheKey]) return Promise.resolve(_optionsCache[cacheKey]);
-        if (_loadingCache[cacheKey]) return _loadingCache[cacheKey];
-
+    var fetchOptions = Base.createOptionsLoader(function (cacheKey) {
         var url = window.__BP + '/api/form-center/fillable-form-templates';
         if (cacheKey) url += '?user=' + encodeURIComponent(cacheKey);
+        return url;
+    });
 
-        _loadingCache[cacheKey] = fetch(url)
-            .then(function (r) { return r.json(); })
-            .then(function (json) {
-                if (json && json.success) {
-                    _optionsCache[cacheKey] = json.data || [];
-                    return _optionsCache[cacheKey];
-                }
-                throw new Error((json && json.message) || __('載入失敗'));
-            })
-            .finally(function () { delete _loadingCache[cacheKey]; });
-
-        return _loadingCache[cacheKey];
-    }
-
-    function escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        var div = document.createElement('div');
-        div.textContent = String(str);
-        return div.innerHTML;
-    }
-
-    // ========================================
-    // Form.io 自訂元件
-    // ========================================
     var FieldComponent = Formio.Components.components.field;
 
     class FormPickerComponent extends FieldComponent {
-
         static schema(...extend) {
             return FieldComponent.schema({
                 type: 'formPicker',
@@ -82,8 +40,8 @@
 
         static get builderInfo() {
             return {
-                title: __('表單選擇'),
-                group: 'custom',
+                title: __('API表單選擇'),
+                group: 'systemForms',
                 icon: 'fa fa-list-check',
                 weight: 11,
                 schema: FormPickerComponent.schema(),
@@ -95,17 +53,45 @@
                 {
                     key: 'display',
                     components: [
+                        {
+                            key: 'apiFormPickerHelp',
+                            type: 'htmlelement',
+                            tag: 'div',
+                            input: false,
+                            content: __('API Key 申請單專用：讓申請人勾選這把 API Key 可以代填哪些表單，只列出 Key 歸屬人自己填得到的表單。流程中需搭配 ApiKeyIssue 節點；單獨放進一般表單沒有作用。'),
+                            weight: -10,
+                        },
                         { key: 'label', type: 'textfield', label: __('欄位標籤'), input: true, weight: 0 },
                         { key: 'key', type: 'textfield', label: __('欄位 Key'), input: true, weight: 10 },
                         { key: 'description', type: 'textfield', label: __('說明文字'), input: true, weight: 20 },
                         {
                             key: 'beneficiaryKey',
-                            type: 'textfield',
-                            label: __('對象欄位 Key'),
-                            tooltip: __('指向本表單中的人員選擇欄位；選項依該對象可填寫的表單計算。留空則依登入者本人。'),
+                            type: 'select',
+                            label: __('Key 歸屬人欄位'),
                             defaultValue: DEFAULT_BENEFICIARY_KEY,
                             input: true,
                             weight: 30,
+                            dataSrc: 'custom',
+                            valueProperty: 'value',
+                            template: '<span>{{ item.label }}</span>',
+                            data: {
+                                custom: [
+                                    'values = [];',
+                                    'var current = (data && data.beneficiaryKey !== undefined) ? data.beneficiaryKey : "";',
+                                    'var seen = {};',
+                                    'try {',
+                                    '  var rootComponents = (((instance || {}).options || {}).editForm || {}).components || [];',
+                                    '  Formio.Utils.eachComponent(rootComponents, function(component) {',
+                                    '    if (component && component.type === "userPicker" && component.key) {',
+                                    '      var label = (component.label || component.key) + " (" + component.key + ")";',
+                                    '      values.push({ label: label, value: component.key });',
+                                    '      seen[component.key] = true;',
+                                    '    }',
+                                    '  }, true);',
+                                    '} catch (err) {}',
+                                    'if (current && !seen[current]) values.push({ label: current + " (" + current + ")", value: current });',
+                                ].join('\n'),
+                            },
                         },
                     ],
                 },
@@ -140,7 +126,7 @@
         init() {
             super.init();
             if (this._pickerOptions === undefined) {
-                this._pickerOptions = null;      // null = 尚未載入
+                this._pickerOptions = null;
                 this._pickerLoadedFor = undefined;
                 this._pickerError = '';
                 this._pickerFilter = '';
@@ -151,7 +137,7 @@
             var tpl = '<div ref="fpRoot" class="bk-form-picker">';
             if (!this.isPickerReadOnly) {
                 tpl += '<input ref="fpSearch" type="text" class="form-control" '
-                    + 'placeholder="' + escapeHtml(__('搜尋表單名稱或代碼...')) + '" '
+                    + 'placeholder="' + Base.escapeHtml(__('搜尋表單名稱或代碼...')) + '" '
                     + 'style="margin-bottom:6px;font-size:13px;padding:6px 10px;">';
             }
             tpl += '<div ref="fpList" style="border:1px solid #d1d5db;border-radius:4px;'
@@ -170,7 +156,6 @@
             });
 
             var self = this;
-
             if (this.refs.fpSearch) {
                 this.refs.fpSearch.value = this._pickerFilter || '';
                 var timer = null;
@@ -183,16 +168,22 @@
                 });
             }
 
-            // 被代申請人改變時重載選項（Component.on 由 destroy 自動解綁）
             this.on('change', function () {
                 self._syncBeneficiary();
             });
 
             this._renderList();
-            // 延遲一個 tick，讓 Form.io 的 submission = { data } 先設定完成
             setTimeout(function () { self._syncBeneficiary(); }, 0);
 
             return super.attach(element);
+        }
+
+        setValue(value, flags) {
+            var changed = super.setValue(value, flags);
+            if (this.isPickerReadOnly && this.refs && this.refs.fpList) {
+                this._renderList();
+            }
+            return changed;
         }
 
         getValueAt(index) {
@@ -205,17 +196,9 @@
 
         getValueAsString(value) {
             var scs = Array.isArray(value) ? value : (this.dataValue || []);
-            if (!scs.length) return __('(未選擇)');
-            var self = this;
-            return scs.map(function (sc) {
-                var opt = self._findOption(sc);
-                return opt ? (opt.name + (opt.code ? ' (' + opt.code + ')' : '')) : sc;
-            }).join('、');
+            return Base.selectedLabels(scs, this._pickerOptions || []);
         }
 
-        // ------------------------------------
-        // 選項載入
-        // ------------------------------------
         _beneficiarySc() {
             var key = this.component.beneficiaryKey;
             if (key === undefined) key = DEFAULT_BENEFICIARY_KEY;
@@ -235,7 +218,7 @@
 
             var self = this;
             fetchOptions(sc).then(function (opts) {
-                if (self._pickerLoadedFor !== sc) return;   // 已被更新的請求取代
+                if (self._pickerLoadedFor !== sc) return;
                 self._pickerOptions = opts;
                 self._pickerError = '';
                 self._pruneValue();
@@ -250,128 +233,32 @@
         }
 
         _pruneValue() {
-            // 換對象後移除新對象填不到的項目（唯讀檢視不改值，那是申請當下的內容）
             if (this.isPickerReadOnly) return;
             var cur = this.dataValue;
             if (!Array.isArray(cur) || !cur.length) return;
             var self = this;
-            var kept = cur.filter(function (sc) { return !!self._findOption(sc); });
+            var kept = cur.filter(function (sc) {
+                return !!Base.findOption(self._pickerOptions, sc);
+            });
             if (kept.length !== cur.length) {
                 this.setValue(kept, { modified: true });
             }
         }
 
-        _findOption(sc) {
-            var opts = this._pickerOptions || [];
-            for (var i = 0; i < opts.length; i++) {
-                if (opts[i].secure_code === sc) return opts[i];
-            }
-            return null;
-        }
-
-        // ------------------------------------
-        // 清單渲染
-        // ------------------------------------
         _renderList() {
             if (!this.refs.fpList) return;
-            var list = this.refs.fpList;
-            list.innerHTML = '';
-
-            if (this._pickerOptions === null) {
-                list.innerHTML = '<div style="padding:12px;color:#9ca3af;">'
-                    + escapeHtml(__('載入中...')) + '</div>';
-                this._renderSummary();
-                return;
-            }
-
-            var selected = Array.isArray(this.dataValue) ? this.dataValue : [];
-
-            if (this.isPickerReadOnly) {
-                this._renderReadOnly(list, selected);
-                this._renderSummary();
-                return;
-            }
-
-            var filter = (this._pickerFilter || '').toLowerCase();
-            var items = this._pickerOptions.filter(function (o) {
-                if (!filter) return true;
-                return (o.name || '').toLowerCase().indexOf(filter) >= 0
-                    || (o.code || '').toLowerCase().indexOf(filter) >= 0;
+            Base.renderPickerList({
+                list: this.refs.fpList,
+                options: this._pickerOptions,
+                selected: Array.isArray(this.dataValue) ? this.dataValue : [],
+                filter: this._pickerFilter,
+                readOnly: this.isPickerReadOnly,
+                unresolvedSuffix: __('(無法解析：可能已停用或超出對象權限)'),
+                emptyMessage: this._pickerError
+                    || (this._pickerFilter ? __('沒有符合的表單') : __('沒有可申請的表單')),
+                onToggle: this._toggle.bind(this),
             });
-
-            if (!items.length) {
-                list.innerHTML = '<div style="padding:12px;color:#9ca3af;">'
-                    + escapeHtml(this._pickerError
-                        || (filter ? __('沒有符合的表單') : __('沒有可申請的表單')))
-                    + '</div>';
-                this._renderSummary();
-                return;
-            }
-
-            var self = this;
-            var lastCategory = null;
-            items.forEach(function (opt) {
-                var catName = opt.category_name || __('未分類');
-                if (catName !== lastCategory) {
-                    lastCategory = catName;
-                    var head = document.createElement('div');
-                    head.style.cssText = 'padding:4px 10px;background:#f3f4f6;color:#374151;'
-                        + 'font-weight:600;font-size:12px;position:sticky;top:0;';
-                    head.textContent = catName;
-                    list.appendChild(head);
-                }
-
-                var row = document.createElement('label');
-                row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;'
-                    + 'padding:6px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;';
-
-                var cb = document.createElement('input');
-                cb.type = 'checkbox';
-                cb.value = opt.secure_code;
-                cb.checked = selected.indexOf(opt.secure_code) >= 0;
-                cb.style.cssText = 'margin-top:2px;flex-shrink:0;';
-                cb.addEventListener('change', function () {
-                    self._toggle(opt.secure_code, cb.checked);
-                });
-
-                var text = document.createElement('span');
-                text.style.cssText = 'flex:1;line-height:1.4;';
-                text.innerHTML = '<span style="color:#111827;">' + escapeHtml(opt.name) + '</span>'
-                    + (opt.code ? '<span style="color:#9ca3af;margin-left:6px;font-size:12px;">'
-                        + escapeHtml(opt.code) + '</span>' : '');
-
-                row.appendChild(cb);
-                row.appendChild(text);
-                row.addEventListener('mouseenter', function () { row.style.backgroundColor = '#f9fafb'; });
-                row.addEventListener('mouseleave', function () { row.style.backgroundColor = ''; });
-                list.appendChild(row);
-            });
-
             this._renderSummary();
-        }
-
-        _renderReadOnly(list, selected) {
-            if (!selected.length) {
-                list.innerHTML = '<div style="padding:12px;color:#9ca3af;">'
-                    + escapeHtml(__('(未選擇)')) + '</div>';
-                return;
-            }
-            var self = this;
-            selected.forEach(function (sc) {
-                var opt = self._findOption(sc);
-                var row = document.createElement('div');
-                row.style.cssText = 'padding:6px 10px;border-bottom:1px solid #f3f4f6;line-height:1.4;';
-                if (opt) {
-                    row.innerHTML = '<span style="color:#111827;">' + escapeHtml(opt.name) + '</span>'
-                        + (opt.code ? '<span style="color:#9ca3af;margin-left:6px;font-size:12px;">'
-                            + escapeHtml(opt.code) + '</span>' : '');
-                } else {
-                    row.innerHTML = '<span style="color:#111827;">' + escapeHtml(sc) + '</span>'
-                        + '<span style="color:#b45309;margin-left:6px;font-size:12px;">'
-                        + escapeHtml(__('(無法解析：可能已停用或超出對象權限)')) + '</span>';
-                }
-                list.appendChild(row);
-            });
         }
 
         _renderSummary() {

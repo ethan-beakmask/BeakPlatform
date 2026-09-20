@@ -163,6 +163,16 @@ function buildBuilderGroups() {
                 userPicker: true
             }
         };
+        groups.systemForms = {
+            title: __('系統申請單專用'),
+            weight: 6,
+            default: false,
+            components: {
+                formPicker: true,
+                proxyFormPicker: true,
+                myRolePicker: true
+            }
+        };
     }
 
     return groups;
