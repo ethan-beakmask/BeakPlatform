@@ -1,5 +1,5 @@
 {
-  "name": "beakplatform-dev",
+  "name": "beakplatform",
   "version": "1.0.0",
   "description": "Multi-tenant RBAC platform with dynamic menu system, organization isolation, and module architecture.",
   "main": "index.js",
