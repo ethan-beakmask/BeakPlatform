@@ -108,6 +108,15 @@ def _is_venv_path(path):
     return 'venv' in rel.parts
 
 
+def _is_outside_repo(path):
+    """來源檔實體不在本 repo 內（例如以 symlink 掛入的本機擴充），不屬於宣告表的盤點範圍。"""
+    try:
+        Path(path).resolve().relative_to(REPO_ROOT)
+    except ValueError:
+        return True
+    return False
+
+
 def _function_node(fn):
     real = inspect.unwrap(fn)
     src_file = inspect.getsourcefile(real)
@@ -289,7 +298,7 @@ def collect_route_inventory(app=None, config_name='development'):
             continue
         view = app.view_functions[rule.endpoint]
         guards, guard_args, has_internal_check, internal_identity_check, src_file = _guard_data(view)
-        if src_file and _is_venv_path(src_file):
+        if src_file and (_is_venv_path(src_file) or _is_outside_repo(src_file)):
             continue
 
         entry = routes.setdefault(
