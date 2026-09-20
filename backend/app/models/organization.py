@@ -56,7 +56,7 @@ class Organization(BaseModel):
     # 企業顯示名稱（多語言）
     display_name = Column(String(255), nullable=True, comment='多語言顯示名稱')
 
-    # 登入網域 (唯一，用於登入識別，如: acme.com.tw)
+    # 登入網域 (唯一，用於登入識別，如: acme.example)
     domain_name = Column(String(255), unique=True, nullable=False, index=True)
 
     # 企業描述

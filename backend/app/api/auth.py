@@ -307,7 +307,7 @@ def login():
     POST /auth/login - 處理登入請求
 
     帳號格式: username@domain_name
-    例如: admin@acme.com.tw
+    例如: admin@acme.example
     """
     if request.method == 'GET':
         if current_user.is_authenticated:

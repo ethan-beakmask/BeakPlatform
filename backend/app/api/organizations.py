@@ -127,11 +127,11 @@ def create_organization():
     Body: {
         "code": "ACME",
         "name": "ACME Corporation",
-        "domain_name": "acme.com.tw",
+        "domain_name": "acme.example",
         "customer_type": "TRIAL",
         "user_limit": 50,
         "contact_person": "張三",
-        "contact_email": "contact@acme.com.tw",
+        "contact_email": "contact@acme.example",
         "admin_password": "required_password"
     }
     """
