@@ -192,7 +192,9 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
                     {
                         'name': '高危雙軌（簽核＋SLA 計時）',
                         'conditions': [_cond('${f.severity_id}', '>=', 4)],
-                        'target_edges': ['edge-high'],
+                        # 一條規則同時指向兩條出線＝並行：一條交給值班人員簽核，
+                        # 一條純計時。計時分支不會代替人做處置。
+                        'target_edges': ['edge-high-sign', 'edge-high-timer'],
                     },
                     {
                         'name': '中危標準簽核',
@@ -212,14 +214,10 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
                 },
             },
             -280, 0,
-            '三條規則互斥。缺 severity_id 時比較失敗、三條都不命中，由 fallback 送人工。',
+            '三條規則互斥。高危規則同時走「簽核」與「SLA 計時」兩條出線（並行雙軌）。'
+            '缺 severity_id 時比較失敗、三條都不命中，由 fallback 送人工。',
         ),
         _archive_node('node-FieldWrite-archive', -140, -190),
-        _node(
-            'node-Fork-high', 'ParallelFork', '高危雙軌',
-            {}, -140, 0,
-            '一條交給值班人員簽核，一條純計時。計時分支不會代替人做處置。',
-        ),
 
         # --- A 路：人工簽核 ---
         _node(
@@ -451,20 +449,20 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
             'node-End', 'End', 'End',
             {'finish_mode': 'detach', 'wait_seconds': 3},
             660, 90,
-            'cancel 模式：簽核完成時一併清掉還在計時的分支。',
+            'detach 模式：直接結束流程。還在倒數的計時節點到期時發現流程已是終態，'
+            '由執行器取消，不會事後催辦。',
         ),
     ]
 
     edges = [
         _edge('edge-start', 'node-Start', 'node-FieldWrite-intel'),
         _edge('edge-intel-branch', 'node-FieldWrite-intel', 'node-Branch-severity'),
-        _edge('edge-high', 'node-Branch-severity', 'node-Fork-high', '高危'),
+        _edge('edge-high-sign', 'node-Branch-severity', 'node-FormAdapter-L1', '高危－簽核'),
+        _edge('edge-high-timer', 'node-Branch-severity', 'node-Delay-sla1', '高危－SLA 計時'),
         _edge('edge-med', 'node-Branch-severity', 'node-FormAdapter-L1med', '中危'),
         _edge('edge-low', 'node-Branch-severity', 'node-FieldWrite-archive', '低危'),
         _edge('edge-arch-end', 'node-FieldWrite-archive', 'node-End'),
 
-        _edge('edge-fork-sign', 'node-Fork-high', 'node-FormAdapter-L1', '簽核'),
-        _edge('edge-fork-timer', 'node-Fork-high', 'node-Delay-sla1', 'SLA 計時'),
 
         _edge('edge-l1-block', 'node-FormAdapter-L1', 'node-Decision-block', '封鎖'),
         _edge('edge-l1-allow', 'node-FormAdapter-L1', 'node-Decision-allow', '放行'),
@@ -569,7 +567,8 @@ def build_solo_graph(role_staff_sc: str) -> dict:
                         'conditions': [
                             _cond('${t.time}', 'matches', OFFICE_HOURS_UTC_REGEX),
                         ],
-                        'target_edges': ['edge-daytime'],
+                        # 一條規則同時指向兩條出線＝並行：一條給人處理，一條計時。
+                        'target_edges': ['edge-day-sign', 'edge-day-timer'],
                     },
                 ],
                 'fallback': {
@@ -660,12 +659,9 @@ def build_solo_graph(role_staff_sc: str) -> dict:
         ),
 
         # --- 白天：人工處置 + 等待期 ---
-        _node(
-            'node-Fork-day', 'ParallelFork', '上班時段雙軌',
-            {}, -140, -60,
-            '一條給人處理，一條計時。計時到了沒人動就自動封鎖，'
-            '補上「下班前 5 分鐘進案」與「週末」兩個邊界。',
-        ),
+        # 上班時段雙軌由 node-Branch-clock 的規則直接指向兩條出線：
+        # 一條給人處理，一條計時。計時到了沒人動就自動封鎖，
+        # 補上「下班前 5 分鐘進案」與「週末」兩個邊界。
         _node(
             'node-FormAdapter-day', 'FormAdapter', '即時處置',
             {
@@ -849,7 +845,8 @@ def build_solo_graph(role_staff_sc: str) -> dict:
             'node-End', 'End', 'End',
             {'finish_mode': 'detach', 'wait_seconds': 3},
             720, 100,
-            'cancel 模式：處置完成時清掉還在計時的分支。',
+            'detach 模式：直接結束流程。還在倒數的計時節點到期時發現流程已是終態，'
+            '由執行器取消。',
         ),
     ]
 
@@ -861,7 +858,8 @@ def build_solo_graph(role_staff_sc: str) -> dict:
         _edge('edge-low', 'node-Branch-triage', 'node-FieldWrite-archive', '低危'),
         _edge('edge-arch-end', 'node-FieldWrite-archive', 'node-End'),
 
-        _edge('edge-daytime', 'node-Branch-clock', 'node-Fork-day', '上班時段'),
+        _edge('edge-day-sign', 'node-Branch-clock', 'node-FormAdapter-day', '上班時段－人工處理'),
+        _edge('edge-day-timer', 'node-Branch-clock', 'node-Delay-day', '上班時段－等待計時'),
         _edge('edge-night', 'node-Branch-clock', 'node-FieldWrite-nightnote', '非上班時段'),
 
         _edge('edge-night-block', 'node-FieldWrite-nightnote', 'node-Decision-nightblock'),
@@ -871,8 +869,6 @@ def build_solo_graph(role_staff_sc: str) -> dict:
         _edge('edge-rv-unblock', 'node-FormAdapter-review', 'node-Decision-unblock', '誤判解除'),
         _edge('edge-rv-observe', 'node-FormAdapter-review', 'node-Decision-observe', '維持觀察'),
 
-        _edge('edge-day-sign', 'node-Fork-day', 'node-FormAdapter-day', '人工處理'),
-        _edge('edge-day-timer', 'node-Fork-day', 'node-Delay-day', '等待計時'),
         _edge('edge-day-block', 'node-FormAdapter-day', 'node-Decision-confirm', '封鎖'),
         _edge('edge-day-observe', 'node-FormAdapter-day', 'node-Decision-observe', '觀察'),
         _edge('edge-day-unblock', 'node-FormAdapter-day', 'node-Decision-unblock', '放行／誤判'),

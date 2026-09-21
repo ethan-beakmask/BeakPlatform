@@ -362,6 +362,9 @@ def ensure_workflow_template(db, models, org_sc, source_form, spec, graph, apply
 
     if tpl:
         tpl.graph = graph
+        # 引擎讀 graph、設計器優先讀 cytoscape_config。曾在設計器存過的流程
+        # 兩欄都有值，只覆寫 graph 會變成「流程跑新版、設計器畫舊版」且不報錯。
+        tpl.cytoscape_config = graph
         tpl.name = spec['workflow_name']
         tpl.description = spec['workflow_desc']
         # 直接改 graph 不會自動 bump revision，而發行是以 version+revision 判斷
