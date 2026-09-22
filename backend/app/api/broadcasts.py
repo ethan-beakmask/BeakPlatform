@@ -189,13 +189,16 @@ def _user_in_target(user, target: dict) -> bool:
 
     # 檢查角色
     if target_roles:
+        # 全站取有效角色的唯一實作（未刪除＋效期內，排除 standby）。
+        # User 沒有 roles 屬性，之前用 hasattr 讀它會恆為空集合。
+        from ..models.associations import UserRoleAssignment
         user_role_codes = set()
-        if hasattr(user, 'roles'):
-            for role in user.roles:
-                if hasattr(role, 'code'):
-                    user_role_codes.add(role.code)
-                if hasattr(role, 'secure_code'):
-                    user_role_codes.add(role.secure_code)
+        for assignment in UserRoleAssignment.get_active_assignments(user.secure_code):
+            role = assignment.role
+            if role is None or role.is_deleted:
+                continue
+            user_role_codes.add(role.code)
+            user_role_codes.add(role.secure_code)
         if user_role_codes & set(target_roles):
             return True
 

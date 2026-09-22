@@ -7,6 +7,7 @@ FormWorkflow Module - Base Node Handler
 """
 import logging
 import os
+import html
 import re
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
@@ -390,6 +391,9 @@ class BaseNodeHandler(ABC):
 
         Args:
             text: 要處理的文字
+            escape_html: True 時對「替換進來的值」做 HTML 跳脫（設計者自己寫在
+                text 裡的標籤不受影響）。輸出會以 innerHTML 渲染時必須帶上，
+                否則表單欄位或事件 payload 裡的內容會在瀏覽器執行。
 
         Returns:
             替換後的文字
@@ -397,10 +401,15 @@ class BaseNodeHandler(ABC):
         if not text:
             return ''
 
+        escape_html = bool(kwargs.get('escape_html'))
         all_vars = self.get_all_vars()
         now = datetime.utcnow()
 
         def replace_var(match):
+            value = _replace_var(match)
+            return html.escape(value, quote=True) if escape_html else value
+
+        def _replace_var(match):
             var_expr = match.group(1)
 
             # --- v2 前綴制 ---

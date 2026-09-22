@@ -62,15 +62,20 @@ OFFICE_HOURS_NOTE = '預設上班時段 09:00-18:00 (Asia/Taipei) = 01:00-09:59 
 # 用負向 lookahead 而不是 not_startswith，因為分支節點沒有這個運算子。
 # 分支節點沒有 not_matches 運算子，所以正反兩個 pattern 都要備妥：
 # 判「可自動封鎖」用負向 lookahead，判「不可自動封鎖」用正向列舉。
+# 範圍對齊 protected_target_service.BUILTIN_PROTECTED_NETWORKS：分流擋下的正是
+# 防禦決策節點寫入時一定會被保護清單拒絕的那些來源，兩邊不一致就會有案件
+# 通過分流卻在決策節點失敗。
 _PRIVATE_IP_ALTERNATION = (
-    r'10\.|127\.|0\.|169\.254\.|192\.168\.|'
-    r'172\.(1[6-9]|2[0-9]|3[01])\.|::1$|[fF][cCdD]'
+    r'0\.|10\.|127\.|169\.254\.|192\.168\.|192\.0\.0\.|198\.1[89]\.|'
+    r'172\.(1[6-9]|2[0-9]|3[01])\.|100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.|'
+    r'2(2[4-9]|[3-5][0-9])\.|'
+    r'::1?$|[fF][cCdD]|[fF][eE][89aAbB]|[fF][fF]'
 )
 # 注意：負向 lookahead 對**空字串**是成立的（沒東西可否定）。所以用它的規則
 # 必須另外搭一條 not_empty，不能只靠這一條擋掉沒有 actor_ip 的案件。
 PUBLIC_IP_REGEX = r'^(?!' + _PRIVATE_IP_ALTERNATION + r')'
 PRIVATE_IP_REGEX = r'^(' + _PRIVATE_IP_ALTERNATION + r')'
-PUBLIC_IP_NOTE = '排除私有網段（RFC1918）、回送與 link-local'
+PUBLIC_IP_NOTE = '排除私有網段（RFC1918）、CGNAT、回送、link-local、群播與保留位址'
 
 # 小企業版自動封鎖的 TTL：24 小時。
 # 選 24 小時而不是涵蓋週末的 72 小時，理由是攻擊持續就會重複觸發、重複開案、
@@ -173,6 +178,28 @@ def _noop_node(node_id, label, marker, x, y, description=''):
 # =============================================================================
 # A. SOC 團隊版
 # =============================================================================
+
+def _pending_conditions():
+    """「案件尚未完成處置」的條件組：一線未簽核，或一線升級二線後二線尚未處置。
+
+    logic 是 group 切分符（標 OR 的那條收尾）：(soc 空) OR (soc==escalate AND l2 空)。
+    """
+    return [
+        _cond('${v.soc_decision}', 'empty', '', logic='OR'),
+        _cond('${v.soc_decision}', '==', 'escalate'),
+        _cond('${v.l2_decision}', 'empty', ''),
+    ]
+
+
+def _settled_conditions():
+    """與 _pending_conditions() 互斥：一線已做出非升級的決策，或二線已處置。"""
+    return [
+        _cond('${v.soc_decision}', 'not_empty', ''),
+        _cond('${v.soc_decision}', '!=', 'escalate', logic='OR'),
+        _cond('${v.soc_decision}', '==', 'escalate'),
+        _cond('${v.l2_decision}', 'not_empty', ''),
+    ]
+
 
 def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
     """
@@ -301,6 +328,64 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
             '指向資安主管而非企業管理員，把管理員從每日執行鏈裡拉出來。',
         ),
         _node(
+            'node-Branch-blockcheck', 'Branch', '封鎖前檢查',
+            {
+                'rules': [
+                    {
+                        'name': '有可封鎖的公網來源',
+                        'conditions': [
+                            _cond('${f.actor_ip}', 'not_empty', ''),
+                            _cond('${f.actor_ip}', 'matches', PUBLIC_IP_REGEX),
+                        ],
+                        'target_edges': ['edge-blockcheck-ok'],
+                    },
+                ],
+                'fallback': {
+                    'action': 'route',
+                    'target_edge': 'edge-blockcheck-manual',
+                    'log_message': '來源位址缺值或為內網／保留位址，改走人工封鎖確認',
+                },
+            },
+            340, 90,
+            '沒有來源 IP 或來源是內網位址時，防禦決策節點會失敗、案件永久卡在進行中。'
+            '這裡先擋下來改走人工，正當要封內網位址的做法是到「封鎖保護清單」設豁免。',
+        ),
+        _node(
+            'node-FieldWrite-noblock', 'OpFieldWrite', '無法自動封鎖註記',
+            {
+                'target_field': 'intel_summary',
+                'content': '【無法自動封鎖】來源位址「${f.actor_ip}」缺值或屬內網／保留位址，'
+                           '防禦決策未寫入。請人工處置：確認真實來源後於防火牆手動封鎖，'
+                           '或在「封鎖保護清單」設定豁免後重新處置。原始情報：${f.intel_summary}',
+            },
+            340, -20,
+            '把原因寫回表單，簽核者開單就看得到為什麼沒有自動封鎖。',
+        ),
+        _node(
+            'node-FormAdapter-manualblock', 'FormAdapter', '人工封鎖確認',
+            {
+                'assignee_type': 'ROLE',
+                'assignee_value': role_staff_sc,
+                'assignee_label': '資安人員',
+                'assignee_list': [],
+                'selection_mode': 'single',
+                'output_variable': 'manual_block_decision',
+                'allow_comment': True,
+                'require_comment': True,
+                'min_comment_length': 10,
+                'use_custom_decisions': True,
+                'input_variables': [],
+                'decision_options': [
+                    {'id': 'opt-mb-done', 'label': '已人工處置－結案', 'value': 'manual_done',
+                     'style': 'default', 'target_edges': ['edge-manualblock-done']},
+                    {'id': 'opt-mb-fp', 'label': '誤判結案', 'value': 'false_positive',
+                     'style': 'danger', 'target_edges': ['edge-manualblock-fp']},
+                ],
+            },
+            500, -20,
+            '案件不會消失在「進行中」：由人確認處置方式並留下意見。',
+        ),
+        _node(
             'node-Decision-block', 'DecisionWriter', '寫入封鎖決策',
             {
                 'action': 'block',
@@ -313,8 +398,8 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
                 'reason_template':
                     'SOC 處置 ${wi.exec_code}：${f.finding_title}（rule ${f.finding_rule_id}）',
             },
-            340, 90,
-            'decided_via 明確標 human；並行分支下自動推斷不可靠。',
+            500, 90,
+            'decided_via 明確標 human；自動推斷不可靠。',
         ),
         _node(
             'node-Decision-allow', 'DecisionWriter', '寫入放行決策',
@@ -333,8 +418,8 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
                 'reason_template':
                     'SOC 判定可接受風險 ${wi.exec_code}：${f.finding_title}',
             },
-            340, 250,
-            '放行也留下決策紀錄，之後同來源再進案時看得到前次判斷。',
+            500, 250,
+            '放行也留下決策紀錄，在決策列表看得到前次判斷。',
         ),
         _node(
             'node-Alert-blocked', 'AlertBroadcast', '封鎖完成通報',
@@ -348,7 +433,7 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
                 'target_roles': ['SECURITY_STAFF', 'SOC_SUPERVISOR'],
                 'target_departments': [],
             },
-            500, 90,
+            660, 90,
             'require_ack 關掉、發角色不發單一管理員：原流程要 ORG_ADMIN 逐件確認，'
             '一個人會變成瓶頸。',
         ),
@@ -364,20 +449,20 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
             {
                 'rules': [
                     {
-                        'name': '已簽核',
-                        'conditions': [_cond('${v.soc_decision}', 'not_empty', '')],
+                        'name': '已完成處置（一線已決、或二線已處置）',
+                        'conditions': _settled_conditions(),
                         'target_edges': ['edge-sla1-signed'],
                     },
                     {
-                        'name': '逾時未簽核',
-                        'conditions': [_cond('${v.soc_decision}', 'empty', '')],
+                        'name': '逾時未處置（一線未簽、或升級後二線未處置）',
+                        'conditions': _pending_conditions(),
                         'target_edges': ['edge-sla1-warn'],
                     },
                 ],
                 'fallback': {
                     'action': 'route',
                     'target_edge': 'edge-sla1-signed',
-                    'log_message': '無法判定簽核狀態，不催辦（寧可漏催也不要誤催）',
+                    'log_message': '無法判定處置狀態，不催辦（寧可漏催也不要誤催）',
                 },
             },
             170, -70,
@@ -390,10 +475,12 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
                 'broadcast_code': 'SOC-SLA-WARN',
                 'title': 'SLA 逾時：${f.finding_title}',
                 'message': f'案件 ${{wi.exec_code}} 已超過 {SOC_SLA_WARN_MINUTES} 分鐘'
-                           '無人簽核，請至資安案件處置中心處理。',
+                           '尚未完成處置（一線未簽核，或已升級二線但尚未處置），'
+                           '請至資安案件處置中心處理。',
                 'require_ack': False,
                 'target_type': 'specific',
-                'target_roles': ['SECURITY_STAFF'],
+                # 升級二線後該催的是主管，所以兩個角色都收
+                'target_roles': ['SECURITY_STAFF', 'SOC_SUPERVISOR'],
                 'target_departments': [],
             },
             340, -70,
@@ -407,20 +494,20 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
             {
                 'rules': [
                     {
-                        'name': '已簽核',
-                        'conditions': [_cond('${v.soc_decision}', 'not_empty', '')],
+                        'name': '已完成處置（一線已決、或二線已處置）',
+                        'conditions': _settled_conditions(),
                         'target_edges': ['edge-sla2-signed'],
                     },
                     {
-                        'name': '仍未簽核',
-                        'conditions': [_cond('${v.soc_decision}', 'empty', '')],
+                        'name': '仍未處置（一線未簽、或升級後二線未處置）',
+                        'conditions': _pending_conditions(),
                         'target_edges': ['edge-sla2-escalate'],
                     },
                 ],
                 'fallback': {
                     'action': 'route',
                     'target_edge': 'edge-sla2-signed',
-                    'log_message': '無法判定簽核狀態，不升級通報',
+                    'log_message': '無法判定處置狀態，不升級通報',
                 },
             },
             660, -70,
@@ -433,7 +520,7 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
                 'title': '案件無人處理：${f.finding_title}',
                 'message': f'案件 ${{wi.exec_code}} 經催辦後仍超過 '
                            f'{SOC_SLA_WARN_MINUTES + SOC_SLA_ESCALATE_MINUTES} 分鐘'
-                           '無人簽核，請主管介入。',
+                           '未完成處置，請主管介入。',
                 'require_ack': True,
                 'target_type': 'specific',
                 'target_roles': ['SOC_SUPERVISOR'],
@@ -448,7 +535,7 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
         _node(
             'node-End', 'End', 'End',
             {'finish_mode': 'detach', 'wait_seconds': 3},
-            660, 90,
+            820, 90,
             'detach 模式：直接結束流程。還在倒數的計時節點到期時發現流程已是終態，'
             '由執行器取消，不會事後催辦。',
         ),
@@ -464,17 +551,22 @@ def build_soc_team_graph(role_staff_sc: str, role_supervisor_sc: str) -> dict:
         _edge('edge-arch-end', 'node-FieldWrite-archive', 'node-End'),
 
 
-        _edge('edge-l1-block', 'node-FormAdapter-L1', 'node-Decision-block', '封鎖'),
+        _edge('edge-l1-block', 'node-FormAdapter-L1', 'node-Branch-blockcheck', '封鎖'),
         _edge('edge-l1-allow', 'node-FormAdapter-L1', 'node-Decision-allow', '放行'),
         _edge('edge-l1-escalate', 'node-FormAdapter-L1', 'node-FormAdapter-L2', '升級'),
         _edge('edge-l1-fp', 'node-FormAdapter-L1', 'node-End', '誤判'),
 
-        _edge('edge-med-block', 'node-FormAdapter-L1med', 'node-Decision-block', '封鎖'),
+        _edge('edge-med-block', 'node-FormAdapter-L1med', 'node-Branch-blockcheck', '封鎖'),
         _edge('edge-med-allow', 'node-FormAdapter-L1med', 'node-Decision-allow', '放行'),
         _edge('edge-med-escalate', 'node-FormAdapter-L1med', 'node-FormAdapter-L2', '升級'),
         _edge('edge-med-fp', 'node-FormAdapter-L1med', 'node-End', '誤判'),
 
-        _edge('edge-l2-block', 'node-FormAdapter-L2', 'node-Decision-block', '封鎖'),
+        _edge('edge-l2-block', 'node-FormAdapter-L2', 'node-Branch-blockcheck', '封鎖'),
+        _edge('edge-blockcheck-ok', 'node-Branch-blockcheck', 'node-Decision-block', '可自動封鎖'),
+        _edge('edge-blockcheck-manual', 'node-Branch-blockcheck', 'node-FieldWrite-noblock', '無法自動封鎖'),
+        _edge('edge-noblock-manual', 'node-FieldWrite-noblock', 'node-FormAdapter-manualblock'),
+        _edge('edge-manualblock-done', 'node-FormAdapter-manualblock', 'node-End', '已人工處置'),
+        _edge('edge-manualblock-fp', 'node-FormAdapter-manualblock', 'node-End', '誤判'),
         _edge('edge-l2-close', 'node-FormAdapter-L2', 'node-End', '結案'),
 
         _edge('edge-block-alert', 'node-Decision-block', 'node-Alert-blocked'),

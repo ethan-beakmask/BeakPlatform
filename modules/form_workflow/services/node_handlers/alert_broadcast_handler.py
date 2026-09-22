@@ -48,11 +48,13 @@ class AlertBroadcastHandler(BaseNodeHandler):
         message = self.get_config_value('message', '')
         require_ack = self.get_config_value('require_ack', True)
 
-        # 支援變數替換
+        # 支援變數替換。message 會被前端以 innerHTML 渲染（面板明示支援 HTML 標籤），
+        # 所以只跳脫「替換進來的值」：表單欄位與事件 payload 是外部輸入，
+        # 不跳脫就是儲存型 XSS；title 前端會整段跳脫，這裡維持原樣。
         if title:
             title = self.replace_variables(title)
         if message:
-            message = self.replace_variables(message)
+            message = self.replace_variables(message, escape_html=True)
 
         if not title:
             self.log_error('未設定標題')
