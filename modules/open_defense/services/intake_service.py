@@ -22,11 +22,19 @@ from app.utils.security import generate_secure_code
 
 from ..models import OdIntakeEvent
 from . import payload_profile_service
-from .routing_service import resolve_form_template
+from .case_aggregation_service import (
+    build_event_summary,
+    effective_config,
+    find_mergeable_case,
+    initial_case_fields,
+    merge_event,
+    resolve_group_key,
+)
+from .routing_service import resolve_routing_rule
 
 logger = logging.getLogger(__name__)
 
-# 聚合降噪:同 攻擊者IP+rule_id 在此時間窗內合併進既有案件(原子 4844)
+# 聚合預設值；實際以路由規則的 aggregation 為準。
 AGGREGATION_WINDOW_MINUTES = 60
 # 情報 enrichment:「同源事件數」的回看範圍
 REPEAT_LOOKBACK_HOURS = 24
@@ -103,7 +111,7 @@ def _compute_risk(severity_id, repeat_count, history_block_count) -> Tuple[int, 
     return score, action
 
 
-def _enrich_form_data(org_secure_code: str, form_data: Dict[str, Any]) -> None:
+def enrich_form_data(org_secure_code: str, form_data: Dict[str, Any]) -> None:
     """
     情報 enrichment(就地補欄位):同源事件數、歷史封鎖次數、
     風險分數與建議處置。封閉網路 v1 只查內部資料源;
@@ -162,114 +170,7 @@ def _enrich_form_data(org_secure_code: str, form_data: Dict[str, Any]) -> None:
     })
 
 
-def _find_mergeable_case(
-    org_secure_code: str,
-    actor_ip: Optional[str],
-    rule_id: Optional[str],
-    severity_id: Optional[int],
-    payload_kind: str,
-    source_system: Optional[str] = None,
-):
-    """
-    聚合降噪:找時間窗內同 攻擊者IP+rule_id 的既有案件。
-
-    - 一般情況只合併進「流程仍在跑(RUNNING)」的案件
-    - 低危(severity<=2)雜訊連已結案的窗內案件也合併(純計數,避免灌出海量歸檔案)
-
-    Returns:
-        FwWorkflowInstance 或 None
-    """
-    if not actor_ip or not rule_id:
-        return None
-
-    if payload_kind not in ('ocsf', 'native'):
-        logger.warning('intake aggregation skipped: invalid payload_kind=%r', payload_kind)
-        return None
-
-    if payload_kind == 'native' and not source_system:
-        logger.warning('native intake aggregation skipped: missing source_system')
-        return None
-
-    from modules.form_workflow.models import FwWorkflowInstance, FwFormInstance
-
-    from datetime import timedelta
-    cutoff = datetime.utcnow() - timedelta(minutes=AGGREGATION_WINDOW_MINUTES)
-
-    query = db.session.query(FwWorkflowInstance).join(
-        OdIntakeEvent,
-        OdIntakeEvent.case_secure_code == FwWorkflowInstance.secure_code,
-    ).join(
-        FwFormInstance,
-        FwFormInstance.secure_code == FwWorkflowInstance.form_instance_secure_code,
-    ).filter(
-        OdIntakeEvent.org_secure_code == org_secure_code,
-        OdIntakeEvent.received_at >= cutoff,
-        OdIntakeEvent.case_secure_code.isnot(None),
-        FwWorkflowInstance.org_secure_code == org_secure_code,
-        FwWorkflowInstance.is_deleted.is_(False),
-        FwFormInstance.form_data['actor_ip'].astext == actor_ip,
-        FwFormInstance.form_data['finding_rule_id'].astext == rule_id,
-    )
-
-    if payload_kind == 'native':
-        query = query.filter(
-            OdIntakeEvent.event_class == 'native',
-            OdIntakeEvent.source_system == source_system,
-        )
-    else:
-        query = query.filter(OdIntakeEvent.event_class != 'native')
-
-    candidates = query.order_by(
-        OdIntakeEvent.received_at.desc()
-    ).limit(20).all()
-
-    merge_closed_ok = (severity_id or 0) <= 2
-    for workflow_instance in candidates:
-        if workflow_instance.status == 'RUNNING' or merge_closed_ok:
-            return workflow_instance
-    return None
-
-
-def _merge_event_into_case(event: OdIntakeEvent, workflow_instance) -> None:
-    """
-    把新事件合併進既有案件:計數累加、severity 取 max、
-    last_seen 更新、風險分數重算。severity 升高視為案件升級(記 log)。
-    """
-    from modules.form_workflow.models import FwFormInstance
-
-    form_instance = FwFormInstance.query.filter_by(
-        secure_code=workflow_instance.form_instance_secure_code,
-    ).first()
-
-    event.case_secure_code = workflow_instance.secure_code
-
-    if form_instance is None:
-        return
-
-    fd = dict(form_instance.form_data or {})
-    fd['od_event_count'] = int(fd.get('od_event_count') or 1) + 1
-
-    old_sev = int(fd.get('severity_id') or 0)
-    new_sev = int(event.severity_id or 0)
-    escalated = new_sev > old_sev
-    if escalated:
-        fd['severity_id'] = new_sev
-
-    fd['od_last_seen'] = ((event.raw_body or {}).get('occurred_at')
-                          or datetime.utcnow().isoformat() + 'Z')
-    fd['risk_score'], fd['recommended_action'] = _compute_risk(
-        fd.get('severity_id'),
-        max(int(fd.get('od_repeat_count') or 0), fd['od_event_count']),
-        fd.get('od_history_block_count'),
-    )
-    form_instance.form_data = fd
-
-    if escalated:
-        logger.warning(
-            'intake merge escalated case=%s severity %s -> %s (event %s)',
-            workflow_instance.execution_code, old_sev, new_sev,
-            event.correlation_id,
-        )
+_enrich_form_data = enrich_form_data
 
 
 def _generate_serial_number(org_secure_code: str) -> str:
@@ -466,13 +367,14 @@ def process_intake(
         )
 
     # 3. routing
-    template_sc = resolve_form_template(org_sc, body)
-    if not template_sc:
+    rule = resolve_routing_rule(org_sc, body)
+    if not rule:
         raise IntakeError(
             _('event_class %(event_class)r 在本企業無命中的 form_template 路由規則,請至 /open-defense/routing-rules 設定',
               event_class=event_class),
             code='no_mapping', status=422,
         )
+    template_sc = rule.form_template_secure_code
 
     # 4. 先寫 OdIntakeEvent(無 case_secure_code,後面回填),確保 unique 約束保證冪等
     event = OdIntakeEvent(
@@ -501,18 +403,43 @@ def process_intake(
             return existing, True
         raise
 
-    # 5. 聚合降噪:時間窗內同 攻擊者IP+rule_id 合併進既有案件,不開新案
     actor = body.get('actor') or {}
+    target = body.get('target') or {}
     finding = body.get('finding') or {}
-    mergeable = _find_mergeable_case(
-        org_secure_code=org_sc,
-        actor_ip=actor.get('ip'),
-        rule_id=finding.get('rule_id'),
-        severity_id=body.get('severity_id'),
+    axis = {
+        'severity_id': body.get('severity_id'),
+        'actor_ip': actor.get('ip'),
+        'target_host': target.get('host'),
+        'source_system': source_system,
+        'finding_rule_id': finding.get('rule_id'),
+        'occurred_at': body.get('occurred_at'),
+    }
+    config = effective_config(rule.aggregation)
+    group_key = resolve_group_key(
+        rule_secure_code=rule.secure_code,
+        axis=axis,
+        client_key=body.get('case_group_key'),
+        config=config,
         payload_kind='ocsf',
+        source_system=source_system,
+    )
+    event_summary = build_event_summary(
+        event_sc=event.secure_code,
+        received_at=event.received_at,
+        axis=axis,
+        finding_title=finding.get('title'),
+        source_system=source_system,
+    )
+    mergeable = find_mergeable_case(
+        org_secure_code=org_sc,
+        form_template_secure_code=template_sc,
+        group_key=group_key,
+        severity_id=body.get('severity_id'),
+        config=config,
     )
     if mergeable is not None:
-        _merge_event_into_case(event, mergeable)
+        event.case_secure_code = mergeable.secure_code
+        merge_event(workflow_instance=mergeable, event_summary=event_summary, axis=axis)
         db.session.commit()
         logger.info(
             'intake merged correlation_id=%s into case=%s',
@@ -523,7 +450,13 @@ def process_intake(
     # 6. 啟 workflow(含情報 enrichment)
     subject = finding.get('title') or f'{source_system} {event_class}'
     form_data = _build_form_data(body)
-    _enrich_form_data(org_sc, form_data)
+    enrich_form_data(org_sc, form_data)
+    if group_key:
+        form_data.update(initial_case_fields(
+            group_key=group_key,
+            event_summary=event_summary,
+            axis=axis,
+        ))
 
     try:
         # 這裡不能用 `_` 當拋棄式變數:模組層有 `from flask_babel import gettext as _`,
@@ -617,12 +550,13 @@ def process_native_intake(
 
     axis = payload_profile_service.normalize_axis_fields(payload, profile)
 
-    template_sc = resolve_form_template(org_sc, payload, payload_kind='native')
-    if not template_sc:
+    rule = resolve_routing_rule(org_sc, payload, payload_kind='native')
+    if not rule:
         raise IntakeError(
             _('原生 payload 在本企業無命中的 form_template 路由規則,請至 /open-defense/routing-rules 設定'),
             code='no_mapping', status=422,
         )
+    template_sc = rule.form_template_secure_code
 
     event = OdIntakeEvent(
         secure_code=generate_secure_code(),
@@ -649,18 +583,32 @@ def process_native_intake(
             return existing, True
         raise
 
-    mergeable = None
-    if axis.get('actor_ip') and axis.get('finding_rule_id'):
-        mergeable = _find_mergeable_case(
-            org_secure_code=org_sc,
-            actor_ip=axis.get('actor_ip'),
-            rule_id=axis.get('finding_rule_id'),
-            severity_id=axis.get('severity_id'),
-            payload_kind='native',
-            source_system=profile.source_system,
-        )
+    config = effective_config(rule.aggregation)
+    group_key = resolve_group_key(
+        rule_secure_code=rule.secure_code,
+        axis=axis,
+        client_key=payload_profile_service.resolve_client_group_key(payload, profile),
+        config=config,
+        payload_kind='native',
+        source_system=profile.source_system,
+    )
+    event_summary = build_event_summary(
+        event_sc=event.secure_code,
+        received_at=event.received_at,
+        axis=axis,
+        finding_title=_native_subject(payload, profile, axis),
+        source_system=profile.source_system,
+    )
+    mergeable = find_mergeable_case(
+        org_secure_code=org_sc,
+        form_template_secure_code=template_sc,
+        group_key=group_key,
+        severity_id=axis.get('severity_id'),
+        config=config,
+    )
     if mergeable is not None:
-        _merge_event_into_case(event, mergeable)
+        event.case_secure_code = mergeable.secure_code
+        merge_event(workflow_instance=mergeable, event_summary=event_summary, axis=axis)
         db.session.commit()
         logger.info(
             'native intake merged correlation_id=%s into case=%s',
@@ -669,7 +617,13 @@ def process_native_intake(
         return event, False
 
     form_data = payload_profile_service.build_native_form_data(payload, profile)
-    _enrich_form_data(org_sc, form_data)
+    enrich_form_data(org_sc, form_data)
+    if group_key:
+        form_data.update(initial_case_fields(
+            group_key=group_key,
+            event_summary=event_summary,
+            axis=axis,
+        ))
     subject = _native_subject(payload, profile, axis)
 
     try:

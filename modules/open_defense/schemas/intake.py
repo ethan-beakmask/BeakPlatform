@@ -81,6 +81,13 @@ def validate_intake_body(body: Any) -> Dict[str, Any]:
         if not isinstance(confidence, int) or confidence < 0 or confidence > 100:
             errors.append(_err('confidence', _('若提供須為 0-100 int')))
 
+    case_group_key = body.get('case_group_key')
+    if case_group_key is not None:
+        if not isinstance(case_group_key, str):
+            errors.append(_err('case_group_key', _('若提供須為字串')))
+        elif len(case_group_key) > 128:
+            errors.append(_err('case_group_key', _('長度 > 128')))
+
     # finding(必填,title 必填)
     finding = body.get('finding')
     if not isinstance(finding, dict):
@@ -131,4 +138,5 @@ def validate_intake_body(body: Any) -> Dict[str, Any]:
         'target': target,
         'evidence': evidence or {},
         'detector_hint': detector_hint or {},
+        'case_group_key': case_group_key,
     }

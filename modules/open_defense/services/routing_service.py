@@ -11,6 +11,7 @@ from flask_babel import gettext as _
 from sqlalchemy import or_
 
 from ..models import OdFormTemplateMapping
+from .case_aggregation_service import GROUP_BY_ALLOWED
 from .payload_profile_service import get_path
 
 logger = logging.getLogger(__name__)
@@ -55,6 +56,51 @@ def validate_match_rules(match_rules) -> tuple[bool, str]:
     return True, ''
 
 
+def validate_aggregation(value) -> tuple[bool, str]:
+    """驗證 aggregation JSONB 設定。None 表示使用預設聚合設定。"""
+    if value is None:
+        return True, ''
+    if not isinstance(value, dict):
+        return False, _('aggregation 必須為物件')
+
+    allowed_keys = {
+        'enabled',
+        'group_by',
+        'window_minutes',
+        'window_from',
+        'merge_closed_max_severity',
+    }
+    unknown = sorted(set(value.keys()) - allowed_keys)
+    if unknown:
+        return False, _('aggregation 含有不支援的 key: %(key)s', key=unknown[0])
+
+    if 'enabled' in value and not isinstance(value.get('enabled'), bool):
+        return False, _('aggregation.enabled 必須為 boolean')
+
+    if 'group_by' in value:
+        group_by = value.get('group_by')
+        if not isinstance(group_by, list):
+            return False, _('aggregation.group_by 必須為陣列')
+        for key in group_by:
+            if key not in GROUP_BY_ALLOWED:
+                return False, _('aggregation.group_by 含有不支援的 key: %(key)s', key=key)
+
+    if 'window_minutes' in value:
+        minutes = value.get('window_minutes')
+        if not isinstance(minutes, int) or isinstance(minutes, bool) or not (1 <= minutes <= 10080):
+            return False, _('aggregation.window_minutes 必須為 1 到 10080 的整數')
+
+    if 'window_from' in value and value.get('window_from') not in ('first_seen', 'last_seen'):
+        return False, _('aggregation.window_from 必須為 first_seen 或 last_seen')
+
+    if 'merge_closed_max_severity' in value:
+        severity = value.get('merge_closed_max_severity')
+        if not isinstance(severity, int) or isinstance(severity, bool) or not (-1 <= severity <= 6):
+            return False, _('aggregation.merge_closed_max_severity 必須為 -1 到 6 的整數')
+
+    return True, ''
+
+
 def resolve_form_template(
     org_secure_code: str,
     body: dict,
@@ -65,6 +111,17 @@ def resolve_form_template(
     matched, _unused_evaluated = evaluate_routing_rules(
         org_secure_code, body, payload_kind)
     return matched.form_template_secure_code if matched else None
+
+
+def resolve_routing_rule(
+    org_secure_code: str,
+    body: dict,
+    payload_kind: str = None,
+) -> Optional[OdFormTemplateMapping]:
+    """依規則決定這個事件要用哪條路由規則。"""
+    matched, _unused_evaluated = evaluate_routing_rules(
+        org_secure_code, body, payload_kind)
+    return matched
 
 
 def evaluate_routing_rules(org_secure_code: str, body: dict, payload_kind: str = None):

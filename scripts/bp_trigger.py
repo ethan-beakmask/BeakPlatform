@@ -120,6 +120,7 @@ def build_parser():
     parser.add_argument('--subject', default='', help='表單主旨；使用 --form-code 時必填')
     parser.add_argument('--field', action='append', default=[], metavar='KEY=VALUE', help='表單欄位，可重複')
     parser.add_argument('--json', default='', help='整包 form_data JSON 物件，會與 --field 合併')
+    parser.add_argument('--group-key', default='', help='案件分組鍵；使用 --form-code 時可選，送到 case_group_key')
     return parser
 
 
@@ -171,8 +172,17 @@ def main(argv=None):
                 return EXIT_ARGS
             form_data = build_form_data(args)
             payload = {'form_code': args.form_code, 'subject': args.subject, 'form_data': form_data}
+            if args.group_key:
+                payload['case_group_key'] = args.group_key
             status, data = call_platform(args.base, args.key_id, secret, 'POST', '/api/trigger/form', payload)
-            print_result('建單成功' if 200 <= status < 300 else '建單失敗', status, data)
+            summary = '建單成功' if 200 <= status < 300 else '建單失敗'
+            if 200 <= status < 300 and data.get('merged') is True:
+                merged = ((data.get('data') or {}).get('merged_into') or {})
+                summary = '事件已併入既有案件 %s（累計 %s 筆）' % (
+                    merged.get('execution_code') or '',
+                    merged.get('od_event_count') or 0,
+                )
+            print_result(summary, status, data)
             return 0 if 200 <= status < 300 else EXIT_PLATFORM
 
         return run_selftest(args.base, args.key_id, secret, args.selftest)

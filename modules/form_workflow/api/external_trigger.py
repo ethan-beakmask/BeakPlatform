@@ -12,9 +12,11 @@ scope 解釋(本模組負責):
   scopes.form          : published SC 直綁,重新發行後失效,僅一次性測試用
 """
 import logging
+from datetime import datetime
 
 from flask import Blueprint, jsonify, request, g
 from flask_babel import gettext as _
+from sqlalchemy.orm.attributes import flag_modified
 
 from app import db, limiter
 from app.security.decorators import api_key_hmac_required
@@ -205,6 +207,71 @@ def trigger_form():
                         'allowed_keys': sorted(allowed_keys)},
         }), 400
 
+    case_group_key = data.get('case_group_key')
+    if case_group_key is not None and (
+        not isinstance(case_group_key, str) or len(case_group_key) > 128
+    ):
+        return jsonify({'success': False, 'error': 'invalid_case_group_key'}), 400
+
+    security_aggregation = None
+    form_template = None
+    try:
+        from ..models import FwFormTemplate
+        from ..services.security_center import is_security_category
+
+        form_template = FwFormTemplate.query.filter_by(
+            secure_code=published.source_form_template_secure_code,
+            org_secure_code=org_sc,
+            is_deleted=False,
+        ).first()
+        if form_template and is_security_category(form_template.category_secure_code):
+            security_aggregation = _prepare_security_aggregation(
+                org_sc=org_sc,
+                form_template_sc=published.source_form_template_secure_code,
+                form_data=form_data,
+                client_key=case_group_key,
+            )
+    except Exception:
+        logger.exception('external_trigger: security aggregation preparation failed')
+        return jsonify({'success': False, 'error': 'internal_error'}), 500
+
+    if security_aggregation and security_aggregation['mergeable'] is not None:
+        mergeable = security_aggregation['mergeable']
+        from modules.open_defense.services.case_aggregation_service import merge_event
+
+        merge_event(
+            workflow_instance=mergeable,
+            event_summary=security_aggregation['event_summary'],
+            axis=security_aggregation['axis'],
+        )
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            logger.exception('external_trigger: merge failed key_id=%s', api_key.key_id)
+            return jsonify({'success': False, 'error': 'internal_error'}), 500
+
+        from ..models import FwFormInstance
+        merged_form = FwFormInstance.query.filter_by(
+            secure_code=mergeable.form_instance_secure_code,
+            org_secure_code=org_sc,
+            is_deleted=False,
+        ).first()
+        merged_data = merged_form.form_data if merged_form else {}
+        return jsonify({
+            'success': True,
+            'merged': True,
+            'message': _('事件已併入既有案件'),
+            'data': {
+                'merged_into': {
+                    'execution_code': mergeable.execution_code,
+                    'workflow_instance_secure_code': mergeable.secure_code,
+                    'form_instance_secure_code': mergeable.form_instance_secure_code,
+                    'od_event_count': int((merged_data or {}).get('od_event_count') or 0),
+                },
+            },
+        }), 200
+
     # 申請人(key 綁定的系統帳號)
     try:
         applicant = _resolve_applicant(api_key)
@@ -213,6 +280,19 @@ def trigger_form():
                         'message': str(exc)}), 422
 
     try:
+        if security_aggregation:
+            from modules.open_defense.services.intake_service import enrich_form_data
+
+            enrich_form_data(org_sc, form_data)
+            if security_aggregation['group_key']:
+                from modules.open_defense.services.case_aggregation_service import initial_case_fields
+
+                form_data.update(initial_case_fields(
+                    group_key=security_aggregation['group_key'],
+                    event_summary=security_aggregation['event_summary'],
+                    axis=security_aggregation['axis'],
+                ))
+
         published.mark_as_used()
 
         serial_number, org_form_seq = allocate_serial_number(
@@ -244,6 +324,25 @@ def trigger_form():
             proc_prefix='PROC-',
             **applicant,
         )
+        if security_aggregation and security_aggregation['group_key']:
+            from modules.open_defense.services.case_aggregation_service import build_event_summary
+
+            form_data = dict(form_instance.form_data or {})
+            event_summary = build_event_summary(
+                event_sc=form_instance.secure_code,
+                received_at=datetime.utcnow(),
+                axis=security_aggregation['axis'],
+                finding_title=security_aggregation['finding_title'],
+                source_system=security_aggregation['source_system'],
+            )
+            form_data.update(initial_case_fields(
+                group_key=security_aggregation['group_key'],
+                event_summary=event_summary,
+                axis=security_aggregation['axis'],
+            ))
+            form_instance.form_data = form_data
+            flag_modified(form_instance, 'form_data')
+            db.session.commit()
     except SubmitError as exc:
         return jsonify({'success': False, 'error': 'workflow_error',
                         'message': str(exc)}), 422
@@ -268,6 +367,68 @@ def trigger_form():
             'execution_code': workflow_instance.execution_code,
         }
     }), 201
+
+
+def _prepare_security_aggregation(*, org_sc, form_template_sc, form_data, client_key):
+    from modules.open_defense.models import OdFormTemplateMapping
+    from modules.open_defense.services.case_aggregation_service import (
+        build_event_summary,
+        effective_config,
+        find_mergeable_case,
+        resolve_group_key,
+    )
+
+    rule = OdFormTemplateMapping.query.filter_by(
+        org_secure_code=org_sc,
+        form_template_secure_code=form_template_sc,
+        is_active=True,
+        is_deleted=False,
+    ).order_by(
+        OdFormTemplateMapping.priority.desc(),
+        OdFormTemplateMapping.id.asc(),
+    ).first()
+    config = effective_config(rule.aggregation if rule else None)
+    source_system = form_data.get('source_system')
+    axis = {
+        'severity_id': form_data.get('severity_id'),
+        'actor_ip': form_data.get('actor_ip'),
+        'target_host': form_data.get('target_host'),
+        'source_system': source_system,
+        'finding_rule_id': form_data.get('finding_rule_id'),
+        'occurred_at': form_data.get('occurred_at'),
+    }
+    group_key = resolve_group_key(
+        rule_secure_code=rule.secure_code if rule else None,
+        axis=axis,
+        client_key=client_key,
+        config=config,
+        payload_kind='trigger',
+        source_system=source_system,
+    )
+    event_summary = build_event_summary(
+        event_sc=None,
+        received_at=datetime.utcnow(),
+        axis=axis,
+        finding_title=form_data.get('finding_title'),
+        source_system=source_system,
+    )
+    mergeable = find_mergeable_case(
+        org_secure_code=org_sc,
+        form_template_secure_code=form_template_sc,
+        group_key=group_key,
+        severity_id=axis.get('severity_id'),
+        config=config,
+    )
+    return {
+        'rule': rule,
+        'config': config,
+        'axis': axis,
+        'source_system': source_system,
+        'finding_title': form_data.get('finding_title'),
+        'group_key': group_key,
+        'event_summary': event_summary,
+        'mergeable': mergeable,
+    }
 
 
 @external_trigger_bp.route('/forms', methods=['GET'])

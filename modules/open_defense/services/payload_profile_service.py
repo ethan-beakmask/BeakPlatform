@@ -19,6 +19,7 @@ AXIS_FIELD_KEYS = {
     'finding_rule_id',
     'occurred_at',
 }
+FIELD_MAP_ALLOWED_KEYS = AXIS_FIELD_KEYS | {'case_group_key'}
 RESERVED_FORM_KEYS = AXIS_FIELD_KEYS | {'od_payload_profile'}
 MAX_FLAT_DEPTH = 6
 MAX_FLAT_KEYS = 500
@@ -199,6 +200,13 @@ def normalize_axis_fields(payload: dict, profile) -> dict:
     }
 
 
+def resolve_client_group_key(payload: dict, profile) -> str | None:
+    """依 profile.field_map.case_group_key 取送件端自訂分組鍵。"""
+    field_map = profile.field_map or {}
+    value = get_path(payload, field_map.get('case_group_key') or '')
+    return _to_optional_str(value)
+
+
 def build_native_form_data(payload: dict, profile) -> dict:
     """
     產出要寫進 fw_form_instances.form_data 的完整 dict。
@@ -269,7 +277,7 @@ def validate_profile_payload(body: dict) -> tuple[bool, str]:
     if not isinstance(field_map, dict):
         return False, _('field_map 必須為物件')
     for key, value in field_map.items():
-        if key not in AXIS_FIELD_KEYS:
+        if key not in FIELD_MAP_ALLOWED_KEYS:
             return False, _('field_map 含有不支援的 key: %(key)s', key=key)
         if not isinstance(value, str):
             return False, _('field_map 的 value 必須為字串')

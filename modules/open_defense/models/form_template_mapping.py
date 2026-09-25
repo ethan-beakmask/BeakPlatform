@@ -22,6 +22,7 @@ class OdFormTemplateMapping(OdBaseModel):
     payload_kind = Column(String(10), nullable=True)
     priority = Column(Integer, nullable=False, default=0)
     match_rules = Column(JSONB, nullable=True)
+    aggregation = Column(JSONB, nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
     note = Column(String(500), nullable=True)
 
@@ -34,6 +35,7 @@ class OdFormTemplateMapping(OdBaseModel):
             'payload_kind': self.payload_kind,
             'priority': self.priority,
             'match_rules': self.match_rules,
+            'aggregation': self.aggregation,
             'is_active': self.is_active,
             'note': self.note,
         })

@@ -30,3 +30,33 @@ def test_signature_matches_platform_hmac_verifier():
     body = b'{"subject":"hello","form_data":{"a":"b"}}'
 
     assert tool.compute_request_signature(secret, timestamp, body) == compute_signature(secret, timestamp, body)
+
+
+def test_form_code_prints_merged_result(monkeypatch, capsys):
+    tool = load_tool()
+
+    def fake_call_platform(base, key_id, secret, method, path, body=None, bad_signature=False):
+        return 200, {
+            'success': True,
+            'merged': True,
+            'data': {
+                'merged_into': {
+                    'execution_code': 'PROC-20260925-0001',
+                    'od_event_count': 2,
+                },
+            },
+        }
+
+    monkeypatch.setattr(tool, 'call_platform', fake_call_platform)
+    rc = tool.main([
+        '--base', 'http://example.test/beakplatform',
+        '--key-id', 'ak_test',
+        '--secret', base64.urlsafe_b64encode(b'0123456789abcdef0123456789abcdef').decode('ascii'),
+        '--form-code', 'SEC_INCIDENT_RESPONSE',
+        '--subject', 'test',
+        '--group-key', 'case-1',
+    ])
+
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert '事件已併入既有案件 PROC-20260925-0001（累計 2 筆）' in out

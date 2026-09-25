@@ -14,7 +14,11 @@ from modules.form_workflow.models import FwFormTemplate
 from . import admin_bp
 from ...models import OdFormTemplateMapping
 from ...schemas.intake import VALID_EVENT_CLASSES, validate_intake_body, IntakeValidationError
-from ...services.routing_service import evaluate_routing_rules, validate_match_rules
+from ...services.routing_service import (
+    evaluate_routing_rules,
+    validate_aggregation,
+    validate_match_rules,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +94,11 @@ def create_routing_rule():
     if not ok:
         return _error('invalid_match_rules', message, 400)
 
+    aggregation = body.get('aggregation')
+    ok, message = validate_aggregation(aggregation)
+    if not ok:
+        return _error('invalid_aggregation', message, 400)
+
     event_class = _normalize_event_class(body.get('event_class'))
     event_error = _validate_event_class(event_class)
     if event_error:
@@ -118,6 +127,7 @@ def create_routing_rule():
         form_template_secure_code=form_template_sc,
         priority=priority,
         match_rules=match_rules,
+        aggregation=aggregation,
         is_active=bool(body.get('is_active', True)),
         note=(body.get('note') or '').strip() or None,
     )
@@ -151,6 +161,11 @@ def update_routing_rule(secure_code):
         ok, message = validate_match_rules(body.get('match_rules'))
         if not ok:
             return _error('invalid_match_rules', message, 400)
+
+    if 'aggregation' in body:
+        ok, message = validate_aggregation(body.get('aggregation'))
+        if not ok:
+            return _error('invalid_aggregation', message, 400)
 
     if 'event_class' in body:
         event_class = _normalize_event_class(body.get('event_class'))
@@ -186,6 +201,8 @@ def update_routing_rule(secure_code):
         record.form_template_secure_code = (body.get('form_template_secure_code') or '').strip()
     if 'match_rules' in body:
         record.match_rules = body.get('match_rules')
+    if 'aggregation' in body:
+        record.aggregation = body.get('aggregation')
     if 'is_active' in body:
         record.is_active = bool(body.get('is_active'))
     if 'note' in body:
