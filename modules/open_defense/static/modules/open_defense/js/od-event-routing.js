@@ -15,6 +15,18 @@ function odEventRouting() {
         eventClasses: ['detection_finding', 'network_activity', 'web_activity', 'process_activity'],
         matchOps: ['eq', 'ne', 'in', 'not_in', 'gt', 'gte', 'lt', 'lte', 'contains', 'startswith', 'endswith', 'exists'],
         severityLevels: [0, 1, 2, 3, 4, 5],
+        aggregationGroupFields: [
+            { key: 'severity_id', label: __('嚴重度') },
+            { key: 'actor_ip', label: __('攻擊者 IP') },
+            { key: 'target_host', label: __('目標主機') },
+            { key: 'source_system', label: __('來源系統') },
+            { key: 'finding_rule_id', label: __('規則 ID') },
+        ],
+        aggregationWindowFromOptions: [
+            { value: 'first_seen', label: __('案件建立起算') },
+            { value: 'last_seen', label: __('最後一筆事件起算') },
+        ],
+        mergeClosedLevels: [-1, 0, 1, 2, 3, 4, 5, 6],
         axisFields: [
             { key: 'severity_id', label: __('嚴重度') },
             { key: 'actor_ip', label: __('攻擊者 IP') },
@@ -27,7 +39,7 @@ function odEventRouting() {
         ruleForm: {},
         profileModal: { open: false, mode: 'create', secure_code: '', error: '' },
         profileForm: {},
-        ruleTest: { input: '', payload_kind: 'native', matched: null, evaluated: [], error: '' },
+        ruleTest: { input: '', payload_kind: 'native', matched: null, evaluated: [], aggregation: null, error: '' },
         profileTest: { secure_code: '', input: '', result: null, error: '' },
 
         /* modal 內容用 x-show 渲染，關閉狀態下 DOM 仍存在並持續求值，
@@ -35,7 +47,7 @@ function odEventRouting() {
          * x-model="profileForm.field_map[field.key]" 在頁面載入當下就噴
          * "Cannot read properties of undefined"。 */
         init() {
-            this.ruleForm = this.emptyRuleForm();
+            this.ruleForm = this.normalizeRuleForm(this.emptyRuleForm(), true);
             this.profileForm = this.emptyProfileForm();
         },
 
@@ -120,6 +132,7 @@ function odEventRouting() {
                 event_class: '',
                 form_template_secure_code: '',
                 match_rules: [],
+                aggregation: null,
                 is_active: true,
                 note: '',
             };
@@ -133,7 +146,7 @@ function odEventRouting() {
                 secure_code: rule?.secure_code || '',
                 error: '',
             };
-            this.ruleForm = this.normalizeRuleForm(rule || this.emptyRuleForm());
+            this.ruleForm = this.normalizeRuleForm(rule || this.emptyRuleForm(), !rule);
         },
 
         closeRuleModal() {
@@ -141,7 +154,27 @@ function odEventRouting() {
             this.ruleModal.error = '';
         },
 
-        normalizeRuleForm(rule) {
+        normalizeAggregationForm(aggregation, isNewRule = false) {
+            const defaults = {
+                enabled: true,
+                group_by: ['actor_ip', 'finding_rule_id'],
+                window_minutes: 60,
+                window_from: isNewRule ? 'last_seen' : 'first_seen',
+                merge_closed_max_severity: 2,
+            };
+            if (!aggregation) return { custom: false, ...defaults };
+            return {
+                custom: true,
+                enabled: aggregation.enabled !== false,
+                group_by: Array.isArray(aggregation.group_by) ? [...aggregation.group_by] : [...defaults.group_by],
+                window_minutes: Number(aggregation.window_minutes || defaults.window_minutes),
+                window_from: aggregation.window_from || defaults.window_from,
+                merge_closed_max_severity: Number(
+                    aggregation.merge_closed_max_severity ?? defaults.merge_closed_max_severity),
+            };
+        },
+
+        normalizeRuleForm(rule, isNewRule = false) {
             const form = {
                 name: rule.name || '',
                 priority: Number(rule.priority || 0),
@@ -150,6 +183,7 @@ function odEventRouting() {
                 form_template_secure_code: rule.form_template_secure_code || '',
                 is_active: rule.is_active !== false,
                 note: rule.note || '',
+                aggregation: this.normalizeAggregationForm(rule.aggregation, isNewRule),
                 match_rules: (rule.match_rules || []).map((cond) => {
                     const copy = {
                         field: cond.field || '',
@@ -214,6 +248,7 @@ function odEventRouting() {
             if (!String(this.ruleForm.form_template_secure_code || '').trim()) {
                 throw new Error(__('目標表單必填'));
             }
+            const aggregation = this.buildAggregationPayload();
             return {
                 name: String(this.ruleForm.name || '').trim(),
                 priority: Number(this.ruleForm.priority || 0),
@@ -221,8 +256,24 @@ function odEventRouting() {
                 event_class: this.ruleForm.event_class || '',
                 form_template_secure_code: this.ruleForm.form_template_secure_code,
                 match_rules: matchRules,
+                aggregation,
                 is_active: this.ruleForm.is_active === true,
                 note: String(this.ruleForm.note || '').trim(),
+            };
+        },
+
+        buildAggregationPayload() {
+            const form = this.ruleForm.aggregation || {};
+            if (form.custom !== true) return null;
+            const groupBy = this.aggregationGroupFields
+                .map((field) => field.key)
+                .filter((key) => (form.group_by || []).includes(key));
+            return {
+                enabled: form.enabled === true,
+                group_by: groupBy,
+                window_minutes: Number(form.window_minutes || 60),
+                window_from: form.window_from || 'first_seen',
+                merge_closed_max_severity: Number(form.merge_closed_max_severity ?? 2),
             };
         },
 
@@ -266,6 +317,7 @@ function odEventRouting() {
             this.ruleTest.error = '';
             this.ruleTest.matched = null;
             this.ruleTest.evaluated = [];
+            this.ruleTest.aggregation = null;
             let parsed;
             try {
                 parsed = JSON.parse(this.ruleTest.input || '{}');
@@ -289,6 +341,29 @@ function odEventRouting() {
             }
             this.ruleTest.matched = r.body.matched || null;
             this.ruleTest.evaluated = r.body.evaluated || [];
+            this.ruleTest.aggregation = r.body.aggregation || null;
+        },
+
+        aggregationSummary(rule) {
+            if (!rule?.aggregation) return __('預設');
+            const groupBy = (rule.aggregation.group_by || []).join('+') || __('不聚合');
+            const minutes = Number(rule.aggregation.window_minutes || 60);
+            const rolling = rule.aggregation.window_from === 'last_seen' ? ` ${__('滾動')}` : '';
+            return `${groupBy} / ${minutes}${__('分')}${rolling}`;
+        },
+
+        mergeClosedLabel(value) {
+            const n = Number(value);
+            return n < 0 ? __('不併已結案') : `S${n}`;
+        },
+
+        aggregationTestConfigText() {
+            const config = this.ruleTest.aggregation?.config;
+            if (!config) return '-';
+            const groupBy = (config.group_by || []).join('+') || __('不聚合');
+            const from = config.window_from === 'last_seen'
+                ? __('最後一筆事件起算') : __('案件建立起算');
+            return `${groupBy} / ${config.window_minutes}${__('分')} / ${from}`;
         },
 
         formatCondition(cond) {

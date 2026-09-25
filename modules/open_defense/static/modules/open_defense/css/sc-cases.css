@@ -197,6 +197,17 @@
     white-space: nowrap;
     vertical-align: top;
 }
+.sc-event-summary {
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.sc-event-note {
+    color: var(--color-warning);
+    font-size: var(--font-size-sm);
+    margin: 0 0 10px;
+}
 
 .sc-fields {
     display: grid;

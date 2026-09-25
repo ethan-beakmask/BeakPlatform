@@ -17,6 +17,7 @@
                 <th>{{ _('優先序') }} ↓</th>
                 <th>{{ _('目標表單') }}</th>
                 <th>{{ _('條件數') }}</th>
+                <th>{{ _('聚合') }}</th>
                 <th>{{ _('啟用狀態') }}</th>
                 <th>{{ _('操作') }}</th>
             </tr>
@@ -33,6 +34,7 @@
                     <td x-text="rule.priority"></td>
                     <td x-text="templateName(rule.form_template_secure_code)"></td>
                     <td x-text="(rule.match_rules || []).length"></td>
+                    <td x-text="aggregationSummary(rule)"></td>
                     <td>
                         <span class="od-badge" :class="rule.is_active ? 'od-badge-active' : 'od-badge-inactive'"
                               x-text="rule.is_active ? __('啟用') : __('停用')"></span>
@@ -71,6 +73,14 @@
                 <div x-show="ruleTest.error" class="od-alert od-alert-error" x-text="ruleTest.error"></div>
                 <div x-show="ruleTest.matched" class="od-alert od-alert-success">
                     <span>{{ _('命中規則') }}: </span><strong x-text="ruleTest.matched?.name || ruleTest.matched?.secure_code"></strong>
+                    <div>
+                        <span>{{ _('聚合設定') }}: </span>
+                        <span x-text="aggregationTestConfigText()"></span>
+                    </div>
+                    <div>
+                        <span>{{ _('分組鍵') }}: </span>
+                        <span x-text="ruleTest.aggregation?.group_key || ruleTest.aggregation?.reason || '-'"></span>
+                    </div>
                 </div>
                 <div class="od-test-results">
                     <template x-for="item in ruleTest.evaluated" :key="item.secure_code">
@@ -166,6 +176,58 @@
                     <button type="button" class="btn btn-sm btn-danger" @click="removeMatchRule(idx)">{{ _('刪除') }}</button>
                 </div>
             </template>
+            <div class="od-editor-head">
+                <h4>{{ _('聚合') }}</h4>
+            </div>
+            <div class="od-form-grid">
+                <label class="od-check od-form-span">
+                    <input type="checkbox" x-model="ruleForm.aggregation.custom">
+                    <span>{{ _('自訂聚合設定（未勾＝沿用系統預設）') }}</span>
+                </label>
+            </div>
+            <div class="od-form-grid" x-show="ruleForm.aggregation.custom">
+                <label class="od-check od-form-span">
+                    <input type="checkbox" x-model="ruleForm.aggregation.enabled">
+                    <span>{{ _('啟用聚合') }}</span>
+                </label>
+                <div class="od-field od-form-span">
+                    <label>{{ _('分組鍵') }}</label>
+                    <div class="od-check-grid">
+                        <template x-for="field in aggregationGroupFields" :key="field.key">
+                            <label class="od-check">
+                                <input type="checkbox" :value="field.key" x-model="ruleForm.aggregation.group_by">
+                                <span x-text="field.label"></span>
+                            </label>
+                        </template>
+                    </div>
+                    <div class="od-muted">{{ _('欄位值完全相同才併入同一案，任一欄缺值會各自開案。') }}</div>
+                </div>
+                <div class="od-field">
+                    <label>{{ _('視窗分鐘數') }}</label>
+                    <input type="number" min="1" max="10080" x-model="ruleForm.aggregation.window_minutes">
+                    <div class="od-muted">{{ _('只在視窗內尋找可合併案件。') }}</div>
+                </div>
+                <div class="od-field">
+                    <label>{{ _('視窗起點') }}</label>
+                    <select x-model="ruleForm.aggregation.window_from">
+                        <template x-for="opt in aggregationWindowFromOptions" :key="opt.value">
+                            <option :value="opt.value" :selected="opt.value === ruleForm.aggregation.window_from"
+                                    x-text="opt.label"></option>
+                        </template>
+                    </select>
+                    <div class="od-muted">{{ _('案件建立起算固定視窗；最後一筆事件起算會隨新事件延長。') }}</div>
+                </div>
+                <div class="od-field">
+                    <label>{{ _('已結案合併閾值') }}</label>
+                    <select x-model="ruleForm.aggregation.merge_closed_max_severity">
+                        <template x-for="level in mergeClosedLevels" :key="level">
+                            <option :value="level" :selected="Number(level) === Number(ruleForm.aggregation.merge_closed_max_severity)"
+                                    x-text="mergeClosedLabel(level)"></option>
+                        </template>
+                    </select>
+                    <div class="od-muted">{{ _('嚴重度小於等於閾值時，可併入已結案案件；-1 表示不併。') }}</div>
+                </div>
+            </div>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="closeRuleModal()">{{ _('取消') }}</button>

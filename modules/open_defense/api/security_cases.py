@@ -182,6 +182,57 @@ def _payload_scalar_fields(form_data, detail_key):
     return fields
 
 
+_OD_EVENT_KEYS = (
+    'event_sc',
+    'received_at',
+    'occurred_at',
+    'source_system',
+    'severity_id',
+    'actor_ip',
+    'target_host',
+    'finding_rule_id',
+    'finding_title',
+)
+
+
+def _payload_events(form_data):
+    events = form_data.get('od_events')
+    if not isinstance(events, list):
+        return []
+
+    normalized = []
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        normalized.append({
+            key: event.get(key)
+            for key in _OD_EVENT_KEYS
+        })
+    return normalized
+
+
+def _apply_events_egress(form_instance, events):
+    if not events:
+        return events
+
+    fields = []
+    rows = [{'actor_ip': event.get('actor_ip')} for event in events]
+    columns = [{'key': 'actor_ip', 'label': 'actor_ip'}]
+    _fields, filtered_rows, _columns = _apply_payload_egress(
+        form_instance, fields, rows, columns)
+
+    masked = []
+    for idx, event in enumerate(events):
+        item = dict(event)
+        if idx < len(filtered_rows) and isinstance(filtered_rows[idx], dict):
+            if 'actor_ip' in filtered_rows[idx]:
+                item['actor_ip'] = filtered_rows[idx]['actor_ip']
+            else:
+                item['actor_ip'] = None
+        masked.append(item)
+    return masked
+
+
 def _apply_payload_egress(form_instance, fields, rows, columns):
     from app.services import egress_service
 
@@ -350,6 +401,8 @@ def list_cases():
     for fi, wi in rows:
         fd = fi.form_data or {}
         severity = fd.get('severity_id')
+        actor_ips = fd.get('od_actor_ips') if isinstance(
+            fd.get('od_actor_ips'), list) else []
         picked, can_act = picked_map.get(wi.secure_code, (None, False))
         waiting = ({
             'queue_secure_code': picked.secure_code,
@@ -371,6 +424,7 @@ def list_cases():
             'risk_score': fd.get('risk_score'),
             'recommended_action': fd.get('recommended_action'),
             'od_event_count': fd.get('od_event_count'),
+            'od_actor_ip_count': len(actor_ips),
             'finding_rule_id': fd.get('finding_rule_id'),
             'submitted_at': fi.submitted_at.isoformat() if fi.submitted_at else None,
             'completed_at': fi.completed_at.isoformat() if fi.completed_at else None,
@@ -473,6 +527,10 @@ def case_payload(wi_sc):
 
     form_instance, _workflow_instance = row
     form_data = form_instance.form_data or {}
+    events = _payload_events(form_data)
+    events = _apply_events_egress(form_instance, events)
+    actor_ips = form_data.get('od_actor_ips') if isinstance(
+        form_data.get('od_actor_ips'), list) else []
 
     profile = None
     detail = None
@@ -522,6 +580,9 @@ def case_payload(wi_sc):
         } if profile else None),
         'detail': detail,
         'fields': fields,
+        'events': events,
+        'events_truncated': form_data.get('od_events_truncated') or 0,
+        'actor_ips': actor_ips,
     }
     if truncated:
         data['truncated'] = True

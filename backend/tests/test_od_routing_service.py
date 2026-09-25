@@ -5,6 +5,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app import db
+from app.models.permission import Permission, PermissionLevel
+from app.services.permission_service import PermissionService
 from modules.open_defense.models import OdFormTemplateMapping
 from modules.open_defense.services.routing_service import (
     resolve_form_template,
@@ -51,6 +53,8 @@ def _rule(
     form_template_secure_code='tmpl_default',
     priority=0,
     match_rules=None,
+    aggregation=None,
+    payload_kind=None,
     is_active=True,
     name='rule',
 ):
@@ -59,7 +63,9 @@ def _rule(
         event_class=event_class,
         form_template_secure_code=form_template_secure_code,
         priority=priority,
+        payload_kind=payload_kind,
         match_rules=match_rules,
+        aggregation=aggregation,
         is_active=is_active,
         name=name,
         is_deleted=False,
@@ -67,6 +73,29 @@ def _rule(
     db.session.add(record)
     db.session.flush()
     return record
+
+
+def _routing_client(app, client):
+    endpoint = 'open_defense_admin_api.test_routing_rule'
+    if endpoint not in app.view_functions:
+        from modules.open_defense.api import admin_bp
+        app.register_blueprint(admin_bp)
+    return client
+
+
+def _ensure_open_defense_admin_permission():
+    if not Permission.query.filter_by(code='open_defense.admin').first():
+        db.session.add(Permission(
+            resource_type='open_defense',
+            action='admin',
+            code='open_defense.admin',
+            name='OpenDefense Admin',
+            permission_level=PermissionLevel.ORG,
+            is_system_permission=True,
+            is_active=True,
+        ))
+        db.session.flush()
+    PermissionService.clear_cache()
 
 
 def test_legacy_event_class_mapping_still_matches(app, db_session):
@@ -171,6 +200,63 @@ def test_validate_match_rules_rejects_unknown_op_and_regex(app):
     ])
     assert not ok
     assert '不支援' in message
+
+
+def test_routing_rule_test_returns_ocsf_aggregation(app, admin_client, db_session):
+    rule = _rule(
+        name='OCSF aggregation',
+        payload_kind='ocsf',
+        form_template_secure_code='tmpl_ocsf_agg',
+        match_rules=[{'field': 'source_system', 'op': 'eq', 'value': 'suricata'}],
+        aggregation={
+            'enabled': True,
+            'group_by': ['actor_ip', 'finding_rule_id'],
+            'window_minutes': 30,
+            'window_from': 'last_seen',
+            'merge_closed_max_severity': -1,
+        },
+    )
+    _ensure_open_defense_admin_permission()
+
+    response = _routing_client(app, admin_client).post(
+        '/beakplatform/api/open_defense/admin/routing-rules/test',
+        json={**_body(), 'payload_kind': 'ocsf'},
+    )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body['matched']['secure_code'] == rule.secure_code
+    assert body['aggregation']['config']['window_minutes'] == 30
+    assert body['aggregation']['config']['window_from'] == 'last_seen'
+    assert body['aggregation']['group_key'].startswith(f'rule:{rule.secure_code}:')
+    assert body['aggregation']['group_key'].endswith('\x1fkind=ocsf')
+    assert body['aggregation']['reason'] is None
+
+
+def test_routing_rule_test_returns_native_aggregation_reason(app, admin_client, db_session):
+    _rule(
+        name='Native aggregation',
+        payload_kind='native',
+        form_template_secure_code='tmpl_native_agg',
+        match_rules=[{'field': 'Summary.RuleId', 'op': 'eq', 'value': 'AV-017A'}],
+        aggregation=None,
+    )
+    _ensure_open_defense_admin_permission()
+
+    response = _routing_client(app, admin_client).post(
+        '/beakplatform/api/open_defense/admin/routing-rules/test',
+        json={
+            'payload_kind': 'native',
+            'payload': {'Summary': {'RuleId': 'AV-017A'}},
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body['matched']['name'] == 'Native aggregation'
+    assert body['aggregation']['config']['group_by'] == ['actor_ip', 'finding_rule_id']
+    assert body['aggregation']['group_key'] is None
+    assert '原生格式的軸線由來源格式決定' in body['aggregation']['reason']
 
     ok, message = validate_match_rules([
         {'field': 'finding.title', 'op': 'regex', 'value': '.*'},

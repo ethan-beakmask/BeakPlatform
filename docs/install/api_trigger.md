@@ -55,6 +55,21 @@ python3 scripts/bp_trigger.py \
 
 成功時平台會回傳建立結果。接著回到 UI 的「表單中心」或「開放防禦 / 資安案件處置中心」查看標題含 `TEST-` 的案件。
 
+重複打同一事件會併入既有案件，平台回 `200` 並帶 `merged: true`，不會多開一張單。
+要把多個 IP 歸成同一案，可以由送件端指定 `--group-key`：
+
+```bash
+python3 scripts/bp_trigger.py \
+  --form-code SEC_INCIDENT_RESPONSE \
+  --subject 'TEST-同一掃描任務' \
+  --group-key SCAN-20260926-001 \
+  --field finding_title='TEST-掃描告警' \
+  --field source_system=manual \
+  --field severity_id=3 \
+  --field actor_ip=203.0.113.43 \
+  --field target_host=demo.internal
+```
+
 ## 四、錯誤碼對照
 
 | HTTP | code | 常見原因 |
@@ -64,6 +79,7 @@ python3 scripts/bp_trigger.py \
 | 400 | `missing_subject` | 缺少 `subject` |
 | 400 | `form_data_must_be_object` | `form_data` 不是 JSON 物件 |
 | 400 | `unknown_field` | 欄位名稱不在表單內；回應會附 `allowed_keys` |
+| 200 | `merged` | 事件已併入既有案件，回應的 `merged_into` 有案件編號 |
 | 401 | `auth_failed` | key id、secret、簽章或時間戳錯誤 |
 | 403 | `scope_denied` | API Key 沒有這個觸發範圍 |
 | 404 | `form_not_found` | 找不到表單，或表單不在這把 key 可見範圍 |

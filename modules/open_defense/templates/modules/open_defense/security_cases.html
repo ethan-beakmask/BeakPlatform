@@ -154,6 +154,8 @@
                                  <div class="sc-field-value mono" x-html="val(selected.finding_rule_id)"></div></div>
                             <div><div class="sc-field-label">{{ _('聚合事件數') }}</div>
                                  <div class="sc-field-value" x-text="selected.od_event_count ?? 1"></div></div>
+                            <div><div class="sc-field-label">{{ _('來源 IP 數') }}</div>
+                                 <div class="sc-field-value" x-text="selected.od_actor_ip_count ?? '-'"></div></div>
                             <div><div class="sc-field-label">{{ _('建立時間') }}</div>
                                  <div class="sc-field-value" x-text="fmtTime(selected.submitted_at)"></div></div>
                             <div><div class="sc-field-label">{{ _('處置流程') }}</div>
@@ -251,6 +253,44 @@
                                 </template>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="sc-tab-panel" x-show="activeTab === 'events'">
+                        <div class="sc-event-summary" x-text="eventsSummaryText()"></div>
+                        <template x-if="payload?.events_truncated > 0">
+                            <p class="sc-event-note"
+                               x-text="__('事件超過 200 筆，中段已省略 {n} 筆，只保留最早與最新各 100 筆。', {n: payload.events_truncated})"></p>
+                        </template>
+                        <div class="sc-table-scroll">
+                            <table class="od-table">
+                                <thead>
+                                    <tr>
+                                        <th>{{ _('收到時間') }}</th>
+                                        <th>{{ _('發生時間') }}</th>
+                                        <th>{{ _('來源') }}</th>
+                                        <th>{{ _('嚴重度') }}</th>
+                                        <th>{{ _('來源 IP') }}</th>
+                                        <th>{{ _('目標主機') }}</th>
+                                        <th>{{ _('規則 ID') }}</th>
+                                        <th>{{ _('標題') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(ev, i) in eventsDesc" :key="ev.event_sc || i">
+                                        <tr>
+                                            <td x-text="fmtTime(ev.received_at)"></td>
+                                            <td x-text="fmtTime(ev.occurred_at)"></td>
+                                            <td x-text="ev.source_system || '-'"></td>
+                                            <td x-text="ev.severity_id ?? '-'"></td>
+                                            <td class="od-mono" x-html="val(ev.actor_ip)"></td>
+                                            <td x-text="ev.target_host || '-'"></td>
+                                            <td class="od-mono" x-text="ev.finding_rule_id || '-'"></td>
+                                            <td x-text="ev.finding_title || '-'"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <div class="sc-tab-panel" x-show="activeTab === 'detail'">

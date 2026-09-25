@@ -212,6 +212,9 @@ function scCases() {
          * 但 x-show 沒有跟著重算，畫面停在前一個分頁。 */
         get tabs() {
             const items = [{ id: 'summary', label: __('案件摘要') }];
+            if (this.payload?.events?.length) {
+                items.push({ id: 'events', label: __('持續事件') });
+            }
             if (this.payload?.detail?.rows?.length) {
                 items.push({ id: 'detail', label: __('事件明細') });
             }
@@ -287,6 +290,30 @@ function scCases() {
             if (!this.tabs.some((tab) => tab.id === this.activeTab)) {
                 this.activeTab = 'summary';
             }
+        },
+        get eventsAsc() {
+            return [...(this.payload?.events || [])].sort((a, b) => {
+                const av = this._utcMillis(a.received_at);
+                const bv = this._utcMillis(b.received_at);
+                const left = av === null ? Number.POSITIVE_INFINITY : av;
+                const right = bv === null ? Number.POSITIVE_INFINITY : bv;
+                return left - right;
+            });
+        },
+        get eventsDesc() {
+            return [...this.eventsAsc].reverse();
+        },
+        eventsSummaryText() {
+            const events = this.eventsAsc;
+            const first = events.length ? this.fmtTime(events[0].received_at) : '-';
+            const last = events.length ? this.fmtTime(events[events.length - 1].received_at) : '-';
+            const actorCount = this.payload?.actor_ips?.length ?? 0;
+            return __('共 {n} 筆事件，來源 IP {m} 個；最早 {first}，最新 {last}', {
+                n: events.length,
+                m: actorCount,
+                first,
+                last,
+            });
         },
 
         // ---- 顯示 helper ----

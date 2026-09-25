@@ -14,6 +14,7 @@ from modules.form_workflow.models import FwFormTemplate
 from . import admin_bp
 from ...models import OdFormTemplateMapping
 from ...schemas.intake import VALID_EVENT_CLASSES, validate_intake_body, IntakeValidationError
+from ...services.case_aggregation_service import effective_config, resolve_group_key
 from ...services.routing_service import (
     evaluate_routing_rules,
     validate_aggregation,
@@ -66,6 +67,44 @@ def _validate_form_template(org_sc, form_template_sc):
 
 def _rule_payload(record):
     return record.to_dict()
+
+
+def _routing_test_aggregation(matched, event_body, payload_kind):
+    if not matched:
+        return {'config': None, 'group_key': None, 'reason': None}
+
+    config = effective_config(matched.aggregation)
+    if payload_kind == 'native':
+        return {
+            'config': config,
+            'group_key': None,
+            'reason': _('原生格式的軸線由來源格式決定，試算不算分組鍵'),
+        }
+
+    actor = event_body.get('actor') or {}
+    target = event_body.get('target') or {}
+    finding = event_body.get('finding') or {}
+    axis = {
+        'actor_ip': actor.get('ip'),
+        'target_host': target.get('host'),
+        'source_system': event_body.get('source_system'),
+        'finding_rule_id': finding.get('rule_id'),
+        'severity_id': event_body.get('severity_id'),
+        'occurred_at': event_body.get('occurred_at'),
+    }
+    group_key = resolve_group_key(
+        rule_secure_code=matched.secure_code,
+        axis=axis,
+        client_key=event_body.get('case_group_key'),
+        config=config,
+        payload_kind='ocsf',
+        source_system=event_body.get('source_system'),
+    )
+    return {
+        'config': config,
+        'group_key': group_key,
+        'reason': None if group_key else _('分組欄位有缺，這筆事件會各自開案'),
+    }
 
 
 @admin_bp.route('/routing-rules', methods=['GET'])
@@ -277,8 +316,10 @@ def test_routing_rule():
             'name': matched.name,
             'form_template_secure_code': matched.form_template_secure_code,
         }
+    aggregation = _routing_test_aggregation(matched, event_body, payload_kind)
 
     return jsonify({
         'matched': matched_payload,
         'evaluated': evaluated,
+        'aggregation': aggregation,
     })
