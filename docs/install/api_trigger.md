@@ -14,6 +14,8 @@ http://<平台IP>:<埠>/beakplatform/security/api-keys/
 
 `secret` 只顯示一次，請立即保存。它是 base64url 字串；`bp_trigger.py` 會自己解碼成 HMAC 使用的 raw bytes，不要自行轉碼。
 
+也可以由資安人員自己填「API Key 申請單」申請，前提是表單已授權給他的角色；詳見使用手冊「API Key 管理」。
+
 ## 二、列出可觸發的表單
 
 建議把認證放在環境變數，避免 secret 留在 shell history：

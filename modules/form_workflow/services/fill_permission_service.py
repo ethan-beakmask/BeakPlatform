@@ -81,18 +81,21 @@ def build_fill_permission_context(user, org_sc):
     return ctx
 
 
-def check_mapping_permission(ctx, perms):
+def check_mapping_permission(ctx, perms, *, is_security=False):
     """
     以預載的 context 檢查一組 FwMappingPermission 是否放行。
 
     Args:
         ctx: build_fill_permission_context() 的回傳
         perms: 該 mapping 的 FwMappingPermission 列表（可為 None/空）
+        is_security: 資安案件表單無規則時 fail-closed
     """
     if ctx['is_hardcoded']:
         return True
 
     if not perms:
+        if is_security:
+            return False
         # 無自訂規則時預設「企業成員」可填；is_external 是雙保險，
         # 確保外部廠商在任何情況下都不會經由預設規則被放行。
         return (
@@ -155,19 +158,39 @@ def user_can_fill_mapping(user, org_sc, mapping_sc):
         mapping_sc: 配對 secure_code
     """
     ctx = build_fill_permission_context(user, org_sc)
-    if ctx['is_hardcoded']:
-        return True
 
     if not mapping_sc:
         return False
 
-    from ..models import FwMappingPermission
+    from ..models import FwFormTemplate, FwFormWorkflowMapping, FwMappingPermission
+    from .security_center import is_security_category
+
+    mapping = FwFormWorkflowMapping.query.filter_by(
+        secure_code=mapping_sc,
+        org_secure_code=org_sc,
+        is_deleted=False,
+    ).first()
+    if not mapping:
+        return False
+
+    template = FwFormTemplate.query.filter_by(
+        secure_code=mapping.form_template_secure_code,
+        org_secure_code=org_sc,
+        is_deleted=False,
+    ).first()
+    if not template:
+        return False
+
+    if ctx['is_hardcoded']:
+        return True
+
+    is_security = is_security_category(template.category_secure_code)
     perms = FwMappingPermission.query.filter_by(
         org_secure_code=org_sc,
         mapping_secure_code=mapping_sc,
         is_deleted=False
     ).all()
-    return check_mapping_permission(ctx, perms)
+    return check_mapping_permission(ctx, perms, is_security=is_security)
 
 
 def _build_unit_ancestors(unit_sc, ancestors, org_sc):
@@ -193,8 +216,8 @@ def _build_unit_ancestors(unit_sc, ancestors, org_sc):
     ancestors.add('__ORG_ROOT__')
 
 
-def _latest_published_template_rows(org_sc):
-    """回傳每張表單模板最新一筆 Published，已排除資安分類。"""
+def _latest_published_template_rows(org_sc, *, include_security=False):
+    """回傳每張表單模板最新一筆 Published；預設排除資安分類。"""
     from app import db
     from ..models import (
         FwCategory, FwFormWorkflowMapping, FwPublishedFormWorkflow,
@@ -237,9 +260,10 @@ def _latest_published_template_rows(org_sc):
 
         form_snapshot = p.form_snapshot or {}
         cat_sc = form_snapshot.get('category_secure_code')
-        # 資安分類表單由處置中心 / intake 專用鏈路承接，不是一般表單選項，
-        # 與表單中心清單採同一條隔離規則。
-        if is_security_category(cat_sc):
+        is_security = is_security_category(cat_sc)
+        # 表單中心與代理限定表單選擇器仍維持 UI/用途隔離；API Key 申請
+        # 需納入資安表單，再交由 fw_mapping_permissions 判定。
+        if is_security and not include_security:
             continue
 
         cat = cat_map.get(cat_sc) if cat_sc else None
@@ -249,6 +273,7 @@ def _latest_published_template_rows(org_sc):
                 p.source_mapping_secure_code
                 or mapping_id_to_sc.get(p.source_mapping_id)
             ),
+            'is_security': is_security,
             'item': {
                 'secure_code': template_sc,
                 'name': form_snapshot.get('name') or p.name,
@@ -256,6 +281,7 @@ def _latest_published_template_rows(org_sc):
                 'description': form_snapshot.get('description') or p.description,
                 'category_secure_code': cat_sc,
                 'category_name': cat.name if cat else form_snapshot.get('category'),
+                'is_security': is_security,
             },
         })
 
@@ -266,6 +292,13 @@ def _latest_published_template_rows(org_sc):
     return rows
 
 
+def _public_template_item(item):
+    """移除內部判定欄位，維持公開回傳形狀。"""
+    public = item.copy()
+    public.pop('is_security', None)
+    return public
+
+
 def list_published_templates(org_sc):
     """
     列出企業內「有 Published 版本」的表單模板，不套填寫權限過濾。
@@ -273,7 +306,10 @@ def list_published_templates(org_sc):
     用途：代理限定表單選擇器與 OpProxyGrant 重驗。回傳形狀與排序必須和
     list_fillable_published_templates() 一致，讓前後端顯示與驗證同源。
     """
-    return [row['item'] for row in _latest_published_template_rows(org_sc)]
+    return [
+        _public_template_item(row['item'])
+        for row in _latest_published_template_rows(org_sc)
+    ]
 
 
 def list_fillable_published_templates(user, org_sc):
@@ -304,11 +340,70 @@ def list_fillable_published_templates(user, org_sc):
             perm_map.setdefault(p.mapping_secure_code, []).append(p)
 
     result = []
-    for row in _latest_published_template_rows(org_sc):
+    for row in _latest_published_template_rows(org_sc, include_security=True):
         mapping_sc = row['mapping_secure_code']
-        if not check_mapping_permission(ctx, perm_map.get(mapping_sc)):
+        if not check_mapping_permission(
+            ctx, perm_map.get(mapping_sc), is_security=row['is_security']
+        ):
             continue
 
-        result.append(row['item'])
+        result.append(_public_template_item(row['item']))
 
+    return result
+
+
+def ensure_role_fill_permissions(org_sc, mapping_sc, role_codes, *, apply=True):
+    """
+    確保指定配對授權給角色代碼清單。
+
+    role grant_target 存 roles.code；角色查詢必須帶 org_secure_code，因為 code
+    跨企業不唯一。apply=False 只回報將建立/已存在/缺少，不寫入資料庫。
+    """
+    from app import db
+    from app.models import Role
+    from app.utils.security import generate_secure_code
+    from ..models import FwMappingPermission
+
+    result = {'created': [], 'existing': [], 'missing_roles': []}
+    seen = set()
+    for raw_code in role_codes or []:
+        role_code = str(raw_code or '').strip()
+        if not role_code or role_code in seen:
+            continue
+        seen.add(role_code)
+
+        role = Role.query.filter_by(
+            org_secure_code=org_sc,
+            code=role_code,
+            is_deleted=False,
+        ).first()
+        if not role:
+            result['missing_roles'].append(role_code)
+            continue
+
+        exists = FwMappingPermission.query.filter_by(
+            org_secure_code=org_sc,
+            mapping_secure_code=mapping_sc,
+            grant_type='role',
+            grant_target=role_code,
+            is_deleted=False,
+        ).first()
+        if exists:
+            result['existing'].append(role_code)
+            continue
+
+        result['created'].append(role_code)
+        if apply:
+            db.session.add(FwMappingPermission(
+                secure_code=generate_secure_code(),
+                org_secure_code=org_sc,
+                mapping_secure_code=mapping_sc,
+                grant_type='role',
+                grant_target=role_code,
+                grant_target_name=role.name,
+                include_children=False,
+            ))
+
+    if apply and result['created']:
+        db.session.flush()
     return result

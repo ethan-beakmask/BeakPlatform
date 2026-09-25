@@ -118,7 +118,7 @@
                     secret: <span x-text="createdKey.secret"></span>
                 </div>
                 <div class="ak-sub">
-                    {{ _('簽章方式：HMAC-SHA256(secret, "{timestamp}\\n{body}")，headers：X-BP-Key-Id / X-BP-Timestamp / X-BP-Signature。詳見 dev-notes/API_KEY_TRIGGER_SPEC.md。') }}
+                    {{ _('簽章方式：HMAC-SHA256(secret, "{timestamp}\\n{body}")，headers：X-BP-Key-Id / X-BP-Timestamp / X-BP-Signature。工具與範例：scripts/bp_trigger.py、docs/install/api_trigger.md。') }}
                 </div>
             </div>
         </template>

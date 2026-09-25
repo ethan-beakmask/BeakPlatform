@@ -63,6 +63,7 @@ from od_workflow_graphs import (  # noqa: E402
 SOURCE_FORM_CODE = 'SEC_INCIDENT_RESPONSE'
 STAFF_ROLE_CODE = 'SECURITY_STAFF'
 SUPERVISOR_ROLE_CODE = 'SOC_SUPERVISOR'
+SECURITY_FILL_ROLE_CODES = ['SECURITY_STAFF', 'SOC_SUPERVISOR']
 SUPERVISOR_ROLE_NAME = '資安主管'
 SUPERVISOR_ROLE_DESC = '高嚴重度資安案件的第二級處置與封鎖決策覆核'
 
@@ -402,9 +403,13 @@ def ensure_mapping_and_publish(db, models, org_sc, form_tpl, wf_tpl, publisher, 
     FwFormWorkflowMapping = models['FwFormWorkflowMapping']
     FwPublishedFormWorkflow = models['FwPublishedFormWorkflow']
     from app.utils.security import generate_secure_code
+    from modules.form_workflow.services.fill_permission_service import (
+        ensure_role_fill_permissions,
+    )
 
     if not apply or not form_tpl or not wf_tpl:
         log('  [預演] 會建立表單流程配對並發行')
+        log('  [預演] 會補資安表單填寫角色規則：' + ', '.join(SECURITY_FILL_ROLE_CODES))
         return None, None
 
     mapping = FwFormWorkflowMapping.query.filter_by(
@@ -440,6 +445,13 @@ def ensure_mapping_and_publish(db, models, org_sc, form_tpl, wf_tpl, publisher, 
         db.session.add(mapping)
         db.session.flush()
         log(f'  已建立配對：{mapping.secure_code}')
+
+    fill_perms = ensure_role_fill_permissions(
+        org_sc, mapping.secure_code, SECURITY_FILL_ROLE_CODES, apply=apply)
+    log('  填寫角色規則：'
+        f"created={fill_perms['created'] or []}, "
+        f"existing={fill_perms['existing'] or []}, "
+        f"missing_roles={fill_perms['missing_roles'] or []}")
 
     # 發行：沿用 API 的邏輯（api/mappings.py::publish_mapping），
     # 版本相同就不重複建，不同則停用舊版再建新版。

@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 19:10+0800\n"
+"POT-Creation-Date: 2026-09-26 02:25+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -3028,6 +3028,8 @@ msgstr ""
 #: app/templates/pages/admin/initial_setup.html:181
 #: app/templates/pages/admin/org-admins/list.html:40
 #: app/templates/pages/admin/settings.html:223
+#: app/templates/pages/dev/portal_quick_login.html:180
+#: app/templates/pages/dev/portal_quick_login.html:211
 #: app/templates/pages/external-users/list.html:34
 #: app/templates/pages/hostconfig/_system_settings_modals.html:56
 #: app/templates/pages/organizations/admins.html:48
@@ -3629,6 +3631,7 @@ msgstr "Proxy"
 #: app/templates/pages/access_center/_tab_health.html:108
 #: app/templates/pages/access_center/_tab_roles.html:4
 #: app/templates/pages/access_center/index.html:23
+#: app/templates/pages/dev/portal_quick_login.html:227
 #: app/templates/pages/external-users/edit.html:134
 #: app/templates/pages/hostconfig/_system_settings_section_orgdatabases.html:48
 #: app/templates/pages/modules/list.html:156
@@ -3875,6 +3878,7 @@ msgstr "Primary Email"
 #: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:133
 #: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:38
 #: app/templates/pages/admin/settings.html:216
+#: app/templates/pages/dev/portal_quick_login.html:215
 #: app/templates/pages/organizations/create.html:53
 #: app/templates/pages/organizations/edit.html:61
 #: app/templates/pages/personal_settings.html:51
@@ -5686,6 +5690,7 @@ msgstr "Set Role and its permissions."
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:168
 #: app/templates/pages/admin/index.html:26
+#: app/templates/pages/dev/portal_quick_login.html:231
 msgid "管理角色"
 msgstr "Manage Roles"
 
@@ -7601,7 +7606,7 @@ msgstr "All day"
 msgid "全天事件"
 msgstr "All-day event"
 
-#: ../modules/open_defense/services/intake_service.py:417
+#: ../modules/open_defense/services/intake_service.py:320
 #: app/templates/pages/calendar/_event_modal.html:43
 #: app/templates/pages/calendar/_event_modal.html:51
 msgid "開始"
@@ -7729,66 +7734,6 @@ msgstr "No events on this day"
 #: app/templates/pages/calendar/calendar.html:143
 msgid "在這天新增"
 msgstr "Add on this day"
-
-msgid "Portal 帳號快速切換 - BeakPlatform 開發工具"
-msgstr "Portal Account Quick Switch - BeakPlatform Developer Tool"
-
-msgid "開發工具，僅限內網；正式部署前必須移除"
-msgstr ""
-"Developer tool for internal networks only; remove before production "
-"deployment"
-
-msgid "NoCode 公開 portal 帳號快速切換"
-msgstr "NoCode Public Portal Account Quick Switch"
-
-msgid "清除 portal session"
-msgstr "Clear portal session"
-
-msgid "前往此子系統 portal"
-msgstr "Go to this subsystem portal"
-
-msgid "切換 portal 身分"
-msgstr "Switch portal identity"
-
-msgid "子系統"
-msgstr "Subsystem"
-
-msgid "請選擇子系統"
-msgstr "Please select a subsystem"
-
-msgid "目前身分摘要"
-msgstr "Current Identity Summary"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:201
-#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:188
-msgid "階級"
-msgstr "Level"
-
-msgid "Rank"
-msgstr "Rank"
-
-msgid "請選擇子系統與帳號後切換身分"
-msgstr "Select a subsystem and account before switching identity"
-
-msgid "帳號清單資訊"
-msgstr "Account List Information"
-
-msgid "顯示欄位"
-msgstr "Visible fields"
-
-msgid ""
-"帳號下拉會顯示 username、display_name、階級 code、rank、管理角色與停用狀態；停用帳號仍可切換，用於測試 fail-"
-"closed。"
-msgstr ""
-"The account dropdown shows username, display_name, level code, rank, "
-"admin roles, and disabled status; disabled accounts can still be selected"
-" to test fail-closed behavior."
-
-msgid "回平台快速登入"
-msgstr "Back to platform quick login"
-
-msgid "portal 帳號快速切換（NoCode 公開子系統）"
-msgstr "Portal account quick switch (NoCode public subsystem)"
 
 #: app/templates/pages/external-users/create.html:3
 #: app/templates/pages/external-users/create.html:15
@@ -12257,11 +12202,12 @@ msgstr ""
 #, python-brace-format
 msgid ""
 "簽章方式：HMAC-SHA256(secret, \"{timestamp}\\n{body}\")，headers：X-BP-Key-Id / "
-"X-BP-Timestamp / X-BP-Signature。詳見 dev-notes/API_KEY_TRIGGER_SPEC.md。"
+"X-BP-Timestamp / X-BP-"
+"Signature。工具與範例：scripts/bp_trigger.py、docs/install/api_trigger.md。"
 msgstr ""
-"Signature method: HMAC-SHA256(secret, \"{timestamp}\\n{body}\"), headers:"
-" X-BP-Key-Id / X-BP-Timestamp / X-BP-Signature. See dev-"
-"notes/API_KEY_TRIGGER_SPEC.md for details."
+"Signature: HMAC-SHA256(secret, \"{timestamp}\\n{body}\"), headers: X-BP-"
+"Key-Id / X-BP-Timestamp / X-BP-Signature. Tool and examples: "
+"scripts/bp_trigger.py, docs/install/api_trigger.md."
 
 #: app/templates/pages/security/_api_keys_modals.html:128
 msgid "我已保存，關閉"
@@ -13300,22 +13246,31 @@ msgstr "Category %(name)s deleted"
 msgid "已儲存核決上限"
 msgstr "Approval limits saved"
 
+#: app/web/dev.py:267 app/web/dev.py:371
 msgid "找不到子系統，或此子系統沒有 portal.db"
 msgstr "Subsystem not found, or this subsystem has no portal.db"
 
+#: app/web/dev.py:278
 msgid "此子系統尚未初始化 portal.db"
 msgstr "This subsystem has not initialized portal.db"
 
+#: app/templates/pages/dev/portal_quick_login.html:170 app/web/dev.py:359
+msgid "請選擇子系統"
+msgstr "Please select a subsystem"
+
+#: app/web/dev.py:364
 msgid "請選擇帳號"
 msgstr "Please select an account"
 
-#: app/web/sys_accounts.py:196 app/web/sys_accounts.py:272
+#: app/web/dev.py:396 app/web/sys_accounts.py:196 app/web/sys_accounts.py:272
 msgid "帳號不存在"
 msgstr "Account not found"
 
+#: app/web/dev.py:402
 msgid "系統尚未初始化"
 msgstr "System has not been initialized"
 
+#: app/web/dev.py:442
 msgid "Portal session 已清除"
 msgstr "Portal session cleared"
 
@@ -14310,6 +14265,80 @@ msgstr ""
 msgid "第 %(row)s 列: 企業成員編號 %(employee_id)s 已存在"
 msgstr "Row %(row)s: employee ID %(employee_id)s already exists"
 
+#: app/templates/pages/dev/portal_quick_login.html:6
+msgid "Portal 帳號快速切換 - BeakPlatform 開發工具"
+msgstr "Portal Account Quick Switch - BeakPlatform Developer Tool"
+
+#: app/templates/pages/dev/portal_quick_login.html:131
+msgid "開發工具，僅限內網；正式部署前必須移除"
+msgstr ""
+"Developer tool for internal networks only; remove before production "
+"deployment"
+
+#: app/templates/pages/dev/portal_quick_login.html:134
+msgid "NoCode 公開 portal 帳號快速切換"
+msgstr "NoCode Public Portal Account Quick Switch"
+
+#: app/templates/pages/dev/portal_quick_login.html:139
+#: app/templates/pages/dev/portal_quick_login.html:199
+msgid "清除 portal session"
+msgstr "Clear portal session"
+
+#: app/templates/pages/dev/portal_quick_login.html:157
+msgid "前往此子系統 portal"
+msgstr "Go to this subsystem portal"
+
+#: app/templates/pages/dev/portal_quick_login.html:165
+msgid "切換 portal 身分"
+msgstr "Switch portal identity"
+
+#: app/templates/pages/dev/portal_quick_login.html:168
+msgid "子系統"
+msgstr "Subsystem"
+
+#: app/templates/pages/dev/portal_quick_login.html:206
+msgid "目前身分摘要"
+msgstr "Current Identity Summary"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:201
+#: ../modules/nocode_builder/templates/modules/nocode_builder/workspace.html:188
+#: app/templates/pages/dev/portal_quick_login.html:219
+msgid "階級"
+msgstr "Level"
+
+#: app/templates/pages/dev/portal_quick_login.html:223
+msgid "Rank"
+msgstr "Rank"
+
+#: app/templates/pages/dev/portal_quick_login.html:244
+msgid "請選擇子系統與帳號後切換身分"
+msgstr "Select a subsystem and account before switching identity"
+
+#: app/templates/pages/dev/portal_quick_login.html:247
+msgid "帳號清單資訊"
+msgstr "Account List Information"
+
+#: app/templates/pages/dev/portal_quick_login.html:250
+msgid "顯示欄位"
+msgstr "Visible fields"
+
+#: app/templates/pages/dev/portal_quick_login.html:252
+msgid ""
+"帳號下拉會顯示 username、display_name、階級 code、rank、管理角色與停用狀態；停用帳號仍可切換，用於測試 fail-"
+"closed。"
+msgstr ""
+"The account dropdown shows username, display_name, level code, rank, "
+"admin roles, and disabled status; disabled accounts can still be selected"
+" to test fail-closed behavior."
+
+#: app/templates/pages/dev/portal_quick_login.html:262
+msgid "回平台快速登入"
+msgstr "Back to platform quick login"
+
+#: app/templates/pages/dev/quick_login.html:203
+msgid "portal 帳號快速切換（NoCode 公開子系統）"
+msgstr "Portal account quick switch (NoCode public subsystem)"
+
 #: ../modules/open_defense/api/decisions.py:81
 msgid "since 必須為 ISO-8601 字串"
 msgstr "since must be an ISO-8601 string"
@@ -14399,46 +14428,46 @@ msgstr "Built-in protection items cannot be deleted; disable them instead"
 msgid "刪除保護清單失敗"
 msgstr "Failed to delete protected list"
 
-#: ../modules/open_defense/api/admin/routing_rules.py:34
+#: ../modules/open_defense/api/admin/routing_rules.py:38
 #, python-format
 msgid "event_class 必須為 %(classes)s 之一"
 msgstr "event_class must be one of %(classes)s"
 
-#: ../modules/open_defense/api/admin/routing_rules.py:46
+#: ../modules/open_defense/api/admin/routing_rules.py:50
 msgid "payload_kind 必須為 ocsf 或 native"
 msgstr "payload_kind must be either ocsf or native"
 
-#: ../modules/open_defense/api/admin/routing_rules.py:52
+#: ../modules/open_defense/api/admin/routing_rules.py:56
 msgid "form_template_secure_code 必填"
 msgstr "form_template_secure_code is required"
 
-#: ../modules/open_defense/api/admin/routing_rules.py:59
+#: ../modules/open_defense/api/admin/routing_rules.py:63
 msgid "form_template_secure_code 不存在或不屬於本企業"
 msgstr ""
 "form_template_secure_code does not exist or does not belong to this "
 "organization"
 
-#: ../modules/open_defense/api/admin/routing_rules.py:111
-#: ../modules/open_defense/api/admin/routing_rules.py:177
+#: ../modules/open_defense/api/admin/routing_rules.py:120
+#: ../modules/open_defense/api/admin/routing_rules.py:192
 msgid "priority 必須為整數"
 msgstr "priority must be an integer"
 
-#: ../modules/open_defense/api/admin/routing_rules.py:130
-#: ../modules/open_defense/api/admin/routing_rules.py:199
+#: ../modules/open_defense/api/admin/routing_rules.py:140
+#: ../modules/open_defense/api/admin/routing_rules.py:216
 msgid "儲存路由規則失敗"
 msgstr "Failed to save routing rule"
 
-#: ../modules/open_defense/api/admin/routing_rules.py:146
-#: ../modules/open_defense/api/admin/routing_rules.py:214
+#: ../modules/open_defense/api/admin/routing_rules.py:156
+#: ../modules/open_defense/api/admin/routing_rules.py:231
 msgid "路由規則不存在"
 msgstr "Routing rule not found"
 
-#: ../modules/open_defense/api/admin/routing_rules.py:223
+#: ../modules/open_defense/api/admin/routing_rules.py:240
 msgid "刪除路由規則失敗"
 msgstr "Failed to delete routing rule"
 
-#: ../modules/open_defense/api/admin/routing_rules.py:245
-#: ../modules/open_defense/api/admin/routing_rules.py:249
+#: ../modules/open_defense/api/admin/routing_rules.py:262
+#: ../modules/open_defense/api/admin/routing_rules.py:266
 msgid "事件 body 格式不合法"
 msgstr "Invalid event body format"
 
@@ -14448,7 +14477,7 @@ msgstr "body must be a JSON object"
 
 #: ../modules/open_defense/schemas/intake.py:54
 #: ../modules/open_defense/schemas/intake.py:60
-#: ../modules/open_defense/schemas/intake.py:91
+#: ../modules/open_defense/schemas/intake.py:98
 msgid "必填,字串"
 msgstr "required, string"
 
@@ -14482,25 +14511,33 @@ msgid "若提供須為 0-100 int"
 msgstr "if provided, must be an int from 0 to 100"
 
 #: ../modules/open_defense/schemas/intake.py:87
+msgid "若提供須為字串"
+msgstr "Must be a string if provided"
+
+#: ../modules/open_defense/schemas/intake.py:89
+msgid "長度 > 128"
+msgstr "Length > 128"
+
+#: ../modules/open_defense/schemas/intake.py:94
 msgid "必填,object"
 msgstr "required, object"
 
-#: ../modules/open_defense/schemas/intake.py:93
+#: ../modules/open_defense/schemas/intake.py:100
 msgid "長度 > 200"
 msgstr "length > 200"
 
-#: ../modules/open_defense/schemas/intake.py:99
-#: ../modules/open_defense/schemas/intake.py:102
+#: ../modules/open_defense/schemas/intake.py:106
+#: ../modules/open_defense/schemas/intake.py:109
 msgid "必須為 object"
 msgstr "must be an object"
 
-#: ../modules/open_defense/schemas/intake.py:108
+#: ../modules/open_defense/schemas/intake.py:115
 #, python-format
 msgid "event_class=%(event_class)s 時必填"
 msgstr "required when event_class=%(event_class)s"
 
-#: ../modules/open_defense/schemas/intake.py:113
-#: ../modules/open_defense/schemas/intake.py:116
+#: ../modules/open_defense/schemas/intake.py:120
+#: ../modules/open_defense/schemas/intake.py:123
 msgid "若提供須為 object"
 msgstr "if provided, must be an object"
 
@@ -14591,31 +14628,31 @@ msgstr "Cannot transition from %(status)r to %(target_status)r"
 msgid "決策已被其他執行端搶先拾起"
 msgstr "Decision was already picked up by another executor"
 
-#: ../modules/open_defense/services/intake_service.py:312
+#: ../modules/open_defense/services/intake_service.py:214
 #, python-format
 msgid "form template %(form_template_sc)s 不存在或不屬於本企業"
 msgstr ""
 "Form template %(form_template_sc)s does not exist or does not belong to "
 "this organization"
 
-#: ../modules/open_defense/services/intake_service.py:325
+#: ../modules/open_defense/services/intake_service.py:227
 #, python-format
 msgid "form template %(form_template_sc)s 尚無 Published 版本,請先在表單設計器發行"
 msgstr ""
 "Form template %(form_template_sc)s has no Published version. Publish it "
 "in the form designer first"
 
-#: ../modules/open_defense/services/intake_service.py:347
+#: ../modules/open_defense/services/intake_service.py:249
 msgid "工作流模板缺 Start 節點"
 msgstr "Workflow template is missing a Start node"
 
-#: ../modules/open_defense/services/intake_service.py:463
-#: ../modules/open_defense/services/intake_service.py:613
+#: ../modules/open_defense/services/intake_service.py:366
+#: ../modules/open_defense/services/intake_service.py:548
 #, python-format
 msgid "source_system %(source_system)r 不在 key 允許清單"
 msgstr "source_system %(source_system)r is not in the key allowlist"
 
-#: ../modules/open_defense/services/intake_service.py:472
+#: ../modules/open_defense/services/intake_service.py:375
 #, python-format
 msgid ""
 "event_class %(event_class)r 在本企業無命中的 form_template 路由規則,請至 /open-defense"
@@ -14624,72 +14661,72 @@ msgstr ""
 "No routing rule matched event_class %(event_class)r in this organization."
 " Configure it at /open-defense/routing-rules"
 
-#: ../modules/open_defense/services/intake_service.py:547
-#: ../modules/open_defense/services/intake_service.py:690
+#: ../modules/open_defense/services/intake_service.py:482
+#: ../modules/open_defense/services/intake_service.py:646
 #, python-format
 msgid "啟動 workflow 失敗: %(error)s"
 msgstr "Failed to start workflow: %(error)s"
 
-#: ../modules/open_defense/services/intake_service.py:597
+#: ../modules/open_defense/services/intake_service.py:532
 msgid "缺少 correlation_id"
 msgstr "Missing correlation_id"
 
-#: ../modules/open_defense/services/intake_service.py:623
+#: ../modules/open_defense/services/intake_service.py:558
 msgid "原生 payload 在本企業無命中的 form_template 路由規則,請至 /open-defense/routing-rules 設定"
 msgstr ""
 "No routing rule matched this native payload in this organization. "
 "Configure it at /open-defense/routing-rules"
 
-#: ../modules/open_defense/services/payload_profile_service.py:266
+#: ../modules/open_defense/services/payload_profile_service.py:274
 #, python-format
 msgid "%(field)s 必填"
 msgstr "%(field)s is required"
 
-#: ../modules/open_defense/services/payload_profile_service.py:270
+#: ../modules/open_defense/services/payload_profile_service.py:278
 msgid "field_map 必須為物件"
 msgstr "field_map must be an object"
 
-#: ../modules/open_defense/services/payload_profile_service.py:273
+#: ../modules/open_defense/services/payload_profile_service.py:281
 #, python-format
 msgid "field_map 含有不支援的 key: %(key)s"
 msgstr "field_map contains an unsupported key: %(key)s"
 
-#: ../modules/open_defense/services/payload_profile_service.py:275
+#: ../modules/open_defense/services/payload_profile_service.py:283
 msgid "field_map 的 value 必須為字串"
 msgstr "field_map values must be strings"
 
-#: ../modules/open_defense/services/payload_profile_service.py:280
+#: ../modules/open_defense/services/payload_profile_service.py:288
 msgid "severity_map 必須為物件"
 msgstr "severity_map must be an object"
 
-#: ../modules/open_defense/services/payload_profile_service.py:285
+#: ../modules/open_defense/services/payload_profile_service.py:293
 msgid "severity_map 的 value 必須可轉為整數"
 msgstr "severity_map values must be convertible to integers"
 
-#: ../modules/open_defense/services/payload_profile_service.py:290
+#: ../modules/open_defense/services/payload_profile_service.py:298
 msgid "kv_expansions 必須為陣列"
 msgstr "kv_expansions must be an array"
 
-#: ../modules/open_defense/services/payload_profile_service.py:293
+#: ../modules/open_defense/services/payload_profile_service.py:301
 #, python-format
 msgid "kv_expansions[%(idx)s] 必須為物件"
 msgstr "kv_expansions[%(idx)s] must be an object"
 
-#: ../modules/open_defense/services/payload_profile_service.py:297
+#: ../modules/open_defense/services/payload_profile_service.py:305
 #, python-format
 msgid "kv_expansions[%(idx)s].%(field)s 必填"
 msgstr "kv_expansions[%(idx)s].%(field)s is required"
 
-#: ../modules/open_defense/services/payload_profile_service.py:303
+#: ../modules/open_defense/services/payload_profile_service.py:311
 msgid "detail_columns 必須為陣列"
 msgstr "detail_columns must be an array"
 
-#: ../modules/open_defense/services/payload_profile_service.py:306
+#: ../modules/open_defense/services/payload_profile_service.py:314
 #, python-format
 msgid "detail_columns[%(idx)s] 必須為物件"
 msgstr "detail_columns[%(idx)s] must be an object"
 
-#: ../modules/open_defense/services/payload_profile_service.py:309
+#: ../modules/open_defense/services/payload_profile_service.py:317
 #, python-format
 msgid "detail_columns[%(idx)s].key 必填"
 msgstr "detail_columns[%(idx)s].key is required"
@@ -14747,44 +14784,78 @@ msgstr "Unique local address (ULA)"
 msgid "平台基礎設施"
 msgstr "Platform infrastructure"
 
-#: ../modules/open_defense/services/routing_service.py:32
+#: ../modules/open_defense/services/routing_service.py:33
 msgid "match_rules 必須為陣列"
 msgstr "match_rules must be an array"
 
-#: ../modules/open_defense/services/routing_service.py:37
+#: ../modules/open_defense/services/routing_service.py:38
 #, python-format
 msgid "%(prefix)s 必須為物件"
 msgstr "%(prefix)s must be an object"
 
-#: ../modules/open_defense/services/routing_service.py:42
+#: ../modules/open_defense/services/routing_service.py:43
 #, python-format
 msgid "%(prefix)s.field 必填"
 msgstr "%(prefix)s.field is required"
 
-#: ../modules/open_defense/services/routing_service.py:44
+#: ../modules/open_defense/services/routing_service.py:45
 #, python-format
 msgid "%(prefix)s.op 必填"
 msgstr "%(prefix)s.op is required"
 
-#: ../modules/open_defense/services/routing_service.py:46
+#: ../modules/open_defense/services/routing_service.py:47
 #, python-format
 msgid "%(prefix)s.op 不支援"
 msgstr "%(prefix)s.op is not supported"
 
-#: ../modules/open_defense/services/routing_service.py:49
+#: ../modules/open_defense/services/routing_service.py:50
 #, python-format
 msgid "%(prefix)s.value 必須為陣列"
 msgstr "%(prefix)s.value must be an array"
 
-#: ../modules/open_defense/services/routing_service.py:51
+#: ../modules/open_defense/services/routing_service.py:52
 #, python-format
 msgid "%(prefix)s.value 必須為 boolean"
 msgstr "%(prefix)s.value must be a boolean"
 
-#: ../modules/open_defense/services/routing_service.py:53
+#: ../modules/open_defense/services/routing_service.py:54
 #, python-format
 msgid "%(prefix)s.value 必填"
 msgstr "%(prefix)s.value is required"
+
+#: ../modules/open_defense/services/routing_service.py:64
+msgid "aggregation 必須為物件"
+msgstr "aggregation must be an object"
+
+#: ../modules/open_defense/services/routing_service.py:75
+#, python-format
+msgid "aggregation 含有不支援的 key: %(key)s"
+msgstr "aggregation contains an unsupported key: %(key)s"
+
+#: ../modules/open_defense/services/routing_service.py:78
+msgid "aggregation.enabled 必須為 boolean"
+msgstr "aggregation.enabled must be a boolean"
+
+#: ../modules/open_defense/services/routing_service.py:83
+msgid "aggregation.group_by 必須為陣列"
+msgstr "aggregation.group_by must be an array"
+
+#: ../modules/open_defense/services/routing_service.py:86
+#, python-format
+msgid "aggregation.group_by 含有不支援的 key: %(key)s"
+msgstr "aggregation.group_by contains an unsupported key: %(key)s"
+
+#: ../modules/open_defense/services/routing_service.py:91
+msgid "aggregation.window_minutes 必須為 1 到 10080 的整數"
+msgstr "aggregation.window_minutes must be an integer from 1 to 10080"
+
+#: ../modules/open_defense/services/routing_service.py:94
+msgid "aggregation.window_from 必須為 first_seen 或 last_seen"
+msgstr "aggregation.window_from must be first_seen or last_seen"
+
+#: ../modules/open_defense/services/routing_service.py:99
+msgid "aggregation.merge_closed_max_severity 必須為 -1 到 6 的整數"
+msgstr "aggregation.merge_closed_max_severity must be an integer from -1 to 6"
 
 #: ../modules/open_defense/services/service_account_service.py:118
 msgid "name 必填"
@@ -15107,7 +15178,9 @@ msgstr "Decision history"
 
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:35
 msgid "無法連線到防禦節點，以下只是平台端記錄"
-msgstr "Cannot connect to the defense node; the list below is platform records only"
+msgstr ""
+"Cannot connect to the defense node; the list below is platform records "
+"only"
 
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:43
 msgid "對帳"
@@ -18718,21 +18791,25 @@ msgstr "Sorted list cannot be empty"
 msgid "排序失敗: %(error)s"
 msgstr "Sorting failed: %(error)s"
 
-#: ../modules/form_workflow/api/external_trigger.py:69
+#: ../modules/form_workflow/api/external_trigger.py:71
 msgid "API Key 綁定的系統帳號不存在或已停用"
 msgstr ""
 "The system account bound to the API Key does not exist or has been "
 "disabled"
 
-#: ../modules/form_workflow/api/external_trigger.py:116
+#: ../modules/form_workflow/api/external_trigger.py:118
 msgid "表單已有發行記錄，但目前沒有 Published 版本"
 msgstr "The form has publish records but no Published version"
 
-#: ../modules/form_workflow/api/external_trigger.py:118
+#: ../modules/form_workflow/api/external_trigger.py:120
 msgid "表單尚未發行"
 msgstr "The form has not been published"
 
-#: ../modules/form_workflow/api/external_trigger.py:263
+#: ../modules/form_workflow/api/external_trigger.py:264
+msgid "事件已併入既有案件"
+msgstr "The event has been merged into an existing case"
+
+#: ../modules/form_workflow/api/external_trigger.py:362
 #: ../modules/form_workflow/api/fc_fill.py:327
 msgid "表單已送出，流程已啟動"
 msgstr "The form has been sent and the workflow has been started"
@@ -19472,7 +19549,7 @@ msgstr "Delegable Role Picker"
 msgid "人員選擇"
 msgstr "User Picker"
 
-#: ../modules/form_workflow/services/node_field_binding_check.py:70
+#: ../modules/form_workflow/services/node_field_binding_check.py:66
 #, python-format
 msgid ""
 "節點「%(node_label)s」的 %(config_name)s "
@@ -19481,7 +19558,7 @@ msgstr ""
 "Node \"%(node_label)s\" has %(config_name)s pointing to field "
 "\"%(field_key)s\"; it must be a \"%(expected)s\" component"
 
-#: ../modules/form_workflow/services/node_field_binding_check.py:110
+#: ../modules/form_workflow/services/node_field_binding_check.py:106
 #, python-format
 msgid ""
 "節點「%(node_label)s」的 forms_field 指向欄位「%(field_key)s」，但該 API表單選擇的 Key "

@@ -175,7 +175,8 @@ _enrich_form_data = enrich_form_data
 
 def _generate_serial_number(org_secure_code: str) -> str:
     """OD 專用流水號:OD-YYYYMMDD-<8 hex>"""
-    date_str = datetime.utcnow().strftime('%Y%m%d')
+    # 與 form_submit_service 的流程編號一致（伺服器本地日期）
+    date_str = datetime.now().strftime('%Y%m%d')
     return f'OD-{date_str}-{secrets.token_hex(4).upper()}'
 
 
@@ -277,7 +278,8 @@ def _create_form_instance_and_start_workflow(
 
     # 流程編號 -- 序號池與 advisory lock 都在 sequence_code_service 內（唯一實作，
     # 見該檔 docstring；PF-116 之前這裡與 form_submit_service 各寫一份而行為分歧）。
-    date_str = datetime.utcnow().strftime('%Y%m%d')
+    # 與 form_submit_service 的流程編號一致（伺服器本地日期）
+    date_str = datetime.now().strftime('%Y%m%d')
     execution_code = next_execution_code(
         org_secure_code=org_secure_code,
         prefix='OD-',
