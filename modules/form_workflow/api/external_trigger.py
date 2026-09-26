@@ -135,7 +135,7 @@ def trigger_form():
     from ..models import FwPublishedFormWorkflow
     from ..services.form_submit_service import (
         allocate_serial_number, create_instance_and_start,
-        extract_schema_field_keys, SubmitError,
+        extract_schema_field_keys, SubmitError, validate_required_fields,
     )
 
     api_key = g.api_key
@@ -205,6 +205,14 @@ def trigger_form():
             'error': 'unknown_field',
             'details': {'unknown_keys': unknown,
                         'allowed_keys': sorted(allowed_keys)},
+        }), 400
+
+    missing = validate_required_fields(form_schema, form_data)
+    if missing:
+        return jsonify({
+            'success': False,
+            'error': 'missing_required_fields',
+            'details': {'missing_keys': [m['key'] for m in missing]},
         }), 400
 
     case_group_key = data.get('case_group_key')

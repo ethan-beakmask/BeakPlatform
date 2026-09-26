@@ -251,6 +251,37 @@ def create_instance_and_start(
     return form_instance, workflow_instance
 
 
+def _child_component_lists(comp):
+    """Yield direct child component lists from common form.io layout containers."""
+    children = comp.get('components')
+    if isinstance(children, list):
+        yield children
+
+    for col in comp.get('columns') or []:
+        if isinstance(col, dict):
+            children = col.get('components')
+            if isinstance(children, list):
+                yield children
+
+    # 注意:rows 在 table 元件是二維陣列,但 textarea 的 rows 是整數
+    # (form.io 的顯示列數),不加型別檢查會 TypeError
+    rows = comp.get('rows')
+    if isinstance(rows, list):
+        for row in rows:
+            if isinstance(row, list):
+                for cell in row:
+                    if isinstance(cell, dict):
+                        children = cell.get('components')
+                        if isinstance(children, list):
+                            yield children
+
+    for tab in comp.get('tabs') or []:
+        if isinstance(tab, dict):
+            children = tab.get('components')
+            if isinstance(children, list):
+                yield children
+
+
 def extract_schema_field_keys(form_schema) -> set:
     """
     從 form.io schema 遞迴收集 input=true 的欄位 key(含容器內巢狀元件),
@@ -266,21 +297,83 @@ def extract_schema_field_keys(form_schema) -> set:
                 continue
             if comp.get('input') and comp.get('key'):
                 keys.add(comp['key'])
-            # 常見容器:components / columns[].components / rows[][].components
-            walk(comp.get('components'))
-            for col in comp.get('columns') or []:
-                if isinstance(col, dict):
-                    walk(col.get('components'))
-            # 注意:rows 在 table 元件是二維陣列,但 textarea 的 rows 是整數
-            # (form.io 的顯示列數),不加型別檢查會 TypeError
-            rows = comp.get('rows')
-            if isinstance(rows, list):
-                for row in rows:
-                    if isinstance(row, list):
-                        for cell in row:
-                            if isinstance(cell, dict):
-                                walk(cell.get('components'))
+            # 白名單採寬鬆策略:容器內巢狀 input 欄位一律收集。
+            for child_components in _child_component_lists(comp):
+                walk(child_components)
 
     if isinstance(form_schema, dict):
         walk(form_schema.get('components'))
     return keys
+
+
+def _is_empty_required_value(value, component_type):
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value.strip() == ''
+    if isinstance(value, (list, dict)) and len(value) == 0:
+        return True
+    if component_type == 'checkbox' and value is False:
+        return True
+    if component_type == 'selectboxes' and isinstance(value, dict):
+        return not any(value.values())
+    return False
+
+
+def _should_skip_required_validation(comp):
+    conditional = comp.get('conditional') or {}
+    return (
+        comp.get('type') == 'button'
+        or bool(comp.get('hidden'))
+        or bool(conditional.get('when'))
+        or bool(conditional.get('json'))
+        or bool(comp.get('customConditional'))
+        or bool(comp.get('logic'))
+    )
+
+
+def validate_required_fields(form_schema, form_data) -> list[dict]:
+    """
+    Validate top-level form.io required inputs against submitted form_data.
+
+    Conditional/hidden/button components are skipped because the server cannot
+    reliably evaluate client-side visibility. Components with ``input=true`` are
+    not expanded further, so nested container fields such as datagrid/editgrid do
+    not get misread as top-level keys.
+    """
+    if not isinstance(form_schema, dict) or not isinstance(form_data, dict):
+        return []
+
+    missing = []
+
+    def walk(components):
+        if not isinstance(components, list):
+            return
+        for comp in components:
+            if not isinstance(comp, dict):
+                continue
+            if _should_skip_required_validation(comp):
+                continue
+
+            component_type = comp.get('type')
+            is_input = comp.get('input') is True
+            key = comp.get('key')
+            validate = comp.get('validate') or {}
+            if (
+                is_input and key
+                and isinstance(validate, dict)
+                and validate.get('required')
+                and _is_empty_required_value(form_data.get(key), component_type)
+            ):
+                missing.append({
+                    'key': key,
+                    'label': comp.get('label') or key,
+                })
+
+            if is_input:
+                continue
+            for child_components in _child_component_lists(comp):
+                walk(child_components)
+
+    walk(form_schema.get('components'))
+    return missing

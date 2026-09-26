@@ -166,6 +166,8 @@ def submit_form():
 
     if not subject:
         return jsonify({'success': False, 'error': _('請填寫表單主旨')}), 400
+    if not isinstance(form_data, dict):
+        return jsonify({'success': False, 'error': _('form_data 必須是物件')}), 400
 
     # 判斷模式
     is_test_mode = bool(mapping_secure_code) and not published_secure_code
@@ -280,7 +282,18 @@ def submit_form():
         # 序號配發 + 建實例 + 啟動流程（共用 service，與外部發動閘道一致）
         from ..services.form_submit_service import (
             allocate_serial_number, create_instance_and_start, SubmitError,
+            validate_required_fields,
         )
+
+        missing = validate_required_fields(form_schema, form_data)
+        if missing:
+            return jsonify({
+                'success': False,
+                'error': _('缺少必填欄位：%(fields)s',
+                           fields='、'.join(m['label'] for m in missing)),
+                'error_code': 'missing_required_fields',
+                'details': {'missing_keys': [m['key'] for m in missing]},
+            }), 400
 
         serial_number, org_form_seq = allocate_serial_number(
             org.secure_code, is_test_mode,

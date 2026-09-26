@@ -79,6 +79,7 @@ python3 scripts/bp_trigger.py \
 | 400 | `missing_subject` | 缺少 `subject` |
 | 400 | `form_data_must_be_object` | `form_data` 不是 JSON 物件 |
 | 400 | `unknown_field` | 欄位名稱不在表單內；回應會附 `allowed_keys` |
+| 400 | `missing_required_fields` | 表單必填欄位缺值或為空；回應 `details.missing_keys` 列出欄位 key |
 | 200 | `merged` | 事件已併入既有案件，回應的 `merged_into` 有案件編號 |
 | 401 | `auth_failed` | key id、secret、簽章或時間戳錯誤 |
 | 403 | `scope_denied` | API Key 沒有這個觸發範圍 |
