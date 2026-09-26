@@ -583,6 +583,10 @@ def case_payload(wi_sc):
         'events': events,
         'events_truncated': form_data.get('od_events_truncated') or 0,
         'actor_ips': actor_ips,
+        # 即時計數：清單 API 的 od_event_count 是開頁面時抓的，同一頁面內持續併入
+        # 事件後摘要仍顯示舊值（2026-09-26 讀者實測看到 1、DB 已是 6）
+        'event_count': int(form_data.get('od_event_count') or 1),
+        'severity_id': form_data.get('severity_id'),
     }
     if truncated:
         data['truncated'] = True

@@ -133,7 +133,7 @@
                             <div><div class="sc-field-label">{{ _('攻擊者 IP') }}</div>
                                  <div class="sc-field-value mono" x-html="val(selected.actor_ip)"></div></div>
                             <div><div class="sc-field-label">{{ _('嚴重度') }}</div>
-                                 <div class="sc-field-value" x-text="sevNum(selected.severity_id)"></div></div>
+                                 <div class="sc-field-value" x-text="sevNum(payload?.severity_id ?? selected.severity_id)"></div></div>
                             <div><div class="sc-field-label">{{ _('偵測來源') }}</div>
                                  <div class="sc-field-value" x-html="val(selected.source_system)"></div></div>
                             <!-- PF-106：first/last detected_by 並存，來自跨系統關聯查詢；
@@ -152,10 +152,11 @@
                             </template>
                             <div><div class="sc-field-label">{{ _('規則 ID') }}</div>
                                  <div class="sc-field-value mono" x-html="val(selected.finding_rule_id)"></div></div>
+                            <!-- 優先用 payload（點案件時即時抓），清單值是開頁面時的快照 -->
                             <div><div class="sc-field-label">{{ _('聚合事件數') }}</div>
-                                 <div class="sc-field-value" x-text="selected.od_event_count ?? 1"></div></div>
+                                 <div class="sc-field-value" x-text="payload?.event_count ?? selected.od_event_count ?? 1"></div></div>
                             <div><div class="sc-field-label">{{ _('來源 IP 數') }}</div>
-                                 <div class="sc-field-value" x-text="selected.od_actor_ip_count ?? '-'"></div></div>
+                                 <div class="sc-field-value" x-text="payload?.actor_ips ? payload.actor_ips.length : (selected.od_actor_ip_count ?? '-')"></div></div>
                             <div><div class="sc-field-label">{{ _('建立時間') }}</div>
                                  <div class="sc-field-value" x-text="fmtTime(selected.submitted_at)"></div></div>
                             <div><div class="sc-field-label">{{ _('處置流程') }}</div>
