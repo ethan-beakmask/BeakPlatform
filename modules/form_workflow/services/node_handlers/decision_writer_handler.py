@@ -8,8 +8,12 @@ org_secure_code 嚴格繼承自 queue_item(workflow instance),
 即使 form 欄位被竄改也不會跨租戶污染決策表。
 """
 import logging
-from typing import Dict, Any
+import ipaddress
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
+from app import db
+from app.utils.security import generate_secure_code
 from .base import BaseNodeHandler
 
 logger = logging.getLogger(__name__)
@@ -33,6 +37,22 @@ ENFORCEMENT_POINT_ACTIONS = {
 
 # 目前唯一支援 allow 的執行點,config 過濾後一個都不剩時的預設值
 DEFAULT_ALLOW_ENFORCEMENT_POINTS = ['edl']
+DEFAULT_MAX_TARGETS = 200
+
+
+@dataclass
+class _DecisionContext:
+    action: str
+    enforcement_points: List[str]
+    severity: Optional[str]
+    ttl_seconds: Optional[int]
+    reason: Optional[str]
+    allow_protected_target: bool
+    on_protected: str
+    org_secure_code: str
+    decided_via: str
+    decided_by_secure_code: Optional[str]
+    intake_event_secure_code: Optional[str]
 
 
 class DecisionWriterHandler(BaseNodeHandler):
@@ -53,6 +73,10 @@ class DecisionWriterHandler(BaseNodeHandler):
         )
         on_protected = self.get_config_value('on_protected', 'error')
         on_protected = 'skip' if on_protected == 'skip' else 'error'
+        target_source = self._normalize_target_source(
+            self.get_config_value('target_source', 'value')
+        )
+        max_targets = self._parse_max_targets(self.get_config_value('max_targets'))
 
         if not action:
             self.log_error('DecisionWriter 未設定 action')
@@ -60,17 +84,6 @@ class DecisionWriterHandler(BaseNodeHandler):
         if not target_type:
             self.log_error('DecisionWriter 未設定 target_type')
             return {'status': 'error', 'message': '未設定 target_type'}
-
-        # 變數替換 - target_value / reason 通常引用表單欄位
-        target_value = self.replace_variables(target_value_raw)
-        if not target_value or not target_value.strip():
-            self.log_error('DecisionWriter target_value 替換後為空', {
-                'template': target_value_raw,
-            })
-            return {
-                'status': 'error',
-                'message': f'target_value 替換失敗或為空: {target_value_raw!r}',
-            }
 
         reason = self.replace_variables(reason_template) if reason_template else None
 
@@ -122,6 +135,7 @@ class DecisionWriterHandler(BaseNodeHandler):
 
         decided_via = self._infer_decided_via()
         decided_by = self._infer_decided_by()
+        intake_event_secure_code = self._lookup_source_event()
 
         try:
             from modules.open_defense.services.decision_service import (
@@ -131,40 +145,86 @@ class DecisionWriterHandler(BaseNodeHandler):
             self.log_error(f'載入 decision_service 失敗: {exc}')
             return {'status': 'error', 'message': '無法載入 decision_service'}
 
+        context = _DecisionContext(
+            action=action,
+            enforcement_points=enforcement_points,
+            severity=severity,
+            ttl_seconds=ttl_int,
+            reason=reason,
+            allow_protected_target=allow_protected_target,
+            on_protected=on_protected,
+            org_secure_code=org_secure_code,
+            decided_via=decided_via,
+            decided_by_secure_code=decided_by,
+            intake_event_secure_code=intake_event_secure_code,
+        )
+
+        if target_source == 'actor_ips':
+            actor_targets = self._collect_actor_ips()
+            if actor_targets:
+                return self._handle_actor_ips(
+                    context=context,
+                    actor_ips=actor_targets,
+                    max_targets=max_targets,
+                    create_decision=create_decision,
+                    decision_validation_error=DecisionValidationError,
+                    protected_target_error=ProtectedTargetError,
+                )
+
+        # 變數替換 - target_value / reason 通常引用表單欄位
+        target_value = self.replace_variables(target_value_raw)
+        if not target_value or not target_value.strip():
+            self.log_error('DecisionWriter target_value 替換後為空', {
+                'template': target_value_raw,
+            })
+            return {
+                'status': 'error',
+                'message': f'target_value 替換失敗或為空: {target_value_raw!r}',
+            }
+
+        return self._handle_single_value(
+            context=context,
+            target_type=target_type,
+            target_value=target_value,
+            create_decision=create_decision,
+            decision_validation_error=DecisionValidationError,
+            protected_target_error=ProtectedTargetError,
+        )
+
+    def _handle_single_value(
+        self,
+        *,
+        context: _DecisionContext,
+        target_type: str,
+        target_value: str,
+        create_decision,
+        decision_validation_error,
+        protected_target_error,
+    ) -> Dict[str, Any]:
         try:
-            decision = create_decision(
-                org_secure_code=org_secure_code,
-                action=action,
+            decision = self._create_decision(
+                create_decision=create_decision,
+                context=context,
                 target_type=target_type,
                 target_value=target_value,
-                decided_via=decided_via,
-                decided_by_secure_code=decided_by,
-                enforcement_points=enforcement_points,
-                severity=severity,
-                ttl_seconds=ttl_int,
-                reason=reason,
-                case_secure_code=self.queue_item.workflow_instance_secure_code,
-                workflow_node_id=self.queue_item.node_id,
-                intake_event_secure_code=self._lookup_source_event(),
-                allow_protected_target=allow_protected_target,
                 commit=True,
             )
-        except ProtectedTargetError as exc:
+        except protected_target_error as exc:
             public_hit = getattr(exc, 'public_hit', None)
             self.log_error(f'DecisionWriter 命中封鎖保護清單: {exc}', {
-                'action': action,
+                'action': context.action,
                 'target_type': target_type,
                 'target_value': target_value,
                 'hit_source': public_hit.get('source') if public_hit else None,
                 'hit_network': public_hit.get('network') if public_hit else None,
             })
-            if on_protected == 'skip':
+            if context.on_protected == 'skip':
                 return {
                     'status': 'success',
                     'message': str(exc),
                     'data': {
                         'skipped': True,
-                        'action': action,
+                        'action': context.action,
                         'target_type': target_type,
                         'target_value': target_value,
                         'hit_source': public_hit.get('source') if public_hit else None,
@@ -172,7 +232,7 @@ class DecisionWriterHandler(BaseNodeHandler):
                     },
                 }
             return {'status': 'error', 'message': str(exc)}
-        except DecisionValidationError as exc:
+        except decision_validation_error as exc:
             self.log_error(f'DecisionWriter 驗證失敗: {exc}')
             return {'status': 'error', 'message': str(exc)}
         except Exception as exc:
@@ -182,26 +242,220 @@ class DecisionWriterHandler(BaseNodeHandler):
 
         self.log_info('DecisionWriter 已寫入決策', {
             'decision_secure_code': decision.secure_code,
-            'action': action,
+            'action': context.action,
             'target_type': target_type,
             'target_value': target_value,
-            'enforcement_points': enforcement_points,
-            'ttl_seconds': ttl_int,
+            'enforcement_points': context.enforcement_points,
+            'ttl_seconds': context.ttl_seconds,
         })
 
         return {
             'status': 'success',
-            'message': f'決策已寫入: {action} {target_type}={target_value}',
+            'message': f'決策已寫入: {context.action} {target_type}={target_value}',
             'data': {
                 'decision_secure_code': decision.secure_code,
-                'action': action,
+                'action': context.action,
                 'target_type': target_type,
                 'target_value': target_value,
-                'enforcement_points': enforcement_points,
-                'ttl_seconds': ttl_int,
+                'enforcement_points': context.enforcement_points,
+                'ttl_seconds': context.ttl_seconds,
                 'expires_at': decision.expires_at.isoformat() if decision.expires_at else None,
             },
         }
+
+    def _handle_actor_ips(
+        self,
+        *,
+        context: _DecisionContext,
+        actor_ips: List[str],
+        max_targets: int,
+        create_decision,
+        decision_validation_error,
+        protected_target_error,
+    ) -> Dict[str, Any]:
+        if len(actor_ips) > max_targets:
+            message = f'od_actor_ips 目標數 {len(actor_ips)} 超過展開上限 {max_targets}，未寫入任何決策'
+            self.log_error(message, {
+                'target_count': len(actor_ips),
+                'max_targets': max_targets,
+            })
+            return {'status': 'error', 'message': message}
+
+        invalid_values = []
+        targets = []
+        for value in actor_ips:
+            try:
+                parsed = ipaddress.ip_address(value)
+            except ValueError:
+                invalid_values.append(value)
+                continue
+            targets.append({
+                'target_type': 'ipv6' if parsed.version == 6 else 'ip',
+                'target_value': value,
+            })
+        if invalid_values:
+            message = f'od_actor_ips 含不合法 IP，未寫入任何決策: {", ".join(invalid_values)}'
+            self.log_error(message, {'invalid_targets': invalid_values})
+            return {'status': 'error', 'message': message}
+
+        skipped = []
+        if not context.allow_protected_target:
+            try:
+                from modules.open_defense.services.protected_target_service import (
+                    check_block_target, public_hit_view,
+                )
+            except Exception as exc:
+                self.log_error(f'載入 protected_target_service 失敗: {exc}')
+                return {'status': 'error', 'message': '無法載入 protected_target_service'}
+
+            protected_hits = []
+            for target in targets:
+                try:
+                    hit = check_block_target(
+                        org_secure_code=context.org_secure_code,
+                        action=context.action,
+                        target_type=target['target_type'],
+                        target_value=target['target_value'],
+                    )
+                except Exception as exc:
+                    self.log_error(f'DecisionWriter 保護清單預檢失敗: {exc}', target)
+                    return {'status': 'error', 'message': f'保護清單預檢失敗: {exc}'}
+                if hit is None:
+                    continue
+                public_hit = public_hit_view(hit) or {}
+                item = {
+                    'target_value': target['target_value'],
+                    'hit_source': public_hit.get('source'),
+                    'hit_network': public_hit.get('network') or public_hit.get('label'),
+                }
+                protected_hits.append(item)
+
+            if protected_hits and context.on_protected == 'error':
+                values = ', '.join(
+                    f"{item['target_value']}({item['hit_network']})"
+                    for item in protected_hits
+                )
+                message = f'DecisionWriter 命中封鎖保護清單，未寫入任何決策: {values}'
+                self.log_error(message, {'protected_hits': protected_hits})
+                return {'status': 'error', 'message': message}
+
+            if protected_hits:
+                skipped_values = {item['target_value'] for item in protected_hits}
+                targets = [
+                    target for target in targets
+                    if target['target_value'] not in skipped_values
+                ]
+                skipped = protected_hits
+                self.log_warning('DecisionWriter 展開模式略過受保護目標', {
+                    'skipped': skipped,
+                    'action': context.action,
+                })
+
+        batch_id = generate_secure_code()
+        decisions = []
+        total = len(targets)
+        try:
+            for index, target in enumerate(targets):
+                decision = self._create_decision(
+                    create_decision=create_decision,
+                    context=context,
+                    target_type=target['target_type'],
+                    target_value=target['target_value'],
+                    decision_metadata={
+                        'batch': {
+                            'id': batch_id,
+                            'index': index,
+                            'total': total,
+                            'source': 'od_actor_ips',
+                        },
+                    },
+                    commit=False,
+                )
+                decisions.append(decision)
+            db.session.commit()
+        except protected_target_error as exc:
+            db.session.rollback()
+            self.log_error(f'DecisionWriter 展開模式命中封鎖保護清單: {exc}')
+            return {'status': 'error', 'message': str(exc)}
+        except decision_validation_error as exc:
+            db.session.rollback()
+            self.log_error(f'DecisionWriter 展開模式驗證失敗: {exc}')
+            return {'status': 'error', 'message': str(exc)}
+        except Exception as exc:
+            db.session.rollback()
+            logger.exception('DecisionWriter 展開模式寫入失敗')
+            self.log_error(f'DecisionWriter 展開模式寫入失敗: {exc}')
+            return {'status': 'error', 'message': f'寫入失敗: {exc}'}
+
+        target_rows = [
+            {
+                'target_type': decision.target_type,
+                'target_value': decision.target_value,
+                'decision_secure_code': decision.secure_code,
+            }
+            for decision in decisions
+        ]
+        first_decision = decisions[0] if decisions else None
+
+        self.log_info('DecisionWriter 展開模式已寫入決策', {
+            'batch_id': batch_id,
+            'action': context.action,
+            'count': len(decisions),
+            'skipped_count': len(skipped),
+            'enforcement_points': context.enforcement_points,
+            'ttl_seconds': context.ttl_seconds,
+        })
+
+        return {
+            'status': 'success',
+            'message': f'決策已寫入 {len(decisions)} 筆: {context.action} (source: od_actor_ips)',
+            'data': {
+                'decision_secure_code': first_decision.secure_code if first_decision else None,
+                'decision_secure_codes': [
+                    decision.secure_code for decision in decisions
+                ],
+                'targets': target_rows,
+                'skipped': skipped,
+                'batch_id': batch_id,
+                'target_source': 'actor_ips',
+                'action': context.action,
+                'enforcement_points': context.enforcement_points,
+                'ttl_seconds': context.ttl_seconds,
+                'expires_at': (
+                    first_decision.expires_at.isoformat()
+                    if first_decision and first_decision.expires_at else None
+                ),
+            },
+        }
+
+    def _create_decision(
+        self,
+        *,
+        create_decision,
+        context: _DecisionContext,
+        target_type: str,
+        target_value: str,
+        decision_metadata: Optional[Dict[str, Any]] = None,
+        commit: bool,
+    ):
+        return create_decision(
+            org_secure_code=context.org_secure_code,
+            action=context.action,
+            target_type=target_type,
+            target_value=target_value,
+            decided_via=context.decided_via,
+            decided_by_secure_code=context.decided_by_secure_code,
+            enforcement_points=context.enforcement_points,
+            severity=context.severity,
+            ttl_seconds=context.ttl_seconds,
+            reason=context.reason,
+            case_secure_code=self.queue_item.workflow_instance_secure_code,
+            workflow_node_id=self.queue_item.node_id,
+            intake_event_secure_code=context.intake_event_secure_code,
+            decision_metadata=decision_metadata,
+            allow_protected_target=context.allow_protected_target,
+            commit=commit,
+        )
 
     # ------------------------------------------------------------------
     # 內部輔助
@@ -210,6 +464,40 @@ class DecisionWriterHandler(BaseNodeHandler):
         if isinstance(value, str):
             return value.strip().lower() in ('true', '1', 'yes')
         return bool(value)
+
+    def _normalize_target_source(self, value) -> str:
+        return 'actor_ips' if value == 'actor_ips' else 'value'
+
+    def _parse_max_targets(self, value) -> int:
+        try:
+            parsed = int(value)
+            if parsed > 0:
+                return parsed
+        except (TypeError, ValueError):
+            pass
+        return DEFAULT_MAX_TARGETS
+
+    def _collect_actor_ips(self) -> List[str]:
+        try:
+            fi = self.form_instance
+            form_data = getattr(fi, 'form_data', None) if fi else None
+        except Exception:
+            form_data = None
+        if not isinstance(form_data, dict):
+            return []
+        raw_values = form_data.get('od_actor_ips')
+        if not isinstance(raw_values, list):
+            return []
+
+        values = []
+        seen = set()
+        for raw in raw_values:
+            value = str(raw).strip()
+            if not value or value in seen:
+                continue
+            seen.add(value)
+            values.append(value)
+        return values
 
     def _infer_decided_via(self) -> str:
         """

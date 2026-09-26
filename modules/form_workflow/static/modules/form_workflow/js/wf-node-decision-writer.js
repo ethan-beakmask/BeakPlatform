@@ -33,7 +33,9 @@ function renderDecisionWriterPanel(node, nodeId) {
     const cfg = node.data('config') || {};
     const action = cfg.action || 'block';
     const targetType = cfg.target_type || 'ip';
+    const targetSource = cfg.target_source === 'actor_ips' ? 'actor_ips' : 'value';
     const targetValue = cfg.target_value || '';
+    const maxTargets = cfg.max_targets ?? 200;
     const enforcementPoints = dwNormalizeEnforcementPoints(cfg.enforcement_points);
     const fixedEps = ['nftables', 'edl', 'crowdsec', 'cloudflare'];
     const otherEps = enforcementPoints.filter(ep => !fixedEps.includes(ep)).join(', ');
@@ -78,12 +80,27 @@ function renderDecisionWriterPanel(node, nodeId) {
             </div>
 
             <div style="margin-bottom: 8px;">
+                <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">${__('目標來源')}</label>
+                <select id="dwTargetSource" onchange="toggleDwFields()" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                    <option value="value" ${dwSelected(targetSource, 'value')}>${__('目標值（單一目標）')}</option>
+                    <option value="actor_ips" ${dwSelected(targetSource, 'actor_ips')}>${__('案件的全部來源 IP（od_actor_ips）')}</option>
+                </select>
+                <div style="font-size: 10px; color: #888; margin-top: 2px;">${__('展開模式會對案件累積的每個來源 IP 各寫一筆決策；案件沒有累積清單時退回目標值。')}</div>
+            </div>
+
+            <div style="margin-bottom: 8px;">
                 <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">${__('目標值')}
                     <button type="button" onclick="VarPicker.open(this, document.getElementById('dwTargetValue'))"
                         style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="${__('插入變數')}">{x}</button>
                 </label>
                 <input type="text" id="dwTargetValue" value="${dwEscapeHtml(targetValue)}" placeholder="\${f.actor_ip}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-family: monospace;">
                 <div style="font-size: 10px; color: #888; margin-top: 2px;">${__('支援流程變數，例如 ${f.actor_ip}')}</div>
+            </div>
+
+            <div id="dwMaxTargetsBlock" style="margin-bottom: 8px;">
+                <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">${__('展開上限')}</label>
+                <input type="number" id="dwMaxTargets" value="${dwEscapeHtml(maxTargets)}" min="1" step="1" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                <div style="font-size: 10px; color: #888; margin-top: 2px;">${__('超過上限時節點停住等人處理，不會只封前面幾個。')}</div>
             </div>
 
             <div style="margin-bottom: 8px;">
@@ -178,9 +195,12 @@ function toggleDwFields() {
     const edlNote = document.getElementById('dwEdlNote');
     const protectedBlock = document.getElementById('dwProtectedBlock');
     const protectedNote = document.getElementById('dwProtectedNote');
+    const targetSource = document.getElementById('dwTargetSource');
+    const maxTargetsBlock = document.getElementById('dwMaxTargetsBlock');
     const edlAllowed = action === 'block' || action === 'allow' || action === 'unblock';
     const nfCsAllowed = action === 'block' || action === 'unblock';
     const protectedApplies = action === 'block' && ['ip', 'ipv6', 'cidr'].includes(targetType);
+    const expandAllowed = ['ip', 'ipv6'].includes(targetType);
 
     if (edl) {
         edl.disabled = !edlAllowed;
@@ -200,6 +220,13 @@ function toggleDwFields() {
     }
     if (protectedBlock) protectedBlock.style.display = protectedApplies ? '' : 'none';
     if (protectedNote) protectedNote.style.display = protectedApplies ? 'none' : '';
+    if (targetSource) {
+        targetSource.disabled = !expandAllowed;
+        if (!expandAllowed) targetSource.value = 'value';
+    }
+    if (maxTargetsBlock) {
+        maxTargetsBlock.style.display = targetSource?.value === 'actor_ips' ? '' : 'none';
+    }
 }
 window.toggleDwFields = toggleDwFields;
 
@@ -229,6 +256,18 @@ function applyDecisionWriterToConfig(config) {
     config.target_type = document.getElementById('dwTargetType')?.value || 'ip';
     config.target_value = document.getElementById('dwTargetValue')?.value || '';
     config.enforcement_points = enforcementPoints;
+
+    const targetSource = document.getElementById('dwTargetSource')?.value || 'value';
+    if (targetSource === 'actor_ips') config.target_source = 'actor_ips';
+    else delete config.target_source;
+
+    const maxTargetsRaw = document.getElementById('dwMaxTargets')?.value?.trim() || '';
+    const maxTargets = parseInt(maxTargetsRaw, 10);
+    if (targetSource === 'actor_ips' && Number.isInteger(maxTargets) && maxTargets > 0 && maxTargets !== 200) {
+        config.max_targets = maxTargets;
+    } else {
+        delete config.max_targets;
+    }
 
     const severity = document.getElementById('dwSeverity')?.value || '';
     if (severity) config.severity = severity;
@@ -262,7 +301,8 @@ function applyDecisionWriterConfig(nodeId) {
     if (!node) return;
 
     const targetValue = document.getElementById('dwTargetValue')?.value?.trim() || '';
-    if (!targetValue) {
+    const targetSource = document.getElementById('dwTargetSource')?.value || 'value';
+    if (targetSource === 'value' && !targetValue) {
         updateStatus(__('請輸入目標值'), 'warning');
         return;
     }
