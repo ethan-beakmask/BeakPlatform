@@ -1463,6 +1463,7 @@
  "表單代碼": "form code",
  "表單名稱": "Form Name",
  "表單已送出": "Form has been sent",
+ "表單有欄位未填或格式錯誤，請先修正": "Some fields are missing or invalid. Please fix them first.",
  "表單模板 x{count}": "Form template x{count}",
  "表單流程配對": "Form workflow mapping",
  "表單狀態": "form status",

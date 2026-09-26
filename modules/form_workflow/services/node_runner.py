@@ -210,7 +210,20 @@ def update_result(queue_item, result):
 
     else:
         # 其他狀態視為錯誤
-        queue_item.fail(result.get('message', 'Unknown error'))
+        error_message = result.get('message', 'Unknown error')
+        queue_item.fail(error_message)
+        if queue_item.status == 'FAILED':
+            # 重試用盡：把流程實例標成 ERROR，與 handle_error()（例外路徑）一致。
+            # 2026-09-26 前只有例外路徑會標 ERROR，handler 回 error 的節點失敗三次後
+            # 流程仍停在 RUNNING、表單中心看起來「進行中」卻沒有任何待辦，無人知道它死了。
+            from modules.form_workflow.models import FwWorkflowInstance
+            workflow_instance = FwWorkflowInstance.query.filter_by(
+                secure_code=queue_item.workflow_instance_secure_code
+            ).first()
+            if workflow_instance and workflow_instance.status == 'RUNNING':
+                workflow_instance.status = 'ERROR'
+                workflow_instance.error_message = error_message
+                workflow_instance.error_node_id = queue_item.node_id
         db.session.commit()
 
 

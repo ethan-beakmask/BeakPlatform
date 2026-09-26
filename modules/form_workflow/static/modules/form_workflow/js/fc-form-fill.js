@@ -126,12 +126,24 @@ function fcFormFill() {
                 return;
             }
 
+            // 表單欄位驗證（必填、格式）：form.io 只在 form.submit() 時才會自動驗證，
+            // 這裡是自己讀 submission 再 POST，所以要主動跑一次 checkValidity；
+            // dirty=true 才會把錯誤畫在欄位上。2026-09-26 前漏了這步，「有效期限」
+            // 必填留空照樣送出，ApiKeyIssue 節點才在流程裡失敗。
+            const submissionData = (this.formInstance.submission || {}).data || {};
+            if (!this.formInstance.checkValidity(submissionData, true)) {
+                this.formInstance.setPristine(false);
+                this.showToast(__('表單有欄位未填或格式錯誤，請先修正'), 'error');
+                const firstError = document.querySelector('#form-fill-formio .formio-error-wrapper, #form-fill-formio .has-error');
+                if (firstError) firstError.scrollIntoView({ block: 'center' });
+                return;
+            }
+
             this.submitting = true;
 
             try {
                 // 取得表單資料
-                const submission = this.formInstance.submission || {};
-                const formData = submission.data || {};
+                const formData = submissionData;
 
                 // 準備請求資料
                 const payload = { form_data: formData, subject: subject };
