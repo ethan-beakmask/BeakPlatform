@@ -1,1 +1,2 @@
 4.6.13-formio.3 (formio 專用 fork，非 npm flatpickr 本體，版本跟隨 formio.full.min.js 內建定義)
+l10n/flatpickr-zh-TW.js：flatpickr-zh-tw.js 的副本，改全域名稱為 flatpickr-zh-TW 並加 l10ns["zh-TW"] 別名（form.io language="zh-TW" 時請求的是這個大小寫；2026-09-26 PF-312）

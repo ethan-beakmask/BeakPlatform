@@ -5,6 +5,12 @@
     const PREFIX = window.__BP || '';
     const config = window.__PAGE_CONFIG || {};
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const SECURITY_EXAMPLE_VALUES = {
+        actor_ip: '203.0.113.42',
+        finding_rule_id: 'RULE-1',
+        severity_id: '3',
+        source_system: 'manual',
+    };
 
     async function api(path, options = {}) {
         const res = await fetch(PREFIX + path, {
@@ -34,6 +40,7 @@
             selectedFormCode: '',
             subject: __('外部系統觸發'),
             exampleFields: {},
+            caseGroupKey: '',
             secretCopied: false,
             curlCopied: false,
             baseUrl: config.apiTriggerBaseUrl || '',
@@ -114,12 +121,27 @@
                 return form && form.field_keys ? form.field_keys : [];
             },
 
+            selectedFormIsSecurity() {
+                const form = this.selectedForm();
+                return !!(form && form.is_security);
+            },
+
             resetExampleFields() {
                 const next = {};
+                const isSecurity = this.selectedFormIsSecurity();
                 this.selectedFieldKeys().forEach(key => {
-                    next[key] = this.exampleFields[key] || '';
+                    if (!isSecurity) {
+                        next[key] = '';
+                        return;
+                    }
+                    const currentValue = this.exampleFields[key] || '';
+                    next[key] = currentValue;
+                    if (currentValue === '' && SECURITY_EXAMPLE_VALUES[key]) {
+                        next[key] = SECURITY_EXAMPLE_VALUES[key];
+                    }
                 });
                 this.exampleFields = next;
+                this.caseGroupKey = '';
             },
 
             openModal(key, mode, secret) {
@@ -127,6 +149,7 @@
                 this.modalMode = mode;
                 this.secret = secret || '';
                 this.subject = __('外部系統觸發');
+                this.caseGroupKey = '';
                 const forms = this.modalForms();
                 this.selectedFormCode = forms.length ? forms[0].form_code : '';
                 this.exampleFields = {};
@@ -141,6 +164,7 @@
                 this.secret = '';
                 this.modalKey = null;
                 this.exampleFields = {};
+                this.caseGroupKey = '';
                 this.secretCopied = false;
                 this.curlCopied = false;
             },
@@ -199,11 +223,14 @@
                     const value = this.exampleFields[key];
                     if (value !== undefined && value !== '') formData[key] = value;
                 });
-                return {
+                const body = {
                     form_code: form ? form.form_code : '',
                     subject: this.subject || __('外部系統觸發'),
                     form_data: formData,
                 };
+                const caseGroupKey = this.caseGroupKey.trim();
+                if (caseGroupKey) body.case_group_key = caseGroupKey;
+                return body;
             },
 
             curlCommand() {

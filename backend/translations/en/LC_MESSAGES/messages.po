@@ -22879,6 +22879,14 @@ msgstr "- Form:"
 msgid "流程樹系圖 - BeakPlatform"
 msgstr "Workflow tree diagram - BeakPlatform"
 
+#: app/templates/pages/personal_settings.html
+msgid "資安案件會依 actor_ip 與 finding_rule_id 併入同一案件；兩者任一留空就每次各自開案。也可在 body 頂層加 case_group_key 自訂分組鍵。"
+msgstr "Security cases are merged by actor_ip and finding_rule_id; if either is empty, every request opens a new case. You may also add case_group_key at the top level of the body as a custom grouping key."
+
+#: app/templates/pages/personal_settings.html
+msgid "（選填，自訂分組鍵）"
+msgstr "(optional, custom grouping key)"
+
 #~ msgid "前往「%(link_start)s新增企業管理員%(link_end)s」，建立正式管理員並綁定該企業成員帳號"
 #~ msgstr ""
 #~ "Go to \"%(link_start)sAdd Organization "

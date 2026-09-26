@@ -74,8 +74,9 @@ def template_in_scope(template, scope_filter):
 
 def list_triggerable_forms(api_key, org_secure_code) -> list[dict]:
     """列出這把 key 能發動的 published 表單（含 field_keys）。"""
-    from ..models import FwPublishedFormWorkflow
+    from ..models import FwFormTemplate, FwPublishedFormWorkflow
     from ..services.form_submit_service import extract_schema_field_keys
+    from ..services.security_center import is_security_category
 
     scope_filter = resolve_scope_filter(api_key)
 
@@ -89,6 +90,15 @@ def list_triggerable_forms(api_key, org_secure_code) -> list[dict]:
     for pub in published_list:
         if not published_in_scope(pub, scope_filter):
             continue
+        form_template = FwFormTemplate.query.filter_by(
+            org_secure_code=org_secure_code,
+            secure_code=pub.source_form_template_secure_code,
+            is_deleted=False,
+        ).first()
+        is_security = bool(
+            form_template and
+            is_security_category(form_template.category_secure_code)
+        )
         form_snapshot = pub.form_snapshot or {}
         items.append({
             'published_secure_code': pub.secure_code,
@@ -98,6 +108,7 @@ def list_triggerable_forms(api_key, org_secure_code) -> list[dict]:
             'version': pub.source_form_version,
             'field_keys': sorted(extract_schema_field_keys(
                 form_snapshot.get('schema'))),
+            'is_security': is_security,
         })
 
     return items

@@ -14,6 +14,8 @@ function fcFormFill() {
         loadingFormSchema: false,
         submitting: false,
         _fillAttachment: null,
+        _formioI18n: null,
+        _formioI18nLoaded: false,
 
         // --- Methods ---
 
@@ -65,6 +67,32 @@ function fcFormFill() {
             }
         },
 
+        formioUiLocale() {
+            return (typeof BkI18n !== 'undefined' && BkI18n._locale) || 'zh-TW';
+        },
+
+        async formioOptions(readOnly) {
+            const locale = this.formioUiLocale();
+            const options = {
+                language: locale,
+                readOnly: readOnly,
+            };
+            if (locale === 'zh-TW') {
+                if (!this._formioI18nLoaded) {
+                    try {
+                        const res = await fetch((window.__BP || '') + '/static/vendor/formio-i18n-zh-TW.json');
+                        if (res.ok) this._formioI18n = await res.json();
+                    } catch (err) {
+                        console.warn('[FormCenter] form.io i18n load failed:', err);
+                    } finally {
+                        this._formioI18nLoaded = true;
+                    }
+                }
+                if (this._formioI18n) options.i18n = { 'zh-TW': this._formioI18n };
+            }
+            return options;
+        },
+
         async renderFillForm() {
             const formioTarget = document.getElementById('form-fill-formio');
             if (!formioTarget || !this.formSchema) return;
@@ -80,9 +108,8 @@ function fcFormFill() {
                 if (window.BkFileProvider) BkFileProvider.patchSchema(this.formSchema);
 
                 // 渲染 Form.io 到子容器
-                this.formInstance = await Formio.createForm(formioTarget, this.formSchema, {
-                    readOnly: false
-                });
+                const options = await this.formioOptions(false);
+                this.formInstance = await Formio.createForm(formioTarget, this.formSchema, options);
 
                 // 套用底圖和寬度到外層容器
                 this.applyFormBackground('form-fill-container', this.selectedForm?.builder_config);
