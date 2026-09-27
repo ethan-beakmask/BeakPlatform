@@ -11,7 +11,7 @@ covers:
 
 # API Key 管理
 
-外部系統或設備要自動送表單進平台時，需要一把 API Key。Key 由成員填「API Key 申請單」申請，企業管理員核准後由系統自動核發。
+外部系統或設備要自動送表單進平台時，需要一把 API Key。取得方式有兩條：企業管理員在本頁直接建立，或由成員填「API Key 申請單」申請、企業管理員核准後由系統自動核發。從取得 Key 到設備建立資安案件、事件累加的完整走讀見[設備告警接入（API Key 串接）](api_integration/index.md)。
 
 !!! abstract "作業：申請 API Key"
     **MENU**：表單中心 ／ API Key 申請單

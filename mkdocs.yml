@@ -116,6 +116,12 @@ nav:
               - manual/05_security_ops/soc_planning/index.md
               - 資安事件處置流程: manual/05_security_ops/soc_planning/workflow_variants.md
               - 資安團隊角色設計: manual/05_security_ops/soc_planning/role_design.md
+          - 設備告警接入（API Key 串接）:
+              - manual/05_security_ops/api_integration/index.md
+              - 企業管理員直接配發 API Key: manual/05_security_ops/api_integration/by_admin.md
+              - 透過表單中心申請 API Key: manual/05_security_ops/api_integration/by_request.md
+              - 從你的設備建立第一張資安案件: manual/05_security_ops/api_integration/create_case.md
+              - 持續事件如何累加到同一張案件: manual/05_security_ops/api_integration/aggregate_events.md
           - 資安案件處置中心: manual/05_security_ops/security_cases.md
           - 開放防禦儀表板: manual/05_security_ops/od_dashboard.md
           - 決策列表: manual/05_security_ops/decisions.md
