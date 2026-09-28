@@ -161,7 +161,7 @@ touch /opt/tmp/waf-monitor.stop
 行為：
 
 - heartbeat 超過 `--stale-minutes`（預設 12）沒更新 → 發 Telegram
-- 同一次異常在 `--alert-cooldown-minutes`（預設 60）內只發一次
+- 同一次停擺只發一次（以 heartbeat 最後更新時間辨識事件），恢復後再停擺才會再發
 - heartbeat 恢復更新 → 發一則恢復通知
 - 停止旗標存在 → 什麼都不做
 

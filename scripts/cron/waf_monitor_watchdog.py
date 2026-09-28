@@ -6,7 +6,9 @@ WAF 熱備健康監看 heartbeat 看門狗。
     waf_monitor_watchdog.py [--dry-run]
 
 無參數:正式執行,檢查 WAF 監看流程 heartbeat,異常時發 Telegram 告警。
---dry-run:只印出判定,不發送 Telegram,不更新去抖狀態。
+--dry-run:只印出判定,不發送 Telegram,不更新告警狀態。
+
+同一次停擺只告警一次；恢復時發一則恢復通知並清除狀態，之後再停擺才視為新事件。
 
 排程 log 寫 /opt/tmp/BeakPlatform-cron-waf_monitor_watchdog.log,
 heartbeat 寫 /opt/tmp/heartbeat/waf_monitor_watchdog.ok。
@@ -66,16 +68,23 @@ def _write_heartbeat():
 
 
 def _read_state(path):
+    """回傳已告警事件的識別字串（heartbeat 最後更新時間），無狀態回 None"""
     try:
         raw = path.read_text(encoding='utf-8').strip()
-        return datetime.fromisoformat(raw) if raw else None
-    except (OSError, ValueError):
+        return raw or None
+    except OSError:
         return None
 
 
-def _write_state(path, when):
+def _write_state(path, event_key):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(when.isoformat(timespec='seconds'), encoding='utf-8')
+    path.write_text(event_key, encoding='utf-8')
+
+
+def _event_key(status):
+    """同一次停擺期間 heartbeat 的 mtime 不變，以它辨識「同一事件」"""
+    last_update = status['last_update']
+    return last_update.isoformat(timespec='seconds') if last_update else 'missing'
 
 
 def _clear_state(path):
@@ -198,16 +207,14 @@ def build_parser():
                         help='人為停止監看的旗標路徑（預設 /opt/tmp/waf-monitor.stop）')
     parser.add_argument('--stale-minutes', type=int, default=12,
                         help='多久沒更新視為異常（預設 12）')
-    parser.add_argument('--alert-cooldown-minutes', type=int, default=60,
-                        help='異常告警去抖時間，期間內只發一次（預設 60）')
     parser.add_argument('--state-file', type=Path, default=DEFAULT_STATE_FILE,
-                        help='去抖狀態檔（預設 /opt/tmp/waf_monitor_watchdog.state）')
+                        help='已告警事件狀態檔，同一次停擺只告警一次（預設 /opt/tmp/waf_monitor_watchdog.state）')
     parser.add_argument('--telegram-config', default='c9WeYKveCBWxbn0t8kl6yn',
                         help='TelegramConfig secure_code（預設系統企業「系統TG」）')
     parser.add_argument('--telegram-channel', default='測試頻道',
                         help='Telegram 頻道名稱（預設 測試頻道）')
     parser.add_argument('--dry-run', action='store_true',
-                        help='只印出判定,不發送 Telegram,不更新去抖狀態')
+                        help='只印出判定,不發送 Telegram,不更新告警狀態')
     return parser
 
 
@@ -217,8 +224,6 @@ def main() -> int:
 
     if args.stale_minutes < 1 or args.stale_minutes > 1440:
         parser.error('--stale-minutes 必須介於 1 到 1440')
-    if args.alert_cooldown_minutes < 1 or args.alert_cooldown_minutes > 10080:
-        parser.error('--alert-cooldown-minutes 必須介於 1 到 10080')
 
     _bootstrap()
     _setup_logging()
@@ -231,26 +236,23 @@ def main() -> int:
         return 0
 
     status = _heartbeat_status(args.heartbeat, args.stale_minutes)
-    state_time = _read_state(args.state_file)
-    now = status['now']
+    alerted_event = _read_state(args.state_file)
 
     if not status['ok']:
-        in_cooldown = (
-            state_time is not None and
-            (now - state_time).total_seconds() < args.alert_cooldown_minutes * 60
-        )
+        event_key = _event_key(status)
+        already_alerted = alerted_event == event_key
         msg = (
             f'ABNORMAL heartbeat={args.heartbeat} '
             f'last_update={_format_last_update(status["last_update"])} '
-            f'age={_format_age(status["age_seconds"])} cooldown={in_cooldown}'
+            f'age={_format_age(status["age_seconds"])} already_alerted={already_alerted}'
         )
         log.warning(msg)
-        if args.dry_run or in_cooldown:
+        if args.dry_run or already_alerted:
             _write_heartbeat()
             return 0
         if not _send_telegram_with_app(args, _alert_message(args, status), log):
             return 1
-        _write_state(args.state_file, now)
+        _write_state(args.state_file, event_key)
         _write_heartbeat()
         return 0
 
@@ -260,9 +262,9 @@ def main() -> int:
         f'age={_format_age(status["age_seconds"])}'
     )
     log.info(msg)
-    if state_time is not None:
+    if alerted_event is not None:
         if args.dry_run:
-            log.info('RECOVERY dry_run=True（不發送、不清除去抖狀態）')
+            log.info('RECOVERY dry_run=True（不發送、不清除告警狀態）')
         else:
             if not _send_telegram_with_app(args, _recovery_message(args, status), log):
                 return 1
