@@ -75,7 +75,9 @@ class BaseConfig:
 
     # CSRF Protection
     WTF_CSRF_ENABLED = True
-    WTF_CSRF_TIME_LIMIT = 3600  # 1 hour
+    # token 自頁面載入起算的效期。原本沿用套件預設的 1 小時，頁面開著超過 1 小時
+    # 再操作就 400（PF-333）。token 綁 session，session 失效時一併失效。
+    WTF_CSRF_TIME_LIMIT = 8 * 3600  # 8 小時
 
     # Security Headers
     SECURITY_HEADERS = {
