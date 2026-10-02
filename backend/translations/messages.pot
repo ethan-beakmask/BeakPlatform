@@ -543,7 +543,7 @@ msgstr ""
 
 #: app/api/auth.py:1030 app/api/auth.py:1032 app/api/auth.py:1034
 #: app/api/auth.py:1132
-msgid "已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證"
+msgid "已寄送密碼重設驗證信到您的信箱，請在 15 分鐘內完成驗證"
 msgstr ""
 
 #: app/api/auth.py:1084 app/api/auth.py:1121
@@ -3055,7 +3055,7 @@ msgid "驗證並取得暫時密碼"
 msgstr ""
 
 #: app/templates/auth/verify_reset.html:52
-msgid "驗證碼將於申請後 10 分鐘內失效。"
+msgid "驗證碼將於申請後 15 分鐘內失效。"
 msgstr ""
 
 #: app/templates/errors/400.html:6 app/templates/errors/400.html:9

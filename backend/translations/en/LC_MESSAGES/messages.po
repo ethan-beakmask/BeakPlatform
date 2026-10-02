@@ -554,10 +554,10 @@ msgstr ""
 
 #: app/api/auth.py:1030 app/api/auth.py:1032 app/api/auth.py:1034
 #: app/api/auth.py:1132
-msgid "已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證"
+msgid "已寄送密碼重設驗證信到您的信箱，請在 15 分鐘內完成驗證"
 msgstr ""
 "A password reset verification email has been sent. Please complete "
-"verification within 10 minutes"
+"verification within 15 minutes"
 
 #: app/api/auth.py:1084 app/api/auth.py:1121
 msgid "請輸入帳號"
@@ -3116,8 +3116,8 @@ msgid "驗證並取得暫時密碼"
 msgstr "Verify and get temporary password"
 
 #: app/templates/auth/verify_reset.html:52
-msgid "驗證碼將於申請後 10 分鐘內失效。"
-msgstr "The verification code will expire within 10 minutes of application."
+msgid "驗證碼將於申請後 15 分鐘內失效。"
+msgstr "The verification code will expire within 15 minutes of application."
 
 #: app/templates/errors/400.html:6 app/templates/errors/400.html:9
 msgid "錯誤請求"

@@ -30,7 +30,7 @@ function renderOsFileWritePanel(node, nodeId) {
     const createIfMissing = cfg.create_if_missing !== false;
     const encoding = cfg.encoding || 'utf-8';
     const maxFileBytes = cfg.max_file_bytes || 67108864;
-    const lockTimeoutMs = cfg.lock_timeout_ms || 5000;
+    const lockTimeoutMs = cfg.lock_timeout_ms || 10000;
     const resultVar = cfg.result_var || '';
     const stopAfter = cfg.stop_after === true;
 
@@ -136,7 +136,7 @@ function collectOsFileWriteConfig() {
         create_if_missing: !!document.getElementById('fwCreateIfMissing')?.checked,
         encoding: document.getElementById('fwEncoding')?.value.trim() || 'utf-8',
         max_file_bytes: _fwPositiveInt(document.getElementById('fwMaxFileBytes')?.value, 67108864),
-        lock_timeout_ms: _fwPositiveInt(document.getElementById('fwLockTimeoutMs')?.value, 5000),
+        lock_timeout_ms: _fwPositiveInt(document.getElementById('fwLockTimeoutMs')?.value, 10000),
         result_var: document.getElementById('fwResultVar')?.value.trim() || '',
         stop_after: !!document.getElementById('fwStopAfter')?.checked
     };

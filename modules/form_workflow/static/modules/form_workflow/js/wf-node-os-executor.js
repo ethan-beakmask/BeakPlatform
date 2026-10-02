@@ -72,7 +72,7 @@ function renderOsExecutorPanel(node, nodeId) {
 
     const command = cfg.command || '';
     const resultVar = cfg.result_var || '';
-    const timeout = cfg.timeout_seconds || 60;
+    const timeout = cfg.timeout_seconds || 3600;
     const waitForResult = cfg.wait_for_result !== false;
     const exitCodes = Array.isArray(cfg.expect_exit_codes) ? cfg.expect_exit_codes.join(', ') : (cfg.expect_exit_codes || '0');
     const expectPattern = cfg.expect_pattern || '';
@@ -210,7 +210,7 @@ function collectOsExecutorConfig() {
     return {
         command: command.value,
         result_var: document.getElementById('osResultVar')?.value.trim() || '',
-        timeout_seconds: _osClampInt(document.getElementById('osTimeout')?.value, 1, 3600, 60),
+        timeout_seconds: _osClampInt(document.getElementById('osTimeout')?.value, 1, 3600, 3600),
         wait_for_result: waitForResult,
         expect_exit_codes: _osParseExitCodes(document.getElementById('osExpectExitCodes')?.value),
         expect_pattern: pattern.slice(0, 200),

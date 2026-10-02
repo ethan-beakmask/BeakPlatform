@@ -74,7 +74,7 @@ MAX_CELL_CHARS = 2000        # 單格字串長度上限
 MAX_TOTAL_CHARS = 64 * 1024  # 整份結果序列化後的長度上限
 MAX_TEXT_PARAM_CHARS = 4000  # 單一 text 參數長度上限
 
-DEFAULT_TIMEOUT = 10
+DEFAULT_TIMEOUT = 60
 MIN_TIMEOUT = 1
 MAX_TIMEOUT = 60
 

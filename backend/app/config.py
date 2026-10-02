@@ -141,9 +141,6 @@ class ProductionConfig(BaseConfig):
     # Secure cookies (can be disabled via env for non-SSL staging)
     SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'true').lower() == 'true'
 
-    # Stricter session lifetime
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=4)
-
 
 class TestingConfig(BaseConfig):
     """Testing configuration."""

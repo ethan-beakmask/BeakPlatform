@@ -66,7 +66,7 @@ function renderSysSqlExecutorPanel(node, nodeId) {
     _sqlParamValues = { ...(cfg.params || {}) };
 
     const resultVar = cfg.result_var || '';
-    const timeout = cfg.timeout_seconds || 10;
+    const timeout = cfg.timeout_seconds || 60;
     const writeNote = cfg.write_approval_note === true;
     const noteTemplate = cfg.note_template || '';
     const onError = cfg.on_error || 'error';
@@ -246,7 +246,7 @@ function collectSysSqlExecutorConfig() {
     delete params['p_org_secure_code'];
 
     let timeout = parseInt(document.getElementById('sqlTimeout')?.value, 10);
-    if (Number.isNaN(timeout) || timeout < 1 || timeout > 60) timeout = 10;
+    if (Number.isNaN(timeout) || timeout < 1 || timeout > 60) timeout = 60;
 
     const onError = document.getElementById('sqlOnError')?.value === 'continue' ? 'continue' : 'error';
 

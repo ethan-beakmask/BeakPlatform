@@ -39,7 +39,7 @@ class PasswordResetToken(BaseModel):
     # 暫時密碼是否已寄出
     temp_password_sent = Column(Boolean, default=False)
 
-    # 過期時間 (預設 10 分鐘)
+    # 過期時間 (預設 15 分鐘)
     expires_at = Column(DateTime, nullable=False)
 
     # 使用時間 (用戶成功登入暫時密碼後標記)
@@ -66,7 +66,7 @@ class PasswordResetToken(BaseModel):
         return ''.join(secrets.choice(alphabet) for _ in range(12))
 
     @classmethod
-    def create_for_user(cls, org_secure_code: str, email: str, expire_minutes: int = 10) -> 'PasswordResetToken':
+    def create_for_user(cls, org_secure_code: str, email: str, expire_minutes: int = 15) -> 'PasswordResetToken':
         """
         為用戶建立密碼重設 Token
 

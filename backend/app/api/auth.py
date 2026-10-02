@@ -1027,11 +1027,11 @@ def _process_forgot_password(username: str, domain_name: str, login_type: str, o
                     f"Password reset requested for: {email}, "
                     f"notifications sent to: {notification_emails}"
                 )
-                flash(_('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證'), 'success')
+                flash(_('已寄送密碼重設驗證信到您的信箱，請在 15 分鐘內完成驗證'), 'success')
         else:
-            flash(_('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證'), 'success')
+            flash(_('已寄送密碼重設驗證信到您的信箱，請在 15 分鐘內完成驗證'), 'success')
     else:
-        flash(_('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證'), 'success')
+        flash(_('已寄送密碼重設驗證信到您的信箱，請在 15 分鐘內完成驗證'), 'success')
 
     if login_type == 'org' and org:
         return redirect(url_for('auth.org_login', domain_name=domain_name))
@@ -1129,7 +1129,7 @@ def forgot_password():
 
     if not username or not domain_name:
         # 一律顯示成功訊息 (防止帳號列舉)
-        flash(_('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證'), 'success')
+        flash(_('已寄送密碼重設驗證信到您的信箱，請在 15 分鐘內完成驗證'), 'success')
         return redirect(url_for('auth.login'))
 
     return _process_forgot_password(username, domain_name, 'shared')

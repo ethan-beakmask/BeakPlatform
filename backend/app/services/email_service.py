@@ -355,7 +355,7 @@ class EmailService:
 驗證連結：{verification_url}
 驗證碼：{verification_code}
 
-此驗證碼將於 10 分鐘後失效。
+此驗證碼將於 15 分鐘後失效。
 如果您沒有申請密碼重設，請忽略此郵件。
 
 ---
