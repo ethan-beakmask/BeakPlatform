@@ -28,6 +28,7 @@ SQL_EXTRAS = (
     ('seed_node_org_grants.sql', True, False),
     ('seed_menu_defaults.sql', False, False),
     ('seed_rbac_defaults.sql', False, False),
+    ('cleanup_legacy_demo_groups.sql', False, False),
 )
 # fw_sp_setup.sql 刻意不在此表：需要 superuser，由 shell 以 postgres 執行，
 # bootstrap 只驗證它已完成（verify_superuser_objects）。

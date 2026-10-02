@@ -84,9 +84,7 @@ DEMO_COMPANY = {
         ('nina.xiao', '霄寧娜', 'Nina Xiao', 'IT_OPS', 'ENG', False),
     ],
     'admin_member': ('admin.ops', '璃安琪', 'Angel Li', 'GM', 'ADMIN_SPEC', False),
-    'groups': [
-        ('EXT_PARTNER', '外部合作夥伴'),
-    ],
+    'groups': [],
     'external_users': [],
 }
 
