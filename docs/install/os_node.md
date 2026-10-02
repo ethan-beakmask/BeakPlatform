@@ -43,9 +43,9 @@
 # <安裝目錄>/.env
 OS_NODE_ENABLED=1
 
-# 選填：同一企業同時執行中的 OS 命令節點數上限（預設 3）
+# 選填：同一企業同時執行中的 OS 命令節點數上限（預設 10）
 # 超過上限的節點會自動排隊等待，不會失敗
-OS_NODE_MAX_CONCURRENT_PER_ORG=3
+OS_NODE_MAX_CONCURRENT_PER_ORG=10
 ```
 
 改完必須**重新啟動流程執行服務**才會生效。
