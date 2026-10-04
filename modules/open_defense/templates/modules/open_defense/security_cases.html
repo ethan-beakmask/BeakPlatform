@@ -135,7 +135,7 @@
                             <div><div class="sc-field-label">{{ _('嚴重度') }}</div>
                                  <div class="sc-field-value" x-text="sevNum(payload?.severity_id ?? selected.severity_id)"></div></div>
                             <div><div class="sc-field-label">{{ _('偵測來源') }}</div>
-                                 <div class="sc-field-value" x-html="val(selected.source_system)"></div></div>
+                                 <div class="sc-field-value" x-html="val(sourceLabel(selected.source_system))"></div></div>
                             <!-- PF-106：first/last detected_by 並存，來自跨系統關聯查詢；
                                  兩者相同來源時只顯示一列，ClickHouse 不可用或無關聯資料時整段不顯示 -->
                             <template x-if="firstDetectedBy && detectedBySame">
@@ -281,7 +281,7 @@
                                         <tr>
                                             <td x-text="fmtTime(ev.received_at)"></td>
                                             <td x-text="fmtTime(ev.occurred_at)"></td>
-                                            <td x-text="ev.source_system || '-'"></td>
+                                            <td x-text="sourceLabel(ev.source_system) || '-'"></td>
                                             <td x-text="ev.severity_id ?? '-'"></td>
                                             <td class="od-mono" x-html="val(ev.actor_ip)"></td>
                                             <td x-text="ev.target_host || '-'"></td>
