@@ -840,3 +840,14 @@ def test_is_transient_db_error_classification():
     assert is_transient_db_error(invalidated) is True
     assert is_transient_db_error(TypeError('bad payload')) is False
     assert is_transient_db_error(IntegrityError('stmt', {}, Exception('duplicate'))) is False
+
+
+def test_workflow_start_failed_status_follows_error_class(app):
+    from modules.open_defense.services.intake_service import _workflow_start_failed
+
+    with app.test_request_context():
+        permanent = _workflow_start_failed(ValueError('bad graph'))
+        transient = _workflow_start_failed(OperationalError('stmt', {}, Exception('db down')))
+
+    assert (permanent.code, permanent.status) == ('workflow_start_failed', 422)
+    assert (transient.code, transient.status) == ('workflow_start_failed', 503)

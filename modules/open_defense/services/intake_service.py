@@ -66,6 +66,15 @@ def is_transient_db_error(exc: BaseException) -> bool:
     return False
 
 
+def _workflow_start_failed(exc: Exception) -> IntakeError:
+    """啟流程失敗:暫時性資料庫錯誤回 503 讓送件端重送,其餘回 422(重送也不會成功)。"""
+    return IntakeError(
+        _('啟動 workflow 失敗: %(error)s', error=exc),
+        code='workflow_start_failed',
+        status=503 if is_transient_db_error(exc) else 422,
+    )
+
+
 def _build_form_data(event: Dict[str, Any]) -> Dict[str, Any]:
     """
     從 OCSF event 抽出供 form 用的初始欄位。
@@ -493,10 +502,7 @@ def process_intake(
     except Exception as exc:
         db.session.rollback()
         logger.exception('intake workflow start failed')
-        raise IntakeError(
-            _('啟動 workflow 失敗: %(error)s', error=exc),
-            code='workflow_start_failed', status=500,
-        )
+        raise _workflow_start_failed(exc)
 
     # 7. 回填 case_secure_code(= workflow_instance.secure_code)
     event.case_secure_code = workflow_instance_sc
@@ -657,10 +663,7 @@ def process_native_intake(
     except Exception as exc:
         db.session.rollback()
         logger.exception('native intake workflow start failed')
-        raise IntakeError(
-            _('啟動 workflow 失敗: %(error)s', error=exc),
-            code='workflow_start_failed', status=500,
-        )
+        raise _workflow_start_failed(exc)
 
     event.case_secure_code = workflow_instance_sc
     db.session.commit()
