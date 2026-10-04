@@ -207,7 +207,8 @@ curl http://<防禦端IP>:8500/edl                   # 給防火牆抓的黑名�
 ```
 
 Suricata 規則更新（會套用 `suricata/disable.conf` 的停用清單，裡面有三條誤判率極高的 TCP stream 規則，
-以及一條會把本機 cloudflared 自己的 tunnel DNS 查詢當事件的 ET INFO 規則）：
+兩條會把本機 cloudflared 自己的 tunnel 連線當事件的 ET INFO 規則，
+以及一條會把節點自己的 apt 更新檢查當事件的 ET INFO 規則；各條的理由與何時可以拿掉，寫在該檔的註解裡）：
 
 ```bash
 sudo bash /opt/integrated-waf/install.sh --update-rules
