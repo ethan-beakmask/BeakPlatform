@@ -1,0 +1,18 @@
+# CrowdSec 的 http 通知外掛設定。compose 把本檔唯讀掛載進容器，蓋過映像內建的同名檔。
+# 由 profiles.yaml 的 notifications 引用（名稱 http_vector）。
+#
+# 把命中的 alert 原樣送給 Vector 的 crowdsec_alerts 來源（compose 網路內的 vector:8689，沒有發布到主機）。
+# 送出的內容是 alert 的 JSON 陣列，欄位對映成平台事件的工作在 vector/vector.yaml 的 ocsf_from_crowdsec。
+type: http
+name: http_vector
+log_level: info
+max_retry: 3
+timeout: 10s
+
+format: |
+  {{.|toJson}}
+
+url: http://vector:8689/
+method: POST
+headers:
+  Content-Type: application/json

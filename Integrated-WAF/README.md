@@ -8,7 +8,7 @@ BeakPlatform（管制端）建立資安案件，平台核可的封鎖決策再�
 Internet → Cloudflare → cloudflared → WAF(nginx+ModSecurity+CRS) → 你的網站
                                         │ 告警                    ▲
    Suricata（監聽網卡）───────────────► Vector → od-bridge ──事件──► BeakPlatform
-                                        │                          │
+   CrowdSec（SSH 記錄）───────────────► │                          │
                                         ▼                       決策│
                                     ClickHouse   nftables / CrowdSec / EDL ◄──┘
 ```

@@ -23,7 +23,7 @@ Please read and comply with each component's license before use.
 | OWASP ModSecurity CRS (nginx) | WAF：nginx + libmodsecurity v3 + OWASP Core Rule Set | image `owasp/modsecurity-crs:nginx`（浮動 tag，安裝時取最新 / floating tag） | Apache 2.0 | https://github.com/coreruleset/modsecurity-crs-docker |
 | Suricata | 網路入侵偵測 Network IDS（被動監聽網卡 / passive sniffing） | `jasonish/suricata:7.0` | GPLv2（以獨立程序執行，未連結進本專案程式 / runs as a separate process, not linked） | https://suricata.io |
 | Emerging Threats Open ruleset | Suricata 規則集 / rule set，安裝時下載 | 每日更新 / daily | BSD（ET Open） | https://rules.emergingthreats.net |
-| CrowdSec | SSH 登入記錄的行為偵測、平台封鎖決策的本機存放（LAPI）；出廠不連官方 Central API / behavioural detection on SSH auth logs & local decision store (LAPI); Central API disabled by default | `crowdsecurity/crowdsec:v1.6.4` | MIT | https://github.com/crowdsecurity/crowdsec |
+| CrowdSec | SSH 登入記錄的行為偵測（命中後經 Vector 送平台建案）、平台封鎖決策的本機存放（LAPI）；出廠不連官方 Central API / behavioural detection on SSH auth logs (alerts forwarded to the platform via Vector) & local decision store (LAPI); Central API disabled by default | `crowdsecurity/crowdsec:v1.6.4` | MIT | https://github.com/crowdsecurity/crowdsec |
 | Vector | 日誌收集與正規化（轉 OCSF）/ log shipping & normalisation | `timberio/vector:0.41.1-alpine` | MPL 2.0 | https://vector.dev |
 | ClickHouse | 事件儲存與查詢 / event storage | `clickhouse/clickhouse-server:24.8` | Apache 2.0 | https://clickhouse.com |
 | cloudflared | Cloudflare Tunnel 連接器 / tunnel connector | `cloudflare/cloudflared:2026.8.3` | Apache 2.0 | https://github.com/cloudflare/cloudflared |
@@ -82,14 +82,14 @@ sudo apt-get install -y docker.io docker-compose-v2 nftables
 
 ## 本安裝包做的整合 / What this package adds on top
 
-- 一份 `docker-compose.yml` 把上述元件接成一條鏈：WAF 與 Suricata 的告警 → Vector 轉成 OCSF →
+- 一份 `docker-compose.yml` 把上述元件接成一條鏈：WAF、Suricata 與 CrowdSec 的告警 → Vector 轉成 OCSF →
   ClickHouse（全量）與 od-bridge（過濾、封頂後送 BeakPlatform）；od-bridge 再把平台的封鎖決策
   落地到 nftables、CrowdSec 與 EDL 檔
 - `install.sh` 一鍵安裝、`.env` 集中所有參數、`nftables.sh` 產生主機防火牆、
   `cf_tunnel.py` 用 Cloudflare API 建 tunnel 與 DNS
 - 設定檔內的註解說明每個選擇的理由，方便拆開來單獨使用或替換
 
-One `docker-compose.yml` wires the components into a pipeline (WAF/Suricata alerts → Vector →
+One `docker-compose.yml` wires the components into a pipeline (WAF/Suricata/CrowdSec alerts → Vector →
 ClickHouse and od-bridge → BeakPlatform; decisions back to nftables/CrowdSec/EDL), plus the
 installer, a single `.env`, the firewall generator, and the Cloudflare helper. Comments in each
 config explain the reasoning so any part can be replaced or used alone.

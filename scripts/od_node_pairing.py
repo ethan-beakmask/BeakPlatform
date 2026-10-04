@@ -29,7 +29,7 @@
     --base-url <URL>        防禦節點連回平台用的網址，含 /beakplatform 前綴。
                             省略時取「主機設定 / 系統對外網址」加上前綴
     --name <名稱>           節點名稱，用於金鑰與帳號的顯示名稱（預設 integrated-waf）
-    --source-system <值>    可重複。事件來源白名單，預設 coraza suricata vector
+    --source-system <值>    可重複。事件來源白名單，預設 coraza suricata crowdsec vector
     --enforcement-points    逗號分隔，執行帳號可落地的封鎖點，預設 nftables,crowdsec,edl,cloudflare
     --provision             企業尚無事件路由時先建立最小受理鏈路
     --apply                 實際建立；省略時只檢查並預演
@@ -46,7 +46,7 @@ _REPO_ROOT = os.path.abspath(os.path.join(_HERE, '..'))
 sys.path.insert(0, os.path.join(_REPO_ROOT, 'backend'))
 sys.path.insert(0, _REPO_ROOT)
 
-DEFAULT_SOURCE_SYSTEMS = ['coraza', 'suricata', 'vector']
+DEFAULT_SOURCE_SYSTEMS = ['coraza', 'suricata', 'crowdsec', 'vector']
 DEFAULT_EPS = 'nftables,crowdsec,edl,cloudflare'
 PROVISION_SCRIPT = os.path.join(_REPO_ROOT, 'scripts', 'examples', 'provision_od_intake_for_org.py')
 

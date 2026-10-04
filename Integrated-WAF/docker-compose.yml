@@ -5,7 +5,8 @@
 #   Internet → Cloudflare → cloudflared(容器) → waf-nginx:8080 → ${WAF_BACKEND_URL}
 #                                                  │ ModSec audit log
 #   suricata 監聽 ${NODE_IFACE}（被動 IDS）         ▼
-#   vector: 讀 eve.json + audit.log → 轉 OCSF → clickhouse（全量）+ od-bridge（過濾/封頂）
+#   crowdsec 讀主機的 SSH 登入記錄，命中情境時把 alert 送給 vector
+#   vector: 讀 eve.json + audit.log、收 CrowdSec alert → 轉 OCSF → clickhouse（全量）+ od-bridge（過濾/封頂）
 #   od-bridge: 簽章轉送到 BeakPlatform intake；輪詢平台決策 → nftables / CrowdSec / EDL
 #
 # 所有可調參數都在 .env（由 install.sh 產生），本檔不需手改。
@@ -86,6 +87,7 @@ services:
     ports:
       - "127.0.0.1:8688:8688"   # 合成事件注入口，只開本機（可直接注入任意事件，不可對外）
       - "0.0.0.0:8686:8686"             # GraphQL / metrics（唯讀；來源由 nftables 管制）
+      # 8689（CrowdSec alert 的接收口）刻意不發布到主機，只有 compose 網路內的 crowdsec 容器會連
     volumes:
       - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
       - vector-data:/var/lib/vector
@@ -130,6 +132,9 @@ services:
       # 掛整個目錄而不是單一檔案：logrotate 換檔後，單檔掛載會繼續指著舊檔
       - /var/log:/var/log/host:ro
       - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+      # 命中情境後把 alert 送給 Vector（vector:8689），由 Vector 轉成平台事件
+      - ./crowdsec/profiles.yaml:/etc/crowdsec/profiles.yaml:ro
+      - ./crowdsec/notifications/http.yaml:/etc/crowdsec/notifications/http.yaml:ro
     ports:
       - "127.0.0.1:8081:8080"   # LAPI，只開本機（od-bridge 走 host network 用 127.0.0.1:8081）
 

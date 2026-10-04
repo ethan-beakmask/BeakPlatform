@@ -494,12 +494,31 @@ commit_rules_stamp() {
 # ----------------------------------------------------------------------------
 # 7. 啟動
 # ----------------------------------------------------------------------------
+# 單檔掛載的設定檔，容器看到的是啟動當下的那個檔案。更新程式時是換一個新檔而不是原地改寫，
+# 沒有被 compose up 重建的容器會繼續讀舊內容。比對主機與容器內的內容，不同就重啟該服務。
+restart_if_stale() {   # restart_if_stale 服務名 <安裝目錄下的相對路徑>:<容器內路徑>...
+    local svc="$1" pair a b; shift
+    for pair in "$@"; do
+        a="$(sha256sum "$INSTALL_DIR/${pair%%:*}" 2>/dev/null | cut -d' ' -f1 || true)"
+        b="$(compose exec -T "$svc" sha256sum "${pair#*:}" 2>/dev/null </dev/null | cut -d' ' -f1 || true)"
+        if [[ -n "$a" && -n "$b" && "$a" != "$b" ]]; then
+            log_info "$svc 的設定檔有更新，重啟 $svc"
+            compose restart "$svc" >/dev/null
+            return 0
+        fi
+    done
+}
+
 bring_up() {
     log_step "7/8" "啟動服務（docker compose up -d --build）"
     compose config -q || die "docker-compose.yml 或 .env 有誤"
     local suricata_was_up=""
     [[ -n "$(compose ps -q suricata 2>/dev/null || true)" ]] && suricata_was_up="restart"
     compose up -d --build --remove-orphans
+    restart_if_stale vector vector/vector.yaml:/etc/vector/vector.yaml
+    restart_if_stale crowdsec crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml \
+        crowdsec/profiles.yaml:/etc/crowdsec/profiles.yaml \
+        crowdsec/notifications/http.yaml:/etc/crowdsec/notifications/http.yaml
 
     log_info "等待 ClickHouse 就緒"
     local chpw; chpw="$(get_env CLICKHOUSE_PASSWORD)"
@@ -562,6 +581,15 @@ do_verify() {
         echo "  Vector     設定檔        OK"
     else
         echo "  Vector     設定檔        FAIL"; ok=0
+    fi
+    # CrowdSec 命中情境後把 alert 送給 Vector：看 profile 有沒有掛上通知，再從 crowdsec 容器送一個空陣列
+    # 到 Vector 的接收口（空陣列不會產生任何事件）
+    if compose exec -T crowdsec grep -q http_vector /etc/crowdsec/profiles.yaml >/dev/null 2>&1 </dev/null \
+        && compose exec -T crowdsec wget -q -O /dev/null --header 'Content-Type: application/json' \
+            --post-data '[]' http://vector:8689/ >/dev/null 2>&1 </dev/null; then
+        echo "  CrowdSec   通知→Vector   OK"
+    else
+        echo "  CrowdSec   通知→Vector   FAIL（CrowdSec 偵測到的攻擊不會送到平台；重跑 --reconfigure）"; ok=0
     fi
     echo
     echo "== 平台連線 =="

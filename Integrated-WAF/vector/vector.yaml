@@ -1,7 +1,7 @@
 # =============================================================================
 # Vector — 收集 → 正規化（OCSF）→ 分送
 # =============================================================================
-# sources:    Suricata eve.json、WAF audit.log、本機測試用 HTTP 注入口
+# sources:    Suricata eve.json、WAF audit.log、CrowdSec alert、本機測試用 HTTP 注入口
 # transforms: 解析 → 對映成 OCSF → 過濾 → 速率封頂
 # sinks:      clickhouse（全量）、od-bridge（過濾與封頂後，轉送 BeakPlatform）
 #
@@ -31,6 +31,14 @@ sources:
       - /var/log/modsec/audit*.log.*
     read_from: end
     ignore_older_secs: 600
+
+  # CrowdSec 的 http 通知外掛把命中的 alert（JSON 陣列，一筆 alert 拆成一筆事件）送到這裡。
+  # compose 沒有把 8689 發布到主機，只有同一個 compose 網路內的容器連得到
+  crowdsec_alerts:
+    type: http_server
+    address: 0.0.0.0:8689
+    encoding: json
+    method: POST
 
   # 測試用：直接 POST 一筆 OCSF 事件（compose 只綁 127.0.0.1:8688）
   http_test:
@@ -202,10 +210,92 @@ transforms:
       }
       . = out
 
+  # 只留 CrowdSec 自己偵測出來的 alert：decisions 裡要有 origin 為 crowdsec 的一筆
+  # （情境命中後由 profiles.yaml 補上的決策）。手動下的決策（origin cscli）也會觸發通知，但不是偵測結果。
+  # od-bridge 寫進 LAPI 的平台封鎖決策（origin od-bridge）目前不會觸發通知，這裡仍然擋：
+  # 它一旦送得進來，平台每下一道封鎖就會再收到一筆事件、再開一張案件。
+  # 模擬模式的 alert 與非單一 IP 的來源也不送。
+  crowdsec_detections_only:
+    type: filter
+    inputs: [crowdsec_alerts]
+    condition:
+      type: vrl
+      source: |
+        decs = array(.decisions) ?? []
+        own = filter(decs) -> |_i, d| {
+          dec = object(d) ?? {}
+          (string(dec.origin) ?? "") == "crowdsec"
+        }
+        simulated = bool(.simulated) ?? false
+        scope = string(.source.scope) ?? ""
+        src_ip = string(.source.ip) ?? string(.source.value) ?? ""
+        length(own) > 0 && !simulated && scope == "Ip" && src_ip != ""
+
+  # CrowdSec alert → OCSF detection_finding
+  # rule_id 用情境名（例 crowdsecurity/ssh-bf）；target.host 取原始記錄裡的主機名（syslog 行的 hostname），
+  # 取不到才退回節點 IP。correlation_id 用 alert 自己的 uuid，同一筆 alert 重送時平台會認得是重複。
+  ocsf_from_crowdsec:
+    type: remap
+    inputs: [crowdsec_detections_only]
+    source: |
+      scenario = string(.scenario) ?? "crowdsec"
+      # CrowdSec 的 alert 沒有嚴重度欄位。會走到這裡的都是累積到門檻、CrowdSec 自己判定該封鎖的行為，
+      # 一律算 High（3）；針對特定弱點的利用嘗試（情境名帶 cve）算 Critical（4）
+      sev = if contains(downcase(scenario), "cve") { 4 } else { 3 }
+
+      target_host = ""
+      target_service = ""
+      evs = array(.events) ?? []
+      if length(evs) > 0 {
+        ev0 = object(evs[0]) ?? {}
+        metas = array(ev0.meta) ?? []
+        for_each(metas) -> |_i, m| {
+          kv = object(m) ?? {}
+          k = string(kv.key) ?? ""
+          if k == "machine" { target_host = string(kv.value) ?? "" }
+          if k == "service" { target_service = string(kv.value) ?? "" }
+        }
+      }
+      if target_host == "" { target_host = "${NODE_IP:-}" }
+
+      ts = parse_timestamp(string(.start_at) ?? "", "%+") ?? now()
+      alert_uuid = string(.uuid) ?? ""
+      cid = if alert_uuid != "" { alert_uuid } else { uuid_v4() }
+      title = "CrowdSec " + scenario
+      if length(title) > 200 { title = slice!(title, 0, 200) }
+
+      out = {
+        "correlation_id": cid,
+        "source_system": "crowdsec",
+        "event_class": "detection_finding",
+        "occurred_at": format_timestamp!(ts, "%+"),
+        "severity_id": sev,
+        "finding": {
+          "title": title,
+          "summary": string(.message) ?? "",
+          "rule_id": scenario,
+          "rule_set": "CrowdSec"
+        },
+        "actor": {
+          "ip": string(.source.ip) ?? string(.source.value) ?? "",
+          "country": string(.source.cn) ?? ""
+        },
+        "target": {
+          "host": target_host,
+          "url": "",
+          "service": target_service
+        },
+        "evidence": {
+          "raw_log_ref": { "type": "crowdsec", "locator": alert_uuid },
+          "snippet": "events_count=" + (to_string(.events_count) ?? "")
+        }
+      }
+      . = out
+
   # ClickHouse 寬表欄位抽取
   ch_events_from_ocsf:
     type: remap
-    inputs: [ocsf_from_suricata, ocsf_from_modsec, http_test]
+    inputs: [ocsf_from_suricata, ocsf_from_modsec, ocsf_from_crowdsec, http_test]
     source: |
       raw = encode_json(.)
       ts_input = to_string(.occurred_at) ?? ""
@@ -235,7 +325,7 @@ transforms:
   # 進入案件流程前的過濾（ClickHouse 仍保留全部事件）
   intake_filter:
     type: filter
-    inputs: [ocsf_from_suricata, ocsf_from_modsec, http_test]
+    inputs: [ocsf_from_suricata, ocsf_from_modsec, ocsf_from_crowdsec, http_test]
     condition:
       type: vrl
       source: |
@@ -289,6 +379,7 @@ transforms:
     window_secs: ${THROTTLE_CORAZA_WINDOW:-300}
     key_field: "{{ throttle_key }}"
 
+  # 其餘來源（CrowdSec、測試注入口）：同一規則＋同一來源 IP 每 5 分鐘一筆
   intake_throttle_other:
     type: throttle
     inputs: [intake_route._unmatched]

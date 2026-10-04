@@ -19,7 +19,7 @@
 內網使用者或 Cloudflare ─► WAF(8080) ─► 被保護的網站（內網 IP:埠）
                                │ 告警
 Suricata（監聽網卡） ─────────► Vector ─► od-bridge ──事件──► 管制端 /api/open_defense/intake
-                               │                    ▲
+CrowdSec（SSH 記錄） ─────────►│                    ▲
                                ▼                    │ 每 5 秒拉取封鎖決策
                            ClickHouse    nftables / CrowdSec / EDL ◄──┘
 ```
@@ -229,10 +229,15 @@ sudo bash /opt/integrated-waf/install.sh --update-rules
 > sudo bash /opt/integrated-waf/install.sh --update-rules
 > ```
 
-CrowdSec 在本安裝包裡做兩件事，都只在本機運作：
+CrowdSec 在本安裝包裡做三件事：
 
 - **看主機的 SSH 登入記錄**：讀 `/var/log/auth.log`（Ubuntu 的 rsyslog 預設會寫這個檔），偵測暴力破解。
   容器以唯讀方式掛載主機的 `/var/log`。主機若沒有 rsyslog（沒有 `auth.log`），這項偵測不會有資料
+- **把偵測結果送進平台建案**：情境命中（例如 `crowdsecurity/ssh-bf`）時，CrowdSec 把 alert 交給 Vector，
+  轉成來源為 `crowdsec` 的事件，和 WAF、Suricata 的事件走同一條路進管制端、依事件路由建立案件。
+  同一情境＋同一來源 IP 每 5 分鐘最多送一筆。CrowdSec 自己也會在本機記一筆 4 小時的 ban，
+  但本節點沒有裝 bouncer，那筆 ban 不會擋人；要不要封鎖由平台的案件流程決定。
+  來源是私有網段（10/8、172.16/12、192.168/16）的失敗登入會被 CrowdSec 內建的白名單略過，不會產生 alert
 - **存一份平台下發的封鎖決策**：流程的決策節點有選 `crowdsec` 執行點時，od-bridge 把決策寫進 CrowdSec 的本機 API（LAPI），
   解封與到期會一併移除。之後若自行接上 CrowdSec 的 bouncer（例如別台主機的防火牆外掛），它拿到的就是這份清單
 
@@ -241,6 +246,24 @@ sudo docker compose exec crowdsec cscli metrics show acquisition   # 讀了幾�
 sudo docker compose exec crowdsec cscli decisions list             # 目前生效的決策（Source 為 od-bridge 的是平台下發的）
 sudo docker compose exec crowdsec cscli alerts list                # 本機偵測到的事件
 ```
+
+想親眼看一次 SSH 偵測到建案的過程，可以在防禦端寫幾筆假的登入失敗記錄（`203.0.113.0/24` 是文件示範用的保留網段，
+不是真實主機）。幾秒後 `cscli alerts list` 會多一筆 `crowdsecurity/ssh-bf`，od-bridge 的轉送記錄出現
+`src=crowdsec status=200`，管制端的資安案件處置中心多一張標題為「CrowdSec crowdsecurity/ssh-bf」的案件：
+
+```bash
+for n in 1 2 3 4 5 6 7 8; do
+  logger -p auth.info -t sshd --id=$((4300+n)) "Failed password for invalid user admin from 203.0.113.50 port $((40100+n)) ssh2"
+done
+sudo docker compose logs --since 1m od-bridge | grep forwarded
+sudo docker compose exec crowdsec cscli decisions delete --ip 203.0.113.50   # 看完把 CrowdSec 記的那筆測試 ban 清掉
+```
+
+> **2026-10-05 之前配對的節點，更新後要在管制端多做一步**：事件受理金鑰有一份允許的事件來源清單，
+> 舊的開通字串建立的金鑰只允許 `coraza`、`suricata`、`vector`，CrowdSec 的事件會被平台拒收
+> （od-bridge 轉送記錄是 `src=crowdsec status=403`，其他來源不受影響）。以企業管理員登入管制端，
+> 到「安全中心 / API Key」編輯名稱為「integrated-waf intake」的金鑰，在「授權範圍 - 資安事件接收」那一格加一行 `crowdsec` 後儲存。
+> 2026-10-05 之後用 `od_node_pairing.py` 新產生的開通字串已內含 `crowdsec`，不必做這一步。
 
 **出廠不連 CrowdSec 官方的 Central API**：不上傳偵測結果，也不下載社群黑名單。
 要開啟就把 `docker-compose.yml` 裡 crowdsec 的 `DISABLE_ONLINE_API` 改成 `"false"` 再 `--reconfigure`。
@@ -301,6 +324,7 @@ Cloudflare Tunnel 認的是 token 不是 IP，會自己重新連上。
 | 症狀 | 原因與處理 |
 |---|---|
 | 平台連線 `HTTP 000` | 管制端防火牆沒放行防禦端 IP 打平台埠 |
+| od-bridge 轉送記錄出現 `src=crowdsec status=403`，其他來源正常 | 事件受理金鑰允許的事件來源沒有 `crowdsec`（2026-10-05 之前配對的節點）。到管制端「安全中心 / API Key」編輯該金鑰，在「授權範圍 - 資安事件接收」加一行 `crowdsec` |
 | od-bridge 一直 `401` | 開通字串貼錯或該 API Key 已停用；重跑步驟一發新的，`--reconfigure` |
 | `status=422 no_mapping` | 企業沒有事件路由；步驟一加 `--provision`，或在「開放防禦 / 事件路由設定」建規則 |
 | 執行帳號登入 `429` | 短時間登入太多次，等 90 秒 |

@@ -1,0 +1,26 @@
+# CrowdSec 偵測到攻擊之後要做什麼。compose 把本檔唯讀掛載進容器，蓋過映像內建的同名檔。
+#
+# 與映像預設值只差 notifications 那兩行：情境命中後，除了照舊在 CrowdSec 自己的決策庫記一筆
+# 4 小時的 ban，也把 alert 交給 notifications/http.yaml 送進 Vector，轉成平台的一筆事件。
+# 本節點沒有裝 bouncer，這裡的 ban 只是記錄、不會真的擋人；要不要封鎖由平台的案件流程決定。
+#
+# 手動下的決策（cscli decisions add）也會符合這裡的條件並觸發通知，但那不是偵測結果，
+# 由 vector/vector.yaml 的 crowdsec_detections_only 濾掉。od-bridge 寫進來的平台封鎖決策不帶
+# remediation，不符合條件、不會觸發通知；Vector 那一層同樣會擋，兩層都不讓它變成新事件。
+name: default_ip_remediation
+filters:
+ - Alert.Remediation == true && Alert.GetScope() == "Ip"
+decisions:
+ - type: ban
+   duration: 4h
+notifications:
+ - http_vector
+on_success: break
+---
+name: default_range_remediation
+filters:
+ - Alert.Remediation == true && Alert.GetScope() == "Range"
+decisions:
+ - type: ban
+   duration: 4h
+on_success: break
