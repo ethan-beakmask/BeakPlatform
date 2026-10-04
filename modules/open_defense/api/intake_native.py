@@ -8,7 +8,7 @@ import logging
 
 from flask import request, jsonify, g
 
-from app import limiter
+from app import db, limiter
 from app.security.client_ip import get_client_ip
 from app.security.decorators import webhook_hmac_required
 from app.security.rate_limiter import (
@@ -17,7 +17,11 @@ from app.security.rate_limiter import (
 
 from . import api_bp
 from ..models import OdPayloadProfile
-from ..services.intake_service import process_native_intake, IntakeError
+from ..services.intake_service import (
+    process_native_intake,
+    IntakeError,
+    is_transient_db_error,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +96,24 @@ def intake_native():
             'error': exc.code,
             'message': str(exc),
         }), exc.status
+    except Exception as exc:
+        try:
+            db.session.rollback()
+        except Exception as rollback_exc:
+            logger.warning(
+                'native intake rollback failed key=%s profile=%s error=%s',
+                g.api_key.key_id,
+                profile.code,
+                rollback_exc,
+            )
+        logger.exception(
+            'native intake unexpected error key=%s profile=%s',
+            g.api_key.key_id,
+            profile.code,
+        )
+        if is_transient_db_error(exc):
+            return jsonify({'error': 'temporarily_unavailable'}), 503
+        return jsonify({'error': 'unprocessable_event'}), 422
 
     if is_dup:
         return jsonify({

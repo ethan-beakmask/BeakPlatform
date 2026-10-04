@@ -15,6 +15,12 @@ from datetime import datetime
 from typing import Dict, Any, Optional, Tuple
 
 from flask_babel import gettext as _
+from sqlalchemy.exc import (
+    DBAPIError,
+    InterfaceError,
+    OperationalError,
+    TimeoutError as SQLAlchemyTimeoutError,
+)
 
 from app import db
 from app.models.api_key import ApiKey
@@ -49,6 +55,15 @@ class IntakeError(Exception):
         super().__init__(message)
         self.code = code
         self.status = status
+
+
+def is_transient_db_error(exc: BaseException) -> bool:
+    """資料庫連線類的暫時性錯誤:入口回 5xx 讓送件端重送;其餘例外重送也不會成功。"""
+    if isinstance(exc, (OperationalError, InterfaceError, SQLAlchemyTimeoutError)):
+        return True
+    if isinstance(exc, DBAPIError) and exc.connection_invalidated:
+        return True
+    return False
 
 
 def _build_form_data(event: Dict[str, Any]) -> Dict[str, Any]:

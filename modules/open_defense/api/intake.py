@@ -9,7 +9,7 @@ import logging
 
 from flask import request, jsonify, g
 
-from app import limiter
+from app import db, limiter
 from app.security.decorators import webhook_hmac_required
 from app.security.client_ip import get_client_ip
 from app.security.rate_limiter import (
@@ -18,7 +18,11 @@ from app.security.rate_limiter import (
 
 from . import api_bp
 from ..schemas.intake import validate_intake_body, IntakeValidationError
-from ..services.intake_service import process_intake, IntakeError
+from ..services.intake_service import (
+    process_intake,
+    IntakeError,
+    is_transient_db_error,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +80,24 @@ def intake():
             'error': exc.code,
             'message': str(exc),
         }), exc.status
+    except Exception as exc:
+        try:
+            db.session.rollback()
+        except Exception as rollback_exc:
+            logger.warning(
+                'intake rollback failed key=%s correlation_id=%s error=%s',
+                g.api_key.key_id,
+                normalized.get('correlation_id'),
+                rollback_exc,
+            )
+        logger.exception(
+            'intake unexpected error key=%s correlation_id=%s',
+            g.api_key.key_id,
+            normalized.get('correlation_id'),
+        )
+        if is_transient_db_error(exc):
+            return jsonify({'error': 'temporarily_unavailable'}), 503
+        return jsonify({'error': 'unprocessable_event'}), 422
 
     if is_dup:
         return jsonify({

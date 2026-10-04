@@ -1,3 +1,4 @@
+import importlib
 import json
 import logging
 import sys
@@ -7,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from sqlalchemy import inspect
+from sqlalchemy.exc import DBAPIError, IntegrityError, InterfaceError, OperationalError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -19,7 +21,7 @@ from modules.form_workflow.models import (
     FwPublishedFormWorkflow,
     FwWorkflowInstance,
 )
-from modules.open_defense.models import OdIntakeEvent
+from modules.open_defense.models import OdIntakeEvent, OdPayloadProfile
 from modules.open_defense.services.case_aggregation_service import (
     DEFAULT_AGGREGATION,
     append_event,
@@ -29,7 +31,11 @@ from modules.open_defense.services.case_aggregation_service import (
     merge_event,
     resolve_group_key,
 )
-from modules.open_defense.services.intake_service import AGGREGATION_WINDOW_MINUTES
+from modules.open_defense.services.intake_service import (
+    AGGREGATION_WINDOW_MINUTES,
+    IntakeError,
+    is_transient_db_error,
+)
 from modules.open_defense.services.routing_service import validate_aggregation
 
 
@@ -667,3 +673,170 @@ def test_trigger_case_group_key_non_string_is_rejected(app, db_session, monkeypa
 
     assert response.status_code == 400
     assert response.get_json()['error'] == 'invalid_case_group_key'
+
+
+def _od_api_key_fixture(monkeypatch):
+    secret = b'fedcba9876543210fedcba9876543210'
+    key = ApiKey(
+        secure_code='api_key_od_intake_test',
+        org_secure_code=ORG_SC,
+        key_id='ak_od_intake_test',
+        name='OD Intake Test',
+        secret_ciphertext=b'x',
+        secret_file_nonce=b'x',
+        secret_wrapped_dek='x',
+        secret_dek_nonce='x',
+        secret_encryption_key_sc='x',
+        scopes={'od_intake': {'payload_profiles': ['demo_profile']}},
+        status='active',
+    )
+    db.session.add(key)
+    db.session.flush()
+
+    from app.services import api_key_service
+    monkeypatch.setattr(api_key_service, 'decrypt_secret', lambda record: secret)
+    return key, secret
+
+
+def _open_defense_client(app):
+    endpoint = 'open_defense_api.intake'
+    if endpoint not in app.view_functions:
+        from modules.open_defense.api import api_bp
+        app.register_blueprint(api_bp)
+    return app.test_client()
+
+
+def _signed_open_defense_post(app, key, secret, path, payload):
+    body = json.dumps(payload, ensure_ascii=False, separators=(',', ':')).encode('utf-8')
+    ts = str(int(time.time()))
+    return _open_defense_client(app).post(
+        path,
+        data=body,
+        headers={
+            'Content-Type': 'application/json',
+            'X-BP-Key-Id': key.key_id,
+            'X-BP-Timestamp': ts,
+            'X-BP-Signature': compute_signature(secret, ts, body),
+        },
+    )
+
+
+def _ocsf_payload(correlation_id='corr-unexpected-1'):
+    return {
+        'correlation_id': correlation_id,
+        'source_system': 'demo-soc',
+        'event_class': 'detection_finding',
+        'occurred_at': '2026-09-25T00:00:00Z',
+        'severity_id': 3,
+        'finding': {
+            'title': 'Demo finding',
+            'rule_id': 'RULE-1',
+        },
+        'actor': {'ip': '198.51.100.20'},
+        'target': {'host': 'demo-host'},
+    }
+
+
+def _payload_profile_fixture():
+    profile = OdPayloadProfile(
+        secure_code='profile_demo_intake',
+        org_secure_code=ORG_SC,
+        code='demo_profile',
+        name='Demo Profile',
+        source_system='demo-soc',
+        correlation_id_path='id',
+        field_map={},
+        is_active=True,
+    )
+    db.session.add(profile)
+    db.session.flush()
+    return profile
+
+
+def _od_intake_api_module(name):
+    return importlib.import_module(f'modules.open_defense.api.{name}')
+
+
+def test_ocsf_intake_unexpected_error_returns_422_without_exception_detail(app, db_session, monkeypatch):
+    key, secret = _od_api_key_fixture(monkeypatch)
+
+    def fail_process(**kwargs):
+        raise TypeError('boom')
+
+    monkeypatch.setattr(_od_intake_api_module('intake'), 'process_intake', fail_process)
+
+    response = _signed_open_defense_post(
+        app, key, secret, '/beakplatform/api/open_defense/intake', _ocsf_payload()
+    )
+
+    assert response.status_code == 422
+    assert response.get_json()['error'] == 'unprocessable_event'
+    assert 'boom' not in response.get_data(as_text=True)
+
+
+def test_ocsf_intake_transient_db_error_returns_503(app, db_session, monkeypatch):
+    key, secret = _od_api_key_fixture(monkeypatch)
+
+    def fail_process(**kwargs):
+        raise OperationalError('stmt', {}, Exception('db down'))
+
+    monkeypatch.setattr(_od_intake_api_module('intake'), 'process_intake', fail_process)
+
+    response = _signed_open_defense_post(
+        app, key, secret, '/beakplatform/api/open_defense/intake', _ocsf_payload('corr-db-down')
+    )
+
+    assert response.status_code == 503
+    assert response.get_json() == {'error': 'temporarily_unavailable'}
+
+
+def test_ocsf_intake_error_keeps_existing_response(app, db_session, monkeypatch):
+    key, secret = _od_api_key_fixture(monkeypatch)
+
+    def fail_process(**kwargs):
+        raise IntakeError('x', code='template_not_found', status=500)
+
+    monkeypatch.setattr(_od_intake_api_module('intake'), 'process_intake', fail_process)
+
+    response = _signed_open_defense_post(
+        app, key, secret, '/beakplatform/api/open_defense/intake', _ocsf_payload('corr-intake-error')
+    )
+
+    assert response.status_code == 500
+    assert response.get_json()['error'] == 'template_not_found'
+
+
+def test_native_intake_unexpected_error_returns_422(app, db_session, monkeypatch):
+    key, secret = _od_api_key_fixture(monkeypatch)
+    _payload_profile_fixture()
+
+    def fail_process(**kwargs):
+        raise ValueError('native boom')
+
+    monkeypatch.setattr(_od_intake_api_module('intake_native'), 'process_native_intake', fail_process)
+
+    response = _signed_open_defense_post(
+        app,
+        key,
+        secret,
+        '/beakplatform/api/open_defense/intake/native?profile=demo_profile',
+        {'id': 'native-corr-1', 'source': 'demo-soc'},
+    )
+
+    assert response.status_code == 422
+    assert response.get_json() == {'error': 'unprocessable_event'}
+
+
+def test_is_transient_db_error_classification():
+    invalidated = DBAPIError(
+        'stmt',
+        {},
+        Exception('connection lost'),
+        connection_invalidated=True,
+    )
+
+    assert is_transient_db_error(OperationalError('stmt', {}, Exception('db down'))) is True
+    assert is_transient_db_error(InterfaceError('stmt', {}, Exception('iface down'))) is True
+    assert is_transient_db_error(invalidated) is True
+    assert is_transient_db_error(TypeError('bad payload')) is False
+    assert is_transient_db_error(IntegrityError('stmt', {}, Exception('duplicate'))) is False
