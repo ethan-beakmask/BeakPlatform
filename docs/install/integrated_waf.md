@@ -229,6 +229,30 @@ sudo bash /opt/integrated-waf/install.sh --update-rules
 > sudo bash /opt/integrated-waf/install.sh --update-rules
 > ```
 
+CrowdSec 在本安裝包裡做兩件事，都只在本機運作：
+
+- **看主機的 SSH 登入記錄**：讀 `/var/log/auth.log`（Ubuntu 的 rsyslog 預設會寫這個檔），偵測暴力破解。
+  容器以唯讀方式掛載主機的 `/var/log`。主機若沒有 rsyslog（沒有 `auth.log`），這項偵測不會有資料
+- **存一份平台下發的封鎖決策**：流程的決策節點有選 `crowdsec` 執行點時，od-bridge 把決策寫進 CrowdSec 的本機 API（LAPI），
+  解封與到期會一併移除。之後若自行接上 CrowdSec 的 bouncer（例如別台主機的防火牆外掛），它拿到的就是這份清單
+
+```bash
+sudo docker compose exec crowdsec cscli metrics show acquisition   # 讀了幾行、解析了幾行
+sudo docker compose exec crowdsec cscli decisions list             # 目前生效的決策（Source 為 od-bridge 的是平台下發的）
+sudo docker compose exec crowdsec cscli alerts list                # 本機偵測到的事件
+```
+
+**出廠不連 CrowdSec 官方的 Central API**：不上傳偵測結果，也不下載社群黑名單。
+要開啟就把 `docker-compose.yml` 裡 crowdsec 的 `DISABLE_ONLINE_API` 改成 `"false"` 再 `--reconfigure`。
+開啟後請留意：寫進 LAPI 的平台封鎖目標也會被當成偵測訊號上傳（舊版實測如此）。
+
+> **2026-10-04 之前安裝的節點，CrowdSec 實際上沒有作用**，請執行 `sudo bash /opt/integrated-waf/install.sh --update` 更新：
+> 舊版設定讀的是容器裡不存在的 journalctl，SSH 偵測沒有資料來源；od-bridge 寫入 LAPI 的方式也不被接受，
+> 帶 `crowdsec` 執行點的決策會變成 `partial`。舊版另外會向 Central API 註冊並上傳訊號，更新後即停用。
+> 管制端的示範流程（SOC 團隊版、小企業單人版）同日起把 `crowdsec` 加進封鎖與解封節點的執行點；
+> 既有企業的流程不會自動改，要套用就在管制端重跑 `scripts/examples/provision_od_workflow_variants.py --apply --force`，
+> 且**先更新防禦端再更新流程**，順序反過來的話舊版 od-bridge 會把決策回報成 `partial`。
+
 各服務入口（安裝完成時會印出密碼，也在 `.env` 裡）：
 
 | 服務 | 位址 | 說明 |
@@ -282,6 +306,7 @@ Cloudflare Tunnel 認的是 token 不是 IP，會自己重新連上。
 | 執行帳號登入 `500`（od-bridge 印 `SA login 500: Internal server error`） | 管制端 `.env` 缺 `OD_SA_JWT_SECRET`（2026-09-13 之前的 `install.sh` 不會產生它）。在管制端重跑 `sudo bash /opt/BeakPlatform/scripts/install.sh --update` 會自動補上，或手動加一行 base64url 32 bytes 的值後 `systemctl restart beakplatform` |
 | 案件核可了，防禦端沒有動作 | 流程沒有決策節點（`--provision` 的最小流程就是這樣），到「開放防禦 / 防禦決策」看不到任何一筆。依步驟一建含決策節點的流程並啟用路由 |
 | 「放行」決策狀態變 `failed`、`unsupported_action:allow` | 2026-09-13 之前的版本會這樣，現在放行只配 EDL。平台端 `decision_writer_handler.py` 已改為寫入放行決策前自動只保留支援放行的執行點（目前只有 `edl`），nftables／crowdsec 不再配上去；升級平台版本即可，不必手動改流程 |
+| 決策狀態是 `partial`，`application_result` 的 `crowdsec` 那格是 `405` 或 `no_machine_creds` | 防禦端是 2026-10-04 之前的版本，od-bridge 寫不進 CrowdSec。在防禦端執行 `--update` |
 | WAF 正常請求 `502` | 防禦端連不到 `--backend`，先在防禦端 `curl` 那個位址；被保護網站若有 IP 白名單要放行防禦端 |
 | WAF 正常請求 `000` | 被保護網站對根路徑不回應（很多站台刻意如此），改測實際頁面路徑 |
 | Suricata 一直重啟 | `docker compose logs suricata`；常見是網卡名稱不對（`--iface`）或規則檔損毀（重跑規則更新） |

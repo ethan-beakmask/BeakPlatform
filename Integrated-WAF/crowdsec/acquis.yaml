@@ -1,13 +1,7 @@
 ---
-# Suricata EVE feed
+# 主機的 SSH 登入記錄（rsyslog 寫的 /var/log/auth.log，compose 把主機 /var/log 唯讀掛在 /var/log/host）
+# CrowdSec 的容器映像沒有 journalctl，所以讀檔案而不是讀 journal
 filenames:
-  - /var/log/suricata/eve.json
-labels:
-  type: suricata-evelogs
----
-# Local syslog (sshd, systemd)
-source: journalctl
-journalctl_filter:
-  - "_SYSTEMD_UNIT=ssh.service"
+  - /var/log/host/auth.log
 labels:
   type: syslog

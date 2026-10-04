@@ -23,7 +23,7 @@ Please read and comply with each component's license before use.
 | OWASP ModSecurity CRS (nginx) | WAF：nginx + libmodsecurity v3 + OWASP Core Rule Set | image `owasp/modsecurity-crs:nginx`（浮動 tag，安裝時取最新 / floating tag） | Apache 2.0 | https://github.com/coreruleset/modsecurity-crs-docker |
 | Suricata | 網路入侵偵測 Network IDS（被動監聽網卡 / passive sniffing） | `jasonish/suricata:7.0` | GPLv2（以獨立程序執行，未連結進本專案程式 / runs as a separate process, not linked） | https://suricata.io |
 | Emerging Threats Open ruleset | Suricata 規則集 / rule set，安裝時下載 | 每日更新 / daily | BSD（ET Open） | https://rules.emergingthreats.net |
-| CrowdSec | 行為偵測與封鎖（LAPI）/ behavioural detection & blocking | `crowdsecurity/crowdsec:v1.6.4` | MIT | https://github.com/crowdsecurity/crowdsec |
+| CrowdSec | SSH 登入記錄的行為偵測、平台封鎖決策的本機存放（LAPI）；出廠不連官方 Central API / behavioural detection on SSH auth logs & local decision store (LAPI); Central API disabled by default | `crowdsecurity/crowdsec:v1.6.4` | MIT | https://github.com/crowdsecurity/crowdsec |
 | Vector | 日誌收集與正規化（轉 OCSF）/ log shipping & normalisation | `timberio/vector:0.41.1-alpine` | MPL 2.0 | https://vector.dev |
 | ClickHouse | 事件儲存與查詢 / event storage | `clickhouse/clickhouse-server:24.8` | Apache 2.0 | https://clickhouse.com |
 | cloudflared | Cloudflare Tunnel 連接器 / tunnel connector | `cloudflare/cloudflared:2026.8.3` | Apache 2.0 | https://github.com/cloudflare/cloudflared |
