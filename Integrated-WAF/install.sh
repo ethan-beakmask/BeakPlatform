@@ -559,7 +559,9 @@ do_verify() {
     printf '  %s  →  HTTP %s（400/401 代表連得到；000 代表連不到，請查平台主機防火牆是否放行本機）\n' "$base" "$c"
     [[ "$c" != "000" ]] || ok=0
     if [[ -n "$(get_env SA_ID)" ]]; then
-        if compose logs --since 10m od-bridge 2>/dev/null | grep -q "SA login ok"; then
+        # 這兩處不用 grep -q：它一找到就結束，還在輸出的 compose logs 會收到 SIGPIPE，
+        # 在 pipefail 下整條管線算失敗，log 一長就誤報成「沒找到」。
+        if compose logs --since 10m od-bridge 2>/dev/null | grep "SA login ok" >/dev/null; then
             echo "  執行帳號登入            OK（od-bridge 已取得決策輪詢 token）"
         else
             echo "  執行帳號登入            尚未看到成功記錄（剛啟動可等 30 秒再看：docker compose logs od-bridge）"
@@ -568,7 +570,7 @@ do_verify() {
     echo
     echo "== 對外入口 =="
     if [[ -n "$(get_env CLOUDFLARE_TUNNEL_TOKEN)" ]]; then
-        if compose logs cloudflared 2>/dev/null | grep -q "Registered tunnel connection"; then
+        if compose logs cloudflared 2>/dev/null | grep "Registered tunnel connection" >/dev/null; then
             echo "  cloudflared             已連上 Cloudflare（Registered tunnel connection）"
             [[ -n "$(get_env CF_HOSTNAME)" ]] && printf '  對外網址                https://%s/\n' "$(get_env CF_HOSTNAME)"
             [[ -n "$(get_env WELCOME_HOSTNAME)" ]] && printf '  歡迎頁                  https://%s/\n' "$(get_env WELCOME_HOSTNAME)"
