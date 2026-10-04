@@ -4,7 +4,7 @@
 """
 import hashlib
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy.orm.attributes import flag_modified
@@ -245,9 +245,14 @@ def _parse_iso_utc(value) -> datetime | None:
     if not isinstance(value, str) or not value:
         return None
     try:
-        return datetime.fromisoformat(value.rstrip('Z'))
+        parsed = datetime.fromisoformat(value.rstrip('Z'))
     except ValueError:
         return None
+    # 送件端的 occurred_at 可能帶時區偏移（如 +00:00）；一律轉成 naive UTC，
+    # 才能與 utcnow() 算出的 cutoff 比較。
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+    return parsed
 
 
 def _iso(value) -> str | None:

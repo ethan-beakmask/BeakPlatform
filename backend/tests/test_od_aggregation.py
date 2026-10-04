@@ -427,6 +427,35 @@ def test_find_mergeable_case_last_seen_window_extends_case(app, db_session):
     assert _find('native', 'SPLUNK', config=effective_config({'window_from': 'first_seen'})) is None
 
 
+def test_find_mergeable_case_last_seen_accepts_offset_aware_timestamp(app, db_session):
+    _require_od_aggregation_tables()
+    old = datetime.utcnow() - timedelta(minutes=61)
+    config = effective_config({'window_from': 'last_seen'})
+    # 視窗內、帶 +00:00 偏移：要能併案，不得拋 TypeError
+    _case_record(
+        case_sc='case_last_seen_aware',
+        form_sc='form_last_seen_aware',
+        correlation_id='corr-last-seen-aware',
+        event_class='native',
+        source_system='SPLUNK',
+        created_at=old,
+        od_last_seen=(datetime.utcnow() - timedelta(minutes=5)).isoformat() + '+00:00',
+    )
+    # 視窗外、以 +08:00 表示：要先換算成 UTC 再比，只去掉偏移會被誤判成未來時間而併案
+    _case_record(
+        case_sc='case_last_seen_aware_old',
+        form_sc='form_last_seen_aware_old',
+        correlation_id='corr-last-seen-aware-old',
+        event_class='native',
+        source_system='SURICATA',
+        created_at=old,
+        od_last_seen=(old + timedelta(hours=8)).isoformat() + '+08:00',
+    )
+
+    assert _find('native', 'SPLUNK', config=config) is not None
+    assert _find('native', 'SURICATA', config=config) is None
+
+
 def test_find_mergeable_case_completed_threshold(app, db_session):
     _require_od_aggregation_tables()
     _case_record(
