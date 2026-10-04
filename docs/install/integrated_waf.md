@@ -208,11 +208,26 @@ curl http://<防禦端IP>:8500/edl                   # 給防火牆抓的黑名�
 
 Suricata 規則更新（會套用 `suricata/disable.conf` 的停用清單，裡面有三條誤判率極高的 TCP stream 規則，
 兩條會把本機 cloudflared 自己的 tunnel 連線當事件的 ET INFO 規則，
-以及一條會把節點自己的 apt 更新檢查當事件的 ET INFO 規則；各條的理由與何時可以拿掉，寫在該檔的註解裡）：
+一條會把節點自己的 apt 更新檢查當事件的 ET INFO 規則，
+以及本節點沒有啟用解讀的工控協定（DNP3、Modbus）規則；各項的理由與何時可以拿掉，寫在該檔的註解裡）：
 
 ```bash
 sudo bash /opt/integrated-waf/install.sh --update-rules
 ```
+
+`.env` 的 `HOME_NET` 或 `suricata/disable.conf` 改過之後，執行 `--reconfigure` 會自動重新產生規則檔並重啟 Suricata，
+不必另外跑 `--update-rules`。規則檔是依這兩份設定產生的：規則用到的變數沒有定義，或被列進停用清單，
+就不會出現在啟用的規則裡。
+
+> **2026-10-04 之前安裝的節點請更新一次。** 舊版的 Suricata 設定少定義一組規則變數（`HTTP_SERVERS`、`HTTP_PORTS` 等），
+> 約 6,800 條規則在下載階段就被停用，其中多數是對 web 伺服器與特定應用的攻擊特徵，安裝畫面不會顯示。
+> 更新方式是依序執行下面兩行；完成後 `sudo docker compose exec suricata grep "rules successfully loaded" /var/log/suricata/suricata.log | tail -1`
+> 應顯示五萬三千條上下、`0 rules failed`。
+>
+> ```bash
+> sudo bash /opt/integrated-waf/install.sh --update
+> sudo bash /opt/integrated-waf/install.sh --update-rules
+> ```
 
 各服務入口（安裝完成時會印出密碼，也在 `.env` 裡）：
 

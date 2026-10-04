@@ -448,15 +448,47 @@ apply_firewall() {
 # ----------------------------------------------------------------------------
 update_rules() {
     log_step "6/8" "Suricata 規則集（Emerging Threats Open）"
-    if [[ -s "$INSTALL_DIR/suricata/rules/suricata.rules" && "${1:-}" != "force" ]]; then
+    # 規則檔是 suricata-update 依「suricata.yaml 定義了哪些變數」與「disable.conf」產生的：
+    # 表頭用到未定義變數的規則會被它停用。這兩個檔案與上次產生規則檔時不同，就要重新產生，
+    # 否則設定改了、規則檔卻還是舊的（變數補上了，那些規則仍然是停用的）。
+    # 戳記等 Suricata 真的以新規則重啟後才寫入（見 commit_rules_stamp），中途失敗的話下次會重做。
+    local rules="$INSTALL_DIR/suricata/rules/suricata.rules" stamp="$INSTALL_DIR/generated/.suricata-rules-stamp"
+    local conf_sum; conf_sum="$(cat "$INSTALL_DIR/generated/suricata.yaml" "$INSTALL_DIR/suricata/disable.conf" | md5sum | cut -d' ' -f1)"
+    if [[ -s "$rules" && "${1:-}" != "force" && "$(cat "$stamp" 2>/dev/null || true)" == "$conf_sum" ]]; then
         log_info "規則檔已存在，略過（要更新：sudo bash $INSTALL_DIR/install.sh --update-rules）"
         return 0
     fi
-    log_info "下載規則集（約 40MB，視網路 1~3 分鐘）"
-    if ! compose run --rm --no-deps suricata suricata-update --no-test --no-reload \
-            --disable-conf /etc/suricata-update/disable.conf 2>&1 | grep -E "Loaded|Writing|Disabled|ERROR|Error" | tail -5; then
-        log_warn "規則下載失敗，Suricata 會以空規則啟動；稍後可重跑本步驟"
+    if [[ -s "$rules" && "${1:-}" != "force" ]]; then
+        log_info "Suricata 設定或停用清單與上次產生規則檔時不同，重新產生"
     fi
+    log_info "下載規則集（約 40MB，視網路 1~3 分鐘）"
+    rm -f "$stamp.pending"
+    local out
+    if ! out="$(compose run --rm --no-deps suricata suricata-update --no-test --no-reload \
+            --disable-conf /etc/suricata-update/disable.conf 2>&1)"; then
+        tail -3 <<<"$out"
+        log_warn "規則下載失敗，Suricata 會以空規則啟動；稍後可重跑本步驟"
+        return 0
+    fi
+    grep -v "will be disabled" <<<"$out" | grep -E "Loaded|Writing|Disabled|ERROR|Error" | tail -5 || true
+    # suricata-update 遇到表頭用了未定義變數的規則會直接停用，只印一行警告、不算失敗。
+    # 這裡把總數印出來，免得幾千條規則沒在跑卻沒人知道。
+    local unknown; unknown="$(grep "var and will be disabled" <<<"$out" | grep -oE '\[1:[0-9]+\]' | sort -u | wc -l)" || true
+    if [[ "${unknown:-0}" -gt 0 ]]; then
+        log_warn "有 $unknown 條規則因 suricata.yaml 沒有定義它用到的變數而被停用（變數：$(grep "var and will be disabled" <<<"$out" | grep -oE 'disabled: [A-Z0-9_]+' | cut -d' ' -f2 | sort -u | tr '\n' ' ')）"
+    fi
+    echo "$conf_sum" > "$stamp.pending"
+}
+
+# 規則檔重新產生後，確認 Suricata 已載入新規則才把戳記定案。$1=restart 時先重啟 Suricata。
+commit_rules_stamp() {
+    local stamp="$INSTALL_DIR/generated/.suricata-rules-stamp"
+    [[ -e "$stamp.pending" ]] || return 0
+    if [[ "${1:-}" == "restart" ]]; then
+        compose restart suricata >/dev/null
+        log_info "規則檔已重新產生，Suricata 已重啟"
+    fi
+    mv -f "$stamp.pending" "$stamp"
 }
 
 # ----------------------------------------------------------------------------
@@ -465,6 +497,8 @@ update_rules() {
 bring_up() {
     log_step "7/8" "啟動服務（docker compose up -d --build）"
     compose config -q || die "docker-compose.yml 或 .env 有誤"
+    local suricata_was_up=""
+    [[ -n "$(compose ps -q suricata 2>/dev/null || true)" ]] && suricata_was_up="restart"
     compose up -d --build --remove-orphans
 
     log_info "等待 ClickHouse 就緒"
@@ -489,6 +523,9 @@ bring_up() {
             log_warn "CrowdSec machine 註冊失敗（稍後可重跑 --reconfigure）"
         fi
     fi
+
+    # 原本就在跑的 Suricata 不會自己重讀規則檔；剛由 up 建立的容器已經是新規則，不必再重啟
+    commit_rules_stamp "$suricata_was_up"
 }
 
 # ----------------------------------------------------------------------------
@@ -720,6 +757,7 @@ case "$MODE" in
         [[ -f "$ENV_FILE" ]] || die "找不到 $ENV_FILE，請先執行安裝"
         update_rules force
         compose restart suricata >/dev/null && log_info "Suricata 已重啟"
+        commit_rules_stamp
         ;;
     status)     do_status ;;
     verify)     do_verify ;;
