@@ -117,7 +117,9 @@ services:
     image: crowdsecurity/crowdsec:v1.6.4
     restart: unless-stopped
     environment:
-      COLLECTIONS: "crowdsecurity/linux crowdsecurity/sshd crowdsecurity/http-cve crowdsecurity/base-http-scenarios"
+      # 只裝 SSH 相關的偵測。本節點沒有把 HTTP 存取記錄交給 CrowdSec（HTTP 攻擊由 WAF 與 Suricata 負責），
+      # HTTP 類的情境裝了也不會有資料
+      COLLECTIONS: "crowdsecurity/linux crowdsecurity/sshd"
       DISABLE_LOCAL_API: "false"
       # 出廠不連 CrowdSec 官方的 Central API：不上傳偵測訊號（含平台寫進來的封鎖目標）、
       # 也不下載社群黑名單。要開啟就把這行改成 "false" 再 --reconfigure，容器啟動時會自動註冊

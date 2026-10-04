@@ -511,6 +511,17 @@ bring_up() {
     compose exec -T clickhouse clickhouse-client --user secstack --password "$chpw" \
         --multiquery --queries-file /tmp/init.sql 2>&1 | grep -v '^$' || true
 
+    # 舊版安裝包裝過兩組 HTTP 情境（http-cve、base-http-scenarios），但從來沒有 HTTP 記錄可讀。
+    # compose 已不再安裝，這裡把既有節點上殘留的移掉；全新安裝不會進這段。
+    # 不用容器的 DISABLE_COLLECTIONS：兩組有共用項目，移掉第一組後第二組會被標成 tainted 而跳過
+    local cs_cols; cs_cols="$(compose exec -T crowdsec cscli collections list -o raw 2>/dev/null </dev/null || true)"
+    if grep -qE '^crowdsecurity/(http-cve|base-http-scenarios),' <<<"$cs_cols"; then
+        log_info "移除 CrowdSec 用不到的 HTTP 情境"
+        compose exec -T crowdsec cscli collections remove crowdsecurity/http-cve crowdsecurity/base-http-scenarios \
+            --force >/dev/null 2>&1 </dev/null || true
+        compose restart crowdsec >/dev/null
+    fi
+
     if [[ ! -s "$INSTALL_DIR/od-bridge/state/crowdsec_machine.json" ]]; then
         log_info "把 od-bridge 註冊成 CrowdSec machine"
         sleep 5

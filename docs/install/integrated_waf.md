@@ -246,7 +246,8 @@ sudo docker compose exec crowdsec cscli alerts list                # 本機偵�
 要開啟就把 `docker-compose.yml` 裡 crowdsec 的 `DISABLE_ONLINE_API` 改成 `"false"` 再 `--reconfigure`。
 開啟後請留意：寫進 LAPI 的平台封鎖目標也會被當成偵測訊號上傳（舊版實測如此）。
 
-> **2026-10-04 之前安裝的節點，CrowdSec 實際上沒有作用**，請執行 `sudo bash /opt/integrated-waf/install.sh --update` 更新：
+> **2026-10-04 之前安裝的節點，CrowdSec 實際上沒有作用**，請執行 `sudo bash /opt/integrated-waf/install.sh --update` 更新
+> （接著再跑一次 `--reconfigure`，會順手移除舊版裝了但沒有資料可讀的 HTTP 類情境）：
 > 舊版設定讀的是容器裡不存在的 journalctl，SSH 偵測沒有資料來源；od-bridge 寫入 LAPI 的方式也不被接受，
 > 帶 `crowdsec` 執行點的決策會變成 `partial`。舊版另外會向 Central API 註冊並上傳訊號，更新後即停用。
 > 管制端的示範流程（SOC 團隊版、小企業單人版）同日起把 `crowdsec` 加進封鎖與解封節點的執行點；
