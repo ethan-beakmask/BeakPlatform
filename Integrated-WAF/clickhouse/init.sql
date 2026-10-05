@@ -1,9 +1,9 @@
 -- =============================================================
 -- Open Defense — ClickHouse schema
 -- =============================================================
--- One wide events table (raw OCSF JSON + extracted hot columns)
--- + one findings table for rule-matched / decided events.
--- Vector writes to events;  od-bridge writes findings on decision PATCH.
+-- One wide events table (the normalized event as JSON + extracted hot columns)
+-- + a per-minute rollup. Vector is the only writer.
+-- Block decisions are not stored here; they live in BeakPlatform and od-bridge's state.
 -- =============================================================
 
 CREATE TABLE IF NOT EXISTS secstack.events
@@ -42,27 +42,6 @@ PARTITION BY toYYYYMMDD(event_time)
 ORDER BY (event_class, source_system, event_time, correlation_id)
 TTL toDateTime(event_time) + INTERVAL 90 DAY
 SETTINGS index_granularity = 8192;
-
-CREATE TABLE IF NOT EXISTS secstack.findings
-(
-    decided_at      DateTime64(3, 'UTC')  CODEC(Delta, ZSTD(3)),
-    case_secure_code String              CODEC(ZSTD(3)),
-    decision_secure_code String          CODEC(ZSTD(3)),
-    action          LowCardinality(String),
-    target_type     LowCardinality(String),
-    target_value    String CODEC(ZSTD(3)),
-    enforcement_points Array(LowCardinality(String)),
-    severity        LowCardinality(String),
-    ttl_seconds     UInt32 DEFAULT 0,
-    reason          String CODEC(ZSTD(3)),
-    decided_via     LowCardinality(String),
-    apply_status    LowCardinality(String),
-    apply_result    String CODEC(ZSTD(3))
-)
-ENGINE = MergeTree
-PARTITION BY toYYYYMMDD(decided_at)
-ORDER BY (decided_at, decision_secure_code)
-TTL toDateTime(decided_at) + INTERVAL 365 DAY;
 
 -- realtime aggregate: per-source/class events per minute
 CREATE MATERIALIZED VIEW IF NOT EXISTS secstack.events_per_minute

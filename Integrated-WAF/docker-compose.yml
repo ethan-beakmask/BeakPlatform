@@ -54,6 +54,7 @@ services:
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-logs:/var/log/clickhouse-server
       - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./clickhouse/config.d/zz-quiet-logs.xml:/etc/clickhouse-server/config.d/zz-quiet-logs.xml:ro
       - ./generated/clickhouse-network-allowlist.xml:/etc/clickhouse-server/users.d/zz-network-allowlist.xml:ro
     ports:
       # 綁 0.0.0.0 而不是本機 IP：換 IP 時才不必重建容器。來源限制在帳號層

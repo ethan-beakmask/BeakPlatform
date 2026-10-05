@@ -277,6 +277,11 @@ sudo docker compose exec crowdsec cscli decisions delete --ip 203.0.113.50   # �
 > 既有企業的流程不會自動改，要套用就在管制端重跑 `scripts/examples/provision_od_workflow_variants.py --apply --force`，
 > 且**先更新防禦端再更新流程**，順序反過來的話舊版 od-bridge 會把決策回報成 `partial`。
 
+> **2026-10-05 之前安裝的節點，ClickHouse 自己的診斷紀錄會一直長**：出廠設定會把診斷資訊寫成四張系統表、
+> 伺服器 log 用最詳細的等級，都不會自動清除（實測一台低流量節點 12 天，事件資料 132 KiB，這些紀錄合計約 1.6 GB）。
+> 新版把四張表關掉、log 降到 warning，並移除既有的診斷表與一張從未使用的 `findings` 空表。
+> 執行 `sudo bash /opt/integrated-waf/install.sh --update`，接著再跑一次 `--reconfigure`（清除既有的表是第二步做的）；事件資料不受影響。
+
 各服務入口（安裝完成時會印出密碼，也在 `.env` 裡）：
 
 | 服務 | 位址 | 說明 |
@@ -289,6 +294,33 @@ sudo docker compose exec crowdsec cscli decisions delete --ip 203.0.113.50   # �
 | od-bridge | `http://<防禦端IP>:8500/stats` | `/forwards` `/decisions` `/edl` `/edl/allow` |
 
 以上只有 `--admin-ips` 與平台主機能連，其他來源連線逾時是預期行為。
+
+### 讓管制端的案件頁回查全量事件（選用）
+
+送到管制端的事件是過濾、封頂之後的一小部分，全量只存在防禦端的 ClickHouse。
+管制端的資安案件頁有一個「跨系統關聯」分頁，會拿案件的攻擊者 IP 即時回查 ClickHouse，
+把同一個來源在 WAF、Suricata、CrowdSec 各自留下的紀錄並排。
+
+這個分頁預設不會出現，因為管制端不知道 ClickHouse 的位址與帳密。安裝腳本不替你做這一步：
+它等於把防禦端資料庫的密碼交給另一台主機，要不要交由你決定。
+
+要啟用，在管制端的 `/opt/BeakPlatform/.env` 加四行，然後重啟：
+
+```bash
+CLICKHOUSE_URL=http://<防禦端IP>:8123
+CLICKHOUSE_DB=secstack
+CLICKHOUSE_USER=secstack
+CLICKHOUSE_PASSWORD=<防禦端 .env 裡的 CLICKHOUSE_PASSWORD>
+```
+
+```bash
+sudo systemctl restart beakplatform
+```
+
+- 防禦端不必改。管制端的 IP 在安裝時已經列入 ClickHouse 帳號的來源白名單。
+- 連線是 HTTP 明文，密碼放在請求標頭。兩台主機之間要是你信任的網段。
+- `secstack` 是能讀、能寫、能刪表的管理帳號，Vector 寫入與 Grafana 讀取用的也是它。
+- 分頁只在查得到關聯事件時出現。沒有設定、連不上或查詢逾時，案件頁其餘部分照常，只是沒有這個分頁。
 
 ## 八、內容物與授權
 

@@ -1,0 +1,17 @@
+<!-- ClickHouse 出廠會把自己的診斷紀錄寫成四張系統表，伺服器 log 用 trace 等級。
+     這些是給叢集調校用的；單機事件庫用不到，而且不會自動清除：
+     實測一台低流量節點 12 天，事件資料 132 KiB，這四張表約 790 MiB、伺服器 log 約 820 MiB。
+     這裡把四張表關掉、log 降到 warning 並縮小輪替上限。
+     保留 query_log（誰查了什麼、寫入有沒有失敗）、part_log、error_log，它們的量很小。
+     要暫時打開除錯：刪掉對應那一行，docker compose restart clickhouse。 -->
+<clickhouse>
+  <logger>
+    <level>warning</level>
+    <size>50M</size>
+    <count>3</count>
+  </logger>
+  <text_log remove="1"/>
+  <trace_log remove="1"/>
+  <metric_log remove="1"/>
+  <asynchronous_metric_log remove="1"/>
+</clickhouse>

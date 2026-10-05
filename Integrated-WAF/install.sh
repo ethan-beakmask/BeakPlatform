@@ -530,6 +530,18 @@ bring_up() {
     compose exec -T clickhouse clickhouse-client --user secstack --password "$chpw" \
         --multiquery --queries-file /tmp/init.sql 2>&1 | grep -v '^$' || true
 
+    # 舊版安裝包留下的東西，全新安裝不會進這段：
+    # 一、四張診斷用系統表。config.d/zz-quiet-logs.xml 已停止寫入，但既有的表不會自己消失
+    # 二、secstack.findings。從來沒有程式寫入，init.sql 已不再建立；確定是空的才移除
+    local ch_q=(compose exec -T clickhouse clickhouse-client --user secstack --password "$chpw")
+    local t
+    for t in text_log trace_log metric_log asynchronous_metric_log; do
+        "${ch_q[@]}" --query "DROP TABLE IF EXISTS system.$t SYNC" >/dev/null 2>&1 </dev/null || true
+    done
+    if [[ "$("${ch_q[@]}" --query "SELECT count() FROM secstack.findings" 2>/dev/null </dev/null || true)" == "0" ]]; then
+        "${ch_q[@]}" --query "DROP TABLE secstack.findings SYNC" >/dev/null 2>&1 </dev/null || true
+    fi
+
     # 舊版安裝包裝過兩組 HTTP 情境（http-cve、base-http-scenarios），但從來沒有 HTTP 記錄可讀。
     # compose 已不再安裝，這裡把既有節點上殘留的移掉；全新安裝不會進這段。
     # 不用容器的 DISABLE_COLLECTIONS：兩組有共用項目，移掉第一組後第二組會被標成 tainted 而跳過
