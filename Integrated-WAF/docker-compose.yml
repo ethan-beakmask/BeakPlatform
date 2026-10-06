@@ -220,7 +220,10 @@ services:
     image: cloudflare/cloudflared:2026.8.3
     restart: unless-stopped
     profiles: ["tunnel"]
-    command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
+    # token 由環境變數傳入：寫成命令列參數會出現在主機的行程列表，任何本機帳號用 ps 都讀得到
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
     networks:
       default:
         ipv4_address: ${CLOUDFLARED_IP:-172.18.0.250}

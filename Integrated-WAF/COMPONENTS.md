@@ -65,7 +65,7 @@ docker run -d --name clickhouse -p 8123:8123 -p 9000:9000 -e CLICKHOUSE_PASSWORD
   -v clickhouse-data:/var/lib/clickhouse clickhouse/clickhouse-server:24.8
 
 # cloudflared (token from Cloudflare Zero Trust → Tunnels)
-docker run -d --name cloudflared cloudflare/cloudflared:2026.8.3 tunnel --no-autoupdate run --token <TOKEN>
+docker run -d --name cloudflared -e TUNNEL_TOKEN=<TOKEN> cloudflare/cloudflared:2026.8.3 tunnel --no-autoupdate run
 
 # nginx static page
 docker run -d --name welcome -p 8081:80 -v $PWD/html:/usr/share/nginx/html:ro nginx:1.27-alpine
