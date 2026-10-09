@@ -289,7 +289,7 @@ sudo docker compose exec crowdsec cscli decisions delete --ip 203.0.113.50   # �
 | WAF | `http://<防禦端IP>:8080/` | 內網驗證用；對外公開時正式流量可走 tunnel |
 | Grafana | `http://<防禦端IP>:3000/` | admin / `GRAFANA_ADMIN_PASSWORD` |
 | EveBox | `http://<防禦端IP>:5636/` | Suricata 告警瀏覽，無密碼，靠來源限制 |
-| Portainer | `https://<防禦端IP>:9443/` | 容器管理，帳號 `admin`、密碼在安裝結尾印出（存於 `.env` 的 `PORTAINER_ADMIN_PASSWORD`）；自簽憑證，瀏覽器警告按繼續 |
+| Portainer | `https://<防禦端IP>:9443/` | 容器管理，帳號 `admin`、密碼在安裝結尾印出（存於 `.env` 的 `PORTAINER_ADMIN_PASSWORD`）；自簽憑證，瀏覽器警告按繼續。本機 Docker 已由安裝腳本登記成環境 `local`，不必再開精靈頁 |
 | ClickHouse | `http://<防禦端IP>:8123/play` | secstack / `CLICKHOUSE_PASSWORD` |
 | od-bridge | `http://<防禦端IP>:8500/stats` | `/forwards` `/decisions` `/edl` `/edl/allow` |
 

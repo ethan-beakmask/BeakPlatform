@@ -30,7 +30,7 @@ Please read and comply with each component's license before use.
 | nginx | 歡迎頁靜態網頁伺服器 / static page for the welcome hostname | `nginx:1.27-alpine` | BSD-2-Clause | https://nginx.org |
 | Grafana（選用 optional） | 儀表板 / dashboards | `grafana/grafana:11.3.0` + `grafana-clickhouse-datasource` | AGPLv3（Grafana）/ Apache 2.0（datasource plugin） | https://grafana.com |
 | EveBox（選用 optional） | Suricata 告警瀏覽 / alert viewer | `jasonish/evebox:0.28.0` | MIT | https://evebox.org |
-| Portainer CE（選用 optional） | 容器管理介面 / container UI | `portainer/portainer-ce:2.21.4` | zlib | https://www.portainer.io |
+| Portainer CE（選用 optional） | 容器管理介面 / container UI | `portainer/portainer-ce:2.45.2` | zlib | https://www.portainer.io |
 | Docker Engine + Compose plugin | 容器執行環境 / runtime（apt `docker.io`、`docker-compose-v2`） | Ubuntu 套件庫版本 / distro packages | Apache 2.0 | https://www.docker.com |
 | nftables | 主機防火牆與封鎖集合 / host firewall & block sets | Ubuntu 套件庫 / distro package | GPLv2 | https://netfilter.org |
 | ethtool | 關閉監聽網卡的 GRO/LRO/TSO/GSO 與 virtio 的 rx-gro-hw 卸載，避免 Suricata 收到截斷封包 / NIC offload control for clean capture | Ubuntu 套件庫 / distro package | GPLv2 | https://www.kernel.org/pub/software/network/ethtool/ |
@@ -74,7 +74,7 @@ docker run -d --name welcome -p 8081:80 -v $PWD/html:/usr/share/nginx/html:ro ng
 docker run -d --name grafana -p 3000:3000 grafana/grafana:11.3.0
 docker run -d --name evebox -p 5636:5636 -v suricata-logs:/var/log/suricata:ro jasonish/evebox:0.28.0 \
   server --no-auth --datastore=sqlite --data-directory=/data --input=/var/log/suricata/eve.json --host=0.0.0.0
-docker run -d --name portainer -p 9443:9443 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer-ce:2.21.4
+docker run -d --name portainer -p 9443:9443 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer-ce:2.45.2
 
 # Host packages (Ubuntu)
 sudo apt-get install -y docker.io docker-compose-v2 nftables

@@ -232,7 +232,7 @@ services:
 
   # ---------------- 選用 UI（profile: ui）----------------
   portainer:
-    image: portainer/portainer-ce:2.21.4
+    image: portainer/portainer-ce:2.45.2
     restart: unless-stopped
     profiles: ["ui"]
     # 管理員密碼在安裝時就設好：Portainer 啟動後 5 分鐘內沒人建立管理員會自我鎖定

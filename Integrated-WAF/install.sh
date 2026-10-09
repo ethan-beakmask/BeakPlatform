@@ -595,8 +595,47 @@ bring_up() {
         fi
     fi
 
+    portainer_register_local
+
     # 原本就在跑的 Suricata 不會自己重讀規則檔；剛由 up 建立的容器已經是新規則，不必再重啟
     commit_rules_stamp "$suricata_was_up"
+}
+
+# Portainer 出廠沒登記任何環境，登入後首頁只有「No environment available for management」，
+# 要開過一次精靈頁它才會把本機的 Docker 登記成 local。這裡用它的 API 替讀者做這一步：
+# 只在環境清單是空的時候登記，已有環境（不論叫什麼）就不動。密碼與 token 走 stdin 與暫存檔，
+# 不出現在命令列。失敗只警告：讀者仍可登入後自己開精靈頁。
+portainer_register_local() {
+    [[ -n "$(compose ps -q portainer 2>/dev/null || true)" ]] || return 0
+    local base="https://127.0.0.1:9443" i tok hdr eps
+    for i in $(seq 1 30); do
+        curl -fsk "$base/api/system/status" >/dev/null 2>&1 && break
+        sleep 2
+    done
+    tok="$(PW="$(get_env PORTAINER_ADMIN_PASSWORD)" python3 -c 'import json,os; print(json.dumps({"username":"admin","password":os.environ["PW"]}))' \
+        | curl -sk -X POST "$base/api/auth" -H 'Content-Type: application/json' --data-binary @- 2>/dev/null \
+        | python3 -c 'import json,sys
+try: print(json.load(sys.stdin).get("jwt", ""))
+except Exception: print("")')"
+    if [[ -z "$tok" ]]; then
+        log_warn "Portainer 登入失敗，略過本機環境登記（登入後開一次精靈頁即可）"
+        return 0
+    fi
+    hdr="$(mktemp)"; printf 'Authorization: Bearer %s\n' "$tok" > "$hdr"
+    eps="$(curl -sk -H @"$hdr" "$base/api/endpoints" 2>/dev/null | python3 -c 'import json,sys
+try: print(len(json.load(sys.stdin)))
+except Exception: print("err")')"
+    if [[ "$eps" == "0" ]]; then
+        if curl -sk -f -H @"$hdr" -X POST "$base/api/endpoints" \
+             -F Name=local -F EndpointCreationType=1 -F URL=unix:///var/run/docker.sock >/dev/null 2>&1; then
+            log_info "Portainer 已把本機 Docker 登記成環境 local"
+        else
+            log_warn "Portainer 本機環境登記失敗（登入後開一次精靈頁即可）"
+        fi
+    elif [[ "$eps" == "err" ]]; then
+        log_warn "Portainer 環境清單讀不到，略過本機環境登記"
+    fi
+    rm -f "$hdr"
 }
 
 # ----------------------------------------------------------------------------
