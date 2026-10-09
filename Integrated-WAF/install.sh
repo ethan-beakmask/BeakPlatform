@@ -407,6 +407,10 @@ PY
 # Suricata 用 AF_PACKET 監聽實體網卡。網卡的 GRO/LRO/TSO/GSO 卸載會把超過 MTU 的
 # 大封包交給它，症狀是每次有大檔案傳輸就出現「IPv4 truncated packet」解碼告警。
 # 官方建議監聽介面關掉卸載；用 systemd oneshot 讓開機後也維持。
+# 虛擬機的 virtio 網卡另有一項「硬體 GRO」（ethtool 叫 rx-gro-hw）：合併動作在宿主機做，
+# 關掉上面四項不會關到它，大封包照樣進來（2026-10-09 實測：傳 200 MB 進節點，四項關、
+# rx-gro-hw 開是 12,834 筆 truncated 告警；再關 rx-gro-hw 之後是 0 筆）。實體網卡多半沒有
+# 這一項，關不掉也不算失敗，所以另起一行、前面加 - 讓它失敗時不影響服務。
 disable_nic_offload() {
     local iface; iface="$(get_env NODE_IFACE)"
     command -v ethtool >/dev/null || { log_warn "沒有 ethtool，略過網卡卸載設定"; return 0; }
@@ -419,6 +423,7 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 ExecStart=/usr/sbin/ethtool -K $iface gro off lro off tso off gso off
+ExecStart=-/usr/sbin/ethtool -K $iface rx-gro-hw off
 RemainAfterExit=yes
 
 [Install]
@@ -426,7 +431,7 @@ WantedBy=multi-user.target
 EOT
     systemctl daemon-reload
     systemctl enable --now integrated-waf-offload.service >/dev/null 2>&1 \
-        && log_info "網卡 $iface 已關閉 gro/lro/tso/gso 卸載（integrated-waf-offload.service）" \
+        && log_info "網卡 $iface 已關閉 gro/lro/tso/gso/rx-gro-hw 卸載（integrated-waf-offload.service）" \
         || log_warn "網卡卸載設定失敗（虛擬網卡可能不支援，不影響其他功能）"
 }
 
@@ -509,12 +514,36 @@ restart_if_stale() {   # restart_if_stale 服務名 <安裝目錄下的相對路
     done
 }
 
+# EveBox 換大版本（0.18 → 0.28）會自動升級既有 SQLite 資料庫的 schema，但不會重建索引，
+# 啟動時留下「Event table indexes out of date, please consider updating the indexes」
+# 的警告，之後每次啟動都在。看到這行就停掉它、用它自己的 reindex 重建（2026-10-09 實測
+# 386 MB 的資料庫約一分鐘，資料不會少），再啟動。沒裝 EveBox（--no-ui）或索引已是新版就略過。
+evebox_reindex_if_needed() {
+    [[ -n "$(compose ps -q evebox 2>/dev/null || true)" ]] || return 0
+    local i
+    for i in $(seq 1 15); do
+        compose logs --tail 50 evebox 2>/dev/null </dev/null | grep -q "Starting server on" && break
+        sleep 2
+    done
+    compose logs --tail 50 evebox 2>/dev/null </dev/null | grep -q "indexes out of date" || return 0
+    log_info "EveBox 資料庫索引是舊版格式，重建中（資料量大時要幾分鐘）"
+    compose stop evebox >/dev/null
+    if compose run --rm --no-deps --entrypoint /usr/bin/evebox evebox \
+         sqlite reindex --remove --force -D /data /data/events.sqlite </dev/null >/dev/null 2>&1; then
+        log_info "EveBox 索引已重建"
+    else
+        log_warn "EveBox 索引重建失敗，服務照常啟動，只影響查詢速度；可手動重跑：compose run --rm --entrypoint /usr/bin/evebox evebox sqlite reindex --remove --force -D /data /data/events.sqlite"
+    fi
+    compose start evebox >/dev/null
+}
+
 bring_up() {
     log_step "7/8" "啟動服務（docker compose up -d --build）"
     compose config -q || die "docker-compose.yml 或 .env 有誤"
     local suricata_was_up=""
     [[ -n "$(compose ps -q suricata 2>/dev/null || true)" ]] && suricata_was_up="restart"
     compose up -d --build --remove-orphans
+    evebox_reindex_if_needed
     restart_if_stale vector vector/vector.yaml:/etc/vector/vector.yaml
     restart_if_stale crowdsec crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml \
         crowdsec/profiles.yaml:/etc/crowdsec/profiles.yaml \

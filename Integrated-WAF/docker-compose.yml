@@ -247,7 +247,7 @@ services:
       - ./generated/portainer_admin_password:/run/portainer_admin_password:ro
 
   evebox:
-    image: jasonish/evebox:0.18.2
+    image: jasonish/evebox:0.28.0
     restart: unless-stopped
     profiles: ["ui"]
     entrypoint: ["/usr/bin/evebox"]
