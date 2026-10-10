@@ -442,6 +442,10 @@ class BaseNodeHandler(ABC):
             if var_expr.startswith('t.'):
                 return self._resolve_t(var_expr, now)
 
+            # cb. ExternalWait 回呼網址
+            if var_expr.startswith('cb.'):
+                return self._resolve_cb(var_expr[3:])
+
             # --- 過渡期: 舊語法 fallback ---
 
             # form.* (舊 → fi. 或 f.)
@@ -537,6 +541,25 @@ class BaseNodeHandler(ABC):
         elif var_expr == 't.time':
             return now.strftime('%H:%M:%S')
         return ''
+
+    def _resolve_cb(self, node_id: str) -> str:
+        """解析 cb.* ExternalWait 回呼網址。"""
+        from ..external_wait_service import NODE_ID_RE, build_callback_url
+
+        if not NODE_ID_RE.match(node_id or ''):
+            logger.warning('[VarReplace] 不合法的 cb 節點 ID: %s', node_id)
+            return ''
+
+        instance_code = self._get_workflow_instance_code()
+        if not instance_code:
+            logger.warning('[VarReplace] 無 workflow_instance_secure_code，無法解析 cb.%s', node_id)
+            return ''
+
+        callback_url = build_callback_url(instance_code, node_id)
+        if not callback_url:
+            logger.warning('[VarReplace] system_base_url 未設定，無法解析 cb.%s', node_id)
+            return ''
+        return callback_url
 
     # ========================================
     # 過渡期: 舊語法 fallback

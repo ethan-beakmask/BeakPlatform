@@ -282,6 +282,14 @@
                     }
                     break;
                 }
+                case 'ExternalWait': {
+                    const ewCfg = collectExternalWaitConfig();
+                    if (ewCfg) {
+                        Object.assign(config, ewCfg);
+                        changed = true;
+                    }
+                    break;
+                }
                 case 'OpHrLookup': {
                     const hrCfg = collectOpHrLookupConfig();
                     if (hrCfg) {

@@ -119,6 +119,7 @@ def register_builtin_handlers():
     from .os_file_read_handler import OsFileReadHandler
     from .os_file_write_handler import OsFileWriteHandler
     from .http_request_handler import HttpRequestHandler
+    from .external_wait_handler import ExternalWaitHandler
     from .hr_lookup_handler import HrLookupHandler
     from .op_proxy_grant_handler import OpProxyGrantHandler
 
@@ -145,6 +146,7 @@ def register_builtin_handlers():
     NodeHandlerFactory.register('Telegram', TelegramHandler)
     NodeHandlerFactory.register('EmailAdapter', EmailHandler)
     NodeHandlerFactory.register('HttpRequest', HttpRequestHandler)
+    NodeHandlerFactory.register('ExternalWait', ExternalWaitHandler)
 
     # 系統級通知（SysTelegram 複用 TelegramHandler）
     NodeHandlerFactory.register('SysTelegram', TelegramHandler)

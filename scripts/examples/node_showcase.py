@@ -85,6 +85,10 @@ SHOWCASE_ITEMS = [
         'node_types': ['Start', 'HttpRequest', 'Branch', 'OpFieldWrite', 'End'],
         'requires_modules': [], 'depends_on': [],
     }),
+    ('B18 externalwait', 'scripts.examples.provision_nodedemo_externalwait', {}, {
+        'node_types': ['Start', 'HttpRequest', 'ExternalWait', 'Branch', 'OpFieldWrite', 'End'],
+        'requires_modules': [], 'depends_on': [],
+    }),
     ('waf_failover', 'scripts.examples.provision_nodedemo_waf_failover', {}, {
         'node_types': ['Start', 'FormAdapter', 'OsExecutor', 'OpFieldWrite', 'Branch', 'End'],
         'requires_modules': [], 'depends_on': [],

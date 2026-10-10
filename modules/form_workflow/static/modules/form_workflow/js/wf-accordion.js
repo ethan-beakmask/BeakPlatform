@@ -71,7 +71,7 @@
                 'Subflow', 'Delay', 'OpFieldWrite', 'OpSet', 'Telegram',
                 'SysTelegram', 'SysEmailRelay', 'EmailAdapter', 'Branch',
                 'FormAdapter', 'End', 'SysSqlExecutor', 'OsExecutor', 'OsFileRead',
-                'HttpRequest',
+                'HttpRequest', 'ExternalWait',
                 'ParallelJoin',
                 'NavbarBroadcast', 'AlertBroadcast',
                 'SubSystemProvision', 'ApiKeyAction',
@@ -110,6 +110,7 @@
             if (type === 'OsFileRead')             info += renderOsFileReadPanel(node, nodeId);
             if (type === 'OsFileWrite')            info += renderOsFileWritePanel(node, nodeId);
             if (type === 'HttpRequest')          info += renderHttpRequestPanel(node, nodeId);
+            if (type === 'ExternalWait')         info += renderExternalWaitPanel(node, nodeId);
             if (type === 'OpSet')                info += renderOpSetPanel(node, nodeId);
             if (type === 'OpHrLookup')           info += renderOpHrLookupPanel(node, nodeId);
             if (type === 'OpFieldWrite')         info += renderOpFieldWritePanel(node, nodeId);

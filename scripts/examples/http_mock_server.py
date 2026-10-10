@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
+from urllib.request import Request, urlopen
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -47,6 +49,36 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         length = int(self.headers.get('Content-Length') or 0)
         raw = self.rfile.read(length) if length else b''
+        if parsed.path == '/callback-later':
+            try:
+                payload = json.loads(raw.decode('utf-8') or '{}')
+            except ValueError:
+                self._send_json(400, {'error': 'invalid_json'})
+                return
+            callback_url = str(payload.get('callback_url') or '')
+            callback_payload = payload.get('payload') if isinstance(payload.get('payload'), dict) else {}
+            try:
+                delay_seconds = int(payload.get('delay_seconds') or 0)
+            except (TypeError, ValueError):
+                delay_seconds = 0
+            delay_seconds = max(0, min(300, delay_seconds))
+
+            def fire_callback():
+                time.sleep(delay_seconds)
+                body = json.dumps(callback_payload, ensure_ascii=False).encode('utf-8')
+                req = Request(callback_url, data=body, headers={'Content-Type': 'application/json'}, method='POST')
+                try:
+                    with urlopen(req, timeout=10) as resp:
+                        status = resp.getcode()
+                        resp_body = resp.read(300).decode('utf-8', errors='replace')
+                except Exception as exc:
+                    print(f'callback-later error url={callback_url} error={exc}', flush=True)
+                    return
+                print(f'callback-later posted url={callback_url} status={status} body={resp_body}', flush=True)
+
+            threading.Thread(target=fire_callback, daemon=True).start()
+            self._send_json(202, {'accepted': True, 'delay_seconds': delay_seconds})
+            return
         if parsed.path == '/echo':
             try:
                 payload = json.loads(raw.decode('utf-8') or '{}')

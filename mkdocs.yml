@@ -106,6 +106,7 @@ nav:
           - SQL 執行節點: manual/04_form_workflow/sql_executor_node.md
           - 人事資料取值節點: manual/04_form_workflow/hr_lookup_node.md
           - HTTP 呼叫節點: manual/04_form_workflow/http_request_node.md
+          - 等待外部回呼節點: manual/04_form_workflow/external_wait_node.md
           - 配對管理與發行: manual/04_form_workflow/mappings.md
           - 表單風格管理: manual/04_form_workflow/form_themes.md
           - 表單中心: manual/04_form_workflow/center.md

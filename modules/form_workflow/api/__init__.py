@@ -138,6 +138,9 @@ from .mapping_permissions import mapping_permissions_bp
 # 導入外部發動閘道 API Blueprint（平台 API Key HMAC 認證）
 from .external_trigger import external_trigger_bp
 
+# 導入等待外部回呼 API Blueprint（ExternalWait 簽章回呼）
+from .external_wait import external_wait_bp
+
 # 導出所有 Blueprint（供模組載入器使用）
 # field_specs_bp 已移至 spec_formulate 模組
-additional_blueprints = [workflows_bp, forms_bp, mappings_bp, form_center_bp, categories_bp, backgrounds_bp, form_themes_bp, mapping_permissions_bp, external_trigger_bp]
+additional_blueprints = [workflows_bp, forms_bp, mappings_bp, form_center_bp, categories_bp, backgrounds_bp, form_themes_bp, mapping_permissions_bp, external_trigger_bp, external_wait_bp]

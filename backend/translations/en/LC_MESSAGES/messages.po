@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-11 00:07+0800\n"
+"POT-Creation-Date: 2026-10-11 01:05+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -19710,6 +19710,15 @@ msgstr "API key issued"
 msgid "API Key 核發失敗"
 msgstr "API key issuance failed"
 
+#: ../modules/form_workflow/services/node_handlers/external_wait_handler.py:37
+#: ../modules/form_workflow/services/node_handlers/http_request_handler.py:288
+msgid "result_var 格式不合法"
+msgstr "Invalid result_var format"
+
+#: ../modules/form_workflow/services/node_handlers/external_wait_handler.py:45
+msgid "timeout_minutes 必須介於 1 到 14400"
+msgstr "timeout_minutes must be between 1 and 14400"
+
 #: ../modules/form_workflow/services/node_handlers/http_request_handler.py:280
 msgid "url 為必填"
 msgstr "url is required"
@@ -19717,10 +19726,6 @@ msgstr "url is required"
 #: ../modules/form_workflow/services/node_handlers/http_request_handler.py:284
 msgid "method 必須是 GET/POST/PUT/PATCH/DELETE"
 msgstr "method must be GET/POST/PUT/PATCH/DELETE"
-
-#: ../modules/form_workflow/services/node_handlers/http_request_handler.py:288
-msgid "result_var 格式不合法"
-msgstr "Invalid result_var format"
 
 #: ../modules/form_workflow/services/node_handlers/op_proxy_grant_handler.py:36
 msgid "代理指定失敗：表單資料格式錯誤"

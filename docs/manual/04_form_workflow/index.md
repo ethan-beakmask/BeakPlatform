@@ -16,6 +16,7 @@ chapter_index: true
 - [SQL 執行節點](sql_executor_node.md)
 - [人事資料取值節點](hr_lookup_node.md)
 - [HTTP 呼叫節點](http_request_node.md)
+- [等待外部回呼節點](external_wait_node.md)
 - [配對管理與發行](mappings.md)
 - [表單風格管理](form_themes.md)
 - [表單中心](center.md)

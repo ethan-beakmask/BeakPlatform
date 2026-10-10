@@ -699,6 +699,7 @@
                 'fileread': 'OsFileRead',
                 'file_read': 'OsFileRead',
                 'httprequest': 'HttpRequest',
+                'externalwait': 'ExternalWait',
                 'http_request': 'HttpRequest',
                 'sys_telegram': 'SysTelegram',
                 'systelegram': 'SysTelegram',

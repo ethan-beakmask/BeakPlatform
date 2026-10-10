@@ -142,13 +142,13 @@ class WorkflowExecutor:
                         FwNodeExecutionQueue.scheduled_at <= now
                     )
                 ),
-                # Delay / End (strict) 的 WAITING 節點且 scheduled_at 已到期
+                # Delay / End (strict) / ExternalWait 的 WAITING 節點且 scheduled_at 已到期
                 # FormAdapter 等待簽核不在此處理
                 # OsExecutor 在併發上限時會回 waiting + retry_after_seconds，
                 # 不列進來的話那些節點永遠不會被喚醒（PF-181 實測踩到）
                 and_(
                     FwNodeExecutionQueue.status == 'WAITING',
-                    FwNodeExecutionQueue.node_type.in_(['Delay', 'End', 'ParallelJoin', 'OsExecutor']),
+                    FwNodeExecutionQueue.node_type.in_(['Delay', 'End', 'ParallelJoin', 'OsExecutor', 'ExternalWait']),
                     FwNodeExecutionQueue.scheduled_at.isnot(None),
                     FwNodeExecutionQueue.scheduled_at <= now
                 ),
@@ -284,14 +284,14 @@ class WorkflowExecutor:
         """
         from ..models import FwNodeExecutionQueue
 
-        # 處理 Delay / End (strict) / ParallelJoin / OsExecutor 類型的 WAITING 節點（作為備份）
+        # 處理 Delay / End (strict) / ParallelJoin / OsExecutor / ExternalWait 類型的 WAITING 節點（作為備份）
         # FormAdapter 等需要用戶操作的節點不處理
         now = datetime.utcnow()
         waiting_nodes = FwNodeExecutionQueue.query.filter(
             or_(
                 and_(
                     FwNodeExecutionQueue.status == 'WAITING',
-                    FwNodeExecutionQueue.node_type.in_(['Delay', 'End', 'ParallelJoin', 'OsExecutor']),
+                    FwNodeExecutionQueue.node_type.in_(['Delay', 'End', 'ParallelJoin', 'OsExecutor', 'ExternalWait']),
                     FwNodeExecutionQueue.scheduled_at.isnot(None),
                     FwNodeExecutionQueue.scheduled_at <= now
                 ),
@@ -303,7 +303,7 @@ class WorkflowExecutor:
         if not waiting_nodes:
             return
 
-        logger.info(f'發現 {len(waiting_nodes)} 個等待中 Delay/End/ParallelJoin/OsExecutor 節點')
+        logger.info(f'發現 {len(waiting_nodes)} 個等待中 Delay/End/ParallelJoin/OsExecutor/ExternalWait 節點')
 
         for queue_item in waiting_nodes:
             try:

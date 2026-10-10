@@ -6,3 +6,4 @@
 | 檔名 | 內容 |
 |---|---|
 | `custom_node.md` | 替流程設計器加一種新節點：13 層觸點、三個設計決定、逐層做法、完整的 `HttpRequest` 範例規格與驗收清單 |
+| `custom_node_wait.md` | 第二篇：會等待的節點怎麼不卡死、免登入回呼端點的規則、替變數系統加前綴，以及 `ExternalWait` 完整規格（與 `HttpRequest` 成對完成 webhook 往返） |

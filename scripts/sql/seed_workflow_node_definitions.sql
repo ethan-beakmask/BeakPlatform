@@ -44,6 +44,10 @@ VALUES ('xYPO6zCZY5eQTSiFIp/ybg==', 'End', 'SYSTEM', NULL, '基本', '結束', '
 ON CONFLICT (node_type) DO NOTHING;
 
 INSERT INTO workflow_node_definitions (secure_code, node_type, scope, org_secure_code, category, display_name, description, icon, execution_handler, config_schema, canvas_shape, canvas_color, canvas_width, canvas_height, max_input_connections, max_output_connections, default_timeout_seconds, max_timeout_seconds, require_system_admin, is_active, is_deleted, org_restricted, created_at, updated_at)
+VALUES ('4ce1ca4d931bba7bd967fd24', 'ExternalWait', 'SYSTEM', NULL, '整合', '等待外部回呼', '等待外部系統以簽章網址回呼，將回呼內容寫入流程變數。', '/static/modules/form_workflow/icons/workflow/externalwait.svg', 'modules.form_workflow.services.node_handlers.external_wait_handler.ExternalWaitHandler', '{"result_var": "string", "timeout_enabled": "boolean", "timeout_minutes": "integer"}'::jsonb, 'roundrectangle', '#F59E0B', 120, 60, -1, -1, 120, 864000, FALSE, TRUE, FALSE, FALSE, now() AT TIME ZONE 'UTC', now() AT TIME ZONE 'UTC')
+ON CONFLICT (node_type) DO NOTHING;
+
+INSERT INTO workflow_node_definitions (secure_code, node_type, scope, org_secure_code, category, display_name, description, icon, execution_handler, config_schema, canvas_shape, canvas_color, canvas_width, canvas_height, max_input_connections, max_output_connections, default_timeout_seconds, max_timeout_seconds, require_system_admin, is_active, is_deleted, org_restricted, created_at, updated_at)
 VALUES ('0u3uSpWyzvLlh3AT9llS9Q==', 'FormAdapter', 'SYSTEM', NULL, '表單', '簽核', '表單簽核節點', '/static/modules/form_workflow/icons/workflow/formadapter.svg', 'modules.form_workflow.services.node_handlers.formadapter_handler.FormAdapterHandler', '{"approvalMode": "string", "assigneeType": "string", "assigneeValue": "string"}'::jsonb, 'roundrectangle', '#0EA5E9', 140, 70, 1, 2, 172800, 3600, FALSE, TRUE, FALSE, FALSE, now() AT TIME ZONE 'UTC', now() AT TIME ZONE 'UTC')
 ON CONFLICT (node_type) DO NOTHING;
 

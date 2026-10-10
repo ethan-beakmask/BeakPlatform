@@ -83,7 +83,7 @@ grep -rln "OsFileRead" --include=*.js --include=*.py --include=*.html --include=
 | 外部事件 | 回 `waiting`，由某支 API 在事件發生時把佇列項改回 `PENDING`；逾時另用結果 JSON 裡的期限欄位 | `FormAdapter`（簽核 API 喚醒它） |
 
 不在名單內、又沒有 API 會改它狀態的節點，一旦進入 `WAITING` 就**永遠不會再被執行**，流程靜止且不報錯。
-這份文件的範例節點不需要等；需要等的做法留給下一篇（等待外部回呼節點）。
+這份文件的範例節點不需要等；需要等的做法在[第二篇：會等待的節點，以及給外部系統打回來的端點](custom_node_wait.md)。
 
 ---
 
