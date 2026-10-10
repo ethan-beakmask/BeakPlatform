@@ -698,6 +698,8 @@
                 'os_executor': 'OsExecutor',
                 'fileread': 'OsFileRead',
                 'file_read': 'OsFileRead',
+                'httprequest': 'HttpRequest',
+                'http_request': 'HttpRequest',
                 'sys_telegram': 'SysTelegram',
                 'systelegram': 'SysTelegram',
                 'navbarbroadcast': 'NavbarBroadcast',

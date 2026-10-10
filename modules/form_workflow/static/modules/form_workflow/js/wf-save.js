@@ -274,6 +274,14 @@
                     }
                     break;
                 }
+                case 'HttpRequest': {
+                    const hrqCfg = collectHttpRequestConfig();
+                    if (hrqCfg) {
+                        Object.assign(config, hrqCfg);
+                        changed = true;
+                    }
+                    break;
+                }
                 case 'OpHrLookup': {
                     const hrCfg = collectOpHrLookupConfig();
                     if (hrCfg) {

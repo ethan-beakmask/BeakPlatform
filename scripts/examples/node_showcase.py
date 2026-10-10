@@ -81,6 +81,10 @@ SHOWCASE_ITEMS = [
         'node_types': ['Start', 'FormAdapter', 'SubSystemProvision', 'OpFieldWrite', 'Branch', 'End'],
         'requires_modules': ['nocode_builder'], 'depends_on': [],
     }),
+    ('B17 httprequest', 'scripts.examples.provision_nodedemo_httprequest', {}, {
+        'node_types': ['Start', 'HttpRequest', 'Branch', 'OpFieldWrite', 'End'],
+        'requires_modules': [], 'depends_on': [],
+    }),
     ('waf_failover', 'scripts.examples.provision_nodedemo_waf_failover', {}, {
         'node_types': ['Start', 'FormAdapter', 'OsExecutor', 'OpFieldWrite', 'Branch', 'End'],
         'requires_modules': [], 'depends_on': [],
