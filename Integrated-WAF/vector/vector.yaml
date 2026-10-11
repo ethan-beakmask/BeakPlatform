@@ -8,6 +8,9 @@
 # 設定值以 $${NAME} 形式從 .env 帶入（compose 的 env_file）。改值後 docker compose restart vector。
 # =============================================================================
 
+# 解析不帶時區的時間字串（ModSecurity audit 的 time_stamp）一律當 UTC，不依賴容器時鐘設定
+timezone: UTC
+
 api:
   enabled: true
   address: 0.0.0.0:8686       # 唯讀 API；來源由主機 nftables 限制在 ADMIN_IPS
@@ -182,11 +185,16 @@ transforms:
       cf_country = string(hdrs."Cf-Ipcountry") ?? string(hdrs."CF-IPCountry") ?? string(hdrs."cf-ipcountry") ?? ""
       actor_country = if ingress_trusted { cf_country } else { "" }
 
+      # 發生時間取交易自己的時間：ModSecurity v3 的 JSON audit 只有 time_stamp 一欄，
+      # ctime 格式（例 "Fri Oct  9 14:57:15 2026"）、無時區、容器時鐘 UTC，依全域 timezone 解析；
+      # 解析不到才退回 Vector 讀到這一行的時間（2026-10-11 Ethan 裁示，此前一律是讀到的時間）。
+      tx_ts = parse_timestamp(to_string(.transaction.time_stamp) ?? "", "%a %b %e %H:%M:%S %Y") ?? now()
+
       out = {
         "correlation_id": uuid_v4(),
         "source_system": "coraza",
         "event_class": "web_activity",
-        "occurred_at": format_timestamp!(now(), "%+"),
+        "occurred_at": format_timestamp!(tx_ts, "%+"),
         "severity_id": sev,
         "finding": {
           "title": title,
