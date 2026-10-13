@@ -3,6 +3,11 @@
 """
 ISP 機房設備維護示範：同一張表單分四個區段，每個簽核關卡只解鎖該階段欄位。
 
+node展覽館 B19（scripts/examples/node_showcase.py）。全新安裝會種進系統預設企業；
+一般企業用本腳本或 seed_node_showcase.py --only B19 佈建。簽核角色依企業現有角色解析：
+主管核准／升級一律 DEPT_MANAGER@申請人單位；現場與作業用 SECURITY_STAFF、結案用
+SOC_SUPERVISOR，沒有這兩個角色（例如系統預設企業）就退回 DEPT_EMPLOYEE 與 DEPT_HEAD。
+
 用法：
     cd <repo>
     set -a && source .env && set +a
@@ -20,8 +25,10 @@ BACKEND_DIR = os.path.join(REPO_ROOT, 'backend')
 sys.path.insert(0, BACKEND_DIR)
 sys.path.insert(0, REPO_ROOT)
 
+from scripts.examples.node_showcase import SHOWCASE_CATEGORY_NAME, ensure_showcase_category  # noqa: E402
+
 ORG_CODE = 'DEMOSOC'
-CATEGORY_NAME = '設備維護'
+CATEGORY_NAME = SHOWCASE_CATEGORY_NAME
 CATEGORY_SECURE_CODE = None
 ICON_BASE = '/static/modules/form_workflow/icons/workflow'
 
@@ -222,40 +229,6 @@ FORM_SCHEMA = {
         _submit_button(),
     ],
 }
-
-
-def ensure_category(org):
-    """Return the org-local equipment maintenance category, creating it when missing."""
-    from app import db
-    from modules.form_workflow.models import FwCategory
-
-    category = FwCategory.query.filter_by(
-        org_secure_code=org.secure_code,
-        name=CATEGORY_NAME,
-        is_deleted=False,
-    ).first()
-    if category:
-        category.description = '機房與設備維護作業'
-        category.display_order = 20
-        category.is_system = False
-        category.show_in_form_design = True
-        category.show_in_workflow_design = True
-        category.show_in_form_center = True
-        return category
-
-    category = FwCategory(
-        org_secure_code=org.secure_code,
-        name=CATEGORY_NAME,
-        description='機房與設備維護作業',
-        display_order=20,
-        is_system=False,
-        show_in_form_design=True,
-        show_in_workflow_design=True,
-        show_in_form_center=True,
-    )
-    db.session.add(category)
-    db.session.flush()
-    return category
 
 
 def _perm(editable_keys):
@@ -470,9 +443,9 @@ def apply_full_demo(db, models, org, demo, publisher, apply, role_secure_codes):
     FwPublishedFormWorkflow = models['FwPublishedFormWorkflow']
 
     osc = org.secure_code
-    dept_manager_sc = role_secure_codes['DEPT_MANAGER']
-    security_staff_sc = role_secure_codes['SECURITY_STAFF']
-    soc_supervisor_sc = role_secure_codes['SOC_SUPERVISOR']
+    dept_manager_sc = role_secure_codes['dept_manager']
+    security_staff_sc = role_secure_codes['security_staff']
+    soc_supervisor_sc = role_secure_codes['soc_supervisor']
 
     form = FwFormTemplate.query.filter_by(
         org_secure_code=osc, code=demo['form_code'], is_deleted=False).first()
@@ -489,6 +462,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply, role_secure_codes):
         form.name = demo['form_name']
         form.description = demo['form_description']
         form.schema = demo['form_schema']
+        form.category = CATEGORY_NAME
         form.category = CATEGORY_NAME
         form.category_secure_code = CATEGORY_SECURE_CODE
         form.revision = (form.revision or 0) + 1
@@ -508,6 +482,7 @@ def apply_full_demo(db, models, org, demo, publisher, apply, role_secure_codes):
     else:
         wf.name = demo['workflow_name']
         wf.description = demo['description']
+        wf.category = CATEGORY_NAME
         wf.category = CATEGORY_NAME
         wf.category_secure_code = CATEGORY_SECURE_CODE
         wf.graph = graph
@@ -586,17 +561,33 @@ def _workflow_models():
     }
 
 
+ROLE_SLOTS = (
+    # (slot, 候選 code 依序)：第一個存在的角色就採用
+    ('dept_manager', ['DEPT_MANAGER']),
+    ('security_staff', ['SECURITY_STAFF', 'DEPT_EMPLOYEE']),
+    ('soc_supervisor', ['SOC_SUPERVISOR', 'DEPT_HEAD']),
+)
+
+
 def _required_role_secure_codes(org_sc):
+    """回 ({slot: (code, secure_code)}, missing_slots)。"""
     from app.models import Role
 
-    required = ['DEPT_MANAGER', 'SECURITY_STAFF', 'SOC_SUPERVISOR']
+    wanted = sorted({code for _slot, codes in ROLE_SLOTS for code in codes})
     rows = Role.query.filter(
         Role.org_secure_code == org_sc,
-        Role.code.in_(required),
+        Role.code.in_(wanted),
         Role.is_deleted.is_(False),
     ).all()
-    found = {role.code: role.secure_code for role in rows}
-    missing = [code for code in required if code not in found]
+    by_code = {role.code: role.secure_code for role in rows}
+    found = {}
+    missing = []
+    for slot, codes in ROLE_SLOTS:
+        code = next((c for c in codes if c in by_code), None)
+        if code is None:
+            missing.append(slot + '（' + '／'.join(codes) + '）')
+        else:
+            found[slot] = (code, by_code[code])
     return found, missing
 
 
@@ -606,13 +597,15 @@ def provision(org, apply=True, **opts):
 
     del opts
     db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
-    role_secure_codes, missing_roles = _required_role_secure_codes(org.secure_code)
+    roles, missing_roles = _required_role_secure_codes(org.secure_code)
     if missing_roles:
         log('缺少必要角色：' + ', '.join(missing_roles))
-        return {'error': 'missing_roles', 'missing_roles': missing_roles}
+        raise RuntimeError('缺少必要角色：' + ', '.join(missing_roles))
+    log('簽核角色：' + '、'.join(f'{slot}={code}' for slot, (code, _sc) in roles.items()))
+    role_secure_codes = {slot: sc for slot, (_code, sc) in roles.items()}
 
     global CATEGORY_SECURE_CODE
-    CATEGORY_SECURE_CODE = ensure_category(org).secure_code
+    CATEGORY_SECURE_CODE = ensure_showcase_category(org).secure_code
 
     models = _workflow_models()
     osc = org.secure_code
@@ -647,9 +640,11 @@ def main():
             log(f'找不到企業：{args.org}')
             return 1
 
-        result = provision(org, apply=args.apply)
-        if result.get('error') == 'missing_roles':
+        try:
+            result = provision(org, apply=args.apply)
+        except RuntimeError as exc:
             db.session.rollback()
+            log(str(exc))
             return 2
         if args.apply:
             db.session.commit()

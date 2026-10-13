@@ -89,6 +89,10 @@ SHOWCASE_ITEMS = [
         'node_types': ['Start', 'HttpRequest', 'ExternalWait', 'Branch', 'OpFieldWrite', 'End'],
         'requires_modules': [], 'depends_on': [],
     }),
+    ('B19 isp_maintenance', 'scripts.examples.provision_isp_maintenance_demo', {}, {
+        'node_types': ['Start', 'FormAdapter', 'OpFieldWrite', 'End'],
+        'requires_modules': [], 'depends_on': ['B0'],
+    }),
     ('waf_failover', 'scripts.examples.provision_nodedemo_waf_failover', {}, {
         'node_types': ['Start', 'FormAdapter', 'OsExecutor', 'OpFieldWrite', 'Branch', 'End'],
         'requires_modules': [], 'depends_on': [],
