@@ -557,6 +557,10 @@ def seed_org_proxy_request_flow(org_secure_code, *, force=False) -> dict:
                     org_secure_code, wf_tpl.secure_code,
                 )
 
+            # 清單頁縮圖：從出廠縮圖包補上（沒被人儲存過的模板本來沒有縮圖）
+            from app.defaults.thumbnail_defaults import fill_template_thumbnails
+            fill_template_thumbnails(form_tpl, wf_tpl, overwrite=force)
+
             mapping = FwFormWorkflowMapping.query.filter_by(
                 org_secure_code=org_secure_code,
                 form_template_secure_code=form_tpl.secure_code,

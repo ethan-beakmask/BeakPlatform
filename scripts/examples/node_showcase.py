@@ -203,17 +203,31 @@ def _has_module_contract(org, module_code: str) -> bool:
     return ModuleAccessService.check_module_contract(user_like, module_code)
 
 
-def _workflow_codes_for_module(module_name: str) -> list[str]:
+def _demo_codes_for_module(module_name: str) -> tuple[list[str], list[str]]:
+    """回傳 (form_codes, workflow_codes)：示範模組宣告在 DEMOS 類清單或單一 DEMO 的 code。"""
     module = importlib.import_module(module_name)
-    codes = []
+    form_codes: list[str] = []
+    workflow_codes: list[str] = []
+    candidates = []
     for attr in ('DEMOS', 'FULL_DEMOS', 'FULL_DEMOS_STATIC', 'WORKFLOW_ONLY_DEMOS'):
         demos = getattr(module, attr, None)
-        if not isinstance(demos, list):
+        if isinstance(demos, list):
+            candidates.extend(demos)
+    single = getattr(module, 'DEMO', None)
+    if isinstance(single, dict):
+        candidates.append(single)
+    for demo in candidates:
+        if not isinstance(demo, dict):
             continue
-        for demo in demos:
-            if isinstance(demo, dict) and demo.get('workflow_code'):
-                codes.append(demo['workflow_code'])
-    return codes
+        if demo.get('form_code'):
+            form_codes.append(demo['form_code'])
+        if demo.get('workflow_code'):
+            workflow_codes.append(demo['workflow_code'])
+    return form_codes, workflow_codes
+
+
+def _workflow_codes_for_module(module_name: str) -> list[str]:
+    return _demo_codes_for_module(module_name)[1]
 
 
 def _item_exists(org, module_name: str) -> bool:
@@ -318,11 +332,52 @@ def seed_node_showcase(org, apply=True, password=None, only=None, **opts) -> dic
             failed.append((name, f'{exc.__class__.__name__}: {exc}'))
             traceback.print_exc()
 
+    thumbnails = _apply_showcase_thumbnails(org, done, apply=apply)
+
     return {
         'ok': not failed,
         'done': done,
         'failed': failed,
         'skipped': skipped,
         'plan': plan,
+        'thumbnails': thumbnails,
         'category_secure_code': category.secure_code,
     }
+
+
+def _apply_showcase_thumbnails(org, done, apply=True) -> dict | None:
+    """把縮圖包套到剛佈建成功的示範表單／流程上（見 thumbnail_pack.py）。"""
+    if not apply or not done:
+        return None
+    form_codes: list[str] = []
+    workflow_codes: list[str] = []
+    for name, module_name, _defaults, _metadata in SHOWCASE_ITEMS:
+        if not any(done_name == name for done_name, _result in done):
+            continue
+        try:
+            forms, workflows = _demo_codes_for_module(module_name)
+        except Exception:
+            continue
+        form_codes.extend(forms)
+        workflow_codes.extend(workflows)
+    if not form_codes and not workflow_codes:
+        return None
+
+    from app import db
+    from scripts.examples.thumbnail_pack import apply_thumbnail_pack
+
+    summary = apply_thumbnail_pack(
+        org.secure_code, form_codes=form_codes, workflow_codes=workflow_codes, overwrite=True,
+    )
+    db.session.commit()
+    return summary
+
+
+def apply_showcase_thumbnail_pack(org) -> dict:
+    """只套縮圖包、不重新佈建（既有環境升級用；`seed_node_showcase.py --thumbnails-only`）。"""
+    from app import db
+    from scripts.examples.thumbnail_pack import apply_thumbnail_pack
+
+    summary = apply_thumbnail_pack(org.secure_code, overwrite=True)
+    db.session.commit()
+    return summary

@@ -22,6 +22,7 @@ from scripts.examples.provision_nodedemo_httprequest import (  # noqa: E402
     _textarea,
     _text,
     _title,
+    _workflow_models,
     apply_demo as _apply_demo_base,
     ensure_fill_permissions,
     load_node_icons,
@@ -127,6 +128,24 @@ def apply_demo(db, models, org, publisher, apply):
         base.DEMO = old_demo
         base.CATEGORY_NAME = old_category
         base.SHOWCASE_CATEGORY_SECURE_CODE = old_showcase_sc
+
+
+def provision(org, apply=True, **opts):
+    """node_showcase.seed_node_showcase() 的統一入口（B18）；與 httprequest 的 provision 同形。"""
+    from app import db
+    from app.models import User
+
+    del opts
+    db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+    global SHOWCASE_CATEGORY_SECURE_CODE
+    SHOWCASE_CATEGORY_SECURE_CODE = ensure_showcase_category(org).secure_code
+    models = _workflow_models()
+    load_node_icons(models)
+    publisher = User.query.filter_by(
+        org_secure_code=org.secure_code, user_type='ORG_ADMIN',
+        is_deleted=False, is_active=True).first()
+    result = apply_demo(db, models, org, publisher, apply)
+    return {'result': result, 'category_secure_code': SHOWCASE_CATEGORY_SECURE_CODE}
 
 
 def main():

@@ -7,6 +7,7 @@ import json
 import os
 import tempfile
 import threading
+from io import BytesIO
 from pathlib import Path
 
 # 嘗試匯入 html2image
@@ -31,33 +32,28 @@ def is_available():
     return HTML2IMAGE_AVAILABLE and PIL_AVAILABLE
 
 
-def generate_form_thumbnails(schema, form_name="表單"):
+# 表單縮圖的固定尺寸（2:3 直式），清單頁的 .thumb-img 以 object-fit 縮放顯示
+FORM_THUMBNAIL_SIZE = (600, 900)
+# 截圖時的視窗大小
+FORM_RENDER_VIEWPORT = (800, 800)
+
+
+def _static_dir(*parts):
+    return os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '..', '..', '..', 'backend', 'app', 'static', *parts
+    ))
+
+
+def build_form_render_html(schema):
     """
-    從 Form.io schema 生成表單縮圖（使用 html2image 真實渲染）
+    組出渲染表單用的獨立 HTML（本機 file:// 資源，唯讀模式）。
 
-    Args:
-        schema: Form.io schema dict
-        form_name: 表單名稱
-
-    Returns:
-        str: thumbnail_2x1 的 base64 data URI 或 None
+    html2image 與 scripts/examples/build_showcase_thumbnails.py（Playwright）共用，
+    兩條路徑畫出來的縮圖才會一致。
     """
-    if not is_available():
-        return None
-
-    try:
-        # 取得 vendor 靜態資源路徑（平台級）
-        vendor_path = os.path.abspath(os.path.join(
-            os.path.dirname(__file__),
-            '..', '..', '..', 'backend', 'app', 'static', 'vendor'
-        ))
-        js_path = os.path.abspath(os.path.join(
-            os.path.dirname(__file__),
-            '..', '..', '..', 'backend', 'app', 'static', 'js'
-        ))
-
-        # 建立 HTML 內容（使用本地資源）
-        html_content = f'''
+    vendor_path = _static_dir('vendor')
+    js_path = _static_dir('js')
+    return f'''
         <!DOCTYPE html>
         <html>
         <head>
@@ -88,20 +84,71 @@ def generate_form_thumbnails(schema, form_name="表單"):
                 Formio.createForm(document.getElementById('form-container'), schema, {{
                     readOnly: true
                 }}).then(form => {{
+                    window.__formRendered = true;
                     console.log('Form rendered');
                 }}).catch(err => {{
+                    window.__formRendered = true;
                     console.error('Error:', err);
                 }});
             </script>
         </body>
         </html>
-        '''
+    '''
+
+
+def screenshot_to_thumbnail(screenshot_path):
+    """
+    把整頁截圖裁掉周圍空白、縮成 FORM_THUMBNAIL_SIZE，回傳 PNG 的 base64 data URI。
+    """
+    img = Image.open(screenshot_path)
+
+    # 自動裁切周圍空白
+    bg = Image.new(img.mode, img.size, (248, 249, 250))  # #f8f9fa 背景色
+    diff = Image.composite(img, bg, img.convert('L').point(lambda x: 0 if x > 245 else 255))
+    bbox = diff.getbbox()
+    if bbox:
+        # 留一點邊距
+        margin = 10
+        bbox = (
+            max(0, bbox[0] - margin),
+            max(0, bbox[1] - margin),
+            min(img.width, bbox[2] + margin),
+            min(img.height, bbox[3] + margin)
+        )
+        img = img.crop(bbox)
+
+    img_2x1 = img.resize(FORM_THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
+    # 表單畫面是平色塊＋文字，量化成 256 色肉眼看不出差異、PNG 卻只剩約三分之一
+    # （實測 83 KB -> 31 KB）；縮圖以 data URI 存在資料庫並隨清單 API 整批回傳，大小直接影響清單頁載入
+    img_2x1 = img_2x1.convert('RGB').quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+    buf = BytesIO()
+    img_2x1.save(buf, 'PNG', optimize=True)
+    img_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+    return f'data:image/png;base64,{img_base64}'
+
+
+def generate_form_thumbnails(schema, form_name="表單"):
+    """
+    從 Form.io schema 生成表單縮圖（使用 html2image 真實渲染）
+
+    Args:
+        schema: Form.io schema dict
+        form_name: 表單名稱
+
+    Returns:
+        str: thumbnail_2x1 的 base64 data URI 或 None
+    """
+    if not is_available():
+        return None
+
+    try:
+        html_content = build_form_render_html(schema)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             hti = Html2Image(
                 output_path=tmpdir,
                 temp_path=tmpdir,
-                size=(800, 800),
+                size=FORM_RENDER_VIEWPORT,
                 browser='chrome',
                 browser_executable='/usr/bin/google-chrome'
             )
@@ -118,32 +165,7 @@ def generate_form_thumbnails(schema, form_name="表單"):
             if not screenshot_path.exists():
                 raise Exception(f'截圖檔案不存在: {screenshot_path}')
 
-            # 使用 PIL 裁切空白後生成縮圖 (600x900 直式, 2:3)
-            img = Image.open(screenshot_path)
-
-            # 自動裁切周圍空白
-            bg = Image.new(img.mode, img.size, (248, 249, 250))  # #f8f9fa 背景色
-            diff = Image.composite(img, bg, img.convert('L').point(lambda x: 0 if x > 245 else 255))
-            bbox = diff.getbbox()
-            if bbox:
-                # 留一點邊距
-                margin = 10
-                bbox = (
-                    max(0, bbox[0] - margin),
-                    max(0, bbox[1] - margin),
-                    min(img.width, bbox[2] + margin),
-                    min(img.height, bbox[3] + margin)
-                )
-                img = img.crop(bbox)
-
-            img_2x1 = img.resize((600, 900), Image.Resampling.LANCZOS)
-            img_2x1_path = Path(tmpdir) / 'thumbnail_2x1.png'
-            img_2x1.save(img_2x1_path, 'PNG')
-
-            with open(img_2x1_path, 'rb') as f:
-                img_data = f.read()
-                img_base64 = base64.b64encode(img_data).decode('utf-8')
-                thumbnail_2x1 = f'data:image/png;base64,{img_base64}'
+            thumbnail_2x1 = screenshot_to_thumbnail(screenshot_path)
 
             print(f"[thumbnail] 表單 '{form_name}' 縮圖生成成功")
             return thumbnail_2x1

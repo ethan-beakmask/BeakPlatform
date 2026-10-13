@@ -19,6 +19,7 @@ USAGE = """用法：
   venv/bin/python scripts/seed_node_showcase.py --list --org DEMOSOC
   venv/bin/python scripts/seed_node_showcase.py --apply --org DEMOSOC --password <pw>     # 企業級：受限節點示範自動跳過
   venv/bin/python scripts/seed_node_showcase.py --apply --only B8                          # 追加／升級單一示範（系統企業）
+  venv/bin/python scripts/seed_node_showcase.py --thumbnails-only [--org DEMOSOC]          # 只套縮圖包，不重新佈建（既有環境升級用）
 
 說明：
   不帶參數時只顯示本說明並以 exit 1 結束。
@@ -39,6 +40,8 @@ def parse_args(argv):
     group.add_argument('--dry-run', action='store_true', help='只列出會做什麼，不寫入（預設）')
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
     group.add_argument('--list', action='store_true', help='只印出安裝計畫，不寫入')
+    group.add_argument('--thumbnails-only', action='store_true',
+                       help='只把 scripts/examples/thumbnails/ 的縮圖包套到目標企業既有的示範表單／流程，不重新佈建')
     parser.add_argument('--org', help='目標企業，可填 code、domain_name 或 secure_code；預設系統企業')
     parser.add_argument('--only', action='append', default=[],
                         help='只跑指定項目，可重複；可填完整名稱或尾端名稱，例如 B8 sqlexecutor / sqlexecutor')
@@ -83,6 +86,7 @@ def main():
 
     from app import create_app, db
     from scripts.examples.node_showcase import (
+        apply_showcase_thumbnail_pack,
         plan_showcase_items,
         resolve_showcase_org,
         seed_node_showcase,
@@ -98,6 +102,12 @@ def main():
 
         if args.list:
             _print_plan(plan_showcase_items(org, only=args.only))
+            return 0
+
+        if args.thumbnails_only:
+            summary = apply_showcase_thumbnail_pack(org)
+            print(f"縮圖包已套用：表單 {summary['forms']} 張、流程 {summary['workflows']} 張"
+                  f"（企業內沒有對應模板 {len(summary['absent'])} 筆）")
             return 0
 
         try:
@@ -128,6 +138,10 @@ def main():
         print(f'SKIP   {name}: {reason}')
     for name, err in result['failed']:
         print(f'FAILED {name}: {err}')
+    thumbs = result.get('thumbnails')
+    if thumbs:
+        print(f"縮圖包：表單 {thumbs['forms']} 張、流程 {thumbs['workflows']} 張"
+              + (f"；缺縮圖檔 {len(thumbs['missing'])} 筆：{', '.join(thumbs['missing'])}" if thumbs['missing'] else ''))
     print(
         f"總結：done={len(result['done'])} "
         f"skipped={len(result.get('skipped', []))} failed={len(result['failed'])}"
