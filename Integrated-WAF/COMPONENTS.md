@@ -26,7 +26,7 @@ Please read and comply with each component's license before use.
 | CrowdSec | SSH 登入記錄的行為偵測（命中後經 Vector 送平台建案）、平台封鎖決策的本機存放（LAPI）；出廠不連官方 Central API / behavioural detection on SSH auth logs (alerts forwarded to the platform via Vector) & local decision store (LAPI); Central API disabled by default | `crowdsecurity/crowdsec:v1.6.4` | MIT | https://github.com/crowdsecurity/crowdsec |
 | Vector | 日誌收集與正規化（轉 OCSF）/ log shipping & normalisation | `timberio/vector:0.41.1-alpine` | MPL 2.0 | https://vector.dev |
 | ClickHouse | 事件儲存與查詢 / event storage | `clickhouse/clickhouse-server:24.8` | Apache 2.0 | https://clickhouse.com |
-| cloudflared | Cloudflare Tunnel 連接器 / tunnel connector | `cloudflare/cloudflared:2026.8.3` | Apache 2.0 | https://github.com/cloudflare/cloudflared |
+| cloudflared | Cloudflare Tunnel 連接器 / tunnel connector | `cloudflare/cloudflared:2026.10.3` | Apache 2.0 | https://github.com/cloudflare/cloudflared |
 | nginx | 歡迎頁靜態網頁伺服器 / static page for the welcome hostname | `nginx:1.27-alpine` | BSD-2-Clause | https://nginx.org |
 | Grafana（選用 optional） | 儀表板 / dashboards | `grafana/grafana:11.3.0` + `grafana-clickhouse-datasource` | AGPLv3（Grafana）/ Apache 2.0（datasource plugin） | https://grafana.com |
 | EveBox（選用 optional） | Suricata 告警瀏覽 / alert viewer | `jasonish/evebox:0.28.0` | MIT | https://evebox.org |
@@ -65,7 +65,7 @@ docker run -d --name clickhouse -p 8123:8123 -p 9000:9000 -e CLICKHOUSE_PASSWORD
   -v clickhouse-data:/var/lib/clickhouse clickhouse/clickhouse-server:24.8
 
 # cloudflared (token from Cloudflare Zero Trust → Tunnels)
-docker run -d --name cloudflared -e TUNNEL_TOKEN=<TOKEN> cloudflare/cloudflared:2026.8.3 tunnel --no-autoupdate run
+docker run -d --name cloudflared -e TUNNEL_TOKEN=<TOKEN> cloudflare/cloudflared:2026.10.3 tunnel --no-autoupdate run
 
 # nginx static page
 docker run -d --name welcome -p 8081:80 -v $PWD/html:/usr/share/nginx/html:ro nginx:1.27-alpine

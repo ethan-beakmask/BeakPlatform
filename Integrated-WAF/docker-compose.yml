@@ -217,7 +217,7 @@ services:
 
   # ---------------- cloudflared（對外入口；profile: tunnel）----------------
   cloudflared:
-    image: cloudflare/cloudflared:2026.8.3
+    image: cloudflare/cloudflared:2026.10.3
     restart: unless-stopped
     profiles: ["tunnel"]
     # token 由環境變數傳入：寫成命令列參數會出現在主機的行程列表，任何本機帳號用 ps 都讀得到
