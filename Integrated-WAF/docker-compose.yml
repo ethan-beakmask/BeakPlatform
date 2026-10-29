@@ -71,7 +71,27 @@ services:
   od-bridge:
     build: ./od-bridge
     restart: unless-stopped
-    env_file: .env
+    # 只傳 od_bridge/config.py 與 enforcers 讀的鍵，不用 env_file 整份帶入：tunnel token、
+    # 管理介面密碼等用不到的秘密不進容器。只寫鍵名時 compose 從 .env 取值，.env 沒有的鍵
+    # 在容器內就是未設定，程式的預設值照常生效。程式新增讀取的變數要同步加在這裡。
+    environment:
+      - INTAKE_URL
+      - INTAKE_KEY_ID
+      - INTAKE_SECRET_B64
+      - SA_LOGIN_URL
+      - DECISIONS_URL
+      - SA_ID
+      - SA_SECRET
+      - APPLIED_BY
+      - MY_ENFORCEMENT_POINTS
+      - POLL_INTERVAL
+      - INGEST_LISTEN
+      - BRIDGE_INGEST_TOKEN
+      - CROWDSEC_LAPI_URL
+      - EDL_DIR
+      - EDL_PRUNE_INTERVAL
+      - EDL_HEADER
+      - CLOUDFLARE_API_TOKEN
     cap_add:
       - NET_ADMIN          # nftables enforcer 要操作主機的 nft set
     network_mode: host     # nft 命令要打在主機 netns；其他服務走 127.0.0.1
@@ -82,7 +102,21 @@ services:
   vector:
     image: timberio/vector:0.41.1-alpine
     restart: unless-stopped
-    env_file: .env      # vector.yaml 內的 ${VAR}（throttle 值、TRUSTED_INGRESS_LIST）由此讀取
+    # vector.yaml 內的 ${VAR} 由此帶入。只列 vector.yaml 用到的鍵（理由同 od-bridge）：
+    # vector 解析的是攻擊者可控的 log，不該持有 tunnel token 與管理介面密碼。
+    environment:
+      - NODE_IP
+      - BRIDGE_INGEST_TOKEN
+      - CLICKHOUSE_DB
+      - CLICKHOUSE_USER
+      - CLICKHOUSE_PASSWORD
+      - TRUSTED_INGRESS_LIST
+      - THROTTLE_SURICATA_THRESHOLD
+      - THROTTLE_SURICATA_WINDOW
+      - THROTTLE_CORAZA_THRESHOLD
+      - THROTTLE_CORAZA_WINDOW
+      - THROTTLE_GLOBAL_THRESHOLD
+      - THROTTLE_GLOBAL_WINDOW
     extra_hosts:
       - "host.docker.internal:host-gateway"   # vector → od-bridge（host network）
     ports:

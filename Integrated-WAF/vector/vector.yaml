@@ -5,7 +5,8 @@
 # transforms: 解析 → 對映成 OCSF → 過濾 → 速率封頂
 # sinks:      clickhouse（全量）、od-bridge（過濾與封頂後，轉送 BeakPlatform）
 #
-# 設定值以 $${NAME} 形式從 .env 帶入（compose 的 env_file）。改值後 docker compose restart vector。
+# 設定值以 $${NAME} 形式從 .env 帶入（docker-compose.yml 中 vector 的 environment 清單；新增變數要一併加上）。
+# 改值後 docker compose up -d vector（restart 不會重新讀取 .env）。
 # =============================================================================
 
 # 解析不帶時區的時間字串（ModSecurity audit 的 time_stamp）一律當 UTC，不依賴容器時鐘設定
