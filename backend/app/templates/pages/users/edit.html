@@ -49,7 +49,15 @@
             <tr>
                 <td>{{ _('帳號') }}</td>
                 <td><span class="readonly-info">{{ user.email }}</span>
-                    <div class="help-text">{{ _('帳號不可變更') }}</div>
+                    <div class="help-text">
+                        {% if rename_allowed %}
+                        <a href="#rename-account">{{ _('變更帳號') }}</a>
+                        {% elif rename_block_reason %}
+                        {{ rename_block_reason }}
+                        {% else %}
+                        {{ _('只有管理員可以變更帳號') }}
+                        {% endif %}
+                    </div>
                 </td>
             </tr>
             <tr>
@@ -345,6 +353,47 @@
         </div>
         {% endif %}
     </form>
+
+    {% if rename_allowed %}
+    <details id="rename-account" class="rename-account">
+        <summary>{{ _('變更帳號') }}</summary>
+        <div class="detail-content">
+            <form method="POST" action="{{ url_for('users.rename_user', secure_code=user.secure_code) }}"
+                  onsubmit="return confirm(__('確定要變更此帳號嗎？原登入帳號將立即失效。'));">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="rename-field">
+                    {% if user.user_type == 'EXTERNAL' %}
+                    <label for="new_email" class="required">{{ _('新 Email') }}</label>
+                    <input type="email" id="new_email" name="new_email" class="form-control"
+                           value="{{ user.email }}" required>
+                    {% else %}
+                    <label for="new_username" class="required">{{ _('新帳號') }}</label>
+                    <div class="rename-username-input">
+                        <input type="text" id="new_username" name="new_username" class="form-control"
+                               value="{{ user.username }}" required>
+                        <span>@{{ org_domain }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="rename-field">
+                    <label for="rename_reason">{{ _('原因（選填）') }}</label>
+                    <input type="text" id="rename_reason" name="reason" class="form-control"
+                           maxlength="500">
+                </div>
+
+                <ul class="rename-notes">
+                    <li>{{ _('登入帳號與 Email 會改成新值，舊帳號從此無法登入') }}</li>
+                    <li>{{ _('權限、角色、部門、歷史紀錄都不受影響（系統以內部識別碼認人）') }}</li>
+                    <li>{{ _('要把原 Email 發給新進人員時，先把前任帳號改名，再建立新帳號') }}</li>
+                </ul>
+
+                <button type="submit" class="btn btn-primary">{{ _('確認變更帳號') }}</button>
+            </form>
+        </div>
+    </details>
+    {% endif %}
 
     {% if is_admin and not is_self %}
     <div class="danger-zone">

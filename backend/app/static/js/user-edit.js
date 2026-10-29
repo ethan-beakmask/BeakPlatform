@@ -136,3 +136,18 @@ function passwordForm() {
         }
     };
 }
+
+// [變更帳號] 連結只會跳到錨點，<details> 不會自己展開；網址帶 #rename-account 時主動打開
+(function () {
+    function openRenameSection() {
+        if (window.location.hash !== '#rename-account') return;
+        const section = document.getElementById('rename-account');
+        if (section) section.open = true;
+    }
+    window.addEventListener('hashchange', openRenameSection);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', openRenameSection);
+    } else {
+        openRenameSection();
+    }
+})();

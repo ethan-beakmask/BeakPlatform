@@ -12,6 +12,7 @@ from ..models.user import User, UserType
 from ..models.organizational_unit import OrganizationalUnit
 from ..models.user_numbering_rule import UsedUserNumber
 from ..services.email_service import EmailService
+from ..services.user_rename_service import find_account_occupant, occupied_message
 from app.utils.external_url import build_external_url
 from .. import db
 
@@ -134,17 +135,16 @@ def create_user():
         if not email or '@' not in email:
             return jsonify({'error': _('外部廠商帳號需提供完整 Email')}), 400
         username = email
-        existing = User.query.filter_by(
-            email=email, org_secure_code=org.secure_code, is_deleted=False).first()
+        existing = find_account_occupant(org.secure_code, username, email)
         if existing:
-            return jsonify({'error': _('Email %(email)s 已存在', email=email)}), 409
+            return jsonify({'error': occupied_message(existing)}), 409
     else:
         email = f"{username}@{org.domain_name}"
 
         # 檢查帳號唯一性
-        existing = User.query.filter_by(email=email, is_deleted=False).first()
+        existing = find_account_occupant(org.secure_code, username, email)
         if existing:
-            return jsonify({'error': _('帳號 %(username)s 已存在', username=username)}), 409
+            return jsonify({'error': occupied_message(existing)}), 409
 
     # 檢查用戶編號唯一性
     employee_id = employee_id_raw

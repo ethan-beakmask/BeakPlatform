@@ -14,7 +14,7 @@ from flask import Blueprint, render_template, abort, request, flash, redirect, u
 from flask_babel import gettext as _
 from flask_login import current_user
 
-from ..security.decorators import login_required
+from ..security.decorators import admin_required, login_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.organization import counts_toward_user_limit
 from ..models.user import User, UserType
@@ -27,6 +27,12 @@ from ..utils.timezone import get_timezone_choices
 from app.utils.external_url import build_external_url
 from ..services.email_service import EmailService
 from ..services.password_policy_service import PasswordPolicyService
+from ..services.user_rename_service import (
+    check_rename_allowed,
+    find_account_occupant,
+    occupied_message,
+    rename_user as rename_user_account,
+)
 from .. import db
 
 users_bp = Blueprint('users', __name__)
@@ -72,7 +78,7 @@ def _get_representative_positions(positions_by_user):
 
 @users_bp.route('/check-username')
 def check_username():
-    """即時檢查帳號是否可用（排除已刪除，保留停用）"""
+    """即時檢查帳號是否可用（停用與已刪除的帳號也算佔用，與 DB 唯一約束一致）"""
     username = request.args.get('username', '').strip().lower()
     if not username:
         return jsonify({'available': False})
@@ -82,10 +88,7 @@ def check_username():
         return jsonify({'available': False})
 
     email = f"{username}@{org.domain_name}"
-    existing = User.query.filter(
-        User.email == email,
-        User.is_deleted == False
-    ).first()
+    existing = find_account_occupant(org.secure_code, username, email)
 
     return jsonify({'available': existing is None})
 
@@ -379,9 +382,9 @@ def create_user():
                     backup_email_1 = email
 
                 # 檢查帳號是否已存在
-                existing = User.query.filter_by(email=email, is_deleted=False).first()
+                existing = find_account_occupant(org.secure_code, username, email)
                 if existing:
-                    flash(_('帳號 %(username)s 已存在', username=username), 'error')
+                    flash(occupied_message(existing), 'error')
                 # 檢查用戶編號唯一性
                 elif not _check_employee_id_unique(org.secure_code, employee_id):
                     flash(_('用戶編號 %(employee_id)s 已存在', employee_id=employee_id), 'error')
@@ -571,6 +574,12 @@ def edit_user(secure_code: str):
 
     # 取得編輯權限配置
     ctx = _get_edit_context(user, is_self)
+    rename_allowed, rename_block_reason = check_rename_allowed(user, current_user)
+    ctx.update({
+        'rename_allowed': bool(ctx['is_admin'] and rename_allowed),
+        'rename_block_reason': rename_block_reason,
+        'org_domain': user.organization.domain_name if user.organization else '',
+    })
 
     if request.method == 'POST':
         # 如果不可編輯，拒絕 POST
@@ -724,6 +733,48 @@ def edit_user(secure_code: str):
         org_settings=current_user.organization.get_settings() if current_user.organization else {},
         **ctx
     )
+
+
+@users_bp.route('/<secure_code>/rename', methods=['POST'])
+@admin_required
+def rename_user(secure_code: str):
+    """由管理員替帳號改名，保留內部 secure_code。"""
+    try:
+        user = ResourceGateway.get(User, secure_code)
+    except Exception:
+        abort(404)
+
+    try:
+        result = rename_user_account(
+            user,
+            actor=current_user,
+            new_email=(
+                request.form.get('new_email') if user.user_type == UserType.EXTERNAL else None
+            ),
+            new_username=(
+                request.form.get('new_username')
+                if user.user_type != UserType.EXTERNAL else None
+            ),
+            reason=request.form.get('reason'),
+        )
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('user rename failed')
+        flash(_('變更帳號失敗，請稍後再試'), 'error')
+        return redirect(url_for('users.edit_user', secure_code=secure_code))
+    if not result['success']:
+        db.session.rollback()
+        flash(result['message'], 'error')
+        return redirect(url_for('users.edit_user', secure_code=secure_code))
+
+    try:
+        db.session.commit()
+        flash(result['message'], 'success')
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('user rename commit failed')
+        flash(_('變更帳號失敗，請稍後再試'), 'error')
+    return redirect(url_for('users.edit_user', secure_code=secure_code))
 
 
 @users_bp.route('/<secure_code>/delete', methods=['POST'])
@@ -1016,9 +1067,9 @@ def _import_single_user(row: dict, org, row_num: int):
     email = f"{username}@{org.domain_name}"
 
     # 檢查帳號是否已存在
-    existing = User.query.filter_by(email=email, is_deleted=False).first()
+    existing = find_account_occupant(org.secure_code, username, email)
     if existing:
-        return _('第 %(row)s 列: 帳號 %(username)s 已存在', row=row_num, username=username)
+        return _('第 %(row)s 列: ', row=row_num) + occupied_message(existing)
 
     # 選填欄位
     role = row.get('role', '').strip() or 'user'

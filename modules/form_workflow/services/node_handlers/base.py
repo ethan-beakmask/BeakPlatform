@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 
 from app import db
+from app.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -493,12 +494,32 @@ class BaseNodeHandler(ABC):
         if not self.form_instance:
             return ''
 
+        if var_expr == 'fi.applicant_email':
+            return self._resolve_current_applicant_email()
+
         attr_name = self._FI_FIELD_MAP.get(var_expr)
         if attr_name:
             value = getattr(self.form_instance, attr_name, None)
             return str(value) if value is not None else ''
 
         return ''
+
+    def _resolve_current_applicant_email(self) -> str:
+        """以申請人 secure_code 取得目前 Email，查不到才使用送單快照。"""
+        if not self.form_instance:
+            return ''
+
+        applicant_secure_code = getattr(
+            self.form_instance, 'applicant_secure_code', None
+        )
+        if applicant_secure_code:
+            applicant = User.query.filter(
+                User.secure_code == applicant_secure_code,
+                User.org_secure_code == self.form_instance.org_secure_code,
+            ).first()
+            if applicant:
+                return applicant.email or ''
+        return getattr(self.form_instance, 'applicant_email', '') or ''
 
     def _resolve_wi(self, var_expr: str) -> str:
         """解析 wi.* 流程資訊"""
@@ -583,7 +604,7 @@ class BaseNodeHandler(ABC):
         elif var_expr == 'form.applicant_dept':
             return getattr(self.form_instance, 'applicant_dept', '') or ''
         elif var_expr == 'form.applicant_email':
-            return getattr(self.form_instance, 'applicant_email', '') or ''
+            return self._resolve_current_applicant_email()
         else:
             field_name = var_expr[5:]  # 移除 "form." 前綴
             value = self.get_form_field(field_name)

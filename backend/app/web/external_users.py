@@ -9,7 +9,7 @@ BeakMask External User Management Web Routes
 4. Email 由用戶自行輸入（不自動加 domain）
 """
 from datetime import datetime
-from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, current_app
 from flask_babel import gettext as _
 from flask_login import current_user
 
@@ -22,6 +22,8 @@ from ..models.user_unit_membership import UserUnitMembership, MembershipType, Me
 from ..models.audit_log import AuditLog
 from ..services.numbering_service import NumberingService
 from ..services.password_policy_service import PasswordPolicyService
+from ..services.user_rename_service import find_account_occupant, occupied_message, rename_user
+from ..security.client_ip import get_client_ip
 from .. import db
 
 external_users_bp = Blueprint('external_users', __name__)
@@ -140,7 +142,7 @@ def _log_audit(action: str, target_user: User, details: str = None):
             resource_type='EXTERNAL_USER',
             resource_id=target_user.secure_code,
             details=details or f'{action}: {target_user.display_name} ({target_user.email})',
-            ip_address=request.remote_addr,
+            ip_address=get_client_ip(),
             user_agent=request.user_agent.string[:500] if request.user_agent else None
         )
         db.session.add(log)
@@ -230,13 +232,9 @@ def create_external_user():
             username = email
 
             # 檢查同企業內 email 是否已存在
-            existing = User.query.filter_by(
-                email=email,
-                org_secure_code=org.secure_code,
-                is_deleted=False
-            ).first()
+            existing = find_account_occupant(org.secure_code, username, email)
             if existing:
-                flash(_('Email %(email)s 已存在', email=email), 'error')
+                flash(occupied_message(existing), 'error')
             else:
                 # 查找群組
                 group = OrganizationalUnit.query.filter_by(
@@ -411,45 +409,24 @@ def edit_external_user(secure_code: str):
     if request.method == 'POST':
         new_email = request.form.get('email', '').strip().lower()
         new_notes = request.form.get('notes', '').strip()
-
-        if not new_email:
-            flash(_('Email 為必填'), 'error')
-        elif '@' not in new_email:
-            flash(_('請輸入有效的 Email 格式'), 'error')
-        else:
-            # 檢查同企業內 email 是否與其他帳號重複
-            existing = User.query.filter(
-                User.email == new_email,
-                User.org_secure_code == org.secure_code,
-                User.secure_code != secure_code,
-                User.is_deleted == False
-            ).first()
-            if existing:
-                flash(_('Email %(email)s 已被其他帳號使用', email=new_email), 'error')
+        try:
+            rename_result = rename_user(user, actor=current_user, new_email=new_email)
+            if not rename_result['success']:
+                db.session.rollback()
+                flash(rename_result['message'], 'error')
             else:
-                try:
-                    old_email = user.email
-                    old_notes = user.notes
+                old_notes = user.notes
+                user.notes = new_notes or None
+                if old_notes != user.notes:
+                    _log_audit('UPDATE', user, '編輯外部廠商: 備註已更新')
 
-                    user.email = new_email
-                    user.username = new_email
-                    user.backup_email_1 = new_email
-                    user.notes = new_notes if new_notes else None
-
-                    # 稽核記錄
-                    changes = []
-                    if old_email != new_email:
-                        changes.append(f'Email: {old_email} → {new_email}')
-                    if old_notes != user.notes:
-                        changes.append('備註已更新')
-                    _log_audit('UPDATE', user, f'編輯外部廠商: {", ".join(changes)}')
-
-                    db.session.commit()
-                    flash(_('已更新外部廠商 %(name)s', name=user.display_name), 'success')
-                    return redirect(url_for('external_users.list_external_users'))
-                except Exception as e:
-                    db.session.rollback()
-                    flash(_('更新失敗: %(error)s', error=str(e)), 'error')
+                db.session.commit()
+                flash(_('已更新外部廠商 %(name)s', name=user.display_name), 'success')
+                return redirect(url_for('external_users.list_external_users'))
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception('external user update failed')
+            flash(_('更新失敗，請稍後再試'), 'error')
 
     return render_template(
         'pages/external-users/edit.html',

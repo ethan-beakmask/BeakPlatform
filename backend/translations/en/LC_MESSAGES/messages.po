@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-11 01:05+0800\n"
+"POT-Creation-Date: 2026-10-29 23:51+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -230,9 +230,9 @@ msgstr "Unsupported action: %(action)s"
 #: ../modules/form_workflow/api/fc_admin.py:180
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:476
 #: app/api/_ss_emailrelay.py:419 app/api/_ss_emailrelay.py:439
-#: app/web/external_users.py:531 app/web/external_users.py:584
-#: app/web/external_users.py:633 app/web/org_admin_rescue.py:100
-#: app/web/org_admins.py:320 app/web/users.py:799
+#: app/web/external_users.py:508 app/web/external_users.py:561
+#: app/web/external_users.py:610 app/web/org_admin_rescue.py:100
+#: app/web/org_admins.py:320 app/web/users.py:850
 #, python-format
 msgid "操作失敗: %(error)s"
 msgstr "Operation failed: %(error)s"
@@ -706,14 +706,14 @@ msgstr "At least two organizations must be selected"
 #: ../modules/form_workflow/api/form_themes.py:164
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:409
 #: app/api/conglomerates.py:84 app/api/users.py:284
-#: app/web/approval_categories.py:189 app/web/external_users.py:332
+#: app/web/approval_categories.py:189 app/web/external_users.py:330
 #: app/web/job_families.py:239 app/web/job_families.py:240
 #: app/web/job_levels.py:181 app/web/job_titles.py:266
 #: app/web/job_titles.py:267 app/web/menu.py:324 app/web/menu.py:391
 #: app/web/modules.py:123 app/web/org_admins.py:148 app/web/org_admins.py:269
 #: app/web/organizations.py:295 app/web/positions.py:154
 #: app/web/sys_accounts.py:171 app/web/sys_accounts.py:172 app/web/units.py:128
-#: app/web/users.py:492
+#: app/web/users.py:495
 #, python-format
 msgid "建立失敗: %(error)s"
 msgstr "Creation failed: %(error)s"
@@ -730,13 +730,12 @@ msgstr "A conglomerate requires at least two organizations"
 #: ../modules/form_workflow/api/backgrounds.py:151
 #: ../modules/form_workflow/api/categories.py:314
 #: ../modules/form_workflow/api/form_themes.py:219 app/api/conglomerates.py:203
-#: app/web/approval_categories.py:269 app/web/external_users.py:452
-#: app/web/job_families.py:324 app/web/job_families.py:325
-#: app/web/job_levels.py:267 app/web/job_titles.py:344
-#: app/web/job_titles.py:345 app/web/menu.py:483 app/web/modules.py:183
-#: app/web/organizations.py:354 app/web/positions.py:246
+#: app/web/approval_categories.py:269 app/web/job_families.py:324
+#: app/web/job_families.py:325 app/web/job_levels.py:267
+#: app/web/job_titles.py:344 app/web/job_titles.py:345 app/web/menu.py:483
+#: app/web/modules.py:183 app/web/organizations.py:354 app/web/positions.py:246
 #: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:188
-#: app/web/users.py:699
+#: app/web/users.py:708
 #, python-format
 msgid "更新失敗: %(error)s"
 msgstr "Update failed: %(error)s"
@@ -973,13 +972,13 @@ msgstr "Logo deleted"
 #: ../modules/form_workflow/api/categories.py:360
 #: ../modules/form_workflow/api/form_themes.py:264
 #: app/api/enterprise_settings.py:387 app/api/files.py:474
-#: app/web/approval_categories.py:327 app/web/external_users.py:671
+#: app/web/approval_categories.py:327 app/web/external_users.py:648
 #: app/web/job_families.py:421 app/web/job_families.py:422
 #: app/web/job_levels.py:318 app/web/job_titles.py:395
 #: app/web/job_titles.py:396 app/web/menu.py:537 app/web/modules.py:211
 #: app/web/org_admins.py:357 app/web/organizations.py:430
 #: app/web/positions.py:274 app/web/sys_accounts.py:315
-#: app/web/sys_accounts.py:316 app/web/units.py:221 app/web/users.py:760
+#: app/web/sys_accounts.py:316 app/web/units.py:221 app/web/users.py:811
 #, python-format
 msgid "刪除失敗: %(error)s"
 msgstr "Delete failed: %(error)s"
@@ -1069,7 +1068,7 @@ msgstr "Updated"
 #: ../modules/form_workflow/api/workflow_routes.py:745
 #: ../modules/nocode_builder/api/portal_file_api.py:257
 #: app/api/holiday_calendars.py:136 app/api/holiday_calendars.py:175
-#: app/api/work_schedules.py:494
+#: app/api/work_schedules.py:494 app/services/user_rename_service.py:37
 msgid "已刪除"
 msgstr "Deleted"
 
@@ -2143,39 +2142,28 @@ msgstr "Number \"%(number)s\" is already in use"
 msgid "請提供編號"
 msgstr "Please provide a number"
 
-#: app/api/users.py:122 app/services/org_initial_setup_service.py:64
+#: app/api/users.py:123 app/services/org_initial_setup_service.py:64
 #: app/web/org_admins.py:109
 msgid "本國姓名、英文姓名、帳號為必填"
 msgstr "Local name, English name and account are required"
 
-#: app/api/users.py:124 app/web/users.py:366
+#: app/api/users.py:125 app/web/users.py:369
 msgid "用戶編號為必填"
 msgstr "User ID is required"
 
-#: app/api/users.py:128 app/services/org_initial_setup_service.py:46
-#: app/services/org_initial_setup_service.py:214 app/web/external_users.py:184
-#: app/web/external_users.py:374 app/web/org_admins.py:73
-#: app/web/org_admins.py:246 app/web/users.py:373 app/web/users.py:936
+#: app/api/users.py:129 app/services/org_initial_setup_service.py:46
+#: app/services/org_initial_setup_service.py:214 app/web/external_users.py:186
+#: app/web/external_users.py:372 app/web/org_admins.py:73
+#: app/web/org_admins.py:246 app/web/users.py:376 app/web/users.py:987
 msgid "找不到所屬企業"
 msgstr "Owning organization not found"
 
-#: app/api/users.py:135
+#: app/api/users.py:136
 msgid "外部廠商帳號需提供完整 Email"
 msgstr "External vendor accounts require a full email address"
 
-#: app/api/users.py:140 app/web/external_users.py:239
-#, python-format
-msgid "Email %(email)s 已存在"
-msgstr "Email %(email)s already exists"
-
-#: app/api/users.py:147 app/services/org_initial_setup_service.py:99
-#: app/web/sys_accounts.py:128 app/web/users.py:384
-#, python-format
-msgid "帳號 %(username)s 已存在"
-msgstr "Account %(username)s already exists"
-
 #: app/api/users.py:154 app/services/org_initial_setup_service.py:114
-#: app/web/users.py:387
+#: app/web/users.py:390
 #, python-format
 msgid "用戶編號 %(employee_id)s 已存在"
 msgstr "User ID %(employee_id)s already exists"
@@ -2185,21 +2173,21 @@ msgstr "User ID %(employee_id)s already exists"
 msgid "找不到部門代碼 %(department_code)s"
 msgstr "Department code %(department_code)s not found"
 
-#: app/api/users.py:190 app/api/users.py:309 app/web/external_users.py:258
-#: app/web/external_users.py:605 app/web/users.py:390 app/web/users.py:637
-#: app/web/users.py:786
+#: app/api/users.py:190 app/api/users.py:309 app/web/external_users.py:256
+#: app/web/external_users.py:582 app/web/users.py:393 app/web/users.py:646
+#: app/web/users.py:837
 #, python-format
 msgid "已達帳號上限（%(limit)s），目前已使用 %(used)s 個"
 msgstr "Account limit reached (%(limit)s); %(used)s in use."
 
-#: app/api/users.py:269 app/web/users.py:482
+#: app/api/users.py:269 app/web/users.py:485
 #, python-format
 msgid "已建立用戶 %(name)s，密碼通知信已寄至 %(email)s"
 msgstr ""
 "Created user %(name)s; the password notification email has been sent to "
 "%(email)s"
 
-#: app/api/users.py:272 app/web/users.py:485
+#: app/api/users.py:272 app/web/users.py:488
 #, python-format
 msgid "已建立用戶 %(name)s，但密碼通知信寄送失敗（%(email)s），請到編輯頁重設密碼交給對方"
 msgstr ""
@@ -2207,21 +2195,21 @@ msgstr ""
 " (%(email)s). Reset the password on the edit page and provide it to the "
 "member"
 
-#: app/api/users.py:275 app/web/users.py:488
+#: app/api/users.py:275 app/web/users.py:491
 #, python-format
 msgid "已建立用戶 %(name)s"
 msgstr "User %(name)s created"
 
 #: app/api/users.py:334 app/web/org_admins.py:340 app/web/sys_accounts.py:277
-#: app/web/users.py:739
+#: app/web/users.py:790
 msgid "不能刪除自己的帳號"
 msgstr "You cannot delete your own account"
 
-#: app/api/users.py:338 app/web/users.py:744
+#: app/api/users.py:338 app/web/users.py:795
 msgid "不能刪除自己綁定的企業成員帳號"
 msgstr "You cannot delete the employee account bound to yourself"
 
-#: app/api/users.py:342 app/web/users.py:749
+#: app/api/users.py:342 app/web/users.py:800
 msgid "不能刪除企業原始管理員"
 msgstr "The original organization administrator cannot be deleted"
 
@@ -2530,6 +2518,11 @@ msgstr "Password is required"
 msgid "用戶編號為必填，且無可用的預設編號規則"
 msgstr "User ID is required and no default numbering rule is available"
 
+#: app/services/org_initial_setup_service.py:99 app/web/sys_accounts.py:128
+#, python-format
+msgid "帳號 %(username)s 已存在"
+msgstr "Account %(username)s already exists"
+
 #: app/services/org_initial_setup_service.py:106
 #: app/services/org_initial_setup_service.py:230
 #, python-format
@@ -2622,8 +2615,8 @@ msgstr "Employee"
 #: app/templates/pages/platform_help/org_admin.html:52
 #: app/templates/pages/platform_help/org_admin.html:89
 #: app/templates/pages/profile/view.html:21
-#: app/templates/pages/users/edit.html:94
-#: app/templates/pages/users/edit.html:107
+#: app/templates/pages/users/edit.html:102
+#: app/templates/pages/users/edit.html:115
 #: app/templates/pages/users/view.html:42
 msgid "企業管理員"
 msgstr "Organization Admin"
@@ -2650,8 +2643,8 @@ msgstr "Employee"
 #: app/templates/pages/menu/list.html:141
 #: app/templates/pages/menu/list.html:153
 #: app/templates/pages/platform_help/org_admin.html:62
-#: app/templates/pages/users/edit.html:93
-#: app/templates/pages/users/edit.html:108
+#: app/templates/pages/users/edit.html:101
+#: app/templates/pages/users/edit.html:116
 msgid "外部廠商"
 msgstr "External Member"
 
@@ -2662,8 +2655,8 @@ msgstr "External Member"
 #: app/templates/pages/modules/create.html:51
 #: app/templates/pages/platform_help/org_admin.html:47
 #: app/templates/pages/profile/view.html:20
-#: app/templates/pages/users/edit.html:96
-#: app/templates/pages/users/edit.html:106
+#: app/templates/pages/users/edit.html:104
+#: app/templates/pages/users/edit.html:114
 #: app/templates/pages/users/view.html:41
 msgid "系統管理員"
 msgstr "System Admin"
@@ -2790,6 +2783,195 @@ msgstr "Only organization admins can assign regular roles"
 msgid "只有此角色的正式持有者可以授出代理或候補"
 msgstr "Only a regular holder of this role can grant a proxy or standby assignment"
 
+#: app/services/user_rename_service.py:21
+msgid "原始管理員帳號不可變更"
+msgstr "The original administrator account cannot be renamed"
+
+#: app/services/user_rename_service.py:23
+msgid "系統管理員帳號不可變更"
+msgstr "System administrator accounts cannot be renamed"
+
+#: app/services/user_rename_service.py:25
+msgid "服務帳號不可變更"
+msgstr "Service accounts cannot be renamed"
+
+#: app/services/user_rename_service.py:27
+msgid "不可變更自己的帳號"
+msgstr "You cannot rename your own account"
+
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:171
+#: app/services/user_rename_service.py:39
+#: app/templates/pages/access_center/_tab_accounts.html:58
+#: app/templates/pages/admin/_settings_recipients_section.html:45
+#: app/templates/pages/admin/_settings_smtp_section.html:54
+#: app/templates/pages/admin/_settings_telegram_section.html:48
+#: app/templates/pages/admin/numbering/list.html:157
+#: app/templates/pages/admin/org-admins/list.html:74
+#: app/templates/pages/admin/org-admins/list.html:87
+#: app/templates/pages/admin/time/schedules.html:71
+#: app/templates/pages/external-users/list.html:62
+#: app/templates/pages/external-users/list.html:70
+#: app/templates/pages/external-users/view.html:62
+#: app/templates/pages/job_families/view.html:58
+#: app/templates/pages/job_levels/view.html:44
+#: app/templates/pages/job_titles/view.html:65
+#: app/templates/pages/modules/view.html:55
+#: app/templates/pages/modules/view.html:82
+#: app/templates/pages/node_grants/index.html:85
+#: app/templates/pages/org_databases/monitor.html:194
+#: app/templates/pages/org_databases/monitor.html:219
+#: app/templates/pages/organizations/admins.html:82
+#: app/templates/pages/organizations/admins.html:97
+#: app/templates/pages/organizations/edit.html:90
+#: app/templates/pages/organizations/list.html:127
+#: app/templates/pages/organizations/list.html:216
+#: app/templates/pages/organizations/list.html:305
+#: app/templates/pages/positions/list.html:62
+#: app/templates/pages/positions/view.html:97
+#: app/templates/pages/sys_accounts/edit.html:55
+#: app/templates/pages/sys_accounts/list.html:127
+#: app/templates/pages/units/list.html:42
+#: app/templates/pages/units/view.html:49
+#: app/templates/pages/users/edit.html:128
+#: app/templates/pages/users/edit.html:136
+#: app/templates/pages/users/list.html:68
+#: app/templates/pages/users/list.html:77
+#: app/templates/pages/users/view.html:49 app/web/external_users.py:603
+#: app/web/org_admin_rescue.py:96
+msgid "停用"
+msgstr "Disabled"
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:183
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:384
+#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:379
+#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:485
+#: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:132
+#: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:156
+#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:189
+#: app/services/user_rename_service.py:41
+#: app/templates/pages/access_center/_tab_roles.html:58
+#: app/templates/pages/access_center/_tab_roles.html:169
+#: app/templates/pages/admin/_settings_recipients_section.html:44
+#: app/templates/pages/admin/_settings_smtp_section.html:53
+#: app/templates/pages/admin/_settings_smtp_section.html:177
+#: app/templates/pages/admin/_settings_telegram_section.html:47
+#: app/templates/pages/admin/_settings_telegram_section.html:143
+#: app/templates/pages/admin/numbering/list.html:155
+#: app/templates/pages/admin/org-admins/list.html:72
+#: app/templates/pages/admin/org-admins/list.html:87
+#: app/templates/pages/admin/time/schedules.html:68
+#: app/templates/pages/approval_categories/edit.html:81
+#: app/templates/pages/approval_categories/list.html:187
+#: app/templates/pages/external-users/list.html:60
+#: app/templates/pages/external-users/list.html:70
+#: app/templates/pages/external-users/view.html:60
+#: app/templates/pages/hostconfig/_system_settings_modals.html:93
+#: app/templates/pages/hostconfig/_system_settings_modals.html:159
+#: app/templates/pages/hostconfig/_system_settings_modals.html:198
+#: app/templates/pages/job_families/edit.html:85
+#: app/templates/pages/job_families/list.html:184
+#: app/templates/pages/job_families/view.html:58
+#: app/templates/pages/job_levels/edit.html:80
+#: app/templates/pages/job_levels/list.html:167
+#: app/templates/pages/job_levels/view.html:44
+#: app/templates/pages/job_titles/edit.html:105
+#: app/templates/pages/job_titles/list.html:207
+#: app/templates/pages/job_titles/view.html:65
+#: app/templates/pages/menu/edit.html:102
+#: app/templates/pages/modules/edit.html:48
+#: app/templates/pages/modules/view.html:55
+#: app/templates/pages/modules/view.html:82
+#: app/templates/pages/organizations/admins.html:80
+#: app/templates/pages/organizations/admins.html:97
+#: app/templates/pages/organizations/edit.html:89
+#: app/templates/pages/organizations/list.html:215
+#: app/templates/pages/positions/edit.html:106
+#: app/templates/pages/positions/list.html:62
+#: app/templates/pages/positions/view.html:97
+#: app/templates/pages/sys_accounts/edit.html:50
+#: app/templates/pages/sys_accounts/edit.html:54
+#: app/templates/pages/sys_accounts/list.html:122
+#: app/templates/pages/sys_accounts/list.html:126
+#: app/templates/pages/units/list.html:42
+#: app/templates/pages/units/view.html:49
+#: app/templates/pages/users/edit.html:127
+#: app/templates/pages/users/edit.html:136
+#: app/templates/pages/users/list.html:66
+#: app/templates/pages/users/list.html:77
+#: app/templates/pages/users/view.html:49 app/web/external_users.py:603
+#: app/web/org_admin_rescue.py:96
+msgid "啟用"
+msgstr "Active"
+
+#: app/services/user_rename_service.py:42
+#, python-format
+msgid "%(name)s（%(status)s）"
+msgstr "%(name)s (%(status)s)"
+
+#: app/services/user_rename_service.py:59
+#, python-format
+msgid "帳號已被使用：%(occupant)s"
+msgstr "Account already in use: %(occupant)s"
+
+#: app/services/user_rename_service.py:61
+#, python-format
+msgid "帳號已被另一個帳號使用（含已停用或已刪除的帳號）：%(occupant)s；要把它給新人，請先將該帳號改名"
+msgstr ""
+"The account is already used by another account (including disabled or "
+"deleted accounts): %(occupant)s. To give it to a new person, rename that "
+"account first"
+
+#: app/services/user_rename_service.py:78
+msgid "找不到帳號所屬企業"
+msgstr "The organization for this account could not be found"
+
+#: app/services/user_rename_service.py:85
+msgid "外部廠商帳號只能使用完整 Email 變更"
+msgstr "External vendor accounts can only be renamed with a full email address"
+
+#: app/services/user_rename_service.py:88 app/web/external_users.py:223
+msgid "請輸入有效的 Email 格式"
+msgstr "Please enter a valid email format"
+
+#: app/services/user_rename_service.py:92
+msgid "員工帳號只能使用新帳號名稱變更"
+msgstr "Employee accounts can only be renamed with a new username"
+
+#: app/services/user_rename_service.py:95
+msgid "新帳號不可為空"
+msgstr "The new username is required"
+
+#: app/services/user_rename_service.py:97
+msgid "員工帳號不可包含 @"
+msgstr "Employee usernames cannot contain @"
+
+#: app/services/user_rename_service.py:99
+msgid "此帳號名稱為系統保留字"
+msgstr "This username is reserved by the system"
+
+#: app/services/user_rename_service.py:101
+msgid "只有企業管理員可使用 admin- 開頭的帳號"
+msgstr "Only organization administrators may use usernames beginning with admin-"
+
+#: app/services/user_rename_service.py:104
+msgid "帳號 Email 長度不可超過 255 個字元"
+msgstr "The account email cannot exceed 255 characters"
+
+#: app/services/user_rename_service.py:110
+msgid "帳號未變更"
+msgstr "The account was not changed"
+
+#: app/services/user_rename_service.py:170
+msgid "新帳號已被另一個帳號使用（含已停用或已刪除的帳號）；要把它給新人，請先將該帳號改名"
+msgstr ""
+"The new account is already used by another account (including disabled or"
+" deleted accounts). To assign it to a new employee, rename that account "
+"first."
+
+#: app/services/user_rename_service.py:177
+msgid "帳號已變更"
+msgstr "The account has been renamed"
+
 #: app/templates/auth/change_password.html:7
 #: app/templates/auth/change_password.html:11
 #: app/templates/auth/change_password.html:72
@@ -2804,7 +2986,7 @@ msgstr "Only a regular holder of this role can grant a proxy or standby assignme
 #: app/templates/pages/profile/password.html:42
 #: app/templates/pages/sys_accounts/edit.html:61
 #: app/templates/pages/sys_accounts/list.html:135
-#: app/templates/pages/users/edit.html:164
+#: app/templates/pages/users/edit.html:172
 msgid "變更密碼"
 msgstr "Change Password"
 
@@ -2826,7 +3008,7 @@ msgstr "Current password"
 #: app/templates/pages/organizations/admins.html:116
 #: app/templates/pages/sys_accounts/edit.html:64
 #: app/templates/pages/sys_accounts/list.html:138
-#: app/templates/pages/users/edit.html:133
+#: app/templates/pages/users/edit.html:141
 #: app/templates/pages/users/view.html:209
 msgid "新密碼"
 msgstr "New password"
@@ -2987,8 +3169,8 @@ msgstr "Passwords match"
 #: app/templates/pages/units/create.html:68
 #: app/templates/pages/units/edit.html:66
 #: app/templates/pages/users/create.html:24
-#: app/templates/pages/users/edit.html:341
-#: app/templates/pages/users/edit.html:343
+#: app/templates/pages/users/edit.html:349
+#: app/templates/pages/users/edit.html:351
 #: app/templates/pages/users/import.html:184
 #: app/templates/pages/users/view.html:237
 msgid "取消"
@@ -3641,8 +3823,8 @@ msgstr "Proxy"
 #: app/templates/pages/platform_help/org_admin.html:133
 #: app/templates/pages/platform_help/org_admin.html:399
 #: app/templates/pages/profile/view.html:18
-#: app/templates/pages/users/edit.html:89
-#: app/templates/pages/users/edit.html:103
+#: app/templates/pages/users/edit.html:97
+#: app/templates/pages/users/edit.html:111
 #: app/templates/pages/users/view.html:39
 #: app/templates/pages/users/view.html:109
 #: app/templates/pages/users/view.html:174
@@ -3724,8 +3906,8 @@ msgstr "Role"
 #: app/templates/pages/units/edit.html:57
 #: app/templates/pages/units/list.html:28
 #: app/templates/pages/units/view.html:48
-#: app/templates/pages/users/edit.html:116
-#: app/templates/pages/users/edit.html:126
+#: app/templates/pages/users/edit.html:124
+#: app/templates/pages/users/edit.html:134
 #: app/templates/pages/users/list.html:44
 #: app/templates/pages/users/view.html:47
 msgid "狀態"
@@ -3905,7 +4087,7 @@ msgstr "Password"
 #: app/templates/pages/profile/view.html:3
 #: app/templates/pages/profile/view.html:6
 #: app/templates/pages/users/create.html:182
-#: app/templates/pages/users/edit.html:220
+#: app/templates/pages/users/edit.html:228
 #: app/templates/pages/users/view.html:135
 msgid "個人資料"
 msgstr "Profile"
@@ -3915,7 +4097,7 @@ msgstr "Profile"
 #: app/templates/pages/admin/settings.html:221
 #: app/templates/pages/personal_settings.html:72
 #: app/templates/pages/users/create.html:52
-#: app/templates/pages/users/edit.html:66
+#: app/templates/pages/users/edit.html:74
 #: app/templates/pages/users/import.html:131
 #: app/templates/pages/users/view.html:138
 msgid "英文姓名"
@@ -3926,7 +4108,7 @@ msgstr "English Name"
 #: app/templates/pages/admin/settings.html:220
 #: app/templates/pages/personal_settings.html:77
 #: app/templates/pages/users/create.html:43
-#: app/templates/pages/users/edit.html:56
+#: app/templates/pages/users/edit.html:64
 #: app/templates/pages/users/import.html:136
 #: app/templates/pages/users/view.html:142
 msgid "本國姓名"
@@ -3942,9 +4124,9 @@ msgstr "Name in native language"
 #: app/templates/pages/personal_settings.html:84
 #: app/templates/pages/personal_settings.html:143
 #: app/templates/pages/users/create.html:185
-#: app/templates/pages/users/edit.html:223
-#: app/templates/pages/users/edit.html:239
-#: app/templates/pages/users/edit.html:246
+#: app/templates/pages/users/edit.html:231
+#: app/templates/pages/users/edit.html:247
+#: app/templates/pages/users/edit.html:254
 #: app/templates/pages/users/import.html:141
 #: app/templates/pages/users/view.html:146
 msgid "暱稱"
@@ -3960,7 +4142,7 @@ msgstr ""
 #: app/templates/pages/admin/_employee_create_form.html:127
 #: app/templates/pages/personal_settings.html:101
 #: app/templates/pages/users/create.html:226
-#: app/templates/pages/users/edit.html:292
+#: app/templates/pages/users/edit.html:300
 #: app/templates/pages/users/view.html:151
 msgid "聯絡方式"
 msgstr "Contact Information"
@@ -3968,7 +4150,7 @@ msgstr "Contact Information"
 #: app/templates/pages/admin/_employee_create_form.html:134
 #: app/templates/pages/personal_settings.html:106
 #: app/templates/pages/personal_settings.html:112
-#: app/templates/pages/users/edit.html:306
+#: app/templates/pages/users/edit.html:314
 msgid "備用 Email"
 msgstr "Backup email"
 
@@ -3986,16 +4168,16 @@ msgid "介面設定"
 msgstr "Interface Settings"
 
 #: app/templates/pages/personal_settings.html:140
-#: app/templates/pages/users/edit.html:234
+#: app/templates/pages/users/edit.html:242
 msgid "Navbar 顯示"
 msgstr "Navbar display"
 
 #: app/templates/pages/personal_settings.html:142
 #: app/templates/pages/users/create.html:199
 #: app/templates/pages/users/create.html:212
-#: app/templates/pages/users/edit.html:249
-#: app/templates/pages/users/edit.html:266
-#: app/templates/pages/users/edit.html:286
+#: app/templates/pages/users/edit.html:257
+#: app/templates/pages/users/edit.html:274
+#: app/templates/pages/users/edit.html:294
 msgid "跟隨企業設定"
 msgstr "Follow organization settings"
 
@@ -4005,22 +4187,22 @@ msgstr "Follow organization settings"
 #: app/templates/pages/admin/settings.html:224
 #: app/templates/pages/personal_settings.html:144
 #: app/templates/pages/users/create.html:126
-#: app/templates/pages/users/edit.html:173
-#: app/templates/pages/users/edit.html:240
-#: app/templates/pages/users/edit.html:247
+#: app/templates/pages/users/edit.html:181
+#: app/templates/pages/users/edit.html:248
+#: app/templates/pages/users/edit.html:255
 #: app/templates/pages/users/list.html:41
 #: app/templates/pages/users/view.html:65
 msgid "用戶編號"
 msgstr "Employee ID"
 
 #: app/templates/pages/personal_settings.html:145
-#: app/templates/pages/users/edit.html:241
-#: app/templates/pages/users/edit.html:248
+#: app/templates/pages/users/edit.html:249
+#: app/templates/pages/users/edit.html:256
 msgid "用戶編號 + 部門"
 msgstr "User ID + Department"
 
 #: app/templates/pages/personal_settings.html:147
-#: app/templates/pages/users/edit.html:243
+#: app/templates/pages/users/edit.html:251
 msgid "在公開場所使用時，可改為不含真名的顯示方式"
 msgstr ""
 "When used in public places, you can switch to a display that hides your "
@@ -4034,12 +4216,12 @@ msgstr "Language"
 #: app/templates/pages/admin/time/schedules.html:131
 #: app/templates/pages/personal_settings.html:160
 #: app/templates/pages/users/create.html:208
-#: app/templates/pages/users/edit.html:271
+#: app/templates/pages/users/edit.html:279
 msgid "時區"
 msgstr "Timezone"
 
 #: app/templates/pages/personal_settings.html:162
-#: app/templates/pages/users/edit.html:214
+#: app/templates/pages/users/edit.html:222
 msgid "使用企業預設"
 msgstr "Use organization default"
 
@@ -4271,7 +4453,7 @@ msgstr "Name"
 #: app/templates/pages/units/view.html:27
 #: app/templates/pages/units/view.html:77
 #: app/templates/pages/users/create.html:157
-#: app/templates/pages/users/edit.html:184
+#: app/templates/pages/users/edit.html:192
 #: app/templates/pages/users/list.html:42
 msgid "部門"
 msgstr "Department"
@@ -4279,47 +4461,6 @@ msgstr "Department"
 #: app/templates/pages/access_center/_tab_accounts.html:49
 msgid "角色指派"
 msgstr "Role Assignments"
-
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_perms.html:171
-#: app/templates/pages/access_center/_tab_accounts.html:58
-#: app/templates/pages/admin/_settings_recipients_section.html:45
-#: app/templates/pages/admin/_settings_smtp_section.html:54
-#: app/templates/pages/admin/_settings_telegram_section.html:48
-#: app/templates/pages/admin/numbering/list.html:157
-#: app/templates/pages/admin/org-admins/list.html:74
-#: app/templates/pages/admin/org-admins/list.html:87
-#: app/templates/pages/admin/time/schedules.html:71
-#: app/templates/pages/external-users/list.html:62
-#: app/templates/pages/external-users/list.html:70
-#: app/templates/pages/external-users/view.html:62
-#: app/templates/pages/job_families/view.html:58
-#: app/templates/pages/job_levels/view.html:44
-#: app/templates/pages/job_titles/view.html:65
-#: app/templates/pages/modules/view.html:55
-#: app/templates/pages/modules/view.html:82
-#: app/templates/pages/node_grants/index.html:85
-#: app/templates/pages/org_databases/monitor.html:194
-#: app/templates/pages/org_databases/monitor.html:219
-#: app/templates/pages/organizations/admins.html:82
-#: app/templates/pages/organizations/admins.html:97
-#: app/templates/pages/organizations/edit.html:90
-#: app/templates/pages/organizations/list.html:127
-#: app/templates/pages/organizations/list.html:216
-#: app/templates/pages/organizations/list.html:305
-#: app/templates/pages/positions/list.html:62
-#: app/templates/pages/positions/view.html:97
-#: app/templates/pages/sys_accounts/edit.html:55
-#: app/templates/pages/sys_accounts/list.html:127
-#: app/templates/pages/units/list.html:42
-#: app/templates/pages/units/view.html:49
-#: app/templates/pages/users/edit.html:120
-#: app/templates/pages/users/edit.html:128
-#: app/templates/pages/users/list.html:68
-#: app/templates/pages/users/list.html:77
-#: app/templates/pages/users/view.html:49 app/web/external_users.py:626
-#: app/web/org_admin_rescue.py:96
-msgid "停用"
-msgstr "Disabled"
 
 #: app/templates/pages/access_center/_tab_accounts.html:104
 msgid "移除角色"
@@ -4590,67 +4731,6 @@ msgstr "Source"
 msgid "使用人數"
 msgstr "Holders"
 
-#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:183
-#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:384
-#: ../modules/nocode_builder/templates/modules/nocode_builder/_ir_designer_props.html:379
-#: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:485
-#: ../modules/open_defense/templates/modules/open_defense/_event_routing_profiles.html:132
-#: ../modules/open_defense/templates/modules/open_defense/_event_routing_rules.html:156
-#: ../modules/open_defense/templates/modules/open_defense/protected_targets.html:189
-#: app/templates/pages/access_center/_tab_roles.html:58
-#: app/templates/pages/access_center/_tab_roles.html:169
-#: app/templates/pages/admin/_settings_recipients_section.html:44
-#: app/templates/pages/admin/_settings_smtp_section.html:53
-#: app/templates/pages/admin/_settings_smtp_section.html:177
-#: app/templates/pages/admin/_settings_telegram_section.html:47
-#: app/templates/pages/admin/_settings_telegram_section.html:143
-#: app/templates/pages/admin/numbering/list.html:155
-#: app/templates/pages/admin/org-admins/list.html:72
-#: app/templates/pages/admin/org-admins/list.html:87
-#: app/templates/pages/admin/time/schedules.html:68
-#: app/templates/pages/approval_categories/edit.html:81
-#: app/templates/pages/approval_categories/list.html:187
-#: app/templates/pages/external-users/list.html:60
-#: app/templates/pages/external-users/list.html:70
-#: app/templates/pages/external-users/view.html:60
-#: app/templates/pages/hostconfig/_system_settings_modals.html:93
-#: app/templates/pages/hostconfig/_system_settings_modals.html:159
-#: app/templates/pages/hostconfig/_system_settings_modals.html:198
-#: app/templates/pages/job_families/edit.html:85
-#: app/templates/pages/job_families/list.html:184
-#: app/templates/pages/job_families/view.html:58
-#: app/templates/pages/job_levels/edit.html:80
-#: app/templates/pages/job_levels/list.html:167
-#: app/templates/pages/job_levels/view.html:44
-#: app/templates/pages/job_titles/edit.html:105
-#: app/templates/pages/job_titles/list.html:207
-#: app/templates/pages/job_titles/view.html:65
-#: app/templates/pages/menu/edit.html:102
-#: app/templates/pages/modules/edit.html:48
-#: app/templates/pages/modules/view.html:55
-#: app/templates/pages/modules/view.html:82
-#: app/templates/pages/organizations/admins.html:80
-#: app/templates/pages/organizations/admins.html:97
-#: app/templates/pages/organizations/edit.html:89
-#: app/templates/pages/organizations/list.html:215
-#: app/templates/pages/positions/edit.html:106
-#: app/templates/pages/positions/list.html:62
-#: app/templates/pages/positions/view.html:97
-#: app/templates/pages/sys_accounts/edit.html:50
-#: app/templates/pages/sys_accounts/edit.html:54
-#: app/templates/pages/sys_accounts/list.html:122
-#: app/templates/pages/sys_accounts/list.html:126
-#: app/templates/pages/units/list.html:42
-#: app/templates/pages/units/view.html:49
-#: app/templates/pages/users/edit.html:119
-#: app/templates/pages/users/edit.html:128
-#: app/templates/pages/users/list.html:66
-#: app/templates/pages/users/list.html:77
-#: app/templates/pages/users/view.html:49 app/web/external_users.py:626
-#: app/web/org_admin_rescue.py:96
-msgid "啟用"
-msgstr "Active"
-
 #: app/templates/pages/access_center/_tab_roles.html:109
 msgid "載入持有人中"
 msgstr "Loading holders"
@@ -4774,20 +4854,20 @@ msgstr "Required field"
 #: app/templates/pages/admin/_employee_create_form.html:32
 #: app/templates/pages/admin/initial_setup.html:173
 #: app/templates/pages/users/create.html:63
-#: app/templates/pages/users/edit.html:75
+#: app/templates/pages/users/edit.html:83
 msgid "自動翻譯"
 msgstr "Auto Translate"
 
 #: app/templates/pages/admin/_employee_create_form.html:33
 #: app/templates/pages/admin/initial_setup.html:174
 #: app/templates/pages/users/create.html:64
-#: app/templates/pages/users/edit.html:76
+#: app/templates/pages/users/edit.html:84
 msgid "翻譯中..."
 msgstr "Translating..."
 
 #: app/templates/pages/admin/_employee_create_form.html:37
 #: app/templates/pages/users/create.html:68
-#: app/templates/pages/users/edit.html:80
+#: app/templates/pages/users/edit.html:88
 msgid "偵測語言:"
 msgstr "Detection language:"
 
@@ -4836,7 +4916,7 @@ msgstr "Leave blank to automatically generate a strengthened password"
 #: app/templates/pages/sys_accounts/list.html:156
 #: app/templates/pages/sys_accounts/list.html:269
 #: app/templates/pages/users/create.html:121
-#: app/templates/pages/users/edit.html:160
+#: app/templates/pages/users/edit.html:168
 #: app/templates/pages/users/view.html:225
 msgid "密碼符合要求"
 msgstr "The password meets the requirements"
@@ -4879,14 +4959,14 @@ msgstr "Default mask processing of national names"
 
 #: app/templates/pages/admin/_employee_create_form.html:115
 #: app/templates/pages/users/create.html:195
-#: app/templates/pages/users/edit.html:255
+#: app/templates/pages/users/edit.html:263
 msgid "語系"
 msgstr "Language"
 
 #: app/templates/pages/admin/_employee_create_form.html:118
-#: app/templates/pages/users/edit.html:238
-#: app/templates/pages/users/edit.html:259
-#: app/templates/pages/users/edit.html:275
+#: app/templates/pages/users/edit.html:246
+#: app/templates/pages/users/edit.html:267
+#: app/templates/pages/users/edit.html:283
 msgid "-- 跟隨企業設定 --"
 msgstr "-- Follow Organization settings --"
 
@@ -4894,7 +4974,7 @@ msgstr "-- Follow Organization settings --"
 #: app/templates/pages/admin/initial_setup.html:267
 #: app/templates/pages/admin/org-admins/create.html:73
 #: app/templates/pages/users/create.html:229
-#: app/templates/pages/users/edit.html:295
+#: app/templates/pages/users/edit.html:303
 msgid "通知 Email"
 msgstr "Notification Email"
 
@@ -6527,7 +6607,7 @@ msgstr "Preview failed"
 #: app/templates/pages/profile/edit.html:38
 #: app/templates/pages/sys_accounts/edit.html:98
 #: app/templates/pages/units/edit.html:65
-#: app/templates/pages/users/edit.html:339
+#: app/templates/pages/users/edit.html:347
 msgid "儲存變更"
 msgstr "Save Changes"
 
@@ -6674,7 +6754,7 @@ msgstr "Automatically bring into the bound Employee notification mailbox"
 #: app/templates/pages/sys_accounts/edit.html:72
 #: app/templates/pages/sys_accounts/list.html:147
 #: app/templates/pages/sys_accounts/list.html:260
-#: app/templates/pages/users/edit.html:147
+#: app/templates/pages/users/edit.html:155
 #: app/templates/pages/users/view.html:216
 msgid "建議密碼"
 msgstr "Suggested password"
@@ -6751,7 +6831,7 @@ msgstr "Created"
 
 #: app/templates/pages/admin/org-admins/list.html:54
 #: app/templates/pages/job_levels/list.html:94
-#: app/templates/pages/users/edit.html:208
+#: app/templates/pages/users/edit.html:216
 msgid "(預設)"
 msgstr "(Default)"
 
@@ -7427,7 +7507,7 @@ msgstr "Cannot be modified"
 #: app/templates/pages/job_levels/edit.html:96
 #: app/templates/pages/job_titles/edit.html:121
 #: app/templates/pages/positions/edit.html:121
-#: app/templates/pages/users/edit.html:351
+#: app/templates/pages/users/edit.html:400
 msgid "危險區域"
 msgstr "Danger Zone"
 
@@ -7835,7 +7915,7 @@ msgid "編輯外部廠商：%(display_name)s"
 msgstr "Edit External Vendor: %(display_name)s"
 
 #: app/templates/pages/external-users/edit.html:118
-#: app/templates/pages/users/edit.html:140
+#: app/templates/pages/users/edit.html:148
 msgid "留空則不變更"
 msgstr "Leave blank to make no changes"
 
@@ -10133,8 +10213,8 @@ msgstr "Menu authority level"
 
 #: app/templates/pages/modules/create.html:53
 #: app/templates/pages/profile/view.html:22
-#: app/templates/pages/users/edit.html:92
-#: app/templates/pages/users/edit.html:109
+#: app/templates/pages/users/edit.html:100
+#: app/templates/pages/users/edit.html:117
 #: app/templates/pages/users/view.html:43
 msgid "一般用戶"
 msgstr "Regular User"
@@ -12891,7 +12971,7 @@ msgstr ""
 " it to the member instead"
 
 #: app/templates/pages/users/create.html:154
-#: app/templates/pages/users/edit.html:170
+#: app/templates/pages/users/edit.html:178
 #: app/templates/pages/users/view.html:62
 msgid "組織資訊"
 msgstr "Organization information"
@@ -12918,12 +12998,12 @@ msgstr ""
 
 #: app/templates/pages/users/create.html:204
 #: app/templates/pages/users/create.html:221
-#: app/templates/pages/users/edit.html:264
+#: app/templates/pages/users/edit.html:272
 msgid "留空則跟隨企業設定"
 msgstr "Leave blank to follow Organization setting"
 
 #: app/templates/pages/users/create.html:231
-#: app/templates/pages/users/edit.html:298
+#: app/templates/pages/users/edit.html:306
 msgid "留空則使用帳號 Email"
 msgstr "Leave blank to use account number Email"
 
@@ -12940,14 +13020,14 @@ msgid "備用 Email 2"
 msgstr "Backup Email 2"
 
 #: app/templates/pages/users/create.html:240
-#: app/templates/pages/users/edit.html:316
+#: app/templates/pages/users/edit.html:324
 #: app/templates/pages/users/import.html:156
 #: app/templates/pages/users/view.html:156
 msgid "手機號碼 1"
 msgstr "Mobile number 1"
 
 #: app/templates/pages/users/create.html:244
-#: app/templates/pages/users/edit.html:326
+#: app/templates/pages/users/edit.html:334
 #: app/templates/pages/users/import.html:161
 #: app/templates/pages/users/view.html:157
 msgid "手機號碼 2"
@@ -12979,49 +13059,88 @@ msgstr ""
 "information\" function. Currently you can only view the information. If "
 "you need to modify it, please contact the administrator."
 
-#: app/templates/pages/users/edit.html:52
-msgid "帳號不可變更"
-msgstr "Account cannot be changed"
+#: app/templates/pages/users/edit.html:54
+#: app/templates/pages/users/edit.html:359
+msgid "變更帳號"
+msgstr "Rename account"
 
-#: app/templates/pages/users/edit.html:177
+#: app/templates/pages/users/edit.html:58
+msgid "只有管理員可以變更帳號"
+msgstr "Only administrators can rename accounts"
+
+#: app/templates/pages/users/edit.html:185
 msgid "同一企業內需唯一"
 msgstr "The same Organization internal demand is the only one"
 
-#: app/templates/pages/users/edit.html:188
+#: app/templates/pages/users/edit.html:196
 msgid "-- 未分配 --"
 msgstr "-- not assigned --"
 
-#: app/templates/pages/users/edit.html:201
+#: app/templates/pages/users/edit.html:209
 msgid "班表"
 msgstr "Schedule"
 
-#: app/templates/pages/users/edit.html:205
+#: app/templates/pages/users/edit.html:213
 msgid "-- 使用企業預設 --"
 msgstr "-- Use Organization preset --"
 
-#: app/templates/pages/users/edit.html:212
+#: app/templates/pages/users/edit.html:220
 msgid "用於計算工作時間"
 msgstr "Used to calculate working hours"
 
-#: app/templates/pages/users/edit.html:227
+#: app/templates/pages/users/edit.html:235
 msgid "遮罩處理的姓名，避免螢幕旁的窺視者識別身份或推測登入帳號"
 msgstr ""
 "Masked names to prevent prying eyes at the screen from identifying the "
 "identity or guessing the login account"
 
-#: app/templates/pages/users/edit.html:284
+#: app/templates/pages/users/edit.html:292
 msgid "留空則使用企業預設時區"
 msgstr "Leave blank to use Organization default time zone"
 
-#: app/templates/pages/users/edit.html:299
+#: app/templates/pages/users/edit.html:307
 msgid "系統通知發送地址"
 msgstr "System notification sending address"
 
-#: app/templates/pages/users/edit.html:352
+#: app/templates/pages/users/edit.html:367
+msgid "新 Email"
+msgstr "New email"
+
+#: app/templates/pages/users/edit.html:371
+msgid "新帳號"
+msgstr "New username"
+
+#: app/templates/pages/users/edit.html:381
+msgid "原因（選填）"
+msgstr "Reason (optional)"
+
+#: app/templates/pages/users/edit.html:387
+msgid "登入帳號與 Email 會改成新值，舊帳號從此無法登入"
+msgstr ""
+"The login account and email will change to the new value, and the old "
+"account can no longer sign in"
+
+#: app/templates/pages/users/edit.html:388
+msgid "權限、角色、部門、歷史紀錄都不受影響（系統以內部識別碼認人）"
+msgstr ""
+"Permissions, roles, departments, and history remain unchanged because the"
+" system identifies people by an internal ID"
+
+#: app/templates/pages/users/edit.html:389
+msgid "要把原 Email 發給新進人員時，先把前任帳號改名，再建立新帳號"
+msgstr ""
+"To give the original email to a new employee, rename the former employee "
+"account first, then create the new account"
+
+#: app/templates/pages/users/edit.html:392
+msgid "確認變更帳號"
+msgstr "Confirm account rename"
+
+#: app/templates/pages/users/edit.html:401
 msgid "刪除此用戶將無法復原，請謹慎操作。"
 msgstr "Deleting this user cannot be restored, so please proceed with caution."
 
-#: app/templates/pages/users/edit.html:355
+#: app/templates/pages/users/edit.html:404
 msgid "刪除用戶"
 msgstr "Delete User"
 
@@ -13290,128 +13409,119 @@ msgstr "System has not been initialized"
 msgid "Portal session 已清除"
 msgstr "Portal session cleared"
 
-#: app/web/external_users.py:190
+#: app/web/external_users.py:192
 msgid "尚未設定「外部廠商」預設編號規則，請先到「用戶編號規則」頁面設定。"
 msgstr ""
 "No default numbering rule for \"External Vendors\" has been set. Please "
 "configure it on the \"User Numbering Rules\" page first."
 
-#: app/web/external_users.py:219
+#: app/web/external_users.py:221
 msgid "姓名、Email、密碼為必填"
 msgstr "Name, email and password are required"
 
-#: app/web/external_users.py:221 app/web/external_users.py:418
-msgid "請輸入有效的 Email 格式"
-msgstr "Please enter a valid email format"
-
-#: app/web/external_users.py:226
+#: app/web/external_users.py:228
 msgid "必須選擇歸屬群組"
 msgstr "A home group must be selected"
 
-#: app/web/external_users.py:249
+#: app/web/external_users.py:247
 #, python-format
 msgid "找不到群組 %(code)s"
 msgstr "Group %(code)s not found"
 
-#: app/web/external_users.py:270
+#: app/web/external_users.py:268
 msgid "找不到外部廠商預設編號規則，請先設定"
 msgstr ""
 "Default numbering rule for external vendors not found. Please configure "
 "it first"
 
-#: app/web/external_users.py:281
+#: app/web/external_users.py:279
 #, python-format
 msgid "產生編號失敗: %(error)s"
 msgstr "Failed to generate number: %(error)s"
 
-#: app/web/external_users.py:327
+#: app/web/external_users.py:325
 #, python-format
 msgid "已建立外部廠商 %(name)s（編號：%(employee_id)s）"
 msgstr "External vendor %(name)s created (ID: %(employee_id)s)"
 
-#: app/web/external_users.py:351 app/web/external_users.py:383
-#: app/web/external_users.py:484 app/web/external_users.py:545
-#: app/web/external_users.py:598 app/web/external_users.py:647
-#: app/web/external_users.py:685
+#: app/web/external_users.py:349 app/web/external_users.py:381
+#: app/web/external_users.py:461 app/web/external_users.py:522
+#: app/web/external_users.py:575 app/web/external_users.py:624
+#: app/web/external_users.py:662
 msgid "此帳號不是外部廠商"
 msgstr "This account is not an external vendor"
 
-#: app/web/external_users.py:416 app/web/sys_accounts.py:106
-msgid "Email 為必填"
-msgstr "Email is required"
-
-#: app/web/external_users.py:428
-#, python-format
-msgid "Email %(email)s 已被其他帳號使用"
-msgstr "Email %(email)s is already used by another account"
-
-#: app/web/external_users.py:448
+#: app/web/external_users.py:424
 #, python-format
 msgid "已更新外部廠商 %(name)s"
 msgstr "External vendor %(name)s updated"
 
-#: app/web/external_users.py:489
+#: app/web/external_users.py:429
+msgid "更新失敗，請稍後再試"
+msgstr "Update failed. Please try again later"
+
+#: app/web/external_users.py:466
 msgid "請選擇群組"
 msgstr "Please select a group"
 
-#: app/web/external_users.py:501
+#: app/web/external_users.py:478
 msgid "找不到群組"
 msgstr "Group not found"
 
-#: app/web/external_users.py:513
+#: app/web/external_users.py:490
 #, python-format
 msgid "已是「%(name)s」的成員"
 msgstr "Already a member of \"%(name)s\""
 
-#: app/web/external_users.py:528
+#: app/web/external_users.py:505
 #, python-format
 msgid "已加入群組「%(name)s」"
 msgstr "Joined group \"%(name)s\""
 
-#: app/web/external_users.py:550
+#: app/web/external_users.py:527
 msgid "參數錯誤"
 msgstr "Invalid parameters"
 
-#: app/web/external_users.py:560
+#: app/web/external_users.py:537
 msgid "找不到成員關係"
 msgstr "Membership not found"
 
-#: app/web/external_users.py:572
+#: app/web/external_users.py:549
 msgid "外部廠商必須至少屬於一個群組"
 msgstr "An external vendor must belong to at least one group"
 
-#: app/web/external_users.py:581
+#: app/web/external_users.py:558
 #, python-format
 msgid "已從群組「%(name)s」移除"
 msgstr "Removed from group \"%(name)s\""
 
-#: app/web/external_users.py:629
+#: app/web/external_users.py:606
 #, python-format
 msgid "（自動退出 %(g_count)s 個社群、解除 %(r_count)s 個角色）"
 msgstr "(automatically left %(g_count)s groups and released %(r_count)s roles)"
 
-#: app/web/external_users.py:630
+#: app/web/external_users.py:607
 #, python-format
 msgid "已%(status)s外部廠商 %(name)s%(detail)s"
 msgstr "External vendor %(name)s %(status)s%(detail)s"
 
-#: app/web/external_users.py:668
+#: app/web/external_users.py:645
 #, python-format
 msgid "已刪除外部廠商 %(name)s"
 msgstr "External vendor %(name)s deleted"
 
-#: app/web/external_users.py:691 app/web/main.py:236
+#: app/web/external_users.py:668 app/web/main.py:236
 #: app/web/org_admin_rescue.py:136 app/web/org_admins.py:395
-#: app/web/users.py:840
+#: app/web/users.py:891
 msgid "請輸入新密碼"
 msgstr "Please enter a new password"
 
-#: app/web/external_users.py:706
+#: app/web/external_users.py:683
 #, python-format
 msgid "已變更 %(name)s 的密碼"
 msgstr "Password of %(name)s changed"
 
-#: app/web/external_users.py:709
+#: app/web/external_users.py:686
 #, python-format
 msgid "密碼變更失敗: %(error)s"
 msgstr "Password change failed: %(error)s"
@@ -13765,7 +13875,7 @@ msgstr "Administrator %(name)s %(status)s"
 
 #: app/web/org_admin_rescue.py:141 app/web/org_admins.py:116
 #: app/web/org_admins.py:400 app/web/sys_accounts.py:118
-#: app/web/sys_accounts.py:213 app/web/users.py:845
+#: app/web/sys_accounts.py:213 app/web/users.py:896
 msgid "兩次輸入的密碼不一致"
 msgstr "The passwords do not match"
 
@@ -13783,7 +13893,7 @@ msgid "已重設 %(name)s 的密碼，並通知所有企業管理員"
 msgstr "Password of %(name)s reset; all organization admins notified"
 
 #: app/web/org_admin_rescue.py:183 app/web/org_admins.py:445
-#: app/web/users.py:856
+#: app/web/users.py:907
 #, python-format
 msgid "重設密碼失敗: %(error)s"
 msgstr "Password reset failed: %(error)s"
@@ -13821,7 +13931,7 @@ msgstr "Administrator %(admin)s created (bound employee: %(employee)s)%(extra)s"
 msgid "此帳號不是企業管理員"
 msgstr "This account is not an organization administrator"
 
-#: app/web/org_admins.py:296 app/web/sys_accounts.py:217 app/web/users.py:774
+#: app/web/org_admins.py:296 app/web/sys_accounts.py:217 app/web/users.py:825
 msgid "不能停用自己的帳號"
 msgstr "You cannot disable your own account"
 
@@ -13846,7 +13956,7 @@ msgstr "Administrator %(name)s disabled"
 msgid "已刪除管理員 %(name)s"
 msgstr "Administrator %(name)s deleted"
 
-#: app/web/org_admins.py:380 app/web/users.py:820
+#: app/web/org_admins.py:380 app/web/users.py:871
 msgid "請使用「變更密碼」功能修改自己的密碼"
 msgstr "Please use the \"Change Password\" function to change your own password"
 
@@ -14091,6 +14201,10 @@ msgstr "Account is required"
 msgid "帳號只能包含英數字和底線"
 msgstr "Account may only contain letters, digits and underscores"
 
+#: app/web/sys_accounts.py:106
+msgid "Email 為必填"
+msgstr "Email is required"
+
 #: app/web/sys_accounts.py:108
 msgid "Email 格式不正確"
 msgstr "Invalid email format"
@@ -14151,132 +14265,131 @@ msgstr "This unit has child units. Please delete them first"
 msgid "已刪除 %(name)s"
 msgstr "%(name)s deleted"
 
-#: app/web/users.py:364
+#: app/web/users.py:367
 msgid "英文姓名、本國姓名、帳號為必填"
 msgstr "English name, local name and account are required"
 
-#: app/web/users.py:398 app/web/users.py:645
+#: app/web/users.py:401 app/web/users.py:654
 #, python-format
 msgid "找不到部門代碼 %(code)s"
 msgstr "Department code %(code)s not found"
 
-#: app/web/users.py:578
+#: app/web/users.py:587
 msgid "您沒有編輯權限"
 msgstr "You do not have edit permission"
 
-#: app/web/users.py:630
+#: app/web/users.py:639
 msgid "本國姓名、英文姓名為必填"
 msgstr "Local name and English name are required"
 
-#: app/web/users.py:635
+#: app/web/users.py:644
 #, python-format
 msgid "企業成員編號 %(employee_id)s 已存在"
 msgstr "Employee ID %(employee_id)s already exists"
 
-#: app/web/users.py:690
+#: app/web/users.py:699
 msgid "已更新用戶資料"
 msgstr "User data updated"
 
-#: app/web/users.py:756
+#: app/web/users.py:763 app/web/users.py:776
+msgid "變更帳號失敗，請稍後再試"
+msgstr "Account rename failed. Please try again later"
+
+#: app/web/users.py:807
 #, python-format
 msgid "已刪除用戶 %(name)s"
 msgstr "User %(name)s deleted"
 
-#: app/web/users.py:779
+#: app/web/users.py:830
 msgid "不能停用自己綁定的企業成員帳號"
 msgstr "You cannot disable the employee account bound to yourself"
 
-#: app/web/users.py:794
+#: app/web/users.py:845
 #, python-format
 msgid "已啟用用戶 %(name)s"
 msgstr "User %(name)s enabled"
 
-#: app/web/users.py:796
+#: app/web/users.py:847
 #, python-format
 msgid "已停用用戶 %(name)s"
 msgstr "User %(name)s disabled"
 
-#: app/web/users.py:815
+#: app/web/users.py:866
 msgid "找不到該用戶"
 msgstr "User not found"
 
-#: app/web/users.py:825
+#: app/web/users.py:876
 msgid "無權重設系統管理員的密碼"
 msgstr "No permission to reset a system administrator's password"
 
-#: app/web/users.py:853
+#: app/web/users.py:904
 #, python-format
 msgid "已重設 %(name)s 的密碼"
 msgstr "Password of %(name)s reset"
 
-#: app/web/users.py:927
+#: app/web/users.py:978
 msgid "請選擇 CSV 檔案"
 msgstr "Please select a CSV file"
 
-#: app/web/users.py:931
+#: app/web/users.py:982
 msgid "請上傳 CSV 格式檔案"
 msgstr "Please upload a CSV file"
 
-#: app/web/users.py:962
+#: app/web/users.py:1013
 #, python-format
 msgid "第 %(row)s 列: %(error)s"
 msgstr "Row %(row)s: %(error)s"
 
-#: app/web/users.py:968
+#: app/web/users.py:1019
 #, python-format
 msgid "已達帳號上限（%(limit)s）：本次將新增 %(need)s 筆，剩餘名額 %(remain)s，未匯入任何資料"
 msgstr ""
 "Account limit reached (%(limit)s): this import would add %(need)s "
 "account(s) with only %(remain)s slot(s) left. Nothing was imported."
 
-#: app/web/users.py:977
+#: app/web/users.py:1028
 #, python-format
 msgid "成功匯入 %(count)s 位用戶"
 msgstr "%(count)s users imported successfully"
 
-#: app/web/users.py:982
+#: app/web/users.py:1033
 #, python-format
 msgid "... 還有 %(count)s 個錯誤"
 msgstr "... %(count)s more errors"
 
-#: app/web/users.py:988
+#: app/web/users.py:1039
 #, python-format
 msgid "匯入失敗: %(error)s"
 msgstr "Import failed: %(error)s"
 
-#: app/web/users.py:1006
+#: app/web/users.py:1057
 #, python-format
 msgid "第 %(row)s 列: 帳號為必填"
 msgstr "Row %(row)s: account is required"
 
-#: app/web/users.py:1008
+#: app/web/users.py:1059
 #, python-format
 msgid "第 %(row)s 列: 密碼為必填"
 msgstr "Row %(row)s: password is required"
 
-#: app/web/users.py:1010
+#: app/web/users.py:1061
 #, python-format
 msgid "第 %(row)s 列: 姓名為必填"
 msgstr "Row %(row)s: name is required"
 
-#: app/web/users.py:1014
+#: app/web/users.py:1065 app/web/users.py:1072
 #, python-format
 msgid "第 %(row)s 列: "
 msgstr "Row %(row)s: "
 
-#: app/web/users.py:1021
-#, python-format
-msgid "第 %(row)s 列: 帳號 %(username)s 已存在"
-msgstr "Row %(row)s: account %(username)s already exists"
-
-#: app/web/users.py:1027
+#: app/web/users.py:1078
 #, python-format
 msgid "第 %(row)s 列: 外部廠商帳號請在「外部廠商帳號」頁面以完整 Email 建立"
 msgstr ""
 "Row %(row)s: create external vendor accounts on the External Vendors page"
 " with a full email address"
 
-#: app/web/users.py:1035
+#: app/web/users.py:1086
 #, python-format
 msgid "第 %(row)s 列: 企業成員編號 %(employee_id)s 已存在"
 msgstr "Row %(row)s: employee ID %(employee_id)s already exists"
@@ -19710,12 +19823,12 @@ msgstr "API key issued"
 msgid "API Key 核發失敗"
 msgstr "API key issuance failed"
 
-#: ../modules/form_workflow/services/node_handlers/external_wait_handler.py:37
+#: ../modules/form_workflow/services/node_handlers/external_wait_handler.py:38
 #: ../modules/form_workflow/services/node_handlers/http_request_handler.py:288
 msgid "result_var 格式不合法"
 msgstr "Invalid result_var format"
 
-#: ../modules/form_workflow/services/node_handlers/external_wait_handler.py:45
+#: ../modules/form_workflow/services/node_handlers/external_wait_handler.py:46
 msgid "timeout_minutes 必須介於 1 到 14400"
 msgstr "timeout_minutes must be between 1 and 14400"
 
@@ -24875,4 +24988,13 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "(無法取得集團資料庫資訊)"
 #~ msgstr "(Unable to get conglomerate database information)"
+
+#~ msgid "Email %(email)s 已被其他帳號使用"
+#~ msgstr "Email %(email)s is already used by another account"
+
+#~ msgid "Email %(email)s 已存在"
+#~ msgstr "Email %(email)s already exists"
+
+#~ msgid "第 %(row)s 列: 帳號 %(username)s 已存在"
+#~ msgstr "Row %(row)s: account %(username)s already exists"
 

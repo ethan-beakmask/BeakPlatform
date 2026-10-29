@@ -186,6 +186,42 @@ details .detail-content {
     padding-top: 15px;
     border-top: 1px solid var(--color-border-light);
 }
+.rename-account {
+    margin-top: 24px;
+}
+.rename-account .detail-content {
+    background: var(--color-bg-white);
+}
+.rename-field {
+    margin-bottom: 14px;
+}
+.rename-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-text-secondary);
+}
+.rename-field .form-control {
+    max-width: 420px;
+}
+.rename-username-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.rename-username-input .form-control {
+    max-width: 240px;
+}
+.rename-username-input span {
+    color: var(--color-text-secondary);
+}
+.rename-notes {
+    margin: 16px 0;
+    padding-left: 22px;
+    color: var(--color-text-secondary);
+}
+.rename-notes li {
+    margin-bottom: 6px;
+}
 .danger-zone {
     margin-top: 30px;
     padding: 15px;

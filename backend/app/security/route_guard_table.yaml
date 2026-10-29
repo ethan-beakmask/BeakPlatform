@@ -14022,6 +14022,23 @@ routes:
     rules:
     - /users/
     source: backend/app/web/users.py
+  users.rename_user:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - admin_required
+    has_internal_check: false
+    internal_identity_check: true
+    max_audience:
+    - SYSTEM_ADMIN
+    - ORG_ADMIN
+    methods:
+    - POST
+    note: ''
+    review: confirmed
+    rules:
+    - /users/<secure_code>/rename
+    source: backend/app/web/users.py
   users.reset_password:
     answer_source: none
     guard_args: {}

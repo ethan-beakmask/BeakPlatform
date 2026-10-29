@@ -1326,6 +1326,7 @@
  "確定要移除此使用權指派？": "Dissolve Conglomerate \"",
  "確定要解散集團「": "Remove this usage assignment?",
  "確定要解鎖此筆資料嗎？": "Unlock this record?",
+ "確定要變更此帳號嗎？原登入帳號將立即失效。": "Rename this account? The previous login account will stop working immediately.",
  "確定要返回流程目錄嗎？": "Are you sure you want to return to the workflow directory?",
  "確定要重置所有選單配色為預設值？": "Reset all Menu colors to default values?",
  "確定要鎖定此筆資料嗎？鎖定後將無法修改。": "Lock this record? It cannot be modified after locking.",
