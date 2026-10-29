@@ -7,6 +7,5 @@ This product includes software developed by Ethan Yu / 余瑞慶.
 The Apache License 2.0 does not grant permission to use these trademarks.
 Forks and derivative works must use a different name to avoid confusion.
 
-The Integrated-WAF/ directory bundles third-party components (OWASP ModSecurity CRS,
-Suricata, Emerging Threats Open ruleset, CrowdSec, Vector, ClickHouse, cloudflared, nginx).
-Each remains under its own upstream license; see Integrated-WAF/COMPONENTS.md.
+The defense node (Integrated-WAF), which bundles third-party components, has moved to
+its own repository: https://github.com/ethan-beakmask/Integrated-WAF (see its COMPONENTS.md).

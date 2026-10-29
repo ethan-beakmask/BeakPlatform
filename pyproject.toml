@@ -1,6 +1,6 @@
 [project]
 name = "beakplatform"
-version = "1.0.0"
+version = "2.0.0"
 description = "Multi-tenant RBAC Platform"
 requires-python = ">=3.12"
 

@@ -18,9 +18,11 @@
 ## 一、主機 A：裝平台（一行，約 3～5 分鐘）
 
 ```bash
-curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scripts/install.sh \
-  | sudo ADMIN_INITIAL_PASSWORD='<你的密碼>' INSTALL_DEMO=1 bash
+curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/v2.0.0/scripts/install.sh \
+  | sudo ADMIN_INITIAL_PASSWORD='<你的密碼>' INSTALL_DEMO=1 BP_VERSION=v2.0.0 bash
 ```
+
+`BP_VERSION=v2.0.0` 固定安裝與 iThome 2026 鐵人賽文章對應的版本；拿掉則安裝 v2.x 最新正式版。
 
 `INSTALL_DEMO=1` 讓安裝結束後自動多做兩件事：建立示範企業 DemoSOC（含資安人員、事件路由、處置流程），
 以及發一組給防禦節點用的開通字串。
@@ -41,7 +43,7 @@ curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scri
 
   ---- 下一步：到主機 B（防禦節點）執行下面這一道指令（共兩列），兩列一起複製貼上，不需修改 ----
 
-curl -fsSL https://github.com/ethan-beakmask/BeakPlatform/raw/main/Integrated-WAF/install.sh -o ~/integrated-waf-install.sh \
+curl -fsSL https://github.com/ethan-beakmask/Integrated-WAF/raw/v2.0.0/install.sh -o ~/integrated-waf-install.sh \
   && sudo bash ~/integrated-waf-install.sh --pair 'ODN1.（很長一串英數字）' --backend http://<主機A IP>:8000 --admin-ips <你的工作機IP> --yes
 ```
 

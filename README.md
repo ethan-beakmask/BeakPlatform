@@ -71,9 +71,12 @@ BeakPlatform 是整合型的運作平台，不只是傳統的流程引擎、BPM 
 之後主機 B 的管理介面才會對它開放）：
 
 ```bash
-curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scripts/install.sh \
-  | sudo ADMIN_INITIAL_PASSWORD='<你的密碼>' INSTALL_DEMO=1 bash
+curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/v2.0.0/scripts/install.sh \
+  | sudo ADMIN_INITIAL_PASSWORD='<你的密碼>' INSTALL_DEMO=1 BP_VERSION=v2.0.0 bash
 ```
+
+- 這道指令固定安裝 **v2.0.0**（iThome 2026 鐵人賽文章對應的版本）。拿掉 `BP_VERSION=v2.0.0` 則安裝 v2.x 最新正式版，
+  版本規則見下方「版本」。
 
 - 密碼至少 8 字元，含大小寫、數字、符號；示範企業的帳號共用這組密碼。
 - `INSTALL_DEMO=1` 會建立示範企業 DemoSOC、示範帳號、資安事件受理流程，
@@ -87,13 +90,14 @@ curl -sL https://raw.githubusercontent.com/ethan-beakmask/BeakPlatform/main/scri
 原封不動複製到**主機 B** 執行，不需修改。長相如下，其中的開通字串每次安裝都不同，只能從你自己的主機 A 複製：
 
 ```bash
-curl -fsSL https://github.com/ethan-beakmask/BeakPlatform/raw/main/Integrated-WAF/install.sh -o ~/integrated-waf-install.sh \
+curl -fsSL https://github.com/ethan-beakmask/Integrated-WAF/raw/v2.0.0/install.sh -o ~/integrated-waf-install.sh \
   && sudo bash ~/integrated-waf-install.sh --pair 'ODN1.（很長一串英數字）' --backend http://<主機A IP>:8000 --admin-ips <你的工作機IP> --yes
 ```
 
 - `--backend` 是 WAF 要保護的網站，預設填平台本身；`--admin-ips` 是允許開 Grafana／EveBox／Portainer 的來源。
 - 主機 A 的畫面關掉了：在主機 A 執行 `sudo cat /opt/BeakPlatform/demo-credentials.txt`，最後兩列就是。
 - 裝完會印出所有可直接貼到瀏覽器的網址與帳密，結尾應顯示「驗證通過」。
+- 防禦節點預設安裝 Integrated-WAF 的 v2.x 最新正式版；要固定版本，在 `--yes` 前加 `--to v2.0.0`。
 - 經 SSH 跳板連線時，偵測到的工作機 IP 會是跳板機；請自行把 `--admin-ips` 改成真正的工作機。
 
 完整練習 SOP 與常見錯誤見 **`docs/install/reader_quickstart.md`**。
@@ -112,20 +116,37 @@ curl -fsSL https://github.com/ethan-beakmask/BeakPlatform/raw/main/Integrated-WA
 sudo bash /opt/BeakPlatform/scripts/install.sh --status
 sudo bash /opt/BeakPlatform/scripts/install.sh --start
 sudo bash /opt/BeakPlatform/scripts/install.sh --stop
-sudo bash /opt/BeakPlatform/scripts/install.sh --update      # 更新程式並重啟，資料保留
+sudo bash /opt/BeakPlatform/scripts/install.sh --update      # 升級到 v2.x 最新正式版並重啟，資料保留
 sudo bash /opt/BeakPlatform/scripts/install.sh --uninstall   # 移除服務、目錄與資料庫
 journalctl -u beakplatform -f
 ```
 
+### 版本
+
+版本號在 `VERSION`，每個正式版都有對應的 tag（`v2.0.0`、`v2.1.0`……），變更內容見 GitHub Releases。
+
+| 情境 | 指令 |
+|---|---|
+| 安裝指定版本 | 安裝指令加 `BP_VERSION=v2.0.0`（或 `install.sh --to v2.0.0`） |
+| 升級到同一大版本的最新正式版 | `sudo bash /opt/BeakPlatform/scripts/install.sh --update` |
+| 跨大版本升級（必須明確指定） | `sudo bash /opt/BeakPlatform/scripts/install.sh --update --to v3.0.0` |
+| 追最新開發中的程式（不建議正式使用） | `sudo bash /opt/BeakPlatform/scripts/install.sh --update --channel main` |
+
+- **v2.0.0 對應 iThome 2026 鐵人賽文章。** 要與文章畫面完全一致，裝好 v2.0.0 後不要執行 `--update`；
+  2.1 之後的版本會陸續與文章不同。
+- 不支援降版。2026-10 之前從 `main` 安裝的環境，第一次 `--update` 會沿用 `main`，
+  再執行一次 `--update --channel tags` 即改為追正式版。
+
 ## 防禦節點（Integrated-WAF）
 
-`Integrated-WAF/` 是一包「快速安裝與整合」的防禦節點（安裝方式見上方「主機 B」）：
+防禦節點已移到獨立的 repo **[ethan-beakmask/Integrated-WAF](https://github.com/ethan-beakmask/Integrated-WAF)**（版本號與本專案各自獨立，
+`2.0.0` 是共同起點）。它是一包「快速安裝與整合」的防禦節點（安裝方式見上方「主機 B」）：
 WAF（nginx + ModSecurity + OWASP CRS）、Suricata、CrowdSec、Vector、ClickHouse，
 以及自寫的 od-bridge，把事件送進 BeakPlatform 建立案件，並把平台的封鎖決策落地到 nftables、CrowdSec 與 EDL。
 
 裡面的偵測與防禦元件都是各上游專案的成果，我只做了簡化安裝與配合 BeakPlatform 的整合調整。
-內容物、版本、各元件授權與著作權聲明（中英）見 `Integrated-WAF/COMPONENTS.md`，
-安裝說明見 `docs/install/integrated_waf.md`。
+內容物、版本、各元件授權與著作權聲明（中英）見該 repo 的 `COMPONENTS.md`，
+安裝說明見該 repo 的 `docs/install.md`。
 
 ## 版權與授權
 
@@ -134,7 +155,7 @@ WAF（nginx + ModSecurity + OWASP CRS）、Suricata、CrowdSec、Vector、ClickH
 專案與文章中用到的 OWASP ModSecurity CRS、Suricata、Emerging Threats Open 規則、CrowdSec、
 Vector、ClickHouse、cloudflared、nginx，以及其他所有非本人創作的軟體、規則與素材，
 著作權均屬各原作者與專案所有，並依其各自的授權條款使用；本專案不主張任何所有權，也不改變它們的授權。
-完整清單見 `Integrated-WAF/COMPONENTS.md`。
+完整清單見 Integrated-WAF repo 的 `COMPONENTS.md`。
 
 ### 本專案
 

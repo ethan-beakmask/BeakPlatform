@@ -28,6 +28,15 @@ from flask import Flask, Blueprint
 logger = logging.getLogger(__name__)
 
 
+def _read_platform_version() -> str:
+    """從 repo 根目錄讀取平台版本，失敗時使用安全的預設值。"""
+    try:
+        version = (Path(__file__).resolve().parents[2] / 'VERSION').read_text(encoding='utf-8').strip()
+        return version or '0.0.0'
+    except (OSError, UnicodeError, IndexError):
+        return '0.0.0'
+
+
 class ModuleInfo:
     """模組資訊封裝類別"""
 
@@ -63,7 +72,7 @@ class ModuleLoader:
     """模組載入器"""
 
     # 平台版本
-    PLATFORM_VERSION = '1.0.0'
+    PLATFORM_VERSION = _read_platform_version()
 
     def __init__(self, app: Flask = None, modules_path: str = None):
         self.app = app

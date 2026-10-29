@@ -4,7 +4,7 @@
 node展覽館 —— WAF 熱備健康監看（常駐迴圈 + 逾時自動處置）。
 
 這張範本表單示範系統級維運流程：送單後流程常駐在背景，每 N 分鐘呼叫
-Integrated-WAF/monitor_probe.sh 判定 WAF 對外與對內服務是否仍通；連續失敗
+Integrated-WAF repo 的 monitor_probe.sh 判定 WAF 對外與對內服務是否仍通；連續失敗
 達門檻時發 Telegram 告警並開決策關卡。無人在時限內決定時，依送單時選的
 預設值自動切換或繼續監看。
 
@@ -216,7 +216,7 @@ def build_monitor_schema(interval_minutes):
             _title(FORM_NAME),
             _hint(f'這張單送出後流程就常駐在背景，每 {interval_minutes} 分鐘檢查一次；'
                   '正常時不寫表單、只留流程記錄（目前狀態請看流程管理頁）。請先依 '
-                  'Integrated-WAF/failover.conf.example 建立 failover.conf。Telegram 佔位設定組'
+                  'Integrated-WAF repo 的 failover.conf.example 建立 failover.conf。Telegram 佔位設定組'
                   '要到企業設定填入真實值並啟用才寄得出去。'),
             fail_threshold,
             timeout_default_action,
@@ -581,12 +581,10 @@ def apply_full_demo(db, models, org, demo, publisher, apply):
             'published_sc': published.secure_code}
 
 
-def repo_root():
-    return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
-
-
 def default_failover_dir():
-    return os.path.join(repo_root(), 'Integrated-WAF')
+    # 熱備工具在獨立的 Integrated-WAF repo，不隨平台安裝；預設假設管理機已 clone 到
+    # /opt/Integrated-WAF，可用環境變數 INTEGRATED_WAF_DIR 覆寫
+    return os.environ.get('INTEGRATED_WAF_DIR') or '/opt/Integrated-WAF'
 
 
 def build_parser():
@@ -598,7 +596,7 @@ def build_parser():
     group.add_argument('--apply', action='store_true', help='實際寫入資料庫')
     parser.add_argument('--org', default=ORG_CODE, help=f'企業 code（預設 {ORG_CODE}）')
     parser.add_argument('--failover-dir', default=default_failover_dir(),
-                        help='failover.sh / monitor_probe.sh 所在目錄（預設為本 repo 的 Integrated-WAF）')
+                        help='failover.sh / monitor_probe.sh 所在目錄（預設 /opt/Integrated-WAF，或環境變數 INTEGRATED_WAF_DIR）')
     parser.add_argument('--config', default=None,
                         help='failover.conf 路徑（預設 <failover-dir>/failover.conf）')
     parser.add_argument('--interval-minutes', type=int, default=3,

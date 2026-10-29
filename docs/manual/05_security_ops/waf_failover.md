@@ -7,8 +7,6 @@ visible_roles: [SECURITY_STAFF, SOC_SUPERVISOR]
 produces:
   - WAF 切換決策紀錄
 covers:
-  - Integrated-WAF/standby.sh
-  - Integrated-WAF/failover.sh
   - scripts/examples/provision_nodedemo_waf_failover.py
 ---
 

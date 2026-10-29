@@ -14,9 +14,7 @@
 | `api_trigger.md` | 要用外部 API 建立一張資安案件單時 | 在 UI 建 API Key、用 `bp_trigger.py --list` 找 `form_code`、用指令送單、錯誤碼對照 |
 | `mail_smtp.md` | 要設定平台系統信寄送時 | 不裝 E-MailRelay，改在主機設定建立系統級 SMTP、設為預設、指定主要發信服務並測試寄送 |
 | `edl.md` | 要把封鎖決策接到防火牆時 | 黑名單檔案的格式與內容規則、排程與設定、檔案分享與 HTTP 兩種取用方式、驗證步驟 |
-| `integrated_waf.md` | 要架第二台主機當防禦端（WAF / IDS / 自動封鎖）時 | `install.sh --demo` 快速路徑、管制端發憑證一行指令、防禦端一鍵安裝、內網最小驗證、Cloudflare 對外公開選項 |
-| `integrated_waf_standby.md` | 要把防禦端做成兩台熱備時 | 兩台主機三個 IP 的架構、為什麼切換點是 cloudflared 而不是 IP、`standby.sh` / `failover.sh` 用法、腦裂防護、切換驗證 |
-| `integrated_waf_monitor.md` | 熱備架好之後，要自動發現現役節點死掉時 | 探測腳本的四段判定與三個易錯點、把巡檢做成表單流程的理由、無人回應時的逾時處置、heartbeat 看門狗、佈建與停止方式 |
+| （已移出）防禦節點安裝、熱備、監看 | 要架第二台主機當防禦端時 | 已移到獨立 repo [ethan-beakmask/Integrated-WAF](https://github.com/ethan-beakmask/Integrated-WAF) 的 `docs/install.md`、`docs/standby.md`、`docs/monitor.md` |
 | `os_file_write_node.md` | 要用流程的「OS 檔案寫入」節點時 | 三道開關、寫入目錄白名單、換行處理與追加語意 |
 
 ## 怎麼開啟

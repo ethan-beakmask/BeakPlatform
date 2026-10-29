@@ -131,5 +131,3 @@ cj*.txt
 q.txt
 p4_cj.txt
 
-# 熱備切換的實際組態（含內網 IP）
-Integrated-WAF/failover.conf

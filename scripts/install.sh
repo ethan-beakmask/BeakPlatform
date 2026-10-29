@@ -7,6 +7,8 @@
 #   sudo bash install.sh                         全新安裝 (互動式設定密碼)
 #   sudo bash install.sh --demo                  全新環境先安裝平台；已安裝環境佈建示範企業與防禦節點開通字串
 #   sudo bash install.sh --update                升級更新 (保留資料)
+#   sudo bash install.sh --to v2.1.0             安裝指定正式版
+#   sudo bash install.sh --channel main          安裝或升級到 main 分支最新程式
 #   sudo bash install.sh --status                查看服務狀態
 #   sudo bash install.sh --start                 啟動服務
 #   sudo bash install.sh --stop                  停止服務
@@ -25,6 +27,11 @@
 #   GITHUB_TOKEN           GitHub Personal Access Token (公開 repo 不需要；私有 fork 才設定)
 #   SKIP_NODE_SHOWCASE     設為 1 時全新安裝不種入「node展覽館」範例資料包 (預設種入；--update 不受影響)
 #   GITHUB_REPO            GitHub clone URL (預設: https://github.com/ethan-beakmask/BeakPlatform.git)
+#   BP_VERSION             等同 --to；指定 vMAJOR.MINOR.PATCH
+#   BP_CHANNEL             等同 --channel；可用 tags 或 main
+#   WAF_REPO               防禦節點 repo URL (預設: https://github.com/ethan-beakmask/Integrated-WAF)
+#
+# 預設全新安裝／升級到 v2.x 最新正式版；跨大版本必須明確指定 --to。
 # =============================================================================
 set -e
 
@@ -41,6 +48,9 @@ if [ -z "${DB_PASS:-}" ]; then
 fi
 BEAK_PORT="${BEAK_PORT:-8000}"
 GITHUB_REPO="${GITHUB_REPO:-https://github.com/ethan-beakmask/BeakPlatform.git}"
+RELEASE_MAJOR=2
+WAF_REPO="${WAF_REPO:-https://github.com/ethan-beakmask/Integrated-WAF}"
+WAF_RELEASE_MAJOR=2
 SERVICE_NAME="beakplatform"
 SERVICE_USER="beakplatform"
 HEALTH_TIMEOUT=60
@@ -56,6 +66,126 @@ log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step()  { echo -e "${BLUE}[$1]${NC} $2"; }
+
+# 私有 fork 的 Git 查詢必須把 token 放在 x-access-token 的密碼位置。
+# 呼叫端不得輸出回傳 URL，避免憑證進入畫面或 log。
+authenticated_repo_url() {
+    local repo_url="$1"
+    if [ -n "${GITHUB_TOKEN:-}" ] && [[ "$repo_url" == https://github.com/* ]]; then
+        printf 'https://x-access-token:%s@github.com/%s\n' "$GITHUB_TOKEN" "${repo_url#https://github.com/}"
+    else
+        printf '%s\n' "$repo_url"
+    fi
+}
+
+latest_release_tag() {
+    local repo_url="$1" major="$2" url latest
+    url=$(authenticated_repo_url "$repo_url")
+    latest=$(git ls-remote --tags --refs "$url" 2>/dev/null \
+        | awk '{sub("refs/tags/", "", $2); print $2}' \
+        | grep -E "^v${major}\\.[0-9]+\\.[0-9]+$" \
+        | sort -V \
+        | tail -1) || return 1
+    [ -n "$latest" ] || return 1
+    printf '%s\n' "$latest"
+}
+
+tag_exists() {
+    local repo_url="$1" tag="$2" url
+    url=$(authenticated_repo_url "$repo_url")
+    [ -n "$(git ls-remote --tags --refs "$url" "refs/tags/$tag" 2>/dev/null)" ]
+}
+
+newer_major_notice() {
+    local repo_url="$1" url newest_major
+    url=$(authenticated_repo_url "$repo_url")
+    newest_major=$(git ls-remote --tags --refs "$url" 2>/dev/null \
+        | awk '{sub("refs/tags/v", "", $2); if ($2 ~ /^[0-9]+\.[0-9]+\.[0-9]+$/) { split($2, p, "."); print p[1] }}' \
+        | sort -n | tail -1) || return 0
+    if [[ "$newest_major" =~ ^[0-9]+$ ]] && [ "$newest_major" -gt "$RELEASE_MAJOR" ]; then
+        log_warn "有 v${newest_major}.x 可用，跨大版本需 --to"
+    fi
+}
+
+resolve_target() {
+    if [ -n "$REQUESTED_TAG" ]; then
+        if ! tag_exists "$GITHUB_REPO" "$REQUESTED_TAG"; then
+            log_error "遠端找不到指定版本 $REQUESTED_TAG"
+            exit 1
+        fi
+        TARGET_KIND="tag"
+        TARGET_REF="$REQUESTED_TAG"
+        return
+    fi
+
+    if [ "$REQUESTED_CHANNEL" = "main" ]; then
+        TARGET_KIND="main"
+        TARGET_REF="main"
+        return
+    fi
+
+    if [ -z "$REQUESTED_CHANNEL" ] && [ "$ACTION" = "update" ] \
+       && [ -d "$INSTALL_DIR/.git" ] \
+       && [ "$(git -C "$INSTALL_DIR" symbolic-ref -q --short HEAD 2>/dev/null || true)" = "main" ]; then
+        TARGET_KIND="main"
+        TARGET_REF="main"
+        log_info "目前追蹤 main 分支，要改追正式版請加 --channel tags"
+        return
+    fi
+
+    TARGET_KIND="tag"
+    if ! TARGET_REF=$(latest_release_tag "$GITHUB_REPO" "$RELEASE_MAJOR"); then
+        log_error "找不到 v${RELEASE_MAJOR}.x 正式版 tag；可用 --channel main 追蹤開發版，或用 --to 指定版本"
+        exit 1
+    fi
+}
+
+version_is_lower() {
+    local candidate="$1" current="$2"
+    [ "$candidate" != "$current" ] && [ "$(printf '%s\n%s\n' "$candidate" "$current" | sort -V | head -1)" = "$candidate" ]
+}
+
+checkout_target() {
+    local current_hash target_hash installed_version
+    cd "$INSTALL_DIR"
+    current_hash=$(git rev-parse HEAD 2>/dev/null) || {
+        log_error "無法讀取目前 Git commit"
+        exit 1
+    }
+
+    if [ "$TARGET_KIND" = "tag" ]; then
+        if ! git fetch --force --tags origin 2>/dev/null; then
+            log_error "無法從遠端取得 tags"
+            exit 1
+        fi
+        target_hash=$(git rev-parse "refs/tags/$TARGET_REF^{commit}" 2>/dev/null) || {
+            log_error "無法解析版本 $TARGET_REF"
+            exit 1
+        }
+        [ "$current_hash" = "$target_hash" ] && TARGET_WAS_CURRENT=1 || TARGET_WAS_CURRENT=0
+        if ! git checkout --force --detach "refs/tags/$TARGET_REF"; then
+            log_error "無法切換到版本 $TARGET_REF"
+            exit 1
+        fi
+    else
+        if ! git fetch origin main 2>/dev/null; then
+            log_error "無法從遠端取得 main 分支"
+            exit 1
+        fi
+        target_hash=$(git rev-parse origin/main 2>/dev/null) || {
+            log_error "無法解析 origin/main"
+            exit 1
+        }
+        [ "$current_hash" = "$target_hash" ] && TARGET_WAS_CURRENT=1 || TARGET_WAS_CURRENT=0
+        if ! git checkout --force -B main origin/main; then
+            log_error "無法切換到 main 分支"
+            exit 1
+        fi
+    fi
+
+    installed_version=$(cat VERSION 2>/dev/null || echo "未知")
+    log_info "版本 $installed_version（$TARGET_REF，$(git rev-parse --short HEAD)）"
+}
 
 # 既有安裝的 PostgreSQL 埠：從 .env 的 DATABASE_URL 取，取不到就 5432。
 # 全新安裝流程會在 [1/9] 依實際建出的 cluster 重新決定。
@@ -308,7 +438,7 @@ run_demo_provision() {
     local fatal="${1:-0}"
     local demo_code="${DEMO_ORG_CODE:-DEMOSOC}"
     local demo_domain="${DEMO_ORG_DOMAIN:-demo-soc.example}"
-    local seed_log pair_log seed_rc pair_rc demo_password demo_admin pair_string waf_command waf_download workstation_ips cred_file old_umask
+    local seed_log pair_log seed_rc pair_rc demo_password demo_admin pair_string waf_command waf_download waf_ref workstation_ips cred_file old_umask
 
     echo ""
     log_step "demo" "佈建示範企業與防禦節點開通字串..."
@@ -426,7 +556,11 @@ run_demo_provision() {
     # 自動納入平台主機與 SSH 來源，練習環境不必另外給 --admin-ips
     # 下載到家目錄並用 && 串接：下載失敗就不會往下跑到舊檔。不放 /tmp——/tmp 是 sticky 目錄，
     # 留著別的帳號（例如 root）建立的同名舊檔時覆蓋會失敗，接著執行到的就是舊腳本
-    waf_download="curl -fsSL ${GITHUB_REPO%.git}/raw/main/Integrated-WAF/install.sh -o ~/integrated-waf-install.sh \\"
+    if ! waf_ref=$(latest_release_tag "${WAF_REPO}.git" "$WAF_RELEASE_MAJOR"); then
+        log_warn "找不到防禦節點 v${WAF_RELEASE_MAJOR}.x 正式版，示範安裝指令暫用 main"
+        waf_ref="main"
+    fi
+    waf_download="curl -fsSL ${WAF_REPO}/raw/${waf_ref}/install.sh -o ~/integrated-waf-install.sh \\"
     workstation_ips="$(detect_workstation_ips)"
     waf_command="  && sudo bash ~/integrated-waf-install.sh --pair '$pair_string' --backend ${DISPLAY_URL%/}${workstation_ips:+ --admin-ips $workstation_ips} --yes"
     cred_file="$INSTALL_DIR/demo-credentials.txt"
@@ -479,6 +613,10 @@ run_demo_provision() {
 ACTION="fresh"
 WITH_DEMO="${INSTALL_DEMO:-0}"
 ACTION_SET=0
+REQUESTED_TAG="${BP_VERSION:-}"
+REQUESTED_CHANNEL="${BP_CHANNEL:-}"
+CLI_TAG_SET=0
+CLI_CHANNEL_SET=0
 
 usage() {
     echo "BeakPlatform 安裝與升級腳本"
@@ -487,6 +625,9 @@ usage() {
     echo "  sudo bash install.sh                  全新安裝"
     echo "  sudo bash install.sh --demo           佈建示範企業與防禦節點開通字串；全新環境會先安裝平台"
     echo "  sudo bash install.sh --update         升級更新 (保留資料)"
+    echo "  sudo bash install.sh --to v2.1.0      安裝或升級到指定正式版"
+    echo "  sudo bash install.sh --channel tags   安裝或升級到 v2.x 最新正式版（預設）"
+    echo "  sudo bash install.sh --channel main   安裝或升級到 main 分支最新程式"
     echo "  sudo bash install.sh --status         查看服務狀態"
     echo "  sudo bash install.sh --start          啟動服務"
     echo "  sudo bash install.sh --stop           停止服務"
@@ -500,26 +641,43 @@ usage() {
     echo "  DEMO_ORG_CODE=DEMOSOC"
     echo "  DEMO_ORG_DOMAIN=demo-soc.example"
     echo "  GITHUB_TOKEN=<GitHub PAT> (公開 repo 不需要；私有 fork 才設定)"
+    echo "  BP_VERSION=v2.1.0 (等同 --to，命令列優先)"
+    echo "  BP_CHANNEL=tags|main (等同 --channel，命令列優先)"
+    echo "  WAF_REPO=$WAF_REPO"
     echo "  PG_MAJOR=18 (PostgreSQL 大版本，走官方套件庫)"
     echo "  USE_DISTRO_PKGS=1 (改用 Ubuntu 內建的 PostgreSQL 16 / Redis 7.0；封閉網路用)"
 }
 
-for arg in "$@"; do
-    case "$arg" in
+while [ "$#" -gt 0 ]; do
+    case "$1" in
         --help|-h)
             usage
             exit 0
             ;;
         --demo)
             WITH_DEMO=1
+            shift
+            ;;
+        --to)
+            [ "$#" -ge 2 ] || { log_error "--to 需要版本參數"; exit 1; }
+            REQUESTED_TAG="$2"
+            CLI_TAG_SET=1
+            shift 2
+            ;;
+        --channel)
+            [ "$#" -ge 2 ] || { log_error "--channel 需要 tags 或 main"; exit 1; }
+            REQUESTED_CHANNEL="$2"
+            CLI_CHANNEL_SET=1
+            shift 2
             ;;
         --update|--status|--start|--stop|--uninstall)
             if [ "$ACTION_SET" -eq 1 ]; then
                 usage
                 exit 1
             fi
-            ACTION="${arg#--}"
+            ACTION="${1#--}"
             ACTION_SET=1
+            shift
             ;;
         *)
             usage
@@ -527,6 +685,26 @@ for arg in "$@"; do
             ;;
     esac
 done
+
+# 命令列版本選項優先於相對應的環境變數；兩者都由命令列指定時仍保留衝突檢查。
+if [ "$CLI_TAG_SET" -eq 1 ] && [ "$CLI_CHANNEL_SET" -eq 0 ]; then
+    REQUESTED_CHANNEL=""
+elif [ "$CLI_CHANNEL_SET" -eq 1 ] && [ "$CLI_TAG_SET" -eq 0 ]; then
+    REQUESTED_TAG=""
+fi
+
+if [ -n "$REQUESTED_TAG" ] && [[ ! "$REQUESTED_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    log_error "版本格式不正確：$REQUESTED_TAG（應為 vMAJOR.MINOR.PATCH）"
+    exit 1
+fi
+if [ -n "$REQUESTED_CHANNEL" ] && [ "$REQUESTED_CHANNEL" != "tags" ] && [ "$REQUESTED_CHANNEL" != "main" ]; then
+    log_error "--channel 只接受 tags 或 main"
+    exit 1
+fi
+if [ -n "$REQUESTED_TAG" ] && [ "$REQUESTED_CHANNEL" = "main" ]; then
+    log_error "--to 與 --channel main 不可同時使用"
+    exit 1
+fi
 
 if [ "$WITH_DEMO" = "1" ] && [ "$ACTION_SET" -eq 0 ] && [ -f "$INSTALL_DIR/.env" ]; then
     ACTION="demo"
@@ -546,12 +724,21 @@ case "$ACTION" in
         ;;
 esac
 
+if [ "$ACTION" != "fresh" ] && [ "$ACTION" != "update" ] \
+   && { [ -n "$REQUESTED_TAG" ] || [ -n "$REQUESTED_CHANNEL" ]; }; then
+    log_warn "--to／--channel 只適用於全新安裝與 --update，目前動作會忽略版本選項"
+fi
+
 
 # =========================================================================
 #  --status
 # =========================================================================
 if [ "$ACTION" = "status" ]; then
     echo "=== BeakPlatform 服務狀態 ==="
+    echo ""
+    status_version=$(cat "$INSTALL_DIR/VERSION" 2>/dev/null || echo "未知")
+    status_ref=$(git -C "$INSTALL_DIR" describe --tags --always 2>/dev/null || echo "未知")
+    echo "版本: $status_version（$status_ref）"
     echo ""
 
     # systemd service
@@ -712,32 +899,41 @@ if [ "$ACTION" = "update" ]; then
         exit 1
     fi
 
+    # 允許 root 操作非 root 擁有的 repo；resolve_target 要讀目前分支，必須先設
+    git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true
+
+    resolve_target
+    if [ "$TARGET_KIND" = "tag" ]; then
+        current_version=$(cat "$INSTALL_DIR/VERSION" 2>/dev/null || echo "0.0.0")
+        target_version="${TARGET_REF#v}"
+        if version_is_lower "$target_version" "$current_version"; then
+            log_error "不支援降版（目前 $current_version，目標 $target_version）"
+            exit 1
+        fi
+        if [ -n "$REQUESTED_TAG" ] && [ "${target_version%%.*}" != "${current_version%%.*}" ]; then
+            log_warn "即將跨大版本升級（目前 $current_version，目標 $target_version）"
+        fi
+        newer_major_notice "$GITHUB_REPO"
+    fi
+
     cd "$INSTALL_DIR"
 
     # [1] 拉取最新程式碼
     log_step "1/4" "拉取最新程式碼..."
 
-    # 允許 root 操作非 root 擁有的 repo
-    git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true
-
     # 公開 repo 直接用 GITHUB_REPO；只有設定 GITHUB_TOKEN（私有 fork）時才帶 token。
     # token 必須用 https://x-access-token:<PAT>@github.com/... 格式：token 只放 username
     # 位置時 git 會轉去問 credential helper，無 tty 環境（cron、腳本）必定失敗。
-    if [ -n "${GITHUB_TOKEN:-}" ]; then
-        git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@${GITHUB_REPO#https://}"
-    else
-        git remote set-url origin "$GITHUB_REPO"
+    if ! git remote set-url origin "$(authenticated_repo_url "$GITHUB_REPO")"; then
+        log_error "無法更新 Git 遠端網址"
+        exit 1
     fi
+    checkout_target
 
-    git fetch origin main
-    local_hash=$(git rev-parse HEAD)
-    remote_hash=$(git rev-parse origin/main)
-
-    if [ "$local_hash" = "$remote_hash" ]; then
+    if [ "$TARGET_WAS_CURRENT" -eq 1 ]; then
         log_info "程式碼已是最新版本 ($(git log --oneline -1))"
         log_info "仍會執行 schema 同步與出廠資料補種（冪等），修復上次可能中斷的更新"
     else
-        git reset --hard origin/main
         log_info "更新至: $(git log --oneline -1)"
     fi
 
@@ -827,7 +1023,7 @@ if [ "$ACTION" = "update" ]; then
     echo ""
     echo "============================================"
     log_info "升級更新完成"
-    echo "  版本: $(cd "$INSTALL_DIR" && git log --oneline -1)"
+    echo "  版本: $(cat "$INSTALL_DIR/VERSION" 2>/dev/null || echo 未知)（$TARGET_REF，$(git -C "$INSTALL_DIR" rev-parse --short HEAD)）"
     echo "============================================"
     exit 0
 fi
@@ -851,6 +1047,13 @@ echo "  安裝目錄: $INSTALL_DIR"
 echo "  資料庫:   $DB_NAME"
 echo "  Port:     $NGINX_PORT (Nginx) / $APP_PORT (Gunicorn internal)"
 echo "  來源:     $GITHUB_REPO"
+if [ -n "$REQUESTED_TAG" ]; then
+    echo "  版本:     指定 $REQUESTED_TAG"
+elif [ "$REQUESTED_CHANNEL" = "main" ]; then
+    echo "  版本:     main 分支"
+else
+    echo "  版本:     依 tag（最新 v${RELEASE_MAJOR}.x）"
+fi
 echo ""
 
 # 如果目錄已存在且有 .env，警告
@@ -989,14 +1192,13 @@ log_info "PostgreSQL 設定完成 (DB: $DB_NAME)"
 # === [3/9] 取得程式碼 ===
 log_step "3/9" "取得程式碼..."
 
+resolve_target
+[ "$TARGET_KIND" = "tag" ] && newer_major_notice "$GITHUB_REPO"
+
 # 公開 repo 不需要 token；私有 fork 才設定 GITHUB_TOKEN。
 # 帶 token 時 x-access-token: 前綴不可省——token 只放 username 位置時 git 會另外索取 password，
 # 無 tty 環境會直接失敗（fatal: could not read Password）
-if [ -n "${GITHUB_TOKEN:-}" ]; then
-    GITHUB_CLONE_URL="https://x-access-token:${GITHUB_TOKEN}@${GITHUB_REPO#https://}"
-else
-    GITHUB_CLONE_URL="$GITHUB_REPO"
-fi
+GITHUB_CLONE_URL=$(authenticated_repo_url "$GITHUB_REPO")
 
 # 允許 root 操作非 root 擁有的 repo（覆蓋安裝時目錄已 chown 給 service user）
 git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true
@@ -1005,21 +1207,25 @@ if [ -d "$INSTALL_DIR/.git" ]; then
     cd "$INSTALL_DIR"
 
     # 更新 remote URL（token 可能已變更）
-    git remote set-url origin "$GITHUB_CLONE_URL"
+    if ! git remote set-url origin "$GITHUB_CLONE_URL"; then
+        log_error "無法更新 Git 遠端網址"
+        exit 1
+    fi
 
-    # 拉取最新版本並同步（force push 環境下本地 commit 必然脫離 remote 歷史，直接 reset）
-    git fetch origin main 2>/dev/null
-    git reset --hard origin/main
-    log_info "程式碼已同步至最新版本"
+    # 既有 repo 依本次選定的正式版 tag 或 main 分支強制同步。
+    checkout_target
 else
     if [ -d "$INSTALL_DIR" ]; then
         # 目錄存在但不是 git repo，備份後重新 clone
         mv "$INSTALL_DIR" "${INSTALL_DIR}.bak.$(date +%s)"
         log_warn "既有目錄已備份"
     fi
-    git clone "$GITHUB_CLONE_URL" "$INSTALL_DIR"
+    if ! git clone "$GITHUB_CLONE_URL" "$INSTALL_DIR" 2>/dev/null; then
+        log_error "git clone 失敗（私有 repo 請設 GITHUB_TOKEN）"
+        exit 1
+    fi
     cd "$INSTALL_DIR"
-    log_info "程式碼 clone 完成: $(git log --oneline -1)"
+    checkout_target
 fi
 
 # 修正檔案所有權（git 以 root clone/reset，需轉移給應用帳號）
@@ -1282,6 +1488,7 @@ echo ""
 echo "============================================"
 log_info "全新安裝完成"
 echo ""
+echo "  版本: $(cat "$INSTALL_DIR/VERSION" 2>/dev/null || echo 未知)（$TARGET_REF，$(git -C "$INSTALL_DIR" rev-parse --short HEAD)）"
 echo "  登入網址: ${DISPLAY_URL%/}${APP_PREFIX:-/beakplatform}/auth/login"
 echo "            （埠號與 ${APP_PREFIX:-/beakplatform} 缺一不可，少了會是 Not Found）"
 echo ""
