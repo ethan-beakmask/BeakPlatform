@@ -198,6 +198,11 @@ def get_or_create_user(db, User, UserType, org_sc, domain, username, native_name
     user.set_password(password)
     db.session.add(user)
     db.session.flush()
+    # 用戶編號要登記，否則帳號刪除後同一個號碼會被再發給別人
+    from app.models.user_numbering_rule import UsedUserNumber
+    if employee_id and not UsedUserNumber.is_number_used(org_sc, employee_id):
+        UsedUserNumber.record_number(org_secure_code=org_sc, number=employee_id,
+                                     user_secure_code=user.secure_code)
     return user, True
 
 

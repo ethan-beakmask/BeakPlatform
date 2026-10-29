@@ -300,11 +300,10 @@ def _check_employee_id_unique(org_secure_code: str, employee_id: str, exclude_us
                 return True  # 是自己的編號，允許
         return False
 
-    # 也檢查 users 表（雙重保險）
+    # 也檢查 users 表（雙重保險）；已刪除帳號的編號同樣不回收
     query = User.query.filter_by(
         org_secure_code=org_secure_code,
-        employee_id=employee_id,
-        is_deleted=False
+        employee_id=employee_id
     )
     if exclude_user_id:
         query = query.filter(User.id != exclude_user_id)
@@ -673,6 +672,13 @@ def edit_user(secure_code: str):
                     user.is_active = is_active
                 if ctx['can_edit_org_info']:
                     user.employee_id = employee_id
+                    # 編輯時換的新編號也要登記，否則帳號刪除後這個號碼會被再發給別人
+                    if employee_id and not UsedUserNumber.is_number_used(user.org_secure_code, employee_id):
+                        UsedUserNumber.record_number(
+                            org_secure_code=user.org_secure_code,
+                            number=employee_id,
+                            user_secure_code=user.secure_code
+                        )
                     user.primary_unit_secure_code = primary_unit.secure_code if primary_unit else None
                     user.work_schedule_secure_code = work_schedule_code
 
