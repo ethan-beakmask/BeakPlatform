@@ -276,7 +276,7 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
 
     # JSON 或表單回應
     if is_json:
-        return jsonify({
+        payload = {
             'message': 'Login successful',
             'user': {
                 'id': user.secure_code,
@@ -285,8 +285,17 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
                 'name': user.display_name,
                 'user_type': user.user_type,
             }
-        }), 200
+        }
+        from ..services.oidc_login_resume import pending_authorize_redirect
+        target = pending_authorize_redirect()
+        if target:
+            payload['redirect'] = target
+        return jsonify(payload), 200
     else:
+        from ..services.oidc_login_resume import pending_authorize_redirect
+        target = pending_authorize_redirect()
+        if target:
+            return redirect(target)
         return redirect(url_for('main.dashboard'))
 
 
@@ -899,6 +908,10 @@ def change_password():
         return jsonify({'message': _('密碼變更成功')}), 200
     else:
         flash(_('密碼變更成功'), 'success')
+        from ..services.oidc_login_resume import pending_authorize_redirect
+        target = pending_authorize_redirect()
+        if target:
+            return redirect(target)
         return redirect(url_for('main.dashboard'))
 
 

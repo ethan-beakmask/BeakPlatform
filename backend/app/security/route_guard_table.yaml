@@ -11782,6 +11782,97 @@ routes:
     rules:
     - /api/oidc-clients/<secure_code>
     source: backend/app/api/oidc_clients.py
+  oidc_provider.authorize:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - public_route
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /oauth/authorize
+    source: backend/app/api/oidc_provider.py
+  oidc_provider.authorize_resume:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - public_route
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /oauth/authorize/resume
+    source: backend/app/api/oidc_provider.py
+  oidc_provider.discovery:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - public_route
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /.well-known/openid-configuration
+    source: backend/app/api/oidc_provider.py
+  oidc_provider.jwks:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - public_route
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /oauth/jwks
+    source: backend/app/api/oidc_provider.py
+  oidc_provider.token:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - public_route
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /oauth/token
+    source: backend/app/api/oidc_provider.py
+  oidc_provider.userinfo:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - public_route
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /oauth/userinfo
+    source: backend/app/api/oidc_provider.py
   open_defense_admin_api.create_payload_profile:
     answer_source: code
     guard_args:

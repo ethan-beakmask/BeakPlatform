@@ -45,6 +45,12 @@ RATE_LIMIT_CATEGORIES = {
         'env_key': 'RATELIMIT_RESET_PASSWORD',
         'default': '10 per 10 minutes',
     },
+    'oidc_token': {
+        'label': 'OIDC 換發 token (/oauth/token)',
+        'db_key': 'ratelimit_oidc_token',
+        'env_key': 'RATELIMIT_OIDC_TOKEN',
+        'default': '60 per minute',
+    },
 }
 
 # 驗證 rate limit 格式: "N per [M] unit[s]"

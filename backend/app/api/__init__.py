@@ -116,6 +116,10 @@ def register_blueprints(app: Flask) -> None:
     from .oidc_clients import oidc_clients_api_bp
     app.register_blueprint(oidc_clients_api_bp)
 
+    # Public OpenID Connect provider endpoints
+    from .oidc_provider import oidc_provider_bp
+    app.register_blueprint(oidc_provider_bp)
+
     # Security center (本機安全)
     from .security_center import security_center_bp
     app.register_blueprint(security_center_bp)

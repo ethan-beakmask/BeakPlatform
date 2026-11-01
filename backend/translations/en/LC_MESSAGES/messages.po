@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-01 22:43+0800\n"
+"POT-Creation-Date: 2026-11-01 23:57+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -141,11 +141,11 @@ msgstr "The system external URL must not include a query or fragment"
 msgid "缺少 system_base_url"
 msgstr "Missing system_base_url"
 
-#: app/api/_ss_base_url.py:66
+#: app/api/_ss_base_url.py:69
 msgid "OIDC HTTP redirect 設定必須是布林值"
 msgstr "OIDC HTTP redirect setting must be a boolean"
 
-#: app/api/_ss_base_url.py:92
+#: app/api/_ss_base_url.py:95
 msgid "系統對外網址已更新"
 msgstr "System external URL has been updated"
 
@@ -489,133 +489,133 @@ msgid "請求過於頻繁，請稍後再試。"
 msgstr "Too many requests. Please try again later."
 
 #: app/api/auth.py:156 app/api/auth.py:182 app/api/auth.py:194
-#: app/api/auth.py:225 app/api/auth.py:377 app/api/auth.py:503
-#: app/api/auth.py:665 app/api/auth.py:684 app/api/auth.py:692
+#: app/api/auth.py:225 app/api/auth.py:386 app/api/auth.py:512
+#: app/api/auth.py:674 app/api/auth.py:693 app/api/auth.py:701
 msgid "帳號或密碼錯誤"
 msgstr "Incorrect account or password"
 
-#: app/api/auth.py:347 app/api/auth.py:382 app/api/auth.py:486
-#: app/api/auth.py:508
+#: app/api/auth.py:356 app/api/auth.py:391 app/api/auth.py:495
+#: app/api/auth.py:517
 msgid "請輸入帳號和密碼"
 msgstr "Please enter account and password"
 
-#: app/api/auth.py:353
+#: app/api/auth.py:362
 msgid "請輸入正確的帳號格式 (username@domain)"
 msgstr "Please enter a valid account format (username@domain)"
 
-#: app/api/auth.py:451 app/api/auth.py:615
+#: app/api/auth.py:460 app/api/auth.py:624
 msgid "企業不存在或已停用"
 msgstr "Organization does not exist or is disabled"
 
-#: app/api/auth.py:648 app/api/auth.py:670
+#: app/api/auth.py:657 app/api/auth.py:679
 msgid "請輸入 Email 和密碼"
 msgstr "Please enter email and password"
 
-#: app/api/auth.py:688
+#: app/api/auth.py:697
 msgid "此帳號已停用"
 msgstr "This account is disabled"
 
-#: app/api/auth.py:719
+#: app/api/auth.py:728
 msgid "登入成功"
 msgstr "Login successful"
 
-#: app/api/auth.py:863 app/web/profile.py:57
+#: app/api/auth.py:872 app/web/profile.py:57
 msgid "目前密碼錯誤"
 msgstr "Current password is incorrect"
 
-#: app/api/auth.py:867
+#: app/api/auth.py:876
 #, python-format
 msgid "新密碼長度至少 %(min_length)s 碼"
 msgstr "New password must be at least %(min_length)s characters"
 
-#: app/api/auth.py:871
+#: app/api/auth.py:880
 msgid "兩次輸入的新密碼不一致"
 msgstr "The new passwords do not match"
 
-#: app/api/auth.py:875
+#: app/api/auth.py:884
 msgid "新密碼不能與目前密碼相同"
 msgstr "New password cannot be the same as the current password"
 
-#: app/api/auth.py:899 app/api/auth.py:901
+#: app/api/auth.py:908 app/api/auth.py:910
 msgid "密碼變更成功"
 msgstr "Password changed successfully"
 
-#: app/api/auth.py:944
+#: app/api/auth.py:957
 msgid "系統發信服務尚未就緒，無法寄送驗證信，請聯絡系統管理員"
 msgstr ""
 "The system mail service is not ready and cannot send the verification "
 "email. Contact the system administrator."
 
-#: app/api/auth.py:1017
+#: app/api/auth.py:1030
 msgid "驗證信寄送失敗，請聯絡系統管理員"
 msgstr "Failed to send the verification email. Contact the system administrator."
 
-#: app/api/auth.py:1024
+#: app/api/auth.py:1037
 msgid "驗證信已寄出，但其中一個發信服務失敗，請通知系統管理員檢查主機設定"
 msgstr ""
 "The verification email was sent, but one mail service failed. Ask the "
 "system administrator to check host settings."
 
-#: app/api/auth.py:1030 app/api/auth.py:1032 app/api/auth.py:1034
-#: app/api/auth.py:1132
+#: app/api/auth.py:1043 app/api/auth.py:1045 app/api/auth.py:1047
+#: app/api/auth.py:1145
 msgid "已寄送密碼重設驗證信到您的信箱，請在 15 分鐘內完成驗證"
 msgstr ""
 "A password reset verification email has been sent. Please complete "
 "verification within 15 minutes"
 
-#: app/api/auth.py:1084 app/api/auth.py:1121
+#: app/api/auth.py:1097 app/api/auth.py:1134
 msgid "請輸入帳號"
 msgstr "Please enter an account"
 
-#: app/api/auth.py:1164
+#: app/api/auth.py:1177
 msgid "無效的驗證連結"
 msgstr "Invalid verification link"
 
-#: app/api/auth.py:1168
+#: app/api/auth.py:1181
 msgid "驗證連結已過期，請重新申請"
 msgstr "Verification link has expired. Please request a new one"
 
-#: app/api/auth.py:1172
+#: app/api/auth.py:1185
 msgid "此驗證連結已使用過"
 msgstr "This verification link has already been used"
 
-#: app/api/auth.py:1193
+#: app/api/auth.py:1206
 msgid "請輸入驗證碼"
 msgstr "Please enter the verification code"
 
-#: app/api/auth.py:1202
+#: app/api/auth.py:1215
 msgid "驗證碼錯誤或已過期"
 msgstr "Verification code is incorrect or expired"
 
-#: app/api/auth.py:1223
+#: app/api/auth.py:1236
 msgid "系統發信服務尚未就緒，無法寄送暫時密碼，請聯絡系統管理員"
 msgstr ""
 "The system mail service is not ready and cannot send the temporary "
 "password. Contact the system administrator."
 
-#: app/api/auth.py:1256
+#: app/api/auth.py:1269
 msgid "暫時密碼寄送失敗，密碼未變更，請聯絡系統管理員"
 msgstr ""
 "Failed to send the temporary password. The password was not changed. "
 "Contact the system administrator."
 
-#: app/api/auth.py:1270
+#: app/api/auth.py:1283
 msgid "暫時密碼已寄出，但其中一個發信服務失敗，請通知系統管理員檢查主機設定"
 msgstr ""
 "The temporary password was sent, but one mail service failed. Ask the "
 "system administrator to check host settings."
 
-#: app/api/auth.py:1272 app/api/auth.py:1277
+#: app/api/auth.py:1285 app/api/auth.py:1290
 msgid "已寄送暫時密碼到您的信箱，請使用暫時密碼登入後變更密碼"
 msgstr ""
 "A temporary password has been sent to your email. Please log in with it "
 "and change your password"
 
-#: app/api/auth.py:1303
+#: app/api/auth.py:1316
 msgid "找不到目標企業"
 msgstr "Target organization not found"
 
-#: ../modules/form_workflow/api/ai_usage.py:37 app/api/auth.py:1308
+#: ../modules/form_workflow/api/ai_usage.py:37 app/api/auth.py:1321
 #: app/api/enterprise_settings.py:55 app/api/enterprise_settings.py:69
 #: app/api/enterprise_settings.py:99 app/api/enterprise_settings.py:117
 #: app/api/enterprise_settings.py:197 app/api/enterprise_settings.py:220
@@ -627,7 +627,7 @@ msgstr "Target organization not found"
 msgid "找不到企業"
 msgstr "Organization not found"
 
-#: app/api/auth.py:1384 app/api/enterprise_settings.py:272
+#: app/api/auth.py:1397 app/api/enterprise_settings.py:272
 msgid "請提供密碼"
 msgstr "Please provide a password"
 
@@ -1516,6 +1516,18 @@ msgstr "Failed to add organization authorization"
 #: app/api/oidc_clients.py:190
 msgid "撤銷企業授權失敗"
 msgstr "Failed to revoke organization authorization"
+
+#: app/api/oidc_provider.py:71
+msgid "無效或已停用的應用程式。"
+msgstr "Invalid or disabled application."
+
+#: app/api/oidc_provider.py:76
+msgid "redirect_uri 不符合已登記的網址。"
+msgstr "redirect_uri does not exactly match a registered URL."
+
+#: app/api/oidc_provider.py:159
+msgid "授權請求已過期，請回到原系統重新登入。"
+msgstr "The authorization request has expired. Return to the original application and sign in again."
 
 #: app/api/organizational_units.py:154 app/api/organizational_units.py:281
 #: app/api/organizational_units.py:376 app/api/organizational_units.py:543
@@ -10600,6 +10612,10 @@ msgstr "Revoke all"
 msgid "系統預設企業"
 msgstr "System default organization"
 
+#: app/templates/pages/oidc/error.html:6 app/templates/pages/oidc/error.html:11
+msgid "OIDC 授權失敗"
+msgstr "OIDC authorization failed"
+
 #: app/templates/pages/oidc_clients/index.html:2
 #: app/templates/pages/oidc_clients/index.html:10
 msgid "對外單一登入"
@@ -10607,9 +10623,10 @@ msgstr "Single Sign-On Clients"
 
 #: app/templates/pages/oidc_clients/index.html:11
 msgid "註冊 OIDC client、管理企業授權與 RS256 簽章金鑰。"
-msgstr "Register OIDC clients and manage organization authorization and RS256 signing keys."
-"Register OIDC clients and manage organization access and RS256 signing "
-"keys."
+msgstr ""
+"Register OIDC clients and manage organization authorization and RS256 "
+"signing keys.Register OIDC clients and manage organization access and "
+"RS256 signing keys."
 
 #: app/templates/pages/oidc_clients/index.html:17
 msgid "OIDC 提供者資訊"
@@ -25229,4 +25246,3 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "第 %(row)s 列: 帳號 %(username)s 已存在"
 #~ msgstr "Row %(row)s: account %(username)s already exists"
-

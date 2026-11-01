@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale|default('zh-TW') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('OIDC 授權失敗') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+</head>
+<body>
+    <main style="max-width: 640px; margin: 10vh auto; padding: 2rem;">
+        <h1>{{ _('OIDC 授權失敗') }}</h1>
+        <p>{{ message }}</p>
+    </main>
+</body>
+</html>
