@@ -18,6 +18,15 @@
             </div>
         </div>
         <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" x-model="baseUrl.allowHttpRedirect">
+                <span>{{ _('允許 OIDC client 使用 HTTP redirect URI') }}</span>
+            </label>
+            <div class="form-hint">
+                {{ _('僅供受控的本機開發環境使用；正式環境應維持關閉。') }}
+            </div>
+        </div>
+        <div class="form-group">
             <label>{{ _('登入連結預覽') }}</label>
             <div class="baseurl-preview" x-show="baseUrl.value.trim()">
                 <code x-text="baseUrl.value.trim().replace(/\/+$/, '') + '{{ app_prefix }}/auth/org/{{ _('企業網域') }}/login'"></code>

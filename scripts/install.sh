@@ -1484,6 +1484,14 @@ SELECT substr(md5(random()::text),1,22), 'system_base_url', '$DISPLAY_URL', 'str
 WHERE NOT EXISTS (SELECT 1 FROM system_settings WHERE key='system_base_url' AND is_deleted=false);
 " 2>/dev/null || log_warn "system_base_url 種入失敗，可事後在 /hostconfig/server-settings 設定"
 
+sudo -u postgres env PGPORT="$PG_PORT" psql -d "$DB_NAME" -q -c "
+INSERT INTO system_settings (secure_code, key, value, value_type, category, description, created_at, updated_at, is_deleted)
+SELECT substr(md5(random()::text),1,22), 'oidc_allow_http_redirect', 'false', 'boolean', 'general',
+       '是否允許 OIDC client 使用 http redirect URI',
+       now() AT TIME ZONE 'UTC', now() AT TIME ZONE 'UTC', false
+WHERE NOT EXISTS (SELECT 1 FROM system_settings WHERE key='oidc_allow_http_redirect' AND is_deleted=false);
+" 2>/dev/null || log_warn "oidc_allow_http_redirect 出廠值種入失敗"
+
 echo ""
 echo "============================================"
 log_info "全新安裝完成"

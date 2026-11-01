@@ -1,0 +1,29 @@
+.oc-page { display: grid; gap: 18px; }
+.oc-panel { background: var(--color-bg-white); border: 1px solid var(--color-border-light); border-radius: var(--border-radius-lg); padding: 20px; }
+.oc-panel h2 { color: var(--color-text); margin: 0; }
+.oc-meta, .oc-section-head { align-items: flex-start; display: flex; gap: 16px; justify-content: space-between; }
+.oc-meta-grid { display: grid; gap: 8px 14px; grid-template-columns: max-content minmax(0, 1fr); margin-top: 12px; }
+.oc-meta-grid span { color: var(--color-text-secondary); }
+.oc-meta-grid code { overflow-wrap: anywhere; }
+.oc-warning { background: var(--color-warning-light); border-radius: var(--border-radius); color: var(--color-warning); padding: 10px 12px; }
+.oc-message { border-radius: var(--border-radius); padding: 10px 12px; }
+.oc-message-success { background: var(--color-success-light); color: var(--color-success); }
+.oc-message-error { background: var(--color-danger-light); color: var(--color-danger); }
+.oc-table-wrap { margin-top: 14px; overflow-x: auto; }
+.oc-sort { background: transparent; border: 0; color: inherit; cursor: pointer; font: inherit; padding: 0; }
+.oc-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.oc-empty { color: var(--color-text-muted); padding: 24px; text-align: center; }
+.oc-badge { border-radius: var(--border-radius); display: inline-block; font-size: var(--font-size-xs); padding: 3px 7px; }
+.oc-active { background: var(--color-success-light); color: var(--color-success); }
+.oc-inactive { background: var(--color-bg-light); color: var(--color-text-muted); }
+.oc-modal { display: grid; gap: 14px; min-width: 450px; width: min(560px, calc(100vw - 32px)); }
+.oc-modal-wide { width: min(720px, calc(100vw - 32px)); }
+.oc-field { display: grid; gap: 6px; }
+.oc-field input:not([type="radio"]):not([type="checkbox"]), .oc-field select, .oc-field textarea { width: 100%; }
+.oc-check { align-items: center; display: inline-flex; gap: 7px; margin-right: 14px; }
+.oc-modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.oc-grants { display: grid; gap: 8px; margin-top: 12px; }
+.oc-grant-row { align-items: center; border-bottom: 1px solid var(--color-border-light); display: flex; gap: 12px; justify-content: space-between; padding: 8px 0; }
+.oc-secret { align-items: center; background: var(--color-bg-light); display: flex; gap: 10px; padding: 12px; }
+.oc-secret code { flex: 1; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .oc-meta, .oc-section-head { display: grid; } .oc-modal { min-width: 0; } .oc-meta-grid { grid-template-columns: 1fr; } }

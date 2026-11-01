@@ -190,6 +190,8 @@ class OrganizationService:
 
             # 建立預設外部廠商群組
             OrganizationService._create_default_external_group(org)
+            from .oidc_org_defaults import ensure_projects_group_class
+            ensure_projects_group_class(org)
 
         from .schedule_service import ScheduleService
         ScheduleService.ensure_default_schedule(org)

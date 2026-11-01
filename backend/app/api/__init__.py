@@ -112,6 +112,10 @@ def register_blueprints(app: Flask) -> None:
     from .node_grants import node_grants_api_bp
     app.register_blueprint(node_grants_api_bp)  # already has url_prefix
 
+    # OIDC client administration (system admin only)
+    from .oidc_clients import oidc_clients_api_bp
+    app.register_blueprint(oidc_clients_api_bp)
+
     # Security center (本機安全)
     from .security_center import security_center_bp
     app.register_blueprint(security_center_bp)

@@ -11602,6 +11602,186 @@ routes:
     rules:
     - /admin/numbering
     source: backend/app/web/numbering.py
+  oidc_clients.index:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /oidc-clients/
+    source: backend/app/web/oidc_clients.py
+  oidc_clients_api.authorize_client_org:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/oidc-clients/<secure_code>/orgs
+    source: backend/app/api/oidc_clients.py
+  oidc_clients_api.create_oidc_client:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/oidc-clients/
+    source: backend/app/api/oidc_clients.py
+  oidc_clients_api.delete_oidc_client:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - DELETE
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/oidc-clients/<secure_code>
+    source: backend/app/api/oidc_clients.py
+  oidc_clients_api.get_oidc_client:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/oidc-clients/<secure_code>
+    source: backend/app/api/oidc_clients.py
+  oidc_clients_api.list_oidc_clients:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/oidc-clients/
+    source: backend/app/api/oidc_clients.py
+  oidc_clients_api.meta:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/oidc-clients/meta
+    source: backend/app/api/oidc_clients.py
+  oidc_clients_api.revoke_client_org:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - DELETE
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/oidc-clients/<secure_code>/orgs/<org_secure_code>
+    source: backend/app/api/oidc_clients.py
+  oidc_clients_api.rotate_client_secret:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/oidc-clients/<secure_code>/rotate-secret
+    source: backend/app/api/oidc_clients.py
+  oidc_clients_api.rotate_signing_key:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - POST
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/oidc-clients/signing-keys/rotate
+    source: backend/app/api/oidc_clients.py
+  oidc_clients_api.signing_keys:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/oidc-clients/signing-keys
+    source: backend/app/api/oidc_clients.py
+  oidc_clients_api.update_oidc_client:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - system_admin_required
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - PUT
+    note: ''
+    review: unreviewed
+    rules:
+    - /api/oidc-clients/<secure_code>
+    source: backend/app/api/oidc_clients.py
   open_defense_admin_api.create_payload_profile:
     answer_source: code
     guard_args:

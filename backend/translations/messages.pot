@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-29 23:51+0800\n"
+"POT-Creation-Date: 2026-11-01 22:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -122,23 +122,27 @@ msgstr ""
 msgid "選單配色已重置為預設值，重新整理頁面後生效"
 msgstr ""
 
-#: app/api/_ss_base_url.py:28
+#: app/api/_ss_base_url.py:29
 msgid "系統對外網址必須是 http 或 https 的完整 base URL"
 msgstr ""
 
-#: app/api/_ss_base_url.py:31
+#: app/api/_ss_base_url.py:32
 msgid "系統對外網址不要含 /beakplatform 之類的路徑前綴"
 msgstr ""
 
-#: app/api/_ss_base_url.py:34
+#: app/api/_ss_base_url.py:35
 msgid "系統對外網址不可包含 query 或 fragment"
 msgstr ""
 
-#: app/api/_ss_base_url.py:57
+#: app/api/_ss_base_url.py:60
 msgid "缺少 system_base_url"
 msgstr ""
 
-#: app/api/_ss_base_url.py:74
+#: app/api/_ss_base_url.py:66
+msgid "OIDC HTTP redirect 設定必須是布林值"
+msgstr ""
+
+#: app/api/_ss_base_url.py:92
 msgid "系統對外網址已更新"
 msgstr ""
 
@@ -229,7 +233,7 @@ msgstr ""
 #: app/api/_ss_emailrelay.py:419 app/api/_ss_emailrelay.py:439
 #: app/web/external_users.py:508 app/web/external_users.py:561
 #: app/web/external_users.py:610 app/web/org_admin_rescue.py:100
-#: app/web/org_admins.py:320 app/web/users.py:850
+#: app/web/org_admins.py:320 app/web/users.py:856
 #, python-format
 msgid "操作失敗: %(error)s"
 msgstr ""
@@ -692,7 +696,7 @@ msgstr ""
 #: app/web/modules.py:123 app/web/org_admins.py:148 app/web/org_admins.py:269
 #: app/web/organizations.py:295 app/web/positions.py:154
 #: app/web/sys_accounts.py:171 app/web/sys_accounts.py:172 app/web/units.py:128
-#: app/web/users.py:495
+#: app/web/users.py:494
 #, python-format
 msgid "建立失敗: %(error)s"
 msgstr ""
@@ -714,7 +718,7 @@ msgstr ""
 #: app/web/job_titles.py:344 app/web/job_titles.py:345 app/web/menu.py:483
 #: app/web/modules.py:183 app/web/organizations.py:354 app/web/positions.py:246
 #: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:188
-#: app/web/users.py:708
+#: app/web/users.py:714
 #, python-format
 msgid "更新失敗: %(error)s"
 msgstr ""
@@ -793,7 +797,7 @@ msgid "建立職務分類失敗"
 msgstr ""
 
 #: app/api/duties.py:153 app/api/duties.py:383
-#: app/api/organizational_units.py:285 app/api/organizational_units.py:1285
+#: app/api/organizational_units.py:285 app/api/organizational_units.py:1291
 #: app/api/organizations.py:235 app/api/roles.py:388
 msgid "請提供更新資料"
 msgstr ""
@@ -949,7 +953,7 @@ msgstr ""
 #: app/web/job_titles.py:396 app/web/menu.py:537 app/web/modules.py:211
 #: app/web/org_admins.py:357 app/web/organizations.py:430
 #: app/web/positions.py:274 app/web/sys_accounts.py:315
-#: app/web/sys_accounts.py:316 app/web/units.py:221 app/web/users.py:811
+#: app/web/sys_accounts.py:316 app/web/units.py:221 app/web/users.py:817
 #, python-format
 msgid "刪除失敗: %(error)s"
 msgstr ""
@@ -1217,7 +1221,7 @@ msgid "系統級類別不可修改"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_phrases.py:178 app/api/lookup.py:215
-#: app/api/lookup.py:438 app/api/organizational_units.py:1311
+#: app/api/lookup.py:438 app/api/organizational_units.py:1317
 msgid "更新失敗"
 msgstr ""
 
@@ -1448,15 +1452,47 @@ msgstr ""
 msgid "批次操作失敗"
 msgstr ""
 
+#: app/api/oidc_clients.py:50
+msgid "建立 OIDC client 失敗"
+msgstr ""
+
+#: app/api/oidc_clients.py:93
+msgid "輪替 OIDC 簽章金鑰失敗"
+msgstr ""
+
+#: app/api/oidc_clients.py:123
+msgid "更新 OIDC client 失敗"
+msgstr ""
+
+#: app/api/oidc_clients.py:138
+msgid "輪替 client secret 失敗"
+msgstr ""
+
+#: app/api/oidc_clients.py:153
+msgid "刪除 OIDC client 失敗"
+msgstr ""
+
+#: app/api/oidc_clients.py:162
+msgid "請提供 org_secure_code"
+msgstr ""
+
+#: app/api/oidc_clients.py:173
+msgid "新增企業授權失敗"
+msgstr ""
+
+#: app/api/oidc_clients.py:190
+msgid "撤銷企業授權失敗"
+msgstr ""
+
 #: app/api/organizational_units.py:154 app/api/organizational_units.py:281
-#: app/api/organizational_units.py:370 app/api/organizational_units.py:537
-#: app/api/organizational_units.py:620 app/api/organizational_units.py:680
-#: app/api/organizational_units.py:733 app/api/organizational_units.py:797
-#: app/api/organizational_units.py:844 app/api/organizational_units.py:866
-#: app/api/organizational_units.py:902 app/api/organizational_units.py:984
-#: app/api/organizational_units.py:1025 app/api/organizational_units.py:1073
-#: app/api/organizational_units.py:1136 app/api/organizational_units.py:1271
-#: app/api/organizational_units.py:1335
+#: app/api/organizational_units.py:376 app/api/organizational_units.py:543
+#: app/api/organizational_units.py:626 app/api/organizational_units.py:686
+#: app/api/organizational_units.py:739 app/api/organizational_units.py:803
+#: app/api/organizational_units.py:850 app/api/organizational_units.py:872
+#: app/api/organizational_units.py:908 app/api/organizational_units.py:990
+#: app/api/organizational_units.py:1031 app/api/organizational_units.py:1079
+#: app/api/organizational_units.py:1142 app/api/organizational_units.py:1277
+#: app/api/organizational_units.py:1341
 msgid "組織單位不存在"
 msgstr ""
 
@@ -1503,7 +1539,7 @@ msgstr ""
 msgid "名稱不可為空"
 msgstr ""
 
-#: app/api/organizational_units.py:235 app/api/organizational_units.py:318
+#: app/api/organizational_units.py:235 app/api/organizational_units.py:324
 msgid "父層單位不存在"
 msgstr ""
 
@@ -1515,224 +1551,228 @@ msgstr ""
 msgid "建立組織單位失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:304 app/api/roles.py:416
+#: app/api/organizational_units.py:290
+msgid "專案類為系統群組，不可移動或停用"
+msgstr ""
+
+#: app/api/organizational_units.py:310 app/api/roles.py:416
 msgid "不能設定自己為父層"
 msgstr ""
 
-#: app/api/organizational_units.py:309 app/api/roles.py:420
+#: app/api/organizational_units.py:315 app/api/roles.py:420
 msgid "不能設定子層為父層"
 msgstr ""
 
-#: app/api/organizational_units.py:325
+#: app/api/organizational_units.py:331
 msgid "不可在企業群組與外部廠商群組之間移動"
 msgstr ""
 
-#: app/api/organizational_units.py:341
+#: app/api/organizational_units.py:347
 msgid "組織單位更新成功"
 msgstr ""
 
-#: app/api/organizational_units.py:348
+#: app/api/organizational_units.py:354
 msgid "更新組織單位失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:374
+#: app/api/organizational_units.py:380
 msgid "此為系統保留單位，不可刪除"
 msgstr ""
 
-#: app/api/organizational_units.py:409
+#: app/api/organizational_units.py:415
 #, python-format
 msgid "此單位有 %(count)s 個子單位"
 msgstr ""
 
-#: app/api/organizational_units.py:417
+#: app/api/organizational_units.py:423
 #, python-format
 msgid "此單位有 %(count)s 個成員"
 msgstr ""
 
-#: app/api/organizational_units.py:441
+#: app/api/organizational_units.py:447
 msgid "組織單位已刪除"
 msgstr ""
 
-#: app/api/organizational_units.py:443
+#: app/api/organizational_units.py:449
 #, python-format
 msgid "，%(count)s 位成員已移至未分配"
 msgstr ""
 
-#: app/api/organizational_units.py:452
+#: app/api/organizational_units.py:458
 msgid "刪除組織單位失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:624 app/api/organizational_units.py:737
-#: app/api/organizational_units.py:906 app/api/organizational_units.py:1140
+#: app/api/organizational_units.py:630 app/api/organizational_units.py:743
+#: app/api/organizational_units.py:912 app/api/organizational_units.py:1146
 msgid "請提供用戶 ID"
 msgstr ""
 
 #: ../modules/nocode_builder/services/project_service.py:362
-#: app/api/organizational_units.py:634 app/api/organizational_units.py:746
-#: app/api/organizational_units.py:806 app/api/organizational_units.py:916
-#: app/api/organizational_units.py:1031 app/api/organizational_units.py:1150
-#: app/api/organizational_units.py:1384
+#: app/api/organizational_units.py:640 app/api/organizational_units.py:752
+#: app/api/organizational_units.py:812 app/api/organizational_units.py:922
+#: app/api/organizational_units.py:1037 app/api/organizational_units.py:1156
+#: app/api/organizational_units.py:1390
 #: app/services/role_assignment_service.py:192
 msgid "用戶不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:639
+#: app/api/organizational_units.py:645
 msgid "只有企業成員帳號可加入部門"
 msgstr ""
 
-#: app/api/organizational_units.py:649 app/api/organizational_units.py:1196
-#: app/api/organizational_units.py:1232
+#: app/api/organizational_units.py:655 app/api/organizational_units.py:1202
+#: app/api/organizational_units.py:1238
 #, python-format
 msgid "已將 %(user)s 加入 %(unit)s"
 msgstr ""
 
-#: app/api/organizational_units.py:660
+#: app/api/organizational_units.py:666
 msgid "加入部門失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:691
+#: app/api/organizational_units.py:697
 msgid "用戶不存在或不屬於此部門"
 msgstr ""
 
-#: app/api/organizational_units.py:701
+#: app/api/organizational_units.py:707
 #, python-format
 msgid "已將 %(user)s 從 %(unit)s 移除"
 msgstr ""
 
-#: app/api/organizational_units.py:707
+#: app/api/organizational_units.py:713
 msgid "移除成員失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:750
+#: app/api/organizational_units.py:756
 msgid "只有企業成員帳號可設為部門主管"
 msgstr ""
 
-#: app/api/organizational_units.py:754
+#: app/api/organizational_units.py:760
 msgid "部門主管角色不存在，請聯繫系統管理員"
 msgstr ""
 
-#: app/api/organizational_units.py:763
+#: app/api/organizational_units.py:769
 #, python-format
 msgid "已設定 %(user)s 為 %(unit)s 主管"
 msgstr ""
 
-#: app/api/organizational_units.py:777
+#: app/api/organizational_units.py:783
 msgid "設定主管失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:813
+#: app/api/organizational_units.py:819
 msgid "部門主管角色不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:817
+#: app/api/organizational_units.py:823
 msgid "移除主管角色失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:821
+#: app/api/organizational_units.py:827
 #, python-format
 msgid "已移除 %(user)s 的 %(unit)s 主管角色"
 msgstr ""
 
-#: app/api/organizational_units.py:873
+#: app/api/organizational_units.py:879
 #: app/services/role_assignment_service.py:38
 msgid "正主管"
 msgstr ""
 
-#: app/api/organizational_units.py:874
+#: app/api/organizational_units.py:880
 #: app/services/role_assignment_service.py:39
 #: app/templates/pages/admin/departments.html:386
 msgid "副主管"
 msgstr ""
 
-#: app/api/organizational_units.py:875
+#: app/api/organizational_units.py:881
 #: app/templates/pages/admin/departments.html:404
 msgid "候補代理人"
 msgstr ""
 
-#: app/api/organizational_units.py:893 app/api/organizational_units.py:975
+#: app/api/organizational_units.py:899 app/api/organizational_units.py:981
 msgid "無效的職位類型"
 msgstr ""
 
-#: app/api/organizational_units.py:920
+#: app/api/organizational_units.py:926
 msgid "只有企業成員帳號可擔任部門管理職"
 msgstr ""
 
-#: app/api/organizational_units.py:939 app/api/organizational_units.py:950
+#: app/api/organizational_units.py:945 app/api/organizational_units.py:956
 #, python-format
 msgid "%(position)s 角色不存在，請聯繫系統管理員"
 msgstr ""
 
-#: app/api/organizational_units.py:943
+#: app/api/organizational_units.py:949
 msgid "部門頁登記候補代理人"
 msgstr ""
 
-#: app/api/organizational_units.py:954
+#: app/api/organizational_units.py:960
 msgid "設定失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:958
+#: app/api/organizational_units.py:964
 #, python-format
 msgid "已設定 %(user)s 為 %(unit)s %(position)s"
 msgstr ""
 
-#: app/api/organizational_units.py:973
+#: app/api/organizational_units.py:979
 msgid "移除候補代理人請指定使用者"
 msgstr ""
 
-#: app/api/organizational_units.py:999
+#: app/api/organizational_units.py:1005
 #, python-format
 msgid "%(position)s 角色不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:1003 app/api/organizational_units.py:1036
-#: app/api/organizational_units.py:1363
+#: app/api/organizational_units.py:1009 app/api/organizational_units.py:1042
+#: app/api/organizational_units.py:1369
 msgid "移除失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:1006
+#: app/api/organizational_units.py:1012
 #, python-format
 msgid "已移除 %(unit)s %(position)s"
 msgstr ""
 
-#: app/api/organizational_units.py:1040
+#: app/api/organizational_units.py:1046
 #, python-format
 msgid "已移除 %(user)s 的 %(unit)s 候補代理人登記"
 msgstr ""
 
-#: app/api/organizational_units.py:1062
+#: app/api/organizational_units.py:1068
 msgid "無權限存取此社群"
 msgstr ""
 
-#: app/api/organizational_units.py:1124 app/api/organizational_units.py:1259
-#: app/api/organizational_units.py:1325
+#: app/api/organizational_units.py:1130 app/api/organizational_units.py:1265
+#: app/api/organizational_units.py:1331
 msgid "無權限管理此社群成員"
 msgstr ""
 
-#: app/api/organizational_units.py:1156
+#: app/api/organizational_units.py:1162
 msgid "外部人員不可加入企業群組"
 msgstr ""
 
-#: app/api/organizational_units.py:1166
+#: app/api/organizational_units.py:1172
 msgid "無效的成員類型"
 msgstr ""
 
-#: app/api/organizational_units.py:1178
+#: app/api/organizational_units.py:1184
 msgid "該用戶已是此單位的成員"
 msgstr ""
 
-#: app/api/organizational_units.py:1202 app/api/organizational_units.py:1239
+#: app/api/organizational_units.py:1208 app/api/organizational_units.py:1245
 msgid "新增失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:1281 app/api/organizational_units.py:1345
+#: app/api/organizational_units.py:1287 app/api/organizational_units.py:1351
 msgid "成員關係不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:1304
+#: app/api/organizational_units.py:1310
 msgid "更新成功"
 msgstr ""
 
-#: app/api/organizational_units.py:1357
+#: app/api/organizational_units.py:1363
 msgid "已移除成員關係"
 msgstr ""
 
@@ -1753,7 +1793,7 @@ msgstr ""
 #: ../modules/nocode_builder/api/project_api.py:132
 #: ../modules/nocode_builder/api/project_api.py:149
 #: ../modules/nocode_builder/api/project_api.py:171
-#: app/api/organizational_units.py:1419 app/api/organizations.py:230
+#: app/api/organizational_units.py:1425 app/api/organizations.py:230
 #: app/api/security_center.py:291
 msgid "無權限"
 msgstr ""
@@ -2108,14 +2148,14 @@ msgstr ""
 msgid "本國姓名、英文姓名、帳號為必填"
 msgstr ""
 
-#: app/api/users.py:125 app/web/users.py:369
+#: app/api/users.py:125 app/web/users.py:368
 msgid "用戶編號為必填"
 msgstr ""
 
 #: app/api/users.py:129 app/services/org_initial_setup_service.py:46
 #: app/services/org_initial_setup_service.py:214 app/web/external_users.py:186
 #: app/web/external_users.py:372 app/web/org_admins.py:73
-#: app/web/org_admins.py:246 app/web/users.py:376 app/web/users.py:987
+#: app/web/org_admins.py:246 app/web/users.py:375 app/web/users.py:993
 msgid "找不到所屬企業"
 msgstr ""
 
@@ -2124,7 +2164,7 @@ msgid "外部廠商帳號需提供完整 Email"
 msgstr ""
 
 #: app/api/users.py:154 app/services/org_initial_setup_service.py:114
-#: app/web/users.py:390
+#: app/web/users.py:389
 #, python-format
 msgid "用戶編號 %(employee_id)s 已存在"
 msgstr ""
@@ -2135,37 +2175,37 @@ msgid "找不到部門代碼 %(department_code)s"
 msgstr ""
 
 #: app/api/users.py:190 app/api/users.py:309 app/web/external_users.py:256
-#: app/web/external_users.py:582 app/web/users.py:393 app/web/users.py:646
-#: app/web/users.py:837
+#: app/web/external_users.py:582 app/web/users.py:392 app/web/users.py:645
+#: app/web/users.py:843
 #, python-format
 msgid "已達帳號上限（%(limit)s），目前已使用 %(used)s 個"
 msgstr ""
 
-#: app/api/users.py:269 app/web/users.py:485
+#: app/api/users.py:269 app/web/users.py:484
 #, python-format
 msgid "已建立用戶 %(name)s，密碼通知信已寄至 %(email)s"
 msgstr ""
 
-#: app/api/users.py:272 app/web/users.py:488
+#: app/api/users.py:272 app/web/users.py:487
 #, python-format
 msgid "已建立用戶 %(name)s，但密碼通知信寄送失敗（%(email)s），請到編輯頁重設密碼交給對方"
 msgstr ""
 
-#: app/api/users.py:275 app/web/users.py:491
+#: app/api/users.py:275 app/web/users.py:490
 #, python-format
 msgid "已建立用戶 %(name)s"
 msgstr ""
 
 #: app/api/users.py:334 app/web/org_admins.py:340 app/web/sys_accounts.py:277
-#: app/web/users.py:790
+#: app/web/users.py:796
 msgid "不能刪除自己的帳號"
 msgstr ""
 
-#: app/api/users.py:338 app/web/users.py:795
+#: app/api/users.py:338 app/web/users.py:801
 msgid "不能刪除自己綁定的企業成員帳號"
 msgstr ""
 
-#: app/api/users.py:342 app/web/users.py:800
+#: app/api/users.py:342 app/web/users.py:806
 msgid "不能刪除企業原始管理員"
 msgstr ""
 
@@ -2426,6 +2466,75 @@ msgstr ""
 
 #: app/services/doc_catalog_service.py:560
 msgid "本節包含以下主題："
+msgstr ""
+
+#: app/services/oidc_client_service.py:39
+#: app/services/oidc_client_service.py:42
+msgid "名稱長度必須為 1 到 100 字"
+msgstr ""
+
+#: app/services/oidc_client_service.py:48
+msgid "redirect_uris 必須是非空陣列"
+msgstr ""
+
+#: app/services/oidc_client_service.py:54
+#: app/services/oidc_client_service.py:65
+msgid "redirect URI 必須是絕對網址"
+msgstr ""
+
+#: app/services/oidc_client_service.py:60
+msgid "redirect URI 不可包含 fragment"
+msgstr ""
+
+#: app/services/oidc_client_service.py:62
+msgid "redirect URI 不可包含萬用字元"
+msgstr ""
+
+#: app/services/oidc_client_service.py:64
+msgid "redirect URI 必須使用 https"
+msgstr ""
+
+#: app/services/oidc_client_service.py:72
+msgid "allowed_user_types 必須是非空陣列"
+msgstr ""
+
+#: app/services/oidc_client_service.py:74
+#: app/services/oidc_client_service.py:76
+msgid "allowed_user_types 含有不支援的值"
+msgstr ""
+
+#: app/services/oidc_client_service.py:82
+msgid "extra_claims 必須是陣列"
+msgstr ""
+
+#: app/services/oidc_client_service.py:84
+#: app/services/oidc_client_service.py:86
+msgid "extra_claims 含有不支援的值"
+msgstr ""
+
+#: app/services/oidc_client_service.py:105
+msgid "找不到 OIDC client"
+msgstr ""
+
+#: app/services/oidc_client_service.py:164
+#: app/services/oidc_client_service.py:186
+msgid "請提供有效的 JSON 物件"
+msgstr ""
+
+#: app/services/oidc_client_service.py:199
+msgid "is_active 必須是布林值"
+msgstr ""
+
+#: app/services/oidc_client_service.py:246
+msgid "只可授權有效企業"
+msgstr ""
+
+#: app/services/oidc_client_service.py:252
+msgid "此企業已授權"
+msgstr ""
+
+#: app/services/oidc_client_service.py:273
+msgid "找不到企業授權"
 msgstr ""
 
 #: app/services/org_database_service.py:190
@@ -2761,6 +2870,7 @@ msgstr ""
 #: app/templates/pages/modules/view.html:55
 #: app/templates/pages/modules/view.html:82
 #: app/templates/pages/node_grants/index.html:85
+#: app/templates/pages/oidc_clients/index.html:64
 #: app/templates/pages/org_databases/monitor.html:194
 #: app/templates/pages/org_databases/monitor.html:219
 #: app/templates/pages/organizations/admins.html:82
@@ -2824,6 +2934,7 @@ msgstr ""
 #: app/templates/pages/modules/edit.html:48
 #: app/templates/pages/modules/view.html:55
 #: app/templates/pages/modules/view.html:82
+#: app/templates/pages/oidc_clients/index.html:103
 #: app/templates/pages/organizations/admins.html:80
 #: app/templates/pages/organizations/admins.html:97
 #: app/templates/pages/organizations/edit.html:89
@@ -3086,6 +3197,7 @@ msgstr ""
 #: app/templates/pages/modules/create.html:65
 #: app/templates/pages/modules/edit.html:55
 #: app/templates/pages/modules/list.html:182
+#: app/templates/pages/oidc_clients/index.html:104
 #: app/templates/pages/org_databases/monitor.html:516
 #: app/templates/pages/organizations/admins.html:144
 #: app/templates/pages/organizations/create.html:120
@@ -3393,6 +3505,7 @@ msgstr ""
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:32
 #: app/templates/pages/hostconfig/_system_settings_section_telegram.html:36
 #: app/templates/pages/modules/list.html:87
+#: app/templates/pages/oidc_clients/index.html:50
 #: app/templates/pages/organizations/admins.html:53
 #: app/templates/pages/organizations/list.html:293
 #: app/templates/pages/personal_settings.html:214
@@ -3441,6 +3554,7 @@ msgstr ""
 #: app/templates/pages/hostconfig/_system_settings_section_telegram.html:50
 #: app/templates/pages/job_families/view.html:10
 #: app/templates/pages/modules/view.html:16
+#: app/templates/pages/oidc_clients/index.html:61
 #: app/templates/pages/security/api_keys.html:59
 #: app/templates/pages/users/list.html:73
 msgid "編輯"
@@ -3501,6 +3615,7 @@ msgstr ""
 #: app/templates/pages/job_families/list.html:191
 #: app/templates/pages/job_levels/list.html:187
 #: app/templates/pages/job_titles/list.html:214
+#: app/templates/pages/oidc_clients/index.html:65
 #: app/templates/pages/org_databases/monitor.html:147
 #: app/templates/pages/users/list.html:84
 msgid "刪除"
@@ -3812,6 +3927,8 @@ msgstr ""
 #: app/templates/pages/job_titles/view.html:64
 #: app/templates/pages/modules/view.html:54
 #: app/templates/pages/modules/view.html:72
+#: app/templates/pages/oidc_clients/index.html:47
+#: app/templates/pages/oidc_clients/index.html:82
 #: app/templates/pages/org_databases/monitor.html:67
 #: app/templates/pages/organizations/admins.html:51
 #: app/templates/pages/organizations/edit.html:87
@@ -3849,6 +3966,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:231
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:61
 #: app/templates/pages/_my_proxy_assignments.html:40
+#: app/templates/pages/oidc_clients/index.html:118
 #: app/templates/pages/security/api_keys.html:66
 msgid "撤銷"
 msgstr ""
@@ -4184,6 +4302,8 @@ msgstr ""
 #: app/templates/pages/job_levels/create.html:99
 #: app/templates/pages/job_levels/list.html:81
 #: app/templates/pages/modules/list.html:85
+#: app/templates/pages/oidc_clients/index.html:45
+#: app/templates/pages/oidc_clients/index.html:97
 #: app/templates/pages/organizations/_org_hard_delete.html:79
 #: app/templates/pages/organizations/_org_hard_delete.html:137
 #: app/templates/pages/personal_settings.html:207
@@ -4249,6 +4369,7 @@ msgstr ""
 #: ../modules/nocode_builder/templates/modules/nocode_builder/_workspace_template_modal.html:77
 #: app/templates/pages/admin/_settings_recipients_section.html:267
 #: app/templates/pages/calendar/calendar.html:144
+#: app/templates/pages/oidc_clients/index.html:120
 #: app/templates/pages/organizations/list.html:391
 #: app/templates/pages/personal_settings.html:270
 #: app/templates/pages/server_manage/redis_monitor.html:185
@@ -4441,6 +4562,7 @@ msgstr ""
 #: ../modules/open_defense/templates/modules/open_defense/security_cases.html:22
 #: app/templates/pages/access_center/_tab_functions.html:35
 #: app/templates/pages/node_grants/index.html:24
+#: app/templates/pages/oidc_clients/index.html:40
 #: app/templates/pages/server_manage/redis_monitor.html:21
 #: app/templates/pages/server_manage/redis_monitor.html:202
 msgid "重新整理"
@@ -6637,6 +6759,8 @@ msgstr ""
 #: app/templates/pages/external-users/view.html:85
 #: app/templates/pages/job_levels/view.html:51
 #: app/templates/pages/modules/list.html:86
+#: app/templates/pages/oidc_clients/index.html:49
+#: app/templates/pages/oidc_clients/index.html:82
 #: app/templates/pages/organizations/admins.html:52
 #: app/templates/pages/organizations/list.html:241
 #: app/templates/pages/positions/view.html:104
@@ -6929,7 +7053,8 @@ msgstr ""
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:64
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:76
 #: app/templates/pages/admin/time/holiday_calendar_edit.html:116
-#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:33
+#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:42
+#: app/templates/pages/oidc_clients/index.html:104
 #: app/templates/pages/security/org_rate_limits.html:89
 msgid "儲存"
 msgstr ""
@@ -7409,7 +7534,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:98
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:65
 #: app/templates/pages/approval_categories/list.html:197
-#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:34
+#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:43
 #: app/templates/pages/menu/list.html:98
 msgid "儲存中..."
 msgstr ""
@@ -8012,15 +8137,23 @@ msgstr ""
 msgid "請填完整 base URL，例如 https://example.com。不要含尾斜線，也不要含 /beakplatform。"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:21
-msgid "登入連結預覽"
-msgstr ""
-
 #: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:23
-msgid "企業網域"
+msgid "允許 OIDC client 使用 HTTP redirect URI"
 msgstr ""
 
 #: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:26
+msgid "僅供受控的本機開發環境使用；正式環境應維持關閉。"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:30
+msgid "登入連結預覽"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:32
+msgid "企業網域"
+msgstr ""
+
+#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:35
 #: app/templates/pages/organizations/list.html:192
 #: app/templates/pages/organizations/list.html:207
 msgid "尚未設定"
@@ -8819,6 +8952,7 @@ msgid "指令"
 msgstr ""
 
 #: app/templates/pages/hostconfig/data_maintenance.html:250
+#: app/templates/pages/oidc_clients/index.html:128
 #: app/templates/pages/organizations/_org_hard_delete.html:93
 #: app/templates/pages/organizations/_org_hard_delete.html:151
 msgid "複製"
@@ -10124,6 +10258,110 @@ msgstr ""
 msgid "系統預設企業"
 msgstr ""
 
+#: app/templates/pages/oidc_clients/index.html:2
+#: app/templates/pages/oidc_clients/index.html:10
+msgid "對外單一登入"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:11
+msgid "註冊 OIDC client、管理企業授權與 RS256 簽章金鑰。"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:17
+msgid "OIDC 提供者資訊"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:20
+msgid "Issuer"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:21
+msgid "Discovery 網址"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:26
+#: app/templates/pages/organizations/list.html:176
+msgid "尚未設定系統對外網址"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:27
+msgid "前往伺服器設定"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:31
+msgid "建立 client"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:39
+msgid "OIDC clients"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:48
+msgid "授權企業"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:62
+#: app/templates/pages/oidc_clients/index.html:110
+msgid "企業授權"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:63
+msgid "輪替 secret"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:69
+msgid "目前沒有 OIDC client"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:77
+msgid "簽章金鑰"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:78
+msgid "輪替金鑰"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:82
+msgid "退役時間"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:88
+msgid "尚未建立簽章金鑰"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:98
+msgid "Redirect URIs（每行一個）"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:99
+msgid "允許的帳號類型"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:102
+msgid "額外 claims"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:111
+msgid "選擇企業（可複選）"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:116
+msgid "加入所選企業"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:126
+msgid "Client secret"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:127
+msgid "關閉後無法再次查看"
+msgstr ""
+
+#: app/templates/pages/oidc_clients/index.html:129
+#: app/templates/pages/security/_api_keys_modals.html:128
+msgid "我已保存，關閉"
+msgstr ""
+
 #: app/templates/pages/org_databases/monitor.html:5
 #: app/templates/pages/org_databases/monitor.html:171
 msgid "企業獨立資料庫管理"
@@ -10646,10 +10884,6 @@ msgstr ""
 
 #: app/templates/pages/organizations/list.html:174
 msgid "登入 URL"
-msgstr ""
-
-#: app/templates/pages/organizations/list.html:176
-msgid "尚未設定系統對外網址"
 msgstr ""
 
 #: app/templates/pages/organizations/list.html:177
@@ -11781,10 +12015,6 @@ msgid ""
 "簽章方式：HMAC-SHA256(secret, \"{timestamp}\\n{body}\")，headers：X-BP-Key-Id / "
 "X-BP-Timestamp / X-BP-"
 "Signature。工具與範例：scripts/bp_trigger.py、docs/install/api_trigger.md。"
-msgstr ""
-
-#: app/templates/pages/security/_api_keys_modals.html:128
-msgid "我已保存，關閉"
 msgstr ""
 
 #: app/templates/pages/security/_api_keys_modals.html:136
@@ -12939,7 +13169,7 @@ msgstr ""
 
 #: app/web/external_users.py:668 app/web/main.py:236
 #: app/web/org_admin_rescue.py:136 app/web/org_admins.py:395
-#: app/web/users.py:891
+#: app/web/users.py:897
 msgid "請輸入新密碼"
 msgstr ""
 
@@ -13287,7 +13517,7 @@ msgstr ""
 
 #: app/web/org_admin_rescue.py:141 app/web/org_admins.py:116
 #: app/web/org_admins.py:400 app/web/sys_accounts.py:118
-#: app/web/sys_accounts.py:213 app/web/users.py:896
+#: app/web/sys_accounts.py:213 app/web/users.py:902
 msgid "兩次輸入的密碼不一致"
 msgstr ""
 
@@ -13303,7 +13533,7 @@ msgid "已重設 %(name)s 的密碼，並通知所有企業管理員"
 msgstr ""
 
 #: app/web/org_admin_rescue.py:183 app/web/org_admins.py:445
-#: app/web/users.py:907
+#: app/web/users.py:913
 #, python-format
 msgid "重設密碼失敗: %(error)s"
 msgstr ""
@@ -13338,7 +13568,7 @@ msgstr ""
 msgid "此帳號不是企業管理員"
 msgstr ""
 
-#: app/web/org_admins.py:296 app/web/sys_accounts.py:217 app/web/users.py:825
+#: app/web/org_admins.py:296 app/web/sys_accounts.py:217 app/web/users.py:831
 msgid "不能停用自己的帳號"
 msgstr ""
 
@@ -13361,7 +13591,7 @@ msgstr ""
 msgid "已刪除管理員 %(name)s"
 msgstr ""
 
-#: app/web/org_admins.py:380 app/web/users.py:871
+#: app/web/org_admins.py:380 app/web/users.py:877
 msgid "請使用「變更密碼」功能修改自己的密碼"
 msgstr ""
 
@@ -13659,127 +13889,127 @@ msgstr ""
 msgid "已刪除 %(name)s"
 msgstr ""
 
-#: app/web/users.py:367
+#: app/web/users.py:366
 msgid "英文姓名、本國姓名、帳號為必填"
 msgstr ""
 
-#: app/web/users.py:401 app/web/users.py:654
+#: app/web/users.py:400 app/web/users.py:653
 #, python-format
 msgid "找不到部門代碼 %(code)s"
 msgstr ""
 
-#: app/web/users.py:587
+#: app/web/users.py:586
 msgid "您沒有編輯權限"
 msgstr ""
 
-#: app/web/users.py:639
+#: app/web/users.py:638
 msgid "本國姓名、英文姓名為必填"
 msgstr ""
 
-#: app/web/users.py:644
+#: app/web/users.py:643
 #, python-format
 msgid "企業成員編號 %(employee_id)s 已存在"
 msgstr ""
 
-#: app/web/users.py:699
+#: app/web/users.py:705
 msgid "已更新用戶資料"
 msgstr ""
 
-#: app/web/users.py:763 app/web/users.py:776
+#: app/web/users.py:769 app/web/users.py:782
 msgid "變更帳號失敗，請稍後再試"
 msgstr ""
 
-#: app/web/users.py:807
+#: app/web/users.py:813
 #, python-format
 msgid "已刪除用戶 %(name)s"
 msgstr ""
 
-#: app/web/users.py:830
+#: app/web/users.py:836
 msgid "不能停用自己綁定的企業成員帳號"
 msgstr ""
 
-#: app/web/users.py:845
+#: app/web/users.py:851
 #, python-format
 msgid "已啟用用戶 %(name)s"
 msgstr ""
 
-#: app/web/users.py:847
+#: app/web/users.py:853
 #, python-format
 msgid "已停用用戶 %(name)s"
 msgstr ""
 
-#: app/web/users.py:866
+#: app/web/users.py:872
 msgid "找不到該用戶"
 msgstr ""
 
-#: app/web/users.py:876
+#: app/web/users.py:882
 msgid "無權重設系統管理員的密碼"
 msgstr ""
 
-#: app/web/users.py:904
+#: app/web/users.py:910
 #, python-format
 msgid "已重設 %(name)s 的密碼"
 msgstr ""
 
-#: app/web/users.py:978
+#: app/web/users.py:984
 msgid "請選擇 CSV 檔案"
 msgstr ""
 
-#: app/web/users.py:982
+#: app/web/users.py:988
 msgid "請上傳 CSV 格式檔案"
-msgstr ""
-
-#: app/web/users.py:1013
-#, python-format
-msgid "第 %(row)s 列: %(error)s"
 msgstr ""
 
 #: app/web/users.py:1019
 #, python-format
+msgid "第 %(row)s 列: %(error)s"
+msgstr ""
+
+#: app/web/users.py:1025
+#, python-format
 msgid "已達帳號上限（%(limit)s）：本次將新增 %(need)s 筆，剩餘名額 %(remain)s，未匯入任何資料"
 msgstr ""
 
-#: app/web/users.py:1028
+#: app/web/users.py:1034
 #, python-format
 msgid "成功匯入 %(count)s 位用戶"
 msgstr ""
 
-#: app/web/users.py:1033
+#: app/web/users.py:1039
 #, python-format
 msgid "... 還有 %(count)s 個錯誤"
 msgstr ""
 
-#: app/web/users.py:1039
+#: app/web/users.py:1045
 #, python-format
 msgid "匯入失敗: %(error)s"
 msgstr ""
 
-#: app/web/users.py:1057
+#: app/web/users.py:1063
 #, python-format
 msgid "第 %(row)s 列: 帳號為必填"
 msgstr ""
 
-#: app/web/users.py:1059
+#: app/web/users.py:1065
 #, python-format
 msgid "第 %(row)s 列: 密碼為必填"
 msgstr ""
 
-#: app/web/users.py:1061
+#: app/web/users.py:1067
 #, python-format
 msgid "第 %(row)s 列: 姓名為必填"
 msgstr ""
 
-#: app/web/users.py:1065 app/web/users.py:1072
+#: app/web/users.py:1071 app/web/users.py:1078
 #, python-format
 msgid "第 %(row)s 列: "
 msgstr ""
 
-#: app/web/users.py:1078
+#: app/web/users.py:1084
 #, python-format
 msgid "第 %(row)s 列: 外部廠商帳號請在「外部廠商帳號」頁面以完整 Email 建立"
 msgstr ""
 
-#: app/web/users.py:1086
+#: app/web/users.py:1092
 #, python-format
 msgid "第 %(row)s 列: 企業成員編號 %(employee_id)s 已存在"
 msgstr ""

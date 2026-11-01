@@ -7,6 +7,7 @@
                 const data = await res.json();
                 if (data.success) {
                     this.baseUrl.value = data.data.system_base_url || '';
+                    this.baseUrl.allowHttpRedirect = Boolean(data.data.oidc_allow_http_redirect);
                     this.message.baseUrl = '';
                     this.message.baseUrlError = false;
                 } else {
@@ -28,11 +29,15 @@
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrfToken
                     },
-                    body: JSON.stringify({system_base_url: this.baseUrl.value})
+                    body: JSON.stringify({
+                        system_base_url: this.baseUrl.value,
+                        oidc_allow_http_redirect: this.baseUrl.allowHttpRedirect
+                    })
                 });
                 const data = await res.json();
                 if (data.success) {
                     this.baseUrl.value = data.data.system_base_url || '';
+                    this.baseUrl.allowHttpRedirect = Boolean(data.data.oidc_allow_http_redirect);
                     this.message.baseUrl = data.message;
                     this.message.baseUrlError = false;
                 } else {

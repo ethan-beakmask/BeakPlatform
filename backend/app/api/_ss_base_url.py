@@ -16,6 +16,7 @@ from ..security.decorators import system_admin_required
 
 
 SETTING_KEY = 'system_base_url'
+OIDC_HTTP_REDIRECT_KEY = 'oidc_allow_http_redirect'
 
 
 def _normalize_base_url(value: str) -> str:
@@ -45,7 +46,9 @@ def register(bp):
         return jsonify({
             'success': True,
             'data': {
-                'system_base_url': SystemSetting.get(SETTING_KEY, '') or ''
+                'system_base_url': SystemSetting.get(SETTING_KEY, '') or '',
+                'oidc_allow_http_redirect': bool(
+                    SystemSetting.get(OIDC_HTTP_REDIRECT_KEY, False)),
             }
         })
 
@@ -55,6 +58,16 @@ def register(bp):
         data = request.get_json()
         if not data or 'system_base_url' not in data:
             return jsonify({'success': False, 'error': _('缺少 system_base_url')}), 400
+
+        # 沒帶這個欄位就保留現值，避免只改網址的呼叫端把開關悄悄關掉
+        allow_http = data.get(
+            'oidc_allow_http_redirect',
+            bool(SystemSetting.get(OIDC_HTTP_REDIRECT_KEY, False)))
+        if not isinstance(allow_http, bool):
+            return jsonify({
+                'success': False,
+                'error': _('OIDC HTTP redirect 設定必須是布林值'),
+            }), 400
 
         try:
             system_base_url = _normalize_base_url(data.get('system_base_url', ''))
@@ -68,9 +81,20 @@ def register(bp):
             category='general',
             updated_by=current_user.email
         )
+        SystemSetting.set(
+            key=OIDC_HTTP_REDIRECT_KEY,
+            value=allow_http,
+            value_type='boolean',
+            category='general',
+            description='是否允許 OIDC client 使用 http redirect URI',
+            updated_by=current_user.email,
+        )
 
         return jsonify({
             'success': True,
             'message': _('系統對外網址已更新'),
-            'data': {'system_base_url': system_base_url}
+            'data': {
+                'system_base_url': system_base_url,
+                'oidc_allow_http_redirect': allow_http,
+            }
         })

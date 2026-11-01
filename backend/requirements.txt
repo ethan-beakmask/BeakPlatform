@@ -13,6 +13,8 @@ Flask-Migrate==4.1.0
 alembic==1.18.4
 
 # Authentication & Security
+Authlib==1.9.1
+joserfc==1.7.7
 Flask-Login==0.6.3
 Flask-WTF==1.2.2
 WTForms==3.2.1

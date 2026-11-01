@@ -188,6 +188,11 @@ def seed_system_org_defaults(admin_password=None) -> dict:
             db.session.flush()
             summary['external_group_created'] = True
 
+        # 專案類系統群組（PF-327，OIDC project_groups 的上層），冪等
+        from app.services.oidc_org_defaults import ensure_projects_group_class
+        ensure_projects_group_class(org)
+        db.session.flush()
+
         from app.services.menu_service import MenuService
         summary['mrr_created'] = MenuService.seed_org_role_requirements(
             org.secure_code)

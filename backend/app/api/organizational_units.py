@@ -284,6 +284,12 @@ def update_unit(secure_code: str):
     if not data:
         return jsonify({'error': _('請提供更新資料')}), 400
 
+    if (unit.code == 'PROJECTS_GROUPCLASS' and unit.is_system_unit and
+            ('parent_id' in data or data.get('is_active') is False)):
+        return jsonify({
+            'error': _('專案類為系統群組，不可移動或停用')
+        }), 400
+
     try:
         old_name = unit.name
 

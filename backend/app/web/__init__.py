@@ -137,6 +137,10 @@ def register_web_blueprints(app: Flask) -> None:
     from .node_grants import node_grants_bp
     app.register_blueprint(node_grants_bp, url_prefix='/node-grants')
 
+    # OIDC client administration
+    from .oidc_clients import oidc_clients_bp
+    app.register_blueprint(oidc_clients_bp, url_prefix='/oidc-clients')
+
     # Security Center (本機安全)
     from .security_center import security_center_bp
     app.register_blueprint(security_center_bp, url_prefix='/security')

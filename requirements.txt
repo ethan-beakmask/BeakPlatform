@@ -1,4 +1,6 @@
 langdetect==1.0.9
+Authlib==1.9.1
+joserfc==1.7.7
 pykakasi==2.3.0
 pypinyin==0.55.0
 Unidecode==1.4.0

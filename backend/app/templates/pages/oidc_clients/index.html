@@ -1,0 +1,146 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('對外單一登入') }} - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/oidc-clients.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ _('對外單一登入') }}</h1>
+    <p>{{ _('註冊 OIDC client、管理企業授權與 RS256 簽章金鑰。') }}</p>
+</div>
+
+<div class="oc-page" x-data='oidcClientsManager()' x-init="init()" x-cloak>
+    <section class="oc-panel oc-meta">
+        <div>
+            <h2>{{ _('OIDC 提供者資訊') }}</h2>
+            <template x-if="meta.issuer">
+                <div class="oc-meta-grid">
+                    <span>{{ _('Issuer') }}</span><code x-text="meta.issuer"></code>
+                    <span>{{ _('Discovery 網址') }}</span><code x-text="meta.discovery_url"></code>
+                </div>
+            </template>
+            <template x-if="!meta.issuer">
+                <p class="oc-warning">
+                    {{ _('尚未設定系統對外網址') }}
+                    <a href="{{ url_for('hostconfig.server_settings') }}">{{ _('前往伺服器設定') }}</a>
+                </p>
+            </template>
+        </div>
+        <button type="button" class="btn btn-primary" @click="openCreate()">{{ _('建立 client') }}</button>
+    </section>
+
+    <div class="oc-message oc-message-success" x-show="message && !error" x-text="message"></div>
+    <div class="oc-message oc-message-error" x-show="message && error" x-text="message"></div>
+
+    <section class="oc-panel">
+        <div class="oc-section-head">
+            <h2>{{ _('OIDC clients') }}</h2>
+            <button type="button" class="btn btn-secondary" @click="loadClients()" :disabled="busy">{{ _('重新整理') }}</button>
+        </div>
+        <div class="oc-table-wrap">
+            <table class="data-table">
+                <thead><tr>
+                    <th><button class="oc-sort" @click="setSort('name')">{{ _('名稱') }} <span x-text="sortSymbol('name')"></span></button></th>
+                    <th><button class="oc-sort" @click="setSort('client_id')">Client ID <span x-text="sortSymbol('client_id')"></span></button></th>
+                    <th><button class="oc-sort" @click="setSort('is_active')">{{ _('狀態') }} <span x-text="sortSymbol('is_active')"></span></button></th>
+                    <th><button class="oc-sort" @click="setSort('authorized_org_count')">{{ _('授權企業') }} <span x-text="sortSymbol('authorized_org_count')"></span></button></th>
+                    <th><button class="oc-sort" @click="setSort('created_at')">{{ _('建立時間') }} <span x-text="sortSymbol('created_at')"></span></button></th>
+                    <th>{{ _('操作') }}</th>
+                </tr></thead>
+                <tbody>
+                    <template x-for="client in sortedClients()" :key="client.secure_code">
+                        <tr>
+                            <td x-text="client.name"></td>
+                            <td><code x-text="client.client_id"></code></td>
+                            <td><span class="oc-badge" :class="client.is_active ? 'oc-active' : 'oc-inactive'" x-text="client.is_active ? __('啟用') : __('停用')"></span></td>
+                            <td x-text="client.authorized_org_count"></td>
+                            <td x-text="formatTime(client.created_at)"></td>
+                            <td><div class="oc-actions">
+                                <button class="btn btn-secondary" @click="openEdit(client)">{{ _('編輯') }}</button>
+                                <button class="btn btn-secondary" @click="openOrgs(client)">{{ _('企業授權') }}</button>
+                                <button class="btn btn-secondary" @click="rotateSecret(client)">{{ _('輪替 secret') }}</button>
+                                <button class="btn btn-warning" x-show="client.is_active" @click="deactivate(client)">{{ _('停用') }}</button>
+                                <button class="btn btn-danger" @click="removeClient(client)">{{ _('刪除') }}</button>
+                            </div></td>
+                        </tr>
+                    </template>
+                    <tr x-show="!loading && clients.length === 0"><td colspan="6" class="oc-empty">{{ _('目前沒有 OIDC client') }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="oc-panel">
+        <div class="oc-section-head">
+            <h2>{{ _('簽章金鑰') }}</h2>
+            <button type="button" class="btn btn-primary" @click="rotateKey()" :disabled="busy">{{ _('輪替金鑰') }}</button>
+        </div>
+        <div class="oc-table-wrap">
+            <table class="data-table">
+                <thead><tr><th>KID</th><th>{{ _('狀態') }}</th><th>{{ _('建立時間') }}</th><th>{{ _('退役時間') }}</th></tr></thead>
+                <tbody>
+                    <template x-for="key in keys" :key="key.kid"><tr>
+                        <td><code x-text="key.kid"></code></td><td x-text="key.status"></td>
+                        <td x-text="formatTime(key.created_at)"></td><td x-text="formatTime(key.retired_at)"></td>
+                    </tr></template>
+                    <tr x-show="keys.length === 0"><td colspan="4" class="oc-empty">{{ _('尚未建立簽章金鑰') }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="modal-overlay" x-show="formModal">
+        <div class="modal-content oc-modal">
+            <h2 x-text="editing ? __('編輯 client') : __('建立 client')"></h2>
+            <div class="oc-field"><label>{{ _('名稱') }}</label><input class="form-control" x-model="form.name" maxlength="100"></div>
+            <div class="oc-field"><label>{{ _('Redirect URIs（每行一個）') }}</label><textarea class="form-control" rows="4" x-model="form.redirectText"></textarea></div>
+            <fieldset class="oc-field"><legend>{{ _('允許的帳號類型') }}</legend>
+                <template x-for="type in userTypeOptions" :key="type"><label class="oc-check"><input type="checkbox" :value="type" x-model="form.allowed_user_types"><span x-text="type"></span></label></template>
+            </fieldset>
+            <fieldset class="oc-field"><legend>{{ _('額外 claims') }}</legend><label class="oc-check"><input type="checkbox" value="scribe" x-model="form.extra_claims"><span>scribe</span></label></fieldset>
+            <label class="oc-check" x-show="editing"><input type="checkbox" x-model="form.is_active"><span>{{ _('啟用') }}</span></label>
+            <div class="oc-modal-actions"><button class="btn btn-secondary" @click="formModal=false">{{ _('取消') }}</button><button class="btn btn-primary" @click="saveClient()" :disabled="busy">{{ _('儲存') }}</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" x-show="orgModal">
+        <div class="modal-content oc-modal oc-modal-wide">
+            <h2>{{ _('企業授權') }}</h2>
+            <div class="oc-field"><label>{{ _('選擇企業（可複選）') }}</label>
+                <select class="form-control" multiple size="8" x-model="selectedOrgCodes">
+                    <template x-for="org in ungrantedOrgs()" :key="org.secure_code"><option :value="org.secure_code" :selected="selectedOrgCodes.includes(org.secure_code)" x-text="org.name + ' (' + org.code + ')' "></option></template>
+                </select>
+            </div>
+            <button class="btn btn-primary" @click="addSelectedOrgs()" :disabled="busy || selectedOrgCodes.length === 0">{{ _('加入所選企業') }}</button>
+            <div class="oc-grants">
+                <template x-for="org in detail.organizations || []" :key="org.secure_code"><div class="oc-grant-row"><span x-text="org.name + ' (' + org.domain_name + ')' "></span><button class="btn btn-danger" @click="revokeOrg(org)">{{ _('撤銷') }}</button></div></template>
+            </div>
+            <div class="oc-modal-actions"><button class="btn btn-secondary" @click="orgModal=false">{{ _('關閉') }}</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" x-show="secretModal">
+        <div class="modal-content oc-modal">
+            <h2>{{ _('Client secret') }}</h2>
+            <p class="oc-warning">{{ _('關閉後無法再次查看') }}</p>
+            <div class="oc-secret"><code x-text="oneTimeSecret"></code><button class="btn btn-secondary" @click="copySecret()">{{ _('複製') }}</button></div>
+            <div class="oc-modal-actions"><button class="btn btn-primary" @click="closeSecret()">{{ _('我已保存，關閉') }}</button></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.__OIDC_CLIENTS = {
+    api: '{{ url_for("oidc_clients_api.list_oidc_clients") }}',
+    meta: '{{ url_for("oidc_clients_api.meta") }}',
+    keys: '{{ url_for("oidc_clients_api.signing_keys") }}',
+    rotateKey: '{{ url_for("oidc_clients_api.rotate_signing_key") }}'
+};
+</script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/oidc-clients.js') }}"></script>
+{% endblock %}

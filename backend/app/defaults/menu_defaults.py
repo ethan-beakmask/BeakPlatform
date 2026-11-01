@@ -385,6 +385,18 @@ CORE_MENUS = [
         'required_level': 0,
         'is_shared': False,
     },
+    {
+        'code': 'oidc_clients',
+        'title': '對外單一登入',
+        'title_i18n': {'en': 'Single Sign-On Clients'},
+        'parent_code': 'perm_mgmt',
+        'link_type': 'route',
+        'link_target': 'oidc_clients.index',
+        'display_order': 6,
+        'depth': 1,
+        'required_level': 0,
+        'is_shared': False,
+    },
 
     # -- 系統管理 (org_config_mgr) --
     {
