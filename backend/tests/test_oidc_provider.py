@@ -1,6 +1,8 @@
 """End-to-end coverage for the PF-327 OIDC provider."""
 import base64
 import hashlib
+import html
+import re
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -70,6 +72,12 @@ def _code(response):
     return parse_qs(urlparse(response.headers['Location']).query)['code'][0]
 
 
+def _resume_target(response):
+    html_ = response.get_data(as_text=True)
+    url = re.search(r'content="0;url=([^"]+)"', html_).group(1)
+    return html.unescape(url)
+
+
 def _token(client, code, verifier=VERIFIER):
     basic = base64.b64encode(f'scribe-client:{SECRET}'.encode()).decode()
     return client.post(P + '/oauth/token', data={
@@ -96,9 +104,12 @@ def test_complete_login_resume_token_jwks_and_userinfo(
     assert login.status_code == 200
     assert login.get_json()['redirect'].endswith('/oauth/authorize/resume')
     resumed = client.get(P + '/oauth/authorize/resume')
-    assert resumed.status_code == 302
-    query = parse_qs(urlparse(resumed.headers['Location']).query)
-    assert query.get('state') == ['state-1'], resumed.headers['Location']
+    # 中繼頁（200）而非 302：登入表單 POST 的 302 鏈會被 CSP form-action 'self' 擋下
+    assert resumed.status_code == 200
+    assert 'Location' not in resumed.headers
+    assert resumed.headers['Cache-Control'] == 'no-store'
+    query = parse_qs(urlparse(_resume_target(resumed)).query)
+    assert query.get('state') == ['state-1'], resumed.data
     assert query['iss'] == ['https://platform.test/beakplatform']
 
     issued = _token(client, query['code'][0])
@@ -322,7 +333,8 @@ def test_forced_password_change_resumes_only_after_change(
     assert changed.status_code == 302
     assert changed.headers['Location'].endswith('/oauth/authorize/resume')
     resumed = client.get(changed.headers['Location'])
-    assert 'code=' in resumed.headers['Location']
+    assert resumed.status_code == 200
+    assert 'code=' in _resume_target(resumed)
 
 
 @pytest.mark.parametrize('case', [

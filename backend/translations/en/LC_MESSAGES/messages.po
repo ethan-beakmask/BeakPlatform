@@ -25246,3 +25246,15 @@ msgstr "Workflow tree diagram - BeakPlatform"
 
 #~ msgid "第 %(row)s 列: 帳號 %(username)s 已存在"
 #~ msgstr "Row %(row)s: account %(username)s already exists"
+
+#: app/templates/pages/oidc/redirect.html
+msgid "正在回到原系統"
+msgstr "Returning to the original system"
+
+#: app/templates/pages/oidc/redirect.html
+msgid "正在回到原系統，若未自動跳轉請點下方連結。"
+msgstr "Returning to the original system. If you are not redirected automatically, use the link below."
+
+#: app/templates/pages/oidc/redirect.html
+msgid "繼續"
+msgstr "Continue"

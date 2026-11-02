@@ -4,8 +4,8 @@ import time
 from datetime import datetime, timedelta
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from flask import (Blueprint, jsonify, redirect, render_template, request,
-                   session, url_for)
+from flask import (Blueprint, jsonify, make_response as app_response, redirect,
+                   render_template, request, session, url_for)
 from flask_login import current_user
 from flask_babel import gettext as _
 
@@ -158,7 +158,16 @@ def authorize_resume():
               'pending_expired', 400)
         session.pop('oidc_pending', None)
         return _error_page(_('授權請求已過期，請回到原系統重新登入。'))
-    return _authorize(pending)
+    result = _authorize(pending)
+    # resume 是登入表單 POST 的 302 鏈末端，Chrome 對整條鏈套用 CSP form-action 'self'，
+    # 跨來源的 redirect_uri 會被擋；改用 200 中繼頁做一般導航（不受 form-action 管）
+    if result.status_code == 302:
+        target = result.headers['Location']
+        page = render_template('pages/oidc/redirect.html', target=target)
+        response = app_response(page, 200)
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+    return result
 
 
 @oidc_provider_bp.route('/oauth/token', methods=['POST'])

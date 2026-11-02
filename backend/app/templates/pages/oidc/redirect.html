@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale|default('zh-TW') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="refresh" content="0;url={{ target }}">
+    <title>{{ _('正在回到原系統') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+</head>
+<body>
+    <main style="max-width: 640px; margin: 10vh auto; padding: 2rem;">
+        <p>{{ _('正在回到原系統，若未自動跳轉請點下方連結。') }}</p>
+        <p><a href="{{ target }}">{{ _('繼續') }}</a></p>
+    </main>
+    <script>window.location.replace({{ target|tojson }});</script>
+</body>
+</html>
