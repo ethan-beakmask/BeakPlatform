@@ -45,6 +45,12 @@ RATE_LIMIT_CATEGORIES = {
         'env_key': 'RATELIMIT_RESET_PASSWORD',
         'default': '10 per 10 minutes',
     },
+    'oidc_members': {
+        'label': 'OIDC 群組成員清單 (/oauth/project-groups/*/members)',
+        'db_key': 'ratelimit_oidc_members',
+        'env_key': 'RATELIMIT_OIDC_MEMBERS',
+        'default': '30 per minute',
+    },
     'oidc_token': {
         'label': 'OIDC 換發 token (/oauth/token)',
         'db_key': 'ratelimit_oidc_token',

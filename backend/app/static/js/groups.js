@@ -758,6 +758,12 @@ function groupManager() {
                 return;
             }
 
+            if (['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'].includes(roleType) && dragUserType !== 'EMPLOYEE') {
+                this.showToast(__('團長與副團長只能由在職員工擔任'), 'error');
+                this.clearDrag();
+                return;
+            }
+
             var existing = this.members.find(function(m) { return m.user_secure_code === userId; });
 
             try {

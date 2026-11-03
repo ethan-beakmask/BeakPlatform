@@ -567,3 +567,30 @@ def remove_unit_standby(org_sc: str, unit_sc: str, user_sc: str):
         row.is_deleted = True
         row.deleted_at = now
     return user, len(rows)
+
+
+def vacate_group_leadership(user) -> list[dict]:
+    """軟刪同企業 GROUP 的管理層 membership；只 flush，由呼叫端 commit。"""
+    from app.models.organizational_unit import OrganizationalUnit, UnitType
+
+    rows = db.session.query(UserUnitMembership, OrganizationalUnit).join(
+        OrganizationalUnit,
+        OrganizationalUnit.secure_code == UserUnitMembership.unit_secure_code,
+    ).filter(
+        UserUnitMembership.org_secure_code == user.org_secure_code,
+        UserUnitMembership.user_secure_code == user.secure_code,
+        UserUnitMembership.is_deleted.is_(False),
+        UserUnitMembership.role_type.in_((MembershipRole.MANAGER, MembershipRole.DEPUTY,
+                                        MembershipRole.PROXY1, MembershipRole.PROXY2)),
+        OrganizationalUnit.org_secure_code == user.org_secure_code,
+        OrganizationalUnit.unit_type == UnitType.GROUP,
+        OrganizationalUnit.is_deleted.is_(False),
+    ).all()
+    vacated = []
+    for membership, unit in rows:
+        vacated.append({'key': unit.secure_code, 'name': unit.name,
+                        'role_type': membership.role_type})
+        membership.is_deleted = True
+        membership.deleted_at = datetime.utcnow()
+    db.session.flush()
+    return vacated

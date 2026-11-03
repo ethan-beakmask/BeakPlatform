@@ -399,6 +399,10 @@ def register_error_handlers(app: Flask) -> None:
 
     @app.errorhandler(429)
     def ratelimit_handler(error):
+        # flask-limiter 把 on_breach 回傳的 Response 掛在例外上；有就照用，
+        # 否則端點自訂的 429 JSON／導向會被下面的通用回應蓋掉
+        if getattr(error, 'response', None) is not None:
+            return error.response
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({
                 'success': False,

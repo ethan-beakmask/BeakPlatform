@@ -74,13 +74,25 @@ def audit(action, client_id, reason, status=200, user=None, org_sc=None):
         status_code=status)
 
 
+def external_users_enabled() -> bool:
+    return bool(SystemSetting.get('oidc_external_users_enabled', False))
+
+
+def user_type_allowed(client, user) -> bool:
+    """EXTERNAL 只看系統開關；其他 user_type 看 client.allowed_user_types。"""
+    if user.user_type == 'EXTERNAL':
+        return external_users_enabled()
+    return user.user_type in (client.allowed_user_types or [])
+
+
 def validate_subject(client, user_sc, require_contract=False):
     user = User.query.filter(User.secure_code == user_sc,
                              User.is_deleted.is_(False),
                              User.is_active.is_(True)).first()
     if user is None: return None, None, 'user_inactive'
-    if user.user_type == 'EXTERNAL' or user.user_type not in (client.allowed_user_types or []):
-        return user, None, 'user_type_denied'
+    if not user_type_allowed(client, user):
+        return user, None, ('external_disabled' if user.user_type == 'EXTERNAL'
+                            else 'user_type_denied')
     org = Organization.query.filter(
         Organization.secure_code == user.org_secure_code,
         Organization.is_deleted.is_(False), Organization.is_active.is_(True)).first()

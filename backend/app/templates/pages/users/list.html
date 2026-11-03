@@ -118,4 +118,10 @@
         <li>{{ _('停用的用戶無法登入系統') }}</li>
     </ul>
 </div>
+{% set vacated = session.pop('vacated_groups_notice', None) %}
+{% if vacated %}
+<script>window.addEventListener('DOMContentLoaded', function () {
+    alert(__('以下社群的團長位已空出，請另行指派：') + '\n' + {{ vacated|tojson }}.join('\n'));
+});</script>
+{% endif %}
 {% endblock %}

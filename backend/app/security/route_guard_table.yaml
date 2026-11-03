@@ -11842,6 +11842,21 @@ routes:
     rules:
     - /oauth/jwks
     source: backend/app/api/oidc_provider.py
+  oidc_provider.project_group_members:
+    answer_source: code
+    guard_args: {}
+    guards:
+    - public_route
+    has_internal_check: false
+    internal_identity_check: false
+    max_audience: null
+    methods:
+    - GET
+    note: ''
+    review: unreviewed
+    rules:
+    - /oauth/project-groups/<group_sc>/members
+    source: backend/app/api/oidc_provider.py
   oidc_provider.token:
     answer_source: code
     guard_args: {}

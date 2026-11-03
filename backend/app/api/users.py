@@ -341,7 +341,9 @@ def delete_user(secure_code: str):
     if user.is_original_admin:
         return jsonify({'error': _('不能刪除企業原始管理員')}), 403
 
+    from ..services.dept_membership_service import vacate_group_leadership
     ResourceGateway.delete(user, soft=True)
+    vacated = vacate_group_leadership(user)
     ResourceGateway.commit()
 
-    return jsonify({'message': 'User deleted'}), 200
+    return jsonify({'message': 'User deleted', 'vacated_groups': vacated}), 200

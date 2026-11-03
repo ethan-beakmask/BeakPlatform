@@ -10,7 +10,7 @@ URL 安全設計：
 import csv
 import io
 from datetime import datetime
-from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, Response, jsonify, current_app
+from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, Response, jsonify, current_app, session
 from flask_babel import gettext as _
 from flask_login import current_user
 
@@ -34,6 +34,8 @@ from ..services.user_rename_service import (
     rename_user as rename_user_account,
 )
 from .. import db
+
+from ..services.dept_membership_service import vacate_group_leadership
 
 users_bp = Blueprint('users', __name__)
 
@@ -809,11 +811,15 @@ def delete_user(secure_code: str):
     try:
         user.is_deleted = True
         user.deleted_at = datetime.utcnow()
+        vacated = vacate_group_leadership(user)
         db.session.commit()
+        if vacated:
+            session['vacated_groups_notice'] = [g['name'] for g in vacated]
         flash(_('已刪除用戶 %(name)s', name=user.display_name), 'success')
         return redirect(url_for('users.list_users'))
     except Exception as e:
         db.session.rollback()
+        current_app.logger.exception('user delete failed')
         flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('users.edit_user', secure_code=secure_code))
 
@@ -846,13 +852,17 @@ def toggle_status(secure_code: str):
 
     try:
         user.is_active = not user.is_active
+        vacated = vacate_group_leadership(user) if not user.is_active else []
         db.session.commit()
+        if vacated:
+            session['vacated_groups_notice'] = [g['name'] for g in vacated]
         if user.is_active:
             flash(_('已啟用用戶 %(name)s', name=user.display_name), 'success')
         else:
             flash(_('已停用用戶 %(name)s', name=user.display_name), 'success')
     except Exception as e:
         db.session.rollback()
+        current_app.logger.exception('user status toggle failed')
         flash(_('操作失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('users.list_users'))

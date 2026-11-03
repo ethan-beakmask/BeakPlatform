@@ -10,16 +10,16 @@ from flask_login import current_user
 from flask_babel import gettext as _
 
 from app import csrf, db, limiter
-from app.models import OidcAuthorizationCode
+from app.models import OidcAuthorizationCode, Organization
 from app.security.client_ip import client_ip_key
 from app.security.decorators import public_route
-from app.services.oidc_claims import build_claims
+from app.services.oidc_claims import build_claims, authorized_member_group, group_members
 from app.services.oidc_keys import get_public_jwks
 from app.services.oidc_login_resume import PENDING_MAX_AGE
 from app.services.oidc_server import (
     audit, authenticate_client, decode_access_token, discovery_document,
     exchange_authorization_code, exchange_refresh_token, issuer, query_client,
-    token_hash, validate_subject,
+    token_hash, validate_subject, external_users_enabled,
 )
 from app.services.rate_limit_service import RateLimitService
 
@@ -88,6 +88,12 @@ def _authorize(params):
 
     if not current_user.is_authenticated:
         _save_pending(params)
+        if external_users_enabled() and params.get('org_hint'):
+            org = Organization.query.filter(
+                Organization.domain_name == params['org_hint'].strip().lower(),
+                Organization.is_deleted.is_(False), Organization.is_active.is_(True)).first()
+            if org:
+                return redirect(url_for('auth.org_public_login', domain_name=org.domain_name))
         return redirect(url_for('auth.login'))
     if current_user.must_change_password:
         _save_pending(params)
@@ -215,3 +221,54 @@ def userinfo():
         return jsonify({'error': 'invalid_token'}), 401
     claims, client, user = decoded
     return jsonify(build_claims(user, claims.get('scope', ''), client))
+
+
+def _members_limit_key():
+    # 快取掛在 request 物件上（每個請求各一份），限流 key_func 與 view 只做一次密碼雜湊比對
+    if not hasattr(request, '_oidc_members_client'):
+        request._oidc_members_client = authenticate_client()
+    client = request._oidc_members_client
+    return ('oidc_members:client:' + client.client_id if client else
+            'oidc_members:ip:' + client_ip_key())
+
+
+def _members_breach(request_limit):
+    client = getattr(request, '_oidc_members_client', None)
+    audit('OIDC_MEMBERS_DENIED', client.client_id if client else None, 'rate_limited', 429)
+    response = jsonify({'error': 'rate_limited'})
+    response.status_code = 429
+    return response
+
+
+@oidc_provider_bp.route('/oauth/project-groups/<group_sc>/members', methods=['GET'])
+@public_route
+@csrf.exempt
+@limiter.limit(lambda: RateLimitService.get_limit('oidc_members'),
+               key_func=_members_limit_key, on_breach=_members_breach)
+def project_group_members(group_sc):
+    disabled = _disabled()
+    if disabled:
+        return disabled
+    # 限流關閉時不會呼叫 key_func，這裡補做一次認證
+    if not hasattr(request, '_oidc_members_client'):
+        _members_limit_key()
+    client = request._oidc_members_client
+    if client is None:
+        audit('OIDC_MEMBERS_DENIED', None, 'invalid_client', 401)
+        response = jsonify({'error': 'invalid_client'})
+        response.status_code = 401
+        response.headers['WWW-Authenticate'] = 'Basic realm="oauth/project-groups"'
+        return response
+    resolved = authorized_member_group(client, group_sc)
+    if resolved is None:
+        audit('OIDC_MEMBERS_DENIED', client.client_id, 'not_found', 404)
+        return jsonify({'error': 'not_found'}), 404
+    unit, org, tree = resolved
+    members = group_members(client, org, unit)
+    audit('OIDC_MEMBERS_LISTED', client.client_id,
+          f'group={group_sc} count={len(members)}', org_sc=org.secure_code)
+    response = jsonify({'org': {'key': org.secure_code},
+                        'group': {'key': unit.secure_code, 'name': unit.name, 'tree': tree},
+                        'members': members})
+    response.headers['Cache-Control'] = 'no-store'
+    return response

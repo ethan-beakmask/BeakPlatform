@@ -722,14 +722,16 @@ def org_public_login(domain_name: str):
 
     LoginSecurityService.enforce_delay(login_start)
 
+    from ..services.oidc_login_resume import pending_authorize_redirect
+    target = pending_authorize_redirect()
     if is_json:
         return jsonify({
             'success': True,
             'message': _('登入成功'),
-            'redirect': url_for('main.dashboard')
+            'redirect': target or url_for('main.dashboard')
         })
 
-    return redirect(url_for('main.dashboard'))
+    return redirect(target or url_for('main.dashboard'))
 
 
 @auth_bp.route('/logout', methods=['POST'])

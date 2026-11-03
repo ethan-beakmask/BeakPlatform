@@ -1492,6 +1492,14 @@ SELECT substr(md5(random()::text),1,22), 'oidc_allow_http_redirect', 'false', 'b
 WHERE NOT EXISTS (SELECT 1 FROM system_settings WHERE key='oidc_allow_http_redirect' AND is_deleted=false);
 " 2>/dev/null || log_warn "oidc_allow_http_redirect 出廠值種入失敗"
 
+sudo -u postgres env PGPORT="$PG_PORT" psql -d "$DB_NAME" -q -c "
+INSERT INTO system_settings (secure_code, key, value, value_type, category, description, created_at, updated_at, is_deleted)
+SELECT substr(md5(random()::text),1,22), 'oidc_external_users_enabled', 'false', 'boolean', 'general',
+       '允許外部廠商帳號經 OIDC 登入外部系統（試驗用，全部 client 一起生效）',
+       now() AT TIME ZONE 'UTC', now() AT TIME ZONE 'UTC', false
+WHERE NOT EXISTS (SELECT 1 FROM system_settings WHERE key='oidc_external_users_enabled' AND is_deleted=false);
+" 2>/dev/null || log_warn "oidc_external_users_enabled 出廠值種入失敗"
+
 echo ""
 echo "============================================"
 log_info "全新安裝完成"

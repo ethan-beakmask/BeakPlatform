@@ -77,6 +77,17 @@ def _get_managed_group_scs(user) -> list:
     return [m.unit_secure_code for m in memberships]
 
 
+def _assert_leader_eligible(user) -> str | None:
+    if (user is None or user.user_type != 'EMPLOYEE' or
+            not user.is_active or user.is_deleted):
+        return _('團長與副團長只能由在職員工擔任')
+    return None
+
+
+_GROUP_ROLES = (MembershipRole.MANAGER, MembershipRole.DEPUTY,
+                MembershipRole.PROXY1, MembershipRole.PROXY2, MembershipRole.MEMBER)
+
+
 def _is_in_external_tree(unit: OrganizationalUnit) -> bool:
     """判斷群組是否屬於 EXTERNAL_VENDORS 子樹（含自身）"""
     cur = unit
@@ -1145,6 +1156,10 @@ def add_cross_member(secure_code: str):
     if not data or not data.get('user_id'):
         return jsonify({'error': _('請提供用戶 ID')}), 400
 
+    role_type = data.get('role_type', MembershipRole.MEMBER)
+    if role_type not in _GROUP_ROLES:
+        return jsonify({'error': _('無效的角色類型')}), 400
+
     # 驗證用戶
     user = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.secure_code == data['user_id'],
@@ -1170,6 +1185,11 @@ def add_cross_member(secure_code: str):
     # 驗證成員類型
     if membership_type not in [MembershipType.DOTTED, MembershipType.MEMBER]:
         return jsonify({'error': _('無效的成員類型')}), 400
+
+    if unit.unit_type == UnitType.GROUP and role_type != MembershipRole.MEMBER:
+        error = _assert_leader_eligible(user)
+        if error:
+            return jsonify({'error': error}), 400
 
     # 檢查是否已存在相同關係（包含已刪除的，因為唯一約束不考慮 is_deleted）
     existing = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
@@ -1292,6 +1312,16 @@ def update_cross_member(secure_code: str, membership_secure_code: str):
 
     try:
         if 'role_type' in data:
+            if data['role_type'] not in _GROUP_ROLES:
+                return jsonify({'error': _('無效的角色類型')}), 400
+            if unit.unit_type == UnitType.GROUP and data['role_type'] != MembershipRole.MEMBER:
+                user = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
+                    User.secure_code == membership.user_secure_code,
+                    User.org_secure_code == current_user.org_secure_code,
+                    User.is_active.is_(True), User.is_deleted.is_(False)).first()
+                error = _assert_leader_eligible(user)
+                if error:
+                    return jsonify({'error': error}), 400
             membership.role_type = data['role_type']
         if 'start_date' in data:
             membership.start_date = date.fromisoformat(data['start_date']) if data['start_date'] else None
@@ -1418,6 +1448,9 @@ def list_group_member_candidates():
     非 admin 且非任何社群的團長 → 403。
     """
     from ..models.user import UserType
+
+    if current_user.user_type == 'EXTERNAL':
+        return jsonify({'error': _('無權限')}), 403
 
     if not _is_admin(current_user):
         managed_scs = _get_managed_group_scs(current_user)
