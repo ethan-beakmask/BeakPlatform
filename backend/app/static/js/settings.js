@@ -105,6 +105,7 @@ function generalSettings() {
     return {
         settings: {
             allow_user_self_edit: true,
+            oidc_external_users_enabled: false,
             locale: 'zh-TW',
             country: 'TW',
             timezone: 'Asia/Taipei',

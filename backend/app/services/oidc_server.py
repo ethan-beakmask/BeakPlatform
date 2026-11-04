@@ -74,14 +74,14 @@ def audit(action, client_id, reason, status=200, user=None, org_sc=None):
         status_code=status)
 
 
-def external_users_enabled() -> bool:
-    return bool(SystemSetting.get('oidc_external_users_enabled', False))
+def external_users_enabled(org) -> bool:
+    return org is not None and org.get_setting('oidc_external_users_enabled', False) is True
 
 
-def user_type_allowed(client, user) -> bool:
-    """EXTERNAL 只看系統開關；其他 user_type 看 client.allowed_user_types。"""
+def user_type_allowed(client, user, org) -> bool:
+    """EXTERNAL 只看帳號所屬企業的開關；其他 user_type 看 client.allowed_user_types。"""
     if user.user_type == 'EXTERNAL':
-        return external_users_enabled()
+        return external_users_enabled(org)
     return user.user_type in (client.allowed_user_types or [])
 
 
@@ -90,13 +90,13 @@ def validate_subject(client, user_sc, require_contract=False):
                              User.is_deleted.is_(False),
                              User.is_active.is_(True)).first()
     if user is None: return None, None, 'user_inactive'
-    if not user_type_allowed(client, user):
-        return user, None, ('external_disabled' if user.user_type == 'EXTERNAL'
-                            else 'user_type_denied')
     org = Organization.query.filter(
         Organization.secure_code == user.org_secure_code,
         Organization.is_deleted.is_(False), Organization.is_active.is_(True)).first()
     if org is None: return user, None, 'organization_inactive'
+    if not user_type_allowed(client, user, org):
+        return user, None, ('external_disabled' if user.user_type == 'EXTERNAL'
+                            else 'user_type_denied')
     if user.user_type == 'SYSTEM_ADMIN' and not org.is_system_org:
         return user, org, 'system_admin_wrong_org'
     if require_contract and not org.is_contract_valid():

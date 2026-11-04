@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 23:17+0800\n"
+"POT-Creation-Date: 2026-11-05 01:17+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -122,31 +122,27 @@ msgstr ""
 msgid "選單配色已重置為預設值，重新整理頁面後生效"
 msgstr ""
 
-#: app/api/_ss_base_url.py:30
+#: app/api/_ss_base_url.py:29
 msgid "系統對外網址必須是 http 或 https 的完整 base URL"
 msgstr ""
 
-#: app/api/_ss_base_url.py:33
+#: app/api/_ss_base_url.py:32
 msgid "系統對外網址不要含 /beakplatform 之類的路徑前綴"
 msgstr ""
 
-#: app/api/_ss_base_url.py:36
+#: app/api/_ss_base_url.py:35
 msgid "系統對外網址不可包含 query 或 fragment"
 msgstr ""
 
-#: app/api/_ss_base_url.py:62
+#: app/api/_ss_base_url.py:60
 msgid "缺少 system_base_url"
 msgstr ""
 
-#: app/api/_ss_base_url.py:71
+#: app/api/_ss_base_url.py:69
 msgid "OIDC HTTP redirect 設定必須是布林值"
 msgstr ""
 
-#: app/api/_ss_base_url.py:78
-msgid "OIDC 外部廠商設定必須是布林值"
-msgstr ""
-
-#: app/api/_ss_base_url.py:109
+#: app/api/_ss_base_url.py:95
 msgid "系統對外網址已更新"
 msgstr ""
 
@@ -801,7 +797,7 @@ msgid "建立職務分類失敗"
 msgstr ""
 
 #: app/api/duties.py:153 app/api/duties.py:383
-#: app/api/organizational_units.py:296 app/api/organizational_units.py:1310
+#: app/api/organizational_units.py:296 app/api/organizational_units.py:1311
 #: app/api/organizations.py:235 app/api/roles.py:388
 msgid "請提供更新資料"
 msgstr ""
@@ -1225,7 +1221,7 @@ msgid "系統級類別不可修改"
 msgstr ""
 
 #: ../modules/form_workflow/api/fc_phrases.py:178 app/api/lookup.py:215
-#: app/api/lookup.py:438 app/api/organizational_units.py:1346
+#: app/api/lookup.py:438 app/api/organizational_units.py:1347
 msgid "更新失敗"
 msgstr ""
 
@@ -1511,8 +1507,8 @@ msgstr ""
 #: app/api/organizational_units.py:861 app/api/organizational_units.py:883
 #: app/api/organizational_units.py:919 app/api/organizational_units.py:1001
 #: app/api/organizational_units.py:1042 app/api/organizational_units.py:1090
-#: app/api/organizational_units.py:1153 app/api/organizational_units.py:1296
-#: app/api/organizational_units.py:1370
+#: app/api/organizational_units.py:1153 app/api/organizational_units.py:1297
+#: app/api/organizational_units.py:1371
 msgid "組織單位不存在"
 msgstr ""
 
@@ -1630,8 +1626,8 @@ msgstr ""
 #: ../modules/nocode_builder/services/project_service.py:362
 #: app/api/organizational_units.py:651 app/api/organizational_units.py:763
 #: app/api/organizational_units.py:823 app/api/organizational_units.py:933
-#: app/api/organizational_units.py:1048 app/api/organizational_units.py:1167
-#: app/api/organizational_units.py:1419
+#: app/api/organizational_units.py:1048 app/api/organizational_units.py:1171
+#: app/api/organizational_units.py:1420
 #: app/services/role_assignment_service.py:192
 msgid "用戶不存在"
 msgstr ""
@@ -1640,8 +1636,8 @@ msgstr ""
 msgid "只有企業成員帳號可加入部門"
 msgstr ""
 
-#: app/api/organizational_units.py:666 app/api/organizational_units.py:1221
-#: app/api/organizational_units.py:1257
+#: app/api/organizational_units.py:666 app/api/organizational_units.py:1222
+#: app/api/organizational_units.py:1258
 #, python-format
 msgid "已將 %(user)s 加入 %(unit)s"
 msgstr ""
@@ -1745,7 +1741,7 @@ msgid "%(position)s 角色不存在"
 msgstr ""
 
 #: app/api/organizational_units.py:1020 app/api/organizational_units.py:1053
-#: app/api/organizational_units.py:1398
+#: app/api/organizational_units.py:1399
 msgid "移除失敗"
 msgstr ""
 
@@ -1763,40 +1759,40 @@ msgstr ""
 msgid "無權限存取此社群"
 msgstr ""
 
-#: app/api/organizational_units.py:1141 app/api/organizational_units.py:1284
-#: app/api/organizational_units.py:1360
+#: app/api/organizational_units.py:1141 app/api/organizational_units.py:1285
+#: app/api/organizational_units.py:1361
 msgid "無權限管理此社群成員"
 msgstr ""
 
-#: app/api/organizational_units.py:1173
-msgid "外部人員不可加入企業群組"
-msgstr ""
-
-#: app/api/organizational_units.py:1183
-msgid "無效的成員類型"
-msgstr ""
-
-#: app/api/organizational_units.py:1187 app/api/organizational_units.py:1315
+#: app/api/organizational_units.py:1161 app/api/organizational_units.py:1316
 msgid "無效的角色類型"
 msgstr ""
 
-#: app/api/organizational_units.py:1203
+#: app/api/organizational_units.py:1177
+msgid "外部人員不可加入企業群組"
+msgstr ""
+
+#: app/api/organizational_units.py:1187
+msgid "無效的成員類型"
+msgstr ""
+
+#: app/api/organizational_units.py:1204
 msgid "該用戶已是此單位的成員"
 msgstr ""
 
-#: app/api/organizational_units.py:1227 app/api/organizational_units.py:1264
+#: app/api/organizational_units.py:1228 app/api/organizational_units.py:1265
 msgid "新增失敗"
 msgstr ""
 
-#: app/api/organizational_units.py:1306 app/api/organizational_units.py:1380
+#: app/api/organizational_units.py:1307 app/api/organizational_units.py:1381
 msgid "成員關係不存在"
 msgstr ""
 
-#: app/api/organizational_units.py:1339
+#: app/api/organizational_units.py:1340
 msgid "更新成功"
 msgstr ""
 
-#: app/api/organizational_units.py:1392
+#: app/api/organizational_units.py:1393
 msgid "已移除成員關係"
 msgstr ""
 
@@ -1817,7 +1813,7 @@ msgstr ""
 #: ../modules/nocode_builder/api/project_api.py:132
 #: ../modules/nocode_builder/api/project_api.py:149
 #: ../modules/nocode_builder/api/project_api.py:171
-#: app/api/organizational_units.py:1452 app/api/organizational_units.py:1457
+#: app/api/organizational_units.py:1453 app/api/organizational_units.py:1458
 #: app/api/organizations.py:230 app/api/security_center.py:291
 msgid "無權限"
 msgstr ""
@@ -6092,7 +6088,7 @@ msgid "一般設定"
 msgstr ""
 
 #: app/templates/pages/admin/settings.html:34
-#: app/templates/pages/admin/settings.html:287
+#: app/templates/pages/admin/settings.html:302
 msgid "密碼政策"
 msgstr ""
 
@@ -6232,86 +6228,98 @@ msgstr ""
 msgid "IANA 時區，影響系統時間顯示（管理員設定一次即可）"
 msgstr ""
 
+#: app/templates/pages/admin/settings.html:279
+msgid "外部廠商經 OIDC 登入外部系統"
+msgstr ""
+
+#: app/templates/pages/admin/settings.html:286
+msgid "允許本企業的外部廠商帳號經 OIDC 登入已接入平台的外部系統"
+msgstr ""
+
 #: app/templates/pages/admin/settings.html:289
+msgid "整家企業一個開關，不分廠商。關閉後已登入的廠商最遲 15 分鐘內失效。"
+msgstr ""
+
+#: app/templates/pages/admin/settings.html:304
 msgid "設定密碼複雜度要求、歷史限制和登入失敗鎖定"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:299
+#: app/templates/pages/admin/settings.html:314
 msgid "啟用密碼政策"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:300
+#: app/templates/pages/admin/settings.html:315
 msgid "（啟用後，所有密碼欄位將檢查複雜度要求）"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:307
+#: app/templates/pages/admin/settings.html:322
 msgid "注意"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:309
+#: app/templates/pages/admin/settings.html:324
 msgid ""
 "系統發信服務尚未就緒，忘記密碼驗證信與登入救助警報信目前寄不出去。這項設定由系統管理員在「主機設定 → 發信服務」完成，本頁的 SMTP "
 "設定組只給流程節點使用，不影響系統信。"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:319
+#: app/templates/pages/admin/settings.html:334
 msgid "最小長度"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:325
+#: app/templates/pages/admin/settings.html:340
 msgid "個字元（建議 12 以上）"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:331
+#: app/templates/pages/admin/settings.html:346
 msgid "複雜度要求"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:336
+#: app/templates/pages/admin/settings.html:351
 msgid "包含大寫字母 (A-Z)"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:340
+#: app/templates/pages/admin/settings.html:355
 msgid "包含小寫字母 (a-z)"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:344
+#: app/templates/pages/admin/settings.html:359
 msgid "包含數字 (0-9)"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:348
+#: app/templates/pages/admin/settings.html:363
 #, python-format
 msgid "包含特殊符號 (!@#$%%^&* 等)"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:356
+#: app/templates/pages/admin/settings.html:371
 msgid "密碼歷史限制"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:362
+#: app/templates/pages/admin/settings.html:377
 msgid "次內不可重複使用（0 = 不限制）"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:368
+#: app/templates/pages/admin/settings.html:383
 msgid "登入失敗鎖定"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:371
+#: app/templates/pages/admin/settings.html:386
 msgid "連續失敗"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:376
+#: app/templates/pages/admin/settings.html:391
 msgid "次後鎖定帳號"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:379
+#: app/templates/pages/admin/settings.html:394
 msgid "基礎鎖定時間"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:384
+#: app/templates/pages/admin/settings.html:399
 msgid "分鐘，每次鎖定時間 x"
 msgstr ""
 
-#: app/templates/pages/admin/settings.html:391
+#: app/templates/pages/admin/settings.html:406
 msgid "例：基礎 15 分鐘 x 2，第一次鎖 15 分鐘，第二次 30 分鐘，第三次 60 分鐘...（最多 24 小時）"
 msgstr ""
 
@@ -7077,7 +7085,7 @@ msgstr ""
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:64
 #: ../modules/vuln_lifecycle/templates/modules/vuln_lifecycle/asset_detail.html:76
 #: app/templates/pages/admin/time/holiday_calendar_edit.html:116
-#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:49
+#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:42
 #: app/templates/pages/oidc_clients/index.html:104
 #: app/templates/pages/security/org_rate_limits.html:89
 msgid "儲存"
@@ -7558,7 +7566,7 @@ msgstr ""
 #: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:98
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:65
 #: app/templates/pages/approval_categories/list.html:197
-#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:50
+#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:43
 #: app/templates/pages/menu/list.html:98
 msgid "儲存中..."
 msgstr ""
@@ -8169,23 +8177,15 @@ msgstr ""
 msgid "僅供受控的本機開發環境使用；正式環境應維持關閉。"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:32
-msgid "允許外部廠商帳號經 OIDC 登入外部系統"
-msgstr ""
-
-#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:34
-msgid "試驗用；開啟後所有 OIDC client 一起生效，關閉後已登入的廠商最遲 15 分鐘內失效。"
-msgstr ""
-
-#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:37
+#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:30
 msgid "登入連結預覽"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:39
+#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:32
 msgid "企業網域"
 msgstr ""
 
-#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:42
+#: app/templates/pages/hostconfig/_system_settings_section_baseurl.html:35
 #: app/templates/pages/organizations/list.html:192
 #: app/templates/pages/organizations/list.html:207
 msgid "尚未設定"
@@ -22415,8 +22415,4 @@ msgstr ""
 
 #: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:3
 msgid "流程樹系圖 - BeakPlatform"
-msgstr ""
-
-#: app/templates/pages/users/list.html:124
-msgid "以下社群的團長位已空出，請另行指派："
 msgstr ""

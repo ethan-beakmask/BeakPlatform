@@ -27,13 +27,6 @@
             </div>
         </div>
         <div class="form-group">
-            <label class="checkbox-label">
-                <input type="checkbox" x-model="baseUrl.externalUsersEnabled">
-                <span>{{ _('允許外部廠商帳號經 OIDC 登入外部系統') }}</span>
-            </label>
-            <div class="form-hint">{{ _('試驗用；開啟後所有 OIDC client 一起生效，關閉後已登入的廠商最遲 15 分鐘內失效。') }}</div>
-        </div>
-        <div class="form-group">
             <label>{{ _('登入連結預覽') }}</label>
             <div class="baseurl-preview" x-show="baseUrl.value.trim()">
                 <code x-text="baseUrl.value.trim().replace(/\/+$/, '') + '{{ app_prefix }}/auth/org/{{ _('企業網域') }}/login'"></code>

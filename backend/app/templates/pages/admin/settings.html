@@ -275,6 +275,21 @@
                         </div>
                     </td>
                 </tr>
+                <tr>
+                    <th style="text-align: left;">{{ _('外部廠商經 OIDC 登入外部系統') }}</th>
+                    <td>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox"
+                                   x-model="settings.oidc_external_users_enabled"
+                                   @change="saveSettings()"
+                                   style="width: 18px; height: 18px;">
+                            <span>{{ _('允許本企業的外部廠商帳號經 OIDC 登入已接入平台的外部系統') }}</span>
+                        </label>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            {{ _('整家企業一個開關，不分廠商。關閉後已登入的廠商最遲 15 分鐘內失效。') }}
+                        </div>
+                    </td>
+                </tr>
             </table>
 
             <p x-show="saveMessage" x-text="saveMessage"

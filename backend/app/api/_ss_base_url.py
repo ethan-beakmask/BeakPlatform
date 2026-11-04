@@ -17,7 +17,6 @@ from ..security.decorators import system_admin_required
 
 SETTING_KEY = 'system_base_url'
 OIDC_HTTP_REDIRECT_KEY = 'oidc_allow_http_redirect'
-OIDC_EXTERNAL_KEY = 'oidc_external_users_enabled'
 
 
 def _normalize_base_url(value: str) -> str:
@@ -48,7 +47,6 @@ def register(bp):
             'success': True,
             'data': {
                 'system_base_url': SystemSetting.get(SETTING_KEY, '') or '',
-                'oidc_external_users_enabled': bool(SystemSetting.get(OIDC_EXTERNAL_KEY, False)),
                 'oidc_allow_http_redirect': bool(
                     SystemSetting.get(OIDC_HTTP_REDIRECT_KEY, False)),
             }
@@ -71,12 +69,6 @@ def register(bp):
                 'error': _('OIDC HTTP redirect 設定必須是布林值'),
             }), 400
 
-        external_enabled = data.get(
-            OIDC_EXTERNAL_KEY, bool(SystemSetting.get(OIDC_EXTERNAL_KEY, False)))
-        if not isinstance(external_enabled, bool):
-            return jsonify({'success': False,
-                            'error': _('OIDC 外部廠商設定必須是布林值')}), 400
-
         try:
             system_base_url = _normalize_base_url(data.get('system_base_url', ''))
         except ValueError as exc:
@@ -98,18 +90,11 @@ def register(bp):
             updated_by=current_user.email,
         )
 
-        SystemSetting.set(
-            key=OIDC_EXTERNAL_KEY, value=external_enabled, value_type='boolean',
-            category='general',
-            description='允許外部廠商帳號經 OIDC 登入外部系統（試驗用，全部 client 一起生效）',
-            updated_by=current_user.email,
-        )
         return jsonify({
             'success': True,
             'message': _('系統對外網址已更新'),
             'data': {
                 'system_base_url': system_base_url,
                 'oidc_allow_http_redirect': allow_http,
-                'oidc_external_users_enabled': external_enabled,
             }
         })

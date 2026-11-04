@@ -13,9 +13,10 @@ from joserfc import jwt
 from joserfc.jwk import KeySet
 
 from app import db, limiter
-from app.models import (OidcRefreshToken, OrganizationalUnit, Organization,
+from app.models import (OidcClientOrg, OidcRefreshToken, OrganizationalUnit, Organization,
                         SystemSetting, User, UserUnitMembership)
 from app.services.oidc_claims import build_claims
+from app.services.oidc_server import external_users_enabled, validate_subject
 from app.services.rate_limit_service import RateLimitService
 from backend.tests.test_oidc_provider import (
     oidc_setup, P, SECRET, _params, _resume_target, _token, _refresh)
@@ -140,7 +141,8 @@ def test_members_rate_limit(client, oidc_setup):
 
 
 def test_external_login_through_refresh_revocation(client, test_org, oidc_setup):
-    SystemSetting.set('oidc_external_users_enabled', True, value_type='boolean')
+    test_org.set_setting('oidc_external_users_enabled', True)
+    db.session.commit()
     oidc_setup.extra_claims = ['scribe']
     vendor = user(test_org, 'external', 'EXTERNAL')
     vendor.employee_id = 'DCX001'  # 平台給廠商的編號不得外流，claims 與名單都要是 null
@@ -173,7 +175,8 @@ def test_external_login_through_refresh_revocation(client, test_org, oidc_setup)
     # Rotate once so family revocation must cover multiple rows.
     rotated = _refresh(client, tokens['refresh_token']).get_json()
     family = OidcRefreshToken.query.filter_by(user_secure_code=vendor.secure_code).first().family_id
-    SystemSetting.set('oidc_external_users_enabled', False, value_type='boolean')
+    test_org.set_setting('oidc_external_users_enabled', False)
+    db.session.commit()
     denied = _refresh(client, rotated['refresh_token'])
     assert denied.status_code == 400 and denied.get_json() == {'error': 'invalid_grant'}
     db.session.expire_all()
@@ -182,11 +185,49 @@ def test_external_login_through_refresh_revocation(client, test_org, oidc_setup)
     assert members(client, vendor_group.secure_code).get_json()['members'] == []
 
 
-def test_org_hint_fallback_indistinguishable(client, oidc_setup):
-    SystemSetting.set('oidc_external_users_enabled', False, value_type='boolean')
+def test_org_hint_fallback_indistinguishable(client, test_org, oidc_setup):
+    test_org.set_setting('oidc_external_users_enabled', False)
+    db.session.commit()
     disabled = client.get(P + '/oauth/authorize', query_string=_params(org_hint='test.local'))
-    SystemSetting.set('oidc_external_users_enabled', True, value_type='boolean')
+    test_org.set_setting('oidc_external_users_enabled', True)
+    db.session.commit()
     missing = client.get(P + '/oauth/authorize', query_string=_params(org_hint='missing.local'))
     assert (disabled.status_code, disabled.headers['Location']) == (
         missing.status_code, missing.headers['Location'])
     assert disabled.headers['Location'].endswith('/auth/login')
+
+
+def test_external_switch_is_per_organization(client, test_org, oidc_setup):
+    other = Organization(secure_code='oidc-other-org', code='OIDC_OTHER',
+        name='Other', domain_name='other.local', is_active=True, is_deleted=False)
+    db.session.add(other); db.session.flush()
+    db.session.add(OidcClientOrg(client_secure_code=oidc_setup.secure_code,
+                                org_secure_code=other.secure_code))
+    test_org.set_setting('oidc_external_users_enabled', True)
+    other.set_setting('oidc_external_users_enabled', False)
+    vendor = user(test_org, 'vendor1', 'EXTERNAL')
+    vendor2 = user(other, 'vendor2', 'EXTERNAL')
+    db.session.commit()
+
+    assert validate_subject(oidc_setup, vendor2.secure_code)[2] == 'external_disabled'
+    assert validate_subject(oidc_setup, vendor.secure_code)[2] is None
+    disabled = client.get(P + '/oauth/authorize', query_string=_params(org_hint='other.local'))
+    enabled = client.get(P + '/oauth/authorize', query_string=_params(org_hint='test.local'))
+    assert disabled.status_code == 302
+    assert disabled.headers['Location'].endswith('/auth/login')
+    assert enabled.status_code == 302
+    assert enabled.headers['Location'].endswith('/auth/org/test.local/public/login')
+
+    other.is_active = False
+    db.session.commit()
+    assert validate_subject(oidc_setup, vendor2.secure_code)[2] == 'organization_inactive'
+
+
+def test_external_switch_fails_closed(test_org):
+    assert external_users_enabled(None) is False
+    assert external_users_enabled(test_org) is False  # Missing key uses factory default.
+    for value in (None, False, 'true', 'false', 1, 0, [], {}, ['true']):
+        test_org.set_setting('oidc_external_users_enabled', value)
+        assert external_users_enabled(test_org) is False
+    test_org.set_setting('oidc_external_users_enabled', True)
+    assert external_users_enabled(test_org) is True

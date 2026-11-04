@@ -112,6 +112,7 @@ class Organization(BaseModel):
         'login_employee_show_name': True,   # 企業成員登入頁顯示企業名稱
         'login_external_show_logo': True,   # 外部廠商登入頁顯示企業 Logo
         'login_external_show_name': True,   # 外部廠商登入頁顯示企業名稱
+        'oidc_external_users_enabled': False,  # 允許本企業的外部廠商帳號經 OIDC 登入外部系統（整家企業一個開關，不分廠商、不分 client）
         'broadcast_poll_interval_minutes': 1,  # 廣播輪詢間隔（分鐘）
     }
 

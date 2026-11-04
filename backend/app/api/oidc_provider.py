@@ -88,11 +88,11 @@ def _authorize(params):
 
     if not current_user.is_authenticated:
         _save_pending(params)
-        if external_users_enabled() and params.get('org_hint'):
+        if params.get('org_hint'):
             org = Organization.query.filter(
                 Organization.domain_name == params['org_hint'].strip().lower(),
                 Organization.is_deleted.is_(False), Organization.is_active.is_(True)).first()
-            if org:
+            if org and external_users_enabled(org):
                 return redirect(url_for('auth.org_public_login', domain_name=org.domain_name))
         return redirect(url_for('auth.login'))
     if current_user.must_change_password:

@@ -109,7 +109,7 @@ def group_members(client, org, unit) -> list[dict]:
     members = {}
     for membership in effective_memberships(org, [unit.secure_code]):
         user = membership.user
-        if not user_type_allowed(client, user):
+        if not user_type_allowed(client, user, org):
             continue
         manager = membership.role_type in (MembershipRole.MANAGER, MembershipRole.DEPUTY)
         if user.secure_code not in members:
@@ -174,5 +174,5 @@ def build_claims(user, scopes, client):
         claims['scribe_admin'] = _scribe_admin(user, org)
         from app.services.oidc_server import user_type_allowed
         claims['project_groups'] = (_project_groups(user, org)
-                                    if user_type_allowed(client, user) else [])
+                                    if user_type_allowed(client, user, org) else [])
     return claims
